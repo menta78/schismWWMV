@@ -1,0 +1,520 @@
+#include "wwm_functions.h"
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_SIMPLE_EXPLICIT()
+        USE DATAPOOL
+#ifdef MPI_PARALL_GRID
+        use elfe_msgp
+#endif
+
+        IMPLICIT NONE
+
+        REAL              :: TIME1, TIME2, TIME3, TIME4, TIME5
+        REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
+
+!         IF (ICOMP .GT. 1) AC1 = AC2 ! This is also changes just for shit ...
+!         WRITE(*,*) 'AFTER FREQ', SUM(AC2)
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
+
+         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+           DT4A = MAIN%DELT
+           DT4S = DT4A
+           DT4D = 0.5*DT4A
+           DT4F = 0.5*DT4A 
+         ELSE IF (LQSTEA) THEN
+           DT4A = DT_ITER
+           DT4S = DT4A
+           DT4D = 0.5*DT4A
+           DT4F = 0.5*DT4A 
+         END IF
+ 
+         CALL CPU_TIME(TIME1)
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME2)
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+  
+         !WRITE(*,*) 'AFTER FREQ', SUM(AC2)
+
+         CALL CPU_TIME(TIME3)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         !WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
+
+         CALL CPU_TIME(TIME4)
+
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+
+         !WRITE(*,*) 'AFTER ADVECTION', SUM(AC2)
+
+         CALL CPU_TIME(TIME5)
+
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+
+         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+
+         CALL CPU_TIME(TIME6)
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+
+         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+
+         IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
+
+         CALL CPU_TIME(TIME7)
+
+         !WRITE(*,*) 'AFTER BRK LIM', SUM(AC2)
+
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+#endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   '-----SIMPLE SPLITTING SCHEME-----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'DIFFRACTION                      ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'SOURCES                          ', TIME6-TIME5
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'CPU TIMINGS THETA SPACE          ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'CPU MICHE LIMITER                ', TIME7-TIME6
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   'CPU TIMINGS TOTAL TIME           ', TIME7-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
+     &   '-------------TIMINGS-------------'
+#ifdef MPI_PARALL_GRID
+      ENDIF
+#endif
+
+        IF (.NOT. LDIFR) LCALC = .FALSE.
+
+!        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,AC2(137,:,:),10,MSC,MDC,'BEFORE ANY CALL')    
+        RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_DOUBLE_STRANG_EXPLICIT()
+        USE DATAPOOL
+
+#ifdef MPI_PARALL_GRID
+        use elfe_msgp
+#endif
+        IMPLICIT NONE
+
+        REAL       :: TIME1, TIME2, TIME3, TIME4, TIME5
+        REAL       :: TIME6, TIME7, TIME8, TIME9, TIME10
+        REAL       :: TIME11, TIME12, TIME13, TIME14, TIME15, TIME16, TIME17
+
+         !WRITE(*,'("+TRACE...",A)') 'START COMPUTER'
+
+         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+           DT4A = 0.5*MAIN%DELT
+           DT4S = 0.5*DT4A
+           DT4D = ONETHIRD*MAIN%DELT
+           DT4F = DT4D 
+         ELSE IF (LQSTEA) THEN
+           DT4A = 0.5*DT_ITER
+           DT4S = DT4A * 0.25
+           DT4D = ONETHIRD*DT_ITER
+           DT4F = DT4D 
+         END IF
+
+         CALL CPU_TIME(TIME1)
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME2)
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+
+         CALL CPU_TIME(TIME3)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         CALL CPU_TIME(TIME4)
+
+         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -1-'
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME5)
+
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+
+
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+
+         CALL CPU_TIME(TIME6)
+
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+
+         CALL CPU_TIME(TIME7)
+
+         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPATIAL PART AND SOURCE -1-'
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME8)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         CALL CPU_TIME(TIME9)
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+
+         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -2-'
+
+         CALL CPU_TIME(TIME10)
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME11)
+
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+
+         CALL CPU_TIME(TIME12)
+
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+
+         CALL CPU_TIME(TIME13)
+
+         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPATIAL PART AND SOURCE -2-'
+
+         CALL COMPUTE_DIFFRACTION
+
+         CALL CPU_TIME(TIME14)
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+
+         CALL CPU_TIME(TIME15)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         CALL CPU_TIME(TIME16)
+
+         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -3-'
+
+         CALL CPU_TIME(TIME17)
+
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+#endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    '------DOUBLE STRANG SPLITTING----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'DIFFRACTION                      ',                  &
+     &   TIME2-TIME1 + TIME5-TIME4 + TIME8-TIME7 + TIME14+TIME13
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'SOURCES                          ',                  &
+     &   TIME7-TIME6 + TIME13-TIME12
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'CPU TIMINGS ADVEKTION            ',                  &
+     &   TIME6-TIME5 + TIME12-TIME11
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'CPU TIMINGS THETA SPACE          ',                  &
+     &   TIME4-TIME3 + TIME9-TIME8 + TIME16-TIME15
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'CPU TIMINGS SIGMA SPACE          ',                  &
+     &   TIME3-TIME2 + TIME10-TIME9 + TIME15-TIME14
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    'CPU TIMINGS TOTAL TIME           ', &
+     &   TIME17-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
+     &    '-------------TIMINGS-------------'
+#ifdef MPI_PARALL_GRID
+      ENDIF
+#endif
+
+!        WRITE(*,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME2-TIME1
+
+        IF (.NOT. LDIFR) LCALC = .FALSE.
+
+        RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_IMPLICIT
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
+        INTEGER          :: IP, IT
+
+!       Three level splitting to reduce splitting errors when using implicit-explicit schemes
+
+         DT4A = MAIN%DELT
+         DT4S = DT4A
+         DT4D = DT4A*0.5 
+         DT4F = DT4A*0.5
+
+         AC1  = AC2
+
+!         WRITE(*,*) 'BEGINNING', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME1)
+         CALL COMPUTE_DIFFRACTION
+!         WRITE(*,*) '------1--------', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME2)
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
+!         WRITE(*,*) '------2--------', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME3)
+         !IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
+!         WRITE(*,*) '------3--------', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME4)
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
+         CALL CPU_TIME(TIME5)
+!         WRITE(*,*) '------4--------', SUM(AC2), SUM(AC1)
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+         CALL CPU_TIME(TIME6)
+         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+!         WRITE(*,*) '------5--------', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME7)
+         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+!         WRITE(*,*) '------6--------', SUM(AC2), SUM(AC1)
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SPECTRAL SPACE       ', TIME3-TIME2+TIME6-TIME5
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ACTION LIMITER                   ', TIME7-TIME6
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+
+        RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+       SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        INTEGER          :: ITER, IS, ID, IP
+
+        REAL, SAVE       :: TIME1, TIME2
+
+         CALL CPU_TIME(TIME1)
+
+         DT4A = MAIN%DELT 
+         DT4S = DT4A
+         DT4D = DT4A
+         DT4F = DT4A
+
+! Set DAC's to Zero ... 
+
+         CALL CPU_TIME(TIME1)
+
+         DAC_THE = 0.
+         DAC_SIG = 0.
+         DAC_SOU = 0.
+         DAC_ADV = 0.
+
+         AC1 = AC2
+
+! 1st step ...
+
+         IITERSPLIT = 0
+
+         CALL COMPUTE_SPATIAL()
+         CALL COMPUTE_FREQUENCY
+         CALL COMPUTE_DIRECTION()
+         CALL COMPUTE_SOURCES_EXP()
+
+         WRITE(*,*) SUM(DAC_ADV), SUM(DAC_SOU), SUM(DAC_THE)
+
+         AC2 = AC1
+
+         IITERSPLIT = 1
+
+! iteration ...
+
+         CALL COMPUTE_SPATIAL()
+         CALL COMPUTE_FREQUENCY
+         CALL COMPUTE_DIRECTION()
+         CALL COMPUTE_SOURCES_EXP()
+
+         WRITE(*,*) SUM(DAC_ADV), SUM(DAC_SOU), SUM(DAC_THE)
+
+         AC2 = AC1
+
+! final step ... 
+
+         CALL COMPUTE_SPATIAL()
+         CALL COMPUTE_FREQUENCY
+         CALL COMPUTE_DIRECTION()
+         CALL COMPUTE_SOURCES_EXP()
+
+         CALL CPU_TIME(TIME2)
+
+        RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_DIFFRACTION
+        USE DATAPOOL
+        IF (LDIFR) THEN
+          IF (IDIFFR == 1 ) THEN
+            CALL DIFFRA_SIMPLE
+          ELSE IF (IDIFFR == 2) THEN
+            CALL DIFFRA_EXTENDED
+          END IF
+        END IF
+      END SUBROUTINE COMPUTE_DIFFRACTION
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_SPATIAL()
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        IF (DIMMODE == 1) THEN
+          CALL COMPUTE_ADVECTION1D_QUICKEST_A()
+        ELSE IF (DIMMODE == 2) THEN
+          IF (LVECTOR) THEN
+            CALL FLUCT_3
+          ELSE
+            CALL FLUCT_1
+! don't forget to uncomment FLUCT* in wwm_fluctsplit
+!             IF(ICOMP == 0) THEN
+!               CALL FLUCT_EXPLICIT()
+!             ELSE IF(ICOMP == 1) THEN
+!               CALL FLUCT_SEMIIMPLICIT()
+!             ELSE IF(ICOMP == 2) THEN
+!               CALL FLUCT_IMPLICIT()
+!             ENDIF
+          END IF
+          IF ( ICOMP .GE. 1 .AND. (AMETHOD .EQ. 2 .OR. AMETHOD .EQ. 3 )) CALL RESCALE_SPECTRUM
+        END IF
+
+      END SUBROUTINE COMPUTE_SPATIAL
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_DIRECTION()
+        USE DATAPOOL
+        IMPLICIT NONE
+ 
+        IF (DMETHOD > 0) THEN
+          IF (DMETHOD == 1) THEN
+            CALL COMPUTE_DIRECTION_CNTG_A()
+          ELSE IF (DMETHOD == 2) THEN
+            CALL COMPUTE_DIRECTION_QUICKEST_A()
+          ELSE IF (DMETHOD == 3) THEN
+            CALL COMPUTE_DIRECTION_WENO_A()
+          ELSE IF (DMETHOD == 4) THEN
+            CALL COMPUTE_DIRECTION_UPWIND_A()
+          END IF
+        END IF
+
+      END SUBROUTINE COMPUTE_DIRECTION
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_FREQUENCY()
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        IF (FMETHOD == 1) THEN
+          CALL COMPUTE_FREQUENCY_QUICKEST_A()
+        END IF
+
+      END SUBROUTINE COMPUTE_FREQUENCY
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_SOURCES_EXP()
+        USE DATAPOOL
+        IMPLICIT NONE
+
+          IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
+            CALL SOURCE_INT_EXP()
+          END IF
+
+      END SUBROUTINE COMPUTE_SOURCES_EXP
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_SOURCES_IMP()
+        USE DATAPOOL
+        IMPLICIT NONE
+
+          IF (ICOMP >= 2  .AND. SMETHOD > 0) THEN
+            CALL SOURCE_INT_IMP()
+          END IF
+
+      END SUBROUTINE COMPUTE_SOURCES_IMP
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CFLSPEC()
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER              :: IP
+
+         REAL(rkind)                 :: TMPCFLCAD(MNP), TMPCAD(MNP)
+         REAL(rkind)                 :: TMPCFLCAS(MNP), TMPCAS(MNP)
+         REAL(rkind)                 :: CAS(MSC,MDC), CAD(MSC,MDC)
+
+         OPEN(310, FILE='cflcad.bin', FORM = 'UNFORMATTED', STATUS = 'UNKNOWN')
+         OPEN(311, FILE='cflcas.bin', FORM = 'UNFORMATTED', STATUS = 'UNKNOWN')
+
+         TMPCFLCAS = 0.
+         TMPCFLCAD = 0.
+         TMPCAS    = 0. 
+         TMPCAD    = 0.
+
+         DO IP = 1, MNP
+           IF (DEP(IP) .GT. DMIN) THEN
+             CALL PROPTHETA(IP,CAD)
+             CALL PROPSIGMA(IP,CAS)
+             TMPCAD(IP)    = MAXVAL(ABS(CAD))
+! 0.5 since the directional and frequency intergration is split in two parts ....
+             TMPCFLCAD(IP) = 0.5 * TMPCAD(IP)*MAIN%DELT/DDIR
+             TMPCAS(IP)    = MAXVAL(ABS(CAS))
+! absolute max. value ... lies on the secure side ... to do ...
+             TMPCFLCAS(IP) = 0.5 * TMPCAS(IP)*MAIN%DELT/MINVAL(DS_INCR)
+           ELSE
+             CALL PROPTHETA(IP,CAD)
+             CALL PROPSIGMA(IP,CAS)
+             TMPCFLCAD(IP) = 0.
+             TMPCAD(IP)    = 0.
+             TMPCFLCAS(IP) = 0.
+             TMPCAS(IP)    = 0.
+           END IF
+         END DO
+
+         MAXCFLCAD = MAXVAL(TMPCAD)
+         MAXCFLCAS = MAXVAL(TMPCAS)
+
+         WRITE (310) RTIME
+         WRITE (310) (TMPCAD(IP), TMPCAD(IP), TMPCFLCAD(IP), IP = 1, MNP)
+         WRITE (311) RTIME
+         WRITE (311) (TMPCAS(IP), TMPCAS(IP), TMPCFLCAS(IP), IP = 1, MNP)
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************

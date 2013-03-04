@@ -1,0 +1,359 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib
+END
+mmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/mmetis.c
+END
+akwayfm.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/akwayfm.c
+END
+ometis.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/ometis.c
+END
+selectq.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/selectq.c
+END
+setup.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/setup.c
+END
+mdiffusion.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/mdiffusion.c
+END
+kwayrefine.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/kwayrefine.c
+END
+csrmatch.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/csrmatch.c
+END
+initmsection.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/initmsection.c
+END
+iidxsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/iidxsort.c
+END
+lmatch.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/lmatch.c
+END
+proto.h
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/proto.h
+END
+fpqueue.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/fpqueue.c
+END
+weird.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/weird.c
+END
+order.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/order.c
+END
+stat.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/stat.c
+END
+iintsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/iintsort.c
+END
+ikeyvalsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/ikeyvalsort.c
+END
+frename.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/frename.c
+END
+msetup.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/msetup.c
+END
+node_refine.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/node_refine.c
+END
+util.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/util.c
+END
+adrivers.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/adrivers.c
+END
+serial.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/serial.c
+END
+xyzpart.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/xyzpart.c
+END
+debug.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/debug.c
+END
+grsetup.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/grsetup.c
+END
+mdrivers.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/mdrivers.c
+END
+sync
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/sync
+END
+match.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/match.c
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/Makefile
+END
+kwayfm.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/kwayfm.c
+END
+wave.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/wave.c
+END
+gkmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/gkmetis.c
+END
+rmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/rmetis.c
+END
+backcompat.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/backcompat.c
+END
+remap.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/remap.c
+END
+diffutil.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/diffutil.c
+END
+move.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/move.c
+END
+memory.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/memory.c
+END
+initbalance.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/initbalance.c
+END
+ikeysort.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/ikeysort.c
+END
+balancemylink.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/balancemylink.c
+END
+rename.h
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/rename.h
+END
+redomylink.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/redomylink.c
+END
+pspases.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/pspases.c
+END
+parmetislib.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/parmetislib.h
+END
+timer.c
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/timer.c
+END
+kwaybalance.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/kwaybalance.c
+END
+ametis.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/ametis.c
+END
+defs.h
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/defs.h
+END
+macros.h
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/macros.h
+END
+struct.h
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/struct.h
+END
+initpart.c
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/initpart.c
+END
+coarsen.c
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/coarsen.c
+END
+comm.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/comm.c
+END
+stdheaders.h
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/stdheaders.h
+END
+kmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/kmetis.c
+END
+mesh.c
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/ParMETISLib/mesh.c
+END

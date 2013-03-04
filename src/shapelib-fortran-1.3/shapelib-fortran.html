@@ -1,0 +1,107 @@
+<html><head>
+<link href="../dav.css" type="text/css" rel="stylesheet">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Shapelib-Fortran</title></head><body>
+
+<h2>Shapelib-Fortran</h2>
+
+This package contains Fortran 90/95 bindings to the <a
+href="http://shapelib.maptools.org/">Shapefile C Library</a> for
+accessing ESRI Shapefiles, a common format in Geographic Information
+Systems for vector data.<p>
+
+NOTICE: This package is not under active developent anymore, please
+refer to the <a href="http://fortrangis.berlios.de/">FortranGIS</a>
+project for a new and more complete Fortran interface to GIS libraries
+using ISO_C_BINDING facilities of Fortran 2003.<p>
+
+<hr>
+
+<h3>Download</h3>
+
+The Shapelib-Fortran
+package <a href="shapelib-fortran-1.3.tar.gz">version 1.3</a> can be
+downloaded directly from this page.<br>
+
+<hr>
+
+<h3>Build</h3>
+
+The package is configured with the standard GNU autotools, so, in the
+simplest case, the building procedure consists in typing:
+<pre>
+./configure
+make
+make install
+</pre>
+Try <tt>configure --help</tt> for more options to the configure
+script, for example for indicating a particular Fortran compiler.
+Make sure that the shapelib package (including the development package
+if you distribution has one) is installed and accessible before trying
+to build the Fortran bindings.<p>
+
+The package contains also a spec file so that you can quickly build a
+rpm package, on a GNU/Linux system supporting rpm, just issuing the
+command <tt>rpmbuild -ba &lt;package-name&gt;.tar.gz</tt>.<p>
+
+Shapelib-fortran has been tested on Fedora 12 and Debian lenny
+i386/x86_64 GNU/Linux systems. It has been successfully tested with
+gfortran, g95 and pgf90 Fortran compilers.<p>
+
+<hr>
+
+<h3>Use</h3>
+
+In order to access the shapelib API from a Fortran program you have to
+add
+
+<pre>
+USE shplib
+</pre>
+
+to your program unit.
+
+The API has been kept as close as possible to the original C API; the
+retrieved shapes are stored in a Fortran derived type
+<tt>shpobject</tt> which mimics the C structure
+<tt>SHPObject</tt>. Notice that the <tt>shpopen</tt> function, unlike
+Fortran <tt>OPEN</tt> statement, requires the filename variable not to
+contain trailing blanks unless this is explicitly wanted as a part of
+the filename!, so the use of the Fortran intrinsinc function
+<tt>TRIM()</tt> is suggested in this case.<p>
+
+See shplib.f90 for the parameter and derived type definitions and
+<a href="shp_read_test.f90">shp_read_test.f90</a> and
+<a href="shp_write_test.f90">shp_write_test.f90</a> for an example.<p>
+
+Be warned that the Fortran bindings do not support the DBF attribute
+features of the C shapelib.<p>
+
+<hr>
+
+<h3>Support</h3>
+
+If you have questions, doubts or requests for improvement concerning
+the shapelib Fortran bindings, please address them to Davide Cesari
+(<tt>dcesari69 &lt;at&gt; gmail &lt;dot&gt; com; it</tt>).
+Other enquiries concerning the Shapefile C library should be addressed
+to the maintainer of the library, Frank Warmerdam, as indicated in the
+<a href="http://shapelib.maptools.org/">shapelib web page</a>.<p>
+
+<hr>
+<h3>License</h3>
+
+Shapelib-Fortran<br>
+Fortran 90/95 bindings for shapelib<br>
+Copyright (C) 2011 Davide Cesari, dcesari69 &lt;at&gt; gmail &lt;dot&gt; com<br>
+The sources are distributed according to the GNU LGPL license.<br>
+See <tt>LICENSE</tt> file for the full license terms.<p>
+
+<hr>
+
+Last Update 01/06/2011
+
+<hr>
+
+Back to <a href="../">main page</a>.
+</body></html>

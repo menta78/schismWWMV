@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+
+$uu=scalar(@ARGV);
+if ($uu ne 2)
+{
+    print "ConvertBndType1_to_2 is used as\n";
+    print "ConvertBndType1_to_2 [FileI] [FileO]\n";
+    die;
+}
+$FileIn=$ARGV[0];
+$FileOu=$ARGV[1];
+
+
+open(INFILE, $FileIn) or die "impossible to open ".$FileIn;
+@LS=<INFILE>;
+close(INFILE);
+
+$nbLine=scalar(@LS);
+
+open(OUT, "> ".$FileOu);
+print OUT "Line 1\n";
+print OUT "Line 2\n";
+for ($iLine=1; $iLine<=$nbLine; $iLine++)
+{
+    print OUT "0.00000 ".$LS[$iLine-1];
+}
+close(OUT);

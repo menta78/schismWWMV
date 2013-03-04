@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin
+END
+cjd
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/cjd
+END
+nc_copy_data.01
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_copy_data.01
+END
+nc_fix_avg.01
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_fix_avg.01
+END
+nc_verify.01
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_verify.01
+END
+mm52asc.01
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/mm52asc.01
+END
+asc2netcdf_regrid.01
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/asc2netcdf_regrid.01
+END
+nc_make_prate.01
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_make_prate.01
+END
+wgrib
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/wgrib
+END
+asc2netcdf.01
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/asc2netcdf.01
+END
+wgrib2
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/wgrib2
+END
+nc_restrict.01
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_restrict.01
+END
+nc_rotate_wind.01
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/bin/nc_rotate_wind.01
+END

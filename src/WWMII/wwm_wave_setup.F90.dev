@@ -1,0 +1,68 @@
+#include "wwm_functions.h"
+      SUBROUTINE COMPUTE_DIVERGENCE_LH_STRESS(TheDiv)
+      USE DATAPOOL
+      implicit none
+      real(rkind), intent(inout) :: TheDiv(MNP)
+!MATHIEU I suggest heavy use of forchk since otherwise everything gets messed up
+!        e.g. INPUT is already defined in the datapool, now it is redefined this is not ok
+      real(rkind) :: U_X(MNP), U2(MNP), INPUT(MNP)
+      integer IP, ID, IS
+      REAL(rkind) :: COSE2, SINE2, WN, ELOC
+      REAL(rkind) :: ACLOC(MSC,MDC)
+      DO IP = 1, MNP
+        ACLOC = AC2(IP,:,:)
+        DO ID = 1, MDC
+          DO IS = 2, MSC
+            ELOC  = DS_INCR(IS)*DDIR*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))
+            COSE2 = COS(SPDIR(ID))**TWO
+            SINE2 = SIN(SPDIR(ID))**TWO
+            COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
+            WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+            RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC
+            RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
+            RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC
+          ENDDO
+        ENDDO
+      END DO
+      CALL DIFFERENTIATE_XYDIR(RSXX,U_X, U_Y)
+      INPUT=U_X
+      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
+      TheDiv=-U_X
+      !
+      CALL DIFFERENTIATE_XYDIR(RSXY,U_X, U_Y)
+      INPUT=U_X
+      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
+      TheDiv=TheDiv-U_Y
+      !
+      CALL DIFFERENTIATE_XYDIR(RSXY,U_X, U_Y)
+      INPUT=U_Y
+      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
+      TheDiv=TheDiv-U_X
+      !
+      CALL DIFFERENTIATE_XYDIR(RSYY,U_X, U_Y)
+      INPUT=U_Y
+      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
+      TheDiv=TheDiv-U_Y
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SOLVE_POISSON_NEUMANN(TheInp, TheOut)
+! use jacobi preconditioner. Inspired from solve_jcg
+#ifdef MPI_PARALL_GRID
+      USE ELFE_GLBL, ONLY : iplg, np_global
+      USE elfe_msgp, only : myrank, nproc, comm
+#endif
+      implicit none
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_WAVE_SETUP
+      USE DATAPOOL
+      implicit none
+      REAL(rkind) :: TheDiv(MNP)
+      CALL COMPUTE_DIVERGENCE_LH_STRESS(TheDiv)
+
+
+      END SUBROUTINE

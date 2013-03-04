@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/selfe/!svn/ver/198/trunk/src/utility/Sflux_nc
+END
+analyze_sflux1.f90
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/analyze_sflux1.f90
+END
+readnc.m
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/selfe/!svn/ver/5/trunk/src/utility/Sflux_nc/readnc.m
+END
+grb2nc.m
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/selfe/!svn/ver/146/trunk/src/utility/Sflux_nc/grb2nc.m
+END
+readnc2.m
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/readnc2.m
+END
+readnc3.m
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/selfe/!svn/ver/5/trunk/src/utility/Sflux_nc/readnc3.m
+END
+readnc2b.m
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/selfe/!svn/ver/148/trunk/src/utility/Sflux_nc/readnc2b.m
+END
+readnc4.m
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/selfe/!svn/ver/5/trunk/src/utility/Sflux_nc/readnc4.m
+END
+readnc5.m
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/selfe/!svn/ver/80/trunk/src/utility/Sflux_nc/readnc5.m
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/selfe/!svn/ver/5/trunk/src/utility/Sflux_nc/README
+END

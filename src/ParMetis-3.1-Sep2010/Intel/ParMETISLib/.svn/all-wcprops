@@ -1,0 +1,359 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib
+END
+mmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/mmetis.c
+END
+akwayfm.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/akwayfm.c
+END
+ometis.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/ometis.c
+END
+selectq.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/selectq.c
+END
+setup.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/setup.c
+END
+mdiffusion.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/mdiffusion.c
+END
+kwayrefine.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/kwayrefine.c
+END
+csrmatch.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/csrmatch.c
+END
+initmsection.c
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/initmsection.c
+END
+iidxsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/iidxsort.c
+END
+lmatch.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/lmatch.c
+END
+proto.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/proto.h
+END
+fpqueue.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/fpqueue.c
+END
+weird.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/weird.c
+END
+order.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/order.c
+END
+stat.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/stat.c
+END
+iintsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/iintsort.c
+END
+ikeyvalsort.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/ikeyvalsort.c
+END
+frename.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/frename.c
+END
+msetup.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/msetup.c
+END
+node_refine.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/node_refine.c
+END
+util.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/util.c
+END
+adrivers.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/adrivers.c
+END
+serial.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/serial.c
+END
+xyzpart.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/xyzpart.c
+END
+debug.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/debug.c
+END
+grsetup.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/grsetup.c
+END
+mdrivers.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/mdrivers.c
+END
+sync
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/sync
+END
+match.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/match.c
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/Makefile
+END
+kwayfm.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/kwayfm.c
+END
+wave.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/wave.c
+END
+gkmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/gkmetis.c
+END
+rmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/rmetis.c
+END
+backcompat.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/backcompat.c
+END
+remap.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/remap.c
+END
+diffutil.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/diffutil.c
+END
+move.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/move.c
+END
+memory.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/memory.c
+END
+initbalance.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/initbalance.c
+END
+ikeysort.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/ikeysort.c
+END
+balancemylink.c
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/balancemylink.c
+END
+rename.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/rename.h
+END
+redomylink.c
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/redomylink.c
+END
+pspases.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/pspases.c
+END
+parmetislib.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/parmetislib.h
+END
+timer.c
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/timer.c
+END
+kwaybalance.c
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/kwaybalance.c
+END
+ametis.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/ametis.c
+END
+defs.h
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/defs.h
+END
+macros.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/macros.h
+END
+struct.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/struct.h
+END
+initpart.c
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/initpart.c
+END
+coarsen.c
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/coarsen.c
+END
+comm.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/comm.c
+END
+stdheaders.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/stdheaders.h
+END
+kmetis.c
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/kmetis.c
+END
+mesh.c
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/selfe/!svn/ver/5/trunk/src/ParMetis-3.1-Sep2010/Intel/ParMETISLib/mesh.c
+END

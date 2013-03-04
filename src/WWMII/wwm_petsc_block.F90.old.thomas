@@ -1,0 +1,2185 @@
+! note: this file contains calcPDE(). an older version of calcing aspar and B.
+! don't need calcPDE no more because i have a better optimizedversion: calcAspar() and calcB()
+
+
+!> todo for msc = mdc = 7 wrong soluton. compare with petsc serielle and parallel
+!> todo wrong solution on interface/ghost source nodes
+!> todo check for mpi error code
+!> todo merge asparApp2Petsc_small(NNZ) and oAsparApp2Petsc_small(NNZ). as one array?
+#ifdef PETSC
+#ifdef SELFE
+!> Data and mehtods to use one matrix for all nodes, frequency and directions
+!> The matrix has a dimension of (Number of Nodes * frequency * directions)^2
+      MODULE PETSC_BLOCK
+      implicit none
+#include "finclude/petscsysdef.h"
+#include "finclude/petscaodef.h"
+#include "finclude/petscisdef.h"
+#include "finclude/petscvecdef.h"
+#include "finclude/petscmatdef.h"
+#include "finclude/petsckspdef.h"
+
+! uncommment this to enable debug outputs like solver time and iterations and additional debug outputs
+! #define PETSC_DEBUG 1
+
+
+! use the old code to calc aspar/rhs. newer code generate lots of more solver iterations
+#define USEOLDASPARCODE 0
+
+      !> number of loca rows/cols big matrix (all frequency and directions)
+      integer :: nLocalRowBigMatrix = 0
+      integer :: nGlobalRowBigMatrix = 0
+
+            !>
+!       PetscInt, allocatable :: CSR_Petsc2AppLUT(:), o_CSR_Petsc2AppLUT(:)
+!       PetscInt, allocatable :: CSR_App2PetscLUT(:)
+
+      !> IA in CSR format in petsc local order for the big matrix
+      PetscInt, allocatable :: IA_petsc(:)
+      !> colum index in CSR format in petsc local order for the big matrix
+      PetscInt, allocatable :: JA_petsc(:)
+      !> Matrix values in CSR format for the big matrix
+      PetscScalar, allocatable :: ASPAR_petsc(:)
+
+      !> offdiagonal IA CSR format in petsc local order for the big matrix
+      PetscInt, allocatable :: oIA_petsc(:)
+      !> offdiagonal colum index in CSR fromat in petsc GLOABL order for the big matrix?? petsc doku said this should in local order
+      PetscInt, allocatable :: oJA_petsc(:)
+      !> offdiagonal submatrix values in CSR format for the big matrix
+      PetscScalar, allocatable :: oASPAR_petsc(:)
+
+      !> for the small matrix in petsc order
+      integer, allocatable :: IA_petsc_small(:), oIA_petsc_small(:)
+      !> colum index in CSR format for the small matrix in petsc local order
+!       PetscInt, allocatable :: JA_petsc_small(:)
+
+      ! map from app aspar position to petsc aspar position (small matrix)
+      integer, allocatable :: asparApp2Petsc_small(:)
+      integer, allocatable :: oAsparApp2Petsc_small(:)
+
+      ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
+      ! locality ..., stack overflow danger...
+!       real(kind=8), allocatable  ::  ASPAR(:)
+
+      ! max number of adj nodes per node
+      integer :: maxNumConnNode = 0
+
+      contains
+
+
+!> @brief Initialize Petsc. create the mappings, matrix, vectors and finally the solver and preconditioner
+      SUBROUTINE PETSC_INIT_BLOCK
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ
+        ! MSC      - # frequency
+        ! MDC      - # directions
+        use datapool, only: MSC, MDC
+        ! np_global - # nodes gloabl
+        ! np        - # nodes local non augmented
+        ! npg       - # ghost
+        ! npa       - # nodes aufmented
+        ! nea       - # elemnts augmented
+        ! int::iplg(ip)           global element index. local to global LUT
+        ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
+        ! int::nnp(ip)            total # of surrounding nodes for node ip
+        ! int::inp(ip, 1:nnp(ip)) list of surrounding nodes
+        USE elfe_glbl, only: np_global, np, npg, npa, ne_global, nea, iplg, ipgl, nnp, inp, llist_type
+        use petscpool
+        use petscsys
+        use petscmat
+        IMPLICIT NONE
+
+        integer :: IP, ISS, IDD
+        integer :: nghostBlock
+        integer, allocatable :: onlyGhostsBlock(:)
+
+        call MPI_Comm_rank(MPI_COMM_WORLD, rank, ierr)
+        call MPI_Comm_size(MPI_COMM_WORLD, nProcs, ierr)
+
+#ifdef PETSC_DEBUG
+        call PetscPrintf(PETSC_COMM_WORLD, "PETSC_INIT_BLOCK\n", petscErr);CHKERRQ(petscErr)
+#endif
+
+        call PetscLogStagePush(stageInit, petscErr);CHKERRQ(petscErr)
+
+        call createMappings
+        call createMatrix
+
+! create ghost blocks
+        nghostBlock = nghost * MSC * MDC
+        allocate(onlyGhostsBlock(0:nghostBlock-1), stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+        nghostBlock = 0
+
+        do IP = 1, nghost
+          do ISS = 1, MSC
+            do IDD = 1, MDC
+              onlyGhostsBlock(toRowIndex(IP, ISS, IDD)) = toRowIndex(onlyGhosts(IP-1), ISS, IDD)
+            end do
+          end do
+        end do
+
+! create X vector
+         call VecCreateGhost(MPI_COMM_WORLD, \
+              nNodesWithoutInterfaceGhosts * MSC * MDC, \
+              np_global * MSC * MDC, \
+              nghostBlock, \
+              onlyGhostsBlock, \
+              myX, petscErr);CHKERRQ(petscErr)
+
+!          call VecCreateMPI(MPI_COMM_WORLD, \
+!               nNodesWithoutInterfaceGhosts * MSC * MDC, \
+!               np_global * MSC * MDC, \
+!               myX, petscErr);CHKERRQ(petscErr)
+
+! create B vector
+          call VecDuplicate(myX, myB, petscErr);;CHKERRQ(petscErr)
+
+! create solver
+         call KSPCreate(MPI_COMM_WORLD,Solver, petscErr);CHKERRQ(petscErr)
+         call KSPSetOperators(Solver, matrix, matrix, SAME_NONZERO_PATTERN, petscErr); CHKERRQ(petscErr)
+         ! call KSPSetOperators(Solver,matrix,matrix,0, petscErr);CHKERRQ(petscErr)
+
+        call KSPSetType(Solver,KSPDGMRES, petscErr); CHKERRQ(petscErr) ! one good solution ...
+!           call KSPSetType(Solver,KSPBCGSL,  petscErr); CHKERRQ(petscErr)
+!         call KSPSetType(Solver,KSPLSQR,  petscErr); CHKERRQ(petscErr)
+
+         ! Use the old solution vom AC2 to make the solver faster
+         ! call KSPSetInitialGuessNonzero(Solver,PETSC_TRUE, petscErr);CHKERRQ(petscErr)
+
+         call KSPGMRESSetPreAllocateVectors(Solver, petscErr);CHKERRQ(petscErr)
+
+         call setSolverTolerance(solver, 1.D-20,1.D-20,10000.D0,10000)
+
+! Create preconditioner
+         call KSPGetPC(Solver, Prec, petscErr);CHKERRQ(petscErr);
+        call PCSetType(Prec, PCSOR, petscErr);CHKERRQ(petscErr);
+!          call PCSetType(Prec, PCASM, petscErr);CHKERRQ(petscErr);
+!        call PCSetType(Prec, PCHYPRE, petscErr);CHKERRQ(petscErr);
+!        call PCSetType(Prec, PCSPAI, petscErr);CHKERRQ(petscErr);
+!        call PCSetType(Prec, PCNONE, petscErr);CHKERRQ(petscErr);
+
+         call KSPSetFromOptions(Solver, petscErr);CHKERRQ(petscErr)
+#ifdef PETSC_DEBUG
+          if(rank == 0) call printSolverTolerance(solver)
+         if(rank == 0) call printKSPType(Solver);
+#endif
+
+        deallocate(onlyGhostsBlock, stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+      END SUBROUTINE
+
+
+      !> create PETSC matrix which uses fortran arrays
+      subroutine createMatrix()
+        use elfe_glbl, only: np_global
+        use datapool, only: MSC, MDC
+        use petscpool
+        use petscsys
+        use petscmat
+        implicit none
+
+        nLocalRowBigMatrix = nNodesWithoutInterfaceGhosts * MSC*MDC
+        nGlobalRowBigMatrix = np_global * MSC*MDC
+        call createCSR_petsc()
+        call createCSR_petsc_small()
+        call MatCreateMPIAIJWithSplitArrays(MPI_COMM_WORLD, &
+                                            nLocalRowBigMatrix, nLocalRowBigMatrix, &
+                                            nGlobalRowBigMatrix, nGlobalRowBigMatrix, &
+                                            IA_petsc, JA_petsc, ASPAR_petsc, &
+                                            oIA_petsc, oJA_petsc, oASPAR_petsc, &
+                                            matrix, petscErr);CHKERRQ(petscErr);
+      end subroutine
+
+      !> create IA JA ASPAR petsc array for big matrix
+      subroutine createCSR_petsc()
+        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, MSC,MDC
+        use elfe_glbl, only: iplg
+        use petscpool
+        use algorithm, only: bubbleSort, genericData
+        implicit none
+
+
+        ! running variable node number
+        integer :: IP = 0
+        ! node number in petsc order
+        integer :: IP_petsc = 0
+        ! running frequency
+        integer :: ISS = 0
+        ! running direction
+        integer :: IDD = 0
+        ! running variable
+        integer :: i = 0, j = 0, o_j = 0
+
+        ! number of nonzero without interface and ghosts
+        integer :: nnz_new = 0
+        ! number of nonzeros in the offdiagonal submatrix without interface and ghosts
+        integer :: o_nnz_new = 0
+
+        type(genericData), allocatable :: toSort(:)
+        integer :: nToSort = 0
+
+        type(genericData), allocatable :: o_toSort(:)
+        integer :: o_nToSort = 0
+
+        integer :: bigMatrixRow
+
+        ! calc max number of adj nodes per node
+        maxNumConnNode = 0
+        do IP = 1, MNP
+          if(IA(IP+1) - IA(IP)-1 > maxNumConnNode) then
+            maxNumConnNode = IA(IP+1) - IA(IP)-1
+          end if
+        end do
+
+
+        ! simpley calc NNZ and  o_NNZ for one MSD and MDC; for one small matrix
+        ! then multiply with MSC MDC and you have the numbers for the big matrix
+        ! calc NNZ and offdiagonal NNZ
+        ! iterate over all petsc rows and the nodes in this row
+        ! if one is a ghost or interface nodes, increase offdiagonal NNZ
+        nnz_new = 0
+        o_nnz_new = 0
+        do IP_petsc = 1, nNodesWithoutInterfaceGhosts
+          IP = PLO2ALO(IP_petsc-1)+1
+          do i = 1, IA(IP+1) - IA(IP)
+              if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+                o_nnz_new = o_nnz_new + 1
+              else
+                nnz_new = nnz_new + 1
+             endif
+          end do
+        end do
+        nnz_new = nnz_new * MSC * MDC
+        o_nnz_new  = o_nnz_new * MSC * MDC
+!         write(*,*) rank, "nnz_new", nnz_new, " old", NNZ, "o_nnz_new", o_nnz_new
+
+        ! we have now for every node their connected nodes
+        ! iterate over connNode array to create IA and JA
+        allocate(IA_petsc(nLocalRowBigMatrix+1), &
+                 JA_petsc(nnz_new), &
+                 ASPAR_petsc(nnz_new), &
+                 oIA_petsc(nLocalRowBigMatrix+1), &
+                 oJA_petsc(o_nnz_new), &
+                 oASPAR_petsc(o_nnz_new), &
+                 ! +1 because we have to store the diagonal node number too
+                 toSort(maxNumConnNode+1), &
+                 o_toSort(maxNumConnNode+1), &
+                 stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+
+        IA_petsc = 0
+        JA_petsc = 0
+        ASPAR_petsc = 0
+
+        oIA_petsc = 0
+        oJA_petsc = 0
+        oASPAR_petsc = 0
+
+        ! to create IA_petsc and JA_petsc we have to iterate over all nodes, frequency, directions and
+        ! their connected nodes and map the node number to petsc order.
+        ! After that, we perform a topological sort on the nodes to ensure ascending ordering.
+        ! Example:
+        ! Let adj be an array with nodenumbers in Application Ordering adj=[10,25,85,99]
+        ! After mapping to petsc, the new nodenumber are adj=[76,11,67,44]
+        ! After sort: adj=[11,44,67,76]
+        ! Do the sort with a simple bubble sort. yes, bubble sort is vey slow,
+        ! but we have only a few numbers to sort (max 10 I assume).
+        J = 0
+        ! over all petsc IP rows
+        do IP_petsc = 1, nNodesWithoutInterfaceGhosts
+          IP = PLO2ALO(IP_petsc-1)+1
+
+          ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
+          do ISS = 1, MSC
+            do IDD = 1, MDC
+              bigMatrixRow = toRowIndex(IP_petsc, ISS, IDD) +1
+              ! fill with the largest numner petscInt can hold
+              toSort(:)%id = HUGE(0)
+              nToSort = 0
+
+              o_toSort(:)%id = HUGE(0)
+              o_nToSort = 0
+              ! over all nodes in this row
+              do i = 1, IA(IP+1) - IA(IP)
+                ! found a ghost node, treat them special
+                if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+                  o_ntoSort = o_ntoSort + 1
+                  ! store the old position in ASPAR
+                  o_toSort(o_nToSort)%userData = IA(IP)+i
+                  !> todo offdiagonal part with petsc global order? don't know why but it seems to work
+                   o_toSort(o_nToSort)%id = toRowIndex( AGO2PGO(iplg(JA( IA(IP)+i )+1)-1)+1, ISS, IDD)
+                ! not a ghost node
+                else
+                  nToSort = nToSort + 1
+                  ! petsc local node number to sort for
+                  toSort(nToSort)%id = toRowIndex( ALO2PLO(JA( IA(IP)+i ))+1, ISS, IDD )
+                  ! store the old col for row IP
+                  toSort(nToSort)%userData = IA(IP)+i
+                end if
+              end do ! cols
+
+              call bubbleSort(toSort, nToSort)
+              call bubbleSort(o_toSort, o_nToSort)
+
+              ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
+              IA_petsc( toRowIndex(IP_petsc, ISS, IDD) +1 + 1) = IA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + nToSort
+              ! write the sorted cols to the mappings
+              do i = 1, nToSort
+                J = J + 1
+                JA_petsc(J) = toSort(i)%id
+              end do
+
+              ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
+              oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1+1) = oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + o_nToSort
+              do i = 1, o_nToSort
+                o_J = o_J + 1
+                oJA_petsc(o_J) = o_toSort(i)%id
+              end do
+
+            end do ! ID
+          end do ! IS
+
+        end do ! petsc IP rows
+
+!         write(*,*) rank, "IA_petsc", IA_petsc
+!         write(*,*) rank, "JA_petsc", JA_petsc
+!         write(*,*) rank, "LUT", CSR_App2PetscLUT
+
+        deallocate(toSort, o_toSort, stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+      end subroutine
+
+
+      ! create IA petsc array for the small matrix
+      subroutine createCSR_petsc_small()
+        use datapool, only: NNZ, MNE, INE, MNP, IA, JA
+        use elfe_glbl, only: iplg
+        use petscpool
+        use algorithm, only: bubbleSort, genericData
+        implicit none
+
+        ! max number of adj nodes per node
+        integer :: maxNumConnNode = 0
+
+        ! running variable node number
+        integer :: IP = 0
+        ! node number in petsc order
+        integer :: IP_petsc = 0
+        ! running variable
+        integer :: i = 0, j = 0, oj = 0
+
+        ! number of nonzero without interface and ghosts
+        integer :: nnz_new = 0
+        ! number of nonzeros in the offdiagonal submatrix without interface and ghosts
+        integer :: o_nnz_new = 0
+
+        type(genericData), allocatable :: toSort(:)
+        integer :: nToSort = 0
+
+        type(genericData), allocatable :: o_toSort(:)
+        integer :: o_nToSort = 0
+
+        ! calc max number of adj nodes per node
+        maxNumConnNode = 0
+        do IP = 1, MNP
+          if(IA(IP+1) - IA(IP)-1 > maxNumConnNode) then
+            maxNumConnNode = IA(IP+1) - IA(IP)-1
+          end if
+        end do
+
+        ! calc NNZ and offdiagonal NNZ
+        ! iterate over all petsc rows and the nodes in this row
+        ! if one is a ghost or interface nodes, increase offdiagonal NNZ
+        nnz_new = 0
+        o_nnz_new = 0
+        do IP_petsc = 1, nNodesWithoutInterfaceGhosts
+          IP = PLO2ALO(IP_petsc-1)+1
+          do i = 1, IA(IP+1) - IA(IP)
+              if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+                o_nnz_new = o_nnz_new + 1
+              else
+                nnz_new = nnz_new + 1
+             endif
+          end do
+        end do
+
+!         write(*,*) rank, "petsc_small nnz_new", nnz_new, " old", NNZ
+!         write(*,*) rank, "o_nnz_new", o_nnz_new
+
+        ! we have now for every node their connected nodes
+        ! iterate over connNode array to create IA and JA
+        allocate(IA_petsc_small(nNodesWithoutInterfaceGhosts+1), &
+!                  JA_petsc_small(nnz_new), &
+!                  ASPAR_petsc(nnz_new), &
+                 oIA_petsc_small(nNodesWithoutInterfaceGhosts+1), &
+!                  oJA_petsc(o_nnz_new), &
+!                  oASPAR_petsc(o_nnz_new), &
+                 ! +1 because we have to store the diagonal node number too
+                 toSort(maxNumConnNode+1), &
+                 o_toSort(maxNumConnNode+1), &
+                 asparApp2Petsc_small(NNZ), &
+                 oAsparApp2Petsc_small(NNZ), &
+                 stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+
+        IA_petsc_small = 0
+!         JA_petsc_small = 0
+!         ASPAR_petsc = 0
+
+        oIA_petsc_small = 0
+!         oJA_petsc_small = 0
+!         oASPAR_petsc = 0
+
+        asparApp2Petsc_small = -999
+        oAsparApp2Petsc_small = -999
+
+        ! to create IA_petsc JA_petsc we have to iterate over all nodes and
+        ! their connected nodes and map to petsc order.
+        ! the node numbers of the connected nodes in petsc order are not sorted.
+        ! sort them with a simple bubble sort. yes, bubble sort is vey slow,
+        ! but we have only a few numbers to sort (max 10 i assume).
+        J = 0
+        oJ = 0
+        do IP_petsc = 1, nNodesWithoutInterfaceGhosts
+
+          IP = PLO2ALO(IP_petsc-1)+1
+          ! fill with the largest numner petscInt can hold
+          toSort(:)%id = HUGE(0)
+          nToSort = 0
+
+          o_toSort(:)%id = HUGE(0)
+          o_nToSort = 0
+
+          ! over all nodes in this row
+          do i = 1, IA(IP+1) - IA(IP)
+            ! found a ghost node, treat them special
+            if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+              o_ntoSort = o_ntoSort + 1
+              !> todo offdiagonal part with petsc global order? don't know why but it seems to work
+              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA( IA(IP)+i )+1)-1)
+              ! maybe because ALO2PLO has wrong values for offsubmatrix (ghost) nodes? so sorting is not possible
+!               o_toSort(o_nToSort).id = ALO2PLO(JA( IA(IP)+i ))
+
+              ! store the old position in ASPAR
+              o_toSort(o_nToSort)%userData = IA(IP)+i
+
+            ! not a ghost node
+            else
+              nToSort = nToSort + 1
+              ! petsc local node number to sort for
+              toSort(nToSort)%id = ALO2PLO(JA( IA(IP)+i ))
+              ! store the old position in ASPAR
+              toSort(nToSort)%userData = IA(IP)+i
+
+            end if
+          end do
+
+          call bubbleSort(toSort, nToSort)
+          call bubbleSort(o_toSort, o_nToSort)
+
+          ! write the sorted cols to the mappings
+          do i = 1, nToSort
+            ! rein app aspar position. raus petsc aspar position
+            asparApp2Petsc_small(toSort(i)%userData) = J
+            J = J + 1
+!             JA_petsc_small(J) = toSort(i).id
+          end do
+          IA_petsc_small(IP_petsc+1) = IA_petsc_small(IP_petsc) + nToSort
+
+          do i = 1, o_nToSort
+              oAsparApp2Petsc_small(o_toSort(i)%userData) = oJ
+              oJ = oJ + 1
+!             oJA_petsc(oJ) = o_toSort(i).id
+          end do
+          oIA_petsc_small(IP_petsc+1) = oIA_petsc_small(IP_petsc) + o_nToSort
+        end do
+
+!         write(*,*) rank, "asparApp2Petsc_small maxvalue" , maxval(asparApp2Petsc_small)
+
+
+        deallocate(toSort, o_toSort, stat=stat)
+        if(stat /= 0) then
+          write(*,*) __FILE__, " Line", __LINE__
+          stop
+        endif
+      end subroutine
+
+
+      subroutine calcPDE()
+        use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD, THR, IEN, CCON, IE_CELL, POS_CELL, TRIA, DT4A, POSI
+        use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM, IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD, IMATDAA, IMATRAA
+        use datapool, only: NP_RES, IA, JA, NNZ, MNE, AC2, WBAC, IOBWB, DEP, DMIN
+        use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
+        ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
+        use elfe_glbl, only: ipgl1=> ipgl
+        use elfe_msgp, only: exchange_p2d
+        use petscpool
+        use petscsys
+        use petscmat
+        implicit none
+
+        integer :: IP, IDD, ISS
+
+        INTEGER :: I, J
+        INTEGER :: IPGL, IE, POS
+        INTEGER :: I1, I2, I3
+        INTEGER :: POS_TRICK(3,2)
+
+
+        real(kind=8)  :: DTK, TMP3
+        real(kind=8)  :: LAMBDA(2)
+        real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
+        real(kind=8)  :: CRFS(3),K1, KM(3), K(3), TRIA03
+        real(kind=8)  :: DELTAL(3,MNE)
+        real(kind=8)  :: KP(3,MNE), NM(MNE)
+        real(kind=8)  :: U(MNP), C(2,MNP)
+        real(kind=8)  :: B(MNP, MSC, MDC)
+        real(kind=8)  ::  ASPAR(NNZ)
+
+        logical :: firstcall = .true.
+
+        POS_TRICK(1,1) = 2
+        POS_TRICK(1,2) = 3
+        POS_TRICK(2,1) = 3
+        POS_TRICK(2,2) = 1
+        POS_TRICK(3,1) = 1
+        POS_TRICK(3,2) = 2
+
+        B = 0.d0 ! Right hand side ..
+        if(firstcall) then
+!           if(rank == 0) write(*,*) "fill aspar..."
+          ASPAR_petsc = 0
+          oASPAR_petsc = 0
+        endif
+
+        ! over all frequency
+        do ISS = 1, MSC
+
+          ! over all directions
+          do IDD = 1, MDC
+
+            I = 0
+            J = 0
+            IP = 0
+            IPGL = 0
+            IE = 0
+            POS = 0
+            I1 = 0
+            I2 = 0
+            I3 = 0
+            DTK = 0
+            TMP3 = 0
+            LAMBDA = 0
+            FL11 = 0
+            FL12 = 0
+            FL21 = 0
+            FL22 = 0
+            FL31 = 0
+            FL32 = 0
+            CRFS = 0
+            K1 = 0
+            KM = 0
+            K = 0
+            TRIA03 = 0
+            DELTAL = 0
+            KP = 0
+            NM = 0
+            C = 0
+
+! diese schleife ist nicht von IP abhaenig, nur von IS und ID
+!AR: inside omp stuff
+            CALL CADVXY(ISS,IDD,C)
+            !
+            !        Calculate countour integral quantities ...
+            !
+!AR: omp loop
+            DO IE = 1, MNE
+              I1 = INE(1,IE)
+              I2 = INE(2,IE)
+              I3 = INE(3,IE)
+              LAMBDA(1) = ONESIXTH * (C(1,I1)+C(1,I2)+C(1,I3))
+              LAMBDA(2) = ONESIXTH * (C(2,I1)+C(2,I2)+C(2,I3))
+              K(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
+              K(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+              K(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+              KP(1,IE) = MAX(0.d0,K(1))
+              KP(2,IE) = MAX(0.d0,K(2))
+              KP(3,IE) = MAX(0.d0,K(3))
+              KM(1) = MIN(0.d0,K(1))
+              KM(2) = MIN(0.d0,K(2))
+              KM(3) = MIN(0.d0,K(3))
+              FL11 = C(1,I2)*IEN(1,IE)+C(2,I2)*IEN(2,IE)
+              FL12 = C(1,I3)*IEN(1,IE)+C(2,I3)*IEN(2,IE)
+              FL21 = C(1,I3)*IEN(3,IE)+C(2,I3)*IEN(4,IE)
+              FL22 = C(1,I1)*IEN(3,IE)+C(2,I1)*IEN(4,IE)
+              FL31 = C(1,I1)*IEN(5,IE)+C(2,I1)*IEN(6,IE)
+              FL32 = C(1,I2)*IEN(5,IE)+C(2,I2)*IEN(6,IE)
+              CRFS(1) =  - ONESIXTH *  (2.0d0 *FL31 + FL32 + FL21 + 2.0d0 * FL22 )
+              CRFS(2) =  - ONESIXTH *  (2.0d0 *FL32 + 2.0d0 * FL11 + FL12 + FL31 )
+              CRFS(3) =  - ONESIXTH *  (2.0d0 *FL12 + 2.0d0 * FL21 + FL22 + FL11 )
+              DELTAL(:,IE) = CRFS(:)- KP(:,IE)
+              NM(IE)       = 1.d0/MIN(DBLE(THR),SUM(KM(:)))
+            END DO
+
+!AR: omp exchange
+            U = DBLE(AC2(:, ISS, IDD))
+            call exchange_p2d(U)
+
+            J     = 0    ! Counter ...
+!AR: omp exchange
+            ASPAR = 0.d0 ! Mass matrix ...
+
+            !
+            ! ... assembling the linear equation system ....
+            !
+! use the old code to calc aspar/rhs. newer code generate lots of more solver iterations
+#ifdef USEOLDASPARCODE
+!AR: omp loop
+            DO IP = 1, MNP
+              DO I = 1, CCON(IP)
+                J = J + 1
+!AR: for mixed openmpi exchange IE_CELL, POS_CELL by IE_CELL2, POS_CELL2
+                IE    =  IE_CELL(J)
+                POS   =  POS_CELL(J)
+                K1    =  KP(POS,IE) ! Flux Jacobian
+                TRIA03 = ONETHIRD * TRIA(IE)
+                DTK   =  K1 * DT4A
+                TMP3  =  DTK * NM(IE)
+                I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+                I2    =  POSI(2,J)
+                I3    =  POSI(3,J)
+                IF (IOBP(IP) .NE. 2 .AND. IOBPD(IDD, IP) .EQ. 1) THEN
+                  ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
+                  ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
+                  ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
+
+                  ! a ghost or interface node. simpley ignore it
+                  if(ALO2PLO(IP-1) .lt. 0) then
+                  else
+
+
+                    ! dirty... check if aspar position I1 is for a ghost or interface node
+                    ! todo I1 is always diagonal. do we really need this check here?
+!AR: this can be known before ... ghost are always at the same place ...
+                    if(asparApp2Petsc_small(I1) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                    endif
+
+
+                    if(asparApp2Petsc_small(I2) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2)) = ASPAR(I2)
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I2)) = ASPAR(I2)
+                    endif
+
+                    if(asparApp2Petsc_small(I3) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3)) = ASPAR(I3)
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I3)) = ASPAR(I3)
+                    endif
+
+                  endif
+
+                  B(IP, ISS, IDD) =  B(IP, ISS, IDD) + TRIA03 * U(IP)
+                END IF
+              END DO !I: loop over connected elements ...
+            END DO !IP
+
+!AR: omp
+            DO IP = 1, MNP
+              IF (IOBPD(IDD,IP) .EQ. 0) THEN
+
+                if(ALO2PLO(IP-1) .lt. 0) then
+                else
+                  if(asparApp2Petsc_small(I_DIAG(IP)) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = SI(IP)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = SI(IP)
+                  endif
+                endif
+
+                ASPAR(I_DIAG(IP)) = SI(IP)
+                B(IP, ISS, IDD)   = 0.d0
+              END IF
+            END DO
+
+            IF (LBCWA .OR. LBCSP) THEN
+              IF (LINHOM) THEN
+!AR: omp
+                DO IP = 1, IWBMNP
+                  IPGL = IWBNDLC(IP)
+                  ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Add source term to the diagonal
+
+                  if(ALO2PLO(IPGL-1) .lt. 0) then
+
+                  else
+                    if(asparApp2Petsc_small(I_DIAG(IPGL)) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                    endif
+                  endif
+
+                  B(IPGL, ISS, IDD)   = SI(IPGL) * WBAC(ISS, IDD, IP)
+                END DO
+              ELSE
+!AR: omp
+                DO IP = 1, IWBMNP
+                  IPGL = IWBNDLC(IP)
+                  ASPAR(I_DIAG(IPGL)) = SI(IPGL)
+
+                  if(ALO2PLO(IPGL-1) .lt. 0) then
+                  else
+                    if(asparApp2Petsc_small(I_DIAG(IPGL)) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                    endif
+                  endif
+
+                  B(IPGL, ISS, IDD)   = SI(IPGL) * WBAC(ISS, IDD, 1)
+                END DO
+              ENDIF
+            END IF
+
+            IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+!AR: omp
+              DO IP = 1, MNP
+                  IF (IOBP(IP) .EQ. 0) THEN
+                    ! Add source term to the right hand side
+                    ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP, ISS, IDD) * DT4A * SI(IP) * IOBPD(IDD, IP)
+
+                    if(ALO2PLO(IP-1) .lt. 0) then
+                    else
+                      if(asparApp2Petsc_small(I_DIAG(IP)) .eq. -999) then
+                        oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = ASPAR(I_DIAG(IP))
+                      else
+                        ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = ASPAR(I_DIAG(IP))
+                      endif
+                    endif
+
+                    B(IP, ISS, IDD) = B(IP, ISS, IDD)     + IMATRAA(IP, ISS, IDD) * DT4A * SI(IP) * IOBPD(IDD, IP)
+                END IF
+              END DO
+            END IF
+!=====================================================================================================================
+
+#else
+! begin new aron code
+          DO IP = 1, MNP
+           IF (IOBPD(IDD,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+           !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+             DO I = 1, CCON(IP)
+               J = J + 1
+               IE    =  IE_CELL(J)
+               POS   =  POS_CELL(J)
+               K1    =  KP(POS,IE) ! Flux Jacobian
+               TRIA03 = ONETHIRD * TRIA(IE)
+               DTK   =  K1 * DT4A * DBLE(IOBPD(IDD,IP))
+               TMP3  =  DTK * NM(IE)
+               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+               I2    =  POSI(2,J)
+               I3    =  POSI(3,J)
+               ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
+               ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
+               ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
+
+if(firstcall == .true.) then
+              ! a ghost or interface node. simpley ignore it
+               if(ALO2PLO(IP-1) .lt. 0) then
+               else
+               ! dirty... check if aspar position I1 is for a ghost or interface node
+               ! todo I1 is always diagonal. do we really need this check here?
+!AR: this can be known before ... ghost are always at the same place ...
+                  if(asparApp2Petsc_small(I1) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                  endif
+
+
+                  if(asparApp2Petsc_small(I2) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2)) = ASPAR(I2)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I2)) = ASPAR(I2)
+                  endif
+
+                  if(asparApp2Petsc_small(I3) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3)) = ASPAR(I3)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I3)) = ASPAR(I3)
+                  endif
+
+                endif
+endif
+               B(IP, ISS, IDD) = B(IP, ISS, IDD) + TRIA03 * U(IP)
+             END DO !I: loop over connected elements ...
+           ELSE
+             DO I = 1, CCON(IP)
+               J = J + 1
+               IE    =  IE_CELL(J)
+               TRIA03 = ONETHIRD * TRIA(IE)
+               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
+if(firstcall == .true.) then
+               ! a ghost or interface node. simpley ignore it
+               if(ALO2PLO(IP-1) .lt. 0) then
+               else
+                  if(asparApp2Petsc_small(I1) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = ASPAR(I1)
+                  endif
+               endif
+endif
+
+               B(IP, ISS, IDD)     =  0.!B(IP)  + TRIA03 * 0.
+             END DO !I: loop over connected elements ...
+           END IF
+         END DO !IP
+
+         IF (LBCWA .OR. LBCSP) THEN
+           IF (LINHOM) THEN
+             DO IP = 1, IWBMNP
+               IPGL = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+
+if(firstcall == .true.) then
+               if(ALO2PLO(IPGL-1) .lt. 0) then
+               else
+                  if(asparApp2Petsc_small(I_DIAG(IPGL)) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  endif
+               endif
+endif
+
+               B(IPGL, ISS, IDD)             = SI(IPGL) * WBAC(ISS,IDD,IP)
+            END DO
+           ELSE
+             DO IP = 1, IWBMNP
+               IPGL = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+
+if(firstcall == .true.) then
+               if(ALO2PLO(IPGL-1) .lt. 0) then
+               else
+                  if(asparApp2Petsc_small(I_DIAG(IPGL)) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  else
+                    ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  endif
+               endif
+endif
+
+               B(IPGL, ISS, IDD)             = SI(IPGL) * WBAC(ISS,IDD,1)
+             END DO
+           ENDIF
+         END IF
+
+
+
+         DO IP = 1, MNP
+          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. IOBWB(IP) .EQ. 1) THEN
+              ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
+
+if(firstcall == .true.) then
+                if(ALO2PLO(IP-1) .lt. 0) then
+                else
+                    if(asparApp2Petsc_small(I_DIAG(IP)) .eq. -999) then
+                      oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = ASPAR(I_DIAG(IP))
+                    else
+                      ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = ASPAR(I_DIAG(IP))
+                    endif
+                endif
+endif
+
+              B(IP, ISS, IDD) = B(IP, ISS, IDD) + IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+            END IF
+          END DO
+
+
+! end new aron code
+#endif
+!           call checkAsparDiagonalAccuracy(ASPAR, IA, JA,ISS, IDD)
+!             call fillMatrix(ASPAR, ISS, IDD)
+
+          end do ! IDD
+        end do !ISS
+        call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr)
+        call MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr)
+
+        ! fill rhs
+        call fillRHs(B)
+        call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
+        call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr)
+
+        ! fill x
+!         call useOldSolution
+!         call VecAssemblyBegin(myX, petscErr);CHKERRQ(petscErr)
+!         call VecAssemblyEnd(myX, petscErr);CHKERRQ(petscErr)
+
+!         firstcall = .false.
+
+      end subroutine
+
+      subroutine fillRHs(B)
+        use datapool, only: MSC, MDC, MNP
+        use elfe_glbl, only: np, iplg
+        use petscsys
+        use petscmat
+        use petscpool
+        implicit none
+        real(kind=8), intent(in) :: B(MNP, MSC, MDC)
+        PetscScalar :: eEntry
+        PetscInt :: rowGlobal
+        integer :: IP, IPglobal, IDD, ISS
+
+        ! fill RHS vector
+        ! iterate over all resident (and interface) nodes
+        ! map it to petsc global ordering
+        ! map it to block index
+        ! and insert the value from B into RHS vector
+        eEntry = 0;
+        call VecSet(myB, eEntry, petscErr);CHKERRQ(petscErr)
+
+        ! over all local nodes
+        DO IP = 1, np
+
+          ! this is a interface node (row). ignore it. just increase counter
+          if(ALOold2ALO(IP-1) .eq. -999) then
+            cycle
+          end if
+
+          ! map to petsc global order
+          IPglobal = AGO2PGO( iplg(IP)-1 ) + 1
+
+          ! over all frequency
+          do ISS = 1, MSC
+
+            ! over all directions
+            do IDD = 1, MDC
+              ! map to
+              rowGlobal = toRowIndex(IPglobal, ISS, IDD)
+              call VecSetValue(myB, rowGlobal, B(IP, ISS, IDD), ADD_VALUES, petscErr);CHKERRQ(petscErr)
+            end do
+          end do
+        end do
+      end subroutine
+
+      subroutine useOldSolution()
+        use datapool, only: MSC, MDC, MNP, AC2
+        use elfe_glbl, only: np, iplg
+        use petscsys
+        use petscmat
+        use petscpool
+        implicit none
+
+        PetscScalar :: eEntry
+        PetscInt :: rowGlobal
+        integer :: IP, IPglobal, IDD, ISS
+
+        ! fill X vector
+        ! iterate over all resident (and interface) nodes
+        ! map it to petsc global ordering
+        ! map it to block index
+        ! and insert the value from AC2 into X vector
+        eEntry = 0;
+        call VecSet(myX, eEntry, petscErr);CHKERRQ(petscErr)
+
+        ! over all local nodes
+        DO IP = 1, np
+
+          ! this is a interface node (row). ignore it. just increase counter
+          if(ALOold2ALO(IP-1) .eq. -999) then
+            cycle
+          end if
+
+          ! map to petsc global order
+          IPglobal = AGO2PGO( iplg(IP)-1 ) + 1
+
+          ! over all frequency
+          do ISS = 1, MSC
+
+            ! over all directions
+            do IDD = 1, MDC
+              ! map to
+              rowGlobal = toRowIndex(IPglobal, ISS, IDD)
+              eEntry = AC2(IP, ISS, IDD)
+              call VecSetValue(myX, rowGlobal, eEntry, ADD_VALUES, petscErr);CHKERRQ(petscErr)
+            end do
+          end do
+        end do
+        call VecAssemblyBegin(myX, petscErr);CHKERRQ(petscErr)
+        call VecAssemblyEnd(myX, petscErr);CHKERRQ(petscErr)
+
+      end subroutine
+
+
+!       subroutine fillMatrix(ASPAR, ISS, IDD)
+!         use petscsys
+!         use petscpool
+!         implicit none
+!         real(kind=8), intent(in)  :: ASPAR(:)
+!         integer, intent(in) :: ISS, IDD
+!         integer :: IP_petsc, bigMatrixRow, ncols, j
+!
+!
+!         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
+!           bigMatrixRow = toRowIndex(IP_petsc, ISS, IDD) +1
+!           ncols = IA_petsc(bigMatrixRow +1) - IA_petsc(bigMatrixRow)
+!
+!           do j=1, ncols
+!             ASPAR_petsc(IA_petsc(bigMatrixRow) +j) = ASPAR(CSR_Petsc2AppLUT(IA_petsc(bigMatrixRow) +j))
+!           end do !cols
+!
+!           ncols = oIA_petsc(bigMatrixRow +1) - oIA_petsc(bigMatrixRow)
+!           do j=1, ncols
+!             oASPAR_petsc(oIA_petsc(bigMatrixRow) +j) = ASPAR(o_CSR_Petsc2AppLUT(oIA_petsc(bigMatrixRow) +j))
+!           end do !cols
+!         end do ! IP_petsc
+!       end subroutine
+
+      !> calc only rhs and fill direct in petsc myB
+      !> use newer code from fluct
+      subroutine calcB()
+        use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD, IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL, AC2
+        use datapool, only: TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, WBAC, SI, ICOMP, SMETHOD, IMATRAA, DT4A, MAXMNECON
+        use elfe_glbl, only: iplg
+        use elfe_msgp, only: exchange_p2d
+        use petscpool
+        use petscsys
+        use petscvec
+        implicit none
+        integer :: IP, IDD, ISS, IPpetsc
+        INTEGER :: I, J
+        INTEGER :: IPGL, IE
+        real(kind=8)  :: TRIA03arr(MAXMNECON)
+        real(kind=8) :: AC22(MDC, MSC, MNP)
+
+        PetscScalar :: value
+
+        value = 0;
+        call VecSet(myB, value, petscErr);CHKERRQ(petscErr)
+
+        call VecGetArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
+
+!         DO IP = 1, MNP
+          ! over all frequency
+          do ISS = 1, MSC
+            ! over all directions
+            do IDD = 1, MDC
+              AC22(IDD, ISS, :) = AC2(:, ISS, IDD)
+            end do
+          end do
+!         end do
+
+        J = 0
+        DO IP = 1, MNP
+
+          ! this is a interface node (row). ignore it. just increase counter
+          if(ALOold2ALO(IP-1) .eq. -999) then
+            J = J + CCON(IP)
+            cycle
+          end if
+
+          IPpetsc = ALO2PLO(IP-1) +1
+
+          ! speichere alle dreiecksflaeche zwischen die an IP haengen
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            TRIA03arr(I) = ONETHIRD * TRIA(IE)
+          enddo
+
+
+          ! wenn der knoten tief genug liegt und was mitm rand ist, dann alle richtungen/frequenezn auf ihn loslassen
+          if(IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+
+            ! over all frequency
+            do ISS = 1, MSC
+              ! over all directions
+              do IDD = 1, MDC
+                ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
+                if(IOBPD(IDD,IP) .EQ. 1) then
+                  value = 0;
+!                   value = SUM(TRIA03arr(1:CCON(IP)) * DBLE(AC2(IP, ISS, IDD)))
+                  value = SUM(TRIA03arr(1:CCON(IP)) * DBLE(AC22(IDD, ISS, IP)))
+                  ! IP in Petsc local order
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value + myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1)
+!                   B(IP, ISS, IDD) = B(IP, ISS, IDD) + TRIA03 * U(IP)
+                ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
+                else
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+                endif
+
+              end do ! IDD
+            end do ! ISS
+
+          ! wenn der knoten nicht tief genug liegt oder irgendwas mit dem rand ist,setzte ihn null fuer alle richtunge/frequency
+          else
+            value = 0.
+            ! over all frequency
+            do ISS = 1, MSC
+              ! over all directions
+              do IDD = 1, MDC
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+              end do !IDD
+            end do ! ISS
+          endif
+        end do ! IP
+
+
+        IF (LBCWA .OR. LBCSP) THEN
+          IF (LINHOM) THEN
+            DO IP = 1, IWBMNP
+              IPGL = IWBNDLC(IP)
+
+              ! this is a interface node (row). ignore it
+              if(ALOold2ALO(IPGL-1) .eq. -999) then
+                cycle
+              end if
+
+              IPpetsc = ALO2PLO(IPGL-1) +1
+
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+                  value = SI(IPGL) * WBAC(ISS,IDD,IP)
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value
+!                   B(IPGL, ISS, IDD)             = SI(IPGL) * WBAC(ISS,IDD,IP)
+                end do ! MDC
+              end do ! MSC
+            END DO ! IP
+          ELSE ! LINHOM
+            DO IP = 1, IWBMNP
+              IPGL = IWBNDLC(IP)
+
+              ! this is a interface node (row). ignore it. just increase counter
+              if(ALOold2ALO(IPGL-1) .eq. -999) then
+                cycle
+              end if
+
+              IPpetsc = ALO2PLO(IPGL-1) +1
+
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+                  value = SI(IPGL) * WBAC(ISS,IDD,1)
+                    myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value
+!                   B(IPGL, ISS, IDD)             = SI(IPGL) * WBAC(ISS,IDD,1)
+                end do ! MDC
+              end do ! MSC
+            END DO ! IP
+          ENDIF ! LINHOM
+        END IF
+
+
+        ! nur wenn wind und so, schleife auch ausfuehren...
+        if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then
+          DO IP = 1, MNP
+            ! this is a interface node (row). ignore it. just increase counter
+            if(ALOold2ALO(IP-1) .eq. -999) then
+              cycle
+            end if
+
+            IF (IOBWB(IP) .EQ. 1) THEN
+              IPpetsc = ALO2PLO(IP-1) +1
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+                  value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value + myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1)
+    !                 B(IP, ISS, IDD) = B(IP, ISS, IDD) + IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                end do ! MDC
+              end do ! MSC
+            END IF
+          END DO
+        endif
+
+        call VecRestoreArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr);
+        call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
+        call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr)
+      end subroutine
+
+      !> calc only aspar and fill direct in petsc matrix
+      !> use newer code from fluct
+      subroutine calcASPAR()
+        use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD, THR, IEN, CCON, IE_CELL, POS_CELL, TRIA, DT4A, POSI
+        use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM, IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD, IMATDAA, IMATRAA
+        use datapool, only: NP_RES, IA, JA, NNZ, MNE, AC2, WBAC, IOBWB, DEP, DMIN, MAXMNECON
+        use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
+        ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
+        use elfe_glbl, only: ipgl1=> ipgl
+        use elfe_msgp, only: exchange_p2d
+        use petscpool
+        use petscsys
+        use petscmat
+        implicit none
+
+        integer :: IP, IDD, ISS, IPpetsc
+
+        INTEGER :: I, J
+        INTEGER :: IPGL, IE, POS
+        INTEGER :: I1, I2, I3
+        INTEGER :: POS_TRICK(3,2)
+
+
+        real(kind=8)  :: DTK, TMP3
+        real(kind=8)  :: LAMBDA(2, MAXMNECON)
+!         real(kind=8)  :: LAMBDA(2)
+        real(kind=8)  :: FL11(MAXMNECON), FL12(MAXMNECON), FL21(MAXMNECON), FL22(MAXMNECON), FL31(MAXMNECON), FL32(MAXMNECON)
+!         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
+        real(kind=8)  :: CRFS(3, MAXMNECON), K(3, MAXMNECON), TRIA03
+        real(kind=8)  ::  KP(3,MAXMNECON)
+!         real(kind=8)  :: CRFS(3), K(3), TRIA03
+        real(kind=8)  :: KM(3, MAXMNECON)
+!         real(kind=8)  :: KM(3)
+        real(kind=8)  :: K1
+        real(kind=8)  :: DELTAL(3,MAXMNECON)
+        real(kind=8)  :: NM(MAXMNECON)
+!         real(kind=8)  :: U(MNP)
+
+        ! speichere das Ergebnis von CADVXY fuer eine Frequenz, alle Richtungen und die conn Nodes von IP
+        ! erster Index ist der schneller laufende. Entspricht x/y
+        ! zweiter Index sind die Knoten, die braucht man bevor sich ID aendert. 3 Knoten pro Element. 50% der Knoten werden hier doppelt berechnet und gespeichert :/
+        ! groese ca 15kb. passt noch ein eine cache seite :)
+        ! todo adresse von C 32b aligment
+!         real(kind=8)  :: C(2, MAXMNECON*3, MDC)
+        real(kind=8)  :: C1(2, MAXMNECON, MDC)
+        real(kind=8)  :: C2(2, MAXMNECON, MDC)
+        real(kind=8)  :: C3(2, MAXMNECON, MDC)
+        ! speichere alle Knotennummern zwischen fuer die wir das CADVXY Ergebnis brauchen
+        ! todo MAXMNECON*3 ist zuviel. wir brauchen eigentlich nur maxNumConnNode
+        integer :: nodeList(MAXMNECON*3)
+        ! anzahl der Knoten in der Liste
+        integer :: nodeListSize
+
+        integer :: elementList(MAXMNECON)
+        integer :: elementListSize
+
+        ! I1-I3 entsprechend die knotennummern von IE. gemappt auf [1:CCON(IP)]
+        integer :: I123(3, MAXMNECON)
+
+
+        PetscScalar value1, value2, value3
+
+        integer :: IEarr(MAXMNECON), POSarr(MAXMNECON)
+        integer :: I1arr(MAXMNECON), I2arr(MAXMNECON), I3arr(MAXMNECON)
+        real(kind=8)  :: TRIA03arr(MAXMNECON)
+
+        real startTime, endTime, totalTime
+
+        ! number of elements connected to a node
+        integer :: NECON
+
+        ! posistion in aspar for big matrix. see function aspar2petscAspar
+        integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3, petscAsparPosi4
+        ! number of connected nodes for IPpetsc
+        integer :: nConnNode
+
+        totalTime = 0
+
+        POS_TRICK(1,1) = 2
+        POS_TRICK(1,2) = 3
+        POS_TRICK(2,1) = 3
+        POS_TRICK(2,2) = 1
+        POS_TRICK(3,1) = 1
+        POS_TRICK(3,2) = 2
+
+        ASPAR_petsc = 0
+        oASPAR_petsc = 0
+
+
+! kann wahrscheinlich acuh weg. werden eh erst beschrieben
+        I = 0
+
+        IPGL = 0
+        IE = 0
+        POS = 0
+        I1 = 0
+        I2 = 0
+        I3 = 0
+        DTK = 0
+        TMP3 = 0
+        FL11 = 0
+        FL12 = 0
+        FL21 = 0
+        FL22 = 0
+        FL31 = 0
+        FL32 = 0
+        CRFS = 0
+        K1 = 0
+        TRIA03 = 0
+
+        J     = 0    ! Counter ...
+
+        !
+        ! ... assembling the linear equation system ....
+        !
+        DO IP = 1, MNP
+
+          ! this is an ghost or interface node. ignore it
+          if(ALO2PLO(IP-1) .lt. 0) then
+            J = J + CCON(IP)
+            cycle
+          endif
+
+          IPpetsc = ALO2PLO(IP-1)+1
+          petscAsparPosi1 =  MSC*MDC * IA_petsc_small(IPpetsc)
+          nConnNode = IA_petsc_small(IPpetsc+1) - IA_petsc_small(IPpetsc)
+
+          ! speichere Elementnummer, POS und dreiecksflaechen u.s.w zwischen die an IP haengen
+          ! in der ISS IDD schleife aenderen sich die Werte ja nicht. Das erspart auch rechnerrei
+          ! mit J, welches dann MSD MDC mal zuviel addiert würde
+          nodeList = 0
+          nodeListSize = CCON(IP) * 3
+
+          ! loop over all connectec elements and nodes from IP
+
+          do i = 1, CCON(IP)
+            J = J + 1
+            IE = IE_CELL(J)
+            IEarr(i) = IE
+            POS   =  POS_CELL(J)
+            POSarr(i) = POS
+
+            TRIA03arr(i) = ONETHIRD * TRIA(IE)
+            I1arr(i)    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            I2arr(i)    =  POSI(2,J)
+            I3arr(i)    =  POSI(3,J)
+
+            ! jaja muss I1 u.s.w. mal aendern in gescheite namen
+            I123(1, i) = (i-1)*3 +1
+            I123(2, i) = (i-1)*3 +2
+            I123(3, i) = (i-1)*3 +3
+
+            ! speichere alle Knotennummern zwischen die an IP haengen. inklusive IP selbst
+            nodeList((i-1)*3 +1) = INE(1,IE)
+            nodeList((i-1)*3 +2) = INE(2,IE)
+            nodeList((i-1)*3 +3) = INE(3,IE)
+            NECON = CCON(IP)
+
+            elementListSize = CCON(IP)
+            elementList(i) = IE
+          enddo
+
+
+
+          ! over all frequency
+          do ISS = 1, MSC
+
+            petscAsparPosi2 = petscAsparPosi1 + (ISS-1)* MDC *nConnNode
+
+            ! hier CADVXY fuer alle MDC und alle connected Nodes von IP vorberechnen. damit der vecorisierer rocken kann
+!             CALL CADVXY2(ISS, nodeList, nodeListSize, C)
+            call CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
+
+
+            ! over all directions
+            do IDD = 1, MDC
+
+              petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
+
+              ! wenn der knoten irgendne randbedingung erfuellt. dann...
+              IF (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+!                       !
+!                       !        Calculate countour integral quantities ...
+!                       !
+!                       !AR: omp loop
+!                       do i = 1, CCON(IP)
+!                         IE = IEarr(i)
+!                         ! I1-I3 entsprechend die knotennummern von IE. gemappt auf [1:CCON(IP)]
+!                         I1 = (i-1)*3 +1
+!                         I2 = (i-1)*3 +2
+!                         I3 = (i-1)*3 +3
+!                         LAMBDA(1) = ONESIXTH * (C(1,I1, IDD) + C(1,I2, IDD) + C(1,I3, IDD))
+!                         LAMBDA(2) = ONESIXTH * (C(2,I1, IDD) + C(2,I2, IDD) + C(2,I3, IDD))
+!                         K(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
+!                         K(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+!                         K(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+!                         KP(1,i) = MAX(0.d0,K(1))
+!                         KP(2,i) = MAX(0.d0,K(2))
+!                         KP(3,i) = MAX(0.d0,K(3))
+!                         KM(1) = MIN(0.d0,K(1))
+!                         KM(2) = MIN(0.d0,K(2))
+!                         KM(3) = MIN(0.d0,K(3))
+!                         FL11 = C(1,I2, IDD)*IEN(1,IE) + C(2,I2, IDD)*IEN(2,IE)
+!                         FL12 = C(1,I3, IDD)*IEN(1,IE) + C(2,I3, IDD)*IEN(2,IE)
+!                         FL21 = C(1,I3, IDD)*IEN(3,IE) + C(2,I3, IDD)*IEN(4,IE)
+!                         FL22 = C(1,I1, IDD)*IEN(3,IE) + C(2,I1, IDD)*IEN(4,IE)
+!                         FL31 = C(1,I1, IDD)*IEN(5,IE) + C(2,I1, IDD)*IEN(6,IE)
+!                         FL32 = C(1,I2, IDD)*IEN(5,IE) + C(2,I2, IDD)*IEN(6,IE)
+!                         CRFS(1) =  - ONESIXTH *  (2.0d0 *FL31 + FL32 + FL21 + 2.0d0 * FL22 )
+!                         CRFS(2) =  - ONESIXTH *  (2.0d0 *FL32 + 2.0d0 * FL11 + FL12 + FL31 )
+!                         CRFS(3) =  - ONESIXTH *  (2.0d0 *FL12 + 2.0d0 * FL21 + FL22 + FL11 )
+!                         DELTAL(:,i) = CRFS(:)- KP(:,i)
+!                         NM(i)       = 1.d0/MIN(DBLE(THR),SUM(KM(:)))
+!                       END DO
+
+                !
+                !        Calculate countour integral quantities ...
+                !
+                LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
+                K(1,1:NECON)  = LAMBDA(1, 1:NECON) * IEN(1, IEarr(1:NECON)) + LAMBDA(2, 1:NECON) * IEN(2, IEarr(1:NECON))
+                K(2,1:NECON)  = LAMBDA(1, 1:NECON) * IEN(3, IEarr(1:NECON)) + LAMBDA(2, 1:NECON) * IEN(4, IEarr(1:NECON))
+                K(3,1:NECON)  = LAMBDA(1, 1:NECON) * IEN(5, IEarr(1:NECON)) + LAMBDA(2, 1:NECON) * IEN(6, IEarr(1:NECON))
+                KP(:,1:NECON) = MAX(0.d0,K(:, 1:NECON))
+                KM(:,1:NECON) = MIN(0.d0,K(:, 1:NECON))
+                FL11(1:NECON) = C2(1, 1:NECON, IDD)*IEN(1, IEarr(1:NECON)) + C2(2, 1:NECON, IDD)*IEN(2, IEarr(1:NECON))
+                FL12(1:NECON) = C3(1, 1:NECON, IDD)*IEN(1, IEarr(1:NECON)) + C3(2, 1:NECON, IDD)*IEN(2, IEarr(1:NECON))
+                FL21(1:NECON) = C3(1, 1:NECON, IDD)*IEN(3, IEarr(1:NECON)) + C3(2, 1:NECON, IDD)*IEN(4, IEarr(1:NECON))
+                FL22(1:NECON) = C1(1, 1:NECON, IDD)*IEN(3, IEarr(1:NECON)) + C1(2, 1:NECON, IDD)*IEN(4, IEarr(1:NECON))
+                FL31(1:NECON) = C1(1, 1:NECON, IDD)*IEN(5, IEarr(1:NECON)) + C1(2, 1:NECON, IDD)*IEN(6, IEarr(1:NECON))
+                FL32(1:NECON) = C2(1, 1:NECON, IDD)*IEN(5, IEarr(1:NECON)) + C2(2, 1:NECON, IDD)*IEN(6, IEarr(1:NECON))
+                CRFS(1,1:NECON) = - ONESIXTH * (2.0d0 *FL31(1:NECON) + FL32(1:NECON) + FL21(1:NECON) + 2.0d0 * FL22(1:NECON) )
+                CRFS(2,1:NECON) = - ONESIXTH * (2.0d0 *FL32(1:NECON) + 2.0d0 * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
+                CRFS(3,1:NECON) = - ONESIXTH * (2.0d0 *FL12(1:NECON) + 2.0d0 * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
+                DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
+                NM(1:NECON) = 1.d0/MIN(DBLE(THR), SUM(KM(:, 1:NECON),DIM=1))
+
+                DO I = 1, CCON(IP)
+
+                  DTK = KP(POSarr(i), i) * DT4A
+                  I1 = I1arr(i)
+                  I2 = I2arr(i)
+                  I3 = I3arr(i)
+                  ! die values werden aufaddiert
+                  value1 =  TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i)             ,i)  ! Diagonal entry
+                  value2 =                     - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
+                  value3 =                     - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
+
+! call CPU_TIME(startTime)
+                  !AR: this can be known before ... ghost are always at the same place ...
+                  petscAsparPosi4 = petscAsparPosi3 + (asparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
+!                   ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = value1 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1))
+                  ASPAR_petsc(petscAsparPosi4) = value1 + ASPAR_petsc(petscAsparPosi4)
+
+                  if(asparApp2Petsc_small(I2) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2)) = value2 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2))
+                  else
+                  petscAsparPosi4 = petscAsparPosi3 + (asparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(petscAsparPosi4) = value2 + ASPAR_petsc(petscAsparPosi4)
+!                     ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I2)) = value2 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I2))
+                  endif
+
+                  if(asparApp2Petsc_small(I3) .eq. -999) then
+                    oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3)) = value3 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3))
+                  else
+                  petscAsparPosi4 = petscAsparPosi3 + (asparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(petscAsparPosi4) = value3 + ASPAR_petsc(petscAsparPosi4)
+!                     ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I3)) = value3 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I3))
+                  endif
+
+! call CPU_TIME(endTime)
+! totalTime = totalTime + (endTime -  startTime)
+                END DO !I: loop over connected elements ...
+
+            ! der knoten liegt net tief genug. mache was anderes
+              ! nur dreiecksflaeche aufrenen
+              ELSE
+                DO I = 1, CCON(IP)
+                  I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+                  value1 =  TRIA03arr(i)   ! Diagonal entry
+                  ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = value1 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1))
+                END DO !I: loop over connected elements ...
+              END IF
+            end do !IDD
+          end do !ISS
+        END DO !IP
+
+
+        IF (LBCWA .OR. LBCSP) THEN
+          IF (LINHOM) THEN
+            DO IP = 1, IWBMNP
+              IPGL = IWBNDLC(IP)
+              ! ghost or interface node, ignore it
+              if(ALO2PLO(IPGL-1) .lt. 0) then
+                cycle
+              endif
+
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+!                   ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+                  ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                end do ! IDD
+              end do ! ISS
+            END DO ! IP
+          ELSE
+            DO IP = 1, IWBMNP
+              IPGL = IWBNDLC(IP)
+              ! ghost or interface node, ignore it
+              if(ALO2PLO(IPGL-1) .lt. 0) then
+                cycle
+              endif
+
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+!                   ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+                  ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                end do ! IDD
+              end do ! ISS
+            END DO ! IP
+          ENDIF
+        END IF
+
+
+        ! wind und so
+        if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then
+          DO IP = 1, MNP
+            ! ghost or interface node, ignore it
+            if(ALO2PLO(IP-1) .lt. 0) then
+              cycle
+            endif
+
+            IF (IOBWB(IP) .EQ. 1) THEN
+              ! over all frequency
+              do ISS = 1, MSC
+                ! over all directions
+                do IDD = 1, MDC
+!                   ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
+                  value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
+                  ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))) = value1 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP)))
+                end do ! IDD
+              end do ! ISS
+            END IF
+          END DO ! IP
+        endif
+
+        call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr)
+        call MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr)
+
+
+!         write(*,*) "totaltime ", totalTime
+      end subroutine
+
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CADVXY2(ISS, nodeList, nodeListSize, C)
+
+         USE DATAPOOL
+#ifdef SELFE
+         use elfe_msgp
+#endif
+         IMPLICIT NONE
+
+
+         INTEGER, INTENT(IN)  :: ISS
+          integer, intent(in) :: nodeList(:), nodeListSize
+          ! erster index x/y
+          ! zweiter index knotennummern
+          ! dritter index ID
+         real(kind=8), INTENT(OUT)  :: C(2,MAXMNECON*3,MDC)
+
+         INTEGER     :: IP, i
+
+         real(kind=8)      :: DIFRU(MDC), USOC(MDC), WVC
+!
+! Loop over the resident nodes only ... exchange is done in the calling routine
+!
+        ! i represent die connected node numbers. kommen in nodeList doppelt vor.
+        ! todo effizient cachen?
+        do i = 1, nodeListSize
+          IP = nodeList(i)
+
+          IF (LADVTEST) THEN
+            ! dieser Wert ist Richtungsunabhaenig
+            C(1,i,:) =   YP(IP)
+            C(2,i,:) = - XP(IP)
+          ELSE
+            IF (LSECU .OR. LSTCU) THEN
+              C(1,i,:) = DBLE( CG(IP,ISS)*COSTH(:)+CURTXY(IP,1) )
+              C(2,i,:) = DBLE( CG(IP,ISS)*SINTH(:)+CURTXY(IP,2) )
+            ELSE
+              C(1,i,:) = DBLE(CG(IP,ISS)*COSTH(:))
+              C(2,i,:) = DBLE(CG(IP,ISS)*SINTH(:))
+            END IF
+            IF (LSPHE) THEN
+                C(1,i,:) = C(1,i,:)*INVSPHTRANS(IP,1)
+                C(2,i,:) = C(2,i,:)*INVSPHTRANS(IP,2)
+            END IF
+            IF (LDIFR) THEN
+              C(1,i,:) = C(1,i,:)*DIFRM(IP)
+              C(2,i,:) = C(2,i,:)*DIFRM(IP)
+              IF (LSECU .OR. LSTCU) THEN
+                IF (IDIFFR .GT. 1) THEN
+                  WVC = SPSIG(ISS)/WK(IP,ISS)
+                  USOC(:) = (COSTH(:)*CURTXY(IP,1) + SINTH(:)*CURTXY(IP,2))/WVC
+                  DIFRU(:) = 1.d0 + USOC(:) * (1.d0 - DIFRM(IP))
+                ELSE
+                  DIFRU(:) = DIFRM(IP)
+                END IF
+                C(1,i,:) = C(1,i,:)+DBLE(DIFRU(:)*CURTXY(IP,1))
+                C(2,i,:) = C(2,i,:)+DBLE(DIFRU(:)*CURTXY(IP,2))
+              END IF
+            END IF
+          !WRITE(*,*) IP, DIFRM(IP), C(:,IP)
+          END IF
+        enddo
+
+      END SUBROUTINE
+
+
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
+
+         USE DATAPOOL
+#ifdef SELFE
+         use elfe_msgp
+#endif
+         IMPLICIT NONE
+
+
+         INTEGER, INTENT(IN)  :: ISS
+          integer, intent(in) :: elementList(:), elementListSize
+          ! erster index x/y
+          ! zweiter index knotennummern
+          ! dritter index ID
+         real(kind=8), INTENT(OUT)  :: C1(2,MAXMNECON,MDC)
+         real(kind=8), INTENT(OUT)  :: C2(2,MAXMNECON,MDC)
+         real(kind=8), INTENT(OUT)  :: C3(2,MAXMNECON,MDC)
+
+         INTEGER     :: IP, i, IE, IP1, IP2, IP3
+
+         real(kind=8)      :: DIFRU1(MDC), USOC1(MDC), WVC1
+         real(kind=8)      :: DIFRU2(MDC), USOC2(MDC), WVC2
+         real(kind=8)      :: DIFRU3(MDC), USOC3(MDC), WVC3
+!
+! Loop over the resident nodes only ... exchange is done in the calling routine
+!
+        ! i represent die connected node numbers. kommen in nodeList doppelt vor.
+        ! todo effizient cachen?
+        do i = 1, elementListSize
+          IE = elementList(i)
+          IP1 = INE(1,IE)
+          IP2 = INE(2,IE)
+          IP3 = INE(3,IE)
+
+          IF (LADVTEST) THEN
+            ! dieser Wert ist Richtungsunabhaenig
+            C1(1,i,:) =   YP(IP1)
+            C1(2,i,:) = - XP(IP1)
+
+            C2(1,i,:) =   YP(IP2)
+            C2(2,i,:) = - XP(IP2)
+
+            C3(1,i,:) =   YP(IP3)
+            C3(2,i,:) = - XP(IP3)
+          ELSE
+            IF (LSECU .OR. LSTCU) THEN
+              C1(1,i,:) = DBLE( CG(IP1,ISS)*COSTH(:)+CURTXY(IP1,1) )
+              C1(2,i,:) = DBLE( CG(IP1,ISS)*SINTH(:)+CURTXY(IP1,2) )
+
+              C2(1,i,:) = DBLE( CG(IP2,ISS)*COSTH(:)+CURTXY(IP2,1) )
+              C2(2,i,:) = DBLE( CG(IP2,ISS)*SINTH(:)+CURTXY(IP2,2) )
+
+              C3(1,i,:) = DBLE( CG(IP3,ISS)*COSTH(:)+CURTXY(IP3,1) )
+              C3(2,i,:) = DBLE( CG(IP3,ISS)*SINTH(:)+CURTXY(IP3,2) )
+            ELSE
+              C1(1,i,:) = DBLE(CG(IP1,ISS)*COSTH(:))
+              C1(2,i,:) = DBLE(CG(IP1,ISS)*SINTH(:))
+
+              C2(1,i,:) = DBLE(CG(IP2,ISS)*COSTH(:))
+              C2(2,i,:) = DBLE(CG(IP2,ISS)*SINTH(:))
+
+              C3(1,i,:) = DBLE(CG(IP3,ISS)*COSTH(:))
+              C3(2,i,:) = DBLE(CG(IP3,ISS)*SINTH(:))
+            END IF
+            IF (LSPHE) THEN
+                C1(1,i,:) = C1(1,i,:)*INVSPHTRANS(IP1,1)
+                C1(2,i,:) = C1(2,i,:)*INVSPHTRANS(IP1,2)
+
+                C2(1,i,:) = C2(1,i,:)*INVSPHTRANS(IP2,1)
+                C2(2,i,:) = C2(2,i,:)*INVSPHTRANS(IP2,2)
+
+                C3(1,i,:) = C3(1,i,:)*INVSPHTRANS(IP3,1)
+                C3(2,i,:) = C3(2,i,:)*INVSPHTRANS(IP3,2)
+            END IF
+            IF (LDIFR) THEN
+              C1(1,i,:) = C1(1,i,:)*DIFRM(IP1)
+              C1(2,i,:) = C1(2,i,:)*DIFRM(IP1)
+
+              C2(1,i,:) = C2(1,i,:)*DIFRM(IP2)
+              C2(2,i,:) = C2(2,i,:)*DIFRM(IP2)
+
+              C3(1,i,:) = C3(1,i,:)*DIFRM(IP3)
+              C3(2,i,:) = C3(2,i,:)*DIFRM(IP3)
+
+              IF (LSECU .OR. LSTCU) THEN
+                IF (IDIFFR .GT. 1) THEN
+                  WVC1 = SPSIG(ISS)/WK(IP1,ISS)
+                  WVC2 = SPSIG(ISS)/WK(IP2,ISS)
+                  WVC3 = SPSIG(ISS)/WK(IP3,ISS)
+                  USOC1(:) = (COSTH(:)*CURTXY(IP1,1) + SINTH(:)*CURTXY(IP1,2))/WVC1
+                  USOC2(:) = (COSTH(:)*CURTXY(IP2,1) + SINTH(:)*CURTXY(IP2,2))/WVC2
+                  USOC3(:) = (COSTH(:)*CURTXY(IP3,1) + SINTH(:)*CURTXY(IP3,2))/WVC3
+                  DIFRU1(:) = 1.d0 + USOC1(:) * (1.d0 - DIFRM(IP1))
+                  DIFRU2(:) = 1.d0 + USOC2(:) * (1.d0 - DIFRM(IP2))
+                  DIFRU3(:) = 1.d0 + USOC3(:) * (1.d0 - DIFRM(IP3))
+                ELSE
+                  DIFRU1(:) = DIFRM(IP1)
+                  DIFRU2(:) = DIFRM(IP2)
+                  DIFRU3(:) = DIFRM(IP3)
+                END IF
+                C1(1,i,:) = C1(1,i,:)+DBLE(DIFRU1(:)*CURTXY(IP1,1))
+                C1(2,i,:) = C1(2,i,:)+DBLE(DIFRU1(:)*CURTXY(IP1,2))
+
+                C2(1,i,:) = C2(1,i,:)+DBLE(DIFRU2(:)*CURTXY(IP2,1))
+                C2(2,i,:) = C2(2,i,:)+DBLE(DIFRU2(:)*CURTXY(IP2,2))
+
+                C3(1,i,:) = C3(1,i,:)+DBLE(DIFRU3(:)*CURTXY(IP3,1))
+                C3(2,i,:) = C3(2,i,:)+DBLE(DIFRU3(:)*CURTXY(IP3,2))
+              END IF
+            END IF
+          !WRITE(*,*) IP, DIFRM(IP), C(:,IP)
+          END IF
+        enddo
+
+      END SUBROUTINE
+
+
+      subroutine  EIMPS_PETSC_BLOCK()
+        use datapool, only: MSC, MDC, AC2, stat, MNP
+        use elfe_glbl, only: ipgl
+        use elfe_msgp, only: exchange_p2d
+        use petscsys
+        use petscmat
+        use petscpool
+
+        implicit none
+        REAL    ::  startTime, endTime
+        integer :: IP, rowLocal, IDD, ISS
+        PetscScalar :: value
+        ! for the exchange
+        real(kind=8)  :: U(MNP)
+
+        !         logical :: firstRun = .true.
+!         real :: startTime, endTime
+
+        KSPConvergedReason reason;
+        PetscInt iterationen;
+
+ !         call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
+! use old code to fill aspar and b. the exchange is done in calcPDE
+!         call CPU_TIME(startTime)
+!         call calcPDE()
+!         call CPU_TIME(endTime)
+!         if(rank == 0) print '("calcPDE Time = ",f6.3," sec")',endTime - startTime
+
+
+! here comes experimental code
+#ifdef PETSC_DEBUG
+! or use faster code for aspar and b
+        ! exchange entire rhs.
+        ! todo can we do this with one exchange call?
+        ! over all frequency
+        do ISS = 1, MSC
+          ! over all directions
+          do IDD = 1, MDC
+            U = DBLE(AC2(:, ISS, IDD))
+            call exchange_p2d(U)
+            AC2(:, ISS, IDD) = REAL(U)
+          end do
+        end do
+
+        call CPU_TIME(startTime)
+        call calcASPAR()
+        call CPU_TIME(endTime)
+        if(rank == 0) print '("calcASPAR Time = ",f6.3," sec")',endTime - startTime
+
+        call CPU_TIME(startTime)
+        call calcB()
+        call CPU_TIME(endTime)
+        if(rank == 0) print '("calcB Time = ",f6.3," sec")',endTime - startTime
+#endif
+        ! fill x
+        call useOldSolution
+
+!         call checkBigMatrixDiagonalAccuracy(matrix)
+!         call PetscLogStagePop(petscErr);CHKERRQ(ierr)
+
+! Solve
+        ! To solve successive linear systems that have different preconditioner matrices (i.e., the matrix elements
+        ! and/or the matrix data structure change), the user must call KSPSetOperators() and KSPSolve() for each
+        ! solve.
+        call KSPSetOperators(Solver, matrix, matrix, SAME_NONZERO_PATTERN, petscErr);CHKERRQ(petscErr)
+!         call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
+
+        ! Solve!
+!         call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
+        call CPU_TIME(startTime)
+        call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
+        call CPU_TIME(endTime)
+
+        call KSPGetConvergedReason(Solver, reason, petscErr);CHKERRQ(petscErr);
+        if (reason .LT. 0) then
+          write(stat%fhndl,*) "Failure to converge\n"
+        else
+
+        endif
+
+#ifdef PETSC_DEBUG
+        if(rank == 0) then
+          if(reason .LT. 0 ) then
+             write(*,*) "Failure to converge\n"
+          else
+            call KSPGetIterationNumber(Solver, iterationen, petscErr);CHKERRQ(petscErr)
+            if(iterationen /= 0)  write(*,*) "Number of iterations", iterationen
+          endif
+          print '("solver Time = ",f6.3," sec")',endTime - startTime
+        endif
+#endif
+
+!         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
+!         if(rank == 0) print '("overall Time = ",f6.3," sec")',endTime - startTime
+
+        ! get the solution back to fortran.
+        ! iterate over all resident nodes (without interface and ghost nodes) in petsc local order
+        ! map the node index from petsc local ordering back to app old local ordering
+        ! get the soluton from X(IP, IS, ID)
+        ! write the solutin to AC2(IP, IS, ID)
+        AC2 = 0
+        call VecGetArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+        ! loop over all local nodes (in petsc local order)
+        do IP = 1, nNodesWithoutInterfaceGhosts
+          ! map from petsc local to app local
+          ! row represent the local app order
+          rowLocal = ipgl( (PGO2AGO( PLO2PGO( IP-1 ) ))+1 )%id
+
+          ! over all frequency
+          DO ISS = 1, MSC
+
+           ! over all directions
+            DO IDD = 1, MDC
+              value = myXtemp(toRowIndex(IP, ISS, IDD) + 1)
+              AC2(rowLocal, ISS, IDD) = SNGL(MAX(0.d0, value))
+            end do
+          end do
+        end do
+        call VecRestoreArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+
+        IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NaN in AC'
+
+        ! we have to fill the ghost and interface nodes with the solution from the other threads.
+        ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
+        ! normally set to 0, because they do net exist in petsc
+        do ISS = 1, MSC
+          ! over all directions
+          do IDD = 1, MDC
+            U = DBLE(AC2(:, ISS, IDD))
+            call exchange_p2d(U)
+            AC2(:, ISS, IDD) = REAL(U)
+          end do
+        end do
+      end subroutine
+
+
+      !> @brief convert from node number, direction and frequency to a matrix (or vec) row number
+      !> @param IP gloabl or local node  index in app or petsc order. counts from 1
+      !> @param IS current frequency. counts from 1
+      !> @param ID current direction. counts from 1
+      !> @return new matrix (or vec) global or local row number (counts from 0)
+      integer  function toRowIndex(IP, ISS, IDD)
+        ! MSC      - # frequency
+        ! MDC      - # directions
+        use datapool, only: MSC, MDC
+        implicit none
+        integer, intent(in) :: IP, ISS, IDD
+        toRowIndex = (IP-1) * MSC * MDC + (ISS-1) * MDC + (IDD-1)
+        return
+      end function
+
+      !> @brief convert from big Matrix row number to node number
+      !> @param[in] bigmatrix local or global row number (counts from 0)
+      !> @return IP global or local node number (counts from 1)
+      integer function toNodeIndex(bigMatrixRow)
+        use datapool, only: MSC, MDC
+        implicit none
+        integer, intent(in) :: bigMatrixRow
+        toNodeIndex = bigmatrixRow / (MSC * MDC) + 1
+
+      end function
+
+      !> @brief convert from big Matrix row number to ISS number
+      !> @param[in] bigmatrix local or global row number (counts from 0)
+      !> @return ISS (counts from 1)
+      integer function toISS(bigMatrixRow)
+        use datapool, only: MSC, MDC
+        implicit none
+        integer, intent(in) :: bigmatrixRow
+        integer :: IP
+        IP = toNodeIndex(bigmatrixRow)
+        toISS = (bigmatrixRow - ((IP-1) * MSC * MDC)) / MDC + 1
+      end function
+
+      !> @brief convert from big Matrix row number to IDD number
+      !> @param[in] bigmatrix local or global row number (counts from 0)
+      !> @return IDD (counts from 1)
+      integer function toIDD(bigMatrixRow)
+        use datapool, only: MSC, MDC
+        implicit none
+        integer, intent(in) :: bigmatrixRow
+        integer :: IP, ISS
+        IP = toNodeIndex(bigmatrixRow)
+        ISS = toISS(bigmatrixRow)
+        toIDD = bigmatrixRow - ((IP-1) * MSC * MDC)  - (ISS-1) * MDC + 1
+      end function
+
+
+      !> @brief convert from app order position in ASPAR to petsc bigmatrix position in aspar_petsc
+      !> @param IP local node  index in app. counts from 1
+      !> @param IS current frequency. (counts from 1)
+      !> @param ID current direction. (counts from 1)
+      !> @param I  the position in app aspar (counts from 1)
+      !> @return new aspar_petsc bigmatrix position (counts from 1)
+      integer function aspar2petscAspar(IP, ISS, IDD, asparPosition)
+        use datapool, only: MSC, MDC
+        use petscpool, only: ALO2PLO, rank
+        implicit none
+        integer, intent(in) :: IP, ISS, IDD, asparPosition
+        integer :: nConnNode
+        integer :: IPpetscLocal
+
+        ! counts from zero
+        IPpetscLocal = ALO2PLO(IP-1)
+
+        ! ! +1 +1 because IA_petsc_small starts from 1 and we have to access the next IA_petsc element
+        ! we must use IA_petsc_small here because IA has ghost and interface nodes
+        nConnNode = IA_petsc_small(IPpetscLocal+1+1) - IA_petsc_small(IPpetscLocal+1)
+
+        aspar2petscAspar = 0
+        ! in den entsprechenden Block springen.
+        aspar2petscAspar = aspar2petscAspar + MSC*MDC * IA_petsc_small(IPpetscLocal+1)
+        ! von dort aus in den IS block
+        aspar2petscAspar = aspar2petscAspar + (ISS-1)* MDC *nConnNode
+        ! und noch den IS offset
+        aspar2petscAspar = aspar2petscAspar + (IDD-1)*nConnNode
+
+        aspar2petscAspar = aspar2petscAspar + (asparApp2Petsc_small(asparPosition) - IA_petsc_small(IPpetscLocal+1))  + 1
+        if(aspar2petscAspar < 1) then
+          write(*,*) rank, "aspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
+        endif
+      end function
+
+      !> @brief convert from app order position in ASPAR to petsc bigmatrix position in oaspar_petsc (for offdiagonal submatrix)
+      !> @param IP local node  index in app. counts from 1
+      !> @param IS current frequency. counts from 1
+      !> @param ID current direction. counts from 1
+      !> @param I  the i-th NZ in row IP
+      !> @return new oaspar_petsc bigmatrix position (counts from 1)
+      integer function oAspar2petscAspar(IP, ISS, IDD, asparPosition)
+        use datapool, only: MSC, MDC
+        use petscpool, only: ALO2PLO, rank
+        implicit none
+        integer, intent(in) :: IP, ISS, IDD, asparPosition
+        integer :: nConnNode
+        integer :: IPpetscLocal
+
+        ! counts from zero
+        IPpetscLocal = ALO2PLO(IP-1)
+
+        ! ! +1 +1 because IA_petsc_small starts from 1 and we have to access the next IA_petsc element
+        ! we must use IA_petsc_small here because IA has ghost and interface nodes
+        nConnNode = oIA_petsc_small(IPpetscLocal+1+1) - oIA_petsc_small(IPpetscLocal+1)
+
+        oAspar2petscAspar = 0
+        ! in den entsprechenden Block springen.
+        oAspar2petscAspar = oAspar2petscAspar + MSC*MDC * oIA_petsc_small(IPpetscLocal+1)
+        ! von dort aus in den IS block
+        oAspar2petscAspar = oAspar2petscAspar + (ISS-1)* MDC *nConnNode
+        ! und noch den IS offset
+        oAspar2petscAspar = oAspar2petscAspar + (IDD-1)*nConnNode
+
+        oAspar2petscAspar = oAspar2petscAspar + (oAsparApp2Petsc_small(asparPosition) - oIA_petsc_small(IPpetscLocal+1))  + 1
+        if(oAspar2petscAspar < 1) then
+          write(*,*) rank, "oAspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
+        endif
+      end function
+
+      !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
+      subroutine PETSC_FINALIZE_BLOCK()
+        use petscpool
+        use petscsys
+        implicit none
+
+        call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
+
+        ! we deallocate only arrays who are declared in this file!
+!         if(allocated(CSR_Petsc2AppLUT)) deallocate(CSR_Petsc2AppLUT)
+!         if(allocated(o_CSR_Petsc2AppLUT)) deallocate(o_CSR_Petsc2AppLUT)
+        if(allocated(IA_petsc)) deallocate(IA_petsc)
+        if(allocated(JA_petsc)) deallocate(JA_petsc)
+        if(allocated(ASPAR_petsc)) deallocate(ASPAR_petsc)
+        if(allocated(oIA_petsc)) deallocate(oIA_petsc)
+        if(allocated(oJA_petsc)) deallocate(oJA_petsc)
+        if(allocated(oASPAR_petsc)) deallocate(oASPAR_petsc)
+        if(allocated(IA_petsc_small)) deallocate(IA_petsc_small)
+        if(allocated(oIA_petsc_small)) deallocate(oIA_petsc_small)
+        if(allocated(asparApp2Petsc_small)) deallocate(asparApp2Petsc_small)
+        if(allocated(oAsparApp2Petsc_small)) deallocate(oAsparApp2Petsc_small)
+
+      end subroutine
+
+      !> Check if there are any zero or very small diagonal elements
+      !> @param[in] matrix the big PETSC matrix
+      !> @param[in] ISS optional, frequency running variable
+      !> @param[in] IDD optional, direction running variable
+      subroutine checkBigMatrixDiagonalAccuracy(matrix, ISS, IDD)
+        use datapool, only: IOBP, IOBPD
+        use elfe_glbl, only: ipgl
+        use petscpool
+        use petscmat
+        use petscvec
+        implicit none
+
+        Mat, intent(in) :: matrix
+        integer, intent(in), optional :: ISS, IDD
+        ! diagonal portion of the matrix
+        Vec :: diagonal
+        ! position (bigmatrix oder) and value of the min/max entrie
+        PetscInt  :: positionMax, positionMin
+        PetscReal :: valueMax, valueMin
+        ! for mean calc
+        PetscScalar :: summe
+        PetscInt :: globalSize, localSize, start
+        ! Helper arrays to access petsc vec from fortran
+        PetscScalar, pointer :: array(:)
+
+        ! running variable
+        integer :: i
+        ! we will store detail info for maxCount elements
+        integer :: counter, maxCount
+        ! store the detail infos here
+        integer :: entriesDetail(10, 7)
+        ! count the number of zero entries
+        integer zeroElementsCounter
+        ! an entrie is zero if its value is smaller than this variable
+        PetscReal :: epsilon
+        ! node numbers...
+        integer :: IP_petsc, IP, IP_old
+        ! time measurement
+        real :: startTime, endTime
+
+        call CPU_TIME(startTime)
+
+        positionMax = -1
+        positionMin = -1
+        valueMax = 0
+        valueMin = 0
+        summe = 0
+        globalSize = 0
+        localSize = 0
+        start = 0
+        i = 0
+        counter = 0
+        maxCount = 10
+        entriesDetail = 0
+        zeroElementsCounter = 0
+        epsilon = 0
+        IP_petsc = -1
+        IP = -1
+        IP_old = -1
+
+        ! create vector and get matrix diagonale
+        call MatGetVecs(matrix, diagonal, PETSC_NULL_OBJECT, petscErr);CHKERRQ(petscErr)
+        call MatGetDiagonal(matrix, diagonal, petscErr);CHKERRQ(petscErr)
+
+        ! get min/max
+        call VecMin(diagonal, positionMin, valueMin, petscErr);CHKERRQ(petscErr)
+        call VecMax(diagonal, positionMax, valueMax, petscErr);CHKERRQ(petscErr)
+
+        ! calc mean
+        call VecSum(diagonal, summe, petscErr);CHKERRQ(petscErr)
+        call VecGetSize(diagonal, globalSize, petscErr);CHKERRQ(petscErr)
+
+        ! check diagonal entries (in petsc global numbering) which are smaller then ...
+        call VecGetOwnershipRange(diagonal, start, PETSC_NULL, petscErr);CHKERRQ(petscErr)
+        call VecGetLocalSize(diagonal, localSize, petscErr);CHKERRQ(petscErr)
+        ! use the solver relative convergence tolerance as criterion when an entrie is zero
+        call KSPGetTolerances(solver, epsilon, PETSC_NULL, PETSC_NULL, PETSC_NULL, petscErr);CHKERRQ(petscErr)
+
+        call VecGetArrayF90(diagonal, array, petscErr); CHKERRQ(petscErr)
+        do i=1, localSize
+          if(array(i) < epsilon) then
+            ! map from bigmatrix row number to node number
+            IP_petsc = toNodeIndex(start + i - 1)
+            IP = PGO2AGO(IP_petsc - 1) + 1
+            ! count only different node numbers.
+            if(IP_old /= IP) then
+              IP_old = IP
+              zeroElementsCounter = zeroElementsCounter + 1
+
+              ! detail for the first maxCount entries
+              if(counter < maxCount) then
+                counter = counter + 1
+                ! bigmatrix row number
+                entriesDetail(counter, 1) = start + i - 1
+                ! node number petsc order
+                entriesDetail(counter, 2) = IP_petsc
+                ! node number app order
+                entriesDetail(counter, 3) = IP
+                !  boundary characteristic
+                entriesDetail(counter, 4) = IOBP(ipgl(IP)%id)
+                !
+                entriesDetail(counter, 5) = IOBPD(toIDD(start + i - 1) ,ipgl(IP)%id)
+                ! ISS
+                entriesDetail(counter, 6) = toISS(start + i - 1)
+                ! IDD
+                entriesDetail(counter, 7) = toIDD(start + i - 1)
+              endif
+            endif
+          endif
+        end do
+        call VecRestoreArrayF90(diagonal, array, petscErr); CHKERRQ(petscErr);
+        call VecDestroy(diagonal, petscErr);CHKERRQ(petscErr)
+        call CPU_TIME(endTime)
+
+        ! print only a detailed info if there are zero diagonal entries
+        if(zeroElementsCounter /= 0) then
+          write(*,*) "check matrix diagonal Accuracy"
+          if(present(ISS) .and. present(IDD)) write(*,*) "ISS IDD", ISS, IDD
+          write(*,*) "minimum at (big matrix row)" , positionMin, ": ", valueMin
+          write(*,*) "maximum at (big matrix row)" , positionMax, ": ", valueMax
+          write(*,*) "mean" , summe / globalSize
+
+          write(*,*) "first 10 entries which are smaller than", epsilon
+          write(*,*) "bigmatrix | IP_petsc global | APP global |  IOBP   |   IOBPD    |    ISS    |    IDD"
+          do i = 1, min(maxCount, zeroElementsCounter)
+            write(*,*) entriesDetail(i,:)
+          end do
+
+          write(*,*) rank, " There are total ", zeroElementsCounter," entries"
+          write(*,*) "check matrix diagonal Accuracy Ende. Time: ",endTime - startTime," sec"
+        endif
+      end subroutine
+    END MODULE
+#endif SELFE
+#endif PETSC

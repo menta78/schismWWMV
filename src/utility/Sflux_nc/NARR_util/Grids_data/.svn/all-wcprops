@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/selfe/!svn/ver/198/trunk/src/utility/Sflux_nc/NARR_util/Grids_data
+END
+narr_grid_221.lon.txt
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/Grids_data/narr_grid_221.lon.txt
+END
+narr_grid_221.lat.txt
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/Grids_data/narr_grid_221.lat.txt
+END

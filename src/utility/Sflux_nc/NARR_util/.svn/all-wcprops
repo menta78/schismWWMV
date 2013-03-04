@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/selfe/!svn/ver/198/trunk/src/utility/Sflux_nc/NARR_util
+END
+narr_full_year.csh
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/narr_full_year.csh
+END
+narrtest.txt
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/narrtest.txt
+END
+2009.out
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/2009.out
+END
+verify_narr_multi
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/verify_narr_multi
+END
+verify_nnrp
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/verify_nnrp
+END
+nnrp_multi_year.csh
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/nnrp_multi_year.csh
+END
+verify_narr
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/verify_narr
+END
+get_nc_nnrp.01.csh
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/get_nc_nnrp.01.csh
+END
+narr_multi_year.csh
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/narr_multi_year.csh
+END
+nnrp_full_year.csh
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/nnrp_full_year.csh
+END
+verify_nnrp_multi
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/verify_nnrp_multi
+END
+get_nc_narr.01.csh
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/selfe/!svn/ver/175/trunk/src/utility/Sflux_nc/NARR_util/get_nc_narr.01.csh
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/selfe/!svn/ver/183/trunk/src/utility/Sflux_nc/NARR_util/README
+END

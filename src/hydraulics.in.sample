@@ -1,0 +1,7 @@
+2 !# of transfer blocks
+1 2 !block #, # of node-pairs
+101 102 !node pair
+105 109
+2 2 !block #, # of node-pairs
+99 98
+110 115 !end of 2nd structure 

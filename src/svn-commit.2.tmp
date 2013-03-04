@@ -1,0 +1,10 @@
+- initialized some arrays in site output
+- small parameter change in snl4 according to Janssen & Onorato
+- few small changes 
+--This line, and those below, will be ignored--
+
+M    WWMII/wwm_gridcf.F90
+M    WWMII/wwm_specint.F90
+M    WWMII/wwm_snl4.F90
+M    WWMII/wwm_initio.F90
+M    WWMII/wwm_output.F90

@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/selfe/!svn/ver/42/trunk/src/Sediment
+END
+read_sed_input.F90.0
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/selfe/!svn/ver/3/trunk/src/Sediment/read_sed_input.F90.0
+END
+stress.F90
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/selfe/!svn/ver/3/trunk/src/Sediment/stress.F90
+END
+stress_soulsby.F90
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/selfe/!svn/ver/3/trunk/src/Sediment/stress_soulsby.F90
+END
+ocean_mod.F90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/selfe/!svn/ver/3/trunk/src/Sediment/ocean_mod.F90
+END
+read_sed_input.F90
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/selfe/!svn/ver/42/trunk/src/Sediment/read_sed_input.F90
+END
+sediment_v8.F90
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/selfe/!svn/ver/3/trunk/src/Sediment/sediment_v8.F90
+END
+set_vbc.F90
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/selfe/!svn/ver/3/trunk/src/Sediment/set_vbc.F90
+END
+sed_init.F90.ChanROMS
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/selfe/!svn/ver/3/trunk/src/Sediment/sed_init.F90.ChanROMS
+END
+sed_mod.F90
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/selfe/!svn/ver/3/trunk/src/Sediment/sed_mod.F90
+END
+sed_param.F90
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/selfe/!svn/ver/3/trunk/src/Sediment/sed_param.F90
+END
+init_sed.F90
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/selfe/!svn/ver/3/trunk/src/Sediment/init_sed.F90
+END
+sed_init.F90
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/selfe/!svn/ver/3/trunk/src/Sediment/sed_init.F90
+END
+readme
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/selfe/!svn/ver/3/trunk/src/Sediment/readme
+END

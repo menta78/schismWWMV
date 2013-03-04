@@ -1,0 +1,2229 @@
+#include "wwm_functions.h"
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_WIND_INPUT
+#ifdef NCDF
+      USE NETCDF
+#endif
+      USE DATAPOOL
+#ifdef MPI_PARALL_GRID
+      USE ELFE_MSGP, ONLY : myrank, comm, ierr
+      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
+#endif
+      IMPLICIT NONE
+
+      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
+      LOGICAL :: LFLIVE
+      REAL(rkind)    :: WDIRT, wrf_w1, wrf_w2
+      CHARACTER(LEN=20) :: TIMESTRING
+#ifdef MPI_PARALL_GRID
+      INTEGER :: I
+      REAL(rkind)    :: tmp
+#endif
+#ifdef NCDF
+      REAL(rkind)    :: DTMP
+      REAL(rkind)    :: WI(3)
+#endif
+
+      FORECASTHOURS = 0
+      WINDXY(:,:) = 0.0
+      IF (LSTWD) THEN
+        IF (LCWIN) THEN
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED' 
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
+          IF (LWDIR) THEN
+            CALL DEG2NAUT(WDIR, WDIRT, LNAUTIN)
+            DO IP = 1, MNP
+              WINDXY(IP,1) =  WVEL * COS(WDIRT * DEGRAD)
+              WINDXY(IP,2) =  WVEL * SIN(WDIRT * DEGRAD)
+            END DO
+          ELSE
+            DO IP = 1, MNP
+              WINDXY(IP,1) = CWINDX
+              WINDXY(IP,2) = CWINDY
+            END DO
+          END IF
+        ELSE ! LCWIN
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
+          CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A)')  'SPATIAL VARIABLE WIND FIELD IS USED'
+          IF (IWINDFORMAT == 1) THEN
+            CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .FALSE., 2, WINDXY)
+#ifdef NCDF
+          ELSE IF (IWINDFORMAT == 2) THEN ! NETCDF created using ncl_convert2nc using DWD grib
+            CALL INIT_NETCDF_DWD
+            CALL FIND_WIND_NEAREST_LOWER_IDX(SEWI%BMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_DWD(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 3) THEN ! NETCDF created using cdo -f nc copy file.grb file.nc this is CFRS
+            CALL INIT_NETCDF_CRFS
+            CALL FIND_WIND_NEAREST_LOWER_IDX(SEWI%BMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_CRFS(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 4) THEN ! NETCDF NARR downloaded from NOMAD
+            CALL INIT_NETCDF_NARR
+            CALL FIND_WIND_NEAREST_LOWER_IDX(SEWI%BMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_NARR(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF STATIONARY FIELD 
+            WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
+            CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
+            ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2))
+            IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
+              WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
+              WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
+            ELSE
+              ! get record in time that I need for current MAIN%MJD
+              CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
+              ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC1_new', REC1_new
+              CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
+              IF (wrf_w1.NE.1) THEN
+                ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC2_new', REC2_new
+                CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
+                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
+              ELSE
+                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
+              END IF
+              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
+              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+            END IF
+#endif
+          ELSE
+            CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need netcdf)')
+          END IF
+        ENDIF
+      ELSE IF (LSEWD) THEN
+        IF (LCWIN) THEN
+          CALL wwm_abort('LSEWD + LCWIN NOT READY')
+        ELSE
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
+          CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'NONSTATIONARY WIND FIELD IS USED        '
+          SEWI%TOTL = (SEWI%EMJD - SEWI%BMJD) * DAY2SEC
+          SEWI%ISTP = NINT( SEWI%TOTL / SEWI%DELT ) + 1
+          SEWI%TMJD = SEWI%BMJD
+          WRITE(WINDBG%FHNDL,*) SEWI%BEGT, SEWI%ENDT, SEWI%ISTP, SEWI%TOTL/3600.0, SEWI%DELT
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL VARIABLE WIND FIELD IS USED'
+          WRITE(WINDBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
+          IF (IWINDFORMAT == 1) THEN
+            OPEN(WIN%FHNDL, FILE = TRIM(WIN%FNAME), STATUS = 'OLD')
+            CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .TRUE., 2, WINDXY)
+#ifdef NCDF
+          ELSE IF (IWINDFORMAT == 2) THEN ! NETCDF created using ncl_convert2nc using DWD grib
+            CALL INIT_NETCDF_DWD
+            CALL FIND_WIND_NEAREST_LOWER_IDX(MAIN%TMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_DWD(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 3) THEN ! NETCDF created using cdo -f nc copy file.grb file.nc
+            CALL INIT_NETCDF_CRFS
+            CALL FIND_WIND_NEAREST_LOWER_IDX(MAIN%TMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_CRFS(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 4) THEN ! NETCDF created using cdo -f nc copy file.grb file.nc
+            CALL INIT_NETCDF_NARR
+            CALL FIND_WIND_NEAREST_LOWER_IDX(MAIN%TMJD, idxWind)
+            IFILE=WIND_TIME_IFILE(idxWind)
+            IT=WIND_TIME_IT(idxWind)
+            CALL READ_NETCDF_NARR(IFILE, IT, WINDXY)
+          ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF
+            WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED WRF NETCDF'
+            WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
+            CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
+            IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
+              WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
+              WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
+            ELSE
+              ALLOCATE(tmp_wind1(MNP,2))
+              ALLOCATE(tmp_wind2(MNP,2))
+              CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
+              CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1(:,:))
+              IF (wrf_w1.NE.1) THEN
+                CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
+                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
+              ELSE
+                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
+              END IF
+              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
+              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+            END IF
+#endif
+          ELSE
+            CALL WWM_ABORT('Wrong choice of IWINDFORMAT')
+          ENDIF
+        ENDIF
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE UPDATE_WIND(K)
+#ifdef NCDF
+      USE NETCDF 
+#endif
+      USE DATAPOOL
+#ifdef MPI_PARALL_GRID
+      USE elfe_msgp
+#endif 
+      IMPLICIT NONE
+      REAL(rkind)             :: TEST, TMP(MNP,2)
+#ifdef NCDF
+      REAL(rkind)             :: DTMP, wrf_w1, wrf_w2
+      REAL(rkind)             :: Wi(3)
+#endif
+      INTEGER                 :: IP, ISTAT, IT, IFILE, ITMP
+      INTEGER, intent(in)     :: K
+!AR: All crap ... defining K without using means that nobody has ever checked the results or anything else, so why coding at all?
+!AR: Mathieu can you please fix this !!!
+
+      WRITE(WINDBG%FHNDL,*) MAIN%TMJD, SEWI%TMJD-1.E-8, MAIN%TMJD .ge. SEWI%TMJD-1.E-8, MAIN%TMJD .le. SEWI%EMJD, SEWI%EMJD
+      IF ( LSEWD .AND. (MAIN%TMJD .ge. SEWI%TMJD-1.E-8) .AND. (MAIN%TMJD .le. SEWI%EMJD+1.e-8) ) THEN
+        IF (IWINDFORMAT == 1) THEN
+!NDM: Need to add the facility for LINTERWD
+          CALL CSEVAL( WIN%FHNDL, WIN%FNAME, .TRUE., 2, TMP)
+          DVWIND = (TMP-WINDXY)/SEWI%DELT*MAIN%DELT
+#ifdef NCDF
+        ELSE IF (IWINDFORMAT == 2) THEN ! DWD_NETCDF
+          CALL MOVE_BY_ONE_INDEX(IFILE, IT)
+          CALL READ_NETCDF_DWD(IFILE, IT, TMP)
+          DVWIND = (TMP-WINDXY)/SEWI%DELT*MAIN%DELT
+        ELSE IF (IWINDFORMAT == 3) THEN ! NOAA CFRS ... the 1st step is analysis and then we have 5 + 1 forecasts, which give one the option to use either only the 6 forecast's after the analysis or use the analysis with 5 forecast's
+          CALL MOVE_BY_ONE_INDEX(IFILE, IT)
+          CALL READ_NETCDF_CRFS(IFILE, IT, TMP)
+          DVWIND = (TMP-WINDXY)/SEWI%DELT*MAIN%DELT
+        ELSE IF (IWINDFORMAT == 4) THEN ! NOAA NARR ...
+          CALL MOVE_BY_ONE_INDEX(IFILE, IT)
+          CALL READ_NETCDF_NARR(IFILE, IT, TMP)
+          DVWIND = (TMP-WINDXY)/SEWI%DELT*MAIN%DELT
+        ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF FIELD 
+          IF (K.EQ.1) THEN
+            REC1_old = 0
+            REC2_old = 0
+          END IF
+          CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
+          IF (REC1_new.NE.REC1_old) THEN
+            WRITE(WINDBG%FHNDL,'("CALLING READ_INTERP_NETCDF_WRF FROM IO_1 for REC1_new:",I8)') REC1_new
+            CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
+          END IF
+          write(WINDBG%FHNDL,'("min/max tmp_wind1 from IO_1",         &
+      &   I8,2x,4F7.2)')                                              &
+      & K,minval(tmp_wind1(:,1)),minval(tmp_wind1(:,2)),              &
+      &  maxval(tmp_wind1(:,1)),maxval(tmp_wind1(:,2))
+          IF (REC2_new.NE.REC2_old) THEN
+            WRITE(WINDBG%FHNDL,'("CALLING READ_INTERP_NETCDF_WRF FROM IO_1 for REC2_new:",I8)') REC2_new
+            CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
+          END IF
+          write(WINDBG%FHNDL,'("min/max tmp_wind2 from IO_1",         &
+      &     I8,2x,4F7.2)')                                            &
+      &     K,minval(tmp_wind2(:,1)),minval(tmp_wind2(:,2)),          &
+      &     maxval(tmp_wind2(:,1)),maxval(tmp_wind2(:,2))
+          IF (wrf_w1.NE.1) THEN
+            WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
+          ELSE
+            WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
+          END IF
+          write(WINDBG%FHNDL,'("w1,w2:",2F6.3)') wrf_w1, wrf_w2
+          write(WINDBG%FHNDL,'("REC12_old, REC12_new:",4I8)')REC1_old,REC2_old, REC1_new,REC2_new
+          write(WINDBG%FHNDL,'("max WINDXY:",2F7.2)')maxval(WINDXY(:,1)),maxval(WINDXY(:,2))
+          write(WINDBG%FHNDL,'("min WINDXY:",2F7.2)')minval(WINDXY(:,1)),minval(WINDXY(:,2))
+          REC1_old = REC1_new
+          REC2_old = REC2_new
+#endif
+        END IF
+        SEWI%TMJD = SEWI%TMJD + SEWI%DELT*SEC2DAY
+      END IF
+
+      IF (LWINDSWAN) THEN
+        WRITE(3333,*) SEWI%TMJD
+        WRITE(3333,*) WINDXY(:,1)
+        WRITE(3333,*) WINDXY(:,2)
+      END IF
+
+!AR: What is this all about? Mathieu please check this!
+      IF (LSEWD.AND.(IWINDFORMAT.NE.5) ) THEN
+        WINDXY = WINDXY + DVWIND
+      END IF
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE MOVE_BY_ONE_INDEX(IFILE, IT)
+      USE DATAPOOL
+      implicit none
+      integer, intent(out) :: IFILE, IT
+      idxWind =idxWind+1
+      IF (idxWind .gt. NDT_WIND_ALL_FILES) THEN
+        CALL WWM_ABORT('Need wind after the time')
+      END IF
+      IFILE=WIND_TIME_IFILE(idxWind)
+      IT=WIND_TIME_IT(idxWind)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE FIND_WIND_NEAREST_LOWER_IDX(eTime, idx)
+      USE DATAPOOL, only : NDT_WIND_ALL_FILES, WIND_TIME_ALL_FILES
+      USE DATAPOOL, only : WIND_TIME_IFILE, WIND_TIME_IT, rkind, THR8
+      implicit none
+      real(rkind), intent(in) :: eTime
+      integer, intent(out) :: idx
+      integer eIdxF, eIdx
+      eIdxF=-1
+      DO eIdx=1,NDT_WIND_ALL_FILES
+        IF (WIND_TIME_ALL_FILES(eIdx) .le. eTime + THR8) THEN
+          eIdxF=eIdx
+        ENDIF
+      END DO
+      IF (eIdxF .eq. -1) THEN
+        CALL WWM_ABORT('We failed to find the wind index')
+      END IF
+      idx=eIdxF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+#ifdef NCDF
+      SUBROUTINE INIT_NETCDF_DWD
+         USE DATAPOOL
+         USE NETCDF
+         IMPLICIT NONE
+
+        INTEGER :: ISTAT, IT, IX, IY, IFILE
+        INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
+        INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
+        REAL(rkind)    :: RTMP
+        REAL(rkind)  :: DTMP
+        REAL(rkind), ALLOCATABLE :: WIND_TIME(:)
+        character ( len = 20 ) chrtmp
+        character ( len = 15 ) chrdate
+        character ( len = 40 ) netcfd_fname
+        character ( len = 20 ) chrerr
+
+        integer, dimension(nf90_max_var_dims) :: dimIDs
+
+        OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD')
+!
+! count number of netcdf files in list ...
+!
+        NUM_NETCDF_FILES = 0
+        DO
+          READ( WIN%FHNDL, *, IOSTAT = ISTAT )
+          IF ( ISTAT /= 0 ) EXIT
+          NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
+        END DO
+        REWIND (WIN%FHNDL)
+
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+
+        DO IT = 1, NUM_NETCDF_FILES
+          READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
+!          WRITE(WINDBG%FHNDL,*) IT, NETCDF_FILE_NAMES(IT)
+        END DO
+        CLOSE (WIN%FHNDL)
+!
+! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
+!
+        ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -1-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inq_varid(WIND_NCID, 'initial_time0_encoded', ITIME_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -2-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ITIME_ID, dimids = dimids)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -3-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDT_WIND_FILE)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -4-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
+!
+        ISTAT = nf90_inq_varid(WIND_NCID, 'g0_lon_2', ILON_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -5-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILON_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -6-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDX_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -7-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ISTAT = nf90_inq_varid(WIND_NCID, 'g0_lat_1', ILAT_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -8-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILAT_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -9-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDY_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -10-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ALLOCATE (COORD_WIND_X(NDX_WIND))
+        ALLOCATE (COORD_WIND_Y(NDY_WIND))
+!
+! read cooridantes from files ....
+!
+        ISTAT = NF90_GET_VAR(WIND_NCID, ILON_ID, COORD_WIND_X)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -11-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_GET_VAR(WIND_NCID, ILAT_ID, COORD_WIND_Y)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -12-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! estimate offset ...
+!
+        OFFSET_X_WIND = MINVAL(COORD_WIND_X)
+        OFFSET_Y_WIND = MINVAL(COORD_WIND_Y)
+!
+! resolution ...
+!
+        DX_WIND  = ABS(MAXVAL(COORD_WIND_X)-MINVAL(COORD_WIND_X))/(NDX_WIND-1)
+        DY_WIND  = ABS(MAXVAL(COORD_WIND_Y)-MINVAL(COORD_WIND_Y))/(NDY_WIND-1)
+!
+! close netcdf file ...
+!
+        ISTAT = NF90_CLOSE(WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -13-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! total number of time steps ... in all files
+!
+        NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES
+
+        ALLOCATE (WIND_TIME(NDT_WIND_FILE))
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+!
+! read all time steps in the proper format and transform in wwm time line
+!
+         
+        DO IFILE = 1, NUM_NETCDF_FILES
+          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -14-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_DWD ERROR -15-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          DO IT = 1, NDT_WIND_FILE
+            WRITE (3001, *) WIND_TIME(IT)
+          END DO
+          REWIND(3001)
+          DO IT = 1, NDT_WIND_FILE
+            READ (3001, '(A20)') CHRTMP
+            ! YYYYMMDD
+            CHRDATE(1:8) = CHRTMP(4:12)
+            CHRDATE(9:9) = '.'
+            ! HH
+            CHRDATE(10:11) = CHRTMP(12:13)
+            ! MMSS
+            CHRDATE(12:15) = '0000' ! Construct propper format YYYYMMDDHHMMSS character .... len = 15 ... :)
+            CALL CT2MJD(CHRDATE,DTMP) !
+            WIND_TIME(IT) = DTMP    ! Double time with respect to 19000101.000000
+          END DO
+          CLOSE(3001)
+          DO IT = 1, NDT_WIND_FILE
+            WIND_TIME_ALL_FILES(IT+(IFILE-1)*NDT_WIND_FILE) = WIND_TIME(IT)
+            WIND_TIME_IFILE(IT+(IFILE-1)*NDT_WIND_FILE) = IFILE
+            WIND_TIME_IT   (IT+(IFILE-1)*NDT_WIND_FILE) = IT
+          END DO
+        END DO ! IFILE
+
+        SEWI%DELT = (WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1)) * DAY2SEC
+
+!        DO IFILE = 1, NUM_NETCDF_FILES
+!          DO IT = 1, NDT_WIND_FILE
+!            WRITE(WINDBG%FHNDL,*) IFILE, IT, WIND_TIME_ALL_FILES(IT+(IFILE-1)*NDT_WIND_FILE)
+!          END DO
+!        END DO
+
+        IF (LWRITE_ORIG_WIND) THEN
+          WRITE (3010, '(I10)') 0
+          WRITE (3010, '(I10)') NDX_WIND * NDY_WIND
+          COUNTER = 0
+          DO I = 1, NDY_WIND
+            DO J = 1, NDX_WIND
+              WRITE (3010, '(I10,3F15.4)') COUNTER, OFFSET_X_WIND+(J-1)*DX_WIND ,OFFSET_Y_WIND+(I-1)*DY_WIND , 0.0
+              COUNTER = COUNTER + 1
+            END DO
+          END DO
+          WRITE (3010, *) (NDX_WIND-1)*(NDY_WIND-1)*2
+          DO J = 0, NDY_WIND-2
+            DO I = 0, NDX_WIND-2
+              WRITE (3010, '(5I10)')  I+J*NDX_WIND           , NDX_WIND+I+J* NDX_WIND, NDX_WIND+I+1+J*NDX_WIND, 0, 0
+              WRITE (3010, '(5I10)')  NDX_WIND+I+1+J*NDX_WIND, I+1+J*NDX_WIND        , I+J*NDX_WIND           , 0, 0
+            END DO
+          END DO
+          OPEN(3011, FILE  = 'ergwindorig.bin', FORM = 'UNFORMATTED')
+        END IF
+
+     END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_DWD(IFILE, IT, eField)
+         USE DATAPOOL, ONLY : WIND_NCID, WIND_X, WIND_Y, ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, LWRITE_ORIG_WIND, RKIND
+         USE DATAPOOL, only : NUM_NETCDF_FILES, NETCDF_FILE_NAMES
+         USE DATAPOOL, only : MNP, OFFSET_X_WIND, OFFSET_Y_WIND
+         USE DATAPOOL, only : DX_WIND, DY_WIND
+         USE DATAPOOL, only : wwmerr
+         USE NETCDF
+         IMPLICIT NONE
+!
+!        READS WIND_Y, WIND_X and PRESSURE from a given NCID within one DWD file
+!
+         INTEGER, INTENT(IN) :: IFILE, IT
+         REAL(rkind), intent(inout) :: eField(MNP,2)
+         INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
+         INTEGER             :: numLons, numLats, numTime, iy, counter, ip, i, j
+         character(len=100) :: CHRERR
+         REAL(rkind),   ALLOCATABLE :: TMP(:,:)
+         REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
+         REAL(rkind), SAVE          :: TIME
+
+         INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
+         IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
+         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -1-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+         ISTAT = nf90_inq_varid(WIND_NCID, 'V_GDS0_HTGL_13', DWIND_X_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -2-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_X_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -3-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -4-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -5-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -6-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         IF (.NOT. ALLOCATED(WIND_X)) ALLOCATE (WIND_X(NDX_WIND,NDY_WIND))
+
+         ISTAT = nf90_inq_varid(WIND_NCID, 'U_GDS0_HTGL_13', DWIND_Y_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -7-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_Y_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -8-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -9-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -10-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRERR = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -11-', CHRERR
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         IF (.NOT. ALLOCATED(WIND_Y)) ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND))
+
+!         ISTAT = nf90_inq_varid(WIND_NCID, 'PS_MSL_GDS0_MSL_13', DPRESS_ID)
+!         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DPRESS_ID, dimids = dimIDs)
+!         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+!         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+!         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
+!         IF (.NOT. ALLOCATED(ATMO_PRESS)) ALLOCATE (ATMO_PRESS(NDX_WIND,NDY_WIND))
+
+         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X,    start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_WIND_X_ID')
+         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_Y_ID, WIND_Y,    start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_WIND_Y_ID')
+!         ISTAT = NF90_GET_VAR(WIND_NCID, DPRESS_ID, ATMO_PRESS, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+!         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_PRESS_ID')
+
+         IF (LINVERTY) THEN
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           DO IY = 1, NDY_WIND
+             tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
+           END DO
+           wind_x = tmp
+           DO IY = 1, NDY_WIND
+             tmp(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
+           END DO
+           wind_y = tmp
+           DO IY = 1, NDY_WIND
+             tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
+           END DO
+           atmo_press = tmp
+           DEALLOCATE(TMP)
+         END IF
+
+         IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
+         IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
+         IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+
+         COUNTER = 1
+         DO J = 1, NDY_WIND
+           DO I = 1, NDX_WIND
+             U(COUNTER) = WIND_X(I,J)
+             V(COUNTER) = WIND_Y(I,J)
+             IF (ABS(U(COUNTER)) .GT. 1000.) U(COUNTER) = 0.
+             IF (ABS(V(COUNTER)) .GT. 1000.) V(COUNTER) = 0.
+             H(COUNTER) = SQRT((U(COUNTER)**2.+V(COUNTER)**2.))
+             COUNTER = COUNTER + 1
+           END DO
+         END DO
+
+        IF (LWRITE_ORIG_WIND) THEN
+
+          IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
+          IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
+          IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+
+          COUNTER = 1
+          DO J = 1, NDY_WIND
+            DO I = 1, NDX_WIND
+             U(COUNTER) = WIND_X(I,J)
+             V(COUNTER) = WIND_Y(I,J)
+             IF (ABS(U(COUNTER)) .GT. 1000.) U(COUNTER) = 0.
+             IF (ABS(V(COUNTER)) .GT. 1000.) V(COUNTER) = 0.
+             H(COUNTER) = SQRT((U(COUNTER)**2.+V(COUNTER)**2.))
+             COUNTER = COUNTER + 1
+            END DO
+          END DO
+
+          TIME = TIME + 1.
+          WRITE(3011) TIME
+          WRITE(3011) (U(IP), V(IP), H(IP), IP = 1, numLons*numLats)
+
+        END IF
+        ISTAT = NF90_CLOSE(WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -12-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+      CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,eField(:,1))
+      CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,eField(:,2))
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+     SUBROUTINE INIT_NETCDF_CRFS
+         USE DATAPOOL
+         USE NETCDF
+         IMPLICIT NONE
+
+!for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
+
+        INTEGER :: ISTAT, IT, IX, IY, IFILE
+        INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
+        INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
+        REAL(rkind)     :: RTMP
+        REAL(rkind)   :: START_TIME
+        REAL(rkind) , ALLOCATABLE :: WIND_TIME(:), WIND_TIME_NETCDF(:)
+        character ( len = 20 ) chrtmp
+        character ( len = 15 ) chrdate
+        character ( len = 40 ) netcfd_fname, beginn_time
+        character ( len = 100) chrerr
+        CHARACTER(LEN=15) :: eTimeStr
+
+        integer, dimension(nf90_max_var_dims) :: dimIDs
+        logical PREF_ANALYZED
+        integer idx
+        REAL(rkind) :: ePresTime, eNewTime
+        OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
+        IF (ISTAT .LT. 0) THEN
+          WRITE(DBG%FHNDL,*) 'WINDFILES FILE NOT FOUND', WIN%FNAME
+          CALL WWM_ABORT('WINDFILES FILE NOT FOUND')
+        END IF
+!
+! count number of netcdf files in list ...
+! CRFS has analyzed at time 0 and forecast at times +1, +2, +3, +4, +5 +6
+! Ordering in the file is
+! --analyzed 0
+! --fcst +1
+! --fcst +2
+! --fcst +3
+! --fcst +4
+! --fcst +5
+! --fcst +6
+! So, it goes by blocks of 7.
+! PREF_ANALYZED = TRUE.  For prefering analyzed fields when available
+!                 FALSE  For using the analyzed field only at first step.
+        PREF_ANALYZED=.FALSE.
+        NUM_NETCDF_FILES = 0
+        DO
+          READ( WIN%FHNDL, *, IOSTAT = ISTAT )
+          IF ( ISTAT /= 0 ) EXIT
+          NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
+        END DO
+        REWIND (WIN%FHNDL)
+
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+
+        DO IT = 1, NUM_NETCDF_FILES
+          READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
+          WRITE(WINDBG%FHNDL,*) IT, NETCDF_FILE_NAMES(IT)
+        END DO
+        CLOSE (WIN%FHNDL)
+!
+! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
+!
+        ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -1-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inq_varid(WIND_NCID, 'time', ITIME_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -2-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ITIME_ID, dimids = dimids)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -3-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDT_WIND_FILE)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -4-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_get_att(WIND_NCID, ITIME_ID, 'units', beginn_time)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -5-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        CHRDATE(1:4) = beginn_time(13:17)
+        CHRDATE(5:6) = beginn_time(18:19)
+        CHRDATE(7:8) = beginn_time(21:22)
+        CHRDATE(9:9)   = '.'
+        CHRDATE(10:15)= '000000'
+        CALL CT2MJD(CHRDATE,START_TIME)
+!
+! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
+!
+        ISTAT = nf90_inq_varid(WIND_NCID, 'lon', ILON_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -6-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILON_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -7-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDX_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -8-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ISTAT = nf90_inq_varid(WIND_NCID, 'lat', ILAT_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -9-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILAT_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -10-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDY_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -11-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ALLOCATE (DCOORD_WIND_X(NDX_WIND))
+        ALLOCATE (DCOORD_WIND_Y(NDY_WIND))
+!
+! read cooridantes from files ....
+!
+        ISTAT = NF90_GET_VAR(WIND_NCID, ILON_ID, DCOORD_WIND_X)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -12-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_GET_VAR(WIND_NCID, ILAT_ID, DCOORD_WIND_Y)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -13-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        DCOORD_WIND_Y = DCOORD_WIND_Y !+ 90.0_rkind
+
+        DO I = 1, NDX_WIND
+          DCOORD_WIND_X(I) = DCOORD_WIND_X(I) - 180.0_rkind
+        END DO
+!
+! estimate offset ...
+!
+        OFFSET_X_WIND = MINVAL(DCOORD_WIND_X)
+        OFFSET_Y_WIND = MINVAL(DCOORD_WIND_Y)
+!
+! resolution ...
+!
+        DX_WIND  = ABS(MAXVAL(DCOORD_WIND_X)-MINVAL(DCOORD_WIND_X))/(NDX_WIND-1)
+        DY_WIND  = ABS(MAXVAL(DCOORD_WIND_Y)-MINVAL(DCOORD_WIND_Y))/(NDY_WIND-1)
+!
+! close netcdf file ...
+!
+        ISTAT = NF90_CLOSE(WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -14-', CHRERR
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! total number of time steps ... in all files
+!
+        ALLOCATE (WIND_TIME(NDT_WIND_FILE),WIND_TIME_NETCDF(NDT_WIND_FILE))
+        WRITE(WINDBG%FHNDL,*) 'NDT_WIND_FILE=', NDT_WIND_FILE
+        WRITE(WINDBG%FHNDL,*) 'START_TIME=', START_TIME
+!
+! Determine number of records
+! 
+
+
+!        NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES
+!        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
+!        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
+!        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+
+!
+! read all time steps in the proper format and transform in wwm time line
+!
+        NDT_WIND_ALL_FILES=0
+        ePresTime=-100000000
+        DO IFILE = 1, NUM_NETCDF_FILES
+          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -15-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME_NETCDF)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -16-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          WRITE(WINDBG%FHNDL,*) 'IFILE=', IFILE
+          DO IT = 1, NDT_WIND_FILE
+            eNewTime=START_TIME+WIND_TIME_NETCDF(IT)*3600. * SEC2DAY
+            IF (eNewTime .gt. ePresTime + THR8) THEN
+              NDT_WIND_ALL_FILES=NDT_WIND_ALL_FILES + 1
+              ePresTime=eNewTime
+            END IF
+          END DO
+        END DO
+        WRITE(WINDBG%FHNDL,*) 'NDT_WIND_ALL_FILES=', NDT_WIND_ALL_FILES
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+        
+        idx=0
+        ePresTime=-100000000
+        DO IFILE = 1, NUM_NETCDF_FILES
+          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -17-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME_NETCDF)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRERR = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_CRFS ERROR -18-', CHRERR
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          WRITE(WINDBG%FHNDL,*) 'IFILE=', IFILE
+          DO IT = 1, NDT_WIND_FILE
+            eNewTime=START_TIME+WIND_TIME_NETCDF(IT)*3600. * SEC2DAY
+            CALL MJD2CT(eNewTime,eTimeStr)
+            IF (PREF_ANALYZED) THEN
+              IF (eNewTime .gt. ePresTime + THR8) THEN
+                ePresTime=eNewTime
+                idx=idx+1
+                WIND_TIME_ALL_FILES(idx) = eNewTime
+                WIND_TIME_IFILE(idx) = IFILE
+                WIND_TIME_IT(idx) = IT
+                WRITE(WINDBG%FHNDL,110) IT, idx, WIND_TIME_NETCDF(IT) * 3600. * SEC2DAY, eNewTime, eTimeStr
+              ENDIF
+            ELSE
+              IF (eNewTime .gt. ePresTime + THR8) THEN
+                ePresTime=eNewTime
+                idx=idx+1
+              ENDIF
+              WIND_TIME_ALL_FILES(idx) = eNewTime
+              WIND_TIME_IFILE(idx) = IFILE
+              WIND_TIME_IT(idx) = IT
+              WRITE(WINDBG%FHNDL,110) IT, idx, WIND_TIME_NETCDF(IT) * 3600. * SEC2DAY, eNewTime, eTimeStr
+            ENDIF
+          END DO
+        END DO ! IFILE
+110     FORMAT (I4, ' ', I4, ' ', F15.3, ' ', F15.3, ' ', a15)
+        SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
+
+        WRITE(WINDBG%FHNDL,*) 'WIND TIME STEP', SEWI%DELT, DAY2SEC, WIND_TIME_ALL_FILES(2), WIND_TIME_ALL_FILES(1)
+
+        IF (LWRITE_ORIG_WIND) THEN
+          WRITE (3010, '(I10)') 0
+          WRITE (3010, '(I10)') NDX_WIND * NDY_WIND
+          COUNTER = 0
+          DO I = 1, NDY_WIND
+            DO J = 1, NDX_WIND
+              WRITE (3010, '(I10,3F15.4)') COUNTER, OFFSET_X_WIND+(J-1)*DX_WIND ,OFFSET_Y_WIND+(I-1)*DY_WIND , 0.0
+              COUNTER = COUNTER + 1
+            END DO
+          END DO
+          WRITE (3010, *) (NDX_WIND-1)*(NDY_WIND-1)*2
+          DO J = 0, NDY_WIND-2
+            DO I = 0, NDX_WIND-2
+              WRITE (3010, '(5I10)')  I+J*NDX_WIND           , NDX_WIND+I+J* NDX_WIND, NDX_WIND+I+1+J*NDX_WIND, 0, 0
+              WRITE (3010, '(5I10)')  NDX_WIND+I+1+J*NDX_WIND, I+1+J*NDX_WIND        , I+J*NDX_WIND           , 0, 0
+            END DO
+          END DO
+          OPEN(3011, FILE  = 'ergwindorig.bin', FORM = 'UNFORMATTED')
+        END IF
+
+        !STOP 'TEST WIND'
+
+     END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+     SUBROUTINE INIT_NETCDF_NARR
+         USE DATAPOOL
+         USE NETCDF
+         IMPLICIT NONE
+!
+!2do update ...
+!for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
+!
+        INTEGER :: ISTAT, IT, IX, IY, IFILE, II, IP, III
+        INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
+        INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
+        INTEGER(kind=4) :: TIMES
+        REAL(rkind)    :: RTMP
+        REAL(rkind)  :: START_TIME, OFFSET_TIME
+        REAL(rkind), ALLOCATABLE :: WIND_TIME_NETCDF(:)
+        character ( len = 4 ) ch4
+        character ( len = 100 ) chrtmp
+        character ( len = 15 ) chrdate
+        character ( len = 40 ) netcfd_fname, beginn_time
+
+        integer, dimension(nf90_max_var_dims) :: dimIDs
+        integer, allocatable :: COUNTERMAT(:,:)
+        integer, allocatable :: IMAT(:), JMAT(:)
+        integer :: NbPoint, nbFail
+        real(rkind) :: Wi(3), eVal
+!
+! I make the assumption that the year when the dataset beginns at the year indicated in the bouc section
+!
+        CHRDATE(1:4) = SEBO%BEGT(1:4)
+        CHRDATE(5:6) = '01'
+        CHRDATE(7:8) = '01'
+        CHRDATE(9:9)   = '.'
+        CHRDATE(10:15)= '000000'
+        CALL CT2MJD(CHRDATE,START_TIME)
+
+        OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
+        IF (ISTAT .LT. 0) THEN
+          WRITE(wwmerr,*) 'WINDFILES FILE NOT FOUND', WIN%FNAME
+          CALL WWM_ABORT(wwmerr)
+        END IF
+!
+! count number of netcdf files in list ...
+!
+        NUM_NETCDF_FILES = 0
+        DO
+          READ( WIN%FHNDL, *, IOSTAT = ISTAT )
+          IF ( ISTAT /= 0 ) EXIT
+          NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
+        END DO
+        REWIND (WIN%FHNDL)
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+
+        DO IT = 1, NUM_NETCDF_FILES
+          READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
+        END DO
+        CLOSE (WIN%FHNDL)
+!
+! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
+!
+        ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(1)), NF90_NOWRITE, WINDX_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -1-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inq_varid(WINDX_NCID, 'time', ITIME_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -2-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, ITIME_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -3-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = NDT_WIND_FILE)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -4-', CHRTMP
+          CALL wwm_abort(wwmerr)
+        ENDIF
+        WRITE(WINDBG%FHNDL,*) NDT_WIND_FILE, 'NDT_WIND_FILE'
+
+        ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2)), NF90_NOWRITE, WINDY_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -5-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+!
+! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
+!
+        ISTAT = nf90_inq_varid(WINDX_NCID, 'lon', ILON_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -6-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, ILON_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -7-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = NDX_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -8-', CHRTMP 
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(2), len = NDY_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -9-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ISTAT = nf90_inq_varid(WINDY_NCID, 'lat', ILAT_ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -10-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(WINDY_NCID, ILAT_ID, dimids = dimIDs)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -11-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(1), len = NDX_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -12-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(2), len = NDY_WIND)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -13-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        ALLOCATE (DCOORD_WIND_X2(NDX_WIND,NDY_WIND))
+        ALLOCATE (DCOORD_WIND_Y2(NDX_WIND,NDY_WIND))
+!
+! read cooridantes from files ....
+!
+        ISTAT = NF90_GET_VAR(WINDX_NCID, ILON_ID, DCOORD_WIND_X2)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -14-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_GET_VAR(WINDY_NCID, ILAT_ID, DCOORD_WIND_Y2)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -15-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! estimate offset ...
+!
+        OFFSET_X_WIND = MINVAL(DCOORD_WIND_X2)
+        OFFSET_Y_WIND = MINVAL(DCOORD_WIND_Y2)
+
+        !WRITE(WINDBG%FHNDL,*) MINVAL(DCOORD_WIND_X2), MINVAL(DCOORD_WIND_Y2), MAXVAL(DCOORD_WIND_X2), MAXVAL(DCOORD_WIND_Y2)
+!
+! close netcdf file ...
+!
+        ISTAT = NF90_CLOSE(WINDX_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -16-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_CLOSE(WINDY_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -17-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+!
+! total number of time steps ... in all files
+!
+        NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES/2
+
+        ALLOCATE (WIND_TIME_NETCDF(NDT_WIND_FILE))
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+!
+! read all time steps in the proper format and transform in wwm time line
+!
+        DO IFILE = 1, NUM_NETCDF_FILES, 2
+          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WINDX_NCID)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRTMP = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -17-', CHRTMP
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          ISTAT = NF90_GET_VAR(WINDX_NCID, ITIME_ID, WIND_TIME_NETCDF)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRTMP = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -18-', CHRTMP
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+          ISTAT = NF90_CLOSE(WINDX_NCID)
+          IF (ISTAT .NE. nf90_noerr) THEN
+            CHRTMP = nf90_strerror(ISTAT)
+            WRITE(wwmerr,*) 'INIT_NETCDF_NARR ERROR -19-', CHRTMP
+            CALL WWM_ABORT(wwmerr)
+          ENDIF
+
+          WIND_TIME_NETCDF = WIND_TIME_NETCDF/24 ! Transform to days ...
+          OFFSET_TIME = MINVAL(WIND_TIME_NETCDF) - START_TIME  ! in this dataset the time start at 1800 in WWM it start at 1900
+          WIND_TIME_NETCDF = WIND_TIME_NETCDF - OFFSET_TIME ! Now in WWM timeline ...
+          DO IT = 1, NDT_WIND_FILE
+            WIND_TIME_ALL_FILES(IT+(IFILE-1)*NDT_WIND_FILE) = WIND_TIME_NETCDF(IT)
+            WIND_TIME_IFILE(IT+(IFILE-1)*NDT_WIND_FILE) = IFILE
+            WIND_TIME_IT(IT+(IFILE-1)*NDT_WIND_FILE) = IT
+          END DO
+          CH4 = CHRDATE(1:4)
+          READ (CH4,'(i4)') I
+          I = I + 1
+          WRITE (11111,'(i4)') I
+          REWIND(11111)
+          READ(11111,*) ch4
+          CHRDATE(1:4) = ch4
+          CHRDATE(5:6) = '01'
+          CHRDATE(7:8) = '01'
+          CHRDATE(9:9)   = '.'
+          CHRDATE(10:15)= '000000'
+          CALL CT2MJD(CHRDATE,START_TIME)
+          !WRITE(WINDBG%FHNDL,*) CHRDATE, START_TIME
+        END DO ! IFILE
+        SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
+
+        !WRITE(WINDBG%FHNDL,*) WIND_TIME_ALL_FILES(2), WIND_TIME_ALL_FILES(1), DAY2SEC, SEWI%DELT
+
+        MNE_WIND = (NDX_WIND-1)*(NDY_WIND-1)*2
+        MNP_WIND =  NDX_WIND*NDY_WIND
+
+        IF (LWRITE_ORIG_WIND) THEN
+          WRITE (3010, '(I10)') 0
+          WRITE (3010, '(I10)') MNP_WIND
+        END IF
+        COUNTER = 0
+        NbPoint=NDX_WIND*NDY_WIND
+        ALLOCATE(XYPWIND(2,NbPoint))
+        ALLOCATE(IMAT(NbPoint))
+        ALLOCATE(JMAT(NbPoint))
+        ALLOCATE(COUNTERMAT(NDX_WIND,NDY_WIND))
+        DO I = 1, NDX_WIND
+          DO J = 1, NDY_WIND
+            IF (DCOORD_WIND_X2(I,J) .GT. 0.) THEN
+! Transformed to a unified domain extending below -180.
+              DCOORD_WIND_X2(I,J) = -1 * DCOORD_WIND_X2(I,J) - (180.-DCOORD_WIND_X2(I,J)) * 2
+            END IF
+            COUNTER = COUNTER + 1
+            XYPWIND(1,COUNTER) = DCOORD_WIND_X2(I,J)
+            XYPWIND(2,COUNTER) = DCOORD_WIND_Y2(I,J)
+            IMAT(COUNTER)=I
+            JMAT(COUNTER)=J
+            COUNTERMAT(I,J)=COUNTER
+            IF (LWRITE_ORIG_WIND) WRITE (3010, '(I10,3F15.4)') COUNTER, XYPWIND(1,COUNTER), XYPWIND(2,COUNTER), 0.0
+          END DO
+        END DO
+
+        IF (LWRITE_ORIG_WIND) WRITE (3010, *) MNE_WIND
+        MNE_WIND = (NDX_WIND-1)*(NDY_WIND-1)*2
+        ALLOCATE(INE_WIND(3,MNE_WIND)); INE_WIND = 0
+
+        ALLOCATE(UWND_NARR(NDX_WIND*NDY_WIND)); UWND_NARR = 0.
+        ALLOCATE(VWND_NARR(NDX_WIND*NDY_WIND)); VWND_NARR = 0.
+
+        II = 0
+        DO I = 1, NDX_WIND-1
+          DO J = 1, NDY_WIND-1
+            II = II + 1
+            INE_WIND(1,II) = COUNTERMAT(I,J)
+            INE_WIND(2,II) = COUNTERMAT(I+1,J)
+            INE_WIND(3,II) = COUNTERMAT(I,J+1)
+            II = II + 1
+            INE_WIND(1,II) = COUNTERMAT(I+1,J+1)
+            INE_WIND(2,II) = COUNTERMAT(I,J+1)
+            INE_WIND(3,II) = COUNTERMAT(I+1,J)
+          END DO
+        END DO
+
+        IF (LWRITE_ORIG_WIND) OPEN(3011, FILE  = 'ergwindorig.bin', FORM = 'UNFORMATTED')
+        ALLOCATE(WIND_ELE(MNP)); WIND_ELE = 0
+        ALLOCATE(WI_NARR(MNP, 3)); WI_NARR = 0
+        nbFail=0
+        DO IP = 1, MNP
+          CALL FIND_ELE_WIND( MNE_WIND, MNP_WIND, INE_WIND, XYPWIND, XP(IP), YP(IP), WIND_ELE(IP))
+          IF (WIND_ELE(IP) .eq. 0) THEN
+            WRITE(WINDBG%FHNDL,*) 'POINT OF THE MESH IS OUT OF THE WIND FIELD', IP, XP(IP), YP(IP)
+            nbFail=nbFail+1
+          ELSE
+            CALL INTELEMENT_COEF(XYPWIND(1,INE_WIND(:,WIND_ELE(IP))), XYPWIND(2,INE_WIND(:,WIND_ELE(IP))),XP(IP),YP(IP),Wi)
+            WI_NARR(IP,:)=Wi
+!            WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' sumWi=', sum(Wi)
+!            WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' minW=', minval(Wi), ' maxW=', maxval(Wi)
+          ENDIF 
+        END DO
+        WRITE(WINDBG%FHNDL,*) 'MNP=', MNP, ' nbFail=', nbFail
+        DEALLOCATE(IMAT)
+        DEALLOCATE(JMAT)
+        DEALLOCATE(COUNTERMAT)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CreateAngleMatrix(eta_rho, xi_rho, ANG_rho, LON_rho, LAT_rho)
+            implicit none
+      integer, intent(in) :: eta_rho, xi_rho
+      REAL*8, DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
+      REAL*8, DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
+      !
+      integer eta_u, xi_u, iEta, iXi
+      real*8, allocatable :: LONrad_u(:,:)
+      real*8, allocatable :: LATrad_u(:,:)
+      real*8, allocatable :: azim(:,:)
+      real*8 :: eAzim, fAzim, dlam, eFact1, eFact2
+      real*8 :: signAzim, signDlam, ThePi, DegTwoRad
+      real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
+      real*8 :: TPSI2, cta12
+      eta_u=eta_rho
+      xi_u=xi_rho-1
+      allocate(LONrad_u(eta_u,xi_u))
+      allocate(LATrad_u(eta_u,xi_u))
+      allocate(azim(eta_u,xi_u-1))
+      ThePi=3.141592653589792
+      DegTwoRad=ThePi/180
+      DO iEta=1,eta_u
+        DO iXi=1,xi_u
+          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta,iXi+1))*0.5
+          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta,iXi+1))*0.5
+          LONrad_u(iEta,iXi)=eLon*DegTwoRad
+          LATrad_u(iEta,iXi)=eLat*DegTwoRad
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        DO iXi=1,xi_u-1
+          phi1=LATrad_u(iEta,iXi)
+          xlam1=LONrad_u(iEta,iXi)
+          phi2=LATrad_u(iEta,iXi+1)
+          xlam2=LONrad_u(iEta,iXi+1)
+          TPSI2=TAN(phi2)
+          dlam=xlam2-xlam1
+          CALL TwoPiNormalization(dlam)
+          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
+          eAzim=ATAN(1./cta12)
+          CALL MySign(eAzim, signAzim)
+          CALL MySign(dlam, signDlam)
+          IF (signDlam.ne.signAzim) THEN
+            eFact2=1
+          ELSE
+            eFact2=0
+          END IF
+          eFact1=-signAzim
+          fAzim=eAzim+ThePi*eFact1*eFact2
+          azim(iEta,iXi)=fAzim
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        DO iXi=2,xi_u
+          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta,iXi-1)
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        ANG_rho(iEta,1)=ANG_rho(iEta,2)
+        ANG_rho(iEta,xi_rho)=ANG_rho(iEta,xi_u)
+      END DO
+      deallocate(LONrad_u)
+      deallocate(LATrad_u)
+      deallocate(azim)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CreateAngleMatrix_v(eta_rho,xi_rho,ANG_rho,LON_rho,LAT_rho)
+      USE DATAPOOL, only : rkind
+      implicit none
+      integer, intent(in) :: eta_rho, xi_rho
+      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
+      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
+      !
+      integer eta_v, xi_v, iEta, iXi
+      real(rkind), allocatable :: LONrad_v(:,:)
+      real(rkind), allocatable :: LATrad_v(:,:)
+      real(rkind), allocatable :: azim(:,:)
+      real(rkind) :: eAzim, fAzim, dlam, eFact1, eFact2
+      real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
+      real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
+      real(rkind) :: TPSI2, cta12
+      eta_v=eta_rho-1
+      xi_v=xi_rho
+      allocate(LONrad_v(eta_v,xi_v))
+      allocate(LATrad_v(eta_v,xi_v))
+      allocate(azim(eta_v-1,xi_v))
+      ThePi=3.141592653589792
+      DegTwoRad=ThePi/180
+      DO iEta=1,eta_v
+        DO iXi=1,xi_v
+          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta+1,iXi))*0.5
+          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta+1,iXi))*0.5
+          LONrad_v(iEta,iXi)=eLon*DegTwoRad
+          LATrad_v(iEta,iXi)=eLat*DegTwoRad
+        END DO
+      END DO
+      DO iEta=1,eta_v-1
+        DO iXi=1,xi_v
+          phi1=LATrad_v(iEta,iXi)
+          xlam1=LONrad_v(iEta,iXi)
+          phi2=LATrad_v(iEta+1,iXi)
+          xlam2=LONrad_v(iEta+1,iXi)
+          TPSI2=TAN(phi2)
+          dlam=xlam2-xlam1
+          CALL TwoPiNormalization(dlam)
+          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
+          eAzim=ATAN(1./cta12)
+          CALL MySign(eAzim, signAzim)
+          CALL MySign(dlam, signDlam)
+          IF (signDlam.ne.signAzim) THEN
+            eFact2=1
+          ELSE
+            eFact2=0
+          END IF
+          eFact1=-signAzim
+          fAzim=eAzim+ThePi*eFact1*eFact2
+          azim(iEta,iXi)=fAzim
+        END DO
+      END DO
+      DO iEta=2,eta_v
+        DO iXi=1,xi_v
+          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta-1,iXi)
+        END DO
+      END DO
+      DO iXi=1,xi_v
+        ANG_rho(1,iXi)=ANG_rho(2,iXi)
+        ANG_rho(eta_rho,iXi)=ANG_rho(eta_v,iXi)
+      END DO
+      deallocate(LONrad_v)
+      deallocate(LATrad_v)
+      deallocate(azim)
+      END SUBROUTINE CreateAngleMatrix_v
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TwoPiNormalization(TheAng)
+      USE DATAPOOL, only : rkind
+      implicit none
+      REAL(rkind), intent(inout) :: TheAng
+      !
+      REAL(rkind) :: ThePi
+      ThePi=3.141592653589792
+      IF (TheAng < -ThePi) THEN
+        TheAng=TheAng + 2*ThePi
+      ENDIF
+      IF (TheAng > ThePi) THEN
+        TheAng=TheAng - 2*ThePi
+      ENDIF
+      END SUBROUTINE TwoPiNormalization
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE MySign(TheVal, TheSign)
+      USE DATAPOOL, only : rkind
+      implicit none
+      REAL(rkind), intent(in) :: TheVal
+      REAL(rkind), intent(out) :: TheSign
+      IF (TheVal > 0) THEN
+        TheSign=1
+      ELSEIF (TheVal < 0) THEN
+        TheSign=-1
+      ELSE
+        TheSign=0
+      END IF
+      END SUBROUTINE MySign
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_CRFS(IFILE, IT, eField)
+         USE DATAPOOL, ONLY : WIND_NCID, WIND_X, WIND_Y, ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, LWRITE_ORIG_WIND, RKIND
+         USE DATAPOOL, only : STAT, NUM_NETCDF_FILES, NETCDF_FILE_NAMES, WINDBG 
+         USE DATAPOOL, only : MNP, OFFSET_X_WIND, OFFSET_Y_WIND
+         USE DATAPOOL, only : DX_WIND, DY_WIND
+         USE DATAPOOL, only : wwmerr
+         USE NETCDF
+         IMPLICIT NONE
+!
+!        READS WIND_Y, WIND_X and PRESSURE from a given NCID within one NARR file
+!
+         INTEGER, INTENT(IN) :: IFILE, IT
+         REAL(rkind), intent(inout) :: eField(MNP,2)
+
+         INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
+         INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
+         REAL(rkind),   ALLOCATABLE :: TMP(:,:)
+         REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
+         REAL(rkind), SAVE          :: TIME
+         CHARACTER (LEN=100)  :: CHRTMP
+         INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
+         IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
+
+         WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS IFILE=', IFILE, ' IT=', IT
+
+         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -1-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+
+         ISTAT = nf90_inq_varid(WIND_NCID, '10u', DWIND_X_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -2-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_X_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -3-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -4-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -5-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numHeights)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -6-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -7-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         IF (.NOT. ALLOCATED(WIND_X)) ALLOCATE (WIND_X(NDX_WIND,NDY_WIND))
+
+         ISTAT = nf90_inq_varid(WIND_NCID, '10v', DWIND_Y_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -8-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_Y_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -9-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -10-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -11-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numHeights)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -12-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -13-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         IF (.NOT. ALLOCATED(WIND_Y)) ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND))
+
+!        ISTAT = nf90_inq_varid(WIND_NCID, 'PS_MSL_GDS0_MSL_13', DPRESS_ID)
+!        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DPRESS_ID, dimids = dimIDs)
+!        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
+!        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
+!        ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
+!        IF (.NOT. ALLOCATED(ATMO_PRESS)) ALLOCATE (ATMO_PRESS(NDX_WIND,NDY_WIND))
+
+         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
+         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_WIND_X_ID')
+         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_Y_ID, WIND_Y, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
+         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_WIND_Y_ID')
+
+!        ISTAT = NF90_GET_VAR(WIND_NCID, DPRESS_ID, ATMO_PRESS, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+!        IF (ISTAT .NE. nf90_noerr) CALL_WWM_ABORT('ERR READING D_PRESS_ID')
+
+         IF (.TRUE.) THEN
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           DO IY = 1, NDY_WIND
+             tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
+           END DO
+           wind_x = tmp
+           DO IY = 1, NDY_WIND
+             tmp(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
+           END DO
+           wind_y = tmp
+!           DO IY = 1, NDY_WIND
+!             tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
+!           END DO
+!           atmo_press = tmp
+           DEALLOCATE(TMP)
+         END IF
+
+         IF (.TRUE.) THEN
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           DO IX = 1, NDX_WIND
+             IF (IX .GT. NDX_WIND/2) THEN
+               tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
+             ELSE
+               tmp(IX+NDX_WIND/2,:) = wind_x(IX,:)
+             END IF
+           END DO
+           wind_x = tmp
+           DO IX = 1, NDX_WIND
+             IF (IX .GT. NDX_WIND/2) THEN
+               tmp(IX-NDX_WIND/2,:) = wind_y(IX,:)
+             ELSE
+               tmp(IX+NDX_WIND/2,:) = wind_y(IX,:)
+             END IF
+           END DO
+           wind_y = tmp
+           DEALLOCATE(TMP)
+         END IF
+
+!         wind_y = - wind_y
+!         wind_x = - wind_x
+
+        IF (LWRITE_ORIG_WIND) THEN
+          IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
+          IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
+!         IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+          COUNTER = 1
+          DO J = 1, NDY_WIND
+            DO I = 1, NDX_WIND
+              U(COUNTER) = WIND_X(I,J)
+              V(COUNTER) = WIND_Y(I,J)
+              IF (ABS(U(COUNTER)) .GT. 1000.) U(COUNTER) = 0.
+              IF (ABS(V(COUNTER)) .GT. 1000.) V(COUNTER) = 0.
+!             H(COUNTER) = SQRT((U(COUNTER)**2.+V(COUNTER)**2.))
+              COUNTER = COUNTER + 1
+            END DO
+          END DO
+          TIME = TIME + 1.
+          WRITE(3011) TIME
+          WRITE(3011) (U(IP), V(IP), SQRT(U(IP)**2.+V(IP)**2.), IP = 1, NDX_WIND*NDY_WIND)
+          DEALLOCATE(U,V)
+        END IF
+
+        ISTAT = NF90_CLOSE(WIND_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -14-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+        CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,eField(:,1))
+        CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,eField(:,2))
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_NARR(IFILE, IT, eField)
+      USE DATAPOOL, ONLY : WINDX_NCID, WINDY_NCID, WIND_X, WIND_Y,      &
+     &                        ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, &
+     &                        LWRITE_ORIG_WIND, UWND_NARR, VWND_NARR,   &
+     &                        NETCDF_FILE_NAMES, RKIND, wwmerr
+      USE DATAPOOL, only : NUM_NETCDF_FILES, XYPWIND, INE_WIND, MNP
+      USE DATAPOOL, only : XP, YP, WIND_ELE, ZERO, WI_NARR, WINDBG
+         USE NETCDF
+         IMPLICIT NONE
+!
+!        READS WIND_Y, WIND_X and PRESSURE from a given NCID within one NARR file
+!
+         INTEGER, INTENT(IN) :: IFILE, IT
+         REAL(rkind), intent(out) :: eField(MNP,2)
+
+         INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
+         INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
+         INTEGER(kind=2), ALLOCATABLE  :: WIND_X4(:,:), WIND_Y4(:,:)
+         REAL(rkind),   ALLOCATABLE :: TMP(:,:)
+         REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
+         REAL(rkind),SAVE           :: TIME
+         REAL(rkind)                :: scale_factor, eU, eV, eAng
+         REAL(rkind) :: WI(3), sumWi, eF1, eF2
+         CHARACTER (LEN=100)  :: CHRTMP
+
+         INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
+         real(rkind) :: ErrorCoord, XPinterp, YPinterp
+         INTEGER IEwind
+
+         IF (2*IFILE .GT. NUM_NETCDF_FILES) THEN
+           CALL WWM_ABORT('NARR ERROR: Not enough files')
+         END IF
+
+         ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2*IFILE-1)), NF90_NOWRITE, WINDX_NCID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -1-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inq_varid(WINDX_NCID, 'uwnd', DWIND_X_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -2-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, DWIND_X_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -3-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -4-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -5-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(3), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -6-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_get_att(WINDX_NCID, DWIND_X_ID, 'scale_factor', scale_factor)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -7-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+         !WRITE(WINDBG%FHNDL,*) scale_factor
+         !WRITE(WINDBG%FHNDL,*) numLons, numLats, numTime
+         !WRITE(WINDBG%FHNDL,*) NDX_WIND, NDY_WIND
+
+         IF (.NOT. ALLOCATED(WIND_X4)) ALLOCATE (WIND_X4(NDX_WIND,NDY_WIND))
+
+         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(2*IFILE), NF90_NOWRITE, WINDY_NCID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -8-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inq_varid(WINDY_NCID, 'vwnd', DWIND_Y_ID)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -9-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = NF90_INQUIRE_VARIABLE(WINDY_NCID, DWIND_Y_ID, dimids = dimIDs)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -10-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(1), len = numLons)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -11-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(2), len = numLats)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -12-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(3), len = numTime)
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -13-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+         IF (.NOT. ALLOCATED(WIND_Y4)) ALLOCATE (WIND_Y4(NDX_WIND,NDY_WIND))
+
+         ISTAT = NF90_GET_VAR(WINDX_NCID, DWIND_X_ID, WIND_X4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -14-', CHRTMP
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+         ISTAT = NF90_GET_VAR(WINDY_NCID, DWIND_Y_ID, WIND_Y4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
+         IF (ISTAT .NE. nf90_noerr) THEN
+           CHRTMP = nf90_strerror(ISTAT)
+           WRITE(wwmerr,*) 'NETCDF ERROR Y', CHRTMP, WINDX_NCID, WINDY_NCID
+           CALL WWM_ABORT(wwmerr)
+         ENDIF
+
+
+        ISTAT = NF90_CLOSE(WINDX_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -15-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_CLOSE(WINDY_NCID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_NETCDF_NARR ERROR -16-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+
+
+         IF (.FALSE.) THEN
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           DO IX = 1, NDX_WIND
+             tmp(NDX_WIND-(IX-1),:) = wind_x4(IX,:)
+           END DO
+           wind_x4 = tmp
+           DO IX = 1, NDX_WIND
+             tmp(NDX_WIND-(IX-1),:) = wind_y4(IX,:)
+           END DO
+           wind_y4 = tmp
+!           DO IY = 1, NDY_WIND
+!             tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
+!           END DO
+!           atmo_press = tmp
+           DEALLOCATE(TMP)
+         END IF
+
+         IF (.FALSE.) THEN
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           DO IX = 1, NDX_WIND
+             IF (IX .GT. NDX_WIND/2) THEN
+               tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
+             ELSE
+               tmp(IX+NDX_WIND/2,:) = wind_x(IX,:)
+             END IF
+           END DO
+           wind_x = tmp
+           DO IX = 1, NDX_WIND
+             IF (IX .GT. NDX_WIND/2) THEN
+               tmp(IX-NDX_WIND/2,:) = wind_y(IX,:)
+             ELSE
+               tmp(IX+NDX_WIND/2,:) = wind_y(IX,:)
+             END IF
+           END DO
+           wind_y = tmp
+           DEALLOCATE(TMP)
+         END IF
+
+         COUNTER = 0
+         DO I = 1, NDX_WIND
+           DO J = 1, NDY_WIND
+             COUNTER = COUNTER + 1
+             IF (WIND_X4(I,J) .GT. 32766 .OR. WIND_Y4(I,J) .GT. 32766) THEN
+               UWND_NARR(COUNTER) = 0.
+               VWND_NARR(COUNTER) = 0.
+             ELSE
+               UWND_NARR(COUNTER) = WIND_X4(I,J) * scale_factor
+               VWND_NARR(COUNTER) = WIND_Y4(I,J) * scale_factor
+             END IF
+           END DO
+         END DO
+
+         IF (LWRITE_ORIG_WIND) THEN
+           TIME = TIME + 1.
+           WRITE(3011) TIME
+           WRITE(3011) (UWND_NARR(IP), VWND_NARR(IP), SQRT(UWND_NARR(IP)**2.+VWND_NARR(IP)**2.), IP = 1, NDX_WIND*NDY_WIND)
+         END IF
+
+         ErrorCoord=0
+         DO IP = 1, MNP
+           IF (WIND_ELE(IP) .gt. 0) then 
+!             CALL INTELEMENT(XYPWIND(1,INE_WIND(:,WIND_ELE(IP))), XYPWIND(2,INE_WIND(:,WIND_ELE(IP))),UWND_NARR(INE_WIND(:,WIND_ELE(IP))),XP(IP),YP(IP),Wi,eField(IP,1),.FALSE.) 
+!             CALL INTELEMENT(XYPWIND(1,INE_WIND(:,WIND_ELE(IP))), XYPWIND(2,INE_WIND(:,WIND_ELE(IP))),VWND_NARR(INE_WIND(:,WIND_ELE(IP))),XP(IP),YP(IP),Wi,eField(IP,2),.FALSE.)
+             XPinterp=0
+             YPinterp=0
+             IEwind=WIND_ELE(IP)
+             eF1=0
+             eF2=0
+             sumWi=0
+             DO I=1,3
+               XPinterp=XPinterp + WI_NARR(IP,I)*XYPWIND(1,INE_WIND(I,IEwind))
+               YPinterp=YPinterp + WI_NARR(IP,I)*XYPWIND(2,INE_WIND(I,IEwind))
+               eF1=eF1+WI_NARR(IP,I)*UWND_NARR(INE_WIND(I,IEwind))
+               eF2=eF2+WI_NARR(IP,I)*VWND_NARR(INE_WIND(I,IEwind))
+               sumWi=sumWi + WI_NARR(IP,I)
+             END DO
+             eField(IP,1)=eF1
+             eField(IP,2)=eF2
+             ErrorCoord=ErrorCoord + abs(XPinterp - XP(IP)) + abs(YPinterp - YP(IP)) + abs(sumWi - 1)
+           ELSE
+             eField(IP,:) = ZERO
+           ENDIF              
+         END DO
+         WRITE(WINDBG%FHNDL,*) 'ErrorCoord=', ErrorCoord
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+       SUBROUTINE GET_WRF_TIME_INDEX(REC1, REC2, w1, w2)
+       ! For given wwm_time and wind_time return records to get and weights for time
+       ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
+       !
+       USE DATAPOOL, ONLY           : wind_time_mjd, MAIN, rkind      
+       IMPLICIT NONE
+       REAL(rkind), INTENT(OUT)            :: w1, w2
+       INTEGER, INTENT(OUT)                :: REC1, REC2
+       REAL(rkind), ALLOCATABLE            :: dist(:)
+       REAL(rkind), PARAMETER              :: thr = 10E-14
+       INTEGER                             :: loc(1)
+ 
+       ALLOCATE(dist(size(wind_time_mjd,DIM=1)))
+            dist(:) = MAIN%TMJD - wind_time_mjd(:)
+            loc  = minloc( abs(dist(:)))
+            if ( dist(loc(1)).lt.0 ) then 
+                REC1 = loc(1) - 1
+                REC2 = loc(1)
+              else
+                REC1 = loc(1)
+                REC2 = loc(1) + 1
+            end if
+            w1 = 1 - abs(dist(REC1))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
+            w2 = 1 - abs(dist(REC2))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
+            if ( dist(loc(1)).eq.0 ) then
+                REC1 = loc(1)
+                REC2 = loc(1)
+                w1 = 1.0
+                w2 = 0.0
+            end if
+       END SUBROUTINE GET_WRF_TIME_INDEX
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+       SUBROUTINE READ_INTERP_NETCDF_WRF(RECORD_IN, varout)
+       ! For given filename and REC load Uwind and Vwind
+       !
+       USE NETCDF
+       USE DATAPOOL, ONLY : XP,YP,WIN, MNP, wrf_c11, wrf_c21, rkind
+       USE DATAPOOL, only : wrf_c22, wrf_c12, wrf_a, wrf_b, wrf_c, wrf_d, wrf_J
+       USE DATAPOOL, only : wwmerr
+       IMPLICIT NONE
+       INTEGER, INTENT(in)                :: RECORD_IN
+       REAL(rkind), ALLOCATABLE           :: Uwind(:,:), Vwind(:,:)
+       REAL(rkind), INTENT(out)           :: varout(MNP,2)
+       INTEGER                            :: FID, NDX, NDY, NDT, dims(3), ID, ISTAT, I
+       character(len=100) CHRTMP
+        ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -1-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_inq_varid(FID, 'Uwind', ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -2-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -3-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -4-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -5-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -5-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ALLOCATE (Uwind(NDX,NDY))
+        ISTAT = NF90_GET_VAR(FID, ID, Uwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
+
+        ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -6-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -7-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -8-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -9-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -10-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ALLOCATE (Vwind(NDX,NDY))
+        ISTAT = NF90_GET_VAR(FID, ID, Vwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -11-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        ISTAT = NF90_CLOSE(FID)
+        IF (ISTAT .NE. nf90_noerr) THEN
+          CHRTMP = nf90_strerror(ISTAT)
+          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -12-', CHRTMP
+          CALL WWM_ABORT(wwmerr)
+        ENDIF
+        do I = 1, MNP
+        !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
+        varout(I,1) = wrf_J(I)*(                                       &
+     &   Uwind(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
+     &   Uwind(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
+     &   Uwind(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
+     &   Uwind(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+        varout(I,2) = wrf_J(I)*(                                       &
+     &   Vwind(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
+     &   Vwind(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
+     &   Vwind(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
+     &   Vwind(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+        END DO
+        END SUBROUTINE READ_INTERP_NETCDF_WRF
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+       SUBROUTINE INIT_NETCDF_WRF
+       ! Compute WRF2FEM structure holding all needed for bilinear interpolation and wind_time_mjd
+       !
+       USE NETCDF
+       USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
+       USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd
+       USE DATAPOOL, only : wwmerr, WINDBG
+       IMPLICIT NONE
+       INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
+       REAL, ALLOCATABLE                  :: WRF_LON(:,:), WRF_LAT(:,:), dist(:,:)
+       REAL                               :: wind_time_offset, wwm_time_offset, d_lon, d_lat
+       integer i11, j11, i12, j12, i21, j21
+       character(len=100) :: CHRTMP
+       ! wind_time_offset is seconds since 2000-1-1 
+       ! wwm_time_offset is seconds since Modified Julian Day 17/11/1858
+       wind_time_offset = 730486.0
+       wwm_time_offset  = 678942.0
+
+       ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -1-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inq_varid(fid, "LON", varid)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -2-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -3-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -4-', CHRTMP
+         WRITE(wwmerr,*) 'NETCDF ERROR -5-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inquire_dimension(fid, dimids(2), len=nlat)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -5-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       allocate(WRF_LON(nlon,nlat))
+       allocate(WRF_LAT(nlon,nlat))
+       ISTAT = nf90_get_var(fid, varid, WRF_LON)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -6-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inq_varid(fid, "LAT", varid)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -7-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_get_var(fid, varid, WRF_LAT)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -8-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       
+       ISTAT = nf90_inq_varid(fid, "wind_time", varid)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -9-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -10-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
+       allocate(wind_time_mjd(nlon))
+       ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -11-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ISTAT = nf90_close(fid)
+       IF (ISTAT .NE. nf90_noerr) THEN
+         CHRTMP = nf90_strerror(ISTAT)
+         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -12-', CHRTMP
+         CALL WWM_ABORT(wwmerr)
+       ENDIF
+       ! this is hack unitl I get better way of using wind_time attribute units 
+       wind_time_mjd(:) = wind_time_mjd(:) + wind_time_offset - wwm_time_offset
+       ! compute nodes and coefs
+       ALLOCATE(wrf_c11(MNP,2))
+       ALLOCATE(wrf_c12(MNP,2))
+       ALLOCATE(wrf_c21(MNP,2))
+       ALLOCATE(wrf_c22(MNP,2))
+       ALLOCATE(wrf_a(MNP))
+       ALLOCATE(wrf_b(MNP))
+       ALLOCATE(wrf_c(MNP))
+       ALLOCATE(wrf_d(MNP))
+       ALLOCATE(wrf_J(MNP))       
+       ALLOCATE(dist(size(WRF_LON, DIM=1),size(WRF_LON, DIM=2)))
+       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
+       do I = 1, MNP
+       dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )
+       closest(1:2) = MINLOC(dist)
+              d_lon = XP(I)-WRF_LON(closest(1),closest(2)) 
+              d_lat = YP(I)-WRF_LAT(closest(1),closest(2))
+              IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
+              wrf_c11(I,:) = closest(:)
+              wrf_c21(I,1) = closest(1) + 1
+              wrf_c22(I,1) = closest(1) + 1
+              wrf_c12(I,1) = closest(1)
+              wrf_c21(I,2) = closest(2)
+              wrf_c22(I,2) = closest(2) + 1
+              wrf_c12(I,2) = closest(2) + 1
+              end if
+              IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
+              wrf_c11(I,1) = closest(1)
+              wrf_c21(I,1) = closest(1) + 1
+              wrf_c22(I,1) = closest(1) + 1
+              wrf_c12(I,:) = closest(:)
+              wrf_c11(I,2) = closest(2) - 1
+              wrf_c21(I,2) = closest(2) - 1
+              wrf_c22(I,2) = closest(2) 
+              end if
+              IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
+              wrf_c11(I,1) = closest(1) - 1 
+              wrf_c21(I,:) = closest(:)
+              wrf_c22(I,1) = closest(1)
+              wrf_c12(I,1) = closest(1) - 1
+              wrf_c11(I,2) = closest(2)
+              wrf_c22(I,2) = closest(2) + 1
+              wrf_c12(I,2) = closest(2) + 1 
+              end if
+              IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
+                wrf_c11(I,1) = closest(1) - 1
+                wrf_c21(I,1) = closest(1)
+                wrf_c22(I,:) = closest(:)
+                wrf_c12(I,1) = closest(1) - 1
+                wrf_c11(I,2) = closest(2) - 1
+                wrf_c21(I,2) = closest(2) - 1
+                wrf_c12(I,2) = closest(2) 
+              end if    
+              ! J =1/((x2-x1)*(y2-y1))
+              i11=wrf_c11(I,1)
+              j11=wrf_c11(I,2)
+              i12=wrf_c12(I,1)
+              j12=wrf_c12(I,2)
+              i21=wrf_c21(I,1)
+              j21=wrf_c21(I,2)
+              wrf_J(I)=1.0/(                                       &
+       &     (WRF_LON(i21,j21)-WRF_LON(i11,j11))*                  &
+       &     (WRF_LAT(i12,j12)-WRF_LAT(i11,j11)) )   ! J
+              wrf_a(I) = WRF_LON(i21,j21) - XP(I) ! x2-x
+              wrf_b(I) = XP(I) - WRF_LON(i11,j11) ! x-x1
+              wrf_c(I) = WRF_LAT(i12,j12) - YP(I) ! y2-y
+              wrf_d(I) = YP(I) - WRF_LAT(i11,j11) ! y-y1
+       end do
+       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
+       END SUBROUTINE INIT_NETCDF_WRF
+#endif

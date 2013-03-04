@@ -1,0 +1,35 @@
+Fortran 90/95 bindings for shapelib (http://shapelib.maptools.org/)
+Copyright (C) Davide Cesari, 2007, dcesari <at> arpa.emr.it
+The sources are distributed according to the GNU LGPL license.
+
+In order to access the shapelib API from fortran you have to add
+
+USE shplib
+
+to your program unit.
+
+The API has been kept as close as possible to the original C API; the
+retrieved shapes are stored in a Fortran derived type "shpobject"
+which mimics the C structure "SHPObject". Notice that the shpopen
+function, unlike Fortran OPEN statement, requires the filename
+variable not to contain trailing blanks (unless this is
+explicitly wanted!) otherwise the blanks are included in the filename.
+
+See shplib.f90 for the parameter and derived type definitions and
+shp_test.f90 for an example.
+
+Be warned that the bindings need further testing, and may contain
+bugs. They have been tested with gfortran, g95 and pgf90 compilers on
+Linux.
+
+Questions concerning the shapelib fortran bindings should be addressed
+to Davide Cesari (dcesari <at> arpa.emr.it), other questions
+concerning shapelib should be addressed to the maintainer of the
+library, Frank Warmerdam (see web page).
+
+__________________________________________________________
+Davide Cesari   ARPA-Servizio Idro Meteorologico
+ e-mail    dcesari <at> arpa.emr.it
+ www       http://www.arpa.emr.it/sim
+ Address:  ARPA-SIM, Viale Silvani 6, 40122 Bologna, Italy
+__________________________________________________________

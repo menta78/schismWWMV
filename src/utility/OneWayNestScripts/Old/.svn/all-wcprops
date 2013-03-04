@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old
+END
+gen_hot.f90
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/gen_hot.f90
+END
+gen_hot_2.f90
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/gen_hot_2.f90
+END
+gen_hot_3.f90
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/gen_hot_3.f90
+END
+st_slope.txt
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/st_slope.txt
+END
+timeint_3Dth.f90
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/timeint_3Dth.f90
+END
+interpolate_variables_selfe.f90
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/interpolate_variables_selfe.f90
+END
+timeint_3Dth_2.f90
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/timeint_3Dth_2.f90
+END
+interpolate_variables_selfe2.f90
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/interpolate_variables_selfe2.f90
+END
+interpolate_variables_selfe3.f90
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/interpolate_variables_selfe3.f90
+END
+interpolate_variables_selfe2
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/interpolate_variables_selfe2
+END
+interpolate_variables_selfe5.f90
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/selfe/!svn/ver/5/trunk/src/utility/OneWayNestScripts/Old/interpolate_variables_selfe5.f90
+END

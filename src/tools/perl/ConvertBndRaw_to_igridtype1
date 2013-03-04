@@ -1,0 +1,30 @@
+#!/usr/bin/perl -w
+
+$uu=scalar(@ARGV);
+if ($uu ne 2)
+{
+    print "ConvertBndRaw_to_igridtype1_to_2 is used as\n";
+    print "ConvertBndRaw_to_igridtype1 [FileI] [FileO]\n";
+    die;
+}
+$FileIn=$ARGV[0];
+$FileOu=$ARGV[1];
+
+
+open(INFILE, $FileIn) or die "impossible to open ".$FileIn;
+@LS=<INFILE>;
+close(INFILE);
+
+$nbLine=scalar(@LS);
+
+open(OUT, "> ".$FileOu);
+$nb=2+3+7;
+for ($iLine=1; $iLine<=$nb; $iLine++)
+{
+    print OUT "Line ".$iLine."\n";
+}
+for ($iLine=1; $iLine<=$nbLine; $iLine++)
+{
+    print OUT "0.00000 ".$LS[$iLine-1];
+}
+close(OUT);
