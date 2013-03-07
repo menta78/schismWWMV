@@ -515,7 +515,7 @@
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
           END DO
-!          WRITE(*,*) IK, EB(IK), IK, ITH, A(ITH,IK)
+!          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
         END DO
 !
 ! 2.  Integrate over directions -------------------------------------- *
@@ -732,7 +732,7 @@
 !
       Z0VISC = 0.1_rkind*nu_air/MAX(USTAR,0.0001_rkind)
       Z0NOZ = MAX(Z0VISC,ZZ0RAT*Z0)
-      !WRITE(*,*) Z0VISC,ZZ0RAT,Z0
+      !WRITE(DBG%FHNDL,*) Z0VISC,ZZ0RAT,Z0
       FACLN1 = U / LOG(ZZWND/Z0NOZ)
       FACLN2 = LOG(Z0NOZ)
 !
@@ -771,7 +771,7 @@
         IND  = MIN (SIZEFWTABLE-1, INT(XI))
         DELI1= MIN (ONE ,XI-MyREAL(IND))
         DELI2= ONE - DELI1
-        !WRITE(*,'(A10,I10,5F15.8)') 'TEST IND',IND, XI, AORB, Z0NOZ, ABMIN, DELAB
+        !WRITE(DBG%FHNDL,'(A10,I10,5F15.8)') 'TEST IND',IND, XI, AORB, Z0NOZ, ABMIN, DELAB
         FW =FWTABLE(IND)*DELI2+FWTABLE(IND+1)*DELI1
         END IF
 !
@@ -798,7 +798,7 @@
       TAUX = UST**2* COS(USDIR)
       TAUY = UST**2* SIN(USDIR)
 
-      !WRITE(*,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
+      !WRITE(DBG%FHNDL,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
 !
 ! Loop over the resolved part of the spectrum 
 !
@@ -819,7 +819,7 @@
 ! With MIN and MAX the bug should disappear.... but where did it come from?
 ! AR: This is ugly ...
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25,MAX(UST,0.3_rkind))
-        !WRITE(*,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
+        !WRITE(DBG%FHNDL,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
         USDIRP=ATAN2(TAUPY,TAUPX)
         COSU   = COS(USDIRP)
         SINU   = SIN(USDIRP)
@@ -845,7 +845,7 @@
         SWELLCOEFV=-SSWELLF(5)*DRAT*2*K(IS)*SQRT(2*NU_AIR*SIG2(IS)) 
         SWELLCOEFT=-DRAT*SSWELLF(1)*16*SIG2(IS)**2/G9
 !
-        !WRITE(*,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
+        !WRITE(DBG%FHNDL,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
         DO ITH=1,NTH
           IS=ITH+(IK-1)*NTH
           COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
@@ -858,7 +858,7 @@
             ! MU=
             ZLOG=ZCN+ZARG 
       
-            !WRITE(*,*) 'ZLOG', IK, ITH, ZCN, ZARG, X, KAPPA, UCN
+            !WRITE(DBG%FHNDL,*) 'ZLOG', IK, ITH, ZCN, ZARG, X, KAPPA, UCN
             
             IF (ZLOG.LT.0.) THEN
               ! The source term Sp is beta * omega * X**2
@@ -872,7 +872,7 @@
               LLWS(IS)=.FALSE.
               END IF
 
-              !WRITE(*,*) 'DSTAB', DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
+              !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
 !
 !  Added for consistency with ECWAM implsch.F 
 !
@@ -929,9 +929,9 @@
         TAUWNX =STRESSSTABN(3,1)
         TAUWNY =STRESSSTABN(3,2)
    
-       !WRITE(*,*) 'DSTAB', DSTAB(3,:)
-       !WRITE(*,*) 'STRESSTAB', STRESSSTAB (3,1), STRESSSTAB (3,2), STRESSSTABN(3,1), STRESSSTABN(3,2)
-       !WRITE(*,*) FW, UORB
+       !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(3,:)
+       !WRITE(DBG%FHNDL,*) 'STRESSTAB', STRESSSTAB (3,1), STRESSSTAB (3,2), STRESSSTABN(3,1), STRESSSTABN(3,2)
+       !WRITE(DBG%FHNDL,*) FW, UORB
        !WRITE(995,'(A,11G14.5)') 'NEGSTRESS:    ',TAUWNX,TAUWNY,FW*UORB**3
 # ifdef STAB3
       END DO 
@@ -959,7 +959,7 @@
         END DO
       END IF 
 
-      !WRITE(*,*) 'SUMS WINDINPUT', SUM(S), SUM(A)
+      !WRITE(DBG%FHNDL,*) 'SUMS WINDINPUT', SUM(S), SUM(A)
 !
 ! ... Test output of arrays
 !
@@ -987,13 +987,13 @@
          IS=ITH+(NK-1)*NTH
          COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
          TEMP=TEMP+A(IS)*(MAX(COSWIND,ZERO))**3
-         !WRITE(*,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
+         !WRITE(DBG%FHNDL,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
          END DO
 
       TAUPX=TAUX-ABS(TTAUWSHELTER)*XSTRESS
       TAUPY=TAUY-ABS(TTAUWSHELTER)*YSTRESS
 
-      !WRITE(*,*) 'TAUPX', TAUPX, TAUPY, TTAUWSHELTER, XSTRESS, YSTRESS
+      !WRITE(DBG%FHNDL,*) 'TAUPX', TAUPX, TAUPY, TTAUWSHELTER, XSTRESS, YSTRESS
 
       USTP=(TAUPX**2+TAUPY**2)**0.25
       USDIRP=ATAN2(TAUPY,TAUPX)
@@ -1029,7 +1029,7 @@
       TAUWX = XSTRESS+TAUHFL*COS(USDIRP)
       TAUWY = YSTRESS+TAUHFL*SIN(USDIRP)
       TAUW(IP) = SQRT(XSTRESS**2+YSTRESS**2)
-      !WRITE(*,*) 'STRESSES', TAUHF, TAUWX, TAUWY
+      !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
 !      
 ! Reduces tail effect to make sure that wave-supported stress 
 ! is less than total stress, this is borrowed from ECWAM Stresso.F      
@@ -1865,7 +1865,7 @@
       ELSE 
         CHARN = AALPHA
         END IF
-!      write(*,*) z0, ustar, windspeed
+!      write(DBG%FHNDL,*) z0, ustar, windspeed
 !
       RETURN
       END SUBROUTINE CALC_USTAR_NEW
@@ -2033,10 +2033,10 @@
             END IF
           END DO
 
-        !WRITE(*,*) 'FACSAT', FACSAT
-        !WRITE(*,*) 'SATWEIGHTS', SATWEIGHTS 
-        !WRITE(*,*) 'SATINDICES', SATINDICES
-        !WRITE(*,*) 'SUMS', SUM(BTH), SUM(BTH0), SUM(A)
+        !WRITE(DBG%FHNDL,*) 'FACSAT', FACSAT
+        !WRITE(DBG%FHNDL,*) 'SATWEIGHTS', SATWEIGHTS 
+        !WRITE(DBG%FHNDL,*) 'SATINDICES', SATINDICES
+        !WRITE(DBG%FHNDL,*) 'SUMS', SUM(BTH), SUM(BTH0), SUM(A)
 ! 
 !   Optional smooting of B and B0 over frequencies
 ! 
@@ -2128,9 +2128,9 @@
           COEF3=-2.*SIG(IK)*K(IK)*FACTURB
           D((IK-1)*NTH+1:IK*NTH) = SDIAGISO +                           &
      &      COEF2*((MAX(ZERO,BTH((IK-1)*NTH+1:IK*NTH)-COEF1))**SSDSP) 
-          !WRITE(*,*) 'A', COEF1, COEF2
-          !WRITE(*,*) 'B', BTH((IK-1)*NTH+1:IK*NTH) 
-          !WRITE(*,*) 'D', D((IK-1)*NTH+1:IK*NTH)
+          !WRITE(DBG%FHNDL,*) 'A', COEF1, COEF2
+          !WRITE(DBG%FHNDL,*) 'B', BTH((IK-1)*NTH+1:IK*NTH) 
+          !WRITE(DBG%FHNDL,*) 'D', D((IK-1)*NTH+1:IK*NTH)
           END DO
 !
 ! Computes Breaking probability
@@ -2345,7 +2345,7 @@
 ! Add effects
 !
           D(IS) = D(IS) + (SSDSC(3)*RENEWALFREQ+DTURB) 
-          !WRITE(*,*) 'TURBULENCE', IS, D(IS), (SSDSC(3)*RENEWALFREQ+DTURB)
+          !WRITE(DBG%FHNDL,*) 'TURBULENCE', IS, D(IS), (SSDSC(3)*RENEWALFREQ+DTURB)
           END DO
         END DO
 !

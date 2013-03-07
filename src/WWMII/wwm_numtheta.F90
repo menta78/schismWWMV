@@ -109,7 +109,7 @@
              END IF 
              ITER = MAX(1,ITER)
              DT4DI = DT4D / MyREAL(ITER)
-             !write(*,*) ip, is, iter, dt4di, sum(cads),sum(acq)
+             !write(DBG%FHNDL,*) ip, is, iter, dt4di, sum(cads),sum(acq)
              DO IT = 1, ITER ! Iteration
                CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
              END DO          ! end Interation

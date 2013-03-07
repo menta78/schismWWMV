@@ -731,18 +731,37 @@
 !       68: 3D side and half level
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
+#ifdef DEBUG
+#ifdef USE_WWM
+      noutput_ns=6
+#else
+      noutput_ns=5
+#endif
+#else
       noutput_ns=4
+#endif
       allocate(outfile_ns(noutput_ns),varnm_ns(noutput_ns),iof_ns(noutput_ns), &
      &stat=istat)
       outfile_ns(1)='hvel.67'
       outfile_ns(2)='vert.69'
       outfile_ns(3)='temp.70'
       outfile_ns(4)='salt.70'
+#ifdef DEBUG
+      outfile_ns(5)='bpgr.65'
+#ifdef USE_WWM
+      outfile_ns(6)='wafo.67'
+#endif
+#endif
       varnm_ns(1)='3D horizontal vel. at sides and whole levels'
       varnm_ns(2)='Vertical vel. at centroids and whol levels'
       varnm_ns(3)='temperature at prism centers'
       varnm_ns(4)='salinity at prism centers'
-      
+#ifdef DEBUG
+      varnm_ns(5)='barotropic pressure gradient force at side centers'
+#ifdef USE_WWM
+      varnm_ns(6)='wave force at side centers and whole levels'
+#endif
+#endif      
       do i=1,noutput_ns
         call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
         if(iof_ns(i)/=0.and.iof_ns(i)/=1) then
@@ -974,7 +993,7 @@
 !     1: full coupled (elevation, vel, and wind are all passed to WWM);
 !     2: 1-way coupling: only R.S. from WWM feedback to SELFE
       call get_param('param.in','icou_elfe_wwm',1,icou_elfe_wwm,tmp,stringvalue)
-      if(icou_elfe_wwm<0.or.icou_elfe_wwm>7) then
+      if(icou_elfe_wwm<0.or.icou_elfe_wwm>4) then
         write(errmsg,*)'Wrong coupling flag:',icou_elfe_wwm
         call parallel_abort(errmsg)
       endif
@@ -1881,12 +1900,12 @@
           enddo !i=1,ne
 
 #ifdef INCLUDE_TIMING
-          cwtmp=mpi_wtime()
+          wtmp1=mpi_wtime()
 #endif
           call mpi_allreduce(swild99,dir_block,3*nhtblocks,rtype,MPI_SUM,comm,ierr)
           call mpi_allreduce(ibuf1,ibuf2,nhtblocks,itype,MPI_SUM,comm,ierr)
 #ifdef INCLUDE_TIMING
-          wtimer(3,2)=wtimer(3,2)+mpi_wtime()-cwtmp
+          wtimer(3,2)=wtimer(3,2)+mpi_wtime()-wtmp1
 #endif
 
           do i=1,nhtblocks
@@ -3708,11 +3727,11 @@
         WWPDO(:)   = 0.
 !
         x1 = 1.0E3 !* DTD
-        open(77,file='ps.in',status='old')
-        read(77,*)
-        read(77,*)
+        open(61,file='ps.in',status='old')
+        read(61,*)
+        read(61,*)
         do i=1,nps
-          read(77,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
+          read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
           &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
           if(iegl(iegb)%rank==myrank) then
             PSQ(iegl(iegb)%id)     = xPSQ
@@ -4557,17 +4576,17 @@
 !
           x1 = 1.0E3 !* DTD
           npstiminc=86400.
-          open(77,file='ps.in',status='old')
-          rewind(77)
+          open(61,file='ps.in',status='old')
+          rewind(61)
           ninv=time/npstiminc
           npstime=ninv*npstiminc
 !org yc        npstime1=ninv*npstiminc
 !org yc        npstime2=(ninv+1)*npstiminc
-          read(77,*)      !title
+          read(61,*)      !title
           do it=0,ninv
-            read(77,*)    !time
+            read(61,*)    !time
             do i=1,nps
-              read(77,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
+              read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
             &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
               if(iegl(iegb)%rank==myrank) then
                 PSQ(iegl(iegb)%id)     = xPSQ

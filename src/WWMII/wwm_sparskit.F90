@@ -2855,7 +2855,7 @@
                  jw = iw(jlu(jj))
                  if (jw .ne. 0) then
                    alu(jw) = alu(jw) - tl*alu(jj)
-!                   write(*,*) ii, jw, jj
+!                   write(DBG%FHNDL,*) ii, jw, jj
                  end if
               end do
            end do
@@ -2930,7 +2930,7 @@
         subroutine pgmres(n, im, rhs, sol, eps, maxits, aspar, nnz, ia, ja, alu, jlu, ju, vv, ierr)
 !-----------------------------------------------------------------------
 !       use datapool, only : nnz, ia, ja, alu, jlu, ju, vv, aspar!, rhs, sol
-       use datapool, only : rkind
+       use datapool, only : rkind, DBG
        implicit none
 
        integer :: n, im, maxits, ierr, nnz
@@ -2990,13 +2990,13 @@
                   jw = int(iw(jlu(jj)))
                   if (jw .ne. 0) then
                       alu(jw) = alu(jw) - tl*alu(jj)
-!                    write(*,*) ii, jw, jj
+!                    write(DBG%FHNDL,*) ii, jw, jj
                   end if
                end do
             end do
 !     invert  and store diagonal element.
             if (abs(alu(ii)) .lt. epsmac) then
-              write (*,*) 'zero pivot'
+              write(DBG%FHNDL,*) 'zero pivot'
               stop 'wwm_sparskit l.3000'
             end if
             alu(ii) = 1.0_rkind/alu(ii)

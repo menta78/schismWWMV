@@ -3966,7 +3966,7 @@ MODULE WWM_PARALL_SOLVER
 ! The same for x, r
 ! 
       SUBROUTINE I5_BCGS_SOLVER(LocalColor, SolDat)
-      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2
+      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod
 # ifdef DEBUG
@@ -4023,7 +4023,7 @@ MODULE WWM_PARALL_SOLVER
       END DO
       WRITE(myrank+240,*) 'MNP=', MNP, 'NP_RES=', NP_RES
 # endif
-      MaxError=0.000001
+      MaxError=SOLVERTHR
       CALL I5_APPLY_FCT(SolDat,  AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC2=AC2                             ! x solution

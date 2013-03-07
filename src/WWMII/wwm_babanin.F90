@@ -76,7 +76,7 @@ CONTAINS
 
 ! (point output write location 1)
     if(.false.)then
-       write(*,*)'a1,a2 = ',a1,a2
+       write(DBG%FHNDL,*)'a1,a2 = ',a1,a2
     endif
 ! two matrix operations follow:
     EDENST= (2.*g9**2) * ((2.0*pi)**(-4)) * (f**(-5)) * (ANAR**(-1)) *  &
@@ -88,7 +88,7 @@ CONTAINS
 
 
 !    DO IS = 1, nfreq
-!      WRITE(*,*) IS, EDENS(IS), EDENST(IS), DEDENS(IS)
+!      WRITE(DBG%FHNDL,*) IS, EDENS(IS), EDENST(IS), DEDENS(IS)
 !    END DO
 
 
@@ -150,7 +150,7 @@ CONTAINS
 
     if(.false.)then
        do  is=1,nfreq
-          write(*,205)f(is),EDENS(is),EDENST(is),T1(is),T2(is)
+          write(DBG%FHNDL,205)f(is),EDENS(is),EDENST(is),T1(is),T2(is)
        end do
     endif
 205 format('threshold: ',5(1x,D12.5))
@@ -182,7 +182,7 @@ CONTAINS
 
 ! (point output write location 3)
     if(.false.)then
-       WRITE(*,*)'integral of T1,T2,Sds = ',ST1_INT,ST2_INT,Sds_INT
+       WRITE(DBG%FHNDL,*)'integral of T1,T2,Sds = ',ST1_INT,ST2_INT,Sds_INT
     endif
 
   END subroutine calc_Sds
@@ -239,7 +239,7 @@ CONTAINS
 
 subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WIND10,TESTFL)
 
-    use datapool, only : rhoa, rhow, pi, ufric, rkind
+    use datapool, only : rhoa, rhow, pi, ufric, rkind, DBG
     use datapool, only : TAUTOT, CD, Z0, ALPHA_CH, G9, ac2
     implicit none
 
@@ -384,7 +384,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     if(TESTFL)then
 206    format('tau_total = ',f9.6,' ; tauv = ',f9.6,                    &
      &  ' ; tau_normal = ',f9.6,' ; TAUWLIM = ',f9.6)
-       write(*,206)tau_total,tauv,tau_normal,TAUWLIM
+       write(DBG%FHNDL,206)tau_total,tauv,tau_normal,TAUWLIM
     endif
 
     if(tau_normal < TAUWLIM)then
@@ -394,12 +394,12 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
        RETURN
     else
        if(TESTFL)then
-          write(*,*)'reducing Sin to make tau_normal match TAUWLIM'
+          write(DBG%FHNDL,*)'reducing Sin to make tau_normal match TAUWLIM'
        endif
     endif
 
 !    if(tau_normal > 10.0) then
-!      write(*,*) ip, wind10, ufric, tau_normal 
+!      write(DBG%FHNDL,*) ip, wind10, ufric, tau_normal 
 !    end if
 
 ! calculate with reduction, start value arbitrary
@@ -432,7 +432,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
        if(TESTFL)then
 207       format('iter = ',i3,' ; REDUC = ',f9.6,' ; RCHANGE = ',       &
      &  f9.6,' ; tau_normal = ',f9.6,' ; err = ',f9.6)
-          write(*,207)iter,REDUC,RCHANGE,tau_normal,err
+          write(DBG%FHNDL,207)iter,REDUC,RCHANGE,tau_normal,err
        endif
 
        if(abs(sign_new-sign_old) .gt. tiny(1.))then
@@ -447,9 +447,9 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     end do
 
     if(isol==0)then
-       write(*,*)'no solution found at gridpoint', IP, SUM(AC2(IP,:,:))
-       write(*,'(A20,F15.8,A20,F15.8,A10,F15.8,A20,F15.8)')'tau_normal = ',tau_normal,' TAUWLIM =', TAUWLIM,'err =',err,'(abs(err)/TAUWLIM)  = ',abs(err)/TAUWLIM
-       write(*,*) wind10, ufric(ip)
+       write(DBG%FHNDL,*)'no solution found at gridpoint', IP, SUM(AC2(IP,:,:))
+       write(DBG%FHNDL,'(A20,F15.8,A20,F15.8,A10,F15.8,A20,F15.8)')'tau_normal = ',tau_normal,' TAUWLIM =', TAUWLIM,'err =',err,'(abs(err)/TAUWLIM)  = ',abs(err)/TAUWLIM
+       write(DBG%FHNDL,*) wind10, ufric(ip)
 !       if((abs(err)/TAUWLIM).ge.1.0_rkind) then
           open(401,file='debug.dat',form='unformatted')
           write(401)nf_new     ! scalar
@@ -578,9 +578,9 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 ! start error check block (may be omitted)
 !                myu=2.0*RHOAW*(1.0/g9)*(1.0/CGo(IS,1))
 !     &              *(SPCSIG(IS)**2.5)*sqrt(2.0*NU_AIR)
-!                write(*,*)'myu(',IS,') = ',myu
+!                write(DBG%FHNDL,*)'myu(',IS,') = ',myu
 !                SWDIS_CHECK=Cdsv*myu*CGo(IS,1)
-!                write(*,*)'SWDIS(IS),SWDIS_CHECK = ',
+!                write(DBG%FHNDL,*)'SWDIS(IS),SWDIS_CHECK = ',
 !     &                    SWDIS(IS),SWDIS_CHECK
 ! end error check block (may be omitted)
 

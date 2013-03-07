@@ -14,7 +14,7 @@
 
       !> calls the specific PETSC_INIT_* subroutine
       subroutine PETSC_INIT()
-        use datapool, only: AMETHOD
+        use datapool, only: AMETHOD, DBG
         use petscpool, only: petscpoolInit, stageInit, stageSolve, petscErr
 #ifdef MPI_PARALL_GRID
         use petsc_parallel, only: PETSC_INIT_PARALLEL
@@ -34,10 +34,10 @@
         else if(AMETHOD == 5) then
           call PETSC_INIT_BLOCK
         else
-          write(*,*) "PETSC_INIT() you can use AMETHOD=4 "
-          write(*,*) "for petsc parallel or AMETHOD=5 for petsc block."
-          write(*,*) "Other AMETHOD numbers are for other solvers."
-          write(*,*) "AMETHOD =" ,  AMETHOD
+          write(DBG%FHNDL,*) "PETSC_INIT() you can use AMETHOD=4 "
+          write(DBG%FHNDL,*) "for petsc parallel or AMETHOD=5 for petsc block."
+          write(DBG%FHNDL,*) "Other AMETHOD numbers are for other solvers."
+          write(DBG%FHNDL,*) "AMETHOD =" ,  AMETHOD
         endif
 #else
           call PETSC_INIT_SERIELL
@@ -67,7 +67,7 @@
 
       !> clean up memory and calls PetscFinalize()
       subroutine PETSC_FINALIZE()
-        use datapool, only: AMETHOD
+        use datapool, only: AMETHOD, DBG
         use petscpool,      only: petscErr, petscpoolFinalize, stageFin
 #ifdef MPI_PARALL_GRID
         use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
@@ -89,10 +89,10 @@
           else if(AMETHOD == 5) then
             call PETSC_FINALIZE_BLOCK
           else
-            write(*,*) "PETSC_FINALIZE() you can use AMETHOD=4"
-            write(*,*) "for petsc parallel or AMETHOD=5 for petsc block."
-            write(*,*) "Other AMETHOD numbers are for other solvers."
-            write(*,*) "AMETHOD =" , AMETHOD
+            write(DBG%FHNDL,*) "PETSC_FINALIZE() you can use AMETHOD=4"
+            write(DBG%FHNDL,*) "for petsc parallel or AMETHOD=5 for petsc block."
+            write(DBG%FHNDL,*) "Other AMETHOD numbers are for other solvers."
+            write(DBG%FHNDL,*) "AMETHOD =" , AMETHOD
           endif
 # else
           call PETSC_FINALIZE_SERIELL

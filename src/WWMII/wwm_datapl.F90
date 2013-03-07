@@ -283,9 +283,10 @@
             INTEGER                  :: IDEF
          END TYPE
 
-         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, &
-      &     SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
+         INTEGER                :: NB_BLOCK = 1
+         REAL(rkind)            :: SOLVERTHR = 1.E-6_rkind
 
+         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
@@ -552,7 +553,7 @@
 
          INTEGER                                :: NP_WW3, MSC_WW3, MDC_WW3, MAXSTEP_WW3, TSTART_WW3(2)
 
-         REAL(rkind)                            :: DTBOUND_WW3
+         REAL(rkind)                            :: DTBOUND_WW3, DDIR_WW3
          REAL(rkind),   ALLOCATABLE             :: FQ_WW3(:)
          REAL(rkind),   ALLOCATABLE             :: DR_WW3(:)
          REAL(rkind),   ALLOCATABLE             :: XP_WW3(:), YP_WW3(:)
@@ -655,6 +656,7 @@
          REAL(rkind)                      :: DTCUR
          REAL(rkind)                      :: DTCOUP
          REAL(rkind), ALLOCATABLE         :: SHYFZETA(:,:)
+         REAL(rkind), ALLOCATABLE         :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
 !
 ! ... source term ... wwmDsi.mod
 !

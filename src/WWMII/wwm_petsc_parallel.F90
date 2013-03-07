@@ -36,7 +36,7 @@
 !> - create the matrix and vectors
 !> - create the solver and preconditioner
       SUBROUTINE PETSC_INIT_PARALLEL
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, DBG
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost
@@ -112,7 +112,7 @@
 
       ! 1. create IA JA ASPAR petsc arrays
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, IA, JA
+        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -163,8 +163,8 @@
           end do
         end do
 
-!         write(*,*) rank, "nnz_new", nnz_new, " old", NNZ
-!         write(*,*) rank, "o_nnz_new", o_nnz_new
+!         write(DBG%FHNDL,*) rank, "nnz_new", nnz_new, " old", NNZ
+!         write(DBG%FHNDL,*) rank, "o_nnz_new", o_nnz_new
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -179,14 +179,14 @@
      &            o_toSort(maxNumConnNode+1),                           &
      &            stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.171'
         endif
 
         allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ),        &
      &           stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.178'
         endif
 
@@ -258,7 +258,7 @@
 
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.250'
         endif
       end subroutine
@@ -541,7 +541,7 @@
 #ifdef PETSC_DEBUG
          if(rank == 0) then
            if(reason .LT. 0 ) then
-              write(*,*) "Failure to converge\n"
+              write(DBG%FHNDL,*) "Failure to converge\n"
            else
              call KSPGetIterationNumber(Solver, iteration, petscErr)
              CHKERRQ(petscErr)
@@ -549,7 +549,7 @@
              iterationSum = iterationSum + iteration
              solverTimeSum = solverTimeSum + (endTime - startTime)
              if(ISS == MSC .and. IDD == MDC) then
-               write(*,*) "mean number of iterations", iterationSum / real((MSC*MDC))
+               write(DBG%FHNDL,*) "mean number of iterations", iterationSum / real((MSC*MDC))
                 print '("solver Time for all MSD MDC= ",f6.3," sec")', solverTimeSum
              endif
            endif

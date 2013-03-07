@@ -17,7 +17,7 @@
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
           CALL OUTPUT_STATION(RTIME*DAY2SEC,.FALSE.)
           OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
-          !write(*,*) MAIN%TMJD, OUT_STATION%TMJD, OUT_STATION%DELT*SEC2DAY
+          !write(DBG%FHNDL,*) MAIN%TMJD, OUT_STATION%TMJD, OUT_STATION%DELT*SEC2DAY
         END IF
       END SUBROUTINE
 !**********************************************************************
@@ -94,113 +94,6 @@
         END IF
         RETURN
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-!#ifdef MPI_PARALL_GRID
-!      SUBROUTINE GET_GLOBAL_INE(INE_GLOBAL, INE_IN)
-!      USE DATAPOOL
-!      USE ELFE_MSGP, only : COMM, IERR, NPROC, myrank
-!      USE ELFE_GLBL, ONLY : Iplg
-!      implicit none
-!      include 'mpif.h'
-!      integer, intent(in) :: INE_IN(MNE,3)
-!      integer, intent(out) :: INE_GLOBAL(NE_GLOBAL,3)
-!      integer, allocatable :: rbuf_int(:)
-!      integer, allocatable :: status(:)
-!      integer, allocatable :: INEtrans(:)
-!      integer, allocatable :: IPLGget(:)
-!      integer :: idx, NPget, I, IP, iProc
-!      integer :: istatus
-!      allocate(status(MPI_STATUS_SIZE))
-!      IF (myrank.eq.0) THEN
-!        DO IP=1,MNE
-!          INE_GLOBAL(IPLG(IP),:)=INE_IN(IP,:)
-!        END DO
-!        DO iProc=2,NPROC
-!          allocate(rbuf_int(1))
-!          CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 190, comm, status)
-!          NPget=rbuf_int(1)
-!          deallocate(rbuf_int)
-!          !
-!          allocate(IPLGget(NPget))
-!          allocate(INEtrans(NPget*3))
-!          CALL MPI_RECV(IPLGget,NPget,itype, iProc-1, 192, comm, status)
-!          CALL MPI_RECV(INEtrans,NPget*3,itype, iProc-1, 194, comm, status)
-!          idx=0
-!          DO IP=1,NPget
-!            DO I=1,3
-!              idx=idx+1
-!              INE_GLOBAL(IPLGget(IP),I)=INEtrans(idx)
-!            END DO
-!          END DO
-!          deallocate(INEtrans)
-!          deallocate(IPLGget)
-!        END DO
-!      ELSE
-!        allocate(rbuf_int(1))
-!        rbuf_int(1)=MNP
-!        CALL MPI_SEND(rbuf_int,1,itype, 0, 190, comm, istatus)
-!        deallocate(rbuf_int)
-!        !
-!        CALL MPI_SEND(iplg,MNP,itype, 0, 192, comm, istatus)
-!        !
-!        allocate(INEtrans(MNP*3))
-!        idx=0
-!        DO IP=1,MNP
-!          DO I=1,3
-!            idx=idx+1
-!            INEtrans(idx)=INE_IN(IP,I)
-!          END DO
-!        END DO
-!        CALL MPI_SEND(iplg,MNP*3,itype, 0, 194, comm, istatus)
-!        deallocate(INEtrans)
-!      ENDIF
-!      deallocate(status)
-!      END SUBROUTINE
-!#else
-!      SUBROUTINE GET_GLOBAL_INE(INE_GLOBAL, INE_IN)
-!      USE DATAPOOL
-!      integer, intent(in) :: INE_IN(MNP,3)
-!      integer, intent(out) :: INE_GLOBAL(MNP,3)
-!
-!      END SUBROUTINE
-!#endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-#ifdef MPI_PARALL_GRID
-!**********************************************************************
-!* merging globally OUTT_LOC to OUTT
-!* input OUTT_LOC the local result from this thread
-!* output OUTT the global results from all threads at rank 0
-!**********************************************************************
-      SUBROUTINE GET_GLOBAL_ARRAY(OUTT, OUTT_LOC, nbVar)
-         USE DATAPOOL
-         USE ELFE_MSGP, only : COMM, IERR, rtype, myrank
-         USE ELFE_GLBL, ONLY : Iplg, np_global
-         IMPLICIT NONE
-         include 'mpif.h'
-         REAL(rkind), intent(out) :: OUTT(NP_GLOBAL,nbVar)
-         REAL(rkind), intent(in) :: OUTT_LOC(MNP, nbVar)
-         INTEGER, intent(in) :: nbVar
-         !
-         REAL(rkind)  :: OUTT_GLOBAL(NP_GLOBAL,nbVar)
-         REAL(rkind)  :: OUTT_IN(NP_GLOBAL,nbVar)
-         INTEGER :: IP
-         OUTT_IN=ZERO
-         DO IP=1,MNP
-           OUTT_IN(IPLG(IP),:)=OUTT_LOC(IP,:)
-         END DO
-         call mpi_reduce(OUTT_IN,OUTT_GLOBAL,NP_GLOBAL*nbVar,         &
-     &      rtype,MPI_SUM,0,comm,ierr)
-         if(myrank==0) then
-           do IP=1,NP_GLOBAL
-             OUTT(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
-           enddo
-         endif
-      END SUBROUTINE
-#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -366,7 +259,7 @@
             OUTT_4(IP,:) = SNGL(OUTPARS(:))
             CURR_4(IP,:) = SNGL(CURRPARS(:))
             WIND_4(IP,:) = SNGL(WINDPARS(:))
-            !write(*,'(10F15.6)') WINDPARS
+            !write(DBG%FHNDL,'(10F15.6)') WINDPARS
          END DO
 
          IF (LMONO_OUT) THEN
@@ -1296,7 +1189,7 @@
           END IF
         END DO
         CALL WRITE_NETCDF_TIME(ncid, recs_stat, eTimeDay)
-        !write(*,*) 'Writing netcdf station record recs_stat=',recs_stat
+        !write(DBG%FHNDL,*) 'Writing netcdf station record recs_stat=',recs_stat
         iret=nf90_close(ncid)
         IF (iret .NE. nf90_noerr) THEN
           CHRERR = nf90_strerror(iret)
@@ -1569,7 +1462,7 @@
          OUTPAR(9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2 [-}
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
-         !WRITE(*,'(10F15.6)') OUTPAR
+         !WRITE(DBG%FHNDL,'(10F15.6)') OUTPAR
 
          RETURN
       END SUBROUTINE
@@ -1600,7 +1493,7 @@
          OUTPAR(5) = KLM        ! Mean wave number
          OUTPAR(6) = WLM        ! Mean wave length
 
-!         write(*,'(6F15.8)') outpar(1:6)
+!         write(DBG%FHNDL,'(6F15.8)') outpar(1:6)
 
          CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
 
@@ -2180,7 +2073,7 @@
 !**********************************************************************
 #ifdef NCDF
       SUBROUTINE HISTORY_NC_PRINTMMA(eStr, OUTT, NPWORK, NBVAR, I)
-      USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP
+      USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG
 # ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
       USE ELFE_MSGP, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
@@ -2222,13 +2115,13 @@
         ENDIF
       ENDIF
       IF (myrank.eq.0) THEN
-        WRITE(*,110) TRIM(eStr), MinV, MaxV, AvgV
+        WRITE(DBG%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
       END IF
 # else
       MinV=minval(OUTT(:,I))
       MaxV=maxval(OUTT(:,I))
       AvgV=sum(OUTT(:,I))/MNP
-      WRITE(*,110) TRIM(eStr), MinV, MaxV, AvgV
+      WRITE(DBG%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
 # endif
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
       END SUBROUTINE
@@ -2417,7 +2310,7 @@
           END IF
         END DO
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
-        !write(*,*) 'Writing netcdf history record recs_his=',recs_his
+        !write(DBG%FHNDL,*) 'Writing netcdf history record recs_his=',recs_his
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
 !$OMP END MASTER

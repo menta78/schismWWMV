@@ -520,7 +520,7 @@
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
           END DO
-!          WRITE(*,*) IK, EB(IK), IK, ITH, A(ITH,IK)
+!          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
         END DO
 !
 ! 2.  Integrate over directions -------------------------------------- *
@@ -771,7 +771,7 @@
              END DO   
           UORBT=UORBT+EB *SIG(IK)**2 * DDEN(IK) / CG(IK)
           AORB= AORB + EB            * DDEN(IK) / CG(IK)  !deep water only
-          !WRITE(*,*) UORBT, AORB, EB, SIG(IK)**2, DDEN(IK), CG(IK)
+          !WRITE(DBG%FHNDL,*) UORBT, AORB, EB, SIG(IK)**2, DDEN(IK), CG(IK)
           END DO
 
 !AR: Check the problem with SWELLFT IND beeing wrong e.g. eq. 0
@@ -794,8 +794,8 @@
             END IF
           UORB=UORBT
 
-       !WRITE(*,*) 'SWELLFT', SWELLFT(IND),DELI2,SWELLFT(IND+1),DELI1, DELAB
-       !WRITE(*,*) 'URBOT', UORB, AORB, Z0NOZ,XI
+       !WRITE(DBG%FHNDL,*) 'SWELLFT', SWELLFT(IND),DELI2,SWELLFT(IND+1),DELI1, DELAB
+       !WRITE(DBG%FHNDL,*) 'URBOT', UORB, AORB, Z0NOZ,XI
 !
 ! 2.  Diagonal
 !
@@ -820,7 +820,7 @@
       TAUX = UST**2* COS(USDIR)
       TAUY = UST**2* SIN(USDIR)
 
-       !WRITE(*,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
+       !WRITE(DBG%FHNDL,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
 !
 ! Loop over the resolved part of the spectrum 
 !
@@ -840,7 +840,7 @@
         TAUPY=TAUY-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,2)
 ! With MIN and MAX the bug should disappear.... but where did it come from?
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25,MAX(UST,0.3_rkind))
-        !WRITE(*,*) 'MESS', IK, UST, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
+        !WRITE(DBG%FHNDL,*) 'MESS', IK, UST, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
         USDIRP=ATAN2(TAUPY,TAUPX)
         COSU   = COS(USDIRP)
         SINU   = SIN(USDIRP)
@@ -859,7 +859,7 @@
         ZCN=LOG(K(IK)*Z0)
            ! below is the original WAM version (OK for deep water)  g*z0/C^2
            ! ZCN=ALOG(G*Z0b(I)*CM(I)**2)
-        !WRITE(*,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
+        !WRITE(DBG%FHNDL,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
         DO ITH=1,NTH
           IS=ITH+(IK-1)*NTH
           COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
@@ -872,7 +872,7 @@
             ! MU=
             ZLOG=ZCN+ZARG 
       
-            !WRITE(*,*) 'ZLOG', IK, ITH, ZCN, ZARG, X, KAPPA, UCN
+            !WRITE(DBG%FHNDL,*) 'ZLOG', IK, ITH, ZCN, ZARG, X, KAPPA, UCN
             
             IF (ZLOG.LT.ZERO) THEN
               ! The source term Sp is beta * omega * X**2
@@ -885,7 +885,7 @@
               LLWS(IS)=.FALSE.
               END IF
 
-              !WRITE(*,*) DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
+              !WRITE(DBG%FHNDL,*) DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
 !
 !  Added for consistency with ECWAM implsch.F 
 !
@@ -940,9 +940,9 @@
         TAUWNX =STRESSSTABN(3,1)
         TAUWNY =STRESSSTABN(3,2)
    
-        !WRITE(*,*) 'DSTAB', DSTAB(3,:)
-        !WRITE(*,*) 'STRESSTAB', STRESSSTAB (3,1), STRESSSTAB (3,2), STRESSSTABN(3,1), STRESSSTABN(3,2)
-        !WRITE(*,*) FW, UORB
+        !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(3,:)
+        !WRITE(DBG%FHNDL,*) 'STRESSTAB', STRESSSTAB (3,1), STRESSSTAB (3,2), STRESSSTABN(3,1), STRESSSTABN(3,2)
+        !WRITE(DBG%FHNDL,*) FW, UORB
        !  WRITE(995,'(A,11G14.5)') 'NEGSTRESS:    ',TAUWNX,TAUWNY,FW*UORB**3
 # ifdef STAB3
       END DO 
@@ -992,7 +992,7 @@
       TAUPX=TAUX-ABS(TTAUWSHELTER)*XSTRESS
       TAUPY=TAUY-ABS(TTAUWSHELTER)*YSTRESS
 
-      !WRITE(*,*) 'TAUPX', TAUPX, TAUPY, TTAUWSHELTER, XSTRESS, YSTRESS
+      !WRITE(DBG%FHNDL,*) 'TAUPX', TAUPX, TAUPY, TTAUWSHELTER, XSTRESS, YSTRESS
 
       USTP=(TAUPX**2+TAUPY**2)**0.25
       USDIRP=ATAN2(TAUPY,TAUPX)
@@ -1010,10 +1010,10 @@
       IF (TTAUWSHELTER.GT.0) THEN 
          XK = CONST0*TEMP / DELTAIL
          I = MIN (ILEVTAIL-1, INT(XK))
-         !WRITE(*,*) XK, I, ILEVTAIL, CONST0, TEMP, DELTAIL 
+         !WRITE(DBG%FHNDL,*) XK, I, ILEVTAIL, CONST0, TEMP, DELTAIL 
          DELK1= MIN (ONE ,XK-MyREAL(I))
          DELK2=ONE - DELK1
-         !WRITE(*,*) DELK1, DELK2, XK, I, J
+         !WRITE(DBG%FHNDL,*) DELK1, DELK2, XK, I, J
          TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1 )      &
      & *DELJ2 +(TAUHFT2(IND,J+1,I)*DELI2+TAUHFT2(IND+1,J+1,I)*DELI1)    &
      & *DELJ1)*DELK2                                                    &
@@ -1027,7 +1027,7 @@
       TAUHF = CONST0*TEMP*UST**2*TAU1
       TAUWX = XSTRESS+TAUHF*COS(USDIRP)
       TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
-      !WRITE(*,*) 'STRESSES', TAUHF, TAUWX, TAUWY
+      !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
 !      
 ! Reduces tail effect to make sure that wave-supported stress 
 ! is less than total stress, this is borrowed from ECWAM Stresso.F      
@@ -1949,7 +1949,7 @@
         CHARN = AALPHA
         END IF
 
-!      write(*,*) z0, ustar, windspeed
+!      write(DBG%FHNDL,*) z0, ustar, windspeed
 !
       RETURN
       END SUBROUTINE CALC_USTAR_OLD

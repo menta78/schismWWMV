@@ -19,42 +19,35 @@
       use elfe_msgp
       implicit none
       integer :: i,j
+      real(rkind) ::  tmp1,tmp2
 
       !Output sidecenters.bp
       open(32,file='sidecenters.bp')
-!      if(iwrite.eq.0) then
       write(32,*) 'Sidegrid'
       write(32,*) ns
-!      else !evm
-!        write(32,"(a)",advance="no") 'Sidegrid\n'
-!        write(32,"(i12,a)",advance="no") ns,'\n'
-!      endif
       do i=1,ns
-!        if(iwrite.eq.0) then
-        write(32,*) i,xcj(i),ycj(i),real(dps(i))
-!        else !evm
-!          write(32,"(i12,a,f19.9,a,f19.9,a,f12.6,a)",advance="no") &
-!             i," ",xcj(i),"      ",ycj(i),"    ",real(dps(i)),'\n'
-!        endif
-      enddo !i
+        if(ics==1) then
+          write(32,*) i,xcj(i),ycj(i),real(dps(i))
+        else
+          tmp1=sum(xlon(isidenode(i,1:2)))/2
+          tmp2=sum(ylat(isidenode(i,1:2)))/2
+          write(32,*) i,tmp1,tmp2,real(dps(i))
+        endif
+      enddo !ics
       close(32)
 
       !Output centers.bp
       open(32,file='centers.bp')
-!      if(iwrite.eq.0) then
       write(32,*) 'centers pts'
       write(32,*) ne
-!      else !evm
-!        write(32,"(a)",advance="no") 'centers pts\n'
-!        write(32,"(i12,a)",advance="no") ne,'\n'
-!      endif
       do i=1,ne
-!        if(iwrite.eq.0) then
-        write(32,*) i,xctr(i),yctr(i),real(dpe(i))
-!        else !evm
-!          write(32,"(i12,a,f19.9,a,f19.9,a,f12.6,a)",advance="no") &
-!             i," ",xctr(i),"      ",yctr(i),"    ",real(dpe(i)),'\n'
-!        endif
+        if(ics==1) then
+          write(32,*) i,xctr(i),yctr(i),real(dpe(i))
+        else
+          tmp1=sum(xlon(nm(i,1:3)))/3
+          tmp2=sum(ylat(nm(i,1:3)))/3
+          write(32,*) i,tmp1,tmp2,real(dpe(i))
+        endif !ics
       enddo !i
       close(32)
 

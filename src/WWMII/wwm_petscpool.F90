@@ -125,7 +125,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkAsparDiagonalAccuracy(ASPAR, IA, JA, ISS, IDD)
-        use datapool, only: MNP, IOBP
+        use datapool, only: MNP, IOBP, DBG
         use elfe_glbl, only: iplg
         use petscsys
         implicit none
@@ -230,20 +230,20 @@
 
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
-          write(*,*) "check ASPAR diagonal Accuracy"
-          if(present(ISS) .and. present(IDD)) write(*,*) "ISS IDD", ISS, IDD
-          write(*,*) "minimum at (IP global)" , iplg(positionMin), ": ", valueMin
-          write(*,*) "maximum at (IP global)" , iplg(positionMax), ": ", valueMax
-          write(*,*) "mean" , mean
+          write(DBG%FHNDL,*) "check ASPAR diagonal Accuracy"
+          if(present(ISS) .and. present(IDD)) write(DBG%FHNDL,*) "ISS IDD", ISS, IDD
+          write(DBG%FHNDL,*) "minimum at (IP global)" , iplg(positionMin), ": ", valueMin
+          write(DBG%FHNDL,*) "maximum at (IP global)" , iplg(positionMax), ": ", valueMax
+          write(DBG%FHNDL,*) "mean" , mean
 
-          write(*,*) "first 10 entries which are smaller than", epsilon
-          write(*,*) "IP (global)\tIOBP"
+          write(DBG%FHNDL,*) "first 10 entries which are smaller than", epsilon
+          write(DBG%FHNDL,*) "IP (global)\tIOBP"
           do i = 1, min(maxCount, zeroElementsCounter)
-            write(*,*) entriesDetail(i,:)
+            write(DBG%FHNDL,*) entriesDetail(i,:)
           end do
 
-          write(*,*) rank, " There are total ",zeroElementsCounter," entries"
-          write(*,*) "check ASPAR diagonal Accuracy Ende. Time: ",endTime - startTime," sec"
+          write(DBG%FHNDL,*) rank, " There are total ",zeroElementsCounter," entries"
+          write(DBG%FHNDL,*) "check ASPAR diagonal Accuracy Ende. Time: ",endTime - startTime," sec"
         endif
       end subroutine
 #endif
@@ -311,6 +311,7 @@
       !> print out the solver tolerances
       !> @param[in] solver KSP Solver
       subroutine printSolverTolerance(solver)
+        use datapool, only : DBG
         use petscksp
         implicit none
 
@@ -321,15 +322,16 @@
         PetscInt        :: maxits  ! maximum number of iterations
 
         call KSPGetTolerances(solver, rtol, abstol, dtol, maxits, petscErr);CHKERRQ(petscErr)
-        write(*,*) "relative convergence tolerance", rtol
-        write(*,*) "absolute convergence tolerance", abstol
-        write(*,*) "divergence tolerance", dtol
-        write(*,*) "maximum number of iterations", maxits
+        write(DBG%FHNDL,*) "relative convergence tolerance", rtol
+        write(DBG%FHNDL,*) "absolute convergence tolerance", abstol
+        write(DBG%FHNDL,*) "divergence tolerance", dtol
+        write(DBG%FHNDL,*) "maximum number of iterations", maxits
       end subroutine
 
       !> print out the KSP and PC type
       !> @param[in] solver KSP Solver
       subroutine printKSPType(solver)
+        use datapool, only : DBG
         use petscksp
         use petscpc
         use petscmat
@@ -345,24 +347,24 @@
         MatStructure flag
 
         call KSPGetType(solver, ksp, petscErr);CHKERRQ(petscErr)
-        write(*,*) "using KSP: ", trim(ksp)
+        write(DBG%FHNDL,*) "using KSP: ", trim(ksp)
         
         call KSPGetOperators(solver, PETSC_NULL, PETSC_NULL, flag, petscErr);CHKERRQ(petscErr)
         if(flag == SAME_PRECONDITIONER) then
-          write(*,*) "KSP using SAME_PRECONDITIONER"
+          write(DBG%FHNDL,*) "KSP using SAME_PRECONDITIONER"
         else if(flag == SAME_NONZERO_PATTERN) then
-          write(*,*) "KSP using SAME_NONZERO_PATTERN"
+          write(DBG%FHNDL,*) "KSP using SAME_NONZERO_PATTERN"
         else if(flag == DIFFERENT_NONZERO_PATTERN) then
-          write(*,*) "KSP using DIFFERENT_NONZERO_PATTERN"
+          write(DBG%FHNDL,*) "KSP using DIFFERENT_NONZERO_PATTERN"
         else if(flag == SUBSET_NONZERO_PATTERN) then
-          write(*,*) "KSP using SUBSET_NONZERO_PATTERN"
+          write(DBG%FHNDL,*) "KSP using SUBSET_NONZERO_PATTERN"
         else
-          write(*,*) "KSPGetOperators() unknown operator set!"
+          write(DBG%FHNDL,*) "KSPGetOperators() unknown operator set!"
         endif
 
         call KSPGetPC(solver, prec, petscErr);CHKERRQ(petscErr);
         call PCGetType(prec, pc, petscErr);CHKERRQ(petscErr)
-        write(*,*) "using PC: ", trim(pc)
+        write(DBG%FHNDL,*) "using PC: ", trim(pc)
       end subroutine
 
 
@@ -372,6 +374,7 @@
       !> @param[in] b optional, PETSc RHs vector
       !> @param[in] ISS, IDD optional, frequency and direction number
       subroutine printPDE(matrix, x, b, ISS, IDD)
+         use datapool, only : DBG
          use petscmat
          use petscvec
          implicit none
@@ -392,24 +395,24 @@
           call PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_INDEX, petscErr);CHKERRQ(petscErr)
 
           if(present(ISS) .and. present(IDD)) then
-            if(rank == 0) write(*,*) "IS ID", ISS, IDD
+            if(rank == 0) write(DBG%FHNDL,*) "IS ID", ISS, IDD
           endif
 
           ! draw the matrix
           if(present(matrix)) then
-            if(rank == 0) write(*,*) "matrix:"
+            if(rank == 0) write(DBG%FHNDL,*) "matrix:"
             call MatView(matrix, viewer, petscErr);CHKERRQ(petscErr)
           endif
 
           ! draw x
           if(present(x)) then
-            if(rank == 0) write(*,*) "X"
+            if(rank == 0) write(DBG%FHNDL,*) "X"
             call VecView(x, viewer, petscErr);CHKERRQ(petscErr)
           endif
 
           ! draw rhs
           if(present(b)) then
-            if(rank == 0) write(*,*) "rhs"
+            if(rank == 0) write(DBG%FHNDL,*) "rhs"
             call VecView(b, viewer, petscErr);CHKERRQ(petscErr)
           endif
       end subroutine printPDE
@@ -418,26 +421,28 @@
       !> print some matrix information like number of nonzeros, memory allocated
       !> @param[in] matrix PETSC matrix
       subroutine printMatrixInformation(matrix)
+        use datapool, only : DBG
         use petscmat
         implicit none
         Mat, intent(in) :: matrix
         real(kind=8) :: matInfo(MAT_INFO_SIZE)
 
         call MatGetInfo(matrix, MAT_LOCAL, matInfo, petscErr);CHKERRQ(petscErr);
-        write(*,*) "block size", matInfo(MAT_INFO_BLOCK_SIZE)
-        write(*,*) "number of nonzeros allocated", matInfo(MAT_INFO_NZ_ALLOCATED)
-        write(*,*) "number of nonzeros used", matInfo(MAT_INFO_NZ_USED)
-        write(*,*) "number of nonzeros uneeded", matInfo(MAT_INFO_NZ_UNNEEDED)
-        write(*,*) "memory allocated", matInfo(MAT_INFO_MEMORY)
-        write(*,*) "number of matrix assemblies called ", matInfo(MAT_INFO_ASSEMBLIES)
-        write(*,*) "number of mallocs during MatSetValues()", matInfo(MAT_INFO_MALLOCS)
-        write(*,*) "fill ratio for LU/ILU given", matInfo(MAT_INFO_FILL_RATIO_GIVEN)
-        write(*,*) "fill ratio for LU/ILU needed", matInfo(MAT_INFO_FILL_RATIO_NEEDED)
-        write(*,*) "number of mallocs during factorization", matInfo(MAT_INFO_FACTOR_MALLOCS)
+        write(DBG%FHNDL,*) "block size", matInfo(MAT_INFO_BLOCK_SIZE)
+        write(DBG%FHNDL,*) "number of nonzeros allocated", matInfo(MAT_INFO_NZ_ALLOCATED)
+        write(DBG%FHNDL,*) "number of nonzeros used", matInfo(MAT_INFO_NZ_USED)
+        write(DBG%FHNDL,*) "number of nonzeros uneeded", matInfo(MAT_INFO_NZ_UNNEEDED)
+        write(DBG%FHNDL,*) "memory allocated", matInfo(MAT_INFO_MEMORY)
+        write(DBG%FHNDL,*) "number of matrix assemblies called ", matInfo(MAT_INFO_ASSEMBLIES)
+        write(DBG%FHNDL,*) "number of mallocs during MatSetValues()", matInfo(MAT_INFO_MALLOCS)
+        write(DBG%FHNDL,*) "fill ratio for LU/ILU given", matInfo(MAT_INFO_FILL_RATIO_GIVEN)
+        write(DBG%FHNDL,*) "fill ratio for LU/ILU needed", matInfo(MAT_INFO_FILL_RATIO_NEEDED)
+        write(DBG%FHNDL,*) "number of mallocs during factorization", matInfo(MAT_INFO_FACTOR_MALLOCS)
       end subroutine
 
     !> print some matrix properties like norm, diag max/min
     subroutine printMatrixProperties(matrix)
+      use datapool, only : DBG
       use petscmat
       implicit none
       Mat, intent(in) :: matrix
@@ -460,12 +465,12 @@
       call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
 
       if(rank == 0) then
-        write(*,*) "global matrix properties"
-        write(*,*) "NORM 1/2/inf"
-        write(*,*) norm1, norm2, norminf
-        write(*,*) "diagMin, diagMax, ratio"
-        write(*,*) diagMin, diagMax, diagMax/diagMin
-        write(*,*) "local matrix properties"
+        write(DBG%FHNDL,*) "global matrix properties"
+        write(DBG%FHNDL,*) "NORM 1/2/inf"
+        write(DBG%FHNDL,*) norm1, norm2, norminf
+        write(DBG%FHNDL,*) "diagMin, diagMax, ratio"
+        write(DBG%FHNDL,*) diagMin, diagMax, diagMax/diagMin
+        write(DBG%FHNDL,*) "local matrix properties"
       endif
 
       ! local matrix properties
@@ -484,12 +489,12 @@
       call VecMin(diag, PETSC_NULL, diagMin, petscErr);CHKERRQ(petscErr)
       call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
 
-      write(*,*) rank, "NORM1", norm1
-      write(*,*) rank, "NORM2", norm2
-      write(*,*) rank, "NORMinf", norminf
-      write(*,*) rank, "diagMin", diagMin
-      write(*,*) rank, "diagMax", diagMax
-      write(*,*) rank, "diagRatio", diagMax/diagMin
+      write(DBG%FHNDL,*) rank, "NORM1", norm1
+      write(DBG%FHNDL,*) rank, "NORM2", norm2
+      write(DBG%FHNDL,*) rank, "NORMinf", norminf
+      write(DBG%FHNDL,*) rank, "diagMin", diagMin
+      write(DBG%FHNDL,*) rank, "diagMax", diagMax
+      write(DBG%FHNDL,*) rank, "diagRatio", diagMax/diagMin
     end subroutine
       
 
@@ -522,7 +527,7 @@
 #ifdef MPI_PARALL_GRID
       !> create all APP<->Petsc local<->global mappings.
       subroutine createMappings()
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG
         ! np_global    - # nodes gloabal
         ! np or NP_RES - # nodes local non augmented
         ! npg          - # ghost
@@ -569,7 +574,7 @@
                 ALO2AGO(0:nNodesWithoutInterfaceGhosts-1), &
                 stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
 
@@ -597,7 +602,7 @@
 ! create PETsc Local -> Global mapping
         allocate(PLO2PGO(0:nNodesWithoutInterfaceGhosts), PGO2PLO(0:np_global), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.526'
         endif
 
@@ -613,7 +618,7 @@
 ! create App Global <-> PETsc Global mapping
         allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
 
@@ -633,7 +638,7 @@
 ! create App local <-> Petsc local mappings
         allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:nNodesWithoutInterfaceGhosts-1), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.562'
         endif
         ALO2PLO = -999
@@ -652,7 +657,7 @@
         nghost=NP_RES+npg-nNodesWithoutInterfaceGhosts
         allocate(onlyGhosts(0:nghost-1), onlyGhostsOldLocalMapping(0:nghost-1), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.581'
         endif
 
@@ -675,12 +680,12 @@
         end do
 
 !         if(rank == 0) then
-!           write(*,*) rank, "Global Number of Nodes" , np_global
-!           write(*,*) rank, "Local Number of resident nodes", NP_RES
-!           write(*,*) rank, "Local Number of ghost nodes", npg
-!           write(*,*) rank, "local Number of nodes in augmented subdomain (NP_RES+npg)", MNP
-!           write(*,*) rank, "Local Number of nodes without interface and ghost nodes", nNodesWithoutInterfaceGhosts
-!           write(*,*) rank, "Local Number of ghost + interface nodes", nghost
+!           write(DBG%FHNDL,*) rank, "Global Number of Nodes" , np_global
+!           write(DBG%FHNDL,*) rank, "Local Number of resident nodes", NP_RES
+!           write(DBG%FHNDL,*) rank, "Local Number of ghost nodes", npg
+!           write(DBG%FHNDL,*) rank, "local Number of nodes in augmented subdomain (NP_RES+npg)", MNP
+!           write(DBG%FHNDL,*) rank, "Local Number of nodes without interface and ghost nodes", nNodesWithoutInterfaceGhosts
+!           write(DBG%FHNDL,*) rank, "Local Number of ghost + interface nodes", nghost
 !         end if
       end subroutine
 #endif
@@ -712,7 +717,7 @@
 
       !> reads KSP/PC Type etc. from PETScOptions namelist and check for strange values
       subroutine readPETSCnamelist()
-        use datapool, only: inp, CHK
+        use datapool, only: inp, CHK, DBG
         use StringTools
         implicit none
         ! true if one of the values seem strange
@@ -727,6 +732,7 @@
         maxitsStrange = .false.
 
         READ(INP%FHNDL, NML = PETScOptions)
+        WRITE(CHK%FHNDL, NML = PETScOptions)
 
         ksptype = toLower(ksptype)
         pctype  = toLower(pctype)
@@ -738,13 +744,13 @@
         if(maxits < 1 .or. maxits > 10000) maxitsStrange = .true.
 
         if(rtolStrage .or. abstolStrange .or. dtolStrange .or. maxitsStrange) then
-          write(*,*) "Strange input in namelist PETScOptions"
+          write(DBG%FHNDL,*) "Strange input in namelist PETScOptions"
         endif
 
-        if(rtolStrage)    write(*,*) "rtol > 1. Are you sure?", rtol
-        if(abstolStrange) write(*,*) "abstol > 1. Are you sure?", abstol
-        if(dtolStrange)   write(*,*) "dtol < 1. Are you sure?", dtol
-        if(maxitsStrange) write(*,*) "maxits < 1 ir maxits > 10000 Are you sure?", maxits
+        if(rtolStrage)    write(DBG%FHNDL,*) "rtol > 1. Are you sure?", rtol
+        if(abstolStrange) write(DBG%FHNDL,*) "abstol > 1. Are you sure?", abstol
+        if(dtolStrange)   write(DBG%FHNDL,*) "dtol < 1. Are you sure?", dtol
+        if(maxitsStrange) write(DBG%FHNDL,*) "maxits < 1 ir maxits > 10000 Are you sure?", maxits
 
 
 ! todo dosen't work. overwrite wwmcheck.nml and write PETScOptions twice
@@ -754,6 +760,7 @@
 
       !> call all necessary petsc functions to create a solver and PC
       subroutine createSolver()
+        use datapool, only : DBG
         use petscsys
         use petscmat
         implicit none
@@ -763,7 +770,7 @@
         call KSPSetType(solver, ksptype, petscErr);CHKERRQ(petscErr)
 
         if(matrix == 0) then
-           write(*,*) __FILE__, " Line ", __LINE__ ," petsc matrix was not created. call createMatrix() befor createSolver()"
+           write(DBG%FHNDL,*) __FILE__, " Line ", __LINE__ ," petsc matrix was not created. call createMatrix() befor createSolver()"
           stop 'wwm_petscpool l.681'
         endif
 

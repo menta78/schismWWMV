@@ -545,7 +545,7 @@
            DTMAX_GLOBAL_EXP_LOC = VERYLARGE
            DO IP = 1, NP_RES
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !write(*,*) IP, SI(IP), KKSUM(IP)
+             !write(DBG%FHNDL,*) IP, SI(IP), KKSUM(IP)
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
@@ -652,9 +652,9 @@
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
-           WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
+           WRITE (DBG%FHNDL,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,      &
      &       SUMAC1, SUMAC2, MINTEST
-           WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
+           WRITE (DBG%FHNDL,*) 'VOLUME ERROR: TOTAL and ACTUAL',        &
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
@@ -857,9 +857,9 @@
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
-           WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
+           WRITE (DBG%FHNDL,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,      &
      &       SUMAC1, SUMAC2, MINTEST
-           WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
+           WRITE (DBG%FHNDL,*) 'VOLUME ERROR: TOTAL and ACTUAL',        &
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF

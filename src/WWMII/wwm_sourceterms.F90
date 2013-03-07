@@ -59,18 +59,18 @@
          IDISP = 999
 
          IF (.NOT. LRECALC) CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
-!         WRITE(*,'(A5,7F15.4)') 'NEW', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
+!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'NEW', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
 !         CALL PARAMENG(IP,ACLOC,SME01,SME10,KME01,KMWAM,KMWAM2,WLM, &
 !         URSELL,UBOT,ABRBOT,TMBOT,HS,ETOT,FP,TP,CP,KPP,LPP,DM,DSPR, &
 !         PEAKDSPR,PEAKDM)
-!         WRITE(*,'(A5,7F15.4)') 'OLD', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
+!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'OLD', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
 !         DO IS = 1, MSC
 !           DO ID = 1, MDC
 !             TMPAC(ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
 !           END DO
 !         END DO
 !         CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-!         WRITE(*,'(A5,7F15.4)') 'WAM 1', 4*SQRT(EMEAN),EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN
+!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'WAM 1', 4*SQRT(EMEAN),EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN
 
          SSINE = 0._rkind
          SSINL = 0._rkind
@@ -153,7 +153,7 @@
                  CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)  
                  CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS) 
 #else
-                 WRITE(*,*) 'NO ST42 or ST41 chosen but MESIN == 1'
+                 WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
                  STOP 'stop wwm_sourceterms l.186'
 #endif
                  !write(3001,'(10F15.8)') WIND10, UFRIC(IP), Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), ALPHA_CH(IP)
@@ -268,7 +268,7 @@
            !END IF
          END IF ! ISELECT 
  
-         !IF (IOBP(IP) .EQ. 0) WRITE(*,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
+         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -292,7 +292,7 @@
            END IF
          END IF ! ISELECT
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(*,*) 'SNL4', SUM(IMATRA), SUM(IMATDA)
+         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL4', SUM(IMATRA), SUM(IMATDA)
 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IMATRAT = IMATRA
@@ -357,7 +357,7 @@
 
          END IF
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(*,*) 'SNL3', SUM(IMATRA), SUM(IMATDA)
+         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL3', SUM(IMATRA), SUM(IMATDA)
 
          IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
            IF (MESBR .EQ. 1) THEN
@@ -365,7 +365,7 @@
            END IF
          END IF
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(*,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
+         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
 
          IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
            IF (MESBF .GE. 1) THEN
@@ -398,7 +398,7 @@
              CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
              CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
 #else
-             WRITE(*,*) 'NO ST42 or ST41 chosen but MESIN == 1'
+             WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
              STOP 'stop wwm_sourceterms l.186'
 #endif
            ELSEIF (MESIN == 2) THEN
@@ -467,7 +467,7 @@
                DO IS=1,MSC
                  FLLOWEST = VERYSMALL!FLMINFR(JU,IS)*SPRDD(ID) ... check with Jean
                  ACLOC(IS,ID) = GADIAG*TEMP(IS)+ACLOC(IS,ID)*FCONST(IS)
-                 !write(*,'(2I10,3F15.8)') IS, MSC_HF, GADIAG, TEMP(IS), FCONST(IS)
+                 !write(DBG%FHNDL,'(2I10,3F15.8)') IS, MSC_HF, GADIAG, TEMP(IS), FCONST(IS)
                ENDDO
              ENDDO
 

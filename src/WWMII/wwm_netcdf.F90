@@ -2,6 +2,131 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE DETERMINE_NEEDED_COMPUTATION(eVar)
+      USE DATAPOOL, only : VAROUT, OUTVARS_COMPLETE
+      implicit none
+      type(VAROUT), intent(inout) :: eVar
+      LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,                  &
+     &   ETOTC, ETOTS, DM, DSPR,                                        &
+     &   TPPD, TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,         &
+     &   DPEAK, UBOT, ORBITAL, BOTEXPER, TMBOT,                         &
+     &   URSELL, UFRIC, Z0, ALPHA_CH, WINDX, WINDY, CD,                 &
+     &   CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,                 &
+     &   WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                    &
+     &   STOKESBOTTX, STOKESBOTTY,                                      &
+     &   STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,            &
+     &   RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+      LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
+      LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
+      integer iVar, idx, nbOutVarEff
+      HS           = eVar%LVAR( 1)
+      TM01         = eVar%LVAR( 2)
+      TM02         = eVar%LVAR( 3)
+      TM10         = eVar%LVAR( 4)
+      KLM          = eVar%LVAR( 5)
+      WLM          = eVar%LVAR( 6)
+      ETOTC        = eVar%LVAR( 7)
+      ETOTS        = eVar%LVAR( 8)
+      DM           = eVar%LVAR( 9)
+      DSPR         = eVar%LVAR(10)
+      TPPD         = eVar%LVAR(11)
+      TPP          = eVar%LVAR(12)
+      CPP          = eVar%LVAR(13)
+      WNPP         = eVar%LVAR(14)
+      CGPP         = eVar%LVAR(15)
+      KPP          = eVar%LVAR(16)
+      LPP          = eVar%LVAR(17)
+      PEAKD        = eVar%LVAR(18)
+      PEAKDSPR     = eVar%LVAR(19)
+      DPEAK        = eVar%LVAR(20)
+      UBOT         = eVar%LVAR(21)
+      ORBITAL      = eVar%LVAR(22)
+      BOTEXPER     = eVar%LVAR(23)
+      TMBOT        = eVar%LVAR(24)
+      URSELL       = eVar%LVAR(25)
+      UFRIC        = eVar%LVAR(26)
+      Z0           = eVar%LVAR(27)
+      ALPHA_CH     = eVar%LVAR(28)
+      WINDX        = eVar%LVAR(29)
+      WINDY        = eVar%LVAR(30)
+      CD           = eVar%LVAR(31)
+      CURRTX       = eVar%LVAR(32)
+      CURRTY       = eVar%LVAR(33)
+      WATLEV       = eVar%LVAR(34)
+      WATLEVOLD    = eVar%LVAR(35)
+      DEPDT        = eVar%LVAR(36)
+      DEP          = eVar%LVAR(37)
+      WINDMAG      = eVar%LVAR(38)
+      TAUW         = eVar%LVAR(39)
+      TAUWX        = eVar%LVAR(40)
+      TAUWY        = eVar%LVAR(41)
+      TAUHF        = eVar%LVAR(42)
+      TAUTOT       = eVar%LVAR(43)
+      STOKESBOTTX  = eVar%LVAR(44)
+      STOKESBOTTY  = eVar%LVAR(45)
+      STOKESSURFX  = eVar%LVAR(46)
+      STOKESSURFY  = eVar%LVAR(47)
+      STOKESBAROX  = eVar%LVAR(48)
+      STOKESBAROY  = eVar%LVAR(49)
+      RSXX         = eVar%LVAR(50)
+      RSXY         = eVar%LVAR(51)
+      RSYY         = eVar%LVAR(52)
+      CFL1         = eVar%LVAR(53)
+      CFL2         = eVar%LVAR(54)
+      CFL3         = eVar%LVAR(55)
+      ComputeMean=.FALSE.
+      ComputeDirSpread=.FALSE.
+      ComputePeak=.FALSE.
+      ComputeCurr=.FALSE.
+      ComputeUrsell=.FALSE.
+      ComputeStokes=.FALSE.
+      IF (HS .or. TM01 .or. TM02 .or. TM10 .or. KLM .or. WLM) THEN
+        ComputeMean=.TRUE.
+      END IF
+      IF (ETOTC .or. ETOTS .or. DM .or. DSPR) THEN
+        ComputeDirspread=.TRUE.
+      END IF
+      IF (TPPD .or. TPP .or. CPP .or. WNPP .or. CGPP .or. KPP .or. &
+     &    LPP .or. PEAKD .or. PEAKDSPR .or. DPEAK) THEN
+        ComputePeak=.TRUE.
+      END IF
+      IF (UBOT .or. ORBITAL .or. BOTEXPER .or. TMBOT) THEN
+        ComputeCurr=.TRUE.
+      END IF
+      IF (URSELL) THEN
+        ComputeUrsell=.TRUE.
+        ComputeMean=.TRUE.
+        ComputePeak=.TRUE.
+      END IF
+      IF (STOKESSURFX .or. STOKESSURFY .or. STOKESBOTTX .or. STOKESBOTTY .or. STOKESBAROX .or. STOKESBAROY) THEN
+        ComputeStokes=.TRUE.
+      END IF
+      eVar%ComputeMean=ComputeMean
+      eVar%ComputeDirspread=ComputeDirspread
+      eVar%ComputePeak=ComputePeak
+      eVar%ComputeCurr=ComputeCurr
+      eVar%ComputeUrsell=ComputeUrsell
+      eVar%ComputeStokes=ComputeStokes
+      nbOutVarEff=0
+      DO iVar=1,OUTVARS_COMPLETE
+        IF (eVar%LVAR(iVar)) THEN
+          nbOutVarEff=nbOutVarEff+1
+        END IF
+      END DO
+      eVar%nbOutVarEff=nbOutVarEff
+      allocate(eVar%ListIdxEff(nbOutVarEff))
+      idx=0
+      DO iVar=1,OUTVARS_COMPLETE
+        IF (eVar%LVAR(iVar)) THEN
+          idx=idx+1
+          eVar%ListIdxEff(idx)=iVar
+        END IF
+      END DO
+      END SUBROUTINE
+#ifdef NCDF
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBP, NEIGHBOR)
       IMPLICIT NONE
 
@@ -265,131 +390,6 @@
       DEALLOCATE(ListSequence)
       DEALLOCATE(SequenceNumber)
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE DETERMINE_NEEDED_COMPUTATION(eVar)
-      USE DATAPOOL, only : VAROUT, OUTVARS_COMPLETE
-      implicit none
-      type(VAROUT), intent(inout) :: eVar
-      LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,                  &
-     &   ETOTC, ETOTS, DM, DSPR,                                        &
-     &   TPPD, TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,         &
-     &   DPEAK, UBOT, ORBITAL, BOTEXPER, TMBOT,                         &
-     &   URSELL, UFRIC, Z0, ALPHA_CH, WINDX, WINDY, CD,                 &
-     &   CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,                 &
-     &   WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                    &
-     &   STOKESBOTTX, STOKESBOTTY,                                      &
-     &   STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,            &
-     &   RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
-      LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
-      LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
-      integer iVar, idx, nbOutVarEff
-      HS           = eVar%LVAR( 1)
-      TM01         = eVar%LVAR( 2)
-      TM02         = eVar%LVAR( 3)
-      TM10         = eVar%LVAR( 4)
-      KLM          = eVar%LVAR( 5)
-      WLM          = eVar%LVAR( 6)
-      ETOTC        = eVar%LVAR( 7)
-      ETOTS        = eVar%LVAR( 8)
-      DM           = eVar%LVAR( 9)
-      DSPR         = eVar%LVAR(10)
-      TPPD         = eVar%LVAR(11)
-      TPP          = eVar%LVAR(12)
-      CPP          = eVar%LVAR(13)
-      WNPP         = eVar%LVAR(14)
-      CGPP         = eVar%LVAR(15)
-      KPP          = eVar%LVAR(16)
-      LPP          = eVar%LVAR(17)
-      PEAKD        = eVar%LVAR(18)
-      PEAKDSPR     = eVar%LVAR(19)
-      DPEAK        = eVar%LVAR(20)
-      UBOT         = eVar%LVAR(21)
-      ORBITAL      = eVar%LVAR(22)
-      BOTEXPER     = eVar%LVAR(23)
-      TMBOT        = eVar%LVAR(24)
-      URSELL       = eVar%LVAR(25)
-      UFRIC        = eVar%LVAR(26)
-      Z0           = eVar%LVAR(27)
-      ALPHA_CH     = eVar%LVAR(28)
-      WINDX        = eVar%LVAR(29)
-      WINDY        = eVar%LVAR(30)
-      CD           = eVar%LVAR(31)
-      CURRTX       = eVar%LVAR(32)
-      CURRTY       = eVar%LVAR(33)
-      WATLEV       = eVar%LVAR(34)
-      WATLEVOLD    = eVar%LVAR(35)
-      DEPDT        = eVar%LVAR(36)
-      DEP          = eVar%LVAR(37)
-      WINDMAG      = eVar%LVAR(38)
-      TAUW         = eVar%LVAR(39)
-      TAUWX        = eVar%LVAR(40)
-      TAUWY        = eVar%LVAR(41)
-      TAUHF        = eVar%LVAR(42)
-      TAUTOT       = eVar%LVAR(43)
-      STOKESBOTTX  = eVar%LVAR(44)
-      STOKESBOTTY  = eVar%LVAR(45)
-      STOKESSURFX  = eVar%LVAR(46)
-      STOKESSURFY  = eVar%LVAR(47)
-      STOKESBAROX  = eVar%LVAR(48)
-      STOKESBAROY  = eVar%LVAR(49)
-      RSXX         = eVar%LVAR(50)
-      RSXY         = eVar%LVAR(51)
-      RSYY         = eVar%LVAR(52)
-      CFL1         = eVar%LVAR(53)
-      CFL2         = eVar%LVAR(54)
-      CFL3         = eVar%LVAR(55)
-      ComputeMean=.FALSE.
-      ComputeDirSpread=.FALSE.
-      ComputePeak=.FALSE.
-      ComputeCurr=.FALSE.
-      ComputeUrsell=.FALSE.
-      ComputeStokes=.FALSE.
-      IF (HS .or. TM01 .or. TM02 .or. TM10 .or. KLM .or. WLM) THEN
-        ComputeMean=.TRUE.
-      END IF
-      IF (ETOTC .or. ETOTS .or. DM .or. DSPR) THEN
-        ComputeDirspread=.TRUE.
-      END IF
-      IF (TPPD .or. TPP .or. CPP .or. WNPP .or. CGPP .or. KPP .or. &
-     &    LPP .or. PEAKD .or. PEAKDSPR .or. DPEAK) THEN
-        ComputePeak=.TRUE.
-      END IF
-      IF (UBOT .or. ORBITAL .or. BOTEXPER .or. TMBOT) THEN
-        ComputeCurr=.TRUE.
-      END IF
-      IF (URSELL) THEN
-        ComputeUrsell=.TRUE.
-        ComputeMean=.TRUE.
-        ComputePeak=.TRUE.
-      END IF
-      IF (STOKESSURFX .or. STOKESSURFY .or. STOKESBOTTX .or. STOKESBOTTY .or. STOKESBAROX .or. STOKESBAROY) THEN
-        ComputeStokes=.TRUE.
-      END IF
-      eVar%ComputeMean=ComputeMean
-      eVar%ComputeDirspread=ComputeDirspread
-      eVar%ComputePeak=ComputePeak
-      eVar%ComputeCurr=ComputeCurr
-      eVar%ComputeUrsell=ComputeUrsell
-      eVar%ComputeStokes=ComputeStokes
-      nbOutVarEff=0
-      DO iVar=1,OUTVARS_COMPLETE
-        IF (eVar%LVAR(iVar)) THEN
-          nbOutVarEff=nbOutVarEff+1
-        END IF
-      END DO
-      eVar%nbOutVarEff=nbOutVarEff
-      allocate(eVar%ListIdxEff(nbOutVarEff))
-      idx=0
-      DO iVar=1,OUTVARS_COMPLETE
-        IF (eVar%LVAR(iVar)) THEN
-          idx=idx+1
-          eVar%ListIdxEff(idx)=iVar
-        END IF
-      END DO
-      END SUBROUTINE
-#ifdef NCDF
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

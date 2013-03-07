@@ -119,9 +119,9 @@
                       WRITE(DBG%FHNDL,*) 'WRONG ELEMENT', IE, 'WRONG NODENUMBERS', INE(:,IE)
                       WRITE(DBG%FHNDL,'(A40,6F15.8)') 'EDGELENGTHS OF THE WRONG ELEMENT', IEN(:,IE)
                    ELSE IF (TRIA(IE) .LT. 1.E-10_rkind) THEN 
-                     write(*,*) 'IE=', IE, ' TRIA=', TRIA(IE)
-                     write(*,*) 'DXP1=', DXP1, ' DXP3=', DXP3
-                     write(*,*) 'DYP1=', DYP1, ' DYP3=', DYP3
+                     write(DBG%FHNDL,*) 'IE=', IE, ' TRIA=', TRIA(IE)
+                     write(DBG%FHNDL,*) 'DXP1=', DXP1, ' DXP3=', DXP3
+                     write(DBG%FHNDL,*) 'DYP1=', DYP1, ' DYP3=', DYP3
                      CALL WWM_ABORT('too small triangles')
                    END IF 
 

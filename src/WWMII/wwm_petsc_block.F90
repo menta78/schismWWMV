@@ -174,7 +174,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PETSC_INIT_BLOCK
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, RKIND
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, RKIND, DBG
         ! MSC      - # frequency
         ! MDC      - # directions
         use datapool, only: MSC, MDC
@@ -210,7 +210,7 @@
 !!$OMP PARALLEL
 !        nOMPthreads =  omp_get_num_threads()
 !!$OMP END PARALLEL
-!        write(*,*) "openmp threads", nOMPthreads
+!        write(DBG%FHNDL,*) "openmp threads", nOMPthreads
 
 #endif
         call createMappings
@@ -220,7 +220,7 @@
         nghostBlock = nghost * MSC * MDC
         allocate(onlyGhostsBlock(0:nghostBlock-1), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.203'
         endif
         nghostBlock = 0
@@ -258,14 +258,14 @@
 
         deallocate(onlyGhostsBlock, stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.241'
         endif
 
 ! create  cumulative J sparse counter
         allocate(Jcum(MNP+1), stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.251'
         endif
         Jcum = 0
@@ -312,7 +312,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, MSC,MDC, RKIND
+        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, MSC, MDC, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -370,7 +370,7 @@
         end do
         nnz_new = nnz_new * MSC * MDC
         o_nnz_new  = o_nnz_new * MSC * MDC
-!         write(*,*) rank, "nnz_new", nnz_new, " old", NNZ, "o_nnz_new", o_nnz_new
+!         write(DBG%FHNDL,*) rank, "nnz_new", nnz_new, " old", NNZ, "o_nnz_new", o_nnz_new
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -385,7 +385,7 @@
      &           o_toSort(maxNumConnNode+1),                            &
      &           stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.345'
         endif
 
@@ -467,12 +467,12 @@
 
         end do ! petsc IP rows
 
-!         write(*,*) rank, "IA_petsc", IA_petsc
-!         write(*,*) rank, "JA_petsc", JA_petsc
+!         write(DBG%FHNDL,*) rank, "IA_petsc", IA_petsc
+!         write(DBG%FHNDL,*) rank, "JA_petsc", JA_petsc
 
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.432'
         endif
       end subroutine
@@ -481,7 +481,7 @@
 !**********************************************************************
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
-        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, RKIND
+        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -532,8 +532,8 @@
           end do
         end do
 
-!         write(*,*) rank, "petsc_small nnz_new", nnz_new, " old", NNZ
-!         write(*,*) rank, "o_nnz_new", o_nnz_new
+!         write(DBG%FHNDL,*) rank, "petsc_small nnz_new", nnz_new, " old", NNZ
+!         write(DBG%FHNDL,*) rank, "o_nnz_new", o_nnz_new
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -550,7 +550,7 @@
      &           oAsparApp2Petsc_small(NNZ),                            &
      &           stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.510'
         endif
 
@@ -628,10 +628,10 @@
      &    oIA_petsc_small(IP_petsc) + o_nToSort
         end do
 
-!         write(*,*) rank, "asparApp2Petsc_small maxvalue" , maxval(asparApp2Petsc_small)
+!         write(DBG%FHNDL,*) rank, "asparApp2Petsc_small maxvalue" , maxval(asparApp2Petsc_small)
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) then
-          write(*,*) __FILE__, " Line", __LINE__
+          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_block l.591'
         endif
       end subroutine
@@ -1206,7 +1206,7 @@
                 C(2,i,:) = C(2,i,:)+DIFRU(:)*CURTXY(IP,2)
               END IF
             END IF
-          !WRITE(*,*) IP, DIFRM(IP), C(:,IP)
+          !WRITE(DBG%FHNDL,*) IP, DIFRM(IP), C(:,IP)
           END IF
         enddo
 ! !$OMP ENDDO
@@ -1342,7 +1342,7 @@
                 C3(2,i,:) = C3(2,i,:)+DIFRU3(:)*CURTXY(IP3,2)
               END IF
             END IF
-          !WRITE(*,*) IP, DIFRM(IP), C(:,IP)
+          !WRITE(DBG%FHNDL,*) IP, DIFRM(IP), C(:,IP)
           END IF
         enddo
 ! !$OMP ENDDO
@@ -1353,7 +1353,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine  EIMPS_PETSC_BLOCK()
-        use datapool, only: MSC, MDC, AC2, stat, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP
+        use datapool, only: MSC, MDC, AC2, stat, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP, DBG
         use elfe_glbl, only: ipgl
         use elfe_msgp, only: exchange_p4d_wwm
         use petscsys
@@ -1412,11 +1412,11 @@
 #ifdef PETSC_DEBUG
         if(rank == 0) then
           if(reason .LT. 0 ) then
-             write(*,*) "Failure to converge\n"
+             write(DBG%FHNDL,*) "Failure to converge\n"
           else
             call KSPGetIterationNumber(Solver, iteration, petscErr)
             CHKERRQ(petscErr)
-            if(iteration /= 0)  write(*,*) "Number of iterations", iteration
+            if(iteration /= 0)  write(DBG%FHNDL,*) "Number of iterations", iteration
           endif
           print '("solver Time = ",f6.3," sec")', endTime - startTime
         endif
@@ -1539,7 +1539,7 @@
       !> @param asparPosition  the position in app aspar (counts from 1)
       !> @return new aspar_petsc bigmatrix position (counts from 1)
       integer function aspar2petscAspar(IP, ISS, IDD, asparPosition)
-        use datapool, only: MSC, MDC
+        use datapool, only: MSC, MDC, DBG
         use petscpool, only: ALO2PLO, rank
         implicit none
         integer, intent(in) :: IP, ISS, IDD, asparPosition
@@ -1568,7 +1568,7 @@
      &   IA_petsc_small(IPpetscLocal+1))  + 1
 
         if(aspar2petscAspar < 1) then
-          write(*,*) rank,                                              &
+          write(DBG%FHNDL,*) rank,                                              &
      &   "aspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi",        &
      &    IPpetscLocal, ISS, IDD, asparPosition
         endif
@@ -1583,7 +1583,7 @@
       !> @param asparPosition  the i-th NZ in row IP
       !> @return new oaspar_petsc bigmatrix position (counts from 1)
       integer function oAspar2petscAspar(IP, ISS, IDD, asparPosition)
-        use datapool, only: MSC, MDC
+        use datapool, only: MSC, MDC, DBG
         use petscpool, only: ALO2PLO, rank
         implicit none
         integer, intent(in) :: IP, ISS, IDD, asparPosition
@@ -1611,7 +1611,7 @@
      &  (oAsparApp2Petsc_small(asparPosition) -                         &
      &   oIA_petsc_small(IPpetscLocal+1))  + 1
         if(oAspar2petscAspar < 1) then
-          write(*,*) rank,                                              &
+          write(DBG%FHNDL,*) rank,                                              &
      &  "oAspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi",        &
      &    IPpetscLocal, ISS, IDD, asparPosition
         endif
@@ -1646,7 +1646,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkBigMatrixDiagonalAccuracy(matrix_inp, ISS, IDD)
-        use datapool, only: IOBP, IOBPD
+        use datapool, only: IOBP, IOBPD, DBG
         use elfe_glbl, only: ipgl
         use petscpool
         use petscmat
@@ -1768,24 +1768,24 @@
 
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
-          write(*,*) "check matrix diagonal Accuracy"
-          if(present(ISS) .and. present(IDD)) write(*,*)                &
+          write(DBG%FHNDL,*) "check matrix diagonal Accuracy"
+          if(present(ISS) .and. present(IDD)) write(DBG%FHNDL,*)                &
      &                "ISS IDD", ISS, IDD
-          write(*,*) "minimum at (big matrix row)" , positionMin,       &
+          write(DBG%FHNDL,*) "minimum at (big matrix row)" , positionMin,       &
      &                ": ", valueMin
-          write(*,*) "maximum at (big matrix row)" , positionMax,       &
+          write(DBG%FHNDL,*) "maximum at (big matrix row)" , positionMax,       &
      &                ": ", valueMax
-          write(*,*) "mean" , summe / globalSize
+          write(DBG%FHNDL,*) "mean" , summe / globalSize
 
-          write(*,*) "first 10 entries which are smaller than", epsilon
-          write(*,*) "bigmatrix | IP_petsc global | APP global |  IOBP | IOBPD    |    ISS    |    IDD"
+          write(DBG%FHNDL,*) "first 10 entries which are smaller than", epsilon
+          write(DBG%FHNDL,*) "bigmatrix | IP_petsc global | APP global |  IOBP | IOBPD    |    ISS    |    IDD"
           do i = 1, min(maxCount, zeroElementsCounter)
-            write(*,*) entriesDetail(i,:)
+            write(DBG%FHNDL,*) entriesDetail(i,:)
           end do
 
-          write(*,*) rank, " There are total ", zeroElementsCounter,"   &
+          write(DBG%FHNDL,*) rank, " There are total ", zeroElementsCounter,"   &
      &   entries"
-          write(*,*) "check matrix diagonal Accuracy Ende. Time: ",     &
+          write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ",     &
      &   endTime - startTime," sec"
         endif
       end subroutine

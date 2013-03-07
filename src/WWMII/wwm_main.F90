@@ -8,6 +8,7 @@
 !       \/          \/         \/             
 !
 !
+!
 ! WWM-III (Wind Wave Model) source code 
 ! 
 !**********************************************************************
@@ -87,7 +88,7 @@
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE. 
-         ELSE IF (icou_elfe_wwm == 2) THEN ! current effect in wwm but no radiation stress in SELFE 
+         ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -101,7 +102,7 @@
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 3) THEN ! No current effect in wwm but radiation stress in SELFE 
+         ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ZERO
            WATLEVOLD   = ZERO
@@ -115,7 +116,7 @@
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels and raditioan stresss in selfe
+         ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in selfe
            WLDEP       = DEP8
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -129,7 +130,7 @@
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels but no radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -143,13 +144,13 @@
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 6) THEN ! current but no water levels and radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO 
            WATLEVOLD   = ZERO 
            DEP         = WLDEP
            CURTXY(:,1) = UU2(NVRT,:) 
-           CURTXY(:,2) = UU2(NVRT,:) 
+           CURTXY(:,2) = VV2(NVRT,:) 
            IF (.NOT. LWINDFROMWWM) THEN
              WINDXY(:,1) = WINDX0
              WINDXY(:,2) = WINDY0
@@ -157,7 +158,7 @@
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 7) THEN ! current but no water levels and no radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO
            WATLEVOLD   = ZERO
@@ -219,7 +220,7 @@
 !
 ! Compute radiation stress ...
 !
-         IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 4 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
+         IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
          ELSE 
            CALL RADIATION_STRESS_SELFE
@@ -469,11 +470,13 @@
          END DO
 
 #ifdef MPI_PARALL_GRID
-         IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
-#else
-         WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
          MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
          RTIME = MAIN%TMJD - MAIN%BMJD
+         IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
+#else
+         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+         RTIME = MAIN%TMJD - MAIN%BMJD
+         WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
 
          CALL IO_2(K)

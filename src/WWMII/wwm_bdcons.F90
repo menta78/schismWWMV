@@ -75,9 +75,9 @@
               IOBPD(:,IP) = 1
             ENDIF
           END IF
-!          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 3
-!            IOBPD(:,IP) = 1 ! Update Neumann nodes ...
-!          END IF
+          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 3
+            IOBPD(:,IP) = 1 ! Update Neumann nodes ...
+          END IF
         END DO
 
 #ifdef MPI_PARALL_GRID
@@ -88,8 +88,10 @@
            IOBPD(ID,:) = iwild
         ENDDO
 
+
         IF (myrank == 0) THEN
 #endif
+#ifdef DEBUG
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
           END DO
@@ -98,6 +100,7 @@
               WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
             ENDDO
           END DO
+#endif DEBUG
 !#ifdef MPI_PARALL_GRID
         END IF
 !#endif
@@ -335,13 +338,19 @@
 !
 ! write test output ...
 !
-!        IF (myrank == 0) THEN
-!          DO IP = 1, MNP
-!            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-!          END DO
-!        END IF
-!        CALL FLUSH(STAT%FHNDL)
-!        CALL FLUSH(IOBPOUT%FHNDL)
+#ifdef DEBUG
+#ifdef MPI_PARALL_GRID
+        IF (myrank == 0) THEN
+#endif
+          DO IP = 1, MNP
+            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
+          END DO
+#ifdef MPI_PARALL_GRID
+        END IF
+#endif
+        CALL FLUSH(STAT%FHNDL)
+        CALL FLUSH(IOBPOUT%FHNDL)
+#endif DEBUG
         
       END SUBROUTINE
 #endif
@@ -669,15 +678,17 @@
           ENDIF
         END IF
 
+#ifdef DEBUG
 #ifdef MPI_PARALL_GRID
-!        IF (myrank == 0) THEN
+        IF (myrank == 0) THEN
 #endif
-!          DO IP = 1, MNP
-!            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-!          END DO
-!          CALL FLUSH(IOBPOUT%FHNDL)
+          DO IP = 1, MNP
+            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
+          END DO
+          CALL FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
-!        ENDIF 
+        ENDIF 
+#endif
 #endif
         RETURN
       END SUBROUTINE
@@ -840,17 +851,18 @@
 !
 ! write test output ... this is done only for rank = 0 and it is only valid on the decomposition of rank = 0
 !
-!#ifdef MPI_PARALL_GRID
-!        IF (myrank == 0) THEN
-!#endif
-!          DO IP = 1, MNP
-!            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-!          END DO
-!          CALL FLUSH(IOBPOUT%FHNDL)
-!#ifdef MPI_PARALL_GRID
-!        END IF
-!#endif
-
+#ifdef DEBUG
+#ifdef MPI_PARALL_GRID
+        IF (myrank == 0) THEN
+#endif
+          DO IP = 1, MNP
+            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
+          END DO
+          CALL FLUSH(IOBPOUT%FHNDL)
+#ifdef MPI_PARALL_GRID
+        END IF
+#endif
+#endif
         CALL FLUSH(DBG%FHNDL)
 
         RETURN

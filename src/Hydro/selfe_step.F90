@@ -154,7 +154,9 @@
 
       logical,save :: first_call=.true.
       logical :: up_tvd
-
+#ifdef DEBUG
+      real(rkind),allocatable :: bpgr(:,:)
+#endif
 !     Tracers
 !      integer :: flag_model,flag_ic
       real(rkind),allocatable :: Bio_bdefp(:,:),tr_tc(:,:),tr_tl(:,:)
@@ -188,6 +190,9 @@
         allocate(rwild(np_global,3),stat=istat)
         if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
       endif !nws=4
+#ifdef DEBUG
+      allocate(bpgr(nsa,2))
+#endif
 
 !     Source
       if(if_source==1) then
@@ -3737,6 +3742,11 @@
 
 !...  Along each side
 !     su2, sv2 in sframe if ics=2
+#ifdef DEBUG
+      bpgr(:,1) = 0.d0
+      bpgr(:,2) = 0.d0
+#endif
+
       do j=1,nsa !augumented
         if(idry_s(j)==1) then
           do k=1,nvrt
@@ -3786,6 +3796,10 @@
           sv2(1,j)=(hhat(j)*htot*hat_gam_y-theta2*cori(j)*dt*htot*htot*hat_gam_x)/del
           su2(1,j)=max(-rmaxvel,min(rmaxvel,su2(1,j)))
           sv2(1,j)=max(-rmaxvel,min(rmaxvel,sv2(1,j)))
+#ifdef DEBUG
+          bpgr(j,1) = -grav*(1-thetai)*deta1_dx(j)-grav*thetai*deta2_dx(j)
+          bpgr(j,2) = -grav*(1-thetai)*deta1_dy(j)-grav*thetai*deta2_dy(j)
+#endif
 
 !-------------------------------------------------------------------------------------
         else !3D
@@ -6743,6 +6757,18 @@
         call elfe_output_custom(lwrite,9,1,204,'salt',nvrt,nea,tsel(2,:,:))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting salt.70'
       endif !iof_ns
+#ifdef DEBUG
+      if(iof_ns(5)==1) then
+        call elfe_output_custom(lwrite,4,2,205,'bpgr',1,nsa,bpgr(:,1),bpgr(:,2))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpgr.65'
+      endif !iof_ns
+#ifdef USE_WWM
+      if(iof_ns(6)==1) then
+        call elfe_output_custom(lwrite,6,2,206,'wafo',nvrt,nsa,wwave_force(:,:,1),wwave_force(:,:,2))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting wafo.67'
+      endif !iof_ns
+#endif
+#endif
 
 !     Test 
 !      call elfe_output_custom(lwrite,10,1,205,'elev',1,npa,eta2)

@@ -1278,7 +1278,7 @@
         DO K=1,NANG
           FL(K,M) = 0.5*CNSN*UFAC2(K)
           SL(K,M) = FL(K,M)*F(K,M)
-          !write(*,'(2I10,4F15.8)') M, K, FL(K,M), SL(K,M), UFAC2(K), F(K,M)
+          !write(DBG%FHNDL,'(2I10,4F15.8)') M, K, FL(K,M), SL(K,M), UFAC2(K), F(K,M)
         ENDDO
 
       ENDDO
@@ -1419,7 +1419,7 @@
           DO K=1,NANG
             SL(K,M) = SL(K,M)+TEMP1*F(K,M)
             FL(K,M) = FL(K,M)+TEMP1
-            !write(*,'(2I10,10F15.8)') M,K,FL(K,M),TEMP1,4*SQRT(EMEAN)
+            !write(DBG%FHNDL,'(2I10,10F15.8)') M,K,FL(K,M),TEMP1,4*SQRT(EMEAN)
           ENDDO
         ENDDO
 !

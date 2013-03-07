@@ -65,7 +65,8 @@
          END IF
 
          IF (LSHYFEM) THEN
-           ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP))
+           ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP)); SHYFZETA = ZERO; NLEV = 0
+           ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP)); STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
          END IF
 !
 ! WAM Cycle 4.5 - shared
@@ -366,12 +367,7 @@
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
 !AR: Pleaes define all FHNDL in the proper place where the others are defined
-             FHNDLspec=34343
-             FILEspec='nb_block'
-             CALL TEST_FILE_EXIST_DIE("Missing block file : ", FILEspec)
-             OPEN(FHNDLspec, FILE=FILEspec)
-             READ(FHNDLspec, *) NblockFreqDir
-             CLOSE(FHNDLspec)
+             NblockFreqDir = NB_BLOCK 
              CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir)
              CALL I5_ALLOCATE(SolDat)
              IF (PCmethod .eq. 2) THEN
@@ -1397,12 +1393,12 @@
       IMPLICIT NONE
       CHARACTER(LEN=30) :: GNAME
       CHARACTER(LEN=21) :: LABEL
-        OPEN(1007,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-        READ(1007)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+        OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+        READ(WAV%FHNDL)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
         WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
         WRITE(STAT%FHNDL,*) 'LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME'
         WRITE(STAT%FHNDL,*) LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
-        CLOSE(1007)
+        CLOSE(WAV%FHNDL)
         WRITE(STAT%FHNDL,*)'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
         WRITE(STAT%FHNDL,*)'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
         WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
@@ -1440,16 +1436,16 @@
         ALLOCATE(XP_WW3(NP_WW3));XP_WW3=ZERO
         ALLOCATE(YP_WW3(NP_WW3));YP_WW3=ZERO
  
-        OPEN(1007, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-        READ(1007)LABEL,TMP,TMP,TMP,GNAME
-        READ(1007)TMP1
+        OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+        READ(WAV%FHNDL)TMP1
         FQ_WW3 = TMP1
-        READ(1007)TMP2
+        READ(WAV%FHNDL)TMP2
         DR_WW3 = TMP2
         MAXSTEP_WW3 = 0
 
         DO 
-          READ(1007,IOSTAT=IFLAG) TIME
+          READ(WAV%FHNDL,IOSTAT=IFLAG) TIME
           IF (IFLAG .GT. 0) THEN
             STOP 'STRANGE STUFF'
           ELSE IF (IFLAG .LT. 0) THEN
@@ -1457,14 +1453,14 @@
             EXIT
           END IF
           DO IP = 1, NP_WW3 
-            READ(1007,IOSTAT=IFLAG) PID,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR
+            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR
             IF (IFLAG .GT. 0) THEN
               STOP 'STRANGE STUFF'
             ELSE IF (IFLAG .LT. 0) THEN
               WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 2'
               EXIT
             END IF
-            READ(1007,IOSTAT=IFLAG) SPECDMP(:,:)
+            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
             IF (IFLAG .GT. 0) THEN
               STOP 'STRANGE STUFF'
             ELSE IF (IFLAG .LT. 0) THEN
@@ -1476,18 +1472,18 @@
           ENDDO
         END DO
  
-        REWIND(1007)
+        REWIND(WAV%FHNDL)
 
         ALLOCATE(ITIME(MAXSTEP_WW3,2)); ITIME = 0
 
-        READ(1007)LABEL,TMP,TMP,TMP,GNAME
-        READ(1007)TMP1
-        READ(1007)TMP2
+        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+        READ(WAV%FHNDL)TMP1
+        READ(WAV%FHNDL)TMP2
         DO IT = 1, MAXSTEP_WW3 
-          READ(1007,IOSTAT=IFLAG) ITIME(IT,:)
+          READ(WAV%FHNDL,IOSTAT=IFLAG) ITIME(IT,:)
           DO IP = 1, NP_WW3
-            READ(1007,IOSTAT=IFLAG) PID,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR
-            READ(1007,IOSTAT=IFLAG) SPECDMP(:,:)
+            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR,TMPR
+            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
           ENDDO
         END DO
 
@@ -1506,7 +1502,7 @@
         SEBO%BMJD = BND_TIME_ALL_FILES(1,1) 
         SEBO%EMJD = BND_TIME_ALL_FILES(1,MAXSTEP_WW3) 
 
-        CLOSE(1007)
+        CLOSE(WAV%FHNDL)
         WRITE(STAT%FHNDL,*)'FREQ MIN IN WW3 SPECTRUM:',FQ_WW3(1)
         WRITE(STAT%FHNDL,*)'FREQ MAX IN WW3 SPECTRUM:',FQ_WW3(MSC_WW3)
         WRITE(STAT%FHNDL,*)'NUMBER OF TIME STEP',MAXSTEP_WW3
@@ -1536,10 +1532,13 @@
 !*          Kai Li
 !*          Guillaume Dodet (18/12/2012)
 !*
-!* Remarks: GD) Need to be modified for time interpolation. Input
+!* Remarks: GD: Need to be modified for time interpolation. Input
 !*              arguments should include date for interpolation. If
 !*              constant forcing is required, this time can be set to 
 !*              zero and only the first step is read.  
+!* Remakrs: AR: At this time the whole file is read but this should be 
+!*              replaced by a direct access call to the binary file 
+!*              Gulliaume can you do this? It is not that urgent.
 !**********************************************************************
       SUBROUTINE READ_SPEC_WW3(ISTEP,SPECOUT)
       USE DATAPOOL
@@ -1559,36 +1558,35 @@
 
       CHARACTER(LEN=30) :: GNAME
       CHARACTER(LEN=21) :: LABEL
-
       CHARACTER(LEN=10) :: PID(NP_WW3)
 
-      OPEN(1007, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-      READ(1007) LABEL,TMP,TMP,TMP,GNAME
-      READ(1007) FQ_WW3_SNGL
-      READ(1007) DR_WW3_SNGL
+      OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+      READ(WAV%FHNDL) LABEL,TMP,TMP,TMP,GNAME
+      READ(WAV%FHNDL) FQ_WW3_SNGL
+      READ(WAV%FHNDL) DR_WW3_SNGL
       IF(LBCSE) THEN ! non-stationary ...
         DO IT=1,MAXSTEP_WW3
-          READ(1007) TIME
+          READ(WAV%FHNDL) TIME
           DO IP = 1, NP_WW3
-            READ(1007)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
+            READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
             YP_WW3(IP) = YP_WW3_SGLE(IP)
             XP_WW3(IP) = XP_WW3_SGLE(IP)
-            READ(1007)SPECOUT_SGLE(:,:)
+            READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
             SPECOUT(:,:,IP) = SPECOUT_SGLE
           ENDDO ! IP
           IF (IT == ISTEP) EXIT ! Read the certain timestep indicated by ISTEP ...
         ENDDO ! IT 
       ELSE ! stationary ... 
-        READ(1007) TIME
+        READ(WAV%FHNDL) TIME
         DO IP = 1, NP_WW3
-          READ(1007)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP), UA(IP),UD(IP),CA(IP),CD2(IP)
+          READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP), UA(IP),UD(IP),CA(IP),CD2(IP)
           YP_WW3(IP) = YP_WW3_SGLE(IP)
           XP_WW3(IP) = XP_WW3_SGLE(IP)
-          READ(1007)SPECOUT_SGLE(:,:)
+          READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
           SPECOUT(:,:,IP) = SPECOUT_SGLE
         END DO
       ENDIF
-      CLOSE(1007)
+      CLOSE(WAV%FHNDL)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3'
       END SUBROUTINE
 !**********************************************************************
@@ -1607,7 +1605,7 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        INTEGER, INTENT(IN) :: ISTEP
+        INTEGER, INTENT(IN)      :: ISTEP
         REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
 
 
@@ -1632,6 +1630,7 @@
           SPEC_WW3(I,:,1) = SPEC_WW3_TMP(I,:,1)
           DR_WW3 = DR_WW3_TMP
         ENDDO
+        DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
 !
 ! Interpolate ww3 spectra on wwm frequency grid
 ! GD: at the moment 360º spanning grids are mandatory
@@ -1639,7 +1638,7 @@
         IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
-          CALL WWM_ABORT('WW3 FREQUENCY GRID MUST ENCOMPASS WWM GRID')
+          WRITE(STAT%FHNDL,*)'WW3 spectra does encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
         ELSE
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
@@ -1700,6 +1699,7 @@
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
         USE DATAPOOL
         IMPLICIT NONE
+!AR: Kai Li, please carefully describe the method and comment on the input parameters ...
 
         INTEGER, INTENT(IN) :: NP,P,D1,D2
         REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
@@ -1738,7 +1738,8 @@
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
-        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3
+        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3, M0_WWM, M1_WWM, M2_WWM
+
         INTEGER     :: J,IS,ID
 
         DO J=1,NP_WW3
@@ -1753,21 +1754,28 @@
 !GD: to be removed after we are sure that ww3 energy is converted into
 !wave action
         WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS'
-        M0_WW3 = 0; M1_WW3 = 0; M2_WW3 = 0 
+        M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO 
         DO ID = 1,MDC_WW3-1
-           DO IS = 1,MSC_WW3-1
-!              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-!              M0_WW3 =M0_WW3+((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/2.d0)*DF*DDIR_WW3
-!              M1_WW3 =M1_WW3+((FQ_WW3(IS+1)-FQ_WW3(IS))/2.d0)*((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/2.d0)*DF*DDIR_WW3
-!              M1_WW3 =M2_WW3+(((FQ_WW3(IS+1)-FQ_WW3(IS))/2.d0)**2.d0)*((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/2.d0)*DF*DDIR_WW3
-           ENDDO
+          DO IS = 1,MSC_WW3-1
+            DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+            M0_WW3 =M0_WW3+((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/TWO)*DF*DDIR_WW3
+            M1_WW3 =M1_WW3+((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)*((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/TWO)*DF*DDIR_WW3
+            M1_WW3 =M2_WW3+(((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)**TWO)*((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,1))/TWO)*DF*DDIR_WW3
+          ENDDO
         ENDDO
-        HSWW3 = 4.d0*SQRT(M0_WW3)
-        WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3'
-        WRITE(STAT%FHNDL,*)'M0 = ',M0_WW3
-        WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3
-        WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3
-        WRITE(STAT%FHNDL,*)'HS = ',HSWW3
+        M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO 
+        DO ID = 1,MDC-1
+          DO IS = 1,MSC-1
+            DF = SPSIG(IS+1)-SPSIG(IS)
+            M0_WWM =M0_WWM+((SPEC_WWM(IS+1,ID,1)+SPEC_WWM(IS,ID,1))/TWO)*DF*DDIR
+            M1_WWM =M1_WWM+((SPSIG(IS+1)-SPSIG(IS))/TWO)*((SPEC_WWM(IS+1,ID,1)+SPEC_WWM(IS,ID,1))/TWO)*DF*DDIR
+            M1_WWM =M2_WWM+(((SPSIG(IS+1)-SPSIG(IS))/TWO)**TWO)*((SPEC_WWM(IS+1,ID,1)+SPEC_WWM(IS,ID,1))/TWO)*DF*DDIR
+          ENDDO
+        ENDDO
+        WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right)'
+        WRITE(STAT%FHNDL,*)'M0 = ',M0_WW3, M0_WWM
+        WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM
+        WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM
         WRITE(STAT%FHNDL,*)'END CHECK'
 !END GD
 

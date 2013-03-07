@@ -13,7 +13,7 @@
 !
            LSEWL = .TRUE.
            LSECU = .TRUE.
-           WRITE(*,'("+TRACE...",A)') 'OPEN PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'OPEN PIPE'
 !          Pipes that are read by the wave model
            OPEN(1000,file='p_velx.dat'  ,form='unformatted', action='read')
            OPEN(1001,file='p_vely.dat'  ,form='unformatted', action='read')
@@ -39,7 +39,7 @@
            OPEN(2003, file='pipe_wave.bin' ,form='unformatted' ,status = 'unknown')
            OPEN(2004, file='pipe_orbi.bin' ,form='unformatted' ,status = 'unknown')
            OPEN(2005, file='pipe_stok.bin' ,form='unformatted' ,status = 'unknown')
-           WRITE(*,'("+TRACE...",A)') 'END OPEN PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE'
 !
 ! write coupling tyme step
 !
@@ -51,12 +51,12 @@
            READ(1005)  MAIN%DTCUR
 
            IF(ABS(MAIN%DTCOUP-INT(MAIN%DTCOUP/MAIN%DTCUR)*MAIN%DTCUR).GT. .001) THEN
-             write(*,*) 'TIME STEP OF THE hydraulic flow MODEL CANNOT BE DIVIDIED WITHOUT A REST'
-             write(*,*)'dt Stroemung (s) =',MAIN%DTCUR, ',  dt Kopplung (s) = ',MAIN%DTCOUP
+             write(DBG%FHNDL,*) 'TIME STEP OF THE hydraulic flow MODEL CANNOT BE DIVIDIED WITHOUT A REST'
+             write(DBG%FHNDL,*)'dt Stroemung (s) =',MAIN%DTCUR, ',  dt Kopplung (s) = ',MAIN%DTCOUP
 !             CALL WWM_ABORT('dt Stroemungsmodell muss gerades Vielfaches des Kopplungs-dt sein')
            END IF
 
-           WRITE(*,'("+TRACE... DTCUR and DTCOUP",A)') MAIN%DTCUR, MAIN%DTCOUP
+           WRITE(DBG%FHNDL,'("+TRACE... DTCUR and DTCOUP",A)') MAIN%DTCUR, MAIN%DTCOUP
 
        END SUBROUTINE
 !**********************************************************************
@@ -97,8 +97,8 @@
          INTEGER, INTENT(IN)  :: K
 
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           WRITE(*,'("+TRACE...",A)') 'READING PIPE'
-           WRITE(*,'("+TRACE...",A)') 'END READING PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
          END IF
 
       END SUBROUTINE
@@ -124,7 +124,7 @@
            LSEWL = .TRUE.
            LSECU = .TRUE.
 
-           WRITE(*,'("+TRACE...",A)') 'OPEN PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'OPEN PIPE'
 !          Pipes that are read by the wave model
            OPEN(1000,file='p_velx.dat'    ,form='unformatted', action='read')
            OPEN(1001,file='p_vely.dat'    ,form='unformatted', action='read')
@@ -158,7 +158,7 @@
            OPEN(114 ,file='p_cd.dat' ,form='unformatted', action='write')
            OPEN(115 ,file='p_jpress.dat' ,form='unformatted', action='write')
 
-           WRITE(*,'("+TRACE...",A)') 'END OPEN PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE'
 
       END SUBROUTINE
 !**********************************************************************
@@ -300,11 +300,14 @@
                  CALL FLUSH(108)
                  WRITE(109)  ORBITAL
                  CALL FLUSH(109)
-!AR: Delete this stuff 
-                 WRITE(110)  USTOKES_X
+                 WRITE(110)  STOKES_X(:,IP)
                  CALL FLUSH(110)
-                 WRITE(111)  USTOKES_Y
+                 WRITE(111)  STOKES_Y(:,IP)
                  CALL FLUSH(111)
+                 WRITE(114)  CD(IP)
+                 CALL FLUSH(114)
+                 WRITE(115)  JPRESS(IP)
+                 CALL FLUSH(115)
                END DO
              ELSE
                DO IP = 1, MNP
@@ -334,10 +337,9 @@
                  CALL FLUSH(108)
                  WRITE(109)  ORBITAL
                  CALL FLUSH(109)
-!AR: Delete this stuff 
-                 !WRITE(110)  USTOKES_X
+                 WRITE(110)  STOKES_X(:,IP)
                  CALL FLUSH(110)
-                 !WRITE(111)  USTOKES_Y
+                 WRITE(111)  STOKES_Y(:,IP)
                  CALL FLUSH(111)
                  WRITE(112)  WINDXY(IP,1)
                  CALL FLUSH(112)
@@ -345,6 +347,8 @@
                  CALL FLUSH(113)
                  WRITE(114)  CD(IP) 
                  CALL FLUSH(114)
+                 WRITE(115)  JPRESS(IP)
+                 CALL FLUSH(115)
                END DO
              END IF
              WRITE(STAT%FHNDL,'("+TRACE...",A)') 'END WRITING PIPE'
@@ -361,14 +365,14 @@
 !
       LSEWL = .TRUE.
       LSECU = .TRUE.
-      WRITE(*,'("+TRACE...",A)') 'OPEN PIPE ROMS'
+      WRITE(DBG%FHNDL,'("+TRACE...",A)') 'OPEN PIPE ROMS'
 !     Pipes that are read by the wave model
       OPEN(1000,file='pipe/ExchRW'  ,form='unformatted', action='read')
       WRITE(DBG%FHNDL,*) 'WWM: open pipe ExchImport'
 !     Pipes that are written by the wave modell
       OPEN(101 ,file='pipe/ExchWR' ,form='unformatted', action='write')
       WRITE(DBG%FHNDL,*) 'WWM: open pipe ExchExport'
-      WRITE(*,'("+TRACE...",A)') 'END OPEN PIPE ROMS'
+      WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE ROMS'
 
       END SUBROUTINE
 !**********************************************************************
@@ -401,7 +405,7 @@
          integer idx, iProc
 # endif
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           WRITE(*,'("+TRACE...",A)') 'READING PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
 # ifndef WWM_MPI
            DO IP = 1, MNP
              READ(1000) WINDXY(IP,1), WINDXY(IP,2), CURTXY(IP,1), CURTXY(IP,2), WATLEV(IP)
@@ -456,7 +460,7 @@
            deallocate(CURTXY_TOT)
            deallocate(WATLEV_TOT)
 # endif
-           WRITE(*,'("+TRACE...",A)') 'END READING PIPE'
+           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
          END IF
 !
 !2do make a initialization section for ROMS and WWM
@@ -575,7 +579,7 @@
            deallocate(OUTT_TOT)
 # endif
          END IF
-         WRITE(*,*) 'export WWM: ending of writing data'
+         WRITE(DBG%FHNDL,*) 'export WWM: ending of writing data'
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -1192,6 +1196,11 @@
           PartialV1(1)=PartialV1(2)
 # ifndef FIRST_ORDER_ARDHUIN
           DO k=2,Nlevel-1
+            !we compute second differential with three values.
+            !We have classic formula
+            ! d2f/dx2 = (f(x+h) + f(x-h) -2f(x))/h^2
+            ! and this is extended to three arbitrary positions
+            ! but only first order accuracy.
             eF1=(z_r(k)-z_r(k-1))/(z_r(k+1)-z_r(k-1))
             eF2=(z_r(k+1)-z_r(k))/(z_r(k+1)-z_r(k-1))
             eDelta=(z_r(k) - z_r(k+1))*(z_r(k-1) - z_r(k))
@@ -1349,7 +1358,6 @@
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
-          eZetaCorr_loc=0
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IP,IS)
@@ -1384,11 +1392,10 @@
             ENDDO
           END DO
           DO k=1,Nlevel
-            USTOKES_wav(IP,k)=eUSTOKES_loc(k)
-            VSTOKES_wav(IP,k)=eVSTOKES_loc(k)
+            STOKES_X(IP,k)=eUSTOKES_loc(k)
+            STOKES_Y(IP,k)=eVSTOKES_loc(k)
           END DO
-          ZETA_CORR(IP)=eZetaCorr_loc
-          J_PRESSURE(IP)=eJPress_loc
+          JPRESS(IP)=eJPress_loc
         ENDDO
       END SUBROUTINE
 !**********************************************************************
