@@ -223,7 +223,11 @@
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
          ELSE 
-           CALL RADIATION_STRESS_SELFE
+           IF (RADFLAG == 'VORTEX') THEN
+             CALL STOKES_STRESS_INTEGRAL_SELFE
+           ELSE
+             CALL RADIATION_STRESS_SELFE
+           ENDIF
          END IF 
 
          TIME5 = mpi_wtime()

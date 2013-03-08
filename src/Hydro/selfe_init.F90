@@ -31,6 +31,8 @@
                           &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO     !added by YC
+      USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+    &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC
 #endif
 
 #ifdef USE_NAPZD
@@ -1214,7 +1216,7 @@
          &  diffmax(npa),diffmin(npa),dfq1(npa,nvrt),dfq2(npa,nvrt),xlsc0(npa), & 
 !          Note: swild, swild2, swild10 will be re-dimensioned (larger dimension) later
          &  nwild(nea+12),nwild2(ne_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
-         &  swild3(20+ntracers),swild4(nvrt,3+2*ntracers),swild8(nvrt,2),&
+         &  swild3(50+ntracers),swild4(nvrt,3+2*ntracers),swild8(nvrt,2),&
          &  iwater_type(npa),rho_mean(nvrt,nea),erho(nvrt,nea),& 
          &  PSQ(nea),PSK(nea),surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
@@ -1256,6 +1258,10 @@
 
 #ifdef USE_TIMOR
 !     Allocate TIMOR arrays
+#endif 
+
+#ifdef USE_ICM
+      call icm_init
 #endif 
 
 !     Non-hydrostatic arrays
@@ -4331,8 +4337,8 @@
             do l=1,ntracers
               if(flag_model==0) cycle !use i.c. for testing model
 #ifndef USE_NAPZD
-                trel0(l,:,ie)=swild4(:,3+2*l-1)
-                trel(l,:,ie)=swild4(:,3+2*l)
+              trel0(l,:,ie)=swild4(:,3+2*l-1)
+              trel(l,:,ie)=swild4(:,3+2*l)
 #endif
             enddo !l
           endif
@@ -4371,6 +4377,39 @@
             qnon(:,ip)=swild10(:,11)
           endif
         enddo !i=1,np_global
+
+#ifdef USE_ICM
+        do i=1,ne_global       
+          read(36) iegb,swild3(1:22)
+          if(iegl(iegb)%rank==myrank) then
+            ie=iegl(iegb)%id
+            sed_BENDO(ie)=swild3(1)
+            CTEMP(ie)=swild3(2)
+            BBM(ie)=swild3(3)
+            CPOS(ie)=swild3(4)
+            PO4T2TM1S(ie)=swild3(5)
+            NH4T2TM1S(ie)=swild3(6)
+            NO3T2TM1S(ie)=swild3(7)
+            HST2TM1S(ie)=swild3(8)
+            CH4T2TM1S(ie)=swild3(9)
+            CH41TM1S(ie)=swild3(10)
+            SO4T2TM1S(ie)=swild3(11)
+            SIT2TM1S(ie)=swild3(12)
+            BENSTR1S(ie)=swild3(13)
+            CPOP(ie,1)=swild3(14)
+            CPOP(ie,2)=swild3(15)
+            CPOP(ie,3)=swild3(16)
+            CPON(ie,1)=swild3(17)
+            CPON(ie,2)=swild3(18)
+            CPON(ie,3)=swild3(19)
+            CPOC(ie,1)=swild3(20)
+            CPOC(ie,2)=swild3(21)
+            CPOC(ie,3)=swild3(22)
+
+            write(12,*)'ICM:',iegb,CPOC(ie,3)
+          endif
+        enddo !i
+#endif
 
 #ifdef USE_HA
 !...

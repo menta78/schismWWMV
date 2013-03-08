@@ -266,7 +266,11 @@
 !            *** COMPUTE RADIATION STRESSES 2D OR 3D *** ccf
 !
              IF (LCPL) THEN
-               CALL RADIATION_STRESS_SHYFEM
+               IF (RADFLAG = 'VORTEX')
+                 CALL STOKES_STRESS_INTEGRAL_SHYFEM
+               ELSE
+                 CALL RADIATION_STRESS_SHYFEM
+               END IF
              END IF
 
              IF (.NOT. LWINDFROMWWM) THEN
@@ -1314,6 +1318,91 @@
           J_PRESSURE(IP)=eJPress_loc
         ENDDO
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
+        USE mod_coupler
+        USE DATAPOOL
+        implicit none
+        integer IP, k, ID, IS
+        real(rkind) eF1, eF2, eDelta, TheInt, eDep, eHeight
+        real(rkind) eFrac, eFracB, eQuot, TheIntChk
+        real(rkind) eFct, eQuot1, eQuot2, eQuot3, eScal, eZeta
+        real(rkind) eOmega, eMult, MFACT, kD, eSinc
+        real(rkind) USTOKES1, USTOKES2, USTOKES3
+        real(rkind) VSTOKES1, VSTOKES2, VSTOKES3
+        real(rkind) USTOKESpart, VSTOKESpart, eJPress
+        real(rkind) ACLOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
+        real(rkind) zMid, HS, ETOT, MinVal_MFACT, MaxVal_MFACT, MaxVal_eQuot1
+        real(rkind) MinVal_MFACT_gl, MaxVal_MFACT_gl, MaxHS, SumHS, AvgHS
+        real(rkind) WLM, KLM, AvgStokesNormA, AvgStokesNormB
+        real(rkind) PPTAIL, CETAIL, CKTAIL
+        real(rkind) ETOT1, EKTOT
+        real(rkind) eQuotDispersion, eMaxAC, TotSumAC, eQuotAC, eQuotK
+        real(rkind) StokesNormA, StokesNormB, cPhase
+        integer IDsel, ISsel, SelectedK
+        logical DoTail
+        real(rkind) SumNormStokesA(Nlevel), SumNormStokesB(Nlevel)
+        real(rkind) SumZetaCorr, MaxZetaCorr, AvgZetaCorr
+        real(rkind) eMinMfact, eMaxMfact, SelectedHS
+        real(rkind) MaxStokesNorm, MaxValSinc, StokesNorm, SelectedDEP
+        real(rkind) CritError, USTOKES_bar, VSTOKES_bar
+        real(rkind) USTOKES_bar_int, VSTOKES_bar_int
+        real(rkind) eSum_tot, eSum_tot_int, eWkReal
+        real(rkind) eSum_totA, eSum_totA_int
+        real(rkind) eSum_totB, eSum_totB_int
+        real(rkind) TotalBarotropicErrorUstokes, TotalBarotropicErrorVstokes
+        real(rkind) TotalSumUstokes, TotalSumVstokes
+        real(rkind) SumHeight
+        real(rkind) eJPress_loc, eZetaCorr_loc, eProd, eUint, eVint
+
+        DO IP=1,MNP
+          eDep=SHYFZETA(NLEV(IP),MNP)
+          eUSTOKES_loc=0
+          eVSTOKES_loc=0
+          eJpress_loc=0
+          DO IS=1,MSC
+            eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
+            eWk=WK(IP,IS)
+            kD=MIN(KDMAX, eWk*eDep)
+            eWkReal=kD/eDep
+            eSinh2kd=DSINH(2*kD)
+            eSinhkd=DSINH(kD)
+            eSinhkd2=eSinhkd**2
+            eSigma=SPSIG(IS)
+            eUint=0
+            eVint=0
+            DO ID=1,MDC
+              eLoc=AC2(IP,IS,ID)*eMult
+              eScal=COSTH(ID)*PartialU1(Nlevel)+SINTH(ID)*PartialV1(Nlevel)
+              eZeta=eWk/eSinhkd + (eWk/eSigma)*eScal
+              eZetaCorr_loc=eZetaCorr_loc + eLoc*eZeta
+              eJPress=G9*(kD/eSinh2kd)*(1/eDep) * eLoc
+              eJPress_loc=eJPress_loc + eJPress
+              J_PRESSURE(IP)=J_PRESSURE(IP)+eJPress
+              eUint=eUint + eLoc*COSTH(ID)
+              eVint=eVint + eLoc*SINTH(ID)
+            END DO
+            DO k=1,Nlevel
+              eFrac=(z_r(k) - z_w_loc(0))/eDep
+              eHeight=z_w_loc(k)-z_w_loc(k-1)
+              eFracB=eHeight/eDep
+              eSinc=SINH(kD*eFracB)/(kD*eFracB)
+              eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
+              eProd=eSigma*eWkReal*eQuot1
+              eUSTOKES_loc(k)=eUSTOKES_loc(k) + eUint*eProd
+              eVSTOKES_loc(k)=eVSTOKES_loc(k) + eVint*eProd
+            ENDDO
+          END DO
+          DO k=1,Nlevel
+            STOKES_X(IP,k)=eUSTOKES_loc(k)
+            STOKES_Y(IP,k)=eVSTOKES_loc(k)
+          END DO
+          JPRESS(IP)=eJPress_loc
+        ENDDO
+      END SUBROUTINE
+
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

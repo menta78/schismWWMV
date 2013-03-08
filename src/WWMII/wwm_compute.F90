@@ -38,35 +38,23 @@
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
   
-         !WRITE(*,*) 'AFTER FREQ', SUM(AC2)
-
          CALL CPU_TIME(TIME3)
 
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-         !WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
 
          CALL CPU_TIME(TIME4)
 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
-         !WRITE(*,*) 'AFTER ADVECTION', SUM(AC2)
+         CALL CPU_TIME(TIME6)
+
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
 
          CALL CPU_TIME(TIME5)
 
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
-         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
-
-         CALL CPU_TIME(TIME6)
-
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
-
-         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
-
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
 
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
@@ -137,78 +125,20 @@
 
          CALL COMPUTE_DIFFRACTION
 
-         CALL CPU_TIME(TIME2)
-
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-
-         CALL CPU_TIME(TIME3)
-
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-         CALL CPU_TIME(TIME4)
-
-         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -1-'
-
-         CALL COMPUTE_DIFFRACTION
-
-         CALL CPU_TIME(TIME5)
-
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
-
+! ---- 1st spectra 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-
-         CALL CPU_TIME(TIME6)
-
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
-         CALL CPU_TIME(TIME7)
-
-         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPATIAL PART AND SOURCE -1-'
-
-         CALL COMPUTE_DIFFRACTION
-
-         CALL CPU_TIME(TIME8)
-
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-         CALL CPU_TIME(TIME9)
-
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-
-         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -2-'
-
-         CALL CPU_TIME(TIME10)
-
-         CALL COMPUTE_DIFFRACTION
-
-         CALL CPU_TIME(TIME11)
-
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
+! ---- 2nd spectra 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-
-         CALL CPU_TIME(TIME12)
-
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
-         CALL CPU_TIME(TIME13)
-
-         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPATIAL PART AND SOURCE -2-'
-
-         CALL COMPUTE_DIFFRACTION
-
-         CALL CPU_TIME(TIME14)
-
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-
-         CALL CPU_TIME(TIME15)
-
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-         CALL CPU_TIME(TIME16)
-
-         !WRITE(*,'("+TRACE...",A)') 'FINISHED SPECTRAL PART -3-'
+! ---- 3rd spectra 
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
          CALL CPU_TIME(TIME17)
 
@@ -254,42 +184,41 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
+        REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
         INTEGER          :: IP, IT
 
 !       Three level splitting to reduce splitting errors when using implicit-explicit schemes
 
          DT4A = MAIN%DELT
-         DT4S = DT4A
+         DT4S = DT4A*0.5
          DT4D = DT4A*0.5 
          DT4F = DT4A*0.5
 
          AC1  = AC2
 
-!         WRITE(*,*) 'BEGINNING', SUM(AC2), SUM(AC1)
          CALL CPU_TIME(TIME1)
          CALL COMPUTE_DIFFRACTION
-!         WRITE(*,*) '------1--------', SUM(AC2), SUM(AC1)
          CALL CPU_TIME(TIME2)
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-!         WRITE(*,*) '------2--------', SUM(AC2), SUM(AC1)
          CALL CPU_TIME(TIME3)
-         !IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
-!         WRITE(*,*) '------3--------', SUM(AC2), SUM(AC1)
          CALL CPU_TIME(TIME4)
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
          CALL CPU_TIME(TIME5)
-!         WRITE(*,*) '------4--------', SUM(AC2), SUM(AC1)
+         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+         CALL CPU_TIME(TIME6)
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-         CALL CPU_TIME(TIME6)
-         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-!         WRITE(*,*) '------5--------', SUM(AC2), SUM(AC1)
          CALL CPU_TIME(TIME7)
+         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
+         CALL CPU_TIME(TIME8)
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
+         CALL CPU_TIME(TIME9)
+         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+         CALL CPU_TIME(TIME10)
          IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
-!         WRITE(*,*) '------6--------', SUM(AC2), SUM(AC1)
+         CALL CPU_TIME(TIME11)
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1

@@ -26,6 +26,8 @@
                           &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO     !added by YC
+      USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+    &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC
 #endif
 
 #ifdef USE_NAPZD
@@ -5853,6 +5855,7 @@
         endif
         if(myrank==0) write(16,*) 'Calculating ecological sources and sinks terms...'     !added by YC
         !call ecosystem(iths_main,it,rnday,WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea,PSQ)           !added by YC
+        !Main routine of ICM
         call ecosystem(it)
         if(myrank==0) write(16,*) 'Done ecological sources and sinks terms...'            !added by YC
 #endif /*USE_ICM*/
@@ -6995,30 +6998,69 @@
 !-------------------------------------------------------------------------------
 
       if(nhot==1.and.mod(it,nhot_write)==0) then
+        !Flags for modules that need hotstart
+        nwild=0
+#ifdef USE_ICM
+        nwild(1)=1
+#endif
         write(it_char,'(i72)')it
         it_char=adjustl(it_char)
         lit=len_trim(it_char)
         it_char=it_char(1:lit)//'_0000'; lit=len_trim(it_char)
         write(it_char(lit-3:lit),'(i4.4)') myrank
-        ihot_len=nbyte*(4+((6+4*ntracers)*nvrt+1)*ne+(8*nvrt+1)*ns+(3+22*nvrt)*np)
+        !ihot_len=nbyte*(5+((6+4*ntracers)*nvrt+1)*ne+(8*nvrt+1)*ns+(3+22*nvrt)*np)
+        ihot_len=8*(4+((3+2*ntracers)*nvrt+1)*ne+(4*nvrt+1)*ns+(2+11*nvrt)*np)
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
              access='direct',recl=ihot_len,status='replace') 
 
-        write(36,rec=1)dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
+        write(36,rec=1)nwild(1),dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
      &(dble(trel0(l,j,i)),dble(trel(l,j,i)),l=1,ntracers),j=1,nvrt),i=1,ne), &
      &(idry_s(i),(dble(su2(j,i)),dble(sv2(j,i)),dble(tsd(j,i)),dble(ssd(j,i)),j=1,nvrt),i=1,ns), &
      &(dble(eta2(i)),idry(i),(dble(tnd(j,i)),dble(snd(j,i)),dble(tem0(j,i)),dble(sal0(j,i)), &
      &dble(q2(i,j)),dble(xl(i,j)),dble(dfv(i,j)),dble(dfh(i,j)),dble(dfq1(i,j)),dble(dfq2(i,j)), &
-     &dble(qnon(j,i)),j=1,nvrt),i=1,np)
+     &dble(qnon(j,i)),j=1,nvrt),i=1,np) 
         close(36)
+
+        !Set record # for other modules, assuming 8-byte per record
+        IHOTSTP=ihot_len/8
+#ifdef USE_ICM
+        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+             &access='direct',recl=8,status='old')
+        do i=1,ne
+          write(36,rec=IHOTSTP+1)sed_BENDO(i)
+          write(36,rec=IHOTSTP+2)CTEMP(i)
+          write(36,rec=IHOTSTP+3)BBM(i)
+          write(36,rec=IHOTSTP+4)CPOS(i)
+          write(36,rec=IHOTSTP+5)PO4T2TM1S(i)
+          write(36,rec=IHOTSTP+6)NH4T2TM1S(i)
+          write(36,rec=IHOTSTP+7)NO3T2TM1S(i)
+          write(36,rec=IHOTSTP+8)HST2TM1S(i)
+          write(36,rec=IHOTSTP+9)CH4T2TM1S(i)
+          write(36,rec=IHOTSTP+10)CH41TM1S(i)
+          write(36,rec=IHOTSTP+11)SO4T2TM1S(i)
+          write(36,rec=IHOTSTP+12)SIT2TM1S(i)
+          write(36,rec=IHOTSTP+13)BENSTR1S(i)
+          write(36,rec=IHOTSTP+14)CPOP(i,1)
+          write(36,rec=IHOTSTP+15)CPOP(i,2)
+          write(36,rec=IHOTSTP+16)CPOP(i,3)
+          write(36,rec=IHOTSTP+17)CPON(i,1)
+          write(36,rec=IHOTSTP+18)CPON(i,2)
+          write(36,rec=IHOTSTP+19)CPON(i,3)
+          write(36,rec=IHOTSTP+20)CPOC(i,1)
+          write(36,rec=IHOTSTP+21)CPOC(i,2)
+          write(36,rec=IHOTSTP+22)1.1d3 !CPOC(i,3)
+          IHOTSTP=IHOTSTP+22
+        enddo !i
+#endif
 
 #ifdef USE_HA
 !... 
 !...    IF APPROPRIATE ADD HARMONIC ANALYSIS INFORMATION TO HOT START FILE
 !...    Adapted from ADCIRC
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-             access='direct',recl=8,status='old') 
-        IHOTSTP = 3+((1+(3+2*ntracers)*nvrt)*ne)+((1+4*nvrt)*ns)+((2+9*nvrt)*np)
+!Error: recl=nbyte??
+             &access='direct',recl=8,status='old') 
+        !IHOTSTP = 3+((1+(3+2*ntracers)*nvrt)*ne)+((1+4*nvrt)*ns)+((2+9*nvrt)*np)
         IF((iharind.EQ.1).AND.(it.GT.ITHAS)) THEN
            WRITE(36,REC=IHOTSTP+1) ICHA
            IHOTSTP = IHOTSTP + 1
