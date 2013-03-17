@@ -92,9 +92,9 @@
 !$OMP&         PRIVATE(IP,IS,DT4DI,ITER,CFLCAD,REST,CADS,CAD,ACQ)
 !$OMP DO 
          DO IP = 1, MNP
-           IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) CYCLE
-           IF (DEP(IP) .LT. DMIN) CYCLE
-           IF (IOBP(IP) .EQ. 2) CYCLE
+           IF ((ABS(IOBP(IP)) .EQ. 1 .OR. IOBP(IP) .EQ. 3) .AND. .NOT. LTHBOUND) CYCLE ! skip boudary points if set so ...
+           IF (DEP(IP) .LT. DMIN) CYCLE ! skip dry nodes ...
+           IF (IOBP(IP) .EQ. 2) CYCLE ! skip active boundary points ...
            CALL PROPTHETA(IP,CAD)
            DO IS = 1, MSC
              ACQ( 1:MDC) = AC2(IP,IS,:)

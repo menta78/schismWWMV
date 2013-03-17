@@ -64,10 +64,12 @@
            ALLOCATE (DAC_SOU(2,MNP,MSC,MDC)); DAC_SOU = 0._rkind
          END IF
 
+#ifdef SHYFEM_COUPLING
          IF (LSHYFEM) THEN
            ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP)); SHYFZETA = ZERO; NLEV = 0
            ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP)); STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
          END IF
+#endif
 !
 ! WAM Cycle 4.5 - shared
 !
@@ -202,9 +204,11 @@
            DEALLOCATE (DAC_ADV, DAC_THE, DAC_SIG, DAC_SOU)
          END IF
 
+#ifdef SHYFEM_COUPLING
          IF (LSHYFEM) THEN
            DEALLOCATE(SHYFZETA, NLEV)
          END IF
+#endif
 !
 ! WAM Cycle 4.5 - shared
 !
@@ -456,8 +460,10 @@
            CALL FLUSH(STAT%FHNDL)
            IF (LTIMOR) THEN
              CALL INIT_PIPES_TIMOR()
+#ifdef SHYFEM_COUPLING
            ELSE IF (LSHYFEM) THEN
              CALL INIT_PIPES_SHYFEM()
+#endif
            ELSE IF (LROMS) THEN
              CALL INIT_PIPES_ROMS()
            END IF
@@ -542,8 +548,10 @@
          IF (LCPL) THEN
            IF (LTIMOR) THEN
              CALL TERMINATE_PIPES_TIMOR()
+# ifdef SHYFEM_COUPLING
            ELSE IF (LSHYFEM) THEN
              CALL TERMINATE_PIPES_SHYFEM()
+# endif
            ELSE IF (LROMS) THEN
              CALL TERMINATE_PIPES_ROMS()
            END IF
@@ -1234,8 +1242,7 @@
             IPP = IPP + 1
             READ (WAV%FHNDL, *) SPPARM(:,IPP) ! ... read values into boundary array
           ELSE
-            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP, RTMP, RTMP, RTMP,     &
-     &      RTMP, RTMP ! ... else ... throw them away
+            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP, RTMP, RTMP, RTMP, RTMP, RTMP ! ... else ... throw them away
           ENDIF
         END DO
       ELSE
@@ -1304,8 +1311,7 @@
         DO IP = 1, IWBMNPGL
           IF(ipgl(IWBNDGL(IP))%rank == myrank) THEN ! IF boundary nodes belong to local domain read values into boundary array
             IPP = IPP + 1
-            READ (WAV%FHNDL, *) SPPARM(1,IPP), SPPARM(2,IPP),           &
-     &                          SPPARM(3,IPP)
+            READ (WAV%FHNDL, *) SPPARM(1,IPP), SPPARM(2,IPP), SPPARM(3,IPP)
           ELSE
             READ (WAV%FHNDL, *) RTMP, RTMP, RTMP ! ELSE ... throw them away ...
           ENDIF
@@ -1652,8 +1658,8 @@
         IF(LINHOM) THEN !nearest-neighbour interpolation
           DO IB=1,IWBMNP
             IPGL = IWBNDLC(IB)
-            XP_WWM=XP(IPGL)
-            YP_WWM=YP(IPGL)
+            XP_WWM=XLON(IPGL)
+            YP_WWM=YLAT(IPGL)
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)

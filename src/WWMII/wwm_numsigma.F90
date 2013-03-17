@@ -114,15 +114,15 @@
 
              CASE (2)
 
-                  IF (DEP(IP) .GT. DMIN) THEN
-                    DO IS = 1, MSC
-                      WKDEP = WK(IP,IS) * DEP(IP)
-                      IF (WKDEP .LT. 13.) THEN
-                        DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
-                      ELSE
-                        DWDH = 0.
-                      END IF
-                      DO ID = 1, MDC
+                IF (DEP(IP) .GT. DMIN) THEN
+                  DO IS = 1, MSC
+                    WKDEP = WK(IP,IS) * DEP(IP)
+                    IF (WKDEP .LT. 13.) THEN
+                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
+                    ELSE
+                      DWDH = 0.
+                    END IF
+                    DO ID = 1, MDC
                         IF (.NOT. LDIFR) THEN
 
                           CAS(IS,ID) =                                  &
@@ -131,7 +131,7 @@
      &   - CG(IP,IS) * WK(IP,IS) * ( COS2TH(ID)*DCUX(IP,1) +            &
      &                               SIN2TH(ID)*DCUY(IP,2) +            &
      &                     SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
-                        ELSE
+                      ELSE
 
                           CAS(IS,ID) =                                  &
      &   DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1)     &
@@ -139,10 +139,10 @@
      &   - CG(IP,IS) * WK(IP,IS) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1)  &
      &                                         + SIN2TH(ID)*DCUY(IP,2)  &
      &                    + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
-                        END IF
-                      END DO
+                      END IF
                     END DO
-                  END IF
+                  END DO
+                END IF
 
              CASE DEFAULT
                call wwm_abort('CHECK PROPSIGMA CASE')

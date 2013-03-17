@@ -295,8 +295,11 @@
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL4', SUM(IMATRA), SUM(IMATDA)
 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
+
            IMATRAT = IMATRA
-           !IF (IOBP(IP) .EQ. 0) THEN
+
+           IF (IOBP(IP) .EQ. 0 .OR. IOBP(IP) .EQ. 4) THEN
+
              IF (MESDS == 1) THEN
 #ifdef ST41
                CALL W3SDS4_OLD(AWW3,WK(IP,:),CG(IP,:),UFRIC(IP),USTDIR(IP),DEP(IP),IMATRA1D, IMATDA1D) 
@@ -340,7 +343,7 @@
                !CALL SDSW2( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA )
              ELSE IF (MESDS == 6) THEN
              END IF
-           !END IF
+           END IF
 #ifdef VDISLIN
            IF (IDISP == IP) THEN
              CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,IMATRAT-IMATRA,50,MSC,MDC,'BEFORE ANY CALL')
@@ -359,19 +362,24 @@
 
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL3', SUM(IMATRA), SUM(IMATDA)
 
-         IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
-           IF (MESBR .EQ. 1) THEN
-             CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC, IMATRA,IMATDA,SSBR)
-           END IF
+         IF (MESBR .EQ. 1) THEN
+           IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
+             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4) THEN
+               CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC, IMATRA,IMATDA,SSBR)
+             END IF
+           ENDIF
          END IF
 
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
-
-         IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
-           IF (MESBF .GE. 1) THEN
+         IF (MESBF .GE. 1) THEN
+           IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
+             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4) THEN
               CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBR)
+             END IF
            END IF
-         END IF
+         ENDIF
+
+!-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
 
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
 

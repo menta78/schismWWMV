@@ -425,6 +425,8 @@
          REAL(rkind), ALLOCATABLE         :: UWND_NARR(:)
          REAL(rkind), ALLOCATABLE         :: VWND_NARR(:)
          REAL(rkind), ALLOCATABLE         :: WI_NARR(:,:)
+
+
 ! WRF PART I.J.
          REAL(rkind), ALLOCATABLE         :: tmp_wind1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
@@ -651,6 +653,7 @@
          INTEGER                          :: ICPLT = 1
          INTEGER                          :: NLVT
          INTEGER                          :: NSTEPWWM
+         INTEGER                          :: IMET_DRY
 
          INTEGER, ALLOCATABLE             :: NLEV(:)
          REAL(rkind)                      :: DTCUR

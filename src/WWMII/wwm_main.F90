@@ -223,11 +223,11 @@
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
          ELSE 
-           IF (RADFLAG == 'VORTEX') THEN
-             CALL STOKES_STRESS_INTEGRAL_SELFE
-           ELSE
+!           IF (RADFLAG == 'VORTEX') THEN
+!             CALL STOKES_STRESS_INTEGRAL_SELFE
+!           ELSE
              CALL RADIATION_STRESS_SELFE
-           ENDIF
+!           ENDIF
          END IF 
 
          TIME5 = mpi_wtime()
@@ -545,9 +545,11 @@
          IF (LCPL .AND. LTIMOR) THEN
            CALL PIPE_TIMOR_IN(K)
            LCALC = .TRUE.
+# ifdef SHYFEM_COUPLING
          ELSE IF (LCPL .AND. LSHYFEM) THEN
            CALL PIPE_SHYFEM_IN(K)
            LCALC = .TRUE.
+# endif
          ELSE IF (LCPL .AND. LROMS) THEN
            CALL PIPE_ROMS_IN(K,IFILE,IT)
            LCALC = .TRUE.
@@ -614,9 +616,11 @@
 #ifndef SELFE
 # if !defined PGMCL_COUPLING
          IF (LCPL .AND. LTIMOR) THEN
-           CALL PIPE_TIMOR_OUT(K)           
+           CALL PIPE_TIMOR_OUT(K)
+#  ifdef SHYFEM_COUPING
          ELSE IF (LCPL .AND. LSHYFEM) THEN
            CALL PIPE_SHYFEM_OUT(K)
+#  endif
          ELSE IF (LCPL .AND. LROMS) THEN
            CALL PIPE_ROMS_OUT(K)
          END IF

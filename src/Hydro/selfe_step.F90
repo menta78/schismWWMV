@@ -5693,7 +5693,7 @@
 
 !...  Tracer transport
       if(ntracers>0) then
-!       Save previous results in tr_el (global array) to prepare for do_transport_* and for ecosim
+!       Save previous results in tr_el (global array) to prepare for do_transport_* 
         tr_el(1:ntracers,:,:)=trel(1:ntracers,:,:)
 
         select case(flag_model)
@@ -5846,6 +5846,13 @@
           tr_el(:,1:2,:)=1 
         endif
 #endif /*USE_TIMOR*/
+
+
+        !Debug
+        !do j=1,ntracers
+        !  write(12,*)'After trc. trans.:',it,j,real(tr_el(j,:,8))
+        !enddo !j
+ 
 
 #ifdef USE_ICM
         if(myrank==0) write(16,*)'start ICM (5)..'
@@ -7048,7 +7055,7 @@
           write(36,rec=IHOTSTP+19)CPON(i,3)
           write(36,rec=IHOTSTP+20)CPOC(i,1)
           write(36,rec=IHOTSTP+21)CPOC(i,2)
-          write(36,rec=IHOTSTP+22)1.1d3 !CPOC(i,3)
+          write(36,rec=IHOTSTP+22)CPOC(i,3)
           IHOTSTP=IHOTSTP+22
         enddo !i
 #endif
@@ -7106,6 +7113,7 @@
 
       if(myrank==0) write(16,'(a,i12,a,f20.6)') 'TIME STEP= ',it,';  TIME= ',time
 !'
+      call flush(16) !flush "mirror.out" for every time step
       call parallel_barrier !synchronize before starting next time step
 
 

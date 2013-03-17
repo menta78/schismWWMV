@@ -70,12 +70,12 @@
 
         DO IP = 1, MNP
           IF ( (LBCWA .OR. LBCSP) ) THEN
-            IF ( IOBP(IP) == 2 ) THEN
+            IF ( IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
               IOBWB(IP) = 0
               IOBPD(:,IP) = 1
             ENDIF
           END IF
-          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 3
+          IF ( IOBP(IP) == 3 .OR. IOBP(IP) == 4) THEN ! If Neumann boundary condition is given set IOBP to 3
             IOBPD(:,IP) = 1 ! Update Neumann nodes ...
           END IF
         END DO
@@ -178,23 +178,23 @@
 ! add island and boundary flags ...
 !
         DO IP = 1, NP_RES
-          IF (IOBP(IP) .GT. 3) THEN
-            WRITE(wwmerr, *) 'IOBP(IP) must not be .gt. 3', IP, ' iobp=', iobp(IP)
+          IF (IOBP(IP) .GT. 4) THEN
+            WRITE(wwmerr, *) 'IOBP(IP) must not be .gt. 4', IP, ' iobp=', iobp(IP)
             CALL WWM_ABORT(wwmerr)
           ENDIF
         ENDDO
 
         DO IP = 1, NP_RES ! reset boundary flag in the case that wave boundary are not used but defined in the boundary file
           IF (.NOT. LBCWA .AND. .NOT. LBCSP) THEN
-            IF (IOBP(IP) .EQ. 2) IOBP(IP) = 1
+            IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
           ENDIF
         ENDDO
 
         DO IP = 1, NP_RES
-          IF (ibnd_ext_int(IP) == 1 .OR. ibnd_ext_int(IP) == -1 ) THEN
-            IF (IOBP(IP) .ne. 2 .and. IOBP(IP) .ne. 3) THEN
+          IF (IOBP(IP) .ne. 2 .and. IOBP(IP) .ne. 3 .and. IOBP(IP) .ne. 4) THEN
+            IF (abs(ibnd_ext_int(IP)) == 1) THEN
               IOBP(IP) = ibnd_ext_int(IP)
-            endif
+            ENDIF 
           END IF
         END DO
 
@@ -242,7 +242,7 @@
              READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
            END IF
            ITMP=INT(BNDTMP)
-           IF(ITMP==2)THEN
+           IF(ITMP==2 .OR. ITMP==4)THEN
              IWBMNPGL = IWBMNPGL + 1
              IF(ipgl(IP)%rank==myrank) IWBMNP=IWBMNP+1
            ENDIF
@@ -289,7 +289,7 @@
              READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
            END IF
            ITMP=INT(BNDTMP)
-           IF (ITMP==2) THEN
+           IF (ITMP==2 .OR. ITMP ==4) THEN
              IWBMNPGL = IWBMNPGL + 1
              IWBNDGL(IWBMNPGL) = IP !global node #
              IF (ipgl(IP)%rank==myrank) THEN
@@ -523,7 +523,7 @@
       END DO
 
       DO IP = 1, MNP
-        IF (IOBP(IP) .GT. 3) THEN
+        IF (IOBP(IP) .GT. 4) THEN
           WRITE(wwmerr, *) 'NextGen: We need iobp<=2 but ip=', IP, ' iobp=', iobp(IP)
           CALL WWM_ABORT(wwmerr)
         ENDIF
@@ -536,12 +536,12 @@
 #ifndef MPI_PARALL_GRID
       IWBMNP = 0
       DO IP = 1, MNP
-        IF (IOBP(IP) == 2) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
+        IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
       END DO
       ALLOCATE( IWBNDLC(IWBMNP) ) 
       IWBMNP = 0
       DO IP = 1, MNP
-        IF (IOBP(IP) == 2) THEN
+        IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
           IWBMNP = IWBMNP + 1
           IWBNDLC(IWBMNP) = IP ! Stores local wave boundary index 
         END IF
@@ -582,7 +582,7 @@
           READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
         END IF
         ITMP=INT(BNDTMP)
-        IF(ITMP==2)THEN
+        IF(ITMP==2 .OR. ITMP ==4)THEN
           IWBMNPGL = IWBMNPGL + 1
           IF(ipgl(IP)%rank==myrank) IWBMNP=IWBMNP+1
         ENDIF
@@ -625,7 +625,7 @@
             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
           END IF
           ITMP=INT(BNDTMP)
-          IF (ITMP==2) THEN 
+          IF (ITMP==2 .OR. ITMP==4) THEN 
             IWBMNPGL = IWBMNPGL + 1
             IWBNDGL(IWBMNPGL) = IP !global node #
             IF (ipgl(IP)%rank==myrank) THEN
@@ -653,15 +653,16 @@
 !
 ! allocate wave boundary arrays ... 
 !
+!AR: Hi Mathieu, I do not see why you are opening here files ? 
         IF (LINHOM) THEN
-          IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary 
-            OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-          END IF
+!          IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary 
+!            OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
+!          END IF
           SPsize=IWBMNP
         ELSE
-          IF (LBCWA .OR. LBCSP) THEN
-            IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-          ENDIF
+!          IF (LBCWA .OR. LBCSP) THEN
+!            IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
+!          ENDIF
           SPsize=1
         ENDIF
         
@@ -669,6 +670,7 @@
           ALLOCATE( SPPARM(8,SPsize) )
           SPPARM = 0.
         ENDIF
+
         IF (LBCWA .OR. LBCSP) THEN
           ALLOCATE( WBAC(MSC,MDC,SPsize) ); WBAC = 0.
           IF (LBINTER) THEN
@@ -783,13 +785,13 @@
           END IF
           IF (BNDTMP .GT. ZERO) IOBP(IP) = INT(BNDTMP)
           IF (.NOT.  LBCWA  .AND. .NOT. LBCSP) THEN ! Reset boundary flag ...
-            IF (IOBP(IP) .EQ. 2) IOBP(IP) = 1
+            IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
           END IF
         END DO
 
         IWBMNP = 0
         DO IP = 1, MNP
-          IF (IOBP(IP) == 2) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
+          IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
         END DO
 !
 ! map boundary nodes ...
@@ -797,7 +799,7 @@
         ALLOCATE( IWBNDLC(IWBMNP) )
         IWBMNP = 0
         DO IP = 1, MNP
-          IF (IOBP(IP) == 2) THEN
+          IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
             IWBMNP = IWBMNP + 1
             IWBNDLC(IWBMNP) = IP ! Stores local wave boundary index
           END IF
@@ -1000,7 +1002,7 @@
              ELSE IF (LBSP2D) THEN
                IF (IBOUNDFORMAT == 1) THEN ! WWM
                  !CALL READSPEC2D
-                 CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available')
+                 CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
                ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
                  WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
                  CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT)

@@ -3,8 +3,6 @@
       USE DATAPOOL
       implicit none
       real(rkind), intent(inout) :: TheDiv(MNP)
-!MATHIEU I suggest heavy use of forchk since otherwise everything gets messed up
-!        e.g. INPUT is already defined in the datapool, now it is redefined this is not ok
       real(rkind) :: U_X(MNP), U2(MNP), INPUT(MNP)
       integer IP, ID, IS
       REAL(rkind) :: COSE2, SINE2, WN, ELOC

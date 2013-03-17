@@ -1125,74 +1125,90 @@
       iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
       !
+# ifdef MPI_PARALL_GRID
+      iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+      iret=nf90_put_att(ncid,var_id,'description','number of processors')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      !
+      iret=nf90_def_var(ncid,'MULTIPLEOUT',NF90_INT,(/one_dims/),var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+      iret=nf90_put_att(ncid,var_id,'description','multiple status')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+# endif
+      !
       IF (PARAMWRITE_STAT) THEN
         CALL WRITE_PARAM_1(ncid, one_dims)
       ENDIF
       !
       IF (nbTime.gt.0) THEN
         iret = nf90_def_dim(ncid, 'ocean_time', nbTime, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       ELSE
         iret = nf90_def_dim(ncid, 'ocean_time', NF90_UNLIMITED, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
       END IF
       iret=nf90_def_var(ncid,'ocean_time',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'seconds since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
       iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
       !
       iret=nf90_def_var(ncid,'ocean_time_day',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'days since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
       !
       iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
       iret=nf90_def_var(ncid,'x',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
 ! lat
       iret=nf90_def_var(ncid,'y',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
 ! cutoff frequency
       iret=nf90_def_var(ncid,'cutoff',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'Hz')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
 ! ismax value
       iret=nf90_def_var(ncid,'ismax',NF90_INT,(/ nbstat_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
-      IF (MULTIPLEOUT.gt.0) THEN
-! Ifound
-        iret=nf90_def_var(ncid,'ifound',NF90_INT,(/ nbstat_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
-      END IF
-! Isum
-      iret=nf90_def_var(ncid,'isum',NF90_INT,(/ nbstat_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
-! SPSIG
-      iret=nf90_def_var(ncid,'spsig',NF90_INT,(/ msc_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
+      IF (MULTIPLEOUT.gt.0) THEN
+! Ifound
+        iret=nf90_def_var(ncid,'ifound',NF90_INT,(/ nbstat_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
+      END IF
+! Isum
+      iret=nf90_def_var(ncid,'isum',NF90_INT,(/ nbstat_dims/),var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
+! SPSIG
+      iret=nf90_def_var(ncid,'spsig',NF90_INT,(/ msc_dims/),var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
 ! SPDIR
       iret=nf90_def_var(ncid,'spdir',NF90_INT,(/ mdc_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1200,13 +1216,32 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_STAT_2(ncid, MULTIPLEOUT)
       USE DATAPOOL
       USE NETCDF
+# ifdef MPI_PARALL_GRID
+      USE ELFE_MSGP, only : myrank, nproc
+# endif
       implicit none
       integer, intent(in) :: ncid, MULTIPLEOUT
       integer :: eWriteInt(1)
       real(rkind) :: eWriteReal(1)
       integer var_id, iret
       integer I
+      integer eInt(1)
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_2"
+      !
+# ifdef MPI_PARALL_GRID
+      iret=nf90_inq_varid(ncid,'nproc',var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      eInt(1)=nproc
+      iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      !
+      iret=nf90_inq_varid(ncid,'MULTIPLEOUT',var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+      eInt(1)=MULTIPLEOUT
+      iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+# endif
+      !
       IF (PARAMWRITE_STAT) THEN
         CALL WRITE_PARAM_2(ncid)
       ENDIF

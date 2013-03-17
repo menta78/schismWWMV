@@ -1,9 +1,11 @@
 PROG1 = $(HOME)/bin/MergeWWMhistory_NC
 PROG2 = $(HOME)/bin/MergeWWMhotfile_NC
+PROG3 = $(HOME)/bin/MergeWWMstation_NC
 
 OBJScommon = wwm_datapl.o wwm_netcdf.o wwm_gridcf.o wwm_mjdv2.o wwm_aux.o wwm_input.o 
 OBJhistory = MergeWWMhistory_NC.o
 OBJhotfile = MergeWWMhotfile_NC.o
+OBJstation = MergeWWMstation_NC.o
 LIBS = -L$(NETCDF_LIBDIR) -lnetcdf
 
 F90 = ifort
@@ -25,6 +27,9 @@ $(PROG1): $(OBJScommon) $(OBJhistory)
 
 $(PROG2): $(OBJScommon) $(OBJhotfile)
 	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJhotfile) $(LIBS) $(LDFLAGS)
+
+$(PROG3): $(OBJScommon) $(OBJstation)
+	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJstation) $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod *_mod.* *_genmod.* $(PROG)

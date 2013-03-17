@@ -11,7 +11,7 @@ PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = on
+OPENMP =  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 
@@ -77,7 +77,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o \
-       wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_radiation.o wwm_diffrac.o wwm_coupl.o wwm_main.o
+       wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 #       dislin.o diclass.o \
 
 #LIBS = -L/home/aron/opt/dislin/lib/dislin.a

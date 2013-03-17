@@ -379,24 +379,6 @@
 ! ... assembling the linear equation system ....
 !
          DO IP = 1, NP_RES
-!           DO I = 1, CCON(IP)
-!             J = J + 1
-!             IE    =  IE_CELL(J)
-!             POS   =  POS_CELL(J)
-!             K1    =  KP(POS,IE) ! Flux Jacobian
-!             TRIA03 = ONETHIRD * TRIA(IE)
-!             DTK   =  K1 * DT4A
-!             TMP3  =  DTK * NM(IE)
-!             I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-!             I2    =  POSI(2,J)
-!             I3    =  POSI(3,J)
-!             IF (IOBP(IP) .NE. 2 .AND. IOBPD(IDD,IP) .EQ. 1) THEN
-!               ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
-!               ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
-!               ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
-!               B(IP)     =  B(IP) + TRIA03 * U(IP)
-!             END IF
-!           END DO !I: loop over connected elements ...
            IF (IOBPD(IDD,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
              DO I = 1, CCON(IP)
                J = J + 1

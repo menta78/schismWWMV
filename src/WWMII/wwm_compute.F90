@@ -26,8 +26,8 @@
          ELSE IF (LQSTEA) THEN
            DT4A = DT_ITER
            DT4S = DT4A
-           DT4D = 0.5*DT4A
-           DT4F = 0.5*DT4A 
+           DT4D = DT4A!0.5*DT4A
+           DT4F = DT4A!0.5*DT4A 
          END IF
  
          CALL CPU_TIME(TIME1)
@@ -48,9 +48,9 @@
 
          CALL CPU_TIME(TIME6)
 
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+!         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+!         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
 
          CALL CPU_TIME(TIME5)
 

@@ -687,7 +687,7 @@
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
-     &      LETOT, NLVT, DTCOUP
+     &      LETOT, NLVT, DTCOUP, IMET_DRY
 
          NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
      &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
@@ -1993,17 +1993,17 @@
             HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
             HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            !IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-            !  VAL(2,IP) = 0.
-            !ELSE
-            !  VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            !ENDIF
+            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+              VAL(2,IP) = 0.
+            ELSE
+              VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+            ENDIF
 
-            !IF (VAL(2,IP) .GT. TINY(1.)) THEN
-            !  VAL(2,IP) = 1. / VAL(2,IP)
-            !ELSE
-            !  VAL(2,IP) = 0.
-            !END IF
+            IF (VAL(2,IP) .GT. TINY(1.)) THEN
+              VAL(2,IP) = 1. / VAL(2,IP)
+            ELSE
+              VAL(2,IP) = 0.
+            END IF
 
             WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
             WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links

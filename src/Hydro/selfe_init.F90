@@ -4334,12 +4334,22 @@
             we(:,ie)=swild4(:,1)
             tsel(1,:,ie)=swild4(:,2)
             tsel(2,:,ie)=swild4(:,3)
+
+            !Debug; new19
+            if(i==8) write(12,*)'After hot 1:',swild4(:,1:3)
+
             do l=1,ntracers
               if(flag_model==0) cycle !use i.c. for testing model
 #ifndef USE_NAPZD
               trel0(l,:,ie)=swild4(:,3+2*l-1)
               trel(l,:,ie)=swild4(:,3+2*l)
 #endif
+
+              !Debug; new19
+              if(i==8) then
+                write(12,*)'After hot trc:',l,swild4(:,3+2*l)
+              endif
+
             enddo !l
           endif
         enddo !i=1,ne_global
@@ -4354,6 +4364,10 @@
             sv2(:,iside)=swild10(:,2)
             tsd(:,iside)=swild10(:,3)
             ssd(:,iside)=swild10(:,4)
+
+            !Debug; new19
+            if(iside==8) write(12,*)'After hot side:',swild10(:,1:4)
+
           endif
         enddo !i=1,ns_global
 
@@ -4406,7 +4420,7 @@
             CPOC(ie,2)=swild3(21)
             CPOC(ie,3)=swild3(22)
 
-            write(12,*)'ICM:',iegb,CPOC(ie,3)
+            !write(12,*)'ICM:',iegb,CPOC(ie,3)
           endif
         enddo !i
 #endif

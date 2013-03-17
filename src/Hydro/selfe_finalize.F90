@@ -113,6 +113,5 @@
 #ifdef USE_WWM
       call TERMINATE_WWM
 #endif /*USE_WWM*/
-! Finalize parallel environment
-!      call parallel_finalize
+
       end subroutine selfe_finalize
