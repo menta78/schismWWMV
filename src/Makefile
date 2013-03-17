@@ -30,7 +30,7 @@
 #            these are just for testing)
 ################################################################################
 
-#include ${PETSC_DIR}/conf/variables
+include ${PETSC_DIR}/conf/variables
 
 ################################################################################
 # Comment out the following line if you don't want the build dependent
@@ -60,7 +60,7 @@ ENV = ARON
 ################################################################################
 # Executable
 ################################################################################
-EXEC   = $(HOME)/bin/pelfe_ONLY_$(ENV)
+EXEC   = $(HOME)/bin/pelfe_WWM_$(ENV)
 
 ################################################################################
 # Define pre-processing flags.
@@ -657,7 +657,7 @@ OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o wwm_petsc_seriell.o wwm_petsc_paral
                 wwm_snl3.o wwm_snl4.o wwm_snl42.o wwm_babanin.o wwm_ecmwf.o \
                 wwm_sourceterms.o wwm_specint.o wwm_nums1d.o \
                 wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o wwm_netcdf.o \
-                wwm_output.o wwm_compute.o wwm_radiation.o wwm_diffrac.o wwm_main.o
+                wwm_output.o wwm_compute.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_diffrac.o wwm_main.o
 endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
