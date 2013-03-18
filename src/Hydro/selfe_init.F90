@@ -507,8 +507,8 @@
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_SED2D
-      noutput=noutput+5
-      indx_out(1,1)=noutput-4
+      noutput=noutput+6
+      indx_out(1,1)=noutput-5
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_NAPZD
@@ -648,23 +648,27 @@
       variable_nm(indx2+1)='depth in m'
       variable_dim(indx2+1)='2D scalar'
 
-      outfile(indx2+2)='qtot.62'
-      variable_nm(indx2+2)='total transport in m2.s-1'
-      variable_dim(indx2+2)='2D vector'
-         
-      outfile(indx2+3)='qsus.62'
-      variable_nm(indx2+3)='suspended transport in m2.s-1'
+      outfile(indx2+2)='cdsed.61'
+      variable_nm(indx2+2)='drag coefficient in sed2d'
+      variable_dim(indx2+2)='2D scalar'
+
+      outfile(indx2+3)='qtot.62'
+      variable_nm(indx2+3)='total transport in m2.s-1'
       variable_dim(indx2+3)='2D vector'
          
-      outfile(indx2+4)='qbdl.62'
-      variable_nm(indx2+4)='bed load transport in m2.s-1'
+      outfile(indx2+4)='qsus.62'
+      variable_nm(indx2+4)='suspended transport in m2.s-1'
       variable_dim(indx2+4)='2D vector'
          
-      outfile(indx2+5)='dpdxy.62'
-      variable_nm(indx2+5)='Bottom slope in m.m-1'
+      outfile(indx2+5)='qbdl.62'
+      variable_nm(indx2+5)='bed load transport in m2.s-1'
       variable_dim(indx2+5)='2D vector'
+         
+      outfile(indx2+6)='dpdxy.62'
+      variable_nm(indx2+6)='Bottom slope in m.m-1'
+      variable_dim(indx2+6)='2D vector'
 
-      indx2=indx2+5
+      indx2=indx2+6
 #endif 
 
 #ifdef USE_NAPZD
@@ -1287,7 +1291,7 @@
         if(itmp1/=ne_global.or.itmp2/=np_global) call parallel_abort('Check fluxflag.gr3')
         do i=1,np_global
           read(32,*)j,xtmp,ytmp,tmp1
-          if(tmp1<0) call parallel_abort('MAIN: fluxflag.gr3 has <0')
+          if(tmp1<-1) call parallel_abort('MAIN: fluxflag.gr3 has <-1')
           if(ipgl(i)%rank==myrank) nwild2(ipgl(i)%id)=tmp1
         enddo
         close(32)
@@ -4308,7 +4312,6 @@
       endif
 
 #ifdef USE_SED2D
-        call sed2d_read
         call sed2d_init
 #endif
 
@@ -4334,22 +4337,12 @@
             we(:,ie)=swild4(:,1)
             tsel(1,:,ie)=swild4(:,2)
             tsel(2,:,ie)=swild4(:,3)
-
-            !Debug; new19
-            if(i==8) write(12,*)'After hot 1:',swild4(:,1:3)
-
             do l=1,ntracers
               if(flag_model==0) cycle !use i.c. for testing model
 #ifndef USE_NAPZD
               trel0(l,:,ie)=swild4(:,3+2*l-1)
               trel(l,:,ie)=swild4(:,3+2*l)
 #endif
-
-              !Debug; new19
-              if(i==8) then
-                write(12,*)'After hot trc:',l,swild4(:,3+2*l)
-              endif
-
             enddo !l
           endif
         enddo !i=1,ne_global
@@ -4364,10 +4357,6 @@
             sv2(:,iside)=swild10(:,2)
             tsd(:,iside)=swild10(:,3)
             ssd(:,iside)=swild10(:,4)
-
-            !Debug; new19
-            if(iside==8) write(12,*)'After hot side:',swild10(:,1:4)
-
           endif
         enddo !i=1,ns_global
 
@@ -4420,7 +4409,7 @@
             CPOC(ie,2)=swild3(21)
             CPOC(ie,3)=swild3(22)
 
-            !write(12,*)'ICM:',iegb,CPOC(ie,3)
+            !write(12,*)'ICM:',iegb,swild3(1:22)
           endif
         enddo !i
 #endif

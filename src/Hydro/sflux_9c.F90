@@ -300,7 +300,7 @@
 !   (2) grids for air, rad and prc can be different (but must be the same within
 !       each type and each source). Additional requirements for the structured grid in .nc:
 !       [lon,lat](nx,ny) give x,y coord., nx is # of pts in x. Suppose a node in the grid is
-!       given by (i,j) (1<=i<=nx), then the quad (i,j), (i+1,j), (i+1,j+1,i,j+1) must be long
+!       given by (i,j) (1<=i<=nx), then the quad (i,j), (i+1,j), (i+1,j+1,i,j+1) must be along
 !       counter-clockwise direction;
 !   (3) search for "relative_weight" (inside netcdf_io) to 
 !       change relative weights of the 2 sources for air, rad and prc if needed. All weights must > 0!
@@ -309,7 +309,7 @@
 !       the 2 grids, and if some nodes in hgrid.ll fall outside grid "2" the interpolation
 !       will be done on grid "1" only (see combine_sflux_data, in particular, bad_node_2
 !       based on area coordinates outside [0,1]). Both grids must start from stack
-!       1 and have same # of stackes for each variable. However, within each nc file #
+!       1 and have same # of stacks for each variable. However, within each nc file #
 !       of time steps can vary;
 !   (5) air_1_max_window_hours (etc) are set in netcdf_io to define the max. time stamp
 !       (offset from start time in each) within each nc file. Besides those in netcdf_io, 

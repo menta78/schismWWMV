@@ -42,7 +42,7 @@
 #endif USE_SED
 
 #ifdef USE_SED2D
-      use sed2d_mod, only : dpdxy,qb,qs,qtot
+      use sed2d_mod, only : Cdsed,dpdxy,qb,qs,qtot
 #endif
 
 #ifdef USE_OIL
@@ -137,7 +137,7 @@
                  &jcoef(npa*(mnei+1)),ibt_p(npa),ibt_s(nsa)
       real(rkind) :: dfz(2:nvrt),dzz(2:nvrt),deta1_dx(nsa),deta1_dy(nsa),deta2_dx(nsa), &
                      &deta2_dy(nsa),dpr_dx(nsa),dpr_dy(nsa),detp_dx(nsa),detp_dy(nsa), &
-                     &sne(nvrt,3),area_e(nvrt),srad_e(nea),qel(npa),elbc(npa),hhat(nsa), &
+                     &sne(nvrt,3),area_e(nvrt),srad_e(nea),qel(np),elbc(npa),hhat(nsa), &
                      &bigu(nsa,2),ghat1(nea,2),etp(npa),h1d(0:nvrt),SS1d(0:nvrt), &
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
@@ -151,7 +151,7 @@
       real(rkind),allocatable :: rwild(:,:) !,swild(:),swild2(:,:),swild3(:) !swild2 dimension must match that in vinter()
       real(rkind),allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
       real(rkind),allocatable :: hp_int(:,:,:),buf1(:,:),buf2(:,:),buf3(:),msource(:,:)
-      real(rkind),allocatable :: fluxes_vol(:,:),fluxes_vol_gb(:,:) !volume fluxes output between regions
+      real(rkind),allocatable :: fluxes_vol(:),fluxes_vol_gb(:) !volume fluxes output between regions
       logical :: ltmp,ltmp1,ltmp2
 
       logical,save :: first_call=.true.
@@ -6388,9 +6388,9 @@
       deallocate(buf3)
 
       !Fluxes
-      !fluxes_vol(0:max_flreg,0:max_flreg): volume fluxes from region i to j;
-      !only lower triangle is computed
-      allocate(fluxes_vol(0:max_flreg,0:max_flreg),fluxes_vol_gb(0:max_flreg,0:max_flreg),stat=istat)
+      !fluxes_vol(1:max_flreg): volume fluxes from region i to i-1, with i>=1
+      !(i.e. excluding region -1)
+      allocate(fluxes_vol(max_flreg),fluxes_vol_gb(max_flreg),stat=istat)
       if(istat/=0) call parallel_abort('STEP: fluxes_vol alloc')
       fluxes_vol=0 
       do i=1,ns
@@ -6398,14 +6398,17 @@
 
         !Wet internal side
         ie0=is(i,1); ie=is(i,2)
+        if((iflux_e(ie0) .eq. -1) .or. (iflux_e(ie) .eq. -1)) cycle
+
         if(ie0<=0.or.ie<=0) call parallel_abort('STEP: is() out of bound') 
-        if(iflux_e(ie0)/=iflux_e(ie)) then
+        if(iflux_e(ie0) .ne. iflux_e(ie) .and. iabs(iflux_e(ie0) - iflux_e(ie)) .eq. 1) then
           if(associated(isgl(islg(i))%next)) then !interface side
             if(isgl(islg(i))%next%rank<myrank) cycle !already in the sum so skip
           endif
 
           itmp1=max(iflux_e(ie0),iflux_e(ie)) !'hi' region #
           itmp2=min(iflux_e(ie0),iflux_e(ie)) !'lo' region #
+          if(itmp1<1) call parallel_abort('STEP: flux index <1')
           if(itmp1==iflux_e(ie0)) then
             fac=1
           else
@@ -6419,26 +6422,20 @@
               vnn=(su2(k+1,i)+su2(k,i))/2
             endif !ics
             ftmp=fac*distj(i)*(zs(k+1,i)-zs(k,i))*vnn
-            fluxes_vol(itmp1,itmp2)=fluxes_vol(itmp1,itmp2)+ftmp
+            fluxes_vol(itmp1)=fluxes_vol(itmp1)+ftmp
           enddo !k
         endif !side bording 2 regions
       enddo !i=1,ns
 
-      !buf3=0
-      !swild(1)=tvol12; swild(2)=tot_s; swild(3)=fluxbnd; swild(4)=fluxchan; swild(5)=fluxchan1; swild(6)=fluxchan2
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
 #endif
-      !call mpi_reduce(swild,buf3,6,rtype,MPI_SUM,0,comm,ierr)
-      call mpi_reduce(fluxes_vol,fluxes_vol_gb,(max_flreg+1)*(max_flreg+1),rtype,MPI_SUM,0,comm,ierr)
+      call mpi_reduce(fluxes_vol,fluxes_vol_gb,max_flreg,rtype,MPI_SUM,0,comm,ierr)
 #ifdef INCLUDE_TIMING
       wtimer(11,2)=wtimer(11,2)+mpi_wtime()-cwtmp
 #endif
       if(myrank==0) then
-        !write(9,*)time/86400,buf3(5),-buf3(6),buf3(3),buf3(1),buf3(4),buf3(2),0.
-        do i=1,max_flreg
-          write(9,'(i10,1x,e14.6,10000(1x,e14.6))')i,time/86400,fluxes_vol_gb(i,0:i-1)
-        enddo !i
+        write(9,'(f16.6,6000(1x,e14.4))')time/86400,fluxes_vol_gb(1:max_flreg)
         write(16,*)'done computing fluxes...'
       endif
 !---------------------------------------------------------      
@@ -6661,22 +6658,26 @@
 
 #ifdef USE_SED2D
               if((j>=indx_out(1,1)).and.(j<=indx_out(1,2))) then          
-                if(j==indx_out(1,1)) then !scalar
-                  floatout=dp(i)
-                else if(j>indx_out(1,1)) then !vector
-                     if(j==indx_out(1,1)+1) then
-                       floatout=qtot(i,1)
-                       floatout2=qtot(i,2)
-                     else if(j==indx_out(1,1)+2) then
-                       floatout=qs(i,1)
-                       floatout2=qs(i,2)
-                     else if(j==indx_out(1,1)+3) then
-                       floatout=qb(i,1)
-                       floatout2=qb(i,2)
-                     else if(j==indx_out(1,2)) then 
-                       floatout=dpdxy(i,1)
-                       floatout2=dpdxy(i,2)
-                     endif
+                if(j>=indx_out(1,1).and.(j<=indx_out(1,1)+1)) then !scalar
+                  if(j==indx_out(1,1)) then
+                    floatout=dp(i)
+                  else if(j==indx_out(1,1)+1) then
+                    floatout=Cdsed(i)
+                  endif
+                else if(j>indx_out(1,1)+1) then !vector
+                  if(j==indx_out(1,1)+2) then
+                    floatout=qtot(i,1)
+                    floatout2=qtot(i,2)
+                  else if(j==indx_out(1,1)+3) then
+                    floatout=qs(i,1)
+                    floatout2=qs(i,2)
+                  else if(j==indx_out(1,1)+4) then
+                    floatout=qb(i,1)
+                    floatout2=qb(i,2)
+                  else if(j==indx_out(1,1)+5) then 
+                    floatout=dpdxy(i,1)
+                    floatout2=dpdxy(i,2)
+                  endif
                 endif
                 a_4 = transfer(source=floatout,mold=a_4)
 #ifdef AVOID_ADV_WRITE
@@ -6684,7 +6685,7 @@
 #else
                 write(ichan(j),"(a4)",advance="no") a_4
 #endif
-                if(j>indx_out(1,1)) then !vector
+                if(j>indx_out(1,1)+1) then !vector
                   a_4 = transfer(source=floatout2,mold=a_4)
 #ifdef AVOID_ADV_WRITE
                   write(ichan(j)) a_4
@@ -7060,12 +7061,13 @@
         enddo !i
 #endif
 
+        !write(12,*)'After hot trcr:',it,real(trel),real(trel0)
+
 #ifdef USE_HA
 !... 
 !...    IF APPROPRIATE ADD HARMONIC ANALYSIS INFORMATION TO HOT START FILE
 !...    Adapted from ADCIRC
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-!Error: recl=nbyte??
              &access='direct',recl=8,status='old') 
         !IHOTSTP = 3+((1+(3+2*ntracers)*nvrt)*ne)+((1+4*nvrt)*ns)+((2+9*nvrt)*np)
         IF((iharind.EQ.1).AND.(it.GT.ITHAS)) THEN

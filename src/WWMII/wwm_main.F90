@@ -434,7 +434,7 @@
          IF (LCFL) CALL CFLSPEC()
 
 #ifdef MPI_PARALL_GRID
-!         NQSITER = NSTEPWWM
+         NQSITER = NSTEPWWM
 #endif
 
          DO IT = 1, NQSITER

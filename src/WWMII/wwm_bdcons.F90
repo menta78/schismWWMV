@@ -303,38 +303,31 @@
          WRITE(STAT%FHNDL,*)'FINISHED SETTING THE FLAGS'
          WRITE(STAT%FHNDL,*)'Gloabl bnd list from init.:', IWBMNPGL,IWBNDGL(:)
          WRITE(STAT%FHNDL,*)'Local bnd list from init.:', IWBMNP,IWBNDLC(:)
-
+!
+! allocate memory for boundary forcing ....
+!
          IF (LINHOM) THEN
            IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary
-             OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
              ALLOCATE( WBAC(MSC,MDC,IWBMNP) ); WBAC = 0.
              IF (LBINTER) THEN ! For time interpolation
                ALLOCATE( WBACOLD(MSC,MDC,IWBMNP) ); WBACOLD = 0.
                ALLOCATE( WBACNEW(MSC,MDC,IWBMNP) ); WBACNEW = 0.
                ALLOCATE( DSPEC(MSC,MDC,IWBMNP) ); DSPEC   = 0.
              END IF
-             IF (LBCWA) THEN
-               ALLOCATE( SPPARM(8,IWBMNP) )
-               SPPARM = 0.
-             ENDIF
+             IF (LBCWA) ALLOCATE( SPPARM(8,IWBMNP) ); SPPARM = 0. 
            END IF
          ELSE
            IF (LBCWA .OR. LBCSP) THEN
-             IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
              ALLOCATE( WBAC(MSC,MDC,1) ); WBAC = 0.
              IF (LBINTER) THEN
                ALLOCATE( WBACOLD(MSC,MDC,1) ); WBACOLD = 0.
                ALLOCATE( WBACNEW(MSC,MDC,1) ); WBACNEW = 0.
                ALLOCATE( DSPEC(MSC,MDC,1) ); DSPEC   = 0.
              END IF
-             IF (LBCWA) THEN
-               ALLOCATE( SPPARM(8,1) )
-               SPPARM = 0.
-             ENDIF
+             IF (LBCWA) ALLOCATE( SPPARM(8,IWBMNP) ); SPPARM = 0.
            ENDIF
          ENDIF ! LINHOM
          WRITE(STAT%FHNDL,'("+TRACE...",A,I10)') 'Number of Active Wave Boundary Nodes', IWBMNP
-
 !
 ! write test output ...
 !

@@ -1351,6 +1351,7 @@
 !     Third  Line ... number of directions
 !
       IF (LFIRST) THEN
+        OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
         READ (WAV%FHNDL,*) WBMSC
         READ (WAV%FHNDL,*) WBMDC
         !WRITE(*,*) WBMSC, WBMDC
