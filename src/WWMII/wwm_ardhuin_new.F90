@@ -99,8 +99,7 @@
       REAL(rkind), PARAMETER, PRIVATE    :: SIGAMX =   40._rkind
       REAL(rkind), PARAMETER, PRIVATE    :: DRAGMX =    1.E-2
 !
-      REAL(rkind), PRIVATE           :: DSIGA, DDRAG,                   &
-     &            BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
+      REAL(rkind), PRIVATE           :: DSIGA, DDRAG, BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
 !/
       LOGICAL, SAVE , PRIVATE :: FIRST = .TRUE.
 !
@@ -148,7 +147,7 @@
 
         IMPLICIT  NONE
 
-        INTEGER :: IK, ISP, ITH, ITH0
+        INTEGER :: IK, ISP, ITH, ITH0, istat
         REAL(rkind)    :: SIGMA, FR1, RTH0
 
         NK    = MSC
@@ -157,10 +156,14 @@
         MTH   = NTH ! ?
         MSPEC = NSPEC
 
-        ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC))
-        ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH))
-        ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH) )
-        ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC))
+        ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
+        ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 2')
+        ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 3')
+        ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 4')
 
         DTH   = DDIR
         FR1   = SPSIG(1)/PI2
@@ -348,13 +351,33 @@
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)
 
-        ALLOCATE(IKTAB(MK,2000)); IKTAB = 0
-        ALLOCATE(SATINDICES(2*SDSNTH+1,MTH)); SATINDICES = 0
-        ALLOCATE(SATWEIGHTS(2*SDSNTH+1,MTH)); SATWEIGHTS = 0._rkind
-        ALLOCATE(CUMULW(MK*MTH,MK*MTH)); CUMULW = 0._rkind
-        ALLOCATE(DCKI(NKHS,NKD)); DCKI = 0._rkind
-        ALLOCATE(LLWS(NSPEC)); LLWS = .FALSE.
-        ALLOCATE(QBI(NKHS,NKD)); QBI = 0._rkind
+        ALLOCATE(IKTAB(MK,2000), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 5')
+        IKTAB = 0
+
+        ALLOCATE(SATINDICES(2*SDSNTH+1,MTH), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 6')
+        SATINDICES = 0
+
+        ALLOCATE(SATWEIGHTS(2*SDSNTH+1,MTH), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 7')
+        SATWEIGHTS = 0._rkind
+
+        ALLOCATE(CUMULW(MK*MTH,MK*MTH), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 8')
+        CUMULW = 0._rkind
+
+        ALLOCATE(DCKI(NKHS,NKD), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 9')
+        DCKI = 0._rkind
+
+        ALLOCATE(LLWS(NSPEC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 10')
+        LLWS = .FALSE.
+
+        ALLOCATE(QBI(NKHS,NKD), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 11')
+        QBI = 0._rkind
 
         TAUWX = ZERO; TAUWY = ZERO; CD = ZERO; Z0 = ZERO; USTDIR = ZERO
 
@@ -1126,6 +1149,7 @@
 !/
     INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 
     INTEGER  IKL, IS, IS2, ID, ICON, IKD, IKHS, IKH, TOTO
+    integer istat
     REAL(rkind)     C, C2
     REAL(rkind)     DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG
     REAL(rkind)     PROF, W, EPS
@@ -1194,9 +1218,12 @@
 ! 
 ! High frequency tail for convolution calculation 
 !
-        ALLOCATE(K1(NK,NDTAB))
-        ALLOCATE(K2(NK,NDTAB))
-        ALLOCATE(SIGTAB(NK,NDTAB))
+        ALLOCATE(K1(NK,NDTAB), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 12')
+        ALLOCATE(K2(NK,NDTAB), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 13')
+        ALLOCATE(SIGTAB(NK,NDTAB), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 14')
 
         SIGTAB=0. !contains frequency for upper windows boundaries
         IKTAB=0  ! contains indices for upper windows boundaries
@@ -1239,8 +1266,10 @@
         DHS=KHSMAX/NKHS ! max value of KHS=KHSMAX
         DKH=KHMAX/NKHI  ! max value of KH=KHMAX 
         DKD=KDMAX/NKD
-        ALLOCATE(DCKI(NKHS,NKD))
-        ALLOCATE(QBI(NKHS,NKD))
+        ALLOCATE(DCKI(NKHS,NKD), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 15')
+        ALLOCATE(QBI(NKHS,NKD), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 16')
         DCKI=0.
         QBI =0.
         DO IKD=1,NKD
@@ -1556,6 +1585,7 @@
       REAL(rkind)                    :: Y,YC,DELY
       INTEGER                 :: I,J,K,L
       REAL(rkind)                    :: X0
+      integer istat
 !
 !/S      CALL STRACE (IENT, 'TABU_HF')
 !
@@ -1568,7 +1598,8 @@
 !   
       TAUHFT(0:IUSTAR,0:IALPHA)=0. !table initialization
 !
-      ALLOCATE(W(JTOT))
+      ALLOCATE(W(JTOT), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 17')
       W(2:JTOT-1)=ONE
       W(1)=0.5_rkind
       W(JTOT)=0.5_rkind
@@ -1696,6 +1727,7 @@
       REAL(rkind)                    :: Y,YC,DELY
       INTEGER                 :: I, J, K, L
       REAL(rkind)                    :: X0
+      integer istat
 !
 !/S      CALL STRACE (IENT, 'TABU_HF')
 !
@@ -1710,7 +1742,8 @@
 !   
       TAUHFT(0:IUSTAR,0:IALPHA)=0._rkind  !table initialization
 !
-      ALLOCATE(W(JTOT))
+      ALLOCATE(W(JTOT), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 18')
       W(2:JTOT-1)=ONE
       W(1)=0.5_rkind
       W(JTOT)=0.5_rkind

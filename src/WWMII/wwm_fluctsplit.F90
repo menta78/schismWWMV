@@ -2071,16 +2071,21 @@
 
          USE DATAPOOL
          IMPLICIT NONE
-
-         ALLOCATE( CCON(MNP) ); CCON = 0_rkind
-         ALLOCATE( SI(MNP) ); SI = 0._rkind
-         ALLOCATE( ITER_EXP(MSC,MDC) ); ITER_EXP = 0
-         ALLOCATE( ITER_EXPD(MSC) ); ITER_EXPD = 0
+         integer istat
+         ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
+         CCON = 0_rkind
+         SI = 0._rkind
+         ITER_EXP = 0
+         ITER_EXPD = 0
          IF (ICOMP .GE. 1) THEN
-           ALLOCATE( I_DIAG(MNP) ); I_DIAG = 0
+           ALLOCATE( I_DIAG(MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
+           I_DIAG = 0
          END IF
          IF (LCFL) THEN
-           ALLOCATE (CFLCXY(3,MNP))
+           ALLOCATE (CFLCXY(3,MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
            CFLCXY = 0._rkind
          END IF
 
@@ -2113,7 +2118,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER :: I, J, K
+         INTEGER :: I, J, K, istat
          INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
          INTEGER :: I1, I2, I3, NI(3)
          INTEGER :: CHILF(MNP), COUNT_MAX
@@ -2170,7 +2175,8 @@
 #endif
 !
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
-         ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2))
+         ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 4')
 !
          CELLVERTEX(:,:,:) = 0 ! Stores for each node the Elementnumbers of the connected Elements
                                ! and the Position of the position of the Node in the Element Index
@@ -2201,10 +2207,8 @@
            WRITE(DBG%FHNDL,*) 'MNE=', MNE
            CALL WWM_ABORT('Do Not Sleep Before solving the problem')
          ENDIF
-         ALLOCATE (IE_CELL(COUNT_MAX))
-         ALLOCATE (POS_CELL(COUNT_MAX))
-         ALLOCATE (IE_CELL2(MNP,MAXMNECON))
-         ALLOCATE (POS_CELL2(MNP,MAXMNECON))
+         ALLOCATE (IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
 ! order of the occurence in the loop during runtime
          IE_CELL  = 0
@@ -2226,7 +2230,8 @@
 
          IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
 
-           ALLOCATE(PTABLE(COUNT_MAX,7))
+           ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 
            J = 0
            PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
@@ -2290,12 +2295,13 @@
 ! see ...:x
 !
 ! JA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ))
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (IA(MNP+1))
+           ALLOCATE (JA(NNZ), IA(MNP+1), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
-           ALLOCATE (POSI(3,COUNT_MAX)) 
+           ALLOCATE (POSI(3,COUNT_MAX), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 7')
            J = 0
            K = 0
            IA(1) = 1

@@ -89,7 +89,7 @@
 # endif  
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
-      INTEGER              :: IP, IL
+      INTEGER              :: IP, IL, istat
 #ifdef MPI_PARALL_GRID
       integer siz, iProc
       real(rkind),  allocatable :: VAR_REAL_TOT(:,:)
@@ -119,8 +119,8 @@
         ELSE
           siz=NLVT+6
         END IF
-        allocate(VAR_REAL_TOT(np_global,siz))
-        allocate(VAR_INT_TOT(np_global))
+        allocate(VAR_REAL_TOT(np_global,siz), VAR_INT_TOT(np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_shyfem, allocate error 1')
         IF (myrank.eq.0) THEN
           DO IP = 1, np_global
             READ(1000) VAR_REAL_TOT(IP,NLVT+1)
@@ -251,7 +251,7 @@
       include 'mpif.h'
 # endif
       INTEGER, INTENT(IN)  :: K
-      INTEGER         :: IL, IP
+      INTEGER         :: IL, IP, istat
       REAL(rkind)     :: ACLOC(MSC,MDC)
       REAL(rkind)     :: HS,WLM,LPP
       REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2,URSELL,UBOT
@@ -330,8 +330,8 @@
         ELSE
           siz=5*NLVT + 9
         END IF
-        allocate(OUTT(np_global,siz))
-        allocate(OUTT_TOT(np_global,siz))
+        allocate(OUTT(np_global,siz), OUTT_TOT(np_global,siz), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_shyfem, allocate error 2')
         DO IP = 1, MNP
           DO IL = 1, NLVT
             OUTT(iplg(IP), IL       ) = SXX3D(IL,IP)             !ccf

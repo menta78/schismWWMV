@@ -7,6 +7,7 @@
 
          USE DATAPOOL
          USE SdsBabanin
+         USE W3SNLXMD
 #ifdef ST41
          USE W3SRC4MD_OLD
 #elif ST42
@@ -22,7 +23,7 @@
 
          LOGICAL, INTENT(IN) :: LRECALC
 
-         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU
+         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
          REAL(rkind)    :: SME01, SME10, KME01, KMWAM, URSELL, KMWAM2
@@ -42,8 +43,9 @@
 
          REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, AS, ICE, TMP2
          REAL(rkind)    :: CHARN, FMEANWS, TAUWAX, TAUWAY, ABRBOT, FP, TP, XJ, FLLOWEST, GADIAG
-         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), DS, EAD, SUMACLOC, IMATRAT(MSC,MDC)
+         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), EAD, SUMACLOC, IMATRAT(MSC,MDC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1
+         REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
 
          LOGICAL        :: LWINDSEA(MSC,MDC)
          REAL(rkind)    :: XLCKS(MDC,MSC)
@@ -275,7 +277,25 @@
              IF (MESNL .EQ. 1) THEN
                IF (LCIRD) THEN
                  !CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
-                 CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA) 
+                 !CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA) 
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC 
+                     TMPAC_TSA(ID,IS) = ACLOC(IS,ID) * CG(IP,IS)
+                   END DO
+                 END DO 
+                 CG_TSA = CG(IP,:)
+                 WK_TSA = WK(IP,:)
+                 DEP_TSA = DEP(IP)
+                 NZZ = (MSC*(MSC+1))/2
+!                 write(*,*) 'nzz', nzz
+                 CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA) 
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IP,IS)
+                     IMATDA(IS,ID) = IMATDA(IS,ID) + IMATDA_TSA(ID,IS)
+!                      write(*,*) is, id, TMPAC_TSA(ID,IS), IMATRA_TSA(ID,IS), IMATDA_TSA(ID,IS)
+                   END DO
+                 END DO
                  !CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
                  !CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
                ELSE

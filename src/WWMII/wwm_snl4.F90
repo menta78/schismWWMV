@@ -6,6 +6,7 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IS
+         integer istat
          REAL(rkind)    :: XISLN
          REAL(rkind)    :: AUX1, FREQ
          REAL(rkind)    :: LAMBDA, LAMM2, LAMP2
@@ -149,7 +150,8 @@
 !
          IF (ALLOCATED (AF11)) DEALLOCATE (AF11)
 
-         ALLOCATE( AF11(MSC4MI:MSC4MA) )
+         ALLOCATE( AF11(MSC4MI:MSC4MA), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_snl4, allocate error 1')
 
          DO IS = 1, MSC
             AF11(IS) = (SPSIG(IS)/PI2)**11.0

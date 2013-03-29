@@ -87,10 +87,12 @@
            CALL exchange_p2di(iwild)
            IOBPD(ID,:) = iwild
         ENDDO
+#endif
 
-
+#ifdef MPI_PARALL_GRID
         IF (myrank == 0) THEN
 #endif
+
 #ifdef DEBUG
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
@@ -101,9 +103,10 @@
             ENDDO
           END DO
 #endif DEBUG
-!#ifdef MPI_PARALL_GRID
+
+#ifdef MPI_PARALL_GRID
         END IF
-!#endif
+#endif
 
       END SUBROUTINE
 !**********************************************************************
@@ -117,6 +120,7 @@
         IMPLICIT NONE
 
          INTEGER     :: IP, IE, ID
+         integer istat
          INTEGER     :: I, IWILD(MNP)
          REAL(rkind) :: DIR, DIRMIN, DIRMAX, TMP
 
@@ -249,8 +253,8 @@
 
          ENDDO !IP
 
-         ALLOCATE( IWBNDGL(IWBMNPGL))
-         ALLOCATE( IWBNDLC(IWBMNP) )
+         ALLOCATE( IWBNDGL(IWBMNPGL), IWBNDLC(IWBMNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
 
          REWIND(BND%FHNDL)
 
@@ -306,25 +310,42 @@
 !
 ! allocate memory for boundary forcing ....
 !
+
          IF (LINHOM) THEN
            IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary
-             ALLOCATE( WBAC(MSC,MDC,IWBMNP) ); WBAC = 0.
+             ALLOCATE( WBAC(MSC,MDC,IWBMNP), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
+             WBAC = 0.
              IF (LBINTER) THEN ! For time interpolation
-               ALLOCATE( WBACOLD(MSC,MDC,IWBMNP) ); WBACOLD = 0.
-               ALLOCATE( WBACNEW(MSC,MDC,IWBMNP) ); WBACNEW = 0.
-               ALLOCATE( DSPEC(MSC,MDC,IWBMNP) ); DSPEC   = 0.
+               ALLOCATE( WBACOLD(MSC,MDC,IWBMNP), WBACNEW(MSC,MDC,IWBMNP), DSPEC(MSC,MDC,IWBMNP), stat=istat)
+               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 3')
+               WBACOLD = 0.
+               WBACNEW = 0.
+               DSPEC   = 0.
              END IF
-             IF (LBCWA) ALLOCATE( SPPARM(8,IWBMNP) ); SPPARM = 0. 
+             IF (LBCWA) THEN
+               ALLOCATE( SPPARM(8,IWBMNP), stat=istat)
+               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 4')
+               SPPARM = 0.
+             END IF
            END IF
          ELSE
            IF (LBCWA .OR. LBCSP) THEN
-             ALLOCATE( WBAC(MSC,MDC,1) ); WBAC = 0.
+             ALLOCATE( WBAC(MSC,MDC,1), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
+             WBAC = 0.
              IF (LBINTER) THEN
-               ALLOCATE( WBACOLD(MSC,MDC,1) ); WBACOLD = 0.
-               ALLOCATE( WBACNEW(MSC,MDC,1) ); WBACNEW = 0.
-               ALLOCATE( DSPEC(MSC,MDC,1) ); DSPEC   = 0.
+               ALLOCATE( WBACOLD(MSC,MDC,1), WBACNEW(MSC,MDC,1), DSPEC(MSC,MDC,1), stat=istat)
+               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 6')
+               WBACOLD = 0.
+               WBACNEW = 0.
+               DSPEC   = 0.
              END IF
-             IF (LBCWA) ALLOCATE( SPPARM(8,IWBMNP) ); SPPARM = 0.
+             IF (LBCWA) THEN
+               ALLOCATE( SPPARM(8,1), stat=istat)
+               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 7')
+               SPPARM = 0.
+             END IF
            ENDIF
          ENDIF ! LINHOM
          WRITE(STAT%FHNDL,'("+TRACE...",A,I10)') 'Number of Active Wave Boundary Nodes', IWBMNP
@@ -362,9 +383,9 @@
       INTEGER, POINTER :: PREVVERT(:)
       INTEGER          :: ISFINISHED, INEXT, IPREV
       INTEGER          :: IPNEXT, IPPREV, ZNEXT, IP, I, IE
-      ALLOCATE(COLLECTED(MNP))
-      ALLOCATE(PREVVERT(MNP))
-      ALLOCATE(NEXTVERT(MNP))
+      integer istat
+      ALLOCATE(COLLECTED(MNP), PREVVERT(MNP), NEXTVERT(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 8')
       STATUS(:) = 0
       DO IE=1,MNE
         DO I=1,3
@@ -453,7 +474,7 @@
       use elfe_glbl, only : ibnd_ext_int, ipgl, iplg
 #endif
       IMPLICIT NONE
-      INTEGER     :: IP, IFSTAT, SPsize
+      INTEGER     :: IP, IFSTAT, istat, SPsize
       REAL(rkind) :: BNDTMP
       INTEGER, POINTER :: STATUS(:)
       CHARACTER(LEN=200) :: wwmerr
@@ -531,7 +552,8 @@
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
       END DO
-      ALLOCATE( IWBNDLC(IWBMNP) ) 
+      ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
       IWBMNP = 0
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
@@ -580,8 +602,8 @@
           IF(ipgl(IP)%rank==myrank) IWBMNP=IWBMNP+1
         ENDIF
       ENDDO
-      ALLOCATE( IWBNDGL(IWBMNPGL))
-      ALLOCATE( IWBNDLC(IWBMNP) ) 
+      ALLOCATE( IWBNDGL(IWBMNPGL), IWBNDLC(IWBMNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 10')
       REWIND(BND%FHNDL)
 
       IF (IGRIDTYPE.eq.1) THEN ! XFN 
@@ -632,7 +654,8 @@
 !
 ! find islands and domain boundary ....
 !
-        ALLOCATE(STATUS(MNP))
+        ALLOCATE(STATUS(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 11')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
@@ -658,18 +681,23 @@
 !          ENDIF
           SPsize=1
         ENDIF
-        
+
         IF (LBCWA) THEN
-          ALLOCATE( SPPARM(8,SPsize) )
+          ALLOCATE( SPPARM(8,SPsize), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
           SPPARM = 0.
         ENDIF
 
         IF (LBCWA .OR. LBCSP) THEN
-          ALLOCATE( WBAC(MSC,MDC,SPsize) ); WBAC = 0.
+          ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
+          WBAC = 0.
           IF (LBINTER) THEN
-            ALLOCATE( WBACOLD(MSC,MDC,SPsize) ); WBACOLD = 0.
-            ALLOCATE( WBACNEW(MSC,MDC,SPsize) ); WBACNEW = 0.
-            ALLOCATE( DSPEC(MSC,MDC,SPsize) ); DSPEC   = 0.
+            ALLOCATE( WBACOLD(MSC,MDC,SPsize), WBACNEW(MSC,MDC,SPsize), DSPEC(MSC,MDC,SPsize), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 14')
+            WBACOLD = 0.
+            WBACNEW = 0.
+            DSPEC   = 0.
           ENDIF
         END IF
 
@@ -721,7 +749,7 @@
         use elfe_msgp, only : myrank
 #endif
         IMPLICIT NONE
-        INTEGER           :: IP, IFSTAT
+        INTEGER           :: IP, IFSTAT, istat
         REAL(rkind)       :: dbndtmp
         REAL(rkind)       :: BNDTMP
         character(len=60) :: errmsg
@@ -789,7 +817,8 @@
 !
 ! map boundary nodes ...
 !
-        ALLOCATE( IWBNDLC(IWBMNP) )
+        ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 15')
         IWBMNP = 0
         DO IP = 1, MNP
           IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
@@ -802,7 +831,8 @@
 ! find islands and domain boundary ....
 !
 
-        ALLOCATE(STATUS(MNP))
+        ALLOCATE(STATUS(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
@@ -816,28 +846,38 @@
         IF (LINHOM) THEN
           IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary
             OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-            ALLOCATE( WBAC(MSC,MDC,IWBMNP) ); WBAC = 0.
+            ALLOCATE( WBAC(MSC,MDC,IWBMNP), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
+            WBAC = 0.
             IF (LBINTER) THEN ! For time interpolation
-              ALLOCATE( WBACOLD(MSC,MDC,IWBMNP) ); WBACOLD = 0.
-              ALLOCATE( WBACNEW(MSC,MDC,IWBMNP) ); WBACNEW = 0.
-              ALLOCATE( DSPEC(MSC,MDC,IWBMNP) ); DSPEC   = 0.
+              ALLOCATE( WBACOLD(MSC,MDC,IWBMNP), WBACNEW(MSC,MDC,IWBMNP), DSPEC(MSC,MDC,IWBMNP), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 17')
+              WBACOLD = 0.
+              WBACNEW = 0.
+              DSPEC   = 0.
             END IF
             IF (LBCWA) THEN
-              ALLOCATE( SPPARM(8,IWBMNP) )
+              ALLOCATE( SPPARM(8,IWBMNP), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 18')
               SPPARM = 0.
             ENDIF
           END IF
         ELSE
           IF (LBCWA .OR. LBCSP) THEN
             IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-            ALLOCATE( WBAC(MSC,MDC,1) ); WBAC = 0.
+            ALLOCATE( WBAC(MSC,MDC,1), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
+	    WBAC = 0.
             IF (LBINTER) THEN
-              ALLOCATE( WBACOLD(MSC,MDC,1) ); WBACOLD = 0.
-              ALLOCATE( WBACNEW(MSC,MDC,1) ); WBACNEW = 0.
-              ALLOCATE( DSPEC(MSC,MDC,1) ); DSPEC   = 0.
+              ALLOCATE( WBACOLD(MSC,MDC,1), WBACNEW(MSC,MDC,1), DSPEC(MSC,MDC,1), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
+              WBACOLD = 0.
+              WBACNEW = 0.
+              DSPEC   = 0.
             END IF
             IF (LBCWA) THEN
-              ALLOCATE( SPPARM(8,1) )
+              ALLOCATE( SPPARM(8,1), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 21')
               SPPARM = 0.
             ENDIF
           ENDIF
@@ -892,7 +932,7 @@
          INTEGER, INTENT(IN)        :: IT, IFILE
          CHARACTER(len=25)          :: CALLFROM
          REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
-         INTEGER                    :: IP
+         INTEGER                    :: IP, istat
          CHARACTER(len=25)          :: CHR
 
 !AR: WAVE BOUNDARY
@@ -916,7 +956,10 @@
          WRITE(STAT%FHNDL,*) 'WAVE BOUNDARY CONDITION CALLED', IFILE, IT, CALLFROM
 
          IF(LWW3GLOBALOUT) THEN
-           IF (.NOT. ALLOCATED(WW3GLOBAL)) ALLOCATE(WW3GLOBAL(8,MNP))
+           IF (.NOT. ALLOCATED(WW3GLOBAL)) THEN
+             ALLOCATE(WW3GLOBAL(8,MNP), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 22')
+           END IF
          END IF
 
          IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
@@ -1357,7 +1400,7 @@
          REAL(rkind)                :: INSPRD(WBMSC)
          REAL(rkind)                :: INMS(WBMSC)
          REAL(rkind)                :: SPCDIR(MSC), SPLINEVL, ACLOC(MSC,MDC)
-         INTEGER                    :: IS, IS2, ID
+         INTEGER                    :: IS, IS2, ID, istat
          REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
          REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
          REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2
@@ -1627,7 +1670,8 @@
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
-        ALLOCATE(THD(MDC))
+        ALLOCATE(THD(MDC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 23')
         DTHD=360./MDC
         RTH0=SPDIR(1)/DDIR
         DO ID = 1, MDC

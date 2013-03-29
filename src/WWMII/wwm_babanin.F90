@@ -42,19 +42,18 @@ CONTAINS
     REAL(rkind) ::  BNT    ! is an empirical coefficient related to the spectral density in the saturation range (Banner et al 2007)
     real(rkind) ::  ST1_INT,ST2_INT,Sds_int ! integrated values (for test output only)
     INTEGER :: II,IS,ID ! counters
+    integer istat
 !   real ::  ELIM ! needed for 42D (can comment but don't delete)
     
-    ALLOCATE(sds(NFREQ))
-    ALLOCATE(xff(NFREQ))
-    ALLOCATE(ndedens(NFREQ))
-    ALLOCATE(dedens(NFREQ))
-    ALLOCATE(edenst(NFREQ))
-    ALLOCATE(T1(NFREQ))
-    ALLOCATE(T2(NFREQ))
-    ALLOCATE(ANAR(NFREQ))
-    ALLOCATE(ST1(NFREQ))
-    ALLOCATE(ST2(NFREQ))
-    ALLOCATE(ADF(NFREQ))
+    ALLOCATE(sds(NFREQ), xff(NFREQ), T1(NFREQ), T2(NFREQ), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 1')
+
+    ALLOCATE(ndedens(NFREQ), dedens(NFREQ), edenst(NFREQ), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 2')
+
+
+    ALLOCATE(ANAR(NFREQ), ST1(NFREQ), ST2(NFREQ), ADF(NFREQ), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 3')
 
     Bnt=(0.035**2)    !  Use the Bnt given by Banner et al 2007
 ! ----------------------------------------------------------------------------------------------------------------
@@ -316,6 +315,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     INTEGER :: slow_down
     INTEGER :: isol
     INTEGER :: IS
+    integer istat
 
     TESTFL = .false.
 
@@ -324,7 +324,8 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 ! Initialize LFACTOR_S (for error catching)
     LFACTOR_S = HUGE(LFACTOR_S)
 
-    ALLOCATE(S_in1D_S(nf_old))
+    ALLOCATE(S_in1D_S(nf_old), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 4')
 
 ! To simplify calcs, use S_in1D(f)
     S_in1D_S = sum(S_in,1)*DDIR_rad ! note that variable is S_in(ID,IS)
@@ -343,11 +344,8 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     enddo
 
 ! allocate arrays on nf_new
-    ALLOCATE(S_in1D_L(nf_new))
-    ALLOCATE(DF(nf_new)) ! REQ'D?
-    ALLOCATE(CINV_L(nf_new))
-    ALLOCATE(SIGMA_L(nf_new))
-    ALLOCATE(LFACTOR_L(nf_new))
+    ALLOCATE(S_in1D_L(nf_new), DF(nf_new), CINV_L(nf_new), SIGMA_L(nf_new), LFACTOR_L(nf_new), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 5')
 
 ! extend freqs to nf_new
     SIGMA_L=SIGMA_S
@@ -498,12 +496,12 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     INTEGER :: nf
     INTEGER :: IS
+    integer istat
 
     nf=size(df)
 
-    ALLOCATE(UoverC(nf))
-    ALLOCATE(A(nf))
-    ALLOCATE(S_in1D_red(nf))
+    ALLOCATE(UoverC(nf), A(nf), S_in1D_red(nf), stat=istat)
+    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 6')
 
     UoverC=U10MOD * CINV ! matrix op
 

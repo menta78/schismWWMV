@@ -42,6 +42,7 @@
          LOGICAL     :: USE_SINGLE_OUT
          REAL(rkind) :: DELTC
          INTEGER     :: I
+         integer istat
          LOGICAL     :: PARAMWRITE
          LOGICAL     :: AC, WK, ACOUT_1D, ACOUT_2D
          LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,               &
@@ -539,7 +540,8 @@
          ENDIF
          IF (LOUTS) THEN
 
-           ALLOCATE ( STATION_P(IOUTS) )
+           ALLOCATE ( STATION_P(IOUTS), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 1')
 #ifdef MPI_PARALL_GRID
            STATION_P%IFOUND = 0
            STATION_P%ISUM   = 0
@@ -576,7 +578,8 @@
 
          IF (LLOUTS) THEN
 
-          ALLOCATE ( LINES(IOUTS) )
+           ALLOCATE ( LINES(IOUTS), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 2')
 #ifdef MPI_PARALL_GRID
            STATION_P%IFOUND = 0
            STATION_P%ISUM   = 0
@@ -1527,7 +1530,9 @@
 
         WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND', NUM_NETCDF_FILES_BND
 
-        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES))
+        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
+
 
         DO IT = 1, NUM_NETCDF_FILES_BND
           DO IVAR = 1, NUM_NETCDF_VAR_TYPES
@@ -1538,7 +1543,9 @@
 !
 ! four files are read to set up the wave spectra Hs, Tm01, Dir, Sprd
 !
-        ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND)); NDT_BND_FILE = 0
+        ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
+        NDT_BND_FILE = 0
 
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           WRITE(STAT%FHNDL,'(I10,10X,5A30)') IFILE, NETCDF_FILE_NAMES_BND(IFILE,:)
@@ -1628,8 +1635,8 @@
 
         WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
-        ALLOCATE (COORD_BND_X(NDX_BND))
-        ALLOCATE (COORD_BND_Y(NDY_BND))
+        ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
 !
 ! read cooridantes from files ....
 !
@@ -1677,7 +1684,9 @@
 
         WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
 
-        ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAXVAL(NDT_BND_FILE))); BND_TIME_ALL_FILES = ZERO
+        ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAXVAL(NDT_BND_FILE)), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
+        BND_TIME_ALL_FILES = ZERO
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
@@ -1689,7 +1698,9 @@
             WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
             CALL WWM_ABORT(wwmerr)
           ENDIF
-          ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE))); BND_TIME = ZERO
+          ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
+          BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
           ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
           IF (ISTAT .NE. nf90_noerr) THEN
@@ -1768,7 +1779,8 @@
          CHARACTER(LEN=100)   :: CHRERR
          CHARACTER(LEN=25)    :: CALLEDFROM
 
-         ALLOCATE (ITMP(NDX_BND,NDY_BND))
+         ALLOCATE (ITMP(NDX_BND,NDY_BND), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
 
          WRITE(DBG%FHNDL,*) IT, IFILE, 'READING GLOBAL DATA'
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,3),NF90_NOWRITE,HS_BND_NCID)
@@ -1789,7 +1801,11 @@
            WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -3-: ', CHRTMP, CALLEDFROM
            CALL WWM_ABORT(wwmerr)
          ENDIF
-         IF (.NOT. ALLOCATED(HS_WW3)) ALLOCATE (HS_WW3(NDX_BND,NDY_BND)); HS_WW3 = 0.
+         IF (.NOT. ALLOCATED(HS_WW3)) THEN
+           ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
+           HS_WW3 = 0.
+         END IF
          ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
          IF (ISTAT .NE. nf90_noerr) THEN
            CHRTMP = nf90_strerror(ISTAT)
@@ -1810,7 +1826,11 @@
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 2'
          ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 3'
-         IF (.NOT. ALLOCATED(FP_WW3)) ALLOCATE (FP_WW3(NDX_BND,NDY_BND)); FP_WW3 = 0.
+         IF (.NOT. ALLOCATED(FP_WW3)) THEN
+           ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
+           FP_WW3 = 0.
+         END IF
          ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 4'
          FP_WW3 = MyREAL(ITMP) * scale_factor
@@ -1822,7 +1842,11 @@
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 2'
          ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 3'
-         IF (.NOT. ALLOCATED(T02_WW3)) ALLOCATE (T02_WW3(NDX_BND,NDY_BND)); T02_WW3 = 0.
+         IF (.NOT. ALLOCATED(T02_WW3)) THEN
+           ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
+           T02_WW3 = 0.
+         END IF
          ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 4'
          T02_WW3 = MyREAL(ITMP) * scale_factor
@@ -1839,7 +1863,11 @@
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 2'
          ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 1'
-         IF (.NOT. ALLOCATED(DSPR_WW3)) ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND)); DSPR_WW3 = 0.
+         IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
+           ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
+           DSPR_WW3 = 0.
+         END IF
          ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 1'
          DSPR_WW3 = MyREAL(ITMP) * scale_factor
@@ -1856,7 +1884,11 @@
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 2'
          ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 3'
-         IF (.NOT. ALLOCATED(DIR_WW3)) ALLOCATE (DIR_WW3(NDX_BND,NDY_BND)); DIR_WW3 = 0.
+         IF (.NOT. ALLOCATED(DIR_WW3)) THEN
+           ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
+           DIR_WW3 = 0.
+         END IF
          ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
          IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 4'
          DIR_WW3 = MyREAL(ITMP) * scale_factor
@@ -1869,9 +1901,18 @@
 
          IF (LWRITE_WW3_RESULTS) THEN
            OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
-           IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_BND*NDY_BND))
-           IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_BND*NDY_BND))
-           IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_BND*NDY_BND))
+           IF (.NOT. ALLOCATED(U)) THEN
+             ALLOCATE(U(NDX_BND*NDY_BND), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
+           END IF
+           IF (.NOT. ALLOCATED(V)) THEN
+             ALLOCATE(V(NDX_BND*NDY_BND), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 15')
+           END IF
+           IF (.NOT. ALLOCATED(H)) THEN
+             ALLOCATE(H(NDX_BND*NDY_BND), stat=istat)
+             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+           END IF
            COUNTER = 1
            DO J = 1, NDY_BND
              DO I = 1, NDX_BND

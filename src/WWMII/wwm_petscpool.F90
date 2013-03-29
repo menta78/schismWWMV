@@ -508,13 +508,13 @@
         PetscViewer     :: viewer ! draw matrix
 !         PetscDraw   :: draw   ! extended viewer. e.g. pause
 
-        call PetscViewerDrawOpen(PETSC_COMM_WORLD, \
-                                 PETSC_NULL_CHARACTER, \
-                                 "matrix", \
-                                 PETSC_DECIDE, PETSC_DECIDE, \
-                                 800, 800, \
-                                 viewer, \
-                                 petscErr);CHKERRQ(petscErr)
+        call PetscViewerDrawOpen(PETSC_COMM_WORLD, PETSC_NULL_CHARACTER, "matrix", PETSC_DECIDE, PETSC_DECIDE, 800, 800, viewer, petscErr);CHKERRQ(petscErr)
+                                 
+                                 
+                                 
+                                 
+                                 
+                                 
 
         call MatView(matrix, viewer, petscErr );CHKERRQ(petscErr)
 !         call PetscViewerDrawGetDraw(viewer, 0, draw, petscErr);CHKERRQ(petscErr)

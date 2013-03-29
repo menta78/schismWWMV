@@ -239,7 +239,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IS, ID
+         INTEGER :: IS, ID, istat
          INTEGER :: MSC1, MSC2
          REAL(rkind)    :: TMP, CO1
 
@@ -363,12 +363,14 @@
 
          DELTH = PI2/MyREAL(MDC)
 
-         ALLOCATE(DFIM(MSC)); DFIM = 0._rkind
-         ALLOCATE(DFFR(MSC)); DFFR = 0._rkind
-         ALLOCATE(DFFR2(MSC)); DFFR2 = 0._rkind
-         ALLOCATE(DFIMOFR(MSC)); DFIMOFR = 0._rkind
-         ALLOCATE(FR5(MSC)); FR5 = 0._rkind
-         ALLOCATE(FRM5(MSC)); FRM5 = 0._rkind
+         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
+         DFIM = 0._rkind
+         DFFR = 0._rkind
+         DFFR2 = 0._rkind
+         DFIMOFR = 0._rkind
+         FR5 = 0._rkind
+         FRM5 = 0._rkind
 
          CO1     = 0.5_rkind*FRINTF*DELTH
          DFIM(1) = CO1*FR(1)

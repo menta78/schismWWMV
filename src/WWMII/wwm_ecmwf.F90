@@ -684,6 +684,7 @@
       REAL(rkind), ALLOCATABLE :: W(:)
       REAL(rkind) :: ALPHAM, ALPHAMCOEF, CONST1, OMEGAC, X0, UST, Z0, OMEGACC, YC
       REAL(rkind) :: DELY, OMEGA, CM, ZX, ZARG, ZMU, ZLOG, Y, ZBETA
+      integer istat
 
 ! ----------------------------------------------------------------------
 
@@ -699,13 +700,16 @@
 
       CONST1 = BETAMAX/XKAPPA**2
 
-      ALLOCATE(W(JTOT))
+      ALLOCATE(W(JTOT), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 1')
+
       W=1.
       W(1)=0.5
       W(JTOT)=0.5
 
       IF(.NOT.ALLOCATED(TAUHFT)) THEN
-        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE))
+        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 2')
 !        WRITE(STAT%FHNDL,*) 'ALLOCATED HIGH FREQ. STRESS TABLE'
 !        WRITE(STAT%FHNDL,*) NFRE, IALPHA, IUSTAR, JTOT
       ENDIF
@@ -946,6 +950,7 @@
       REAL(rkind), PARAMETER :: XM=0.50
       INTEGER, PARAMETER :: NITER=10
       INTEGER         :: I, J, K, L, M, JL, ITER
+      integer istat
       REAL(rkind), PARAMETER :: EPS1 = 0.00001
       REAL(rkind)            :: XL, TAUWMAX, CDRAG, WCD, ZTAUW, USTOLD
       REAL(rkind)            :: TAUOLD, DELF, Z0, F, UTOP, X, UST
@@ -961,7 +966,8 @@
 !        ----------------
 
       IF(.NOT.ALLOCATED(TAUT)) THEN
-        ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT))
+        ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 3')
 !        WRITE(STAT%FHNDL,*) 'ALLOCATED STRESS TABLE', ITAUMAX, JUMAx, JPLEVT
       ENDIF
 

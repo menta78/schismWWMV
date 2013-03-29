@@ -72,7 +72,8 @@
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF STATIONARY FIELD 
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
-            ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2))
+            ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
               WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
@@ -139,8 +140,8 @@
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
               WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
             ELSE
-              ALLOCATE(tmp_wind1(MNP,2))
-              ALLOCATE(tmp_wind2(MNP,2))
+              ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
               CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
               CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1(:,:))
               IF (wrf_w1.NE.1) THEN
@@ -319,7 +320,8 @@
         END DO
         REWIND (WIN%FHNDL)
 
-        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
 
         DO IT = 1, NUM_NETCDF_FILES
           READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
@@ -394,8 +396,8 @@
           CALL WWM_ABORT(wwmerr)
         ENDIF
 
-        ALLOCATE (COORD_WIND_X(NDX_WIND))
-        ALLOCATE (COORD_WIND_Y(NDY_WIND))
+        ALLOCATE (COORD_WIND_X(NDX_WIND), COORD_WIND_Y(NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 4')
 !
 ! read cooridantes from files ....
 !
@@ -435,10 +437,14 @@
 !
         NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES
 
-        ALLOCATE (WIND_TIME(NDT_WIND_FILE))
-        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME(NDT_WIND_FILE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 5')
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 6')
+        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 7')
+        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 8')
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
@@ -571,7 +577,10 @@
            WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -6-', CHRERR
            CALL WWM_ABORT(wwmerr)
          ENDIF
-         IF (.NOT. ALLOCATED(WIND_X)) ALLOCATE (WIND_X(NDX_WIND,NDY_WIND))
+         IF (.NOT. ALLOCATED(WIND_X)) THEN
+           ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 9')
+         END IF
 
          ISTAT = nf90_inq_varid(WIND_NCID, 'U_GDS0_HTGL_13', DWIND_Y_ID)
          IF (ISTAT .NE. nf90_noerr) THEN
@@ -603,7 +612,10 @@
            WRITE(wwmerr,*) 'READ_NETCDF_DWD ERROR -11-', CHRERR
            CALL WWM_ABORT(wwmerr)
          ENDIF
-         IF (.NOT. ALLOCATED(WIND_Y)) ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND))
+         IF (.NOT. ALLOCATED(WIND_Y)) THEN
+           ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 10')
+         END IF
 
 !         ISTAT = nf90_inq_varid(WIND_NCID, 'PS_MSL_GDS0_MSL_13', DPRESS_ID)
 !         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DPRESS_ID, dimids = dimIDs)
@@ -620,7 +632,9 @@
 !         IF (ISTAT .NE. nf90_noerr) CALL WWM_ABORT('ERR READING D_PRESS_ID')
 
          IF (LINVERTY) THEN
-           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 11')
+
            DO IY = 1, NDY_WIND
              tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
            END DO
@@ -636,9 +650,18 @@
            DEALLOCATE(TMP)
          END IF
 
-         IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
-         IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
-         IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+         IF (.NOT. ALLOCATED(U)) THEN
+           ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 12')
+         END IF
+         IF (.NOT. ALLOCATED(V)) THEN
+           ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 13')
+         END IF
+         IF (.NOT. ALLOCATED(H)) THEN
+           ALLOCATE(H(NDX_WIND*NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 14')
+         END IF
 
          COUNTER = 1
          DO J = 1, NDY_WIND
@@ -654,9 +677,19 @@
 
         IF (LWRITE_ORIG_WIND) THEN
 
-          IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
-          IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
-          IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+          IF (.NOT. ALLOCATED(U)) THEN
+            ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 15')
+          END IF
+
+          IF (.NOT. ALLOCATED(V)) THEN
+            ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 16')
+          END IF
+          IF (.NOT. ALLOCATED(H)) THEN
+            ALLOCATE(H(NDX_WIND*NDY_WIND), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 17')
+          END IF
 
           COUNTER = 1
           DO J = 1, NDY_WIND
@@ -739,7 +772,8 @@
         END DO
         REWIND (WIN%FHNDL)
 
-        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 18')
 
         DO IT = 1, NUM_NETCDF_FILES
           READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
@@ -827,8 +861,8 @@
           CALL WWM_ABORT(wwmerr)
         ENDIF
 
-        ALLOCATE (DCOORD_WIND_X(NDX_WIND))
-        ALLOCATE (DCOORD_WIND_Y(NDY_WIND))
+        ALLOCATE (DCOORD_WIND_X(NDX_WIND), DCOORD_WIND_Y(NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 19')
 !
 ! read cooridantes from files ....
 !
@@ -872,19 +906,10 @@
 !
 ! total number of time steps ... in all files
 !
-        ALLOCATE (WIND_TIME(NDT_WIND_FILE),WIND_TIME_NETCDF(NDT_WIND_FILE))
+        ALLOCATE (WIND_TIME(NDT_WIND_FILE),WIND_TIME_NETCDF(NDT_WIND_FILE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 20')
         WRITE(WINDBG%FHNDL,*) 'NDT_WIND_FILE=', NDT_WIND_FILE
         WRITE(WINDBG%FHNDL,*) 'START_TIME=', START_TIME
-!
-! Determine number of records
-! 
-
-
-!        NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES
-!        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
-!        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
-!        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
-
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
@@ -913,10 +938,9 @@
           END DO
         END DO
         WRITE(WINDBG%FHNDL,*) 'NDT_WIND_ALL_FILES=', NDT_WIND_ALL_FILES
-        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
-        
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 21')
+
         idx=0
         ePresTime=-100000000
         DO IFILE = 1, NUM_NETCDF_FILES
@@ -1038,7 +1062,8 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
-        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES))
+        ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 22')
 
         DO IT = 1, NUM_NETCDF_FILES
           READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
@@ -1133,8 +1158,8 @@
           CALL WWM_ABORT(wwmerr)
         ENDIF
 
-        ALLOCATE (DCOORD_WIND_X2(NDX_WIND,NDY_WIND))
-        ALLOCATE (DCOORD_WIND_Y2(NDX_WIND,NDY_WIND))
+        ALLOCATE (DCOORD_WIND_X2(NDX_WIND,NDY_WIND), DCOORD_WIND_Y2(NDX_WIND,NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 23')
 !
 ! read cooridantes from files ....
 !
@@ -1177,10 +1202,14 @@
 !
         NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES/2
 
-        ALLOCATE (WIND_TIME_NETCDF(NDT_WIND_FILE))
-        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES))
-        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES))
+        ALLOCATE (WIND_TIME_NETCDF(NDT_WIND_FILE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 24')
+        ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 25')
+        ALLOCATE (WIND_TIME_IFILE(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 26')
+        ALLOCATE (WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 27')
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
@@ -1239,10 +1268,10 @@
         END IF
         COUNTER = 0
         NbPoint=NDX_WIND*NDY_WIND
-        ALLOCATE(XYPWIND(2,NbPoint))
-        ALLOCATE(IMAT(NbPoint))
-        ALLOCATE(JMAT(NbPoint))
-        ALLOCATE(COUNTERMAT(NDX_WIND,NDY_WIND))
+        ALLOCATE(XYPWIND(2,NbPoint), IMAT(NbPoint), JMAT(NbPoint), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 28')
+        ALLOCATE(COUNTERMAT(NDX_WIND,NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 29')
         DO I = 1, NDX_WIND
           DO J = 1, NDY_WIND
             IF (DCOORD_WIND_X2(I,J) .GT. 0.) THEN
@@ -1261,10 +1290,14 @@
 
         IF (LWRITE_ORIG_WIND) WRITE (3010, *) MNE_WIND
         MNE_WIND = (NDX_WIND-1)*(NDY_WIND-1)*2
-        ALLOCATE(INE_WIND(3,MNE_WIND)); INE_WIND = 0
+        ALLOCATE(INE_WIND(3,MNE_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 30')
+        INE_WIND = 0
 
-        ALLOCATE(UWND_NARR(NDX_WIND*NDY_WIND)); UWND_NARR = 0.
-        ALLOCATE(VWND_NARR(NDX_WIND*NDY_WIND)); VWND_NARR = 0.
+        ALLOCATE(UWND_NARR(NDX_WIND*NDY_WIND), VWND_NARR(NDX_WIND*NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 31')
+        UWND_NARR = 0.
+        VWND_NARR = 0.
 
         II = 0
         DO I = 1, NDX_WIND-1
@@ -1281,8 +1314,10 @@
         END DO
 
         IF (LWRITE_ORIG_WIND) OPEN(3011, FILE  = 'ergwindorig.bin', FORM = 'UNFORMATTED')
-        ALLOCATE(WIND_ELE(MNP)); WIND_ELE = 0
-        ALLOCATE(WI_NARR(MNP, 3)); WI_NARR = 0
+        ALLOCATE(WIND_ELE(MNP), WI_NARR(MNP, 3), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 32')
+        WIND_ELE = 0
+        WI_NARR = 0
         nbFail=0
         DO IP = 1, MNP
           CALL FIND_ELE_WIND( MNE_WIND, MNP_WIND, INE_WIND, XYPWIND, XP(IP), YP(IP), WIND_ELE(IP))
@@ -1318,11 +1353,11 @@
       real*8 :: signAzim, signDlam, ThePi, DegTwoRad
       real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
       real*8 :: TPSI2, cta12
+      integer istat
       eta_u=eta_rho
       xi_u=xi_rho-1
-      allocate(LONrad_u(eta_u,xi_u))
-      allocate(LATrad_u(eta_u,xi_u))
-      allocate(azim(eta_u,xi_u-1))
+      allocate(LONrad_u(eta_u,xi_u), LATrad_u(eta_u,xi_u), azim(eta_u,xi_u-1), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 33')
       ThePi=3.141592653589792
       DegTwoRad=ThePi/180
       DO iEta=1,eta_u
@@ -1387,11 +1422,12 @@
       real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
       real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
       real(rkind) :: TPSI2, cta12
+      integer istat
       eta_v=eta_rho-1
       xi_v=xi_rho
-      allocate(LONrad_v(eta_v,xi_v))
-      allocate(LATrad_v(eta_v,xi_v))
-      allocate(azim(eta_v-1,xi_v))
+      allocate(LONrad_v(eta_v,xi_v), LATrad_v(eta_v,xi_v), azim(eta_v-1,xi_v), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 34')
+
       ThePi=3.141592653589792
       DegTwoRad=ThePi/180
       DO iEta=1,eta_v
@@ -1543,8 +1579,10 @@
            WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -7-', CHRTMP
            CALL WWM_ABORT(wwmerr)
          ENDIF
-         IF (.NOT. ALLOCATED(WIND_X)) ALLOCATE (WIND_X(NDX_WIND,NDY_WIND))
-
+         IF (.NOT. ALLOCATED(WIND_X)) THEN
+           ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 35')
+         END IF
          ISTAT = nf90_inq_varid(WIND_NCID, '10v', DWIND_Y_ID)
          IF (ISTAT .NE. nf90_noerr) THEN
            CHRTMP = nf90_strerror(ISTAT)
@@ -1581,7 +1619,10 @@
            WRITE(wwmerr,*) 'READ_NETCDF_CRFS ERROR -13-', CHRTMP
            CALL WWM_ABORT(wwmerr)
          ENDIF
-         IF (.NOT. ALLOCATED(WIND_Y)) ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND))
+         IF (.NOT. ALLOCATED(WIND_Y)) THEN
+           ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 36')
+         END IF
 
 !        ISTAT = nf90_inq_varid(WIND_NCID, 'PS_MSL_GDS0_MSL_13', DPRESS_ID)
 !        ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DPRESS_ID, dimids = dimIDs)
@@ -1599,7 +1640,9 @@
 !        IF (ISTAT .NE. nf90_noerr) CALL_WWM_ABORT('ERR READING D_PRESS_ID')
 
          IF (.TRUE.) THEN
-           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 37')
+
            DO IY = 1, NDY_WIND
              tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
            END DO
@@ -1616,7 +1659,8 @@
          END IF
 
          IF (.TRUE.) THEN
-           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 38')
            DO IX = 1, NDX_WIND
              IF (IX .GT. NDX_WIND/2) THEN
                tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
@@ -1640,8 +1684,14 @@
 !         wind_x = - wind_x
 
         IF (LWRITE_ORIG_WIND) THEN
-          IF (.NOT. ALLOCATED(U)) ALLOCATE(U(NDX_WIND*NDY_WIND))
-          IF (.NOT. ALLOCATED(V)) ALLOCATE(V(NDX_WIND*NDY_WIND))
+          IF (.NOT. ALLOCATED(U)) THEN
+            ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 39')
+          END IF
+          IF (.NOT. ALLOCATED(V)) THEN
+            ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 40')
+          END IF
 !         IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
           COUNTER = 1
           DO J = 1, NDY_WIND
@@ -1754,7 +1804,10 @@
          !WRITE(WINDBG%FHNDL,*) numLons, numLats, numTime
          !WRITE(WINDBG%FHNDL,*) NDX_WIND, NDY_WIND
 
-         IF (.NOT. ALLOCATED(WIND_X4)) ALLOCATE (WIND_X4(NDX_WIND,NDY_WIND))
+         IF (.NOT. ALLOCATED(WIND_X4)) THEN
+           ALLOCATE (WIND_X4(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 41')
+         END IF
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(2*IFILE), NF90_NOWRITE, WINDY_NCID)
          IF (ISTAT .NE. nf90_noerr) THEN
@@ -1793,7 +1846,10 @@
            CALL WWM_ABORT(wwmerr)
          ENDIF
 
-         IF (.NOT. ALLOCATED(WIND_Y4)) ALLOCATE (WIND_Y4(NDX_WIND,NDY_WIND))
+         IF (.NOT. ALLOCATED(WIND_Y4)) THEN
+           ALLOCATE (WIND_Y4(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 42')
+         END IF
 
          ISTAT = NF90_GET_VAR(WINDX_NCID, DWIND_X_ID, WIND_X4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
          IF (ISTAT .NE. nf90_noerr) THEN
@@ -1825,7 +1881,8 @@
 
 
          IF (.FALSE.) THEN
-           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 43')
            DO IX = 1, NDX_WIND
              tmp(NDX_WIND-(IX-1),:) = wind_x4(IX,:)
            END DO
@@ -1842,7 +1899,8 @@
          END IF
 
          IF (.FALSE.) THEN
-           ALLOCATE(TMP(NDX_WIND,NDY_WIND))
+           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 44')
            DO IX = 1, NDX_WIND
              IF (IX .GT. NDX_WIND/2) THEN
                tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
@@ -1923,8 +1981,10 @@
        REAL(rkind), ALLOCATABLE            :: dist(:)
        REAL(rkind), PARAMETER              :: thr = 10E-14
        INTEGER                             :: loc(1)
+       integer istat
  
-       ALLOCATE(dist(size(wind_time_mjd,DIM=1)))
+       ALLOCATE(dist(size(wind_time_mjd,DIM=1)), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 45')
             dist(:) = MAIN%TMJD - wind_time_mjd(:)
             loc  = minloc( abs(dist(:)))
             if ( dist(loc(1)).lt.0 ) then 
@@ -1995,7 +2055,8 @@
           WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -5-', CHRTMP
           CALL WWM_ABORT(wwmerr)
         ENDIF
-        ALLOCATE (Uwind(NDX,NDY))
+        ALLOCATE (Uwind(NDX,NDY), Vwind(NDX,NDY), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 46')
         ISTAT = NF90_GET_VAR(FID, ID, Uwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
 
         ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
@@ -2028,7 +2089,7 @@
           WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -10-', CHRTMP
           CALL WWM_ABORT(wwmerr)
         ENDIF
-        ALLOCATE (Vwind(NDX,NDY))
+
         ISTAT = NF90_GET_VAR(FID, ID, Vwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
         IF (ISTAT .NE. nf90_noerr) THEN
           CHRTMP = nf90_strerror(ISTAT)
@@ -2107,8 +2168,8 @@
          WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -5-', CHRTMP
          CALL WWM_ABORT(wwmerr)
        ENDIF
-       allocate(WRF_LON(nlon,nlat))
-       allocate(WRF_LAT(nlon,nlat))
+       allocate(WRF_LON(nlon,nlat), WRF_LAT(nlon,nlat), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
        ISTAT = nf90_get_var(fid, varid, WRF_LON)
        IF (ISTAT .NE. nf90_noerr) THEN
          CHRTMP = nf90_strerror(ISTAT)
@@ -2141,7 +2202,8 @@
          CALL WWM_ABORT(wwmerr)
        ENDIF
        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
-       allocate(wind_time_mjd(nlon))
+       allocate(wind_time_mjd(nlon), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
        ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
        IF (ISTAT .NE. nf90_noerr) THEN
          CHRTMP = nf90_strerror(ISTAT)
@@ -2157,16 +2219,12 @@
        ! this is hack unitl I get better way of using wind_time attribute units 
        wind_time_mjd(:) = wind_time_mjd(:) + wind_time_offset - wwm_time_offset
        ! compute nodes and coefs
-       ALLOCATE(wrf_c11(MNP,2))
-       ALLOCATE(wrf_c12(MNP,2))
-       ALLOCATE(wrf_c21(MNP,2))
-       ALLOCATE(wrf_c22(MNP,2))
-       ALLOCATE(wrf_a(MNP))
-       ALLOCATE(wrf_b(MNP))
-       ALLOCATE(wrf_c(MNP))
-       ALLOCATE(wrf_d(MNP))
-       ALLOCATE(wrf_J(MNP))       
-       ALLOCATE(dist(size(WRF_LON, DIM=1),size(WRF_LON, DIM=2)))
+       ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
+       ALLOCATE(wrf_a(MNP), wrf_b(MNP), wrf_c(MNP), wrf_d(MNP), wrf_J(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
+       ALLOCATE(dist(size(WRF_LON, DIM=1),size(WRF_LON, DIM=2)), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
        WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
        do I = 1, MNP
        dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )

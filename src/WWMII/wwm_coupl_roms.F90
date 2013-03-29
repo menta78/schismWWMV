@@ -46,7 +46,7 @@
          include 'mpif.h'
 # endif
          INTEGER, INTENT(IN)  :: K,IFILE,IT
-         INTEGER              :: IP
+         INTEGER              :: IP, istat
 # ifdef WWM_MPI
          REAL(rkind), allocatable :: WINDXY_TOT(:,:), CURTXY_TOT(:,:), WATLEV_TOT(:)
          real(rkind), allocatable :: rbuf_real(:)
@@ -59,10 +59,8 @@
              READ(1000) WINDXY(IP,1), WINDXY(IP,2), CURTXY(IP,1), CURTXY(IP,2), WATLEV(IP)
            END DO
 # else
-           allocate(WINDXY_TOT(np_global,2))
-           allocate(CURTXY_TOT(np_global,2))
-           allocate(WATLEV_TOT(np_global))
-           allocate(rbuf_real(np_global*5))
+           allocate(WINDXY_TOT(np_global,2), CURTXY_TOT(np_global,2), WATLEV_TOT(np_global), rbuf_real(np_global*5), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 1')
            IF (myrank.eq.0) THEN
              DO IP = 1, np_global
                READ(1000) WINDXY_TOT(IP,1), WINDXY_TOT(IP,2), CURTXY_TOT(IP,1), CURTXY_TOT(IP,2), WATLEV_TOT(IP)
@@ -131,7 +129,7 @@
 !
          INTEGER, INTENT(IN)  :: K 
 
-         INTEGER              :: IP
+         INTEGER              :: IP, istat
          REAL(rkind)          :: ACLOC(MSC,MDC)
          REAL(rkind)          :: HS,WLM,LPP,FPP,CPP,BOTEXPER
          REAL(rkind)          :: URSELL,UBOT,TM,TM01,TM10
@@ -181,8 +179,8 @@
              CALL FLUSH(101)
            END DO
 # else
-           allocate(OUTT(np_global,16))
-           allocate(OUTT_TOT(np_global,16))
+           allocate(OUTT(np_global,16), OUTT_TOT(np_global,16), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 2')
            OUTT=0
            DO IP = 1, MNP
              ACLOC = AC2(IP,:,:)
@@ -250,14 +248,14 @@
 #  ifdef DEBUG_WWM
         integer MinValIndex, MinValIndexInv, eVal
 #  endif
-        allocate(MatrixBelongingWAV(np_global, NnodesWAV))
-        allocate(NumberNode(NnodesWAV))
-        allocate(NumberTrig(NnodesWAV))
+        allocate(MatrixBelongingWAV(np_global, NnodesWAV), NumberNode(NnodesWAV), NumberTrig(NnodesWAV), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 3')
         IF (myrank.ne.MyRankLocal) THEN
           CALL WWM_ABORT('die from ignominious death')
         END IF
         IF (MyRankLocal.eq.0) THEN
-          allocate(All_LocalToGlobal(np_global, NnodesWAV))
+          allocate(All_LocalToGlobal(np_global, NnodesWAV), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 4')
           All_LocalToGlobal=0
           MatrixBelongingWAV=0
           DO i=1,MNP
@@ -267,7 +265,8 @@
           ENDDO
           NumberNode(1)=MNP
           DO iProc=2,NnodesWAV
-            allocate(rbuf_int(2))
+            allocate(rbuf_int(2), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 5')
             CALL MPI_RECV(rbuf_int,2,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
             MNPloc=rbuf_int(1)
             MNEloc=rbuf_int(2)
@@ -275,7 +274,8 @@
             NumberTrig(iProc)=MNEloc
             deallocate(rbuf_int)
 !
-            allocate(rbuf_int(MNPloc))
+            allocate(rbuf_int(MNPloc), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 6')
             CALL MPI_RECV(rbuf_int,MNPloc,itype, iProc-1, 195, WAV_COMM_WORLD, istatus, ierr)
             DO IP=1,MNPloc
               eIdx=rbuf_int(IP)
@@ -285,7 +285,8 @@
             deallocate(rbuf_int)
           END DO
 !
-          allocate(rbuf_int(np_global*NnodesWAV))
+          allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 7')
           idx=0
           DO iProc=1,NnodesWAV
             DO IP=1,np_global
@@ -298,20 +299,23 @@
           END DO
           deallocate(rbuf_int)
         ELSE
-          allocate(rbuf_int(2))
+          allocate(rbuf_int(2), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 8')
           rbuf_int(1)=MNP
           rbuf_int(2)=MNE
           CALL MPI_SEND(rbuf_int,2,itype, 0, 194, WAV_COMM_WORLD, ierr)
           deallocate(rbuf_int)
 
-          allocate(rbuf_int(MNP))
+          allocate(rbuf_int(MNP), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 9')
           DO i=1,MNP
             rbuf_int(i)=iplg(i)
           END DO
           CALL MPI_SEND(rbuf_int,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
           deallocate(rbuf_int)
 !
-          allocate(rbuf_int(np_global*NnodesWAV))
+          allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 10')
           CALL MPI_RECV(rbuf_int,np_global*NnodesWAV,itype, 0, 196, WAV_COMM_WORLD, istatus, ierr)
           idx=0
           DO iProc=1,NnodesWAV
@@ -323,9 +327,8 @@
           deallocate(rbuf_int)
         ENDIF
 
-        allocate(ReindexPerm_wav(MNP))
-        allocate(ReindexPermInv_wav(MNP))
-        allocate(TheIndex(np_global))
+        allocate(ReindexPerm_wav(MNP), ReindexPermInv_wav(MNP), TheIndex(np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 11')
         TheIndex=0
         DO IP=1,MNP
           IPc=iplg(IP)
@@ -365,9 +368,8 @@
         USE mod_coupler
         IMPLICIT NONE
         integer IP
-        allocate(MatrixBelongingWAV(MNP, 1))
-        allocate(ReindexPerm_wav(MNP))
-        allocate(ReindexPermInv_wav(MNP))
+        allocate(MatrixBelongingWAV(MNP, 1), ReindexPerm_wav(MNP), ReindexPermInv_wav(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 12')
         DO IP=1,MNP
           ReindexPerm_wav(IP)=IP
           ReindexPermInv_wav(IP)=IP
@@ -399,9 +401,8 @@
         character(len=256) :: RHEADER
         integer nb1, nb2
         integer TheId
-        allocate(LONtrig_wav(np_global))
-        allocate(LATtrig_wav(np_global))
-        allocate(ListTrig_wav(ne_global,3))
+        allocate(LONtrig_wav(np_global), LATtrig_wav(np_global), ListTrig_wav(ne_global,3), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 13')
         TheId=13000
         open(TheId,file='hgrid.gr3',status='old',iostat=stat)
         read(TheId,*) RHEADER
@@ -427,9 +428,8 @@
         USE mod_coupler
         USE DATAPOOL
         implicit none
-        allocate(LONtrig_wav(MNP))
-        allocate(LATtrig_wav(MNP))
-        allocate(ListTrig_wav(MNE,3))
+        allocate(LONtrig_wav(MNP), LATtrig_wav(MNP), ListTrig_wav(MNE,3), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 14')
         LONtrig_wav=XP
         LATtrig_wav=YP
         ListTrig_wav=INE
@@ -508,16 +508,16 @@
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9, rnk=', myrank
 # endif
-        allocate(rbuf_int(1))
+        allocate(rbuf_int(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 15')
         eRankRecv=ArrLocal % ListFirstRank(OCNid)
         CALL MPI_RECV(rbuf_int,1,itype, eRankRecv, 103, MPI_COMM_WORLD, istatus, ierr)
         Nlevel=rbuf_int(1)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 10, rnk=', myrank
 # endif
-        ALLOCATE(z_w_loc(0:Nlevel))
-        ALLOCATE(eUSTOKES_loc(Nlevel))
-        ALLOCATE(eVSTOKES_loc(Nlevel))
+        ALLOCATE(z_w_loc(0:Nlevel), eUSTOKES_loc(Nlevel), eVSTOKES_loc(Nlevel), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 16')
         deallocate(rbuf_int)
         DoNearest=.TRUE.
 # ifdef DEBUG_WWM
@@ -625,10 +625,8 @@
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
-        allocate(ang_rho(MNP))
-        allocate(dep_rho(MNP))
-        allocate(A_wav_rho_3D(MNP, Nlevel+1))
-        allocate(A_wav_rho(MNP))
+        allocate(ang_rho(MNP), dep_rho(MNP), A_wav_rho_3D(MNP, Nlevel+1), A_wav_rho(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 17')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 24, rnk=', myrank
 # endif
@@ -719,18 +717,12 @@
         WRITE(DBG%FHNDL,*) 'AD, SumDep1=', SumDep1, ' SumDep2=', SumDep2
         WRITE(DBG%FHNDL,*) 'AD, SumDiff=', SumDiff
 # endif
-        allocate(z_r(Nlevel))
-        allocate(PartialU1(Nlevel))
-        allocate(PartialV1(Nlevel))
-        allocate(PartialU2(Nlevel))
-        allocate(PartialV2(Nlevel))
-        allocate(z_w_wav(MNP, 0:Nlevel))
-        allocate(U_wav(MNP, Nlevel))
-        allocate(V_wav(MNP, Nlevel))
-        allocate(USTOKES_wav(MNP, Nlevel))
-        allocate(VSTOKES_wav(MNP, Nlevel))
-        allocate(ZETA_CORR(MNP))
-        allocate(J_PRESSURE(MNP))
+        allocate(z_r(Nlevel), PartialU1(Nlevel), PartialV1(Nlevel), PartialU2(Nlevel), PartialV2(Nlevel), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18')
+        allocate(z_w_wav(MNP, 0:Nlevel), U_wav(MNP, Nlevel), V_wav(MNP, Nlevel), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
+        allocate(USTOKES_wav(MNP, Nlevel), VSTOKES_wav(MNP, Nlevel), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'End ROMS_COUPL_INITIALIZE'
 # endif

@@ -19,6 +19,7 @@
       LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
       LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
       integer iVar, idx, nbOutVarEff
+      integer istat
       HS           = eVar%LVAR( 1)
       TM01         = eVar%LVAR( 2)
       TM02         = eVar%LVAR( 3)
@@ -114,7 +115,8 @@
         END IF
       END DO
       eVar%nbOutVarEff=nbOutVarEff
-      allocate(eVar%ListIdxEff(nbOutVarEff))
+      allocate(eVar%ListIdxEff(nbOutVarEff), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 1')
       idx=0
       DO iVar=1,OUTVARS_COMPLETE
         IF (eVar%LVAR(iVar)) THEN
@@ -146,10 +148,11 @@
       INTEGER :: IPNEXT, IPPREV, ZNEXT
       INTEGER :: eIdx
       LOGICAL :: HaveError
-      ALLOCATE(STATUS(np_glob))
-      ALLOCATE(COLLECTED(np_glob))
-      ALLOCATE(PREVVERT(np_glob))
-      ALLOCATE(NEXTVERT(np_glob))
+      integer istat
+      ALLOCATE(STATUS(np_glob), COLLECTED(np_glob), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 2')
+      ALLOCATE(PREVVERT(np_glob), NEXTVERT(np_glob), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 3')
       NEIGHBOR=0
       STATUS = 0
       NEXTVERT = 0
@@ -227,7 +230,8 @@
           IOBP(IP)=1
         END IF
       END DO
-      ALLOCATE(NBneighbor(np_glob))
+      ALLOCATE(NBneighbor(np_glob), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 4')
       NBneighbor=0
       DO IP=1,np_glob
         eIdx=NEIGHBOR(IP)
@@ -287,6 +291,7 @@
       integer, allocatable :: LengthCycle(:)
       integer iret, lenbound_dims, nbbound_dims, var_id
       integer idx
+      integer istat
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
       STATUS = 0
@@ -300,8 +305,8 @@
         END IF
       END DO
 !      Print *, 'LenBound=', LenBound
-      ALLOCATE(ListSequence(LenBound))
-      ALLOCATE(SequenceNumber(LenBound))
+      ALLOCATE(ListSequence(LenBound), SequenceNumber(LenBound), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 5')
       NbCycle=0
       DO IP=1,np_glob
         IF (STATUS(IP).eq.1) THEN
@@ -323,7 +328,8 @@
           STATUS(IP)=1
         END IF
       END DO
-      allocate(LengthCycle(NbCycle))
+      allocate(LengthCycle(NbCycle), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 6')
       iCycle=0
       idx=0
       DO IP=1,np_glob
@@ -760,6 +766,7 @@
       integer iret, var_id
       integer ntime_dims, oceantimeday_id, oceantimestr_id, oceantime_id
       integer p_dims, e_dims
+      integer istat
       REAL(rkind), allocatable :: XPtotal(:)
       REAL(rkind), allocatable :: YPtotal(:)
       REAL(rkind), allocatable :: DEPtotal(:)
@@ -873,10 +880,8 @@
         iret=nf90_put_att(ncid,var_id,UNITS,'meters')
         CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
 ! boundary
-        ALLOCATE(INEtotal(3, ne_total))
-        ALLOCATE(XPtotal(np_total))
-        ALLOCATE(YPtotal(np_total))
-        ALLOCATE(DEPtotal(np_total))
+        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
         CALL GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
         Oper=1
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
@@ -902,6 +907,7 @@
       integer, intent(in) :: np_write, ne_write
       integer var_id, iret, NewId
       integer nb1, nb2
+      integer istat
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
       REAL(rkind), allocatable :: XPtotal(:)
       REAL(rkind), allocatable :: YPtotal(:)
@@ -940,10 +946,8 @@
         CALL WRITE_PARAM_2(ncid)
       END IF
       IF (GRIDWRITE.and.WriteOutputProcess) THEN
-        ALLOCATE(INEtotal(3, ne_total))
-        ALLOCATE(XPtotal(np_total))
-        ALLOCATE(YPtotal(np_total))
-        ALLOCATE(DEPtotal(np_total))
+        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 8')
         CALL GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
         !
         iret=nf90_inq_varid(ncid, "ele", var_id)

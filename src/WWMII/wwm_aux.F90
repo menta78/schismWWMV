@@ -122,6 +122,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GRAD_CG_K()
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER :: IP, IS
+
+         DCGDX(:,:) = 0.0
+         DCGDY(:,:) = 0.0
+         DWKDX(:,:) = 0.0
+         DWKDY(:,:) = 0.0
+
+         SELECT CASE (DIMMODE)
+            CASE (1)
+              DO IS = 1, MSC
+                CALL DIFFERENTIATE_XDIR(CG(:,IS),DCGDX(:,IS))
+                CALL DIFFERENTIATE_XDIR(WK(:,IS),DWKDX(:,IS))
+              ENDDO
+            CASE (2)
+              DO IS = 1, MSC
+                CALL DIFFERENTIATE_XYDIR(CG(:,IS),DCGDX(:,IS),DCGDY(:,IS))
+                CALL DIFFERENTIATE_XYDIR(WK(:,IS),DWKDX(:,IS),DWKDY(:,IS))
+              ENDDO
+            CASE DEFAULT
+         END SELECT
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE DIFFERENTIATE_XDIR(VAR, DVDX)
          USE DATAPOOL
 #ifdef MPI_PARALL_GRID
@@ -917,6 +946,7 @@
          REAL(rkind), PARAMETER :: FRFAK = 0.9
          REAL(rkind)    :: VEC2RAD, ANG, VEL, WAVEL, DEPTH
          REAL(rkind), ALLOCATABLE  :: HP(:), QU(:), QV(:), UP(:), VP(:)
+         integer istat
 
          HEADSP = 0.0
 
@@ -924,11 +954,8 @@
          CALL WWM_ABORT('ERG2WWM CANNOT BE CALLED FROM SELFE')
 #endif
 
-         ALLOCATE (QU(MNP))
-         ALLOCATE (QV(MNP))
-         ALLOCATE (UP(MNP))
-         ALLOCATE (VP(MNP))
-         ALLOCATE (HP(MNP))
+         ALLOCATE (QU(MNP), QV(MNP), UP(MNP), VP(MNP), HP(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_aux, allocate error 1')
 
          QU = 0.
          QV = 0.

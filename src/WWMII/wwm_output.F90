@@ -683,6 +683,7 @@
       REAL(rkind) :: ACOUT_1D(MSC,3)
       REAL(rkind) :: ACOUT_2D(MSC,MDC)
       INTEGER     :: LPOS
+      integer istat
       character(len =256) :: FILE_NAME, PRE_FILE_NAME
       integer :: iret, ncid, ntime_dims, nbstat_dims
       integer :: msc_dims, mdc_dims, three_dims, one_dims
@@ -706,12 +707,14 @@
       REAL(rkind) :: TheIsumR
 # endif
       REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2), ESUM
-      allocate(OUTPAR_STATIONS(IOUTS,OUTVARS_COMPLETE))
-      allocate(WK_STATIONS(IOUTS,MSC))
-      allocate(AC_STATIONS(IOUTS,MSC,MDC))
+      allocate(OUTPAR_STATIONS(IOUTS,OUTVARS_COMPLETE), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
+      allocate(WK_STATIONS(IOUTS,MSC), AC_STATIONS(IOUTS,MSC,MDC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 2')
+
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
-        allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3))
-        allocate(ACOUT_2D_STATIONS(IOUTS, MSC, MDC))
+        allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
       ENDIF
       DO I = 1, IOUTS
         IF (STATION(I)%IFOUND == 1) THEN
@@ -743,16 +746,17 @@
       END DO
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_STAT.eq.0) THEN
-        allocate(OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE))
+        allocate(OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 4')
         OUTPAR_STATIONS_SUM=0
-        allocate(WK_STATIONS_SUM(IOUTS,MSC))
+        allocate(WK_STATIONS_SUM(IOUTS,MSC), AC_STATIONS_SUM(IOUTS,MSC,MDC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
         WK_STATIONS_SUM=0
-        allocate(AC_STATIONS_SUM(IOUTS,MSC,MDC))
         AC_STATIONS_SUM=0
         IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
-          allocate(ACOUT_1D_STATIONS_SUM(IOUTS,MSC,3))
+          allocate(ACOUT_1D_STATIONS_SUM(IOUTS,MSC,3), ACOUT_2D_STATIONS_SUM(IOUTS,MSC,MDC), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
           ACOUT_1D_STATIONS_SUM=0
-          allocate(ACOUT_2D_STATIONS_SUM(IOUTS,MSC,MDC))
           ACOUT_2D_STATIONS_SUM=0
         END IF
         IF (IOUTS.gt.0) THEN
@@ -2083,6 +2087,7 @@
       character(len=*) :: eStr
       integer, intent(in) :: I, NPWORK, NBVAR
       real(rkind), intent(in) :: OUTT(NPWORK, NBVAR)
+      integer istat
 # ifdef MPI_PARALL_GRID
       include 'mpif.h'
       REAL(rkind), allocatable :: LVect(:,:)
@@ -2100,7 +2105,8 @@
         eVect(2)=maxval(OUTT(:,I))
         eVect(3)=sum(OUTT(:,I)*nwild_loc_res)
         IF (myrank.eq.0) THEN
-          allocate(LVect(nproc,3))
+          allocate(LVect(nproc,3), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 7')
           LVect(1,:)=eVect
           DO iProc=2,nproc
             CALL MPI_RECV(eVect,3,rtype, iProc-1, 190, comm, istatus, ierr)
@@ -2142,7 +2148,7 @@
 # ifdef MPI_PARALL_GRID
       include 'mpif.h'
 # endif
-      INTEGER            :: IP
+      INTEGER            :: IP, istat
 # ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable  :: OUTT_LOC(:,:)
       REAL(rkind), allocatable  :: OUTT(:,:)
@@ -2242,8 +2248,10 @@
       END IF
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
-        ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE))
-        ALLOCATE(OUTT(NP_GLOBAL,OUTVARS_COMPLETE))
+        ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 8')
+        ALLOCATE(OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 9')
         OUTT_LOC=0
         DO IP = 1, MNP
           ACLOC(:,:) = AC2(IP,:,:)
@@ -2258,7 +2266,8 @@
         END IF
         DEALLOCATE(OUTT_LOC)
       ELSE
-        ALLOCATE(OUTT(NP_RES,OUTVARS_COMPLETE))
+        ALLOCATE(OUTT(NP_RES,OUTVARS_COMPLETE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 10')
         DO IP = 1, NP_RES
           ACLOC(:,:) = AC2(IP,:,:)
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)

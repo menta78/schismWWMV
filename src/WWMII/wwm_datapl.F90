@@ -394,8 +394,8 @@
          REAL(rkind), ALLOCATABLE      :: SINCOSTH(:)
          REAL(rkind), ALLOCATABLE      :: SIGPOW(:,:)
 
-         REAL(rkind), ALLOCATABLE      :: WK(:,:)
-         REAL(rkind), ALLOCATABLE      :: CG(:,:)
+         REAL(rkind), ALLOCATABLE      :: WK(:,:), DWKDX(:,:), DWKDY(:,:)
+         REAL(rkind), ALLOCATABLE      :: CG(:,:), DCGDX(:,:), DCGDY(:,:)
 
 #ifdef SELFE
 !         REAL(rkind), ALLOCATABLE    :: CGX(:,:,:)

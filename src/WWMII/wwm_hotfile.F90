@@ -79,6 +79,7 @@ MODULE wwm_hotfile_mod
       integer, intent(in) :: NPCALL
       real(rkind), intent(inout) :: ACread(NPCALL, MSC, MDC)
       integer :: NPLOC
+      integer istat
       integer, allocatable :: IPLGloc(:)
       INTEGER :: HMNP, HMNE
       INTEGER :: HMSC, HMDC
@@ -93,7 +94,8 @@ MODULE wwm_hotfile_mod
         CALL WWM_ABORT('THE HOTFILE GEOMETRY DOES NOT FIT THE INPUT FILE')
       ENDIF
       READ(HOTIN%FHNDL) NPLOC
-      allocate(IPLGloc(NPLOC))
+      allocate(IPLGloc(NPLOC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 1')
       READ(HOTIN%FHNDL) IPLGloc
       deallocate(IPLGloc)
       READ(HOTIN%FHNDL) ACread
@@ -145,7 +147,7 @@ MODULE wwm_hotfile_mod
       INTEGER, allocatable :: IPLGin(:)
       INTEGER :: iplg_id
       REAL(rkind) :: HFRLOW, HFRHIGH
-      integer :: MULTIPLE
+      integer :: MULTIPLE, istat
       character(len=140) :: FILERET
       MULTIPLE=1
       CALL PRE_CREATE_LOCAL_HOTNAME(FILEHOT, FILERET,                   &
@@ -161,7 +163,8 @@ MODULE wwm_hotfile_mod
           CALL WWM_ABORT('THE HOTFILE GEOMETRY DOES NOT FIT THE INPUT FILE')
         ENDIF
         READ(HOTIN%FHNDL) NPLOC
-        allocate(IPLGin(NPLOC))
+        allocate(IPLGin(NPLOC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 2')
         READ(HOTIN%FHNDL) IPLGin
         IPLG(1:NPLOC)=IPLGin
         deallocate(IPLGin)
@@ -174,7 +177,8 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         iret=nf90_inquire_dimension(ncid, mnp_dims, len=nploc)
         CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
-        allocate(IPLGin(NPLOC))
+        allocate(IPLGin(NPLOC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 3')
         iret=nf90_inq_varid(ncid, "iplg", iplg_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
         iret=nf90_get_var(ncid, iplg_id, IPLGin, start=(/1/), count=(/NPLOC/))
@@ -222,19 +226,22 @@ MODULE wwm_hotfile_mod
       integer, allocatable :: ListAttained(:)
       integer :: eDiff, I, iProc, idx, eIdx, eStat, nbProc, IP
       integer :: nbNeedProc, nbF, NPLOC, nbZero, idxB
+      integer istat
 #ifndef MPI_PARALL_GRID
       integer, allocatable :: iplg(:)
       integer :: nproc, myrank
       nproc=1
       myrank=0
-      allocate(iplg(MNP))
+      allocate(iplg(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 4')
 !Mathieu ... again all crap ... where is ip defined in heaven? ... rather in hell!
 !        ... please use consistently ip as variable for nodes ...
       DO IP=1,MNP
         iplg(IP)=IP
       END DO
 #endif
-      allocate(IPLGtot(np_total))
+      allocate(IPLGtot(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 5')
       CALL DETERMINE_NUMBER_PROC(FILEHOT, HOTSTYLE, nbProc)
       IF (nbProc.eq.nproc) THEN
         CALL READ_IPLG(HOTSTYLE, FILEHOT, myrank+1, NPLOC, IPLGtot)
@@ -251,14 +258,16 @@ MODULE wwm_hotfile_mod
         END IF
       END IF
       eRecons % IsEasy = .FALSE.
-      allocate(eStatus(np_total))
+      allocate(eStatus(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 6')
       eStatus=0
       DO IP=1,MNP
         eStatus(IPLG(IP))=IP
       END DO
       nbNeedProc=0
       IF (myrank.eq.0) THEN
-        allocate(ListAttained(np_total))
+        allocate(ListAttained(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 7')
         ListAttained=0
       ENDIF
       DO iProc=1,nbProc
@@ -291,7 +300,8 @@ MODULE wwm_hotfile_mod
         DEALLOCATE(ListAttained)
       ENDIF
       eRecons % nbNeedProc=nbNeedProc
-      allocate(eRecons % ListSubset(nbNeedProc))
+      allocate(eRecons % ListSubset(nbNeedProc), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 8')
       idx=0
       DO iProc=1,nbProc
         CALL READ_IPLG(HOTSTYLE, FILEHOT, iProc, NPLOC, IPLGtot)
@@ -306,8 +316,10 @@ MODULE wwm_hotfile_mod
           eRecons % ListSubset(idx) % eRankProc=iProc
           eRecons % ListSubset(idx) % nbNeedEntries=nbF
           eRecons % ListSubset(idx) % NPLOC=NPLOC
-          ALLOCATE(eRecons % ListSubset(idx) % ListNeedIndexFile(nbF))
-          ALLOCATE(eRecons % ListSubset(idx) % ListNeedIndexMemory(nbF))
+          ALLOCATE(eRecons % ListSubset(idx) % ListNeedIndexFile(nbF), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 9')
+          ALLOCATE(eRecons % ListSubset(idx) % ListNeedIndexMemory(nbF), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 10')
           idxB=0
           DO I=1,NPLOC
             eIdx=IPLGtot(I)
@@ -368,14 +380,15 @@ MODULE wwm_hotfile_mod
         USE ELFE_GLBL, ONLY : iplg, np_global
 #endif
         IMPLICIT NONE
-        INTEGER IP, idxFil, idxMem, iProc
+        INTEGER IP, idxFil, idxMem, iProc, istat
         REAL(rkind), ALLOCATABLE :: ACinB(:,:,:)
         character(len=140) :: FILERET
         type(ReconstructInfo) :: eRecons
         integer :: nbF, NPLOC, eRank, I
         IF (MULTIPLEIN_HOT.eq.0) THEN
 #ifdef MPI_PARALL_GRID
-          ALLOCATE(ACinB(NP_GLOBAL,MSC,MDC))
+          ALLOCATE(ACinB(NP_GLOBAL,MSC,MDC), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 11')
           CALL READ_AC_SIMPLE(HOTIN%FNAME, NP_GLOBAL, ACinB)
           DO IP=1,MNP
             AC2(IP,:,:)=ACinB(iplg(IP),:,:)
@@ -398,7 +411,8 @@ MODULE wwm_hotfile_mod
               NPLOC=eRecons % ListSubset(iProc) % NPLOC
               CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,        &
      &            MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
-              allocate(ACinB(NPLOC, MSC, MDC))
+              allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 12')
               CALL READ_AC_SIMPLE(FILERET, NPLOC, ACinB)
               DO I=1,nbF
                 idxFil=eRecons % ListSubset(iProc) % ListNeedIndexFile(I)
@@ -427,7 +441,7 @@ MODULE wwm_hotfile_mod
         CHARACTER(len=140) :: FILERET
         REAL(rkind), ALLOCATABLE :: ACreturn(:,:,:)
         REAL(rkind), ALLOCATABLE :: VALB(:), VALB_SUM(:)
-        INTEGER IP, ID, IS
+        INTEGER IP, ID, IS, istat
         CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET,              &
      &    MULTIPLEOUT_HOT, HOTSTYLE_OUT)
         OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET),                      &
@@ -439,10 +453,11 @@ MODULE wwm_hotfile_mod
 #else
         IF (MULTIPLEOUT_HOT.eq.0) THEN
           IF (myrank.eq.0) THEN
-            allocate(ACreturn(np_global, MSC, MDC))
+            allocate(ACreturn(np_global, MSC, MDC), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 13')
           END IF
-          allocate(VALB(np_global))
-          allocate(VALB_SUM(np_global))
+          allocate(VALB(np_global), VALB_SUM(np_global), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 13')
           DO ID=1,MDC
             DO IS=1,MSC
               VALB=0
@@ -494,11 +509,13 @@ MODULE wwm_hotfile_mod
         character(len=140) :: FILERET
         INTEGER :: iret, ncid, ac_id, iProc, idxFil, idxMem
         INTEGER :: nbF
+        integer istat
         IF (MULTIPLEIN_HOT.eq.0) THEN
 # ifdef MPI_PARALL_GRID
           iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
           iret=nf90_inq_varid(ncid, "ac", ac_id)
-          allocate(ACin(np_global,MSC))
+          allocate(ACin(np_global,MSC), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 14')
           DO ID=1,MDC
             iret=nf90_get_var(ncid,ac_id,ACin,                        &
      &    start=(/1,1,ID,IHOTPOS_IN/), count = (/MNP, MSC, MDC, 1 /))
@@ -534,7 +551,8 @@ MODULE wwm_hotfile_mod
               CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,     &
      &            MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
               iret=nf90_open(TRIM(FILERET), nf90_nowrite, ncid)
-              allocate(ACinB(NPLOC, MSC, MDC))
+              allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 15')
               iret=nf90_inq_varid(ncid, "ac", ac_id)
               iret=nf90_get_var(ncid,ac_id,ACinB,                     &
      &     start=(/1,1,1,IHOTPOS_IN/), count=(/NPLOC, MSC, MDC, 1 /))
@@ -575,6 +593,7 @@ MODULE wwm_hotfile_mod
       character(len=140) :: FILERET
       integer np_write, ne_write
       integer :: i
+      integer istat
       CHARACTER :: eChar
 # ifdef MPI_PARALL_GRID
       integer ID
@@ -645,10 +664,11 @@ MODULE wwm_hotfile_mod
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         IF (myrank.eq.0) THEN
-          allocate(ACreturn(np_global, MSC, MDC))
+          allocate(ACreturn(np_global, MSC, MDC), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         END IF
-        allocate(VALB(np_global))
-        allocate(VALB_SUM(np_global))
+        allocate(VALB(np_global), VALB_SUM(np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 17')
         DO ID=1,MDC
           DO IS=1,MSC
             VALB=0

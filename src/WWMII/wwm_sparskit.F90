@@ -2888,12 +2888,14 @@
         integer, intent(in) :: ja(*), ia(*)
         integer, intent(inout) :: ju(*), jlu(*), iw(n)
         integer ju0, ii, js, j, jcol, jf, jm, jrow, jj, jw, i, ierr
+        integer istat
         real(rkind) tl
         integer, allocatable :: ListJ(:)
         ju0 = n+2
         jlu(1) = ju0
         iw = 0
-        allocate(ListJ(n))
+        allocate(ListJ(n), stat=istat)
+        IF (istat /= 0) CALL WWM_ABORT('wwm_sparskit, allocate error 1')
         do ii = 1, n
           do j=ia(ii),ia(ii+1)-1
             jcol = ja(j)
