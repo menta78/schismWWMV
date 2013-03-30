@@ -24,7 +24,7 @@
 
          LOGICAL, INTENT(IN) :: LRECALC
 
-         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ, IERR
+         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
          REAL(rkind)    :: SME01, SME10, KME01, KMWAM, URSELL, KMWAM2
@@ -47,7 +47,6 @@
          REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), EAD, SUMACLOC, IMATRAT(MSC,MDC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
-         REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC)
 
          LOGICAL        :: LWINDSEA(MSC,MDC)
          REAL(rkind)    :: XLCKS(MDC,MSC)
@@ -277,40 +276,35 @@
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
-               CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
-             ELSE IF (MESNL .EQ. 2) THEN
-               CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA)
-             ELSE IF (MESNL .EQ. 3) THEN
-               CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
-             ELSE IF (MESNL .EQ. 4) THEN
-               CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
-             ELSE IF (MESNL .EQ. 5) THEN
-               CALL WWMQUAD_WRT (ACLOC,SPSIG,SPDIR,MDC,MSC,DEP(IP),1,XNL,DDIAG,IERR)
-               WRITE (*,*) 'WRT IP =', IP, 'FERTIG !!!'
-               IF (IERR .GT. 0) THEN
-                 WRITE (*,*) 'XNL_WRT ERROR', IERR
-                 STOP
+               IF (LCIRD) THEN
+                 !CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
+                 !CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA) 
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC 
+                     TMPAC_TSA(ID,IS) = ACLOC(IS,ID) * CG(IP,IS)
+                   END DO
+                 END DO 
+                 CG_TSA = CG(IP,:)
+                 WK_TSA = WK(IP,:)
+                 DEP_TSA = DEP(IP)
+                 NZZ = (MSC*(MSC+1))/2
+!                 write(*,*) 'nzz', nzz
+                 CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA) 
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IP,IS)
+                     IMATDA(IS,ID) = IMATDA(IS,ID) + IMATDA_TSA(ID,IS)
+!                      write(*,*) is, id, TMPAC_TSA(ID,IS), IMATRA_TSA(ID,IS), IMATDA_TSA(ID,IS)
+                   END DO
+                 END DO
+                 !CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
+                 !CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
                ELSE
-                 IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
-                 IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
+                 WRITE(wwmerr,*) 'SNL4 is not ready when LCIRD = .FALSE.'
+                 CALL WWM_ABORT(wwmerr)
                END IF
-             ELSE IF (MESNL .EQ. 6) THEN
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
-                   TMPAC_TSA(ID,IS) = ACLOC(IS,ID) * CG(IP,IS)
-                 END DO
-               END DO
-               CG_TSA = CG(IP,:)
-               WK_TSA = WK(IP,:)
-               DEP_TSA = DEP(IP)
-               NZZ = (MSC*(MSC+1))/2
-               CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA)
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
-                   IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IP,IS)
-                   IMATDA(IS,ID) = IMATDA(IS,ID) + IMATDA_TSA(ID,IS)
-                 END DO
-               END DO
+             ELSE IF (MESNL .EQ. 2) THEN
+               STOP 'MESNL == 2 .NOT. IMPLEMENTED'
              END IF
            END IF
            IF (IDISP == IP) THEN
