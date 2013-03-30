@@ -244,7 +244,7 @@
         integer, allocatable :: NumberNode(:), NumberTrig(:)
         integer, allocatable :: All_LocalToGlobal(:,:)
         integer i, eIdx, iProc, MNPloc, MNEloc, idx
-        integer IPc, IP
+        integer IPc, IP, istat
 #  ifdef DEBUG_WWM
         integer MinValIndex, MinValIndexInv, eVal
 #  endif
@@ -394,10 +394,11 @@
 # ifdef WWM_MPI
       SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
         USE mod_coupler
+        USE DATAPOOL, only : DBG
         USE elfe_msgp, only : parallel_abort
         USE elfe_glbl, only : np_global, ne_global
         implicit none
-        integer i, j, k, iegb, stat
+        integer i, j, k, iegb, stat, istat
         character(len=256) :: RHEADER
         integer nb1, nb2
         integer TheId
@@ -440,6 +441,7 @@
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_INITIALIZE
         USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total
+        USE DATAPOOL, only : DBG
         USE mod_coupler
         USE PGMCL_LIBRARY
         USE pgmcl_interp
@@ -448,6 +450,7 @@
         logical DoNearest
         integer, allocatable :: rbuf_int(:)
         integer IP, iNodeSel, idx, eRankRecv
+        integer istat
         real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
         real(rkind) minBathy, maxBathy
 !        character(len=40) :: FileSave1, FileSave2
@@ -549,25 +552,33 @@
      &    ne_total, ListTrig_wav,                                       &
      &    np_total, LONtrig_wav, LATtrig_wav)
 # ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14  aaa, rnk=', myrank
+        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_rho, MatrixBelongingWAV,                   &
      &    mMat_OCNtoWAV_rho, TheArr_OCNtoWAV_rho)
+        CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_rho,          &
+     &    3, TheAsync_OCNtoWAV_uvz)
+        CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_rho,          &
+     &    Nlevel+1, TheAsync_OCNtoWAV_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'nbNeedTot=', TheArr_OCNtoWAV_rho % nbNeedTot
         WRITE(DBG%FHNDL,*) 'nbProc=', TheArr_OCNtoWAV_rho % nbProc
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 14, rnk=', myrank
+        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 14'
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_u, MatrixBelongingWAV,                     &
      &    mMat_OCNtoWAV_u, TheArr_OCNtoWAV_u)
+        CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_u,            &
+     &    Nlevel, TheAsync_OCNtoWAV_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 15, rnk=', myrank
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_v, MatrixBelongingWAV,                     &
      &    mMat_OCNtoWAV_v, TheArr_OCNtoWAV_v)
+        CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_v,            &
+     &    Nlevel, TheAsync_OCNtoWAV_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 16, rnk=', myrank
 # endif
@@ -607,25 +618,33 @@
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_rho,                   &
      &    mMat_WAVtoOCN_rho, TheArr_WAVtoOCN_rho)
+        CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_rho,           &
+     &    Nlevel+1, TheAsync_WAVtoOCN_rho)
+        CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_rho,           &
+     &    19, TheAsync_WAVtoOCN_stat)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 21, rnk=', myrank
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_u,                     &
      &    mMat_WAVtoOCN_u, TheArr_WAVtoOCN_u)
+        CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_u,             &
+     &    Nlevel+1, TheAsync_WAVtoOCN_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 22, rnk=', myrank
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_v,                     &
      &    mMat_WAVtoOCN_v, TheArr_WAVtoOCN_v)
+        CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_v,             &
+     &    Nlevel+1, TheAsync_WAVtoOCN_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23, rnk=', myrank
 # endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
-        allocate(ang_rho(MNP), dep_rho(MNP), A_wav_rho_3D(MNP, Nlevel+1), A_wav_rho(MNP), stat=istat)
+        allocate(CosAng(MNP), SinAng(MNP), dep_rho(MNP), A_wav_u_3D(Nlevel+1,MNP), A_wav_v_3D(Nlevel+1,MNP), A_wav_ur_3D(Nlevel,MNP), A_wav_vr_3D(Nlevel,MNP), A_wav_rho_3D(Nlevel+1,MNP), A_wav_stat(19,MNP), A_wav_uvz(3,MNP), A_wav_rho(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 17')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 24, rnk=', myrank
@@ -636,7 +655,8 @@
         CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 203, A_wav_rho)
         DO idx=1,MNP
           IP=ReindexPerm_wav(idx)
-          ang_rho(IP)=A_wav_rho(idx)
+          CosAng(IP)=COS(A_wav_rho(idx))
+          SinAng(IP)=SIN(A_wav_rho(idx))
         END DO
 # endif
 # ifdef DEBUG_WWM
@@ -659,7 +679,8 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'SumDepReceive=', SumDepReceive
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 33, rnk=', myrank
+        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 33'
+        WRITE(DBG%FHNDL,*) 'WAV, rnk=', myrank
         AbsDiff=0
         SumDep1=0
         SumDep2=0
@@ -761,9 +782,16 @@
         CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_rho)
         CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_u)
         CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_v)
-        deallocate(ang_rho)
+        deallocate(CosAng)
+        deallocate(SinAng)
         deallocate(dep_rho)
         deallocate(A_wav_rho_3D)
+        deallocate(A_wav_stat)
+        deallocate(A_wav_uvz)
+        deallocate(A_wav_u_3D)
+        deallocate(A_wav_v_3D)
+        deallocate(A_wav_ur_3D)
+        deallocate(A_wav_vr_3D)
         deallocate(A_wav_rho)
         deallocate(z_r)
         deallocate(PartialU1)
@@ -976,7 +1004,11 @@
 # ifdef DUMMY_COUPLING
         CALL MPI_INTERP_Dummy_Recv(ArrLocal, 201, OCNid)
 # else
-        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_rho, 201, 3, A_wav_rho_3D)
+#  ifdef NO_ASYNC
+        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_rho, 201, 3, A_wav_uvz)
+#  else
+        CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_uvz, 201, A_wav_uvz)
+#  endif
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, After Data receive'
@@ -991,8 +1023,8 @@
         WATLEVOLD=WATLEV
         DELTAT_WATLEV = MAIN%DTCOUP
         DO idx=1,MNP
-          u1=A_wav_rho_3D(idx,1)
-          v1=A_wav_rho_3D(idx,2)
+          u1=A_wav_uvz(1,idx)
+          v1=A_wav_uvz(2,idx)
 # ifdef DEBUG_WWM
           IF (abs(u1).gt.MaxUwind) THEN
             MaxUwind=abs(u1)
@@ -1005,9 +1037,9 @@
           NbPoint=NbPoint+1
 # endif
           IP=ReindexPerm_wav(idx)
-          u2=u1*DCOS(ang_rho(IP))-v1*DSIN(ang_rho(IP))
-          v2=v1*DCOS(ang_rho(IP))+u1*DSIN(ang_rho(IP))
-          z1=A_wav_rho_3D(idx,3)
+          u2=u1*CosAng(IP)-v1*SinAng(IP)
+          v2=v1*CosAng(IP)+u1*SinAng(IP)
+          z1=A_wav_uvz(3,idx)
           WINDXY(IP,1)=u2
           WINDXY(IP,2)=v2
           WATLEV(IP)=z1
@@ -1022,7 +1054,11 @@
 # ifdef DUMMY_COUPLING
         CALL MPI_INTERP_Dummy_Recv(ArrLocal, 203, OCNid)
 # else
+#  ifdef NO_ASYNC
         CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_rho, 203, Nlevel+1, A_wav_rho_3D)
+#  else
+        CALL MPI_INTERP_Arecv_3D_r8(TheAsync_OCNtoWAV_rho, 203, A_wav_rho_3D)
+#  endif
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 3'
@@ -1030,7 +1066,7 @@
         DO kLev=0,Nlevel
           DO idx=1,MNP
             IP=ReindexPerm_wav(idx)
-            z_w_wav(IP,kLev)=A_wav_rho_3D(idx,kLev+1)
+            z_w_wav(IP,kLev)=A_wav_rho_3D(kLev+1,idx)
           END DO
         END DO
 # ifdef DEBUG_WWM
@@ -1039,12 +1075,16 @@
 # ifdef DUMMY_COUPLING
         CALL MPI_INTERP_Dummy_Recv(ArrLocal, 204, OCNid)
 # else
-        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_u, 204, Nlevel, A_wav_rho_3D)
+#  ifdef NO_ASYNC
+        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_u, 204, Nlevel, A_wav_ur_3D)
+#  else
+        CALL MPI_INTERP_Arecv_3D_r8(TheAsync_OCNtoWAV_u, 204, A_wav_ur_3D)
+#  endif
 # endif
         DO kLev=1,Nlevel
           DO idx=1,MNP
             IP=ReindexPerm_wav(idx)
-            U_wav(IP,kLev)=A_wav_rho_3D(idx,kLev)
+            U_wav(IP,kLev)=A_wav_ur_3D(kLev,idx)
           END DO
         END DO
 # ifdef DEBUG_WWM
@@ -1053,7 +1093,11 @@
 # ifdef DUMMY_COUPLING
         CALL MPI_INTERP_Dummy_Recv(ArrLocal, 205, OCNid)
 # else
-        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_v, 205, Nlevel, A_wav_rho_3D)
+#  ifdef NO_ASYNC
+        CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_v, 205, Nlevel, A_wav_vr_3D)
+#  else
+        CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_v, 205, A_wav_vr_3D)
+#  endif
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'After the receive'
@@ -1061,7 +1105,7 @@
         DO kLev=1,Nlevel
           DO idx=1,MNP
             IP=ReindexPerm_wav(idx)
-            V_wav(IP,kLev)=A_wav_rho_3D(idx,kLev)
+            V_wav(IP,kLev)=A_wav_vr_3D(kLev,idx)
           END DO
         END DO
 # ifdef DEBUG_WWM
@@ -1071,8 +1115,8 @@
           DO kLev=1,Nlevel
             u1=U_wav(IP,kLev)
             v1=V_wav(IP,kLev)
-            u2=u1*DCOS(ang_rho(IP))-v1*DSIN(ang_rho(IP))
-            v2=v1*DCOS(ang_rho(IP))+u1*DSIN(ang_rho(IP))
+            u2=u1*CosAng(IP)-v1*SinAng(IP)
+            v2=v1*CosAng(IP)+u1*SinAng(IP)
             U_wav(IP,kLev)=u2
             V_wav(IP,kLev)=v2
           END DO
@@ -1119,6 +1163,8 @@
         real(rkind) :: MaxLwave, SumLwave, avgLwave
         real(rkind) :: MaxStokesNorm, SumStokesNorm, avgStokesNorm
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 1'
+        SumNormTau=0
+        MaxNormTau=0
 # endif
         CALL STOKES_STRESS_INTEGRAL_ROMS
         DO IP=1,MNP
@@ -1126,61 +1172,17 @@
           DO kLev=1,Nlevel
             u1=USTOKES_wav(IP,kLev)
             v1=VSTOKES_wav(IP,kLev)
-            u2=u1*COS(ang_rho(IP))+v1*SIN(ang_rho(IP))
-            v2=v1*COS(ang_rho(IP))-u1*SIN(ang_rho(IP))
-            A_wav_rho_3D(idx,kLev)=u2
+            u2=u1*CosAng(IP)+v1*SinAng(IP)
+            v2=v1*CosAng(IP)-u1*SinAng(IP)
+            A_wav_u_3D(kLev,idx)=u2
+            A_wav_v_3D(kLev,idx)=v2
           END DO
-        END DO
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 206, OCNid)
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 208, OCNid)
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 210, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 206, Nlevel, A_wav_rho_3D)
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_u, 208, Nlevel, A_wav_rho_3D)
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_v, 210, Nlevel, A_wav_rho_3D)
-# endif
-        DO IP=1,MNP
-          idx=ReindexPermInv_wav(IP)
-          DO kLev=1,Nlevel
-            u1=USTOKES_wav(IP,kLev)
-            v1=VSTOKES_wav(IP,kLev)
-            u2=u1*COS(ang_rho(IP))+v1*SIN(ang_rho(IP))
-            v2=v1*COS(ang_rho(IP))-u1*SIN(ang_rho(IP))
-            A_wav_rho_3D(idx,kLev)=v2
-          END DO
-        END DO
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 207, OCNid)
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 209, OCNid)
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 211, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 207, Nlevel, A_wav_rho_3D)
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_u, 209, Nlevel, A_wav_rho_3D)
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_v, 211, Nlevel, A_wav_rho_3D)
-# endif
-        DO IP=1,MNP
-          idx=ReindexPermInv_wav(IP)
-          A_wav_rho_3D(idx,1)=J_PRESSURE(IP)
-          A_wav_rho_3D(idx,2)=ZETA_CORR(IP)
-        END DO
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 2047, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 2047, 2, A_wav_rho_3D)
-# endif
-# ifdef DEBUG_WWM
-        SumNormTau=0
-        MaxNormTau=0
-# endif
-        DO IP=1,MNP
-          idx=ReindexPermInv_wav(IP)
           u1=TAUWX(IP)
           v1=TAUWY(IP)
-          u2=u1*COS(ang_rho(IP))+v1*SIN(ang_rho(IP))
-          v2=v1*COS(ang_rho(IP))-u1*SIN(ang_rho(IP))
-          A_wav_rho_3D(idx,1)=u2
-          A_wav_rho_3D(idx,2)=v2
+          u2=u1*CosAng(IP)+v1*SinAng(IP)
+          v2=v1*CosAng(IP)-u1*SinAng(IP)
+          A_wav_u_3D(Nlevel+1,idx)=u2
+          A_wav_v_3D(Nlevel+1,idx)=v2
 # ifdef DEBUG_WWM
           eNorm=SQRT(u2*u2 + v2*v2)
           IF (eNorm.gt.MaxNormTau) THEN
@@ -1195,22 +1197,40 @@
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.1'
 # endif
 # ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 2041, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 206, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 208, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 210, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 207, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 209, OCNid)
+        CALL MPI_INTERP_Dummy_Send(ArrLocal, 211, OCNid)
 # else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_u, 2041, 2, A_wav_rho_3D)
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.2'
-# endif
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 2039, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_v, 2039, 2, A_wav_rho_3D)
+#  ifdef NO_ASYNC
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 206, Nlevel+1, A_wav_u_3D)
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_u, 208, Nlevel+1, A_wav_u_3D)
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_v, 210, Nlevel+1, A_wav_u_3D)
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 207, Nlevel+1, A_wav_v_3D)
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_u, 209, Nlevel+1, A_wav_v_3D)
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_v, 211, Nlevel+1, A_wav_v_3D)
+#  else
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_rho, 206, A_wav_u_3D)
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_u, 208, A_wav_u_3D)
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_v, 210, A_wav_u_3D)
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_rho, 207, A_wav_v_3D)
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_u, 209, A_wav_v_3D)
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_v, 211, A_wav_v_3D)
+#  endif
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.3'
 # endif
 # ifdef DEBUG_WWM
+        MaxHwave=0.0
+        SumHwave=0.0
+        MaxLwave=0.0
+        SumLwave=0.0
+        SumStokesNorm=0
+        MaxStokesNorm=0
+        NbPoint=0.0
         SumUFRICsqr=0
         SumCd=0
         SumWind=0
@@ -1218,11 +1238,10 @@
         SumAlpha=0
         NbAlpha=0
 # endif
-        DO IP=1,MNP
+        DO IP = 1, MNP
           idx=ReindexPermInv_wav(IP)
-          A_wav_rho_3D(idx,1)=UFRIC(IP)
-          A_wav_rho_3D(idx,2)=Z0(IP)
-          A_wav_rho_3D(idx,3)=CD(IP)
+          ACLOC = AC2(IP,:,:)
+          CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
 # ifdef DEBUG_WWM
           SumUFRICsqr=SumUFRICsqr + UFRIC(IP)*UFRIC(IP)
           eMag=SQRT(WINDXY(IP,1)**2 + WINDXY(IP,2)**2)
@@ -1234,44 +1253,6 @@
             SumAlpha=SumAlpha + eAlpha
             NbAlpha=NbAlpha+1
           END IF
-# endif
-        END DO
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.4'
-# endif
-# ifdef DEBUG_WWM
-        AvgUFRICsqr=SumUFRICsqr/MNP
-        AvgStressCd=SumStressCd/MNP
-        AvgAlpha=SumAlpha/NbAlpha
-        AvgWind=SumWind/MNP
-        AvgCd=SumCd/MNP
-        WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'AvgNormFV2=', AvgUFRICsqr
-        WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'AvgCdU2=', AvgStressCd
-        WRITE(DBG%FHNDL,*) 'AvgCd=', AvgCd, ' AvgAlpha=', AvgAlpha
-        WRITE(DBG%FHNDL,*) 'AvgWind=', AvgWind
-# endif
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 1453, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 1453, 3, A_wav_rho_3D)
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.5'
-# endif
-# ifdef DEBUG_WWM
-        MaxHwave=0.0
-        SumHwave=0.0
-        MaxLwave=0.0
-        SumLwave=0.0
-        SumStokesNorm=0
-        MaxStokesNorm=0
-        NbPoint=0.0
-# endif
-        DO IP = 1, MNP
-          idx=ReindexPermInv_wav(IP)
-          ACLOC = AC2(IP,:,:)
-          CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
-# ifdef DEBUG_WWM
           IF (HS.gt.MaxHwave) THEN
             MaxHwave=HS
           ENDIF
@@ -1295,11 +1276,28 @@
           SumStokesNorm=SumStokesNorm + eStokesNorm
           NbPoint=NbPoint + 1
 # endif
-          A_wav_rho_3D(idx,1)=HS
-          A_wav_rho_3D(idx,2)=TM01
-          A_wav_rho_3D(idx,3)=TM02
-          A_wav_rho_3D(idx,4)=KLM
-          A_wav_rho_3D(idx,5)=WLM
+          CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+          CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
+          CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+          A_wav_stat(1, idx)=HS
+          A_wav_stat(2, idx)=TM01
+          A_wav_stat(3, idx)=TM02
+          A_wav_stat(4, idx)=KLM
+          A_wav_stat(5, idx)=WLM
+          A_wav_stat(6, idx)=ORBITAL
+          A_wav_stat(7, idx)=TMBOT
+          A_wav_stat(8, idx)=DISSIPATION(IP)
+          A_wav_stat(9, idx)=QBLOCAL(IP)
+          A_wav_stat(10,idx)=DM
+          A_wav_stat(11,idx)=TPP
+          A_wav_stat(12,idx)=DSPR
+          A_wav_stat(13,idx)=PEAKDSPR
+          A_wav_stat(14,idx)=PEAKDM
+          A_wav_stat(15,idx)=UFRIC(IP)
+          A_wav_stat(16,idx)=Z0(IP)
+          A_wav_stat(17,idx)=CD(IP)
+          A_wav_stat(18,idx)=J_PRESSURE(IP)
+          A_wav_stat(19,idx)=ZETA_CORR(IP)
         END DO
 # ifdef DEBUG_WWM
         avgHwave=SumHwave/NbPoint
@@ -1307,53 +1305,27 @@
         avgStokesNorm=SumStokesNorm/NbPoint
         WRITE(DBG%FHNDL,*) 'WAV, MaxHwave=', MaxHwave, ' avgHwave=', avgHwave
         WRITE(DBG%FHNDL,*) 'WAV, MaxLwave=', MaxLwave, ' avgLwave=', avgLwave
-        WRITE(DBG%FHNDL,*) 'WAV, MaxStokesNorm=', MaxStokesNorm, ' avgStokesNorm=', avgStokesNorm
+        WRITE(DBG%FHNDL,*) 'WAV, MaxStokesNorm=', MaxStokesNorm
+        WRITE(DBG%FHNDL,*) 'WAV, avgStokesNorm=', avgStokesNorm
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 6'
+        AvgUFRICsqr=SumUFRICsqr/MNP
+        AvgStressCd=SumStressCd/MNP
+        AvgAlpha=SumAlpha/NbAlpha
+        AvgWind=SumWind/MNP
+        AvgCd=SumCd/MNP
+        WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'AvgNormFV2=', AvgUFRICsqr
+        WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'AvgCdU2=', AvgStressCd
+        WRITE(DBG%FHNDL,*) 'AvgCd=', AvgCd, ' AvgAlpha=', AvgAlpha
+        WRITE(DBG%FHNDL,*) 'AvgWind=', AvgWind
 # endif
 # ifdef DUMMY_COUPLING
         CALL MPI_INTERP_Dummy_Send(ArrLocal, 212, OCNid)
 # else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 212, 5, A_wav_rho_3D)
-# endif
-
-        DO IP = 1, MNP
-          idx=ReindexPermInv_wav(IP)
-          ACLOC = AC2(IP,:,:)
-          CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
-          A_wav_rho_3D(idx,1)=ORBITAL
-          A_wav_rho_3D(idx,2)=TMBOT
-          A_wav_rho_3D(idx,3)=DISSIPATION(IP)
-          A_wav_rho_3D(idx,4)=QBLOCAL(IP)
-        END DO
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 8'
-# endif
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 213, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 213, 4, A_wav_rho_3D)
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 9'
-# endif
-        DO IP = 1, MNP
-          idx=ReindexPermInv_wav(IP)
-          ACLOC = AC2(IP,:,:)
-          CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
-          CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
-          A_wav_rho_3D(idx,1)=DM
-          A_wav_rho_3D(idx,2)=TPP
-          A_wav_rho_3D(idx,3)=DSPR
-          A_wav_rho_3D(idx,4)=PEAKDSPR
-          A_wav_rho_3D(idx,5)=PEAKDM
-        END DO
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 10'
-# endif
-# ifdef DUMMY_COUPLING
-        CALL MPI_INTERP_Dummy_Send(ArrLocal, 214, OCNid)
-# else
-        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 214, 5, A_wav_rho_3D)
+#  ifdef NO_ASYNC
+        CALL MPI_INTERP_SEND_3D_r8(TheArr_WAVtoOCN_rho, 212, 19, A_wav_stat)
+#  else
+        CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_stat, 212, A_wav_stat)
+#  endif
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 11'

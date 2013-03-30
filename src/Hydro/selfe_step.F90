@@ -27,7 +27,9 @@
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO     !added by YC
       USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
-    &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC
+                              &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
+                              &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
+                              &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S  !added by wangzg
 #endif
 
 #ifdef USE_NAPZD
@@ -3104,20 +3106,28 @@
               v2=sv2(1,isd)
               taux2=(tau(n1,1)+tau(n2,1))/2
               tauy2=(tau(n1,2)+tau(n2,2))/2
+#ifdef USE_WWM
+              tmp1=wwave_force(1,isd,1)
+              tmp2=wwave_force(1,isd,2)
+#endif /*USE_WWM*/
             else !lat/lon; project to eframe
               call project_hvec(sdbt(1,1,isd),sdbt(2,1,isd),sframe(:,:,isd),eframe(:,:,i),sdbtu,sdbtv)
               call project_hvec(su2(1,isd),sv2(1,isd),sframe(:,:,isd),eframe(:,:,i),u2,v2)
               swild10(1:3,1:3)=(pframe(:,:,n1)+pframe(:,:,n2))/2
               call project_hvec((tau(n1,1)+tau(n2,1))/2,(tau(n1,2)+tau(n2,2))/2, &
      &swild10(1:3,1:3),eframe(:,:,i),taux2,tauy2)
+#ifdef USE_WWM
+              call project_hvec(wwave_force(1,isd,1),wwave_force(1,isd,2), &
+     &sframe(:,:,isd),eframe(:,:,i),tmp1,tmp2)
+#endif /*USE_WWM*/
             endif !ics
             hat_gam_x=sdbtu+dt*(-dprdx/rho0+0.69*grav*detpdx)+ &
      &(1-theta2)*cori(isd)*dt*v2-grav*(1-thetai)*dt*detadx+dt*taux2/htot
             hat_gam_y=sdbtv+dt*(-dprdy/rho0+0.69*grav*detpdy)- &
      &(1-theta2)*cori(isd)*dt*u2-grav*(1-thetai)*dt*detady+dt*tauy2/htot
 #ifdef USE_WWM
-            hat_gam_x=hat_gam_x+dt*wwave_force(1,isd,1)
-            hat_gam_y=hat_gam_y+dt*wwave_force(1,isd,2)
+            hat_gam_x=hat_gam_x+dt*tmp1 !wwave_force(1,isd,1)
+            hat_gam_y=hat_gam_y+dt*tmp2 !wwave_force(1,isd,2)
 #endif /*USE_WWM*/
             del=hhat(isd)**2+(theta2*cori(isd)*dt*htot)**2 !delta>0
             !Gamma vector (eframe)
@@ -3153,13 +3163,24 @@
             do j=1,3 !side
               isd=js(i,j)
               do k=kbs(isd)+1,nvrt
-                rs1=rs1+area(i)/3*(zs(k,isd)-zs(k-1,isd))* &
-     &(wwave_force(k,isd,1)+wwave_force(k-1,isd,1))/2
-                rs2=rs2+area(i)/3*(zs(k,isd)-zs(k-1,isd))* &
-     &(wwave_force(k,isd,2)+wwave_force(k-1,isd,2))/2
+                if(ics==1) then
+                  swild(1:2)=wwave_force(k,isd,1:2)
+                  swild(3:4)=wwave_force(k-1,isd,1:2)
+                else !lon/lat; to eframe
+                  call project_hvec(wwave_force(k,isd,1),wwave_force(k,isd,2), &
+     &sframe(:,:,isd),eframe(:,:,i),swild(1),swild(2))
+                  call project_hvec(wwave_force(k-1,isd,1),wwave_force(k-1,isd,2), &
+     &sframe(:,:,isd),eframe(:,:,i),swild(3),swild(4))
+                endif !ics
+                if(k==kbs(isd)+1) swild3(1:2)=swild(1:2) !save the bottom
+
+                rs1=rs1+area(i)/3*(zs(k,isd)-zs(k-1,isd))*(swild(1)+swild(3))/2
+!     &(wwave_force(k,isd,1)+wwave_force(k-1,isd,1))/2
+                rs2=rs2+area(i)/3*(zs(k,isd)-zs(k-1,isd))*(swild(2)+swild(4))/2
+!     &(wwave_force(k,isd,2)+wwave_force(k-1,isd,2))/2
               enddo !k
-              rs1=rs1-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,1)
-              rs2=rs2-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,2)
+              rs1=rs1-dt*chigamma*area(i)/3*swild3(1) !wwave_force(kbs(isd)+1,isd,1)
+              rs2=rs2-dt*chigamma*area(i)/3*swild3(2) !wwave_force(kbs(isd)+1,isd,2)
             enddo !j=1,3
             ghat1(i,1)=ghat1(i,1)+dt*rs1
             ghat1(i,2)=ghat1(i,2)+dt*rs2
@@ -6628,23 +6649,31 @@
               if(flag_model/=1) call parallel_abort('MAIN: strange output (2)')
 !'
               if(j<=indx_out(1,2)) then
+
                 if(j==indx_out(1,1)) then
+                  ! depth.61
                   floatout=dp(i)
                 else if(j<=indx_out(1,1)+ntracers) then
+                  !qbdl_n.62
                   floatout=bedldu(i,j-indx_out(1,1))
+                  floatout2=bedldv(i,j-indx_out(1,1))
                 else if(j<=indx_out(1,1)+2*ntracers) then
-                  floatout=bedldv(i,j-indx_out(1,1)-ntracers)
-                else if(j<=indx_out(1,1)+3*ntracers) then
-                  floatout=bed_fracn(i,j-indx_out(1,1)-2*ntracers)
-                else if(j==indx_out(1,1)+1+3*ntracers) then
+                  !bfrac_n.61
+                  floatout=bed_fracn(i,j-indx_out(1,1)-ntracers)
+                else if(j==indx_out(1,1)+1+2*ntracers) then
+                  !bedd50.61
                   floatout=bed_d50n(i)*1000.d0 ! in mm
-                else if (j==indx_out(1,1)+2+3*ntracers) then
+                else if (j==indx_out(1,1)+2+2*ntracers) then
+                  !bstress.61
                   floatout=bed_taun(i)*rho0 ! in N.m-2
-               else if (j==indx_out(1,1)+3+3*ntracers) then
+               else if (j==indx_out(1,1)+3+2*ntracers) then
+                  !brough.61
                   floatout=bed_rough(i)*1000.d0 ! in mm
-                else if (j==indx_out(1,1)+4+3*ntracers) then
+                else if (j==indx_out(1,1)+4+2*ntracers) then
+                  !brip_h.61
                   floatout=bed_ripphgt(i) ! in m
-                else if (j==indx_out(1,1)+5+3*ntracers) then
+                else if (j==indx_out(1,1)+5+2*ntracers) then
+                  !brip_l.61
                   floatout=bed_ripplen(i) ! in m
                 endif
                 a_4 = transfer(source=floatout,mold=a_4)
@@ -6653,6 +6682,15 @@
 #else
                 write(ichan(j),"(a4)",advance="no") a_4
 #endif
+                if((j>=indx_out(1,1)+1).and.(j<=indx_out(1,1)+ntracers)) then
+                  a_4 = transfer(source=floatout2,mold=a_4)
+#ifdef AVOID_ADV_WRITE
+                  write(ichan(j)) a_4
+#else
+                  write(ichan(j),"(a4)",advance="no") a_4
+#endif
+                endif
+
               endif !scope of SED model
 #endif /*USE_SED*/
 
@@ -7057,7 +7095,25 @@
           write(36,rec=IHOTSTP+20)CPOC(i,1)
           write(36,rec=IHOTSTP+21)CPOC(i,2)
           write(36,rec=IHOTSTP+22)CPOC(i,3)
-          IHOTSTP=IHOTSTP+22
+          write(36,rec=IHOTSTP+23)NH41TM1S(i)
+          write(36,rec=IHOTSTP+24)NO31TM1S(i)
+          write(36,rec=IHOTSTP+25)HS1TM1S(i)
+          write(36,rec=IHOTSTP+26)SI1TM1S(i)
+          write(36,rec=IHOTSTP+27)PO41TM1S(i)
+          write(36,rec=IHOTSTP+28)PON1TM1S(i)
+          write(36,rec=IHOTSTP+29)PON2TM1S(i)
+          write(36,rec=IHOTSTP+30)PON3TM1S(i)
+          write(36,rec=IHOTSTP+31)POC1TM1S(i)
+          write(36,rec=IHOTSTP+32)POC2TM1S(i)
+          write(36,rec=IHOTSTP+33)POC3TM1S(i)
+          write(36,rec=IHOTSTP+34)POP1TM1S(i)
+          write(36,rec=IHOTSTP+35)POP2TM1S(i)
+          write(36,rec=IHOTSTP+36)POP3TM1S(i)
+          write(36,rec=IHOTSTP+37)PSITM1S(i)
+          write(36,rec=IHOTSTP+38)BFORMAXS(i)
+          write(36,rec=IHOTSTP+39)ISWBENS(i)
+          write(36,rec=IHOTSTP+40)DFEEDM1S(i)
+          IHOTSTP=IHOTSTP+40
         enddo !i
 #endif
 

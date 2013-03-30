@@ -99,7 +99,8 @@
       REAL(rkind), PARAMETER, PRIVATE    :: SIGAMX =   40._rkind
       REAL(rkind), PARAMETER, PRIVATE    :: DRAGMX =    1.E-2
 !
-      REAL(rkind), PRIVATE           :: DSIGA, DDRAG, BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
+      REAL(rkind), PRIVATE           :: DSIGA, DDRAG,                   &
+     &            BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
 !/
       LOGICAL, SAVE , PRIVATE :: FIRST = .TRUE.
 !

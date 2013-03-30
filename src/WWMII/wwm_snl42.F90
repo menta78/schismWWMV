@@ -289,9 +289,6 @@
 !
 !        High frequency factor:
 !
-!        MSC2   = INT(MyREAL(MSC)/2.0)
-!        MSC1   = MSC2-1
-!        XIS    = SPSIG(MSC2)/SPSIG(MSC1) has been defined in DATAPOOL
          FACHFR = 1.0 / (XIS**PWTAIL)
 !
 !     *** Prepare auxiliary spectrum               ***
@@ -369,7 +366,6 @@
               DA2C(IS,MDC+ID) = DA2C(IS,ID     )
               DA2P(IS,MDC+ID) = DA2P(IS,ID     )
               DA2M(IS,MDC+ID) = DA2M(IS,ID     )
-
               SA1 (IS,ID0   ) = SA1 (IS,MDC+ID0)
               SA2 (IS,ID0   ) = SA2 (IS,MDC+ID0)
               DA1C(IS,ID0   ) = DA1C(IS,MDC+ID0)
@@ -396,7 +392,6 @@
      &        + AWG6 * ( SA1(I-ISM1,J+IDM ) + SA2(I-ISM1,J-IDM ) )   &
      &        + AWG7 * ( SA1(I-ISM ,J+IDM1) + SA2(I-ISM ,J-IDM1) )   &
      &        + AWG8 * ( SA1(I-ISM ,J+IDM ) + SA2(I-ISM ,J-IDM ) )
-
               DSNL(I,J) =   -2.0 * ( DA1C(I,J) + DA2C(I,J) )        &
      &        + SWG1 * ( DA1P(I-ISP1,J-IDP1) + DA2P(I-ISP1,J+IDP1) )  &
      &        + SWG2 * ( DA1P(I-ISP1,J-IDP ) + DA2P(I-ISP1,J+IDP ) )  &
@@ -406,7 +401,6 @@
      &        + SWG6 * ( DA1M(I-ISM1,J+IDM ) + DA2M(I-ISM1,J-IDM ) )  &
      &        + SWG7 * ( DA1M(I-ISM ,J+IDM1) + DA2M(I-ISM ,J-IDM1) )  &
      &        + SWG8 * ( DA1M(I-ISM ,J+IDM ) + DA2M(I-ISM ,J-IDM ) )
-
               IF (ICOMP .GE. 2) THEN
                 IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
                 IMATDA(I,J) = IMATDA(I,J) - DSNL(I,J) / PI3
@@ -414,7 +408,6 @@
                 IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
                 IMATDA(I,J) = IMATDA(I,J) + DSNL(I,J) / PI3
               END IF
-
            END DO
          END DO
 
