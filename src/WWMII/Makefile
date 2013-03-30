@@ -14,6 +14,8 @@ NETCDF = on
 OPENMP =  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
+# Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
+SNL4_TSA = on
 
 #F90 = gfortran
 F90 = mpif90
@@ -114,12 +116,16 @@ ifdef DARKO
   DARKOFLAG = -DDARKO 
 endif
 
+ifdef SNL4_TSA 
+  SNL4_TSAFLAG = -DSNL4_TSA
+endif
+
 
 MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
 F90FLAGS += ${MPI_INCLUDE}
 
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 

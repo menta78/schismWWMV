@@ -8,7 +8,9 @@
 
          USE DATAPOOL
          USE SdsBabanin
+#ifdef SNL4_TSA
          USE W3SNLXMD
+#endif
 #ifdef ST41
          USE W3SRC4MD_OLD
 #elif ST42
@@ -285,7 +287,9 @@
              ELSE IF (MESNL .EQ. 4) THEN
                CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 5) THEN
+#ifdef SNL4_TSA
                CALL WWMQUAD_WRT (ACLOC,SPSIG,SPDIR,MDC,MSC,DEP(IP),1,XNL,DDIAG,IERR)
+#endif
                WRITE (*,*) 'WRT IP =', IP, 'FERTIG !!!'
                IF (IERR .GT. 0) THEN
                  WRITE (*,*) 'XNL_WRT ERROR', IERR
