@@ -438,7 +438,7 @@
       
        res = one / ((delta(ip, is3, is4, is5))**2) * dtdx(ip,is,is1,is2,id,n1,emf) - (tt(ip,is,is1,is2,n1,emf) / &
      &       ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
-               
+
       end function k
 !**********************************************************************
 !*                                                                    *
@@ -473,8 +473,10 @@
          do is1 = 1, msc
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
-             f2 = ac2(ip,is2,id) 
+             f2 = ac2(ip,is2,id)
+#ifdef BUGGY_CODE
              SUPER = ( tt(ip, is, is1, is2, 0, em) * f1 * f2 + tt(ip, is2, is1, is, 0, em) * f1 * f ) * tt(ip, is, is1, is2, 0, em) * j(ip, is, is1, is2, id) * kron_delta(is,is1+is2)
+#endif
            enddo
          enddo
          SUPER = 8 * SUPER
@@ -482,7 +484,9 @@
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
              f1 = ac2(ip,is2,id)
+#ifdef BUGGY_CODE
              SUB = ( tt(ip, is, is1, is2, 1, em) * f1 * f2 + tt(ip, is1, is, is2, 1, em) * f2 * f ) * tt(ip, is2, is1, is, 0, em) * f1 * f * tt(ip, is, is1, is2, 1, em) * j(ip, is2, is, is1, id) * kron_delta(is2,is+is2)
+#endif
            enddo
          enddo
          SUB = 16 * SUB
@@ -510,7 +514,9 @@
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
              f2 = ac2(ip,is2,id)
+#ifdef BUGGY_CODE
              SUPER = ( tt(ip, is, is1, is2, 0, em) * f1 * f2 + tt(ip, is2, is1, is, 0, em) * f1 * f ) * tt(ip, is, is1, is2, 0, em) * j(ip, is, is1, is2, id) * kron_delta(is,is1+is2)
+#endif
            enddo
          enddo
          SUPER = 8 * SUPER
@@ -518,7 +524,9 @@
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
              f1 = ac2(ip,is2,id)
+#ifdef BUGGY_CODE
              SUB = ( tt(ip, is, is1, is2, 1, em) * f1 * f2 + tt(ip, is1, is, is2, 1, em) * f2 * f ) * tt(ip, is2, is1, is, 0, em) * f1 * f * tt(ip, is, is1, is2, 1, em) * j(ip, is2, is, is1, id) * kron_delta(is2,is+is2)
+#endif
            enddo
          enddo
          SUB = 16 * SUB

@@ -117,6 +117,7 @@
          LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
 
          INTEGER                   :: IP
+         LOGICAL                   :: DoAirSea
 #ifdef MPI_PARALL_GRID
          REAL(rkind)               :: OUTT_GLOBAL(NP_GLOBAL,OUTVARS)
          REAL(rkind)               :: OUTT(NP_GLOBAL,OUTVARS)
@@ -145,7 +146,7 @@
          CHARACTER(LEN=15)  :: CTIME
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
- 
+         DoAirSea=.TRUE.
 #ifdef MPI_PARALL_GRID
         OUTT_GLOBAL = 0.
         OUTT        = 0.
@@ -209,7 +210,9 @@
              OPEN(OUT%FHNDL+5, FILE  = 'erguvd.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+6, FILE  = 'ergufric.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+7, FILE  = 'ergtau.bin'  , FORM = 'UNFORMATTED')
-             OPEN(OUT%FHNDL+8, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
+             IF (DoAirSea) THEN
+               OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
+             END IF
            END IF
            WRITE(OUT%FHNDL+1)  TIME_4
            WRITE(OUT%FHNDL+1)  (OUTT_GLOBAL_4(IP,7), OUTT_GLOBAL_4(IP,8), OUTT_GLOBAL_4(IP,1)  , IP = 1, NP_GLOBAL)
@@ -232,13 +235,16 @@
            WRITE(OUT%FHNDL+7)  TIME_4
            WRITE(OUT%FHNDL+7)  (WIND_GLOBAL_4(IP,4), WIND_GLOBAL_4(IP,5), WIND_GLOBAL_4(IP,6)  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+7)
-           DO IP = 1, MNP
-             IF (WIND_GLOBAL_4(IP,8) .lt. thr8) then
-               cycle
-             ELSE
-               WRITE(OUT%FHNDL+8,'(10F15.6)') WIND_GLOBAL_4(IP,:)
-             ENDIF
-           ENDDO
+           IF (DoAirSea) THEN
+             DO IP = 1, NP_GLOBAL
+               IF (WIND_GLOBAL_4(IP,8) .lt. thr8) then
+                 cycle
+               ELSE
+                 WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
+               ENDIF
+             ENDDO
+             CALL FLUSH(OUT%FHNDL+9)
+           END IF
          END IF
 #else
          TIME_4 = SNGL(TIME)
@@ -278,35 +284,46 @@
            OPEN(OUT%FHNDL+6, FILE  = 'ergshallow.bin'  , FORM = 'UNFORMATTED')
            OPEN(OUT%FHNDL+7, FILE  = 'ergufric.bin'  , FORM = 'UNFORMATTED')
            OPEN(OUT%FHNDL+8, FILE  = 'ergtau.bin'  , FORM = 'UNFORMATTED')
-           OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
+           IF (DoAirSea) THEN
+             OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
+           END IF
          END IF
          WRITE(OUT%FHNDL+1)  TIME_4
          WRITE(OUT%FHNDL+1)  (OUTT_4(IP,7), OUTT_4(IP,8), OUTT_4(IP,1), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+1)
          WRITE(OUT%FHNDL+2)  TIME_4
          WRITE(OUT%FHNDL+2)  (CURR_4(IP,1), CURR_4(IP,2), SNGL(DEP(IP)), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+2)
          WRITE(OUT%FHNDL+3)  TIME_4
          WRITE(OUT%FHNDL+3)  (OUTT_4(IP,7), OUTT_4(IP,8), OUTT_4(IP,10), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+3)
          WRITE(OUT%FHNDL+4)  TIME_4
          WRITE(OUT%FHNDL+4)  (UFRIC(IP), Z0(IP), ALPHA_CH(IP), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+4)
          WRITE(OUT%FHNDL+5)  TIME_4
          WRITE(OUT%FHNDL+5)  (OUTT_4(IP,1), OUTT_4(IP,2), OUTT_4(IP,3), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+5)
          WRITE(OUT%FHNDL+6)  TIME_4
          WRITE(OUT%FHNDL+6)  (OUTT_4(IP,1), OUTT_4(IP,2), REAL(ISHALLOW(IP)), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+6)
          WRITE(OUT%FHNDL+7)  TIME_4
          WRITE(OUT%FHNDL+7)  (WIND_4(IP,8), WIND_4(IP,9), WIND_4(IP,8), IP = 1, MNP)
+         CALL FLUSH(OUT%FHNDL+7)
          WRITE(OUT%FHNDL+8)  TIME_4
          WRITE(OUT%FHNDL+8)  (WIND_4(IP,4), WIND_4(IP,5), WIND_4(IP,6), IP = 1, MNP)
-         DO IP = 1, MNP
-           IF (WIND_4(IP,8) .lt. thr8) then
-             cycle 
-           ELSE
-             WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
-           ENDIF
-         ENDDO
+         CALL FLUSH(OUT%FHNDL+8)
+         IF (DoAirSea) THEN
+           DO IP = 1, MNP
+             IF (WIND_4(IP,8) .lt. thr8) then
+               cycle 
+             ELSE
+               WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
+             ENDIF
+           ENDDO
+           CALL FLUSH(OUT%FHNDL+9)
+         END IF
 !$OMP END MASTER
 #endif
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

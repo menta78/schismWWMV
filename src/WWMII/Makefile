@@ -5,13 +5,13 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on 
+MPI = 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on 
+PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on 
+NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = 
+OPENMP =  on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 
@@ -35,9 +35,9 @@ F90 = mpif90
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
+#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#F90OPTI = -g -traceback -O2 -axSSE4.2 -unroll-aggressive -assume byterecl 
+F90OPTI = -g -traceback -O2 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp
@@ -71,7 +71,7 @@ F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-chec
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
-OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o wwm_snl4_tsa.o \
+OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \

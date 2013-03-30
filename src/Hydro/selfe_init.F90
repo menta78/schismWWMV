@@ -32,7 +32,9 @@
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO     !added by YC
       USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
-    &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC
+                              &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
+                              &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
+                              &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S  !added YC 
 #endif
 
 #ifdef USE_NAPZD
@@ -501,9 +503,9 @@
       noutput=26+ntracers !all Hydro and generic tracers outputs
 #ifdef USE_SED
       ! depth, d50, taub, bedforms heigth, bedforms length, z0,
-      !  bedldu(ntracers), bedldv(ntracers),bedfrac(ntracers)
-      noutput=noutput+6+3*ntracers
-      indx_out(1,1)=noutput-(5+3*ntracers)
+      !  qbdl(ntracers),bedfrac(ntracers)
+      noutput=noutput+6+2*ntracers
+      indx_out(1,1)=noutput-(5+2*ntracers)
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_SED2D
@@ -610,37 +612,42 @@
       outfile(indx2+1)='depth.61'
       variable_nm(indx2+1)='depth in m'
       variable_dim(indx2+1)='2D scalar'
+
       do i=1,ntracers
          write(ifile_char,'(i03)')i
          ifile_char=adjustl(ifile_char)
          ifile_len=len_trim(ifile_char)
-         outfile(indx2+1+i)='bedlu_'//ifile_char(1:ifile_len)//'.61'
-         variable_nm(indx2+1+i)='Bedlu #'//trim(ifile_char)
-         variable_dim(indx2+1+i)='2D scalar'
-         outfile(indx2+1+ntracers+i)='bedlv_'//ifile_char(1:ifile_len)//'.61'
-!'
-         variable_nm(indx2+1+ntracers+i)='Bedlv #'//trim(ifile_char)
+
+         outfile(indx2+1+i)='qbdl_'//ifile_char(1:ifile_len)//'.62'
+         variable_nm(indx2+1+i)='Bedload #'//trim(ifile_char)
+         variable_dim(indx2+1+i)='2D vector'
+
+         outfile(indx2+1+ntracers+i)='bfrac_'//ifile_char(1:ifile_len)//'.61'
+         variable_nm(indx2+1+ntracers+i)='Bedfr #'//trim(ifile_char)
          variable_dim(indx2+1+ntracers+i)='2D scalar'
-         outfile(indx2+1+2*ntracers+i)='bfrac_'//ifile_char(1:ifile_len)//'.61'
-         variable_nm(indx2+1+2*ntracers+i)='Bedfr #'//trim(ifile_char)
-         variable_dim(indx2+1+2*ntracers+i)='2D scalar'
       enddo !i
-      outfile(indx2+2+3*ntracers)='bedd50.61'
-      variable_nm(indx2+2+3*ntracers)='median grain size (mm)'
-      variable_dim(indx2+2+3*ntracers)='2D scalar'
-      outfile(indx2+3+3*ntracers)='bstress.61'
-      variable_nm(indx2+3+3*ntracers)='bottom shear stress (N.m-2)'
-      variable_dim(indx2+3+3*ntracers)='2D scalar'
-      outfile(indx2+4+3*ntracers)='brough.61'
-      variable_nm(indx2+4+3*ntracers)='bottom roughness lenght z0 (mm)'
-      variable_dim(indx2+4+3*ntracers)='2D scalar'
-      outfile(indx2+5+3*ntracers)='brip_h.61'
-      variable_nm(indx2+5+3*ntracers)='bed ripples height (m)'
-      variable_dim(indx2+5+3*ntracers)='2D scalar'
-      outfile(indx2+6+3*ntracers)='brip_l.61'
-      variable_nm(indx2+6+3*ntracers)='bed ripples lenght (m)'
-      variable_dim(indx2+6+3*ntracers)='2D scalar'
-      indx2=indx2+6+3*ntracers
+
+      outfile(indx2+2+2*ntracers)='bedd50.61'
+      variable_nm(indx2+2+2*ntracers)='median grain size (mm)'
+      variable_dim(indx2+2+2*ntracers)='2D scalar'
+
+      outfile(indx2+3+2*ntracers)='bstress.61'
+      variable_nm(indx2+3+2*ntracers)='bottom shear stress (N.m-2)'
+      variable_dim(indx2+3+2*ntracers)='2D scalar'
+
+      outfile(indx2+4+2*ntracers)='brough.61'
+      variable_nm(indx2+4+2*ntracers)='bottom roughness lenght z0 (mm)'
+      variable_dim(indx2+4+2*ntracers)='2D scalar'
+
+      outfile(indx2+5+2*ntracers)='brip_h.61'
+      variable_nm(indx2+5+2*ntracers)='bed ripples height (m)'
+      variable_dim(indx2+5+2*ntracers)='2D scalar'
+
+      outfile(indx2+6+2*ntracers)='brip_l.61'
+      variable_nm(indx2+6+2*ntracers)='bed ripples lenght (m)'
+      variable_dim(indx2+6+2*ntracers)='2D scalar'
+
+      indx2=indx2+6+2*ntracers
 #endif /*USE_SED*/
 
 #ifdef USE_SED2D
@@ -999,7 +1006,7 @@
 !     1: full coupled (elevation, vel, and wind are all passed to WWM);
 !     2: 1-way coupling: only R.S. from WWM feedback to SELFE
       call get_param('param.in','icou_elfe_wwm',1,icou_elfe_wwm,tmp,stringvalue)
-      if(icou_elfe_wwm<0.or.icou_elfe_wwm>4) then
+      if(icou_elfe_wwm<0.or.icou_elfe_wwm>7) then
         write(errmsg,*)'Wrong coupling flag:',icou_elfe_wwm
         call parallel_abort(errmsg)
       endif
@@ -4383,7 +4390,7 @@
 
 #ifdef USE_ICM
         do i=1,ne_global       
-          read(36) iegb,swild3(1:22)
+          read(36) iegb,swild3(1:40)
           if(iegl(iegb)%rank==myrank) then
             ie=iegl(iegb)%id
             sed_BENDO(ie)=swild3(1)
@@ -4408,8 +4415,26 @@
             CPOC(ie,1)=swild3(20)
             CPOC(ie,2)=swild3(21)
             CPOC(ie,3)=swild3(22)
+            NH41TM1S(ie)=swild3(23)
+            NO31TM1S(ie)=swild3(24)
+            HS1TM1S(ie)=swild3(25)
+            SI1TM1S(ie)=swild3(26)
+            PO41TM1S(ie)=swild3(27)
+            PON1TM1S(ie)=swild3(28)
+            PON2TM1S(ie)=swild3(29)
+            PON3TM1S(ie)=swild3(30)
+            POC1TM1S(ie)=swild3(31)
+            POC2TM1S(ie)=swild3(32)
+            POC3TM1S(ie)=swild3(33)
+            POP1TM1S(ie)=swild3(34)
+            POP2TM1S(ie)=swild3(35)
+            POP3TM1S(ie)=swild3(36)
+            PSITM1S(ie)=swild3(37)
+            BFORMAXS(ie)=swild3(38)
+            ISWBENS(ie)=swild3(39)
+            DFEEDM1S(ie)=swild3(40)
 
-            !write(12,*)'ICM:',iegb,swild3(1:22)
+            !write(12,*)'ICM:',iegb,swild3(1:40)
           endif
         enddo !i
 #endif
@@ -4691,7 +4716,7 @@
             endif
           enddo
 
-          surf_time1=time
+          surf_time1=int(time/npstiminc)*npstiminc  !added by wangzg
           surf_time2=surf_time1+86400.
         
         endif ! iSun=2
