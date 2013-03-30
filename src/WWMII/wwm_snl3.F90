@@ -277,7 +277,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      function tt(ip, is, is1, is2, n1, emf) result(res)
+      function w(ip, is, is1, is2, n1, emf) result(res)
       use datapool, only : rkind, wk, cg, spsig, g9, one
       implicit none
      
@@ -285,12 +285,12 @@
       real(rkind)                :: res !return
 
 !!! mapping var.
-      real(rkind)                :: omega_a  
-      real(rkind)                :: omega_b 
-      real(rkind)                :: omega_c 
-      real(rkind)                :: cg_a  
-      real(rkind)                :: cg_b  
-      real(rkind)                :: cg_c  
+      real(rkind)                :: omegaa  
+      real(rkind)                :: omegab 
+      real(rkind)                :: omegac 
+      real(rkind)                :: cga  
+      real(rkind)                :: cgb  
+      real(rkind)                :: cgc  
       real(rkind)                :: ka  
       real(rkind)                :: kb  
       real(rkind)                :: kc 
@@ -302,25 +302,27 @@
 !       em=0 without eldeberky & madsen
 !       em=1 with eldeberky & madsen
 
-        omega_a = spsig(is)
-        omega_b = spsig(is)
-        omega_c = spsig(is)
+        omegaa = spsig(is)
+        omegab = spsig(is)
+        omegac = spsig(is)
 
-        cg_a    = cg(ip,is)
-        cg_c    = cg(ip,is1)
-        cg_b    = cg(ip,is2)
+        cga    = cg(ip,is)
+        cgc    = cg(ip,is1)
+        cgb    = cg(ip,is2)
 
         ka      = wk(ip,is)
         kb      = wk(ip,is1)
         kc      = wk(ip,is2)
 
-        res =  (g9 * omega_a) / (8 * omega_b * omega_c * sqrt(cg_a * cg_b *cg_c))  *  &        
-     &         ( (-one)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc +  & 
-     &         ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omega_b * omega_c)**2 / g9**2) + & 
-     &         ( kb**2 * omega_c / omega_a) + ( (-1)**n1 * kc**2 * omega_b / omega_a) + ( (-one)**(n1+1) * &
-     &         ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omega_a**2 * omega_b * omega_c) / g9**2) ) )
+!AR: reduce the +- stuff ...
+!
+        res =  (g9 * omegaa) / (8 * sqrt(cga * cgb *cgc))  *  &        
+     &         ( (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc +  & 
+     &         ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2) + & 
+     &         ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa) + ( (-1)**(n1+1) * & 
+     &         ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) ) )
         
-      end function tt       
+      end function w
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -351,7 +353,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      function dtdx(ip, is, is1, is2, id, n1, switch) result(res)
+      function dwdx(ip, is, is1, is2, id, n1, switch) result(res)
       use datapool, only : rkind, wk, cg, spsig, g9, one, costh, sinth, dcgdx, dcgdy, dwkdx, dwkdy, one, two, three
       implicit none
      
@@ -360,71 +362,48 @@
 
       integer                    :: switch
 
-      real(rkind)                :: omega_a 
-      real(rkind)                :: omega_b 
-      real(rkind)                :: omega_c 
-      real(rkind)                :: cg_a 
-      real(rkind)                :: cg_b 
-      real(rkind)                :: cg_c 
-      real(rkind)                :: cg_a_1abl 
-      real(rkind)                :: cg_b_1abl
-      real(rkind)                :: cg_c_1abl
+      real(rkind)                :: omegaa 
+      real(rkind)                :: omegab 
+      real(rkind)                :: omegac 
+      real(rkind)                :: cga 
+      real(rkind)                :: cgb 
+      real(rkind)                :: cgc 
+      real(rkind)                :: cga_
+      real(rkind)                :: cgb_
+      real(rkind)                :: cgc_
       real(rkind)                :: ka 
       real(rkind)                :: kb 
       real(rkind)                :: kc 
-      real(rkind)                :: ka_1abl 
-      real(rkind)                :: kb_1abl 
-      real(rkind)                :: kc_1abl 
+      real(rkind)                :: ka_ 
+      real(rkind)                :: kb_ 
+      real(rkind)                :: kc_ 
 
-        omega_a = spsig(is)
-        omega_b = spsig(is)
-        omega_c = spsig(is)
+        omegaa = spsig(is)
+        omegab = spsig(is)
+        omegac = spsig(is)
 
-        cg_a    = cg(ip,is)
-        cg_c    = cg(ip,is1)
-        cg_b    = cg(ip,is2)
+        cga    = cg(ip,is)
+        cgc    = cg(ip,is1)
+        cgb    = cg(ip,is2)
 
         ka      = wk(ip,is)
         kb      = wk(ip,is1)
         kc      = wk(ip,is2)
 
-        cg_a_1abl = costh(id) * dcgdx(ip,is) + sinth(id) * dcgdy(ip,is) 
-        cg_b_1abl = costh(id) * dcgdx(ip,is1) + sinth(id) * dcgdy(ip,is1)
-        cg_c_1abl = costh(id) * dcgdx(ip,is2) + sinth(id) * dcgdy(ip,is2)
+        cga_ = costh(id) * dcgdx(ip,is) + sinth(id) * dcgdy(ip,is) 
+        cgb_ = costh(id) * dcgdx(ip,is1) + sinth(id) * dcgdy(ip,is1)
+        cgc_ = costh(id) * dcgdx(ip,is2) + sinth(id) * dcgdy(ip,is2)
 
-        ka_1abl = costh(id) * dwkdx(ip,is) + sinth(id) * dwkdy(ip,is)
-        kb_1abl = costh(id) * dwkdx(ip,is1) + sinth(id) * dwkdy(ip,is1)
-        kc_1abl = costh(id) * dwkdx(ip,is2) + sinth(id) * dwkdy(ip,is2)
+        ka_ = costh(id) * dwkdx(ip,is) + sinth(id) * dwkdy(ip,is)
+        kb_ = costh(id) * dwkdx(ip,is1) + sinth(id) * dwkdy(ip,is1)
+        kc_ = costh(id) * dwkdx(ip,is2) + sinth(id) * dwkdy(ip,is2)
 
       
-      if(switch == 0) then
-        
-        res = ( g9 * omega_a * ( - ( - ((-1)**n1 * omega_a**2 * omega_b * omega_c / g9**2) + & 
-     &    (omega_b**2 * omega_c**2 / g9**2) + 2 * (-1)**n1 * kb * kc + (omega_c * kb**2 + (-one)**n1 * omega_b * kc**2 / omega_a) ) *  &
-     &    (cg_a * cg_c * cg_b_1abl + cg_b * ( cg_c * cg_a_1abl + cg_a * cg_c_1abl )) +     &
-     &    (one/omega_a) * 4 * cg_a * cg_b * cg_c * ( omega_c * kb * ka_1abl + (-1)**n1 * ( omega_b * kc * kc_1abl +   &
-     &     omega_a * ( kc * kb_1abl + kb * kc_1abl ) ) ) ) ) / (16 * omega_b * omega_c * (cg_a * cg_b * cg_c)**(three/two) )
-      
-      else if(switch == 1) then
-        
-        res = ( g9 * omega_a * ( - (     (omega_c * kb**2 / omega_a)  - one/(g9**2) * &
-     &    ((-one)**n1) * omega_a * omega_b * omega_c * ( omega_a - 2 * cg_a * ( ka - (-one)**n1 * kb - kc ) ) +   &
-     &     ( omega_b**2 * omega_c**2 * ( 1 - (2 * cg_a * (ka - (-one)**n1 * kb - kc)) / omega_a ) / g9**2 ) +   &
-     &     (-1)**n1 * kb * ( 2 - (2 * cg_a * (ka - (-one)**n1 * kb - kc))/omega_a ) * kc + ( (-one)**n1 * omega_b * kc**2 / omega_a) ) *   &
-     &     ( cg_a * cg_c * cg_b_1abl + cg_b * ( cg_c * cg_a_1abl + cg_a * cg_c_1abl ) ) + 2 * cg_a * &
-     &     cg_b * cg_c * ( 2 * omega_c * kb * kb_1abl / omega_a + (-1)**n1 * ( 2 - 2 * cg_a * (ka - (-1)**n1 * kb - kc)/omega_a ) *   &
-     &     kc * kb_1abl + (one/((g9**2)*omega_a)) * 2 * omega_b**2 * omega_c**2 * ( - ( ka - (-one)**n1 * kb - kc) * cg_a_1abl -  &
-     &     cg_a * ( ka_1abl - (-1)**n1 * kb_1abl - kc_1abl) ) + (one/omega_a) * 2 * (-one)**n1 * kb * kc *   &
-     &     ( - ( ka - (-one)**n1 * kb - kc ) * cg_a_1abl - cg_a * ( ka_1abl - (-one)**n1 * kb_1abl - kc_1abl ) ) +   &
-     &     (-one)**n1 * kb * ( 2 - 2 * cg_a * (ka - (-1)**n1 * kb - kc)/omega_a ) * kc_1abl +   &
-     &     2 * (-one)**n1 * omega_b * kc * kc_1abl / omega_a - one/(g9**2) * 2 * (-one)**n1 * omega_a * omega_b * omega_c  * &
-     &     ( - ka * cg_a_1abl + (-1)**n1 * kb * cg_a_1abl + kc * cg_a_1abl - cg_a * ka_1abl +   &
-     &     (-1)**n1 * cg_a * kb_1abl + cg_a * kc_1abl) ) ) ) / ( 16 * omega_b * omega_c * ( cg_a * cg_b * cg_c )**(three/two) ) 
-      else
-        stop 'wrong switch - function dtdx'
-      end if
-        
-      end function dtdx        
+        res = (g9*((4*Cga*Cgb*Cgc*((-1)**n1*((kb_*kc + kb*kc_)*omegaa +kc*kc_*omegab) +kb*kb_*omegac))/&
+               omegaa -(Cga*Cgb_*Cgc +Cgb*(Cga_*Cgc + Cga*Cgc_))*(2*(-1)**n1*kb*kc -((-1)**n1*omegaa**2*omegab*omegac)/g9**2+&
+              (omegab**2*omegac**2)/g9**2 +((-1)**n1*kc**2*omegab +kb**2*omegac)/omegaa)))/(16.*(Cga*Cgb*Cgc)**1.5)
+
+      end function dwdx        
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -434,10 +413,9 @@
 
       integer, intent(in)        :: ip, is, is1, is2, is3, is4, is5, id, n1, emf
       real(rkind)                :: res ! return
-      real(rkind)                :: delta, dtdx, tt, ddelta_dx
+      real(rkind)                :: delta, dwdx, w, ddelta_dx
       
-       res = one / ((delta(ip, is3, is4, is5))**2) * dtdx(ip,is,is1,is2,id,n1,emf) - (tt(ip,is,is1,is2,n1,emf) / &
-     &       ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
+       res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
 
       end function k
 !**********************************************************************
@@ -458,79 +436,49 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     subroutine snl3sd(ip,snl3)
-     use datapool, only : rkind, msc, mdc, ac2
-     implicit none 
-
-     real(rkind), intent(out) :: snl3(msc,mdc)
-     integer, intent(in)      :: ip
-     integer :: is, is1, is2, id, em, kron_delta
-     real(rkind) :: SUPER, SUB, f, f1, f2, tt, j
-
-     do id = 1, mdc   
-       do is = 1, msc
-         f = ac2(ip,is,id)
-         do is1 = 1, msc
-           f1 = ac2(ip,is1,id)
-           do is2 = 1, msc
-             f2 = ac2(ip,is2,id)
-#ifdef BUGGY_CODE
-             SUPER = ( tt(ip, is, is1, is2, 0, em) * f1 * f2 + tt(ip, is2, is1, is, 0, em) * f1 * f ) * tt(ip, is, is1, is2, 0, em) * j(ip, is, is1, is2, id) * kron_delta(is,is1+is2)
-#endif
-           enddo
-         enddo
-         SUPER = 8 * SUPER
-         do is1 = 1, msc
-           f1 = ac2(ip,is1,id)
-           do is2 = 1, msc
-             f1 = ac2(ip,is2,id)
-#ifdef BUGGY_CODE
-             SUB = ( tt(ip, is, is1, is2, 1, em) * f1 * f2 + tt(ip, is1, is, is2, 1, em) * f2 * f ) * tt(ip, is2, is1, is, 0, em) * f1 * f * tt(ip, is, is1, is2, 1, em) * j(ip, is2, is, is1, id) * kron_delta(is2,is+is2)
-#endif
-           enddo
-         enddo
-         SUB = 16 * SUB
-         snl3(is,id) = SUB + SUPER
-       enddo ! all freq. 
-     enddo ! all directions 
-
-     end subroutine snl3sd
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-     subroutine snl3ta(ip,snl3)
-     use datapool, only : rkind, msc, mdc, ac2
+     subroutine snl3ta(ip,snl3,dsnl3)
+     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir
      implicit none
 
-     real(rkind), intent(out) :: snl3(msc,mdc)
+     real(rkind), intent(out) :: snl3(msc,mdc), dsnl3(msc,mdc)
      integer, intent(in)      :: ip
      integer :: is, is1, is2, id, em, kron_delta
-     real(rkind) :: SUPER, SUB, f, f1, f2, tt, j
+     real(rkind) :: SUPER, SUB, f, f1, f2, tt, j, SUPERD, SUBD, k, w, JAC
+
+
 
      do id = 1, mdc
+       snl3(:,id) = zero
+       dsnl3(:,id) = zero
+       SUPER = ZERO; SUPERD = ZERO
+       SUB   = ZERO; SUBD = ZERO
        do is = 1, msc
-         f = ac2(ip,is,id)
+         f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir)* cg(ip,is)
          do is1 = 1, msc
-           f1 = ac2(ip,is1,id)
+           f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
            do is2 = 1, msc
-             f2 = ac2(ip,is2,id)
-#ifdef BUGGY_CODE
-             SUPER = ( tt(ip, is, is1, is2, 0, em) * f1 * f2 + tt(ip, is2, is1, is, 0, em) * f1 * f ) * tt(ip, is, is1, is2, 0, em) * j(ip, is, is1, is2, id) * kron_delta(is,is1+is2)
-#endif
+             f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
+             SUPER = SUPER + ( k(ip, is, is1, is2, id, is, is1, is2, 0, 0) * f1 * f2 + k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 * f &
+     &                       + k(ip, is2, is1, is, id, is, is1, is2, 1, 0) * f2 * f ) * w(ip, is, is1, is2, 0, 0) * kron_delta(is,is1+is2)
+             SUPERD = SUPERD +  ( k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 + &
+     &                            k(ip, is2, is1, is, id, is, is1, is2, 1, 0) * f2 ) * w(ip, is, is1, is2, 0, 0) * kron_delta(is,is1+is2) 
            enddo
          enddo
-         SUPER = 8 * SUPER
+         SUPER = 4 * SUPER
          do is1 = 1, msc
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
              f1 = ac2(ip,is2,id)
-#ifdef BUGGY_CODE
-             SUB = ( tt(ip, is, is1, is2, 1, em) * f1 * f2 + tt(ip, is1, is, is2, 1, em) * f2 * f ) * tt(ip, is2, is1, is, 0, em) * f1 * f * tt(ip, is, is1, is2, 1, em) * j(ip, is2, is, is1, id) * kron_delta(is2,is+is2)
-#endif
+             SUB = SUB + ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2 + k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
+      &                    k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
+             SUBD = SUBD + ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2 + k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
+      &                      k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
            enddo
          enddo
-         SUB = 16 * SUB
-         snl3(is,id) = SUB + SUPER
+         SUB = 8 * SUB
+         JAC = 1./(SPSIG(IS)*DDIR*FRINTF)
+         snl3(is,id) = (SUB + SUPER) * JAC
+         dsnl3(is,id) = (SUB + SUPER) 
        enddo ! all freq. 
      enddo ! all directions 
 
