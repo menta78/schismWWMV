@@ -5,13 +5,13 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = 
+MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = 
+PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP =  on
+OPENMP =  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 
@@ -86,7 +86,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
 
 ifdef NETCDF
   all: $(NETC) $(PROG)
-  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
   FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)
