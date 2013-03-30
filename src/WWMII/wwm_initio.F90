@@ -796,7 +796,12 @@
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
          USE DATAPOOL
+         USE M_CONSTANTS
+         USE M_XNLDATA
+         USE M_FILEIO
+
          IMPLICIT NONE
+         INTEGER IQGRID, INODE, IERR
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
          CALL GRADDEP
@@ -808,7 +813,20 @@
          CALL MAKE_WAVE_TABLE
          CALL WAVE_K_C_CG
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
-         IF (MESNL .GT. 0) CALL PARAMETER4SNL
+         IF (MESNL .LT. 4) THEN
+           CALL PARAMETER4SNL
+         ELSE IF (MESNL .EQ. 5) THEN
+           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+           CALL INIT_CONSTANTS()
+           IQGRID = 3
+           INODE  = 1
+           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+           WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
+           IF (IERR .GT. 0) THEN
+             WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
+             STOP
+           END IF
+         ENDIF
          WRITE(STAT%FHNDL,*) 'SNL4'
          !IF (MESTR .GT. 0) CALL INIT_TRIADSWAN
          !WRITE(STAT%FHNDL,*) 'SNL3'

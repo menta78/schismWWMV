@@ -2141,6 +2141,9 @@ real, allocatable :: z_ad(:),z_sig(:)  ! directions and radian frequencies of gr
 integer ierr,iuerr                     ! error variables
 !------------------------------------------------------------------------------
 !
+z_depth = 0.
+s_depth = 0.
+q_depth_saved = 0.
 call q_stack('+q_ctrgrid')
 !
 !  echo input arguments
@@ -5021,6 +5024,7 @@ select case(iq_locus)
   dk0   = dk0/2                         ! reduce initial step
   dk    = dk0
   iend  = 0
+  dke   = 0.
 !
   if(iq_test>=2) write(luq_tst,'(a,3f12.6)') 'Q_POLAR2: loclen dsz dk:',loclen,dsz,dk
 !

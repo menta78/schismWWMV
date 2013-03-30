@@ -1607,8 +1607,8 @@
 !!
 !!        Bash; use fbi() & diag2()
 !!        Convert Polar fbi(k,theta) to Cartesian S(theta,k)
-!b        S(iang,irng) = fbi(irng,iang) * wka(irng)   !* <=============
-!b        D(iang,irng) = diag2(irng,iang)
+!          S(iang,irng) = fbi(irng,iang) * wka(irng)   !* <=============
+!          D(iang,irng) = diag2(irng,iang)
 !!        --------------------------------
 !!
   51    continue

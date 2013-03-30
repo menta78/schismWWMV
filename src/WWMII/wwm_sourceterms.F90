@@ -49,7 +49,7 @@
          REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), EAD, SUMACLOC, IMATRAT(MSC,MDC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
-         REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC)
+         REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
 
          LOGICAL        :: LWINDSEA(MSC,MDC)
          REAL(rkind)    :: XLCKS(MDC,MSC)
@@ -287,9 +287,11 @@
              ELSE IF (MESNL .EQ. 4) THEN
                CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 5) THEN
-#ifdef SNL4_TSA
-               CALL WWMQUAD_WRT (ACLOC,SPSIG,SPDIR,MDC,MSC,DEP(IP),1,XNL,DDIAG,IERR)
-#endif
+               ACLOC_WRT = REAL(ACLOC)
+               SPSIG_WRT = REAL(SPSIG)
+               SPDIR_WRT = REAL(SPDIR)
+               DEP_WRT   = DEP(IP)
+               CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR)
                WRITE (*,*) 'WRT IP =', IP, 'FERTIG !!!'
                IF (IERR .GT. 0) THEN
                  WRITE (*,*) 'XNL_WRT ERROR', IERR
@@ -308,7 +310,9 @@
                WK_TSA = WK(IP,:)
                DEP_TSA = DEP(IP)
                NZZ = (MSC*(MSC+1))/2
+#ifdef SNL4_TSA
                CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA)
+#endif
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IP,IS)

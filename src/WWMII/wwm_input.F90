@@ -1369,7 +1369,7 @@
              call wwm_abort('CHECK NUMS - MESTR OUT OF RANGE')
            END IF
 
-           IF (MESNL .GT. 2) THEN
+           IF (MESNL .GT. 6) THEN
              call wwm_abort('CHECK NUMS - MESNL OUT OF RANGE')
            END IF
 
