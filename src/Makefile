@@ -560,7 +560,7 @@ ifeq ($(ENV),ARON)
 #  FLDFLAGS += -openmp 
   #####Libraries
   MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis
-  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x
+  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff # for netcdf4.x.x
   CDFMOD  = -I$(NETCDF_INCDIR)
   ifdef USE_GOTM
     GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules

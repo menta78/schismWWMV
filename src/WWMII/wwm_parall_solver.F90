@@ -1264,7 +1264,7 @@ MODULE WWM_PARALL_SOLVER
       integer, intent(in) :: siz
       real(rkind), intent(in) :: eField(MNP, siz)
       integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank, IP, iSiz
+      integer I, iRank, IP, iSiz, istat
       real(rkind) :: MaxErr, eDiff
       real(rkind), allocatable :: TheRecv(:,:), p2d_data_send(:,:), eFieldC(:,:)
       integer nbDiff
@@ -1356,7 +1356,7 @@ MODULE WWM_PARALL_SOLVER
       integer, intent(in) :: siz
       real(rkind), intent(in) :: eField(MNP, siz)
       integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank, IP, iSiz
+      integer I, iRank, IP, iSiz, istat
       real(rkind) :: MaxErr, eDiff
       real(rkind), allocatable :: TheRecv(:,:), p2d_data_send(:,:), eFieldC(:,:)
       integer nbDiff
