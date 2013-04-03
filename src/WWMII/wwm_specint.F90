@@ -20,66 +20,70 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
          DO IP = 1, MNP 
-           IF (ABS(IOBP(IP)) .NE. 1 .OR. IOBP(IP) .NE. 3) THEN
+           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-                 CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
-                 CALL INT_IP_DYN(IP, 4, 0.001_rkind, 10, ACLOC, NIT_SNL3)
-                 !IF (NIT_SNL3 .Gt. 1) WRITE(*,*) NIT_SNL3
-                 CALL INT_IP_STAT(IP,20,LLIMT,ACLOC)
-                 !CALL RKS_SP3(IP,20,DT4S,LLIMT,ACLOC)
+!                 CALL INT_IP_STAT(IP,20,LLIMT,ACLOC)
+!                 write(*,*) 'calling routine shit aa', ip, iobp(ip)
+                 CALL INT_IP_DYN(IP, 10, .TRUE., 0.001_rkind, NDYNITER_SNL3, ACLOC, NIT_SNL3)
+!                 CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
                  CALL RKS_SP3(IP,10,DT4S,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 4) THEN
-                 CALL INT_IP_DYN(IP, 10, DTMIN_DYN,NDYNITER, ACLOC, NIT_ALL)
+                 CALL INT_IP_DYN(IP, 10, LLIMT, DTMIN_DYN,NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                 CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                 CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                 CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                 CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
+                 CALL INT_IP_DYN(IP, 1, LLIMT, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                 CALL INT_IP_DYN(IP, 2, LLIMT, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                 CALL INT_IP_DYN(IP, 3, LLIMT, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                 CALL INT_IP_DYN(IP, 4, LLIMT, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                 CALL INT_IP_DYN(IP, 5, LLIMT, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                 CALL INT_IP_DYN(IP, 6, LLIMT, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
                AC2(IP,:,:) = ACLOC
                CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE., MSC_HF) ! Update everything based on the new spectrum ...
-               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                 CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+               ENDIF
                AC2(IP,:,:) = ACLOC
              ENDIF
-           ELSE ! Boundary node ... 
+           ELSE !Boundary node ... 
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+!                 write(*,*) 'calling routine shit bb', ip, iobp(ip)
                  ACLOC  = AC2(IP,:,:)
                  IF (SMETHOD == 1) THEN
-                   CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
-                   CALL INT_IP_DYN(IP, 4, 0.001_rkind, 10, ACLOC, NIT_SNL3)
-                   !IF (NIT_SNL3 .Gt. 1) WRITE(*,*) NIT_SNL3
                    CALL INT_IP_STAT(IP,20,LLIMT,ACLOC)
-                   !CALL RKS_SP3(IP,20,DT4S,LLIMT,ACLOC)
+                   CALL INT_IP_DYN(IP, 4, .FALSE., 0.001_rkind, NDYNITER_SNL3, ACLOC, NIT_SNL3)
+                   CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
                  ELSE IF (SMETHOD == 2) THEN
                    CALL INT_IP_STAT(IP,10,LLIMT,ACLOC)
                  ELSE IF (SMETHOD == 3) THEN
                    CALL RKS_SP3(IP,10,DT4S,LLIMT,ACLOC)
                  ELSE IF (SMETHOD == 4) THEN
-                   CALL INT_IP_DYN(IP, 10, DTMIN_DYN,NDYNITER, ACLOC, NIT_ALL)
+                   CALL INT_IP_DYN(IP, 10, LLIMT, DTMIN_DYN,NDYNITER, ACLOC, NIT_ALL)
                  ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-                   CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                   CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                   CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                   CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                   CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                   CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
+                   CALL INT_IP_DYN(IP, 1, LLIMT, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                   CALL INT_IP_DYN(IP, 2, LLIMT, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                   CALL INT_IP_DYN(IP, 3, LLIMT, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                   CALL INT_IP_DYN(IP, 4, LLIMT, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                   CALL INT_IP_DYN(IP, 5, LLIMT, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                   CALL INT_IP_DYN(IP, 6, LLIMT, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                  END IF
                  AC2(IP,:,:) = ACLOC
                  CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE., MSC_HF) ! Update everything based on the new spectrum ...
-                 IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
-                 AC2(IP,:,:) = ACLOC
+                 IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                   CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+                   AC2(IP,:,:) = ACLOC
+                 END IF
                ENDIF
              ELSE
-               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
-               AC2(IP,:,:) = ACLOC
+               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                 CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+                 AC2(IP,:,:) = ACLOC
+               ENDIF
              ENDIF 
            ENDIF
            !IF (IOBP(IP) .EQ. -1) AC2(IP,:,:) = ZERO
@@ -117,16 +121,16 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
-           MSC_HF = MSC
-           IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .EQ. 1) CYCLE
-           IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .EQ. 0) THEN
-             ACLOC = AC2(IP,:,:)
-             CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.,MSC_HF) 
-             IMATDAA(IP,:,:) = IMATDA
-             IMATRAA(IP,:,:) = IMATRA
-           END IF
+           IF ((ABS(IOBP(IP)) .NE. 1 .OR. IOBP(IP) .NE. 3) .AND. LSOUBOUND) THEN
+             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+               MSC_HF = MSC
+               ACLOC = AC2(IP,:,:)
+               CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA,.FALSE.,MSC_HF) 
+               IMATDAA(IP,:,:) = IMATDA
+               IMATRAA(IP,:,:) = IMATRA
+             END IF !
+           ENDIF
          END DO
-
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif
@@ -165,15 +169,19 @@
 
          CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE., MSC_HF)  ! 1. CALL
 
+!         if (SUM(ACLOC) .NE. SUM(ACLOC)) STOP 'NAN l. 174 wwm_specint.F90'
+
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
              OLDAC  = ACLOC(IS,ID)
-             NEWDAC = IMATRA(IS,ID) * DT4S / ( 1.0 - DT4S * MIN(0._rkind,IMATDA(IS,ID))) 
+             NEWDAC = IMATRA(IS,ID) * DT4S / ( 1.0 - DT4S * MIN(ZERO,IMATDA(IS,ID))) 
              IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
              ACLOC(IS,ID) = MAX( 0.0_rkind, OLDAC + NEWDAC ) 
            END DO
          END DO
+
+!         write(*,'(A10,2I10,L10,I10,2F15.6)') 'after', ip, iobp(ip), limiter, iselect, sum(acloc), sum(imatra)
 
          RETURN
       END SUBROUTINE
@@ -261,7 +269,7 @@
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(2._rkind*SPSIG*WK(IP,:)**3.0_rkind*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**THREE*CG(IP,:))
            ELSE IF (MELIM == 2) THEN
              NPF = LIMFAK*ABS((CONST*(MAX(UFRIC(IP),G9*SND/SPSIG)))/(SPSIG**3*WK(IP,:)))
            END IF
@@ -274,15 +282,9 @@
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DTSII / ( 1.0 - DTSII * MIN(0._rkind,IMATDA(IS,ID)) )
-             IF (LIMITER) THEN
-!               IF (NEWDAC > THR) THEN
-                 NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!               ELSE
-!                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!               END IF
-             END IF
-             ACLOC(IS,ID) = MAX( 0.0_rkind, ACLOC(IS,ID) + NEWDAC )
+             NEWDAC = IMATRA(IS,ID) * DTSII / ( ONE - DTSII * MIN(0._rkind,IMATDA(IS,ID)) )
+             IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
+             ACLOC(IS,ID) = MAX( ZERO, ACLOC(IS,ID) + NEWDAC )
            END DO
          END DO
 
@@ -293,15 +295,9 @@
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DTSII / ( 1.0 - DTSII * MIN(0._rkind,IMATDA(IS,ID)) )
-             IF (LIMITER) THEN
-!               IF (NEWDAC > THR) THEN
-                 NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!               ELSE
-!                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!               END IF
-             END IF
-             ACLOC(IS,ID) = MAX( 0._rkind, 0.75_rkind * ACOLD(IS,ID) +  0.25_rkind * ACLOC(IS,ID) + 0.25_rkind * NEWDAC)
+             NEWDAC = IMATRA(IS,ID) * DTSII / ( ONE - DTSII * MIN(ZERO,IMATDA(IS,ID)) )
+             IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC) 
+             ACLOC(IS,ID) = MAX( ZERO, 0.75_rkind * ACOLD(IS,ID) +  0.25_rkind * ACLOC(IS,ID) + 0.25_rkind * NEWDAC)
            END DO
          END DO
 
@@ -312,15 +308,9 @@
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DTSII / ( 1.0 - DTSII * MIN(0._rkind,IMATDA(IS,ID)) )
-             IF (LIMITER) THEN
-!               IF (NEWDAC > THR) THEN
-                 NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!               ELSE
-!                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!               END IF
-             END IF
-             ACLOC(IS,ID) = MAX( 0._rkind, 1._rkind/3._rkind * ACOLD(IS,ID) + 2._rkind/3._rkind * ACLOC(IS,ID) + 2._rkind/3._rkind * NEWDAC)
+             NEWDAC = IMATRA(IS,ID) * DTSII / ( 1.0 - DTSII * MIN(ZERO,IMATDA(IS,ID)) )
+             IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
+             ACLOC(IS,ID) = MAX( ZERO, ONE/THREE * ACOLD(IS,ID) + TWO/THREE * ACLOC(IS,ID) + TWO/THREE * NEWDAC)
            END DO
          END DO
 
@@ -330,13 +320,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_DYN(IP, ISELECT, DTMIN, ITRMX, ACLOC, ITER)
+      SUBROUTINE INT_IP_DYN(IP, ISELECT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP, ISELECT, ITRMX
          INTEGER, INTENT(OUT)       :: ITER
+         LOGICAL,INTENT(IN)          :: LIMIT
          REAL(rkind), INTENT(IN)    :: DTMIN
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
@@ -364,7 +355,6 @@
 
          DTTOT = 0.
          ITER  = 0
-         MSC_HF = MSC
 
          DO WHILE ( DTTOT < DT4S )
 
@@ -376,8 +366,6 @@
 
            CALL SOURCETERMS(IP, ISELECT,ACLOC, IMATRA, IMATDA, .FALSE., MSC_HF)  ! 1. CALL
         
-           IF (ABS(SUM(IMATRA)) .LT. THR) EXIT
-
            !DO IS = 1, MSC
            !  IF (SPSIG(IS) .GT. SIGHF) THEN
            !    MSC_HF = IS
@@ -394,7 +382,7 @@
            END DO
 
            DT4SI  = DTMAX
-           DT4SI  = MAX(DTMIN,DT4SI)
+           DT4SI  = MAX(DTMIN,DT4SI) ! This is not entirely stable !!!
            DTLEFT = DT4S - DTTOT
 
            IF ( DTLEFT > THR .AND. DTLEFT < DT4SI) THEN
@@ -411,7 +399,7 @@
            ELSE
              LSTABLE = .FALSE.
            END IF
-          
+
            IF (LSTABLE) THEN
              DO IS = 1, MSC_HF
                DO ID = 1, MDC
@@ -439,13 +427,7 @@
                MAXDAC = NPF(IS)
                DO ID = 1, MDC
                  NEWDAC = IMATRA(IS,ID) * DT4SI / ( 1.0 - DT4SI * MIN(0._rkind,IMATDA(IS,ID)) )
-                 IF (LLIMT) THEN
-!                   IF (NEWDAC > THR) THEN
-                     NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!                   ELSE
-!                     IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!                   END IF
-                 END IF
+                 IF (LIMIT) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
                  ACLOC(IS,ID) = MAX( 0.0_rkind, ACLOC(IS,ID) + NEWDAC )
                END DO
              END DO
@@ -454,13 +436,7 @@
                MAXDAC = NPF(IS)
                DO ID = 1, MDC
                  NEWDAC = IMATRA(IS,ID) * DT4SI / ( 1.0 - DT4SI * MIN(0._rkind,IMATDA(IS,ID)) )
-                 IF (LLIMT) THEN
-!                   IF (NEWDAC > THR) THEN
-                     NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!                   ELSE
-!                     IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!                   END IF
-                 END IF
+                 IF (LIMIT) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
                  ACLOC(IS,ID) = MAX( 0._rkind, 3./4. * ACOLD(IS,ID) +  1./4. * ACLOC(IS,ID) + 1./4. * NEWDAC)
                END DO
              END DO
@@ -469,13 +445,7 @@
                MAXDAC = NPF(IS)
                DO ID = 1, MDC
                  NEWDAC = IMATRA(IS,ID) * DT4SI / ( 1.0 - DT4SI * MIN(0._rkind,IMATDA(IS,ID)) )
-                 IF (LLIMT) THEN
-!                   IF (NEWDAC > THR) THEN
-                     NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!                   ELSE
-!                     IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!                   END IF
-                 END IF
+                 IF (LIMIT) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
                  ACLOC(IS,ID) = MAX( 0._rkind, 1./3. * ACOLD(IS,ID) +  2./3. * ACLOC(IS,ID) + 2./3. * NEWDAC)
                END DO
              END DO

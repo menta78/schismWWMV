@@ -1525,8 +1525,8 @@
          IPAR(4) = 200*MNP  !
          IPAR(5) = 15
          IPAR(6) = 1000    ! use at most 1000 matvec's
-         FPAR(1) = 1.0E-10  ! relative tolerance 1.0E-6
-         FPAR(2) = 1.0E-12  ! absolute tolerance 1.0E-10
+         FPAR(1) = 1.0E-16  ! relative tolerance 1.0E-6
+         FPAR(2) = 1.0E-20  ! absolute tolerance 1.0E-10
          FPAR(11) = 0.0_rkind    ! clearing the FLOPS counter
 
          AU    = 0.

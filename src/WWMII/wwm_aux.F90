@@ -430,9 +430,11 @@
            DEPLOC = MAX(DMIN,DEP(IP))
            DO IS = 1, MSC
              SPSIGLOC = SPSIG(IS)
-             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+!             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
              WK(IP,IS) = WVK
              CG(IP,IS) = WVCG
+             WC(IP,IS) = WVC
            END DO
          END DO
       END SUBROUTINE

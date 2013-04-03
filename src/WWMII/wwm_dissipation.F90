@@ -403,57 +403,58 @@
           BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )
           BETA2 = BETA**2
         ELSE
-          BETA = 0._rkind
-          BETA2 = 0._rkind
+          BETA = ZERO 
+          BETA2 = ZERO 
         END IF
 
         IF (BETA <= 0.5_RKIND) THEN
-           QQ = 0.0_RKIND
-        ELSE IF (BETA <= 1.0_rkind) THEN
-           QQ = (2.0_RKIND*BETA-1.0_RKIND)**2
+           QQ = ZERO 
+        ELSE IF (BETA <= ONE) THEN
+           QQ = (TWO*BETA-ONE)**2
         END IF
 !
 ! 2.b. Iterate to obtain actual breaking fraction
 !
         IF ( BETA .LE. 0.2_rkind ) THEN
-          QB     = 0._rkind
-        ELSE IF ( BETA .LT. 1._rkind ) THEN
+          QB     = ZERO 
+        ELSE IF ( BETA .LT. ONE ) THEN
           ARG    = EXP  (( QQ - 1. ) / BETA2 )
           QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
           DO IS = 1, 3
             QB     = EXP((QB-1.)/BETA2)
           END DO
         ELSE
-          QB = 1.0 - 10.E-10 
+          QB = ONE - 10.E-10 
         END IF
 
         QBLOCAL(IP) = QB
 
-        !WRITE(*,'(7F15.4)') HMAX, BB, QB, KME, LPP, KPP, HS
+        !WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
 
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
           SURFA0 = 0.
           SURFA1 = 0.
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-            IF ( BETA2 .LT. 1._rkind - 10.E-10) THEN
+            IF ( BETA2 .LT. ONE - 10.E-10) THEN
               WS  = ( ALPBJ / PI) *  QB * SME / BETA2
-              SbrD = WS * (1._rkind - QB) / (BETA2 - QB)
+              SbrD = WS * (ONE - QB) / (BETA2 - QB)
             ELSE
               WS  =  (ALPBJ/PI)*SME !( PSURF(1) / PI) * SMEBRK
-              SbrD = 0._rkind
+              SbrD = ZERO 
             END IF
             SURFA0 = SbrD
             SURFA1 = WS + SbrD
           ELSE
-            SURFA0 = 0._rkind
-            SURFA1 = 0._rkind
+            SURFA0 = ZERO 
+            SURFA1 = ZERO 
           END IF
         ELSE       ! not linearized ... 
-          IF ( BETA2 .GT. 10.E-10  .AND. ABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-            IF ( BETA2 .LT. 1._rkind ) THEN
-              SURFA0  = - ALPBJ * QB * SME/PI / BETA2
+          IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+            IF ( BETA2 .LT. ONE - 10.E-10) THEN
+              SURFA0  = - ALPBJ * QB * SME / PI / BETA2
+              !write(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
             ELSE
-              SURFA0  = - ALPBJ * SME/PI !/ ETOT
+              SURFA0  = - ALPBJ * SME / PI !/ ETOT
             END IF
           ELSE
             SURFA0 = 0.
@@ -468,8 +469,9 @@
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
             ELSE IF (ICOMP .LT. 2 ) THEN
               IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
-              SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+              SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
+!              if (surfa0 .lt. zero) write(*,*) is, id, SURFA0
             END IF
           END DO
         END DO 

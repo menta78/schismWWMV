@@ -396,6 +396,7 @@
 
          REAL(rkind), ALLOCATABLE      :: WK(:,:), DWKDX(:,:), DWKDY(:,:)
          REAL(rkind), ALLOCATABLE      :: CG(:,:), DCGDX(:,:), DCGDY(:,:)
+         REAL(rkind), ALLOCATABLE      :: WC(:,:)
 
 #ifdef SELFE
 !         REAL(rkind), ALLOCATABLE    :: CGX(:,:,:)

@@ -14,7 +14,7 @@
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 
 !         IF (ICOMP .GT. 1) AC1 = AC2 ! This is also changes just for shit ...
-!         WRITE(*,*) 'AFTER FREQ', SUM(AC2)
+!         WRITE(*,*) 'BEFORE EVERYTHING', SUM(AC2)
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
 
@@ -37,30 +37,34 @@
          CALL CPU_TIME(TIME2)
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+
+!         WRITE(*,*) 'AFTER FREQ.', SUM(AC2)
   
          CALL CPU_TIME(TIME3)
 
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
+!         WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
+
          CALL CPU_TIME(TIME4)
 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
-         CALL CPU_TIME(TIME6)
-
-!         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-
-!         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+!         WRITE(*,*) 'AFTER SPATIAL', SUM(AC2)
 
          CALL CPU_TIME(TIME5)
 
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
+!         WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
-         CALL CPU_TIME(TIME7)
+         CALL CPU_TIME(TIME6)
 
-         !WRITE(*,*) 'AFTER BRK LIM', SUM(AC2)
+!         WRITE(*,*) 'AFTER BRK. LIM', SUM(AC2)
+
+         CALL CPU_TIME(TIME6)
 
 #ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
@@ -78,9 +82,9 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
      &   'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU MICHE LIMITER                ', TIME7-TIME6
+     &   'CPU MICHE LIMITER                ', TIME6-TIME5
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU TIMINGS TOTAL TIME           ', TIME7-TIME1
+     &   'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
      &   '-------------TIMINGS-------------'
 #ifdef MPI_PARALL_GRID
@@ -190,25 +194,15 @@
 !       Three level splitting to reduce splitting errors when using implicit-explicit schemes
 
          DT4A = MAIN%DELT
-         DT4S = DT4A*0.5
-         DT4D = DT4A*0.5 
-         DT4F = DT4A*0.5
+         DT4S = DT4A
+         DT4D = DT4A 
+         DT4F = DT4A
 
          AC1  = AC2
 
          CALL CPU_TIME(TIME1)
          CALL COMPUTE_DIFFRACTION
          CALL CPU_TIME(TIME2)
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-         CALL CPU_TIME(TIME3)
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
-         CALL CPU_TIME(TIME4)
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-         CALL CPU_TIME(TIME5)
-         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-         CALL CPU_TIME(TIME6)
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
          CALL CPU_TIME(TIME7)
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP

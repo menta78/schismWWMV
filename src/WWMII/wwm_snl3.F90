@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine triadswan (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine triadswan_new (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
 !
       use datapool
       implicit none
@@ -17,107 +17,121 @@
 
       real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0
       real(rkind)    em,ft, rint, sigpi, sinbph, stri, wism, wism1 , fac1
-      real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell
+      real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell,facres,facscl,siglow
       
       real(rkind), allocatable :: e(:), sa(:,:)
 
-      ptriad(1)  = 0.05_rkind    ! swan settings 40.51
-      ptriad(2)  = 2.5_rkind     ! frequency range for triad = trira * smebrk = ismax
-      ptriad(3)  = 10._rkind     ! not used
-      ptriad(4)  = 0.2_rkind     ! parameterized biphase
-      ptriad(5)  = 0.01_rkind    ! ursell lower limit
+      IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
+      IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
+      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
 
-      if (trico .gt. 0.)   ptriad(1) = trico
-      if (trira  .gt. 0.)  ptriad(2) = trira
-      if (triurs .gt. 0.)  ptriad(5) = triurs
+      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
-      call ursell_number(hs,smespc,dep(ip),ursell)
+!      write(*,*) '---- calling snl3 -----', ip, iobp(ip)
 
-      if (ursell .lt. ptriad(5)) return
+      IJ2    = INT (FLOAT(MSC) / 2.)
+      IJ1    = IJ2 - 1
+      FAC1   = SPSIG(IJ2) / SPSIG(IJ1)
+      IRES   = NINT ( LOG10( 2.) / LOG10( FAC1 ) )
+      FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
 
-      !write(*,'(5f15.6)') dep(ip), smespc, ursell, ptriad(5)
+      IF (ABS(FACSCL-2.).GT.0.05) THEN
+         FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
+         SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
+         WRITE (*,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
+      END IF
 
-      dep_2 = dep(ip)**2
-      dep_3 = dep(ip)**3
-      i2     = int (float(msc) / two)
-      i1     = i2 - 1
-      xis    = spsig(i2) / spsig(i1)
-      xisln  = log( xis )
-      isp    = int( log(two) / xisln )
-      isp1   = isp + 1
-      wisp   = (two - xis**isp) / (xis**isp1 - xis**isp)
-      wisp1  = one - wisp
-      ism    = int( log(0.5_rkind) / xisln )
-      ism1   = ism - 1
-      wism   = (xis**ism -0.5_rkind) / (xis**ism - xis**ism1)
-      wism1  = 1. - wism
+      DEP_2 = DEP(IP)**2
+      DEP_3 = DEP(IP)**3
+      I2     = INT (FLOAT(MSC) / 2.)
+      I1     = I2 - 1
+      XIS    = SPSIG(I2) / SPSIG(I1)
+      XISLN  = LOG( XIS )
+      ISP    = INT( LOG(2.) / XISLN )
+      ISP1   = ISP + 1
+      WISP   = (2. - XIS**ISP) / (XIS**ISP1 - XIS**ISP)
+      WISP1  = 1. - WISP
+      ISM    = INT( LOG(0.5) / XISLN )
+      ISM1   = ISM - 1
+      WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
+      WISM1  = 1. - WISM
 
-      allocate (e (1:msc))
-      allocate (sa(1:msc+isp1,1:mdc))
-      e  = zero 
-      sa = zero 
+!      write(*,*) DEP_2, DEP_3
+!      write(*,*) I1, I2, XIS, XISLN
+!      write(*,*) ISM, ISM1
+!      write(*,*) wism, wism1
+!      write(*,*) ISP, ISP1
+!      write(*,*) wisp, wisp1
 
-      ismax = 1
-      do is = 1, msc
-       if ( spsig(is) .lt. ( ptriad(2) * smespc) ) then
-          ismax = is
-        endif
-      enddo
-!
-!      ismax = max( 1, min( msc, max ( ismax , isp1 ) ) ) ! added fix the bug described below ...
-      ismax = max ( ismax , isp1 ) 
-!
-        biph   = (0.5_rkind*pi)*(tanh(ptriad(4)/ursell)-1.)
-        sinbph = abs( sin(biph) )
-        do id = 1, mdc
-           do is = 1, msc
-              e(is) = acloc(is,id) * pi2 * spsig(is)
-           end do
-           do is = 1, ismax 
-              e0  = e(is)
-              w0  = spsig(is)
-              wn0 = wk(ip,is)
-              c0  = w0 / wn0
-              if ( is.gt.-ism1 ) then
-                 em  = wism * e(is+ism1)      + wism1 * e(is+ism)
-                 wm  = wism * spsig(is+ism1)  + wism1 * spsig(is+ism)
-                 wnm = wism * wk(ip,is+ism1)  + wism1 * wk(ip,is+ism)
-                 cm  = wm / wnm
-              else
-                 em  = zero 
-                 wm  = zero 
-                 wnm = zero 
-                 cm  = zero 
-              end if
-              aux1 = wnm**2 * ( g9 * dep(ip) + two*cm**2 )
-              aux2 = wn0 * dep(ip) * ( g9 * dep(ip) + (two/15._rkind) * g9 * dep_3 * wn0**2 -(two/five) * w0**2 * dep_2 )
-              rint = aux1 / aux2
-              ft = ptriad(1) * c0 * cg(ip,is) * rint**2 * sinbph
-              sa(is,id) = max(zero, ft * ( em * em - two * em * e0 ))
-           end do
-        end do
+      ALLOCATE (E (1:MSC))
+      ALLOCATE (SA(1:MSC+ISP1,1:MDC))
+      E  = 0.
+      SA = 0.
 
-        do is = 1, msc
-           sigpi = spsig(is) * pi2
-           do id = 1, mdc
-             if (acloc(is,id) .gt. verysmall) then
-               stri = sa(is,id) - 2.*(wisp  * sa(is+isp1,id) + wisp1 * sa(is+isp,id))
-               if (abs(stri) .gt. 0.) then
-                 if (icomp .ge. 2) then
-                   if (stri .gt. 0.) then
-                     imatra(is,id) = imatra(is,id) + stri / sigpi
-                   else
-                     imatda(is,id) = imatda(is,id) - stri / (acloc(is,id)*sigpi)
-                   end if
-                 else
-                   imatra(is,id) = imatra(is,id) + stri / sigpi
-                   imatda(is,id) = imatda(is,id) + stri / (acloc(is,id)*sigpi)
-                 end if
-                 ssnl3(is,id) = stri/sigpi
-               end if
-            end if
-          end do
-        end do
+      ISMAX = 1
+      DO IS = 1, MSC
+       IF ( SPSIG(IS) .LT. ( PTRIAD(2) * SMESPC) ) THEN
+          ISMAX = IS
+        ENDIF
+      ENDDO
+!      ISMAX = MIN( MSC, MAX ( ISMAX , ISP1 ) ) ! added fix the bug described below ...
+      ISMAX = MAX ( ISMAX , ISP1 )
+
+      IF ( URSELL .GE. PTRIAD(5) ) THEN
+
+        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        SINBPH = ABS( SIN(BIPH) )
+
+        !write(*,*) ip, biph, sinbph
+
+        DO ID = 1, MDC
+           E = ACLOC(:,ID) * PI2 * SPSIG
+           DO IS = 1, ISMAX ! this is the latest swan version and has bug in this loop since IS runs out of allocation range in E because it is greater the MSC
+              E0  = E(IS)
+              W0  = SPSIG(IS)
+              WN0 = WK(IP,IS)
+              C0  = W0 / WN0
+              IF ( IS.GT.-ISM1 ) THEN
+                 EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
+                 WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
+                 WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
+                 CM  = WM / WNM
+              ELSE
+                 EM  = 0.
+                 WM  = 0.
+                 WNM = 0.
+                 CM  = 0.
+              END IF
+              AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
+              AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 -(2./ 5.) * W0**2 * DEP_2 )
+              RINT = AUX1 / AUX2
+              FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
+              SA(IS,ID) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
+!              WRITE(*,*) IS, ID, WK(IP,IS), ISMAX, MSC
+           END DO
+        END DO
+
+        DO IS = 1, MSC
+           SIGPI = SPSIG(IS) * PI2
+           DO ID = 1, MDC
+              STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
+              IF (ABS(STRI) .LT. THR) CYCLE
+!              WRITE(*,*) STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
+              IF (ICOMP .GE. 2) THEN
+                IF (STRI .GT. 0.) THEN
+                  IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+                ELSE
+                  IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
+                END IF
+              ELSE
+                IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+                !IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+              END IF
+          END DO
+        END DO
+        ssnl3 = imatra
+
+      END IF
 
       deallocate(e,sa)
 
@@ -253,6 +267,8 @@
       real(rkind)                :: res !return
 
         res = wk(ip,is) - wk(ip,is1) - wk(ip,is2)
+
+!        write(*,*) 'delta', res 
         
       end function delta
 !**********************************************************************
@@ -272,6 +288,8 @@
         kc_1abl = costh(id) * dwkdx(ip,is2) + sinth(id) * dwkdy(ip,is2)
       
         res = ka_1abl - kb_1abl - kc_1abl
+
+!        write(*,*) 'ddelta_dx', res
         
       end function ddelta_dx
 !**********************************************************************
@@ -297,6 +315,8 @@
 !!! function declaration
       real(rkind)                :: tau
       
+      real(rkind)                :: a,b,c,d, e
+      
 !       n1=0 means +
 !       n1=1 means -
 !       em=0 without eldeberky & madsen
@@ -316,11 +336,19 @@
 
 !AR: reduce the +- stuff ...
 !
-        res =  (g9 * omegaa) / (8 * sqrt(cga * cgb *cgc))  *  &        
+        res =  one / (8 * sqrt(cga * cgb *cgc))  *  &        
      &         ( (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc +  & 
      &         ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2) + & 
      &         ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa) + ( (-1)**(n1+1) * & 
-     &         ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) ) )
+     &         ( (-1)**(n1+1) * ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) ) ) )
+
+!        a  = one / (8 * sqrt(cga * cgb *cgc))
+!        b  = (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc
+!        c  = ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2)
+!        d  = ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa)  
+!        e  = ( (-1)**(n1+1) * ( (-1)**(n1+1) * ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) )) 
+
+!        write(*,'(A20,7F15.10)') 'w    ', res, tau(ip, is, is1, is2,n1), a, b, c, d, e
         
       end function w
 !**********************************************************************
@@ -333,7 +361,7 @@
       integer, intent(in)        :: ip, is, is1, is2, n1
       real(rkind)                :: res !return
 
-      real(rkind)                :: cg_a 
+      real(rkind)                :: cga 
       real(rkind)                :: ka  
       real(rkind)                :: kb  
       real(rkind)                :: kc  
@@ -341,14 +369,16 @@
 
         omega_a = spsig(is)
 
-        cg_a    = cg(ip,is)
+        cga    = cg(ip,is)
 
         ka      = wk(ip,is)
         kb      = wk(ip,is1)
         kc      = wk(ip,is2)
       
-        res = 2 * cg_a * ( ka + (-1)**(n1+1) * kb - kc ) / omega_a
-            
+        res = 2 * cga * ( ka + (-1)**(n1+1) * kb - kc ) / omega_a
+
+!        write(*,*) 'tau', res 
+
       end function tau
 !**********************************************************************
 !*                                                                    *
@@ -399,9 +429,11 @@
         kc_ = costh(id) * dwkdx(ip,is2) + sinth(id) * dwkdy(ip,is2)
 
       
-        res = (g9*((4*Cga*Cgb*Cgc*((-1)**n1*((kb_*kc + kb*kc_)*omegaa +kc*kc_*omegab) +kb*kb_*omegac))/&
+        res = (((4*Cga*Cgb*Cgc*((-1)**n1*((kb_*kc + kb*kc_)*omegaa +kc*kc_*omegab) +kb*kb_*omegac))/&
                omegaa -(Cga*Cgb_*Cgc +Cgb*(Cga_*Cgc + Cga*Cgc_))*(2*(-1)**n1*kb*kc -((-1)**n1*omegaa**2*omegab*omegac)/g9**2+&
               (omegab**2*omegac**2)/g9**2 +((-1)**n1*kc**2*omegab +kb**2*omegac)/omegaa)))/(16.*(Cga*Cgb*Cgc)**1.5)
+
+         !write(*,*) 'dwdx', res 
 
       end function dwdx        
 !**********************************************************************
@@ -417,6 +449,8 @@
       
        res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
 
+       !write(*,*) 'k', res
+
       end function k
 !**********************************************************************
 !*                                                                    *
@@ -431,6 +465,8 @@
       real(rkind)                :: delta, ddelta_dx
            
         res = - ( one / (delta(ip, is, is1, is2)**3)  ) * ddelta_dx(ip, is, is1, is2, id)
+
+        !write(*,*) 'j', res 
         
       end function j
 !**********************************************************************
@@ -445,21 +481,21 @@
      integer :: is, is1, is2, id, em, kron_delta
      real(rkind) :: SUPER, SUB, f, f1, f2, tt, j, SUPERD, SUBD, k, w, JAC
 
-
-
      do id = 1, mdc
        snl3(:,id) = zero
        dsnl3(:,id) = zero
-       SUPER = ZERO; SUPERD = ZERO
-       SUB   = ZERO; SUBD = ZERO
+#ifdef SNL3_DOUBLE
        do is = 1, msc
+         SUPER = ZERO; SUPERD = ZERO
+         SUB   = ZERO; SUBD = ZERO
          f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir)* cg(ip,is)
          do is1 = 1, msc
            f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
            do is2 = 1, msc
              f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
-             SUPER = SUPER + ( k(ip, is, is1, is2, id, is, is1, is2, 0, 0) * f1 * f2 + k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 * f &
-     &                       + k(ip, is2, is1, is, id, is, is1, is2, 1, 0) * f2 * f ) * w(ip, is, is1, is2, 0, 0) * kron_delta(is,is1+is2)
+             SUPER =   SUPER +  ( k(ip, is, is1, is2, id, is, is1, is2, 0, 0) * f1 * f2 &
+     &                       +    k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 * f &
+     &                       +    k(ip, is2, is1, is, id, is, is1, is2, 1, 0) * f2 * f ) * w(ip, is, is1, is2, 0, 0) * kron_delta(is,is1+is2)
              SUPERD = SUPERD +  ( k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 + &
      &                            k(ip, is2, is1, is, id, is, is1, is2, 1, 0) * f2 ) * w(ip, is, is1, is2, 0, 0) * kron_delta(is,is1+is2) 
            enddo
@@ -469,18 +505,60 @@
            f1 = ac2(ip,is1,id)
            do is2 = 1, msc
              f1 = ac2(ip,is2,id)
-             SUB = SUB + ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2 + k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
-      &                    k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
-             SUBD = SUBD + ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2 + k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
-      &                      k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
+             SUB = SUB +   ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2  +  k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
+      &                      k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) *  w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
+             SUBD = SUBD + ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2  +  k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
+      &                      k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) *  w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
            enddo
          enddo
-         SUB = 8 * SUB
+#else
+       do is = 2, msc 
+         SUPER = ZERO; SUPERD = ZERO
+         f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir) * cg(ip,is)
+         do is1 = 1, is - 1
+           is2 = is - is1
+           f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
+           f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
+
+           SUPER =   SUPER    + ( k(ip, is , is1, is2, id, is, is1, is2, 0, 0) * f1 * f2 &
+     &                        +   k(ip, is1, is2, is , id, is, is1, is2, 1, 0) * f1 * f &
+     &                        +   k(ip, is2, is1, is , id, is, is1, is2, 1, 0) * f2 * f ) * w(ip, is, is1, is2, 0, 0) 
+
+           SUPERD = SUPERD    + ( k(ip, is1, is2, is , id, is, is1, is2, 1, 0) * f1  &
+     &                        +   k(ip, is2, is1, is , id, is, is1, is2, 1, 0) * f2 ) *     w(ip, is, is1, is2, 0, 0)
+         enddo
+         SUPER = 4 * SUPER
+         SUPERD = 4 * SUPERD
          JAC = 1./(SPSIG(IS)*DDIR*FRINTF)
-         snl3(is,id) = (SUB + SUPER) * JAC
-         dsnl3(is,id) = (SUB + SUPER) 
-       enddo ! all freq. 
-     enddo ! all directions 
+         snl3(is,id) = SUPER * JAC
+         dsnl3(is,id) = SUPERD
+         !write(*,*) is, id, 'super',super,superd
+       end do ! is 
+       do is = 1, msc-1
+         SUB   = ZERO; SUBD = ZERO
+         f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir) * cg(ip,is)
+         do is1 = 1, msc - is
+           is2 = is + is1
+           f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
+           f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
+
+             SUB =    SUB + ( k(ip, is , is1, is2, id, is2, is, is1, 1, 0) * f1 * f2 &
+      &                   +   k(ip, is1, is , is2, id, is2, is, is1, 1, 0) * f2 * f + &
+      &                       k(ip, is2, is1, is , id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) 
+
+             SUBD = SUBD + (  k(ip, is , is1, is2, id, is2, is, is1, 1, 0) * f1 * f2  &
+      &                  +    k(ip, is1, is , is2, id, is2, is, is1, 1, 0) * f2 * f  &
+      &                  +    k(ip, is2, is1, is , id, is2, is, is1, 0, 0) * f1 * f ) * w(ip, is, is1, is2, 1, 0) 
+         enddo ! is1 
+         SUB = 8 * SUB
+         SUBD = 8 * SUBD 
+         !write(*,*) is, id, 'sub',sub,subd
+         JAC = 1./(SPSIG(IS)*DDIR*FRINTF)
+         snl3(is,id) = snl3(is,id) + SUB * JAC
+         dsnl3(is,id) = dsnl3(is,id) + SUBD
+#endif
+       enddo ! is 
+     enddo ! id 
 
      end subroutine snl3ta
 !**********************************************************************
@@ -494,7 +572,558 @@
 
         res = int((float(i+j)-abs(i-j)))/(float((i+j)+abs(i-j))) 
 
+        write(*,*) 'kron-delta', i, j, res
+
       end function kron_delta 
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      subroutine snl31 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+!
+      use datapool
+      implicit none
+
+      integer, intent(in)        :: ip
+      real(rkind), intent(in)    :: hs, smespc
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+
+         INTEGER :: IS, ID
+         REAL(rkind)    :: BIPH, ASINB
+         REAL(rkind)    :: ED(MSC)
+         INTEGER :: IS1, IS2, ISMAX
+         REAL(rkind)    :: KIS1, KIS2, CIS1, CIS2, CGIS1
+         INTEGER :: IRES
+         REAL(rkind)    :: AUX1, AUX2, FAC
+         REAL(rkind)    :: JAC, KP
+         REAL(rkind)    :: NL3IS1, NL3IS2
+         REAL(rkind)    :: DEP1
+         REAL(rkind)    :: ALPHAEB, URSELL
+         REAL(rkind)    :: SF3P(MSC,MDC), SF3M(MSC,MDC)
+
+         TRIRA = 1.E15
+!         TRICO = 0.1 * (1. - KP * DEP(IP))**2.
+
+         IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
+         IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
+         IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
+
+         CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+
+         IF (URSELL > PTRIAD(5)) THEN
+            IRES   = INT(LOG(2.0)/LOG(XIS))
+            ISMAX  = 1
+            DO IS = 1, MSC
+               IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
+            END DO
+            ISMAX = MAX(ISMAX,IRES+1)
+            BIPH = PI/2.0*(TANH(0.2/URSELL)-1.0)
+            ASINB = ABS(SIN(BIPH))
+            DO ID = 1, MDC
+               DO IS = 1, MSC
+                  ED(IS) = AC1(IP,IS,ID)*SPSIG(IS)
+               END DO
+               DO IS = 1, ISMAX-IRES
+                  IS1 = IS+IRES
+                  IS2 = IS
+                  KIS1 = WK(IP,IS1)
+                  KIS2 = WK(IP,IS2)
+                  CIS1 = WC(IP,IS1)
+                  CIS2 = WC(IP,IS2)
+                  CGIS1 = CG(IP,IS1)
+                  DEP1 = DEP(IP)
+                  AUX1 = KIS2**2.0*(G9*DEP1+2.0*CIS2**2.0)
+                  AUX2 = KIS1*DEP1*(G9*DEP1+2.0/15.0*G9*DEP1**3.0*KIS1**2.0 -2.0/5.0*SPSIG(IS1)**2.0*DEP1**2.0)
+                  JAC = AUX1/AUX2
+                  FAC = PTRIAD(1)*PI2*CIS1*CGIS1*JAC**2.0*ASINB
+                  NL3IS1 = MAX( 0.0 , FAC*(ED(IS2)*ED(IS2)-2.0*ED(IS2)*ED(IS1)) )
+                  NL3IS2 = NL3IS1
+                  IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
+                  IMATRA(IS2,ID) = IMATRA(IS2,ID) - 2.0 * NL3IS2 / SPSIG(IS2)
+                  SF3P(IS1,ID) = SF3P(IS1,ID) + NL3IS1
+                  SF3M(IS2,ID) = SF3M(IS2,ID) - 2.0 * NL3IS2
+               END DO
+            END DO
+            SSNL3 = SF3P+SF3M
+         END IF
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      subroutine snl32 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+!
+      use datapool
+      implicit none
+
+      integer, intent(in)        :: ip
+      real(rkind), intent(in)    :: hs, smespc
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      
+      INTEGER           :: I, J, I1, I2
+      INTEGER           :: IRES, ISMAX, ITRIAD
+      INTEGER           :: IS, ID
+      REAL(rkind)              :: PTTRIAD(5)
+      REAL(rkind)              :: DEP_2, DEP_3, BB, BIPH
+      REAL(rkind)              :: TMN, URS
+      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj,XISTRI
+      REAL(rkind)              :: ALPH, BETA, SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
+      REAL(rkind)              :: E(MSC), URSELL
+
+      LOGICAL  :: TRIEXP
+
+      PTTRIAD(1)  = 0.1 
+      PTTRIAD(2)  = 2.2 
+      PTTRIAD(3)  = 10. 
+      PTTRIAD(4)  = 0.2
+      PTTRIAD(5)  = 0.01
+
+      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+
+      DEP_2 = DEP(IP)**2
+      DEP_3 = DEP(IP)**3
+      BB     = 1. / 15.
+      
+      TRIEXP = .FALSE.
+
+      I2     = INT (FLOAT(MSC) / 2.)
+      I1     = I2 - 1
+      XISTRI = SPSIG(I2) / SPSIG(I1)
+      IRES   = NINT ( LOG( 2.) / LOG ( XISTRI ) )
+!
+      ISMAX = 1
+      DO IS = 1, MSC
+        IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN
+          ISMAX = IS
+        ENDIF
+      ENDDO 
+!
+      ISMAX = MAX ( ISMAX , IRES + 1 )
+!      
+      TMN = PI2 / SMESPC
+      URS = MIN ( URSELL , 10. )
+      IF (URS .LT. PTTRIAD(5)) THEN
+        BIPH = 0.0
+      ELSE
+        BIPH = - PI2 / 8. * ( LOG10(URS) + 1.)
+      ENDIF
+
+      SINBPH = ABS( SIN(BIPH) )
+      IF ( URS .GE. PTTRIAD(5) ) THEN
+        DO ID = 1, MDC
+          DO IS = 1, MSC
+            E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+          ENDDO
+          DO I = 1, ISMAX-IRES
+            J     = I + IRES
+            WiT   = SPSIG(I)
+            WjT   = SPSIG(J)
+            WNi   = WK(IP,I)
+            WNj   = WK(IP,J)
+            CGi   = CG(IP,1)
+            CGj   = CG(IP,J)
+            JACi  = PI2 * WiT
+            JACj  = PI2 * WjT
+            ALPH = 4. * WNi**2 * ( 0.5 + ( WiT**2 / ( WNi**2 * G9 * DEP(IP) ) ) )
+            BETA  = -2. * WNj * ( G9 * DEP(IP) + 2. * BB * G9 * DEP_3 * WNj**2 - ( BB + 1./3. ) * WjT**2 * DEP_2   )
+            FT    = PTTRIAD(1) * CGj * SINBPH * ( G9 * ALPH / BETA )**2
+            RHV_i = 0.
+            RHV_j = 0.
+            DIA_i = 0.
+            DIA_j = 0.
+            IF ( TRIEXP ) THEN
+              RHV_j = FT * ( (WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i) )
+              RHV_i = RHV_j
+              IF ( RHV_j .LE. 0. ) THEN
+                RHV_j = 0.
+                RHV_i = 0.
+              ENDIF
+              IMATRA(i,ID) = IMATRA(i,ID) - RHV_i / JACi
+              IMATRA(j,ID) = IMATRA(j,ID) + 0.5 * RHV_j / JACj
+              ssnl3(i,ID) = 0.5 * RHV_j / JACj
+            ELSE
+              RHV_j = FT * ((WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i))
+              DIA_i = FT * ((WjT/WNj) * E(i)        - 2. * (WiT/WNi) * E(j))
+              IF ( RHV_j .LE. 0. ) THEN
+                RHV_j = 0.
+                RHV_i = 0.
+                DIA_j = 0.
+                DIA_i = 0.
+              ENDIF
+              IMATRA(i,ID) = IMATRA(i,ID) + 0.5 * RHV_j / JACj
+              IMATDA(j,ID) = IMATDA(j,ID) + DIA_i
+              ssnl3(i,ID) = 0.5 * RHV_j / JACj
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDIF
+      RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      subroutine snl33 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+!
+      use datapool
+      implicit none
+
+      integer, intent(in)        :: ip
+      real(rkind), intent(in)    :: hs, smespc
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+
+      INTEGER           :: I, J, I1, I2
+      INTEGER           :: IRES, ISMAX, ITRIAD
+      INTEGER           :: IS, ID
+      REAL(rkind)              :: PTTRIAD(5)
+      REAL(rkind)              :: DEP_2, DEP_3, BB, BIPH, RINT
+      REAL(rkind)              :: TMN, URS, AUX1, AUX2
+      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj,XISTRI,Ci,Cj
+      REAL(rkind)              :: ALPH, BETA, SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
+      REAL(rkind)              :: E(MSC), URSELL
+
+      LOGICAL  :: TRIEXP
+
+      PTTRIAD(1)  = 0.25
+      PTTRIAD(2)  = 2.5
+      PTTRIAD(3)  = 10.
+      PTTRIAD(4)  = 0.2
+      PTTRIAD(5)  = 0.01
+
+      DEP_2 = DEP(IP)
+      DEP_3 = DEP(IP)
+
+      TRIEXP = .FALSE.
+
+      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+
+      E(:) = 0.
+      I2     = INT (FLOAT(MSC) / 2.)
+      I1     = I2 - 1
+      XISTRI = SPSIG(I2) / SPSIG(I1)
+      IRES   = NINT ( LOG( 2.) / LOG ( XISTRI ) )
+      ISMAX = 1
+
+      DO IS = 1, MSC
+       IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN
+          ISMAX = IS
+        ENDIF
+      ENDDO
+
+      ISMAX = MAX ( ISMAX , IRES + 1 )
+
+      IF ( URSELL .GE. PTTRIAD(5) ) THEN
+
+        BIPH   = (0.5*PI)*(TANH(PTTRIAD(4)/URSELL)-1)
+        SINBPH = ABS( SIN(BIPH) )
+        DO ID = 1, MDC
+          DO IS = 1, MSC
+            E(IS)  = AC1(IP,IS,ID) * PI2 * SPSIG(IS)
+          ENDDO
+          DO I = 1, ISMAX-IRES
+            J   = I + IRES
+            WiT  = SPSIG(I)
+            WjT  = SPSIG(J)
+            WNi = WK(IP,i)
+            WNj = WK(IP,j)
+            Ci  = WiT / WNi
+            Cj  = WjT / WNj
+            CGi = CG(IP,i)
+            CGj = CG(IP,j)
+            JACi = PI2 * WiT
+            JACj = PI2 * WjT
+            AUX1 = WNi**2 * ( G9 * DEP(IP) + 2. * Ci**2 )
+            AUX2 = WNj * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WNj**2 - (2./ 5.) * WjT**2 * DEP_2 )
+            RINT = AUX1 / AUX2
+            FT = PTTRIAD(1) * Cj * CGj * RINT**2 * SINBPH
+            RHV_i = 0.
+            RHV_j = 0.
+            DIA_i = 0.
+            DIA_j = 0.
+            IF ( TRIEXP ) THEN
+              RHV_j = FT * (  E(i) * E(i)  - 2. * E(j) * E(i) )
+              RHV_i = RHV_j
+              IF ( RHV_j .LE. 0. ) THEN
+                RHV_j = 0.
+                RHV_i = 0.
+              ENDIF
+              IMATRA(i,ID) = IMATRA(i,ID) - 2. * RHV_i / JACi
+              IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
+              ssnl3(i,id) = - 2. * RHV_i / JACi
+            ELSE
+              RHV_j = FT * ( E(i) * E(i) - 2. * E(j) * E(i) )
+              DIA_i = FT * ( E(i) - 2. * E(j) )
+              IF ( RHV_j .LE. 0. ) THEN
+                RHV_j = 0.
+                RHV_i = 0.
+                DIA_j = 0.
+                DIA_i = 0.
+              ENDIF
+              IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
+              IMATDA(i,ID) = IMATDA(i,ID) + 2. * DIA_i
+              ssnl3(j,id) = RHV_j / JACj
+            ENDIF
+          ENDDO
+        ENDDO
+      ENDIF
+      RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      subroutine triadswan (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+!
+      use datapool
+      implicit none
+
+      integer, intent(in)        :: ip
+      real(rkind), intent(in)    :: hs, smespc
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+
+      INTEGER IDDLOW, IDDTOP, ISSTOP
+      INTEGER IDCMIN(MSC), IDCMAX(MSC)
+!
+      INTEGER I1, I2, ID, IDDUM, IENT, II, IS, ISM, ISM1, ISMAX, ISP, ISP1, IJ1, IJ2, IRES
+      REAL(rkind)    AUX1, AUX2, BIPH, C0, CM, DEP_2, DEP_3, E0, ACTMP(MDC,MSC), ABSGRAD, URSELL
+      REAL(rkind)    EM,FT, RINT, SIGPI, SINBPH, STRI, WISM, WISM1, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
+      REAL(rkind)    WISP, WISP1,W0, WM, WN0, WNM,  XISLN, TMPAC(MSC,MDC), TMPAC1D(MSC), IMATRATMP(MDC,MSC)
+
+      REAL(rkind), ALLOCATABLE :: E(:), SA(:,:)
+
+      IF (TRICO .GT. 0.) PTRIAD(1) = TRICO
+      IF (TRIRA .GT. 0.) PTRIAD(2) = TRIRA
+      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
+
+      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+
+      IMATRATMP = 0.
+      IMATDATMP = 0.
+
+      ACTMP = 0.
+      DO IS = 1, MSC
+        DO ID = 1, MDC
+          ACTMP(ID,IS) = ACLOC(IS,ID)
+        END DO
+      END DO
+
+      IJ2    = INT (FLOAT(MSC) / 2.)
+      IJ1    = IJ2 - 1
+      FAC1   = SPSIG(IJ2) / SPSIG(IJ1)
+      IRES   = NINT ( LOG10( 2.) / LOG10( FAC1 ) )
+      FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
+
+      IF (ABS(FACSCL-2.).GT.0.05) THEN
+         FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
+         SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
+!         WRITE (*,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
+      END IF
+      DEP_2 = DEP(IP)**2
+      DEP_3 = DEP(IP)**3
+      I2     = INT (FLOAT(MSC) / 2.)
+      I1     = I2 - 1
+      XIS    = SPSIG(I2) / SPSIG(I1)
+      XISLN  = LOG( XIS )
+      ISP    = INT( LOG(2.) / XISLN )
+      ISP1   = ISP + 1
+      WISP   = (2. - XIS**ISP) / (XIS**ISP1 - XIS**ISP)
+      WISP1  = 1. - WISP
+      ISM    = INT( LOG(0.5) / XISLN )
+      ISM1   = ISM - 1
+      WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
+      WISM1  = 1. - WISM
+
+      ALLOCATE (E (1:MSC))
+      ALLOCATE (SA(1:MDC,1:MSC+ISP1))
+      E  = 0.
+      SA = 0.
+      ISMAX = 1
+      DO IS = 1, MSC
+       IF ( SPSIG(IS) .LT. ( PTRIAD(2) * SMESPC) ) THEN
+          ISMAX = IS
+        ENDIF
+      ENDDO
+      ISMAX = MAX ( ISMAX , ISP1 )
+
+      IF ( URSELL .GT. PTRIAD(5) ) THEN
+        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        SINBPH = ABS( SIN(BIPH) )
+        DO ID = 1, MDC
+           DO IS = 1, MSC
+              E(IS) = ACTMP(ID,IS) * 2. * PI * SPSIG(IS)
+           END DO
+           DO IS = 1, ISMAX
+              E0  = E(IS)
+              W0  = SPSIG(IS)
+              WN0 = WK(IP,IS)
+              C0  = W0 / WN0
+              IF ( IS.GT.-ISM1 ) THEN
+                 EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
+                 WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
+                 WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
+                 CM  = WM / WNM
+              ELSE
+                 EM  = 0.
+                 WM  = 0.
+                 WNM = 0.
+                 CM  = 0.
+              END IF
+              AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
+              AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 -(2./ 5.) * W0**2 * DEP_2 )
+              RINT = AUX1 / AUX2
+              FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
+              SA(ID,IS) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
+           END DO
+        END DO
+        DO IS = 1, MSC
+           SIGPI = SPSIG(IS) * 2. * PI
+           DO ID = 1, MDC
+              STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
+              ssnl3(is,id) = STRI
+              IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
+              IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+           END DO
+        END DO
+
+      END IF
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      subroutine triad_polnikov (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+!
+      use datapool
+      implicit none
+
+      integer, intent(in)        :: ip
+      real(rkind), intent(in)    :: hs, smespc
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+!
+      INTEGER             :: J, IS, ID, IT, ITER
+      REAL(rkind)          :: ETOT4
+      REAL*8                :: KI, KJ , ETOT
+      REAL*8                :: PROPFAK, DBETA, DSIGMA
+      REAL*8                :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
+      REAL*8                :: DELTAK(MSC), DK, H, TMP1, TMP2, TMP3
+      REAL*8                :: PART1(MSC), PART2(MSC), EPS(MSC)
+      REAL*8                :: SUMAC, KJKIKJ, KJKJKI, SNL(MSC)
+
+      ITER = 10
+
+      ETOT = DBLE(ETOT4)
+
+      DELTAK(1) = WK(IP,1)
+      DO IS = 2, MSC
+        DELTAK(IS) = WK(IP,IS) - WK(IP,IS-1)
+      END DO
+
+      H  = DEP(IP)
+
+      IF (ETOT .GT. THR) THEN
+
+        DO ID = 1, MDC
+          DO IS = 1, MSC
+
+            BETA_0(IS) = 0.1 * SPSIG(IS)/PI2
+            KI = WK(IP,IS)
+            DK = DELTAK(IS)
+            PROPFAK = 9. * KI * SQRT(G9) * DK / (32. * PI * SQRT(H))
+
+            DO IT = 1, ITER
+
+              BETA_1(IS) = 0.
+              PART1(IS)  = 0.
+              PART2(IS)  = 0.
+
+              DO J = 1, IS - 1
+                SUMAC   = DBLE(( ACLOC(J,ID) * CG(IP,J) - ACLOC(IS-J,ID) * CG(IP,IS-J) ))
+                KJ = WK(IP, J)
+                KJKIKJ = KJ*(KI-KJ)
+                KJKJKI = KJ*(KJ-KI)
+                DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
+                DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
+                PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * SUMAC
+                IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
+              END DO
+              DO J = IS+1, MSC
+                SUMAC   = DBLE(( ACLOC(J-IS,ID) * CG(IP,J-IS) - ACLOC(J,ID) * CG(IP,J) ))
+                KJ = WK(IP, J)
+                KJKIKJ = KJ*(KI-KJ)
+                KJKJKI = KJ*(KJ-KI)
+                DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
+                DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
+                PART2(IS) = PART2(IS) +  KJKJKI * DBETA * SUMAC
+                IF (PART2(IS) .NE. PART2(IS)) WRITE (*,*)'PART2', PART2(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
+              END DO
+              BETA_1(IS) = PROPFAK * ( PART1(IS) -  2. * PART2(IS) )
+              IF (ABS(BETA_1(IS)) .GT. THR) THEN
+                EPS(IS) =  ( ABS(   BETA_0(IS) - BETA_1(IS)  ) ) / ABS(BETA_0(IS))
+              ELSE
+                EPS(IS) = 0.
+              END IF
+              IF (ABS(EPS(IS)) .LT.  10E-3) THEN
+                EXIT
+              END IF
+              BETA_0(IS) = BETA_1(IS)
+            END DO ! ... IT
+
+            PART1(IS)  = 0.
+            PART2(IS)  = 0.
+            DO J = 1, IS - 1
+              IF (BETA_0(IS) .LT. THR) CYCLE
+              KJ = WK(IP, J)
+              KJKIKJ = KJ*(KI-KJ)
+              KJKJKI = KJ*(KJ-KI)
+              DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
+              DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
+              TMP1    = DBLE(ACLOC(J,ID)*CG(IP,J)*ACLOC(IS-J,ID)*CG(IP,IS-J))
+              TMP2    = DBLE(ACLOC(J,ID)*CG(IP,J)+ACLOC(IS-J,ID)*CG(IP,IS-J))
+              TMP3    = (TMP1 - ACLOC(IS,ID)*CG(IP,IS)*TMP2)
+              PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * TMP3
+              IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
+            END DO
+            DO J = IS+1, MSC
+              IF (BETA_0(IS) .LT. THR) CYCLE
+              KJ = WK(IP, J)
+              KJKIKJ = KJ*(KI-KJ)
+              KJKJKI = KJ*(KJ-KI)
+              DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
+              DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
+              TMP1    = DBLE(ACLOC(IS,ID)*CG(IP,IS)*ACLOC(J-IS,ID)*CG(IP,J-IS))
+              TMP2    = DBLE(ACLOC(IS,ID)*CG(IP,IS)+ACLOC(J-IS,ID)*CG(IP,J-IS))
+              TMP3    = (TMP1 - ACLOC(J,ID)*CG(IP,J)*TMP2)
+              PART2(IS) = PART2(IS) +  KJKIKJ * DBETA * TMP3
+              IF (PART2(IS) .NE. PART2(IS)) WRITE (*,*)'PART2', PART2(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
+            END DO
+            SNL3(IS,ID) = PROPFAK * ( PART1(IS) - 2. *  PART2(IS) )
+          END DO ! ... IS
+        END DO ! ... ID
+
+        DO IS = 1, MSC
+          DO ID = 1, MDC
+            IMATRA(IS,ID) = IMATRA(IS,ID) + SNL3(IS,ID)
+            ssnl3(is,id) = SNL3(IS,ID)
+            IF (ACLOC(IS,ID) .GT. 0.) THEN
+              IMATDA(IS,ID) = IMATDA(IS,ID) + SNL3(IS,ID)/ACLOC(IS,ID)
+            ELSE
+              IMATDA(IS,ID) = 0.
+            END IF
+          END DO
+        END DO
+
+      END IF
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+

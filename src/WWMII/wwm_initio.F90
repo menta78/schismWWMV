@@ -120,10 +120,12 @@
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-         ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), stat=istat)
+         ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
-         WK = 0._rkind
-         CG = 0._rkind
+         WK = ZERO 
+         CG = ZERO 
+         DWKDX = ZERO
+         DCGDX = ZERO
 #ifdef SELFE
 !         ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = 0._rkind
 !         ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = 0._rkind
@@ -828,8 +830,8 @@
            END IF
          ENDIF
          WRITE(STAT%FHNDL,*) 'SNL4'
-         !IF (MESTR .GT. 0) CALL INIT_TRIADSWAN
-         !WRITE(STAT%FHNDL,*) 'SNL3'
+         IF (MESTR .GT. 0) CALL GRAD_CG_K 
+         WRITE(STAT%FHNDL,*) 'SNL3'
 
          RETURN
       END SUBROUTINE
@@ -1442,7 +1444,6 @@
         OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
         READ (WAV%FHNDL,*) WBMSC
         READ (WAV%FHNDL,*) WBMDC
-        !WRITE(*,*) WBMSC, WBMDC
         CALL ALLOC_SPEC_BND
         DO IS = 1, WBMSC
           READ (WAV%FHNDL,*) SFRQ(IS,1)
@@ -1458,7 +1459,6 @@
       ELSE
         DO IS = 1, WBMSC
           READ (WAV%FHNDL, *) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
-          !WRITE(*,*) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
         END DO
       END IF
 

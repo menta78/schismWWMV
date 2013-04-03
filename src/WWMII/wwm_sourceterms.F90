@@ -386,25 +386,28 @@
 #endif
          END IF
 
-          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.40).AND.ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
+         IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.40).AND.ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
            IF (MESTR .EQ. 1 ) THEN
-             CALL TRIADSWAN (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+!             CALL TRIADSWAN (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+             CALL SNL31 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+!             CALL SNL32 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+!             CALL SNL33 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+!             CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
            ELSE IF (MESTR .EQ. 2) THEN
              CALL TRIAD_DINGEMANS (IP,ACLOC,IMATRA,IMATDA,SSNL3)
            ELSE IF (MESTR .EQ. 3) THEN
-             CALL snl3ta(ip,snl3,dsnl3) 
+             IF (SUM(ACLOC) .GT. SMALL) CALL snl3ta(ip,snl3,dsnl3) 
              SSNL3 = SNL3
              IMATRA = IMATRA + SNL3
              IMATDA = IMATDA + DSNL3
            END IF
-
          END IF
 
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL3', SUM(IMATRA), SUM(IMATDA)
 
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
-             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4) THEN
+             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
                CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC, IMATRA,IMATDA,SSBR)
              END IF
            ENDIF
@@ -413,7 +416,7 @@
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
          IF (MESBF .GE. 1) THEN
            IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
-             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4) THEN
+             IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
               CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBR)
              END IF
            END IF
@@ -600,7 +603,8 @@
 
          HS = 4.*SQRT(ETOT)
 
-         IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
+!AR: Fuckung lmono shit crap !
+         !IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
 
          EMAX = 1./16. * (HMAX(IP))**2
 
@@ -609,6 +613,8 @@
            SSBRL = ACLOC - RATIO * ACLOC
            ACLOC = RATIO * ACLOC
          END IF
+
+         !WRITE(*,*)  IP, HMAX(IP)
 
         RETURN
         END SUBROUTINE

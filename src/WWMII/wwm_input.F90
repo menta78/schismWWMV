@@ -1365,7 +1365,7 @@
              call wwm_abort('If AMETHOD=6 then you need MPI')
            ENDIF
 #endif
-           IF (MESTR .GT. 2) THEN
+           IF (MESTR .GT. 3) THEN
              call wwm_abort('CHECK NUMS - MESTR OUT OF RANGE')
            END IF
 

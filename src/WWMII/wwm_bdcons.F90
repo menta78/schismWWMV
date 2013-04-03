@@ -75,7 +75,7 @@
               IOBPD(:,IP) = 1
             ENDIF
           END IF
-          IF ( IOBP(IP) == 3 .OR. IOBP(IP) == 4) THEN ! If Neumann boundary condition is given set IOBP to 3
+          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 3
             IOBPD(:,IP) = 1 ! Update Neumann nodes ...
           END IF
         END DO
@@ -1090,7 +1090,7 @@
       REAL(rkind) ::  RA, SALPHA, SF, SF4, SF5, FPK, FPK4, EFTAIL, CDIR
       REAL(rkind) ::  GAMMA_FUNC, DSPR, AACOS, ADIR, EPTAIL, APTAIL, PPTAIL
       REAL(rkind) ::  OMEG, EFTOT, ETOTT, CTOT, TM1, TPEAK
-      LOGICAL  LOGPM
+      LOGICAL  LOGPM, LINCOUT
 
 !     SPPARM(1): Hs, sign. wave height
 !     SPPARM(2): Wave period given by the user (either peak or mean)
@@ -1133,14 +1133,13 @@
 
       IF (LSHAPE.EQ.3) THEN
 !       select bin closest to given period
-        DIFPER = 10E10
+        DIFPER = 1.E10
         DO IS = 1, MSC
           IF (ABS(PKPER - PI2/SPSIG(IS)) .LT. DIFPER) THEN
             ISP = IS
             DIFPER = ABS(PKPER - PI2/SPSIG(IS))
           END IF
         ENDDO
-        IF (MSC .EQ. 1) ISP = 1
       ENDIF
 !
 100   FPK  = (1./PKPER)
@@ -1221,7 +1220,7 @@
       END DO
 
       MPER = 0.
-      IF (LOGPM.AND.ITPER.LT.100) THEN
+      IF (.NOT.LOGPM.AND.ITPER.LT.100) THEN
         ITPER = ITPER + 1
 !       calculate average frequency
         AM0 = 0.
@@ -1245,6 +1244,9 @@
         ELSE
           MPER = THR
         ENDIF
+!        write(*,'(I10,4F15.8)') ITPER, MPER, &
+!     &            ABS(MPER-SPPAR(2)) .GT. 0.01*SPPAR(2), &
+!     &            (SPPAR(2) / MPER) * PKPER
         IF (ABS(MPER-SPPAR(2)) .GT. 0.01*SPPAR(2)) THEN
 !         modification suggested by Mauro Sclavo
           PKPER = (SPPAR(2)/MPER) * PKPER
@@ -1255,9 +1257,12 @@
         CALL FLUSH(STAT%FHNDL)
       ENDIF
 
+
       CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
 
       ADIR = DEG * DEGRAD
+
+!      write(*,*) adir, SPPAR(3), DEG, LNAUTIN
 
       IF (INT(SPPAR(6)) .EQ. 1) THEN
         DSPR = PI * SPPAR(4) / 180._rkind
@@ -1272,15 +1277,25 @@
         CTOT =  SQRT(0.5_rkind*MS/PI)/(1._rkind-0.25_rkind/MS)
       ENDIF
 
+      LINCOUT = .FALSE.
       DO ID = 1, MDC
         AACOS = COS(SPDIR(ID) - ADIR)
+        !write(*,*) aacos, spdir(id), adir
         IF (AACOS .GT. 0._rkind) THEN
           CDIR = CTOT * MAX (AACOS**MS, THR)
+          IF (.NOT.LCIRD) THEN
+            IF (AACOS .GE. COS(DDIR)) THEN
+              LINCOUT = .TRUE.
+              !WRITE(*,*) 'ERROR', AACOS, COS(DDIR) 
+              !STOP 'AVERAGE DIRECTION IS OUT OF SECTOR'
+            ENDIF
+          ENDIF
         ELSE
           CDIR = 0._rkind
         ENDIF
         DO IS = 1, MSC
           ACLOC(IS,ID) = CDIR * ACLOC(IS,MDC)
+          !write(*,'(2I10,2F15.8)') is, id, cdir, ACLOC(IS,MDC)
         ENDDO
       ENDDO
 !
@@ -1370,9 +1385,13 @@
 
         WRITE (STAT%FHNDL,'("+TRACE...",A)') 'GIVEN BOUNDARY SPECTRA AND RECALCULATED WAVE PARAMETERS'
         WRITE (STAT%FHNDL,'("+TRACE...",A)') 'THE DIFFERENCE IS MOSTLY DUE TO COARSE RESOLUTION IN SPECTRAL SPACE'
-        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'HS =', SPPAR(1),        'DM =', SPPAR(3), 'DSPR =', SPPAR(4)
+        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'HS =', SPPAR(1)  
+        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'DM =', SPPAR(3)
+        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'DSPR =', SPPAR(4)
         WRITE (STAT%FHNDL,*) 'GIVEN     ', 'TM or TP', SPPAR(2)
-        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'HS =', 4. * SQRT(ETOT), 'DM =',       DM , 'DSPR =', DSPR
+        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'HS =', 4. * SQRT(ETOT)
+        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DM =',       DM 
+        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DSPR =', DSPR
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
         WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
         WRITE (STAT%FHNDL,*) SPPAR
@@ -1431,23 +1450,13 @@
 
          ETOT = 0.0
          DO IS = 2, WBMSC
-           DS = (INSPF(IS) - INSPF(IS-1)) / PI2
-           EAD = 0.5*( (INSPE(IS) + INSPE(IS-1)) * PI2 )*DS
+           DS = (INSPF(IS) - INSPF(IS-1)) 
+           EAD = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
            ETOT = ETOT + EAD
          END DO
 
          WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
 
-         ETOT = 0.0
-         DO IS = 2, WBMSC
-           DS   = INSPF(IS) - INSPF(IS-1)
-           EAD  = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
-           ETOT = ETOT + EAD
-!           WRITE (STAT%FHNDL,'(7F15.8)') INSPF(IS), INSPF(IS-1), DS, INSPE(IS), INSPE(IS-1), EAD, ETOT
-         END DO
-!
-         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 2', 4.0*SQRT(ETOT)
-!
          ACLOC = 0.
          CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INSPE, ACLOC(:,1))
 
@@ -1520,7 +1529,7 @@
 !
          IF (LINDSPRDEG) THEN
            DO IS = 1, WBMSC
-             INMS(IS) = MAX (INSPRD(IS)**(-2) - 2._rkind, ONE)
+             INMS(IS) = MAX (INSPRD(IS)**(-2) - TWO, ONE)
            END DO
          ELSE
            DO IS = 1, WBMSC
@@ -1662,8 +1671,8 @@
 
       WBACOUT(:,:,1) = ACLOC
 
-      !WRITE (*,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
-      !WRITE (*,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
+      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
+      WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
       CALL FLUSH(DBG%FHNDL)
       CALL FLUSH(STAT%FHNDL)
