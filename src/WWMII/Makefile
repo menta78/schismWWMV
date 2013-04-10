@@ -5,13 +5,13 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI =  
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on 
+PETSC =  
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on
+NETCDF = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP =  
+OPENMP = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -60,7 +60,6 @@ F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-chec
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -fopenmp -Wall
 
 #LDFLAGS = -Mprof=dwarf -Mprof=lines -Mprof=func -Mprof=time Minfo=ccff
-#TCFLAG  = -tcheck
 #LDFLAGS = -lpthread
 
 #ITT_BASE = /home/aron/intel/itt
@@ -95,6 +94,7 @@ else
 endif
 
 ifdef MPI
+  MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
   MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER -DDEBUG
   OBJS= $(OBJSELFE) $(OBJWWM)
@@ -121,11 +121,10 @@ ifdef SNL4_TSA
 endif
 
 
-MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
-F90FLAGS += ${MPI_INCLUDE}
+MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/  
 
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG} ${MPI_INCLUDE}
 
 NETC = NETC
 
@@ -134,7 +133,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS) $(TCFLAG) $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS) $(OBJS) $(LIBS) 
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)

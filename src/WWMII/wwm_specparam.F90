@@ -1026,7 +1026,7 @@
          REAL(rkind), INTENT(IN)    :: HS, SME, DEPTH
          REAL(rkind), INTENT(OUT)   :: URSELL 
 
-         IF (DEPTH .GT. DMIN .AND. SME .GT. verysmall .AND. HS .GT. verysmall) THEN
+         IF (DEPTH .GT. DMIN) THEN
            URSELL = (G9 * HS)/(TWO*SQRT(TWO)*SME**2*DEPTH**2)
          ELSE
            URSELL = ZERO
@@ -1541,7 +1541,7 @@
            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
          end do
 
-         IF (ETOT .GT. verysmall) THEN
+         IF (ETOT .GT. thr) THEN
 !
 ! tail ratios same as in swan ...
 !

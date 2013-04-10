@@ -155,7 +155,7 @@
             END IF
 #endif
           ELSE
-            CALL WWM_ABORT('Wrong choice of IWINDFORMAT')
+            CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
           ENDIF
         ENDIF
       ENDIF

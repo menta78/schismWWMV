@@ -37,7 +37,7 @@
          REAL(rkind)    :: FPP, CGPP, WNPP, CPP, TPP, LPP, TEMP2(MSC)
          REAL(rkind)    :: AWW3(NSPEC), AWW32d(MSC,MDC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
          REAL(rkind)    :: F(MDC,MSC), SL(MDC,MSC), FL(MDC,MSC), EDENS(MSC), KDS(MSC), ABAB(MSC)
-         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC)
+         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC), ACLOC2(MSC,MDC)
 
 
          REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC)
@@ -54,17 +54,17 @@
          LOGICAL        :: LWINDSEA(MSC,MDC)
          REAL(rkind)    :: XLCKS(MDC,MSC)
 
-         WIND10 = 0._rkind
+         WIND10 = ZERO 
          MSC_HF = MSC
          SUMACLOC = SUM(ACLOC)
 
-         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
-           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
-         END IF
+!         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
+!           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
+!         END IF
 
          IDISP = 999
 
-         IF (.NOT. LRECALC) CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
+         IF (.NOT. LRECALC) CALL MEAN_WAVE_PARAMETER(IP,AC1(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
 !         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'NEW', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
 !         CALL PARAMENG(IP,ACLOC,SME01,SME10,KME01,KMWAM,KMWAM2,WLM, &
 !         URSELL,UBOT,ABRBOT,TMBOT,HS,ETOT,FP,TP,CP,KPP,LPP,DM,DSPR, &
@@ -78,15 +78,15 @@
 !         CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
 !         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'WAM 1', 4*SQRT(EMEAN),EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN
 
-         SSINE = 0._rkind
-         SSINL = 0._rkind
-         SSNL3 = 0._rkind
-         SSNL4 = 0._rkind
-         SSBR  = 0._rkind
-         SSBF  = 0._rkind
-         IMATRA_WAM = 0._rkind
-         IMATDA_WAM = 0._rkind
-         TMPAC      = 0._rkind
+         SSINE = zero
+         SSINL = zero
+         SSNL3 = zero
+         SSNL4 = zero
+         SSBR  = zero
+         SSBF  = zero
+         IMATRA_WAM = zero
+         IMATDA_WAM = zero
+         TMPAC      = zero
 
          IF (MESDS == 1 .OR. MESIN .EQ. 1) THEN
            DO IS = 1, MSC
@@ -96,11 +96,11 @@
            END DO
          END IF
 
-         IMATRA(:,:) = 0.
-         IMATDA(:,:) = 0.
-         IMATRAWW3   = 0.
-         IMATDAWW3   = 0.
-         QBLOCAL(IP) = 0.
+         IMATRA(:,:) = zero 
+         IMATDA(:,:) = zero 
+         IMATRAWW3   = zero 
+         IMATDAWW3   = zero 
+         QBLOCAL(IP) = zero 
 
 #ifdef ST_DEF
          DO IK=1, NK
@@ -116,12 +116,9 @@
 #endif
 
          IF ((ISELECT .EQ. 1 .OR. ISELECT .EQ. 10 .OR. ISELECT .EQ. 20) .AND. .NOT. LRECALC) THEN
-
            IF (IOBP(IP) .EQ. 0) THEN
-
              IF (MESIN == 1) THEN ! Ardhuin et al. 2010
                CALL SET_WIND( IP, WIND10, WINDTH )
-
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. THR) THEN
 #ifdef ST_DEF
                  AWW3    = 1.E-8 
@@ -247,7 +244,7 @@
                      IMATDA(IS,ID) = 0.!IMATDA_WAM(ID,IS)/PI2/SPSIG(IS)
                    END DO
                  END DO
-               ELSE IF (RTIME .GT. THR .AND. WIND10 .GT. SMALL .AND. SUM(ACLOC) .LT. SMALL) THEN ! AR: To Do improve this crap!
+               ELSE IF (RTIME .GT. THR .AND. WIND10 .GT. SMALL .AND. SUMACLOC .LT. SMALL) THEN ! AR: To Do improve this crap!
                  CALL SET_WIND( IP, WIND10, WINDTH )
                  TMPAC = SMALL
                  XLCKS = ZERO 
@@ -276,7 +273,7 @@
  
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
-         IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
+         IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
                CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
@@ -387,19 +384,21 @@
          END IF
 
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.40).AND.ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
-           IF (MESTR .EQ. 1 ) THEN
+           IF (SUMACLOC .GT. SMALL) THEN
+             IF (MESTR .EQ. 1 ) THEN
 !             CALL TRIADSWAN (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
              CALL SNL31 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
 !             CALL SNL32 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
 !             CALL SNL33 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
-!             CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
-           ELSE IF (MESTR .EQ. 2) THEN
-             CALL TRIAD_DINGEMANS (IP,ACLOC,IMATRA,IMATDA,SSNL3)
-           ELSE IF (MESTR .EQ. 3) THEN
-             IF (SUM(ACLOC) .GT. SMALL) CALL snl3ta(ip,snl3,dsnl3) 
-             SSNL3 = SNL3
-             IMATRA = IMATRA + SNL3
-             IMATDA = IMATDA + DSNL3
+!               CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+             ELSE IF (MESTR .EQ. 2) THEN
+               CALL TRIAD_DINGEMANS (IP,ACLOC,IMATRA,IMATDA,SSNL3)
+             ELSE IF (MESTR .EQ. 3) THEN
+               CALL snl3ta(ip,snl3,dsnl3) 
+               SSNL3 = SNL3
+               IMATRA = IMATRA + SNL3
+               IMATDA = IMATDA + DSNL3
+             END IF
            END IF
          END IF
 
@@ -571,7 +570,7 @@
 !               ELSE
 !                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
 !               END IF
-               AC2(IP,IS,ID) = MAX( 0._rkind, OLDAC + NEWDAC )
+               AC2(IP,IS,ID) = MAX( zero, OLDAC + NEWDAC )
              END DO
            END DO
          END DO
@@ -684,7 +683,7 @@
                   DO ID = 1, MDC
                      IF (AC2(IP,IS,ID) < 0.0) AC2(IP,IS,ID) = 0.0
                      IF (FACTOR >= 0.0)  AC2(IP,IS,ID) = AC2(IP,IS,ID)*FACTOR
-                     AC2(IP,IS,ID) = MAX(0._rkind,AC2(IP,IS,ID))
+                     AC2(IP,IS,ID) = MAX(zero,AC2(IP,IS,ID))
                   END DO
                END IF
             END DO

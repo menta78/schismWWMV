@@ -4373,8 +4373,10 @@ MODULE WWM_PARALL_SOLVER
         WRITE(240+myrank,*) 'nbDiff=', nbDiff
         WRITE(240+myrank,*) 'AC8(z) max=', maxval(SolDat%AC8), 'sum=', sum(SolDat%AC8)
         idAC8=idAC8+1
+#ifdef NCDF
         iret=nf90_inq_varid(ncid, 'AC8', var_id)
         iret=nf90_put_var(ncid,var_id,SolDat%AC8,start=(/1,1,1,idAC8/), count = (/ MNP, MSC, MDC, 1 /))
+#endif
 # endif
 
         ! L9 t=Az

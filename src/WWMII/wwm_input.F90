@@ -1378,7 +1378,8 @@
            END IF
 
            IF (MESNL .GT. 0 .AND. .NOT. LLIMT ) THEN
-             call wwm_abort('YOU ARE USING SNL WITHOUT LIMITER CODE WILL STOP NOW')
+!AR: this will be a warning ...
+             !call wwm_abort('YOU ARE USING SNL WITHOUT LIMITER CODE WILL STOP NOW')
            END IF
 
          ELSE

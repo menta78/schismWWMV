@@ -13,10 +13,9 @@
         REAL              :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 
-!         IF (ICOMP .GT. 1) AC1 = AC2 ! This is also changes just for shit ...
-!         WRITE(*,*) 'BEFORE EVERYTHING', SUM(AC2)
-
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
+
+         AC1 = AC2 
 
          IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
            DT4A = MAIN%DELT
@@ -38,31 +37,31 @@
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
 
-!         WRITE(*,*) 'AFTER FREQ.', SUM(AC2)
+         !WRITE(*,*) 'AFTER FREQ.', SUM(AC2)
   
          CALL CPU_TIME(TIME3)
 
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
-!         WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
+         !WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
 
          CALL CPU_TIME(TIME4)
 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
-!         WRITE(*,*) 'AFTER SPATIAL', SUM(AC2)
+         !WRITE(*,*) 'AFTER SPATIAL', SUM(AC2)
 
          CALL CPU_TIME(TIME5)
 
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
-!         WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
 
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
          CALL CPU_TIME(TIME6)
 
-!         WRITE(*,*) 'AFTER BRK. LIM', SUM(AC2)
+         !WRITE(*,*) 'AFTER BRK. LIM', SUM(AC2)
 
          CALL CPU_TIME(TIME6)
 
