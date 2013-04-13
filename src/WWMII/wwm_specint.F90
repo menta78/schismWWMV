@@ -13,10 +13,17 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID, NSTEP, MSC_HF
+         INTEGER        :: IP, IS, ID, NSTEP, MSC_HF, iter
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL1(MSC,MDC), SSBRL2(MSC,MDC)
-         REAL(rkind)    :: WIND10, WINDTH
+         REAL(rkind)    :: WIND10, WINDTH, DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+
+         DT4S_T = 1./3. * DT4S
+         DT4S_E = 0.125 * DT4S
+         DT4S_Q = 0.25 * DT4S
+         DT4S_H = 0.5 * DT4S
+         DT4S_TQ = 0.75 * DT4S
+         DT4S_TS = 2./3. * DT4S
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
          DO IP = 1, MNP 
@@ -24,33 +31,37 @@
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-!                 DT4S = 0.5 * DT4S 
-!                 CALL INT_IP_DYN(IP, 2, .TRUE., DTMIN_SNL4, NDYNITER_SNL4, ACLOC, NIT_SNL4)
-!                 DT4S = 2 * DT4S
-!                 CALL INT_IP_DYN(IP, 20, .FALSE., DTMIN_DYN , NDYNITER_SIN , ACLOC, NIT_SIN) ! Sbf
-!                 DT4S = 0.5 * DT4S
-!                 CALL INT_IP_DYN(IP, 2, .TRUE., DTMIN_SNL4, NDYNITER_SNL4, ACLOC, NIT_SNL4)
+                 !CALL INT_IP_DYN(IP, 20, DT4S, .FALSE., DTMIN_SNL4, NDYNITER_SNL4, ACLOC, NIT_SNL4)
+                 !CALL INT_IP_DYN(IP, 2, DT4S, .TRUE., DTMIN_DYN , NDYNITER_SIN , ACLOC, NIT_SIN) ! Sbf
+                 !CALL INT_IP_DYN(IP, 2, DT4S_TS, .TRUE., DTMIN_SNL4, NDYNITER_SNL4, ACLOC, NIT_SNL4)
+!                 CALL INT_IP_DYN(IP, 20, DT4S_H, .FALSE., DTMIN_DYN , NDYNITER_SIN , ACLOC, NIT_SIN) ! Sbf
+!                 CALL INT_IP_DYN(IP, 2, DT4S_T, .TRUE., DTMIN_SNL4, NDYNITER_SNL4, ACLOC, NIT_SNL4)
 !                 CALL INT_IP_DYN(IP, 6, .FALSE., DTMIN_SBF , NDYNITER_SBF , ACLOC, NIT_SBF) ! Sbf
 !                 CALL INT_IP_DYN(IP, 5, .FALSE., DTMIN_SBR , NDYNITER_SBR , ACLOC, NIT_SBR) ! Sbr
 !                 CALL INT_IP_DYN(IP, 4, .FALSE., DTMIN_SNL3, NDYNITER_SNL3, ACLOC, NIT_SNL3)! Snl3 
 
-                 DT4S = 0.5 * DT4S
-                 !CALL INT_IP_STAT(IP,2,.TRUE.,ACLOC)
-                 CALL RKS_SP3(IP,2,DT4S,.TRUE.,ACLOC)
-                 DT4S = 2 * DT4S
-                 !CALL INT_IP_STAT(IP,20,.FALSE.,ACLOC)
-                 CALL RKS_SP3(IP,20,DT4S,.FALSE.,ACLOC)
-                 DT4S = 0.5 * DT4S
-                 CALL RKS_SP3(IP,2,DT4S,.TRUE.,ACLOC)
-                 !CALL INT_IP_STAT(IP,2,.TRUE.,ACLOC)
+!                 CALL RKS_SP3(IP,20,DT4S_H,.FALSE.,ACLOC)
+!                 CALL RKS_SP3(IP,2,DT4S,.TRUE.,ACLOC)
+!                 CALL RKS_SP3(IP,20,DT4S_H,.FALSE.,ACLOC)
 
-                 write(*,*) NIT_SNL4, NIT_SIN, NIT_SBF, NIT_SBR, NIT_SNL3
+                 !CALL RKS_SP3(IP,2,DT4S_H,.TRUE.,ACLOC)
+                 !CALL RKS_SP3(IP,20,DT4S,.FALSE.,ACLOC)
+                 !CALL RKS_SP3(IP,2,DT4S_H,.TRUE.,ACLOC)
+
+                 !CALL RKS_SP3(IP,2,DT4S_H,.TRUE.,ACLOC)
+                 !CALL RKS_SP3(IP,20,DT4S_E,.FALSE.,ACLOC)
+
+                 CALL INT_IP_STAT(IP,DT4S_H,20,.FALSE.,ACLOC)
+                 CALL INT_IP_STAT(IP,DT4S,2,.TRUE.,ACLOC)
+                 CALL INT_IP_STAT(IP,DT4S_H,20,.FALSE.,ACLOC)
+
+                 !write(*,*) NIT_SNL4, NIT_SIN, NIT_SBF, NIT_SBR, NIT_SNL3
                ELSE IF (SMETHOD == 2) THEN
-                 CALL INT_IP_STAT(IP,10,LLIMT,ACLOC)
+                 CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
                  CALL RKS_SP3(IP,10,DT4S,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 4) THEN
-                 CALL INT_IP_DYN(IP, 10, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
+                 CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                  write(*,*) NDYNITER, NIT_ALL
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
                  CALL INT_IP_DYN(IP, 1, LLIMT, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
@@ -156,13 +167,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_STAT(IP,ISELECT,LIMITER,ACLOC)
+      SUBROUTINE INT_IP_STAT(IP,DT,ISELECT,LIMITER,ACLOC)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP, ISELECT
          LOGICAL, INTENT(IN) :: LIMITER
+         REAL(rkind), INTENT(IN) :: DT
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
@@ -173,7 +185,7 @@
          REAL(rkind)    :: NEWDAC, NEWAC(MSC,MDC)
          REAL(rkind)    :: MAXDAC, CONST, SND
 
-         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+         CONST = PI2**2*3.0*1.0E-7*DT*SPSIG(MSC)
          SND   = PI2*5.6*1.0E-3
 
          IF (LIMITER) THEN
@@ -192,7 +204,7 @@
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
              OLDAC  = ACLOC(IS,ID)
-             NEWDAC = IMATRA(IS,ID) * DT4S / ( 1.0 - DT4S * MIN(ZERO,IMATDA(IS,ID))) 
+             NEWDAC = IMATRA(IS,ID) * DT / ( 1.0 - DT * MIN(ZERO,IMATDA(IS,ID))) 
              IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
              ACLOC(IS,ID) = MAX( 0.0_rkind, OLDAC + NEWDAC ) 
            END DO
@@ -337,7 +349,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_DYN(IP, ISELECT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
+      SUBROUTINE INT_IP_DYN(IP, ISELECT, DT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -345,7 +357,7 @@
          INTEGER, INTENT(IN)        :: IP, ISELECT, ITRMX
          INTEGER, INTENT(OUT)       :: ITER
          LOGICAL,INTENT(IN)          :: LIMIT
-         REAL(rkind), INTENT(IN)    :: DTMIN
+         REAL(rkind), INTENT(IN)    :: DTMIN, DT
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
@@ -373,30 +385,30 @@
          DTTOT = 0.
          ITER  = 0
 
-         DO WHILE ( DTTOT < DT4S )
+         DO WHILE ( DTTOT < DT )
 
            ACOLD = ACLOC
-           IF (ITER == 0) DT4SI = DT4S
-           IF (ITER == 0) DTLEFT = DT4S
+           IF (ITER == 0) DT4SI = DT
+           IF (ITER == 0) DTLEFT = DT
            ITER  = ITER + 1
-           DTMAX =  DT4S 
+           DTMAX =  DT
 
            CALL SOURCETERMS(IP, ISELECT,ACLOC, IMATRA, IMATDA, .FALSE., MSC_HF)  ! 1. CALL
         
            DO ID = 1, MDC
              DO IS = 1, MSC_HF
                IF (ABS(IMATRA(IS,ID)) .GT. VERYSMALL) THEN                
-                 DTMAX = MIN(DTMAX,MIN(DT4S,NPF(IS)/ABS(IMATRA(IS,ID))))
+                 DTMAX = MIN(DTMAX,MIN(DT,NPF(IS)/ABS(IMATRA(IS,ID))))
                END IF
              END DO
            END DO
 
            DT4SI  = DTMAX
            DT4SI  = MAX(DTMIN,DT4SI) ! This is not entirely stable !!!
-           DTLEFT = DT4S - DTTOT
+           DTLEFT = DT - DTTOT
 
            IF ( DTLEFT > THR .AND. DTLEFT < DT4SI) THEN
-             DT4SI = (DT4S - DTTOT)
+             DT4SI = (DT - DTTOT)
            ELSE IF ( DTLEFT .GE. DT4SI .AND. ITER .EQ. ITRMX) THEN
              DT4SI = DTLEFT 
              LSTABLE = .FALSE. 
