@@ -32,7 +32,7 @@
          REAL(rkind)    :: UBOT, TMBOT, SME01WS, SME10WS
          REAL(rkind)    :: HS, ETOT, CP, WLM, FPMH,FPM4 
          REAL(rkind)    :: KPP, WPINT, WIINT, FRP, LPOW, MPOW, a1, a2, DM, DSPR, ETOTWS
-         REAL(rkind)    :: PEAKDSPR, PEAKDM, ORBITAL, BOTEXPER, ETOTS, ETOTC
+         REAL(rkind)    :: PEAKDSPR, PEAKDM, ORBITAL, BOTEXPER, ETOTS, ETOTC, XRR, XPP, XFLT, XREL, FACP, XFILT
          REAL(rkind)    :: FPP, CGPP, WNPP, CPP, TPP, LPP, TEMP2(MSC)
          REAL(rkind)    :: AWW3(NSPEC), AWW32d(MSC,MDC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
          REAL(rkind)    :: F(MDC,MSC), SL(MDC,MSC), FL(MDC,MSC), EDENS(MSC), KDS(MSC), ABAB(MSC)
@@ -41,7 +41,7 @@
 
          REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC)
          REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC), SSBRL(MSC,MDC)
-         REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1
+         REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1, DAM(MSC*MDC)
 
          REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, AS, ICE, TMP2
          REAL(rkind)    :: CHARN, FMEANWS, TAUWAX, TAUWAY, ABRBOT, FP, TP, XJ, FLLOWEST, GADIAG
@@ -102,15 +102,28 @@
          END IF
 
 #ifdef ST_DEF
-         DO IK=1, NK
-           WN2(1+(IK-1)*NTH) = WK(IP,IK)
-         END DO
-         DO IK=1, NK
-           IS0 = (IK-1)*NTH
-           DO ITH=2, NTH
-             WN2(ITH+IS0) = WN2(1+IS0)
-           END DO
-         END DO
+      XPP     = 0.15
+      XRR     = 0.10
+      XFILT  = 0.05
+      XPP     = MAX ( 1.E-6 , XPP )
+      XRR     = MAX ( 1.E-6 , XRR )
+      XREL   = XRR
+      XFILT  = MAX ( 0. , XFILT )
+      XFLT   = XFILT
+      FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2
+
+      DO IK=1, NK
+        DAM(1+(IK-1)*NTH) = FACP / ( SIG(IK) * WK(IP,IK)**3 )
+        WN2(1+(IK-1)*NTH) = WK(IP,IK)
+        END DO
+!
+      DO IK=1, NK
+        IS0    = (IK-1)*NTH
+        DO ITH=2, NTH
+          DAM(ITH+IS0) = DAM(1+IS0)
+          WN2(ITH+IS0) = WN2(1+IS0)
+          END DO
+        END DO
 #endif
 
          IF ((ISELECT .EQ. 1 .OR. ISELECT .EQ. 10 .OR. ISELECT .EQ. 20) .AND. .NOT. LRECALC) THEN
@@ -122,7 +135,7 @@
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. THR) THEN
                  MSC_HF(IP) = MSC
 #ifdef ST_DEF
-                 AWW3    = 1.E-8 
+                 AWW3    = 1.E-3 
                  LLWS    = .TRUE.
                  USTAR   = 0.
                  USTDIR  = 0.
@@ -272,7 +285,7 @@
  
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
-         IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10) .AND. .NOT. LRECALC) THEN
+         IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
                CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
@@ -385,7 +398,7 @@
 #endif
          END IF
 
-         IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.40).AND.ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
+         IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30).AND.ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. SMALL) THEN
              IF (MESTR .EQ. 1 ) THEN
 !             CALL TRIADSWAN (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)

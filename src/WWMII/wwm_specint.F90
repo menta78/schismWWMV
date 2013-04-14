@@ -31,9 +31,8 @@
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-                 CALL RKS_SP3(IP,2,DT4S_T,.TRUE.,ACLOC)
-                 CALL RKS_SP3(IP,20,DT4S,.FALSE.,ACLOC)
-                 CALL RKS_SP3(IP,2,DT4S_TS,.TRUE.,ACLOC)
+                 CALL INT_IP_STAT(IP,DT4S, 20,LLIMT,ACLOC)
+                 CALL RKS_SP3(IP,40,DT4S_H,.FALSE.,ACLOC)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -275,7 +274,7 @@
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DTSII / ( ONE - DTSII * MIN(0._rkind,IMATDA(IS,ID)) )
+             NEWDAC = IMATRA(IS,ID) * DTSII / ( ONE - DTSII * MIN(ZERO,IMATDA(IS,ID)) )
              IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
              ACLOC(IS,ID) = MAX( ZERO, ACLOC(IS,ID) + NEWDAC )
            END DO
@@ -301,7 +300,7 @@
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DTSII / ( 1.0 - DTSII * MIN(ZERO,IMATDA(IS,ID)) )
+             NEWDAC = IMATRA(IS,ID) * DTSII / ( ONE - DTSII * MIN(ZERO,IMATDA(IS,ID)) )
              IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
              ACLOC(IS,ID) = MAX( ZERO, ONE/THREE * ACOLD(IS,ID) + TWO/THREE * ACLOC(IS,ID) + TWO/THREE * NEWDAC)
            END DO
@@ -316,6 +315,11 @@
       SUBROUTINE INT_IP_DYN(IP, ISELECT, DT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
 
          USE DATAPOOL
+#ifdef ST41
+         USE W3SRC4MD_OLD
+#elif ST42
+         USE W3SRC4MD_NEW
+#endif
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP, ISELECT, ITRMX
@@ -325,25 +329,46 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         INTEGER :: IS, ID
+         INTEGER :: IS, ID, IK, ITH, IS0
 
          REAL(rkind)    :: ACOLD(MSC,MDC)
          REAL(rkind)    :: NPF(MSC)
-         REAL(rkind)    :: TMP1, TMP2, TMP3
-         REAL(rkind)    :: NEWDAC, CONST, SND
-         REAL(rkind)    :: MAXDAC, DTMAX, DTTOT, DTLEFT, DT4SI
+         REAL(rkind)    :: TMP1, TMP2, TMP3, AFILT
+         REAL(rkind)    :: NEWDAC, CONST, SND, DAMAX, AFAC
+         REAL(rkind)    :: MAXDAC, DTMAX, DTTOT, DTLEFT, DT4SI, USTAR
 
          REAL(rkind), PARAMETER :: MAXDTFAC = VERYLARGE 
 
          LOGICAL :: LSTABLE
 
-         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+         REAL(rkind) :: XPP, XRR, XFILT, XREL, XFLT, FACP, DAM(MSC)
+
+
+#ifdef ST_DEF
+         XPP    = 0.15
+         XRR    = 0.10
+         XFILT  = 0.0001 ! AR: check why it must be so small ..
+         XPP    = MAX ( 1.E-6 , XPP )
+         XRR    = MAX ( 1.E-6 , XRR )
+         XREL   = XRR
+         XFLT   = MAX ( 0. , XFILT ) 
+         FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2  ! s4/m4
+         DAM    = FACP / ( SIG * WK(IP,:)**3 ) / CG(IP,:) ! s * m³ * s4/m4 = 
+         AFILT  = MAX ( DAM(MSC) , XFLT*MAXVAL(ACLOC))!*PI2*SPSIG(MSC_HF(IP)) )
+#endif
+
+         CONST = PI2**2*3.0*1.0E-7*DT*SPSIG(MSC_HF(IP))
          SND   = PI2*5.6*1.0E-3
 
-         IF (MELIM == 1) THEN
-           NPF = 0.0081_rkind*LIMFAK/(two*SPSIG*WK(IP,:)**3*CG(IP,:))
-         ELSE IF (MELIM == 2) THEN
-           NPF = LIMFAK*ABS((CONST*(MAX(UFRIC(IP),G9*SND/SPSIG)))/(SPSIG**3*WK(IP,:)))
+         IF (LIMIT) THEN
+           IF (MELIM == 1) THEN
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
+           ELSE IF (MELIM == 2) THEN
+             DO IS = 1, MSC
+               USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
+               NPF(IS) = ABS((CONST*USTAR)/(SPSIG(IS)**3*WK(IP,IS)))
+             END DO
+           END IF
          END IF
 
          DTTOT = 0.
@@ -362,7 +387,9 @@
            DO ID = 1, MDC
              DO IS = 1, MSC_HF(IP)
                IF (ABS(IMATRA(IS,ID)) .GT. VERYSMALL) THEN                
-                 DTMAX = MIN(DTMAX,MIN(DT,NPF(IS)/ABS(IMATRA(IS,ID))))
+                 DAMAX  = MIN ( DAM(IS) , MAX ( XREL*ACLOC(IS,ID), AFILT ) )
+                 AFAC  = ONE / MAX( 1.E-10 , ABS(IMATRA(IS,ID)/DAMAX) )
+                 DTMAX = MIN (DTMAX ,AFAC/(MAX(1.E-10,ONE + AFAC*MIN(ZERO,IMATDA(IS,ID))))) 
                END IF
              END DO
            END DO
@@ -380,11 +407,13 @@
 
            DTTOT = DTTOT + DT4SI
 
-           IF ( DT4SI .LT. DTMAX ) THEN
+           IF ( DT4SI .LT. DTMAX + SMALL) THEN
              LSTABLE = .TRUE. 
            ELSE
              LSTABLE = .FALSE.
            END IF
+
+           write(*,*) DTTOT, DT4SI, DTMAX, LSTABLE
 
            IF (LSTABLE) THEN
              DO IS = 1, MSC_HF(IP)
