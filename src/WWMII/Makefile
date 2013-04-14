@@ -5,7 +5,7 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI = 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC =  
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
@@ -31,13 +31,13 @@ F90 = mpif90
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-#F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
+F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
+#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -g -traceback -O2 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti

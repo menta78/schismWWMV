@@ -700,19 +700,14 @@
 
       CONST1 = BETAMAX/XKAPPA**2
 
+      WRITE(5011) DELUST, DELALP
+
       ALLOCATE(W(JTOT), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 1')
 
       W=1.
       W(1)=0.5
       W(JTOT)=0.5
-
-      IF(.NOT.ALLOCATED(TAUHFT)) THEN
-        ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,NFRE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 2')
-!        WRITE(STAT%FHNDL,*) 'ALLOCATED HIGH FREQ. STRESS TABLE'
-!        WRITE(STAT%FHNDL,*) NFRE, IALPHA, IUSTAR, JTOT
-      ENDIF
 
       DO M=1,NFRE
 
@@ -753,6 +748,8 @@
         ENDDO
 
       ENDDO
+
+      WRITE(5011) TAUHFT
 
       DEALLOCATE(W)
 !      WRITE(STAT%FHNDL,*) 'STRESS TABLE DONE'
@@ -849,8 +846,8 @@
       DELJ1   = MIN(1.,XJ - REAL(J))
       DELJ2   = 1. - DELJ1
 
-      !WRITE(STAT%FHNDL,*) 'INPUT DATA', DELTAUW, TAUW, ITAUMAX, JUMAX, U10
-      !WRITE(STAT%FHNDL,*) 'STRESS INDICES', XI, I, DELI1, DELI2, XJ, J, DELJ2, DELJ1
+      WRITE(STAT%FHNDL,*) 'INPUT DATA', DELTAUW, TAUW, ITAUMAX, JUMAX, U10
+      WRITE(STAT%FHNDL,*) 'STRESS INDICES', XI, I, DELI1, DELI2, XJ, J, DELJ2, DELJ1
 
       US  = (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2 +&
             (TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
@@ -965,11 +962,10 @@
 !     0. ALLOCATE ARRAYS
 !        ----------------
 
-      IF(.NOT.ALLOCATED(TAUT)) THEN
-        ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 3')
+!        ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+!        IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 3')
 !        WRITE(STAT%FHNDL,*) 'ALLOCATED STRESS TABLE', ITAUMAX, JUMAx, JPLEVT
-      ENDIF
+!      ENDIF
 
 !*    1.DETERMINE TOTAL STRESS.
 !       -----------------------
@@ -983,7 +979,9 @@
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 
-      WRITE(STAT%FHNDL,*) 'STRESS INIT', TAUWMAX, DELU, DELTAUW
+      write(5010) DELU, DELTAUW
+
+      WRITE(STAT%FHNDL,*) 'STRESS INIT', DELU, DELTAUW
 !
 !*    1.2 DETERMINE STRESS.
 !         -----------------
@@ -992,7 +990,7 @@
 
         XL=XNLEV(JL)
         IF(ITEST.GE.1) THEN
-!          WRITE(STAT%FHNDL,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
+          WRITE(STAT%FHNDL,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
 
         CDRAG = 0.0012875
@@ -1010,13 +1008,12 @@
               UST    = SQRT(TAUOLD)
               Z0     = ALPHA*TAUOLD/(G)/(1.-X)**XM
               F      = UST-XKAPPA*UTOP/(LOG(XL/Z0))
-              DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST*&
-     &         (1.-(XM+1)*X)/(1.-X)
+              DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST*(1.-(XM+1)*X)/(1.-X)
               UST    = UST-F/DELF
               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
             ENDDO
             TAUT(I,J,JL)  = SQRT(TAUOLD)
-            WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)
+!            WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)
           ENDDO
         ENDDO
       ENDDO
@@ -1028,6 +1025,8 @@
           TAUT(I,0,JL)=0.0
         ENDDO
       ENDDO
+
+      write(5010) TAUT
 
       RETURN
       END SUBROUTINE STRESS

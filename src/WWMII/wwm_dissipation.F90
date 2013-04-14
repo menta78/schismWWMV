@@ -48,6 +48,52 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SDS_CYCLE4( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSDS )
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)    :: IP
+         REAL(rkind)   , INTENT(IN)    :: KMESPC, SMESPC, ETOT
+         REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSDS(MSC,MDC)
+
+         INTEGER :: IS, ID
+
+         REAL(rkind)   :: CDS, ALPHAPM, STEEP, POW
+         REAL(rkind)   :: DELTA
+         REAL(rkind)   :: SDSWCAP
+         REAL(rkind)   :: AUX, AUX1
+         REAL(rkind)   :: AUX2
+!
+         ALPHAPM = 3.02E-3
+         CDS     = 4.1E-5
+         DELTA   = 0.6
+         POW     = 2.
+         STEEP   = KMESPC**2.0*ETOT
+         AUX     = CDS * SMESPC * (STEEP/ALPHAPM)**POW
+
+!         write(*,*) aux, cds, smespc, steep, alphapm, pow
+
+         DO IS = 1, MSC
+            AUX1 = WK(IP,IS) / KMESPC
+            AUX2 = ( (1.0 - DELTA) + DELTA * AUX1 ) * AUX1
+            SDSWCAP = AUX * AUX2
+            DO ID = 1, MDC
+               SSDS(IS,ID) = SDSWCAP * ACLOC(IS,ID)
+               IF (ICOMP .GE. 2) THEN
+                 IMATDA(IS,ID) = IMATDA(IS,ID) + SDSWCAP
+               ELSE
+                 IMATDA(IS,ID) = IMATDA(IS,ID) - SDSWCAP
+                 IMATRA(IS,ID) = IMATRA(IS,ID) - SSDS(IS,ID)
+               END IF
+            END DO
+         END DO
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SDS_ECMWF (IP, EMEAN, FMEAN, AKMEAN, ACLOC, IMATRA, IMATDA, SSDS)
          USE DATAPOOL
          IMPLICIT NONE
@@ -68,21 +114,21 @@
          REAL(rkind)    :: TEMP1, SDS
 
          CDIS  = 4.2
-         CONSS =  .5 * CDIS
+         CONSS = -CDIS*PI2 
 
-         SDS = CONSS*FMEAN*EMEAN**2*AKMEAN**4
+         SDS = CONSS*FMEAN*EMEAN**2*AKMEAN**4/PI2
 
          DO IS = 1, MSC
-            TEMP1 = WK(IP,IS)/AKMEAN
-            SSDS(IS,:) = SDS * ((1-0.6)*TEMP1 + (0.6)*TEMP1**2)
-            DO ID = 1, MDC
-               IF (ICOMP .GE. 2) THEN
-                 IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
-               ELSE IF (ICOMP .LT. 2) THEN
-                 IMATRA(IS,ID) = IMATRA(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
-                 IMATDA(IS,ID) = IMATDA(IS,ID) - SSDS(IS,ID)
-               END IF
-            END DO
+           TEMP1 = WK(IP,IS)/AKMEAN
+           SSDS(IS,:) = SDS * ((1-0.6)*TEMP1 + 0.6*TEMP1**2)
+           DO ID = 1, MDC
+            IF (ICOMP .GE. 2) THEN
+              IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
+            ELSE IF (ICOMP .LT. 2) THEN
+              IMATRA(IS,ID) = IMATRA(IS,ID) + SSDS(IS,ID) * ACLOC(IS,ID)
+              IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
+            END IF
+           END DO
          END DO
 
       END SUBROUTINE SDS_ECMWF

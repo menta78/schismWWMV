@@ -104,11 +104,27 @@
 ! WAM Cycle 4.5 - shared
 !
          IF (MESIN .EQ. 2) THEN
-           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1), stat=istat)
+           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1), MSC_HF(MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-           TAUHFT   = zero; TAUT = 0._rkind
+           TAUHFT = zero; TAUT = zero; MSC_HF = MSC
+         ELSE IF (MESIN .EQ. 6) THEN
+           ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
+           ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
+           ALLOCATE(MSC_HF(MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
+           TAUHFT = zero; TAUT = zero; MSC_HF = MSC
+           INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
+           INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+           IF (LPRECOMP_EXIST) THEN
+             READ(5010) DELU, DELTAUW
+             READ(5010) TAUT
+             READ(5011) DELUST, DELALP 
+             READ(5011) TAUHFT
+           ENDIF
          ENDIF
-!
+
 ! Boundary conditions - shared
 !
          ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
@@ -494,11 +510,11 @@
 #elif ST42
            CALL PREPARE_ARDHUIN_NEW
 #endif
-         ELSE IF (MESIN .EQ. 2) THEN
+         ELSE IF (MESIN .EQ. 2 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
            CALL PREPARE_SOURCE
            CALL FLUSH(STAT%FHNDL)
-         ELSE IF (MESIN .EQ. 6) THEN
+         ELSE IF (MESIN .EQ. 6 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
            CALL PREPARE_SOURCE_ECMWF 
            CALL FLUSH(STAT%FHNDL)

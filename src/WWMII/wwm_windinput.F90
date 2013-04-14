@@ -179,8 +179,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_LIN_CAV( IP, WINDTH, FPM, ACLOC, IMATRA,           &
-     &  IMATDA, SSINL )
+      SUBROUTINE SIN_LIN_CAV( IP, WINDTH, FPM, IMATRA, SSINL )
 !
 !     Linear growth term according to Cavaleri & Melanotte Rizolli ...
 !
@@ -188,28 +187,29 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)   :: IP
-         REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   , INTENT(OUT)  :: IMATRA(MSC,MDC)
          REAL(rkind)   , INTENT(OUT)  :: SSINL(MSC,MDC)
          REAL(rkind)   , INTENT(IN)   :: WINDTH
          REAL(rkind)   , INTENT(IN)   :: FPM
-         REAL(rkind)   , INTENT(IN)   :: ACLOC(MSC,MDC)
 
-         INTEGER               :: IS, ID
+         INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX, AUX1, AUX2, AUXH
          REAL(rkind)                  :: SWINA, SFIL(MSC,MDC)
 
          AUX = 0.0015_rkind / ( G9*G9*PI2 )
+
          DO IS = 1, MSC
-            AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
-            AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
-            DO ID = 1, MDC
-               IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
-                 AUX2 = ( UFRIC(IP) * MAX( 0._rkind , COS(SPDIR(ID)-WINDTH) ) )**4
-                 SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
-                 SSINL(IS,ID) = SWINA / SPSIG(IS)
-                 IMATRA(IS,ID) = SSINL(IS,ID)
-               END IF
-            END DO
+           AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
+           AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
+           DO ID = 1, MDC
+             IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
+               AUX2 = ( UFRIC(IP) * MAX( 0._rkind , COS(SPDIR(ID)-WINDTH) ) )**4
+               SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
+               SSINL(IS,ID) = SWINA / SPSIG(IS)
+               IMATRA(IS,ID) = SSINL(IS,ID)
+               write(*,'(8F20.10)') ssinl(is,id), fpm, aux, aux2, auxh, ufric(ip)
+             END IF
+           END DO
          END DO
 
          RETURN
@@ -432,7 +432,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE STRESSO_ECMWF (IP,WINDTH,ACLOC,IMATRA,MSC_HF)
+       SUBROUTINE STRESSO_ECMWF (IP,WINDTH,ACLOC,IMATRA)
 !
 !      Janssen input from the WAM source code ... 
 !
@@ -441,7 +441,7 @@
 
          REAL(rkind), PARAMETER    :: EPS1    = 0.00001_rkind
 
-         INTEGER, INTENT(IN)  :: IP, MSC_HF
+         INTEGER, INTENT(IN)  :: IP
          REAL(rkind), INTENT(IN)     :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)     :: IMATRA(MSC,MDC)
 
@@ -454,17 +454,17 @@
          REAL(rkind)    :: TEMP, XSTRESS, YSTRESS, WINDTH, TAU1, UST, UST2, INVRHOA, ACBAR
 
 
-         CONST0  = DDIR*SPSIG(MSC_HF)**6/G9**2 ! rad * 1/s**6 / (m²/s**4) = rad / m² * 1/s² 
+         CONST0  = DDIR*SPSIG(MSC_HF(IP))**6/G9**2 ! rad * 1/s**6 / (m²/s**4) = rad / m² * 1/s² 
 !         WRITE(1006,*) CONST0
          CONSTF = 0._rkind
-         DO IS = 1, MSC_HF - 1
+         DO IS = 1, MSC_HF(IP) - 1
            CONSTF(IS)=XINVEPS*FRINTF*DDIR*SIGPOW(IS,3)  ! kg/kg * rad * 1/s³ = rad/s³
 !           WRITE(1006,'(I10,5F15.6)') IS, CONSTF(IS), SPSIG(IS), FRINTF
          ENDDO
 
          XSTRESS = 0._rkind ! N/m² -> kg * m/s² / m² => kg/(m*s²)
          YSTRESS = 0._rkind
-         DO IS = 1, MSC_HF
+         DO IS = 1, MSC_HF(IP)
            DO ID = 1,MDC
              XSTRESS = XSTRESS + IMATRA(IS,ID) * CONSTF(IS) * SINTH(ID) ! m²s/rad * rad * 1/s³ = m²/s² 
              YSTRESS = YSTRESS + IMATRA(IS,ID) * CONSTF(IS) * COSTH(ID) 
@@ -494,7 +494,7 @@
 
          TEMP = 0._rkind
          DO ID = 1, MDC
-           TEMP = TEMP + ACLOC(MSC_HF,ID) * MAX(0._rkind,COS(SPDIR(ID)-WINDTH))**3
+           TEMP = TEMP + ACLOC(MSC_HF(IP),ID) * MAX(0._rkind,COS(SPDIR(ID)-WINDTH))**3
          END DO
 
          TAUHF(IP)= CONST0*TEMP*UST2*TAU1 ! rad/(m²s²)'m²s²/rad*m²/s² = m²/s²
