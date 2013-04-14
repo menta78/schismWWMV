@@ -117,8 +117,10 @@
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESIN == 1) THEN ! Ardhuin et al. 2010
                CALL SET_WIND( IP, WIND10, WINDTH )
+               TAUWX(IP) = ZERO
+               TAUWY(IP) = ZERO               
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. THR) THEN
-
+                 MSC_HF(IP) = MSC
 #ifdef ST_DEF
                  AWW3    = 1.E-8 
                  LLWS    = .TRUE.
@@ -143,6 +145,7 @@
                    IMATDA(:,ID) = IMATDAWW3(:,ID) 
                  END DO
                ELSE
+                 MSC_HF(IP) = MSC
                  AS      = 0. 
                  ICE     = 0. ! Ice maps ... 
 #ifdef ST41

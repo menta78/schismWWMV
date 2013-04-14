@@ -42,8 +42,9 @@
 !
 ! spectral grid - shared
 !
-         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), stat=istat)
+         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), MSC_HF(MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+         MSC_HF = MSC
          SPSIG = zero
          SPDIR = zero
          FR    = zero
@@ -104,17 +105,15 @@
 ! WAM Cycle 4.5 - shared
 !
          IF (MESIN .EQ. 2) THEN
-           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1), MSC_HF(MNP), stat=istat)
+           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-           TAUHFT = zero; TAUT = zero; MSC_HF = MSC
+           TAUHFT = zero; TAUT = zero
          ELSE IF (MESIN .EQ. 6) THEN
            ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
            ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-           ALLOCATE(MSC_HF(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-           TAUHFT = zero; TAUT = zero; MSC_HF = MSC
+           TAUHFT = zero; TAUT = zero
            INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
            INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
            IF (LPRECOMP_EXIST) THEN

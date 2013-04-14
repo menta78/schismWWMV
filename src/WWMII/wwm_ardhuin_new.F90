@@ -382,7 +382,9 @@
 
         TAUWX = ZERO; TAUWY = ZERO; CD = ZERO; Z0 = ZERO; USTDIR = ZERO
 
-        IF (LPRECOMPST4) THEN
+        INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
+
+        IF (.NOT. LPRECOMP_EXIST) THEN
           CALL INSIN4_NEW(.TRUE.)
         ELSE
           CALL READ_INSIN4_NEW
@@ -393,8 +395,8 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4_NEW()
-        USE DATAPOOL, ONLY : LPRECOMPST4
-        IF (.NOT. LPRECOMPST4) THEN
+        USE DATAPOOL, ONLY : LPRECOMP_EXIST 
+        IF (LPRECOMP_EXIST) THEN
           READ (5002)                &
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
@@ -1132,7 +1134,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY: LPRECOMPST4, G9, INVPI2, RADDEG, RKIND
+      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST
       USE DATAPOOL, ONLY: ZERO, ONE, TWO
 # ifdef MPI_PARALL_GRID
       USE ELFE_MSGP
@@ -1346,7 +1348,7 @@
    if (myrank == 0) then
 # endif
 
-   IF (LPRECOMPST4) THEN
+   IF (.NOT. LPRECOMP_EXIST) THEN
      WRITE (5002)                                                       &
      & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                    &
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &

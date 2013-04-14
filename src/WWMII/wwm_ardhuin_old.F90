@@ -386,7 +386,9 @@
 
         TAUWX = 0.; TAUWY = 0.; CD = 0.; Z0 = 0.; USTDIR = 0.
 
-        IF (LPRECOMPST4) THEN
+        INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
+
+        IF (.NOT. LPRECOMP_EXIST) THEN
           CALL INSIN4_OLD(.TRUE.)
         ELSE
           CALL READ_INSIN4_OLD
@@ -397,8 +399,8 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4_OLD()
-        USE DATAPOOL, ONLY : LPRECOMPST4
-        IF (.NOT. LPRECOMPST4) THEN
+        USE DATAPOOL, ONLY : LPRECOMP_EXIST 
+        IF (.NOT. LPRECOMP_EXIST) THEN
           READ (5002)                                                   &
      &     ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                &
      &     TTAUWSHELTER, SSWELLFPAR, SSWELLF,                           &

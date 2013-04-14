@@ -153,7 +153,7 @@
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**THREE*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
            ELSE IF (MELIM == 2) THEN
              DO IS = 1, MSC
                USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
@@ -251,20 +251,20 @@
          INTEGER :: IS, ID
          REAL(rkind)    :: ACOLD(MSC,MDC)
          REAL(rkind)    :: NPF(MSC)
-         REAL(rkind)    :: NEWDAC, MAXDAC, CONST, SND
+         REAL(rkind)    :: NEWDAC, MAXDAC, CONST, SND, USTAR
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         CONST = PI2**2*3.0*1.0E-7*DTSII*SPSIG(MSC)
+         CONST = PI2**2*3.0*1.0E-7*DTSII*SPSIG(MSC_HF(IP))
          SND   = PI2*5.6*1.0E-3
- 
-         IMATRA = 0.
-         IMATDA = 0.
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**THREE*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
            ELSE IF (MELIM == 2) THEN
-             NPF = LIMFAK*ABS((CONST*(MAX(UFRIC(IP),G9*SND/SPSIG)))/SPSIG**4)/(SPSIG*PI2)
+             DO IS = 1, MSC
+               USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
+               NPF(IS) = ABS((CONST*USTAR)/(SPSIG(IS)**3*WK(IP,IS)))
+             END DO
            END IF
          END IF
 

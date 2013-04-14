@@ -237,7 +237,6 @@
          LOGICAL    :: LEXPIMP     = .FALSE.
          LOGICAL    :: LFIRSTSTEP  = .TRUE.
          LOGICAL    :: LFIRSTREAD  = .TRUE.
-         LOGICAL    :: LPRECOMPST4 = .TRUE.
          LOGICAL    :: LPRECOMP_EXIST = .FALSE.
          LOGICAL    :: LETOT       = .TRUE.
          LOGICAL    :: LADVTEST    = .FALSE.

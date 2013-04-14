@@ -724,7 +724,7 @@
 
          NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
      &      MESBR, ICRIT, ALPBJ, BRHD,                                  &
-     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, LPRECOMPST4
+     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
