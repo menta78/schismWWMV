@@ -1586,6 +1586,7 @@ subroutine aquire_hgrid(full_aquire)
             write(errmsg,*)'Broken ball:',i
             call parallel_abort(errmsg)
           endif
+
         else !one more node for bnd ball
           nnp(i)=nnp(i)+1
           if(nnp(i)>mnei+1) then

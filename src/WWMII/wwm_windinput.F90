@@ -207,7 +207,6 @@
                SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
                SSINL(IS,ID) = SWINA / SPSIG(IS)
                IMATRA(IS,ID) = SSINL(IS,ID)
-               write(*,'(8F20.10)') ssinl(is,id), fpm, aux, aux2, auxh, ufric(ip)
              END IF
            END DO
          END DO

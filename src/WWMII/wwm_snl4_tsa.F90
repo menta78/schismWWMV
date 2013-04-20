@@ -1601,14 +1601,14 @@
 !!
 !!        Bash; use tsa() & diag()
 !!        Convert Polar tsa(k,theta) to Cartesian S(theta,k)
-!          S(iang,irng) = tsa(irng,iang) * wka(irng)   !* <=============
-!          D(iang,irng) = diag(irng,iang)
+          S(iang,irng) = tsa(irng,iang) * wka(irng)   !* <=============
+          D(iang,irng) = diag(irng,iang)
 !!        --------------------------------
 !!
 !!        Bash; use fbi() & diag2()
 !!        Convert Polar fbi(k,theta) to Cartesian S(theta,k)
-          S(iang,irng) = fbi(irng,iang) * wka(irng)   !* <=============
-          D(iang,irng) = diag2(irng,iang)
+!          S(iang,irng) = fbi(irng,iang) * wka(irng)   !* <=============
+!          D(iang,irng) = diag2(irng,iang)
 !!        --------------------------------
 !!
   51    continue

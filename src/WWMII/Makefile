@@ -1,5 +1,5 @@
 include ${PETSC_DIR}/conf/variables
-PROG = $(HOME)/bin/wwmadv2
+PROG = $(HOME)/bin/wwmadv
 #PROG = wwmadv
 
 FFLAGS = -DST42
@@ -37,9 +37,9 @@ F90 = mpif90
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
+#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#F90OPTI = -g -traceback -O2 -axSSE4.2 -unroll-aggressive -assume byterecl 
+F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp

@@ -31,7 +31,7 @@
       IF (LSTWD) THEN
         IF (LCWIN) THEN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED' 
-          WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
+          WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT, LWDIR
           IF (LWDIR) THEN
             CALL DEG2NAUT(WDIR, WDIRT, LNAUTIN)
             DO IP = 1, MNP
@@ -100,6 +100,8 @@
       ELSE IF (LSEWD) THEN
         IF (LCWIN) THEN
           CALL wwm_abort('LSEWD + LCWIN NOT READY')
+!         CALL READ_WIND_TIME_SERIES(IT) ! set time according to wwminput.nml and get initial time step
+!         CALL SET_INITIAL_WIND(IT) ! 
         ELSE
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)

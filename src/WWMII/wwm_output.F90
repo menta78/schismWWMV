@@ -237,11 +237,7 @@
            CALL FLUSH(OUT%FHNDL+7)
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
-               IF (WIND_GLOBAL_4(IP,8) .lt. thr8) then
-                 cycle
-               ELSE
-                 WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
-               ENDIF
+               WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
              ENDDO
              CALL FLUSH(OUT%FHNDL+9)
            END IF
@@ -295,7 +291,7 @@
          WRITE(OUT%FHNDL+2)  (CURR_4(IP,1), CURR_4(IP,2), SNGL(DEP(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+2)
          WRITE(OUT%FHNDL+3)  TIME_4
-         WRITE(OUT%FHNDL+3)  (OUTT_4(IP,7), OUTT_4(IP,8), OUTT_4(IP,10), IP = 1, MNP)
+         WRITE(OUT%FHNDL+3)  (OUTT_4(IP,7), OUTT_4(IP,8), WIND_4(IP,3), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+3)
          WRITE(OUT%FHNDL+4)  TIME_4
          WRITE(OUT%FHNDL+4)  (UFRIC(IP), Z0(IP), ALPHA_CH(IP), IP = 1, MNP)
@@ -314,11 +310,7 @@
          CALL FLUSH(OUT%FHNDL+8)
          IF (DoAirSea) THEN
            DO IP = 1, MNP
-             IF (WIND_4(IP,8) .lt. thr8) then
-               cycle 
-             ELSE
-               WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
-             ENDIF
+             WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
            ENDDO
            CALL FLUSH(OUT%FHNDL+9)
          END IF
@@ -1483,7 +1475,7 @@
          OUTPAR(9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2 [-}
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
-         !WRITE(DBG%FHNDL,'(10F15.6)') OUTPAR
+!         WRITE(DBG%FHNDL,'(10F15.6)') OUTPAR
 
          RETURN
       END SUBROUTINE

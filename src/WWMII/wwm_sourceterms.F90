@@ -133,30 +133,36 @@
                TAUWX(IP) = ZERO
                TAUWY(IP) = ZERO               
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. THR) THEN
-                 MSC_HF(IP) = MSC
+                 CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+                 IF (.NOT. LINID) THEN
+                   CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+!                   write(*,*) 'cavaleri mellanote rizzoli', ip, sum(acloc), sum(imatra), sum(imatda) 
+                 ENDIF
+!                 MSC_HF(IP) = MSC
 #ifdef ST_DEF
-                 AWW3    = 1.E-3 
-                 LLWS    = .TRUE.
-                 USTAR   = 0.
-                 USTDIR  = 0.
-                 AS      = 0.
-                 ICE     = 0.
+ !                AWW3    = 0. 
+!                 LLWS    = .TRUE.
+!                 USTAR   = 0.
+!                 USTDIR  = 0.
+!                 AS      = 0.
+!                 ICE     = 0.
 #endif
 
-#ifdef ST41
-                 CALL W3SPR4_OLD ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), CHARN, LLWS, FMEANWS)
-                 CALL W3SIN4_OLD ( AWW3, CG(IP,:), WK(IP,:), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
-#elif ST42
-                 CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)    
-                 CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
-#endif
-                 CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
-                 SSINE = IMATRAWW3
-                 CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
-                 DO ID = 1, MDC
-                   IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(IP,:)
-                   IMATDA(:,ID) = IMATDAWW3(:,ID) 
-                 END DO
+!#ifdef ST41
+!                 CALL W3SPR4_OLD ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), CHARN, LLWS, FMEANWS)
+!                 CALL W3SIN4_OLD ( AWW3, CG(IP,:), WK(IP,:), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
+!#elif ST42
+!                 CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)    
+!                 CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
+!#endif
+!                 CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
+!                 SSINE = IMATRAWW3
+!                 CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
+                 !DO ID = 1, MDC
+                 !  IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(IP,:) + IMATRA(IS,ID)
+                 !  IMATDA(:,ID) = IMATDAWW3(:,ID) 
+                 !END DO
+!                 write(*,*) 'AFTER ARDHUIN',  ip, sum(acloc), sum(imatra), sum(imatda) 
                ELSE
                  MSC_HF(IP) = MSC
                  AS      = 0. 
@@ -180,7 +186,7 @@
                  SSINE = IMATRAWW3
                  CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
                  DO ID = 1, MDC
-                   IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(IP,:)
+                   IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(IP,:) + IMATRA(:,ID)
                    IMATDA(:,ID) = IMATDAWW3(:,ID) !/ CG(IP,:) 
                  END DO
                END IF
@@ -284,6 +290,8 @@
          END IF ! ISELECT 
  
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
+
+        !write(*,*) 'FINAL IMATRA', sum(IMATRA)
 
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -442,6 +450,7 @@
 
            !WRITE(*,*) 'DOING RECALCULATION BASED ON NEW SPECTRA', SUM(ACLOC)
 
+!AR: this cannot work since crap was done here ... we need a better calling structure to this stuff ... 
            DISSIPATION(IP) = 0.
            AIRMOMENTUM(IP) = 0.
            DO ID = 1, MDC
@@ -495,7 +504,10 @@
 
              CALL FKMEAN  (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
              CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-             CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+             CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
+             CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+             CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
+             CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
 
              TAILFACTOR=2.5
              FPMH = TAILFACTOR/FR(1)
