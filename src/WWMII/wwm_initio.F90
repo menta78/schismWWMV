@@ -351,7 +351,7 @@
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
          USE WWM_PARALL_SOLVER, only : SYMM_INIT_COLORING, INIT_BLOCK_FREQDIR
-         USE WWM_PARALL_SOLVER, only : I5_ALLOCATE
+         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_ALLOCATE
 # endif
 #endif
 #ifdef PETSC
@@ -458,7 +458,7 @@
 !AR: Pleaes define all FHNDL in the proper place where the others are defined
              NblockFreqDir = NB_BLOCK 
              CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir)
-             CALL I5_ALLOCATE(SolDat)
+             CALL WWM_SOLVER_ALLOCATE(SolDat)
              IF (PCmethod .eq. 2) THEN
 !               CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
              END IF

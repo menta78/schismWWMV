@@ -186,7 +186,7 @@
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-         USE WWM_PARALL_SOLVER, only : I5_EIMPS
+         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
 # endif
 #endif
          IMPLICIT NONE
@@ -276,7 +276,7 @@
            ELSE IF (AMETHOD == 6) THEN
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-             CALL I5_EIMPS(MainLocalColor, SolDat)
+             CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
 # endif
 #endif
            END IF
