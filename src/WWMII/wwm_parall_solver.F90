@@ -4007,7 +4007,7 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: eCoeff
       integer lenBlock, IP, JP, idx, J, IS, ID, IP_glob
       integer DoOper
-      real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
+      real(rkind), intent(inout) :: ACret(MSC,MDC,MNP)
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=NP_RES,1,-1
         IF (LocalColor % CovLower(IP) == 1) THEN
@@ -4295,7 +4295,7 @@ MODULE WWM_PARALL_SOLVER
           idx=JA(J)
           eSum=eSum + SolDat % ASPAR_block(:,:,J)*ACin(:,:,idx)
         END DO
-        ACret(IP,:,:)=eSum
+        ACret(:,:,IP)=eSum
       END DO
       CALL EXCHANGE_P4D_WWM(ACret)
       END SUBROUTINE
