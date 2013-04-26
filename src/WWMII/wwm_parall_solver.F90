@@ -5,8 +5,8 @@
 !    We use memory ordered as AC(MNP,MSC,MDC)
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
-#undef PLAN_B
 #define PLAN_B
+#undef PLAN_B
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -2917,8 +2917,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
-! Those are passive checks that we may pass
-! and still be incorrect
 # ifdef DEBUG
       DO IP=1,NP_RES
         DO J=IA(IP),IA(IP+1)-1
@@ -2935,6 +2933,46 @@ MODULE WWM_PARALL_SOLVER
       END DO
       WRITE(myrank+740,*) 'sum(Jstatus_L)=', sum(Jstatus_L)
       WRITE(myrank+740,*) 'sum(Jstatus_U)=', sum(Jstatus_U)
+# endif
+# ifdef REORDER_ASPAR
+      allocate(IA_L(NP_RES+1))
+      allocate(IA_U(NP_RES+1))
+      allocate(JA_LU(NNZ))
+      allocate(Jmap(NNZ))
+      allocate(JmapR(NNZ))
+      Jmap=-1
+      JmapR=-1
+      IA_L(1)=1
+      idx=0
+      DO IP=1,NP_RES
+        DO J=IA(IP),IA(IP+1)-1
+          nb=0
+          IF (Jstatus_L(J).eq.1) THEN
+            JP=JA(J)
+            nb=nb+1
+            idx=idx+1
+            Jmap(idx)=J
+            JmapR(J)=idx
+            JA_LU(idx)=JP
+          END IF
+          IA_L(IP+1)=IA_L(IP)+nb
+        END DO
+      END DO
+      IA_U(1)=IA_L(NP_RES+1)
+      DO IP=1,NP_RES
+        DO J=IA(IP),IA(IP+1)-1
+          nb=0
+          IF (Jstatus_U(J).eq.1) THEN
+            JP=JA(J)
+            nb=nb+1
+            idx=idx+1
+            Jmap(idx)=J
+            JmapR(J)=idx
+            JA_LU(idx)=JP
+          END IF
+          IA_U(IP+1)=IA_U(IP)+nb
+        END DO
+      END DO
 # endif
       allocate(LocalColor % Jstatus_L(NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 103')

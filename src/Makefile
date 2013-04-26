@@ -54,8 +54,8 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = BLKLGT
 #ENV         = GORDON
 #ENV         = FRANZIUS
-#ENV         = MATHIEU
-ENV = ARON
+ENV         = MATHIEU
+#ENV = ARON
 
 ################################################################################
 # Executable
