@@ -4980,11 +4980,8 @@ MODULE WWM_PARALL_SOLVER
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter
       MaxError=SOLVERTHR
-      CALL I5B_APPLY_FCT(SolDat,  AC2, SolDat % AC3)
+      CALL I5B_APPLY_FCT(SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
-      DO IP=1,MNP
-        SolDat % AC2(:,:,IP)=AC2(IP,:,:) ! x solution
-      END DO
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
       SolDat % AC5=0                               ! v
@@ -5529,6 +5526,120 @@ MODULE WWM_PARALL_SOLVER
 #endif
       END SUBROUTINE
 !**********************************************************************
+!*
+!**********************************************************************
+      SUBROUTINE  EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
+      REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
+      REAL(rkind), intent(inout) :: U(MSC, MDC, MNP)
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+      REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+      REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
+      INTEGER :: I1, I2, I3
+      INTEGER :: IP, ID, IE, POS
+      INTEGER :: I, J, IPGL, IPrel
+      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
+      REAL(rkind) :: LAMBDA(MSC,MDC,2)
+
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+      CALL CADVXY_VECTOR(CX, CY)
+!
+!        Calculate countour integral quantities ...
+!
+      DO IE = 1, MNE
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I2))
+        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I2))
+        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
+        KP(:,:,:,IE) = MAX(ZERO,K)
+        KM = MIN(0.0_rkind,K)
+        FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
+        FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
+        FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
+        FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
+        FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
+        FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
+        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
+        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
+        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
+        NM(:,:,IE)       = ONE/MIN(THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+      END DO
+
+      J     = 0    ! Counter ...
+      ASPAR = 0.0_rkind ! Mass matrix ...
+      B     = 0.0_rkind ! Right hand side ...
+!
+! ... assembling the linear equation system ....
+!
+      DO IP = 1, NP_RES
+        IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            POS   =  POS_CELL(J)
+            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
+            TRIA03 = ONETHIRD * TRIA(IE)
+            DO ID=1,MDC
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:,IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            I2    =  POSI(2,J)
+            I3    =  POSI(3,J)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
+            B(:,:,IP)     =  B(:,:,IP) + TRIA03 * U(:,:,IP)
+          END DO !I: loop over connected elements ...
+        ELSE
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            TRIA03 = ONETHIRD * TRIA(IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+            B(:,:,IP)     =  ZERO
+          END DO
+        END IF
+      END DO
+      IF (LBCWA .OR. LBCSP) THEN
+        IF (LINHOM) THEN
+          IPrel=IP
+        ELSE
+          IPrel=1
+        ENDIF
+        DO IP = 1, IWBMNP
+          IPGL = IWBNDLC(IP)
+          ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+          B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
+        END DO
+      END IF
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+        DO IP = 1, NP_RES
+          IF (IOBWB(IP) .EQ. 1) THEN
+            ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * SI(IP) ! Add source term to the diagonal
+            B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * SI(IP) ! Add source term to the right hand side
+          ENDIF
+        END DO
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5_EIMPS(LocalColor, SolDat)
@@ -5579,6 +5690,12 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
       integer IS, ID, IP
+      DO IP=1,MNP
+        SolDat % AC2(:,:,IP)=AC2(IP,:,:)
+      END DO
+#if defined ASPAR_B_COMPUTE_BLOCK
+      CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+#else
       DO IS=1,MSC
         DO ID=1,MDC
           U=AC2(:,IS,ID)
@@ -5587,6 +5704,7 @@ MODULE WWM_PARALL_SOLVER
           SolDat % B_block(IS,ID,:)=B
         END DO
       END DO
+#endif
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
       CALL I5B_EXCHANGE_ASPAR(SolDat % ASPAR_block)
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
