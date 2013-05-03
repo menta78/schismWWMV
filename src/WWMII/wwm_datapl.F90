@@ -985,7 +985,6 @@
          ! reordering indexes for efficient exchanges
          integer, dimension(:), pointer :: IA_L, IA_U, JA_LU
          integer, dimension(:), pointer :: Jmap, JmapR
-         integer NNZshift
          ! MPI var for isend/irecv
          integer, dimension(:), pointer :: Low_s_rq
          integer, dimension(:), pointer :: Upp_s_rq

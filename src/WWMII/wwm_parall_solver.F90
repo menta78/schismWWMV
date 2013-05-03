@@ -2861,7 +2861,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE DETERMINE_JSTATUS_L_U(LocalColor)
       USE DATAPOOL, only : LocalColorInfo, MNP, rkind
-      USE DATAPOOL, only : NNZ, IA, JA, NP_RES
+      USE DATAPOOL, only : NNZ, IA, JA, NP_RES, I_DIAG
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_p2drecv_type, wwm_p2dsend_type
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
@@ -2964,8 +2964,8 @@ MODULE WWM_PARALL_SOLVER
             LocalColor % JmapR(J)=idx
             LocalColor % JA_LU(idx)=JP
           END IF
-          LocalColor % IA_L(IP+1)=LocalColor % IA_L(IP)+nb
         END DO
+        LocalColor % IA_L(IP+1)=LocalColor % IA_L(IP)+nb
       END DO
       LocalColor % IA_U(1)=LocalColor % IA_L(NP_RES+1)
       DO IP=1,NP_RES
@@ -2979,10 +2979,14 @@ MODULE WWM_PARALL_SOLVER
             LocalColor % JmapR(J)=idx
             LocalColor % JA_LU(idx)=JP
           END IF
-          LocalColor % IA_U(IP+1)=LocalColor % IA_U(IP)+nb
         END DO
+        nb=nb+1
+        idx=idx+1
+        J=I_DIAG(IP)
+        LocalColor % Jmap(idx)=J
+        LocalColor % JmapR(J)=idx
+        LocalColor % IA_U(IP+1)=LocalColor % IA_U(IP)+nb
       END DO
-      LocalColor % NNZshift=LocalColor % IA_U(NP_RES+1)
 # endif
       allocate(LocalColor % Jstatus_L(NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 103')
@@ -3269,7 +3273,7 @@ MODULE WWM_PARALL_SOLVER
               SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)*SolDat%AC2(:,:,JP)
             END IF
           ENDDO
-          J=LocalColor % NNZshift + IP
+          J=LocalColor% IA_U(IP+1)-1
           SolDat % ASPAR_pc(:,:,J)=SolDat%AC2(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_U(J) == 1) THEN
@@ -3742,13 +3746,15 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
       INTEGER, intent(in) :: iBlock
-      integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbUpp_send
+      integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
-      DO idx=1,lenBlock
-        IS=LocalColor % ISindex(iBlock, idx)
-        ID=LocalColor % IDindex(iBlock, idx)
-        LocalColor % ACexch(idx,:)=AC(IS,ID,:)
+      DO IP=1,MNP
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
+        END DO
       END DO
       nbUpp_send=LocalColor % nbUpp_send
       DO iUpp=1,nbUpp_send
@@ -3771,13 +3777,15 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(inout) :: AC(MSC, MDC, MNP)
       INTEGER, intent(in) :: iBlock
-      integer iProc, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbLow_recv
+      integer iProc, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbLow_recv
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
-      DO idx=1,lenBlock
-        IS=LocalColor % ISindex(iBlock, idx)
-        ID=LocalColor % IDindex(iBlock, idx)
-        LocalColor % ACexch(idx,:)=AC(IS,ID,:)
+      DO IP=1,MNP
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
+        END DO
       END DO
       nbLow_recv=LocalColor % nbLow_recv
       DO iProc=1,nbLow_recv
@@ -3788,10 +3796,12 @@ MODULE WWM_PARALL_SOLVER
       IF (nbLow_recv > 0) THEN
         call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
       END IF
-      DO idx=1,lenBlock
-        IS=LocalColor % ISindex(iBlock, idx)
-        ID=LocalColor % IDindex(iBlock, idx)
-        AC(IS,ID,:)=LocalColor % ACexch(idx,:)
+      DO IP=1,MNP
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          AC(IS,ID,:)=LocalColor % ACexch(idx,:)
+        END DO
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -4088,7 +4098,7 @@ MODULE WWM_PARALL_SOLVER
       DO IP=NP_RES,1,-1
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
-          DO J=LocalColor % IA_U(IP),LocalColor % IA_U(IP+1)-1
+          DO J=LocalColor % IA_U(IP),LocalColor % IA_U(IP+1)-2
             JP=LocalColor % JA_LU(J)
             DO idx=1,lenBlock
               IS=LocalColor % ISindex(iBlock, idx)
@@ -4099,7 +4109,7 @@ MODULE WWM_PARALL_SOLVER
               END IF
             END DO
           END DO
-          J=LocalColor % NNZshift + IP
+          J=LocalColor % IA_U(IP+1)-1
           DO idx=1,lenBlock
             IS=LocalColor % ISindex(iBlock, idx)
             ID=LocalColor % IDindex(iBlock, idx)
