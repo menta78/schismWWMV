@@ -7,6 +7,14 @@
 !    so reordering at the beginning but less operations later on.
 #define PLAN_B
 #undef PLAN_B
+! This is for the reordering of ASPAR_pc and hopefully higher speed
+! in the application of the preconditioner.
+#undef REORDER_ASPAR_PC
+#define REORDER_ASPAR_PC
+! This is for the computation of ASPAR_block by a block algorithm
+! with hopefully higher speed.
+#define ASPAR_B_COMPUTE_BLOCK
+#undef ASPAR_B_COMPUTE_BLOCK
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -2864,6 +2872,7 @@ MODULE WWM_PARALL_SOLVER
       integer Jstatus_L(NNZ), Jstatus_U(NNZ)
       integer IP, J, JP, DoOper
       integer istat
+      integer nb, idx
       Jstatus_L=0
       Jstatus_U=0
       DO IP=1,NP_RES
@@ -2934,15 +2943,15 @@ MODULE WWM_PARALL_SOLVER
       WRITE(myrank+740,*) 'sum(Jstatus_L)=', sum(Jstatus_L)
       WRITE(myrank+740,*) 'sum(Jstatus_U)=', sum(Jstatus_U)
 # endif
-# ifdef REORDER_ASPAR
-      allocate(IA_L(NP_RES+1))
-      allocate(IA_U(NP_RES+1))
-      allocate(JA_LU(NNZ))
-      allocate(Jmap(NNZ))
-      allocate(JmapR(NNZ))
-      Jmap=-1
-      JmapR=-1
-      IA_L(1)=1
+# ifdef REORDER_ASPAR_PC
+      allocate(LocalColor % IA_L(NP_RES+1))
+      allocate(LocalColor % IA_U(NP_RES+1))
+      allocate(LocalColor % JA_LU(NNZ))
+      allocate(LocalColor % Jmap(NNZ))
+      allocate(LocalColor % JmapR(NNZ))
+      LocalColor % Jmap=-1
+      LocalColor % JmapR=-1
+      LocalColor % IA_L(1)=1
       idx=0
       DO IP=1,NP_RES
         DO J=IA(IP),IA(IP+1)-1
@@ -2951,14 +2960,14 @@ MODULE WWM_PARALL_SOLVER
             JP=JA(J)
             nb=nb+1
             idx=idx+1
-            Jmap(idx)=J
-            JmapR(J)=idx
-            JA_LU(idx)=JP
+            LocalColor % Jmap(idx)=J
+            LocalColor % JmapR(J)=idx
+            LocalColor % JA_LU(idx)=JP
           END IF
-          IA_L(IP+1)=IA_L(IP)+nb
+          LocalColor % IA_L(IP+1)=LocalColor % IA_L(IP)+nb
         END DO
       END DO
-      IA_U(1)=IA_L(NP_RES+1)
+      LocalColor % IA_U(1)=LocalColor % IA_L(NP_RES+1)
       DO IP=1,NP_RES
         DO J=IA(IP),IA(IP+1)-1
           nb=0
@@ -2966,13 +2975,14 @@ MODULE WWM_PARALL_SOLVER
             JP=JA(J)
             nb=nb+1
             idx=idx+1
-            Jmap(idx)=J
-            JmapR(J)=idx
-            JA_LU(idx)=JP
+            LocalColor % Jmap(idx)=J
+            LocalColor % JmapR(J)=idx
+            LocalColor % JA_LU(idx)=JP
           END IF
-          IA_U(IP+1)=IA_U(IP)+nb
+          LocalColor % IA_U(IP+1)=LocalColor % IA_U(IP)+nb
         END DO
       END DO
+      LocalColor % NNZshift=LocalColor % IA_U(NP_RES+1)
 # endif
       allocate(LocalColor % Jstatus_L(NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 103')
@@ -3242,20 +3252,33 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-      integer IP, ID, IS, JP, J1, J, IPglob, JPglob
+      integer IP, ID, IS, JP, JR, J1, J, IPglob, JPglob
       real(rkind) eVal
       DO IP=1,NP_RES
         J=I_DIAG(IP)
-        DO IS=1,MSC
-          DO ID=1,MDC
-            eVal=ONE/SolDat % ASPAR_block(IS,ID,J)
-            SolDat%AC2(IS,ID,IP)=eVal
-          END DO
-        END DO
+        SolDat%AC2(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
       CALL EXCHANGE_P4D_WWM(SolDat%AC2)
       DO IP=1,NP_RES
         IF (LocalColor%CovLower(IP) == 1) THEN
+# if defined REORDER_ASPAR_PC
+          DO J=IA(IP),IA(IP+1)-1
+            IF (LocalColor%Jstatus_L(J) == 1) THEN
+              JP=JA(J)
+              JR=LocalColor%JmapR(J)
+              SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)*SolDat%AC2(:,:,JP)
+            END IF
+          ENDDO
+          J=LocalColor % NNZshift + IP
+          SolDat % ASPAR_pc(:,:,J)=SolDat%AC2(:,:,IP)
+          DO J=IA(IP),IA(IP+1)-1
+            IF (LocalColor%Jstatus_U(J) == 1) THEN
+              JP=JA(J)
+              JR=LocalColor%JmapR(J)
+              SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)
+            END IF
+          END DO
+# else
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_L(J) == 1) THEN
               JP=JA(J)
@@ -3270,6 +3293,7 @@ MODULE WWM_PARALL_SOLVER
               SolDat % ASPAR_pc(:,:,J)=SolDat % ASPAR_block(:,:,J)
             END IF
           END DO
+# endif
         END IF
       END DO
       END SUBROUTINE
@@ -3854,7 +3878,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : IA, JA, I_DIAG, MSC, MDC, MNP, rkind, NP_RES
+      USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
       USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
@@ -3925,7 +3949,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : IA, JA, I_DIAG, MSC, MDC, MNP, rkind, NP_RES
+      USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
       USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
@@ -3940,6 +3964,19 @@ MODULE WWM_PARALL_SOLVER
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
+# if defined REORDER_ASPAR_PC
+          DO J=LocalColor % IA_L(IP),LocalColor % IA_L(IP+1)-1
+            JP=LocalColor % JA_LU(J)
+            DO idx=1,lenBlock
+              IS=LocalColor % ISindex(iBlock, idx)
+              ID=LocalColor % IDindex(iBlock, idx)
+              eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+              IF (DO_SOLVE_L) THEN
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
+              END IF
+            END DO
+          END DO
+# else
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_L(J) .eq. 1) THEN
               JP=JA(J)
@@ -3953,6 +3990,7 @@ MODULE WWM_PARALL_SOLVER
               END DO
             END IF
           END DO
+# endif
         ENDIF
       END DO
       END SUBROUTINE
@@ -4049,6 +4087,27 @@ MODULE WWM_PARALL_SOLVER
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=NP_RES,1,-1
         IF (LocalColor % CovLower(IP) == 1) THEN
+# if defined REORDER_ASPAR_PC
+          DO J=LocalColor % IA_U(IP),LocalColor % IA_U(IP+1)-1
+            JP=LocalColor % JA_LU(J)
+            DO idx=1,lenBlock
+              IS=LocalColor % ISindex(iBlock, idx)
+              ID=LocalColor % IDindex(iBlock, idx)
+              eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+              IF (DO_SOLVE_U) THEN
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
+              END IF
+            END DO
+          END DO
+          J=LocalColor % NNZshift + IP
+          DO idx=1,lenBlock
+            IS=LocalColor % ISindex(iBlock, idx)
+            ID=LocalColor % IDindex(iBlock, idx)
+            IF (DO_SOLVE_U) THEN
+              ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
+            END IF
+          END DO
+# else
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_U(J) .eq. 1) THEN
               JP=JA(J)
@@ -4070,6 +4129,7 @@ MODULE WWM_PARALL_SOLVER
               ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
             END IF
           END DO
+#endif
         ENDIF
       END DO
       END SUBROUTINE
