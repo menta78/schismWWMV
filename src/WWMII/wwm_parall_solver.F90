@@ -1984,11 +1984,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
       CALL INIT_LOW_2_UPP_ARRAYS(LocalColor, ListColorWork)
       !
-!# ifdef DEBUG
-!      WRITE(740+myrank,*) 'Before INIT_UPP_2_LOW_ARRAYS (not needed)'
-!# endif
-!      CALL INIT_UPP_2_LOW_ARRAYS(LocalColor, ListColorWork)
-      !
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Before CALL_BLOCK_FREQDIR'
 # endif
@@ -2203,12 +2198,12 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'SumErr(meth1/meth2) CovLower=', SumErr
       WRITE(740+myrank,*) 'MNP=', MNP, ' sum(CovLower)=', sum(CovLower)
-# endif
       IF (SumErr .gt. 0) THEN
         DO IP=1,MNP
           WRITE(740+myrank,*) IP, CovLower(IP), CovLower_meth2(IP)
         END DO
       ENDIF
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2771,19 +2766,6 @@ MODULE WWM_PARALL_SOLVER
                   DoOper=1
                 END IF
               END IF
-!              IF (LocalColor % CovLower(JP) == 1) THEN
-!                IF (JP .gt. IP) THEN
-!                  DoOper=1
-!                ELSE
-!                  DoOper=0
-!                END IF
-!              ELSE
-!                IF (JP .le. NP_RES) THEN
-!                  DoOper=0
-!                ELSE
-!                  DoOper=1
-!                END IF
-!              END IF
             ELSE
               DoOper=0
             END IF
