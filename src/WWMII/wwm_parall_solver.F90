@@ -5,8 +5,10 @@
 !    We use memory ordered as AC(MNP,MSC,MDC)
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
-#define PLAN_B
+#define DEBUG
+
 #undef PLAN_B
+#define PLAN_B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
 #undef REORDER_ASPAR_PC
@@ -3579,7 +3581,7 @@ MODULE WWM_PARALL_SOLVER
       IF (nbLow_send > 0) THEN
         call mpi_waitall(nbLow_send, LocalColor%u2l_p2dsend_rqst, LocalColor%u2l_p2dsend_stat,ierr)
       END IF
-      END SUBROUTINE 
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -4311,6 +4313,82 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(ACw, Lerror)
+      USE DATAPOOL, only : MNP, MSC, MDC, rkind
+      USE DATAPOOL, only : ListIPLG, ListMNP
+      USE elfe_msgp, only : istatus, ierr, comm, rtype, myrank, nproc
+      USE elfe_glbl, only : iplg, np_global
+      implicit none
+      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
+      real(rkind), intent(out) :: Lerror
+      real(rkind), allocatable :: ACtotal(:,:,:)
+      real(rkind), allocatable :: ACloc(:,:,:)
+      real(rkind), allocatable :: rbuf_real(:)
+      integer, allocatable :: ListFirstMNP(:)
+      integer, allocatable :: eStatus(:)
+      integer IP, iProc, IPglob, IS, ID
+      integer MNPloc
+      integer istat
+      IF (myrank == 0) THEN
+        Lerror=0
+        allocate(ListFirstMNP(nproc), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 108')
+        ListFirstMNP=0
+        DO iProc=2,nproc
+          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+        END DO
+        allocate(eStatus(np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 109')
+        allocate(ACtotal(MSC, MDC, np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 110')
+        eStatus=0
+        DO IP=1,MNP
+          IPglob=iplg(IP)
+          ACtotal(:,:,IPglob)=ACw(:,:,IP)
+          eStatus(IPglob)=1
+        END DO
+        DO iProc=2,nproc
+          MNPloc=ListMNP(iProc)
+          allocate(ACloc(MSC, MDC, MNPloc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 111')
+          CALL MPI_RECV(ACloc,MNPloc*MSC*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          DO IP=1,MNPloc
+            IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+            IF (eStatus(IPglob) == 1) THEN
+              DO IS=1,MSC
+                DO ID=1,MDC
+                  Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
+                END DO
+              END DO
+            ELSE
+              eStatus(IPglob)=1
+              ACtotal(:,:,IPglob)=ACloc(:,:,IP)
+            END IF
+          END DO
+          deallocate(ACloc)
+        END DO
+        deallocate(ListFirstMNP)
+        deallocate(ACtotal)
+        deallocate(eStatus)
+        allocate(rbuf_real(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 112')
+        rbuf_real(1)=Lerror
+        DO iProc=2,nproc
+          CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
+        END DO
+        deallocate(rbuf_real)
+      ELSE
+        CALL MPI_SEND(ACw,MNP*MSC*MDC,rtype, 0, 53, comm, ierr)
+        allocate(rbuf_real(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 113')
+        CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
+        Lerror=rbuf_real(1)
+        deallocate(rbuf_real)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5_SUM_MAX(ACw, LSum, LMax)
       USE DATAPOOL, only : rkind, MNP, MSC, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
@@ -4371,6 +4449,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod
+      USE elfe_msgp, only : myrank
 # ifdef DEBUG
       USE DATAPOOL, only : MNE, XP, YP, INE
       USE DATAPOOL, only : IA, JA, PCmethod
@@ -4775,6 +4854,9 @@ MODULE WWM_PARALL_SOLVER
       END IF
       iSystem=iSystem+1
 # endif
+      IF (myrank .eq. 0) THEN
+        Print *, 'nbIter=', nbIter
+      END IF
       AC2=SolDat%AC2
       END SUBROUTINE
 !
@@ -4785,6 +4867,9 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -4796,11 +4881,15 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: MaxError, CritVal
       REAL(rkind) :: eSum1, eSum2
       REAL(rkind) :: TheTol
+# ifdef DEBUG
+      REAL(rkind) :: Lerror
+# endif
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter
       MaxError=SOLVERTHR
       CALL I5B_APPLY_FCT(SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
+      SolDat % AC2=AC2                             ! x solution
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
       SolDat % AC5=0                               ! v
@@ -4817,6 +4906,12 @@ MODULE WWM_PARALL_SOLVER
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
         CALL I5B_SCALAR(SolDat % AC4, SolDat % AC3, Prov)
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC4, Lerror)
+        WRITE(myrank+240,*) 'error(AC4)=', Lerror
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC3, Lerror)
+        WRITE(myrank+240,*) 'error(AC3)=', Lerror
+# endif
 
         ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
         Beta=(Prov/Rho)*(Alpha/Omega)
@@ -4829,15 +4924,27 @@ MODULE WWM_PARALL_SOLVER
      &      + Beta(:,:)*SolDat%AC6(:,:,IP)                            &
      &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(:,:,IP)
         END DO
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC6, Lerror)
+        WRITE(myrank+240,*) 'error(AC6)=', Lerror
+# endif
 
         ! L4 y=K^(-1) Pi
         SolDat%AC1=SolDat%AC6
         IF (PCmethod .gt. 0) THEN
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
         ENDIF
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
+        WRITE(myrank+240,*) 'error(AC1)=', Lerror
+# endif
 
         ! L5 vi=Ay
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC1, SolDat%AC5)
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC5, Lerror)
+        WRITE(myrank+240,*) 'error(AC5)=', Lerror
+# endif
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
         CALL I5B_SCALAR(SolDat % AC4, SolDat % AC5, Prov)
@@ -4849,15 +4956,27 @@ MODULE WWM_PARALL_SOLVER
           SolDat%AC7(:,:,IP)=SolDat%AC3(:,:,IP)                        &
      &      - Alpha(:,:)*SolDat%AC5(:,:,IP)
         END DO
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC7, Lerror)
+        WRITE(myrank+240,*) 'error(AC7)=', Lerror
+# endif
 
         ! L8 z=K^(-1) s
         SolDat%AC8=SolDat%AC7
         IF (PCmethod .gt. 0) THEN
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC8)
         END IF
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
+        WRITE(myrank+240,*) 'error(AC8)=', Lerror
+# endif
 
         ! L9 t=Az
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC8, SolDat%AC9)
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC9, Lerror)
+        WRITE(myrank+240,*) 'error(AC9)=', Lerror
+# endif
 
         ! L10 omega=(t,s)/(t,t)
         CALL I5B_SCALAR(SolDat % AC9, SolDat % AC7, Omega)
@@ -4871,10 +4990,23 @@ MODULE WWM_PARALL_SOLVER
      &      + Alpha(:,:)*SolDat%AC1(:,:,IP)                            &
      &      + Omega(:,:)*SolDat%AC8(:,:,IP)
         END DO
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC2, Lerror)
+        WRITE(myrank+240,*) 'error(AC2)=', Lerror
+# endif
 
         ! L12 If x is accurate enough finish
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC2, SolDat%AC1)
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
+        WRITE(myrank+240,*) 'error(AC1)=', Lerror
+# endif
+
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
+        WRITE(myrank+240,*) 'error(AC8)=', Lerror
+# endif
         CALL I5B_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
 
@@ -4890,7 +5022,14 @@ MODULE WWM_PARALL_SOLVER
           SolDat%AC3(:,:,IP)=SolDat%AC7(:,:,IP)                        &
      &      - Omega(:,:)*SolDat%AC9(:,:,IP)
         END DO
+# ifdef DEBUG
+        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC3, Lerror)
+        WRITE(myrank+240,*) 'error(AC3)=', Lerror
+# endif
       END DO
+      IF (myrank .eq. 0) THEN
+        Print *, 'nbIter=', nbIter
+      END IF
       DO IP=1,MNP
         AC2(IP,:,:)=SolDat%AC2(:,:,IP)
       END DO
