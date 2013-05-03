@@ -3109,9 +3109,9 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) eVal
       DO IP=1,NP_RES
         J=I_DIAG(IP)
-        SolDat%AC2(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
+        SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
-      CALL EXCHANGE_P4D_WWM(SolDat%AC2)
+      CALL EXCHANGE_P4D_WWM(SolDat%AC4)
       DO IP=1,NP_RES
         IF (LocalColor%CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
@@ -3119,11 +3119,11 @@ MODULE WWM_PARALL_SOLVER
             IF (LocalColor%Jstatus_L(J) == 1) THEN
               JP=JA(J)
               JR=LocalColor%JmapR(J)
-              SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)*SolDat%AC2(:,:,JP)
+              SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)*SolDat%AC4(:,:,JP)
             END IF
           ENDDO
           J=LocalColor% IA_U(IP+1)-1
-          SolDat % ASPAR_pc(:,:,J)=SolDat%AC2(:,:,IP)
+          SolDat % ASPAR_pc(:,:,J)=SolDat%AC4(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_U(J) == 1) THEN
               JP=JA(J)
@@ -3135,11 +3135,11 @@ MODULE WWM_PARALL_SOLVER
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_L(J) == 1) THEN
               JP=JA(J)
-              SolDat % ASPAR_pc(:,:,J)=SolDat % ASPAR_block(:,:,J)*SolDat%AC2(:,:,JP)
+              SolDat % ASPAR_pc(:,:,J)=SolDat % ASPAR_block(:,:,J)*SolDat%AC4(:,:,JP)
             END IF
           ENDDO
           J=I_DIAG(IP)
-          SolDat % ASPAR_pc(:,:,J)=SolDat%AC2(:,:,IP)
+          SolDat % ASPAR_pc(:,:,J)=SolDat%AC4(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_U(J) == 1) THEN
               JP=JA(J)
@@ -4439,6 +4439,82 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5B_SUM_MAX(ACw, LSum, LMax)
+      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      USE DATAPOOL, only : nwild_loc_res, NP_RES
+      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      implicit none
+      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
+      real(rkind), intent(inout) :: LSum(MSC, MDC)
+      real(rkind), intent(inout) :: LMax(MSC, MDC)
+      real(rkind) :: RScal(MSC, MDC)
+      integer IP, iProc, IS, ID
+      LSum=0
+      DO IP=1,NP_RES
+        LSum=LSum + nwild_loc_res(IP)*ACw(:,:, IP)
+      END DO
+      DO IS=1,MSC
+        DO ID=1,MDC
+          LMax(IS,ID)=maxval(ACw(IS,ID,:))
+        END DO
+      END DO
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          LSum = LSum + RScal
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 59, comm, istatus, ierr)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              IF (RScal(IS,ID) .gt. LMax(IS,ID)) THEN
+                LMax(IS,ID)=RScal(IS,ID)
+              END IF
+            END DO
+          END DO
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(LSum,MSC*MDC,rtype, iProc-1, 197, comm, ierr)
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(LMax,MSC*MDC,rtype, iProc-1, 199, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(LSum,MSC*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(LMax,MSC*MDC,rtype, 0, 59, comm, ierr)
+        CALL MPI_RECV(LSum,MSC*MDC,rtype, 0, 197, comm, istatus, ierr)
+        CALL MPI_RECV(LMax,MSC*MDC,rtype, 0, 199, comm, istatus, ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      FUNCTION I5_SUMTOT(ACw)
+      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      implicit none
+      real(rkind), intent(in) :: ACw(MNP, MSC, MDC)
+      real(rkind) :: LSum(MSC, MDC)
+      real(rkind) :: LMax(MSC, MDC)
+      real(rkind) :: I5_SUMTOT
+      CALL I5_SUM_MAX(ACw, LSum, LMax)
+      I5_SUMTOT=sum(LSum)
+      END FUNCTION
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      FUNCTION I5B_SUMTOT(ACw)
+      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      implicit none
+      real(rkind), intent(in) :: ACw(MNP, MSC, MDC)
+      real(rkind) :: LSum(MSC, MDC)
+      real(rkind) :: LMax(MSC, MDC)
+      real(rkind) :: I5B_SUMTOT
+      CALL I5B_SUM_MAX(ACw, LSum, LMax)
+      I5B_SUMTOT=sum(LSum)
+      END FUNCTION
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 ! We use the notations of
 ! http://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 ! and we use K1=Id
@@ -4889,7 +4965,6 @@ MODULE WWM_PARALL_SOLVER
       MaxError=SOLVERTHR
       CALL I5B_APPLY_FCT(SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
-      SolDat % AC2=AC2                             ! x solution
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
       SolDat % AC5=0                               ! v
