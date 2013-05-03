@@ -3551,7 +3551,7 @@ MODULE WWM_PARALL_SOLVER
         DO idx=1,lenBlock
           IS=LocalColor % ISindex(iBlock, idx)
           ID=LocalColor % IDindex(iBlock, idx)
-          AC(IS,ID,:)=LocalColor % ACexch(idx,:)
+          AC(IS,ID,IP)=LocalColor % ACexch(idx,IP)
         END DO
       END DO
       END SUBROUTINE
@@ -4736,6 +4736,8 @@ MODULE WWM_PARALL_SOLVER
      &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(IP,:,:)
         END DO
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC6)=', I5_SUMTOT(SolDat%AC6)
         WRITE(myrank+240,*) 'AC6(p) max=', maxval(SolDat % AC6), 'sum=', sum(SolDat % AC6)
         CALL I5_TOTAL_COHERENCY_ERROR(SolDat%AC6, Lerror)
         CALL I5_SUM_MAX(SolDat%AC6, LSum, LMax)
@@ -4757,6 +4759,8 @@ MODULE WWM_PARALL_SOLVER
           CALL I5_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
         ENDIF
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC1)=', I5_SUMTOT(SolDat%AC1)
         WRITE(myrank+240,*) 'AC1(y) max=', maxval(SolDat % AC1), 'sum=', sum(SolDat % AC1)
         CALL I5_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
         CALL I5_SUM_MAX(SolDat%AC1, LSum, LMax)
@@ -4773,6 +4777,8 @@ MODULE WWM_PARALL_SOLVER
         ! L5 vi=Ay
         CALL I5_APPLY_FCT(SolDat,  SolDat%AC1, SolDat%AC5)
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC5)=', I5_SUMTOT(SolDat%AC5)
         WRITE(myrank+240,*) 'AC5(v) max=', maxval(SolDat % AC5), 'sum=', sum(SolDat % AC5)
         idAC5=idAC5+1
         iret=nf90_inq_varid(ncid, 'AC5', var_id)
@@ -4796,6 +4802,8 @@ MODULE WWM_PARALL_SOLVER
      &      - Alpha(:,:)*SolDat%AC5(IP,:,:)
         END DO
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC7)=', I5_SUMTOT(SolDat%AC7)
         WRITE(myrank+240,*) 'AC7(s) max=', maxval(SolDat%AC7), 'sum=', sum(SolDat%AC7)
         idAC7=idAC7+1
         iret=nf90_inq_varid(ncid, 'AC7', var_id)
@@ -4808,6 +4816,8 @@ MODULE WWM_PARALL_SOLVER
           CALL I5_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC8)
         END IF
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC8)=', I5_SUMTOT(SolDat%AC8)
         WRITE(myrank+240,*) 'max(AC8-7)=', maxval(SolDat%AC8 - SolDat%AC7)
         WRITE(myrank+240,*) 'min(AC8-7)=', minval(SolDat%AC8 - SolDat%AC7)
         WRITE(myrank+240,*) 'SYNCERR'
@@ -4831,6 +4841,8 @@ MODULE WWM_PARALL_SOLVER
         ! L9 t=Az
         CALL I5_APPLY_FCT(SolDat,  SolDat%AC8, SolDat%AC9)
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC9)=', I5_SUMTOT(SolDat%AC9)
         WRITE(myrank+240,*) 'AC9(t) max=', maxval(SolDat%AC9), 'sum=', sum(SolDat%AC9)
         idAC9=idAC9+1
         iret=nf90_inq_varid(ncid, 'AC9', var_id)
@@ -4856,6 +4868,8 @@ MODULE WWM_PARALL_SOLVER
      &      + Omega(:,:)*SolDat%AC8(IP,:,:)
         END DO
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC2)=', I5_SUMTOT(SolDat%AC2)
         WRITE(myrank+240,*) 'AC2(x) max=', maxval(SolDat%AC2), 'sum=', sum(SolDat%AC2)
         idAC2=idAC2+1
         iret=nf90_inq_varid(ncid, 'AC2', var_id)
@@ -4868,6 +4882,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC8)=', I5_SUMTOT(SolDat%AC8)
         WRITE(myrank+240,*) 'CritVal=', CritVal
         idCritVal=idCritVal+1
         iret=nf90_inq_varid(ncid, 'CritVal', var_id)
@@ -4887,23 +4903,12 @@ MODULE WWM_PARALL_SOLVER
      &      - Omega(:,:)*SolDat%AC9(IP,:,:)
         END DO
 # if defined DEBUG && defined NCDF
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC3)=', I5_SUMTOT(SolDat%AC3)
         WRITE(myrank+240,*) 'AC3(r) max=', maxval(SolDat%AC3), 'sum=', sum(SolDat%AC3)
         idAC3=idAC3+1
         iret=nf90_inq_varid(ncid, 'AC3', var_id)
         iret=nf90_put_var(ncid,var_id,SolDat%AC3,start=(/1,1,1,idAC3/), count = (/ MNP, MSC, MDC, 1 /))
-# endif
-# ifdef DEBUG
-      write(2000+myrank,*) 'nbIter=', nbIter
-      write(2000+myrank,*) 'sumtot(AC1)=', I5_SUMTOT(SolDat%AC1)
-      write(2000+myrank,*) 'sumtot(AC2)=', I5_SUMTOT(SolDat%AC2)
-      write(2000+myrank,*) 'sumtot(AC3)=', I5_SUMTOT(SolDat%AC3)
-      write(2000+myrank,*) 'sumtot(AC4)=', I5_SUMTOT(SolDat%AC4)
-      write(2000+myrank,*) 'sumtot(AC5)=', I5_SUMTOT(SolDat%AC5)
-      write(2000+myrank,*) 'sumtot(AC6)=', I5_SUMTOT(SolDat%AC6)
-      write(2000+myrank,*) 'sumtot(AC7)=', I5_SUMTOT(SolDat%AC7)
-      write(2000+myrank,*) 'sumtot(AC8)=', I5_SUMTOT(SolDat%AC8)
-      write(2000+myrank,*) 'sumtot(AC9)=', I5_SUMTOT(SolDat%AC9)
-      CALL FLUSH(2000+myrank)
 # endif
       END DO
 # if defined DEBUG
@@ -5031,6 +5036,8 @@ MODULE WWM_PARALL_SOLVER
      &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(:,:,IP)
         END DO
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(SolDat%AC6)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC6, Lerror)
         WRITE(myrank+240,*) 'error(AC6)=', Lerror
 # endif
@@ -5041,6 +5048,8 @@ MODULE WWM_PARALL_SOLVER
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
         ENDIF
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
@@ -5048,6 +5057,8 @@ MODULE WWM_PARALL_SOLVER
         ! L5 vi=Ay
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC1, SolDat%AC5)
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(SolDat%AC5)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC5, Lerror)
         WRITE(myrank+240,*) 'error(AC5)=', Lerror
 # endif
@@ -5063,6 +5074,8 @@ MODULE WWM_PARALL_SOLVER
      &      - Alpha(:,:)*SolDat%AC5(:,:,IP)
         END DO
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(SolDat%AC7)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC7, Lerror)
         WRITE(myrank+240,*) 'error(AC7)=', Lerror
 # endif
@@ -5073,6 +5086,8 @@ MODULE WWM_PARALL_SOLVER
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC8)
         END IF
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
         WRITE(myrank+240,*) 'error(AC8)=', Lerror
 # endif
@@ -5080,6 +5095,8 @@ MODULE WWM_PARALL_SOLVER
         ! L9 t=Az
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC8, SolDat%AC9)
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(SolDat%AC9)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC9, Lerror)
         WRITE(myrank+240,*) 'error(AC9)=', Lerror
 # endif
@@ -5097,6 +5114,8 @@ MODULE WWM_PARALL_SOLVER
      &      + Omega(:,:)*SolDat%AC8(:,:,IP)
         END DO
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(SolDat%AC2)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC2, Lerror)
         WRITE(myrank+240,*) 'error(AC2)=', Lerror
 # endif
@@ -5104,12 +5123,16 @@ MODULE WWM_PARALL_SOLVER
         ! L12 If x is accurate enough finish
         CALL I5B_APPLY_FCT(SolDat,  SolDat%AC2, SolDat%AC1)
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
 
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
         WRITE(myrank+240,*) 'error(AC8)=', Lerror
 # endif
@@ -5129,21 +5152,10 @@ MODULE WWM_PARALL_SOLVER
      &      - Omega(:,:)*SolDat%AC9(:,:,IP)
         END DO
 # ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(SolDat%AC3)
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
-# endif
-# ifdef DEBUG
-      write(2000+myrank,*) 'nbIter=', nbIter
-      write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
-      write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(SolDat%AC2)
-      write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(SolDat%AC3)
-      write(2000+myrank,*) 'sumtot(AC4)=', I5B_SUMTOT(SolDat%AC4)
-      write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(SolDat%AC5)
-      write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(SolDat%AC6)
-      write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(SolDat%AC7)
-      write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
-      write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(SolDat%AC9)
-      CALL FLUSH(2000+myrank)
 # endif
       END DO
       IF (myrank .eq. 0) THEN
