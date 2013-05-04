@@ -2991,6 +2991,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       integer ISsel, IDsel
       integer eCov
+      real(rkind) eSum
       real(rkind) eCoeff
 # endif
       DO IP=1,NP_RES
@@ -3076,6 +3077,17 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*) 'Sums of ASPAR_pc'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          eSum=sum(SolDat % ASPAR_pc(:,IS,ID))
+          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+        END DO
+      END DO
+      WRITE(3000+myrank,*) 'End of sums'
+      CALL FLUSH(3000+myrank)
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3090,7 +3102,6 @@ MODULE WWM_PARALL_SOLVER
       integer, allocatable :: ListJ(:)
       integer istat
       real(rkind) tl
-      SolDat%ASPAR_pc=SolDat%ASPAR_block
       CALL WWM_ABORT('Please program it')
       END SUBROUTINE
 !**********************************************************************
@@ -3102,11 +3113,17 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MNP, MSC, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE elfe_msgp, only : exchange_p4d_wwm
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IP, ID, IS, JP, JR, J1, J, IPglob, JPglob
       real(rkind) eVal
+# if defined DEBUG
+      real(rkind) :: eSum
+# endif
       DO IP=1,NP_RES
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
@@ -3149,6 +3166,18 @@ MODULE WWM_PARALL_SOLVER
 # endif
         END IF
       END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*) 'Sums of ASPAR_pc'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          eSum=sum(SolDat % ASPAR_pc(IS,ID,:))
+          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+        END DO
+      END DO
+      WRITE(3000+myrank,*) 'End of sums'
+      CALL FLUSH(3000+myrank)
+# endif
+      
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3649,6 +3678,7 @@ MODULE WWM_PARALL_SOLVER
       integer, intent(in) :: iBlock
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
+      real(rkind) :: eSum
 # endif
       real(rkind) :: eCoeff
       real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
@@ -3703,6 +3733,15 @@ MODULE WWM_PARALL_SOLVER
         Hfield(:)=ACret(:,IS,ID)
         write(740+myrank,*) IS, ID, sum(Hfield)
       END DO
+      WRITE(3000+myrank,*) 'Partial_SOLVE_L Sums of ACret'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          eSum=sum(ACret(:,IS,ID))
+          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+        END DO
+      END DO
+      WRITE(3000+myrank,*) 'End of sums'
+      CALL FLUSH(3000+myrank)
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -3712,8 +3751,10 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
       USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
+# ifdef DEBUG
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
+# endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
@@ -3722,6 +3763,9 @@ MODULE WWM_PARALL_SOLVER
       real(rkind), intent(inout) :: ACret(MSC,MDC,MNP)
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP
+# ifdef DEBUG
+      real(rkind) :: eSum
+# endif
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
@@ -3754,6 +3798,17 @@ MODULE WWM_PARALL_SOLVER
 # endif
         ENDIF
       END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*) 'Partial_SOLVE_L Sums of ACret'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          eSum=sum(ACret(IS,ID,:))
+          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+        END DO
+      END DO
+      WRITE(3000+myrank,*) 'End of sums'
+      CALL FLUSH(3000+myrank)
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
