@@ -882,7 +882,7 @@
 !pub                  kref2,kref4,jref2,jref4,wtk2,wtk4,              &
 !pub                  wta2,wta4,tfac2,tfac4,grad )
 !!    -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-      call gridsetr ( nrng,nang,npts,NZZ, dep,dfrq,ierr_gr,           &
+      call gridsetr ( nrng,nang,npts,NZZ,dep,dfrq,ierr_gr,           &
                       frqa,wka, cgnrng, sinan,cosan )
 !!    -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !!    ------------------------------------------------------------------
@@ -905,7 +905,7 @@
 #endif
       end if
 !!
-      FIRST_TSA  = .FALSE.
+      FIRST_TSA  = .TRUE.
       print *, ' Done calling gridsetr OK '
 !!-=
 !!    ------------------------------------------------------------------
