@@ -65,30 +65,17 @@
 
          CALL CPU_TIME(TIME6)
 
-#ifdef MPI_PARALL_GRID
-      IF (myrank == 0) THEN
-#endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   '-----SIMPLE SPLITTING SCHEME-----'
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'DIFFRACTION                      ', TIME2-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'SOURCES                          ', TIME6-TIME5
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU TIMINGS THETA SPACE          ', TIME4-TIME3
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU MICHE LIMITER                ', TIME6-TIME5
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')                   &
-     &   '-------------TIMINGS-------------'
-#ifdef MPI_PARALL_GRID
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME6-TIME5
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS THETA SPACE          ', TIME4-TIME3
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+
       ENDIF
-#endif
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
 
