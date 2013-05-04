@@ -6,17 +6,18 @@
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
 #define DEBUG
+#undef DEBUG
 
 #undef PLAN_B
 #define PLAN_B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#undef REORDER_ASPAR_PC
 #define REORDER_ASPAR_PC
+#undef REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#define ASPAR_B_COMPUTE_BLOCK
 #undef ASPAR_B_COMPUTE_BLOCK
+#define ASPAR_B_COMPUTE_BLOCK
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -3704,7 +3705,7 @@ MODULE WWM_PARALL_SOLVER
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(J,IS,ID)
 # ifdef DEBUG
-                IF ((IS.eq.2).and.(ID.eq.2)) THEN
+                IF ((IS.eq.4).and.(ID.eq.4)) THEN
                   WRITE(myrank+1490,*) iplg(IP), iplg(JP), eCoeff
                   WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IP,IS,ID), ACret(JP,IS,ID)
                 END IF
@@ -3770,6 +3771,7 @@ MODULE WWM_PARALL_SOLVER
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
+          Print *, 'Using REORDER_ASPAR_PC'
           DO J=LocalColor % IA_L(IP),LocalColor % IA_L(IP+1)-1
             JP=LocalColor % JA_LU(J)
             DO idx=1,lenBlock
@@ -3789,6 +3791,12 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+# ifdef DEBUG
+                IF ((IS.eq.4).and.(ID.eq.4)) THEN
+                  WRITE(myrank+1490,*) iplg(IP), iplg(JP), eCoeff
+                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IP,IS,ID), ACret(JP,IS,ID)
+                END IF
+# endif
                 IF (DO_SOLVE_L) THEN
                   ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
                 END IF
@@ -3808,6 +3816,8 @@ MODULE WWM_PARALL_SOLVER
       END DO
       WRITE(3000+myrank,*) 'End of sums'
       CALL FLUSH(3000+myrank)
+      CALL FLUSH(790+myrank)
+      CALL FLUSH(1490+myrank)
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -4754,7 +4764,7 @@ MODULE WWM_PARALL_SOLVER
         nbIter=nbIter+1
 # ifdef DEBUG
         IF (myrank .eq. 0) THEN
-          Print *, 'nbIter=', nbIter
+          WRITE(740+myrank,*) 'nbIter=', nbIter
         END IF
         WRITE(myrank+240,*) 'nbIter=', nbIter
 # endif
@@ -4797,8 +4807,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5_TOTAL_COHERENCY_ERROR(SolDat%AC6, Lerror)
         CALL I5_SUM_MAX(SolDat%AC6, LSum, LMax)
         IF (myrank .eq. 0) THEN
-          Print *, 'AC6(coherr)=', Lerror
-          Print *, 'AC6(sum/max)=', LSum(ISsel, IDsel), LMax(ISsel, IDsel)
+          WRITE(740+myrank,*) 'AC6(coherr)=', Lerror
+          WRITE(740+myrank,*) 'AC6(sum/max)=', LSum(ISsel, IDsel), LMax(ISsel, IDsel)
         END IF
         idAC6=idAC6+1
         iret=nf90_inq_varid(ncid, 'AC6', var_id)
@@ -4820,8 +4830,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
         CALL I5_SUM_MAX(SolDat%AC1, LSum, LMax)
         IF (myrank .eq. 0) THEN
-          Print *, 'AC1(coherr)=', Lerror
-          Print *, 'AC1(sum/max)=', LSum(ISsel, IDsel), LMax(ISsel, IDsel)
+          WRITE(740+myrank,*) 'AC1(coherr)=', Lerror
+          WRITE(740+myrank,*) 'AC1(sum/max)=', LSum(ISsel, IDsel), LMax(ISsel, IDsel)
         END IF
         idAC1=idAC1+1
         iret=nf90_inq_varid(ncid, 'AC1', var_id)
@@ -5213,9 +5223,11 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
 # endif
       END DO
+# ifdef DEBUG
       IF (myrank .eq. 0) THEN
         Print *, 'nbIter=', nbIter
       END IF
+# endif
       DO IP=1,MNP
         AC2(IP,:,:)=SolDat%AC2(:,:,IP)
       END DO
@@ -5732,7 +5744,7 @@ MODULE WWM_PARALL_SOLVER
 ! ... assembling the linear equation system ....
 !
       DO IP = 1, NP_RES
-        IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+        IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
           DO I = 1, CCON(IP)
             J = J + 1
             IE    =  IE_CELL(J)
