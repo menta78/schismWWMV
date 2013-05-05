@@ -12,8 +12,8 @@
 #define PLAN_B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#define REORDER_ASPAR_PC
 #undef REORDER_ASPAR_PC
+#define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
 #define ASPAR_B_COMPUTE_BLOCK
@@ -2809,8 +2809,8 @@ MODULE WWM_PARALL_SOLVER
       LocalColor % IA_L(1)=1
       idx=0
       DO IP=1,NP_RES
+        nb=0
         DO J=IA(IP),IA(IP+1)-1
-          nb=0
           IF (Jstatus_L(J).eq.1) THEN
             JP=JA(J)
             nb=nb+1
@@ -2824,8 +2824,8 @@ MODULE WWM_PARALL_SOLVER
       END DO
       LocalColor % IA_U(1)=LocalColor % IA_L(NP_RES+1)
       DO IP=1,NP_RES
+        nb=0
         DO J=IA(IP),IA(IP+1)-1
-          nb=0
           IF (Jstatus_U(J).eq.1) THEN
             JP=JA(J)
             nb=nb+1
@@ -2840,6 +2840,7 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         LocalColor % Jmap(idx)=J
         LocalColor % JmapR(J)=idx
+        LocalColor % JA_LU(idx)=JP
         LocalColor % IA_U(IP+1)=LocalColor % IA_U(IP)+nb
       END DO
 # endif
@@ -3783,10 +3784,10 @@ MODULE WWM_PARALL_SOLVER
               ID=LocalColor % IDindex(iBlock, idx)
               eCoeff=SolDat % ASPAR_pc(IS,ID,J)
 #  ifdef DEBUG
-                IF ((IS.eq.4).and.(ID.eq.4)) THEN
-                  WRITE(myrank+1490,*) 'IP, JP, J, Jmap=', IP, JP, J, LocalColor % Jmap(J)
-                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
-                END IF
+              IF ((IS.eq.4).and.(ID.eq.4)) THEN
+                WRITE(myrank+1490,*) 'IP, JP, J, Jmap=', IP, JP, J, LocalColor % Jmap(J)
+                WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
+              END IF
 #  endif
               IF (DO_SOLVE_L) THEN
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
