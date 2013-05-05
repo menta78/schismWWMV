@@ -365,7 +365,7 @@
      &                                   + FL22                         &
      &                                   + FL11 )
            DELTAL(:,IE) = CRFS(:)-KP(:,IE)
-           NM(IE)       = 1.0_rkind/MIN(THR,SUM(KM(:)))
+           NM(IE)       = 1.0_rkind/MIN(-THR,SUM(KM(:)))
          END DO
 
          CALL CPU_TIME(TIME2)
