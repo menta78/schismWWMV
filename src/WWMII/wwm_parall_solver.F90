@@ -5,8 +5,8 @@
 !    We use memory ordered as AC(MNP,MSC,MDC)
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 
 #undef PLAN_B
 #define PLAN_B
@@ -16,8 +16,8 @@
 #undef REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
+#undef ASPAR_B_COMPUTE_BLOCK
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -2794,11 +2794,16 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'sum(Jstatus_U)=', sum(Jstatus_U)
 # endif
 # ifdef REORDER_ASPAR_PC
-      allocate(LocalColor % IA_L(NP_RES+1))
-      allocate(LocalColor % IA_U(NP_RES+1))
-      allocate(LocalColor % JA_LU(NNZ))
-      allocate(LocalColor % Jmap(NNZ))
-      allocate(LocalColor % JmapR(NNZ))
+      allocate(LocalColor % IA_L(NP_RES+1), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('determine_jstatus_L_U, error 1')
+      allocate(LocalColor % IA_U(NP_RES+1), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('determine_jstatus_L_U, error 2')
+      allocate(LocalColor % JA_LU(NNZ), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('determine_jstatus_L_U, error 3')
+      allocate(LocalColor % Jmap(NNZ), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('determine_jstatus_L_U, error 4')
+      allocate(LocalColor % JmapR(NNZ), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('determine_jstatus_L_U, error 5')
       LocalColor % Jmap=-1
       LocalColor % JmapR=-1
       LocalColor % IA_L(1)=1
@@ -3771,13 +3776,18 @@ MODULE WWM_PARALL_SOLVER
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
-          Print *, 'Using REORDER_ASPAR_PC'
           DO J=LocalColor % IA_L(IP),LocalColor % IA_L(IP+1)-1
             JP=LocalColor % JA_LU(J)
             DO idx=1,lenBlock
               IS=LocalColor % ISindex(iBlock, idx)
               ID=LocalColor % IDindex(iBlock, idx)
               eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+#  ifdef DEBUG
+                IF ((IS.eq.4).and.(ID.eq.4)) THEN
+                  WRITE(myrank+1490,*) 'IP, JP, J, Jmap=', IP, JP, J, LocalColor % Jmap(J)
+                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
+                END IF
+#  endif
               IF (DO_SOLVE_L) THEN
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END IF
@@ -3791,12 +3801,12 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-# ifdef DEBUG
+#  ifdef DEBUG
                 IF ((IS.eq.4).and.(ID.eq.4)) THEN
-                  WRITE(myrank+1490,*) iplg(IP), iplg(JP), eCoeff
-                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IP,IS,ID), ACret(JP,IS,ID)
+                  WRITE(myrank+1490,*) 'IP, JP, J=', IP, JP, J
+                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
                 END IF
-# endif
+#  endif
                 IF (DO_SOLVE_L) THEN
                   ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
                 END IF
