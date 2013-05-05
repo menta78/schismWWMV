@@ -1006,7 +1006,7 @@
               CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)       + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
               CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)       + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
               DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
-              NM(1:NECON) = ONE/MIN(THR,SUM(KM(:, 1:NECON),DIM=1))
+              NM(1:NECON) = ONE/MIN(-THR,SUM(KM(:, 1:NECON),DIM=1))
 
               do I = 1, CCON(IP)
                 DTK = KP(POSarr(i), i) * DT4A

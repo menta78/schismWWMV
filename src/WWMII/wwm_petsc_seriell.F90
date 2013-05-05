@@ -144,7 +144,7 @@
            CRFS(2) =  - ONESIXTH *  (TWO *FL32 + TWO * FL11 + FL12 + FL31 )
            CRFS(3) =  - ONESIXTH *  (TWO *FL12 + TWO * FL21 + FL22 + FL11 )
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
-           NM(IE)       = 1.0_rkind/MIN(THR,SUM(KM(:)))
+           NM(IE)       = 1.0_rkind/MIN(-THR,SUM(KM(:)))
          END DO
 
          CALL CPU_TIME(TIME2)

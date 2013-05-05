@@ -1233,7 +1233,7 @@
            CRFS(2) =  - ONESIXTH *  (TWO *FL32 + TWO * FL11 + FL12 + FL31 )
            CRFS(3) =  - ONESIXTH *  (TWO *FL12 + TWO * FL21 + FL22 + FL11 )
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
-           NM(IE)       = ONE/MIN(THR,SUM(KM(:)))
+           NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
 
          U = AC2(:,IS,ID)
@@ -1417,7 +1417,7 @@
            CRFS(2) =  - ONESIXTH *  (TWO *FL32 + TWO * FL11 + FL12 + FL31 )
            CRFS(3) =  - ONESIXTH *  (TWO *FL12 + TWO * FL21 + FL22 + FL11 )
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
-           NM(IE)       = ONE/MIN(THR,SUM(KM(:)))
+           NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
 
          J     = 0    ! Counter ...
@@ -2197,7 +2197,6 @@
            DO I = 1, CCON(IP)
              J = J + 1
            END DO
-           !WRITE(5555,*) IP, SI(IP)
          END DO
 
          COUNT_MAX = J ! Max. Number of entries in the pointers used in the calculations
@@ -2206,6 +2205,7 @@
            WRITE(DBG%FHNDL,*) 'MNE=', MNE
            CALL WWM_ABORT('Do Not Sleep Before solving the problem')
          ENDIF
+
          ALLOCATE (IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
@@ -2223,7 +2223,6 @@
              POS_CELL(J)     = CELLVERTEX(IP,I,2)
              IE_CELL2(IP,I)  = CELLVERTEX(IP,I,1)
              POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
-             !WRITE(5555,*) IP, I, J, IE_CELL(J), POS_CELL(J)
            END DO
          END DO
 
