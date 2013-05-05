@@ -5,15 +5,15 @@
 !    We use memory ordered as AC(MNP,MSC,MDC)
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
-#undef DEBUG
 #define DEBUG
+#undef DEBUG
 
-#undef PLAN_B
 #define PLAN_B
+#undef PLAN_B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#undef REORDER_ASPAR_PC
 #define REORDER_ASPAR_PC
+#undef REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
 #define ASPAR_B_COMPUTE_BLOCK
@@ -2998,7 +2998,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       integer ISsel, IDsel
       integer eCov
-      real(rkind) eSum
+      real(rkind) eSum, eSumB
       real(rkind) eCoeff
 # endif
       DO IP=1,NP_RES
@@ -3085,11 +3085,12 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
 # if defined DEBUG
-      WRITE(3000+myrank,*) 'Sums of ASPAR_pc'
+      WRITE(3000+myrank,*) 'Sums of ASPAR_pc / ASPAR_block'
       DO IS=1,MSC
         DO ID=1,MDC
           eSum=sum(SolDat % ASPAR_pc(:,IS,ID))
-          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+          eSumB=sum(SolDat % ASPAR_block(:,IS,ID))
+          WRITE(3000+myrank,*) 'IS, ID, eSum(A/B)=', IS, ID, eSum, eSumB
         END DO
       END DO
       WRITE(3000+myrank,*) 'End of sums'
@@ -3129,7 +3130,7 @@ MODULE WWM_PARALL_SOLVER
       integer IP, ID, IS, JP, JR, J1, J, IPglob, JPglob
       real(rkind) eVal
 # if defined DEBUG
-      real(rkind) :: eSum
+      real(rkind) :: eSum, eSumB
 # endif
       DO IP=1,NP_RES
         J=I_DIAG(IP)
@@ -3174,11 +3175,12 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
 # if defined DEBUG
-      WRITE(3000+myrank,*) 'Sums of ASPAR_pc'
+      WRITE(3000+myrank,*) 'Sums of ASPAR_pc / ASPAR_block'
       DO IS=1,MSC
         DO ID=1,MDC
           eSum=sum(SolDat % ASPAR_pc(IS,ID,:))
-          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
+          eSumB=sum(SolDat % ASPAR_block(IS,ID,:))
+          WRITE(3000+myrank,*) 'IS, ID, eSum(A/B)=', IS, ID, eSum, eSumB
         END DO
       END DO
       WRITE(3000+myrank,*) 'End of sums'
@@ -5686,17 +5688,20 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-#if defined PLAN_B
+# if defined PLAN_B
       CALL I5B_EIMPS(LocalColor, SolDat)
-#else
+# else
       CALL I5_EIMPS(LocalColor, SolDat)
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
@@ -5707,7 +5712,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       INTEGER :: I1, I2, I3
-      INTEGER :: IP, ID, IE, POS
+      INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel
       REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
@@ -5728,8 +5733,8 @@ MODULE WWM_PARALL_SOLVER
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
-        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I2))
-        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I2))
+        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
+        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
         K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
         K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
@@ -5745,9 +5750,38 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
-        NM(:,:,IE)       = ONE/MIN(THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        DO IS=1,MSC
+          DO ID=1,MDC
+            NM(IS,ID,IE)=ONE/MIN(THR,KM(IS,ID,1) + KM(IS,ID,2) + KM(IS,ID,3))
+          END DO
+        END DO
       END DO
-
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
+      WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
+      WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
+      WRITE(3000+myrank,*)  'sum(KM    )=', sum(KM)
+      WRITE(3000+myrank,*)  'sum(FL11  )=', sum(FL11)
+      WRITE(3000+myrank,*)  'sum(FL12  )=', sum(FL11)
+      WRITE(3000+myrank,*)  'sum(FL21  )=', sum(FL21)
+      WRITE(3000+myrank,*)  'sum(FL22  )=', sum(FL22)
+      WRITE(3000+myrank,*)  'sum(FL31  )=', sum(FL31)
+      WRITE(3000+myrank,*)  'sum(FL32  )=', sum(FL32)
+      WRITE(3000+myrank,*)  'sum(CRFS  )=', sum(CRFS)
+      WRITE(3000+myrank,*)  'sum(DELTAL)=', sum(DELTAL)
+      WRITE(3000+myrank,*)  'sum(NM    )=', sum(NM)
+      WRITE(3000+myrank,*)  'maxval(NM    )=', maxval(NM)
+      DO IS=1,MSC
+        DO ID=1,MDC
+          DO IE=1,MNE
+            IF (ABS(NM(IS,ID,IE)) > 1000000) THEN
+              WRITE(4000+myrank,*) 'IS, ID, IE=', IS, ID, IE
+              WRITE(4000+myrank,*) '   NM=', NM(IS,ID,IE)
+            END IF
+          END DO
+        END DO
+      END DO
+# endif
       J     = 0    ! Counter ...
       ASPAR = 0.0_rkind ! Mass matrix ...
       B     = 0.0_rkind ! Right hand side ...
@@ -5785,6 +5819,10 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+# endif
       IF (LBCWA .OR. LBCSP) THEN
         IF (LINHOM) THEN
           IPrel=IP
