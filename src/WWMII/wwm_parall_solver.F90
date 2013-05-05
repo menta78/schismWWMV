@@ -5750,11 +5750,7 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
-        DO IS=1,MSC
-          DO ID=1,MDC
-            NM(IS,ID,IE)=ONE/MIN(THR,KM(IS,ID,1) + KM(IS,ID,2) + KM(IS,ID,3))
-          END DO
-        END DO
+        NM(I:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
       END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
