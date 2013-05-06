@@ -18,6 +18,9 @@
 ! with hopefully higher speed.
 #undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
+! An algorithm that should be slightly faster for norm computations
+#undef FAST_NORM
+#define FAST_NORM
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -4285,6 +4288,94 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5_L2_LINF(ACw1, ACw2, Norm_L2, Norm_LINF)
+      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      USE DATAPOOL, only : nwild_loc_res, NP_RES
+      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      implicit none
+      real(rkind), intent(in) :: ACw1(MNP, MSC, MDC)
+      real(rkind), intent(in) :: ACw2(MNP, MSC, MDC)
+      real(rkind), intent(inout) :: Norm_L2(MSC, MDC)
+      real(rkind), intent(inout) :: Norm_LINF(MSC, MDC)
+      real(rkind) :: LScal(MSC, MDC, 2)
+      real(rkind) :: RScal(MSC, MDC, 2)
+      integer IP, iProc, IS, ID
+      LScal=0
+      DO IP=1,NP_RES
+        LScal(:,:,1)=LScal(:,:,1) + nwild_loc_res(IP)*((ACw1(IP,:,:) - ACw2(IP,:,:))**2)
+        DO IS=1,MSC
+          DO ID=1,MDC
+            LScal(IS,ID,2)=max(LScal(IS,ID,2), abs(ACw1(IP,IS,ID) - ACw2(IP,IS,ID)))
+          END DO
+        END DO
+      END DO
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(RScal,MSC*MDC*2,rtype, iProc-1, 19, comm, istatus, ierr)
+          LScal(:,:,1) = LScal(:,:,1) + RScal(:,:,1)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              LScal(IS,ID,2)=max(LScal(IS,ID,2), RScal(IS,ID,2))
+            END DO
+          END DO
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(LScal,MSC*MDC*2,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(LScal,MSC*MDC*2,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,MSC*MDC*2,rtype, 0, 23, comm, istatus, ierr)
+      END IF
+      Norm_L2=LScal(:,:,1)
+      Norm_LINF=LScal(:,:,2)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE I5B_L2_LINF(ACw1, ACw2, Norm_L2, Norm_LINF)
+      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      USE DATAPOOL, only : nwild_loc_res, NP_RES
+      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      implicit none
+      real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
+      real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
+      real(rkind), intent(inout) :: Norm_L2(MSC, MDC)
+      real(rkind), intent(inout) :: Norm_LINF(MSC, MDC)
+      real(rkind) :: LScal(MSC, MDC, 2)
+      real(rkind) :: RScal(MSC, MDC, 2)
+      integer IP, iProc, IS, ID
+      LScal=0
+      DO IP=1,NP_RES
+        LScal(:,:,1)=LScal(:,:,1) + nwild_loc_res(IP)*((ACw1(:,:,IP) - ACw2(:,:,IP))**2)
+        DO IS=1,MSC
+          DO ID=1,MDC
+            LScal(IS,ID,2)=max(LScal(IS,ID,2), abs(ACw1(IS,ID,IP) - ACw2(IS,ID,IP)))
+          END DO
+        END DO
+      END DO
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(RScal,MSC*MDC*2,rtype, iProc-1, 19, comm, istatus, ierr)
+          LScal(:,:,1) = LScal(:,:,1) + RScal(:,:,1)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              LScal(IS,ID,2)=max(LScal(IS,ID,2), RScal(IS,ID,2))
+            END DO
+          END DO
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(LScal,MSC*MDC*2,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(LScal,MSC*MDC*2,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,MSC*MDC*2,rtype, 0, 23, comm, istatus, ierr)
+      END IF
+      Norm_L2=LScal(:,:,1)
+      Norm_LINF=LScal(:,:,2)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5B_SCALAR(ACw1, ACw2, LScal)
       USE DATAPOOL, only : rkind, MNP, MSC, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
@@ -4648,6 +4739,9 @@ MODULE WWM_PARALL_SOLVER
       ISsel=2
       IDsel=2
 # endif
+# ifdef FAST_NORM
+      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+# endif
       MaxError=SOLVERTHR
       CALL I5_APPLY_FCT(SolDat,  AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
@@ -4956,9 +5050,14 @@ MODULE WWM_PARALL_SOLVER
 
         ! L12 If x is accurate enough finish
         CALL I5_APPLY_FCT(SolDat,  SolDat%AC2, SolDat%AC1)
+# if defined FAST_NORM
+        CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
+        CritVal=maxval(Norm_L2)
+# else
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
         CALL I5_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
+# endif
 # if defined DEBUG && defined NCDF
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC8)=', I5_SUMTOT(SolDat%AC8)
@@ -5058,6 +5157,9 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: TheTol
 # ifdef DEBUG
       REAL(rkind) :: Lerror
+# endif
+# ifdef FAST_NORM
+      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
 # endif
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter
@@ -5205,16 +5307,14 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
 
+# if defined FAST_NORM
+        CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
+        CritVal=maxval(Norm_L2)
+# else
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
-        WRITE(myrank+240,*) 'error(AC8)=', Lerror
-# endif
         CALL I5B_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
-
+# endif
         IF (maxval(Prov) .lt. MaxError) THEN
           EXIT
         ENDIF
