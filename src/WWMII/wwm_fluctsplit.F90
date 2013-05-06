@@ -1,5 +1,6 @@
 #include "wwm_functions.h"
-
+#undef DEBUG
+#define DEBUG
 ! don't forget to uncomment if() )in wwm_compute
 ! !**********************************************************************
 ! !*                                                                    *
@@ -1364,6 +1365,9 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
+#if defined DEBUG
+         USE elfe_msgp, only : myrank
+#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
@@ -1455,7 +1459,9 @@
              END DO !I: loop over connected elements ...
            END IF
          END DO !IP
-
+#if defined DEBUG
+         WRITE(3000+myrank,*) 'IS, ID, sum=', IS, ID, sum(ASPAR)
+#endif
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              IPrel=IP

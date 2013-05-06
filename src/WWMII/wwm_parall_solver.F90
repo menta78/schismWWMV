@@ -8,16 +8,16 @@
 #define DEBUG
 #undef DEBUG
 
-#define PLAN_B
 #undef PLAN_B
+#define PLAN_B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#define REORDER_ASPAR_PC
 #undef REORDER_ASPAR_PC
+#define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#define ASPAR_B_COMPUTE_BLOCK
 #undef ASPAR_B_COMPUTE_BLOCK
+#define ASPAR_B_COMPUTE_BLOCK
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -4602,7 +4602,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5_BCGS_SOLVER(LocalColor, SolDat)
       USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod
+      USE DATAPOOL, only : PCmethod, STAT
       USE elfe_msgp, only : myrank
 # ifdef DEBUG
       USE DATAPOOL, only : MNE, XP, YP, INE
@@ -5031,9 +5031,7 @@ MODULE WWM_PARALL_SOLVER
       END IF
       iSystem=iSystem+1
 # endif
-      IF (myrank .eq. 0) THEN
-        Print *, 'nbIter=', nbIter
-      END IF
+      WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       AC2=SolDat%AC2
       END SUBROUTINE
 !
@@ -5043,7 +5041,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat)
       USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod
+      USE DATAPOOL, only : PCmethod, STAT
 # ifdef DEBUG
       USE elfe_msgp, only : myrank
 # endif
@@ -5236,11 +5234,7 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
 # endif
       END DO
-# ifdef DEBUG
-      IF (myrank .eq. 0) THEN
-        Print *, 'nbIter=', nbIter
-      END IF
-# endif
+      WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       DO IP=1,MNP
         AC2(IP,:,:)=SolDat%AC2(:,:,IP)
       END DO
@@ -5750,7 +5744,7 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
-        NM(I:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
       END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
@@ -5818,6 +5812,11 @@ MODULE WWM_PARALL_SOLVER
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(3000+myrank,*) 'IS, ID, sum(ASPAR)=', IS, ID, sum(ASPAR(IS,ID,:))
+        END DO
+      END DO
 # endif
       IF (LBCWA .OR. LBCSP) THEN
         IF (LINHOM) THEN
