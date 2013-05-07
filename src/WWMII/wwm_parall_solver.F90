@@ -10,8 +10,9 @@
 #define DEBUG
 #undef DEBUG
 
-#undef PLAN_B
-#define PLAN_B
+#define PLAN_I4
+#undef PLAN_I5B
+#undef PLAN_I5B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
 #undef REORDER_ASPAR_PC
@@ -23,6 +24,10 @@
 ! An algorithm that should be slightly faster for norm computations
 #undef FAST_NORM
 #define FAST_NORM
+! Either we use the SELFE exchange routine or ours that exchanges only
+! the ghost nodes and not the interface nodes.
+#undef SELFE_EXCH
+#define SELFE_EXCH
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -177,6 +182,36 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5B_EXCHANGE_P4D_WWM(LocalColor, AC)
+      USE DATAPOOL, only : MNP, MSC, MDC, rkind, LocalColorInfo
+      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
+      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
+      USE DATAPOOL, only : wwmtot_p2dsend_type, wwmtot_p2drecv_type
+      USE DATAPOOL, only : wwm_p2dsend_rqst, wwm_p2drecv_rqst
+      USE DATAPOOL, only : wwm_p2dsend_stat, wwm_p2drecv_stat
+      USE elfe_msgp, only : comm, ierr, myrank
+      implicit none
+      type(LocalColorInfo), intent(in) :: LocalColor
+      real(rkind), intent(inout) :: AC(LocalColor%MSCeffect,MDC,MNP)
+      integer iSync, iRank
+      DO iSync=1,wwm_nnbr_send
+        iRank=wwm_ListNeigh_send(iSync)
+        CALL mpi_isend(AC, 1, wwmtot_p2dsend_type(iSync), iRank-1, 1020, comm, wwm_p2dsend_rqst(iSync), ierr)
+      END DO
+      DO iSync=1,wwm_nnbr_recv
+        iRank=wwm_ListNeigh_recv(iSync)
+        call mpi_irecv(AC,1,wwmtot_p2drecv_type(iSync),iRank-1,1020,comm,wwm_p2drecv_rqst(iSync),ierr)
+      END DO
+      IF (wwm_nnbr_send > 0) THEN
+        call mpi_waitall(wwm_nnbr_send, wwm_p2dsend_rqst, wwm_p2dsend_stat,ierr)
+      END IF
+      IF (wwm_nnbr_recv > 0) THEN
+        call mpi_waitall(wwm_nnbr_recv, wwm_p2drecv_rqst, wwm_p2drecv_stat,ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5_EXCHANGE_ASPAR(ASPAR_bl)
       USE DATAPOOL
       USE elfe_msgp, only : comm, ierr, myrank
@@ -242,9 +277,9 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      integer I, iProc
+      type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: ASPAR_bl(LocalColor%MSCeffect,MDC,NNZ)
+      integer I, iProc
       INTEGER :: IZ, IS, ID
       do I=1,wwm_nnbr_m_send
         iProc=wwm_ListNeigh_m_send(I)
@@ -1266,346 +1301,6 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
 # ifdef DEBUG
-      SUBROUTINE CHECK_P2D_EXCH_BLOCK(LocalColor, eField, siz)
-      USE elfe_msgp
-      USE DATAPOOL
-      implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
-      integer, intent(in) :: siz
-      real(rkind), intent(in) :: eField(MNP, siz)
-      integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank, IP, iSiz, istat
-      real(rkind) :: MaxErr, eDiff
-      real(rkind), allocatable :: TheRecv(:,:), p2d_data_send(:,:), eFieldC(:,:)
-      integer nbDiff
-      IF (siz .gt. LocalColor % maxBlockLength) THEN
-        Print *, 'siz=', siz
-        Print *, 'maxBlockLength=', LocalColor % maxBlockLength
-        CALL WWM_ABORT('Error between siz and maxBlockLength')
-      ENDIF
-      allocate(eFieldC(LocalColor % maxBlockLength, MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 47')
-      allocate(TheRecv(LocalColor % maxBlockLength, MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 48')
-      allocate(p2d_data_send(LocalColor % maxBlockLength, MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 49')
-      eFieldC=0
-      DO I=1,siz
-        eFieldC(I,:)=eField(:,I)
-      END DO
-      nbLow_recv=LocalColor%nbLow_recv
-      nbUpp_send=LocalColor%nbUpp_send
-      p2d_data_send=eFieldC
-      TheRecv=eFieldC
-      DO iUpp=1,nbUpp_send
-        I=LocalColor % ListIdxUpper_send(iUpp)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,LocalColor % blk_p2dsend_type(i),iRank-1,13,comm,LocalColor % Upp_s_rq(iUpp),ierr)
-      END DO
-      DO iLow=1,nbLow_recv
-        I=LocalColor % ListIdxLower_recv(iLow)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,LocalColor % blk_p2drecv_type(i),iRank-1,13,comm,LocalColor % Low_r_rq(iLow),ierr)
-      END DO
-      IF (nbUpp_send > 0) THEN
-        call mpi_waitall(nbUpp_send, LocalColor%Upp_s_rq, LocalColor%Upp_s_stat,ierr)
-      END IF
-      IF (nbLow_recv > 0) THEN
-        call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eFieldC - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_BLOCK 1: MaxErr=', MaxErr
-      !
-      !
-      nbLow_send=LocalColor%nbLow_send
-      nbUpp_recv=LocalColor%nbUpp_recv
-      DO iLow=1,nbLow_send
-        I=LocalColor % ListIdxLower_send(iLow)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,LocalColor % blk_p2dsend_type(i),iRank-1,17,comm,LocalColor%Low_s_rq(iLow),ierr)
-      END DO
-      DO iUpp=1,nbUpp_recv
-        I=LocalColor % ListIdxUpper_recv(iUpp)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,LocalColor % blk_p2drecv_type(i),iRank-1,17,comm,LocalColor%Upp_r_rq(iUpp),ierr)
-      END DO
-      IF (nbLow_send > 0) THEN
-        call mpi_waitall(nbLow_send, LocalColor%Low_s_rq, LocalColor%Low_s_stat,ierr)
-      END IF
-      IF (nbUpp_recv > 0) THEN
-        call mpi_waitall(nbUpp_recv, LocalColor%Upp_r_rq, LocalColor%Upp_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eFieldC - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_BLOCK 2: MaxErr=', MaxErr
-      DO iSiz=1,siz
-        MaxErr=maxval(abs(eFieldC(iSiz,:) - TheRecv(iSiz,:)))
-        if (MaxErr .gt. 0) THEN
-          WRITE(740+myrank,*) 'iSiz=', iSiz, '/', siz
-          nbDiff=0
-          DO IP=1,MNP
-            eDiff=abs(eFieldC(iSiz,IP) - TheRecv(iSiz,IP))
-            IF (eDiff .gt. 0) THEN
-              WRITE(740+myrank,*) IP, LocalColor%CovLower(IP), eFieldC(iSiz,IP), TheRecv(iSiz,IP)
-              nbDiff=nbDiff+1
-            END IF
-          END DO
-          WRITE(740+myrank,*) 'nbDiff=', nbDiff
-        END IF
-      END DO
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE CHECK_P2D_EXCH_BLOCK_REV(LocalColor, eField, siz)
-      USE elfe_msgp
-      USE DATAPOOL
-      implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
-      integer, intent(in) :: siz
-      real(rkind), intent(in) :: eField(MNP, siz)
-      integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank, IP, iSiz, istat
-      real(rkind) :: MaxErr, eDiff
-      real(rkind), allocatable :: TheRecv(:,:), p2d_data_send(:,:), eFieldC(:,:)
-      integer nbDiff
-      IF (siz .gt. LocalColor % maxBlockLength) THEN
-        Print *, 'siz=', siz
-        Print *, 'maxBlockLength=', LocalColor % maxBlockLength
-        CALL WWM_ABORT('Error between siz and maxBlockLength')
-      ENDIF
-      allocate(eFieldC(MNP, LocalColor % maxBlockLength), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 50')
-      allocate(TheRecv(MNP, LocalColor % maxBlockLength), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 51')
-      allocate(p2d_data_send(MNP, LocalColor % maxBlockLength), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 52')
-      eFieldC=0
-      DO I=1,siz
-        eFieldC(:,I)=eField(:,I)
-      END DO
-      nbLow_recv=LocalColor%nbLow_recv
-      nbUpp_send=LocalColor%nbUpp_send
-      p2d_data_send=eFieldC
-      TheRecv=eFieldC
-      DO iUpp=1,nbUpp_send
-        I=LocalColor % ListIdxUpper_send(iUpp)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,LocalColor % blk_p2dsend_type(i),iRank-1,13,comm,LocalColor % Upp_s_rq(iUpp),ierr)
-      END DO
-      DO iLow=1,nbLow_recv
-        I=LocalColor % ListIdxLower_recv(iLow)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,LocalColor % blk_p2drecv_type(i),iRank-1,13,comm,LocalColor % Low_r_rq(iLow),ierr)
-      END DO
-      IF (nbUpp_send > 0) THEN
-        call mpi_waitall(nbUpp_send, LocalColor%Upp_s_rq, LocalColor%Upp_s_stat,ierr)
-      END IF
-      IF (nbLow_recv > 0) THEN
-        call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eFieldC - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_BLOCK_REV 1: MaxErr=', MaxErr
-      !
-      !
-      nbLow_send=LocalColor%nbLow_send
-      nbUpp_recv=LocalColor%nbUpp_recv
-      DO iLow=1,nbLow_send
-        I=LocalColor % ListIdxLower_send(iLow)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,LocalColor % blk_p2dsend_type(i),iRank-1,17,comm,LocalColor%Low_s_rq(iLow),ierr)
-      END DO
-      DO iUpp=1,nbUpp_recv
-        I=LocalColor % ListIdxUpper_recv(iUpp)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,LocalColor % blk_p2drecv_type(i),iRank-1,17,comm,LocalColor%Upp_r_rq(iUpp),ierr)
-      END DO
-      IF (nbLow_send > 0) THEN
-        call mpi_waitall(nbLow_send, LocalColor%Low_s_rq, LocalColor%Low_s_stat,ierr)
-      END IF
-      IF (nbUpp_recv > 0) THEN
-        call mpi_waitall(nbUpp_recv, LocalColor%Upp_r_rq, LocalColor%Upp_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eFieldC - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_BLOCK_REV 2: MaxErr=', MaxErr
-      DO iSiz=1,siz
-        MaxErr=maxval(abs(eFieldC(iSiz,:) - TheRecv(iSiz,:)))
-        if (MaxErr .gt. 0) THEN
-          WRITE(740+myrank,*) 'iSiz=', iSiz, '/', siz
-          nbDiff=0
-          DO IP=1,MNP
-            eDiff=abs(eFieldC(IP,iSiz) - TheRecv(IP,iSiz))
-            IF (eDiff .gt. 0) THEN
-              WRITE(740+myrank,*) IP, LocalColor%CovLower(IP), eFieldC(IP,iSiz), TheRecv(IP,iSiz)
-              nbDiff=nbDiff+1
-            END IF
-          END DO
-          WRITE(740+myrank,*) 'nbDiff=', nbDiff
-        END IF
-      END DO
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE CHECK_P2D_EXCH_STACKED(LocalColor, eField, siz)
-      USE elfe_msgp
-      USE DATAPOOL
-      implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
-      integer, intent(in) :: siz
-      real(rkind), intent(in) :: eField(MNP, siz)
-      integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank, IP, iSiz
-      real(rkind) :: TheRecv(MNP,siz), p2d_data_send(MNP,siz)
-      real(rkind) :: MaxErr, eDiff
-      integer nbDiff
-      nbLow_recv=LocalColor%nbLow_recv
-      nbUpp_send=LocalColor%nbUpp_send
-      p2d_data_send=eField
-      TheRecv=eField
-      DO iUpp=1,nbUpp_send
-        I=LocalColor % ListIdxUpper_send(iUpp)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,siz,wwm_p2dsend_type(i),iRank-1,13,comm,LocalColor % Upp_r_rq(iUpp),ierr)
-      END DO
-      DO iLow=1,nbLow_recv
-        I=LocalColor % ListIdxLower_recv(iLow)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,siz,wwm_p2drecv_type(i),iRank-1,13,comm,LocalColor % Low_r_rq(iLow),ierr)
-      END DO
-      IF (nbUpp_send > 0) THEN
-        call mpi_waitall(nbUpp_send, LocalColor%Upp_s_rq, LocalColor%Upp_s_stat,ierr)
-      END IF
-      IF (nbLow_recv > 0) THEN
-        call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eField - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_STACKED 1: MaxErr=', MaxErr
-      DO iSiz=1,siz
-        MaxErr=maxval(abs(eField(:,iSiz) - TheRecv(:,iSiz)))
-        if (MaxErr .gt. 0) THEN
-          WRITE(740+myrank,*) 'iSiz=', iSiz, '/', siz
-          nbDiff=0
-          DO IP=1,MNP
-            eDiff=abs(eField(IP,iSiz) - TheRecv(IP,iSiz))
-            IF (eDiff .gt. 0) THEN
-              WRITE(740+myrank,*) IP, LocalColor%CovLower(IP), eField(IP,iSiz), TheRecv(IP,iSiz), 'diff'
-              nbDiff=nbDiff+1
-            ELSE
-              WRITE(740+myrank,*) IP, LocalColor%CovLower(IP), eField(IP,iSiz), TheRecv(IP,iSiz)
-            ENDIF
-          END DO
-          WRITE(740+myrank,*) 'nbDiff=', nbDiff
-        END IF
-      END DO
-      !
-      !
-      nbLow_send=LocalColor%nbLow_send
-      nbUpp_recv=LocalColor%nbUpp_recv
-      p2d_data_send=eField
-      TheRecv=eField
-      DO iLow=1,nbLow_send
-        I=LocalColor % ListIdxLower_send(iLow)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,siz,wwm_p2dsend_type(i),iRank-1,17,comm,LocalColor%Low_s_rq(iLow),ierr)
-      END DO
-      DO iUpp=1,nbUpp_recv
-        I=LocalColor % ListIdxUpper_recv(iUpp)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,siz,wwm_p2drecv_type(i),iRank-1,17,comm,LocalColor%Upp_r_rq(iUpp),ierr)
-      END DO
-      IF (nbLow_send > 0) THEN
-        call mpi_waitall(nbLow_send, LocalColor%Low_s_rq, LocalColor%Low_s_stat,ierr)
-      END IF
-      IF (nbUpp_recv > 0) THEN
-        call mpi_waitall(nbUpp_recv, LocalColor%Upp_r_rq, LocalColor%Upp_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eField - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH_STACKED 2: MaxErr=', MaxErr
-      DO iSiz=1,siz
-        MaxErr=maxval(abs(eField(:,iSiz) - TheRecv(:,iSiz)))
-        if (MaxErr .gt. 0) THEN
-          WRITE(740+myrank,*) 'iSiz=', iSiz, '/', siz
-          nbDiff=0
-          DO IP=1,MNP
-            eDiff=abs(eField(IP,iSiz) - TheRecv(IP,iSiz))
-            IF (eDiff .gt. 0) THEN
-              WRITE(740+myrank,*) IP, LocalColor%CovLower(IP), eField(IP,iSiz), TheRecv(IP,iSiz)
-              nbDiff=nbDiff+1
-            END IF
-          END DO
-          WRITE(740+myrank,*) 'nbDiff=', nbDiff
-        END IF
-      END DO
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE CHECK_P2D_EXCH(LocalColor, eField)
-      USE elfe_msgp
-      USE DATAPOOL
-      implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(in) :: eField(MNP)
-      integer iLow, iUpp, nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer I, iRank
-      real(rkind) :: TheRecv(MNP), p2d_data_send(MNP)
-      real(rkind) :: MaxErr
-      nbLow_recv=LocalColor%nbLow_recv
-      nbUpp_send=LocalColor%nbUpp_send
-      p2d_data_send=eField
-      DO iUpp=1,nbUpp_send
-        I=LocalColor % ListIdxUpper_send(iUpp)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,wwm_p2dsend_type(i),iRank-1,13,comm,LocalColor % Upp_s_rq(iUpp),ierr)
-      END DO
-      TheRecv=eField
-      DO iLow=1,nbLow_recv
-        I=LocalColor % ListIdxLower_recv(iLow)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,wwm_p2drecv_type(i),iRank-1,13,comm,LocalColor % Low_r_rq(iLow),ierr)
-      END DO
-      IF (nbUpp_send > 0) THEN
-        call mpi_waitall(nbUpp_send, LocalColor%Upp_s_rq, LocalColor%Upp_s_stat,ierr)
-      END IF
-      IF (nbLow_recv > 0) THEN
-        call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eField - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH 1: MaxErr=', MaxErr
-      !
-      !
-      nbLow_send=LocalColor%nbLow_send
-      nbUpp_recv=LocalColor%nbUpp_recv
-      DO iLow=1,nbLow_send
-        I=LocalColor % ListIdxLower_send(iLow)
-        iRank=wwm_ListNeigh_send(i)
-        call mpi_isend(p2d_data_send,1,wwm_p2dsend_type(i),iRank-1,17,comm,LocalColor%Low_s_rq(iLow),ierr)
-      END DO
-      DO iUpp=1,nbUpp_recv
-        I=LocalColor % ListIdxUpper_recv(iUpp)
-        iRank=wwm_ListNeigh_recv(i)
-        call mpi_irecv(TheRecv,1,wwm_p2drecv_type(i),iRank-1,17,comm,LocalColor%Upp_r_rq(iUpp),ierr)
-      END DO
-      IF (nbLow_send > 0) THEN
-        call mpi_waitall(nbLow_send, LocalColor%Low_s_rq, LocalColor%Low_s_stat,ierr)
-      END IF
-      IF (nbUpp_recv > 0) THEN
-        call mpi_waitall(nbUpp_recv, LocalColor%Upp_r_rq, LocalColor%Upp_r_stat,ierr)
-      END IF
-      MaxErr=maxval(abs(eField - TheRecv))
-      WRITE(740+myrank,*) 'CHECK_P2D_EXCH 2: MaxErr=', MaxErr
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
       SUBROUTINE WRITE_EXPLICIT_ORDERING(ListPos, ListPosRev, ListColor)
       USE DATAPOOL, only : MNP, ListMNP, ListNP_RES, ListIPLG
       USE elfe_msgp, only : nproc, myrank
@@ -2052,10 +1747,10 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
+      integer, intent(in) :: ListColor(nproc)
       real(rkind) :: p2d_data_send(MNP)
       real(rkind) :: CovLower(MNP), CovLower_meth2(MNP), CovLower_meth3(MNP)
       real(rkind) :: SumErr, SumDiff
-      integer, intent(in) :: ListColor(nproc)
       integer eColor, fColor, I, iRank, J
       integer nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
       integer iProc, stat, eSize, iLow, iUpp, DoOper
@@ -3083,7 +2778,7 @@ MODULE WWM_PARALL_SOLVER
 !* but the values would not be used                                   *
 !**********************************************************************
       SUBROUTINE I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
-      USE DATAPOOL, only : MNP, MSC, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
+      USE DATAPOOL, only : MNP, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE elfe_msgp, only : exchange_p4d_wwm
 # ifdef DEBUG
@@ -3101,7 +2796,11 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
+# ifdef SELFE_EXCHANGE
+      CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
+# else
       CALL EXCHANGE_P4D_WWM(SolDat%AC4)
+# endif
       DO IP=1,NP_RES
         IF (LocalColor%CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
@@ -3139,19 +2838,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
         END IF
       END DO
-# if defined DEBUG
-      WRITE(3000+myrank,*) 'Sums of ASPAR_pc / ASPAR_block'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          eSum=sum(SolDat % ASPAR_pc(IS,ID,:))
-          eSumB=sum(SolDat % ASPAR_block(IS,ID,:))
-          WRITE(3000+myrank,*) 'IS, ID, eSum(A/B)=', IS, ID, eSum, eSumB
-        END DO
-      END DO
-      WRITE(3000+myrank,*) 'End of sums'
-      CALL FLUSH(3000+myrank)
-# endif
-      
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3201,12 +2887,12 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
+      REAL(rkind), intent(in) :: AC(MNP, MSC, MDC)
+      INTEGER, intent(in) :: iBlock
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
 # endif
-      REAL(rkind), intent(in) :: AC(MNP, MSC, MDC)
-      INTEGER, intent(in) :: iBlock
       integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbUpp_send
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
@@ -3242,12 +2928,12 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_recv, wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(MNP, MSC, MDC)
+      INTEGER, intent(in) :: iBlock
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
 # endif
-      INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbLow_recv
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
@@ -3297,7 +2983,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(in) :: AC(MNP, MSC, MDC)
       INTEGER, intent(in) :: iBlock
 # ifdef DEBUG
@@ -3337,12 +3023,12 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       include 'mpif.h'
+      type(LocalColorInfo), intent(in) :: LocalColor
+      REAL(rkind), intent(inout) :: AC(MNP, MSC, MDC)
+      INTEGER, intent(in) :: iBlock
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
 # endif
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      REAL(rkind), intent(inout) :: AC(MNP, MSC, MDC)
-      INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength
       integer nbUpp_recv, IS, ID
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -3391,7 +3077,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
@@ -3422,7 +3108,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_recv, wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbLow_recv
@@ -3460,7 +3146,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbLow_send
@@ -3488,7 +3174,7 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       include 'mpif.h'
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(LocalColor % MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength
@@ -3544,12 +3230,12 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
+      real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
       real(rkind) :: eSum
 # endif
       real(rkind) :: eCoeff
-      real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -3627,8 +3313,8 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
-      real(rkind) :: eCoeff
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
+      real(rkind) :: eCoeff
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP
 # ifdef DEBUG
@@ -3704,13 +3390,13 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
+      real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
 # ifdef DEBUG
       real(rkind) :: Hfield(MNP)
 # endif
       real(rkind) :: eCoeff
       integer lenBlock, IP, JP, idx, J, IS, ID, IP_glob
       integer DoOper
-      real(rkind), intent(inout) :: ACret(MNP,MSC,MDC)
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=NP_RES,1,-1
         IF (LocalColor % CovLower(IP) == 1) THEN
@@ -3777,10 +3463,10 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
+      real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
       real(rkind) :: eCoeff
       integer lenBlock, IP, JP, idx, J, IS, ID, IP_glob
       integer DoOper
-      real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
       lenBlock=LocalColor % BlockLength(iBlock)
       DO IP=NP_RES,1,-1
         IF (LocalColor % CovLower(IP) == 1) THEN
@@ -3838,7 +3524,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(MNP, MSC, MDC)
       real(rkind) :: U(MSC,MDC,MNP)
       INTEGER :: IP, IS, ID, i, iRank
@@ -3896,38 +3582,8 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(MSC, MDC, MNP)
-      INTEGER :: IP, IS, ID, i, iRank
-      integer iSync
-      integer nbSync_send, nbSync_recv
-      nbSync_recv=LocalColor%sync_nnbr_recv
-      nbSync_send=LocalColor%sync_nnbr_send
-      DO iSync=1,nbSync_send
-        iRank=LocalColor % sync_ListNeigh_send(iSync)
-        CALL mpi_isend(AC, 1, LocalColor%sync_p2dsend_type(iSync), iRank-1, 1009, comm, LocalColor%sync_p2dsend_rqst(iSync), ierr)
-      END DO
-      DO iSync=1,nbSync_recv
-        iRank=LocalColor % sync_ListNeigh_recv(iSync)
-        call mpi_irecv(AC,1,LocalColor%sync_p2drecv_type(iSync),iRank-1,1009,comm,LocalColor%sync_p2drecv_rqst(iSync),ierr)
-      END DO
-      IF (nbSync_send > 0) THEN
-        call mpi_waitall(nbSync_send, LocalColor%sync_p2dsend_rqst, LocalColor%sync_p2dsend_stat,ierr)
-      END IF
-      IF (nbSync_recv > 0) THEN
-        call mpi_waitall(nbSync_recv, LocalColor%sync_p2drecv_rqst, LocalColor%sync_p2drecv_stat,ierr)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE I4_SYNC_SENDRECV(LocalColor, AC)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
-      USE elfe_msgp, only : comm, ierr, myrank
-      implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      real(rkind), intent(inout) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER :: IP, IS, ID, i, iRank
       integer iSync
       integer nbSync_send, nbSync_recv
@@ -3957,7 +3613,7 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : myrank
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       real(rkind), intent(inout) :: ACret(MNP, MSC, MDC)
       integer iBlock, lenBlock, idx, IS, ID
@@ -4053,7 +3709,7 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : myrank
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       real(rkind), intent(inout) :: ACret(MSC, MDC, MNP)
       integer iBlock, lenBlock, idx, IS, ID
@@ -4105,15 +3761,16 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_APPLY_FCT(SolDat,  ACin, ACret)
-      USE DATAPOOL, only : I5_SolutionData, IA, JA, NP_RES, MSC, MDC, MNP, rkind
+      SUBROUTINE I5B_APPLY_FCT(MSCeffect, SolDat,  ACin, ACret)
+      USE DATAPOOL, only : I5_SolutionData, IA, JA, NP_RES, MDC, MNP, rkind
       USE elfe_msgp, only : exchange_p4d_wwm
       implicit none
       integer IP, J, idx
       type(I5_SolutionData), intent(inout) :: SolDat
-      REAL(rkind) :: eSum(MSC,MDC)
-      REAL(rkind), intent(in) :: ACin(MSC, MDC, MNP)
-      REAL(rkind), intent(inout) :: ACret(MSC, MDC, MNP)
+      integer, intent(in) :: MSCeffect
+      REAL(rkind), intent(in) :: ACin(MSCeffect, MDC, MNP)
+      REAL(rkind), intent(inout) :: ACret(MSCeffect, MDC, MNP)
+      REAL(rkind) :: eSum(MSCeffect,MDC)
       DO IP=1,NP_RES
         eSum=0
         DO J=IA(IP),IA(IP+1)-1
@@ -4122,17 +3779,22 @@ MODULE WWM_PARALL_SOLVER
         END DO
         ACret(:,:,IP)=eSum
       END DO
+# ifdef SELFE_EXCHANGE
+      CALL I5B_EXCHANGE_P4D_WWM(LocalColor, ACret)
+# else
       CALL EXCHANGE_P4D_WWM(ACret)
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE REPLACE_NAN_ZERO(LScal)
-      USE DATAPOOL, only : rkind, MSC, MDC
+      SUBROUTINE REPLACE_NAN_ZERO(LocalColor, LScal)
+      USE DATAPOOL, only : rkind, MSC, MDC, LocalColorInfo
       implicit none
-      real(rkind), intent(inout) :: LScal(MSC,MDC)
+      type(LocalColorInfo), intent(in) :: LocalColor
+      real(rkind), intent(inout) :: LScal(LocalColor%MSCeffect,MDC)
       integer IS, ID
-      DO IS=1,MSC
+      DO IS=1,LocalColor%MSCeffect
         DO ID=1,MDC
           IF (LScal(IS,ID) .ne. LScal(IS,ID)) THEN
             LScal(IS,ID)=0
@@ -4217,22 +3879,23 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_L2_LINF(ACw1, ACw2, Norm_L2, Norm_LINF)
-      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      SUBROUTINE I5B_L2_LINF(MSCeffect, ACw1, ACw2, Norm_L2, Norm_LINF)
+      USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
       USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
-      real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
-      real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: Norm_L2(MSC, MDC)
-      real(rkind), intent(inout) :: Norm_LINF(MSC, MDC)
-      real(rkind) :: LScal(MSC, MDC, 2)
-      real(rkind) :: RScal(MSC, MDC, 2)
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw1(MSCeffect, MDC, MNP)
+      real(rkind), intent(in) :: ACw2(MSCeffect, MDC, MNP)
+      real(rkind), intent(inout) :: Norm_L2(MSCeffect, MDC)
+      real(rkind), intent(inout) :: Norm_LINF(MSCeffect, MDC)
+      real(rkind) :: LScal(MSCeffect, MDC, 2)
+      real(rkind) :: RScal(MSCeffect, MDC, 2)
       integer IP, iProc, IS, ID
       LScal=0
       DO IP=1,NP_RES
         LScal(:,:,1)=LScal(:,:,1) + nwild_loc_res(IP)*((ACw1(:,:,IP) - ACw2(:,:,IP))**2)
-        DO IS=1,MSC
+        DO IS=1,MSCeffect
           DO ID=1,MDC
             LScal(IS,ID,2)=max(LScal(IS,ID,2), abs(ACw1(IS,ID,IP) - ACw2(IS,ID,IP)))
           END DO
@@ -4240,20 +3903,20 @@ MODULE WWM_PARALL_SOLVER
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC*2,rtype, iProc-1, 19, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,MSCeffect*MDC*2,rtype, iProc-1, 19, comm, istatus, ierr)
           LScal(:,:,1) = LScal(:,:,1) + RScal(:,:,1)
-          DO IS=1,MSC
+          DO IS=1,MSCeffect
             DO ID=1,MDC
               LScal(IS,ID,2)=max(LScal(IS,ID,2), RScal(IS,ID,2))
             END DO
           END DO
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LScal,MSC*MDC*2,rtype, iProc-1, 23, comm, ierr)
+          CALL MPI_SEND(LScal,MSCeffect*MDC*2,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LScal,MSC*MDC*2,rtype, 0, 19, comm, ierr)
-        CALL MPI_RECV(LScal,MSC*MDC*2,rtype, 0, 23, comm, istatus, ierr)
+        CALL MPI_SEND(LScal,MSCeffect*MDC*2,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,MSCeffect*MDC*2,rtype, 0, 23, comm, istatus, ierr)
       END IF
       Norm_L2=LScal(:,:,1)
       Norm_LINF=LScal(:,:,2)
@@ -4261,15 +3924,16 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_SCALAR(ACw1, ACw2, LScal)
-      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      SUBROUTINE I5B_SCALAR(MSCeffect, ACw1, ACw2, LScal)
+      USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
       USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
-      real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
-      real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: LScal(MSC, MDC)
-      real(rkind) :: RScal(MSC, MDC)
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw1(MSCeffect, MDC, MNP)
+      real(rkind), intent(in) :: ACw2(MSCeffect, MDC, MNP)
+      real(rkind), intent(inout) :: LScal(MSCeffect, MDC)
+      real(rkind) :: RScal(MSCeffect, MDC)
       integer IP, iProc
       LScal=0
       DO IP=1,NP_RES
@@ -4277,15 +3941,15 @@ MODULE WWM_PARALL_SOLVER
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 19, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,MSCeffect*MDC,rtype, iProc-1, 19, comm, istatus, ierr)
           LScal = LScal + RScal
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LScal,MSC*MDC,rtype, iProc-1, 23, comm, ierr)
+          CALL MPI_SEND(LScal,MSCeffect*MDC,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LScal,MSC*MDC,rtype, 0, 19, comm, ierr)
-        CALL MPI_RECV(LScal,MSC*MDC,rtype, 0, 23, comm, istatus, ierr)
+        CALL MPI_SEND(LScal,MSCeffect*MDC,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,MSCeffect*MDC,rtype, 0, 23, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -4367,13 +4031,14 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(ACw, Lerror)
-      USE DATAPOOL, only : MNP, MSC, MDC, rkind
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
+      USE DATAPOOL, only : MNP, MDC, rkind
       USE DATAPOOL, only : ListIPLG, ListMNP
       USE elfe_msgp, only : istatus, ierr, comm, rtype, myrank, nproc
       USE elfe_glbl, only : iplg, np_global
       implicit none
-      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
       real(rkind), intent(out) :: Lerror
       real(rkind), allocatable :: ACtotal(:,:,:)
       real(rkind), allocatable :: ACloc(:,:,:)
@@ -4393,7 +4058,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
         allocate(eStatus(np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 109')
-        allocate(ACtotal(MSC, MDC, np_global), stat=istat)
+        allocate(ACtotal(MSCeffect, MDC, np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 110')
         eStatus=0
         DO IP=1,MNP
@@ -4403,13 +4068,13 @@ MODULE WWM_PARALL_SOLVER
         END DO
         DO iProc=2,nproc
           MNPloc=ListMNP(iProc)
-          allocate(ACloc(MSC, MDC, MNPloc), stat=istat)
+          allocate(ACloc(MSCeffect, MDC, MNPloc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 111')
-          CALL MPI_RECV(ACloc,MNPloc*MSC*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          CALL MPI_RECV(ACloc,MNPloc*MSCeffect*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
           DO IP=1,MNPloc
             IPglob=ListIPLG(IP+ListFirstMNP(iProc))
             IF (eStatus(IPglob) == 1) THEN
-              DO IS=1,MSC
+              DO IS=1,MSCeffect
                 DO ID=1,MDC
                   Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
                 END DO
@@ -4432,7 +4097,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
         deallocate(rbuf_real)
       ELSE
-        CALL MPI_SEND(ACw,MNP*MSC*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(ACw,MNP*MSCeffect*MDC,rtype, 0, 53, comm, ierr)
         allocate(rbuf_real(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 113')
         CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
@@ -4493,33 +4158,34 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_SUM_MAX(ACw, LSum, LMax)
-      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      SUBROUTINE I5B_SUM_MAX(MSCeffect, ACw, LSum, LMax)
+      USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
       USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
-      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: LSum(MSC, MDC)
-      real(rkind), intent(inout) :: LMax(MSC, MDC)
-      real(rkind) :: RScal(MSC, MDC)
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      real(rkind), intent(inout) :: LSum(MSCeffect, MDC)
+      real(rkind), intent(inout) :: LMax(MSCeffect, MDC)
+      real(rkind) :: RScal(MSCeffect, MDC)
       integer IP, iProc, IS, ID
       LSum=0
       DO IP=1,NP_RES
         LSum=LSum + nwild_loc_res(IP)*ACw(:,:, IP)
       END DO
-      DO IS=1,MSC
+      DO IS=1,MSCeffect
         DO ID=1,MDC
           LMax(IS,ID)=maxval(ACw(IS,ID,:))
         END DO
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,MSCeffect*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
           LSum = LSum + RScal
         END DO
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 59, comm, istatus, ierr)
-          DO IS=1,MSC
+          CALL MPI_RECV(RScal,MSCeffect*MDC,rtype, iProc-1, 59, comm, istatus, ierr)
+          DO IS=1,MSCeffect
             DO ID=1,MDC
               IF (RScal(IS,ID) .gt. LMax(IS,ID)) THEN
                 LMax(IS,ID)=RScal(IS,ID)
@@ -4528,16 +4194,16 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LSum,MSC*MDC,rtype, iProc-1, 197, comm, ierr)
+          CALL MPI_SEND(LSum,MSCeffect*MDC,rtype, iProc-1, 197, comm, ierr)
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LMax,MSC*MDC,rtype, iProc-1, 199, comm, ierr)
+          CALL MPI_SEND(LMax,MSCeffect*MDC,rtype, iProc-1, 199, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LSum,MSC*MDC,rtype, 0, 53, comm, ierr)
-        CALL MPI_SEND(LMax,MSC*MDC,rtype, 0, 59, comm, ierr)
-        CALL MPI_RECV(LSum,MSC*MDC,rtype, 0, 197, comm, istatus, ierr)
-        CALL MPI_RECV(LMax,MSC*MDC,rtype, 0, 199, comm, istatus, ierr)
+        CALL MPI_SEND(LSum,MSCeffect*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(LMax,MSCeffect*MDC,rtype, 0, 59, comm, ierr)
+        CALL MPI_RECV(LSum,MSCeffect*MDC,rtype, 0, 197, comm, istatus, ierr)
+        CALL MPI_RECV(LMax,MSCeffect*MDC,rtype, 0, 199, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -4556,14 +4222,15 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      FUNCTION I5B_SUMTOT(ACw)
-      USE DATAPOOL, only : rkind, MNP, MSC, MDC
+      FUNCTION I5B_SUMTOT(MSCeffect, ACw)
+      USE DATAPOOL, only : rkind, MNP, MDC
       implicit none
-      real(rkind), intent(in) :: ACw(MNP, MSC, MDC)
-      real(rkind) :: LSum(MSC, MDC)
-      real(rkind) :: LMax(MSC, MDC)
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      real(rkind) :: LSum(MSCeffect, MDC)
+      real(rkind) :: LMax(MSCeffect, MDC)
       real(rkind) :: I5B_SUMTOT
-      CALL I5B_SUM_MAX(ACw, LSum, LMax)
+      CALL I5B_SUM_MAX(MSCeffect, ACw, LSum, LMax)
       I5B_SUMTOT=sum(LSum)
       END FUNCTION
 !**********************************************************************
@@ -4778,7 +4445,7 @@ MODULE WWM_PARALL_SOLVER
         iret=nf90_inq_varid(ncid, 'Beta', var_id)
         iret=nf90_put_var(ncid,var_id,Beta,start=(/1,1,idBeta/), count = (/ MSC, MDC, 1 /))
 # endif
-        CALL REPLACE_NAN_ZERO(Beta)
+        CALL REPLACE_NAN_ZERO(LocalColor, Beta)
         Rho=Prov
 # if defined DEBUG && defined NCDF
         idRho=idRho+1
@@ -4845,7 +4512,7 @@ MODULE WWM_PARALL_SOLVER
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
         CALL I5_SCALAR(SolDat % AC4, SolDat % AC5, Prov)
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(Alpha)
+        CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
 # if defined DEBUG && defined NCDF
         WRITE(myrank+240,*) 'Alpha max=', maxval(Alpha), 'sum=', sum(Alpha)
         idAlpha=idAlpha+1
@@ -4910,7 +4577,7 @@ MODULE WWM_PARALL_SOLVER
         CALL I5_SCALAR(SolDat % AC9, SolDat % AC7, Omega)
         CALL I5_SCALAR(SolDat % AC9, SolDat % AC9, Prov)
         Omega(:,:)=Omega(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(Omega)
+        CALL REPLACE_NAN_ZERO(LocalColor, Omega)
 # if defined DEBUG && defined NCDF
         WRITE(myrank+240,*) 'Omega max=', maxval(Omega), 'sum=', sum(Omega)
         idOmega=idOmega+1
@@ -4935,14 +4602,9 @@ MODULE WWM_PARALL_SOLVER
 
         ! L12 If x is accurate enough finish
         CALL I5_APPLY_FCT(SolDat,  SolDat%AC2, SolDat%AC1)
-# if defined FAST_NORM
-        CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
-        CritVal=maxval(Norm_L2)
-# else
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
         CALL I5_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
-# endif
 # if defined DEBUG && defined NCDF
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC8)=', I5_SUMTOT(SolDat%AC8)
@@ -5016,7 +4678,6 @@ MODULE WWM_PARALL_SOLVER
       iSystem=iSystem+1
 # endif
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
-      AC2=SolDat%AC2
       END SUBROUTINE
 !
 !
@@ -5047,9 +4708,10 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
 # endif
       integer :: MaxIter = 30
-      integer IP, IS, ID, nbIter
+      integer IP, IS, ID, nbIter, MSCeffect
       MaxError=SOLVERTHR
-      CALL I5B_APPLY_FCT(SolDat,  SolDat % AC2, SolDat % AC3)
+      MSCeffect=LocalColor % MSCeffect
+      CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
@@ -5079,7 +4741,7 @@ MODULE WWM_PARALL_SOLVER
         nbIter=nbIter+1
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
-        CALL I5B_SCALAR(SolDat % AC4, SolDat % AC3, Prov)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
 # ifdef DEBUG
         CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC4, Lerror)
         WRITE(myrank+240,*) 'error(AC4)=', Lerror
@@ -5089,7 +4751,7 @@ MODULE WWM_PARALL_SOLVER
 
         ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
         Beta=(Prov/Rho)*(Alpha/Omega)
-        CALL REPLACE_NAN_ZERO(Beta)
+        CALL REPLACE_NAN_ZERO(LocalColor, Beta)
         Rho=Prov
 
         ! L3: Pi = r(i-1) + Beta*(p(i-1) -omega(i-1)*v(i-1))
@@ -5118,7 +4780,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L5 vi=Ay
-        CALL I5B_APPLY_FCT(SolDat,  SolDat%AC1, SolDat%AC5)
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC5)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(SolDat%AC5)
@@ -5127,9 +4789,9 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
-        CALL I5B_SCALAR(SolDat % AC4, SolDat % AC5, Prov)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC5, Prov)
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(Alpha)
+        CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
 
         ! L7 s=r(i-1) - alpha v(i)
         DO IP=1,MNP
@@ -5156,7 +4818,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L9 t=Az
-        CALL I5B_APPLY_FCT(SolDat,  SolDat%AC8, SolDat%AC9)
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC8, SolDat%AC9)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(SolDat%AC9)
@@ -5165,10 +4827,10 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L10 omega=(t,s)/(t,t)
-        CALL I5B_SCALAR(SolDat % AC9, SolDat % AC7, Omega)
-        CALL I5B_SCALAR(SolDat % AC9, SolDat % AC9, Prov)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC9, SolDat % AC7, Omega)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC9, SolDat % AC9, Prov)
         Omega(:,:)=Omega(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(Omega)
+        CALL REPLACE_NAN_ZERO(LocalColor, Omega)
 
         ! L11 x(i)=x(i-1) + Alpha y + Omega z
         DO IP=1,MNP
@@ -5184,7 +4846,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L12 If x is accurate enough finish
-        CALL I5B_APPLY_FCT(SolDat,  SolDat%AC2, SolDat%AC1)
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC2, SolDat%AC1)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
@@ -5193,11 +4855,11 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
 # if defined FAST_NORM
-        CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
+        CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
 # else
         SolDat%AC8=SolDat%AC1 - SolDat%B_block
-        CALL I5B_SCALAR(SolDat % AC8, SolDat % AC8, Prov)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
 # endif
         IF (maxval(Prov) .lt. MaxError) THEN
@@ -5220,9 +4882,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
       END DO
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
-      DO IP=1,MNP
-        AC2(IP,:,:)=SolDat%AC2(:,:,IP)
-      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -5528,7 +5187,7 @@ MODULE WWM_PARALL_SOLVER
         MSCeffect=Hlen+1
       ENDIF
       LocalColor % MSCeffect=MSCeffect
-      allocate(LocalColor % ISbegin(MSCeffect), LocalColor % ISbegin(MSCeffect), stat=istat)
+      allocate(LocalColor % ISbegin(MSCeffect), LocalColor % ISend(MSCeffect), LocalColor % ISlen(MSCeffect), stat=istat)
       IF (istat /=0) CALL WWM_ABORT('allocation error')
       ISbegin=0
       DO iMSCblock=1,NbMSCblock
@@ -5539,6 +5198,7 @@ MODULE WWM_PARALL_SOLVER
         END IF
         LocalColor % ISbegin(iMSCblock)=ISbegin+1
         LocalColor % ISend  (iMSCblock)=ISbegin+len
+        LocalColor % ISlen  (iMSCblock)=len
         ISbegin=ISbegin+len
       END DO
       END SUBROUTINE
@@ -5581,11 +5241,15 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_INIT
       implicit none
-#if defined PLAN_B
+# ifdef PLAN_I4
+      CALL I4_SOLVER_INIT
+# else
+#  if defined PLAN_I5B
       CALL I5B_SOLVER_INIT
-#else
+#  else
       CALL I5_SOLVER_INIT
-#endif
+#  endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -5606,9 +5270,25 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_SOLVER_INIT
       USE DATAPOOL
       implicit none
-      NblockFreqDir = NB_BLOCK 
+      NblockFreqDir = NB_BLOCK
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
       CALL I5B_ALLOCATE(SolDat, MSC)
+      IF (PCmethod .eq. 2) THEN
+!        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE I4_SOLVER_INIT
+      USE DATAPOOL
+      implicit none
+      integer NbMSCblock
+      NblockFreqDir = NB_BLOCK
+      NbMSCblock = 7
+      CALL I4_SPLIT_MSC(MainLocalColor, NbMSCblock)
+      CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MainLocalColor % MSCeffect)
+      CALL I5B_ALLOCATE(SolDat, MainLocalColor % MSCeffect)
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
       END IF
@@ -5698,7 +5378,7 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-# if defined PLAN_B
+# if defined PLAN_I5B
       CALL I5B_EIMPS(LocalColor, SolDat)
 # else
       CALL I5_EIMPS(LocalColor, SolDat)
@@ -5707,33 +5387,37 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I4_CADVXY_VECTOR(CX,CY, IS1, IS2)
+      SUBROUTINE I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
       USE DATAPOOL
       IMPLICIT NONE
-      integer, intent(in) :: IS1, IS2
-      REAL(rkind), INTENT(OUT)  :: CX(MDC,IS1:IS2,MNP), CY(MDC,IS1:IS2,MNP)
-      INTEGER     :: IP, IS, ID
+      type(LocalColorInfo), intent(inout) :: LocalColor
+      REAL(rkind), INTENT(OUT)  :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
+      integer, intent(in) :: iMSCblock
+      INTEGER     :: IP, IS, ID, IS1, IS2, ISr
       REAL(rkind)      :: DIFRU, USOC, WVC
 !
 ! Loop over the resident nodes only ... exchange is done in the calling routine
 !
+      IS1=LocalColor%ISbegin(iMSCblock)
+      IS2=LocalColor%ISend  (iMSCblock)
       DO IP = 1, MNP
         DO IS = IS1, IS2
+          ISr=IS+1-IS1
           DO ID = 1, MDC
             IF (LSECU .OR. LSTCU) THEN
-              CX(ID,IS,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-              CY(ID,IS,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+              CX(ISr,ID,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+              CY(ISr,ID,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
             ELSE
-              CX(ID,IS,IP) = CG(IP,IS)*COSTH(ID)
-              CY(ID,IS,IP) = CG(IP,IS)*SINTH(ID)
+              CX(ISr,ID,IP) = CG(IP,IS)*COSTH(ID)
+              CY(ISr,ID,IP) = CG(IP,IS)*SINTH(ID)
             END IF
             IF (LSPHE) THEN
-              CY(ID,IS,IP) = CX(ID,IS,IP)*INVSPHTRANS(IP,1)
-              CX(ID,IS,IP) = CY(ID,IS,IP)*INVSPHTRANS(IP,2)
+              CY(ISr,ID,IP) = CX(ISr,ID,IP)*INVSPHTRANS(IP,1)
+              CX(ISr,ID,IP) = CY(ISr,ID,IP)*INVSPHTRANS(IP,2)
             END IF
             IF (LDIFR) THEN
-              CX(ID,IS,IP) = CX(ID,IS,IP)*DIFRM(IP)
-              CY(ID,IS,IP) = CY(ID,IS,IP)*DIFRM(IP)
+              CX(ISr,ID,IP) = CX(ISr,ID,IP)*DIFRM(IP)
+              CY(ISr,ID,IP) = CY(ISr,ID,IP)*DIFRM(IP)
               IF (LSECU .OR. LSTCU) THEN
                 IF (IDIFFR .GT. 1) THEN
                   WVC = SPSIG(IS)/WK(IP,IS)
@@ -5742,13 +5426,172 @@ MODULE WWM_PARALL_SOLVER
                 ELSE
                   DIFRU = DIFRM(IP)
                 END IF
-                CX(ID,IS,IP) = CX(ID,IS,IP) + DIFRU*CURTXY(IP,1)
-                CY(ID,IS,IP) = CY(ID,IS,IP) + DIFRU*CURTXY(IP,2)
+                CX(ISr,ID,IP) = CX(ISr,ID,IP) + DIFRU*CURTXY(IP,1)
+                CY(ISr,ID,IP) = CY(ISr,ID,IP) + DIFRU*CURTXY(IP,2)
               END IF
             END IF
           END DO
         END DO
       END DO
+      END SUBROUTINE
+!**********************************************************************
+!*
+!**********************************************************************
+      SUBROUTINE I4_EIMPS_ASPAR_B_BLOCK(LocalColor, ASPAR, B, U, iMSCblock)
+      USE DATAPOOL
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
+      IMPLICIT NONE
+      type(LocalColorInfo), intent(inout) :: LocalColor
+      REAL(rkind), intent(inout) :: ASPAR(LocalColor%MSCeffect, MDC, NNZ)
+      REAL(rkind), intent(inout) :: B(LocalColor%MSCeffect, MDC, MNP)
+      REAL(rkind), intent(in) :: U(LocalColor%MSCeffect, MDC, MNP)
+      integer, intent(in) :: iMSCblock
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: FL11(LocalColor%MSCeffect,MDC), FL12(LocalColor%MSCeffect,MDC), FL21(LocalColor%MSCeffect,MDC), FL22(LocalColor%MSCeffect,MDC), FL31(LocalColor%MSCeffect,MDC), FL32(LocalColor%MSCeffect,MDC)
+      REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
+      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
+      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3,MNE)
+      INTEGER :: I1, I2, I3
+      INTEGER :: IP, ID, IS, IE, POS
+      INTEGER :: I, J, IPGL, IPrel, ISr, IS1, IS2
+      REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
+      REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
+
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+      CALL I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
+!
+!        Calculate countour integral quantities ...
+!
+      DO IE = 1, MNE
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
+        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
+        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
+        KP(:,:,:,IE) = MAX(ZERO,K)
+        KM = MIN(0.0_rkind,K)
+        FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
+        FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
+        FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
+        FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
+        FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
+        FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
+        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
+        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
+        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
+        NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+      END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
+      WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
+      WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
+      WRITE(3000+myrank,*)  'sum(KM    )=', sum(KM)
+      WRITE(3000+myrank,*)  'sum(FL11  )=', sum(FL11)
+      WRITE(3000+myrank,*)  'sum(FL12  )=', sum(FL11)
+      WRITE(3000+myrank,*)  'sum(FL21  )=', sum(FL21)
+      WRITE(3000+myrank,*)  'sum(FL22  )=', sum(FL22)
+      WRITE(3000+myrank,*)  'sum(FL31  )=', sum(FL31)
+      WRITE(3000+myrank,*)  'sum(FL32  )=', sum(FL32)
+      WRITE(3000+myrank,*)  'sum(CRFS  )=', sum(CRFS)
+      WRITE(3000+myrank,*)  'sum(DELTAL)=', sum(DELTAL)
+      WRITE(3000+myrank,*)  'sum(NM    )=', sum(NM)
+      WRITE(3000+myrank,*)  'maxval(NM    )=', maxval(NM)
+      DO IS=1,LocalColor%MSCeffect
+        DO ID=1,MDC
+          DO IE=1,MNE
+            IF (ABS(NM(IS,ID,IE)) > 1000000) THEN
+              WRITE(4000+myrank,*) 'IS, ID, IE=', IS, ID, IE
+              WRITE(4000+myrank,*) '   NM=', NM(IS,ID,IE)
+            END IF
+          END DO
+        END DO
+      END DO
+# endif
+      J     = 0    ! Counter ...
+      ASPAR = 0.0_rkind ! Mass matrix ...
+      B     = 0.0_rkind ! Right hand side ...
+!
+! ... assembling the linear equation system ....
+!
+      DO IP = 1, NP_RES
+        IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            POS   =  POS_CELL(J)
+            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
+            TRIA03 = ONETHIRD * TRIA(IE)
+            DO ID=1,MDC
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:,IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            I2    =  POSI(2,J)
+            I3    =  POSI(3,J)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
+            B(:,:,IP)     =  B(:,:,IP) + TRIA03 * U(:,:,IP)
+          END DO !I: loop over connected elements ...
+        ELSE
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            TRIA03 = ONETHIRD * TRIA(IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+            B(:,:,IP)     =  ZERO
+          END DO
+        END IF
+      END DO
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      DO IS=1,LocalColor%MSCeffect
+        DO ID=1,MDC
+          WRITE(3000+myrank,*) 'IS, ID, sum(ASPAR)=', IS, ID, sum(ASPAR(IS,ID,:))
+        END DO
+      END DO
+# endif
+      IF (LBCWA .OR. LBCSP) THEN
+        IF (LINHOM) THEN
+          IPrel=IP
+        ELSE
+          IPrel=1
+        ENDIF
+        DO IP = 1, IWBMNP
+          IPGL = IWBNDLC(IP)
+          ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+          DO IS=IS1,IS2
+            ISr=IS+1-IS1
+            B(ISr,:,IPGL)         = SI(IPGL) * WBAC(IS,:,IPrel)
+          END DO
+        END DO
+      END IF
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+        DO IP = 1, NP_RES
+          IF (IOBWB(IP) .EQ. 1) THEN
+            DO IS=IS1,IS2
+              ISr=IS+1-IS1
+              ASPAR(ISr,:,I_DIAG(IP)) = ASPAR(ISr,:,I_DIAG(IP)) + IMATDAA(IP,IS,:) * DT4A * SI(IP) ! Add source term to the diagonal
+              B(ISr,:,IP)             = B(ISr,:,IP) + IMATRAA(IP,IS,:) * DT4A * SI(IP) ! Add source term to the right hand side
+            END DO
+          ENDIF
+        END DO
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -5761,7 +5604,7 @@ MODULE WWM_PARALL_SOLVER
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
-      REAL(rkind), intent(inout) :: U(MSC, MDC, MNP)
+      REAL(rkind), intent(in)    :: U(MSC, MDC, MNP)
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
@@ -5929,7 +5772,7 @@ MODULE WWM_PARALL_SOLVER
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
-            AC2(IP,IS,ID)=MAX(ZERO, AC2(IP,IS,ID))*MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IP,IS,ID))*MyREAL(IOBPD(ID,IP))
           END DO
         END DO
       END DO
@@ -5950,7 +5793,9 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
+#ifndef ASPAR_B_COMPUTE_BLOCK
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
+#endif
       integer IS, ID, IP
       DO IP=1,MNP
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
@@ -5967,14 +5812,18 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
 #endif
+# ifdef SELFE_EXCHANGE
+      CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat % B_block)
+# else
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
+# endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
       CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
-            AC2(IP,IS,ID)=MAX(ZERO, AC2(IP,IS,ID))*MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS,ID,IP))*MyREAL(IOBPD(ID,IP))
           END DO
         END DO
       END DO
@@ -5983,6 +5832,39 @@ MODULE WWM_PARALL_SOLVER
         Write(myrank+591,*) 'Clearing ENDING'
       END IF
 # endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE I4_EIMPS(LocalColor, SolDat)
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
+      USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
+      USE DATAPOOL, only : PCmethod, IOBPD, ZERO
+      USE elfe_msgp, only : myrank, exchange_p4d_wwm
+      implicit none
+      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(I5_SolutionData), intent(inout) :: SolDat
+      integer IS, ID, IP
+      integer iMSCblock, IS1, IS2
+      DO iMSCblock=1,LocalColor % NbMSCblock
+        IS1=LocalColor%ISbegin(iMSCblock)
+        IS2=LocalColor%ISbegin(iMSCblock)
+        DO IP=1,MNP
+          SolDat % AC2(1:LocalColor%ISlen(iMSCblock),:,IP)=AC2(IP,IS1:IS2,:)
+        END DO
+        CALL I4_EIMPS_ASPAR_B_BLOCK(LocalColor, SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2, iMSCblock)
+        CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%B_block)
+        CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
+        CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
+        CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
+        DO IP=1,MNP
+          DO IS=IS1,IS2
+            DO ID=1,MDC
+              AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))*MyREAL(IOBPD(ID,IP))
+            END DO
+          END DO
+        END DO
+      END DO
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER
