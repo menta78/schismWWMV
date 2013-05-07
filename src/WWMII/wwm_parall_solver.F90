@@ -10,7 +10,9 @@
 #undef DEBUG
 #define DEBUG
 
+#define PLAN_I4
 #undef PLAN_I4
+
 #undef PLAN_I5B
 #define PLAN_I5B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
@@ -3669,7 +3671,6 @@ MODULE WWM_PARALL_SOLVER
       integer iBlock, lenBlock, idx, IS, ID
       integer maxBlockLength
       maxBlockLength=LocalColor % maxBlockLength
-      Print *, 'I5B_APPLY_PRECOND, MSCeffect=', LocalColor%MSCeffect
       DO iBlock=1,LocalColor % Nblock
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, ACret, iBlock)
@@ -4657,6 +4658,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: eSum1, eSum2
       REAL(rkind) :: TheTol
 # ifdef DEBUG
+      integer IS1, IS2
       REAL(rkind) :: Lerror
 # endif
 # ifdef FAST_NORM
@@ -4687,6 +4689,9 @@ MODULE WWM_PARALL_SOLVER
       write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
       write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
       CALL FLUSH(2000+myrank)
+      DO IS=1,LocalColor%MSCeffect
+        WRITE(myrank+240,*) 'IS, sum(AC3)=', IS, sum(SolDat%AC3(IS,:,:))
+      END DO
 # endif
       Rho=1
       Alpha=1
@@ -4703,6 +4708,9 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC4)=', Lerror
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC4)=', IS, sum(SolDat%AC4(IS,:,:))
+        END DO
 # endif
 
         ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
@@ -4721,6 +4729,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(MSCeffect, SolDat%AC6)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC6, Lerror)
         WRITE(myrank+240,*) 'error(AC6)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC6)=', IS, sum(SolDat%AC6(IS,:,:))
+        END DO
 # endif
 
         ! L4 y=K^(-1) Pi
@@ -4733,6 +4744,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC1)=', IS, sum(SolDat%AC1(IS,:,:))
+        END DO
 # endif
 
         ! L5 vi=Ay
@@ -4742,6 +4756,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC5, Lerror)
         WRITE(myrank+240,*) 'error(AC5)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC5)=', IS, sum(SolDat%AC5(IS,:,:))
+        END DO
 # endif
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
@@ -4759,6 +4776,12 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC7, Lerror)
         WRITE(myrank+240,*) 'error(AC7)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC7)=', IS, sum(SolDat%AC7(IS,:,:))
+        END DO
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(Alpha)=', IS, sum(Alpha(IS,:))
+        END DO
 # endif
 
         ! L8 z=K^(-1) s
@@ -4771,6 +4794,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC8, Lerror)
         WRITE(myrank+240,*) 'error(AC8)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC8)=', IS, sum(SolDat%AC8(IS,:,:))
+        END DO
 # endif
 
         ! L9 t=Az
@@ -4780,6 +4806,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC9, Lerror)
         WRITE(myrank+240,*) 'error(AC9)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC9)=', IS, sum(SolDat%AC9(IS,:,:))
+        END DO
 # endif
 
         ! L10 omega=(t,s)/(t,t)
@@ -4799,6 +4828,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(MSCeffect, SolDat%AC2)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC2, Lerror)
         WRITE(myrank+240,*) 'error(AC2)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC2)=', IS, sum(SolDat%AC2(IS,:,:))
+        END DO
 # endif
 
         ! L12 If x is accurate enough finish
@@ -4808,6 +4840,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC1)=', IS, sum(SolDat%AC1(IS,:,:))
+        END DO
 # endif
 # if defined FAST_NORM
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
@@ -4834,6 +4869,9 @@ MODULE WWM_PARALL_SOLVER
         write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(MSCeffect, SolDat%AC3)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC3)=', IS, sum(SolDat%AC3(IS,:,:))
+        END DO
 # endif
       END DO
       Print *, 'nbIter=', nbIter
@@ -5134,7 +5172,7 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: NbMSCblock
       integer Hlen, Delta, MSCeffect, istat, iMSCblock, len
-      integer ISbegin
+      integer ISbegin, IS1, IS2
       Hlen=INT(MSC/NbMSCblock)
       Delta=MSC - Hlen*NbMSCblock
       IF (Delta == 0) THEN
@@ -5153,10 +5191,13 @@ MODULE WWM_PARALL_SOLVER
         ELSE
           len=Hlen
         END IF
-        LocalColor % ISbegin(iMSCblock)=ISbegin+1
-        LocalColor % ISend  (iMSCblock)=ISbegin+len
+        IS1=ISbegin+1
+        IS2=ISbegin+len
+        LocalColor % ISbegin(iMSCblock)=IS1
+        LocalColor % ISend  (iMSCblock)=IS2
         LocalColor % ISlen  (iMSCblock)=len
         ISbegin=ISbegin+len
+        Print *, 'iMSCblock, IS12=', iMSCblock, IS1, IS2
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -5525,12 +5566,10 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
 # if defined DEBUG
-      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
-      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
+      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
       DO IS=1,LocalColor%MSCeffect
-        DO ID=1,MDC
-          WRITE(3000+myrank,*) 'IS, ID, sum(ASPAR)=', IS, ID, sum(ASPAR(IS,ID,:))
-        END DO
+        WRITE(3000+myrank,*) 'A: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
       END DO
 # endif
       IF (LBCWA .OR. LBCSP) THEN
@@ -5548,6 +5587,13 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END IF
+# if defined DEBUG
+      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
+      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
+      DO IS=1,LocalColor%MSCeffect
+        WRITE(3000+myrank,*) 'B: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
+      END DO
+# endif
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
           IF (IOBWB(IP) .EQ. 1) THEN
@@ -5559,6 +5605,15 @@ MODULE WWM_PARALL_SOLVER
           ENDIF
         END DO
       ENDIF
+# if defined DEBUG
+      WRITE(3000+myrank,*) 'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*) 'sum(B     )=', sum(B)
+      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
+      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
+      DO IS=1,LocalColor%MSCeffect
+        WRITE(3000+myrank,*) 'C: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
+      END DO
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -5681,15 +5736,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
-# if defined DEBUG
-      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
-      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(3000+myrank,*) 'IS, ID, sum(ASPAR)=', IS, ID, sum(ASPAR(IS,ID,:))
-        END DO
-      END DO
-# endif
       IF (LBCWA .OR. LBCSP) THEN
         IF (LINHOM) THEN
           IPrel=IP
@@ -5710,6 +5756,13 @@ MODULE WWM_PARALL_SOLVER
           ENDIF
         END DO
       ENDIF
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      DO IS=1,MSC
+        WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
+      END DO
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -5815,6 +5868,9 @@ MODULE WWM_PARALL_SOLVER
       integer iMSCblock, IS1, IS2
       Print *, 'NbMSCblock=', LocalColor % NbMSCblock
       DO iMSCblock=1,LocalColor % NbMSCblock
+# ifdef DEBUG
+        WRITE(240+myrank,*) 'iMSCblock=', iMSCblock
+# endif
         Print *, 'iMSCblock=', iMSCblock
         IS1=LocalColor%ISbegin(iMSCblock)
         IS2=LocalColor%ISbegin(iMSCblock)
