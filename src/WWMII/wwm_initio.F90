@@ -350,8 +350,7 @@
          USE DATAPOOL
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-         USE WWM_PARALL_SOLVER, only : SYMM_INIT_COLORING, INIT_BLOCK_FREQDIR
-         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_ALLOCATE
+         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
 #ifdef PETSC
@@ -453,16 +452,8 @@
 #endif
            END IF
            IF (AMETHOD .EQ. 6) THEN
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-!AR: Pleaes define all FHNDL in the proper place where the others are defined
-             NblockFreqDir = NB_BLOCK 
-             CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir)
-             CALL WWM_SOLVER_ALLOCATE(SolDat)
-             IF (PCmethod .eq. 2) THEN
-!               CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
-             END IF
-# endif
+#if defined WWM_SOLVER && defined MPI_PARALL_GRID
+             CALL WWM_SOLVER_INIT
 #endif
            END IF
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
