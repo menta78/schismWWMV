@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 
 #define PLAN_I4
 #undef PLAN_I5B
@@ -806,12 +806,13 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CREATE_WWM_P2D_EXCH
+      SUBROUTINE CREATE_WWM_P2D_EXCH(MSCeffect)
       USE DATAPOOL
       USE elfe_msgp
       USE elfe_glbl
       implicit none
       include 'mpif.h'
+      integer, intent(in) :: MSCeffect
       integer :: ListFirst(nproc)
       integer :: ListNeigh01(nproc)
       integer :: ListCommon_recv(nproc)
@@ -968,14 +969,14 @@ MODULE WWM_PARALL_SOLVER
             IPmap=ListMappedB(IP_glob)
             idx=idx+1
             dspl_send(idx)=IP-1
-            dspl_send_tot(idx)=MSC*MDC*(IP-1)
+            dspl_send_tot(idx)=MSCeffect*MDC*(IP-1)
             idxDspl_send=idxDspl_send+1
             wwm_ListDspl_send(idxDspl_send)=IP
           END IF
         END DO
         call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwm_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwm_p2dsend_type(iNeigh), ierr)
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send_tot,rtype,wwmtot_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_send_tot,rtype,wwmtot_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwmtot_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
         deallocate(dspl_send_tot)
@@ -995,7 +996,7 @@ MODULE WWM_PARALL_SOLVER
             IPmap=ListMapped(IP_glob)
             idx=idx+1
             dspl_recv(idx)=IPmap-1
-            dspl_recv_tot(idx)=MSC*MDC*(IPmap-1)
+            dspl_recv_tot(idx)=MSCeffect*MDC*(IPmap-1)
             idxDspl_recv=idxDspl_recv+1
             wwm_ListDspl_recv(idxDspl_recv)=IPmap
           END IF
@@ -1003,7 +1004,7 @@ MODULE WWM_PARALL_SOLVER
         !
         call mpi_type_create_indexed_block(nbCommon,1,dspl_recv,rtype,wwm_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(wwm_p2drecv_type(iNeigh), ierr)
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv_tot,rtype,wwmtot_p2drecv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_recv_tot,rtype,wwmtot_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(wwmtot_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
         deallocate(dspl_recv_tot)
@@ -1015,12 +1016,13 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CREATE_WWM_MAT_P2D_EXCH
+      SUBROUTINE CREATE_WWM_MAT_P2D_EXCH(MSCeffect)
       USE DATAPOOL
       USE elfe_msgp
       USE elfe_glbl
       implicit none
       include 'mpif.h'
+      integer, intent(in) :: MSCeffect
       integer :: ListFirstMNP(nproc), ListFirstNNZ(nproc)
       integer :: ListCommon_send(nproc), ListCommon_recv(nproc)
       integer :: ListMapped(np_global)
@@ -1222,13 +1224,13 @@ MODULE WWM_PARALL_SOLVER
                   idxDspl_send=idxDspl_send+1
                   wwm_ListDspl_m_send(idxDspl_send)=J
                   idx=idx+1
-                  dspl_send(idx)=(J-1)*MSC*MDC
+                  dspl_send(idx)=(J-1)*MSCeffect*MDC
                 END IF
               END IF
             END DO
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,wwmmat_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_send,rtype,wwmmat_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwmmat_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -1268,13 +1270,13 @@ MODULE WWM_PARALL_SOLVER
                   idxDspl_recv=idxDspl_recv+1
                   wwm_ListDspl_m_recv(idxDspl_recv)=Jfound
                   idx=idx+1
-                  dspl_recv(idx)=(Jfound-1)*MSC*MDC
+                  dspl_recv(idx)=(Jfound-1)*MSCeffect*MDC
                 END IF
               END IF
             END DO
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,wwmmat_p2drecv_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_recv,rtype,wwmmat_p2drecv_type(iNeigh), ierr)
         call mpi_type_commit(wwmmat_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -1623,11 +1625,11 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After COLLECT_ALL_IA_JA'
 # endif
-      CALL CREATE_WWM_P2D_EXCH
+      CALL CREATE_WWM_P2D_EXCH(MSCeffect)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After CREATE_WWM_P2D_EXCH'
 # endif
-      CALL CREATE_WWM_MAT_P2D_EXCH
+      CALL CREATE_WWM_MAT_P2D_EXCH(MSCeffect)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After CREATE_WWM_MAT_P2D_EXCH'
 # endif
@@ -1683,54 +1685,6 @@ MODULE WWM_PARALL_SOLVER
       DO_SYNC_UPP_2_LOW=.TRUE.
       DO_SYNC_LOW_2_UPP=.TRUE.
       DO_SYNC_FINAL=.TRUE.
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'Checking XP exchanges'
-      CALL CHECK_P2D_EXCH(LocalColor, XP)
-      WRITE(740+myrank,*) 'Checking YP exchanges'
-      CALL CHECK_P2D_EXCH(LocalColor, YP)
-      WRITE(740+myrank,*) 'Checking IPLG exchanges'
-      CALL CHECK_P2D_EXCH(LocalColor, MyREAL(iplg))
-      !
-      WRITE(740+myrank,*) 'Check Standard SELFE'
-      CALL CHECK_STANDARD_SELFE_EXCH
-      WRITE(740+myrank,*) 'Checking stacked exchanges A'
-      eFieldStackA(:,1)=XP
-      eFieldStackA(:,2)=YP
-      eFieldStackA(:,3)=MyREAL(iplg)
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackA, 3)
-      WRITE(740+myrank,*) 'Checking stacked exchanges B'
-      eFieldStackB(:,1)=XP
-      eFieldStackB(:,2)=YP
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackB, 2)
-      WRITE(740+myrank,*) 'Checking stacked exchanges C'
-      eFieldStackC(:,1)=XP
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackC, 1)
-      WRITE(740+myrank,*) 'Checking stacked exchanges D'
-      eFieldStackB(:,1)=XP
-      eFieldStackB(:,2)=XP
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackB, 2)
-      WRITE(740+myrank,*) 'Checking stacked exchanges E'
-      eFieldStackB(:,1)=XP
-      eFieldStackB(:,2)=0
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackB, 2)
-      WRITE(740+myrank,*) 'Checking stacked exchanges F'
-      eFieldStackB(:,1)=0
-      eFieldStackB(:,2)=XP
-!      CALL CHECK_P2D_EXCH_STACKED(LocalColor, eFieldStackB, 2)
-      !
-      WRITE(740+myrank,*) 'Checking stacked exchanges RevA'
-      eFieldStackA(1,:)=XP
-      eFieldStackA(2,:)=YP
-      eFieldStackA(3,:)=MyREAL(iplg)
-!      CALL CHECK_P2D_EXCH_STACKED_REV(LocalColor, eFieldStackRevA, 3)
-      WRITE(740+myrank,*) 'Checking stacked exchanges RevB'
-      eFieldStackB(1,:)=XP
-      eFieldStackB(2,:)=YP
-!      CALL CHECK_P2D_EXCH_STACKED_REV(LocalColor, eFieldStackRevB, 2)
-      WRITE(740+myrank,*) 'Checking stacked exchanges RevC'
-      eFieldStackC(1,:)=XP
-!      CALL CHECK_P2D_EXCH_STACKED_REV(LocalColor, eFieldStackRevC, 1)
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3365,7 +3319,7 @@ MODULE WWM_PARALL_SOLVER
       END DO
 # if defined DEBUG
       WRITE(3000+myrank,*) 'Partial_SOLVE_L Sums of ACret'
-      DO IS=1,MSC
+      DO IS=1,LocalColor%MSCeffect
         DO ID=1,MDC
           eSum=sum(ACret(IS,ID,:))
           WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
@@ -4272,6 +4226,9 @@ MODULE WWM_PARALL_SOLVER
 # endif
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter
+# ifdef FAST_NORM
+      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+# endif
 # ifdef DEBUG
       integer, SAVE :: iSystem = 1
       integer nbDiff
@@ -4290,9 +4247,6 @@ MODULE WWM_PARALL_SOLVER
       integer :: ListPosBRev(np_global)
       ISsel=2
       IDsel=2
-# endif
-# ifdef FAST_NORM
-      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
 # endif
       MaxError=SOLVERTHR
       CALL I5_APPLY_FCT(SolDat,  AC2, SolDat % AC3)
@@ -4722,30 +4676,31 @@ MODULE WWM_PARALL_SOLVER
       SolDat % AC9=0                               ! t
 # ifdef DEBUG
       write(2000+myrank,*) 'Before loop'
-      write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
-      write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(SolDat%AC2)
-      write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(SolDat%AC3)
-      write(2000+myrank,*) 'sumtot(AC4)=', I5B_SUMTOT(SolDat%AC4)
-      write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(SolDat%AC5)
-      write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(SolDat%AC6)
-      write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(SolDat%AC7)
-      write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
-      write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(SolDat%AC9)
+      write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
+      write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(MSCeffect, SolDat%AC2)
+      write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(MSCeffect, SolDat%AC3)
+      write(2000+myrank,*) 'sumtot(AC4)=', I5B_SUMTOT(MSCeffect, SolDat%AC4)
+      write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
+      write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(MSCeffect, SolDat%AC6)
+      write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
+      write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
+      write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
       CALL FLUSH(2000+myrank)
 # endif
       Rho=1
       Alpha=1
       Omega=1
       nbIter=0
+      Print *, 'Before loop in IB_BCGS_SOLVER'
       DO
         nbIter=nbIter+1
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
 # ifdef DEBUG
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC4, Lerror)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC4, Lerror)
         WRITE(myrank+240,*) 'error(AC4)=', Lerror
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC3, Lerror)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
 # endif
 
@@ -4762,8 +4717,8 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(SolDat%AC6)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC6, Lerror)
+        write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(MSCeffect, SolDat%AC6)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC6, Lerror)
         WRITE(myrank+240,*) 'error(AC6)=', Lerror
 # endif
 
@@ -4774,8 +4729,8 @@ MODULE WWM_PARALL_SOLVER
         ENDIF
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
+        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
 
@@ -4783,8 +4738,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC5)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(SolDat%AC5)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC5, Lerror)
+        write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC5, Lerror)
         WRITE(myrank+240,*) 'error(AC5)=', Lerror
 # endif
 
@@ -4800,8 +4755,8 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(SolDat%AC7)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC7, Lerror)
+        write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC7, Lerror)
         WRITE(myrank+240,*) 'error(AC7)=', Lerror
 # endif
 
@@ -4812,8 +4767,8 @@ MODULE WWM_PARALL_SOLVER
         END IF
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(SolDat%AC8)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC8, Lerror)
+        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC8, Lerror)
         WRITE(myrank+240,*) 'error(AC8)=', Lerror
 # endif
 
@@ -4821,8 +4776,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC8, SolDat%AC9)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(SolDat%AC9)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC9, Lerror)
+        write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC9, Lerror)
         WRITE(myrank+240,*) 'error(AC9)=', Lerror
 # endif
 
@@ -4840,8 +4795,8 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(SolDat%AC2)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC2, Lerror)
+        write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(MSCeffect, SolDat%AC2)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC2, Lerror)
         WRITE(myrank+240,*) 'error(AC2)=', Lerror
 # endif
 
@@ -4849,8 +4804,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC2, SolDat%AC1)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(SolDat%AC1)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC1, Lerror)
+        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
 
@@ -4876,8 +4831,8 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(SolDat%AC3)
-        CALL I5B_TOTAL_COHERENCY_ERROR(SolDat%AC3, Lerror)
+        write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(MSCeffect, SolDat%AC3)
+        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
 # endif
       END DO
@@ -5186,8 +5141,9 @@ MODULE WWM_PARALL_SOLVER
       ELSE
         MSCeffect=Hlen+1
       ENDIF
+      LocalColor % NbMSCblock=NbMSCblock
       LocalColor % MSCeffect=MSCeffect
-      allocate(LocalColor % ISbegin(MSCeffect), LocalColor % ISend(MSCeffect), LocalColor % ISlen(MSCeffect), stat=istat)
+      allocate(LocalColor % ISbegin(NbMSCblock), LocalColor % ISend(NbMSCblock), LocalColor % ISlen(NbMSCblock), stat=istat)
       IF (istat /=0) CALL WWM_ABORT('allocation error')
       ISbegin=0
       DO iMSCblock=1,NbMSCblock
@@ -5378,10 +5334,16 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-# if defined PLAN_I5B
-      CALL I5B_EIMPS(LocalColor, SolDat)
+      Print *, 'In WWM_SOLVER_EIMPS'
+# if defined PLAN_I4
+      Print *, 'Before I4_EIMPS'
+      CALL I4_EIMPS(LocalColor, SolDat)
 # else
+#  if defined PLAN_I5B
+      CALL I5B_EIMPS(LocalColor, SolDat)
+#  else
       CALL I5_EIMPS(LocalColor, SolDat)
+#  endif
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -5459,6 +5421,8 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
       REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
+      IS1=LocalColor%ISbegin(iMSCblock)
+      IS2=LocalColor%ISend  (iMSCblock)
 
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -5846,7 +5810,9 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IS, ID, IP
       integer iMSCblock, IS1, IS2
+      Print *, 'NbMSCblock=', LocalColor % NbMSCblock
       DO iMSCblock=1,LocalColor % NbMSCblock
+        Print *, 'iMSCblock=', iMSCblock
         IS1=LocalColor%ISbegin(iMSCblock)
         IS2=LocalColor%ISbegin(iMSCblock)
         DO IP=1,MNP
