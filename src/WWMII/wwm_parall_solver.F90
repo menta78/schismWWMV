@@ -10,9 +10,9 @@
 #undef DEBUG
 #define DEBUG
 
-#define PLAN_I4
+#undef PLAN_I4
 #undef PLAN_I5B
-#undef PLAN_I5B
+#define PLAN_I5B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
 #undef REORDER_ASPAR_PC
@@ -3032,7 +3032,7 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -3101,7 +3101,7 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbLow_send
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -3665,10 +3665,11 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
-      real(rkind), intent(inout) :: ACret(MSC, MDC, MNP)
+      real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
       integer iBlock, lenBlock, idx, IS, ID
       integer maxBlockLength
       maxBlockLength=LocalColor % maxBlockLength
+      Print *, 'I5B_APPLY_PRECOND, MSCeffect=', LocalColor%MSCeffect
       DO iBlock=1,LocalColor % Nblock
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, ACret, iBlock)
@@ -4808,7 +4809,6 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
         WRITE(myrank+240,*) 'error(AC1)=', Lerror
 # endif
-
 # if defined FAST_NORM
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
@@ -4836,6 +4836,7 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
 # endif
       END DO
+      Print *, 'nbIter=', nbIter
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
 !**********************************************************************
@@ -5227,8 +5228,10 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL
       implicit none
       NblockFreqDir = NB_BLOCK
+      MainLocalColor%MSCeffect=MSC
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
       CALL I5B_ALLOCATE(SolDat, MSC)
+      Print *, 'MSC=', MSC
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
       END IF
