@@ -10,8 +10,8 @@
 #undef DEBUG
 #define DEBUG
 
-#undef PLAN_I4
 #define PLAN_I4
+#undef PLAN_I4
 
 #undef PLAN_I5B
 #define PLAN_I5B
@@ -28,8 +28,8 @@
 #define FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef SELFE_EXCH
 #define SELFE_EXCH
+#undef SELFE_EXCH
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -4870,7 +4870,7 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_SCALAR(MSCeffect, SolDat % AC8, SolDat % AC8, Prov)
         CritVal=maxval(Prov)
 # endif
-        IF (maxval(Prov) .lt. MaxError) THEN
+        IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
         IF (nbIter .gt. MaxIter) THEN
