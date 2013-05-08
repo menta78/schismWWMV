@@ -7,11 +7,11 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#undef DEBUG
 #define DEBUG
+#undef DEBUG
 
-#define PLAN_I4
 #undef PLAN_I4
+#define PLAN_I4
 
 #undef PLAN_I5B
 #define PLAN_I5B
@@ -28,8 +28,8 @@
 #define FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#define SELFE_EXCH
 #undef SELFE_EXCH
+#define SELFE_EXCH
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -4697,7 +4697,6 @@ MODULE WWM_PARALL_SOLVER
       Alpha=1
       Omega=1
       nbIter=0
-      Print *, 'Before loop in IB_BCGS_SOLVER'
       DO
         nbIter=nbIter+1
 
@@ -4892,7 +4891,6 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # endif
       END DO
-      Print *, 'nbIter=', nbIter
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
 !**********************************************************************
@@ -5215,7 +5213,6 @@ MODULE WWM_PARALL_SOLVER
         LocalColor % ISend  (iMSCblock)=IS2
         LocalColor % ISlen  (iMSCblock)=len
         ISbegin=ISbegin+len
-        Print *, 'iMSCblock, IS12=', iMSCblock, IS1, IS2
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -5290,7 +5287,6 @@ MODULE WWM_PARALL_SOLVER
       MainLocalColor%MSCeffect=MSC
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
       CALL I5B_ALLOCATE(SolDat, MSC)
-      Print *, 'MSC=', MSC
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
       END IF
@@ -5396,9 +5392,7 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-      Print *, 'In WWM_SOLVER_EIMPS'
 # if defined PLAN_I4
-      Print *, 'Before I4_EIMPS'
       CALL I4_EIMPS(LocalColor, SolDat)
 # else
 #  if defined PLAN_I5B
@@ -5884,12 +5878,10 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IS, ID, IP
       integer iMSCblock, IS1, IS2
-      Print *, 'NbMSCblock=', LocalColor % NbMSCblock
       DO iMSCblock=1,LocalColor % NbMSCblock
 # ifdef DEBUG
         WRITE(240+myrank,*) 'iMSCblock=', iMSCblock
 # endif
-        Print *, 'iMSCblock=', iMSCblock
         IS1=LocalColor%ISbegin(iMSCblock)
         IS2=LocalColor%ISbegin(iMSCblock)
         DO IP=1,MNP

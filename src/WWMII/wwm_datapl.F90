@@ -284,7 +284,7 @@
          END TYPE
 
          INTEGER                :: NB_BLOCK = 1
-         REAL(rkind)            :: SOLVERTHR = 1.E-6_rkind
+         REAL(rkind)            :: SOLVERTHR = 1.E-20_rkind
 
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
 
