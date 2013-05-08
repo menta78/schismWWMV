@@ -10,8 +10,8 @@
 #undef DEBUG
 #define DEBUG
 
-#define PLAN_I4
 #undef PLAN_I4
+#define PLAN_I4
 
 #undef PLAN_I5B
 #define PLAN_I5B
@@ -4640,7 +4640,7 @@ MODULE WWM_PARALL_SOLVER
 ! With another node ordering, maybe better performance
 !
       SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat)
-      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
+      USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod, STAT
 # ifdef DEBUG
@@ -4649,11 +4649,11 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-      REAL(rkind) :: Rho(MSC,MDC)
-      REAL(rkind) :: Prov(MSC,MDC)
-      REAL(rkind) :: Alpha(MSC,MDC)
-      REAL(rkind) :: Beta(MSC,MDC)
-      REAL(rkind) :: Omega(MSC,MDC)
+      REAL(rkind) :: Rho(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Prov(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Alpha(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Beta(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: MaxError, CritVal
       REAL(rkind) :: eSum1, eSum2
       REAL(rkind) :: TheTol
@@ -4662,7 +4662,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Lerror
 # endif
 # ifdef FAST_NORM
-      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC), Norm_LINF(LocalColor%MSCeffect,MDC)
 # endif
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter, MSCeffect
@@ -4708,8 +4708,16 @@ MODULE WWM_PARALL_SOLVER
         WRITE(myrank+240,*) 'error(AC4)=', Lerror
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
         WRITE(myrank+240,*) 'error(AC3)=', Lerror
+        WRITE(myrank+240,*) 'sum(abs(AC4))=', sum(abs(SolDat%AC4))
+        WRITE(myrank+240,*) 'sum(abs(AC3))=', sum(abs(SolDat%AC3))
         DO IS=1,LocalColor%MSCeffect
           WRITE(myrank+240,*) 'IS, sum(AC4)=', IS, sum(SolDat%AC4(IS,:,:))
+        END DO
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(Prov)=', IS, sum(Prov(IS,:))
+        END DO
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(AC4*AC3)=', IS, sum(SolDat%AC4(IS,:,:)*SolDat%AC2(IS,:,:))
         END DO
 # endif
 
@@ -4717,6 +4725,11 @@ MODULE WWM_PARALL_SOLVER
         Beta=(Prov/Rho)*(Alpha/Omega)
         CALL REPLACE_NAN_ZERO(LocalColor, Beta)
         Rho=Prov
+# ifdef DEBUG
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(Rho)=', IS, sum(Rho(IS,:))
+        END DO
+# endif
 
         ! L3: Pi = r(i-1) + Beta*(p(i-1) -omega(i-1)*v(i-1))
         DO IP=1,MNP
@@ -4763,6 +4776,11 @@ MODULE WWM_PARALL_SOLVER
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC5, Prov)
+# ifdef DEBUG
+        DO IS=1,LocalColor%MSCeffect
+          WRITE(myrank+240,*) 'IS, sum(Prov)=', IS, sum(Prov(IS,:))
+        END DO
+# endif
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
         CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
 
