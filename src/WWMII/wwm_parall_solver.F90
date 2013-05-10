@@ -30,6 +30,9 @@
 ! the ghost nodes and not the interface nodes.
 #undef SELFE_EXCH
 #define SELFE_EXCH
+! Repeated CX/CY computations but less memory used.
+#undef NO_MEMORY_CX_CY
+#define NO_MEMORY_CX_CY
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -5642,7 +5645,11 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+#ifndef NO_MEMORY_CX_CY
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+#else
+      REAL(rkind) :: CX(MSC,MDC,3), CY(MSC,MDC,3)
+#endif
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
@@ -5658,11 +5665,14 @@ MODULE WWM_PARALL_SOLVER
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
 
+#ifndef NO_MEMORY_CX_CY
       CALL CADVXY_VECTOR(CX, CY)
+#endif
 !
 !        Calculate countour integral quantities ...
 !
       DO IE = 1, MNE
+#ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
@@ -5679,6 +5689,54 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
+#else
+        DO I=1,3
+          IP = INE(I,IE)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              IF (LSECU .OR. LSTCU) THEN
+                CX(IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+                CY(IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+              ELSE
+                CX(IS,ID,I) = CG(IP,IS)*COSTH(ID)
+                CY(IS,ID,I) = CG(IP,IS)*SINTH(ID)
+              END IF
+              IF (LSPHE) THEN
+                CY(IS,ID,I) = CX(IS,ID,I)*INVSPHTRANS(IP,1)
+                CX(IS,ID,I) = CY(IS,ID,I)*INVSPHTRANS(IP,2)
+              END IF
+              IF (LDIFR) THEN
+                CX(IS,ID,I) = CX(IS,ID,I)*DIFRM(IP)
+                CY(IS,ID,I) = CY(IS,ID,I)*DIFRM(IP)
+                IF (LSECU .OR. LSTCU) THEN
+                  IF (IDIFFR .GT. 1) THEN
+                    WVC = SPSIG(IS)/WK(IP,IS)
+                    USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
+                    DIFRU = ONE + USOC * (ONE - DIFRM(IP))
+                  ELSE
+                    DIFRU = DIFRM(IP)
+                  END IF
+                  CX(IS,ID,I) = CX(IS,ID,I) + DIFRU*CURTXY(IP,1)
+                  CY(IS,ID,I) = CY(IS,ID,I) + DIFRU*CURTXY(IP,2)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
+        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
+        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
+        KP(:,:,:,IE) = MAX(ZERO,K)
+        KM = MIN(0.0_rkind,K)
+        FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
+        FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
+        FL21(:,:) = CX(:,:,3)*IEN(3,IE)+CY(:,:,3)*IEN(4,IE)
+        FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
+        FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
+        FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
+#endif
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
