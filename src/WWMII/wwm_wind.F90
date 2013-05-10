@@ -161,6 +161,9 @@
           ENDIF
         ENDIF
       ENDIF
+
+      WRITE(STAT%FHNDL,*) 'SUM OF THE WIND', SUM(WINDXY)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

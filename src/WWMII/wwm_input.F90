@@ -425,7 +425,7 @@
                WriteOutputProcess_stat=.FALSE.
              ENDIF
            ELSE
-             CALL WWM_ABORT('You must have MULTIPLEOUT=0 or 1')
+             CALL WWM_ABORT('Station: You must have MULTIPLEOUT=0 or 1')
            ENDIF
          ENDIF
 # else
@@ -663,8 +663,7 @@
 !      WRITE(STAT%FHNDL,*) 'THE GRIDSIZE IS MNP, MNE:', MNP, MNE
 
       IF (MNP == 0 .OR. MNE == 0) THEN
-        WRITE(DBG%FHNDL) 'No Nodes and No Elements have been read in'
-        STOP 'wwm_input.F90 l.629'
+        CALL WWM_ABORT('No Nodes and No Elements have been read in')
       ENDIF
 
       CLOSE(GRD%FHNDL)
@@ -772,6 +771,8 @@
          MAIN%ISTP = NINT( MAIN%TOTL / MAIN%DELT )
          MAIN%TMJD = MAIN%BMJD
 
+         IF (MAIN%DELT .LT. THR) CALL WWM_ABORT('TIME STEP IS ZERO')
+
 #ifdef SELFE
          IF (DIMMODE .NE. 2 .OR. .NOT. LCPL) THEN
            WRITE(wwmerr,*)'You are running in less than 1d or LCPL = .F.',&
@@ -844,7 +845,17 @@
 
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE
-
+         IF (LBCWA .and. (.not. LINHOM) .and. (.not. LBCSE)) THEN
+           ! Parametric Wave Boundary is prescribed
+           ! Inhomogenous in space
+           ! Steady in time
+           IF (WBTP*FRLOW .gt. 1) THEN
+             CALL WWM_ABORT('FRLOW is too high with respect to WBTP')
+           END IF
+           IF (WBTP*FRHIGH .lt. 1) THEN
+             CALL WWM_ABORT('FRHIGH is too low with respect to WBTP')
+           END IF
+         END IF
          WRITE(STAT%FHNDL,'("+TRACE...",A10,I5)') 'BOUNDARY FILE FORMAT IS', IBOUNDFORMAT
 
          SEBO%BEGT = BEGTC
@@ -965,6 +976,8 @@
          DELTC = -1
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
+         MULTIPLEOUT=0
+         MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
          wwm_print_namelist(HOTFILE)
          MULTIPLEIN_HOT=MULTIPLEIN
@@ -983,7 +996,7 @@
                WriteOutputProcess_hot=.FALSE.
              ENDIF
            ELSE
-             CALL WWM_ABORT('You must have MULTIPLEOUT=0 or 1')
+             CALL WWM_ABORT('Hotfile: You must have MULTIPLEOUT=0 or 1')
            ENDIF
          ENDIF
 #else
@@ -1033,6 +1046,7 @@
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind) :: tmp
+      REAL(rkind) :: tmp_arr(np_global)
 #endif
       CURTXY(:,:) = 0.0
       IF (LSTCU) THEN
@@ -1058,18 +1072,18 @@
             CALL TEST_FILE_EXIST_DIE("2: Missing current file : ", CUR%FNAME)
             OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
 #ifdef MPI_PARALL_GRID
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
             DO I=1,NP_GLOBAL
               IF (ipgl(I)%rank==myrank) THEN
-                READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp
                 IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,1)=tmp
+                CURTXY(ipgl(I)%id,1)=tmp_arr(I)
               END IF
             END DO
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
             DO I=1,NP_GLOBAL
               IF (ipgl(I)%rank==myrank) THEN
-                READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp
                 IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,2)=tmp
+                CURTXY(ipgl(I)%id,2)=tmp_arr(I)
               END IF
             END DO
 #else
@@ -1113,6 +1127,7 @@
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind)    :: tmp
+      REAL(rkind)    :: tmp_arr(np_global)
 #endif
       WATLEV    = 0.
       WATLEVOLD = 0.
@@ -1125,11 +1140,11 @@
             CALL TEST_FILE_EXIST_DIE("1: Missing watlev file : ", WAT%FNAME)
             OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
 #ifdef MPI_PARALL_GRID
+            READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp_arr
             DO I=1,NP_GLOBAL
               IF (ipgl(I)%rank==myrank) THEN
-                READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp
                 IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                WATLEV(ipgl(I)%id)=tmp
+                WATLEV(ipgl(I)%id)=tmp_arr(I)
               END IF
             END DO
 #else

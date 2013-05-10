@@ -64,6 +64,14 @@
 
          IF (.NOT. LRECALC) CALL MEAN_WAVE_PARAMETER(IP,AC1(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
 
+!         if (ip == 26) then
+!           call MEAN_PARAMETER_LOC(ACLOC,CURTXY(IP,:),DEP(IP),WK(IP,:),MSC,HS,TM01,TM02,TM10,KLM,WLM)
+!           call PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+!           call MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
+!           write(*,*) IP,HS,TM01,TM02,KLM,WLM,KPP,LPP,DM,DSPR
+!           stop 
+!         endif
+         
 !         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'NEW', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
 !         CALL PARAMENG(IP,ACLOC,SME01,SME10,KME01,KMWAM,KMWAM2,WLM, &
 !         URSELL,UBOT,ABRBOT,TMBOT,HS,ETOT,FP,TP,CP,KPP,LPP,DM,DSPR, &
@@ -190,6 +198,12 @@
                    IMATDA(:,ID) = IMATDAWW3(:,ID) !/ CG(IP,:) 
                  END DO
                END IF
+               IF (LNANINFCHK) THEN
+                 IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+                   WRITE(*,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+                   STOP
+                 END IF
+               ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
                CALL SET_WIND( IP, WIND10, WINDTH )
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. VERYSMALL) THEN
@@ -291,7 +305,12 @@
  
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
-        !write(*,*) 'FINAL IMATRA', sum(IMATRA)
+         IF (LNANINFCHK) THEN
+           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+             STOP
+           END IF
+         ENDIF
 
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -344,7 +363,12 @@
            END IF
          END IF ! ISELECT
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL4', SUM(IMATRA), SUM(IMATDA)
+         IF (LNANINFCHK) THEN
+           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SNL4'
+             STOP
+           END IF
+         ENDIF
 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
@@ -441,6 +465,13 @@
              IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
               CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBR)
              END IF
+           END IF
+         ENDIF
+
+         IF (LNANINFCHK) THEN
+           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF'
+             STOP
            END IF
          ENDIF
 

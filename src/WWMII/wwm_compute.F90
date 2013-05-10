@@ -13,10 +13,14 @@
         REAL              :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 
+
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
          CALL FLUSH(STAT%FHNDL)
 
          AC1 = AC2 
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 1'
+         ENDIF
 
          IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
            DT4A = MAIN%DELT
@@ -38,29 +42,41 @@
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
 
-         !WRITE(*,*) 'AFTER FREQ.', SUM(AC2)
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 2'
+         ENDIF
   
          CALL CPU_TIME(TIME3)
 
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
-         !WRITE(*,*) 'AFTER DIRECTION', SUM(AC2)
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 3'
+         ENDIF
 
          CALL CPU_TIME(TIME4)
 
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
-         !WRITE(*,*) 'AFTER SPATIAL', SUM(AC2)
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 4'
+         ENDIF
 
          CALL CPU_TIME(TIME5)
 
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
-         !WRITE(*,*) 'AFTER SOURCES', SUM(AC2)
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 5'
+         ENDIF
+
+         CALL CPU_TIME(TIME6)
 
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
-         CALL CPU_TIME(TIME6)
+         IF (LNANINFCHK) THEN
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 6'
+         ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
@@ -310,6 +326,8 @@
             CALL COMPUTE_DIRECTION_UPWIND_A()
           END IF
         END IF
+
+        IF ( DMETHOD == 1) CALL RESCALE_SPECTRUM
 
       END SUBROUTINE COMPUTE_DIRECTION
 !**********************************************************************

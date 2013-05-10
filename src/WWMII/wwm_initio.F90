@@ -1454,6 +1454,7 @@
         OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
         READ (WAV%FHNDL,*) WBMSC
         READ (WAV%FHNDL,*) WBMDC
+        !WRITE(*,*) WBMSC, WBMDC
         CALL ALLOC_SPEC_BND
         DO IS = 1, WBMSC
           READ (WAV%FHNDL,*) SFRQ(IS,1)
@@ -1469,6 +1470,7 @@
       ELSE
         DO IS = 1, WBMSC
           READ (WAV%FHNDL, *) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
+          !WRITE(*,*) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
         END DO
       END IF
 
@@ -1555,23 +1557,23 @@
         DO 
           READ(WAV%FHNDL,IOSTAT=IFLAG) TIME
           IF (IFLAG .GT. 0) THEN
-            STOP 'STRANGE STUFF'
+            CALL WWM_ABORT('IFLAG incorrectly set 1')
           ELSE IF (IFLAG .LT. 0) THEN
             WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 1, WHICH IS NICE'
             EXIT
           END IF
           DO IP = 1, NP_WW3 
             READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
-            WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+!            WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
             IF (IFLAG .GT. 0) THEN
-              STOP 'STRANGE STUFF'
+              CALL WWM_ABORT('IFLAG incorrectly set 2')
             ELSE IF (IFLAG .LT. 0) THEN
               WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 2, WHICH IS NOT GOOD'
               EXIT
             END IF
             READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
             IF (IFLAG .GT. 0) THEN
-              STOP 'STRANGE STUFF'
+              CALL WWM_ABORT('IFLAG incorrectly set 3')
             ELSE IF (IFLAG .LT. 0) THEN
               WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'  
               EXIT
@@ -1672,6 +1674,8 @@
       REAL :: FQ_WW3_SNGL(MSC_WW3), DR_WW3_SNGL(MDC_WW3)
       REAL :: XP_WW3_SGLE(NP_WW3), YP_WW3_SGLE(NP_WW3)
       REAL :: D(NP_WW3),UA(NP_WW3),UD(NP_WW3),CA(NP_WW3),CD2(NP_WW3)
+      REAL :: m0,m1,m2,df
+      INTEGER :: is,id
 
       CHARACTER(LEN=30) :: GNAME
       CHARACTER(LEN=21) :: LABEL
@@ -1686,10 +1690,21 @@
           READ(WAV%FHNDL) TIME
           DO IP = 1, NP_WW3
             READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
-            YP_WW3(IP) = YP_WW3_SGLE(IP)
-            XP_WW3(IP) = XP_WW3_SGLE(IP)
+            YP_WW3(IP) = YP_WW3_SGLE(IP)*DEGRAD
+            XP_WW3(IP) = XP_WW3_SGLE(IP)*DEGRAD
             READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
+!            write(*,*) sum(SPECOUT_SGLE)
             SPECOUT(:,:,IP) = SPECOUT_SGLE
+            m0 = 0.; m1 = 0.; m2 = 0.
+            DO ID = 1,MDC_WW3-1
+              DO IS = 1,MSC_WW3-1
+                DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+                M0 = M0+((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+                M1 = M1+((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+                M2 = M2+(((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)**TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+!                write(*,*) 4*sqrt(m0), m1, m2, df
+              ENDDO
+            ENDDO
           ENDDO ! IP
           IF (IT == ISTEP) EXIT ! Read the certain timestep indicated by ISTEP ...
         ENDDO ! IT 
@@ -1697,8 +1712,8 @@
         READ(WAV%FHNDL) TIME
         DO IP = 1, NP_WW3
           READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP), UA(IP),UD(IP),CA(IP),CD2(IP)
-          YP_WW3(IP) = YP_WW3_SGLE(IP)
-          XP_WW3(IP) = XP_WW3_SGLE(IP)
+          YP_WW3(IP) = YP_WW3_SGLE(IP)*DEGRAD
+          XP_WW3(IP) = XP_WW3_SGLE(IP)*DEGRAD
           READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
           SPECOUT(:,:,IP) = SPECOUT_SGLE
         END DO
@@ -1726,7 +1741,7 @@
         REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
 
 
-        INTEGER     :: I,J,IB,IPGL,IBWW3,STEP,TIME(2)
+        INTEGER     :: I,J,IB,IPGL,IBWW3,STEP,TIME(2),IS
         REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
         REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
@@ -1736,18 +1751,25 @@
 ! Read spectra in file
 !
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
+
+        !DO IBWW3=1,NP_WW3
+        !  WRITE(*,*) IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
+        !END DO
+
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)
 !
-        DO I=1,MSC_WW3
-          DR_WW3_TMP=DR_WW3
-          SPEC_WW3_TMP(I,:,1) = SPEC_WW3_UNSORT(I,:,1)
-          CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(I,:,1),JUNK,MDC_WW3,2)
-          SPEC_WW3(I,:,1) = SPEC_WW3_TMP(I,:,1)
-          DR_WW3 = DR_WW3_TMP
-        ENDDO
-        DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
+        DO IBWW3 = 1, NP_WW3
+          DO IS = 1,MSC_WW3
+            DR_WW3_TMP=DR_WW3
+            SPEC_WW3_TMP(IS,:,IBWW3) = SPEC_WW3_UNSORT(IS,:,IBWW3)
+            CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,MDC_WW3,2)
+            SPEC_WW3(IS,:,IBWW3) = SPEC_WW3_TMP(IS,:,IBWW3)
+            DR_WW3 = DR_WW3_TMP
+          ENDDO
+          DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
+        ENDDO ! IBWW3
 !
 ! Interpolate ww3 spectra on wwm frequency grid
 ! GD: at the moment 360º spanning grids are mandatory
@@ -1755,7 +1777,8 @@
         IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
-          WRITE(STAT%FHNDL,*)'WW3 spectra does encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
+          WRITE(STAT%FHNDL,*)'WW3 spectra does not encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
+!GD2AR: here we should either stop the simulation or call SPECTRALINT
         ELSE
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
@@ -1770,18 +1793,25 @@
           DO IB=1,IWBMNP
             IPGL = IWBNDLC(IB)
 #ifdef SELFE
-            XP_WWM=XLON(IPGL)
-            YP_WWM=YLAT(IPGL)
+            XP_WWM=XLON(IPGL) * RADDEG 
+            YP_WWM=YLAT(IPGL) * RADDEG 
 #else
-            XP_WWM=XP(IPGL)
-            YP_WWM=YP(IPGL)
+            XP_WWM = XP(IPGL)
+            YP_WWM = YP(IPGL)
 #endif
+!            write(*,*) XP_WWM, YP_WWM
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
+                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM*RADDEG,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
+                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM*RADDEG,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
+                !write(*,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               ENDDO
-              CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, -2)
+              CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
+              DO IBWW3=1,NP_WW3
+                !write(*,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
+              END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
             ELSE
               WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
@@ -1859,14 +1889,14 @@
         REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
-        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
+        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
         REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID
 
-        REAL(rkind) :: JACOBIAN(MSC)
+        REAL(rkind) :: JACOBIAN(MSC), AM, SM, OUTPAR(OUTVARS)
 
-        JACOBIAN = 1./SPSIG/PI2 ! ENERGY / HZ -> ACTION / RAD
+        JACOBIAN = 1./(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
 
         DO IP=1,NP_WW3
           DO IS=1,MSC_WW3
@@ -1877,41 +1907,78 @@
           ENDDO
         ENDDO
 
-        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS'
-        DO IP = 1, NP_WW3
+        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER INTERPOLATION'
+        DO IP = 1, 1!NP_WW3
           M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-          DO ID = 1,MDC_WW3-1
+          DO ID = 1,MDC_WW3
             DO IS = 1,MSC_WW3-1
               DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-              M0_WW3 =M0_WW3+((SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO)*DF*DDIR_WW3
-              M1_WW3 =M1_WW3+((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)*((SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO)*DF*DDIR_WW3
-              M2_WW3 =M2_WW3+(((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)**TWO)*((SPEC_WW3(IS+1,ID,1)+SPEC_WW3(IS,ID,IP))/TWO)*DF*DDIR_WW3
+              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
             ENDDO
           ENDDO
           M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO 
-          DO ID = 1,MDC-1
+          DO ID = 1,MDC
             DO IS = 1,MSC-1
               DF = FR(IS+1)-FR(IS)
-              M0_WWM =M0_WWM+((SPEC_WWM(IS+1,ID,1)+SPEC_WWM(IS,ID,1))/TWO)*DF*DDIR
-              M1_WWM =M1_WWM+((FR(IS+1)-FR(IS))/TWO)*((SPEC_WWM(IS+1,ID,1)+SPEC_WWM(IS,ID,1))/TWO)*DF*DDIR
-              M2_WWM =M2_WWM+(((FR(IS+1)-FR(IS))/TWO)**TWO)*((SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO)*DF*DDIR
+              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO
+              SM = (FR(IS+1)+FR(IS))/TWO
+              M0_WWM =M0_WWM+AM*DF*DDIR
+              M1_WWM =M1_WWM+AM*SM*DF*DDIR
+              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
             ENDDO
           ENDDO
+          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+          WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right) before JACOBIAN'
+          WRITE(STAT%FHNDL,*)'HS = ',4*SQRT(M0_WW3), 4*SQRT(M0_WWM)
+          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM
+          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM
+          WRITE(STAT%FHNDL,*)'END CHECK'
         END DO
 
+! Do jacobian
+
         DO IP = 1, NP_WW3
-          DO IS = 1, MSC
-            DO ID = 1, MDC
-              SPEC_WWM(IS,ID,IP) = SPEC_WWM(IS,ID,IP) * JACOBIAN(IS)
-            END DO              
-          END DO
+          DO ID = 1, MDC
+            SPEC_WWM(:,ID,IP) = SPEC_WWM(:,ID,IP) * JACOBIAN(:) ! convert to wave action in sigma,theta space
+          END DO              
         END DO
-           
-        WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right)'
-        WRITE(STAT%FHNDL,*)'M0 = ',4*SQRT(M0_WW3), 4*SQRT(M0_WWM)
-        WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM
-        WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM
-        WRITE(STAT%FHNDL,*)'END CHECK'
+
+!        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
+!        DO IP = 1, 1!NP_WW3
+!          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+!          DO ID = 1,MDC_WW3
+!            DO IS = 1,MSC_WW3-1
+!              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+!              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+!              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+!              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+!              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+!              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
+!            ENDDO
+!          ENDDO
+!          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
+!          DO ID = 1,MDC
+!            DO IS = 1,MSC-1
+!              DF = SPSIG(IS+1)-SPSIG(IS)
+!              SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
+!              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
+!              M0_WWM =M0_WWM+AM*DF*DDIR
+!              M1_WWM =M1_WWM+AM*SM*DF*DDIR
+!              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
+!            ENDDO
+!          ENDDO
+!          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+!          WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right) after JACOBIAN'
+!          WRITE(STAT%FHNDL,*)'HS = ',SQRT(M0_WW3)*4, SQRT(M0_WWM)*4
+!          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM!/PI2
+!          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM!/(PI2)**2
+!          WRITE(STAT%FHNDL,*)'TM01 =', M0_WW3/M1_WW3, M0_WWM/M1_WWM 
+!          WRITE(STAT%FHNDL,*)'END CHECK'
+!        END DO
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE SPECTRALINT'
         END SUBROUTINE

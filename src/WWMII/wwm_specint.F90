@@ -40,6 +40,12 @@
                ELSE IF (SMETHOD == 4) THEN
                  CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
+                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                 CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                 CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                 CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                 CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
                CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
@@ -62,6 +68,12 @@
                  ELSE IF (SMETHOD == 4) THEN
                    CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                  ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
+                   CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                   CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                   CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                   CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                   CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                   CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                  END IF
                  CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                  IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
@@ -75,6 +87,12 @@
                  AC2(IP,:,:) = ACLOC
                ENDIF
              ENDIF 
+           ENDIF
+           IF (LNANINFCHK) THEN 
+             IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
+               WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
+               STOP 'wwm_specint.F90 l.88'
+             END IF
            ENDIF
          ENDDO
 #if defined ST41 || defined ST42
@@ -119,6 +137,7 @@
              END IF !
            ENDIF
          END DO
+
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif

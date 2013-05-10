@@ -75,7 +75,7 @@
               IOBPD(:,IP) = 1
             ENDIF
           END IF
-          IF ( IOBP(IP) == 3 ) THEN ! If Neumann boundary condition is given set IOBP to 3
+          IF ( IOBP(IP) == 3 .OR. IOBP(IP) == 4) THEN ! If Neumann boundary condition is given set IOBP to 3
             IOBPD(:,IP) = 1 ! Update Neumann nodes ...
           END IF
         END DO
@@ -867,7 +867,7 @@
             IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
             ALLOCATE( WBAC(MSC,MDC,1), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
-	    WBAC = 0.
+              WBAC = 0.
             IF (LBINTER) THEN
               ALLOCATE( WBACOLD(MSC,MDC,1), WBACNEW(MSC,MDC,1), DSPEC(MSC,MDC,1), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
@@ -1786,7 +1786,7 @@
                IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
                  DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
                  IT   = NINT(DTMP/SEBO%DELT) + 1
-                 !IF (LBINTER) IT = IT + 1
+                 IF (LBINTER) IT = IT + 1
                END IF
 
                IF (LBINTER) THEN

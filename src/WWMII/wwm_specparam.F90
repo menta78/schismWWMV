@@ -635,12 +635,12 @@
          PPTAIL = PTAIL(1) - 3.
          EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          DO ID=1, MDC
-            IF (.false.) then! LSECU .OR. LSTCU) THEN
+            IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
             ENDIF
             DO IS = 1, ISMAX
               EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
-              IF (.false.) then !LSECU .OR. LSTCU) THEN
+              IF (LSECU .OR. LSTCU) THEN
                 OMEG  = SPSIG(IS) + WK(IP,IS) * UXD
                 OMEG2 = OMEG**2
               ELSE
@@ -1026,7 +1026,7 @@
          REAL(rkind), INTENT(IN)    :: HS, SME, DEPTH
          REAL(rkind), INTENT(OUT)   :: URSELL 
 
-         IF (DEPTH .GT. DMIN) THEN
+         IF (DEPTH .GT. DMIN .AND. SME .GT. small .AND. HS .GT. small) THEN
            URSELL = (G9 * HS)/(TWO*SQRT(TWO)*SME**2*DEPTH**2)
          ELSE
            URSELL = ZERO
@@ -1541,7 +1541,7 @@
            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
          end do
 
-         IF (ETOT .GT. thr) THEN
+         IF (ETOT .GT. verysmall) THEN
 !
 ! tail ratios same as in swan ...
 !
@@ -1597,12 +1597,12 @@
 ! tail ratios same as in swan ...
 !
          DO ID=1, MDC
-            IF (.false.) then!LSECU .OR. LSTCU) THEN
+            IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXYLOC(1)*COSTH(ID) + CURTXYLOC(2)*SINTH(ID)
             ENDIF
             DO IS = 1, ISMAX
               EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
-              IF (.false.) then !LSECU .OR. LSTCU) THEN
+              IF (LSECU .OR. LSTCU) THEN
                 OMEG  = SPSIG(IS) + WKLOC(IS) * UXD
                 OMEG2 = OMEG**2
               ELSE

@@ -174,7 +174,7 @@
            LCALC       = .TRUE.
          END IF
 
-         IF (LNANCHECK) THEN
+         IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_A
          END IF
 
@@ -232,7 +232,7 @@
 
          TIME5 = mpi_wtime()
  
-         IF (LNANCHECK) THEN
+         IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
          END IF
 
@@ -337,7 +337,7 @@
          INTEGER :: IP
 
          CALL CPU_TIME(TIME1)
-
+       
          CALL IO_1(K)
 
          CALL CPU_TIME(TIME2)

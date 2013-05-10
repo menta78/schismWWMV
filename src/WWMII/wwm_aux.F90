@@ -1749,17 +1749,17 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INTERDIR (Y1, Y2, DX, DIFFDX, YINTER)
-      use datapool,  only : rkind
+      use datapool,  only : rkind, zero
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)   :: Y1, Y2, DX, DIFFDX
       REAL(rkind), INTENT(OUT)  :: YINTER
 
-      IF       ((Y1 > 0.0 .AND. Y1 < 90.0) .AND. (Y2 < 360.0_rkind .AND. Y2 > 270.0)) THEN
-        YINTER=(Y1+360.0_rkind)+(Y2-(Y1+360.0_rkind))/DX*DIFFDX
-        IF (YINTER > 360.0_rkind) YINTER = YINTER - 360.0_rkind
-      ELSE IF  ((Y2 > 0.0 .AND. Y2 < 90.0) .AND. (Y1 < 360.0_rkind .AND. Y1 > 270.0)) THEN
-        YINTER = Y1+((Y2+360.0_rkind)-Y1)/DX*DIFFDX
-        IF (YINTER > 360.0_rkind) YINTER = YINTER - 360.0_rkind
+      IF ((Y1 > ZERO .AND. Y1 < 90._rkind) .AND. (Y2 < 360._rkind .AND. Y2 > 270._rkind)) THEN
+        YINTER=(Y1+360._rkind)+(Y2-(Y1+360._rkind))/DX*DIFFDX
+        IF (YINTER > 360._rkind) YINTER = YINTER - 360._rkind
+      ELSE IF  ((Y2 > ZERO .AND. Y2 < 90._rkind) .AND. (Y1 < 360._rkind .AND. Y1 > 270._rkind)) THEN
+        YINTER = Y1+((Y2+360._rkind)-Y1)/DX*DIFFDX
+        IF (YINTER > 360._rkind) YINTER = YINTER - 360._rkind
       ELSE
         YINTER = Y1+(Y2-Y1)/DX*DIFFDX
       END IF
@@ -1807,11 +1807,13 @@
 #endif
       IMPLICIT NONE
       character(*), intent(in) :: string
+
+      WRITE(DBG%FHNDL, *) TRIM(string)
+      CALL FLUSH(DBG%FHNDL)
+
 #ifdef MPI_PARALL_GRID
       CALL PARALLEL_ABORT(TRIM(string))
 #else
-      Write(*,*) TRIM(string)
-      WRITE(DBG%FHNDL, *) TRIM(string)
       STOP 'WWM_ABORT'
 #endif
       END SUBROUTINE WWM_ABORT
