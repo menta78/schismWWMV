@@ -5649,6 +5649,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
 #else
       REAL(rkind) :: CX(MSC,MDC,3), CY(MSC,MDC,3)
+      REAL(rkind)      :: DIFRU, USOC, WVC
 #endif
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       INTEGER :: I1, I2, I3
