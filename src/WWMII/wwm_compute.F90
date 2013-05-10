@@ -14,19 +14,20 @@
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
+         CALL FLUSH(STAT%FHNDL)
 
          AC1 = AC2 
 
          IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
            DT4A = MAIN%DELT
            DT4S = DT4A
-           DT4D = 0.5*DT4A
-           DT4F = 0.5*DT4A 
+           DT4D = DT4A
+           DT4F = DT4A 
          ELSE IF (LQSTEA) THEN
            DT4A = DT_ITER
            DT4S = DT4A
-           DT4D = DT4A!0.5*DT4A
-           DT4F = DT4A!0.5*DT4A 
+           DT4D = DT4A
+           DT4F = DT4A
          END IF
  
          CALL CPU_TIME(TIME1)
@@ -61,10 +62,6 @@
 
          CALL CPU_TIME(TIME6)
 
-         !WRITE(*,*) 'AFTER BRK. LIM', SUM(AC2)
-
-         CALL CPU_TIME(TIME6)
-
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME6-TIME5
@@ -74,6 +71,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+         CALL FLUSH(STAT%FHNDL)
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
 
@@ -95,69 +93,49 @@
         REAL       :: TIME6, TIME7, TIME8, TIME9, TIME10
         REAL       :: TIME11, TIME12, TIME13, TIME14, TIME15, TIME16, TIME17
 
-         !WRITE(*,'("+TRACE...",A)') 'START COMPUTER'
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
 
-         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
-           DT4A = 0.5*MAIN%DELT
-           DT4S = 0.5*DT4A
-           DT4D = ONETHIRD*MAIN%DELT
-           DT4F = DT4D 
-         ELSE IF (LQSTEA) THEN
-           DT4A = 0.5*DT_ITER
-           DT4S = DT4A * 0.25
-           DT4D = ONETHIRD*DT_ITER
-           DT4F = DT4D 
-         END IF
+        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+          DT4A = 0.5*MAIN%DELT
+          DT4S = 0.5*DT4A
+          DT4D = ONETHIRD*MAIN%DELT
+          DT4F = DT4D 
+        ELSE IF (LQSTEA) THEN
+          DT4A = 0.5*DT_ITER
+          DT4S = DT4A * 0.25
+          DT4D = ONETHIRD*DT_ITER
+          DT4F = DT4D 
+        END IF
 
-         CALL CPU_TIME(TIME1)
+        CALL CPU_TIME(TIME1)
 
-         CALL COMPUTE_DIFFRACTION
+        CALL COMPUTE_DIFFRACTION
 
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+        IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 ! ---- 1st spectra 
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+        IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
 ! ---- 2nd spectra 
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+        IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 ! ---- 3rd spectra 
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
+        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
-         CALL CPU_TIME(TIME17)
+        CALL CPU_TIME(TIME17)
 
-#ifdef MPI_PARALL_GRID
-      IF (myrank == 0) THEN
-#endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    '------DOUBLE STRANG SPLITTING----'
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'DIFFRACTION                      ',                  &
-     &   TIME2-TIME1 + TIME5-TIME4 + TIME8-TIME7 + TIME14+TIME13
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'SOURCES                          ',                  &
-     &   TIME7-TIME6 + TIME13-TIME12
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'CPU TIMINGS ADVEKTION            ',                  &
-     &   TIME6-TIME5 + TIME12-TIME11
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'CPU TIMINGS THETA SPACE          ',                  &
-     &   TIME4-TIME3 + TIME9-TIME8 + TIME16-TIME15
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'CPU TIMINGS SIGMA SPACE          ',                  &
-     &   TIME3-TIME2 + TIME10-TIME9 + TIME15-TIME14
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    'CPU TIMINGS TOTAL TIME           ', &
-     &   TIME17-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)')               &
-     &    '-------------TIMINGS-------------'
-#ifdef MPI_PARALL_GRID
-      ENDIF
-#endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------DOUBLE STRANG SPLITTING----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1 + TIME5-TIME4 + TIME8-TIME7 + TIME14+TIME13
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME7-TIME6 + TIME13-TIME12
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5 + TIME12-TIME11
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS THETA SPACE          ', TIME4-TIME3 + TIME9-TIME8 + TIME16-TIME15
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2 + TIME10-TIME9 + TIME15-TIME14 
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME17-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 
 !        WRITE(*,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME2-TIME1
 
@@ -175,37 +153,36 @@
         REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
         INTEGER          :: IP, IT
 
-!       Three level splitting to reduce splitting errors when using implicit-explicit schemes
+        DT4A = MAIN%DELT
+        DT4S = DT4A
+        DT4D = DT4A 
+        DT4F = DT4A
 
-         DT4A = MAIN%DELT
-         DT4S = DT4A
-         DT4D = DT4A 
-         DT4F = DT4A
+        AC1  = AC2
 
-         AC1  = AC2
+        CALL CPU_TIME(TIME1)
+        CALL COMPUTE_DIFFRACTION
+        CALL CPU_TIME(TIME2)
+        IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
+        CALL CPU_TIME(TIME7)
+        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
+        CALL CPU_TIME(TIME8)
+        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
+        CALL CPU_TIME(TIME9)
+        IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        CALL CPU_TIME(TIME10)
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+        CALL CPU_TIME(TIME11)
 
-         CALL CPU_TIME(TIME1)
-         CALL COMPUTE_DIFFRACTION
-         CALL CPU_TIME(TIME2)
-         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-         CALL CPU_TIME(TIME7)
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
-         CALL CPU_TIME(TIME8)
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-         CALL CPU_TIME(TIME9)
-         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-         CALL CPU_TIME(TIME10)
-         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
-         CALL CPU_TIME(TIME11)
-
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SPECTRAL SPACE       ', TIME3-TIME2+TIME6-TIME5
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ACTION LIMITER                   ', TIME7-TIME6
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SPECTRAL SPACE       ', TIME3-TIME2+TIME6-TIME5
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ACTION LIMITER                   ', TIME7-TIME6
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+        CALL FLUSH(STAT%FHNDL)
 
         RETURN
       END SUBROUTINE
