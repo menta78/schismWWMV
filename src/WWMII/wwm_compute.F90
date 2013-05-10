@@ -29,7 +29,7 @@
            DT4D = DT4A
            DT4F = DT4A
          END IF
- 
+
          CALL CPU_TIME(TIME1)
 
          CALL COMPUTE_DIFFRACTION
