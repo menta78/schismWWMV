@@ -1026,7 +1026,7 @@
          REAL(rkind), INTENT(IN)    :: HS, SME, DEPTH
          REAL(rkind), INTENT(OUT)   :: URSELL 
 
-         IF (DEPTH .GT. DMIN .AND. SME .GT. small .AND. HS .GT. small) THEN
+         IF (DEPTH .GT. DMIN .AND. SME .GT. verysmall .AND. HS .GT. verysmall) THEN
            URSELL = (G9 * HS)/(TWO*SQRT(TWO)*SME**2*DEPTH**2)
          ELSE
            URSELL = ZERO
