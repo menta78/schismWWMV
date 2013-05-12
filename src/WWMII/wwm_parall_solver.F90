@@ -5606,7 +5606,6 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(LocalColor%MSCeffect,MDC), FL12(LocalColor%MSCeffect,MDC), FL21(LocalColor%MSCeffect,MDC), FL22(LocalColor%MSCeffect,MDC), FL31(LocalColor%MSCeffect,MDC), FL32(LocalColor%MSCeffect,MDC)
       REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
-      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
       REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3,MNE)
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
@@ -5614,6 +5613,12 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
       REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
+#ifdef NO_MEMORY_CX_CY
+      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,3), CY(LocalColor%MSCeffect,MDC,3)
+      REAL(rkind) :: USOC, WVC, DIFRU
+#else
+      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
+#endif
       IS1=LocalColor%ISbegin(iMSCblock)
       IS2=LocalColor%ISend  (iMSCblock)
 
@@ -5624,11 +5629,14 @@ MODULE WWM_PARALL_SOLVER
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
 
+#ifndef NO_MEMORY_CX_CY
       CALL I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
+#endif
 !
 !        Calculate countour integral quantities ...
 !
       DO IE = 1, MNE
+#ifdef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
@@ -5645,6 +5653,55 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
+#else
+        DO I=1,3
+          IP=INE(I,IE)
+          DO IS = IS1, IS2
+            ISr=IS+1-IS1
+            DO ID = 1, MDC
+              IF (LSECU .OR. LSTCU) THEN
+                CX(ISr,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+                CY(ISr,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+              ELSE
+                CX(ISr,ID,I) = CG(IP,IS)*COSTH(ID)
+                CY(ISr,ID,I) = CG(IP,IS)*SINTH(ID)
+              END IF
+              IF (LSPHE) THEN
+                CY(ISr,ID,I) = CX(ISr,ID,I)*INVSPHTRANS(IP,1)
+                CX(ISr,ID,I) = CY(ISr,ID,I)*INVSPHTRANS(IP,2)
+              END IF
+              IF (LDIFR) THEN
+                CX(ISr,ID,I) = CX(ISr,ID,I)*DIFRM(IP)
+                CY(ISr,ID,I) = CY(ISr,ID,I)*DIFRM(IP)
+                IF (LSECU .OR. LSTCU) THEN
+                  IF (IDIFFR .GT. 1) THEN
+                    WVC = SPSIG(IS)/WK(IP,IS)
+                    USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
+                    DIFRU = ONE + USOC * (ONE - DIFRM(IP))
+                  ELSE
+                    DIFRU = DIFRM(IP)
+                  END IF
+                  CX(ISr,ID,I) = CX(ISr,ID,I) + DIFRU*CURTXY(IP,1)
+                  CY(ISr,ID,I) = CY(ISr,ID,I) + DIFRU*CURTXY(IP,2)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
+        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
+        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
+        KP(:,:,:,IE) = MAX(ZERO,K)
+        KM = MIN(0.0_rkind,K)
+        FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
+        FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
+        FL21(:,:) = CX(:,:,3)*IEN(3,IE)+CY(:,:,3)*IEN(4,IE)
+        FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
+        FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
+        FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
+#endif
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
@@ -6088,7 +6145,11 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%B_block)
         CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
         CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
+#ifdef BCGS_REORG
+        CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+#else
         CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
+#endif
         DO IP=1,MNP
           DO IS=IS1,IS2
             DO ID=1,MDC
