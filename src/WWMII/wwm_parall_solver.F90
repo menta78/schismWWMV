@@ -33,6 +33,9 @@
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
+! New less memory intensive method
+#undef BCGS_REORG
+#define BCGS_REORG
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -4638,6 +4641,9 @@ MODULE WWM_PARALL_SOLVER
 # endif
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 !
 !
 ! With another node ordering, maybe better performance
@@ -4893,6 +4899,130 @@ MODULE WWM_PARALL_SOLVER
           WRITE(myrank+240,*) 'IS, sum(AC3)=', IS, sum(SolDat%AC3(IS,:,:))
         END DO
 # endif
+      END DO
+      WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+!
+! With another node ordering, maybe better performance
+!
+      SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+      USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
+      USE DATAPOOL, only : PCmethod, STAT
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
+      implicit none
+      type(LocalColorInfo), intent(inout) :: LocalColor
+      type(I5_SolutionData), intent(inout) :: SolDat
+      REAL(rkind) :: Rho(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Prov(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Alpha(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Beta(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: MaxError, CritVal
+      REAL(rkind) :: eSum1, eSum2
+      REAL(rkind) :: TheTol
+      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC), Norm_LINF(LocalColor%MSCeffect,MDC)
+      integer :: MaxIter = 30
+      integer IP, IS, ID, nbIter, MSCeffect
+      MaxError=SOLVERTHR
+      MSCeffect=LocalColor % MSCeffect
+      CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
+      SolDat % AC1=0                               ! y
+      SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
+      SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
+      SolDat % AC5=0                               ! v
+      SolDat % AC6=0                               ! p
+      SolDat % AC7=0                               ! t
+      Rho=1
+      Alpha=1
+      Omega=1
+      nbIter=0
+      DO
+        nbIter=nbIter+1
+
+        ! L1: Rhoi =(\hat{r}_0, r_{i-1}
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
+
+        ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
+        Beta=(Prov/Rho)*(Alpha/Omega)
+        CALL REPLACE_NAN_ZERO(LocalColor, Beta)
+        Rho=Prov
+
+        ! L3: Pi = r(i-1) + Beta*(p(i-1) -omega(i-1)*v(i-1))
+        DO IP=1,MNP
+          SolDat%AC6(:,:,IP)=SolDat%AC3(:,:,IP)                        &
+     &      + Beta(:,:)*SolDat%AC6(:,:,IP)                            &
+     &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(:,:,IP)
+        END DO
+
+        ! L4 y=K^(-1) Pi
+        SolDat%AC1=SolDat%AC6
+        IF (PCmethod .gt. 0) THEN
+          CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
+        ENDIF
+
+        ! L5 vi=Ay
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC5)
+
+        ! L6 Alpha=Rho/(hat(r)_0, v_i)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC5, Prov)
+        Alpha(:,:)=Rho(:,:)/Prov(:,:)
+        CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
+
+        ! L6.1 x(i)=x(i-1) + Alpha y
+        DO IP=1,MNP
+          SolDat%AC2(:,:,IP)=SolDat%AC2(:,:,IP)                        &
+     &      + Alpha(:,:)*SolDat%AC1(:,:,IP)
+        END DO
+
+        ! L7 s=r(i-1) - alpha v(i)
+        DO IP=1,MNP
+          SolDat%AC3(:,:,IP)=SolDat%AC3(:,:,IP)                        &
+     &      - Alpha(:,:)*SolDat%AC5(:,:,IP)
+        END DO
+
+        ! L8 z=K^(-1) s
+        SolDat%AC1=SolDat%AC3
+        IF (PCmethod .gt. 0) THEN
+          CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
+        END IF
+
+        ! L9 t=Az
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC7)
+
+        ! L10 omega=(t,s)/(t,t)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC7, SolDat % AC3, Omega)
+        CALL I5B_SCALAR(MSCeffect, SolDat % AC7, SolDat % AC7, Prov)
+        Omega(:,:)=Omega(:,:)/Prov(:,:)
+        CALL REPLACE_NAN_ZERO(LocalColor, Omega)
+
+        ! L11 x(i)=x(i-1) + Omega z
+        DO IP=1,MNP
+          SolDat%AC2(:,:,IP)=SolDat%AC2(:,:,IP)                        &
+     &      + Omega(:,:)*SolDat%AC1(:,:,IP)
+        END DO
+
+        ! L12 If x is accurate enough finish
+        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC2, SolDat%AC1)
+        CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
+        CritVal=maxval(Norm_L2)
+        IF (CritVal .lt. MaxError) THEN
+          EXIT
+        ENDIF
+        IF (nbIter .gt. MaxIter) THEN
+          EXIT
+        ENDIF
+
+        ! L13 r=s-omega t
+        DO IP=1,MNP
+          SolDat%AC3(:,:,IP)=SolDat%AC3(:,:,IP)                        &
+     &      - Omega(:,:)*SolDat%AC7(:,:,IP)
+        END DO
       END DO
       WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
@@ -5241,10 +5371,12 @@ MODULE WWM_PARALL_SOLVER
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 124')
       allocate(SolDat % AC7(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 125')
+#ifndef BCGS_REORG
       allocate(SolDat % AC8(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 126')
       allocate(SolDat % AC9(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 127')
+#endif
       allocate(SolDat % ASPAR_block(MSCeffect,MDC,NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 128')
       allocate(SolDat % B_block(MSCeffect,MDC, MNP), stat=istat)
@@ -5324,8 +5456,10 @@ MODULE WWM_PARALL_SOLVER
       deallocate(SolDat % AC5)
       deallocate(SolDat % AC6)
       deallocate(SolDat % AC7)
+#ifndef BCGS_REORG
       deallocate(SolDat % AC8)
       deallocate(SolDat % AC9)
+#endif
       deallocate(SolDat % ASPAR_block)
       deallocate(SolDat % B_block)
       deallocate(SolDat % ASPAR_pc)
@@ -5910,7 +6044,11 @@ MODULE WWM_PARALL_SOLVER
 # endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
+#ifdef BCGS_REORG
+      CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+#else
       CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
+#endif
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
