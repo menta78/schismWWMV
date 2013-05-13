@@ -946,7 +946,8 @@
 !         2 - JONSWAP
 !         3 - BIN
 !         4 - Gauss
-!         negative peak (+) or mean frequency (-)
+!         negative peak (-) or mean frequency ()
+
 !     SPPARM(6): directional spreading in degree (1) or exponent (2)
 !     SPPARM(7): gaussian width for the gauss spectrum 0.1
 !     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.

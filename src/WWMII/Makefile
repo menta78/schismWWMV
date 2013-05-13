@@ -120,7 +120,6 @@ ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-
 MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/  
 
 

@@ -31,8 +31,8 @@
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-                 CALL INT_IP_STAT(IP,DT4S, 20,LLIMT,ACLOC)
-                 CALL RKS_SP3(IP,40,DT4S_H,.FALSE.,ACLOC)
+                 CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
+                 CALL RKS_SP3(IP,30,DT4S_H,.FALSE.,ACLOC)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -40,12 +40,12 @@
                ELSE IF (SMETHOD == 4) THEN
                  CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                 CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                 CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                 CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                 CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
+                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                 CALL INT_IP_DYN(IP, 2, DTMIN_SNL4, LLIMT, DTMIN_DYN,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                 CALL INT_IP_DYN(IP, 3, DTMIN_SDS , LLIMT, DTMIN_DYN,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                 CALL INT_IP_DYN(IP, 4, DTMIN_SNL3, LLIMT, DTMIN_DYN,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN, NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                 CALL INT_IP_DYN(IP, 6, DTMIN_SBF , LLIMT, DTMIN_DYN,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
                CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
@@ -54,13 +54,12 @@
                AC2(IP,:,:) = ACLOC
              ENDIF
            ELSE !Boundary node ... 
-               IF (LSOUBOUND) THEN ! Source terms on boundary ...
-                 IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+             IF (LSOUBOUND) THEN ! Source terms on boundary ...
+               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                  ACLOC  = AC2(IP,:,:)
                  IF (SMETHOD == 1) THEN
-                   CALL RKS_SP3(IP,2,DT4S_T,.TRUE.,ACLOC)
-                   CALL RKS_SP3(IP,20,DT4S,.FALSE.,ACLOC)
-                   CALL RKS_SP3(IP,2,DT4S_TS,.TRUE.,ACLOC)
+                   CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
+                   CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
                  ELSE IF (SMETHOD == 2) THEN
                    CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                  ELSE IF (SMETHOD == 3) THEN
@@ -68,13 +67,13 @@
                  ELSE IF (SMETHOD == 4) THEN
                    CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                  ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-                   CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                   CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                   CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                   CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                   CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                   CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
-                 END IF
+                   CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                   CALL INT_IP_DYN(IP, 2, DTMIN_SNL4, LLIMT, DTMIN_DYN,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                   CALL INT_IP_DYN(IP, 3, DTMIN_SDS , LLIMT, DTMIN_DYN,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                   CALL INT_IP_DYN(IP, 4, DTMIN_SNL3, LLIMT, DTMIN_DYN,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                   CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                   CALL INT_IP_DYN(IP, 6, DTMIN_SBF , LLIMT, DTMIN_DYN,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
+                 END IF ! SMETHOD
                  CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                  IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                    CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
@@ -82,6 +81,7 @@
                  AC2(IP,:,:) = ACLOC
                ENDIF
              ELSE
+               ACLOC = AC2(IP,:,:)
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN ! limit wave height on the boundary ...
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                  AC2(IP,:,:) = ACLOC
@@ -119,6 +119,8 @@
          REAL(rkind)    :: ACLOC(MSC,MDC)
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL(MSC,MDC)
 
+         stop 'source int imp'
+
 !$OMP WORKSHARE
          IMATDAA = 0.
          IMATRAA = 0.
@@ -128,7 +130,7 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
-           IF ((ABS(IOBP(IP)) .NE. 1 .OR. IOBP(IP) .NE. 3) .AND. LSOUBOUND) THEN
+           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3) .AND. LSOUBOUND) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC = AC2(IP,:,:)
                CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA,.FALSE.) 

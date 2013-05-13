@@ -54,13 +54,13 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = BLKLGT
 #ENV         = GORDON
 #ENV         = FRANZIUS
-ENV         = MATHIEU
-#ENV = ARON
+#ENV         = MATHIEU
+ENV = ARON
 
 ################################################################################
 # Executable
 ################################################################################
-EXEC   = $(HOME)/bin/pelfe_WWM_$(ENV)
+EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 
 ################################################################################
 # Define pre-processing flags.
