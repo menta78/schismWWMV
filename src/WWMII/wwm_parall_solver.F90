@@ -10,8 +10,8 @@
 #define DEBUG
 #undef DEBUG
 
-#undef PLAN_I4
 #define PLAN_I4
+#undef PLAN_I4
 
 #undef PLAN_I5B
 #define PLAN_I5B
