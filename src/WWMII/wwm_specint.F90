@@ -42,23 +42,12 @@
                ELSE IF (SMETHOD == 4) THEN
                  CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-<<<<<<< HEAD
                  CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
                  CALL INT_IP_DYN(IP, 2, DTMIN_SNL4, LLIMT, DTMIN_DYN,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
                  CALL INT_IP_DYN(IP, 3, DTMIN_SDS , LLIMT, DTMIN_DYN,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
                  CALL INT_IP_DYN(IP, 4, DTMIN_SNL3, LLIMT, DTMIN_DYN,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
                  CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN, NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
                  CALL INT_IP_DYN(IP, 6, DTMIN_SBF , LLIMT, DTMIN_DYN,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
-=======
-#ifdef ACTIVATE_SMETHOD_5
-                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                 CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                 CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                 CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                 CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
-#endif
->>>>>>> 8d753de85d1bdae584659c19ef15ed3408c1c5ac
                END IF
                CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
@@ -80,25 +69,13 @@
                  ELSE IF (SMETHOD == 4) THEN
                    CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                  ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-<<<<<<< HEAD
                    CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
                    CALL INT_IP_DYN(IP, 2, DTMIN_SNL4, LLIMT, DTMIN_DYN,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
                    CALL INT_IP_DYN(IP, 3, DTMIN_SDS , LLIMT, DTMIN_DYN,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
                    CALL INT_IP_DYN(IP, 4, DTMIN_SNL3, LLIMT, DTMIN_DYN,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
                    CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
                    CALL INT_IP_DYN(IP, 6, DTMIN_SBF , LLIMT, DTMIN_DYN,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
-                 END IF ! SMETHOD
-=======
-#ifdef ACTIVATE_SMETHOD_5
-                   CALL INT_IP_DYN(IP, 1, DTMIN_SIN ,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
-                   CALL INT_IP_DYN(IP, 2, DTMIN_SNL4,   NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
-                   CALL INT_IP_DYN(IP, 3, DTMIN_SDS ,   NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
-                   CALL INT_IP_DYN(IP, 4, DTMIN_SNL3,   NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                   CALL INT_IP_DYN(IP, 5, DTMIN_SBR ,   NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
-                   CALL INT_IP_DYN(IP, 6, DTMIN_SBF ,   NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
-#endif
                  END IF
->>>>>>> 8d753de85d1bdae584659c19ef15ed3408c1c5ac
                  CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                  IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                    CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
