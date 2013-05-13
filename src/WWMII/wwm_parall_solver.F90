@@ -31,11 +31,11 @@
 #undef SELFE_EXCH
 #define SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
-#undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
+#undef NO_MEMORY_CX_CY
 ! New less memory intensive method
-#undef BCGS_REORG
 #define BCGS_REORG
+#undef BCGS_REORG
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -5636,7 +5636,7 @@ MODULE WWM_PARALL_SOLVER
 !        Calculate countour integral quantities ...
 !
       DO IE = 1, MNE
-#ifdef NO_MEMORY_CX_CY
+#ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
