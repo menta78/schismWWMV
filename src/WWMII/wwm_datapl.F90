@@ -934,8 +934,8 @@
          REAL(rkind), PARAMETER       :: WP1TAIL = 1./3.
          REAL(rkind), PARAMETER       :: USTARM = 5.
 
-         INTEGER, PARAMETER    :: ISHALLO = 0 
-         INTEGER, ALLOCATABLE  :: MSC_HF(:)
+         INTEGER, PARAMETER           :: ISHALLO = 0 
+         INTEGER, ALLOCATABLE         :: MSC_HF(:)
 
          REAL(rkind), ALLOCATABLE     :: TAUTOT(:)   ! Total Stress from the Waves
          REAL(rkind), ALLOCATABLE     :: TAUWX(:)    ! X Component of the total stress (m^2/s/s)

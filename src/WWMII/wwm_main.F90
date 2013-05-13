@@ -34,7 +34,6 @@
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
-         LOGICAL, PARAMETER :: LNANCHECK = .FALSE.
 
          TIME1 = mpi_wtime()
 
@@ -767,6 +766,7 @@
       call parallel_barrier
       CALL INITIALIZE_WWM
       CALLFROM='WWM_MPI'
+
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)

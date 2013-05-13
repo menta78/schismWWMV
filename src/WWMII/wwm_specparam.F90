@@ -548,6 +548,118 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE MEAN_PARAMETER_BDCONS(ACLOC,HS,TM01,TM02)
+
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT)   :: HS,TM01,TM02
+
+      INTEGER             :: ID, IS
+
+      REAL(rkind)                :: Y(MSC)
+      REAL(rkind)                :: DS,ATAIL,ETAIL, ESIGTAIL
+      REAL(rkind)                :: OMEG2,OMEG,EAD,UXD,UYD,ETOT
+      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL, S2
+      REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
+      REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
+      REAL(rkind)                :: dintspec, dintspec_y, tmp(msc),actmp(msc)
+!
+! total energy ...
+!
+      Y = ZERO
+      tmp = ZERO
+      actmp = ZERO
+      ETOT = ZERO
+      do id = 1, mdc
+        tmp(:) = acloc(:,id) * spsig
+        ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
+        do is = 2, msc - 1
+          ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
+        end do
+        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+      end do
+
+      IF (ETOT .GT. THR) THEN
+!
+! tail ratios same as in swan ...
+!
+         DS    = SPSIG(MSC) - SPSIG(MSC-1)
+         ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+         ETOT  = ETOT + PTAIL(6) * ETAIL
+
+         HS = 4*SQRT(ETOT)
+
+         APTOT = ZERO
+         EPTOT = ZERO
+!
+! tail ratios same as in swan ...
+!
+         PPTAIL = PTAIL(1)
+         APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PPTAIL = PTAIL(1) - ONE
+         EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+
+         DO ID = 1, MDC
+           DO IS = 1, MSC
+             APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+           ENDDO
+         ENDDO
+
+         APTOT = APTOT * FRINTF
+         EPTOT = EPTOT * FRINTF
+
+         IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
+           DO ID = 1, MDC
+           AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+           APTOT = APTOT + APTAIL * AHFR
+           EHFR  = SPSIG(MSC) * AHFR
+           EPTOT = EPTOT + EPTAIL * EHFR
+           ENDDO
+         ENDIF
+
+         IF (EPTOT .GT. ZERO) THEN
+            TM01 = PI2 * APTOT / EPTOT
+         ELSE
+            TM01 = ZERO
+         END IF
+
+         ETOT  = ZERO
+         EFTOT = ZERO
+         PPTAIL = PTAIL(1) - ONE
+         ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PPTAIL = PTAIL(1) - 3.
+         EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         DO ID=1, MDC
+            DO IS = 1, MSC
+              EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+              OMEG2 = SIGPOW(IS,2)
+              ETOT  = ETOT + EAD
+              EFTOT = EFTOT + EAD * OMEG2
+            ENDDO
+            IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
+              EAD  = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+              ETOT  = ETOT  + ETAIL * EAD
+              EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
+            ENDIF
+         ENDDO
+         IF (EFTOT .GT. sqrt(verysmall)) THEN
+           TM02 = PI2 * SQRT(ETOT/EFTOT)
+         ELSE
+           TM02 = ZERO
+         END IF
+
+      ELSE
+        HS = ZERO
+        TM01 = ZERO
+        TM02 = ZERO
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
 
       USE DATAPOOL

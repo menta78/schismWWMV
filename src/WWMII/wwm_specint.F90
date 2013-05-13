@@ -34,7 +34,8 @@
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
                  CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
-                 CALL RKS_SP3(IP,30,DT4S_H,.FALSE.,ACLOC)
+                 CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
+                 CALL INT_IP_DYN(IP, 40, DT4S, LLIMT, ONE, 50, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -62,6 +63,7 @@
                  IF (SMETHOD == 1) THEN
                    CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
                    CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
+                   CALL INT_IP_DYN(IP,40,DT4S,LLIMT,ONE,50,ACLOC,NIT_ALL)
                  ELSE IF (SMETHOD == 2) THEN
                    CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                  ELSE IF (SMETHOD == 3) THEN
@@ -120,8 +122,6 @@
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL(MSC,MDC)
-
-         stop 'source int imp'
 
 !$OMP WORKSHARE
          IMATDAA = 0.
@@ -347,7 +347,7 @@
 
          INTEGER, INTENT(IN)        :: IP, ISELECT, ITRMX
          INTEGER, INTENT(OUT)       :: ITER
-         LOGICAL,INTENT(IN)          :: LIMIT
+         LOGICAL,INTENT(IN)         :: LIMIT
          REAL(rkind), INTENT(IN)    :: DTMIN, DT
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
@@ -366,7 +366,6 @@
 
          REAL(rkind) :: XPP, XRR, XFILT, XREL, XFLT, FACP, DAM(MSC)
 
-
 #ifdef ST_DEF
          XPP    = 0.15
          XRR    = 0.10
@@ -376,7 +375,7 @@
          XREL   = XRR
          XFLT   = MAX ( 0. , XFILT ) 
          FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2  ! s4/m4
-         DAM    = FACP / ( SIG * WK(IP,:)**3 ) / CG(IP,:) ! s * m³ * s4/m4 = 
+         DAM    = FACP / ( SPSIG * WK(IP,:)**3 ) / CG(IP,:) ! s * m³ * s4/m4 = 
          AFILT  = MAX ( DAM(MSC) , XFLT*MAXVAL(ACLOC))!*PI2*SPSIG(MSC_HF(IP)) )
 #endif
 
@@ -436,8 +435,6 @@
              LSTABLE = .FALSE.
            END IF
 
-           write(*,*) DTTOT, DT4SI, DTMAX, LSTABLE
-
            IF (LSTABLE) THEN
              DO IS = 1, MSC_HF(IP)
                DO ID = 1, MDC
@@ -487,9 +484,7 @@
                  ACLOC(IS,ID) = MAX( ZERO, 1./3. * ACOLD(IS,ID) +  2./3. * ACLOC(IS,ID) + 2./3. * NEWDAC)
                END DO
              END DO
-
            END IF
-
          END DO      
 
       END SUBROUTINE

@@ -390,8 +390,7 @@
 !       Integrate over depth for checking
         RSXX = ZERO
         DO IP = 1, MNP
-!          IF (ABS(IOBP(IP)) .GT. 0) CYCLE
-          IF (DEP(IP) .LT. DMIN) CYCLE
+          IF(IDRY(IP)==1) CYCLE
           DO IL = KBP(IP)+1, NVRT 
             RSXX(IP) = RSXX(IP) + 0.5_rkind*( SXX3D(IL,IP)+SXX3D(IL-1,IP) ) * ABS((ZETA(IL,IP) - ZETA(IL-1,IP)))/G9
           END DO !IL
@@ -403,7 +402,7 @@
 !         Use same arrays to temporarily store properly scaled Sxx etc
 !         write(12,*)'Checking Sxx,Sxy,Syy:'
           do IP=1,MNP
-            if(DEP8(IP)+ETA2(IP)<=DMIN) then
+            IF(IDRY(IP)==1) then
               SXX3D0(:,IP)=ZERO
               SYY3D0(:,IP)=ZERO
               SXY3D0(:,IP)=ZERO
