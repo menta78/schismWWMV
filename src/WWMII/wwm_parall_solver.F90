@@ -13,23 +13,23 @@
 #define PLAN_I4
 #undef PLAN_I4
 
-#undef PLAN_I5B
 #define PLAN_I5B
+#undef PLAN_I5B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#undef REORDER_ASPAR_PC
 #define REORDER_ASPAR_PC
+#undef REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
+#undef ASPAR_B_COMPUTE_BLOCK
 ! An algorithm that should be slightly faster for norm computations
-#undef FAST_NORM
 #define FAST_NORM
+#undef FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef SELFE_EXCH
 #define SELFE_EXCH
+#undef SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #define NO_MEMORY_CX_CY
 #undef NO_MEMORY_CX_CY
@@ -4475,6 +4475,10 @@ MODULE WWM_PARALL_SOLVER
         CALL I5_SCALAR(SolDat % AC4, SolDat % AC5, Prov)
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
         CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
+# ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(Alpha)=', sum(Alpha)
+# endif
 # if defined DEBUG && defined NCDF
         WRITE(myrank+240,*) 'Alpha max=', maxval(Alpha), 'sum=', sum(Alpha)
         idAlpha=idAlpha+1
@@ -4489,6 +4493,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # if defined DEBUG && defined NCDF
         write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sum(AC7)=', sum(SolDat%AC7)
         write(2000+myrank,*) 'sumtot(AC7)=', I5_SUMTOT(SolDat%AC7)
         WRITE(myrank+240,*) 'AC7(s) max=', maxval(SolDat%AC7), 'sum=', sum(SolDat%AC7)
         idAC7=idAC7+1
@@ -4791,7 +4796,10 @@ MODULE WWM_PARALL_SOLVER
 # endif
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
         CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
-
+# ifdef DEBUG
+        write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sumtot(Alpha)=', sum(Alpha)
+# endif
         ! L7 s=r(i-1) - alpha v(i)
         DO IP=1,MNP
           SolDat%AC7(:,:,IP)=SolDat%AC3(:,:,IP)                        &
@@ -4799,6 +4807,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
+        write(2000+myrank,*) 'sum(AC7)=', sum(SolDat%AC7)
         write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
         CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC7, Lerror)
         WRITE(myrank+240,*) 'error(AC7)=', Lerror
@@ -5406,6 +5415,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL
       implicit none
       NblockFreqDir = NB_BLOCK 
+      MainLocalColor%MSCeffect=MSC
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
       CALL I5_ALLOCATE(SolDat)
       IF (PCmethod .eq. 2) THEN
