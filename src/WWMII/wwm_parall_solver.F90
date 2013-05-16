@@ -33,7 +33,7 @@
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
-! New less memory intensive method
+! New less memory intensive method obtained by rewriting the BCGS
 #undef BCGS_REORG
 #define BCGS_REORG
 !**********************************************************************
@@ -6110,9 +6110,6 @@ MODULE WWM_PARALL_SOLVER
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
 # endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
-      IF (myrank .eq. 0) THEN
-        Print *, 'Before CREATE_PRECOND'
-      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
 #ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
