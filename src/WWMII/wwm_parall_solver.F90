@@ -13,16 +13,16 @@
 #define PLAN_I4
 #undef PLAN_I4
 
-#define PLAN_I5B
 #undef PLAN_I5B
+#define PLAN_I5B
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#define REORDER_ASPAR_PC
 #undef REORDER_ASPAR_PC
+#define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#define ASPAR_B_COMPUTE_BLOCK
 #undef ASPAR_B_COMPUTE_BLOCK
+#define ASPAR_B_COMPUTE_BLOCK
 ! An algorithm that should be slightly faster for norm computations
 #define FAST_NORM
 #undef FAST_NORM
@@ -5577,8 +5577,8 @@ MODULE WWM_PARALL_SOLVER
               CY(ISr,ID,IP) = CG(IP,IS)*SINTH(ID)
             END IF
             IF (LSPHE) THEN
-              CY(ISr,ID,IP) = CX(ISr,ID,IP)*INVSPHTRANS(IP,1)
-              CX(ISr,ID,IP) = CY(ISr,ID,IP)*INVSPHTRANS(IP,2)
+              CX(ISr,ID,IP) = CX(ISr,ID,IP)*INVSPHTRANS(IP,1)
+              CY(ISr,ID,IP) = CY(ISr,ID,IP)*INVSPHTRANS(IP,2)
             END IF
             IF (LDIFR) THEN
               CX(ISr,ID,IP) = CX(ISr,ID,IP)*DIFRM(IP)
@@ -5677,8 +5677,8 @@ MODULE WWM_PARALL_SOLVER
                 CY(ISr,ID,I) = CG(IP,IS)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
-                CY(ISr,ID,I) = CX(ISr,ID,I)*INVSPHTRANS(IP,1)
-                CX(ISr,ID,I) = CY(ISr,ID,I)*INVSPHTRANS(IP,2)
+                CX(ISr,ID,I) = CX(ISr,ID,I)*INVSPHTRANS(IP,1)
+                CY(ISr,ID,I) = CY(ISr,ID,I)*INVSPHTRANS(IP,2)
               END IF
               IF (LDIFR) THEN
                 CX(ISr,ID,I) = CX(ISr,ID,I)*DIFRM(IP)
@@ -5836,9 +5836,9 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
-# ifdef DEBUG
+!# ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
+!# endif
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
@@ -5870,6 +5870,13 @@ MODULE WWM_PARALL_SOLVER
 #ifndef NO_MEMORY_CX_CY
       CALL CADVXY_VECTOR(CX, CY)
 #endif
+      WRITE(6000+myrank,*) 'Step 0'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, CX=', sum(CX(IS,ID,:)), ' CY=', sum(CY(IS,ID,:))
+        END DO
+      END DO
 !
 !        Calculate countour integral quantities ...
 !
@@ -5904,8 +5911,8 @@ MODULE WWM_PARALL_SOLVER
                 CY(IS,ID,I) = CG(IP,IS)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
-                CY(IS,ID,I) = CX(IS,ID,I)*INVSPHTRANS(IP,1)
-                CX(IS,ID,I) = CY(IS,ID,I)*INVSPHTRANS(IP,2)
+                CX(IS,ID,I) = CX(IS,ID,I)*INVSPHTRANS(IP,1)
+                CY(IS,ID,I) = CY(IS,ID,I)*INVSPHTRANS(IP,2)
               END IF
               IF (LDIFR) THEN
                 CX(IS,ID,I) = CX(IS,ID,I)*DIFRM(IP)
@@ -5944,6 +5951,13 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+      END DO
+      WRITE(6000+myrank,*) 'Step 1'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
+        END DO
       END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
@@ -6008,6 +6022,13 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
+      WRITE(6000+myrank,*) 'Step 2'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
+        END DO
+      END DO
       IF (LBCWA .OR. LBCSP) THEN
         IF (LINHOM) THEN
           IPrel=IP
@@ -6020,6 +6041,13 @@ MODULE WWM_PARALL_SOLVER
           B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
         END DO
       END IF
+      WRITE(6000+myrank,*) 'Step 3'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
+        END DO
+      END DO
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
           IF (IOBWB(IP) .EQ. 1) THEN
@@ -6028,6 +6056,13 @@ MODULE WWM_PARALL_SOLVER
           ENDIF
         END DO
       ENDIF
+      WRITE(6000+myrank,*) 'Step 4'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
+        END DO
+      END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
@@ -6094,6 +6129,12 @@ MODULE WWM_PARALL_SOLVER
       END DO
 #if defined ASPAR_B_COMPUTE_BLOCK
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+      DO IS=1,MSC
+        DO ID=1,MDC
+          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), ' B=', sum(SolDat%B_block(IS,ID,:))
+        END DO
+      END DO
 #else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -6101,6 +6142,7 @@ MODULE WWM_PARALL_SOLVER
           CALL EIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
           SolDat % ASPAR_block(IS,ID,:)=ASPAR
           SolDat % B_block(IS,ID,:)=B
+          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), ' B=', sum(SolDat%B_block(IS,ID,:))
         END DO
       END DO
 #endif
@@ -6110,6 +6152,9 @@ MODULE WWM_PARALL_SOLVER
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
 # endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
+      IF (myrank .eq. 0) THEN
+        Print *, 'Before CREATE_PRECOND'
+      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
 #ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
