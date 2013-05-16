@@ -1,6 +1,4 @@
 #include "wwm_functions.h"
-#undef DEBUG
-#define DEBUG
 ! don't forget to uncomment if() )in wwm_compute
 ! !**********************************************************************
 ! !*                                                                    *
@@ -1393,9 +1391,6 @@
          POS_TRICK(3,2) = 2
 
          CALL CADVXY(IS,ID,C)
-         WRITE(6000+myrank,*) 'Step 0'
-         WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-         WRITE(6000+myrank,*) 'sum, C(1,:)=',sum(C(1,:)), ' C(2,:)=',sum(C(2,:))
 !
 !        Calculate countour integral quantities ...
 !
@@ -1426,9 +1421,6 @@
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
            NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
-         WRITE(6000+myrank,*) 'Step 1'
-         WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-         WRITE(6000+myrank,*) 'sum, ASPAR=',sum(ASPAR), ' B=',sum(B)
 
          J     = 0    ! Counter ...
          ASPAR = 0.0_rkind ! Mass matrix ...
@@ -1465,9 +1457,6 @@
              END DO !I: loop over connected elements ...
            END IF
          END DO !IP
-         WRITE(6000+myrank,*) 'Step 2'
-         WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-         WRITE(6000+myrank,*) 'sum, ASPAR=',sum(ASPAR), ' B=',sum(B)
 #if defined DEBUG
          WRITE(3000+myrank,*) 'IS, ID, sum=', IS, ID, sum(ASPAR)
 #endif
@@ -1483,9 +1472,6 @@
              B(IPGL)             = SI(IPGL) * WBAC(IS,ID,IPrel)
            END DO
          END IF
-         WRITE(6000+myrank,*) 'Step 3'
-         WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-         WRITE(6000+myrank,*) 'sum, ASPAR=',sum(ASPAR), ' B=',sum(B)
 
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
            DO IP = 1, NP_RES
@@ -1495,9 +1481,6 @@
              ENDIF
            END DO
          ENDIF
-         WRITE(6000+myrank,*) 'Step 4'
-         WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-         WRITE(6000+myrank,*) 'sum, ASPAR=',sum(ASPAR), ' B=',sum(B)
 
       END SUBROUTINE
 !**********************************************************************

@@ -24,18 +24,18 @@
 #undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
 ! An algorithm that should be slightly faster for norm computations
-#define FAST_NORM
 #undef FAST_NORM
+#define FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#define SELFE_EXCH
 #undef SELFE_EXCH
+#define SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
-#define NO_MEMORY_CX_CY
 #undef NO_MEMORY_CX_CY
+#define NO_MEMORY_CX_CY
 ! New less memory intensive method
-#define BCGS_REORG
 #undef BCGS_REORG
+#define BCGS_REORG
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -5870,13 +5870,6 @@ MODULE WWM_PARALL_SOLVER
 #ifndef NO_MEMORY_CX_CY
       CALL CADVXY_VECTOR(CX, CY)
 #endif
-      WRITE(6000+myrank,*) 'Step 0'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, CX=', sum(CX(IS,ID,:)), ' CY=', sum(CY(IS,ID,:))
-        END DO
-      END DO
 !
 !        Calculate countour integral quantities ...
 !
@@ -5952,13 +5945,6 @@ MODULE WWM_PARALL_SOLVER
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
       END DO
-      WRITE(6000+myrank,*) 'Step 1'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
-        END DO
-      END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
       WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
@@ -6022,13 +6008,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
-      WRITE(6000+myrank,*) 'Step 2'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
-        END DO
-      END DO
       IF (LBCWA .OR. LBCSP) THEN
         IF (LINHOM) THEN
           IPrel=IP
@@ -6041,13 +6020,6 @@ MODULE WWM_PARALL_SOLVER
           B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
         END DO
       END IF
-      WRITE(6000+myrank,*) 'Step 3'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
-        END DO
-      END DO
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
           IF (IOBWB(IP) .EQ. 1) THEN
@@ -6056,13 +6028,6 @@ MODULE WWM_PARALL_SOLVER
           ENDIF
         END DO
       ENDIF
-      WRITE(6000+myrank,*) 'Step 4'
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(ASPAR(IS,ID,:)), ' B=', sum(B(IS,ID,:))
-        END DO
-      END DO
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
@@ -6129,12 +6094,6 @@ MODULE WWM_PARALL_SOLVER
       END DO
 #if defined ASPAR_B_COMPUTE_BLOCK
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
-      DO IS=1,MSC
-        DO ID=1,MDC
-          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), ' B=', sum(SolDat%B_block(IS,ID,:))
-        END DO
-      END DO
 #else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -6142,7 +6101,6 @@ MODULE WWM_PARALL_SOLVER
           CALL EIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
           SolDat % ASPAR_block(IS,ID,:)=ASPAR
           SolDat % B_block(IS,ID,:)=B
-          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), ' B=', sum(SolDat%B_block(IS,ID,:))
         END DO
       END DO
 #endif
