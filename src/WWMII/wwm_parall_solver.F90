@@ -21,21 +21,21 @@
 #define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
+#undef ASPAR_B_COMPUTE_BLOCK
 ! An algorithm that should be slightly faster for norm computations
-#undef FAST_NORM
 #define FAST_NORM
+#undef FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef SELFE_EXCH
 #define SELFE_EXCH
+#undef SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
-#undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
+#undef NO_MEMORY_CX_CY
 ! New less memory intensive method obtained by rewriting the BCGS
-#undef BCGS_REORG
 #define BCGS_REORG
+#undef BCGS_REORG
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -5768,7 +5768,11 @@ MODULE WWM_PARALL_SOLVER
             ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
-            B(:,:,IP)     =  B(:,:,IP) + TRIA03 * U(:,:,IP)
+            DO ID=1,MDC
+              IF (IOBPD(ID,IP) .eq. 1) THEN
+                B(:,ID,IP)     =  B(:,ID,IP) + TRIA03 * U(:,:,IP)
+              END IF
+            END DO
           END DO !I: loop over connected elements ...
         ELSE
           DO I = 1, CCON(IP)
@@ -5995,7 +5999,9 @@ MODULE WWM_PARALL_SOLVER
             ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
-            B(:,:,IP)     =  B(:,:,IP) + TRIA03 * U(:,:,IP)
+            DO ID=1,MDC
+              B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
+            END DO
           END DO !I: loop over connected elements ...
         ELSE
           DO I = 1, CCON(IP)
@@ -6094,6 +6100,12 @@ MODULE WWM_PARALL_SOLVER
       END DO
 #if defined ASPAR_B_COMPUTE_BLOCK
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+!      DO IS=1,MSC
+!        DO ID=1,MDC
+!          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+!          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
+!        END DO
+!      END DO
 #else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -6101,6 +6113,8 @@ MODULE WWM_PARALL_SOLVER
           CALL EIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
           SolDat % ASPAR_block(IS,ID,:)=ASPAR
           SolDat % B_block(IS,ID,:)=B
+!          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
+!          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
         END DO
       END DO
 #endif
@@ -6110,6 +6124,9 @@ MODULE WWM_PARALL_SOLVER
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
 # endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
+!      IF (myrank .eq. 0) THEN
+!        Print *, 'Before CREATE_PRECOND'
+!      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
 #ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
