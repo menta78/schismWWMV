@@ -94,7 +94,7 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 
 # Wind wave model WWM
   USE_WWM = yes
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
   USE_PETSC = yes
