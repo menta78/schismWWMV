@@ -1,6 +1,4 @@
 #include "wwm_functions.h"
-#undef DEBUG
-#define DEBUG
 ! don't forget to uncomment if() )in wwm_compute
 ! !**********************************************************************
 ! !*                                                                    *
@@ -1365,9 +1363,9 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
-#if defined DEBUG
+!#if defined DEBUG
          USE elfe_msgp, only : myrank
-#endif
+!#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
@@ -1423,7 +1421,6 @@
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
            NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
-
 
          J     = 0    ! Counter ...
          ASPAR = 0.0_rkind ! Mass matrix ...
@@ -2047,8 +2044,8 @@
                CY(IS,ID,IP) = CG(IP,IS)*SINTH(ID)
              END IF
              IF (LSPHE) THEN
-                CY(IS,ID,IP) = CX(IS,ID,IP)*INVSPHTRANS(IP,1)
-                CX(IS,ID,IP) = CY(IS,ID,IP)*INVSPHTRANS(IP,2)
+                CX(IS,ID,IP) = CX(IS,ID,IP)*INVSPHTRANS(IP,1)
+                CY(IS,ID,IP) = CY(IS,ID,IP)*INVSPHTRANS(IP,2)
              END IF
              IF (LDIFR) THEN
                CX(IS,ID,IP) = CX(IS,ID,IP)*DIFRM(IP)
