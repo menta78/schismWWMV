@@ -767,7 +767,7 @@
               EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
             ENDIF
          ENDDO
-         IF (EFTOT .GT. sqrt(verysmall)) THEN
+         IF (EFTOT .GT. sqrt(small)) THEN
            TM02 = PI2 * SQRT(ETOT/EFTOT)
          ELSE
            TM02 = ZERO
@@ -801,7 +801,7 @@
             ENDDO
          ENDIF
 
-         IF (ETOT1.GT.VERYSMALL.AND.EKTOT.GT.VERYSMALL) THEN
+         IF (ETOT1.GT.SMALL.AND.EKTOT.GT.SMALL) THEN
             WLM = PI2 * (ETOT1/EKTOT)
             KLM = PI2/WLM
          ELSE

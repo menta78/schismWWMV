@@ -307,11 +307,6 @@
          DO IS = 2, MSCL
            SPSIGL(IS) = SPSIGL(IS-1) + SSB
          ENDDO
-
-         DO IS = 1, MSCL 
-           WRITE(*,*) IS, MSCL, SPSIGL(IS)/PI2
-         ENDDO
- 
 !
 !    *** the ratio of the consecutive frequency ... for quad
 !

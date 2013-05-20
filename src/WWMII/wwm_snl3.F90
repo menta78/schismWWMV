@@ -649,7 +649,7 @@
         BIPH  = PI/TWO*(TANH(0.2/URSELL)-ONE)
         ASINB = ABS(SIN(BIPH))
         DO ID = 1, MDC
-          ED = AC1(IP,:,ID)*SPSIG
+          ED = AC2(IP,:,ID)*SPSIG
           DO IS = 1, ISMAX-IRES
             IS1     = IS+IRES
             IS2     = IS
