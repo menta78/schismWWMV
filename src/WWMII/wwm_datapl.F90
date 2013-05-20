@@ -1026,6 +1026,11 @@
          integer, dimension(:,:), pointer :: u2l_p2drecv_stat
          integer, dimension(:), pointer :: u2l_p2dsend_type
          integer, dimension(:), pointer :: u2l_p2drecv_type
+         ! variables for compact exchanges
+         integer nbNeedSend_u2l, nbNeedRecv_u2l
+         integer nbNeedSend_blk, nbNeedRecv_blk
+         integer, dimension(:), pointer :: IdxSend_u2l, IdxRecv_u2l
+         integer, dimension(:), pointer :: IdxSend_blk, IdxRecv_blk
          ! variables for sync (depend on CovLower)
          integer sync_nnbr_send, sync_nnbr_recv
          integer, dimension(:), pointer :: sync_ListNbCommon_send
