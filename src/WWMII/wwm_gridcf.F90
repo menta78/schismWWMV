@@ -308,10 +308,6 @@
            SPSIGL(IS) = SPSIGL(IS-1) + SSB
          ENDDO
 
-         write(*,*) (frhigh-frlow)/(sfac*frlow-frlow)
-
-         WRITE(*,*) MSCL, SSB, SPECTRAL_BANDWIDTH, SPSIG(2)/PI2, SPSIG(1)/PI2
-         pause
          DO IS = 1, MSCL 
            WRITE(*,*) IS, MSCL, SPSIGL(IS)/PI2
          ENDDO
