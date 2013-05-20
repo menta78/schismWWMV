@@ -382,6 +382,7 @@
 
          
          REAL(rkind), ALLOCATABLE      :: SPSIG(:)
+         REAL(rkind), ALLOCATABLE      :: SPSIGL(:)
          REAL(rkind), ALLOCATABLE      :: SPDIR(:)
          REAL(rkind), ALLOCATABLE      :: FR(:)
          REAL(rkind), ALLOCATABLE      :: DS_INCR(:)
@@ -411,7 +412,7 @@
          INTEGER   :: NVRT
 #endif
          INTEGER   :: MDC
-         INTEGER   :: MSC
+         INTEGER   :: MSC, MSCL
          INTEGER   :: NSPEC
 
          LOGICAL   :: LCYCLEHOT

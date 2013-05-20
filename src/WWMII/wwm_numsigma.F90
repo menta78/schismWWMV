@@ -8,6 +8,7 @@
          IMPLICIT NONE
 
          INTEGER :: IP, IS, ID, IT, ITER
+         LOGICAL :: ISEQ0
 
          REAL(rkind)    :: CAS(MSC,MDC)
 
@@ -31,22 +32,14 @@
            DO ID = 1, MDC
              ACQ(1:MSC)  = AC2(IP,:,ID)
              CASS(1:MSC) = CAS(:,ID)
-             DO IS = 1, MSC
-               CFLCAS  = (ABS(CAS(IS,ID))*DT4F)/(MIN(DS_BAND(IS),DS_INCR(IS)))
-             END DO 
-             REST  = ABS(MOD(CFLCAS,1.0_rkind))
-             IF (CFLCAS .LT. THR) THEN
-               CYCLE
+             CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND)
+             REST    = ABS(MOD(CFLCAS,ONE))
+             IF (ISEQ0(CFLCAS)) CYCLE
+             REST  = ABS(MOD(CFLCAS,ONE))
+             IF (REST .GT. THR .AND. REST .LT. 0.5) THEN
+               ITER = ABS(NINT(CFLCAS)) + 1
              ELSE
-               IF (CFLCAS .LT. 1.) THEN
-                 ITER = 1
-               ELSE
-                 IF (REST .LT. THR) THEN
-                   ITER = INT(CFLCAS)
-                 ELSE
-                   ITER = INT(CFLCAS) + 1
-                 END IF
-               END IF
+               ITER = ABS(NINT(CFLCAS))
              END IF
              DT4FI = DT4F / MyREAL(ITER)
              DO IT = 1, ITER ! Iteration
@@ -67,7 +60,7 @@
 !                 AC2(IP,:,ID) = MAX(0.,REAL(rkind)(ACQ(1:MSC))) - DAC_ADV(IP,:,ID) - DAC_THE(IP,:,ID) - DAC_SOU(IP,:,ID)
 !               END IF
 !             ELSE
-               AC2(IP,:,ID) = MAX(0._rkind,ACQ(1:MSC))
+               AC2(IP,:,ID) = MAX(ZERO,ACQ(1:MSC))
 !             END IF
            END DO
          END DO
@@ -86,8 +79,6 @@
          REAL(rkind), INTENT(OUT)   :: CAS(MSC,MDC)
          INTEGER :: IS, ID
          REAL(rkind)    :: CFL, DWDH, WKDEP
-         REAL(rkind)    :: CAST1, CAST2, CAST3, CAST4, CAST5, CAST6,    &
-     &      CAST7, CAST8, CAST9
 
          CAS = 0.
 

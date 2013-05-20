@@ -102,7 +102,7 @@
 ! derivative at the center of the element and assigning this value to the
 ! the side center.
      
-        IMET_DRY = 1 
+        IMET_DRY = 2 
 
         SXX3D(:,:) = ZERO
         SYY3D(:,:) = ZERO

@@ -181,7 +181,7 @@
          FLA(IXY) = MIN(ZERO,CS(IXY)) * Q(IXYC)
 !
          IXY = MX
-!         IXYC = IXY - 1 * INT( MIN(ZERO, SIGN(1.1_rkind,CS(IXY)) ) )
+         IXYC = IXY - 1 * INT( MIN(ZERO, SIGN(1.1_rkind,CS(IXY)) ) )
          FLA(IXY) = MAX(ZERO,CS(IXY)) * Q(IXYC)
 
          DO IXY = 1, MX

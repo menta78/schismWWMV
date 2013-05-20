@@ -601,30 +601,30 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 
-      INTEGER :: IS, ID
-      REAL(rkind)    :: BIPH, ASINB
+      INTEGER :: IS, ID, I1, I2
+      REAL(rkind)    :: BIPH, ASINB, XISTRI
       REAL(rkind)    :: ED(MSC)
       INTEGER :: IS1, IS2, ISMAX
       REAL(rkind)    :: KIS1, KIS2, CIS1, CIS2, CGIS1
       INTEGER :: IRES
       REAL(rkind)    :: AUX1, AUX2, FAC
-      REAL(rkind)    :: JAC, KP
+      REAL(rkind)    :: JAC, KP, DNL3IS1, DNL3IS2
       REAL(rkind)    :: NL3IS1, NL3IS2, SIGG1, SIGG2
       REAL(rkind)    :: cgl(msc),cl(msc),wkl(msc), AA
       REAL(rkind)    :: ALPHAEB, URSELL, BB, DEP1, DEP2, DEP3
       REAL(rkind)    :: SF3P(MSC,MDC), SF3M(MSC,MDC)
 
-      PTRIAD(1)  = 0.25
+      PTRIAD(1)  = 1. 
       PTRIAD(2)  = 2.5
       PTRIAD(3)  = 10.
       PTRIAD(4)  = 0.2
       PTRIAD(5)  = 0.01
 
-      BB = ONE/15.
-      AA = TWO/FIVE
+      BB   = ONE/15._rkind
+      AA   = TWO/FIVE
       DEP1 = DEP(IP)
-      DEP2 = DEP1**2.
-      DEP3 = DEP2 * DEP1
+      DEP2 = DEP1**2
+      DEP3 = DEP2*DEP1
 
       wkl = wk(ip,:)
       cgl = cg(ip,:)
@@ -637,38 +637,43 @@
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
 
       IF (URSELL > PTRIAD(5)) THEN
-        IRES   = INT(LOG(2.0)/LOG(XIS))
+        I2     = INT(DBLE(MSC)/TWO)
+        I1     = I2-1
+        XISTRI = SPSIG(I2) / SPSIG(I1)
+        IRES   = NINT(LOG(TWO)/LOG(XISTRI))
         ISMAX  = 1
         DO IS = 1, MSC
-           IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
+          IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
         END DO
         ISMAX = MAX(ISMAX,IRES+1)
-        BIPH = PI/2.0*(TANH(0.2/URSELL)-1.0)
+        BIPH  = PI/TWO*(TANH(0.2/URSELL)-ONE)
         ASINB = ABS(SIN(BIPH))
         DO ID = 1, MDC
-          DO IS = 1, MSC
-            ED(IS) = AC1(IP,IS,ID)*SPSIG(IS)
-          END DO
+          ED = AC2(IP,:,ID)*SPSIG
           DO IS = 1, ISMAX-IRES
-            IS1 = IS+IRES
-            IS2 = IS
-            KIS1 = WKL(IS1)
-            KIS2 = WKL(IS2)
-            CIS1 = CL(IS1)
-            CIS2 = CL(IS2)
-            CGIS1 = CGL(IS1)
-            SIGG1 = SPSIG(IS1)
-            SIGG2 = SPSIG(IS2)
-            AUX1  = KIS2**2*(G9*DEP1+2.0*CIS2**2)
-            AUX2  = KIS1*DEP1*(G9*DEP1+2.0*BB*G9*DEP3*KIS1**2-AA*SIGG1**2*DEP2)
-            JAC   = AUX1/AUX2
-            FAC   = PTRIAD(1)*PI2*CIS1*CGIS1*JAC**2*ASINB
-            NL3IS1 = MAX( 0.0 , FAC*(ED(IS2)*ED(IS2)-TWO*ED(IS2)*ED(IS1)) )
-            NL3IS2 = NL3IS1
-            IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SIGG1
-            IMATRA(IS2,ID) = IMATRA(IS2,ID) - TWO * NL3IS2 / SIGG2
+            IS1     = IS+IRES
+            IS2     = IS
+            AUX1    = WKL(IS2)**2*(G9*DEP1+TWO*CL(IS2)**2)
+            AUX2    = WKL(IS1)*DEP1*(G9*DEP1+TWO*BB*G9*DEP3*WKL(IS1)**2-AA*SIGPOW(IS,2)*DEP2)
+            JAC     = AUX1/AUX2
+            FAC     = PTRIAD(1)*PI2*CL(IS1)*CGL(IS1)*JAC**2*ASINB
+            NL3IS1  = MAX(ZERO,FAC*(ED(IS2)*ED(IS2)-TWO*ED(IS2)*ED(IS1)))
+            DNL3IS1 = MAX(ZERO,FAC*(ED(IS2)-TWO*ED(IS1)))
+            NL3IS2  = TWO*NL3IS1
+            DNL3IS2 = TWO*DNL3IS1
+            IF (ICOMP .LT. 2) THEN
+              IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
+              IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
+              IMATDA(IS1,ID) = IMATDA(IS1,ID) + DNL3IS1 
+              IMATDA(IS2,ID) = IMATDA(IS2,ID) - DNL3IS2 
+            ELSE
+              IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
+              !IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
+              !IMATDA(IS1,ID) = IMATDA(IS1,ID) - DNL3IS1 
+              IMATDA(IS2,ID) = IMATDA(IS2,ID) + DNL3IS2 
+            ENDIF
             SF3P(IS1,ID) = SF3P(IS1,ID) + NL3IS1
-            SF3M(IS2,ID) = SF3M(IS2,ID) - TWO * NL3IS2
+            SF3M(IS2,ID) = SF3M(IS2,ID) - NL3IS2
           END DO
         END DO
         SSNL3 = SF3P+SF3M

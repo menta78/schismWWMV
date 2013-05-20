@@ -695,7 +695,7 @@
         ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
       end do
 
-      IF (ETOT .GT. THR) THEN
+      IF (ETOT .GT. verysmall) THEN
 !
 ! tail ratios same as in swan ...
 !

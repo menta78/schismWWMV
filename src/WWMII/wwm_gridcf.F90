@@ -241,6 +241,7 @@
 
          INTEGER :: IS, ID, istat
          INTEGER :: MSC1, MSC2
+         REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
          REAL(rkind)    :: TMP, CO1
 
          SGLOW  = PI2*FRLOW
@@ -295,6 +296,26 @@
               DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
            END DO
          END IF
+
+         SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
+         SSB                =  (SPSIG(2)-SPSIG(1))/PI2
+         MSCL               =  SPECTRAL_BANDWIDTH/SSB
+
+         ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
+        
+         SPSIGL(1) = FRLOW * PI2
+         DO IS = 2, MSCL
+           SPSIGL(IS) = SPSIGL(IS-1) + SSB
+         ENDDO
+
+         write(*,*) (frhigh-frlow)/(sfac*frlow-frlow)
+
+         WRITE(*,*) MSCL, SSB, SPECTRAL_BANDWIDTH, SPSIG(2)/PI2, SPSIG(1)/PI2
+         pause
+         DO IS = 1, MSCL 
+           WRITE(*,*) IS, MSCL, SPSIGL(IS)/PI2
+         ENDDO
+ 
 !
 !    *** the ratio of the consecutive frequency ... for quad
 !

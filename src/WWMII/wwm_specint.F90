@@ -35,7 +35,7 @@
                IF (SMETHOD == 1) THEN
                  CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
                  CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
-                 CALL INT_IP_DYN(IP, 40, DT4S, LLIMT, ONE, 50, ACLOC, NIT_ALL)
+                 CALL INT_IP_DYN(IP, 4, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -43,11 +43,11 @@
                ELSE IF (SMETHOD == 4) THEN
                  CALL INT_IP_DYN(IP, 10, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
-                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,   NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                 CALL INT_IP_DYN(IP, 1, DTMIN_SIN , LLIMT, DTMIN_DYN,  NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
                  CALL INT_IP_DYN(IP, 2, DTMIN_SNL4, LLIMT, DTMIN_DYN,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
                  CALL INT_IP_DYN(IP, 3, DTMIN_SDS , LLIMT, DTMIN_DYN,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
                  CALL INT_IP_DYN(IP, 4, DTMIN_SNL3, LLIMT, DTMIN_DYN,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
-                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN, NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                 CALL INT_IP_DYN(IP, 5, DTMIN_SBR , LLIMT, DTMIN_DYN,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
                  CALL INT_IP_DYN(IP, 6, DTMIN_SBF , LLIMT, DTMIN_DYN,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
                CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
@@ -132,14 +132,23 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
-           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3) .AND. LSOUBOUND) THEN
+           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC = AC2(IP,:,:)
                CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA,.FALSE.) 
                IMATDAA(IP,:,:) = IMATDA
                IMATRAA(IP,:,:) = IMATRA
              END IF !
-           ENDIF
+           ELSE
+             IF (LSOUBOUND) THEN ! Source terms on boundary ...
+               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+                 ACLOC = AC2(IP,:,:)
+                 CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA,.FALSE.)
+                 IMATDAA(IP,:,:) = IMATDA
+                 IMATRAA(IP,:,:) = IMATRA
+               ENDIF
+             ENDIF
+           ENDIF  
          END DO
 
 #if defined ST41 || defined ST42
