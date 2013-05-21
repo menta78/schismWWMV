@@ -970,10 +970,7 @@
 
       IF (ICOMP .LE. 1) THEN
         S = D * A
-!        D = 0.
       ELSE
-!        S = D * A 
-!        D = -D  
         DO IK = 1, NSPEC ! Patankar Rules 
           IF (D(IK) .GT. 0.) THEN
             S(IK) = D(IK) * A(IK)
@@ -2391,7 +2388,6 @@
 !            
       IF (ICOMP .LE. 1) THEN
         S = D * A 
-!        D = ZERO
       ELSE 
         DO IK = 1, NSPEC ! Patankar Rules 
           IF (D(IK) .GT. 0.) THEN

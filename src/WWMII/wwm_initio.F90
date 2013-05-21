@@ -465,7 +465,7 @@
  
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
 #if defined SELFE 
-         DMIN = DMIN_SELFE 
+         DMIN = DMIN_SELFE
          CALL SET_IOBP_SELFE
 #else
          CALL SET_IOBP_NEXTGENERATION
