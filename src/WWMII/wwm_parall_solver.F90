@@ -21,18 +21,18 @@
 #define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
-#define ASPAR_B_COMPUTE_BLOCK
 #undef ASPAR_B_COMPUTE_BLOCK
+#define ASPAR_B_COMPUTE_BLOCK
 ! An algorithm that should be slightly faster for norm computations
-#define FAST_NORM
 #undef FAST_NORM
+#define FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#define SELFE_EXCH
 #undef SELFE_EXCH
+#define SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
-#define NO_MEMORY_CX_CY
 #undef NO_MEMORY_CX_CY
+#define NO_MEMORY_CX_CY
 ! New less memory intensive method obtained by rewriting the BCGS
 ! Needs 7 times MSC*MDC*MNP versus 9 times.
 #undef BCGS_REORG
