@@ -853,7 +853,7 @@
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
           DO IS = 1, MSC
-            E(IS)  = AC1(IP,IS,ID) * PI2 * SPSIG(IS)
+            E(IS)  = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
           ENDDO
           DO I = 1, ISMAX-IRES
             J   = I + IRES
@@ -975,10 +975,10 @@
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
 
-      IF (IP == 1786) THEN
-        WRITE(*,*) DEP_2, DEP_3, I2, I1, XIS, XISLN, ISP, ISP1, WISP, WISP1, ISM, ISM1, WISM, WISM1
-        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
+!      IF (IP == 1786) THEN
+!        WRITE(*,*) DEP_2, DEP_3, I2, I1, XIS, XISLN, ISP, ISP1, WISP, WISP1, ISM, ISM1, WISM, WISM1
+!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+!      ENDIF
 
       ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MDC,1:MSC+ISP1))
@@ -1033,9 +1033,9 @@
         END DO
       END IF
 
-      IF (IP == 1786) THEN
-        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
+!      IF (IP == 1786) THEN
+!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+!      ENDIF
     
 
       END SUBROUTINE

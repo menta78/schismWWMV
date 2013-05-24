@@ -174,7 +174,6 @@
         DT4F = 0.5*DT4A
 
         AC1  = AC2
-
         CALL CPU_TIME(TIME1)
         CALL COMPUTE_DIFFRACTION
         CALL CPU_TIME(TIME2)

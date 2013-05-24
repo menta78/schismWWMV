@@ -466,6 +466,7 @@
 #elif SELFE
                if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #endif
+               CALL FLUSH(QSTEA%FHNDL)
                EXIT 
              END IF
            END IF
@@ -481,6 +482,7 @@
          RTIME = MAIN%TMJD - MAIN%BMJD
          WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
+         CALL FLUSH(STAT%FHNDL)
 
          CALL IO_2(K)
 
