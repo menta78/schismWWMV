@@ -109,7 +109,6 @@
               AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
               RINT = AUX1 / AUX2
               FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              !SA(IS,ID) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
               SA(IS,ID) = MAX(0., FT * ( EM * (EM - 2*E0 )))
               IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
            END DO
@@ -974,11 +973,6 @@
       ISM1   = ISM - 1
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
-
-      IF (IP == 1786) THEN
-        WRITE(*,*) DEP_2, DEP_3, I2, I1, XIS, XISLN, ISP, ISP1, WISP, WISP1, ISM, ISM1, WISM, WISM1
-        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
 
       ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MDC,1:MSC+ISP1))
