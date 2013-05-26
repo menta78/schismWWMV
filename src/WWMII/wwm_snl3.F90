@@ -1022,15 +1022,30 @@
               SA(ID,IS) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
            END DO
         END DO
-        DO IS = 1, MSC
-           SIGPI = SPSIG(IS) * 2. * PI
-           DO ID = 1, MDC
-              STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
-              ssnl3(is,id) = STRI
-              IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
-              IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
-           END DO
-        END DO
+        IF (ICOMP .LT. 2) THEN
+          DO IS = 1, MSC
+             SIGPI = SPSIG(IS) * 2. * PI
+             DO ID = 1, MDC
+                STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
+                ssnl3(is,id) = STRI
+                IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
+                IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+             END DO
+          END DO
+        ELSE
+          DO IS = 1, MSC
+             SIGPI = SPSIG(IS) * 2. * PI
+             DO ID = 1, MDC
+                STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
+                ssnl3(is,id) = STRI
+                IF (STRI .GT. ZERO) THEN
+                  IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
+                ELSE
+                  IMATDA(IS,ID) =  IMATDA(IS,ID) - STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+                ENDIF
+             END DO
+          END DO
+        ENDIF
       END IF
 
 !      IF (IP == 1786) THEN

@@ -441,11 +441,7 @@
            DT_ITER = MAIN%DELT/MyREAL(NQSITER)
 
            IF (ICOMP .LT. 2) THEN
-             IF (LITERSPLIT) THEN
-               CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-             ELSE 
-               CALL COMPUTE_SIMPLE_EXPLICIT
-             END IF
+             CALL COMPUTE_SIMPLE_EXPLICIT
            ELSE
              CALL COMPUTE_IMPLICIT
            END IF
