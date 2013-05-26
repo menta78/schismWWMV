@@ -653,9 +653,9 @@
 !* ---update OUTVAR_COMPLETE (wwm_datapl.F90)                         *
 !* ---update the reading of output parameter in                       *
 !*    READ_HISTORY_STATION_NAMELIST (wwm_input.F90)                   *
-!* ---add full name and unit in NAMEVARIABLE (wwm_output.F90)         *
+!* ---add full name and unit in NAMEVARIABLE (wwm_netcdf.F90)         *
 !* ---add needed corrections in DETERMINE_NEEDED_COMPUTATION          *
-!*      (wwm_output.F90)                                              *
+!*      (wwm_netcdf.F90)                                              *
 !* ---add the commputation of the output variable in                  *
 !*    PAR_COMPLETE (history)    and PAR_COMPLETE_LOC (station)        *
 !* ---wwminput.nmlref for the manual.                                 *
@@ -1613,66 +1613,69 @@
          IF (VAROUT_HISTORY%ComputePeak) THEN
            CALL PEAK_PARAMETER(IP,ACLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
            OUTPAR(11)  = TPPD     ! Discrete Peak Period
-           OUTPAR(12)  = TPP      ! Peak period
-           OUTPAR(13)  = CPP      ! Peak phase vel.
-           OUTPAR(14)  = WNPP     ! Peak n-factor
-           OUTPAR(15)  = CGPP     ! Peak group vel.
-           OUTPAR(16)  = KPP      ! Peak wave number
-           OUTPAR(17)  = LPP      ! Peak wave length.
-           OUTPAR(18)  = PEAKD    ! Peak direction
-           OUTPAR(19)  = PEAKDSPR ! Peak directional spreading
-           OUTPAR(20)  = DPEAK    ! Discrete peak direction
+           OUTPAR(12)  = CPPD     ! Discrete Peak speed
+           OUTPAR(13)  = KPPD     ! Discrete Peak wave number
+           OUTPAR(14)  = CGPD     ! Discrete Peak group speed
+           OUTPAR(15)  = TPP      ! Peak period
+           OUTPAR(16)  = CPP      ! Peak phase vel.
+           OUTPAR(17)  = WNPP     ! Peak n-factor
+           OUTPAR(18)  = CGPP     ! Peak group vel.
+           OUTPAR(19)  = KPP      ! Peak wave number
+           OUTPAR(20)  = LPP      ! Peak wave length.
+           OUTPAR(21)  = PEAKD    ! Peak direction
+           OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
+           OUTPAR(23)  = DPEAK    ! Discrete peak direction
          END IF
 
          IF (VAROUT_HISTORY%ComputeCurr) THEN
            CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
-           OUTPAR(21)  = UBOT     !
-           OUTPAR(22)  = ORBITAL  ! Orbital vel.
-           OUTPAR(23)  = BOTEXPER ! Bottom excursion period.
-           OUTPAR(24)  = TMBOT    !
+           OUTPAR(24)  = UBOT     !
+           OUTPAR(25)  = ORBITAL  ! Orbital vel.
+           OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
+           OUTPAR(27)  = TMBOT    !
          END IF
 
          IF (VAROUT_HISTORY%ComputeUrsell) THEN
            CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
-           OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+           OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
          END IF
 
-         OUTPAR(26) = UFRIC(IP)
-         OUTPAR(27) = Z0(IP)
-         OUTPAR(28) = ALPHA_CH(IP)
-         OUTPAR(29) = WINDXY(IP,1)
-         OUTPAR(30) = WINDXY(IP,2)
-         OUTPAR(31) = CD(IP)
+         OUTPAR(29) = UFRIC(IP)
+         OUTPAR(30) = Z0(IP)
+         OUTPAR(31) = ALPHA_CH(IP)
+         OUTPAR(32) = WINDXY(IP,1)
+         OUTPAR(33) = WINDXY(IP,2)
+         OUTPAR(34) = CD(IP)
 
-         OUTPAR(32) = CURTXY(IP,1)
-         OUTPAR(33) = CURTXY(IP,2)
-         OUTPAR(34) = WATLEV(IP)
-         OUTPAR(35) = WATLEVOLD(IP)
-         OUTPAR(36) = DEPDT(IP)
-         OUTPAR(37) = DEP(IP)
-         OUTPAR(38) = SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
-         OUTPAR(39) = TAUW(IP)
-         OUTPAR(40) = TAUW(IP)
-         OUTPAR(41) = TAUW(IP)
-         OUTPAR(42) = TAUHF(IP)
-         OUTPAR(43) = TAUTOT(IP)
+         OUTPAR(35) = CURTXY(IP,1)
+         OUTPAR(36) = CURTXY(IP,2)
+         OUTPAR(37) = WATLEV(IP)
+         OUTPAR(38) = WATLEVOLD(IP)
+         OUTPAR(39) = DEPDT(IP)
+         OUTPAR(40) = DEP(IP)
+         OUTPAR(41) = SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
+         OUTPAR(42) = TAUW(IP)
+         OUTPAR(43) = TAUW(IP)
+         OUTPAR(44) = TAUW(IP)
+         OUTPAR(45) = TAUHF(IP)
+         OUTPAR(46) = TAUTOT(IP)
 
          IF (VAROUT_HISTORY%ComputeStokes) THEN
            CALL STOKES_DRIFT_SURFACE_BAROTROPIC(IP,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
-           OUTPAR(44) = STOKESBOTTX
-           OUTPAR(45) = STOKESBOTTY
-           OUTPAR(46) = STOKESSURFX
-           OUTPAR(47) = STOKESSURFY
-           OUTPAR(48) = STOKESBAROX
-           OUTPAR(49) = STOKESBAROY
+           OUTPAR(47) = STOKESBOTTX
+           OUTPAR(48) = STOKESBOTTY
+           OUTPAR(49) = STOKESSURFX
+           OUTPAR(50) = STOKESSURFY
+           OUTPAR(51) = STOKESBAROX
+           OUTPAR(52) = STOKESBAROY
          END IF
-         OUTPAR(50) = RSXX(IP)
-         OUTPAR(51) = RSXY(IP)
-         OUTPAR(52) = RSYY(IP)
+         OUTPAR(53) = RSXX(IP)
+         OUTPAR(54) = RSXY(IP)
+         OUTPAR(55) = RSYY(IP)
          IF (LCFL) THEN
-           OUTPAR(53) = CFLCXY(1,IP)
-           OUTPAR(54) = CFLCXY(2,IP)
-           OUTPAR(55) = CFLCXY(3,IP)
+           OUTPAR(56) = CFLCXY(1,IP)
+           OUTPAR(57) = CFLCXY(2,IP)
+           OUTPAR(58) = CFLCXY(3,IP)
          ENDIF
       END SUBROUTINE
 !**********************************************************************
@@ -1721,68 +1724,71 @@
          IF (VAROUT_STATION%ComputePeak) THEN
            CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
            OUTPAR(11)  = TPPD     ! Discrete Peak Period
-           OUTPAR(12)  = TPP      ! Continues Peak period
-           OUTPAR(13)  = CPP      ! Peak phase vel.
-           OUTPAR(14)  = WNPP     ! Peak n-factor
-           OUTPAR(15)  = CGPP     ! Peak group vel.
-           OUTPAR(16)  = KPP      ! Peak wave number
-           OUTPAR(17)  = LPP      ! Peak wave length.
-           OUTPAR(18)  = PEAKD    ! Peak direction
-           OUTPAR(19)  = PEAKDSPR ! Peak directional spreading
-           OUTPAR(20)  = DPEAK    ! Discrete peak direction
+           OUTPAR(12)  = CPPD     ! Discrete Peak speed
+           OUTPAR(13)  = KPPD     ! Discrete Peak wave number
+           OUTPAR(14)  = CGPD     ! Discrete Peak group speed
+           OUTPAR(15)  = TPP      ! Continues Peak period
+           OUTPAR(16)  = CPP      ! Peak phase vel.
+           OUTPAR(17)  = WNPP     ! Peak n-factor
+           OUTPAR(18)  = CGPP     ! Peak group vel.
+           OUTPAR(19)  = KPP      ! Peak wave number
+           OUTPAR(20)  = LPP      ! Peak wave length.
+           OUTPAR(21)  = PEAKD    ! Peak direction
+           OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
+           OUTPAR(23)  = DPEAK    ! Discrete peak direction
          END IF
 
          IF (VAROUT_STATION%ComputeCurr) THEN
            CALL WAVE_CURRENT_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
-           OUTPAR(21)  = UBOT     !
-           OUTPAR(22)  = ORBITAL  ! Orbital vel.
-           OUTPAR(23)  = BOTEXPER ! Bottom excursion period.
-           OUTPAR(24)  = TMBOT    !
+           OUTPAR(24)  = UBOT     !
+           OUTPAR(25)  = ORBITAL  ! Orbital vel.
+           OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
+           OUTPAR(27)  = TMBOT    !
          END IF
 
          IF (VAROUT_STATION%ComputeUrsell) THEN
            CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
-           OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+           OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
          END IF
 
          DO J=1,3
            IP=INE(J, IELOC)
-           OUTPAR(26) = OUTPAR(26) + WI(J)*UFRIC(IP)
-           OUTPAR(27) = OUTPAR(27) + WI(J)*Z0(IP)
-           OUTPAR(28) = OUTPAR(28) + WI(J)*ALPHA_CH(IP)
-           OUTPAR(29) = OUTPAR(29) + WI(J)*WINDXY(IP,1)
-           OUTPAR(30) = OUTPAR(30) + WI(J)*WINDXY(IP,2)
-           OUTPAR(31) = OUTPAR(31) + WI(J)*CD(IP)
-           OUTPAR(32) = OUTPAR(32) + WI(J)*CURTXY(IP,1)
-           OUTPAR(33) = OUTPAR(33) + WI(J)*CURTXY(IP,2)
-           OUTPAR(34) = OUTPAR(34) + WI(J)*WATLEV(IP)
-           OUTPAR(35) = OUTPAR(35) + WI(J)*WATLEVOLD(IP)
-           OUTPAR(36) = OUTPAR(36) + WI(J)*DEPDT(IP)
-           OUTPAR(37) = OUTPAR(37) + WI(J)*DEP(IP)
+           OUTPAR(29) = OUTPAR(26) + WI(J)*UFRIC(IP)
+           OUTPAR(30) = OUTPAR(27) + WI(J)*Z0(IP)
+           OUTPAR(31) = OUTPAR(28) + WI(J)*ALPHA_CH(IP)
+           OUTPAR(32) = OUTPAR(29) + WI(J)*WINDXY(IP,1)
+           OUTPAR(33) = OUTPAR(30) + WI(J)*WINDXY(IP,2)
+           OUTPAR(34) = OUTPAR(31) + WI(J)*CD(IP)
+           OUTPAR(35) = OUTPAR(32) + WI(J)*CURTXY(IP,1)
+           OUTPAR(36) = OUTPAR(33) + WI(J)*CURTXY(IP,2)
+           OUTPAR(37) = OUTPAR(34) + WI(J)*WATLEV(IP)
+           OUTPAR(38) = OUTPAR(35) + WI(J)*WATLEVOLD(IP)
+           OUTPAR(39) = OUTPAR(36) + WI(J)*DEPDT(IP)
+           OUTPAR(40) = OUTPAR(37) + WI(J)*DEP(IP)
            eWindMag=SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
-           OUTPAR(38) = OUTPAR(38) + WI(J)*eWindMag
-           OUTPAR(39) = OUTPAR(39) + WI(J)*TAUW(IP)
-           OUTPAR(40) = OUTPAR(40) + WI(J)*TAUW(IP)
-           OUTPAR(41) = OUTPAR(41) + WI(J)*TAUW(IP)
-           OUTPAR(42) = OUTPAR(42) + WI(J)*TAUHF(IP)
-           OUTPAR(43) = OUTPAR(43) + WI(J)*TAUTOT(IP)
-           OUTPAR(50) = OUTPAR(44) + WI(J)*RSXX(IP)
-           OUTPAR(51) = OUTPAR(45) + WI(J)*RSXY(IP)
-           OUTPAR(52) = OUTPAR(46) + WI(J)*RSYY(IP)
+           OUTPAR(41) = OUTPAR(38) + WI(J)*eWindMag
+           OUTPAR(42) = OUTPAR(39) + WI(J)*TAUW(IP)
+           OUTPAR(43) = OUTPAR(40) + WI(J)*TAUW(IP)
+           OUTPAR(44) = OUTPAR(41) + WI(J)*TAUW(IP)
+           OUTPAR(45) = OUTPAR(42) + WI(J)*TAUHF(IP)
+           OUTPAR(46) = OUTPAR(43) + WI(J)*TAUTOT(IP)
+           OUTPAR(53) = OUTPAR(44) + WI(J)*RSXX(IP)
+           OUTPAR(54) = OUTPAR(45) + WI(J)*RSXY(IP)
+           OUTPAR(55) = OUTPAR(46) + WI(J)*RSYY(IP)
            IF (LCFL) THEN
-             OUTPAR(53) = OUTPAR(47) + WI(J)*CFLCXY(1,IP)
-             OUTPAR(54) = OUTPAR(48) + WI(J)*CFLCXY(2,IP)
-             OUTPAR(55) = OUTPAR(49) + WI(J)*CFLCXY(3,IP)
+             OUTPAR(56) = OUTPAR(47) + WI(J)*CFLCXY(1,IP)
+             OUTPAR(57) = OUTPAR(48) + WI(J)*CFLCXY(2,IP)
+             OUTPAR(58) = OUTPAR(49) + WI(J)*CFLCXY(3,IP)
            ENDIF
          END DO
          IF (VAROUT_STATION%ComputeStokes) THEN
            CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
-           OUTPAR(44) = STOKESBOTTX
-           OUTPAR(45) = STOKESBOTTY
-           OUTPAR(46) = STOKESSURFX
-           OUTPAR(47) = STOKESSURFY
-           OUTPAR(48) = STOKESBAROX
-           OUTPAR(49) = STOKESBAROY
+           OUTPAR(47) = STOKESBOTTX
+           OUTPAR(48) = STOKESBOTTY
+           OUTPAR(49) = STOKESSURFX
+           OUTPAR(50) = STOKESSURFY
+           OUTPAR(51) = STOKESBAROX
+           OUTPAR(52) = STOKESBAROY
          END IF
          RETURN
       END SUBROUTINE
@@ -2083,7 +2089,7 @@
 !**********************************************************************
 #ifdef NCDF
       SUBROUTINE HISTORY_NC_PRINTMMA(eStr, OUTT, NPWORK, NBVAR, I)
-      USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG
+      USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG, STAT
 # ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
       USE ELFE_MSGP, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
@@ -2127,13 +2133,13 @@
         ENDIF
       ENDIF
       IF (myrank.eq.0) THEN
-        WRITE(DBG%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
+        WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
       END IF
 # else
       MinV=minval(OUTT(:,I))
       MaxV=maxval(OUTT(:,I))
       AvgV=sum(OUTT(:,I))/MNP
-      WRITE(DBG%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
+      WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
 # endif
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
       END SUBROUTINE

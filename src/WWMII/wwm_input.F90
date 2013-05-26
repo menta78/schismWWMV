@@ -47,7 +47,8 @@
          LOGICAL     :: AC, WK, ACOUT_1D, ACOUT_2D
          LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,               &
      &      ETOTC, ETOTS, DM, DSPR,                                     &
-     &      TPPD, TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,      &
+     &      TPPD, CPPD, KPPD, CGPD,                                     &
+     &      TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,            &
      &      DPEAK, UBOT, ORBITAL, BOTEXPER, TMBOT,                      &
      &      URSELL, UFRIC, Z0, ALPHA_CH, WINDX, WINDY, CD,              &
      &      CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,              &
@@ -62,7 +63,8 @@
      &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &
      &      ETOTC, ETOTS, DM, DSPR,                                     &
-     &      TPPD, TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,      &
+     &      TPPD, CPPD, KPPD, CGPD,                                     &
+     &      TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR,            &
      &      DPEAK, UBOT, ORBITAL, BOTEXPER, TMBOT,                      &
      &      URSELL, UFRIC, Z0, ALPHA_CH, WINDX, WINDY, CD,              &
      &      CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,              &
@@ -77,7 +79,7 @@
      &      CUTOFF, LSIGMAX, LSP1D, LSP2D, LLOUTS, ILOUTS, NLOUTS,      &
      &      AC, WK, ACOUT_1D, ACOUT_2D,                                 &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &
-     &      ETOTC, ETOTS, DM, DSPR, TPPD, TPP,                          &
+     &      ETOTC, ETOTS, DM, DSPR, TPPD, CPPD, KPPD, CGPD, TPP,        &
      &      CPP, WNPP, CGPP, KPP, LPP, PEAKD, PEAKDSPR, DPEAK,          &
      &      UBOT, ORBITAL, BOTEXPER, TMBOT,                             &
      &      URSELL, UFRIC, Z0, ALPHA_CH, WINDX, WINDY, CD,              &
@@ -114,6 +116,9 @@
          DM=.FALSE.
          DSPR=.FALSE.
          TPPD=.FALSE.
+         CPPD=.FALSE.
+         KPPD=.FALSE.
+         CGPD=.FALSE.
          TPP=.FALSE.
          CPP=.FALSE.
          WNPP=.FALSE.
@@ -266,50 +271,53 @@
          LVAR_READ( 9)=DM
          LVAR_READ(10)=DSPR
          LVAR_READ(11)=TPPD
-         LVAR_READ(12)=TPP
-         LVAR_READ(13)=CPP
-         LVAR_READ(14)=WNPP
-         LVAR_READ(15)=CGPP
-         LVAR_READ(16)=KPP
-         LVAR_READ(17)=LPP
-         LVAR_READ(18)=PEAKD
-         LVAR_READ(19)=PEAKDSPR
-         LVAR_READ(20)=DPEAK
-         LVAR_READ(21)=UBOT
-         LVAR_READ(22)=ORBITAL
-         LVAR_READ(23)=BOTEXPER
-         LVAR_READ(24)=TMBOT
-         LVAR_READ(25)=URSELL
-         LVAR_READ(26)=UFRIC
-         LVAR_READ(27)=Z0
-         LVAR_READ(28)=ALPHA_CH
-         LVAR_READ(29)=WINDX
-         LVAR_READ(30)=WINDY
-         LVAR_READ(31)=CD
-         LVAR_READ(32)=CURRTX
-         LVAR_READ(33)=CURRTY
-         LVAR_READ(34)=WATLEV
-         LVAR_READ(35)=WATLEVOLD
-         LVAR_READ(36)=DEPDT
-         LVAR_READ(37)=DEP
-         LVAR_READ(38)=WINDMAG
-         LVAR_READ(39)=TAUW
-         LVAR_READ(40)=TAUWX
-         LVAR_READ(41)=TAUWY
-         LVAR_READ(42)=TAUHF
-         LVAR_READ(43)=TAUTOT
-         LVAR_READ(44)=STOKESBOTTX
-         LVAR_READ(45)=STOKESBOTTY
-         LVAR_READ(46)=STOKESSURFX
-         LVAR_READ(47)=STOKESSURFY
-         LVAR_READ(48)=STOKESBAROX
-         LVAR_READ(49)=STOKESBAROY
-         LVAR_READ(50)=RSXX
-         LVAR_READ(51)=RSXY
-         LVAR_READ(52)=RSYY
-         LVAR_READ(53)=CFL1
-         LVAR_READ(54)=CFL2
-         LVAR_READ(55)=CFL3
+         LVAR_READ(12)=CPPD
+         LVAR_READ(13)=KPPD
+         LVAR_READ(14)=CGPD
+         LVAR_READ(15)=TPP
+         LVAR_READ(16)=CPP
+         LVAR_READ(17)=WNPP
+         LVAR_READ(18)=CGPP
+         LVAR_READ(19)=KPP
+         LVAR_READ(20)=LPP
+         LVAR_READ(21)=PEAKD
+         LVAR_READ(22)=PEAKDSPR
+         LVAR_READ(23)=DPEAK
+         LVAR_READ(24)=UBOT
+         LVAR_READ(25)=ORBITAL
+         LVAR_READ(26)=BOTEXPER
+         LVAR_READ(27)=TMBOT
+         LVAR_READ(28)=URSELL
+         LVAR_READ(29)=UFRIC
+         LVAR_READ(30)=Z0
+         LVAR_READ(31)=ALPHA_CH
+         LVAR_READ(32)=WINDX
+         LVAR_READ(33)=WINDY
+         LVAR_READ(34)=CD
+         LVAR_READ(35)=CURRTX
+         LVAR_READ(36)=CURRTY
+         LVAR_READ(37)=WATLEV
+         LVAR_READ(38)=WATLEVOLD
+         LVAR_READ(39)=DEPDT
+         LVAR_READ(40)=DEP
+         LVAR_READ(41)=WINDMAG
+         LVAR_READ(42)=TAUW
+         LVAR_READ(43)=TAUWX
+         LVAR_READ(44)=TAUWY
+         LVAR_READ(45)=TAUHF
+         LVAR_READ(46)=TAUTOT
+         LVAR_READ(47)=STOKESBOTTX
+         LVAR_READ(48)=STOKESBOTTY
+         LVAR_READ(49)=STOKESSURFX
+         LVAR_READ(50)=STOKESSURFY
+         LVAR_READ(51)=STOKESBAROX
+         LVAR_READ(52)=STOKESBAROY
+         LVAR_READ(53)=RSXX
+         LVAR_READ(54)=RSXY
+         LVAR_READ(55)=RSYY
+         LVAR_READ(56)=CFL1
+         LVAR_READ(57)=CFL2
+         LVAR_READ(58)=CFL3
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -341,6 +349,9 @@
          DM=.FALSE.
          DSPR=.FALSE.
          TPPD=.FALSE.
+         CPPD=.FALSE.
+         KPPD=.FALSE.
+         CGPD=.FALSE.
          TPP=.FALSE.
          CPP=.FALSE.
          WNPP=.FALSE.
@@ -492,50 +503,53 @@
          LVAR_READ( 9)=DM
          LVAR_READ(10)=DSPR
          LVAR_READ(11)=TPPD
-         LVAR_READ(12)=TPP
-         LVAR_READ(13)=CPP
-         LVAR_READ(14)=WNPP
-         LVAR_READ(15)=CGPP
-         LVAR_READ(16)=KPP
-         LVAR_READ(17)=LPP
-         LVAR_READ(18)=PEAKD
-         LVAR_READ(19)=PEAKDSPR
-         LVAR_READ(20)=DPEAK
-         LVAR_READ(21)=UBOT
-         LVAR_READ(22)=ORBITAL
-         LVAR_READ(23)=BOTEXPER
-         LVAR_READ(24)=TMBOT
-         LVAR_READ(25)=URSELL
-         LVAR_READ(26)=UFRIC
-         LVAR_READ(27)=Z0
-         LVAR_READ(28)=ALPHA_CH
-         LVAR_READ(29)=WINDX
-         LVAR_READ(30)=WINDY
-         LVAR_READ(31)=CD
-         LVAR_READ(32)=CURRTX
-         LVAR_READ(33)=CURRTY
-         LVAR_READ(34)=WATLEV
-         LVAR_READ(35)=WATLEVOLD
-         LVAR_READ(36)=DEPDT
-         LVAR_READ(37)=DEP
-         LVAR_READ(38)=WINDMAG
-         LVAR_READ(39)=TAUW
-         LVAR_READ(40)=TAUWX
-         LVAR_READ(41)=TAUWY
-         LVAR_READ(42)=TAUHF
-         LVAR_READ(43)=TAUTOT
-         LVAR_READ(44)=STOKESBOTTX
-         LVAR_READ(45)=STOKESBOTTY
-         LVAR_READ(46)=STOKESSURFX
-         LVAR_READ(47)=STOKESSURFY
-         LVAR_READ(48)=STOKESBAROX
-         LVAR_READ(49)=STOKESBAROY
-         LVAR_READ(50)=RSXX
-         LVAR_READ(51)=RSXY
-         LVAR_READ(52)=RSYY
-         LVAR_READ(53)=CFL1
-         LVAR_READ(54)=CFL2
-         LVAR_READ(55)=CFL3
+         LVAR_READ(12)=CPPD
+         LVAR_READ(13)=KPPD
+         LVAR_READ(14)=CGPD
+         LVAR_READ(15)=TPP
+         LVAR_READ(16)=CPP
+         LVAR_READ(17)=WNPP
+         LVAR_READ(18)=CGPP
+         LVAR_READ(19)=KPP
+         LVAR_READ(20)=LPP
+         LVAR_READ(21)=PEAKD
+         LVAR_READ(22)=PEAKDSPR
+         LVAR_READ(23)=DPEAK
+         LVAR_READ(24)=UBOT
+         LVAR_READ(25)=ORBITAL
+         LVAR_READ(26)=BOTEXPER
+         LVAR_READ(27)=TMBOT
+         LVAR_READ(28)=URSELL
+         LVAR_READ(29)=UFRIC
+         LVAR_READ(30)=Z0
+         LVAR_READ(31)=ALPHA_CH
+         LVAR_READ(32)=WINDX
+         LVAR_READ(33)=WINDY
+         LVAR_READ(34)=CD
+         LVAR_READ(35)=CURRTX
+         LVAR_READ(36)=CURRTY
+         LVAR_READ(37)=WATLEV
+         LVAR_READ(38)=WATLEVOLD
+         LVAR_READ(39)=DEPDT
+         LVAR_READ(40)=DEP
+         LVAR_READ(41)=WINDMAG
+         LVAR_READ(42)=TAUW
+         LVAR_READ(43)=TAUWX
+         LVAR_READ(44)=TAUWY
+         LVAR_READ(45)=TAUHF
+         LVAR_READ(46)=TAUTOT
+         LVAR_READ(47)=STOKESBOTTX
+         LVAR_READ(48)=STOKESBOTTY
+         LVAR_READ(49)=STOKESSURFX
+         LVAR_READ(50)=STOKESSURFY
+         LVAR_READ(51)=STOKESBAROX
+         LVAR_READ(52)=STOKESBAROY
+         LVAR_READ(53)=RSXX
+         LVAR_READ(54)=RSXY
+         LVAR_READ(55)=RSYY
+         LVAR_READ(56)=CFL1
+         LVAR_READ(57)=CFL2
+         LVAR_READ(58)=CFL3
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN

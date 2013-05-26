@@ -946,7 +946,7 @@
 !         2 - JONSWAP
 !         3 - BIN
 !         4 - Gauss
-!         negative peak (-) or mean frequency ()
+!         positive peak (+) or mean frequency (-)
 
 !     SPPARM(6): directional spreading in degree (1) or exponent (2)
 !     SPPARM(7): gaussian width for the gauss spectrum 0.1
@@ -984,7 +984,7 @@
                  IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
                END IF
                DO IP = 1, IWBMNP
-                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1')
+                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
                END DO
              ELSE  ! Steady ...
                SPPARM = 0.
@@ -1003,7 +1003,7 @@
                  CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
                END IF
                DO IP = 1, IWBMNP
-                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 2')
+                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 2', .FALSE.)
                END DO
              END IF ! LBCSE ...
            ELSE ! Homogenous in space
@@ -1013,7 +1013,7 @@
                ELSE IF (IBOUNDFORMAT == 2) THEN
                  CALL READWAVEPARFVCOM
                END IF
-               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3')
+               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
              ELSE ! Steady in time ...
                SPPARM = 0.
                WBAC   = 0.
@@ -1029,7 +1029,7 @@
                SPPARM(6,1) = WBDSMS
                SPPARM(7,1) = WBGAUSS
                SPPARM(8,1) = WBPKEN
-               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4')
+               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
              END IF ! LBCSE
            END IF ! LINHOM
          ELSE IF (LBCSP) THEN ! Spectrum is prescribed
@@ -1071,7 +1071,145 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      SUBROUTINE SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM, OPTI)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
+      CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
+      LOGICAL, INTENT(IN) :: LDEBUG, OPTI
+      IF (OPTI) THEN
+        CALL OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      ELSE
+        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: SPPAR(8)
+      REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT) :: HS, TM, DM
+      REAL(rkind) :: DEPLOC, CURTXYLOC(2)
+      REAL(rkind) :: WKLOC(MSC)
+      REAL(rkind) :: FPP, TPP, CPP, WNPP, CGPP, KPP, LPP
+      REAL(rkind) :: PEAKDSPR, PEAKDM, DPEAK, TPPD, KPPD, CGPD, CPPD
+      REAL(rkind) :: TM01, TM02, TM10, KLM, WLM
+      REAL(rkind) :: ETOTS, ETOTC, DSPR
+      REAL(rkind) :: SPSIGLOC, WVN, WVC, WVK, WVCG
+      integer ISMAX, IS
+      DEPLOC=10000
+      ISMAX=MSC
+      CURTXYLOC=ZERO
+      DO IS=1,MSC
+        SPSIGLOC = SPSIG(IS)
+        CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
+        WKLOC(IS)=WVK
+      END DO
+      CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      IF (SPPAR(5) .gt. 0) THEN
+        CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+        TM=TPP
+        DM=PEAKDM
+      ELSE
+        CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+        TM=TM01
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
+      CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
+      LOGICAL, INTENT(IN) :: LDEBUG
+      REAL(rkind) :: HS, TM, DM, TheErr, DeltaPer, Tper
+      REAL(rkind) :: AUX2
+      REAL(rkind) :: DiffAng, DEG, ADIR
+      REAL(rkind) :: SPPARwork1(8), SPPARwork2(8), SPPARwork(8)
+      integer :: iIter, nbIter, eSign, IS, ID
+      REAL(rkind) :: eSum
+      IF (ABS(SPPAR(5)) .eq. 3) THEN
+        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+        RETURN
+      END IF
+
+      SPPARwork1=SPPAR
+      SPPARwork2=SPPAR
+      Tper=SPPAR(2)
+      CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+!      Print *, 'Tper=', Tper, ' TM=', TM
+      DeltaPer=Tper - TM
+      IF (TM < Tper) THEN
+        eSign=1
+      ELSE
+        eSign=-1
+      END IF
+!      Print *, 'eSign=', eSign
+      SPPARwork=SPPAR
+      SPPARwork(2)=SPPAR(2) + DeltaPer
+      DO
+        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
+        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+        TheErr=(TM - Tper)*eSign
+!        Print *, 'Loop SPPARwork(2)=', SPPARwork(2), ' TM=', TM
+        IF (TheErr > 0) THEN
+          EXIT
+        END IF
+        SPPARwork(2)=SPPARwork(2) + DeltaPer
+      END DO
+!      Print *, 'Tper=', Tper, ' TM=', TM
+      IF (eSign .eq. 1) THEN
+        SPPARwork1=SPPAR
+        SPPARwork2=SPPARwork
+      ELSE
+        SPPARwork1=SPPARwork
+        SPPARwork2=SPPAR
+      END IF
+      nbIter=20
+      iIter=0
+      DO
+        SPPARwork=0.5_rkind*SPPARwork1 + 0.5_rkind*SPPARwork2
+        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
+        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+!        Print *, 'iIter=', iIter, ' TM=', TM
+        IF (TM > Tper) THEN
+          SPPARwork2=SPPARwork
+        ELSE
+          SPPARwork1=SPPARwork
+        END IF
+        iIter=iIter + 1
+        IF (iIter > nbIter) THEN
+          EXIT
+        END IF
+      END DO
+      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
+      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+      SPPARwork(1)=SPPAR(1)*(SPPAR(1)/HS)
+      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
+      DO IS=1,MSC
+        eSum=sum(ACLOC(IS,:))
+        WRITE(STAT%FHNDL,*) 'IS=', IS, eSum
+      END DO
+      CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
+      ADIR = DEG * DEGRAD
+      DO ID=1,MDC
+        eSum=sum(ACLOC(:,ID))
+        DiffAng=(360.0_rkind/PI2)*(SPDIR(ID) - ADIR)
+        WRITE(STAT%FHNDL,*) 'ID=', ID, eSum, DiffAng
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
 
       USE DATAPOOL
 #ifdef SELFE
@@ -1092,15 +1230,14 @@
       REAL(rkind) ::  GAMMA_FUNC, DSPR, AACOS, ADIR, EPTAIL, APTAIL, PPTAIL
       REAL(rkind) ::  OMEG, EFTOT, ETOTT, CTOT, TM1, TPEAK
       LOGICAL  LOGPM, LINCOUT
-
-!     SPPARM(1): Hs, sign. wave height
-!     SPPARM(2): Wave period given by the user (either peak or mean)
-!     SPPARM(3): average direction
-!     SPPARM(4): directional spread
-!     SPPARM(5): spectral shape (1-4), (1 - Pierson-Moskowitz, 2 - JONSWAP, 3 - BIN, 4 - Gauss) peak (+) or mean frequency (-)
-!     SPPARM(6): directional spreading in degree (2) or exponent (1)
-!     SPPARM(7): gaussian width for the gauss spectrum 0.1
-!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.3
+!     SPPARM(1), WBHS: Hs, sign. wave height
+!     SPPARM(2), WBTP: Wave period given by the user (either peak or mean)
+!     SPPARM(3), WBDM: average direction
+!     SPPARM(4), WBDS: directional spread
+!     SPPARM(5), WBSS: spectral shape (1-4), (1 - Pierson-Moskowitz, 2 - JONSWAP, 3 - BIN, 4 - Gauss) peak (+) or mean frequency (-)
+!     SPPARM(6), WBDSMS: directional spreading in degree (2) or exponent (1)
+!     SPPARM(7), WBGAUSS: gaussian width for the gauss spectrum 0.1
+!     SPPARM(8), WBPKEN: peak enhancement factor for the JONSWAP spectra 3.3
 
       IF (LDEBUG) THEN
         WRITE(*,*) 'HS    PER    DIR    DPSR    SHAPE   DEGEXP    GAUSS   PEAK'
