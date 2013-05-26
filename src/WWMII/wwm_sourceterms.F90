@@ -439,7 +439,7 @@
              ELSE IF (MESTR .EQ. 3) THEN
                CALL SNL33 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
              ELSE IF (MESTR .EQ. 4) THEN
-               CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+               CALL TRIADSWAN (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
              ELSE IF (MESTR .EQ. 5) THEN
                CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
              ELSE IF (MESTR .EQ. 6) THEN
@@ -720,7 +720,7 @@
            IF (ETOT .GT. EMAX) THEN
              RATIO = EMAX/ETOT
              AC2(IP,:,:) = RATIO * ACLOC(:,:)
-             IF (ICOMP .EQ. 2) AC1(IP,:,:) = RATIO * ACLOC(:,:)
+             AC1(IP,:,:) = RATIO * ACLOC(:,:)
            END IF
 
          END DO

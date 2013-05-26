@@ -24,13 +24,13 @@
          IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
            DT4A = MAIN%DELT
            DT4S = DT4A
-           DT4D = DT4A
-           DT4F = DT4A 
+           DT4D = 0.5_rkind*DT4A
+           DT4F = 0.5_rkind*DT4A 
          ELSE IF (LQSTEA) THEN
            DT4A = DT_ITER
            DT4S = DT4A
-           DT4D = DT4A
-           DT4F = DT4A
+           DT4D = 0.5_rkind*DT4A
+           DT4F = 0.5_rkind*DT4A
          END IF
 
          CALL CPU_TIME(TIME1)
@@ -40,6 +40,7 @@
          CALL CPU_TIME(TIME2)
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
          IF (LNANINFCHK) THEN
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 2'
@@ -47,6 +48,7 @@
   
          CALL CPU_TIME(TIME3)
 
+         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
          IF (LNANINFCHK) THEN
@@ -168,13 +170,19 @@
         REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
         INTEGER          :: IP, IT
 
-        DT4A = MAIN%DELT
-        DT4S = DT4A
-        DT4D = 0.5*DT4A 
-        DT4F = 0.5*DT4A
+        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+          DT4A = MAIN%DELT
+          DT4S = DT4A
+          DT4D = 0.5_rkind*DT4A
+          DT4F = 0.5_rkind*DT4A
+        ELSE IF (LQSTEA) THEN
+          DT4A = DT_ITER
+          DT4S = DT4A
+          DT4D = 0.5_rkind*DT4A
+          DT4F = 0.5_rkind*DT4A
+        END IF
 
         AC1  = AC2
-
         CALL CPU_TIME(TIME1)
         CALL COMPUTE_DIFFRACTION
         CALL CPU_TIME(TIME2)

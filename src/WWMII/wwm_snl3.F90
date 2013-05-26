@@ -852,7 +852,7 @@
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
           DO IS = 1, MSC
-            E(IS)  = AC1(IP,IS,ID) * PI2 * SPSIG(IS)
+            E(IS)  = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
           ENDDO
           DO I = 1, ISMAX-IRES
             J   = I + IRES
@@ -974,6 +974,11 @@
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
 
+!      IF (IP == 1786) THEN
+!        WRITE(*,*) DEP_2, DEP_3, I2, I1, XIS, XISLN, ISP, ISP1, WISP, WISP1, ISM, ISM1, WISM, WISM1
+!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+!      ENDIF
+
       ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MDC,1:MSC+ISP1))
       E  = 0.
@@ -1016,20 +1021,35 @@
               SA(ID,IS) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
            END DO
         END DO
-        DO IS = 1, MSC
-           SIGPI = SPSIG(IS) * 2. * PI
-           DO ID = 1, MDC
-              STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
-              ssnl3(is,id) = STRI
-              IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
-              IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
-           END DO
-        END DO
+        IF (ICOMP .LT. 2) THEN
+          DO IS = 1, MSC
+             SIGPI = SPSIG(IS) * 2. * PI
+             DO ID = 1, MDC
+                STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
+                ssnl3(is,id) = STRI
+                IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
+                IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+             END DO
+          END DO
+        ELSE
+          DO IS = 1, MSC
+             SIGPI = SPSIG(IS) * 2. * PI
+             DO ID = 1, MDC
+                STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
+                ssnl3(is,id) = STRI
+                IF (STRI .GT. ZERO) THEN
+                  IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
+                ELSE
+                  IMATDA(IS,ID) =  IMATDA(IS,ID) - STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+                ENDIF
+             END DO
+          END DO
+        ENDIF
       END IF
 
-      IF (IP == 1786) THEN
-        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
+!      IF (IP == 1786) THEN
+!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+!      ENDIF
     
 
       END SUBROUTINE
