@@ -1386,7 +1386,7 @@
              call wwm_abort('If AMETHOD=4 then you need PETSC')
            ENDIF
            IF (AMETHOD.eq.5) THEN
-             call wwm_abort('If AMETHOD=4 then you need PETSC')
+             call wwm_abort('If AMETHOD=5 then you need PETSC')
            ENDIF
 #endif
 #ifndef MPI_PARALL_GRID
