@@ -190,7 +190,7 @@
 !  convergence analysis - shared
 !
          IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(IE), stat=istat)
+           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
            IP_IS_STEADY = 0
            IE_IS_STEADY = 0
