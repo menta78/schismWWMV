@@ -430,6 +430,7 @@
 
 
 ! WRF PART I.J.
+         integer nbtime_mjd
          REAL(rkind), ALLOCATABLE         :: tmp_wind1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
          REAL(rkind), ALLOCATABLE         :: wind_time_mjd(:)

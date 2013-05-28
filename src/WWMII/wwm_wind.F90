@@ -1979,34 +1979,31 @@
        ! For given wwm_time and wind_time return records to get and weights for time
        ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
        !
-       USE DATAPOOL, ONLY           : wind_time_mjd, MAIN, rkind      
+       USE DATAPOOL, ONLY           : wind_time_mjd, nbtime_mjd, MAIN, DBG, rkind
+      
        IMPLICIT NONE
        REAL(rkind), INTENT(OUT)            :: w1, w2
        INTEGER, INTENT(OUT)                :: REC1, REC2
-       REAL(rkind), ALLOCATABLE            :: dist(:)
-       REAL(rkind), PARAMETER              :: thr = 10E-14
-       INTEGER                             :: loc(1)
+       REAL(rkind) :: eTime1, eTime2
+       INTEGER  :: iTime
        integer istat
  
-       ALLOCATE(dist(size(wind_time_mjd,DIM=1)), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 45')
-            dist(:) = MAIN%TMJD - wind_time_mjd(:)
-            loc  = minloc( abs(dist(:)))
-            if ( dist(loc(1)).lt.0 ) then 
-                REC1 = loc(1) - 1
-                REC2 = loc(1)
-              else
-                REC1 = loc(1)
-                REC2 = loc(1) + 1
-            end if
-            w1 = 1 - abs(dist(REC1))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
-            w2 = 1 - abs(dist(REC2))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
-            if ( dist(loc(1)).eq.0 ) then
-                REC1 = loc(1)
-                REC2 = loc(1)
-                w1 = 1.0
-                w2 = 0.0
-            end if
+       DO iTime=2,nbtime_mjd
+         eTime1=wind_time_mjd(iTime-1)
+         eTime2=wind_time_mjd(iTime)
+         IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
+           REC2=iTime
+           REC1=iTime-1
+           w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
+           w1=(eTime2 - MAIN % TMJD)/(eTime2-eTime1)
+           RETURN
+         END IF
+       END DO
+       WRITE(DBG%FHNDL,*) 'Time error in wind for WRF'
+       WRITE(DBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
+       WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
+       WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
+       CALL WWM_ABORT('Error in wind forcing time setup')
        END SUBROUTINE GET_WRF_TIME_INDEX
 !**********************************************************************
 !*                                                                    *
@@ -2129,164 +2126,132 @@
        !
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
-       USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd
+       USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
        USE DATAPOOL, only : wwmerr, WINDBG
        IMPLICIT NONE
        INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
+       INTEGER ntime
        REAL, ALLOCATABLE                  :: WRF_LON(:,:), WRF_LAT(:,:), dist(:,:)
        REAL                               :: wind_time_offset, wwm_time_offset, d_lon, d_lat
        integer i11, j11, i12, j12, i21, j21
        character(len=100) :: CHRTMP
+       character (len = *), parameter :: CallFct="INIT_NETCDF_WRF"
        ! wind_time_offset is seconds since 2000-1-1 
        ! wwm_time_offset is seconds since Modified Julian Day 17/11/1858
        wind_time_offset = 730486.0
        wwm_time_offset  = 678942.0
 
        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -1-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
        ISTAT = nf90_inq_varid(fid, "LON", varid)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -2-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -3-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -4-', CHRTMP
-         WRITE(wwmerr,*) 'NETCDF ERROR -5-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+
        ISTAT = nf90_inquire_dimension(fid, dimids(2), len=nlat)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -5-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+
        allocate(WRF_LON(nlon,nlat), WRF_LAT(nlon,nlat), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
+
        ISTAT = nf90_get_var(fid, varid, WRF_LON)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -6-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
        ISTAT = nf90_inq_varid(fid, "LAT", varid)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -7-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+
        ISTAT = nf90_get_var(fid, varid, WRF_LAT)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -8-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
        
        ISTAT = nf90_inq_varid(fid, "wind_time", varid)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -9-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -10-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
-       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
-       allocate(wind_time_mjd(nlon), stat=istat)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+       allocate(wind_time_mjd(nbtime_mjd), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+
        ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -11-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
        ISTAT = nf90_close(fid)
-       IF (ISTAT .NE. nf90_noerr) THEN
-         CHRTMP = nf90_strerror(ISTAT)
-         WRITE(wwmerr,*) 'INIT_NETCDF_WRF ERROR -12-', CHRTMP
-         CALL WWM_ABORT(wwmerr)
-       ENDIF
+       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
        ! this is hack unitl I get better way of using wind_time attribute units 
        wind_time_mjd(:) = wind_time_mjd(:) + wind_time_offset - wwm_time_offset
        ! compute nodes and coefs
        ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
+
        ALLOCATE(wrf_a(MNP), wrf_b(MNP), wrf_c(MNP), wrf_d(MNP), wrf_J(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
+
        ALLOCATE(dist(size(WRF_LON, DIM=1),size(WRF_LON, DIM=2)), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
+
        WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
        do I = 1, MNP
-       dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )
-       closest(1:2) = MINLOC(dist)
-              d_lon = XP(I)-WRF_LON(closest(1),closest(2)) 
-              d_lat = YP(I)-WRF_LAT(closest(1),closest(2))
-              IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
-              wrf_c11(I,:) = closest(:)
-              wrf_c21(I,1) = closest(1) + 1
-              wrf_c22(I,1) = closest(1) + 1
-              wrf_c12(I,1) = closest(1)
-              wrf_c21(I,2) = closest(2)
-              wrf_c22(I,2) = closest(2) + 1
-              wrf_c12(I,2) = closest(2) + 1
-              end if
-              IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
-              wrf_c11(I,1) = closest(1)
-              wrf_c21(I,1) = closest(1) + 1
-              wrf_c22(I,1) = closest(1) + 1
-              wrf_c12(I,:) = closest(:)
-              wrf_c11(I,2) = closest(2) - 1
-              wrf_c21(I,2) = closest(2) - 1
-              wrf_c22(I,2) = closest(2) 
-              end if
-              IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
-              wrf_c11(I,1) = closest(1) - 1 
-              wrf_c21(I,:) = closest(:)
-              wrf_c22(I,1) = closest(1)
-              wrf_c12(I,1) = closest(1) - 1
-              wrf_c11(I,2) = closest(2)
-              wrf_c22(I,2) = closest(2) + 1
-              wrf_c12(I,2) = closest(2) + 1 
-              end if
-              IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
-                wrf_c11(I,1) = closest(1) - 1
-                wrf_c21(I,1) = closest(1)
-                wrf_c22(I,:) = closest(:)
-                wrf_c12(I,1) = closest(1) - 1
-                wrf_c11(I,2) = closest(2) - 1
-                wrf_c21(I,2) = closest(2) - 1
-                wrf_c12(I,2) = closest(2) 
-              end if    
-              ! J =1/((x2-x1)*(y2-y1))
-              i11=wrf_c11(I,1)
-              j11=wrf_c11(I,2)
-              i12=wrf_c12(I,1)
-              j12=wrf_c12(I,2)
-              i21=wrf_c21(I,1)
-              j21=wrf_c21(I,2)
-              wrf_J(I)=1.0/(                                       &
-       &     (WRF_LON(i21,j21)-WRF_LON(i11,j11))*                  &
-       &     (WRF_LAT(i12,j12)-WRF_LAT(i11,j11)) )   ! J
-              wrf_a(I) = WRF_LON(i21,j21) - XP(I) ! x2-x
-              wrf_b(I) = XP(I) - WRF_LON(i11,j11) ! x-x1
-              wrf_c(I) = WRF_LAT(i12,j12) - YP(I) ! y2-y
-              wrf_d(I) = YP(I) - WRF_LAT(i11,j11) ! y-y1
-       end do
+         dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )
+         closest(1:2) = MINLOC(dist)
+         d_lon = XP(I)-WRF_LON(closest(1),closest(2)) 
+         d_lat = YP(I)-WRF_LAT(closest(1),closest(2))
+         IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
+           wrf_c11(I,:) = closest(:)
+           wrf_c21(I,1) = closest(1) + 1
+           wrf_c22(I,1) = closest(1) + 1
+           wrf_c12(I,1) = closest(1)
+           wrf_c21(I,2) = closest(2)
+           wrf_c22(I,2) = closest(2) + 1
+           wrf_c12(I,2) = closest(2) + 1
+         END IF
+         IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
+           wrf_c11(I,1) = closest(1)
+           wrf_c21(I,1) = closest(1) + 1
+           wrf_c22(I,1) = closest(1) + 1
+           wrf_c12(I,:) = closest(:)
+           wrf_c11(I,2) = closest(2) - 1
+           wrf_c21(I,2) = closest(2) - 1
+           wrf_c22(I,2) = closest(2) 
+         END IF
+         IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
+           wrf_c11(I,1) = closest(1) - 1 
+           wrf_c21(I,:) = closest(:)
+           wrf_c22(I,1) = closest(1)
+           wrf_c12(I,1) = closest(1) - 1
+           wrf_c11(I,2) = closest(2)
+           wrf_c22(I,2) = closest(2) + 1
+           wrf_c12(I,2) = closest(2) + 1 
+         END IF
+         IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
+           wrf_c11(I,1) = closest(1) - 1
+           wrf_c21(I,1) = closest(1)
+           wrf_c22(I,:) = closest(:)
+           wrf_c12(I,1) = closest(1) - 1
+           wrf_c11(I,2) = closest(2) - 1
+           wrf_c21(I,2) = closest(2) - 1
+           wrf_c12(I,2) = closest(2) 
+         END IF
+         ! J =1/((x2-x1)*(y2-y1))
+         i11=wrf_c11(I,1)
+         j11=wrf_c11(I,2)
+         i12=wrf_c12(I,1)
+         j12=wrf_c12(I,2)
+         i21=wrf_c21(I,1)
+         j21=wrf_c21(I,2)
+         wrf_J(I)=1.0/( (WRF_LON(i21,j21)-WRF_LON(i11,j11))*(WRF_LAT(i12,j12)-WRF_LAT(i11,j11)) )
+         wrf_a(I) = WRF_LON(i21,j21) - XP(I) ! x2-x
+         wrf_b(I) = XP(I) - WRF_LON(i11,j11) ! x-x1
+         wrf_c(I) = WRF_LAT(i12,j12) - YP(I) ! y2-y
+         wrf_d(I) = YP(I) - WRF_LAT(i11,j11) ! y-y1
+       END DO
        WRITE(WINDBG%FHNDL,*) ' done interp calcs'
        END SUBROUTINE INIT_NETCDF_WRF
 #endif
