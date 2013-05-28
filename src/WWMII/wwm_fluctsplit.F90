@@ -480,11 +480,7 @@
 !
          CALL CADVXY(IS,ID,C)
 
-         IP_TEST = 180
-
-         KELEM  = ZERO 
-         FLALL  = ZERO  
-         N      = ZERO
+         IP_TEST = 180 
 !
 !        Calculate K-Values and contour based quantities ...
 !
@@ -492,7 +488,6 @@
 !!$OMP&   PRIVATE(IE,I1,I2,I3,LAMBDA,KTMP,TMP,FL11,FL12,FL21,FL22,FL31,FL32,FL111,FL112,FL211,FL212,FL311,FL312) &
 !!$OMP&   SHARED(MNE,INE,IEN,C,KELEM,FLALL,N)
          DO IE = 1, MNE
-            IF (IE_IS_STEADY(IE) .EQ. 1) CYCLE
             I1 = INE(1,IE)
             I2 = INE(2,IE)
             I3 = INE(3,IE)
@@ -526,7 +521,6 @@
          IF (LCALC) THEN
            KKSUM = 0.0_rkind
            DO IE = 1, MNE
-             IF (IE_IS_STEADY(IE) .EQ. 1) CYCLE
              NI = INE(:,IE)
              KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
            END DO
@@ -549,7 +543,6 @@
            DTMAX_GLOBAL_EXP = VERYLARGE
            DTMAX_GLOBAL_EXP_LOC = VERYLARGE
            DO IP = 1, NP_RES
-             IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              !write(DBG%FHNDL,*) IP, SI(IP), KKSUM(IP)
              IF (LCFL) THEN
@@ -563,7 +556,6 @@
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
-             IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              !DTMAX_EXP = SI(IP)/MAX(THR,KMAX(IP))
              IF (LCFL) THEN
@@ -589,6 +581,8 @@
          DTSI(:)  = DT4AI/SI(:)
 
          U = AC2(:,IS,ID) 
+ 
+         IMETHOD = 3
 !
          IF (LADVTEST) THEN
            CALL CHECKCONS(U,SUMAC1)
@@ -598,19 +592,17 @@
 !
 !         WRITE(STAT%FHNDL,'(3I10,4F15.4)') IS, ID, ITER_EXP(IS,ID), SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2), &
 !     &    SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2)*DT4A/MINVAL(EDGELENGTH), MAXVAL(CG(:,IS)), SQRT(G9*MAXVAL(DEP))
+         IMETHOD = 1
          IF (IMETHOD == 1) THEN
            DO IT = 1, ITER_EXP(IS,ID)
              ST = ZERO ! Init. ... only used over the residual nodes see IP loop
              DO IE = 1, MNE
-               IF (IE_IS_STEADY(IP) .EQ. 1) CYCLE
                NI     = INE(:,IE)
                U3     = U(NI)
                UTILDE = N(IE) * (DOT_PRODUCT(FLALL(:,IE),U3)) !* IOBED(ID,IE)
                ST(NI) = ST(NI) + KELEM(:,IE) * (U3 - UTILDE) ! the 2nd term are the theta values of each node ...
              END DO
-             DO IP = 1, MNP
-               IF (IP_IS_STEADY(IP) .EQ. 0) U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
-             ENDDO
+             U = MAX(0.0_rkind,U-DTSI*ST*IOBWB)*IOBPD(ID,:)*IOBDP
 !             WRITE(*,'(2I10,F20.10,2I20,F20.10)') ID, IS, U(IP_TEST), IOBPD(ID,IP_TEST), IOBDP(IP_TEST), DEP(IP_TEST)
 #ifdef MPI_PARALL_GRID
              CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
@@ -1371,9 +1363,9 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
-#if defined DEBUG
+!#if defined DEBUG
          USE elfe_msgp, only : myrank
-#endif
+!#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
@@ -1429,7 +1421,6 @@
            DELTAL(:,IE) = CRFS(:)- KP(:,IE)
            NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
-
 
          J     = 0    ! Counter ...
          ASPAR = 0.0_rkind ! Mass matrix ...
