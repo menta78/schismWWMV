@@ -141,20 +141,20 @@
             IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
               WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
-            ELSE
-              ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
-              CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
-              CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1(:,:))
-              IF (wrf_w1.NE.1) THEN
-                CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
-                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
-              ELSE
-                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
-              END IF
-              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
-              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+              CALL WWM_ABORT('Error in WRF wind')
             END IF
+            ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
+            CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
+            CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
+            IF (wrf_w1.NE.1) THEN
+              CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
+              WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
+            ELSE
+              WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
+            END IF
+            write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
+            write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
@@ -2128,7 +2128,7 @@
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
        USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
-       USE DATAPOOL, only : wwmerr, WINDBG, rkind
+       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG
        IMPLICIT NONE
        INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
        integer attid, nbChar
@@ -2185,22 +2185,25 @@
        ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
-       eStrTime( 1: 1)=eStrAtt(11:11)
-       eStrTime( 2: 2)=eStrAtt(12:12)
-       eStrTime( 3: 3)=eStrAtt(13:13)
-       eStrTime( 4: 4)=eStrAtt(14:14)
-       eStrTime( 5: 5)=eStrAtt(16:16)
-       eStrTime( 6: 6)=eStrAtt(17:17)
-       eStrTime( 7: 7)=eStrAtt(19:19)
-       eStrTime( 8: 8)=eStrAtt(20:20)
+       eStrTime( 1: 1)=eStrAtt(12:12)
+       eStrTime( 2: 2)=eStrAtt(13:13)
+       eStrTime( 3: 3)=eStrAtt(14:14)
+       eStrTime( 4: 4)=eStrAtt(15:15)
+       eStrTime( 5: 5)=eStrAtt(17:17)
+       eStrTime( 6: 6)=eStrAtt(18:18)
+       eStrTime( 7: 7)=eStrAtt(20:20)
+       eStrTime( 8: 8)=eStrAtt(21:21)
        eStrTime( 9: 9)='.'
-       eStrTime(10:10)=eStrAtt(22:22)
-       eStrTime(11:11)=eStrAtt(23:23)
-       eStrTime(12:12)=eStrAtt(25:25)
-       eStrTime(13:13)=eStrAtt(26:26)
-       eStrTime(14:14)=eStrAtt(28:28)
-       eStrTime(15:15)=eStrAtt(29:29)
+       eStrTime(10:10)=eStrAtt(23:23)
+       eStrTime(11:11)=eStrAtt(24:24)
+       eStrTime(12:12)=eStrAtt(26:26)
+       eStrTime(13:13)=eStrAtt(27:27)
+       eStrTime(14:14)=eStrAtt(29:29)
+       eStrTime(15:15)=eStrAtt(30:30)
        CALL CT2MJD(eStrTime, eTimeStart)
+       WRITE(DBG%FHNDL,*) 'eStrTime=', eStrTime
+       WRITE(DBG%FHNDL,*) 'eTimeStart=', eTimeStart
+       CALL FLUSH(DBG%FHNDL)
 
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
