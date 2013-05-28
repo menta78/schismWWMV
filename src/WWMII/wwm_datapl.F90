@@ -850,6 +850,8 @@
          INTEGER                :: IVECTOR = 2
          REAL(rkind)            :: QSCFL   = 1.
          LOGICAL                :: LCHKCONV = .TRUE.
+         INTEGER, ALLOCATABLE   :: IP_IS_STEADY(:)
+         INTEGER, ALLOCATABLE   :: IE_IS_STEADY(:)
          INTEGER                :: NQSITER = 1
          INTEGER                :: ICOMP   = 2
 

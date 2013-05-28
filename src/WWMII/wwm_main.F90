@@ -449,14 +449,14 @@
            ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
 
            IF (LCHKCONV) THEN
-             CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3, CONV4, CONV5)
+             CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
              IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                  &
-     &           CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
-     &           CONV3 .GT. 100._rkind*QSCONV3 .AND.                    &
-     &           CONV4 .GT. 100._rkind*QSCONV4 .AND.                    &
-     &           CONV5 .GT. 100._rkind*QSCONV5 .AND.                    &
-     &           K .NE. 1) .OR.                                         &
-     &           IT .EQ. NQSITER ) THEN
+     &             CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
+     &             CONV3 .GT. 100._rkind*QSCONV3 .AND.                    &
+     &             CONV4 .GT. 100._rkind*QSCONV4 .AND.                    &
+     &             CONV5 .GT. 100._rkind*QSCONV5 .AND.                    &
+     &             K .NE. 1) .OR.                                         &
+     &             IT .EQ. NQSITER ) THEN
 #ifndef SELFE
                WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #elif SELFE
