@@ -558,7 +558,12 @@
             IF (CONVK3 .LT. EPSH3) IPCONV3 = IPCONV3 + 1
             IF (CONVK4 .LT. EPSH4) IPCONV4 = IPCONV4 + 1
             IF (CONVK5 .LT. EPSH5) IPCONV5 = IPCONV5 + 1
-            IF (CONVK1 .LT. EPSH1 .AND. CONVK2 .LT. EPSH2 .AND. CONVK3 .LT. EPSH3 .AND. CONVK4 .LT. EPSH4 .AND. CONVK5 .LT. EPSH5) IP_IS_STEADY(IP) = 1
+            IF (CONVK1 .LT. EPSH1 .AND. CONVK2 .LT. EPSH2 .AND. CONVK3 .LT. EPSH3 .AND. CONVK4 .LT. EPSH4 .AND. CONVK5 .LT. EPSH5) THEN
+              IP_IS_STEADY(IP) = 1
+            ELSE
+              IP_IS_STEADY(IP) = 0
+            ENDIF
+            write(*,*) IP, IP_IS_STEADY(IP) 
           END IF
           HSOLD(IP)    = HS2
           SUMACOLD(IP) = SUMAC
@@ -571,19 +576,19 @@
           IF (SUM(IP_IS_STEADY(NI)) .EQ. 3) IE_IS_STEADY(IE) = 1
         ENDDO
 
-        DO IP = 1, MNP
-          DO I = 1, CCON(IP)
-            ITMP = 0 
-            IF (IE_IS_STEADY(IE_CELL2(IP,I)) .EQ. 1) THEN
-              ITMP = ITMP + 1 
-            ENDIF
-          ENDDO
-          IF (ITMP .EQ. CCON(IP) .AND. IP_IS_STEADY(IP) .EQ. 1) THEN
-            IP_IS_STEADY(IP) = 1
-          ELSE
-            IP_IS_STEADY(IP) = 0
-          ENDIF
-        ENDDO
+!        DO IP = 1, MNP
+!          DO I = 1, CCON(IP)
+!            ITMP = 0 
+!            IF (IE_IS_STEADY(IE_CELL2(IP,I)) .EQ. 1) THEN
+!              ITMP = ITMP + 1 
+!            ENDIF
+!          ENDDO
+!          IF (ITMP .EQ. CCON(IP) .AND. IP_IS_STEADY(IP) .EQ. 1) THEN
+!            IP_IS_STEADY(IP) = 1
+!          ELSE
+!            IP_IS_STEADY(IP) = 0
+!          ENDIF
+!        ENDDO
 
 #ifdef MPI_PARALL_GRID
         CALL MPI_ALLREDUCE(IPCONV1, itmp, 1, itype, MPI_SUM, COMM, ierr)
