@@ -1363,9 +1363,9 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
-!#if defined DEBUG
+#if defined DEBUG
          USE elfe_msgp, only : myrank
-!#endif
+#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
