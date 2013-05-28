@@ -1979,35 +1979,31 @@
        ! For given wwm_time and wind_time return records to get and weights for time
        ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
        !
-       USE DATAPOOL, ONLY           : wind_time_mjd, MAIN, rkind      
+       USE DATAPOOL, ONLY           : wind_time_mjd, nbtime_mjd, MAIN, DBG, rkind
+      
        IMPLICIT NONE
        REAL(rkind), INTENT(OUT)            :: w1, w2
        INTEGER, INTENT(OUT)                :: REC1, REC2
-       REAL(rkind), ALLOCATABLE            :: dist(:)
-       REAL(rkind), PARAMETER              :: thr = 10E-14
-       INTEGER                             :: loc(1)
+       REAL(rkind) :: eTime1, eTime2
+       INTEGER  :: iTime
        integer istat
  
-       
-       ALLOCATE(dist(size(wind_time_mjd,DIM=1)), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 45')
-       dist(:) = MAIN%TMJD - wind_time_mjd(:)
-       loc  = minloc( abs(dist(:)))
-       if ( dist(loc(1)).lt.0 ) then 
-         REC1 = loc(1) - 1
-         REC2 = loc(1)
-       else
-         REC1 = loc(1)
-         REC2 = loc(1) + 1
-       end if
-       w1 = 1 - abs(dist(REC1))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
-       w2 = 1 - abs(dist(REC2))/( abs(dist(REC1)) + abs(dist(REC2)) + thr)
-       if ( dist(loc(1)).eq.0 ) then
-         REC1 = loc(1)
-         REC2 = loc(1)
-         w1 = 1.0
-         w2 = 0.0
-       end if
+       DO iTime=2,nbtime_mjd
+         eTime1=wind_time_mjd(iTime-1)
+         eTime2=wind_time_mjd(iTime)
+         IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
+           REC2=iTime
+           REC1=iTime-1
+           w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
+           w1=(eTime2 - MAIN % TMJD)/(eTime2-eTime1)
+           RETURN
+         END IF
+       END DO
+       WRITE(DBG%FHNDL,*) 'Time error in wind for WRF'
+       WRITE(DBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
+       WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
+       WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
+       CALL WWM_ABORT('Error in wind forcing time setup')
        END SUBROUTINE GET_WRF_TIME_INDEX
 !**********************************************************************
 !*                                                                    *
@@ -2130,7 +2126,7 @@
        !
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
-       USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd
+       USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
        USE DATAPOOL, only : wwmerr, WINDBG
        IMPLICIT NONE
        INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
@@ -2178,10 +2174,10 @@
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=ntime)
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-       allocate(wind_time_mjd(ntime), stat=istat)
+       allocate(wind_time_mjd(nbtime_mjd), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
 
        ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
