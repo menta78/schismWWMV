@@ -138,11 +138,23 @@
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED WRF NETCDF'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
-            IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
+            IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
-              WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
+              WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
+              WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
+              WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
+              WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
+            IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
+              WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside WRF wind_time range!'
+              WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
+              WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
+              WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
+              WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL WWM_ABORT('Error in WRF wind')
+            END IF
+
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
