@@ -432,6 +432,9 @@
 
          IF (LCFL) CALL CFLSPEC()
 
+         IP_IS_STEADY = 0 ! Reset local convergence indicators ...
+         IE_IS_STEADY = 0
+
 #ifdef MPI_PARALL_GRID
          NQSITER = NSTEPWWM
 #endif

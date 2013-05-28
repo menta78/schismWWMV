@@ -457,7 +457,7 @@
         REAL(rkind), INTENT(IN)  :: TIME
         REAL(rkind), INTENT(OUT) :: CONV1, CONV2, CONV3, CONV4, CONV5
 
-        INTEGER :: IP, IE, IS, ID, NI(3)
+        INTEGER :: I, IP, IE, IS, ID, NI(3)
         INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5
         REAL(rkind)  :: SUMAC, ACLOC(MSC,MDC)
         REAL(rkind)  :: ETOT, EAD, DS, HS2
@@ -473,9 +473,6 @@
         IPCONV3 = 0
         IPCONV4 = 0
         IPCONV5 = 0
-
-        IP_IS_STEADY = 0
-        IE_IS_STEADY = 0
 
 #ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
@@ -572,6 +569,20 @@
         DO IE = 1, MNE
           NI = INE(:,IE)
           IF (SUM(IP_IS_STEADY(NI)) .EQ. 3) IE_IS_STEADY(IE) = 1
+        ENDDO
+
+        DO IP = 1, MNP
+          DO I = 1, CCON(IP)
+            ITMP = 0 
+            IF (IE_IS_STEADY(IE_CELL2(IP,I)) .EQ. 1) THEN
+              ITMP = ITMP + 1 
+            ENDIF
+          ENDDO
+          IF (ITMP .EQ. CCON(IP) .AND. IP_IS_STEADY(IP) .EQ. 1) THEN
+            IP_IS_STEADY(IP) = 1
+          ELSE
+            IP_IS_STEADY(IP) = 0
+          ENDIF
         ENDDO
 
 #ifdef MPI_PARALL_GRID

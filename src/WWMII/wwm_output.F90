@@ -122,10 +122,12 @@
          REAL(rkind)               :: CURR(NP_GLOBAL,CURRVARS)
          REAL(rkind)               :: WIND_GLOBAL(NP_GLOBAL,WINDVARS)
          REAL(rkind)               :: WIND(NP_GLOBAL,WINDVARS)
+         REAL(rkind)               :: ITER_GLOBAL(NP_GLOBAL), ITER_LOCAL(MNP)
 
          REAL(kind=4)              :: OUTT_GLOBAL_4(NP_GLOBAL,OUTVARS)
          REAL(kind=4)              :: CURR_GLOBAL_4(NP_GLOBAL,CURRVARS)
          REAL(kind=4)              :: WIND_GLOBAL_4(NP_GLOBAL,WINDVARS)
+         REAL(kind=4)              :: ITER_GLOBAL_4(NP_GLOBAL)
 
 #else
          REAL(rkind)               :: OUTT(MNP,OUTVARS)
@@ -134,6 +136,7 @@
          REAL(kind=4)              :: OUTT_4(MNP,OUTVARS)
          REAL(kind=4)              :: CURR_4(MNP,CURRVARS)
          REAL(kind=4)              :: WIND_4(MNP,WINDVARS)
+         REAL(kind=4)              :: ITER_4(MNP)
 #endif
          REAL(rkind)               :: ACLOC(MSC,MDC)
          REAL(rkind)               :: OUTPARS(OUTVARS)
@@ -160,7 +163,7 @@
         OUTPARS = 0.
         CURRPARS = 0.
         WINDPARS = 0.
-
+        ITER_LOCAL = DBLE(IP_IS_STEADY)
  
 #ifdef MPI_PARALL_GRID
          DO IP = 1, MNP
@@ -182,17 +185,20 @@
          call mpi_reduce(OUTT,OUTT_GLOBAL,NP_GLOBAL*OUTVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(CURR,CURR_GLOBAL,NP_GLOBAL*CURRVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(WIND,WIND_GLOBAL,NP_GLOBAL*WINDVARS,rtype,MPI_SUM,0,comm,ierr)
+         call mpi_reduce(ITER_LOCAL,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
 
          if(myrank==0) then
            do IP=1,NP_GLOBAL
              OUTT_GLOBAL(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
              CURR_GLOBAL(IP,:)=CURR_GLOBAL(IP,:)*nwild_gb(IP)
              WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
+             ITER_LOCAL(IP)=ITER_GLOBAL(IP)*nwild_gb(IP)
            enddo !IP
            do IP=1,NP_GLOBAL
              OUTT_GLOBAL_4(IP,:)=SNGL(OUTT_GLOBAL(IP,:))
              CURR_GLOBAL_4(IP,:)=SNGL(CURR_GLOBAL(IP,:))
              WIND_GLOBAL_4(IP,:)=SNGL(WIND_GLOBAL(IP,:))
+             ITER_LOCAL_4(IP)=SNGL(ITER_LOCAL(IP))
            enddo !IP
          endif !myrank
 
@@ -207,6 +213,7 @@
              OPEN(OUT%FHNDL+5, FILE  = 'erguvd.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+6, FILE  = 'ergufric.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+7, FILE  = 'ergtau.bin'  , FORM = 'UNFORMATTED')
+             OPEN(OUT%FHNDL+8, FILE  = 'erginter.bin'  , FORM = 'UNFORMATTED')
              IF (DoAirSea) THEN
                OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
              END IF
@@ -232,6 +239,9 @@
            WRITE(OUT%FHNDL+7)  TIME_4
            WRITE(OUT%FHNDL+7)  (WIND_GLOBAL_4(IP,4), WIND_GLOBAL_4(IP,5), WIND_GLOBAL_4(IP,6)  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+7)
+           WRITE(OUT%FHNDL+8)  TIME_4
+           WRITE(OUT%FHNDL+8)  (ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP)  , IP = 1, NP_GLOBAL)
+           CALL FLUSH(OUT%FHNDL+8)
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
                WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
@@ -264,6 +274,7 @@
          IF (LMONO_OUT) THEN
 !$OMP WORKSHARE
            OUTT(:,1) = OUTT(:,1) / SQRT(2.)
+           ITER_4 = DBLE(IP_IS_STEADY)
 !$OMP END WORKSHARE
          ENDIF
 
@@ -303,7 +314,9 @@
          WRITE(OUT%FHNDL+7)  (WIND_4(IP,8), WIND_4(IP,9), WIND_4(IP,8), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+7)
          WRITE(OUT%FHNDL+8)  TIME_4
-         WRITE(OUT%FHNDL+8)  (WIND_4(IP,4), WIND_4(IP,5), WIND_4(IP,6), IP = 1, MNP)
+         WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_GLOBAL)
+         CALL FLUSH(OUT%FHNDL+8)
+
          CALL FLUSH(OUT%FHNDL+8)
          IF (DoAirSea) THEN
            DO IP = 1, MNP
