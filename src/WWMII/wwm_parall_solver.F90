@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 
 #define PLAN_I4
 #undef PLAN_I4
@@ -1574,7 +1574,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'maxBlockLength=', maxBlockLength
 # endif
-#ifdef LU_SOLVE_RWRT
+# ifdef LU_SOLVE_RWRT
       allocate(ListNeed(MNP), IdxRev(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 61a')
       ListNeed=0
@@ -1654,7 +1654,7 @@ MODULE WWM_PARALL_SOLVER
         DEALLOCATE(dspl_recv)
       END DO
       deallocate(ListNeed, IdxRev)
-#else
+# else
       DO I=1,wwm_nnbr_send
         nbCommon=wwm_ListNbCommon_send(I)
         eFirst=ListFirstCommon_send(I)
@@ -1681,7 +1681,7 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % blk_p2drecv_type(I), ierr)
         DEALLOCATE(dspl_recv)
       END DO
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3608,20 +3608,20 @@ MODULE WWM_PARALL_SOLVER
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_U(J) .eq. 1) THEN
               JP=JA(J)
-#ifdef DEBUG
+# ifdef DEBUG
               WRITE(myrank+800,*) 'iplg(IP/JP)/J=', iplg(IP), iplg(JP), J
               WRITE(myrank+500,*) iplg(IP), iplg(JP)
-#endif
+# endif
               DO idx=1,lenBlock
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(J,IS,ID)
-#ifdef DEBUG
+# ifdef DEBUG
                 IF ((IS.eq.2).and.(ID.eq.2)) THEN
                   WRITE(myrank+1500,*) iplg(IP), iplg(JP), eCoeff
                   WRITE(myrank+800,*) 'eCoeff, AC12=', eCoeff, ACret(IP,IS,ID), ACret(JP,IS,ID)
                 END IF
-#endif
+# endif
                 IF (DO_SOLVE_U) THEN
                   ACret(IP,IS,ID)=ACret(IP,IS,ID) - eCoeff*ACret(JP,IS,ID)
                 END IF
@@ -3717,7 +3717,7 @@ MODULE WWM_PARALL_SOLVER
               ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
             END IF
           END DO
-#endif
+# endif
         ENDIF
       END DO
       END SUBROUTINE
@@ -3920,23 +3920,52 @@ MODULE WWM_PARALL_SOLVER
       integer iBlock, lenBlock, idx, IS, ID
       integer maxBlockLength
       maxBlockLength=LocalColor % maxBlockLength
+# ifdef DEBUG
+      WRITE(myrank+7000,*) 'Nblock=', LocalColor % Nblock 
+# endif
       DO iBlock=1,LocalColor % Nblock
+# ifdef DEBUG
+        WRITE(myrank+7000,*) 'iBlock=', iBlock
+        WRITE(myrank+7000,*) '1: sum(ACret)=', sum(ACret)
+# endif
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, ACret, iBlock)
         END IF
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '2: sum(ACret)=', sum(ACret)
+# endif
         CALL I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '3: sum(ACret)=', sum(ACret)
+# endif
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, ACret, iBlock)
         END IF
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '4: sum(ACret)=', sum(ACret)
+# endif
       END DO
       DO iBlock=1,LocalColor%Nblock
+# ifdef DEBUG
+        WRITE(myrank+7000,*) 'iBlock=', iBlock
+        WRITE(myrank+7000,*) '1: sum(ACret)=', sum(ACret)
+# endif
         IF (DO_SYNC_UPP_2_LOW) THEN
           CALL I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, ACret, iBlock)
         END IF
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '2: sum(ACret)=', sum(ACret)
+# endif
         CALL I5B_PARTIAL_SOLVE_U(LocalColor, SolDat, iBlock, ACret)
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '3: sum(ACret)=', sum(ACret)
+# endif
         IF (DO_SYNC_UPP_2_LOW) THEN
           CALL I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, ACret, iBlock)
         END IF
+# ifdef DEBUG
+        WRITE(myrank+7000,*) '4: sum(ACret)=', sum(ACret)
+# endif
       END DO
       IF (DO_SYNC_FINAL) THEN
         CALL I5B_SYNC_SENDRECV(LocalColor, ACret)
@@ -4766,10 +4795,10 @@ MODULE WWM_PARALL_SOLVER
         WRITE(240+myrank,*) 'nbDiff=', nbDiff
         WRITE(240+myrank,*) 'AC8(z) max=', maxval(SolDat%AC8), 'sum=', sum(SolDat%AC8)
         idAC8=idAC8+1
-#ifdef NCDF
+#  ifdef NCDF
         iret=nf90_inq_varid(ncid, 'AC8', var_id)
         iret=nf90_put_var(ncid,var_id,SolDat%AC8,start=(/1,1,1,idAC8/), count = (/ MNP, MSC, MDC, 1 /))
-#endif
+#  endif
 # endif
 
         ! L9 t=Az
@@ -5623,12 +5652,12 @@ MODULE WWM_PARALL_SOLVER
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 124')
       allocate(SolDat % AC7(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 125')
-#ifndef BCGS_REORG
+# ifndef BCGS_REORG
       allocate(SolDat % AC8(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 126')
       allocate(SolDat % AC9(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 127')
-#endif
+# endif
       allocate(SolDat % ASPAR_block(MSCeffect,MDC,NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 128')
       allocate(SolDat % B_block(MSCeffect,MDC, MNP), stat=istat)
@@ -5709,10 +5738,10 @@ MODULE WWM_PARALL_SOLVER
       deallocate(SolDat % AC5)
       deallocate(SolDat % AC6)
       deallocate(SolDat % AC7)
-#ifndef BCGS_REORG
+# ifndef BCGS_REORG
       deallocate(SolDat % AC8)
       deallocate(SolDat % AC9)
-#endif
+# endif
       deallocate(SolDat % ASPAR_block)
       deallocate(SolDat % B_block)
       deallocate(SolDat % ASPAR_pc)
@@ -5866,12 +5895,12 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
       REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
-#ifdef NO_MEMORY_CX_CY
+# ifdef NO_MEMORY_CX_CY
       REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,3), CY(LocalColor%MSCeffect,MDC,3)
       REAL(rkind) :: USOC, WVC, DIFRU
-#else
+# else
       REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
-#endif
+# endif
       IS1=LocalColor%ISbegin(iMSCblock)
       IS2=LocalColor%ISend  (iMSCblock)
 
@@ -5882,14 +5911,14 @@ MODULE WWM_PARALL_SOLVER
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
 
-#ifndef NO_MEMORY_CX_CY
+# ifndef NO_MEMORY_CX_CY
       CALL I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
-#endif
+# endif
 !
 !        Calculate countour integral quantities ...
 !
       DO IE = 1, MNE
-#ifndef NO_MEMORY_CX_CY
+# ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
@@ -5906,7 +5935,7 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
-#else
+# else
         DO I=1,3
           IP=INE(I,IE)
           DO IS = IS1, IS2
@@ -5954,7 +5983,7 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
-#endif
+# endif
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
@@ -6083,9 +6112,9 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
-!# ifdef DEBUG
+# ifdef DEBUG
       USE elfe_msgp, only : myrank
-!# endif
+# endif
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
@@ -6093,12 +6122,12 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-#ifndef NO_MEMORY_CX_CY
+# ifndef NO_MEMORY_CX_CY
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
-#else
+# else
       REAL(rkind) :: CX(MSC,MDC,3), CY(MSC,MDC,3)
       REAL(rkind)      :: DIFRU, USOC, WVC
-#endif
+# endif
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
@@ -6114,14 +6143,14 @@ MODULE WWM_PARALL_SOLVER
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
 
-#ifndef NO_MEMORY_CX_CY
+# ifndef NO_MEMORY_CX_CY
       CALL CADVXY_VECTOR(CX, CY)
-#endif
+# endif
 !
 !        Calculate countour integral quantities ...
 !
       DO IE = 1, MNE
-#ifndef NO_MEMORY_CX_CY
+# ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
@@ -6138,7 +6167,7 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
-#else
+# else
         DO I=1,3
           IP = INE(I,IE)
           DO IS=1,MSC
@@ -6185,7 +6214,7 @@ MODULE WWM_PARALL_SOLVER
         FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
         FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
         FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
-#endif
+# endif
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
@@ -6334,14 +6363,14 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-#ifndef ASPAR_B_COMPUTE_BLOCK
+# ifndef ASPAR_B_COMPUTE_BLOCK
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
-#endif
+# endif
       integer IS, ID, IP
       DO IP=1,MNP
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
-#if defined ASPAR_B_COMPUTE_BLOCK
+# if defined ASPAR_B_COMPUTE_BLOCK
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
 !      DO IS=1,MSC
 !        DO ID=1,MDC
@@ -6349,7 +6378,7 @@ MODULE WWM_PARALL_SOLVER
 !          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
 !        END DO
 !      END DO
-#else
+# else
       DO IS=1,MSC
         DO ID=1,MDC
           U=AC2(:,IS,ID)
@@ -6360,7 +6389,7 @@ MODULE WWM_PARALL_SOLVER
 !          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
         END DO
       END DO
-#endif
+# endif
 # ifdef SELFE_EXCHANGE
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat % B_block)
 # else
@@ -6371,11 +6400,11 @@ MODULE WWM_PARALL_SOLVER
 !        Print *, 'Before CREATE_PRECOND'
 !      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
-#ifdef BCGS_REORG
+# ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
-#else
+# else
       CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
-#endif
+# endif
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
@@ -6415,11 +6444,11 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%B_block)
         CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
         CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
-#ifdef BCGS_REORG
+# ifdef BCGS_REORG
         CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
-#else
+# else
         CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
-#endif
+# endif
         DO IP=1,MNP
           DO IS=IS1,IS2
             DO ID=1,MDC
