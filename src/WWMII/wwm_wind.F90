@@ -77,21 +77,21 @@
             IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
               WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
-            ELSE
-              ! get record in time that I need for current MAIN%MJD
-              CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
-              ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC1_new', REC1_new
-              CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
-              IF (wrf_w1.NE.1) THEN
-                ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC2_new', REC2_new
-                CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
-                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
-              ELSE
-                WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
-              END IF
-              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
-              write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+              CALL WWM_ABORT('Error in wind times')
             END IF
+            ! get record in time that I need for current MAIN%MJD
+            CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
+            ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC1_new', REC1_new
+            CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
+            IF (wrf_w1.NE.1) THEN
+              ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC2_new', REC2_new
+              CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
+              WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
+            ELSE
+              WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)
+            END IF
+            write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
+            write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
 #endif
           ELSE
             CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need netcdf)')
@@ -2003,6 +2003,7 @@
        WRITE(DBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
        WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
        WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
+       CALL FLUSH(DBG%FHNDL)
        CALL WWM_ABORT('Error in wind forcing time setup')
        END SUBROUTINE GET_WRF_TIME_INDEX
 !**********************************************************************
@@ -2127,15 +2128,19 @@
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
        USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
-       USE DATAPOOL, only : wwmerr, WINDBG
+       USE DATAPOOL, only : wwmerr, WINDBG, rkind
        IMPLICIT NONE
        INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
+       integer attid, nbChar
        INTEGER ntime
        REAL, ALLOCATABLE                  :: WRF_LON(:,:), WRF_LAT(:,:), dist(:,:)
        REAL                               :: wind_time_offset, wwm_time_offset, d_lon, d_lat
        integer i11, j11, i12, j12, i21, j21
        character(len=100) :: CHRTMP
        character (len = *), parameter :: CallFct="INIT_NETCDF_WRF"
+       character (len=200) :: eStrAtt
+       character (len=15) :: eStrTime
+       real(rkind) :: eTimeStart
        ! wind_time_offset is seconds since 2000-1-1 
        ! wwm_time_offset is seconds since Modified Julian Day 17/11/1858
        wind_time_offset = 730486.0
@@ -2171,6 +2176,32 @@
        ISTAT = nf90_inq_varid(fid, "wind_time", varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
+       ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+!       allocate(eStrAtt(nbChar), stat=istat)
+!       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
+
+       ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+       eStrTime( 1: 1)=eStrAtt(11:11)
+       eStrTime( 2: 2)=eStrAtt(12:12)
+       eStrTime( 3: 3)=eStrAtt(13:13)
+       eStrTime( 4: 4)=eStrAtt(14:14)
+       eStrTime( 5: 5)=eStrAtt(16:16)
+       eStrTime( 6: 6)=eStrAtt(17:17)
+       eStrTime( 7: 7)=eStrAtt(19:19)
+       eStrTime( 8: 8)=eStrAtt(20:20)
+       eStrTime( 9: 9)='.'
+       eStrTime(10:10)=eStrAtt(22:22)
+       eStrTime(11:11)=eStrAtt(23:23)
+       eStrTime(12:12)=eStrAtt(25:25)
+       eStrTime(13:13)=eStrAtt(26:26)
+       eStrTime(14:14)=eStrAtt(28:28)
+       eStrTime(15:15)=eStrAtt(29:29)
+       CALL CT2MJD(eStrTime, eTimeStart)
+
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
@@ -2186,7 +2217,7 @@
        ISTAT = nf90_close(fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
        ! this is hack unitl I get better way of using wind_time attribute units 
-       wind_time_mjd(:) = wind_time_mjd(:) + wind_time_offset - wwm_time_offset
+       wind_time_mjd(:) = wind_time_mjd(:) + eTimeStart
        ! compute nodes and coefs
        ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
