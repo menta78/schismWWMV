@@ -608,7 +608,9 @@
                UTILDE = N(IE) * (DOT_PRODUCT(FLALL(:,IE),U3)) !* IOBED(ID,IE)
                ST(NI) = ST(NI) + KELEM(:,IE) * (U3 - UTILDE) ! the 2nd term are the theta values of each node ...
              END DO
-             U = MAX(0.0_rkind,U-DTSI*ST*IOBWB)*IOBPD(ID,:)*IOBDP
+             DO IP = 1, MNP
+               IF (IP_IS_STEADY(IP) .EQ. 0) U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+             ENDDO
 !             WRITE(*,'(2I10,F20.10,2I20,F20.10)') ID, IS, U(IP_TEST), IOBPD(ID,IP_TEST), IOBDP(IP_TEST), DEP(IP_TEST)
 #ifdef MPI_PARALL_GRID
              CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
