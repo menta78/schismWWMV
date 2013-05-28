@@ -192,13 +192,13 @@
              OUTT_GLOBAL(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
              CURR_GLOBAL(IP,:)=CURR_GLOBAL(IP,:)*nwild_gb(IP)
              WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
-             ITER_LOCAL(IP)=ITER_GLOBAL(IP)*nwild_gb(IP)
+             ITER_GLOBAL(IP)=ITER_GLOBAL(IP)*nwild_gb(IP)
            enddo !IP
            do IP=1,NP_GLOBAL
              OUTT_GLOBAL_4(IP,:)=SNGL(OUTT_GLOBAL(IP,:))
              CURR_GLOBAL_4(IP,:)=SNGL(CURR_GLOBAL(IP,:))
              WIND_GLOBAL_4(IP,:)=SNGL(WIND_GLOBAL(IP,:))
-             ITER_LOCAL_4(IP)=SNGL(ITER_LOCAL(IP))
+             ITER_GLOBAL_4(IP)=SNGL(ITER_GLOBAL(IP))
            enddo !IP
          endif !myrank
 
