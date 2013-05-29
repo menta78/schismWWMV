@@ -56,6 +56,7 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = FRANZIUS
 #ENV         = MATHIEU
 ENV = ARON
+ENV = ZANKE
 
 ################################################################################
 # Executable
@@ -93,12 +94,12 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 #  PPFLAGS := $(PPFLAGS) -DDEBUG 
 
 # Wind wave model WWM
-  USE_WWM = yes
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
+#  USE_WWM = yes
+#  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-  USE_PETSC = yes
-  PPFLAGS := $(PPFLAGS) -DPETSC 
+#  USE_PETSC = yes
+#  PPFLAGS := $(PPFLAGS) -DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes
@@ -583,6 +584,50 @@ ifeq ($(ENV),ARON)
   endif
 
 endif
+
+ifeq ($(ENV),ZANKE)
+  FCP = mpif90
+  FLD = $(FCP)
+# MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 -DWWM_SOLVER
+# DEBUG + DEVELOPEMENT
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+# PERFORMANCE SAVE OPTIMIZATION
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
+# AGGRESSIVE OPTIMIZATION
+#  FCPFLAGS = $(PPFLAGS) -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#  FLDFLAGS = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
+
+#  FCPFLAGS += -openmp
+#  FLDFLAGS += -openmp 
+  #####Libraries
+  MTSLIBS = -L/home/zanke/opt/ParMetis-3.1-64bit -lparmetis -lmetis
+  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -L/home/zanke/opt/mpich2_1.4_intel/lib
+  CDFMOD  = -I$(NETCDF_INCDIR) -I/home/zanke/opt/mpich2_1.4_intel/include
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/zanke/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/zanke/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+
+  #PETSC
+
+  ifdef USE_PETSC
+    include ${PETSC_DIR}/conf/variables
+    PETSCLIBS = -L${PETSC_DIR}/lib/ -lpetsc
+    PETSCMOD = -I${PETSC_DIR}/include/
+    CDFLIBS += ${PETSC_LIB}
+  else
+    PETSCLIBS =
+    PETSCMOD =
+  endif
+
+endif
+
 ################################################################################
 # Environment for Linux / 32 bit /  Intel Compiler / MPICH
 ################################################################################
