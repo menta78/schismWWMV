@@ -550,17 +550,17 @@ ifeq ($(ENV),ARON)
 #  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
 #  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 # PERFORMANCE SAVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl 
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
   FLDFLAGS = -O1 -g -traceback -assume byterecl 
 # AGGRESSIVE OPTIMIZATION
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
+#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #  FCPFLAGS += -openmp
 #  FLDFLAGS += -openmp 
   #####Libraries
   MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis
-  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x
+  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff # for netcdf4.x.x
   CDFMOD  = -I$(NETCDF_INCDIR)
   ifdef USE_GOTM
     GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules

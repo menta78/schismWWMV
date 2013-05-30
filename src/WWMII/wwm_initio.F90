@@ -190,7 +190,7 @@
 !  convergence analysis - shared
 !
          IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), stat=istat)
+           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
            IP_IS_STEADY = 0
            IE_IS_STEADY = 0
@@ -1801,7 +1801,6 @@
             XP_WWM = XP(IPGL)
             YP_WWM = YP(IPGL)
 #endif
-!            write(*,*) XP_WWM, YP_WWM
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
                 WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM*RADDEG,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
@@ -1818,6 +1817,7 @@
             ELSE
               WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
             ENDIF
+            WRITE(STAT%FHNDL,*) 'TEST OUTPUT', IB, XP_WWM, YP_WWM, SUM(WBACOUT(:,:,IB))
           ENDDO
         ELSE
           DO IB=1,IWBMNP

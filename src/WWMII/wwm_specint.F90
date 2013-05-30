@@ -29,9 +29,9 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
          DO IP = 1, MNP 
+!           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
                  CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)

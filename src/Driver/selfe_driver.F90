@@ -12,17 +12,19 @@
 !                                                                                       
 !         Developers:                                                   
 !                    Lead: Joseph Zhang (OHSU & VIMS)
-!                    Air-sea exchnage: Mike Zulauf (OHSU)
-!                    Ecology: Marta Rodrigues/Anabela Oliveira (LNEC)
-!                    Sediment: Ligia Pinto/Andre Fortunato (LNEC)
+!                    Air-sea exchange: Mike Zulauf (OHSU)
+!                    Ecology: Marta Rodrigues,Anabela Oliveira (LNEC)
+!                    Sediment: Ligia Pinto,Andre Fortunato (LNEC)
 !                    Oil Spill: Alberto Azvedo/Anabela Oliveira (LNEC)
 !                    Waves: Aron Roland (Zanke & Partner),Ulrich Zanke (Zanke & Partner) 
 !                    Water quality: Harry Wang (VIMS)
+!                    Hydraulics: Eli Ateljevich (CAL-DWR)
 !                    Scientific direction: Antonio Baptista (OHSU)                      
 !                                                                                       
-!               Copyright 2003-2012 Oregon Health and Science University                
-!                         2012- Virginia Institute of Marine Science, College of William & Mary
+!               Copyright 2003-2012 Oregon Health and Science University (OHSU)
+!                         2012- OHSU & VIMS
 !                              All Rights Reserved                                      
+!       Redistribution of any files contained in this package is strictly prohibited
 !                                                                                       
 !       The heat exchange module makes use of the bulk aerodynamic surface flux         
 !       algorithm introduced by Zeng et al (1998), and the polynomial fits to           
@@ -46,7 +48,7 @@
 !
 !       A very special thanks to Dr. Tim Campbell, the author of MPI ELCIRC. We have
 !       largely followed his style in MPI SELFE. We are indebted to his generous
-!       help thru'out the process of parallelizing SELFE.
+!       help throughout the process of parallelizing SELFE.
 !
 !                                                                                       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

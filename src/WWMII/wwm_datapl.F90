@@ -853,6 +853,7 @@
          LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER, ALLOCATABLE   :: IP_IS_STEADY(:)
          INTEGER, ALLOCATABLE   :: IE_IS_STEADY(:)
+         REAL(rkind), ALLOCATABLE :: STAT2D(:,:)
          INTEGER                :: NQSITER = 1
          INTEGER                :: ICOMP   = 2
 

@@ -424,7 +424,7 @@
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
 
-         INTEGER :: IT
+         INTEGER :: IT, IP
          REAL(rkind)    :: ITERTIME
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
 
@@ -453,6 +453,9 @@
 
            IF (LCHKCONV) THEN
              CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
+!             DO IP = 1, MNP
+!               IF (IP_IS_STEADY(IP) .GE. 1) AC2(IP,:,:) = AC1(IP,:,:)
+!             ENDDO
              IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                  &
      &             CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
      &             CONV3 .GT. 100._rkind*QSCONV3 .AND.                    &

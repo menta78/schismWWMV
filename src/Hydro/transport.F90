@@ -262,13 +262,17 @@
 !       Mark upwind prisms for efficiency
         iupwind_e=0
         do i=1,ne
-          do j=1,3
-            nd=nm(i,j)
-            toth=eta2(nd)+dp(nd)
-            if(toth<h_tvd.or.itvd_e(i)==0) then
-              iupwind_e(i)=1; exit
-            endif
-          enddo !j
+          if(itvd_e(i)==0) then
+            iupwind_e(i)=1 
+          else !itvd_e=1
+            do j=1,3
+              nd=nm(i,j)
+              toth=eta2(nd)+dp(nd)
+              if(toth<h_tvd) then
+                iupwind_e(i)=1; exit
+              endif
+            enddo !j
+          endif !itvd_e
         enddo !i=1,ne
       endif !up_tvd
 

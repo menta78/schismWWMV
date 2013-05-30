@@ -14,14 +14,14 @@ module elfe_glbl
 !#endif
 
   ! Some constants
-  real(rkind),parameter :: small1=1.e-6 !small non-negative number
+  real(rkind),parameter :: small1=1.d-6 !small non-negative number
   real(rkind),parameter :: small2=small1*100 !slightly larger number
-  real(rkind),parameter :: pi=3.141592653589793
-  real(rkind),parameter :: grav=9.81
-  real(rkind),parameter :: rho0=1000. !1025. !ref. density for S=33 and T=10C
-  real(rkind),parameter :: shw=4184.
-  real(rkind),parameter :: rearth=6378206.4 !earth radius
-  real(rkind),parameter :: omega_e=7.292e-5 !angular freq. of earth rotation
+  real(rkind),parameter :: pi=3.141592653589793d0
+  real(rkind),parameter :: grav=9.81d0
+  real(rkind),parameter :: rho0=1000.d0 !1025. !ref. density for S=33 and T=10C
+  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p)
+  real(rkind),parameter :: rearth=6378206.4d0 !earth radius
+  real(rkind),parameter :: omega_e=7.292d-5 !angular freq. of earth rotation
   !For water quality model
   integer,parameter :: NDTWQ=1   !add by YC
 

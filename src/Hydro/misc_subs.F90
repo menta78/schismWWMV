@@ -2346,7 +2346,8 @@
 !     Calculate horizontal gradient at (resident) sides and whole level for variable
 !     defined at nodes, using cubic spline.
 !     Bottom extrapolation has 2 options based on h_bcc1
-!     If ics=2, dvar_dxy is defined in sframe
+!     If ics=2, dvar_dxy is defined in eframe of 1st adjacent elem. (as
+!     eframe is along lon/lat and the 2 eframes are close).
 !===============================================================================
       subroutine hgrad_nodes(imet_dry,ihbnd,nvrt1,npa1,nsa1,var_nd,dvar_dxy)
       use elfe_glbl
@@ -2370,7 +2371,7 @@
       real(rkind) :: hp_int(nvrt1,npa1),swild(nvrt1),swild2(nvrt1,4)
       integer :: nwild(3)
       
-      hp_int=0 !temporary save of 2nd deriavtives
+      hp_int=0 !temporary save of 2nd derivatives
       do i=1,npa
         if(idry(i)==1) cycle
 
@@ -2383,6 +2384,7 @@
         if(idry_s(i)==1) cycle
 
 !       Wet side; pts 1&2
+        ie=is(i,1)
         node1=isidenode(i,1); node2=isidenode(i,2)
         if(ics==1) then
           xn1=xnd(node1)
@@ -2390,11 +2392,11 @@
           xn2=xnd(node2)
           yn2=ynd(node2)
         else
-          !to sframe
+          !to eframe
           call project_pt('g2l',xnd(node1),ynd(node1),znd(node1), &
-     &(/xcj(i),ycj(i),zcj(i)/),sframe(:,:,i),xn1,yn1,tmp)
+     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),xn1,yn1,tmp)
           call project_pt('g2l',xnd(node2),ynd(node2),znd(node2), &
-     &(/xcj(i),ycj(i),zcj(i)/),sframe(:,:,i),xn2,yn2,tmp)
+     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),xn2,yn2,tmp)
         endif !ics
           
         eta_min=min(znl(nvrt,node1),znl(nvrt,node2))
@@ -2430,7 +2432,6 @@
           x43=yn2-yn1 !ynd(node2)-ynd(node1)
           y43=xn1-xn2 !xnd(node1)-xnd(node2)
         else if(is(i,2)==0.and.ihbnd/=0) then !use shape function
-          ie=is(i,1)
           node3=sum(nm(ie,1:3))-node1-node2
           if(idry(node3)==1) then
             write(errmsg,*)'hgrad_nodes: node3 dry',iplg(node3),ielg(ie)
@@ -2469,11 +2470,11 @@
               !in eframe
               dvar_dxy(1:2,k,i)=dvar_dxy(1:2,k,i)+swild2(k,j)*dl(ie,nwild(j),1:2)
             enddo !j
-            if(ics==2) then !to sframe
-              call project_hvec(dvar_dxy(1,k,i),dvar_dxy(2,k,i),eframe(:,:,ie),sframe(:,:,i),tmp1,tmp2)
-              dvar_dxy(1,k,i)=tmp1
-              dvar_dxy(2,k,i)=tmp2
-            endif !ics
+!            if(ics==2) then !to sframe
+!              call project_hvec(dvar_dxy(1,k,i),dvar_dxy(2,k,i),eframe(:,:,ie),sframe(:,:,i),tmp1,tmp2)
+!              dvar_dxy(1,k,i)=tmp1
+!              dvar_dxy(2,k,i)=tmp2
+ !           endif !ics
           enddo !k          
 
         else !internal side
@@ -2485,11 +2486,11 @@
             xn4=xnd(node4)
             yn4=ynd(node4)
           else
-            !to sframe
+            !to eframe
             call project_pt('g2l',xnd(node3),ynd(node3),znd(node3), &
-     &(/xcj(i),ycj(i),zcj(i)/),sframe(:,:,i),xn3,yn3,tmp)
+     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),xn3,yn3,tmp)
             call project_pt('g2l',xnd(node4),ynd(node4),znd(node4), &
-     &(/xcj(i),ycj(i),zcj(i)/),sframe(:,:,i),xn4,yn4,tmp)
+     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),xn4,yn4,tmp)
           endif !ics
 
           x43=xn4-xn3 !xnd(node4)-xnd(node3)
@@ -2499,7 +2500,7 @@
 
             if(imet_dry==1) then !zero out the derivative along 3-4
               swild2(kbs(i):nvrt,3:4)=0
-            else !use as sideceter i as '3'
+            else !use sideceter i as '3'
               x43=xn4-(xn1+xn2)/2
               y43=yn4-(yn1+yn2)/2
               swild2(kbs(i):nvrt,3)=(swild2(kbs(i):nvrt,1)+swild2(kbs(i):nvrt,2))/2
@@ -2520,7 +2521,7 @@
 
             if(imet_dry==1) then !zero out the derivative along 3-4
               swild2(kbs(i):nvrt,3:4)=0
-            else !use as sideceter i as '4'
+            else !use sideceter i as '4'
               x43=(xn1+xn2)/2-xn3
               y43=(yn1+yn2)/2-yn3
               swild2(kbs(i):nvrt,4)=(swild2(kbs(i):nvrt,1)+swild2(kbs(i):nvrt,2))/2

@@ -25,7 +25,7 @@
                           &WWPRPOP,WWPLPOP,WWPDOP,WWPPO4t,WWPSU,WWPSAt, &
                           &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
-                          &PSAt,PCOD,PDO     !added by YC
+                          &PSAt,PCOD,PDO,WMS,irea    !added by YC
       USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
                               &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
                               &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
@@ -40,7 +40,7 @@
        USE sed_mod, only : Wsed,Srho,Nbed,bedldu,bedldv,bed,bottom,    &
                            bed_frac,mcoefd,bed_fracn,bed_d50n,bed_taun,&
                            bedforms_rough,bed_ripphgt,bed_ripplen,     &
-                           bed_rough
+                           bed_rough,ibfmt
 #endif USE_SED
 
 #ifdef USE_SED2D
@@ -114,7 +114,8 @@
                      &av_df,vol1,tot_heat,tot_salt,tot_heat_gb, &
                      &tot_salt_gb,dav_mag,tvol,tmass,tpe,tkne,enerf,ener_ob, &
                      &av_dep,vel_m1,vel_m2,xtmp,ytmp,ftmp,tvol12,fluxbnd, &
-                     &fluxchan,fluxchan1,fluxchan2,tot_s,flux_s,ah,ubm,ramp_ss,Cdmax
+                     &fluxchan,fluxchan1,fluxchan2,tot_s,flux_s,ah,ubm,ramp_ss,Cdmax, &
+                     &wmag_e,wmag_factor !wmag_e and wmag_facotr addedy by wangzg
 
 !     Output handles
       character(len=72) :: it_char
@@ -159,7 +160,7 @@
       logical,save :: first_call=.true.
       logical :: up_tvd
 #ifdef DEBUG
-      real(rkind),allocatable :: bpgr(:,:)
+      real(rkind),allocatable :: bpgr(:,:),wafo(:,:,:)
 #endif
 !     Tracers
 !      integer :: flag_model,flag_ic
@@ -195,7 +196,7 @@
         if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
       endif !nws=4
 #ifdef DEBUG
-      allocate(bpgr(nsa,2))
+      allocate(bpgr(nsa,2),wafo(nvrt,nsa,2))
 #endif
 
 !     Source
@@ -435,7 +436,21 @@
           pr(i)=pr1(i)+wtratio*(pr2(i)-pr1(i))
         enddo !i
       endif !nws=4
-
+#ifdef USE_ICM
+! calculating WMS used for reareation,added by wangzg
+      if(irea==1) then
+        do i=1,nea
+           if(idry_e(i)==1) cycle
+            n1=nm(i,1)
+            n2=nm(i,2)
+            n3=nm(i,3)
+            wmag_e=sqrt(windx(n1)**2+windy(n1)**2)+sqrt(windx(n2)**2+windy(n2)**2)+sqrt(windx(n3)**2+windy(n3)**2)
+            wmag_factor=(windfactor(n1)+windfactor(n2)+windfactor(n3))/3.
+            wmag_e=wmag_e/3.
+            WMS(i)=wmag_e !*wmag_factor !no windfactor for DO reareation
+        enddo !i
+      endif !irea=1
+#endif
 !     CORIE mode
       if(nws>=2.and.nws<=3) then
         if(time>=wtime2) then
@@ -1550,9 +1565,9 @@
                 call parallel_abort(errmsg)
               endif
               if(k==0) then
-                SS1d(k)=u_taub**2/dfv(j,klev)
+                SS1d(k)=(u_taub**2/dfv(j,klev))**2
               else
-                SS1d(k)=u_taus**2/dfv(j,klev)
+                SS1d(k)=(u_taus**2/dfv(j,klev))**2
               endif
               NN1d(k)=0
             else
@@ -1700,17 +1715,17 @@
             cpsi2p(k)=cpsi2
           endif
         enddo !k=kbp(j)+1,nvrt
-        rzbt(kbp(j))=0 !for Galperin's clipping
+!        rzbt(kbp(j))=0 !for Galperin's clipping
 
 !        write(90,*)'WOW1',it,j
 
 !	Compute upper bound for xl 
-        do k=kbp(j),nvrt
+        do k=kbp(j)+1,nvrt
           dists=eta2(j)-znl(k,j)
           distb=znl(k,j)+dp(j)
-          if(k==kbp(j)) then
-            xlmax(k)=max(xlmin2(j),dzz(k+1)*0.4_rkind)
-          else if(k==nvrt) then
+!          if(k==kbp(j)) then
+!            xlmax(k)=max(xlmin2(j),dzz(k+1)*0.4_rkind)
+          if(k==nvrt) then
             xlmax(k)=max(xlmin2(j),dzz(k)*0.4_rkind)
           else !internal layers
             xlmax(k)=0.4*min(dists,distb)
@@ -1737,9 +1752,9 @@
 !        write(90,*)'WOW2',it,j
 
 !	Matrix Q
-        nqdim=nvrt-kbp(j)+1
-        do k=kbp(j),nvrt
-          kin=k-kbp(j)+1 !row #
+        nqdim=nvrt-kbp(j) !+1
+        do k=kbp(j)+1,nvrt
+          kin=k-kbp(j) !+1 !row #
           alow(kin)=0
           bdia(kin)=0
           cupp(kin)=0
@@ -1763,7 +1778,7 @@
             cupp(kin)=cupp(kin)+dt*diss
           endif
 
-          if(k>kbp(j)) then
+          if(k>kbp(j)+1) then
             tmp=(dfq1(j,k)+dfq1(j,k-1))/2*dt/dzz(k)
             bdia(kin)=bdia(kin)+dzz(k)/3+tmp
             alow(kin)=alow(kin)+dzz(k)/6-tmp
@@ -1781,19 +1796,22 @@
             bdia(kin)=bdia(kin)+dt*diss*2
             alow(kin)=alow(kin)+dt*diss
           endif
-        enddo !k=kbp(j),nvrt
+        enddo !k=kbp(j)+1,nvrt
 
 !	Soln for q2 at new level
         call tridag(nvrt,100,nqdim,1,alow,bdia,cupp,rrhs,soln,gam)
-        do k=kbp(j),nvrt
-          kin=k-kbp(j)+1
-          if(k==nvrt) then
-            q2tmp(k)=q2fs
-          else if(k==kbp(j)) then
-            q2tmp(k)=q2bot
-          else
-            q2tmp(k)=max(soln(kin,1),q2min)
-          endif
+        q2tmp(nvrt)=q2fs
+        !Extrapolate to bottom mainly for diffusivities
+        q2tmp(kbp(j):kbp(j)+1)=q2bot
+        do k=kbp(j)+2,nvrt-1
+          kin=k-kbp(j) !+1
+!          if(k==nvrt) then
+!            q2tmp(k)=q2fs
+!          else if(k==kbp(j)+1) then
+!            q2tmp(k)=q2bot
+!          else
+          q2tmp(k)=max(soln(kin,1),q2min)
+!          endif
         enddo !k
 
 !        write(90,*)'WOW4',it,j,(q2tmp(k),k=1,nvrt)
@@ -1802,8 +1820,8 @@
 !        enddo 
 
 !	Matrix QL
-        do k=kbp(j),nvrt
-          kin=k-kbp(j)+1
+        do k=kbp(j)+1,nvrt
+          kin=k-kbp(j) !+1
           alow(kin)=0
           bdia(kin)=0
           cupp(kin)=0
@@ -1831,7 +1849,7 @@
             bdia(kin)=bdia(kin)+0.4*rnub*dt*dfq2(j,k)/xl(j,k)
           endif
 
-          if(k>kbp(j)) then 
+          if(k>kbp(j)+1) then 
             tmp=(dfq2(j,k)+dfq2(j,k-1))/2*dt/dzz(k)
             bdia(kin)=bdia(kin)+dzz(k)/3+tmp
             alow(kin)=alow(kin)+dzz(k)/6-tmp
@@ -1850,10 +1868,10 @@
             diss=cpsi2p(k)*cmiu0**3*sqrt(q2ha(k))/xlha(k)*dzz(k)/6 !diss/k
             bdia(kin)=bdia(kin)+dt*diss*2
             alow(kin)=alow(kin)+dt*diss
-          else !k=kbp(j)
+          else !k=kbp(j)+1
             bdia(kin)=bdia(kin)+0.4*rnub*dt*dfq2(j,k)/xl(j,k)
           endif
-        enddo !k=kbp(j),nvrt
+        enddo !k=kbp(j)+1,nvrt
 
 !        write(90,*)'WOW5',it,j
 !        do k=1,nvrt
@@ -1865,12 +1883,12 @@
 
 !        write(90,*)'WOW6',it,j
 
-        do k=kbp(j),nvrt
-          kin=k-kbp(j)+1
+        do k=kbp(j)+1,nvrt
+          kin=k-kbp(j) !+1
           q2l=max(soln(kin,1),psimin)
           if(k==nvrt) then
             xltmp(k)=xlfs
-          else if(k==kbp(j)) then
+          else if(k==kbp(j)+1) then
             xltmp(k)=xlbot
           else
             xltmp(k)=(q2l*cmiu0**(-rpub)*q2tmp(k)**(-rmub))**(1/rnub)
@@ -1892,8 +1910,14 @@
             write(errmsg,*)'Negative q2',q2(j,k),xl(j,k)
             call parallel_abort(errmsg)
           endif
+        enddo !k=kbp(j)+1,nvrt
 
-!         Compute vertical diffusivities at new time
+!       Extrapolate q2, xl to bottom mainly for diffusivities
+        q2(j,kbp(j))=q2(j,kbp(j)+1)
+        xl(j,kbp(j))=xl(j,kbp(j)+1)
+
+!       Compute vertical diffusivities at new time
+        do k=kbp(j),nvrt
           call asm(j,k,vd,td,qd1,qd2)
           dfv(j,k)=min(diffmax(j),max(diffmin(j),vd))
           dfh(j,k)=min(diffmax(j),max(diffmin(j),td))
@@ -1902,7 +1926,7 @@
 
 !         Debug
 !          write(90,*)'No. ',k,xl(j,k),dfh(j,k),dfv(j,k),dfq1(j,k),dfq2(j,k)
-        enddo !k=kbp(j),nvrt
+        enddo !k=kbp(j)+1,nvrt
 
 !       Extend
         do k=1,kbp(j)-1
@@ -3000,6 +3024,11 @@
 !      stop
 
 !     ghat1 (in eframe if ics=2)
+#ifdef USE_WWM
+#ifdef DEBUG
+      wafo = 0.d0
+#endif
+#endif
       do i=1,nea
         if(ihydraulics/=0.and.nhtblocks>0) then; if(isblock_el(i)>0) then !active block
           ghat1(i,1)=0
@@ -3106,28 +3135,37 @@
               v2=sv2(1,isd)
               taux2=(tau(n1,1)+tau(n2,1))/2
               tauy2=(tau(n1,2)+tau(n2,2))/2
-#ifdef USE_WWM
-              tmp1=wwave_force(1,isd,1)
-              tmp2=wwave_force(1,isd,2)
-#endif /*USE_WWM*/
+!#ifdef USE_WWM
+!              tmp1=wwave_force(1,isd,1)
+!              tmp2=wwave_force(1,isd,2)
+!#endif /*USE_WWM*/
             else !lat/lon; project to eframe
               call project_hvec(sdbt(1,1,isd),sdbt(2,1,isd),sframe(:,:,isd),eframe(:,:,i),sdbtu,sdbtv)
               call project_hvec(su2(1,isd),sv2(1,isd),sframe(:,:,isd),eframe(:,:,i),u2,v2)
               swild10(1:3,1:3)=(pframe(:,:,n1)+pframe(:,:,n2))/2
               call project_hvec((tau(n1,1)+tau(n2,1))/2,(tau(n1,2)+tau(n2,2))/2, &
      &swild10(1:3,1:3),eframe(:,:,i),taux2,tauy2)
-#ifdef USE_WWM
-              call project_hvec(wwave_force(1,isd,1),wwave_force(1,isd,2), &
-     &sframe(:,:,isd),eframe(:,:,i),tmp1,tmp2)
-#endif /*USE_WWM*/
+!#ifdef USE_WWM
+!              call project_hvec(wwave_force(1,isd,1),wwave_force(1,isd,2), &
+!     &sframe(:,:,isd),eframe(:,:,i),tmp1,tmp2)
+!#ifdef DEBUG
+!              wafo(:,isd,1) = tmp1
+!              wafo(:,isd,2) = tmp2
+!#endif
+!#endif /*USE_WWM*/
             endif !ics
             hat_gam_x=sdbtu+dt*(-dprdx/rho0+0.69*grav*detpdx)+ &
      &(1-theta2)*cori(isd)*dt*v2-grav*(1-thetai)*dt*detadx+dt*taux2/htot
             hat_gam_y=sdbtv+dt*(-dprdy/rho0+0.69*grav*detpdy)- &
      &(1-theta2)*cori(isd)*dt*u2-grav*(1-thetai)*dt*detady+dt*tauy2/htot
 #ifdef USE_WWM
-            hat_gam_x=hat_gam_x+dt*tmp1 !wwave_force(1,isd,1)
-            hat_gam_y=hat_gam_y+dt*tmp2 !wwave_force(1,isd,2)
+            !wwave_force in eframe
+            hat_gam_x=hat_gam_x+dt*wwave_force(1,isd,1)
+            hat_gam_y=hat_gam_y+dt*wwave_force(1,isd,2)
+#ifdef DEBUG
+            wafo(:,isd,1)=wwave_force(1,isd,1)
+            wafo(:,isd,2)=wwave_force(1,isd,2)
+#endif
 #endif /*USE_WWM*/
             del=hhat(isd)**2+(theta2*cori(isd)*dt*htot)**2 !delta>0
             !Gamma vector (eframe)
@@ -3163,24 +3201,25 @@
             do j=1,3 !side
               isd=js(i,j)
               do k=kbs(isd)+1,nvrt
-                if(ics==1) then
-                  swild(1:2)=wwave_force(k,isd,1:2)
-                  swild(3:4)=wwave_force(k-1,isd,1:2)
-                else !lon/lat; to eframe
-                  call project_hvec(wwave_force(k,isd,1),wwave_force(k,isd,2), &
-     &sframe(:,:,isd),eframe(:,:,i),swild(1),swild(2))
-                  call project_hvec(wwave_force(k-1,isd,1),wwave_force(k-1,isd,2), &
-     &sframe(:,:,isd),eframe(:,:,i),swild(3),swild(4))
-                endif !ics
-                if(k==kbs(isd)+1) swild3(1:2)=swild(1:2) !save the bottom
+!                if(ics==1) then
+!                  swild(1:2)=wwave_force(k,isd,1:2)
+!                  swild(3:4)=wwave_force(k-1,isd,1:2)
+!                else !lon/lat; to eframe
+!                  call project_hvec(wwave_force(k,isd,1),wwave_force(k,isd,2), &
+!     &sframe(:,:,isd),eframe(:,:,i),swild(1),swild(2))
+!                  call project_hvec(wwave_force(k-1,isd,1),wwave_force(k-1,isd,2), &
+!     &sframe(:,:,isd),eframe(:,:,i),swild(3),swild(4))
+!                endif !ics
+!                if(k==kbs(isd)+1) swild3(1:2)=swild(1:2) !save the bottom
 
-                rs1=rs1+area(i)/3*(zs(k,isd)-zs(k-1,isd))*(swild(1)+swild(3))/2
-!     &(wwave_force(k,isd,1)+wwave_force(k-1,isd,1))/2
-                rs2=rs2+area(i)/3*(zs(k,isd)-zs(k-1,isd))*(swild(2)+swild(4))/2
-!     &(wwave_force(k,isd,2)+wwave_force(k-1,isd,2))/2
+                !wwave_force in eframe
+                rs1=rs1+area(i)/3*(zs(k,isd)-zs(k-1,isd))* & !(swild(1)+swild(3))/2
+     &(wwave_force(k,isd,1)+wwave_force(k-1,isd,1))/2
+                rs2=rs2+area(i)/3*(zs(k,isd)-zs(k-1,isd))* & !(swild(2)+swild(4))/2
+     &(wwave_force(k,isd,2)+wwave_force(k-1,isd,2))/2
               enddo !k
-              rs1=rs1-dt*chigamma*area(i)/3*swild3(1) !wwave_force(kbs(isd)+1,isd,1)
-              rs2=rs2-dt*chigamma*area(i)/3*swild3(2) !wwave_force(kbs(isd)+1,isd,2)
+              rs1=rs1-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,1)
+              rs2=rs2-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,2)
             enddo !j=1,3
             ghat1(i,1)=ghat1(i,1)+dt*rs1
             ghat1(i,2)=ghat1(i,2)+dt*rs2
@@ -3766,8 +3805,7 @@
 !...  Along each side
 !     su2, sv2 in sframe if ics=2
 #ifdef DEBUG
-      bpgr(:,1) = 0.d0
-      bpgr(:,2) = 0.d0
+      bpgr = 0.d0
 #endif
 
       do j=1,nsa !augumented
@@ -3809,8 +3847,15 @@
      &(1-theta2)*cori(j)*dt*su2(1,j)-grav*(1-thetai)*dt*deta1_dy(j)+dt*tauy2/htot
 !         Radiation stress
 #ifdef  USE_WWM
-            hat_gam_x=hat_gam_x+dt*wwave_force(1,j,1)
-            hat_gam_y=hat_gam_y+dt*wwave_force(1,j,2)
+            !wwave_force in eframe
+            if(ics==1) then
+              tmp1=wwave_force(1,j,1)
+              tmp2=wwave_force(1,j,2)
+            else !use swild10 as approx.
+              call project_hvec(wwave_force(1,j,1),wwave_force(1,j,2),swild10(1:3,1:3),sframe(:,:,j),tmp1,tmp2)
+            endif !ics
+            hat_gam_x=hat_gam_x+dt*tmp1 !wwave_force(1,j,1)
+            hat_gam_y=hat_gam_y+dt*tmp2 !wwave_force(1,j,2)
 #endif /*USE_WWM*/
           !Add deta2 to \hat{Gamma}
           hat_gam_x=hat_gam_x-grav*thetai*dt*deta2_dx(j)
@@ -3926,10 +3971,26 @@
 
 !         Radiation stress
 #ifdef  USE_WWM
-            if(k<nvrt) rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k+1)/6*dt* &
+            if(ics==1) then
+              if(k<nvrt) rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k+1)/6*dt* &
      &(2*wwave_force(k,j,1:2)+wwave_force(k+1,j,1:2))
-            if(k>kbs(j)+1) rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k)/6*dt* &
+              if(k>kbs(j)+1) rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k)/6*dt* &
      &(2*wwave_force(k,j,1:2)+wwave_force(k-1,j,1:2))
+            else !use swild10 as approx. to eframe
+              call project_hvec(wwave_force(k,j,1),wwave_force(k,j,2), &
+     &swild10(1:3,1:3),sframe(:,:,j),swild(1),swild(2))
+              if(k<nvrt) then
+                call project_hvec(wwave_force(k+1,j,1),wwave_force(k+1,j,2), &
+     &swild10(1:3,1:3),sframe(:,:,j),swild(3),swild(4))
+                rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k+1)/6*dt*(2*swild(1:2)+swild(3:4))
+              endif !if(k<nvrt)
+             
+              if(k>kbs(j)+1) then
+                call project_hvec(wwave_force(k-1,j,1),wwave_force(k-1,j,2), &
+     &swild10(1:3,1:3),sframe(:,:,j),swild(3),swild(4))
+                rrhs(kin,1:2)=rrhs(kin,1:2)+dzz(k)/6*dt*(2*swild(1:2)+swild(3:4))
+              endif !if(k>kbs(j)+1)
+            endif !ics
 #endif /*USE_WWM*/
         enddo !k=kbs(j)+1,nvrt
 
@@ -4695,13 +4756,13 @@
 !...  Sponge layer for elev. and vel.
       if(inu_elev==1) then
         do i=1,npa
-          eta2(i)=eta2(i)*(1-elev_nudge(i))
+          eta2(i)=eta2(i)*(1-elev_nudge(i)*dt)
         enddo !i
       endif !inu_elev
 
       if(inu_uv==1) then
         do i=1,nsa
-          uvnu=(uv_nudge(isidenode(i,1))+uv_nudge(isidenode(i,2)))/2
+          uvnu=(uv_nudge(isidenode(i,1))+uv_nudge(isidenode(i,2)))/2*dt
           su2(:,i)=su2(:,i)*(1-uvnu)
           sv2(:,i)=sv2(:,i)*(1-uvnu)
         enddo !i
@@ -5283,8 +5344,8 @@
                 else
                   vnf=vnf2
                 endif
-                tnu=t_nudge(nd0)*vnf
-                snu=s_nudge(nd0)*vnf
+                tnu=t_nudge(nd0)*vnf*dt
+                snu=s_nudge(nd0)*vnf*dt
                 if(tnu<0.or.tnu>1.or.snu<0.or.snu>1.or.vnf<0.or.vnf>1) then
                   write(errmsg,*)'Nudging factor out of bound (1):',tnu,snu,vnf
                   call parallel_abort(errmsg)
@@ -5305,8 +5366,8 @@
                 else
                   vnf=vnf2
                 endif
-                tnu=(t_nudge(node1)+t_nudge(node2))/2*vnf
-                snu=(s_nudge(node1)+s_nudge(node2))/2*vnf
+                tnu=(t_nudge(node1)+t_nudge(node2))/2*vnf*dt
+                snu=(s_nudge(node1)+s_nudge(node2))/2*vnf*dt
                 if(tnu<0.or.tnu>1.or.snu<0.or.snu>1.or.vnf<0.or.vnf>1) then
                   write(errmsg,*)'Nudging factor out of bound (2):',tnu,snu,vnf
                   call parallel_abort(errmsg)
@@ -5478,19 +5539,19 @@
 
 !       Point sources/sinks; at bottom layer
 !Error: need to reconcile with ICM
-        if(if_source==1.and.mass_source==1) then
-          do i=1,nea
-            if(idry_e(i)==1.or.vsource(i)<=0) cycle
-
-            !Positive source only
-            bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
-            if(bigv==0) call parallel_abort('STEP: bigv==0')
-            do j=1,2 !T,S
-              bdy_frc(j,kbe(i)+1,i)=bdy_frc(j,kbe(i)+1,i)+ &
-     &(msource(j,i)-tsel(j,kbe(i)+1,i))*vsource(i)/bigv
-            enddo !j
-          enddo !i
-        endif !if_source
+!        if(if_source==1.and.mass_source==1) then
+!          do i=1,nea
+!            if(idry_e(i)==1.or.vsource(i)<=0) cycle
+!
+!            !Positive source only
+!            bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
+!            if(bigv==0) call parallel_abort('STEP: bigv==0')
+!            do j=1,2 !T,S
+!              bdy_frc(j,kbe(i)+1,i)=bdy_frc(j,kbe(i)+1,i)+ &
+!     &(msource(j,i)-tsel(j,kbe(i)+1,i))*vsource(i)/bigv
+!            enddo !j
+!          enddo !i
+!        endif !if_source
 
 !       VIMS surface temperature; added by YC
 #ifdef USE_ICM
@@ -5528,6 +5589,22 @@
 !        call parallel_finalize
 !        stop
 
+!       Point sources/sinks using operator splitting (that guarentees max.
+!       principle); at bottom layer
+!Error: need to reconcile with ICM
+        if(if_source==1) then
+          do i=1,nea
+            if(idry_e(i)==1.or.vsource(i)<=0) cycle
+
+            !Positive source only
+            bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
+            if(bigv<=0) call parallel_abort('STEP: bigv==0')
+            rat=vsource(i)*dt/bigv !ratio of volumes (>0)
+            do j=1,2 !T,S
+              tsel(j,kbe(i)+1,i)=(tsel(j,kbe(i)+1,i)+rat*msource(j,i))/(1+rat)
+            enddo !j
+          enddo !i
+        endif !if_source
 
 #ifdef USE_ICM
       if(myrank==0) write(16,*)'impose ICM point source S..'
@@ -5567,8 +5644,8 @@
               else
                 vnf=vnf2
               endif
-              tnu=(t_nudge(n1)+t_nudge(n2)+t_nudge(n3))/3*vnf
-              snu=(s_nudge(n1)+s_nudge(n2)+s_nudge(n3))/3*vnf
+              tnu=(t_nudge(n1)+t_nudge(n2)+t_nudge(n3))/3*vnf*dt
+              snu=(s_nudge(n1)+s_nudge(n2)+s_nudge(n3))/3*vnf*dt
               if(tnu<0.or.tnu>1.or.snu<0.or.snu>1.or.vnf<0.or.vnf>1) then
                 write(errmsg,*)'Nudging factor out of bound (1):',tnu,snu,vnf
                 call parallel_abort(errmsg)
@@ -5744,19 +5821,20 @@
             flx_bt = 0
             flx_sf = 0
 
-            !Pt source (imposed at bottom layer)
-            if(if_source==1.and.mass_source==1) then
-              do i=1,nea
-                if(idry_e(i)==1.or.vsource(i)<=0) cycle
-
-                !Positive source only
-                bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
-                if(bigv==0) call parallel_abort('STEP: bigv==0 (2)')
-                do j=1,ntracers
-                  bdy_frc(j,kbe(i)+1,i)=(msource(j+2,i)-trel(j,kbe(i)+1,i))*vsource(i)/bigv
-                enddo !j
-              enddo !i
-            endif !if_source
+            !Pt source (imposed at bottom layer): use operator splitting as in
+            !T,S
+!            if(if_source==1.and.mass_source==1) then
+!              do i=1,nea
+!                if(idry_e(i)==1.or.vsource(i)<=0) cycle
+!
+!                !Positive source only
+!                bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
+!                if(bigv==0) call parallel_abort('STEP: bigv==0 (2)')
+!                do j=1,ntracers
+!                  bdy_frc(j,kbe(i)+1,i)=(msource(j+2,i)-trel(j,kbe(i)+1,i))*vsource(i)/bigv
+!                enddo !j
+!              enddo !i
+!            endif !if_source
 
           case(1) !Sediment
 #ifdef USE_SED
@@ -5940,9 +6018,9 @@
 !!YC            trel(n,PSK(i),i)=total_loading/(86400*abs(PSQ(i)))
             trel(n,PSK(i),i)=(trel(n,PSK(i),i)*(bigv+PSQ(i)*dt)+(total_loading*dt/86400.))/bigv
 !!YC            trel(n,PSK(i)-1:PSK(i)-4,i)=trel(n,PSK(i),i)
-            do k=PSK(i)-1,PSK(i)-6
-              trel(n,k,i)=trel(n,PSK(i),i)
-            enddo
+!            do k=PSK(i)-1,PSK(i)-6
+!              trel(n,k,i)=trel(n,PSK(i),i)
+!            enddo
 !YC            trel(n,nvrt,i)=WWPDO(i)/(86400*abs(PSQ(i)))
           enddo
 !YC                endif
@@ -5976,7 +6054,8 @@
 
           if(inu_tr/=0) then
             do k=kbe(i)+1,nvrt
-              trnu=(tr_nudge(n1)+tr_nudge(n2)+tr_nudge(n3))/3
+              !Horizontal relax. only
+              trnu=(tr_nudge(n1)+tr_nudge(n2)+tr_nudge(n3))/3*dt
               if(trnu<0.or.trnu>1) then
                 write(errmsg,*)'Nudging factor out of bound (2):',trnu
                 call parallel_abort(errmsg)
@@ -6314,7 +6393,7 @@
         enddo !k
         htot=eta2(i)+dp(i)
         if(htot<=h0) then
-          write(errmsg,*)'Impossible 24'
+          write(errmsg,*)'Impossible 24:',it,i,eta2(i),dp(i),htot,h0,iplg(i)
           call parallel_abort(errmsg)
         endif
         dav(i,1)=dav(i,1)/htot
@@ -6813,11 +6892,31 @@
       endif !iof_ns
 #ifdef USE_WWM
       if(iof_ns(6)==1) then
-        call elfe_output_custom(lwrite,6,2,206,'wafo',nvrt,nsa,wwave_force(:,:,1),wwave_force(:,:,2))
+        call elfe_output_custom(lwrite,6,2,206,'wafo',nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting wafo.67'
       endif !iof_ns
+#ifdef USE_SED
+      if(iof_ns(7)==1)then
+        call elfe_output_custom(lwrite,5,1,207,'bfmt',1,nea,bottom(:,ibfmt))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
+      endif !iof_ns
 #endif
+#else /*not USE_WWM*/
+#ifdef USE_SED
+      if(iof_ns(6)==1)then
+        call elfe_output_custom(lwrite,5,1,206,'bfmt',1,nea,bottom(:,ibfmt))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
+      endif !iof_ns
 #endif
+#endif /*USE_WWM*/
+#else /*not DEBUG*/
+#ifdef USE_SED
+      if(iof_ns(5)==1)then
+        call elfe_output_custom(lwrite,5,1,205,'bfmt',1,nea,bottom(:,ibfmt))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
+      endif !iof_ns
+#endif
+#endif /*DEBUG*/
 
 !     Test 
 !      call elfe_output_custom(lwrite,10,1,205,'elev',1,npa,eta2)
@@ -6976,7 +7075,7 @@
               endif
             enddo !j
             write(250+i,'(e14.6,6000(1x,e14.6))')time,sta_out_gb(:,i)
-            if(i>4) write(250+i,'(e14.6,10000(1x,e14.6))')time,sta_out3d_gb(:,:,i),zta_out3d_gb(:,:,i)
+            if(i>4) write(250+i,'(e14.6,20000(1x,e14.6))')time,sta_out3d_gb(:,:,i),zta_out3d_gb(:,:,i)
           enddo !i
           write(16,*)'done station outputs...'
         endif !myrank
@@ -7044,22 +7143,29 @@
 !-------------------------------------------------------------------------------
 
       if(nhot==1.and.mod(it,nhot_write)==0) then
-        !Flags for modules that need hotstart
-        nwild=0
+        !Flags for each module that needs hotstart outputs
+        nwild=0 !init.
 #ifdef USE_ICM
         nwild(1)=1
 #endif
+#ifdef USE_SED2D
+        nwild(2)=1
+#endif
+#ifdef USE_HA
+        nwild(3)=1
+#endif
+
         write(it_char,'(i72)')it
         it_char=adjustl(it_char)
         lit=len_trim(it_char)
         it_char=it_char(1:lit)//'_0000'; lit=len_trim(it_char)
         write(it_char(lit-3:lit),'(i4.4)') myrank
-        !ihot_len=nbyte*(5+((6+4*ntracers)*nvrt+1)*ne+(8*nvrt+1)*ns+(3+22*nvrt)*np)
-        ihot_len=8*(4+((3+2*ntracers)*nvrt+1)*ne+(4*nvrt+1)*ns+(2+11*nvrt)*np)
+        !Reserve 8 bytes for all integers as well
+        ihot_len=8*(6+((3+2*ntracers)*nvrt+1)*ne+(4*nvrt+1)*ns+(2+11*nvrt)*np)
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
              access='direct',recl=ihot_len,status='replace') 
 
-        write(36,rec=1)nwild(1),dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
+        write(36,rec=1)nwild(1:3),dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
      &(dble(trel0(l,j,i)),dble(trel(l,j,i)),l=1,ntracers),j=1,nvrt),i=1,ne), &
      &(idry_s(i),(dble(su2(j,i)),dble(sv2(j,i)),dble(tsd(j,i)),dble(ssd(j,i)),j=1,nvrt),i=1,ns), &
      &(dble(eta2(i)),idry(i),(dble(tnd(j,i)),dble(snd(j,i)),dble(tem0(j,i)),dble(sal0(j,i)), &
@@ -7067,7 +7173,7 @@
      &dble(qnon(j,i)),j=1,nvrt),i=1,np) 
         close(36)
 
-        !Set record # for other modules, assuming 8-byte per record
+        !Save starting record # for other modules, assuming 8-byte per record
         IHOTSTP=ihot_len/8
 #ifdef USE_ICM
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
@@ -7114,13 +7220,24 @@
           write(36,rec=IHOTSTP+39)ISWBENS(i)
           write(36,rec=IHOTSTP+40)DFEEDM1S(i)
           IHOTSTP=IHOTSTP+40
-        enddo !i
-#endif
+        enddo !i=1,ne
+        close(36)
+#endif /*USE_ICM*/
 
         !write(12,*)'After hot trcr:',it,real(trel),real(trel0)
 
+#ifdef USE_SED2D
+        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+             &access='direct',recl=8,status='old')
+        do i=1,np
+          write(36,rec=IHOTSTP+1)dp(i)
+          IHOTSTP=IHOTSTP+1
+        enddo !i=1,np
+        close(36)
+#endif /*USE_SED2D*/
+
 #ifdef USE_HA
-!... 
+!...  not working properly yet
 !...    IF APPROPRIATE ADD HARMONIC ANALYSIS INFORMATION TO HOT START FILE
 !...    Adapted from ADCIRC
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &

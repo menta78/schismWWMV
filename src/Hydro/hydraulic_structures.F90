@@ -8,7 +8,7 @@
       implicit none
 
 
-      integer, parameter :: NAME_LEN = 16
+      integer, parameter :: NAME_LEN = 32
 
 
 !---- Constants for struct_type
@@ -253,12 +253,14 @@
           op = struct%op_up
       end if
 
-      depth_flow = min(struct%height,max_elev - struct%elev)
+      if(struct%struct_type .ne. HYDTRANSFER) then
+        depth_flow = min(struct%height,max_elev - struct%elev)
 !JZ: 'op==0.d0' is risky; consider integer operation?
-      if (depth_flow <= 0.D0 .or. op == 0.d0)then
-        flow = 0.d0
-	return
-       end if
+        if (depth_flow <= 0.D0 .or. op == 0.d0)then
+          flow = 0.d0
+	  return
+         end if
+      end if
 
       select case(struct%struct_type)
       case(HYDTRANSFER)

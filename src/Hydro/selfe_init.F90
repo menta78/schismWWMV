@@ -96,7 +96,7 @@
 
 !     Local variables
       type(llist_type),pointer :: llp
-      logical :: ltmp,ltmp1,ltmp2
+      logical :: ltmp,ltmp1,ltmp2,lexist
       character(len=48) :: inputfile
 !      integer :: flag_model,flag_ic
 
@@ -745,14 +745,28 @@
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
 #ifdef DEBUG
+
 #ifdef USE_WWM
+      noutput_ns=6
+#ifdef USE_SED
+      noutput_ns=7
+#endif
+#else /*not WWM*/
+#ifdef USE_SED
       noutput_ns=6
 #else
       noutput_ns=5
 #endif
+#endif /*USE_WWM*/
+
+#else /*not DEBUG*/
+#ifdef USE_SED
+      noutput_ns=5
 #else
       noutput_ns=4
 #endif
+#endif /*DEBUG*/
+
       allocate(outfile_ns(noutput_ns),varnm_ns(noutput_ns),iof_ns(noutput_ns), &
      &stat=istat)
       outfile_ns(1)='hvel.67'
@@ -763,8 +777,19 @@
       outfile_ns(5)='bpgr.65'
 #ifdef USE_WWM
       outfile_ns(6)='wafo.67'
+#ifdef USE_SED
+      outfile_ns(7)='bfmt.66'
 #endif
+#else /*not WWM*/
+#ifdef USE_SED
+      outfile_ns(6)='bfmt.66'
 #endif
+#endif /*USE_WWM*/
+#else /*not DEBUG*/
+#ifdef USE_SED
+      outfile_ns(5)='bfmt.66'
+#endif
+#endif /*DEBUG*/
       varnm_ns(1)='3D horizontal vel. at sides and whole levels'
       varnm_ns(2)='Vertical vel. at centroids and whol levels'
       varnm_ns(3)='temperature at prism centers'
@@ -773,8 +798,19 @@
       varnm_ns(5)='barotropic pressure gradient force at side centers'
 #ifdef USE_WWM
       varnm_ns(6)='wave force at side centers and whole levels'
+#ifdef USE_SED
+      varnm_ns(7)='bedforms type over the domain'
 #endif
-#endif      
+#else /*not USE_WWM*/
+#ifdef USE_SED
+      varnm_ns(6)='bedforms type over the domain'
+#endif
+#endif /*USE_WWM*/
+#else /*not DEBUG*/
+#ifdef USE_SED
+      varnm_ns(5)='bedforms type over the domain'
+#endif
+#endif /*DEBUG*/
       do i=1,noutput_ns
         call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
         if(iof_ns(i)/=0.and.iof_ns(i)/=1) then
@@ -870,7 +906,7 @@
 
 !     tvd_mid1: model AA (my own formulation); CC (Casulli's definition of upwind
 !     ratio)
-!     TVD scheme will be used if itvd_e=1 and total depth >=h_tvd
+!     TVD scheme will be used if itvd_e=1 and min(total depth) >=h_tvd
       if(iupwind_t==2) then
         call get_param('param.in','tvd_mid',0,itmp,tmp,tvd_mid1)
         call get_param('param.in','flimiter',0,itmp,tmp,flimiter1)
@@ -1046,8 +1082,8 @@
       call get_param('param.in','if_source',1,if_source,tmp,stringvalue)
       if(if_source/=0.and.if_source/=1) call parallel_abort('Wrong if_source')
       !If mass_source=0, the mass from sink/sources is not used in transport
-      call get_param('param.in','mass_source',1,mass_source,tmp,stringvalue)
-      if(mass_source/=0.and.mass_source/=1) call parallel_abort('Wrong mass_source')
+      !call get_param('param.in','mass_source',1,mass_source,tmp,stringvalue)
+      !if(mass_source/=0.and.mass_source/=1) call parallel_abort('Wrong mass_source')
 
 !     Tracers 
       call get_param('param.in','flag_model',1,flag_model,tmp,stringvalue)
@@ -1292,19 +1328,16 @@
         allocate(iflux_e(nea),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: iflux_e alloc')
 
-        open(32,file='fluxflag.gr3',status='old')
-        read(32,*)
-        read(32,*) itmp1,itmp2
-        if(itmp1/=ne_global.or.itmp2/=np_global) call parallel_abort('Check fluxflag.gr3')
-        do i=1,np_global
-          read(32,*)j,xtmp,ytmp,tmp1
-          if(tmp1<-1) call parallel_abort('MAIN: fluxflag.gr3 has <-1')
-          if(ipgl(i)%rank==myrank) nwild2(ipgl(i)%id)=tmp1
+        open(32,file='fluxflag.prop',status='old')
+        do i=1,ne_global
+          read(32,*)j,tmp1
+          if(tmp1<-1) call parallel_abort('MAIN: fluxflag.prop has <-1')
+          if(iegl(i)%rank==myrank) iflux_e(iegl(i)%id)=tmp1
         enddo
         close(32)
-        do i=1,nea !must be aug.
-          iflux_e(i)=maxval(nwild2(nm(i,1:3)))
-        enddo !i
+!        do i=1,nea !must be aug.
+!          iflux_e(i)=maxval(nwild2(nm(i,1:3)))
+!        enddo !i
 
         itmp1=maxval(iflux_e)
         call mpi_allreduce(itmp1,max_flreg,1,itype,MPI_MAX,comm,ierr)
@@ -1500,6 +1533,25 @@
         xlon_el(i)=(xlon(nm(i,1))+xlon(nm(i,2))+xlon(nm(i,3)))/3*180/pi !in degrees
         ylat_el(i)=(ylat(nm(i,1))+ylat(nm(i,2))+ylat(nm(i,3)))/3*180/pi
       enddo !i
+#endif
+
+!... Read lat/lon for spectral spatial interpolation  in WWM
+#ifdef USE_WWM
+      inquire(file='hgrid.ll',exist=lexist)
+      if(lexist) then
+        open(32,file='hgrid.ll',status='old')
+        read(32,*)
+        read(32,*) !ne,np
+        do i=1,np_global
+           read(32,*)j,xtmp,ytmp
+           if(ipgl(i)%rank==myrank) then
+             xlon(ipgl(i)%id)=xtmp*pi/180
+             ylat(ipgl(i)%id)=ytmp*pi/180
+           endif
+        enddo !i
+        close(32)
+        lreadll=.true. 
+      endif 
 #endif
 
 !...  Classify interior/exterior bnd node and calculate edge angles (for WWM only)
@@ -2853,11 +2905,11 @@
      &call parallel_abort('Check elev_nudge.gr3')
         do i=1,np_global
           read(10,*)j,xtmp,ytmp,tmp1
-          if(tmp1<0.or.tmp1>1) then
+          if(tmp1<0.or.tmp1*dt>1) then
             write(errmsg,*)'Wrong nudging factor at node (1):',i,tmp1
             call parallel_abort(errmsg)
           endif
-          if(ipgl(i)%rank==myrank) elev_nudge(ipgl(i)%id)=tmp1
+          if(ipgl(i)%rank==myrank) elev_nudge(ipgl(i)%id)=tmp1 !Dimension: sec^-1
         enddo !i
         close(10)
       endif !inu_elev
@@ -2870,11 +2922,11 @@
      &call parallel_abort('Check uv_nudge.gr3')
         do i=1,np_global
           read(10,*)j,xtmp,ytmp,tmp1
-          if(tmp1<0.or.tmp1>1) then
+          if(tmp1<0.or.tmp1*dt>1) then
             write(errmsg,*)'Wrong nudging factor at node (2):',i,tmp1
             call parallel_abort(errmsg)
           endif
-          if(ipgl(i)%rank==myrank) uv_nudge(ipgl(i)%id)=tmp1
+          if(ipgl(i)%rank==myrank) uv_nudge(ipgl(i)%id)=tmp1 !Dimension: sec^-1
         enddo !i
         close(10)
       endif !inu_uv
@@ -2909,11 +2961,12 @@
         do i=1,np_global
           read(10,*)j,xtmp,ytmp,tmp1
           read(32,*)j,xtmp,ytmp,tmp2
-          if(tmp1<0.or.tmp1>1.or.tmp2<0.or.tmp2>1) then
+          if(tmp1<0.or.tmp1*dt>1.or.tmp2<0.or.tmp2*dt>1) then
             write(errmsg,*)'Wrong nudging factor at node:',i,tmp1,tmp2
             call parallel_abort(errmsg)
           endif
           if(ipgl(i)%rank==myrank) then
+            !Dimension: sec^-1
             t_nudge(ipgl(i)%id)=tmp1
             s_nudge(ipgl(i)%id)=tmp2
           endif
@@ -2971,23 +3024,18 @@
       endif !mmm>0
 
 !     tvd_mid1: model AA (my own formulation); CC (Casulli's definition of upwind ratio)
-!     TVD scheme will be used if itvd_e=1 and total depth >=h_tvd
+!     TVD scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd
       itvd_e=0 !init. for upwind
       if(iupwind_t==2) then
-!        call get_param('param.in','tvd_mid',0,itmp,tmp,tvd_mid)
-!        call get_param('param.in','flimiter',0,itmp,tmp,flimiter)
-!        call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
-        open(32,file='tvd.gr3',status='old')
-        read(32,*); read(32,*)
-        do i=1,np_global
-          read(32,*)j,xtmp,ytmp,tmp
+        open(32,file='tvd.prop',status='old')
+        do i=1,ne_global
+          read(32,*)j,tmp
           itmp=nint(tmp)
           if(itmp/=0.and.itmp/=1) then
             write(errmsg,*)'Unknown TVD flag:',i,tmp
             call parallel_abort(errmsg)
           endif
-
-          if(ipgl(i)%rank==myrank) itvd_e(ipgl(i)%id)=itmp
+          if(iegl(i)%rank==myrank) itvd_e(iegl(i)%id)=itmp
         enddo !i
         close(32)
       endif !iupwind_t
@@ -3743,7 +3791,7 @@
         WWPCOD(:)  = 0.
         WWPDO(:)   = 0.
 !
-        x1 = 1.0E3 !* DTD
+        x1 = 1.0E3 !conversion from kg to g
         open(61,file='ps.in',status='old')
         read(61,*)
         read(61,*)
@@ -3751,8 +3799,8 @@
           read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
           &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
           if(iegl(iegb)%rank==myrank) then
-            PSQ(iegl(iegb)%id)     = xPSQ
-            PSK(iegl(iegb)%id)     = xPSK
+            PSQ(iegl(iegb)%id)     = xPSQ !m^3/s - usually negative
+            PSK(iegl(iegb)%id)     = xPSK !vertical layer where the source is applied
             WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3 = g per day
             WWPLPOC(iegl(iegb)%id) = PLPOC * x1
             WWPDOCA(iegl(iegb)%id) = PDOCA * x1
@@ -3779,6 +3827,7 @@
       endif ! iWQPS=2
 
 !     VIMS surface temperature mode added by YC
+!     May want to use heat exchange instead
       if(iSun==2) then
         if(myrank==0) write(16,*)'start reading ICM surface T...'
         open(62,file='surface_t.th',status='old')
@@ -4439,6 +4488,16 @@
         enddo !i
 #endif
 
+#ifdef USE_SED2D
+      do i=1,np_global
+        read(36) ipgb,double1
+        if(ipgl(ipgb)%rank==myrank) then
+          ip=ipgl(ipgb)%id
+          dp(ip)=double1
+        endif
+      enddo !i
+#endif
+
 #ifdef USE_HA
 !...
 !......HOT START INFORMATION FOR HARMONIC ANALYSIS
@@ -4641,7 +4700,7 @@
           WWPCOD(:)  = 0.
           WWPDO(:)   = 0.
 !
-          x1 = 1.0E3 !* DTD
+          x1 = 1.0E3 !from kg to g
           npstiminc=86400.
           open(61,file='ps.in',status='old')
           rewind(61)

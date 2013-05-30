@@ -25,9 +25,7 @@
 !$OMP&         ITER,CFLCAS,REST,CASS,CAS,ACQ,LITERSPLIT)
 !$OMP DO SCHEDULE (DYNAMIC)
          DO IP = 1, MNP
-           IF (LQSTEA) THEN
-             IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
-           END IF
+!           IF (LQSTEA .AND. IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) CYCLE
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 2) CYCLE

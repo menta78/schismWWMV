@@ -458,7 +458,7 @@
         REAL(rkind), INTENT(OUT) :: CONV1, CONV2, CONV3, CONV4, CONV5
 
         INTEGER :: I, IP, IE, IS, ID, NI(3)
-        INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5
+        INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5, ISCONV(MNP)
         REAL(rkind)  :: SUMAC, ACLOC(MSC,MDC)
         REAL(rkind)  :: ETOT, EAD, DS, HS2
         REAL(rkind)  :: ETOTF3, ETOTF4, TP, KHS2, EFTOT, TM02
@@ -477,7 +477,7 @@
 #ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
 #else
-        DO IP = 1, NP_RES
+        DO IP = 1, NP_RES 
 
           IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface node
             IF(IPGL(IPLG(ip))%NEXT%RANK < MYRANK) CYCLE !already in the sum so skip
@@ -546,6 +546,8 @@
             IPCONV3 = IPCONV3 + 1
             IPCONV4 = IPCONV4 + 1
             IPCONV5 = IPCONV5 + 1
+            ISCONV(IP) = 1
+            !write(dbg%fhndl,*) 'boundary -------1------', TIME, IP, IP_IS_STEADY(IP)
             CYCLE
           ELSE 
             CONVK1 = ABS(HSOLD(IP)-HS2)/HS2
@@ -559,11 +561,12 @@
             IF (CONVK4 .LT. EPSH4) IPCONV4 = IPCONV4 + 1
             IF (CONVK5 .LT. EPSH5) IPCONV5 = IPCONV5 + 1
             IF (CONVK1 .LT. EPSH1 .AND. CONVK2 .LT. EPSH2 .AND. CONVK3 .LT. EPSH3 .AND. CONVK4 .LT. EPSH4 .AND. CONVK5 .LT. EPSH5) THEN
-              IP_IS_STEADY(IP) = 1
+              ISCONV(IP) = 1 
+              !write(dbg%fhndl,*) 'converged -------2------', TIME, IP, IP_IS_STEADY(IP)
             ELSE
-              IP_IS_STEADY(IP) = 0
+              ISCONV(IP) = 0
+              !write(dbg%fhndl,*) 'not converged -------3------', TIME, IP, IP_IS_STEADY(IP)
             ENDIF
-            write(*,*) IP, IP_IS_STEADY(IP) 
           END IF
           HSOLD(IP)    = HS2
           SUMACOLD(IP) = SUMAC
@@ -571,24 +574,30 @@
           TM02OLD(IP)  = TM02
         END DO  ! IP
 
+        !write(*,*) time, maxval(IP_IS_STEADY), minval(IP_IS_STEADY)
+
         DO IE = 1, MNE
           NI = INE(:,IE)
-          IF (SUM(IP_IS_STEADY(NI)) .EQ. 3) IE_IS_STEADY(IE) = 1
+          IF (SUM(ISCONV(NI)) .EQ. 3) THEN
+            IE_IS_STEADY(IE) = IE_IS_STEADY(IE) + 1
+          ELSE
+            IE_IS_STEADY(IE) = 0
+          ENDIF
+          !WRITE(*,*) IE, IE_IS_STEADY(IE)
         ENDDO
 
-!        DO IP = 1, MNP
-!          DO I = 1, CCON(IP)
-!            ITMP = 0 
-!            IF (IE_IS_STEADY(IE_CELL2(IP,I)) .EQ. 1) THEN
-!              ITMP = ITMP + 1 
-!            ENDIF
-!          ENDDO
-!          IF (ITMP .EQ. CCON(IP) .AND. IP_IS_STEADY(IP) .EQ. 1) THEN
-!            IP_IS_STEADY(IP) = 1
-!          ELSE
-!            IP_IS_STEADY(IP) = 0
-!          ENDIF
-!        ENDDO
+        DO IP = 1, MNP
+          ITMP = 0
+          DO I = 1, CCON(IP)
+            IF (IE_IS_STEADY(IE_CELL2(IP,I)) .GE. 1) ITMP = ITMP + 1
+          ENDDO
+          IF (ITMP .EQ. CCON(IP)) THEN
+            IP_IS_STEADY(IP) = IP_IS_STEADY(IP) + 1
+            !IF (IP_IS_STEADY(IP) .GT. 2) WRITE(*,*) TIME, IP, IP_IS_STEADY(IP)
+          ELSE
+            IP_IS_STEADY(IP) = 0
+          ENDIF
+        ENDDO
 
 #ifdef MPI_PARALL_GRID
         CALL MPI_ALLREDUCE(IPCONV1, itmp, 1, itype, MPI_SUM, COMM, ierr)
@@ -2303,7 +2312,7 @@
       POSITION_BEFORE_POINT=LPOS
       END FUNCTION
 !**********************************************************************
-!*                                                                     *
+!*                                                                    *
 !**********************************************************************
       SUBROUTINE GETSTRING (ThePow, TheNb, eStr)
       IMPLICIT NONE
@@ -2352,6 +2361,55 @@
       WRITE(eStr,40) TRIM(eStrZero),TRIM(eStrNb)
   40  FORMAT (a,a)
       END SUBROUTINE GETSTRING
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+     SUBROUTINE SPECSTAT(TIME)
+
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         REAL, INTENT(IN)    :: TIME
+
+         INTEGER             :: IS, ID, IP
+         REAL(RKIND)         :: ETOT
+
+! Specstat 2D definiton 1 based on the total energy ... may be to less specific for certain spatial points e.g. coastal points in shadowing areas ....
+
+        STAT2D = 0.
+        DO IP = 1, MNP
+           ETOT = SUM(AC2(IP,:,:))
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               IF (ETOT .GT. THR) THEN
+                 IF (AC2(IP,IS,ID)/ETOT .LT. 1.E-5) THEN
+                   STAT2D(IS,ID) = STAT2D(IS,ID) + 1./REAL(MNP)*100.
+!                   WRITE(*,'(3I10,4E15.4)') IP, IS, ID, STAT2D(IS,ID), AC2(IP,IS,ID)/ETOT, AC2(IP,IS,ID), ETOT
+                 END IF
+               ELSE 
+                 STAT2D(IS,ID) = STAT2D(IS,ID) + 1./REAL(MNP)*100.
+               END IF
+             END DO
+           END DO
+        END DO
+
+        DO IS = 1, MSC
+          DO ID = 1, MDC
+            IF (STAT2D(IS,ID) .GT. 99.9) STAT2D(IS,ID) = 0.
+          END DO
+        END DO
+
+!         CALL SSORTORG(STAT1D,SIGTMP,MSC,1)
+!         DO IS = 1, MSC
+!            DO ID = 1, MDC
+!              WRITE(*,'(2I10,F15.4)') IS, ID, STAT2D(IS,ID)
+!            END DO
+!             WRITE(*,*) IS, STAT1D(IS)
+!          END DO
+
+!         CALL DISPLAY_GRAPH(SPSIG,SUM1D,MSC,MINVAL(SPSIG),MAXVAL(SPSIG),MINVAL(SUM1D),MAXVAL(SUM1D),'','','')
+
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
