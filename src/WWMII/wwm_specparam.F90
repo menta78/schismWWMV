@@ -1029,7 +1029,7 @@
            do is = 2, msc -1 
              ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do 
-           ETOT_SKDSIG = tmp(msc) * ONEHALF * ds_incr(msc)
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(msc) * ONEHALF * ds_incr(msc)
          end do
 
          IF (ETOT_SKD .gt. verysmall) THEN 
@@ -1040,6 +1040,22 @@
            ORBITAL     = SQRT(2*ETOT_SKD)
            BOTEXPER    = SQRT(2*ETOT_SKDSIG)
            TMBOT       = PI2*SQRT(ETOT_SKDSIG/ETOT_SKD)
+
+           IF (BOTEXPER .NE. BOTEXPER) THEN
+ETOT_SKDSIG = ZERO
+         do id = 1, mdc
+           tmp(:) = acloc(:,id) * spsig * y
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)
+           write(*,*) ETOT_SKDSIG, tmp(1), ds_incr(1)
+           do is = 2, msc -1
+             ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
+             write(*,*) ETOT_SKDSIG, tmp(is), ds_band(is)
+           end do
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(msc) * ONEHALF * ds_incr(msc)
+           write(*,*) ETOT_SKDSIG, tmp(msc), ds_incr(msc)
+         end do
+              STOP 'NAN CURR PARAM'
+           ENDIF
            
          ELSE 
 !

@@ -56,7 +56,7 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = FRANZIUS
 #ENV         = MATHIEU
 ENV = ARON
-ENV = ZANKE
+#ENV = ZANKE
 
 ################################################################################
 # Executable
@@ -94,12 +94,12 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 #  PPFLAGS := $(PPFLAGS) -DDEBUG 
 
 # Wind wave model WWM
-#  USE_WWM = yes
-#  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
+  USE_WWM = yes
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-#  USE_PETSC = yes
-#  PPFLAGS := $(PPFLAGS) -DPETSC 
+  USE_PETSC = yes
+  PPFLAGS := $(PPFLAGS) -DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes
@@ -548,11 +548,11 @@ ifeq ($(ENV),ARON)
 # MPI vserion (1 or 2)
   PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 -DWWM_SOLVER 
 # DEBUG + DEVELOPEMENT
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 # PERFORMANCE SAVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
-  FLDFLAGS = -O1 -g -traceback -assume byterecl 
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
+#  FLDFLAGS = -O1 -g -traceback -assume byterecl 
 # AGGRESSIVE OPTIMIZATION
 #  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl

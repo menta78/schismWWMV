@@ -1754,9 +1754,9 @@
 !
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
 
-        !DO IBWW3=1,NP_WW3
-        !  WRITE(*,*) IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
-        !END DO
+        DO IBWW3=1,NP_WW3
+          WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
+        END DO
 
 !
 ! Sort directions and carries spectra along (ww3 directions are not
@@ -1771,6 +1771,7 @@
             DR_WW3 = DR_WW3_TMP
           ENDDO
           DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
+          WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
         ENDDO ! IBWW3
 !
 ! Interpolate ww3 spectra on wwm frequency grid
@@ -1780,12 +1781,14 @@
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
           WRITE(STAT%FHNDL,*)'WW3 spectra does not encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
-!GD2AR: here we should either stop the simulation or call SPECTRALINT
+          CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
         ELSE
           WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
           WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
           CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
         ENDIF
+
+        WRITE(STAT%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
 !
 ! Interpolate ww3 spectra on wwm boundary nodes
 ! GD: ww3 forcing works until here. Some more debugging is needed
@@ -1803,8 +1806,8 @@
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM*RADDEG,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
-                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM*RADDEG,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
+                !WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
+                !WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
                 !write(*,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
@@ -1814,16 +1817,20 @@
                 !write(*,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
+              !write(*,*) INDBWW3(1:2), sum(SPEC_WWM(:,:,INT(INDBWW3(1:2)))), SUM(WBACOUT(:,:,IB))
             ELSE
               WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
             ENDIF
-            WRITE(STAT%FHNDL,*) 'TEST OUTPUT', IB, XP_WWM, YP_WWM, SUM(WBACOUT(:,:,IB))
-          ENDDO
+          ENDDO ! IB 
         ELSE
           DO IB=1,IWBMNP
             WBACOUT(:,:,IB) = SPEC_WWM(:,:,1) 
           ENDDO
         ENDIF
+
+        DO IB = 1, IWBMNP
+          WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
+        ENDDO 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
         END SUBROUTINE
@@ -1898,6 +1905,8 @@
 
         REAL(rkind) :: JACOBIAN(MSC), AM, SM, OUTPAR(OUTVARS)
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
+
         JACOBIAN = 1./(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
 
         DO IP=1,NP_WW3
@@ -1910,7 +1919,7 @@
         ENDDO
 
         WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER INTERPOLATION'
-        DO IP = 1, 1!NP_WW3
+        DO IP = 1, NP_WW3
           M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
           DO ID = 1,MDC_WW3
             DO IS = 1,MSC_WW3-1
@@ -1949,40 +1958,41 @@
           END DO              
         END DO
 
-!        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
-!        DO IP = 1, 1!NP_WW3
-!          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-!          DO ID = 1,MDC_WW3
-!            DO IS = 1,MSC_WW3-1
-!              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-!              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
-!              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
-!              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
-!              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
-!              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
-!            ENDDO
-!          ENDDO
-!          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
-!          DO ID = 1,MDC
-!            DO IS = 1,MSC-1
-!              DF = SPSIG(IS+1)-SPSIG(IS)
-!              SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
-!              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
-!              M0_WWM =M0_WWM+AM*DF*DDIR
-!              M1_WWM =M1_WWM+AM*SM*DF*DDIR
-!              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
-!            ENDDO
-!          ENDDO
-!          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
-!          WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right) after JACOBIAN'
-!          WRITE(STAT%FHNDL,*)'HS = ',SQRT(M0_WW3)*4, SQRT(M0_WWM)*4
-!          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM!/PI2
-!          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM!/(PI2)**2
-!          WRITE(STAT%FHNDL,*)'TM01 =', M0_WW3/M1_WW3, M0_WWM/M1_WWM 
-!          WRITE(STAT%FHNDL,*)'END CHECK'
-!        END DO
+        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
+        DO IP = 1, NP_WW3
+          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+          DO ID = 1,MDC_WW3
+            DO IS = 1,MSC_WW3-1
+              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
+            ENDDO
+          ENDDO
+          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
+          DO ID = 1,MDC
+            DO IS = 1,MSC-1
+              DF = SPSIG(IS+1)-SPSIG(IS)
+              SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
+              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
+              M0_WWM =M0_WWM+AM*DF*DDIR
+              M1_WWM =M1_WWM+AM*SM*DF*DDIR
+              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
+            ENDDO
+          ENDDO
+          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+          WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right) after JACOBIAN'
+          WRITE(STAT%FHNDL,*)'HS = ',SQRT(M0_WW3)*4, SQRT(M0_WWM)*4
+          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM!/PI2
+          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM!/(PI2)**2
+          WRITE(STAT%FHNDL,*)'TM01 =', M0_WW3/M1_WW3, M0_WWM/M1_WWM 
+          WRITE(STAT%FHNDL,*)'END CHECK'
+        END DO
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE SPECTRALINT'
+
         END SUBROUTINE
 !**********************************************************************
 !* INTERLIND
