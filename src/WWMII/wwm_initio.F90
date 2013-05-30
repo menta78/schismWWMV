@@ -1806,18 +1806,18 @@
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-                !WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
-                !WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
+                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
+                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
-                !write(*,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
+                WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               ENDDO
               CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
               DO IBWW3=1,NP_WW3
-                !write(*,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
+                WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
-              !write(*,*) INDBWW3(1:2), sum(SPEC_WWM(:,:,INT(INDBWW3(1:2)))), SUM(WBACOUT(:,:,IB))
+              !WRITE(STAT%FHNDL,*) INDBWW3(1:2), sum(SPEC_WWM(:,:,INT(INDBWW3(1:2)))), SUM(WBACOUT(:,:,IB))
             ELSE
               WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
             ENDIF
@@ -1907,15 +1907,19 @@
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
 
-        JACOBIAN = 1./(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
+        JACOBIAN = ONE/(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
+ 
+        SPEC_WW3_TMP = ZERO
 
         DO IP=1,NP_WW3
+          WRITE(STAT%FHNDL,'(A20,I10,2F20.10)') 'BEFORE INTERPOLATION', IP, SUM(SPEC_WW3(:,:,IP)), SUM(SPEC_WW3_TMP(:,:,IP))
           DO IS=1,MSC_WW3
             CALL INTERLIND(MDC_WW3,MDC,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
           ENDDO
           DO ID=1,MDC 
             CALL INTERLIN (MSC_WW3,MSC,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
           ENDDO
+          WRITE(STAT%FHNDL,'(A20,I10,2F20.10)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3(:,:,IP)), SUM(SPEC_WW3_TMP(:,:,IP))
         ENDDO
 
         WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER INTERPOLATION'
@@ -1985,9 +1989,9 @@
           WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
           WRITE(STAT%FHNDL,*)'INTEGRATED PARAMETERS IN WW3 (left) WWM(right) after JACOBIAN'
           WRITE(STAT%FHNDL,*)'HS = ',SQRT(M0_WW3)*4, SQRT(M0_WWM)*4
-          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM!/PI2
-          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM!/(PI2)**2
-          WRITE(STAT%FHNDL,*)'TM01 =', M0_WW3/M1_WW3, M0_WWM/M1_WWM 
+          WRITE(STAT%FHNDL,*)'M1 = ',M1_WW3, M1_WWM/PI2
+          WRITE(STAT%FHNDL,*)'M2 = ',M2_WW3, M2_WWM/(PI2)**2
+          WRITE(STAT%FHNDL,*)'TM01 =', M0_WW3/M1_WW3, M0_WWM/PI2/M1_WWM/(PI2)**2
           WRITE(STAT%FHNDL,*)'END CHECK'
         END DO
 
