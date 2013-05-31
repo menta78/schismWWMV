@@ -1939,6 +1939,12 @@
                  DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
                  WBAC    =  WBACOLD
                  WBACOLD =  WBACNEW
+
+                 IF (LNANINFCHK) THEN
+                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION ',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
+                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                 ENDIF
+
                ELSE ! .NOT. LBINTER
                  IF (IBOUNDFORMAT == 3) THEN
                    WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
@@ -1951,6 +1957,11 @@
                  END IF
                END IF
 
+               IF (LNANINFCHK) THEN
+                 WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION ',  SUM(WBAC)
+                 IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1956'
+               ENDIF
+
              ENDIF 
 !
              SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY ! Increment boundary time line ...
@@ -1959,6 +1970,12 @@
 
              IF (LBINTER) THEN
                WBAC = WBAC + DSPEC
+
+           IF (LNANINFCHK) THEN
+             WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION ',  SUM(WBAC)
+             IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1965'
+           ENDIF
+
              END IF
 
            END IF
@@ -1972,6 +1989,11 @@
              eIdx = IWBNDLC(IP)
              AC2(eIdx,:,:) = WBAC(:,:,bIdx)
            END DO
+
+           IF (LNANINFCHK) THEN
+             WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
+             IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1978'
+           ENDIF
 
          ENDIF ! LBCSE ... 
       END SUBROUTINE

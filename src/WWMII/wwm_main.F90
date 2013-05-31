@@ -37,6 +37,11 @@
 
          TIME1 = mpi_wtime()
 
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 1'
+         ENDIF
+
 !zyl: check dimension
 !ar: obsolete since already checked in init_wwm, after model has been tested this should be removed
          if(WINDVARS/=size(WIND_INTPAR,2)) call wwm_abort('Dimension mismatch: OUTWINDPAR and out_wwm_windpar')
@@ -56,6 +61,11 @@
            WRITE(DBG%FHNDL,*) 'nstep_wwm=', NSTEPWWM
            WRITE(DBG%FHNDL,*) '       dt=', DT_SELFE
            CALL WWM_ABORT('Correct coupled model time-steppings')
+         ENDIF
+
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' FIRST SUM IN MAIN ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
          ENDIF
 
          SIMUTIME = SIMUTIME + MAIN%DELT
@@ -181,6 +191,11 @@
          IT    = 1
          CALL SET_WAVE_BOUNDARY_CONDITION
 
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER SETTING BOUNDARY CONDITION IN MAIN ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+         ENDIF
+
          IF (LFIRSTSTEP) THEN
            IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SELFE
            LFIRSTSTEP = .FALSE.
@@ -189,12 +204,24 @@
 
          TIME2 = mpi_wtime() 
 
+
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 3'
+         ENDIF
+
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
             CALL QUASI_STEADY(KKK)
          ELSE
             CALL UN_STEADY(KKK,CALLFROM)
          END IF
+
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 4'
+         ENDIF
+
 
          TIME3 = mpi_wtime()
 
@@ -238,6 +265,11 @@
          KKK = KKK + 1
 
          TIME6 = mpi_wtime()
+
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+         ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1

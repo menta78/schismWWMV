@@ -19,6 +19,7 @@
 
          AC1 = AC2 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 1'
          ENDIF
 
@@ -44,6 +45,7 @@
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -1- ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 2'
          ENDIF
   
@@ -53,6 +55,7 @@
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -2- ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 3'
          ENDIF
 
@@ -61,6 +64,7 @@
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER SPATIAL ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 4'
          ENDIF
 
@@ -69,6 +73,7 @@
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 5'
          ENDIF
 
@@ -77,6 +82,7 @@
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
          IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' AFTER BREAK LIMIT ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 6'
          ENDIF
 

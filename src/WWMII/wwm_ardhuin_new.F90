@@ -395,9 +395,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4_NEW()
-        USE DATAPOOL, ONLY : LPRECOMP_EXIST 
+        USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
+        IMPLICIT NONE
+        INTEGER :: MSC_TEST, MDC_TEST
         IF (LPRECOMP_EXIST) THEN
           READ (5002)                &
+        & MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
         & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,  &
@@ -410,6 +413,14 @@
         & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,      &
         & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS, &
         & DIKCUMUL, CUMULW, QBI
+
+        IF (MSC_TEST .NE. MSC .OR. MDC_TEST .NE. MDC) THEN
+          WRITE(DBG%FHNDL,*) 'MSC AND MDC READ FROM FILE AND SET IN WWMINPUT.NML ARE NOT EQUAL -STOP-'
+          WRITE(DBG%FHNDL,*) MSC_TEST, MSC
+          WRITE(DBG%FHNDL,*) MDC_TEST, MDC 
+          CALL WWM_ABORT('THE fort.5002 file does not match your specifications')
+        ENDIF
+          
         END IF
      END SUBROUTINE
 !**********************************************************************
@@ -694,7 +705,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, MSC, MDC,  &
-     &  MSC, MDC, TAUHF, TAUTOT, TAUW, RKIND, NSPEC, ZERO, ONE
+     &  MSC, MDC, TAUHF, TAUTOT, TAUW, RKIND, NSPEC, ZERO, ONE, DBG
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -1010,7 +1021,7 @@
          IS=ITH+(NK-1)*NTH
          COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
          TEMP=TEMP+A(IS)*(MAX(COSWIND,ZERO))**3
-         !WRITE(DBG%FHNDL,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
+         WRITE(DBG%FHNDL,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
          END DO
 
       TAUPX=TAUX-ABS(TTAUWSHELTER)*XSTRESS
@@ -1034,10 +1045,10 @@
       IF (TTAUWSHELTER.GT.0) THEN 
          XK = CONST0*TEMP/DELTAIL
          I  = MIN(ILEVTAIL-1, INT(XK))
+         WRITE(DBG%FHNDL,*) XK, I, ILEVTAIL, CONST0, TEMP, DELTAIL
          DELK1= MIN (ONE ,XK-MyREAL(I))
          DELK2=ONE - DELK1
-         !WRITE(4000,*) XK, I, ILEVTAIL, CONST0, TEMP, DELTAIL
-         !WRITE(4000,*) DELK1, DELK2, XK, I, J
+         WRITE(DBG%FHNDL,*) DELK1, DELK2, XK, I, J
          TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1)*DELJ2 &
      &  +(TAUHFT2(IND,J+1,I)*DELI2+TAUHFT2(IND+1,J+1,I)*DELI1)*DELJ1)*  &
      &   DELK2 +((TAUHFT2(IND,J,I+1)*DELI2+TAUHFT2(IND+1,J,I+1)*DELI1)* &
@@ -1131,7 +1142,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST
+      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
       USE DATAPOOL, ONLY: ZERO, ONE, TWO
 # ifdef MPI_PARALL_GRID
       USE ELFE_MSGP
@@ -1347,6 +1358,7 @@
 
    IF (.NOT. LPRECOMP_EXIST) THEN
      WRITE (5002)                                                       &
+     & MSC,MDC,                                                         &
      & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                    &
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &
      & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,                  &
