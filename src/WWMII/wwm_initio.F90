@@ -1798,16 +1798,16 @@
           DO IB=1,IWBMNP
             IPGL = IWBNDLC(IB)
 #ifdef SELFE
-            XP_WWM=XLON(IPGL) * RADDEG 
-            YP_WWM=YLAT(IPGL) * RADDEG 
+            XP_WWM=XLON(IPGL)! * RADDEG 
+            YP_WWM=YLAT(IPGL)! * RADDEG 
 #else
             XP_WWM = XP(IPGL)
             YP_WWM = YP(IPGL)
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)*RADDEG
-                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)*RADDEG
+                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
+                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
                 WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)

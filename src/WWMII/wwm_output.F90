@@ -164,7 +164,8 @@
         OUTPARS = 0.
         CURRPARS = 0.
         WINDPARS = 0.
-        IF (LQSTEA) ITER_LOCAL = DBLE(IP_IS_STEADY)
+
+        IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
 
         !write(*,*) time, maxval(IP_IS_STEADY), minval(IP_IS_STEADY)
  
@@ -189,7 +190,7 @@
          call mpi_reduce(OUTT,OUTT_GLOBAL,NP_GLOBAL*OUTVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(CURR,CURR_GLOBAL,NP_GLOBAL*CURRVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(WIND,WIND_GLOBAL,NP_GLOBAL*WINDVARS,rtype,MPI_SUM,0,comm,ierr)
-         IF (LQSTEA) call mpi_reduce(ITERT,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
+         IF (LQSTEA  .AND. LCHKCONV) call mpi_reduce(ITERT,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
 
         !write(*,*) time, maxval(ITER_GLOBAL), minval(ITER_GLOBAL)
 
@@ -198,13 +199,13 @@
              OUTT_GLOBAL(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
              CURR_GLOBAL(IP,:)=CURR_GLOBAL(IP,:)*nwild_gb(IP)
              WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
-             IF (LQSTEA) ITER_GLOBAL(IP)  =ITER_GLOBAL(IP)  *nwild_gb(IP)
+             IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL(IP)  =ITER_GLOBAL(IP)  *nwild_gb(IP)
            enddo !IP
            do IP=1,NP_GLOBAL
              OUTT_GLOBAL_4(IP,:)=SNGL(OUTT_GLOBAL(IP,:))
              CURR_GLOBAL_4(IP,:)=SNGL(CURR_GLOBAL(IP,:))
              WIND_GLOBAL_4(IP,:)=SNGL(WIND_GLOBAL(IP,:))
-             IF (LQSTEA) ITER_GLOBAL_4(IP)=SNGL(ITER_GLOBAL(IP))
+             IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL_4(IP)=SNGL(ITER_GLOBAL(IP))
            enddo !IP
          endif !myrank
 
@@ -247,7 +248,7 @@
            WRITE(OUT%FHNDL+7)  TIME_4
            WRITE(OUT%FHNDL+7)  (WIND_GLOBAL_4(IP,4), WIND_GLOBAL_4(IP,5), WIND_GLOBAL_4(IP,6)  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+7)
-           IF (LQSTEA) THEN
+           IF (LQSTEA .AND. LCHKCONV) THEN
              WRITE(OUT%FHNDL+8)  TIME_4
              WRITE(OUT%FHNDL+8)  (ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP)  , IP = 1, NP_GLOBAL)
              CALL FLUSH(OUT%FHNDL+8)
@@ -323,7 +324,7 @@
          WRITE(OUT%FHNDL+7)  TIME_4
          WRITE(OUT%FHNDL+7)  (WIND_4(IP,8), WIND_4(IP,9), WIND_4(IP,8), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+7)
-         IF (LQSTEA) THEN
+         IF (LQSTEA .AND. LCHKCONV) THEN
            WRITE(OUT%FHNDL+8)  TIME_4
            WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+8)

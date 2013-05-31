@@ -600,6 +600,7 @@
         endif !sum
       endif !mod()
 #endif /*USE_WWM*/
+      return 
 
 !...  compute wind stress components (in lat/lon frame if ics=2; in map projection E-N direction if ics=1)
       dragcmin=1.0d-3*(0.61+0.063*6)
