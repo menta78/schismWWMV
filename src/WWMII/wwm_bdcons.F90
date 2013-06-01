@@ -1874,6 +1874,11 @@
 
 !BUG: LBINTER = .FALSE. has some bug
 
+         IF (LNANINFCHK) THEN
+           WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1978'
+         ENDIF
+
          IF (LBCSE) THEN 
            IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
              IF (LBCWA) THEN
@@ -1939,12 +1944,10 @@
                  DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
                  WBAC    =  WBACOLD
                  WBACOLD =  WBACNEW
-
                  IF (LNANINFCHK) THEN
-                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION ',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
+                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER TRUE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
                    IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
                  ENDIF
-
                ELSE ! .NOT. LBINTER
                  IF (IBOUNDFORMAT == 3) THEN
                    WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
@@ -1955,26 +1958,25 @@
                    CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
                    CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
                  END IF
-               END IF
-
-               IF (LNANINFCHK) THEN
-                 WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION ',  SUM(WBAC)
-                 IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1956'
-               ENDIF
+                 IF (LNANINFCHK) THEN
+                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER FALSE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
+                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                 ENDIF
+               END IF ! LBINTER
 
              ENDIF 
 !
              SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY ! Increment boundary time line ...
 !
-           ELSE ! Interpolate in time ...
+           ELSE ! Interpolate in time ... no nead to read ...
 
              IF (LBINTER) THEN
                WBAC = WBAC + DSPEC
 
-           IF (LNANINFCHK) THEN
-             WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION ',  SUM(WBAC)
-             IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1965'
-           ENDIF
+               IF (LNANINFCHK) THEN
+                 WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
+                 IF (SUM(WBAC) .NE. SUM(WBAC)) STOP 'NAN IN BOUNDARY CONDTITION l.1965'
+               ENDIF
 
              END IF
 
