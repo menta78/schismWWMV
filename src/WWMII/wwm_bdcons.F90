@@ -1044,6 +1044,10 @@
                  WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
                  CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT)
                  WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
+                 IF (LNANINFCHK) THEN
+                   WRITE(DBG%FHNDL,*) ' AFTER CALL GET_BINARY_WW3_SPECTRA',  SUM(WBACOUT)
+                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                 ENDIF
                ELSE IF (IBOUNDFORMAT .NE. 1 .OR. IBOUNDFORMAT .NE. 3) THEN
                  CALL WWM_ABORT('IBOUNDFORMAT is not defined for the chosen value')
                ENDIF
