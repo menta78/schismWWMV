@@ -482,15 +482,13 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(Graph), intent(in) :: AdjGraph
       integer, intent(out) :: result
-      integer, allocatable :: ListStatus(:)
-      integer, allocatable :: ListPosFirst(:)
+      integer :: ListStatus(AdjGraph%nbVert)
+      integer :: ListPosFirst(AdjGraph%nbVert)
       integer idx, iVert, nbVert, nbVertIsFinished, eAdj
       integer eDeg, sizConn, I, IsFinished
       integer istat
       idx=0
       nbVert=AdjGraph%nbVert
-      allocate(ListPosFirst(nbVert), ListStatus(nbVert), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 15')
       ListStatus=0
       DO iVert=1,nbVert
         ListPosFirst(iVert)=idx
@@ -526,8 +524,6 @@ MODULE WWM_PARALL_SOLVER
         result=1
       END IF
       result=0
-      deallocate(ListStatus)
-      deallocate(ListPosFirst)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1615,6 +1611,8 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % blk_p2dsend_type(I), ierr)
         DEALLOCATE(dspl_send)
       END DO
+      !
+      !
       ListNeed=0
       IdxRev=0
       nbNeedRecv_blk=0
@@ -3335,10 +3333,12 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
 # else
-      DO idx=1,lenBlock
-        IS=LocalColor % ISindex(iBlock, idx)
-        ID=LocalColor % IDindex(iBlock, idx)
-        LocalColor % ACexch(idx,:)=AC(IS,ID,:)
+      DO IP=1,MNP
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
+        END DO
       END DO
 # endif
       nbLow_send=LocalColor % u2l_nnbr_send
@@ -3391,7 +3391,7 @@ MODULE WWM_PARALL_SOLVER
         DO idx=1,lenBlock
           IS=LocalColor % ISindex(iBlock, idx)
           ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,idxIP)=AC(IS,ID,IP)
+          AC(IS,ID,IP) = LocalColor % ACexch(idx,idxIP)
         END DO
       END DO
 # else
@@ -3399,7 +3399,7 @@ MODULE WWM_PARALL_SOLVER
         DO idx=1,lenBlock
           IS=LocalColor % ISindex(iBlock, idx)
           ID=LocalColor % IDindex(iBlock, idx)
-          AC(IS,ID,IP)=LocalColor % ACexch(idx,IP)
+          AC(IS,ID,IP) = LocalColor % ACexch(idx,IP)
         END DO
       END DO
 # endif
