@@ -2197,6 +2197,7 @@ MODULE WWM_PARALL_SOLVER
         deallocate(dspl_send)
       END DO
 # ifdef LU_SOLVE_RWRT
+      IdxRev=0
       idx=0
       DO IP=1,MNP
         IF (ListNeedRecv(IP) .eq. 1) THEN
@@ -2260,6 +2261,9 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % u2l_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
+# ifdef LU_SOLVE_RWRT
+      deallocate(ListNeedRecv, ListNeedSend, IdxRev)
+# endif
       !
       ! Now the synchronization arrays
       !
