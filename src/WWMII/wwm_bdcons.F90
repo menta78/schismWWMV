@@ -931,7 +931,7 @@
 
          INTEGER, INTENT(IN)        :: IT, IFILE
          CHARACTER(len=25)          :: CALLFROM
-         REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
+         REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
          INTEGER                    :: IP, istat
          CHARACTER(len=25)          :: CHR
 
