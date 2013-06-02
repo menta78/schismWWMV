@@ -594,7 +594,7 @@
          DTSI(:)  = DT4AI/SI(:)
 
          U = AC2(:,IS,ID) 
-!
+
          IF (LADVTEST) THEN
            CALL CHECKCONS(U,SUMAC1)
          END IF

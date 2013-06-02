@@ -1754,9 +1754,9 @@
 !
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
 
-        DO IBWW3=1,NP_WW3
-          WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
-        END DO
+        !DO IBWW3=1,NP_WW3
+        !  WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
+        !END DO
 
 !
 ! Sort directions and carries spectra along (ww3 directions are not
@@ -1771,7 +1771,7 @@
             DR_WW3 = DR_WW3_TMP
           ENDDO
           DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
-          WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
+          !WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
         ENDDO ! IBWW3
 !
 ! Interpolate ww3 spectra on wwm frequency grid
@@ -1806,16 +1806,16 @@
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
-                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
+                !WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
+                !WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
-                WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
+                !WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               ENDDO
               CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
-              DO IBWW3=1,NP_WW3
-                WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
-              END DO
+              !DO IBWW3=1,NP_WW3
+              !  WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
+              !END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
               !WRITE(STAT%FHNDL,*) INDBWW3(1:2), sum(SPEC_WWM(:,:,INT(INDBWW3(1:2)))), SUM(WBACOUT(:,:,IB))
             ELSE
@@ -1828,9 +1828,9 @@
           ENDDO
         ENDIF
 
-        DO IB = 1, IWBMNP
-          WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
-        ENDDO 
+        !DO IB = 1, IWBMNP
+        !  WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
+        !ENDDO 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
         END SUBROUTINE
