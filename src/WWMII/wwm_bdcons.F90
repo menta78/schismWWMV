@@ -1007,30 +1007,32 @@
                END DO
              END IF ! LBCSE ...
            ELSE ! Homogenous in space
-             IF (LBCSE) THEN ! Unsteady in time
-               IF (IBOUNDFORMAT == 1) THEN
-                 CALL READWAVEPARWWM
-               ELSE IF (IBOUNDFORMAT == 2) THEN
-                 CALL READWAVEPARFVCOM
-               END IF
-               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
-             ELSE ! Steady in time ...
-               SPPARM = 0.
-               WBAC   = 0.
-               IF (LMONO_IN) THEN
-                 SPPARM(1,1) = WBHS * SQRT(2.)
-               ELSE
-                 SPPARM(1,1) = WBHS
-               END IF
-               SPPARM(2,1) = WBTP
-               SPPARM(3,1) = WBDM
-               SPPARM(4,1) = WBDS
-               SPPARM(5,1) = WBSS
-               SPPARM(6,1) = WBDSMS
-               SPPARM(7,1) = WBGAUSS
-               SPPARM(8,1) = WBPKEN
-               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
-             END IF ! LBCSE
+             IF (IWBMNP .gt. 0) THEN
+               IF (LBCSE) THEN ! Unsteady in time
+                 IF (IBOUNDFORMAT == 1) THEN
+                   CALL READWAVEPARWWM
+                 ELSE IF (IBOUNDFORMAT == 2) THEN
+                   CALL READWAVEPARFVCOM
+                 END IF
+                 CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
+               ELSE ! Steady in time ...
+                 SPPARM = 0.
+                 WBAC   = 0.
+                 IF (LMONO_IN) THEN
+                   SPPARM(1,1) = WBHS * SQRT(2.)
+                 ELSE
+                   SPPARM(1,1) = WBHS
+                 END IF
+                 SPPARM(2,1) = WBTP
+                 SPPARM(3,1) = WBDM
+                 SPPARM(4,1) = WBDS
+                 SPPARM(5,1) = WBSS
+                 SPPARM(6,1) = WBDSMS
+                 SPPARM(7,1) = WBGAUSS
+                 SPPARM(8,1) = WBPKEN
+                 CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
+               END IF ! LBCSE
+             END IF
            END IF ! LINHOM
          ELSE IF (LBCSP) THEN ! Spectrum is prescribed
            IF (LINHOM) THEN ! The boundary conditions is not homogenous!
