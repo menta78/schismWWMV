@@ -715,6 +715,7 @@
       INTEGER FHNDL
       !
       FHNDL=12
+      CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
       OPEN(FHNDL, FILE = TRIM(INP%FNAME))
       READ(FHNDL, NML = PROC)
       IF (LSPHE) THEN
