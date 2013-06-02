@@ -1753,18 +1753,9 @@
 !
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
 
-<<<<<<< HEAD
         !DO IBWW3=1,NP_WW3
         !  WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
         !END DO
-
-=======
-!        DO IBWW3=1,NP_WW3
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,:))
-        ENDIF
-!        END DO
->>>>>>> ca3b34dd2a5ea7c5baff7d0bf4cd95b2603bf0a8
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)
@@ -1778,11 +1769,7 @@
             DR_WW3 = DR_WW3_TMP
           ENDDO
           DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
-<<<<<<< HEAD
-          !WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
-=======
 !          WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
->>>>>>> ca3b34dd2a5ea7c5baff7d0bf4cd95b2603bf0a8
         ENDDO ! IBWW3
 !
 ! Interpolate ww3 spectra on wwm frequency grid
@@ -1819,7 +1806,6 @@
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-<<<<<<< HEAD
                 !WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
                 !WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
@@ -1830,18 +1816,6 @@
               !DO IBWW3=1,NP_WW3
               !  WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               !END DO
-=======
-!                WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
-!                WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
-                DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
-                INDBWW3(IBWW3)=IBWW3
-!                WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
-              ENDDO
-              CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
-!              DO IBWW3=1,NP_WW3
-!                WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
-!              END DO
->>>>>>> ca3b34dd2a5ea7c5baff7d0bf4cd95b2603bf0a8
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
               WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
             ELSE
@@ -1854,15 +1828,9 @@
           ENDDO
         ENDIF
 
-<<<<<<< HEAD
         !DO IB = 1, IWBMNP
         !  WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
         !ENDDO 
-=======
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) 'SUM OF WBAC AFTER GET_BINARY_WW3_SPECTRA', IB, SUM(WBACOUT(:,:,:)) 
-        ENDIF
->>>>>>> ca3b34dd2a5ea7c5baff7d0bf4cd95b2603bf0a8
 
         END SUBROUTINE
 !**********************************************************************
