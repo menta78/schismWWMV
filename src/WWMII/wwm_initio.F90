@@ -1755,7 +1755,9 @@
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
 
 !        DO IBWW3=1,NP_WW3
+        IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,:))
+        ENDIF
 !        END DO
 !
 ! Sort directions and carries spectra along (ww3 directions are not
@@ -1787,7 +1789,9 @@
           CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
         ENDIF
 
-        WRITE(DBG%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
+        ENDIF
 !
 ! Interpolate ww3 spectra on wwm boundary nodes
 ! GD: ww3 forcing works until here. Some more debugging is needed
@@ -1827,7 +1831,9 @@
           ENDDO
         ENDIF
 
-        WRITE(DBG%FHNDL,*) 'SUM OF WBAC AFTER GET_BINARY_WW3_SPECTRA', IB, SUM(WBACOUT(:,:,:)) 
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) 'SUM OF WBAC AFTER GET_BINARY_WW3_SPECTRA', IB, SUM(WBACOUT(:,:,:)) 
+        ENDIF
 
         END SUBROUTINE
 !**********************************************************************
@@ -1908,7 +1914,9 @@
         SPEC_WW3_TMP = ZERO
         SPEC_WWM     = ZERO
 
-        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
+        ENDIF
 
         DO IP=1,NP_WW3
           DO IS=1,MSC_WW3
@@ -1943,7 +1951,9 @@
           WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
         END DO
 
-        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        ENDIF
 
 ! Do jacobian
 
@@ -1981,7 +1991,9 @@
           WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
         END DO
 
-        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        ENDIF
 
         END SUBROUTINE
 !**********************************************************************

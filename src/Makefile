@@ -551,11 +551,11 @@ ifeq ($(ENV),ARON)
 #  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
 #  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 # PERFORMANCE SAVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
-  FLDFLAGS = -O1 -g -traceback -assume byterecl 
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
+#  FLDFLAGS = -O1 -g -traceback -assume byterecl 
 # AGGRESSIVE OPTIMIZATION
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #  FCPFLAGS += -openmp
 #  FLDFLAGS += -openmp 
