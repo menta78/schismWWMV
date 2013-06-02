@@ -39,7 +39,8 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 1'
+           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 1 AC2'
+           !IF (SUM(AC1) .NE. SUM(AC1)) STOP 'NAN IN MAIN 1 AC1'
          ENDIF
 
 !zyl: check dimension
@@ -468,7 +469,7 @@
          IF (LCHKCONV) IE_IS_STEADY = 0
 
 #ifdef MPI_PARALL_GRID
-         NQSITER = NSTEPWWM
+!         NQSITER = NSTEPWWM ! this is not very flexible!
 #endif
 
          DO IT = 1, NQSITER
