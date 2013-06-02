@@ -482,15 +482,13 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(Graph), intent(in) :: AdjGraph
       integer, intent(out) :: result
-      integer, allocatable :: ListStatus(:)
-      integer, allocatable :: ListPosFirst(:)
+      integer :: ListStatus(AdjGraph%nbVert)
+      integer :: ListPosFirst(AdjGraph%nbVert)
       integer idx, iVert, nbVert, nbVertIsFinished, eAdj
       integer eDeg, sizConn, I, IsFinished
       integer istat
       idx=0
       nbVert=AdjGraph%nbVert
-      allocate(ListPosFirst(nbVert), ListStatus(nbVert), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 15')
       ListStatus=0
       DO iVert=1,nbVert
         ListPosFirst(iVert)=idx
@@ -526,8 +524,6 @@ MODULE WWM_PARALL_SOLVER
         result=1
       END IF
       result=0
-      deallocate(ListStatus)
-      deallocate(ListPosFirst)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1615,6 +1611,8 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % blk_p2dsend_type(I), ierr)
         DEALLOCATE(dspl_send)
       END DO
+      !
+      !
       ListNeed=0
       IdxRev=0
       nbNeedRecv_blk=0
@@ -2199,6 +2197,7 @@ MODULE WWM_PARALL_SOLVER
         deallocate(dspl_send)
       END DO
 # ifdef LU_SOLVE_RWRT
+      IdxRev=0
       idx=0
       DO IP=1,MNP
         IF (ListNeedRecv(IP) .eq. 1) THEN
@@ -2262,6 +2261,9 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % u2l_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
+# ifdef LU_SOLVE_RWRT
+      deallocate(ListNeedRecv, ListNeedSend, IdxRev)
+# endif
       !
       ! Now the synchronization arrays
       !
@@ -2519,6 +2521,13 @@ MODULE WWM_PARALL_SOLVER
       IF (LocalColor % nbNeedRecv_u2l > lenMNP) THEN
         lenMNP=LocalColor % nbNeedRecv_u2l
       END IF
+#  ifdef DEBUG
+      WRITE(7000+myrank,*) 'nbNeedSend_blk=', LocalColor % nbNeedSend_blk
+      WRITE(7000+myrank,*) 'nbNeedRecv_blk=', LocalColor % nbNeedRecv_blk
+      WRITE(7000+myrank,*) 'nbNeedSend_u2l=', LocalColor % nbNeedSend_u2l
+      WRITE(7000+myrank,*) 'nbNeedRecv_u2l=', LocalColor % nbNeedRecv_u2l
+      WRITE(7000+myrank,*) 'lenMNP=', lenMNP
+#  endif
       allocate(LocalColor % ACexch(maxBlockLength, lenMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
 # else
@@ -3280,6 +3289,15 @@ MODULE WWM_PARALL_SOLVER
           LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
         END DO
       END DO
+# else
+      DO idxIP=1,LocalColor % nbNeedRecv_blk
+        IP = LocalColor % IdxRecv_blk(idxIP)
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,idxIP) = AC(IS,ID,IP)
+        END DO
+      END DO
 # endif
       nbLow_recv=LocalColor % nbLow_recv
       DO iProc=1,nbLow_recv
@@ -3335,10 +3353,12 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
 # else
-      DO idx=1,lenBlock
-        IS=LocalColor % ISindex(iBlock, idx)
-        ID=LocalColor % IDindex(iBlock, idx)
-        LocalColor % ACexch(idx,:)=AC(IS,ID,:)
+      DO IP=1,MNP
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
+        END DO
       END DO
 # endif
       nbLow_send=LocalColor % u2l_nnbr_send
@@ -3376,6 +3396,15 @@ MODULE WWM_PARALL_SOLVER
           LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
         END DO
       END DO
+# else
+      DO idxIP=1,LocalColor % nbNeedRecv_u2l
+        IP = LocalColor % IdxRecv_u2l(idxIP)
+        DO idx=1,lenBlock
+          IS=LocalColor % ISindex(iBlock, idx)
+          ID=LocalColor % IDindex(iBlock, idx)
+          LocalColor % ACexch(idx,idxIP) = AC(IS,ID,IP)
+        END DO
+      END DO
 # endif
       nbUpp_recv=LocalColor % u2l_nnbr_recv
       DO iProc=1,nbUpp_recv
@@ -3391,7 +3420,7 @@ MODULE WWM_PARALL_SOLVER
         DO idx=1,lenBlock
           IS=LocalColor % ISindex(iBlock, idx)
           ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,idxIP)=AC(IS,ID,IP)
+          AC(IS,ID,IP) = LocalColor % ACexch(idx,idxIP)
         END DO
       END DO
 # else
@@ -3399,7 +3428,7 @@ MODULE WWM_PARALL_SOLVER
         DO idx=1,lenBlock
           IS=LocalColor % ISindex(iBlock, idx)
           ID=LocalColor % IDindex(iBlock, idx)
-          AC(IS,ID,IP)=LocalColor % ACexch(idx,IP)
+          AC(IS,ID,IP) = LocalColor % ACexch(idx,IP)
         END DO
       END DO
 # endif
@@ -5670,6 +5699,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_INIT
       implicit none
+      Print *, 'Begin WWM_SOLVER_INIT'
 # ifdef PLAN_I4
       CALL I4_SOLVER_INIT
 # else
@@ -5699,11 +5729,22 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_SOLVER_INIT
       USE DATAPOOL
+# ifdef DEBUG
+      USE elfe_msgp, only : myrank
+# endif
       implicit none
       NblockFreqDir = NB_BLOCK
       MainLocalColor%MSCeffect=MSC
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
+# ifdef DEBUG
+      WRITE(myrank+740,*) 'After SYMM_INIT_COLORING'
+      CALL FLUSH(myrank+740)
+# endif
       CALL I5B_ALLOCATE(SolDat, MSC)
+# ifdef DEBUG
+      WRITE(myrank+740,*) 'After I5B_ALLOCATE'
+      CALL FLUSH(myrank+740)
+# endif
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
       END IF
@@ -6110,7 +6151,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*
 !**********************************************************************
-      SUBROUTINE  EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
+      SUBROUTINE EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
 # ifdef DEBUG
       USE elfe_msgp, only : myrank
@@ -6135,7 +6176,9 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(MSC,MDC,2)
-
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'Begin of EIMPS_ASPAR_B_BLOCK'
+# endif
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -6149,6 +6192,9 @@ MODULE WWM_PARALL_SOLVER
 !
 !        Calculate countour integral quantities ...
 !
+# ifdef DEBUG
+      WRITE(740+myrank,*) ' Before MNE loop'
+# endif
       DO IE = 1, MNE
 # ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
@@ -6222,6 +6268,7 @@ MODULE WWM_PARALL_SOLVER
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
       END DO
 # if defined DEBUG
+      WRITE(740+myrank,*) ' After MNE loop'
       WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
       WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
       WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
@@ -6367,11 +6414,24 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
 # endif
       integer IS, ID, IP
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'Begin I5B_EIMPS'
+# endif
       DO IP=1,MNP
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
 # if defined ASPAR_B_COMPUTE_BLOCK
+#  ifdef DEBUG
+      WRITE(740+myrank,*) 'MSC=', MSC
+      WRITE(740+myrank,*) 'MDC=', MDC
+      WRITE(740+myrank,*) 'MNP=', MNP
+      WRITE(740+myrank,*) 'NNZ=', NNZ
+      WRITE(740+myrank,*) 'Before EIMPS_ASPAR_B_BLOCK'
+#  endif
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+#  ifdef DEBUG
+      WRITE(740+myrank,*) 'After EIMPS_ASPAR_B_BLOCK'
+#  endif
 !      DO IS=1,MSC
 !        DO ID=1,MDC
 !          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
@@ -6390,16 +6450,28 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
 # endif
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'After ASPAR init'
+# endif
 # ifdef SELFE_EXCHANGE
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat % B_block)
 # else
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
 # endif
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'After EXCHANGE_P4D_WWM'
+# endif
       CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'After I5B_EXCHANGE_ASPAR'
+# endif
 !      IF (myrank .eq. 0) THEN
 !        Print *, 'Before CREATE_PRECOND'
 !      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'After I5B_CREATE_PRECOND'
+# endif
 # ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
 # else

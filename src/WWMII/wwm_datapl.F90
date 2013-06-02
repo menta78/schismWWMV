@@ -1031,6 +1031,18 @@
          integer, dimension(:,:), pointer :: u2l_p2drecv_stat
          integer, dimension(:), pointer :: u2l_p2dsend_type
          integer, dimension(:), pointer :: u2l_p2drecv_type
+         ! variables for u2l (depend on CovLower and ListColor)
+         integer l2u_nnbr_send, l2u_nnbr_recv
+         integer, dimension(:), pointer :: l2u_ListNbCommon_send
+         integer, dimension(:), pointer :: l2u_ListNbCommon_recv
+         integer, dimension(:), pointer :: l2u_ListNeigh_send
+         integer, dimension(:), pointer :: l2u_ListNeigh_recv
+         integer, dimension(:), pointer :: l2u_p2dsend_rqst
+         integer, dimension(:), pointer :: l2u_p2drecv_rqst
+         integer, dimension(:,:), pointer :: l2u_p2dsend_stat
+         integer, dimension(:,:), pointer :: l2u_p2drecv_stat
+         integer, dimension(:), pointer :: l2u_p2dsend_type
+         integer, dimension(:), pointer :: l2u_p2drecv_type
          ! variables for compact exchanges
          integer nbNeedSend_u2l, nbNeedRecv_u2l
          integer nbNeedSend_blk, nbNeedRecv_blk
