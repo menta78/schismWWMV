@@ -38,8 +38,8 @@
 #undef BCGS_REORG
 #define BCGS_REORG
 ! Rewriting of some exchange routines for LU solve
-#undef LU_SOLVE_RWRT
 #define LU_SOLVE_RWRT
+#undef LU_SOLVE_RWRT
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *

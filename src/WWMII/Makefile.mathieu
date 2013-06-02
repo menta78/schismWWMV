@@ -54,6 +54,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 #F90OPTI = -fpp -g -traceback -check all -openmp
 #debug no openmp
 #F90OPTI = -fpp -g -traceback -fp-model precise -check all 
+
 #PGI
 #F90OPTI = -g -O1 -Mprof=dwarf -Mprof=time -Minfo=ccff -mp
 #F90OPTI = -fastsse -Munroll -Minline=reshape -Minline=levels:10 -Mvect -Mipa=fast Mipa=levels:10 -Mlarge_arrays -mp
