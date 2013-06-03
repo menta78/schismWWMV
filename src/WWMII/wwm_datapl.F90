@@ -447,6 +447,9 @@
          INTEGER, ALLOCATABLE       :: wrf_c21(:,:) 
          INTEGER, ALLOCATABLE       :: wrf_c22(:,:)
          INTEGER, ALLOCATABLE       :: wrf_c12(:,:)
+         INTEGER, ALLOCATABLE       :: WRF_IX(:), WRF_IY(:)
+         REAL(rkind), ALLOCATABLE   :: wrf_coeff(:,:)
+         integer, allocatable :: SHIFTXY(:,:)
          INTEGER                   :: REC1_old, REC2_old
          INTEGER                          :: REC1_new, REC2_new
 ! END WRF PART I.J.

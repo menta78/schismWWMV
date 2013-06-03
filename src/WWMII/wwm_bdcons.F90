@@ -378,14 +378,9 @@
 #endif
       implicit none
       integer, intent(inout) :: STATUS(MNP)
-      INTEGER, POINTER :: COLLECTED(:)
-      INTEGER, POINTER :: NEXTVERT(:)
-      INTEGER, POINTER :: PREVVERT(:)
+      INTEGER :: COLLECTED(MNP), NEXTVERT(MNP), PREVVERT(MNP)
       INTEGER          :: ISFINISHED, INEXT, IPREV
       INTEGER          :: IPNEXT, IPPREV, ZNEXT, IP, I, IE
-      integer istat
-      ALLOCATE(COLLECTED(MNP), PREVVERT(MNP), NEXTVERT(MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 8')
       STATUS(:) = 0
       DO IE=1,MNE
         DO I=1,3
@@ -455,9 +450,6 @@
 #ifdef MPI_PARALL_GRID
       CALL exchange_p2di(STATUS)
 #endif
-      DEALLOCATE(COLLECTED)
-      DEALLOCATE(PREVVERT)
-      DEALLOCATE(NEXTVERT)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
