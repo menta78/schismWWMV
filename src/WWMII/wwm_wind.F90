@@ -74,12 +74,22 @@
             CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
-            IF ((SEWI%BMJD.LT.minval(WIND_TIME_MJD)).OR.(SEWI%EMJD.GT.maxval(WIND_TIME_MJD))) THEN
+            IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
-              WRITE(WINDBG%FHNDL,*) SEWI%BMJD, SEWI%EMJD, minval(WIND_TIME_MJD), maxval(WIND_TIME_MJD)
-              CALL WWM_ABORT('Error in wind times')
+              WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
+              WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
+              WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
+              WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL WWM_ABORT('Error in WRF wind')
             END IF
-            ! get record in time that I need for current MAIN%MJD
+            IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
+              WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside WRF wind_time range!'
+              WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
+              WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
+              WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
+              WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL WWM_ABORT('Error in WRF wind')
+            END IF
             CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
             ! WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF at INIT_WIND_CURRENT_WATLEV, REC1_new', REC1_new
             CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
@@ -154,7 +164,6 @@
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
-
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
@@ -2016,7 +2025,7 @@
        WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
        WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
        CALL FLUSH(DBG%FHNDL)
-       CALL WWM_ABORT('Error in wind forcing time setup')
+       CALL WWM_ABORT('Error in WRF wind forcing time setup')
        END SUBROUTINE GET_WRF_TIME_INDEX
 !**********************************************************************
 !*                                                                    *
@@ -2032,92 +2041,55 @@
        INTEGER, INTENT(in)                :: RECORD_IN
        REAL(rkind), ALLOCATABLE           :: Uwind(:,:), Vwind(:,:)
        REAL(rkind), INTENT(out)           :: varout(MNP,2)
+       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_WRF"
        INTEGER                            :: FID, NDX, NDY, NDT, dims(3), ID, ISTAT, I
        character(len=100) CHRTMP
-        ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -1-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = NF90_inq_varid(FID, 'Uwind', ID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -2-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -3-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -4-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -5-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -5-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ALLOCATE (Uwind(NDX,NDY), Vwind(NDX,NDY), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 46')
-        ISTAT = NF90_GET_VAR(FID, ID, Uwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
+       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
-        ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -6-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -7-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -8-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -9-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -10-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+       ISTAT = NF90_inq_varid(FID, 'Uwind', ID)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-        ISTAT = NF90_GET_VAR(FID, ID, Vwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -11-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        ISTAT = NF90_CLOSE(FID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRTMP = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'READ_INTERP_NETCDF_WRF ERROR -12-', CHRTMP
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
-        do I = 1, MNP
+       ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
+       ALLOCATE (Uwind(NDX,NDY), Vwind(NDX,NDY), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 46')
+
+       ISTAT = NF90_GET_VAR(FID, ID, Uwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
+       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+
+       ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+
+       ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
+       ISTAT = NF90_GET_VAR(FID, ID, Vwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
+       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+
+       ISTAT = NF90_CLOSE(FID)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+
+       do I = 1, MNP
         !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
         varout(I,1) = wrf_J(I)*(                                       &
      &   Uwind(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
@@ -2129,8 +2101,8 @@
      &   Vwind(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
      &   Vwind(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
      &   Vwind(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
-        END DO
-        END SUBROUTINE READ_INTERP_NETCDF_WRF
+       END DO
+       END SUBROUTINE READ_INTERP_NETCDF_WRF
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -2173,6 +2145,8 @@
        ISTAT = nf90_inquire_dimension(fid, dimids(2), len=nlat)
        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
+       WRITE(WINDBG%FHNDL,*) 'nlon=', nlon, 'nlat=', nlat
+
        allocate(WRF_LON(nlon,nlat), WRF_LAT(nlon,nlat), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
 
@@ -2213,9 +2187,9 @@
        eStrTime(14:14)=eStrAtt(29:29)
        eStrTime(15:15)=eStrAtt(30:30)
        CALL CT2MJD(eStrTime, eTimeStart)
-       WRITE(DBG%FHNDL,*) 'eStrTime=', eStrTime
-       WRITE(DBG%FHNDL,*) 'eTimeStart=', eTimeStart
-       CALL FLUSH(DBG%FHNDL)
+       WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
+       WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
+       CALL FLUSH(WINDBG%FHNDL)
 
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
@@ -2231,7 +2205,7 @@
 
        ISTAT = nf90_close(fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
-       ! this is hack unitl I get better way of using wind_time attribute units 
+
        wind_time_mjd(:) = wind_time_mjd(:) + eTimeStart
        ! compute nodes and coefs
        ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
