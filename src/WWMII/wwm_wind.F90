@@ -1670,18 +1670,16 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE READ_INTERP_NETCDF_WRF(RECORD_IN, varout)
-       ! For given filename and REC load Uwind and Vwind
-       !
        USE NETCDF
        USE DATAPOOL, ONLY : XP,YP,WIN, MNP, wrf_c11, wrf_c21, rkind
        USE DATAPOOL, only : wrf_c22, wrf_c12, wrf_a, wrf_b, wrf_c, wrf_d, wrf_J
-       USE DATAPOOL, only : wwmerr
+       USE DATAPOOL, only : wwmerr, UWIND_FD, VWIND_FD
+       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
        IMPLICIT NONE
        INTEGER, INTENT(in)                :: RECORD_IN
-       REAL(rkind), ALLOCATABLE           :: Uwind(:,:), Vwind(:,:)
        REAL(rkind), INTENT(out)           :: varout(MNP,2)
        character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_WRF"
-       INTEGER                            :: FID, NDX, NDY, NDT, dims(3), ID, ISTAT, I
+       INTEGER                            :: FID, dims(3), ID, ISTAT, I
        character(len=100) CHRTMP
        ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1689,57 +1687,30 @@
        ISTAT = NF90_inq_varid(FID, 'Uwind', ID)
        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-       ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
+       ISTAT = NF90_GET_VAR(FID, ID, UWIND_FD, start = (/ 1, 1, RECORD_IN /), count = (/ NDX_WIND_FD, NDY_WIND_FD, 1 /))
        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
+       ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
+       ISTAT = NF90_GET_VAR(FID, ID, VWIND_FD, start = (/ 1, 1, RECORD_IN /), count = (/ NDX_WIND_FD, NDY_WIND_FD, 1 /))
        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
-
-       ALLOCATE (Uwind(NDX,NDY), Vwind(NDX,NDY), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 46')
-
-       ISTAT = NF90_GET_VAR(FID, ID, Uwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
-       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
-
-       ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
-
-       ISTAT = NF90_INQUIRE_VARIABLE(FID, ID, dimids = dims)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
-
-       ISTAT = nf90_inquire_dimension(FID, dims(1), len = NDX)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
-
-       ISTAT = nf90_inquire_dimension(FID, dims(2), len = NDY)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
-
-       ISTAT = nf90_inquire_dimension(FID, dims(3), len = NDT)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
-
-       ISTAT = NF90_GET_VAR(FID, ID, Vwind, start = (/ 1, 1, RECORD_IN /), count = (/ NDX, NDY, 1 /))
-       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
-
        ISTAT = NF90_CLOSE(FID)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
        do I = 1, MNP
         !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
-        varout(I,1) = wrf_J(I)*(                                       &
-     &   Uwind(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
-     &   Uwind(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
-     &   Uwind(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
-     &   Uwind(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
-        varout(I,2) = wrf_J(I)*(                                       &
-     &   Vwind(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
-     &   Vwind(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
-     &   Vwind(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
-     &   Vwind(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+        varout(I,1) = wrf_J(I)*(                                          &
+     &   UWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
+     &   UWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
+     &   UWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
+     &   UWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+        varout(I,2) = wrf_J(I)*(                                          &
+     &   VWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
+     &   VWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
+     &   VWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
+     &   VWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
        END DO
        END SUBROUTINE READ_INTERP_NETCDF_WRF
 !**********************************************************************
@@ -1752,22 +1723,20 @@
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
        USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
        USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG
+       USE DATAPOOL, only : UWIND_FD, VWIND_FD
+       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
        IMPLICIT NONE
        INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
        integer attid, nbChar
        INTEGER ntime
        REAL, ALLOCATABLE                  :: WRF_LON(:,:), WRF_LAT(:,:), dist(:,:)
-       REAL                               :: wind_time_offset, wwm_time_offset, d_lon, d_lat
+       REAL                               :: d_lon, d_lat
        integer i11, j11, i12, j12, i21, j21
        character(len=100) :: CHRTMP
        character (len = *), parameter :: CallFct="INIT_NETCDF_WRF"
        character (len=200) :: eStrAtt
        character (len=15) :: eStrTime
        real(rkind) :: eTimeStart
-       ! wind_time_offset is seconds since 2000-1-1 
-       ! wwm_time_offset is seconds since Modified Julian Day 17/11/1858
-       wind_time_offset = 730486.0
-       wwm_time_offset  = 678942.0
 
        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1778,15 +1747,16 @@
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nlon)
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_WIND_FD)
        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(fid, dimids(2), len=nlat)
+       ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_WIND_FD)
        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
-       WRITE(WINDBG%FHNDL,*) 'nlon=', nlon, 'nlat=', nlat
+       WRITE(WINDBG%FHNDL,*) 'NDX_WIND_FD=', NDX_WIND_FD
+       WRITE(WINDBG%FHNDL,*) 'NYX_WIND_FD=', NDY_WIND_FD
 
-       allocate(WRF_LON(nlon,nlat), WRF_LAT(nlon,nlat), stat=istat)
+       allocate(WRF_LON(NDX_WIND_FD, NDY_WIND_FD), WRF_LAT(NDX_WIND_FD, NDY_WIND_FD), UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
 
        ISTAT = nf90_get_var(fid, varid, WRF_LON)
@@ -1803,9 +1773,6 @@
 
        ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
-
-!       allocate(eStrAtt(nbChar), stat=istat)
-!       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
 
        ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
