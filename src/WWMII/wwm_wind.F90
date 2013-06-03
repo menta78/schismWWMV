@@ -1850,7 +1850,7 @@
        DO I = 1, MNP
          IF (I .eq. 1) THEN
            IXs=1
-           IXs=1
+           IYs=1
          ELSE
            IXs=WRF_IX(I-1)
            IYs=WRF_IX(I-1)
@@ -1865,7 +1865,7 @@
            IXmax=min(NDX_WIND_FD-1, IXs+aShift)
            IYmax=min(NDY_WIND_FD-1, IYs+aShift)
            DO IX=IXmin,IXmax
-             DO IYmin=IYmin,IYmax
+             DO IY=IYmin,IYmax
                IF (WeFind .eq. 0) THEN
                  X(1)=WRF_LON(IX, IY)
                  X(2)=WRF_LON(IX+1, IY)
