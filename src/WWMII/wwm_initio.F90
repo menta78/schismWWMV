@@ -1021,6 +1021,7 @@
 #endif
          WRITE(DBG%FHNDL, *) 'THR=', THR
          WRITE(DBG%FHNDL, *) 'THR8=', THR8
+         CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
 #ifdef MPIP_PARALL_GRID
          IF (myrank == 0) THEN
 #endif
@@ -1756,6 +1757,7 @@
         !DO IBWW3=1,NP_WW3
         !  WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
         !END DO
+
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)
@@ -1817,7 +1819,7 @@
               !  WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               !END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
-              WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
+              !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
             ELSE
               WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
             ENDIF
@@ -1832,6 +1834,7 @@
         !  WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
         !ENDDO 
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
