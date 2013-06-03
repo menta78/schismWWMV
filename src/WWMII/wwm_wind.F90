@@ -1668,7 +1668,7 @@
        USE DATAPOOL, ONLY : XP,YP,WIN, MNP, wrf_c11, wrf_c21, rkind
        USE DATAPOOL, only : wrf_c22, wrf_c12, wrf_a, wrf_b, wrf_c, wrf_d, wrf_J
        USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
-       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
+       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
        USE DATAPOOL, only : WRF_IX, WRF_IY, SHIFTXY, WRF_coeff, wrf_scale_factor
        IMPLICIT NONE
        INTEGER, INTENT(in)                :: RECORD_IN
@@ -1677,7 +1677,7 @@
        INTEGER                            :: FID, dims(3), ID, ISTAT, I, J
        INTEGER :: IX, IY
        REAL(rkind) :: Uw, Vw
-       LOGICAL :: METHOD1 = .TRUE.
+       LOGICAL :: METHOD1 = .FALSE.
        character(len=100) CHRTMP
        ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1711,23 +1711,35 @@
          varout(I,2)=Vw*wrf_scale_factor
        END DO
        ELSE
-       do I = 1, MNP
-        !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
-        varout(I,1) = wrf_scale_factor*wrf_J(I)*(                         &
-     &   UWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
-     &   UWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
-     &   UWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
-     &   UWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
-        varout(I,2) = wrf_scale_factor*wrf_J(I)*(                         &
-     &   VWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+           &
-     &   VWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+           &
-     &   VWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+           &
-     &   VWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
-       END DO
+         do I = 1, MNP
+          !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
+           varout(I,1) = wrf_scale_factor*wrf_J(I)*(                      &
+     &      UWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+        &
+     &      UWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+        &
+     &      UWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+        &
+     &      UWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+           varout(I,2) = wrf_scale_factor*wrf_J(I)*(                      &
+     &      VWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+        &
+     &      VWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+        &
+     &      VWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+        &
+     &      VWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
+           IF ((abs(varout(I,1)) .ge. 1000000).or.(abs(varout(I,2)) .ge. 1000000)) THEN
+             WRITE(WINDBG%FHNDL,*) 'wrf_scale_factor=', wrf_scale_factor
+             WRITE(WINDBG%FHNDL,*) 'wrf_c11(I)=', wrf_c11(I,1), wrf_c11(I,2)
+             WRITE(WINDBG%FHNDL,*) 'wrf_c21(I)=', wrf_c21(I,1), wrf_c21(I,2)
+             WRITE(WINDBG%FHNDL,*) 'wrf_c12(I)=', wrf_c12(I,1), wrf_c12(I,2)
+             WRITE(WINDBG%FHNDL,*) 'wrf_c22(I)=', wrf_c22(I,1), wrf_c22(I,2)
+             WRITE(WINDBG%FHNDL,*) 'wrf_a=', wrf_a(I)
+             WRITE(WINDBG%FHNDL,*) 'wrf_b=', wrf_b(I)
+             WRITE(WINDBG%FHNDL,*) 'wrf_c=', wrf_c(I)
+             WRITE(WINDBG%FHNDL,*) 'wrf_d=', wrf_d(I)
+           END IF
+         END DO
        END IF
-       Print *, 'maxval(varount)=', maxval(abs(varout))
-       Print *, 'maxval(UWIND_FD)=', maxval(abs(UWIND_FD))
-       Print *, 'maxval(VWIND_FD)=', maxval(abs(VWIND_FD))
+       WRITE(WINDBG%FHNDL,*) 'maxval(varount)=', maxval(abs(varout))
+       WRITE(WINDBG%FHNDL,*) 'maxval(UWIND_FD)=', maxval(abs(UWIND_FD))
+       WRITE(WINDBG%FHNDL,*) 'maxval(VWIND_FD)=', maxval(abs(VWIND_FD))
+       CALL FLUSH(WINDBG%FHNDL)
        END SUBROUTINE READ_INTERP_NETCDF_WRF
 !**********************************************************************
 !*                                                                    *
@@ -1757,7 +1769,7 @@
        integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
        integer aShift
        real(rkind) :: X(3), Y(3), WI(3), a, b, eX, eY
-       LOGICAL :: METHOD1 = .TRUE.
+       LOGICAL :: METHOD1 = .FALSE.
 
        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1849,150 +1861,149 @@
 
        WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
        IF (METHOD1 .eqv. .FALSE.) THEN
-       allocate(WRF_IX(MNP), WRF_IY(MNP), SHIFTXY(4,2), WRF_COEFF(4,MNP), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-       SHIFTXY(1,1)=0
-       SHIFTXY(1,2)=0
-       SHIFTXY(2,1)=1
-       SHIFTXY(2,2)=0
-       SHIFTXY(3,1)=0
-       SHIFTXY(3,2)=1
-       SHIFTXY(4,1)=1
-       SHIFTXY(4,2)=1
-
-       DO I = 1, MNP
-         IF (I .eq. 1) THEN
-           IXs=1
-           IYs=1
-         ELSE
-           IXs=WRF_IX(I-1)
-           IYs=WRF_IX(I-1)
-         END IF
-         aShift=1
-         eX=XP(I)
-         eY=YP(I)
-         DO
-           WeFind=0
-           IXmin=max(1, IXs - aShift)
-           IYmin=max(1, IYs - aShift)
-           IXmax=min(NDX_WIND_FD-1, IXs+aShift)
-           IYmax=min(NDY_WIND_FD-1, IYs+aShift)
-           DO IX=IXmin,IXmax
-             DO IY=IYmin,IYmax
-               IF (WeFind .eq. 0) THEN
-                 X(1)=WRF_LON(IX, IY)
-                 X(2)=WRF_LON(IX+1, IY)
-                 X(3)=WRF_LON(IX, IY+1)
-                 Y(1)=WRF_LAT(IX, IY)
-                 Y(2)=WRF_LAT(IX+1, IY)
-                 Y(3)=WRF_LAT(IX, IY+1)
-                 CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                 IF (minval(WI) .ge. -THR) THEN
-                   WeFind=1
-                   WRF_IX(I)=IX
-                   WRF_IY(I)=IY
-                   a=WI(2)
-                   b=WI(3)
-                   wrf_coeff(1, I)=(1-a)*(1-b)
-                   wrf_coeff(2, I)=a*(1-b)
-                   wrf_coeff(3, I)=(1-a)*b
-                   wrf_coeff(4, I)=(1-a)*(1-b)
+         allocate(WRF_IX(MNP), WRF_IY(MNP), SHIFTXY(4,2), WRF_COEFF(4,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+         SHIFTXY(1,1)=0
+         SHIFTXY(1,2)=0
+         SHIFTXY(2,1)=1
+         SHIFTXY(2,2)=0
+         SHIFTXY(3,1)=0
+         SHIFTXY(3,2)=1
+         SHIFTXY(4,1)=1
+         SHIFTXY(4,2)=1
+         DO I = 1, MNP
+           IF (I .eq. 1) THEN
+             IXs=1
+             IYs=1
+           ELSE
+             IXs=WRF_IX(I-1)
+             IYs=WRF_IX(I-1)
+           END IF
+           aShift=1
+           eX=XP(I)
+           eY=YP(I)
+           DO
+             WeFind=0
+             IXmin=max(1, IXs - aShift)
+             IYmin=max(1, IYs - aShift)
+             IXmax=min(NDX_WIND_FD-1, IXs+aShift)
+             IYmax=min(NDY_WIND_FD-1, IYs+aShift)
+             DO IX=IXmin,IXmax
+               DO IY=IYmin,IYmax
+                 IF (WeFind .eq. 0) THEN
+                   X(1)=WRF_LON(IX, IY)
+                   X(2)=WRF_LON(IX+1, IY)
+                   X(3)=WRF_LON(IX, IY+1)
+                   Y(1)=WRF_LAT(IX, IY)
+                   Y(2)=WRF_LAT(IX+1, IY)
+                   Y(3)=WRF_LAT(IX, IY+1)
+                   CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
+                   IF (minval(WI) .ge. -THR) THEN
+                     WeFind=1
+                     WRF_IX(I)=IX
+                     WRF_IY(I)=IY
+                     a=WI(2)
+                     b=WI(3)
+                     wrf_coeff(1, I)=(1-a)*(1-b)
+                     wrf_coeff(2, I)=a*(1-b)
+                     wrf_coeff(3, I)=(1-a)*b
+                     wrf_coeff(4, I)=(1-a)*(1-b)
+                   END IF
                  END IF
-               END IF
-               IF (WeFind .eq. 0) THEN
-                 X(1)=WRF_LON(IX+1, IY+1)
-                 X(2)=WRF_LON(IX+1, IY)
-                 X(3)=WRF_LON(IX, IY+1)
-                 Y(1)=WRF_LAT(IX+1, IY+1)
-                 Y(2)=WRF_LAT(IX+1, IY)
-                 Y(3)=WRF_LAT(IX, IY+1)
-                 CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                 IF (minval(WI) .ge. -THR) THEN
-                   WeFind=1
-                   WRF_IX(I)=IX
-                   WRF_IY(I)=IY
-                   a=1 - WI(3)
-                   b=1 - WI(2)
-                   wrf_coeff(1, I)=(1-a)*(1-b)
-                   wrf_coeff(2, I)=a*(1-b)
-                   wrf_coeff(3, I)=(1-a)*b
-                   wrf_coeff(4, I)=(1-a)*(1-b)
+                 IF (WeFind .eq. 0) THEN
+                   X(1)=WRF_LON(IX+1, IY+1)
+                   X(2)=WRF_LON(IX+1, IY)
+                   X(3)=WRF_LON(IX, IY+1)
+                   Y(1)=WRF_LAT(IX+1, IY+1)
+                   Y(2)=WRF_LAT(IX+1, IY)
+                   Y(3)=WRF_LAT(IX, IY+1)
+                   CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
+                   IF (minval(WI) .ge. -THR) THEN
+                     WeFind=1
+                     WRF_IX(I)=IX
+                     WRF_IY(I)=IY
+                     a=1 - WI(3)
+                     b=1 - WI(2)
+                     wrf_coeff(1, I)=(1-a)*(1-b)
+                     wrf_coeff(2, I)=a*(1-b)
+                     wrf_coeff(3, I)=(1-a)*b
+                     wrf_coeff(4, I)=(1-a)*(1-b)
+                   END IF
                  END IF
-               END IF
+               END DO
              END DO
-           END DO
-           IF (WeFind .eq. 1) THEN
-             EXIT
-           END IF
-           IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
-             WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
-             WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
-             CALL WWM_ABORT('Incorrect WRF wind input')
-           END IF
-           aShift=aShift + 1
-         END DO  
-       END DO
+             IF (WeFind .eq. 1) THEN
+               EXIT
+             END IF
+             IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
+               WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
+               WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
+               CALL WWM_ABORT('Incorrect WRF wind input')
+             END IF
+             aShift=aShift + 1
+           END DO  
+         END DO
        ELSE
-       ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
-       ALLOCATE(wrf_a(MNP), wrf_b(MNP), wrf_c(MNP), wrf_d(MNP), wrf_J(MNP), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
-       ALLOCATE(dist(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
-       do I = 1, MNP
-         dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )
-         closest(1:2) = MINLOC(dist)
-         d_lon = XP(I)-WRF_LON(closest(1),closest(2)) 
-         d_lat = YP(I)-WRF_LAT(closest(1),closest(2))
-         IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
-           wrf_c11(I,:) = closest(:)
-           wrf_c21(I,1) = closest(1) + 1
-           wrf_c22(I,1) = closest(1) + 1
-           wrf_c12(I,1) = closest(1)
-           wrf_c21(I,2) = closest(2)
-           wrf_c22(I,2) = closest(2) + 1
-           wrf_c12(I,2) = closest(2) + 1
-         END IF
-         IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
-           wrf_c11(I,1) = closest(1)
-           wrf_c21(I,1) = closest(1) + 1
-           wrf_c22(I,1) = closest(1) + 1
-           wrf_c12(I,:) = closest(:)
-           wrf_c11(I,2) = closest(2) - 1
-           wrf_c21(I,2) = closest(2) - 1
-           wrf_c22(I,2) = closest(2) 
-         END IF
-         IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
-           wrf_c11(I,1) = closest(1) - 1 
-           wrf_c21(I,:) = closest(:)
-           wrf_c22(I,1) = closest(1)
-           wrf_c12(I,1) = closest(1) - 1
-           wrf_c11(I,2) = closest(2)
-           wrf_c22(I,2) = closest(2) + 1
-           wrf_c12(I,2) = closest(2) + 1 
-         END IF
-         IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
-           wrf_c11(I,1) = closest(1) - 1
-           wrf_c21(I,1) = closest(1)
-           wrf_c22(I,:) = closest(:)
-           wrf_c12(I,1) = closest(1) - 1
-           wrf_c11(I,2) = closest(2) - 1
-           wrf_c21(I,2) = closest(2) - 1
-           wrf_c12(I,2) = closest(2) 
-         END IF
-         ! J =1/((x2-x1)*(y2-y1))
-         i11=wrf_c11(I,1)
-         j11=wrf_c11(I,2)
-         i12=wrf_c12(I,1)
-         j12=wrf_c12(I,2)
-         i21=wrf_c21(I,1)
-         j21=wrf_c21(I,2)
-         wrf_J(I)=1.0/( (WRF_LON(i21,j21)-WRF_LON(i11,j11))*(WRF_LAT(i12,j12)-WRF_LAT(i11,j11)) )
-         wrf_a(I) = WRF_LON(i21,j21) - XP(I) ! x2-x
-         wrf_b(I) = XP(I) - WRF_LON(i11,j11) ! x-x1
-         wrf_c(I) = WRF_LAT(i12,j12) - YP(I) ! y2-y
-         wrf_d(I) = YP(I) - WRF_LAT(i11,j11) ! y-y1
-       END DO
+         ALLOCATE(wrf_c11(MNP,2), wrf_c12(MNP,2), wrf_c21(MNP,2), wrf_c22(MNP,2), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
+         ALLOCATE(wrf_a(MNP), wrf_b(MNP), wrf_c(MNP), wrf_d(MNP), wrf_J(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
+         ALLOCATE(dist(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
+         DO I = 1, MNP
+           dist(:,:) = ABS( CMPLX(XP(I)-WRF_LON(:,:), YP(I)-WRF_LAT(:,:)) )
+           closest(1:2) = MINLOC(dist)
+           d_lon = XP(I)-WRF_LON(closest(1),closest(2)) 
+           d_lat = YP(I)-WRF_LAT(closest(1),closest(2))
+           IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
+             wrf_c11(I,:) = closest(:)
+             wrf_c21(I,1) = closest(1) + 1
+             wrf_c22(I,1) = closest(1) + 1
+             wrf_c12(I,1) = closest(1)
+             wrf_c21(I,2) = closest(2)
+             wrf_c22(I,2) = closest(2) + 1
+             wrf_c12(I,2) = closest(2) + 1
+           END IF
+           IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
+             wrf_c11(I,1) = closest(1)
+             wrf_c21(I,1) = closest(1) + 1
+             wrf_c22(I,1) = closest(1) + 1
+             wrf_c12(I,:) = closest(:)
+             wrf_c11(I,2) = closest(2) - 1
+             wrf_c21(I,2) = closest(2) - 1
+             wrf_c22(I,2) = closest(2) 
+           END IF
+           IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
+             wrf_c11(I,1) = closest(1) - 1 
+             wrf_c21(I,:) = closest(:)
+             wrf_c22(I,1) = closest(1)
+             wrf_c12(I,1) = closest(1) - 1
+             wrf_c11(I,2) = closest(2)
+             wrf_c22(I,2) = closest(2) + 1
+             wrf_c12(I,2) = closest(2) + 1 
+           END IF
+           IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
+             wrf_c11(I,1) = closest(1) - 1
+             wrf_c21(I,1) = closest(1)
+             wrf_c22(I,:) = closest(:)
+             wrf_c12(I,1) = closest(1) - 1
+             wrf_c11(I,2) = closest(2) - 1
+             wrf_c21(I,2) = closest(2) - 1
+             wrf_c12(I,2) = closest(2) 
+           END IF
+           ! J =1/((x2-x1)*(y2-y1))
+           i11=wrf_c11(I,1)
+           j11=wrf_c11(I,2)
+           i12=wrf_c12(I,1)
+           j12=wrf_c12(I,2)
+           i21=wrf_c21(I,1)
+           j21=wrf_c21(I,2)
+           wrf_J(I)=1.0/( (WRF_LON(i21,j21)-WRF_LON(i11,j11))*(WRF_LAT(i12,j12)-WRF_LAT(i11,j11)) )
+           wrf_a(I) = WRF_LON(i21,j21) - XP(I) ! x2-x
+           wrf_b(I) = XP(I) - WRF_LON(i11,j11) ! x-x1
+           wrf_c(I) = WRF_LAT(i12,j12) - YP(I) ! y2-y
+           wrf_d(I) = YP(I) - WRF_LAT(i11,j11) ! y-y1
+         END DO
        END IF
        WRITE(WINDBG%FHNDL,*) ' done interp calcs'
        END SUBROUTINE INIT_NETCDF_WRF
