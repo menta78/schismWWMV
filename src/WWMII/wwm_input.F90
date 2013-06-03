@@ -894,6 +894,9 @@
          wwm_print_namelist(WIND)
 
          WIN%FNAME = TRIM(FILEWIND)
+         IF (LWINDFROMWWM .and. (LCWIN .eq. .FALSE.)) THEN
+           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
+         END IF
 
          SEWI%BEGT = BEGTC
          SEWI%DELT = DELTC

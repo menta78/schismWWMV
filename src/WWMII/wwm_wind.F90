@@ -46,7 +46,6 @@
           END IF
         ELSE ! LCWIN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
-          CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)')  'SPATIAL VARIABLE WIND FIELD IS USED'
           IF (IWINDFORMAT == 1) THEN
             CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .FALSE., 2, WINDXY)
@@ -114,7 +113,6 @@
 !         CALL SET_INITIAL_WIND(IT) ! 
         ELSE
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
-          CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'NONSTATIONARY WIND FIELD IS USED        '
           SEWI%TOTL = (SEWI%EMJD - SEWI%BMJD) * DAY2SEC
           SEWI%ISTP = NINT( SEWI%TOTL / SEWI%DELT ) + 1
@@ -669,10 +667,6 @@
       integer idx
       REAL(rkind) :: ePresTime, eNewTime
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
-      IF (ISTAT .LT. 0) THEN
-        WRITE(DBG%FHNDL,*) 'WINDFILES FILE NOT FOUND', WIN%FNAME
-        CALL WWM_ABORT('WINDFILES FILE NOT FOUND')
-      END IF
 !
 ! count number of netcdf files in list ...
 ! CRFS has analyzed at time 0 and forecast at times +1, +2, +3, +4, +5 +6
@@ -910,10 +904,6 @@
       CALL CT2MJD(CHRDATE,START_TIME)
 
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
-      IF (ISTAT .LT. 0) THEN
-        WRITE(wwmerr,*) 'WINDFILES FILE NOT FOUND', WIN%FNAME
-        CALL WWM_ABORT(wwmerr)
-      END IF
 !
 ! count number of netcdf files in list ...
 !
