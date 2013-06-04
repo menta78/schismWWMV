@@ -1871,6 +1871,10 @@
          SHIFTXY(3,2)=1
          SHIFTXY(4,1)=1
          SHIFTXY(4,2)=1
+         WRITE(WINDBG%FHNDL,*) 'min(WRF_LON)=', minval(WRF_LON)
+         WRITE(WINDBG%FHNDL,*) 'max(WRF_LON)=', maxval(WRF_LON)
+         WRITE(WINDBG%FHNDL,*) 'min(WRF_LAT)=', minval(WRF_LAT)
+         WRITE(WINDBG%FHNDL,*) 'max(WRF_LAT)=', maxval(WRF_LAT)
          DO I = 1, MNP
            IF (I .eq. 1) THEN
              IXs=1
@@ -1909,11 +1913,6 @@
                    Y(2)=WRF_LAT(IX+1, IY)
                    Y(3)=WRF_LAT(IX, IY+1)
                    CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                   WRITE(WINDBG%FHNDL,*) 'test'
-                   WRITE(WINDBG%FHNDL,*) '1: WI=', WI(1), WI(2), WI(3)
-                   WRITE(WINDBG%FHNDL,*) '1: X=', X(1), X(2), X(3)
-                   WRITE(WINDBG%FHNDL,*) '1: Y=', Y(1), Y(2), Y(3)
-                   WRITE(WINDBG%FHNDL,*) '1: IX=', IX, ' IY=', IY
                    IF (minval(WI) .ge. -THR) THEN
                      WeFind=1
                      WRF_IX(I)=IX
@@ -1934,10 +1933,6 @@
                    Y(2)=WRF_LAT(IX+1, IY)
                    Y(3)=WRF_LAT(IX, IY+1)
                    CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                   WRITE(WINDBG%FHNDL,*) '2: WI=', WI(1), WI(2), WI(3)
-                   WRITE(WINDBG%FHNDL,*) '2: X=', X(1), X(2), X(3)
-                   WRITE(WINDBG%FHNDL,*) '2: Y=', Y(1), Y(2), Y(3)
-                   WRITE(WINDBG%FHNDL,*) '2: IX=', IX, ' IY=', IY
                    IF (minval(WI) .ge. -THR) THEN
                      WeFind=1
                      WRF_IX(I)=IX
@@ -1953,19 +1948,13 @@
                END DO
              END DO
              IF (WeFind .eq. 1) THEN
-               WRITE(WINDBG%FHNDL,*) 'I=', I
-               WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
-               WRITE(WINDBG%FHNDL,*) 'wrf_coeff(1,I)=', wrf_coeff(1,I)
-               WRITE(WINDBG%FHNDL,*) 'wrf_coeff(2,I)=', wrf_coeff(2,I)
-               WRITE(WINDBG%FHNDL,*) 'wrf_coeff(3,I)=', wrf_coeff(3,I)
-               WRITE(WINDBG%FHNDL,*) 'wrf_coeff(4,I)=', wrf_coeff(4,I)
-               WRITE(WINDBG%FHNDL,*) 'wrf_coeff(:,I)=', sum(wrf_coeff(:,I))
                EXIT
              END IF
              IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
                WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
                WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
                WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
+               CALL FLUSH(WINDBG%FHNDL)
                CALL WWM_ABORT('Incorrect WRF wind input')
              END IF
              aShift=aShift + 1
