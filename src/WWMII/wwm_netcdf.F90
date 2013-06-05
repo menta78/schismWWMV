@@ -134,28 +134,18 @@
 !**********************************************************************
       SUBROUTINE SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBP, NEIGHBOR)
       IMPLICIT NONE
-
       INTEGER, INTENT(IN)             :: np_glob, ne_glob
       INTEGER, INTENT(IN)             :: INEglob(3, ne_glob)
       INTEGER, INTENT(INOUT)          :: IOBP(np_glob)
       INTEGER, INTENT(INOUT)          :: NEIGHBOR(np_glob)
 
-      INTEGER, POINTER :: STATUS(:)
-      INTEGER, POINTER :: COLLECTED(:)
-      INTEGER, POINTER :: NEXTVERT(:)
-      INTEGER, POINTER :: PREVVERT(:)
-      INTEGER, POINTER :: NBneighbor(:)
+      INTEGER :: STATUS(np_glob), COLLECTED(np_glob)
+      INTEGER :: NEXTVERT(np_glob), PREVVERT(np_glob), NBneighbor(np_glob)
 
-      INTEGER :: IE, I, IP
-      INTEGER :: ISFINISHED, INEXT, IPREV
-      INTEGER :: IPNEXT, IPPREV, ZNEXT
-      INTEGER :: eIdx
+      INTEGER :: IE, I, IP, eIdx
+      INTEGER :: ISFINISHED, INEXT, IPREV, IPNEXT, IPPREV, ZNEXT
       LOGICAL :: HaveError
       integer istat
-      ALLOCATE(STATUS(np_glob), COLLECTED(np_glob), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 2')
-      ALLOCATE(PREVVERT(np_glob), NEXTVERT(np_glob), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 3')
       NEIGHBOR=0
       STATUS = 0
       NEXTVERT = 0
@@ -182,9 +172,9 @@
           END IF
         END DO
       END DO
-      STATUS(:)=0
+      STATUS=0
       DO
-        COLLECTED(:)=0
+        COLLECTED=0
         DO IE=1,ne_glob
           DO I=1,3
             IF (I.EQ.1) THEN
@@ -212,7 +202,6 @@
             END IF
           END DO
         END DO
-
         ISFINISHED=1
         DO IP=1,np_glob
           IF ((COLLECTED(IP).eq.0).and.(STATUS(IP).eq.0)) THEN
@@ -233,8 +222,6 @@
           IOBP(IP)=1
         END IF
       END DO
-      ALLOCATE(NBneighbor(np_glob), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 4')
       NBneighbor=0
       DO IP=1,np_glob
         eIdx=NEIGHBOR(IP)
@@ -265,14 +252,8 @@
       IF (HaveError) THEN
         Print *, 'Find some errors in the output'
         Print *, 'Please check for node contained in several boundaries'
-        STOP
+        CALL WWM_ABORT('Please debug the boundary code')
       END IF
-      DEALLOCATE(STATUS)
-      DEALLOCATE(COLLECTED)
-      DEALLOCATE(NEXTVERT)
-      DEALLOCATE(PREVVERT)
-      DEALLOCATE(NBneighbor)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -307,7 +288,6 @@
           STATUS(IP)=1
         END IF
       END DO
-!      Print *, 'LenBound=', LenBound
       ALLOCATE(ListSequence(LenBound), SequenceNumber(LenBound), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 5')
       NbCycle=0
@@ -357,7 +337,7 @@
         END IF
       END DO
       !
-      IF (Oper == 1) THEN
+      IF ((Oper == 1).and.(LenBound.gt.0)) THEN
         iret = nf90_def_dim(ncid, 'lenbound', LenBound, lenbound_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
         iret = nf90_def_dim(ncid, 'nbbound', NbCycle, nbbound_dims)
@@ -378,16 +358,16 @@
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Length of cycles')
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
       END IF
-      IF (Oper == 2) THEN
+      IF ((Oper == 2).and.(LenBound.gt.0)) THEN
         iret=nf90_inq_varid(ncid, "inode", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
         iret=nf90_put_var(ncid,var_id,ListSequence, start = (/1/), count = (/ LenBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
         iret=nf90_inq_varid(ncid, "icycle", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
         iret=nf90_put_var(ncid,var_id,SequenceNumber, start = (/1/), count = (/ LenBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
         !
         iret=nf90_inq_varid(ncid, "lencycle", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
@@ -395,9 +375,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       END IF
       !
-      deallocate(LengthCycle)      
-      DEALLOCATE(ListSequence)
-      DEALLOCATE(SequenceNumber)
+      deallocate(LengthCycle, ListSequence, SequenceNumber)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -900,10 +878,7 @@
         CALL GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
         Oper=1
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
-        DEALLOCATE(INEtotal)
-        DEALLOCATE(XPtotal)
-        DEALLOCATE(YPtotal)
-        DEALLOCATE(DEPtotal)
+        DEALLOCATE(INEtotal, XPtotal, YPtotal, DEPtotal)
       END IF
       END SUBROUTINE
 !**********************************************************************

@@ -76,6 +76,8 @@
       ALLOCATE(INE(3,MNE))
       ALLOCATE(IEN(6,MNE))
       ALLOCATE(TRIA(MNE))
+      np_total=MNP
+      ne_total=MNE
 !
       CALL READ_SPATIAL_GRID
       CALL SPATIAL_GRID
