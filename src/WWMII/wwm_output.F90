@@ -2027,7 +2027,6 @@
            DO IS = 1, MSC
              ECLL = ACLOC(IS,ID)*SPSIG(IS)
              IF (.NOT. LSTCU .AND. .NOT. LSECU) THEN ! No current ... relative freq.
-             !IF ( LSTCU .AND. LSECU) THEN
                ACOUT_2D(IS,ID) = ECLL
                ACOUT_1D(IS,1) = ACOUT_1D(IS,1) + ECLL * DDIR
                ACOUT_1D(IS,2) = ACOUT_1D(IS,2) + ECLL * DDIR * COSTH(ID)
@@ -2074,7 +2073,6 @@
          END DO ! ID
 
          IF (LSTCU .OR. LSECU) THEN
-         !IF (.NOT. LSTCU .OR. .NOT. LSECU) THEN
            DO ID = 1, MDC
              DO IS = 1, MSC
                DOMEG = FRINTF * SPSIG(IS)

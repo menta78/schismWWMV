@@ -86,36 +86,36 @@ endif
 # PPFLAGS := $(PPFLAGS) -DMM5
 
 # GOTM turbulence closure model
-# GOTM = yes
+# USE_GOTM = yes
 
 # Wind wave model WWM
-# WWM = yes
+# USE_WWM = yes
 
 # Implicit schemes in WWM needs PetSc
-# PETSC = yes
+# USE_PETSC = yes
 
 # TIMOR 
-# TIMOR = yes
+# USE_TIMOR = yes
 
 # Harmonic analysis tool
- HA = yes
+ USE_HA = yes
 
 ##### Select only _one_ model from below
 
 # Ecological model - NAPZD Spitz (internal use only)
-# NAPZD = yes
+# USE_NAPZD = yes
 
 # Or:
 # Ecological model (EcoSim)
-# ECO = yes
+# USE_ECO = yes
 
 # Or:
 # CE-QUAL-ICM
-# ICM = yes
+# USE_ICM = yes
 
 # Or:
 # Sediment model 
-# SED = yes
+# USE_SED = yes
 
 # If you choose SED you should set the following algorithmic preferences
 
@@ -153,6 +153,10 @@ endif
 #   PPFLAGS:= $(PPFLAGS) -DDENSED
 
 # Or:
+# Sediment model (2D)
+# #  USE_SED2D = yes
+
+# Or:
 # Oil spill model (not active)
 # OIL = yes
 
@@ -160,10 +164,10 @@ endif
 #########  Compiler configuration related flags
 
 # Include a timer
- TIMER = yes
+# USE_TIMER = yes
 
 # Debug mode (more time consuming)
-# DEBUG = yes
+# USE_DEBUG = yes
 
 
 ######### Specialty compiler flags and workarounds

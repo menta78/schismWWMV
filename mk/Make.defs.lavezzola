@@ -153,7 +153,7 @@ USE_OPEN64 := TRUE
 # TIMER = yes
 
 # Debug mode (more time consuming)
-# DEBUG = yes
+# USE_DEBUG = yes
 
 
 ######### Specialty compiler flags and workarounds
