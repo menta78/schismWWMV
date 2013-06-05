@@ -470,35 +470,35 @@
         eStrUnit="degree"
       ELSE IF (IDX.eq.11) THEN
         eStr="TPPD"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="Discrete peak wave period"
+        eStrUnit="second"
       ELSE IF (IDX.eq.12) THEN
         eStr="CPPD"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="Discrete peak wave speed"
+        eStrUnit="meter second -1"
       ELSE IF (IDX.eq.13) THEN
         eStr="KPPD"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="discrete peak wave number"
+        eStrUnit="meter-1"
       ELSE IF (IDX.eq.14) THEN
         eStr="CGPD"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="discrete peak group speed"
+        eStrUnit="meter second-1"
       ELSE IF (IDX.eq.15) THEN
         eStr="TPP"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="peak wave period"
+        eStrUnit="second"
       ELSE IF (IDX.eq.16) THEN
         eStr="CPP"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="peak wave speed"
+        eStrUnit="meter second-1"
       ELSE IF (IDX.eq.17) THEN
         eStr="WNPP"
         eStrFullName="unk"
         eStrUnit="unk"
       ELSE IF (IDX.eq.18) THEN
         eStr="CGPP"
-        eStrFullName="Peak group velocity"
+        eStrFullName="peak group velocity"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.19) THEN
         eStr="KPP"
@@ -518,12 +518,12 @@
         eStrUnit="degree"
       ELSE IF (IDX.eq.23) THEN
         eStr="DPEAK"
-        eStrFullName="unk"
+        eStrFullName="discrete peak direction"
         eStrUnit="degree"
       ELSE IF (IDX.eq.24) THEN
         eStr="UBOT"
-        eStrFullName="unk"
-        eStrUnit="unk"
+        eStrFullName="wind-induced bottom orbital velocity"
+        eStrUnit="meter second-1"
       ELSE IF (IDX.eq.25) THEN
         eStr="ORBITAL"
         eStrFullName="unk"
@@ -538,55 +538,55 @@
         eStrUnit="unk"
       ELSE IF (IDX.eq.28) THEN
         eStr="URSELL"
-        eStrFullName="Ursell number"
+        eStrFullName="ursell number"
         eStrUnit="non-dimensional"
       ELSE IF (IDX.eq.29) THEN
         eStr="UFRIC"
-        eStrFullName="Air friction velocity"
+        eStrFullName="air friction velocity"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.30) THEN
         eStr="Z0"
-        eStrFullName="Air roughness length"
+        eStrFullName="air roughness length"
         eStrUnit="meter"
       ELSE IF (IDX.eq.31) THEN
         eStr="ALPHA_CH"
-        eStrFullName="Air Charnock coefficient"
+        eStrFullName="air Charnock coefficient"
         eStrUnit="non-dimensional"
       ELSE IF (IDX.eq.32) THEN
         eStr="WINDX"
-        eStrFullName="Wind in X direction"
+        eStrFullName="wind in X direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.33) THEN
         eStr="WINDY"
-        eStrFullName="Wind in Y direction"
+        eStrFullName="wind in Y direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.34) THEN
         eStr="CD"
-        eStrFullName="Drag coefficient"
+        eStrFullName="drag coefficient"
         eStrUnit="non-dimensional"
       ELSE IF (IDX.eq.35) THEN
         eStr="CURTX"
-        eStrFullName="Current in X direction"
+        eStrFullName="current in X direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.36) THEN
         eStr="CURTY"
-        eStrFullName="Current in Y direction"
+        eStrFullName="current in Y direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.37) THEN
         eStr="WATLEV"
-        eStrFullName="Water level"
+        eStrFullName="water level"
         eStrUnit="meter"
       ELSE IF (IDX.eq.38) THEN
         eStr="WATLEVOLD"
-        eStrFullName="Water level at previous time step"
+        eStrFullName="water level at previous time step"
         eStrUnit="meter"
       ELSE IF (IDX.eq.39) THEN
         eStr="DEPDT"
-        eStrFullName="Water level change"
+        eStrFullName="water level change"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.40) THEN
         eStr="DEP"
-        eStrFullName="Bathymetry"
+        eStrFullName="bathymetry"
         eStrUnit="meter"
       ELSE IF (IDX.eq.41) THEN
         eStr="WINDMAG"
@@ -594,60 +594,60 @@
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.42) THEN
         eStr="TAUW"
-        eStrFullName="Wave supported surface stress"
+        eStrFullName="wave supported surface stress"
         eStrUnit="unk"
       ELSE IF (IDX.eq.43) THEN
         eStr="TAUWX"
-        eStrFullName="Wave supported surface X-stress"
+        eStrFullName="wave supported surface X-stress"
         eStrUnit="unk"
       ELSE IF (IDX.eq.44) THEN
         eStr="TAUWY"
-        eStrFullName="Wave supported surface Y-stress"
+        eStrFullName="wave supported surface Y-stress"
         eStrUnit="unk"
       ELSE IF (IDX.eq.45) THEN
         eStr="TAUHF"
-        eStrFullName="High frequency surface stress"
+        eStrFullName="high frequency surface stress"
         eStrUnit="unk"
       ELSE IF (IDX.eq.46) THEN
         eStr="TAUTOT"
-        eStrFullName="Total surface stress"
+        eStrFullName="total surface stress"
         eStrUnit="unk"
       ELSE IF (IDX.eq.47) THEN
         eStr="STOKESBOTTX"
-        eStrFullName="Bottom Stokes velocity in X direction"
+        eStrFullName="bottom Stokes velocity in X direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.48) THEN
         eStr="STOKESBOTTY"
-        eStrFullName="Bottom Stokes velocity in Y direction"
+        eStrFullName="bottom Stokes velocity in Y direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.49) THEN
         eStr="STOKESSURFX"
-        eStrFullName="Surface Stokes velocity in X direction"
+        eStrFullName="surface Stokes velocity in X direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.50) THEN
         eStr="STOKESSURFY"
-        eStrFullName="Surface Stokes velocity in Y direction"
+        eStrFullName="surface Stokes velocity in Y direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.51) THEN
         eStr="STOKESBAROX"
-        eStrFullName="Barotropic Stokes velocity in X direction"
+        eStrFullName="barotropic Stokes velocity in X direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.52) THEN
         eStr="STOKESBAROY"
-        eStrFullName="Barotropic Stokes velocity in Y direction"
+        eStrFullName="barotropic Stokes velocity in Y direction"
         eStrUnit="meter second -1"
       ELSE IF (IDX.eq.53) THEN
         eStr="RSXX"
-        eStrFullName="Barotropic Stress potential Sxx"
-        eStrUnit="unk"
+        eStrFullName="barotropic Stress potential Sxx"
+        eStrUnit="meter2 second2"
       ELSE IF (IDX.eq.54) THEN
         eStr="RSXY"
-        eStrFullName="Barotropic Stress potential Sxy"
-        eStrUnit="unk"
+        eStrFullName="barotropic Stress potential Sxy"
+        eStrUnit="meter2 second2"
       ELSE IF (IDX.eq.55) THEN
         eStr="RSYY"
-        eStrFullName="Barotropic Stress potential Syy"
-        eStrUnit="unk"
+        eStrFullName="barotropic Stress potential Syy"
+        eStrUnit="meter2 second2"
       ELSE IF (IDX.eq.56) THEN
         eStr="CFL1"
         eStrFullName="CFL number 1"
