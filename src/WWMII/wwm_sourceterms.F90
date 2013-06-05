@@ -113,10 +113,10 @@
       XPP     = 0.15
       XRR     = 0.10
       XFILT  = 0.05
-      XPP     = MAX ( 1.E-6 , XPP )
-      XRR     = MAX ( 1.E-6 , XRR )
+      XPP     = MAX ( 1.E-6_rkind , XPP )
+      XRR     = MAX ( 1.E-6_rkind , XRR )
       XREL   = XRR
-      XFILT  = MAX ( 0. , XFILT )
+      XFILT  = MAX ( ZERO , XFILT )
       XFLT   = XFILT
       FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2
 
@@ -534,7 +534,7 @@
              END DO
 
              DO ID=1,MDC
-               SPRDD(ID)=MAX(0.,COS(SPDIR(ID)-WINDTH))**2 ! Possible error in directional convention 
+               SPRDD(ID)=MAX(ZERO, COS(SPDIR(ID)-WINDTH))**2 ! Possible error in directional convention 
              ENDDO
  
              XJ=WIND10/50._rkind/REAL(200)

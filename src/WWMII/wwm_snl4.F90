@@ -241,7 +241,7 @@
          SNLCS2 = PQUAD(4)
          SNLCS3 = PQUAD(5)
          !AUX    = MAX(DEP(IP)*KMESPC,1.363_rkind) ! ... check this kind of stuff with peters paper ...
-         AUX    = MAX(0.75*DEP(IP)*KMESPC, 0.5)
+         AUX    = MAX(0.75*DEP(IP)*KMESPC, 0.5_rkind)
          AUX2   = MAX ( -1.E15_rkind, SNLCS3*AUX)
          CONS   = SNLC1 * ( 1. + SNLCS1/AUX * (1.-SNLCS2*AUX) * EXP(AUX2))
 

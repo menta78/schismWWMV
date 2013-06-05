@@ -109,7 +109,7 @@
               AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
               RINT = AUX1 / AUX2
               FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              SA(IS,ID) = MAX(0., FT * ( EM * (EM - 2*E0 )))
+              SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
               IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
            END DO
         END DO
@@ -734,7 +734,7 @@
       ISMAX = MAX ( ISMAX , IRES + 1 )
 !      
       TMN = PI2 / SMESPC
-      URS = MIN ( URSELL , 10. )
+      URS = MIN ( URSELL , TEN )
       IF (URS .LT. PTTRIAD(5)) THEN
         BIPH = 0.0
       ELSE
@@ -1018,7 +1018,7 @@
               AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 -(2./ 5.) * W0**2 * DEP_2 )
               RINT = AUX1 / AUX2
               FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              SA(ID,IS) = MAX(0., FT * ( EM * EM - 2. * EM * E0 ))
+              SA(ID,IS) = MAX(ZERO, FT * ( EM * EM - 2. * EM * E0 ))
            END DO
         END DO
         IF (ICOMP .LT. 2) THEN
@@ -1028,7 +1028,7 @@
                 STRI = SA(ID,IS) - 2.*(WISP  * SA(ID,IS+ISP1) + WISP1 * SA(ID,IS+ISP ))
                 ssnl3(is,id) = STRI
                 IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
-                IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+                IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18_rkind, ACLOC(IS,ID)*SIGPI)
              END DO
           END DO
         ELSE
@@ -1040,7 +1040,7 @@
                 IF (STRI .GT. ZERO) THEN
                   IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
                 ELSE
-                  IMATDA(IS,ID) =  IMATDA(IS,ID) - STRI / MAX(1.E-18,ACLOC(IS,ID)*SIGPI)
+                  IMATDA(IS,ID) =  IMATDA(IS,ID) - STRI / MAX(1.E-18_rkind, ACLOC(IS,ID)*SIGPI)
                 ENDIF
              END DO
           END DO

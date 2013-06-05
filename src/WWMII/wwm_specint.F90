@@ -382,10 +382,10 @@
          XPP    = 0.15
          XRR    = 0.10
          XFILT  = 0.0001 ! AR: check why it must be so small ..
-         XPP    = MAX ( 1.E-6 , XPP )
-         XRR    = MAX ( 1.E-6 , XRR )
+         XPP    = MAX ( 1.E-6_rkind , XPP )
+         XRR    = MAX ( 1.E-6_rkind , XRR )
          XREL   = XRR
-         XFLT   = MAX ( 0. , XFILT ) 
+         XFLT   = MAX ( ZERO , XFILT ) 
          FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2  ! s4/m4
          DAM    = FACP / ( SPSIG * WK(IP,:)**3 ) / CG(IP,:) ! s * m³ * s4/m4 = 
          AFILT  = MAX ( DAM(MSC) , XFLT*MAXVAL(ACLOC))!*PI2*SPSIG(MSC_HF(IP)) )
@@ -422,8 +422,8 @@
              DO IS = 1, MSC_HF(IP)
                IF (ABS(IMATRA(IS,ID)) .GT. VERYSMALL) THEN                
                  DAMAX  = MIN ( DAM(IS) , MAX ( XREL*ACLOC(IS,ID), AFILT ) )
-                 AFAC  = ONE / MAX( 1.E-10 , ABS(IMATRA(IS,ID)/DAMAX) )
-                 DTMAX = MIN (DTMAX ,AFAC/(MAX(1.E-10,ONE + AFAC*MIN(ZERO,IMATDA(IS,ID))))) 
+                 AFAC  = ONE / MAX( 1.E-10_rkind , ABS(IMATRA(IS,ID)/DAMAX) )
+                 DTMAX = MIN (DTMAX ,AFAC/(MAX(1.E-10_rkind, ONE + AFAC*MIN(ZERO,IMATDA(IS,ID))))) 
                END IF
              END DO
            END DO

@@ -508,7 +508,8 @@
      &          NANG => MDC, &
      &          NFRE => MSC, &
      &          INDEP => DEP, &
-     &          ROWATER => RHOW 
+     &          ROWATER => RHOW, &
+     &          ZERO, ONE 
 
       IMPLICIT NONE
 
@@ -570,35 +571,35 @@
           YSTRESS=YSTRESS+CNST*COSTH(K)
         ENDDO
       ENDDO
-      XSTRESS=XSTRESS/MAX(ROAIRN,1.)
-      YSTRESS=YSTRESS/MAX(ROAIRN,1.)
+      XSTRESS=XSTRESS/MAX(ROAIRN, ONE)
+      YSTRESS=YSTRESS/MAX(ROAIRN, ONE)
 
 !*    2.3 CALCULATE HIGH-FREQUENCY CONTRIBUTION TO STRESS.
 !     ----------------------------------------------------
 
       K=1
-      COSW = MAX(COS(TH(K)-THWNEW),0.)
+      COSW = MAX(COS(TH(K)-THWNEW), ZERO)
       TEMP = F(K,MIJ)*COSW**3
 
       DO K=2,NANG
-        COSW = MAX(COS(TH(K)-THWNEW),0.)
+        COSW = MAX(COS(TH(K)-THWNEW), ZERO)
         TEMP = TEMP+F(K,MIJ)*COSW**3
       ENDDO
 
-      UST   = MAX(USNEW,0.000001)
+      UST   = MAX(USNEW,0.000001_rkind)
       UST2 = UST**2
       XI    = UST / DELUST
-      XI    = MIN(REAL(IUSTAR),XI)
+      XI    = MIN(REAL(IUSTAR, rkind),XI)
       I     = MIN (IUSTAR-1, INT(XI))
       I     = MAX (0, I)
-      DELI1 = MIN (1. ,XI-REAL(I))
+      DELI1 = MIN (ONE ,XI-REAL(I))
       DELI2   = 1. - DELI1
 
       XJ    = (G*Z0NEW/UST2-ALPHA) / DELALP
-      XJ    = MIN(REAL(IALPHA),XJ)
+      XJ    = MIN(REAL(IALPHA, rkind),XJ)
       J     = MIN (IALPHA-1, INT(XJ))
       J     = MAX (0, J)
-      DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+      DELJ1 = MAX(MIN (ONE ,XJ-REAL(J, rkind)), ZERO)
       DELJ2   = 1. - DELJ1
 
       TAU1 = ( TAUHFT(I  ,J  ,MIJ)*DELI2 + &
@@ -612,7 +613,7 @@
       YSTRESS = YSTRESS+TAUHF*COS(THWNEW)
       TAUTOT = SQRT(XSTRESS**2+YSTRESS**2)
       TAUTOT = MIN(TAUW,UST2-EPS1)
-      TAUTOT = MAX(TAUW,0.)
+      TAUTOT = MAX(TAUW, ZERO)
 
 !      IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
 
@@ -672,7 +673,8 @@
      &                      EPSMIN => SMALL, &
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
-     &                      INDEP => DEP
+     &                      INDEP => DEP, &
+     &                      ZERO, ONE
 
       IMPLICIT NONE
 
@@ -727,20 +729,20 @@
         X0 = 0.05
         DO L=0,IALPHA
           DO K=0,IUSTAR
-            UST      = MAX(REAL(K)*DELUST,0.000001)
+            UST      = MAX(REAL(K)*DELUST,0.000001_rkind)
             Z0       = UST**2*(ALPHA+REAL(L)*DELALP)/G
             OMEGACC  = MAX(OMEGAC,X0*G/UST)
             YC       = OMEGACC*SQRT(Z0/G)
-            DELY     = MAX((1.-YC)/REAL(JTOT),0.)
+            DELY     = MAX((1.-YC)/REAL(JTOT),ZERO)
             DO J=1,JTOT
               Y        = YC+REAL(J-1)*DELY
               OMEGA    = Y*SQRT(G/Z0)
               CM       = G/OMEGA
               ZX       = UST/CM +ZALP
-              ZARG     = MIN(XKAPPA/ZX,20.)
-              ZMU      = MIN(G*Z0/CM**2*EXP(ZARG),1.)
+              ZARG     = MIN(XKAPPA/ZX,20._rkind)
+              ZMU      = MIN(G*Z0/CM**2*EXP(ZARG),ONE)
 
-              ZLOG         = MIN(LOG(ZMU),0.)
+              ZLOG         = MIN(LOG(ZMU),ZERO)
               ZBETA        = CONST1*ZMU*ZLOG**4
               TAUHFT(K,L,M)= TAUHFT(K,L,M)+W(J)*ZBETA/Y*DELY
             ENDDO
@@ -815,7 +817,8 @@
      &                      EPSMIN => SMALL, &
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
-     &                      INDEP => DEP
+     &                      INDEP => DEP, &
+     &                      ZERO, ONE
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
       REAL(rkind),INTENT(IN) ::  U10,TAUW
@@ -839,11 +842,11 @@
 
       XI      = SQRT(TAUW)/DELTAUW
       I       = MIN ( ITAUMAX-1, INT(XI) )
-      DELI1   = MIN(1.,XI - REAL(I))
+      DELI1   = MIN(ONE, XI - REAL(I))
       DELI2   = 1. - DELI1
       XJ      = U10/DELU
       J       = MIN ( JUMAX-1, INT(XJ) )
-      DELJ1   = MIN(1.,XJ - REAL(J))
+      DELJ1   = MIN(ONE, XJ - REAL(J))
       DELJ2   = 1. - DELJ1
 
       WRITE(STAT%FHNDL,*) 'INPUT DATA', DELTAUW, TAUW, ITAUMAX, JUMAX, U10
@@ -858,7 +861,7 @@
 !      SQRTCDM1  = MIN(U10/US,100.0)
 !      Z0        = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
       UST2 = US**2
-      ARG  = MAX(1.-(TAUW/UST2),EPS1)
+      ARG  = MAX(ONE-(TAUW/UST2),EPS1)
       Z0   = ALPHA*UST2/G/SQRT(ARG)
       CD   = (US/U10)**2
       CHA  = 9.81*Z0/UST2 
@@ -1202,7 +1205,7 @@
       C_D = A+B*U10
       DC_DDU = B
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-      SIG_N = MIN(0.5, SIG_CONV * (BG_GUST*USNEW**3+ 0.5*XKAPPA*ZIDLNEW**3)**ONETHIRD/U10)
+      SIG_N = MIN(0.5_rkind, SIG_CONV * (BG_GUST*USNEW**3+ 0.5*XKAPPA*ZIDLNEW**3)**ONETHIRD/U10)
 
       USP = USNEW*(1.+SIG_N)
       USM = USNEW*(1.-SIG_N)
@@ -1436,7 +1439,7 @@
            IF(DEP(IP).LT.DEPTHTRS) THEN
              EMAX = (GAM_B_J*DEP(IP))**2/16.
              ALPH = 2.*EMAX/(EMEAN)
-             ARG  = MIN(ALPH,50.)
+             ARG  = MIN(ALPH,50._rkind)
 !!!!!!!! test an iterative scheme
 !!!!!!!! if it works we might want to introduce a table
              Q_OLD = EXP(-ARG)
