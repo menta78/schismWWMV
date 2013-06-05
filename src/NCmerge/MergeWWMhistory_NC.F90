@@ -63,6 +63,7 @@
 !      open(STAT%FHNDL, FILE='wwmstat.out', status='unknown')
       CALL INIT_FILE_HANDLES()
       CALL READ_WWMINPUT
+!      CALL INIT_ARRAYS
       CLOSE(INP%FHNDL)
       open(GRD%FHNDL, FILE=TRIM(GRD%FNAME))
 !
@@ -71,6 +72,7 @@
       ALLOCATE(XP(MNP))
       ALLOCATE(YP(MNP))
       ALLOCATE(DEP(MNP))
+      ALLOCATE(INVSPHTRANS(MNP,2))
       ALLOCATE(INE(3,MNE))
       ALLOCATE(IEN(6,MNE))
       ALLOCATE(TRIA(MNE))
@@ -259,6 +261,7 @@
         END DO
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
+        DEALLOCATE(LTimeDay)
         ifile=ifile+1
       END DO
   10  FORMAT (a,i4.4,'.nc')
@@ -411,3 +414,90 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************    
+       SUBROUTINE INIT_ARRAYS
+
+         USE DATAPOOL
+         IMPLICIT NONE
+
+#ifdef MPI_PARALL_GRID
+         INTEGER :: IE, IP
+#endif
+         integer istat
+
+         ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
+         DX1 = zero
+         DX2 = zero
+
+         ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
+         DEP = zero
+
+         ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
+         INVSPHTRANS = zero
+
+         ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
+         INE = 0
+         IEN = zero
+         TRIA = zero
+#ifdef MPI_PARALL_GRID
+         DO IE = 1, MNE
+           INE(:,IE) = INETMP(IE,:)
+         END DO
+#else
+         XP  = zero
+         YP  = zero
+#endif
+!
+! spectral grid - shared
+!
+         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), MSC_HF(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+         MSC_HF = MSC
+         SPSIG = zero
+         SPDIR = zero
+         FR    = zero
+
+         ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
+         COSTH = zero
+         SINTH = zero
+         COS2TH = zero
+         SIN2TH = zero
+
+         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
+         SINCOSTH = zero
+         SIGPOW = zero
+         DS_BAND = zero
+         DS_INCR = zero
+!
+! action densities and source terms - shared
+!
+         ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
+         AC2 = zero
+
+         ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+         AC1 = zero
+
+         IF (ICOMP .GE. 2) THEN
+           ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
+           IMATRAA = zero
+           IMATDAA = zero
+         END IF
+
+         IF (LITERSPLIT) THEN
+!           ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
+           ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
+           DAC_ADV = zero
+           DAC_THE = zero
+           DAC_SIG = zero
+           DAC_SOU = zero
+         END IF
+      END SUBROUTINE
