@@ -2205,6 +2205,7 @@
       character (len = *), parameter :: CallFct="OUTPUT_HISTORY_NC"
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: FULLNAME = "full-name"
+      character (len = *), parameter :: COORD = "coordinates"
       character(len=1), parameter :: ePoint = '.'
       integer, save ::  recs_his
       integer, save ::  recs_his2
@@ -2268,6 +2269,12 @@
               iret=nf90_put_att(ncid,var_id,UNITS,TRIM(eStrUnit))
               CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
               iret=nf90_put_att(ncid,var_id,FULLNAME,TRIM(eStrFullName))
+              CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+              IF (LSPHE) THEN
+                iret=nf90_put_att(ncid,var_id,COORD,"lon lat")
+              ELSE
+                iret=nf90_put_att(ncid,var_id,COORD,"x y")
+              END IF
               CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
             END IF
           END DO

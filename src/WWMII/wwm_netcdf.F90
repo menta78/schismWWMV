@@ -945,12 +945,20 @@
         iret=nf90_put_var(ncid,var_id,INEtotal, start = (/1,1/), count = (/ 3, ne_total/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         !
-        iret=nf90_inq_varid(ncid, "x", var_id)
+        IF (LSPHE) THEN
+          iret=nf90_inq_varid(ncid, "lon", var_id)
+        ELSE
+          iret=nf90_inq_varid(ncid, "x", var_id)
+        ENDIF
         CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
         iret=nf90_put_var(ncid,var_id,XPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
-        iret=nf90_inq_varid(ncid, "y", var_id)
+        IF (LSPHE) THEN
+          iret=nf90_inq_varid(ncid, "lat", var_id)
+        ELSE
+          iret=nf90_inq_varid(ncid, "y", var_id)
+        ENDIF
         CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
         iret=nf90_put_var(ncid,var_id,YPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
@@ -1241,13 +1249,21 @@
       ENDIF
       DO I=1,IOUTS 
         eWriteReal(1)=STATION(I) % XCOORD
-        iret=nf90_inq_varid(ncid, "x", var_id)
+        IF (LSPHE) THEN
+          iret=nf90_inq_varid(ncid, "lon", var_id)
+        ELSE
+          iret=nf90_inq_varid(ncid, "x", var_id)
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
         iret=nf90_put_var(ncid,var_id,eWriteReal, start=(/I/), count =(/1/) )
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         !
         eWriteReal(1)=STATION(I) % YCOORD
-        iret=nf90_inq_varid(ncid, "y", var_id)
+        IF (LSPHE) THEN
+          iret=nf90_inq_varid(ncid, "lat", var_id)
+        ELSE
+          iret=nf90_inq_varid(ncid, "y", var_id)
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
         iret=nf90_put_var(ncid,var_id,eWriteReal, start=(/I/), count =(/1/) )
         CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
