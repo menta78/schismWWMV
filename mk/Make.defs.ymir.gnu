@@ -37,37 +37,31 @@
 ################################################################################
 
 
-ENV = ubuntu.gnu
+ENV = ymir.gnu
+
 
 ################################################################################
-# Environment for Ubuntu with GNU compilers
-# Packages requirement: gfortran, gcc, libnetcdf-dev, mpich2, libparmetis-dev, libcr-dev,
-# which can be installed with the command below:
-# "sudo apt-get install gfortran gcc libnetcdf-dev mpich2 libparmetis-dev libcr-dev"
-# Test is passed on Ubuntu 11.10 64bit, Ubuntu 12.04 64bit
+# Environment for Linux / 64 bit /  GNU Compiler / MPICH2 (Ymir cluster)
 ################################################################################
 
-#  USE_WRAP = yes
-FCP = /usr/bin/mpif90.mpich2 -f90=gfortran -ffree-line-length-none
+FCP = mpif90 -f90=gfortran -ffree-line-length-none
 FLD = $(FCP)
-# MPI vserion (1 or 2) 
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
-
-FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #-g -fbacktrace #-finit-real=nan -fbounds-check #MPI code
-FLDFLAGS = -O2 #for final linking of object files
-
+# MPI vserion (1 or 2)
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #-g -fbacktrace #-finit-real=nan -fbounds-check
+FLDFLAGS = -O2  #for final linking of object files
   #####Libraries
-#MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
-MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
-CDFLIBS = -L/usr/lib/ -lnetcdf -lnetcdff
-CDFMOD = -I/usr/include/ # modules for netcdf
+MTSLIBS = -L/Calcul/Apps/parmetis/distrib.ParMetis-3.1.1 -lparmetis -lmetis
+CDFLIBS = -L/Calcul/Apps/intel/composerxe/lib/intel64 -lirc -limf -lintlc -lifcore -lsvml -lifport -L/Calcul/Apps/netcdf411/lib -lnetcdf -lnetcdff
+CDFMOD = -I/Calcul/Apps/netcdf411/include # -I/Calcul/Apps/netcdf/4.2.1.1.ifort/include   # modules for netcdf
 ifdef USE_GOTM
-   GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
-   GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+   GTMMOD =  -I/Utilisateurs/kli/opt/source/gotm-4.0.0/modules/IFORT/ #modules
+   GTMLIBS = -L/Utilisateurs/kli/opt/source/gotm-4.0.0/lib/IFORT -lturbulence_prod  -lutil_prod
 else
    GTMMOD =
    GTMLIBS =
 endif
+
 
 
 
@@ -104,7 +98,7 @@ endif
 # USE_TIMOR = yes
 
 # Harmonic analysis tool
-# USE_HA = yes
+ USE_HA = yes
 
 ##### Select only _one_ model from below
 
@@ -170,7 +164,7 @@ endif
 #########  Compiler configuration related flags
 
 # Include a timer
-# TIMER = yes
+# USE_TIMER = yes
 
 # Debug mode (more time consuming)
 # USE_DEBUG = yes

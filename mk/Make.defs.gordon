@@ -29,54 +29,35 @@
 #
 # Libraries (needed for parallel code)
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
-#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
-#            these are just for testing)
-#
-#
-#
 ################################################################################
 
-
-ENV = ubuntu.gnu
-
 ################################################################################
-# Environment for Ubuntu with GNU compilers
-# Packages requirement: gfortran, gcc, libnetcdf-dev, mpich2, libparmetis-dev, libcr-dev,
-# which can be installed with the command below:
-# "sudo apt-get install gfortran gcc libnetcdf-dev mpich2 libparmetis-dev libcr-dev"
-# Test is passed on Ubuntu 11.10 64bit, Ubuntu 12.04 64bit
-################################################################################
-
-#  USE_WRAP = yes
-FCP = /usr/bin/mpif90.mpich2 -f90=gfortran -ffree-line-length-none
-FLD = $(FCP)
-# MPI vserion (1 or 2) 
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
-
-FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #-g -fbacktrace #-finit-real=nan -fbounds-check #MPI code
-FLDFLAGS = -O2 #for final linking of object files
-
-  #####Libraries
-#MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
-MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
-CDFLIBS = -L/usr/lib/ -lnetcdf -lnetcdff
-CDFMOD = -I/usr/include/ # modules for netcdf
-ifdef USE_GOTM
-   GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
-   GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
-else
-   GTMMOD =
-   GTMLIBS =
-endif
-
-
+## Environment for GORDON cluster
+## Need to first do:
+## module load netcdf/3.6.2 (module display to see env)
+#################################################################################
+ENV = GORDON
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
 
-#EXEC   := othername.ex
+EXEC   := pelfe_$(ENV)_ADC
 
+################################################################################
+# Environment 
+################################################################################
+
+FCP = mpif90
+FLD = $(FCP)
+# MPI vserion (1 or 2)
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
+FLDFLAGS = -O2
+#####Libraries
+MTSLIBS = -L/home/yinglong/src/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+CDFLIBS = -L/opt/netcdf/3.6.2/intel/lib -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
+CDFMOD = -I/opt/netcdf/3.6.2/intel/include  # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
@@ -84,6 +65,9 @@ endif
 ################################################################################
 
 # -DSELFE is always on and is defined elsewhere
+
+# SURA project (remove afterwards)
+  USE_ADC = yes
 
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -94,9 +78,17 @@ endif
 # GOTM turbulence closure model
 # USE_GOTM = yes
 
+# Don't comment out the follow ifdef
+ifdef USE_GOTM
+   GTMMOD =  -I/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/modules/IFORT/ #modules
+   GTMLIBS = -L/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/lib/IFORT/ -lturbulence_prod  -lutil_prod
+else
+   GTMMOD =
+   GTMLIBS =
+endif
+
 # Wind wave model WWM
 # USE_WWM = yes
-
 # Implicit schemes in WWM needs PetSc
 # USE_PETSC = yes
 
@@ -123,42 +115,7 @@ endif
 # Sediment model 
 # USE_SED = yes
 
-# If you choose SED you should set the following algorithmic preferences
-
-  ##Bedload 
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
-
-  ##Bedload - MPM model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
-
-  ##slope formulation
-#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
-#  PPFLAGS := $(PPFLAGS) -DDELFT
-#  PPFLAGS := $(PPFLAGS) -DCARMO
-
-  ##Bedload - VR model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
-
-  ##Suspended load
-#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
-
-  ##boundary conditions for WENO
-  ## default strictly monotonic
-#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
-#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
-
-  ## Morphology
-#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
-
-  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
-#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
-
-  ##sediment density in eqstate
-#   PPFLAGS:= $(PPFLAGS) -DDENSED
-
-# Or:
+#Or:
 # Sediment model (2D)
 # #  USE_SED2D = yes
 
@@ -166,11 +123,10 @@ endif
 # Oil spill model (not active)
 # USE_OIL = yes
 
-
 #########  Compiler configuration related flags
 
 # Include a timer
-# TIMER = yes
+# USE_TIMER = yes
 
 # Debug mode (more time consuming)
 # USE_DEBUG = yes
