@@ -397,9 +397,9 @@
       SUBROUTINE READ_INSIN4_NEW()
         USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
         IMPLICIT NONE
-        INTEGER :: MSC_TEST, MDC_TEST
+        INTEGER :: MSC_TEST, MDC_TEST, ISTAT
         IF (LPRECOMP_EXIST) THEN
-          READ (5002)                &
+          READ (5002, IOSTAT=ISTAT)                        &
         & MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
@@ -413,7 +413,8 @@
         & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,      &
         & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS, &
         & DIKCUMUL, CUMULW, QBI
-
+        IF (ISTAT /= 0) CALL WWM_ABORT('Remove fort.5002 Error while trying to read precomputed array')
+        
         IF (MSC_TEST .NE. MSC .OR. MDC_TEST .NE. MDC) THEN
           WRITE(DBG%FHNDL,*) 'MSC AND MDC READ FROM FILE AND SET IN WWMINPUT.NML ARE NOT EQUAL -STOP-'
           WRITE(DBG%FHNDL,*) MSC_TEST, MSC

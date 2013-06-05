@@ -63,6 +63,7 @@
 !      open(STAT%FHNDL, FILE='wwmstat.out', status='unknown')
       CALL INIT_FILE_HANDLES()
       CALL READ_WWMINPUT
+!      CALL INIT_ARRAYS
       CLOSE(INP%FHNDL)
       open(GRD%FHNDL, FILE=TRIM(GRD%FNAME))
 !
@@ -71,6 +72,7 @@
       ALLOCATE(XP(MNP))
       ALLOCATE(YP(MNP))
       ALLOCATE(DEP(MNP))
+      ALLOCATE(INVSPHTRANS(MNP,2))
       ALLOCATE(INE(3,MNE))
       ALLOCATE(IEN(6,MNE))
       ALLOCATE(TRIA(MNE))
@@ -155,6 +157,7 @@
         ! Now creating the merged file.
         !
         CALL GET_FILE_NAME_MERGE(FILE_NAME_MERGE, ifile)
+        Print *, 'FILE_NAME_MERGE=', TRIM(FILE_NAME_MERGE)
         iret = nf90_create(TRIM(FILE_NAME_MERGE), NF90_CLOBBER, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
         CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, MNP, MNE)
@@ -191,7 +194,7 @@
         iret = nf90_inq_varid(ncid, 'ocean_time_day', itime_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
         DO iTime=1,nbTime
-          Print *, '  iTime=', iTime, '/', nbTime
+!          Print *, '  iTime=', iTime, '/', nbTime
           eTimeDay=LTimeDay(iTime)
           CALL WRITE_NETCDF_TIME(ncid, iTime, eTimeDay)
           DO iProc=1,nproc
@@ -259,6 +262,7 @@
         END DO
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
+        DEALLOCATE(LTimeDay)
         ifile=ifile+1
       END DO
   10  FORMAT (a,i4.4,'.nc')
@@ -295,7 +299,7 @@
       integer LPOS, POSITION_BEFORE_POINT
       LPOS=POSITION_BEFORE_POINT(OUT_HISTORY%FNAME)
       IF (OUT_HISTORY%IDEF.gt.0) THEN
-         WRITE (FILE_NAME,10) OUT_HISTORY%FNAME(1:LPOS),1
+         WRITE (FILE_NAME,10) OUT_HISTORY%FNAME(1:LPOS),ifile
   10     FORMAT (a,'_',i4.4,'.nc')
       ELSE
          WRITE (FILE_NAME,20) OUT_HISTORY%FNAME(1:LPOS)
@@ -408,6 +412,3 @@
          OUT%FHNDL     = STARTHNDL + 23 
 
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************    

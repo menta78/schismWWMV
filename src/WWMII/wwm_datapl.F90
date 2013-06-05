@@ -254,6 +254,7 @@
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
+
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
          CHARACTER(LEN=8)       :: PROCNAME  = 'DEFAULT'
@@ -423,10 +424,13 @@
          INTEGER, ALLOCATABLE      :: INE(:,:)
          INTEGER, ALLOCATABLE      :: INE_WIND(:,:)
          INTEGER, ALLOCATABLE      :: WIND_ELE(:)
-         REAL(rkind), ALLOCATABLE         :: XYPWIND(:,:)
-         REAL(rkind), ALLOCATABLE         :: UWND_NARR(:)
-         REAL(rkind), ALLOCATABLE         :: VWND_NARR(:)
-         REAL(rkind), ALLOCATABLE         :: WI_NARR(:,:)
+         REAL(rkind), ALLOCATABLE :: XYPWIND(:,:)
+         REAL(rkind), ALLOCATABLE :: UWND_NARR(:)
+         REAL(rkind), ALLOCATABLE :: VWND_NARR(:)
+         REAL(rkind), ALLOCATABLE :: WI_NARR(:,:)
+         REAL(rkind), ALLOCATABLE :: UWIND_FD(:,:), VWIND_FD(:,:)
+         integer NDX_WIND_FD, NDY_WIND_FD
+
 
 
 ! WRF PART I.J.
@@ -443,8 +447,12 @@
          INTEGER, ALLOCATABLE       :: wrf_c21(:,:) 
          INTEGER, ALLOCATABLE       :: wrf_c22(:,:)
          INTEGER, ALLOCATABLE       :: wrf_c12(:,:)
+         INTEGER, ALLOCATABLE       :: WRF_IX(:), WRF_IY(:)
+         REAL(rkind), ALLOCATABLE   :: wrf_coeff(:,:)
+         integer, allocatable :: SHIFTXY(:,:)
          INTEGER                   :: REC1_old, REC2_old
          INTEGER                          :: REC1_new, REC2_new
+         real(rkind) :: wrf_scale_factor
 ! END WRF PART I.J.
 
          REAL(rkind), ALLOCATABLE         :: TRIA(:)

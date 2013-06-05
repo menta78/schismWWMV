@@ -464,9 +464,7 @@
         REAL(rkind)  :: ETOTF3, ETOTF4, TP, KHS2, EFTOT, TM02
         REAL(rkind)  :: FP, CP, KPP, CGP, WNP, UXD, OMEG, OMEG2
         REAL(rkind)  :: CONVK1, CONVK2, CONVK3, CONVK4, CONVK5
-#ifdef MPI_PARALL_GRID
         INTEGER :: ITMP
-#endif
 
         IPCONV1 = 0
         IPCONV2 = 0

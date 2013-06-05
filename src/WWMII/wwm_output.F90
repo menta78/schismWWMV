@@ -165,7 +165,9 @@
         CURRPARS = 0.
         WINDPARS = 0.
 
+#ifdef MPI_PARALL_GRID
         IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
+#endif
 
         !write(*,*) time, maxval(IP_IS_STEADY), minval(IP_IS_STEADY)
  
@@ -326,7 +328,7 @@
          CALL FLUSH(OUT%FHNDL+7)
          IF (LQSTEA .AND. LCHKCONV) THEN
            WRITE(OUT%FHNDL+8)  TIME_4
-           WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_TOTAL)
            CALL FLUSH(OUT%FHNDL+8)
          ENDIF
          IF (DoAirSea) THEN
