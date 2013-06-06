@@ -1775,7 +1775,7 @@
        ! Reading wind attributes
 
        ISTAT = nf90_inq_varid(fid, "Uwind", varid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
        ISTAT = nf90_get_att(fid, varid, "scale_factor", wrf_scale_factor)
        IF (ISTAT /= 0) THEN
@@ -1794,25 +1794,27 @@
        WRITE(WINDBG%FHNDL,*) 'wrf_add_offset=', wrf_add_offset
 
        ISTAT = nf90_get_att(fid, varid, "coordinates", CoordString)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
        alen=LEN_TRIM(CoordString)
        posBlank=INDEX(CoordString(1:alen), ' ')
        Xname=CoordString(1:posBlank-1)
        Yname=CoordString(posBlank+1:alen)
+       WRITE(WINDBG%FHNDL,*) 'Xname=', TRIM(Xname)
+       WRITE(WINDBG%FHNDL,*) 'Yname=', TRIM(Yname)
 
        ! Reading lontitude/latitude array
 
        ISTAT = nf90_inq_varid(fid, Xname, varid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-
-       ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-
-       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_WIND_FD)
        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-       ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_WIND_FD)
+       ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_WIND_FD)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
+       ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_WIND_FD)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
        WRITE(WINDBG%FHNDL,*) 'NDX_WIND_FD=', NDX_WIND_FD
        WRITE(WINDBG%FHNDL,*) 'NYX_WIND_FD=', NDY_WIND_FD
@@ -1821,24 +1823,24 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
 
        ISTAT = nf90_get_var(fid, varid, WRF_LON)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
-
-       ISTAT = nf90_inq_varid(fid, Yname, varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
-       ISTAT = nf90_get_var(fid, varid, WRF_LAT)
+       ISTAT = nf90_inq_varid(fid, Yname, varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+       ISTAT = nf90_get_var(fid, varid, WRF_LAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
        ! Reading time
        
        ISTAT = nf90_inq_varid(fid, "wind_time", varid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
-
-       ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-       ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
+       ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
+       ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
        eStrTime( 1: 1)=eStrAtt(12:12)
        eStrTime( 2: 2)=eStrAtt(13:13)
@@ -1861,19 +1863,19 @@
        CALL FLUSH(WINDBG%FHNDL)
 
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
        allocate(wind_time_mjd(nbtime_mjd), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
 
        ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
        ISTAT = nf90_close(fid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
        wind_time_mjd(:) = wind_time_mjd(:) + eTimeStart
 

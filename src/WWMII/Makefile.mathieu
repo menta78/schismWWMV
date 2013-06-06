@@ -22,7 +22,6 @@ F90 = mpif90
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
-#F90 = f77
 
 
 
