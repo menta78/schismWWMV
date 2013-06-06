@@ -452,7 +452,7 @@
          integer, allocatable :: SHIFTXY(:,:)
          INTEGER                   :: REC1_old, REC2_old
          INTEGER                          :: REC1_new, REC2_new
-         real(rkind) :: wrf_scale_factor
+         real(rkind) :: wrf_scale_factor, wrf_add_offset
 ! END WRF PART I.J.
 
          REAL(rkind), ALLOCATABLE         :: TRIA(:)

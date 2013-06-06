@@ -1669,7 +1669,8 @@
        USE DATAPOOL, only : wrf_c22, wrf_c12, wrf_a, wrf_b, wrf_c, wrf_d, wrf_J
        USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
        USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
-       USE DATAPOOL, only : WRF_IX, WRF_IY, SHIFTXY, WRF_coeff, wrf_scale_factor
+       USE DATAPOOL, only : WRF_IX, WRF_IY, SHIFTXY, WRF_coeff
+       USE DATAPOOL, only : wrf_add_offset, wrf_scale_factor
        IMPLICIT NONE
        INTEGER, INTENT(in)                :: RECORD_IN
        REAL(rkind), INTENT(out)           :: varout(MNP,2)
@@ -1717,12 +1718,12 @@
        ELSE
          do I = 1, MNP
           !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
-           varout(I,1) = wrf_scale_factor*wrf_J(I)*(                      &
+           varout(I,1) = wrf_add_offset + wrf_scale_factor*wrf_J(I)*(     &
      &      UWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+        &
      &      UWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+        &
      &      UWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+        &
      &      UWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
-           varout(I,2) = wrf_scale_factor*wrf_J(I)*(                      &
+           varout(I,2) = wrf_add_Offset + wrf_scale_factor*wrf_J(I)*(     &
      &      VWIND_FD(wrf_c11(I,1),wrf_c11(I,2))*wrf_a(I)*wrf_c(I)+        &
      &      VWIND_FD(wrf_c21(I,1),wrf_c21(I,2))*wrf_b(I)*wrf_c(I)+        &
      &      VWIND_FD(wrf_c12(I,1),wrf_c12(I,2))*wrf_a(I)*wrf_d(I)+        &
@@ -1743,7 +1744,8 @@
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, wrf_c11, wrf_c21, wrf_c22, wrf_c12
        USE DATAPOOL, only : wrf_a, wrf_b, wrf_c, wrf_d, wrf_J, wind_time_mjd, nbtime_mjd
-       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, wrf_scale_factor
+       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, ZERO
+       USE DATAPOOL, only : wrf_add_offset, wrf_scale_factor
        USE DATAPOOL, only : UWIND_FD, VWIND_FD
        USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
        USE DATAPOOL, only : WRF_coeff, WRF_IX, WRF_IY, SHIFTXY, THR, ONE
@@ -1758,9 +1760,11 @@
        character (len = *), parameter :: CallFct="INIT_NETCDF_WRF"
        character (len=200) :: eStrAtt
        character (len=15) :: eStrTime
+       character (len=200) :: CoordString
+       character (len=100) :: Xname, Yname
        real(rkind) :: eTimeStart
        integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
-       integer aShift
+       integer aShift, posBlank, alen
        real(rkind) :: X(3), Y(3), WI(3), a, b, eX, eY
        real(rkind) :: eDist, MinDist
        LOGICAL :: METHOD1 = .FALSE.
@@ -1768,7 +1772,37 @@
        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
-       ISTAT = nf90_inq_varid(fid, "LON", varid)
+       ! Reading wind attributes
+
+       ISTAT = nf90_inq_varid(fid, "Uwind", varid)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
+       ISTAT = nf90_get_att(fid, varid, "scale_factor", wrf_scale_factor)
+       IF (ISTAT /= 0) THEN
+         CHRERR = nf90_strerror(ISTAT)
+         WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+         wrf_scale_factor=ONE
+       ENDIF
+       WRITE(WINDBG%FHNDL,*) 'wrf_scale_factor=', wrf_scale_factor
+
+       ISTAT = nf90_get_att(fid, varid, "add_offset", wrf_add_offset)
+       IF (ISTAT /= 0) THEN
+         CHRERR = nf90_strerror(ISTAT)
+         WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+         wrf_add_offset=ZERO
+       ENDIF
+       WRITE(WINDBG%FHNDL,*) 'wrf_add_offset=', wrf_add_offset
+
+       ISTAT = nf90_get_att(fid, varid, "coordinates", CoordString)
+       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+       alen=LEN_TRIM(CoordString)
+       posBlank=INDEX(CoordString(1:alen), ' ')
+       Xname=CoordString(1:posBlank-1)
+       Yname=CoordString(posBlank+1:alen)
+
+       ! Reading lontitude/latitude array
+
+       ISTAT = nf90_inq_varid(fid, Xname, varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
@@ -1783,31 +1817,19 @@
        WRITE(WINDBG%FHNDL,*) 'NDX_WIND_FD=', NDX_WIND_FD
        WRITE(WINDBG%FHNDL,*) 'NYX_WIND_FD=', NDY_WIND_FD
 
-       ISTAT = nf90_inq_varid(fid, "Uwind", varid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
-
-       ISTAT = nf90_get_att(fid, varid, "scale_factor", wrf_scale_factor)
-       IF (ISTAT /= 0) THEN
-         CHRERR = nf90_strerror(ISTAT)
-         WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
-         wrf_scale_factor=ONE
-       ENDIF
-       WRITE(WINDBG%FHNDL,*) 'wrf_scale_factor=', wrf_scale_factor
-
        allocate(WRF_LON(NDX_WIND_FD, NDY_WIND_FD), WRF_LAT(NDX_WIND_FD, NDY_WIND_FD), UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
-
-       ISTAT = nf90_inq_varid(fid, "LON", varid)
-       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
        ISTAT = nf90_get_var(fid, varid, WRF_LON)
        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-       ISTAT = nf90_inq_varid(fid, "LAT", varid)
+       ISTAT = nf90_inq_varid(fid, Yname, varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
        ISTAT = nf90_get_var(fid, varid, WRF_LAT)
        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+       ! Reading time
        
        ISTAT = nf90_inq_varid(fid, "wind_time", varid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
@@ -1854,6 +1876,7 @@
        CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
        wind_time_mjd(:) = wind_time_mjd(:) + eTimeStart
+
        ! compute nodes and coefs
 
        WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
