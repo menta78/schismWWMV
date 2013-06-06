@@ -858,12 +858,20 @@
         iret=nf90_put_att(ncid,var_id,UNITS,'non-dimensional')
         CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
 ! lon
-        iret=nf90_def_var(ncid,'x',NF90_RUNTYPE,(/ p_dims/),var_id)
+        IF (LSPHE) THEN
+          iret=nf90_def_var(ncid,"lon",NF90_RUNTYPE,(/ p_dims/),var_id)
+        ELSE
+          iret=nf90_def_var(ncid,"x",NF90_RUNTYPE,(/ p_dims/),var_id)
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
         iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
         CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
 ! lat
-        iret=nf90_def_var(ncid,'y',NF90_RUNTYPE,(/ p_dims/),var_id)
+        IF (LSPHE) THEN
+          iret=nf90_def_var(ncid,"lat",NF90_RUNTYPE,(/ p_dims/),var_id)
+        ELSE
+          iret=nf90_def_var(ncid,"y",NF90_RUNTYPE,(/ p_dims/),var_id)
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
         iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
@@ -1170,12 +1178,20 @@
       !
       iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
-      iret=nf90_def_var(ncid,'x',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      IF (LSPHE) THEN
+        iret=nf90_def_var(ncid,"lon",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      ELSE
+        iret=nf90_def_var(ncid,"x",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
       CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
 ! lat
-      iret=nf90_def_var(ncid,'y',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      IF (LSPHE) THEN
+        iret=nf90_def_var(ncid,"lat",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      ELSE
+        iret=nf90_def_var(ncid,"y",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
+      END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
       CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
