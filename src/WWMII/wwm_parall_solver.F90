@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 
 #define PLAN_I4
 #undef PLAN_I4
@@ -38,11 +38,11 @@
 #undef BCGS_REORG
 #define BCGS_REORG
 ! Rewriting of some exchange routines for LU solve
-#undef LU_SOLVE_RWRT
 #define LU_SOLVE_RWRT
+#undef LU_SOLVE_RWRT
 ! Operation L2U which are smaller than BLK_
-#undef L2U_OPER
 #define L2U_OPER
+#undef L2U_OPER
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -3379,8 +3379,8 @@ MODULE WWM_PARALL_SOLVER
       nbUpp_send=LocalColor % nbUpp_send
 # ifdef L2U_OPER
       DO iUpp=1,nbUpp_send
-        iRank=LocalColor % l2u_ListNeigh_send(i)
-        CALL mpi_isend(LocalColor % ACexch, 1, LocalColor % blk_p2dsend_type(iUpp), iRank, 7, comm, LocalColor%Upp_s_rq(iUpp), ierr)
+        iRank=LocalColor % l2u_ListNeigh_send(iUpp)
+        CALL mpi_isend(LocalColor % ACexch, 1, LocalColor % l2u_p2dsend_type(iUpp), iRank, 7, comm, LocalColor%Upp_s_rq(iUpp), ierr)
       END DO
 # else
       DO iUpp=1,nbUpp_send
@@ -5835,7 +5835,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_INIT
       implicit none
-      Print *, 'Begin WWM_SOLVER_INIT'
 # ifdef PLAN_I4
       CALL I4_SOLVER_INIT
 # else
