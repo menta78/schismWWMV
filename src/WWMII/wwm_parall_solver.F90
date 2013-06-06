@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#undef DEBUG
 #define DEBUG
+#undef DEBUG
 
 #define PLAN_I4
 #undef PLAN_I4
@@ -531,6 +531,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+# ifdef DEBUG
       SUBROUTINE GRAPH_TEST_UNIDIRECT(AdjGraph)
       implicit none
       type(Graph), intent(in) :: AdjGraph
@@ -553,6 +554,7 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       END SUBROUTINE
+# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -616,9 +618,11 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
+# ifdef DEBUG
         IF (idx /= sumMNP) THEN
           CALL WWM_ABORT('Inconsistency in IPLG creation')
         END IF
+# endif
         DO iProc=2,nproc
           CALL MPI_SEND(ListIPLG,sumMNP,itype, iProc-1, 271, comm, ierr)
         END DO
@@ -659,9 +663,11 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
+# ifdef DEBUG
         IF (idx /= sumMNP) THEN
           CALL WWM_ABORT('Inconsistency in CovLower creation')
         END IF
+# endif
         DO iProc=2,nproc
           CALL MPI_SEND(LocalColor % ListCovLower,sumMNP,itype, iProc-1, 811, comm, ierr)
         END DO
@@ -740,9 +746,11 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
+# ifdef DEBUG
         IF (idx /= sumIAsiz) THEN
           CALL WWM_ABORT('Inconsistency in sumIAsiz')
         END IF
+# endif
         DO iProc=2,nproc
           CALL MPI_SEND(ListIA,sumIAsiz,itype, iProc-1, 271, comm, ierr)
         END DO
@@ -847,9 +855,11 @@ MODULE WWM_PARALL_SOLVER
       ListMapped=0
       DO IP=1,MNP
         IP_glob=iplg(IP)
+# ifdef DEBUG
         IF (ListMapped(IP_glob) .gt. 0) THEN
           CALL WWM_ABORT('Clear error in ListMapped');
         ENDIF
+# endif
         ListMapped(IP_glob)=IP
       END DO
       wwm_nnbr_send=0
@@ -863,9 +873,11 @@ MODULE WWM_PARALL_SOLVER
           ListMappedB=0
           DO IP=1,MNPloc
             IP_glob=ListIPLG(IP+ListFirst(iProc))
+# ifdef DEBUG
             IF (ListMappedB(IP_glob) .gt. 0) THEN
               CALL WWM_ABORT('Clear error in ListMappedB');
             ENDIF
+# endif
             ListMappedB(IP_glob)=IP
           END DO
           !
@@ -965,9 +977,11 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirst(iProc))
+# ifdef DEBUG
           IF (ListMappedB(IP_glob) .gt. 0) THEN
             CALL WWM_ABORT('Clear error in ListMappedB');
           ENDIF
+# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon=wwm_ListNbCommon_send(iNeigh)
@@ -1057,9 +1071,11 @@ MODULE WWM_PARALL_SOLVER
       ListMapped=0
       DO IP=1,MNP
         IP_glob=iplg(IP)
+# ifdef DEBUG
         IF (ListMapped(IP_glob) .gt. 0) THEN
           CALL WWM_ABORT('Clear error in ListMapped');
         ENDIF
+# endif
         ListMapped(IP_glob)=IP
       END DO
       wwm_nnbr_m_recv=0
@@ -1072,9 +1088,11 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirstMNP(iProc))
+# ifdef DEBUG
           IF (ListMappedB(IP_glob) .gt. 0) THEN
             CALL WWM_ABORT('Clear error in ListMappedB');
           ENDIF
+# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon_recv=0
@@ -1114,9 +1132,11 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirstMNP(iProc))
+# ifdef DEBUG
           IF (ListMappedB(IP_glob) .gt. 0) THEN
             CALL WWM_ABORT('Clear error in ListMappedB');
           ENDIF
+# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon_send=0
@@ -1380,12 +1400,10 @@ MODULE WWM_PARALL_SOLVER
       integer istat
       MaxDeg=AdjGraph % MaxDeg
       nbVert=AdjGraph % nbVert
-      allocate(CurrColor(MaxDeg+1), stat=istat)
+      allocate(CurrColor(MaxDeg+1), ListPosFirst(nbVert), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 53')
       ListColor=0
       idx=0
-      allocate(ListPosFirst(nbVert), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 54')
       DO iVert=1,nbVert
         ListPosFirst(iVert)=idx
         idx=idx+AdjGraph % ListDegree(iVert)
@@ -1837,9 +1855,7 @@ MODULE WWM_PARALL_SOLVER
       CALL SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY'
-# endif
       CALL GRAPH_TEST_UNIDIRECT(AdjGraph)
-# ifdef DEBUG
       WRITE(740+myrank,*) 'After GRAPH_TEST_UNIDIRECT'
 # endif
       CALL BUILD_MULTICOLORING(AdjGraph, ListColor)
@@ -4435,17 +4451,15 @@ MODULE WWM_PARALL_SOLVER
       integer istat
       IF (myrank == 0) THEN
         Lerror=0
-        allocate(ListFirstMNP(nproc), stat=istat)
+        allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 108')
         ListFirstMNP=0
+        eStatus=0
         DO iProc=2,nproc
           ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
         END DO
-        allocate(eStatus(np_global), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 109')
         allocate(ACtotal(MSCeffect, MDC, np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 110')
-        eStatus=0
         DO IP=1,MNP
           IPglob=iplg(IP)
           ACtotal(:,:,IPglob)=ACw(:,:,IP)
