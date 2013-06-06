@@ -12,6 +12,7 @@
       character(len=80) :: eStrFullName
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: FULLNAME = "full-name"
+      character (len = *), parameter :: COORD = "coordinates"
       integer, dimension(nf90_max_var_dims) :: dimids
 
       integer nbArg, nbProc, iProc, FHNDL
@@ -175,6 +176,12 @@
             iret=nf90_put_att(ncid,var_id,UNITS,TRIM(eStrUnit))
             CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
             iret=nf90_put_att(ncid,var_id,FULLNAME,TRIM(eStrFullName))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+            IF (LSPHE) THEN
+              iret=nf90_put_att(ncid,var_id,COORD,"lon lat")
+            ELSE
+              iret=nf90_put_att(ncid,var_id,COORD,"x y")
+            END IF
             CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
           END IF
         END DO

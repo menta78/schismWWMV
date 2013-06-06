@@ -864,7 +864,11 @@
           iret=nf90_def_var(ncid,"x",NF90_RUNTYPE,(/ p_dims/),var_id)
         END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
+        IF (LSPHE) THEN
+          iret=nf90_put_att(ncid,var_id,UNITS,'degree')
+        ELSE
+          iret=nf90_put_att(ncid,var_id,UNITS,'meter')
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
 ! lat
         IF (LSPHE) THEN
@@ -873,7 +877,11 @@
           iret=nf90_def_var(ncid,"y",NF90_RUNTYPE,(/ p_dims/),var_id)
         END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
+        IF (LSPHE) THEN
+          iret=nf90_put_att(ncid,var_id,UNITS,'degree')
+        ELSE
+          iret=nf90_put_att(ncid,var_id,UNITS,'meter')
+        END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
 ! depth
         iret=nf90_def_var(ncid,'depth',NF90_RUNTYPE,(/ p_dims/),var_id)
@@ -1184,7 +1192,11 @@
         iret=nf90_def_var(ncid,"x",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
       END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
+      IF (LSPHE) THEN
+        iret=nf90_put_att(ncid,var_id,UNITS,'degree')
+      ELSE
+        iret=nf90_put_att(ncid,var_id,UNITS,'meter')
+      END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
 ! lat
       IF (LSPHE) THEN
@@ -1193,7 +1205,11 @@
         iret=nf90_def_var(ncid,"y",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
       END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'meters/degrees')
+      IF (LSPHE) THEN
+        iret=nf90_put_att(ncid,var_id,UNITS,'degree')
+      ELSE
+        iret=nf90_put_att(ncid,var_id,UNITS,'meter')
+      END IF
       CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
 ! cutoff frequency
       iret=nf90_def_var(ncid,'cutoff',NF90_RUNTYPE,(/ nbstat_dims/),var_id)
