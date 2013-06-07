@@ -41,7 +41,7 @@ endif
 
 
 -include ../mk/Make.defs.local  #optional include
-include ../mk/Make.defs.config
+-include ../mk/Make.defs.config
 
 
 ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
@@ -82,7 +82,7 @@ ifdef USE_ADC
 endif
 
 ifdef USE_PETSC
-  include ${PETSC_DIR}/conf/variables/
+  -include ${PETSC_DIR}/conf/variables/
 endif
 
 
