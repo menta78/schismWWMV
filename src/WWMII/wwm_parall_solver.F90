@@ -8,7 +8,7 @@
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
 #undef DEBUG
-#define DEBUG
+!#define DEBUG
 
 #define PLAN_I4
 #undef PLAN_I4
