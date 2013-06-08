@@ -461,6 +461,8 @@
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
            CALL FLUSH(STAT%FHNDL)
          END IF
+         CLOSE(INP%FHNDL)
+         CLOSE(CHK%FHNDL)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
          CALL FLUSH(STAT%FHNDL)
          CALL INIT_SPECTRAL_GRID
@@ -1063,8 +1065,6 @@
          INTEGER              :: LFDB
          close(DBG%FHNDL)
          close(STAT%FHNDL)
-         close( INP%FHNDL)
-         close( CHK%FHNDL)
          close( QSTEA%FHNDL)
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)

@@ -139,14 +139,14 @@
 !     *** compute the radian frequency**11 for IS=ISHGH, ISLOW ***
 !
          IF (LTEST) THEN
-            WRITE(CHK%FHNDL,*) 'PARAMETER 4 SNL'
-            WRITE(CHK%FHNDL,*) IDP, IDP1, IDM, IDM1
-            WRITE(CHK%FHNDL,*) ISP, ISP1, ISM, ISM1
-            WRITE(CHK%FHNDL,*) ISLOW, ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
-            WRITE(CHK%FHNDL,*) XIS
-            WRITE(CHK%FHNDL,*) AWG1, AWG2, AWG3, AWG4
-            WRITE(CHK%FHNDL,*) AWG5, AWG6, AWG7, AWG8
-            WRITE(CHK%FHNDL,*) '---------------------------------------'
+            WRITE(STAT % FHNDL,*) 'PARAMETERS FOR SNL'
+            WRITE(STAT % FHNDL,*) IDP, IDP1, IDM, IDM1
+            WRITE(STAT % FHNDL,*) ISP, ISP1, ISM, ISM1
+            WRITE(STAT % FHNDL,*) ISLOW, ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
+            WRITE(STAT % FHNDL,*) XIS
+            WRITE(STAT % FHNDL,*) AWG1, AWG2, AWG3, AWG4
+            WRITE(STAT % FHNDL,*) AWG5, AWG6, AWG7, AWG8
+            WRITE(STAT % FHNDL,*) '---------------------------------------'
          END IF
 !
        IF (ALLOCATED (AF11)) DEALLOCATE (AF11)
