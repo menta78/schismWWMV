@@ -223,7 +223,6 @@
            IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 4'
          ENDIF
 
-
          TIME3 = mpi_wtime()
 
          IF (myrank == 0) WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'nth call to WWM', SIMUTIME
@@ -642,6 +641,7 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
+
          CALL OUTPUT_HISTORY_AND_STATION
          IF (LHOTF) THEN
            IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
