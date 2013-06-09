@@ -47,8 +47,8 @@
       WRITE(*,*) 'Please define date format'
       WRITE(*,*) '(1) YYYY MM DD hh'
       WRITE(*,*) '(2) YYYY MM DD hh mm'
-       CUT_OFF = 0.4 
-       dateFMT = 1. 
+      CUT_OFF = 0.4 
+      dateFMT = 1. 
 !      READ(*,*) dateFMT
       
       BUOYS = 0  
@@ -441,7 +441,7 @@
             AUX_M1_O(:) = 0.0
             AUX_M2_O(:) = 0.0
             ISEMAX = 1
-            EMAX_O(IT,IB) = E_O(1) 
+            EMAX_O(I,IB) = E_O(1) 
             DO K = 1, MSC_O(IB) - 1
               IF (FREQ_O(K,IB) .LE. CUT_OFF) THEN
                 IF (E_O(K) .LT. 0.0) E_O(K) = 0.0
@@ -449,8 +449,8 @@
                 AUX_M0_O(K) = DELTAE * DFREQ_O(K,IB)
                 AUX_M1_O(K) = DELTAE * DFREQ_O(K,IB) * FREQ_O(K,IB)
                 AUX_M2_O(K) = DELTAE * DFREQ_O(K,IB) * FREQ_O(K,IB)**2.
-                IF (E_O(K) .GE. EMAX_O(IT,IB)) THEN
-                  EMAX_O(IT,IB) = E_O(K)
+                IF (E_O(K) .GE. EMAX_O(I,IB)) THEN
+                  EMAX_O(I,IB) = E_O(K)
                   ISEMAX = K 
                 ENDIF
 !               WRITE(*,*) AUX_M0_O(K), AUX_M1_O(K), AUX_M2_O(K)
@@ -460,7 +460,7 @@
                 AUX_M2_O(K) = SMALL 
               END IF
             END DO          
-            IF (E_O(ISMAX) .GT. EMAX_O(IT,IB)) EMAX_O(IT,IB) = E_O(ISMAX)
+            IF (E_O(ISMAX) .GT. EMAX_O(I,IB)) EMAX_O(I,IB) = E_O(ISMAX)
             M0 = SUM(AUX_M0_O(:))
             M1 = SUM(AUX_M1_O(:))
             M2 = SUM(AUX_M2_O(:))
@@ -1080,9 +1080,9 @@
       
       WRITE(TMPCHAR,999) BUOYS 
      
-      FMT_NAM_HEADER = '('//'A12,'//TMPCHAR//'A7'//')' 
-      FMT_ERG_HEADER = '('//'A7,'//TMPCHAR//'A8'//')'
-      FMT_ERG_RESULT = '('//'A7,'//TMPCHAR//'F8.3'//')'
+      FMT_NAM_HEADER = '('//'A12,'//TMPCHAR//'A8'//')' 
+      FMT_ERG_HEADER = '('//'A12,'//TMPCHAR//'A8'//')'
+      FMT_ERG_RESULT = '('//'A12,'//TMPCHAR//'F8.3'//')'
         
 !      WRITE(*,*) FMT_ERG_HEADER
 !      WRITE(*,*) FMT_ERG_RESULT
@@ -1094,7 +1094,7 @@
       OPEN(10,  FILE = 'statistik.dat', STATUS='UNKNOWN')
 
       WRITE (10,*) '-----------------------------------------'
-      WRITE (10,FMT_NAM_HEADER) 'BUOYS:', (BNAMES(I),I = 1, BUOYS)
+      WRITE (10,FMT_NAM_HEADER) 'BUOYS ', (BNAMES(I),I = 1, BUOYS)
       WRITE (10,*) '-----------------HS----------------------'
       WRITE (10,FMT_ERG_RESULT) 'MEAN_O', (MEAN_HS_O (I)  ,I = 1, BUOYS)
       WRITE (10,FMT_ERG_RESULT) 'MEAN_S', (MEAN_HS_SP(I)  ,I = 1, BUOYS)
@@ -1237,11 +1237,11 @@
 !           YYYY MM DD hh
             READ  (5, '(A4,A,A2,A,A2,A,A2'//','//FMT_O(IB)//')') YYYY,DUMP3,MM,DUMP3,DD,DUMP3,hh, TMPE(:)
             !WRITE(2222, '(A4,A,A2,A,A2,A,A2)') YYYY,DUMP3,MM,DUMP3,DD,DUMP3,hh
-            DATUM_O(I,IB) = YYYY//MM//DD//'.'//HH//'0000'
+            DATUM_O(IT,IB) = YYYY//MM//DD//'.'//HH//'0000'
           ELSE IF(dateFMT == 2) THEN
 !             YYYY MM DD hh MINUTE
             READ  (5, '(A4,A,A2,A,A2,A,A2,A,A2'//','//FMT_O(IB)//')') YYYY,DUMP3,MM,DUMP3,DD,DUMP3,hh,DUMP3,MINUTE, TMPE(:)
-            DATUM_O(I,IB) = YYYY//MM//DD//'.'//HH//MINUTE//'00'
+            DATUM_O(IT,IB) = YYYY//MM//DD//'.'//HH//MINUTE//'00'
           END IF
           DO IS_O = 1, MSC_O(IB)
             IF (TMPE(IS_O) .GT. 990. .OR. TMPE(IS_O) .LT. 0.) THEN
