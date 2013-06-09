@@ -315,9 +315,9 @@
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
-               CALL SNL4 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL41 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 2) THEN
-               CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL4(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 3) THEN
                CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 4) THEN

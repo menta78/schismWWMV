@@ -706,7 +706,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, MSC, MDC,  &
-     &  MSC, MDC, TAUHF, TAUTOT, TAUW, RKIND, NSPEC, ZERO, ONE, DBG
+     &  MSC, MDC, TAUHF, TAUTOT, TAUW, RKIND, NSPEC, ZERO, ONE, DBG, THR8
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -984,15 +984,16 @@
         S = D * A
       ELSE
         DO IK = 1, NSPEC ! Patankar Rules 
-          IF (D(IK) .GT. 0.) THEN
+          IF (S(IK) .GT. -THR8) THEN
             S(IK) = D(IK) * A(IK)
-            D(IK) = 0.
+            D(IK)  = ZERO
           ELSE
-            S(IK) = 0.
+            S(IK) = ZERO
             D(IK) = -D(IK)
-          END IF
+          ENDIF
         END DO
-      END IF 
+      END IF
+
 
       !WRITE(DBG%FHNDL,*) 'SUMS WINDINPUT', SUM(S), SUM(A)
 !
@@ -1980,7 +1981,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : ICOMP, INVPI2, G9, RHOW, RHOA, RADDEG,       &
-     &   PI2, RKIND, NSPEC, ZERO, ONE
+     &   PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8
 !
       IMPLICIT NONE
 !/
@@ -2400,18 +2401,19 @@
 !/ ------------------------------------------------------------------- /
 !            
       IF (ICOMP .LE. 1) THEN
-        S = D * A 
-      ELSE 
+        S = D * A
+      ELSE
         DO IK = 1, NSPEC ! Patankar Rules 
-          IF (D(IK) .GT. 0.) THEN
+          IF (S(IK) .GT. -THR8) THEN
             S(IK) = D(IK) * A(IK)
-            D(IK) = 0.
+            D(IK)  = ZERO
           ELSE
-            S(IK) = 0.
+            S(IK) = ZERO
             D(IK) = -D(IK)
-          END IF
+          ENDIF
         END DO
       END IF
+
 !
 !/ ------------------------------------------------------------------- /
 !                     COMPUTES WHITECAP PARAMETERS
