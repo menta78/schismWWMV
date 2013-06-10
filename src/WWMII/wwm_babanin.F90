@@ -26,17 +26,16 @@ CONTAINS
     real(rkind)             , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
     real(rkind)             , INTENT(OUT) ::  Kds(:)     ! Kds(f)=Sds(f)/E(f)
 
-
-    real(rkind)             , allocatable ::  Sds(:)     ! Sds(f), the source term
-    real(rkind)             , allocatable ::  ndedens(:) ! NDEDENS(f)=DEDENS(f)/EDENST(f)
-    real(rkind)             , allocatable ::  dedens(:)  ! DEDENS(f)=EDENS(f)-EDENST(f)
-    real(rkind)             , allocatable ::  edenst(:)  ! EDENST(f)=(2*g.^2)*((2*pi).^-4)*(f.^-5).*(A.^-1)*Bnt
-    real(rkind)             , allocatable ::  T1(:)      ! inherent dissipation (divided by E(f))
-    real(rkind)             , allocatable ::  T2(:)      ! induced dissipation (divided by E(f))
-    real(rkind)             , allocatable ::  ST1(:)     ! inherent dissipation
-    real(rkind)             , allocatable ::  ST2(:)     ! induced dissipation
-    real(rkind)             , allocatable ::  ANAR(:)    ! directional narrowness as defined in Babanin publications (value used)
-    real(rkind)             , allocatable ::  xff(:),ADF(:) ! temporary arrays for integration
+    real(rkind)             ::  Sds(nfreq)     ! Sds(f), the source term
+    real(rkind)             ::  ndedens(nfreq) ! NDEDENS(f)=DEDENS(f)/EDENST(f)
+    real(rkind)             ::  dedens(nfreq)  ! DEDENS(f)=EDENS(f)-EDENST(f)
+    real(rkind)             ::  edenst(nfreq)  ! EDENST(f)=(2*g.^2)*((2*pi).^-4)*(f.^-5).*(A.^-1)*Bnt
+    real(rkind)             ::  T1(nfreq)      ! inherent dissipation (divided by E(f))
+    real(rkind)             ::  T2(nfreq)      ! induced dissipation (divided by E(f))
+    real(rkind)             ::  ST1(nfreq)     ! inherent dissipation
+    real(rkind)             ::  ST2(nfreq)     ! induced dissipation
+    real(rkind)             ::  ANAR(nfreq)    ! directional narrowness as defined in Babanin publications (value used)
+    real(rkind)             ::  xff(nfreq),ADF(nfreq) ! temporary arrays for integration
 
     REAL(rkind) ::  ASUM   ! temporary variable for integration
     REAL(rkind) ::  BNT    ! is an empirical coefficient related to the spectral density in the saturation range (Banner et al 2007)
@@ -44,16 +43,6 @@ CONTAINS
     INTEGER :: II,IS,ID ! counters
     integer istat
 !   real ::  ELIM ! needed for 42D (can comment but don't delete)
-    
-    ALLOCATE(sds(NFREQ), xff(NFREQ), T1(NFREQ), T2(NFREQ), stat=istat)
-    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 1')
-
-    ALLOCATE(ndedens(NFREQ), dedens(NFREQ), edenst(NFREQ), stat=istat)
-    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 2')
-
-
-    ALLOCATE(ANAR(NFREQ), ST1(NFREQ), ST2(NFREQ), ADF(NFREQ), stat=istat)
-    IF (istat/=0) CALL WWM_ABORT('wwm_babanin, allocate error 3')
 
     Bnt=(0.035**2)    !  Use the Bnt given by Banner et al 2007
 ! ----------------------------------------------------------------------------------------------------------------
@@ -468,7 +457,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     DO IS=1,NF_OLD
        Lfactor_S(IS)=Lfactor_L(IS)
     END DO
-
+    DEALLOCATE(S_in1D_S, S_in1D_L, DF, CINV_L, SIGMA_L, LFACTOR_L)
   end subroutine calc_Lfactor
 
   subroutine calc_tau_normal(tau_normal,Lfactor,REDUC,S_in1D,df,CINV,   &
@@ -515,7 +504,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     do IS=1,nf
        tau_normal=tau_normal+rhow*grav*S_in1D_red(IS)*CINV(IS)*df(IS)
     enddo
-
+    DEALLOCATE(UoverC, A, S_in1D_red)
   end subroutine calc_tau_normal
 
 
