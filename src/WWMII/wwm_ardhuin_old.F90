@@ -360,8 +360,7 @@
 
 
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
-        ALLOCATE(IKTAB(MK,2000), SATINDICES(MTH,2*SDSNTH+1), SATWEIGHTS(MTH,2*SDSNTH+1), CUMULW(MK,MTH,MK,MTH), DCKI(NKHS,NKD), LLWS(NSPEC), 
-stat=istat)
+        ALLOCATE(IKTAB(MK,2000), SATINDICES(MTH,2*SDSNTH+1), SATWEIGHTS(MTH,2*SDSNTH+1), CUMULW(MK,MTH,MK,MTH), DCKI(NKHS,NKD), LLWS(NSPEC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 5')
         IKTAB = 0
         SATINDICES = 0
@@ -1275,8 +1274,6 @@ stat=istat)
       DHS=KHSMAX/NKHS ! max value of KHS=KHSMAX
       DKH=KHMAX/NKHI ! max value of KH=KHMAX 
       DKD=KDMAX/NKD
-      ALLOCATE(DCKI(NKHS,NKD), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 12')
       DCKI=0.
       DO IKD=1,NKD
         KHS=0.
@@ -1299,8 +1296,7 @@ stat=istat)
          END DO
      END DO
       
-   DEALLOCATE(K1,K2)
-   DEALLOCATE(SIGTAB)
+   DEALLOCATE(K1,K2,SIGTAB)
    ELSE 
       IKTAB(:,:)=1
       DCKI(:,:)=0.
