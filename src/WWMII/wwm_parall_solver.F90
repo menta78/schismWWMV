@@ -21,9 +21,6 @@
 ! with hopefully higher speed.
 #undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
-! An algorithm that should be slightly faster for norm computations
-#undef FAST_NORM
-#define FAST_NORM
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
 #undef SELFE_EXCH
@@ -3729,9 +3726,7 @@ MODULE WWM_PARALL_SOLVER
       integer IS1, IS2
       REAL(rkind) :: Lerror
 # endif
-# ifdef FAST_NORM
       real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC), Norm_LINF(LocalColor%MSCeffect,MDC)
-# endif
       integer :: MaxIter = 30
       integer IP, IS, ID, nbIter, MSCeffect
       MaxError=SOLVERTHR
@@ -3933,14 +3928,8 @@ MODULE WWM_PARALL_SOLVER
           WRITE(myrank+240,*) 'IS, sum(AC1)=', IS, sum(SolDat%AC1(IS,:,:))
         END DO
 # endif
-# if defined FAST_NORM
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
-# else
-        SolDat%AC8=SolDat%AC1 - SolDat%B_block
-        CALL I5B_SCALAR(MSCeffect, SolDat % AC8, SolDat % AC8, Prov)
-        CritVal=maxval(Prov)
-# endif
         IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
@@ -4818,23 +4807,7 @@ MODULE WWM_PARALL_SOLVER
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
 # if defined ASPAR_B_COMPUTE_BLOCK
-#  ifdef DEBUG
-      WRITE(740+myrank,*) 'MSC=', MSC
-      WRITE(740+myrank,*) 'MDC=', MDC
-      WRITE(740+myrank,*) 'MNP=', MNP
-      WRITE(740+myrank,*) 'NNZ=', NNZ
-      WRITE(740+myrank,*) 'Before EIMPS_ASPAR_B_BLOCK'
-#  endif
       CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
-#  ifdef DEBUG
-      WRITE(740+myrank,*) 'After EIMPS_ASPAR_B_BLOCK'
-#  endif
-!      DO IS=1,MSC
-!        DO ID=1,MDC
-!          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-!          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
-!        END DO
-!      END DO
 # else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4842,8 +4815,6 @@ MODULE WWM_PARALL_SOLVER
           CALL EIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
           SolDat % ASPAR_block(IS,ID,:)=ASPAR
           SolDat % B_block(IS,ID,:)=B
-!          WRITE(6000+myrank,*) 'IS=', IS, 'ID=', ID
-!          WRITE(6000+myrank,*) 'sum, ASPAR=', sum(SolDat%ASPAR_block(IS,ID,:)), 'B=', sum(SolDat%B_block(ID,ID,:))
         END DO
       END DO
 # endif
