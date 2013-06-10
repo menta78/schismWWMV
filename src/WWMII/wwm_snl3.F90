@@ -1047,7 +1047,7 @@
         ENDIF
       END IF
 
-      DEALLOCAT (E,SA)
+      DEALLOCATE (E,SA)
 
       END SUBROUTINE
 !**********************************************************************
