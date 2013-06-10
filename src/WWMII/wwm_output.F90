@@ -700,15 +700,15 @@
       include 'mpif.h'
 # endif
 # ifdef MPI_PARALL_GRID
-      REAL(rkind), allocatable  :: OUTPAR_STATIONS_SUM(:,:)
-      REAL(rkind), allocatable  :: WK_STATIONS_SUM(:,:)
-      REAL(rkind), allocatable  :: AC_STATIONS_SUM(:,:,:)
+      REAL(rkind) :: OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE)
+      REAL(rkind) :: WK_STATIONS_SUM(IOUTS,MSC)
+      REAL(rkind) :: AC_STATIONS_SUM(IOUTS,MSC,MDC)
       REAL(rkind), allocatable  :: ACOUT_1D_STATIONS_SUM(:,:,:)
       REAL(rkind), allocatable  :: ACOUT_2D_STATIONS_SUM(:,:,:)
 # endif
-      REAL(rkind), allocatable  :: OUTPAR_STATIONS(:,:)
-      REAL(rkind), allocatable  :: WK_STATIONS(:,:)
-      REAL(rkind), allocatable  :: AC_STATIONS(:,:,:)
+      REAL(rkind) :: OUTPAR_STATIONS(IOUTS,OUTVARS_COMPLETE)
+      REAL(rkind) :: WK_STATIONS(IOUTS,MSC)
+      REAL(rkind) :: AC_STATIONS(IOUTS,MSC,MDC)
       REAL(rkind), allocatable  :: ACOUT_1D_STATIONS(:,:,:)
       REAL(rkind), allocatable  :: ACOUT_2D_STATIONS(:,:,:)
       REAL(rkind) :: eTimeDay
@@ -722,6 +722,7 @@
       integer :: msc_dims, mdc_dims, three_dims, one_dims
       integer :: var_id
       integer :: I, IE, irec_dim, IELOC, ISMAX
+      character (len = *), parameter :: CallFct = "OUTPUT_STATION_NC"
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: FULLNAME = "full-name"
       integer, save ::  recs_stat
@@ -740,10 +741,6 @@
       REAL(rkind) :: TheIsumR
 # endif
       REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2), ESUM
-      allocate(OUTPAR_STATIONS(IOUTS,OUTVARS_COMPLETE), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
-      allocate(WK_STATIONS(IOUTS,MSC), AC_STATIONS(IOUTS,MSC,MDC), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 2')
 
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
@@ -779,11 +776,7 @@
       END DO
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_STAT.eq.0) THEN
-        allocate(OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 4')
         OUTPAR_STATIONS_SUM=0
-        allocate(WK_STATIONS_SUM(IOUTS,MSC), AC_STATIONS_SUM(IOUTS,MSC,MDC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
         WK_STATIONS_SUM=0
         AC_STATIONS_SUM=0
         IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
@@ -818,12 +811,8 @@
      &         ACOUT_2D_STATIONS_SUM(I,:,:)/TheIsumR
           ENDIF
         ENDDO
-        deallocate(OUTPAR_STATIONS_SUM)
-        deallocate(WK_STATIONS_SUM)
-        deallocate(AC_STATIONS_SUM)
         IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
-          deallocate(ACOUT_1D_STATIONS_SUM)
-          deallocate(ACOUT_2D_STATIONS_SUM)
+          deallocate(ACOUT_1D_STATIONS_SUM, ACOUT_2D_STATIONS_SUM)
         ENDIF
       ENDIF
 # endif
@@ -867,190 +856,99 @@
         IF (WriteOutputProcess_stat) THEN
 ! create nc file, vars, and do all time independant job
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -1-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+
           CALL WRITE_NETCDF_HEADERS_STAT_1(ncid, -1, MULTIPLEOUT_STAT)
           iret=nf90_inq_dimid(ncid, 'nbstation', nbstat_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -2-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -3-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+
           iret=nf90_inq_dimid(ncid, 'msc', msc_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -4-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+
           iret=nf90_inq_dimid(ncid, 'mdc', mdc_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -5-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+
           iret=nf90_inq_dimid(ncid, 'one', one_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -6-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+
           iret=nf90_inq_dimid(ncid, 'three', three_dims)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -7-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+
 #ifdef MPI_PARALL_GRID
           iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -7-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+
           iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -7-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+
           iret=nf90_put_att(ncid,var_id,FULLNAME,'number of processors')
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -7-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
 #endif
           IF (VAROUT_STATION%AC) THEN
             iret=nf90_def_var(ncid,'AC',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -8-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+
             iret=nf90_put_att(ncid,var_id,UNITS,'unk')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -9-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+
             iret=nf90_put_att(ncid,var_id,FULLNAME,'spectral energy density')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -10-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
           END IF
           IF (VAROUT_STATION%WK) THEN
             iret=nf90_def_var(ncid,'WK',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, ntime_dims /),var_id)
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -11-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+
             iret=nf90_put_att(ncid,var_id,UNITS,'unk')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -12-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+
             iret=nf90_put_att(ncid,var_id,FULLNAME,'wave number by frequency')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -13-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
           END IF
           IF (VAROUT_STATION%ACOUT_1D) THEN
             iret=nf90_def_var(ncid,'ACOUT_1D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, three_dims, ntime_dims /),var_id)
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -14-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+
             iret=nf90_put_att(ncid,var_id,UNITS,'unk')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -15-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+
             iret=nf90_put_att(ncid,var_id,FULLNAME,'1-dimensional spectrum')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -16-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
           END IF
           IF (VAROUT_STATION%ACOUT_2D) THEN
             iret=nf90_def_var(ncid,'ACOUT_2D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -17-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+
             iret=nf90_put_att(ncid,var_id,UNITS,'unk')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -18-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+
             iret=nf90_put_att(ncid,var_id,FULLNAME,'2-dimensional spectrum')
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -19-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
           END IF
           DO I=1,OUTVARS_COMPLETE
             IF (VAROUT_STATION%LVAR(I)) THEN
               CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
               iret=nf90_def_var(ncid,TRIM(eStr),NF90_OUTTYPE_STAT,(/ nbstat_dims, ntime_dims /),var_id)
-              IF (iret .NE. nf90_noerr) THEN
-                CHRERR = nf90_strerror(iret)
-                WRITE(wwmerr,*) 'OUTPUT_STATION_NC -20-', CHRERR
-                CALL WWM_ABORT(wwmerr)
-              ENDIF
+              CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
+
               iret=nf90_put_att(ncid,var_id,UNITS,TRIM(eStrUnit))
-              IF (iret .NE. nf90_noerr) THEN
-                CHRERR = nf90_strerror(iret)
-                WRITE(wwmerr,*) 'OUTPUT_STATION_NC -21-', CHRERR
-                CALL WWM_ABORT(wwmerr)
-              ENDIF
+              CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
+
               iret=nf90_put_att(ncid,var_id,FULLNAME,TRIM(eStrFullName))
-              IF (iret .NE. nf90_noerr) THEN
-                CHRERR = nf90_strerror(iret)
-                WRITE(wwmerr,*) 'OUTPUT_STATION_NC -22-', CHRERR
-                CALL WWM_ABORT(wwmerr)
-              ENDIF
+              CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
             END IF
           END DO
           iret=nf90_close(ncid)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -23-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
+
           iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -24-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+
           CALL WRITE_NETCDF_HEADERS_STAT_2(ncid, MULTIPLEOUT_STAT)
           iret=nf90_close(ncid)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -25-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
         ENDIF
 !$OMP END MASTER
       END IF
@@ -1061,178 +959,99 @@
       IF (WriteOutputProcess_stat) THEN
 !$OMP MASTER
         iret=nf90_open(TRIM(FILE_NAME), nf90_write, ncid)
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -26-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
+
         iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -27-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
+
         iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_stat)
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -28-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
+
         recs_stat=recs_stat+1
         IF (recs_stat.ne.recs_stat2) THEN
            CALL WWM_ABORT('There are more bugs to be solved (stat)');
         ENDIF
 #ifdef MPI_PARALL_GRID
         iret=nf90_inq_varid(ncid,'nproc',var_id)
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -29-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
+
         eInt(1)=nproc
         iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -30-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
 #endif
         IF (VAROUT_STATION%AC) THEN
           iret=nf90_inq_varid(ncid, 'AC', var_id)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -30-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
+
           IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
             iret=nf90_put_var(ncid,var_id,AC_STATIONS,                   &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,MDC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -31-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(AC_STATIONS),             &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,MDC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -32-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
           ENDIF
         END IF
         IF (VAROUT_STATION%WK) THEN
           iret=nf90_inq_varid(ncid, 'WK', var_id)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -33-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
             iret=nf90_put_var(ncid,var_id,WK_STATIONS,                   &
      &        start = (/1,1,recs_stat/), count=(/IOUTS,MSC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -34-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 38, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(WK_STATIONS),             &
      &        start = (/1,1,recs_stat/), count=(/IOUTS,MSC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -35-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 39, iret)
           ENDIF
         END IF
         IF (VAROUT_STATION%ACOUT_1D) THEN
           iret=nf90_inq_varid(ncid, 'ACOUT_1D', var_id)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -36-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 40, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
             iret=nf90_put_var(ncid,var_id,ACOUT_1D_STATIONS,             &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,3,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -37-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 41, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(ACOUT_1D_STATIONS),       &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,3,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -38-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 42, iret)
           ENDIF
         END IF
         IF (VAROUT_STATION%ACOUT_2D) THEN
           iret=nf90_inq_varid(ncid, 'ACOUT_2D', var_id)
-          IF (iret .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(iret)
-            WRITE(wwmerr,*) 'OUTPUT_STATION_NC -39-', CHRERR
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 43, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
             iret=nf90_put_var(ncid,var_id,ACOUT_2D_STATIONS,             &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,MDC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -40-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 44, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(ACOUT_2D_STATIONS),       &
      &        start = (/1,1,1,recs_stat/), count=(/IOUTS,MSC,MDC,1/))
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -41-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 45, iret)
           ENDIF
         END IF
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_STATION%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
-            IF (iret .NE. nf90_noerr) THEN
-              CHRERR = nf90_strerror(iret)
-              WRITE(wwmerr,*) 'OUTPUT_STATION_NC -42-', CHRERR
-              CALL WWM_ABORT(wwmerr)
-            ENDIF
+            CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
             IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
               iret=nf90_put_var(ncid,var_id,OUTPAR_STATIONS(:,I),          &
      &              start = (/1, recs_stat/), count = (/ IOUTS, 1 /))
-              IF (iret .NE. nf90_noerr) THEN
-                CHRERR = nf90_strerror(iret)
-                WRITE(wwmerr,*) 'OUTPUT_STATION_NC -43-', CHRERR
-                CALL WWM_ABORT(wwmerr)
-              ENDIF
+              CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(OUTPAR_STATIONS(:,I)),    &
      &              start = (/1, recs_stat/), count = (/ IOUTS, 1 /))
-              IF (iret .NE. nf90_noerr) THEN
-                CHRERR = nf90_strerror(iret)
-                WRITE(wwmerr,*) 'OUTPUT_STATION_NC -44-', CHRERR
-                CALL WWM_ABORT(wwmerr)
-              ENDIF
+              CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
             ENDIF
           END IF
         END DO
         CALL WRITE_NETCDF_TIME(ncid, recs_stat, eTimeDay)
         !write(DBG%FHNDL,*) 'Writing netcdf station record recs_stat=',recs_stat
         iret=nf90_close(ncid)
-        IF (iret .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(iret)
-          WRITE(wwmerr,*) 'OUTPUT_STATION_NC -45-', CHRERR
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 49, iret)
 !$OMP END MASTER
       ENDIF
       IF (OUT_STATION%IDEF.gt.0) THEN
@@ -1241,9 +1060,9 @@
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
-      deallocate(OUTPAR_STATIONS)
-      deallocate(WK_STATIONS)
-      deallocate(AC_STATIONS)
+      IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
+        deallocate(ACOUT_1D_STATIONS, ACOUT_2D_STATIONS)
+      ENDIF
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -2294,10 +2113,8 @@
       END IF
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
-        ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
+        ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 8')
-        ALLOCATE(OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 9')
         OUTT_LOC=0
         DO IP = 1, MNP
           ACLOC(:,:) = AC2(IP,:,:)
