@@ -1257,8 +1257,6 @@
         DHS=KHSMAX/NKHS ! max value of KHS=KHSMAX
         DKH=KHMAX/NKHI  ! max value of KH=KHMAX 
         DKD=KDMAX/NKD
-        ALLOCATE(DCKI(NKHS,NKD), QBI(NKHS,NKD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 15')
         DCKI=0.
         QBI =0.
         DO IKD=1,NKD
@@ -1288,9 +1286,8 @@
           QBI = ONE
           END WHERE
 
-        DEALLOCATE(K1,K2)
-        DEALLOCATE(SIGTAB)
-      ELSE 
+        DEALLOCATE(K1,K2,SIGTAB)
+      ELSE
         IKTAB(:,:)=1
         DCKI(:,:) =0.
         QBI(:,:)  =0.
