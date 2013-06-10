@@ -32,9 +32,6 @@
 ! Needs 7 times MSC*MDC*MNP versus 9 times.
 #undef BCGS_REORG
 #define BCGS_REORG
-! Rewriting of some exchange routines for LU solve
-#undef LU_SOLVE_RWRT
-#define LU_SOLVE_RWRT
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -1496,11 +1493,9 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : XP, YP
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
-# ifdef LU_SOLVE_RWRT
       integer, allocatable :: ListNeed(:), IdxRev(:)
       integer nbNeedSend_blk, nbNeedRecv_blk
       integer idx, IP
-# endif
       integer nbUpp_send, nbLow_recv, iUpp, iLow, iRank
       integer maxBlockLength, idxSend, idxRecv
       integer I, IC, nbCommon, eFirst
@@ -1526,7 +1521,6 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'maxBlockLength=', maxBlockLength
 # endif
-# ifdef LU_SOLVE_RWRT
       allocate(ListNeed(MNP), IdxRev(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 61a')
       ListNeed=0
@@ -1616,34 +1610,6 @@ MODULE WWM_PARALL_SOLVER
         DEALLOCATE(dspl_recv)
       END DO
       deallocate(ListNeed, IdxRev)
-# else
-      DO I=1,wwm_nnbr_send
-        nbCommon=wwm_ListNbCommon_send(I)
-        eFirst=ListFirstCommon_send(I)
-        ALLOCATE(dspl_send(nbCommon), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 61')
-        DO IC=1,nbCommon
-          idxSend=wwm_ListDspl_send(eFirst+IC)
-          dspl_send(IC)=(idxSend-1)*maxBlockLength
-        END DO
-        call mpi_type_create_indexed_block(nbCommon,maxBlockLength,dspl_send,rtype,LocalColor % blk_p2dsend_type(I),ierr)
-        call mpi_type_commit(LocalColor % blk_p2dsend_type(I), ierr)
-        DEALLOCATE(dspl_send)
-      END DO
-      DO I=1,wwm_nnbr_recv
-        nbCommon=wwm_ListNbCommon_recv(I)
-        eFirst=ListFirstCommon_recv(I)
-        ALLOCATE(dspl_recv(nbCommon), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 62')
-        DO IC=1,nbCommon
-          idxRecv=wwm_ListDspl_recv(eFirst+IC)
-          dspl_recv(IC)=(idxRecv-1)*maxBlockLength
-        END DO
-        call mpi_type_create_indexed_block(nbCommon,maxBlockLength,dspl_recv,rtype,LocalColor % blk_p2drecv_type(I),ierr)
-        call mpi_type_commit(LocalColor % blk_p2drecv_type(I), ierr)
-        DEALLOCATE(dspl_recv)
-      END DO
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1918,11 +1884,9 @@ MODULE WWM_PARALL_SOLVER
       integer nbMap0, nbMap1
       integer DoOper
       integer istat
-# ifdef LU_SOLVE_RWRT
       integer, allocatable :: ListNeedSend(:), ListNeedRecv(:), IdxRev(:)
       integer nbNeedSend_u2l, nbNeedRecv_u2l
       integer lenMNP
-# endif
       ListFirst=0
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
@@ -1954,7 +1918,6 @@ MODULE WWM_PARALL_SOLVER
       ListCommon_send=0
       ListCommon_recv=0
       eColor=LocalColor % ListColor(myrank+1)
-# ifdef LU_SOLVE_RWRT
       allocate(ListNeedRecv(MNP), ListNeedSend(MNP), IdxRev(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 79a')
       ListNeedRecv=0
@@ -1962,7 +1925,6 @@ MODULE WWM_PARALL_SOLVER
       IdxRev=0
       nbNeedSend_u2l=0
       nbNeedRecv_u2l=0
-# endif
 # ifdef DEBUG
       WRITE(740+myrank,*) 'U2L eColor=', eColor
 # endif
@@ -1992,12 +1954,10 @@ MODULE WWM_PARALL_SOLVER
               END IF
               IF (WeMatch .eq. 1) THEN
                 nbCommon_recv=nbCommon_recv+1
-# ifdef LU_SOLVE_RWRT
                 IF (ListNeedRecv(IPmap) .eq. 0) THEN
                   nbNeedRecv_u2l=nbNeedRecv_u2l+1
                   ListNeedRecv(IPmap)=1
                 END IF
-# endif
               END IF
             END IF
           END DO
@@ -2018,12 +1978,10 @@ MODULE WWM_PARALL_SOLVER
             IF ((IPmap .gt. 0).and.(IPmap .le. NP_RES)) THEN
               IF ((eCov .eq. 0).or.(IP.gt.NP_RESloc)) THEN
                 nbCommon_send=nbCommon_send+1
-# ifdef LU_SOLVE_RWRT
                 IF (ListNeedSend(IPmap) .eq. 0) THEN
                   nbNeedSend_u2l=nbNeedSend_u2l+1
                   ListNeedSend(IPmap)=1
                 END IF
-# endif
               END IF
             END IF
           END DO
@@ -2066,12 +2024,10 @@ MODULE WWM_PARALL_SOLVER
           LocalColor % u2l_ListNbCommon_recv(idx_recv)=nbCommon
         END IF
       END DO
-# ifdef LU_SOLVE_RWRT
       LocalColor % nbNeedSend_u2l=nbNeedSend_u2l
       LocalColor % nbNeedRecv_u2l=nbNeedRecv_u2l
       allocate(LocalColor % IdxSend_u2l(nbNeedSend_u2l), LocalColor % IdxRecv_u2l(nbNeedRecv_u2l), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 82a')
-# endif
       !
       ! Now creating the u2l exchange
       ! 
@@ -2095,7 +2051,6 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'WWM_P2D: alloc done'
 # endif
       maxBlockLength=LocalColor % maxBlockLength
-# ifdef LU_SOLVE_RWRT
       idx=0
       DO IP=1,MNP
         IF (ListNeedSend(IP) .eq. 1) THEN
@@ -2104,7 +2059,6 @@ MODULE WWM_PARALL_SOLVER
           IdxRev(IP)=idx
         END IF
       END DO
-# endif
       DO iNeigh=1,u2l_nnbr_send
         iProc=LocalColor % u2l_ListNeigh_send(iNeigh)
         MNPloc=ListMNP(iProc)
@@ -2140,11 +2094,7 @@ MODULE WWM_PARALL_SOLVER
             END IF
             IF (WeMatch .eq. 1) THEN
               idx=idx+1
-# ifdef LU_SOLVE_RWRT
               dspl_send(idx)=maxBlockLength*(IdxRev(IP)-1)
-# else
-              dspl_send(idx)=maxBlockLength*(IP-1)
-# endif
             END IF
           END IF
         END DO
@@ -2158,7 +2108,6 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % u2l_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
-# ifdef LU_SOLVE_RWRT
       IdxRev=0
       idx=0
       DO IP=1,MNP
@@ -2168,7 +2117,6 @@ MODULE WWM_PARALL_SOLVER
           IdxRev(IP)=idx
         END IF
       END DO
-# endif
       DO iNeigh=1,u2l_nnbr_recv
         iProc=LocalColor % u2l_ListNeigh_recv(iNeigh)
         MNPloc=ListMNP(iProc)
@@ -2205,11 +2153,7 @@ MODULE WWM_PARALL_SOLVER
             END IF
             IF (WeMatch .eq. 1) THEN
               idx=idx+1
-# ifdef LU_SOLVE_RWRT
               dspl_recv(idx)=maxBlockLength*(IdxRev(IPmap)-1)
-# else
-              dspl_recv(idx)=maxBlockLength*(IPmap-1)
-# endif
             END IF
           END IF
         END DO
@@ -2223,9 +2167,7 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % u2l_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
-# ifdef LU_SOLVE_RWRT
       deallocate(ListNeedRecv, ListNeedSend, IdxRev)
-# endif
       !
       ! Now the synchronization arrays
       !
@@ -2469,7 +2411,6 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(LocalColor % sync_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
-# ifdef LU_SOLVE_RWRT
       lenMNP=0
       IF (LocalColor % nbNeedSend_blk > lenMNP) THEN
         lenMNP=LocalColor % nbNeedSend_blk
@@ -2483,19 +2424,15 @@ MODULE WWM_PARALL_SOLVER
       IF (LocalColor % nbNeedRecv_u2l > lenMNP) THEN
         lenMNP=LocalColor % nbNeedRecv_u2l
       END IF
-#  ifdef DEBUG
+# ifdef DEBUG
       WRITE(7000+myrank,*) 'nbNeedSend_blk=', LocalColor % nbNeedSend_blk
       WRITE(7000+myrank,*) 'nbNeedRecv_blk=', LocalColor % nbNeedRecv_blk
       WRITE(7000+myrank,*) 'nbNeedSend_u2l=', LocalColor % nbNeedSend_u2l
       WRITE(7000+myrank,*) 'nbNeedRecv_u2l=', LocalColor % nbNeedRecv_u2l
       WRITE(7000+myrank,*) 'lenMNP=', lenMNP
-#  endif
+# endif
       allocate(LocalColor % ACexch(maxBlockLength, lenMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
-# else
-      allocate(LocalColor % ACexch(maxBlockLength, MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2864,12 +2801,9 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
-# ifdef LU_SOLVE_RWRT
       integer idxIP
-# endif
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
-# ifdef LU_SOLVE_RWRT
       DO idxIP=1,LocalColor % nbNeedSend_blk
         IP = LocalColor % IdxSend_blk(idxIP)
         DO idx=1,lenBlock
@@ -2878,15 +2812,6 @@ MODULE WWM_PARALL_SOLVER
           LocalColor % ACexch(idx,idxIP)=AC(IS,ID,IP)
         END DO
       END DO
-# else
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
-        END DO
-      END DO
-# endif
       nbUpp_send=LocalColor % nbUpp_send
       DO iUpp=1,nbUpp_send
         iRank=LocalColor % l2u_ListNeigh_send(iUpp)
@@ -2908,20 +2833,9 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind), intent(inout) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbLow_recv
-# ifdef LU_SOLVE_RWRT
       integer idxIP
-# endif
       lenBlock=LocalColor % BlockLength(iBlock)
       maxBlockLength=LocalColor % maxBlockLength
-# ifndef LU_SOLVE_RWRT
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
-        END DO
-      END DO
-# endif
       nbLow_recv=LocalColor % nbLow_recv
       DO iProc=1,nbLow_recv
         iRank=LocalColor % l2u_ListNeigh_recv(iProc)
@@ -2930,7 +2844,6 @@ MODULE WWM_PARALL_SOLVER
       IF (nbLow_recv > 0) THEN
         call mpi_waitall(nbLow_recv, LocalColor%Low_r_rq, LocalColor%Low_r_stat,ierr)
       END IF
-# ifdef LU_SOLVE_RWRT
       DO idxIP=1,LocalColor % nbNeedRecv_blk
         IP = LocalColor % IdxRecv_blk(idxIP)
         DO idx=1,lenBlock
@@ -2939,15 +2852,6 @@ MODULE WWM_PARALL_SOLVER
           AC(IS,ID,IP) = LocalColor % ACexch(idx,idxIP)
         END DO
       END DO
-# else
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          AC(IS,ID,IP)=LocalColor % ACexch(idx,IP)
-        END DO
-      END DO
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2961,11 +2865,8 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, maxBlockLength, IS, ID, nbLow_send, IP
-# ifdef LU_SOLVE_RWRT
       integer idxIP
-# endif
       lenBlock=LocalColor % BlockLength(iBlock)
-# ifdef LU_SOLVE_RWRT
       DO idxIP=1,LocalColor % nbNeedSend_u2l
         IP = LocalColor % IdxSend_u2l(idxIP)
         DO idx=1,lenBlock
@@ -2974,15 +2875,6 @@ MODULE WWM_PARALL_SOLVER
           LocalColor % ACexch(idx,idxIP)=AC(IS,ID,IP)
         END DO
       END DO
-# else
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
-        END DO
-      END DO
-# endif
       nbLow_send=LocalColor % u2l_nnbr_send
       DO iProc=1,nbLow_send
         iRank=LocalColor % u2l_ListNeigh_send(iProc)
@@ -3006,28 +2898,8 @@ MODULE WWM_PARALL_SOLVER
       INTEGER, intent(in) :: iBlock
       integer iProc, i, iRank, idx, lenBlock, maxBlockLength
       integer nbUpp_recv, IS, ID, IP
-# ifdef LU_SOLVE_RWRT
       integer idxIP
-# endif
       lenBlock=LocalColor % BlockLength(iBlock)
-# ifndef LU_SOLVE_RWRT
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,IP)=AC(IS,ID,IP)
-        END DO
-      END DO
-# else
-      DO idxIP=1,LocalColor % nbNeedRecv_u2l
-        IP = LocalColor % IdxRecv_u2l(idxIP)
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          LocalColor % ACexch(idx,idxIP) = AC(IS,ID,IP)
-        END DO
-      END DO
-# endif
       nbUpp_recv=LocalColor % u2l_nnbr_recv
       DO iProc=1,nbUpp_recv
         iRank=LocalColor % u2l_ListNeigh_recv(iProc)
@@ -3036,7 +2908,6 @@ MODULE WWM_PARALL_SOLVER
       IF (nbUpp_recv > 0) THEN
         call mpi_waitall(nbUpp_recv, LocalColor%u2l_p2drecv_rqst, LocalColor%u2l_p2drecv_stat,ierr)
       END IF
-# ifdef LU_SOLVE_RWRT
       DO idxIP=1,LocalColor % nbNeedRecv_u2l
         IP = LocalColor % IdxRecv_u2l(idxIP)
         DO idx=1,lenBlock
@@ -3045,15 +2916,6 @@ MODULE WWM_PARALL_SOLVER
           AC(IS,ID,IP) = LocalColor % ACexch(idx,idxIP)
         END DO
       END DO
-# else
-      DO IP=1,MNP
-        DO idx=1,lenBlock
-          IS=LocalColor % ISindex(iBlock, idx)
-          ID=LocalColor % IDindex(iBlock, idx)
-          AC(IS,ID,IP) = LocalColor % ACexch(idx,IP)
-        END DO
-      END DO
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
