@@ -226,11 +226,11 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: IZ, IS, ID
       do I=1,wwm_nnbr_m_send
         iProc=wwm_ListNeigh_m_send(I)
-        call mpi_isend(ASPAR_bl,1,wwmmat_p2dsend_type(I),iProc-1,991,comm,wwmmat_p2dsend_rqst(i),ierr)
+        call mpi_isend(ASPAR_bl,1,wwmmat_p2dsend_type(I),iProc,991,comm,wwmmat_p2dsend_rqst(i),ierr)
       enddo
       do I=1,wwm_nnbr_m_recv
         iProc=wwm_ListNeigh_m_recv(I)
-        call mpi_irecv(ASPAR_bl,1,wwmmat_p2drecv_type(I),iProc-1,991,comm,wwmmat_p2drecv_rqst(i),ierr)
+        call mpi_irecv(ASPAR_bl,1,wwmmat_p2drecv_type(I),iProc,991,comm,wwmmat_p2drecv_rqst(i),ierr)
       enddo
       IF (wwm_nnbr_m_recv .gt. 0) THEN
         call mpi_waitall(wwm_nnbr_m_recv,wwmmat_p2drecv_rqst,wwmmat_p2drecv_stat,ierr)
@@ -1103,7 +1103,7 @@ MODULE WWM_PARALL_SOLVER
       DO iProc=1,nproc
         IF (ListCommon_send(iProc) .gt. 0) THEN
           idx=idx+1
-          wwm_ListNeigh_m_send(idx)=iProc
+          wwm_ListNeigh_m_send(idx)=iProc-1
           nbCommon=ListCommon_send(iProc)
           wwm_ListNbCommon_m_send(idx)=nbCommon
           sumNbCommon_send=sumNbCommon_send+nbCommon
@@ -1117,7 +1117,7 @@ MODULE WWM_PARALL_SOLVER
       DO iProc=1,nproc
         IF (ListCommon_recv(iProc) .gt. 0) THEN
           idx=idx+1
-          wwm_ListNeigh_m_recv(idx)=iProc
+          wwm_ListNeigh_m_recv(idx)=iProc-1
           nbCommon=ListCommon_recv(iProc)
           wwm_ListNbCommon_m_recv(idx)=nbCommon
           sumNbCommon_recv=sumNbCommon_recv+nbCommon
@@ -1130,7 +1130,7 @@ MODULE WWM_PARALL_SOLVER
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 43')
       idxDspl_send=0
       DO iNeigh=1,wwm_nnbr_m_send
-        iProc=wwm_ListNeigh_m_send(iNeigh)
+        iProc=wwm_ListNeigh_m_send(iNeigh)+1
         MNPloc=ListMNP(iProc)
         ListMappedB=0
         DO IP=1,MNPloc
@@ -1184,7 +1184,7 @@ MODULE WWM_PARALL_SOLVER
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 45')
       idxDspl_recv=0
       DO iNeigh=1,wwm_nnbr_m_recv
-        iProc=wwm_ListNeigh_m_recv(iNeigh)
+        iProc=wwm_ListNeigh_m_recv(iNeigh)+1
         nbCommon=wwm_ListNbCommon_m_recv(iNeigh)
 # ifdef DEBUG
         WRITE(740+myrank,*) 'nbCommon=', nbCommon
@@ -1980,13 +1980,13 @@ MODULE WWM_PARALL_SOLVER
       DO iProc=1,nproc
         IF (ListCommon_send(iProc) .gt. 0) THEN
           idx_send=idx_send+1
-          LocalColor % u2l_ListNeigh_send(idx_send)=iProc
+          LocalColor % u2l_ListNeigh_send(idx_send)=iProc-1
           nbCommon=ListCommon_send(iProc)
           LocalColor % u2l_ListNbCommon_send(idx_send)=nbCommon
         END IF
         IF (ListCommon_recv(iProc) .gt. 0) THEN
           idx_recv=idx_recv+1
-          LocalColor % u2l_ListNeigh_recv(idx_recv)=iProc
+          LocalColor % u2l_ListNeigh_recv(idx_recv)=iProc-1
           nbCommon=ListCommon_recv(iProc)
           LocalColor % u2l_ListNbCommon_recv(idx_recv)=nbCommon
         END IF
@@ -2017,7 +2017,7 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       DO iNeigh=1,u2l_nnbr_send
-        iProc=LocalColor % u2l_ListNeigh_send(iNeigh)
+        iProc=LocalColor % u2l_ListNeigh_send(iNeigh)+1
         MNPloc=ListMNP(iProc)
         NP_RESloc=ListNP_RES(iProc)
         ListMapped0_B=0
@@ -2075,7 +2075,7 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       DO iNeigh=1,u2l_nnbr_recv
-        iProc=LocalColor % u2l_ListNeigh_recv(iNeigh)
+        iProc=LocalColor % u2l_ListNeigh_recv(iNeigh)+1
         MNPloc=ListMNP(iProc)
         NP_RESloc=ListNP_RES(iProc)
         ListMapped0_B=0
@@ -2214,13 +2214,13 @@ MODULE WWM_PARALL_SOLVER
       DO iProc=1,nproc
         IF (ListCommon_send(iProc) .gt. 0) THEN
           idx_send=idx_send+1
-          LocalColor % sync_ListNeigh_send(idx_send)=iProc
+          LocalColor % sync_ListNeigh_send(idx_send)=iProc-1
           nbCommon=ListCommon_send(iProc)
           LocalColor % sync_ListNbCommon_send(idx_send)=nbCommon
         END IF
         IF (ListCommon_recv(iProc) .gt. 0) THEN
           idx_recv=idx_recv+1
-          LocalColor % sync_ListNeigh_recv(idx_recv)=iProc
+          LocalColor % sync_ListNeigh_recv(idx_recv)=iProc-1
           nbCommon=ListCommon_recv(iProc)
           LocalColor % sync_ListNbCommon_recv(idx_recv)=nbCommon
         END IF
@@ -2234,7 +2234,7 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'SYNC sync_nnbr_send=', sync_nnbr_send
 # endif
       DO iNeigh=1,sync_nnbr_send
-        iProc=LocalColor % sync_ListNeigh_send(iNeigh)
+        iProc=LocalColor % sync_ListNeigh_send(iNeigh)+1
         MNPloc=ListMNP(iProc)
         NP_RESloc=ListNP_RES(iProc)
         ListMapped0_B=0
@@ -2293,7 +2293,7 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'SYNC sync_nnbr_recv=', sync_nnbr_recv
 # endif
       DO iNeigh=1,sync_nnbr_recv
-        iProc=LocalColor % sync_ListNeigh_recv(iNeigh)
+        iProc=LocalColor % sync_ListNeigh_recv(iNeigh)+1
         MNPloc=ListMNP(iProc)
         NP_RESloc=ListNP_RES(iProc)
         ListMapped0_B=0
@@ -2383,7 +2383,6 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : NNZ, IA, JA, NP_RES, I_DIAG
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_p2drecv_type, wwm_p2dsend_type
-      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE elfe_msgp, only : myrank, nproc, comm, ierr, nbrrank_p
       implicit none
       include 'mpif.h'
@@ -2727,7 +2726,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
+      USE DATAPOOL, only : wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2759,7 +2758,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_recv, wwm_p2drecv_type
+      USE DATAPOOL, only : wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2791,7 +2790,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_p2dsend_type
+      USE DATAPOOL, only : wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2811,7 +2810,7 @@ MODULE WWM_PARALL_SOLVER
       nbLow_send=LocalColor % u2l_nnbr_send
       DO iProc=1,nbLow_send
         iRank=LocalColor % u2l_ListNeigh_send(iProc)
-        call mpi_isend(LocalColor % ACexch,1,LocalColor%u2l_p2dsend_type(iProc),iRank-1,1151,comm,LocalColor%u2l_p2dsend_rqst(iProc),ierr)
+        call mpi_isend(LocalColor % ACexch,1,LocalColor%u2l_p2dsend_type(iProc),iRank,1151,comm,LocalColor%u2l_p2dsend_rqst(iProc),ierr)
       END DO
       IF (nbLow_send > 0) THEN
         call mpi_waitall(nbLow_send, LocalColor%u2l_p2dsend_rqst, LocalColor%u2l_p2dsend_stat,ierr)
@@ -2822,7 +2821,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_recv, wwm_p2drecv_type
+      USE DATAPOOL, only : wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       include 'mpif.h'
@@ -2836,7 +2835,7 @@ MODULE WWM_PARALL_SOLVER
       nbUpp_recv=LocalColor % u2l_nnbr_recv
       DO iProc=1,nbUpp_recv
         iRank=LocalColor % u2l_ListNeigh_recv(iProc)
-        call mpi_irecv(LocalColor % ACexch,1,LocalColor%u2l_p2drecv_type(iProc),iRank-1,1151,comm,LocalColor % u2l_p2drecv_rqst(iProc),ierr)
+        call mpi_irecv(LocalColor % ACexch,1,LocalColor%u2l_p2drecv_type(iProc),iRank,1151,comm,LocalColor % u2l_p2drecv_rqst(iProc),ierr)
       END DO
       IF (nbUpp_recv > 0) THEN
         call mpi_waitall(nbUpp_recv, LocalColor%u2l_p2drecv_rqst, LocalColor%u2l_p2drecv_stat,ierr)
@@ -3018,7 +3017,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_SYNC_SENDRECV(LocalColor, AC)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -3030,11 +3028,11 @@ MODULE WWM_PARALL_SOLVER
       nbSync_send=LocalColor%sync_nnbr_send
       DO iSync=1,nbSync_send
         iRank=LocalColor % sync_ListNeigh_send(iSync)
-        CALL mpi_isend(AC, 1, LocalColor%sync_p2dsend_type(iSync), iRank-1, 1009, comm, LocalColor%sync_p2dsend_rqst(iSync), ierr)
+        CALL mpi_isend(AC, 1, LocalColor%sync_p2dsend_type(iSync), iRank, 1009, comm, LocalColor%sync_p2dsend_rqst(iSync), ierr)
       END DO
       DO iSync=1,nbSync_recv
         iRank=LocalColor % sync_ListNeigh_recv(iSync)
-        call mpi_irecv(AC,1,LocalColor%sync_p2drecv_type(iSync),iRank-1,1009,comm,LocalColor%sync_p2drecv_rqst(iSync),ierr)
+        call mpi_irecv(AC,1,LocalColor%sync_p2drecv_type(iSync),iRank,1009,comm,LocalColor%sync_p2drecv_rqst(iSync),ierr)
       END DO
       IF (nbSync_send > 0) THEN
         call mpi_waitall(nbSync_send, LocalColor%sync_p2dsend_rqst, LocalColor%sync_p2dsend_stat,ierr)
