@@ -360,32 +360,17 @@
 
 
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
-        ALLOCATE(IKTAB(MK,2000), stat=istat)
+        ALLOCATE(IKTAB(MK,2000), SATINDICES(MTH,2*SDSNTH+1), SATWEIGHTS(MTH,2*SDSNTH+1), CUMULW(MK,MTH,MK,MTH), DCKI(NKHS,NKD), LLWS(NSPEC), 
+stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 5')
         IKTAB = 0
-
-        ALLOCATE(SATINDICES(MTH,2*SDSNTH+1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 6')
         SATINDICES = 0
-
-        ALLOCATE(SATWEIGHTS(MTH,2*SDSNTH+1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 7')
         SATWEIGHTS = 0.
-
-        ALLOCATE(CUMULW(MK,MTH,MK,MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 8')
         CUMULW = 0.
-
-        ALLOCATE(DCKI(NKHS,NKD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 9')
         DCKI = 0.
-
-        ALLOCATE(LLWS(NSPEC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 10')
         LLWS = .FALSE.
 
         TAUWX = 0.; TAUWY = 0.; CD = 0.; Z0 = 0.; USTDIR = 0.
-
         INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
 
         IF (.NOT. LPRECOMP_EXIST) THEN
@@ -1615,9 +1600,6 @@
          END DO
       END DO
       DEALLOCATE(W)
-
-
-      RETURN
 !/T 9000 FORMAT ('TABU_HF, L, K, ALPHA, UST, TAUHFT(K,L) :',(2I4,3F8.3))    
       END SUBROUTINE TABU_TAUHF_OLD
 
@@ -1779,8 +1761,6 @@
            END DO
         END DO
       DEALLOCATE(W)
-
-      RETURN
 !/T 9000 FORMAT (' TEST TABU_HFT2, K, L, I, UST, ALPHA, LEVTAIL, TAUHFT2(K,L,I) :',(3I4,4F10.5))    
       END SUBROUTINE TABU_TAUHF2_OLD
 ! ----------------------------------------------------------------------
