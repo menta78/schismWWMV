@@ -352,32 +352,14 @@
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)
 
-        ALLOCATE(IKTAB(MK,2000), stat=istat)
+        ALLOCATE(IKTAB(MK,2000), SATINDICES(2*SDSNTH+1,MTH), SATWEIGHTS(2*SDSNTH+1,MTH), CUMULW(MK*MTH,MK*MTH), DCKI(NKHS,NKD), LLWS(NSPEC), QBI(NKHS,NKD), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 5')
         IKTAB = 0
-
-        ALLOCATE(SATINDICES(2*SDSNTH+1,MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 6')
         SATINDICES = 0
-
-        ALLOCATE(SATWEIGHTS(2*SDSNTH+1,MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 7')
         SATWEIGHTS = 0._rkind
-
-        ALLOCATE(CUMULW(MK*MTH,MK*MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 8')
         CUMULW = 0._rkind
-
-        ALLOCATE(DCKI(NKHS,NKD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 9')
         DCKI = 0._rkind
-
-        ALLOCATE(LLWS(NSPEC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 10')
         LLWS = .FALSE.
-
-        ALLOCATE(QBI(NKHS,NKD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 11')
         QBI = 0._rkind
 
         TAUWX = ZERO; TAUWY = ZERO; CD = ZERO; Z0 = ZERO; USTDIR = ZERO
@@ -1231,12 +1213,8 @@
 ! 
 ! High frequency tail for convolution calculation 
 !
-        ALLOCATE(K1(NK,NDTAB), stat=istat)
+        ALLOCATE(K1(NK,NDTAB), K2(NK,NDTAB), SIGTAB(NK,NDTAB), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 12')
-        ALLOCATE(K2(NK,NDTAB), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 13')
-        ALLOCATE(SIGTAB(NK,NDTAB), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 14')
 
         SIGTAB=0. !contains frequency for upper windows boundaries
         IKTAB=0  ! contains indices for upper windows boundaries
@@ -1279,10 +1257,8 @@
         DHS=KHSMAX/NKHS ! max value of KHS=KHSMAX
         DKH=KHMAX/NKHI  ! max value of KH=KHMAX 
         DKD=KDMAX/NKD
-        ALLOCATE(DCKI(NKHS,NKD), stat=istat)
+        ALLOCATE(DCKI(NKHS,NKD), QBI(NKHS,NKD), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 15')
-        ALLOCATE(QBI(NKHS,NKD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 16')
         DCKI=0.
         QBI =0.
         DO IKD=1,NKD
@@ -1649,7 +1625,6 @@
          END DO
       END DO
       DEALLOCATE(W)
-      RETURN
 !/T 9000 FORMAT ('TABU_HF, L, K, ALPHA, UST, TAUHFT(K,L) :',(2I4,3F8.3))    
       END SUBROUTINE TABU_TAUHF_NEW
 
@@ -1809,8 +1784,6 @@
            END DO
         END DO
       DEALLOCATE(W)
-
-      RETURN
 !/T 9000 FORMAT (' TEST TABU_HFT2, K, L, I, UST, ALPHA, LEVTAIL, TAUHFT2(K,L,I) :',(3I4,4F10.5))    
       END SUBROUTINE TABU_TAUHF2_NEW
 
