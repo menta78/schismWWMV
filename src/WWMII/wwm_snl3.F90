@@ -1047,10 +1047,7 @@
         ENDIF
       END IF
 
-!      IF (IP == 1786) THEN
-!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-!      ENDIF
-    
+      DEALLOCAT (E,SA)
 
       END SUBROUTINE
 !**********************************************************************
