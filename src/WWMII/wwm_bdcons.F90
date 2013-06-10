@@ -468,7 +468,7 @@
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, istat, SPsize
       REAL(rkind) :: BNDTMP
-      INTEGER, POINTER :: STATUS(:)
+      INTEGER :: STATUS(MNP)
       CHARACTER(LEN=200) :: wwmerr
 
       INTEGER          :: I, ITMP, JTMP
@@ -646,15 +646,12 @@
 !
 ! find islands and domain boundary ....
 !
-        ALLOCATE(STATUS(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 11')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
             IOBP(IP)=1
           END IF
         END DO
-        DEALLOCATE(STATUS)
 #ifdef MPI_PARALL_GRID
         CALL EXCHANGE_P2DI(IOBP)
 #endif
@@ -745,7 +742,7 @@
         REAL(rkind)       :: dbndtmp
         REAL(rkind)       :: BNDTMP
         character(len=60) :: errmsg
-        INTEGER, POINTER  :: STATUS(:)
+        INTEGER           :: STATUS(MNP)
         INTEGER           :: ITMP, I
         REAL(rkind)       :: ATMP, BTMP
 !
@@ -823,15 +820,12 @@
 ! find islands and domain boundary ....
 !
 
-        ALLOCATE(STATUS(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
             IOBP(IP)=1
           END IF
         END DO
-        DEALLOCATE(STATUS)
 !
 ! allocate wave boundary arrays ...
 !

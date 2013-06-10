@@ -19,7 +19,8 @@
       real(rkind)    em,ft, rint, sigpi, sinbph, stri, wism, wism1 , fac1
       real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell,facres,facscl,siglow
       
-      real(rkind), allocatable :: e(:), sa(:,:)
+      real(rkind) :: E(MSC)
+      real(rkind), allocatable :: sa(:,:)
 
       PTRIAD(1)  = 0.1
       PTRIAD(2)  = 2.2
@@ -68,7 +69,6 @@
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
 
-      ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MSC+ISP1,1:MDC))
       E  = 0.
       SA = 0.
@@ -140,7 +140,7 @@
         WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
       ENDIF
 
-      deallocate(e,sa)
+      deallocate(sa)
 
       end subroutine 
 !**********************************************************************
@@ -924,7 +924,8 @@
       REAL(rkind)    EM,FT, RINT, SIGPI, SINBPH, STRI, WISM, WISM1, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
       REAL(rkind)    WISP, WISP1,W0, WM, WN0, WNM,  XISLN, TMPAC(MSC,MDC), TMPAC1D(MSC), IMATRATMP(MDC,MSC)
 
-      REAL(rkind), ALLOCATABLE :: E(:), SA(:,:)
+      REAL(rkind) :: E(MSC)
+      REAL(rkind), ALLOCATABLE :: SA(:,:)
 
       PTRIAD(1)  = 0.25
       PTRIAD(2)  = 2.5
@@ -979,7 +980,6 @@
 !        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
 !      ENDIF
 
-      ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MDC,1:MSC+ISP1))
       E  = 0.
       SA = 0.
@@ -1047,7 +1047,7 @@
         ENDIF
       END IF
 
-      DEALLOCATE (E,SA)
+      DEALLOCATE (SA)
 
       END SUBROUTINE
 !**********************************************************************
