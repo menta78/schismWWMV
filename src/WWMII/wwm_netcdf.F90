@@ -1116,6 +1116,117 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE DEFINE_STATION_NC(FILE_NAME, MULTIPLEOUT)
+      USE NETCDF
+      USE DATAPOOL
+      implicit none
+      character(len=1000), intent(in) :: FILE_NAME
+      integer, intent(in) :: MULTIPLEOUT
+      character (len = *), parameter :: CallFct="DEFINE_STATION_NC"
+      character (len = *), parameter :: UNITS = "units"
+      character (len = *), parameter :: FULLNAME = "full-name"
+      character(len=40) :: eStr, eStrUnit
+      character(len=80) :: eStrFullName
+      integer iret, ncid, nbstat_dims, ntime_dims, msc_dims, mdc_dims
+      integer one_dims, three_dims, var_id, I
+      iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+
+      CALL WRITE_NETCDF_HEADERS_STAT_1(ncid, -1, MULTIPLEOUT)
+      iret=nf90_inq_dimid(ncid, 'nbstation', nbstat_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+
+      iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+
+      iret=nf90_inq_dimid(ncid, 'msc', msc_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+
+      iret=nf90_inq_dimid(ncid, 'mdc', mdc_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+
+      iret=nf90_inq_dimid(ncid, 'one', one_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+
+      iret=nf90_inq_dimid(ncid, 'three', three_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+
+#ifdef MPI_PARALL_GRID
+      iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+
+      iret=nf90_put_att(ncid,var_id,FULLNAME,'number of processors')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+#endif
+      IF (VAROUT_STATION%AC) THEN
+        iret=nf90_def_var(ncid,'AC',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+
+        iret=nf90_put_att(ncid,var_id,UNITS,'unk')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'spectral energy density')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      END IF
+      IF (VAROUT_STATION%WK) THEN
+        iret=nf90_def_var(ncid,'WK',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, ntime_dims /),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+
+        iret=nf90_put_att(ncid,var_id,UNITS,'unk')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'wave number by frequency')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+      END IF
+      IF (VAROUT_STATION%ACOUT_1D) THEN
+        iret=nf90_def_var(ncid,'ACOUT_1D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, three_dims, ntime_dims /),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+
+        iret=nf90_put_att(ncid,var_id,UNITS,'unk')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'1-dimensional spectrum')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      END IF
+      IF (VAROUT_STATION%ACOUT_2D) THEN
+        iret=nf90_def_var(ncid,'ACOUT_2D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+
+        iret=nf90_put_att(ncid,var_id,UNITS,'unk')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'2-dimensional spectrum')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+      END IF
+      DO I=1,OUTVARS_COMPLETE
+        IF (VAROUT_STATION%LVAR(I)) THEN
+          CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
+          iret=nf90_def_var(ncid,TRIM(eStr),NF90_OUTTYPE_STAT,(/ nbstat_dims, ntime_dims /),var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
+
+          iret=nf90_put_att(ncid,var_id,UNITS,TRIM(eStrUnit))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
+
+          iret=nf90_put_att(ncid,var_id,FULLNAME,TRIM(eStrFullName))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
+        END IF
+      END DO
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
+
+      iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+
+      CALL WRITE_NETCDF_HEADERS_STAT_2(ncid, MULTIPLEOUT_STAT)
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WRITE_NETCDF_HEADERS_STAT_1(ncid, nbTime, MULTIPLEOUT)
       USE DATAPOOL
       USE NETCDF

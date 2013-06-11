@@ -20,7 +20,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/netcdf.mod .
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
-all: $(NETC) $(PROG1) $(PROG2)
+all: $(NETC) $(PROG1) $(PROG2) $(PROG3)
 
 $(PROG1): $(OBJScommon) $(OBJhistory)
 	$(F90) -o $(PROG1) $(F90FLAGS) $(OBJScommon) $(OBJhistory) $(LIBS) $(LDFLAGS)
