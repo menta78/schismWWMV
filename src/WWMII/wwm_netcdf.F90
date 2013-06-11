@@ -1120,7 +1120,7 @@
       USE NETCDF
       USE DATAPOOL
       implicit none
-      character(len=1000), intent(in) :: FILE_NAME
+      character(len=256), intent(in) :: FILE_NAME
       integer, intent(in) :: MULTIPLEOUT
       character (len = *), parameter :: CallFct="DEFINE_STATION_NC"
       character (len = *), parameter :: UNITS = "units"

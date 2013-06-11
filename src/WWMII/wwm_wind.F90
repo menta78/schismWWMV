@@ -232,21 +232,11 @@
           END IF
           CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
           IF (REC1_new.NE.REC1_old) THEN
-            WRITE(WINDBG%FHNDL,'("CALLING READ_INTERP_NETCDF_WRF FROM IO_1 for REC1_new:",I8)') REC1_new
             CALL READ_INTERP_NETCDF_WRF(REC1_new,tmp_wind1)
           END IF
-          write(WINDBG%FHNDL,'("min/max tmp_wind1 from IO_1",         &
-      &   I8,2x,4F7.2)')                                              &
-      & K,minval(tmp_wind1(:,1)),minval(tmp_wind1(:,2)),              &
-      &  maxval(tmp_wind1(:,1)),maxval(tmp_wind1(:,2))
           IF (REC2_new.NE.REC2_old) THEN
-            WRITE(WINDBG%FHNDL,'("CALLING READ_INTERP_NETCDF_WRF FROM IO_1 for REC2_new:",I8)') REC2_new
             CALL READ_INTERP_NETCDF_WRF(REC2_new,tmp_wind2)
           END IF
-          write(WINDBG%FHNDL,'("min/max tmp_wind2 from IO_1",         &
-      &     I8,2x,4F7.2)')                                            &
-      &     K,minval(tmp_wind2(:,1)),minval(tmp_wind2(:,2)),          &
-      &     maxval(tmp_wind2(:,1)),maxval(tmp_wind2(:,2))
           IF (wrf_w1.NE.1) THEN
             WINDXY(:,:) = wrf_w1*tmp_wind1(:,:)+wrf_w2*tmp_wind2(:,:)
           ELSE
@@ -1711,7 +1701,7 @@
              Vw=Vw + WRF_COEFF(J,I)*VWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
              sumCOEFF=sumCOEFF + WRF_COEFF(J,I)
            END DO
-           Print *, 'sumCOEFF=', sumCOEFF
+!           Print *, 'sumCOEFF=', sumCOEFF
            varout(I,1)=Uw*wrf_scale_factor + wrf_add_offset
            varout(I,2)=Vw*wrf_scale_factor + wrf_add_offset
          END DO
@@ -1730,11 +1720,12 @@
      &      VWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
          END DO
        END IF
+       WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_WRF'
        WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
-       WRITE(WINDBG%FHNDL,*) 'maxval(varount((:,1))=', maxval(abs(varout(:,1)))
-       WRITE(WINDBG%FHNDL,*) 'maxval(varount(:,2))=', maxval(abs(varout(:,2)))
-       WRITE(WINDBG%FHNDL,*) 'maxval(UWIND_FD)=', maxval(abs(UWIND_FD))
-       WRITE(WINDBG%FHNDL,*) 'maxval(VWIND_FD)=', maxval(abs(VWIND_FD))
+       WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
+       WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
+       WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(varout(:,1)), maxval(varout(:,1))
+       WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(varout(:,2)), maxval(varout(:,2))
        CALL FLUSH(WINDBG%FHNDL)
        END SUBROUTINE READ_INTERP_NETCDF_WRF
 !**********************************************************************
@@ -1949,7 +1940,7 @@
                      wrf_coeff(1, I)=(1-a)*(1-b)
                      wrf_coeff(2, I)=a*(1-b)
                      wrf_coeff(3, I)=(1-a)*b
-                     wrf_coeff(4, I)=(1-a)*(1-b)
+                     wrf_coeff(4, I)=a*b
                    END IF
                  END IF
                  IF (WeFind .eq. 0) THEN
@@ -1969,7 +1960,7 @@
                      wrf_coeff(1, I)=(1-a)*(1-b)
                      wrf_coeff(2, I)=a*(1-b)
                      wrf_coeff(3, I)=(1-a)*b
-                     wrf_coeff(4, I)=(1-a)*(1-b)
+                     wrf_coeff(4, I)=a*b
                    END IF
                  END IF
                END DO
