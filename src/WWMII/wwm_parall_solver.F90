@@ -3370,7 +3370,7 @@ MODULE WWM_PARALL_SOLVER
 ! In this algorithm, the use of v_{i-1}, v_i can be replace to just "v"
 ! The same for x, r
 ! 
-      SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat)
+      SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod, STAT
@@ -3380,6 +3380,9 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
+      integer, intent(inout) :: nbIter
+      REAL(rkind), intent(inout) :: Norm_L2(LocalColor%MSCeffect,MDC)
+      REAL(rkind), intent(inout) :: Norm_LINF(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Rho(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Prov(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Alpha(LocalColor%MSCeffect,MDC)
@@ -3392,9 +3395,8 @@ MODULE WWM_PARALL_SOLVER
       integer IS1, IS2
       REAL(rkind) :: Lerror
 # endif
-      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC), Norm_LINF(LocalColor%MSCeffect,MDC)
       integer :: MaxIter = 30
-      integer IP, IS, ID, nbIter, MSCeffect
+      integer IP, IS, ID, MSCeffect
       MaxError=SOLVERTHR
       MSCeffect=LocalColor % MSCeffect
       CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
@@ -3618,7 +3620,6 @@ MODULE WWM_PARALL_SOLVER
         END DO
 # endif
       END DO
-      WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3626,7 +3627,7 @@ MODULE WWM_PARALL_SOLVER
 !
 ! With another node ordering, maybe better performance
 !
-      SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+      SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod, STAT
@@ -3636,6 +3637,9 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
+      integer, intent(inout) :: nbIter
+      REAL(rkind), intent(inout) :: Norm_L2(LocalColor%MSCeffect,MDC)
+      REAL(rkind), intent(inout) :: Norm_LINF(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Rho(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Prov(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Alpha(LocalColor%MSCeffect,MDC)
@@ -3644,9 +3648,8 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: MaxError, CritVal
       REAL(rkind) :: eSum1, eSum2
       REAL(rkind) :: TheTol
-      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC), Norm_LINF(LocalColor%MSCeffect,MDC)
       integer :: MaxIter = 30
-      integer IP, IS, ID, nbIter, MSCeffect
+      integer IP, IS, ID, MSCeffect
       MaxError=SOLVERTHR
       MSCeffect=LocalColor % MSCeffect
       CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
@@ -3742,7 +3745,6 @@ MODULE WWM_PARALL_SOLVER
      &      - Omega(:,:)*SolDat%AC7(:,:,IP)
         END DO
       END DO
-      WRITE(STAT%FHNDL, *) 'nbIter=', nbIter
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -4430,11 +4432,14 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_EIMPS(LocalColor, SolDat)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
-      USE DATAPOOL, only : PCmethod, IOBPD, ZERO
+      USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
       USE elfe_msgp, only : myrank, exchange_p4d_wwm
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
+      integer nbIter
+      real(rkind) :: Norm_L2(MSC,MDC)
+      real(rkind) :: Norm_LINF(MSC,MDC)
 # ifndef ASPAR_B_COMPUTE_BLOCK
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
 # endif
@@ -4480,9 +4485,9 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'After I5B_CREATE_PRECOND'
 # endif
 # ifdef BCGS_REORG
-      CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+      CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
 # else
-      CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
+      CALL I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
 # endif
       DO IP=1,MNP
         DO IS=1,MSC
@@ -4491,6 +4496,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
+      WRITE(STAT%FHNDL,*) 'nbIter=', nbIter, 'L2/LINF=', maxval(Norm_L2), maxval(Norm_LINF)
 # ifdef DEBUG
       IF (myrank == 1) THEN
         Write(myrank+591,*) 'Clearing ENDING'
@@ -4503,13 +4509,21 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I4_EIMPS(LocalColor, SolDat)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
-      USE DATAPOOL, only : PCmethod, IOBPD, ZERO
+      USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
       USE elfe_msgp, only : myrank, exchange_p4d_wwm
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IS, ID, IP
       integer iMSCblock, IS1, IS2
+      integer nbIter
+      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC)
+      real(rkind) :: Norm_LINF(LocalColor%MSCeffect,MDC)
+      integer nbIterMax
+      real(rkind) :: Max_L2, Max_LINF, eMax
+      nbIterMax=0
+      Max_L2=ZERO
+      Max_LINF=ZERO
       DO iMSCblock=1,LocalColor % NbMSCblock
 # ifdef DEBUG
         WRITE(240+myrank,*) 'iMSCblock=', iMSCblock
@@ -4524,9 +4538,9 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
         CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
 # ifdef BCGS_REORG
-        CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat)
+        CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
 # else
-        CALL I5B_BCGS_SOLVER(LocalColor, SolDat)
+        CALL I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
 # endif
         DO IP=1,MNP
           DO IS=IS1,IS2
@@ -4535,7 +4549,19 @@ MODULE WWM_PARALL_SOLVER
             END DO
           END DO
         END DO
+        IF (nbIter > nbIterMax) THEN
+          nbIterMax=nbIter
+        END IF
+        eMax=maxval(Norm_L2)
+        IF (eMax > Max_L2) THEN
+          Max_L2=eMax
+        END IF
+        eMax=maxval(Norm_LINF)
+        IF (eMax > Max_LINF) THEN
+          Max_LINF=eMax
+        END IF
       END DO
+      WRITE(STAT%FHNDL,*) 'nbIter=', nbIterMax, 'L2/LINF=', Max_L2, Max_LINF
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER
