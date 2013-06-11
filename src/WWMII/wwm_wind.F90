@@ -1677,7 +1677,7 @@
        character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_WRF"
        INTEGER                            :: FID, dims(3), ID, ISTAT, I, J
        INTEGER :: IX, IY, nbBad
-       REAL(rkind) :: Uw, Vw
+       REAL(rkind) :: Uw, Vw, sumCOEFF
        LOGICAL :: METHOD1 = .FALSE.
        logical isinf
        character(len=100) CHRTMP
@@ -1705,16 +1705,16 @@
            Vw=ZERO
            IX=WRF_IX(I)
            IY=WRF_IY(I)
+           sumCOEFF=ZERO
            DO J=1,4
              Uw=Uw + WRF_COEFF(J,I)*UWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
              Vw=Vw + WRF_COEFF(J,I)*VWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
+             sumCOEFF=sumCOEFF + WRF_COEFF(J,I)
            END DO
-           varout(I,1)=Uw*wrf_scale_factor
-           varout(I,2)=Vw*wrf_scale_factor
+           Print *, 'sumCOEFF=', sumCOEFF
+           varout(I,1)=Uw*wrf_scale_factor + wrf_add_offset
+           varout(I,2)=Vw*wrf_scale_factor + wrf_add_offset
          END DO
-         WRITE(WINDBG%FHNDL,*) 'maxval(varount(:,1))=', maxval(varout(:,1))
-         WRITE(WINDBG%FHNDL,*) 'maxval(varount(:,2))=', maxval(varout(:,2))
-         WRITE(WINDBG%FHNDL,*) 'maxval(abs(wrf_coeff))=', maxval(abs(wrf_coeff))
        ELSE
          do I = 1, MNP
           !interpolate onto FEM not sure if I can fill it up at the once (:,1:2)
@@ -1730,7 +1730,9 @@
      &      VWIND_FD(wrf_c22(I,1),wrf_c22(I,2))*wrf_b(I)*wrf_d(I) )
          END DO
        END IF
-       WRITE(WINDBG%FHNDL,*) 'maxval(varount)=', maxval(abs(varout))
+       WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
+       WRITE(WINDBG%FHNDL,*) 'maxval(varount((:,1))=', maxval(abs(varout(:,1)))
+       WRITE(WINDBG%FHNDL,*) 'maxval(varount(:,2))=', maxval(abs(varout(:,2)))
        WRITE(WINDBG%FHNDL,*) 'maxval(UWIND_FD)=', maxval(abs(UWIND_FD))
        WRITE(WINDBG%FHNDL,*) 'maxval(VWIND_FD)=', maxval(abs(VWIND_FD))
        CALL FLUSH(WINDBG%FHNDL)
