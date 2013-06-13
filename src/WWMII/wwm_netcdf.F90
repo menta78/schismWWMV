@@ -553,11 +553,11 @@
         eStrFullName="air Charnock coefficient"
         eStrUnit="non-dimensional"
       ELSE IF (IDX.eq.32) THEN
-        eStr="WINDX"
+        eStr="Uwind"
         eStrFullName="wind in X direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.33) THEN
-        eStr="WINDY"
+        eStr="Vwind"
         eStrFullName="wind in Y direction"
         eStrUnit="meter second-1"
       ELSE IF (IDX.eq.34) THEN
@@ -1133,6 +1133,7 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
 
       CALL WRITE_NETCDF_HEADERS_STAT_1(ncid, -1, MULTIPLEOUT)
+
       iret=nf90_inq_dimid(ncid, 'nbstation', nbstat_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
 
@@ -1151,16 +1152,6 @@
       iret=nf90_inq_dimid(ncid, 'three', three_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
 
-#ifdef MPI_PARALL_GRID
-      iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
-
-      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
-
-      iret=nf90_put_att(ncid,var_id,FULLNAME,'number of processors')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
-#endif
       IF (VAROUT_STATION%AC) THEN
         iret=nf90_def_var(ncid,'AC',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
@@ -1345,12 +1336,12 @@
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
 ! SPSIG
-      iret=nf90_def_var(ncid,'spsig',NF90_INT,(/ msc_dims/),var_id)
+      iret=nf90_def_var(ncid,'spsig',NF90_RUNTYPE,(/ msc_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
 ! SPDIR
-      iret=nf90_def_var(ncid,'spdir',NF90_INT,(/ mdc_dims/),var_id)
+      iret=nf90_def_var(ncid,'spdir',NF90_RUNTYPE,(/ mdc_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
@@ -1451,12 +1442,12 @@
 # endif
         iret=nf90_inq_varid(ncid, "spsig", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
-        iret=nf90_put_var(ncid,var_id,SPSIG, start=(/MSC/), count =(/1/) )
+        iret=nf90_put_var(ncid,var_id,SPSIG, start=(/1/), count =(/MSC/) )
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
         !
         iret=nf90_inq_varid(ncid, "spdir", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
-        iret=nf90_put_var(ncid,var_id,SPDIR, start=(/MDC/), count =(/1/) )
+        iret=nf90_put_var(ncid,var_id,SPDIR, start=(/1/), count =(/MDC/) )
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       ENDDO
       END SUBROUTINE
