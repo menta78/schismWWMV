@@ -272,6 +272,9 @@
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
         DEALLOCATE(LTimeDay)
+        IF (OUT_HISTORY%IDEF .le. 0) THEN
+          EXIT
+        END IF
         ifile=ifile+1
       END DO
   10  FORMAT (a,i4.4,'.nc')
@@ -312,7 +315,7 @@
   10     FORMAT (a,'_',i4.4,'.nc')
       ELSE
          WRITE (FILE_NAME,20) OUT_HISTORY%FNAME(1:LPOS)
-  20     FORMAT (a,'nc')
+  20     FORMAT (a,'.nc')
       ENDIF
       END SUBROUTINE
 !**********************************************************************

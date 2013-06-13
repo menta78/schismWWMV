@@ -86,7 +86,6 @@
 !
 ! Now the allocations
 !
-      Print *, 'allocate, IOUTS=', IOUTS
       allocate(OUTPAR_STATIONS_R(IOUTS,OUTVARS_COMPLETE), WK_STATIONS_R(IOUTS,MSC), AC_STATIONS_R(IOUTS,MSC,MDC),        OUTPAR_STATIONS_W(IOUTS,OUTVARS_COMPLETE), WK_STATIONS_W(IOUTS,MSC), AC_STATIONS_W(IOUTS,MSC,MDC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
       OUTPAR_STATIONS_W=0
@@ -107,7 +106,6 @@
 !
 ! Reading nproc
 !
-      Print *, 'FILE_NAME_SPLIT=', TRIM(FILE_NAME_SPLIT)
       iret = NF90_OPEN(TRIM(FILE_NAME_SPLIT), NF90_NOWRITE, ncid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
 
@@ -185,8 +183,9 @@
 
 
         DO iTime=1,nbTime
+          Print *, 'iTime=', iTime, '/', nbTime
           DO iProc=1,nproc
-            Print *, 'iProc=', iProc
+!            Print *, 'iProc=', iProc
             CALL GET_FILE_NAME_SPLIT(FILE_NAME_SPLIT, ifile, iProc)
             iret=nf90_open(TRIM(FILE_NAME_SPLIT), nf90_write, ncid)
             CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
@@ -227,13 +226,8 @@
             DO IVAR=1,OUTVARS_COMPLETE
               IF (VAROUT_STATION%LVAR(IVAR)) THEN
                 CALL NAMEVARIABLE(IVAR, eStr, eStrFullName, eStrUnit)
-                Print *, 'IVAR=', IVAR
-                Print *, 'eStr=', TRIM(eStr)
-                Print *, 'eStrFullName=', TRIM(eStrFullName)
                 iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
                 CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
-                Print *, 'iTime=', iTime
-                Print *, 'IOUTS=', IOUTS
                 iret=nf90_get_var(ncid,var_id,OUTPAR_STATIONS_R(:,IVAR), start = (/1, iTime/), count = (/ IOUTS, 1 /))
                 CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
               END IF
@@ -249,6 +243,7 @@
           !
           ! Now doing the writing
           !
+          Print *, 'FILE_NAME_MERGE=', TRIM(FILE_NAME_MERGE)
           iret=nf90_open(TRIM(FILE_NAME_MERGE), nf90_write, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
           IF (VAROUT_STATION%AC) THEN
@@ -297,7 +292,7 @@
           END IF
           DO IVAR=1,OUTVARS_COMPLETE
             IF (VAROUT_STATION%LVAR(IVAR)) THEN
-              CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
+              CALL NAMEVARIABLE(IVAR, eStr, eStrFullName, eStrUnit)
               iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
               CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
               IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
@@ -315,6 +310,10 @@
           CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
         END DO
         DEALLOCATE(LTimeDay)
+        IF (OUT_STATION%IDEF .le. 0) THEN
+          EXIT
+        END IF
+        ifile=ifile+1
       END DO
       DEALLOCATE(OUTPAR_STATIONS_R, WK_STATIONS_R, AC_STATIONS_R, OUTPAR_STATIONS_W, WK_STATIONS_W, AC_STATIONS_W)
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
@@ -358,7 +357,7 @@
   10     FORMAT (a,'_',i4.4,'.nc')
       ELSE
          WRITE (FILE_NAME,20) OUT_STATION%FNAME(1:LPOS)
-  20     FORMAT (a,'nc')
+  20     FORMAT (a,'.nc')
       ENDIF
       END SUBROUTINE
 !**********************************************************************
