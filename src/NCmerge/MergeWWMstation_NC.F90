@@ -21,7 +21,7 @@
       integer nnode_dims, ntime_dims, istat
       integer iTime, nbTime, iEnt, IVAR
       integer len1, len2
-      character (len = *), parameter :: CallFct="MERGE_WWM_NC_FILE"
+      character (len = *), parameter :: CallFct="MergeWWMstation_NC"
 
       integer, allocatable :: ListORIGIN(:), ISum(:), IFound(:)
       integer ifile, I
@@ -82,9 +82,11 @@
       CALL SPATIAL_GRID
       close(GRD%FHNDL)
       MULTIPLEOUT_STAT=0
+      CALL INIT_SPECTRAL_GRID()
 !
 ! Now the allocations
 !
+      Print *, 'allocate, IOUTS=', IOUTS
       allocate(OUTPAR_STATIONS_R(IOUTS,OUTVARS_COMPLETE), WK_STATIONS_R(IOUTS,MSC), AC_STATIONS_R(IOUTS,MSC,MDC),        OUTPAR_STATIONS_W(IOUTS,OUTVARS_COMPLETE), WK_STATIONS_W(IOUTS,MSC), AC_STATIONS_W(IOUTS,MSC,MDC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
       OUTPAR_STATIONS_W=0
@@ -130,8 +132,12 @@
         CALL GET_FILE_NAME_SPLIT(FILE_NAME_SPLIT, ifile, iProc)
         iret = NF90_OPEN(TRIM(FILE_NAME_SPLIT), NF90_NOWRITE, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+
+        iret = nf90_inq_varid(ncid, 'ifound', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+
         iret = NF90_GET_VAR(ncid, var_id, IFound)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         DO I=1,IOUTS
           IF (IFound(I) .eq. 1) THEN
             ListORIGIN(I)=iProc
@@ -139,8 +145,9 @@
           END IF
         END DO
         iret = NF90_CLOSE(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
       END DO
+      DEALLOCATE(IFound)
 !
 ! Now looping ...
 !
@@ -157,18 +164,18 @@
         ! Reading the time
         !
         iret = nf90_open(TRIM(FILE_NAME_SPLIT), NF90_NOWRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         iret = nf90_inq_varid(ncid, 'ocean_time_day', itime_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
         iret = NF90_INQUIRE_VARIABLE(ncid, ITIME_ID, dimids = dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         iret = nf90_inquire_dimension(ncid, dimids(1), len = nbTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
         ALLOCATE(LTimeDay(nbTime))
         iret = NF90_GET_VAR(ncid, itime_id, LTimeDay)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
         !
         ! Now creating the merged file.
         !
@@ -179,6 +186,10 @@
 
         DO iTime=1,nbTime
           DO iProc=1,nproc
+            Print *, 'iProc=', iProc
+            CALL GET_FILE_NAME_SPLIT(FILE_NAME_SPLIT, ifile, iProc)
+            iret=nf90_open(TRIM(FILE_NAME_SPLIT), nf90_write, ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
             IF (VAROUT_STATION%AC) THEN
               iret=nf90_get_var(ncid,var_id,AC_STATIONS_R, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
               DO I=1,IOUTS
@@ -189,7 +200,7 @@
             END IF
             IF (VAROUT_STATION%WK) THEN
               iret=nf90_inq_varid(ncid, 'WK', var_id)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
               iret=nf90_get_var(ncid,var_id,WK_STATIONS_R, start = (/1,1,iTime/), count=(/IOUTS,MSC,1/))
               DO I=1,IOUTS
                 IF (ListORIGIN(I) .eq. iProc) THEN
@@ -199,7 +210,7 @@
             END IF
             IF (VAROUT_STATION%ACOUT_1D) THEN
               iret=nf90_inq_varid(ncid, 'ACOUT_1D', var_id)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 40, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
               iret=nf90_get_var(ncid,var_id,ACOUT_1D_STATIONS_R, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,3,1/))
               DO I=1,IOUTS
                 IF (ListORIGIN(I) .eq. iProc) THEN
@@ -209,17 +220,22 @@
             END IF
             IF (VAROUT_STATION%ACOUT_2D) THEN
               iret=nf90_inq_varid(ncid, 'ACOUT_2D', var_id)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 43, iret)
-              iret=nf90_put_var(ncid,var_id,ACOUT_2D_STATIONS_R, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 44, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+              iret=nf90_get_var(ncid,var_id,ACOUT_2D_STATIONS_R, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
+              CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
             END IF
             DO IVAR=1,OUTVARS_COMPLETE
               IF (VAROUT_STATION%LVAR(IVAR)) THEN
                 CALL NAMEVARIABLE(IVAR, eStr, eStrFullName, eStrUnit)
+                Print *, 'IVAR=', IVAR
+                Print *, 'eStr=', TRIM(eStr)
+                Print *, 'eStrFullName=', TRIM(eStrFullName)
                 iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
-                CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+                CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+                Print *, 'iTime=', iTime
+                Print *, 'IOUTS=', IOUTS
                 iret=nf90_get_var(ncid,var_id,OUTPAR_STATIONS_R(:,IVAR), start = (/1, iTime/), count = (/ IOUTS, 1 /))
-                CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+                CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
               END IF
             END DO
             DO I=1,IOUTS
@@ -227,74 +243,76 @@
                 OUTPAR_STATIONS_W(I,:)=OUTPAR_STATIONS_R(I,:)
               END IF
             END DO
+            iret=nf90_close(ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
           END DO
           !
           ! Now doing the writing
           !
           iret=nf90_open(TRIM(FILE_NAME_MERGE), nf90_write, ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
           IF (VAROUT_STATION%AC) THEN
             iret=nf90_inq_varid(ncid, 'AC', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
             IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
               iret=nf90_put_var(ncid,var_id,AC_STATIONS_W, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(AC_STATIONS_W), start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
             ENDIF
           END IF
           IF (VAROUT_STATION%WK) THEN
             iret=nf90_inq_varid(ncid, 'WK', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
             IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
               iret=nf90_put_var(ncid,var_id,WK_STATIONS_W, start = (/1,1,iTime/), count=(/IOUTS,MSC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 38, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(WK_STATIONS_W), start = (/1,1,iTime/), count=(/IOUTS,MSC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 39, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
             ENDIF
           END IF
           IF (VAROUT_STATION%ACOUT_1D) THEN
             iret=nf90_inq_varid(ncid, 'ACOUT_1D', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 40, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
             IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
               iret=nf90_put_var(ncid,var_id,ACOUT_1D_STATIONS_W, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,3,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 41, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(ACOUT_1D_STATIONS_W), start = (/1,1,1,iTime/), count=(/IOUTS,MSC,3,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 42, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
             ENDIF
           END IF
           IF (VAROUT_STATION%ACOUT_2D) THEN
             iret=nf90_inq_varid(ncid, 'ACOUT_2D', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 43, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
             IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
               iret=nf90_put_var(ncid,var_id,ACOUT_2D_STATIONS_W, start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 44, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(ACOUT_2D_STATIONS_W), start = (/1,1,1,iTime/), count=(/IOUTS,MSC,MDC,1/))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 45, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
             ENDIF
           END IF
           DO IVAR=1,OUTVARS_COMPLETE
             IF (VAROUT_STATION%LVAR(IVAR)) THEN
               CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
               iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
               IF (NF90_RUNTYPE == NF90_OUTTYPE_STAT) THEN
                 iret=nf90_put_var(ncid,var_id,OUTPAR_STATIONS_W(:,IVAR), start = (/1, iTime/), count = (/ IOUTS, 1 /))
-                CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+                CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
               ELSE
                 iret=nf90_put_var(ncid,var_id,SNGL(OUTPAR_STATIONS_W(:,IVAR)), start = (/1, iTime/), count = (/ IOUTS, 1 /))
-                CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
+                CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
               ENDIF
             END IF
           END DO
           eTimeDay=LTimeDay(iTime)
           CALL WRITE_NETCDF_TIME(ncid, iTime, eTimeDay)
           iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 49, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
         END DO
         DEALLOCATE(LTimeDay)
       END DO
@@ -302,6 +320,7 @@
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         deallocate(ACOUT_1D_STATIONS_R, ACOUT_2D_STATIONS_R, ACOUT_1D_STATIONS_W, ACOUT_2D_STATIONS_W)
       ENDIF
+      DEALLOCATE(ListORIGIN)
       END PROGRAM
 !**********************************************************************
 !*                                                                    *
@@ -313,7 +332,7 @@
       character(len=1000), intent(out) :: FILE_NAME
       character(len =256) :: PRE_FILE_NAME
       integer LPOS, POSITION_BEFORE_POINT
-      LPOS=POSITION_BEFORE_POINT(OUT_HISTORY%FNAME)
+      LPOS=POSITION_BEFORE_POINT(OUT_STATION%FNAME)
       IF (OUT_STATION%IDEF.gt.0) THEN
          WRITE (PRE_FILE_NAME,10) OUT_STATION%FNAME(1:LPOS),ifile
   10     FORMAT (a,'_',i4.4)
@@ -333,7 +352,7 @@
       integer, intent(in) :: ifile
       character(len=1000), intent(out) :: FILE_NAME
       integer LPOS, POSITION_BEFORE_POINT
-      LPOS=POSITION_BEFORE_POINT(OUT_HISTORY%FNAME)
+      LPOS=POSITION_BEFORE_POINT(OUT_STATION%FNAME)
       IF (OUT_STATION%IDEF.gt.0) THEN
          WRITE (FILE_NAME,10) OUT_STATION%FNAME(1:LPOS),ifile
   10     FORMAT (a,'_',i4.4,'.nc')

@@ -1846,6 +1846,8 @@
 #ifdef MPI_PARALL_GRID
       CALL PARALLEL_ABORT(TRIM(string))
 #else
+      Print *, 'We have to abort. Reason:'
+      Print *, TRIM(string)
       STOP 'WWM_ABORT'
 #endif
       END SUBROUTINE WWM_ABORT

@@ -42,26 +42,9 @@
 !
 ! spectral grid - shared
 !
-         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), MSC_HF(MNP), stat=istat)
+         ALLOCATE(MSC_HF(MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
          MSC_HF = MSC
-         SPSIG = zero
-         SPDIR = zero
-         FR    = zero
-
-         ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
-         COSTH = zero
-         SINTH = zero
-         COS2TH = zero
-         SIN2TH = zero
-
-         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
-         SINCOSTH = zero
-         SIGPOW = zero
-         DS_BAND = zero
-         DS_INCR = zero
 !
 ! action densities and source terms - shared
 !

@@ -29,7 +29,7 @@ $(PROG2): $(OBJScommon) $(OBJhotfile)
 	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJhotfile) $(LIBS) $(LDFLAGS)
 
 $(PROG3): $(OBJScommon) $(OBJstation)
-	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJstation) $(LIBS) $(LDFLAGS)
+	$(F90) -o $(PROG3) $(F90FLAGS) $(OBJScommon) $(OBJstation) $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod *_mod.* *_genmod.* $(PROG)
