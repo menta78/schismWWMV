@@ -15,13 +15,21 @@
       CHARACTER(LEN = 15)  :: CTMP15
       CHARACTER(LEN = 5)   :: NAMEBUOY 
 
+      CHARACTER(LEN=30), ALLOCATABLE   :: STATIONNAMES (:)
+      CHARACTER(LEN=30), ALLOCATABLE   :: STATIONNAMES_O (:)
+      CHARACTER(LEN=15), ALLOCATABLE   :: DATUM_SP     (:)
+      CHARACTER(LEN=15), ALLOCATABLE   :: DATUM_O      (:,:)
+      CHARACTER(LEN=15), ALLOCATABLE   :: FMT_O        (:)  
+      CHARACTER(LEN=15), ALLOCATABLE   :: FMT_O_F      (:)
+
+
       INTEGER              :: IS, ID, IB, I, J, K, IT, ISMAX, IBUOYS
       INTEGER              :: IS_O, IT_O
       INTEGER              :: dateFMT = 0
 
       INTEGER, ALLOCATABLE :: I2DSPECOUT(:)
 
-      INTEGER, ALLOCATABLE :: IFIND(:), ICOUNT(:), FILETYPE(:)
+      INTEGER, ALLOCATABLE :: IFIND(:), FILETYPE(:)
       
       PI  = 4.* DATAN(1.d0)
       PI2 = 2.* PI
@@ -37,21 +45,40 @@
       CALL TEST_FILE_EXIST_DIE("Missing list of setup : ", "setup.dat")
       OPEN(3,  FILE = 'setup.dat',     STATUS='OLD')
 
-
-
       CALL INIT_FILE_HANDLES()
       CALL READ_WWMINPUT
       CALL INIT_SPECTRAL_GRID()
 
+      IF (VAROUT_STATION%AC .eqv. .FALSE.) THEN
+        Print *, 'In NAMELIST STATION, we need AC turned on'
+        STOP
+      END IF
+      IF (VAROUT_STATION%ACOUT_2D .eqv. .FALSE.) THEN
+        Print *, 'In NAMELIST STATION, we need ACOUT_2D turned on'
+        STOP
+      END IF
+
+      WRITE(4002,*) '2D SPECTRA WWMIII'
+      WRITE(4002,*) 'NUMBER OF FREQ', MSC
+      WRITE(4002,*) 'NUMBER OF DIRECTIONS', MDC
+      WRITE(4002,*) 'SPECTRAL GRID IN RAD AND HZ' 
+      DO IS = 1, MSC
+        WRITE(4002,*) IS, SPSIG(IS), FREQ_SP(IS)
+      END DO 
+      WRITE(4002,*) 'DIRECTIONAL GRID DDIR =',DDIR
+      DO ID = 1, MDC
+        WRITE(4002,*) ID, SPDIR(ID)
+      END DO
       BUOYS = IOUTS
 
 !------------------------------------------------------------------------      
 ! get sizes 
 !------------------------------------------------------------------------
       CALL GET_NBFILE(nbFile, N_DT_SP)
+      allocate(ListNbTime(nbFile))
       allocate(ZEIT_SP(N_DT_SP))
-      CALL GET_LIST_TIME(nbFile, N_DT_SP, ZEIT_SP)
-      ALLOCATE (STATIONNAMES(BUOYS), IFIND(BUOYS), ICOUNT(BUOYS), FILETYPE(BUOYS), I2DSPECOUT(BUOYS))
+      CALL GET_LIST_TIME(nbFile, ListNbTime, N_DT_SP, ZEIT_SP)
+      ALLOCATE (STATIONNAMES(BUOYS), IFIND(BUOYS), FILETYPE(BUOYS), I2DSPECOUT(BUOYS))
 
       I2DSPECOUT(:) = 0
          
@@ -104,7 +131,7 @@
 ! alloc and init sim arrays ... 
 !------------------------------------------------------------------------
 
-      ALLOCATE (DATUM_SP (N_DT_SP),, HS_SP    (N_DT_SP, BUOYS), TM01_SP  (N_DT_SP, BUOYS), TM02_SP  (N_DT_SP, BUOYS), EMAX_SP  (N_DT_SP, BUOYS), TP_SP    (N_DT_SP, BUOYS), stat=istat)
+      ALLOCATE (E_B_TOT(N_DT_SP, MSC, BUOYS), HS_SP(N_DT_SP, BUOYS), TM01_SP(N_DT_SP, BUOYS), TM02_SP(N_DT_SP, BUOYS), EMAX_SP(N_DT_SP, BUOYS), TP_SP(N_DT_SP, BUOYS), stat=istat)
 
       DATUM_SP = ''
       HS_SP    = 0.
@@ -117,65 +144,69 @@
 
       IBUOYS = 0
 
-      DO IB = 1, BUOYS
-        CALL TEST_FILE_EXIST_DIE("Missing station file : ", TRIM(STATIONNAMES(IB)))
-        OPEN(4, FILE = TRIM(STATIONNAMES(IB)), STATUS='OLD', FORM='UNFORMATTED')
-        READ(4) MSC
-        READ(4) MDC
-        READ(4) SPSIG
-        READ(4) SPDIR
-        READ(4) IFIND(IB)
-        WRITE(2220,*) TRIM(STATIONNAMES(IB))
-        WRITE(2221,*) TRIM(STATIONNAMES(IB))
+      ifile=1
+      CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
+      iret = nf90_open(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+
+      iret = nf90_inq_varid(ncid, 'ifound', var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+
+      iret = NF90_GET_VAR(ncid, var_id, IFIND)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+
+      DO IB=1,BUOYS
         WRITE(1003,*) 'HEADER INFORMATIONS OF THE CERTAIN BUOY'
         WRITE(1003,*) IB, IFIND(IB), TRIM(STATIONNAMES(IB))
         WRITE(1003,*) MSC, MDC
         WRITE(1003,*) SPSIG, SPDIR
         WRITE(1003,*) 'TIME HISTORY'
+      END DO
 
-        IF (IB == 1) THEN
-          WRITE(4002,*) '2D SPECTRA WWMIII'
-          WRITE(4002,*) 'START WRITING 2D SPECTRA FOR STATION =', IB, TRIM(STATIONNAMES(IB))
-          WRITE(4002,*) 'NUMBER OF FREQ', MSC
-          WRITE(4002,*) 'NUMBER OF DIRECTIONS', MDC
-          WRITE(4002,*) 'SPECTRAL GRID IN RAD AND HZ' 
-          DO IS = 1, MSC
-            WRITE(4002,*) IS, SPSIG(IS), FREQ_SP(IS)
-          END DO 
-          WRITE(4002,*) 'DIRECTIONAL GRID DDIR =',DDIR
-          DO ID = 1, MDC
-            WRITE(4002,*) ID, SPDIR(ID)
-          END DO
-        ENDIF
-        IF (IFIND(IB) .NE. 0) THEN
-          IBUOYS = IBUOYS + 1
-          DO IT = 1, N_DT_SP
-            READ(4) DATUM_SP(IT)
-            READ(4) DEPLOC
-            READ(4) CURTXYLOC
-            READ(4) ACLOC
-            READ(4) ACLOC2D
-            WRITE(2000,*) IB, IT, 'CURTXYLOC', CURTXYLOC
-            CALL CT2MJD(DATUM_SP(IT), XMJD)
-            WRITE(2001,*) DATUM_SP(IT), XMJD
-            ZEIT_SP(IT)  = XMJD
-            AUX_M0_SP(:) = 0.0
-            AUX_M1_SP(:) = 0.0
-            AUX_M2_SP(:) = 0.0
+      HS_SP  =0
+      TM01_SP=0
+      TM02_SP=0
+      TP_SP  =0
+
+      posTime=0
+      DO ifile=1,nbFile
+        CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
+        iret = nf90_open(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        !
+        nbTime=ListNbTime(ifile)
+        allocate(AC_R(IOUTS, MSC, MDC, nbTime), ACOUT_2D_R(IOUTS, MSC, MDC, nbTime), stat=istat)
+
+        iret = nf90_inq_varid(ncid, 'AC', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        iret = NF90_GET_VAR(ncid, var_id, AC_R)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+
+        iret = nf90_inq_varid(ncid, 'ACOUT_2D', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        iret = NF90_GET_VAR(ncid, var_id, ACOUT_2D_R)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        DO iTime=1,nbTime
+          posTime=posTime+1
+          DO IB=1,BUOYS
+            IF (IFIND(IB) .EQ. 0) CYCLE
+            ACLOC=AC_R(IB,:,:,iTime)
+            ACLOC2D=ACOUT_2D_R(IB,:,:,iTime)
+            AUX_M0_SP = 0.0
+            AUX_M1_SP = 0.0
+            AUX_M2_SP = 0.0
             E_SP = 0.0
             DO K = 1, ISMAX
               E_SP(K) = SUM(ACLOC2D(K,:)) * DDIR * PI2 !* SPSIG(K) 
             END DO
             ETOT1  = SUM(SUM(ACLOC(:,:),DIM=2) * SPSIG(:)**2 * FRINTF*DDIR )
-            IF (IB == 1) THEN
-              WRITE(4002,*) IB, IT, TRIM(DATUM_SP(IT)), ZEIT_SP(IT)
-              DO IS = 1, MSC
-                DO ID = 1, MDC
-                  write(4002,*) FREQ_SP(IS), SPDIR(ID), ACLOC2D(IS,ID)*PI2
-                ENDDO
-              ENDDO
-            ENDIF
-            EMAX_SP(IT,IB)  = E_SP(1)
+            EMAX_SP(posTime,IB)  = E_SP(1)
             ISEMAX          = 1
             DO K = 1, ISMAX - 1
               DELTAE = 0.5*(E_SP(K+1)+E_SP(K))
@@ -192,28 +223,21 @@
             M1 = SUM(AUX_M1_SP(:))
             M2 = SUM(AUX_M2_SP(:))
             WRITE(2000,*) 'M0, M1, M2', M0, M1, M2
-            IF (M0 .GT. 1.E-14) THEN
-              HS_SP  (IT,IB) =  4*M0**0.5
-              TM01_SP(IT,IB) = (M0/M1)
-              TM02_SP(IT,IB) = (M0/M2)**0.5
-              TP_SP  (IT,IB) = 1./FREQ_SP(ISEMAX)
-            ELSE
-              HS_SP  (IT,IB) = 0.
-              TM01_SP(IT,IB) = 0.
-              TM02_SP(IT,IB) = 0.
-              TP_SP  (IT,IB) = 0.
+            IF (M0 .GT. THR) THEN
+              HS_SP  (posTime,IB) =  4*M0**0.5
+              TM01_SP(posTime,IB) = (M0/M1)
+              TM02_SP(posTime,IB) = (M0/M2)**0.5
+              TP_SP  (posTime,IB) = 1./FREQ_SP(ISEMAX)
             END IF
+            DO IS = 1, MSC
+              E_B_TOT(posTime,IS, IB) = SUM(ACLOC2D(IS,:)) * DDIR * PI2 !* SPSIG(IS)
+            END DO
           END DO
-        ELSE
-          HS_SP  (:,IB) = 0. 
-          TM01_SP(:,IB) = 0. 
-          TM02_SP(:,IB) = 0. 
-          TP_SP  (:,IB) = 0.
-        END IF
-        CLOSE(4)
-      END DO 
+        END DO
+        deallocate(AC_R, ACOUT_2D_R)
+      END DO
 
-!------------------------------------------------------------------------      
+!------------------------------------------------------------------------
 ! read observation station namelist ...
 !------------------------------------------------------------------------
 
@@ -329,6 +353,7 @@
 !------------------------------------------------------------------------      
 ! allocate arrays needed for statistics ... 
 !------------------------------------------------------------------------
+      ALLOCATE (E_B(N_DT_SP, MSC))
       
       ALLOCATE (E_O        (MSC_O_MAX)); E_O = 0.0
       ALLOCATE (E_OS       (N_DT_O_MAX, MSC_O_MAX)); E_OS = 0.0
@@ -421,7 +446,6 @@
               TM01_O(I,IB) = 0.
               TM02_O(I,IB) = 0.
             ELSE IF(dateFMT == 2) THEN
-              !READ  (5, '(A4,A,A2,A,A2,A,A2,A,A2'//','//FMT_O(IB)//')') YYYY,DUMP3,MM,DUMP3,DD,DUMP3,hh,DUMP3,MINUTE,DUMP_R,DUMP_R,DUMP_R,HS_O(I,IB),TP_O(I,IB),DUMP_R,DUMP_R,DUMP_R,DUMP_R,DUMP_R,DUMP_R,DUMP_R,DUMP_R
               READ  (5, '(A4,A,A2,A,A2,A,A2,A,A2,I4,F5.1,F5.1,2F6.2,F6.2,I4,F7.1,F6.1,2F6.1,F5.1,F6.2)') YYYY,DUMP3,MM,DUMP3,DD,DUMP3,hh,DUMP3,MINUTE,DUMP_I,DUMP_R,DUMP_R,HS_O(I,IB),TP_O(I,IB),DUMP_R,DUMP_I,DUMP_R,DUMP_R,DUMP_R, DUMP_R, DUMP_R, DUMP_R
               DATUM_O(I,IB) = YYYY//MM//DD//'.'//HH//MINUTE//'00'
               CALL CT2MJD(DATUM_O(I,IB), XMJD)
@@ -432,7 +456,6 @@
           ENDIF
         END DO
         CLOSE(5)
-!        PAUSE
       END DO
 
       WRITE(*,*) 'MIN MAX ZEITEN', MINVAL(ZEIT_SP), MAXVAL(ZEIT_SP)
@@ -767,12 +790,7 @@
       MEAN_TP_SP  (:) = 0.0
       KORR_TP     (:) = 0.0
 
-      !WRITE(*,'(A10,A10,5A16)') 'BUOY NO', 'BNAMES', 'IFIND', 'N_STAT', 'N_OUT', 'N_OBSRV_ERR'  
-      !DO I = 1, BUOYS
-      !  WRITE (*,'(I10,A10,5I15)') I, TRIM(BNAMES(I)), IFIND(I), N_STAT(I), N_OUT_TIME(I), N_OBSRV_ERR(I)
-      !END DO  
-
-!------------------------------------------------------------------------      
+!------------------------------------------------------------------------
 ! read the observed wave spectra and estimate spectral moments ...
 !------------------------------------------------------------------------
 
@@ -1083,7 +1101,6 @@
 ! start with spectral statistics ...  
 !------------------------------------------------------------------------
 
-      ALLOCATE (E_B(N_DT_SP, MSC))
 
       ALLOCATE (DIFF1_ESP(N_DT_O_MAX, MSC))
       ALLOCATE (DIFF2_ESP(N_DT_O_MAX, MSC))
@@ -1124,28 +1141,10 @@
         CTMP30 = BNAMES(IB)
         NAMEBUOY = CTMP30(1:5)
 
-        CALL TEST_FILE_EXIST_DIE("Missing station file : ", TRIM(STATIONNAMES(IB)))
-        OPEN(4, FILE = TRIM(STATIONNAMES(IB)), STATUS='OLD', FORM='UNFORMATTED')
-        READ(4) MSC
-        READ(4) MDC
-        READ(4) SPSIG
-        READ(4) SPDIR
-        READ(4) IFIND(IB)
-        DO I = 1, N_DT_SP
-          READ  (4) DATUM_SP(I) 
-          READ  (4) DEPLOC
-          CALL CT2MJD(DATUM_SP(I), XMJD)
-          READ(4) ACLOC
-          READ(4) ACLOC2D
-          DO IS = 1, MSC
-            E_B(I,IS) = SUM(ACLOC2D(IS,:)) * DDIR * PI2 !* SPSIG(IS) 
-          END DO
-          ETOT = 0 
-        END DO
-        CLOSE(4) 
+        E_B=E_B_TOT(:,:, IB)
 
         N_DT_ERR = 0
-        CALL TEST_FILE_EXIST_DIE("Missing obse file : ", TRIM(STATIONNAMES_O(IB)))
+        CALL TEST_FILE_EXIST_DIE("Missing observation file : ", TRIM(STATIONNAMES_O(IB)))
         OPEN(5, FILE = TRIM(STATIONNAMES_O(IB)), STATUS='OLD')  
         READ (5, '(A500)') DUMP 
         DO IT = 1, N_DT_O(IB)
@@ -1234,9 +1233,8 @@
         N_STAT(IB) = 0
         OPEN(48, FILE = TRIM(NAMEBUOY)//'_diffspec'//'.dat', STATUS='UNKNOWN')
         OPEN(49, FILE = TRIM(NAMEBUOY)//'_spec'//'.dat', STATUS='UNKNOWN')
-!        OPEN(50, FILE = TRIM(NAMEBUOY)//'_observation'//'.dat', STATUS='UNKNOWN')
-        WRITE(CHTMP,999) MSC       
-        DO IT_O = 1, N_DT_O(IB) 
+        WRITE(CHTMP,999) MSC
+        DO IT_O = 1, N_DT_O(IB)
           IF (ZEIT_O(IT_O,IB) > ZEIT_SP(1) .AND. ZEIT_O(IT_O,IB) < ZEIT_SP(N_DT_SP)) THEN
             IF (N_DT_ERR(IB,IT_O) .EQ. 0) THEN
               ETMPS = 0.
@@ -1259,7 +1257,6 @@
                   ETMPO = ETMPO + E_OSF(IT_O,IS) * (FREQ_SP(IS)-FREQ_SP(IS-1)) 
                 END IF
               END DO
-              !WRITE(*,'(2I10,3F15.6)') IB, IT_O, ZEIT_O(IT_O,IB), 4*SQRT(ETMPS), 4*SQRT(ETMPO)
             ELSE
               DIFF1_ESP(IT_O,:) =  0.0
               DIFF2_ESP(IT_O,:) =  0.0
@@ -1501,22 +1498,26 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_LIST_TIME(nbFile, nbTime, ListTime)
+      SUBROUTINE GET_LIST_TIME(nbFile, ListNbTime, nbTime, ListTime)
       USE DATAPOOL
       implicit none
       integer, intent(in) :: nbFile, nbTime
+      real(rkind), intent(out) :: ListNbTime(nbFile)
       real(rkind), intent(out) :: ListTime(nbTime)
       character(len=1000) :: FILE_NAME
-      integer posTime
+      integer posTime, posPRev
       IF (OUT_STATION%IDEF.gt.0) THEN
         posTime=0
         DO iFile=1,nbFile
           CALL GET_FILE_NAME_MERGE(FILE_NAME, iFile)
+          posPrev=posTime
           CALL GET_TheTime(FILE_NAME, nbTime, posTime, ListTime)
+          ListNbTime(iFile)=posTime-posPrev
         END DO
       ELSE
         ifile=1
         CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
+        ListNbTime(1)=nbTime
         CALL GET_TheTime(FILE_NAME, nbTime, 0, ListTime)
       END IF
       END SUBROUTINE

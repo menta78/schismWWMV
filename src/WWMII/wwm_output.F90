@@ -661,7 +661,6 @@
                WRITE(OUTSP2D%FHNDL) CURTXYLOC
                WRITE(OUTSP2D%FHNDL) ACLOC
                WRITE(OUTSP2D%FHNDL) ACOUT_2D
-!               WRITE(STAT%FHNDL,*) I, 'SUM ACLOC', SUM(ACLOC), SUM(ACOUT_2D)
                CALL FLUSH(OUTSP2D%FHNDL)
                CLOSE(OUTSP2D%FHNDL)
              END IF ! LSP2D
