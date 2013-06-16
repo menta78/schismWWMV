@@ -349,7 +349,7 @@
         call KSPGetType(solver, ksp, petscErr);CHKERRQ(petscErr)
         write(DBG%FHNDL,*) "using KSP: ", trim(ksp)
         
-        call KSPGetOperators(solver, PETSC_NULL, PETSC_NULL, flag, petscErr);CHKERRQ(petscErr)
+        call KSPGetOperators(solver, Amat, Pmat, flag, petscErr);CHKERRQ(petscErr)
         if(flag == SAME_PRECONDITIONER) then
           write(DBG%FHNDL,*) "KSP using SAME_PRECONDITIONER"
         else if(flag == SAME_NONZERO_PATTERN) then
