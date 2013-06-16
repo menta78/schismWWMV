@@ -32,6 +32,7 @@
         IF (LCWIN) THEN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED' 
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT, LWDIR
+          CALL FLUSH(WINDBG%FHNDL)
           IF (LWDIR) THEN
             CALL DEG2NAUT(WDIR, WDIRT, LNAUTIN)
             DO IP = 1, MNP
@@ -47,6 +48,7 @@
         ELSE ! LCWIN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)')  'SPATIAL VARIABLE WIND FIELD IS USED'
+          CALL FLUSH(WINDBG%FHNDL)
           IF (IWINDFORMAT == 1) THEN
             CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .FALSE., 2, WINDXY)
 #ifdef NCDF
@@ -70,6 +72,7 @@
             CALL READ_NETCDF_NARR(IFILE, IT, WINDXY)
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF STATIONARY FIELD 
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
+            CALL FLUSH(WINDBG%FHNDL)
             CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
@@ -79,6 +82,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
             IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
@@ -87,6 +91,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
             CALL GET_WRF_TIME_INDEX(REC1_new,REC2_new,wrf_w1,wrf_w2)
@@ -101,6 +106,7 @@
             END IF
             write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
             write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+            CALL FLUSH(WINDBG%FHNDL)
 #endif
           ELSE
             CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need netcdf)')
@@ -114,12 +120,14 @@
         ELSE
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'NONSTATIONARY WIND FIELD IS USED        '
+          CALL FLUSH(WINDBG%FHNDL)
           SEWI%TOTL = (SEWI%EMJD - SEWI%BMJD) * DAY2SEC
           SEWI%ISTP = NINT( SEWI%TOTL / SEWI%DELT ) + 1
           SEWI%TMJD = SEWI%BMJD
           WRITE(WINDBG%FHNDL,*) SEWI%BEGT, SEWI%ENDT, SEWI%ISTP, SEWI%TOTL/3600.0, SEWI%DELT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL VARIABLE WIND FIELD IS USED'
           WRITE(WINDBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
+          CALL FLUSH(WINDBG%FHNDL)
           IF (IWINDFORMAT == 1) THEN
             OPEN(WIN%FHNDL, FILE = TRIM(WIN%FNAME), STATUS = 'OLD')
             CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .TRUE., 2, WINDXY)
@@ -145,6 +153,7 @@
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF WRF
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED WRF NETCDF'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING WRF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
+            CALL FLUSH(WINDBG%FHNDL)
             CALL INIT_NETCDF_WRF !load wind_time_mjd and compute interp coefs
             IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside WRF wind_time range!'
@@ -152,6 +161,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
             IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
@@ -160,6 +170,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+              CALL FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in WRF wind')
             END IF
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
@@ -174,14 +185,13 @@
             END IF
             write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
             write(WINDBG%FHNDL,'("+TRACE... Done with WRF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
+            CALL FLUSH(WINDBG%FHNDL)
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
           ENDIF
         ENDIF
       ENDIF
-
-      WRITE(STAT%FHNDL,*) 'SUM OF THE WIND', SUM(WINDXY)
 
       END SUBROUTINE
 !**********************************************************************

@@ -428,6 +428,7 @@
 
          IF (DIMMODE .EQ. 2) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS STARTED'
+           CALL FLUSH(STAT%FHNDL)
            CALL INIT_FLUCT_ARRAYS
            CALL INIT_FLUCT
 
@@ -451,6 +452,7 @@
          CALL INIT_SPECTRAL_GRID
  
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
+         CALL FLUSH(STAT%FHNDL)
 #if defined SELFE 
          DMIN = DMIN_SELFE
          CALL SET_IOBP_SELFE
@@ -458,6 +460,7 @@
          CALL SET_IOBP_NEXTGENERATION
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
+         CALL FLUSH(STAT%FHNDL)
          CALL SET_IOBPD
 
 #ifndef PGMCL_COUPLING
@@ -489,6 +492,7 @@
 #endif
          ELSE IF (MESIN .EQ. 2 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
+           CALL FLUSH(STAT%FHNDL)
            CALL PREPARE_SOURCE
            CALL FLUSH(STAT%FHNDL)
          ELSE IF (MESIN .EQ. 6 .AND. .NOT. LPRECOMP_EXIST) THEN
@@ -708,6 +712,7 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE DEALLOC_WILD_ARRAY
+!AR: what is this kind of shit ?
        USE DATAPOOL
        implicit none
        DEALLOCATE(nwild_loc)
@@ -805,15 +810,22 @@
          INTEGER IQGRID, INODE, IERR
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
+         CALL FLUSH(STAT%FHNDL)
          CALL GRADDEP
          WRITE(STAT%FHNDL,*) 'GRADDEP'
+         CALL FLUSH(STAT%FHNDL)
          IF (LSTCU .OR. LSECU) CALL GRADCURT
          WRITE(STAT%FHNDL,*) 'GRADCURT'
+         CALL FLUSH(STAT%FHNDL)
          CALL BASIC_PARAMETER
          WRITE(STAT%FHNDL,*) 'BASIC'
+         CALL FLUSH(STAT%FHNDL)
          CALL MAKE_WAVE_TABLE
          CALL WAVE_K_C_CG
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
+         CALL FLUSH(STAT%FHNDL)
+
+
          IF (MESNL .LT. 4) THEN
            CALL PARAMETER4SNL
          ELSE IF (MESNL .EQ. 5) THEN
@@ -822,15 +834,10 @@
            IQGRID = 3
            INODE  = 1
            CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
-           IF (IERR .GT. 0) THEN
-             WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
-             STOP
-           END IF
+           IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
          ENDIF
-         WRITE(STAT%FHNDL,*) 'SNL4'
-         IF (MESTR .GT. 0) CALL GRAD_CG_K 
-         WRITE(STAT%FHNDL,*) 'SNL3'
+
+         IF (MESTR .GT. 5) CALL GRAD_CG_K 
 
          RETURN
       END SUBROUTINE

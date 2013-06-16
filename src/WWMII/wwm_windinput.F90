@@ -360,8 +360,10 @@
 
          CALL STRESS_ECMWF ()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
+         CALL FLUSH(STAT%FHNDL)
          CALL TAUHFR_ECMWF ()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
+         CALL FLUSH(STAT%FHNDL)
 
        END SUBROUTINE PREPARE_SOURCE
 !**********************************************************************
@@ -376,8 +378,11 @@
 
          CALL STRESS()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
+         CALL FLUSH(STAT%FHNDL)
+
          CALL TAUHF_ECMWF_NEW
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
+         CALL FLUSH(STAT%FHNDL)
 
        END SUBROUTINE PREPARE_SOURCE_ECMWF
 !**********************************************************************
