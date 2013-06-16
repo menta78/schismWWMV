@@ -11,18 +11,20 @@
           CALL OUTPUT_HISTORY(RTIME*DAY2SEC,.FALSE.)
           OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
         END IF
+
         IF ( (MAIN%TMJD .GE. OUT_STATION%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_STATION%EMJD)) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
           CALL OUTPUT_STATION(RTIME*DAY2SEC,.FALSE.)
           OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
-          !write(DBG%FHNDL,*) MAIN%TMJD, OUT_STATION%TMJD, OUT_STATION%DELT*SEC2DAY
         END IF
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_AND_STATION' 
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_OUTPUT( TIME, LINIT_OUTPUT )
-        USE DATAPOOL, ONLY : rkind, SEC2DAY, OUT_HISTORY, OUT_STATION
+        USE DATAPOOL, ONLY : rkind, SEC2DAY, OUT_HISTORY, OUT_STATION, STAT 
         IMPLICIT NONE
         REAL(rkind), INTENT(IN)    :: TIME
         LOGICAL, INTENT(IN) :: LINIT_OUTPUT
@@ -30,6 +32,9 @@
         CALL OUTPUT_STATION( TIME, LINIT_OUTPUT )
         OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -44,7 +49,6 @@
                ! Do nothing ...
             CASE (1)
                CALL OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
-               WRITE(STAT%FHNDL,*) 'WRITING XFN OUTPUT'
             CASE (2)
 #ifdef NCDF
                CALL OUTPUT_HISTORY_NC
@@ -59,7 +63,9 @@
                WRITE(DBG%FHNDL,*) 'IOUTP=', VAROUT_HISTORY%IOUTP
                CALL WWM_ABORT('WRONG NO OUTPUT SPECIFIED')
          END SELECT
-         RETURN
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
+         CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -72,7 +78,7 @@
         CHARACTER(LEN=15)   :: CTIME
         CALL MJD2CT(MAIN%TMJD, CTIME)
 
-        IF ((DIMMODE .GT. 1).and.LOUTS) THEN
+        IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
           WRITE(STAT%FHNDL,*) 'WRITING STATION OUTPUT'
           SELECT CASE (VAROUT_STATION%IOUTP)
             CASE (0)
@@ -88,9 +94,9 @@
             CASE DEFAULT
                CALL WWM_ABORT('WRONG NO STATION OUTPUT SPECIFIED')
           END SELECT
-          WRITE(STAT%FHNDL,*) 'FINISHED STATION OUTPUT'
         END IF
-        RETURN
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -170,8 +176,6 @@
         IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
 #endif
 
-        !write(*,*) time, maxval(IP_IS_STEADY), minval(IP_IS_STEADY)
- 
 #ifdef MPI_PARALL_GRID
          DO IP = 1, MNP
             IF (DEP(IP) .GT. DMIN) THEN
@@ -195,8 +199,6 @@
          call mpi_reduce(WIND,WIND_GLOBAL,NP_GLOBAL*WINDVARS,rtype,MPI_SUM,0,comm,ierr)
          IF (LQSTEA  .AND. LCHKCONV) call mpi_reduce(ITERT,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
 
-        !write(*,*) time, maxval(ITER_GLOBAL), minval(ITER_GLOBAL)
-
          if(myrank==0) then
            do IP=1,NP_GLOBAL
              OUTT_GLOBAL(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
@@ -213,8 +215,6 @@
          endif !myrank
 
          TIME_4 = SNGL(TIME)
-
-         !write(*,*) time, maxval(ITER_GLOBAL_4), minval(ITER_GLOBAL_4)
 
          IF (myrank == 0) THEN
            IF (LINIT_OUTPUT) THEN
@@ -340,6 +340,8 @@
          END IF
 !$OMP END MASTER
 #endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -668,6 +670,8 @@
 #ifdef MPI_PARALL_GRID
          END IF
 #endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !* The netcdf output outs the most variables and is the most          *
@@ -1219,9 +1223,8 @@
          OUTPAR(9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2 [-}
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
-!         WRITE(DBG%FHNDL,'(10F15.6)') OUTPAR
-
-         RETURN
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WINDPAR'
+         CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1290,7 +1293,9 @@
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
 
-         RETURN
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
+         CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1315,6 +1320,7 @@
       END DO
       AvgHS=SumHS/MyREAL(MNP)
       WRITE(DBG%FHNDL,*) 'DEBUG AvgHS=', AvgHS, ' MaxHS=', MaxHS
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1424,6 +1430,10 @@
            OUTPAR(57) = CFLCXY(2,IP)
            OUTPAR(58) = CFLCXY(3,IP)
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE'
+         CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1537,7 +1547,10 @@
            OUTPAR(51) = STOKESBAROX
            OUTPAR(52) = STOKESBAROY
          END IF
-         RETURN
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE_LOC'
+         CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1602,13 +1615,15 @@
 
          OUTPAR(26:31) = ZERO 
 
-         RETURN
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR_LOC'
+         CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************
       SUBROUTINE INTSPEC(MSC, MDC, DDIR, ACLOC, SPSIG, HS)
-         USE DATAPOOL, ONLY : rkind
+         USE DATAPOOL, ONLY : rkind, stat
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: MSC, MDC
@@ -1634,6 +1649,9 @@
          ELSE
            HS = 0.0
          END IF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTSPEC'
+         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1669,6 +1687,8 @@
          END DO
 
          CLOSE(MISC%FHNDL)
+         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_TEST'
+         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1716,7 +1736,9 @@
          END DO
 
 110      FORMAT (2X,I10,3(A2,F15.8))
-         RETURN
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_SHP'
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -1829,7 +1851,9 @@
            END IF
          END DO
 
-         RETURN
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH CLSPEC'
+        CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1889,6 +1913,9 @@
       WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
 # endif
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
+        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2097,7 +2124,8 @@
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
-      RETURN
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_NC'
+      CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************

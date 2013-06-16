@@ -35,18 +35,18 @@
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
+         CALL FLUSH(STAT%FHNDL)
+
          TIME1 = mpi_wtime()
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 1 AC2'
-           !IF (SUM(AC1) .NE. SUM(AC1)) STOP 'NAN IN MAIN 1 AC1'
+           IF (SUM(AC2) .NE. SUM(AC2)) call wwm_abort('NAN IN MAIN 1')
          ENDIF
 
-!zyl: check dimension
-!ar: obsolete since already checked in init_wwm, after model has been tested this should be removed
          if(WINDVARS/=size(WIND_INTPAR,2)) call wwm_abort('Dimension mismatch: OUTWINDPAR and out_wwm_windpar')
-         if(OUTVARS/=size(OUTT_INTPAR,2)) call wwm_abort('Dimension mismatch: OUTPAR and out_wwm')
+         if(OUTVARS/=size(OUTT_INTPAR,2))  call wwm_abort('Dimension mismatch: OUTPAR and out_wwm')
 
          NSTEPWWM = NSTEP_WWM0
 
@@ -56,6 +56,7 @@
          T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
          T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
          DT_PROVIDED=NSTEPWWM*DT_SELFE
+
          IF (abs(MAIN%DELT - DT_PROVIDED).gt.THR) THEN
            WRITE(DBG%FHNDL,*) 'MAIN%DELT=', MAIN%DELT, ' in wwminput.nml'
            WRITE(DBG%FHNDL,*) 'But nstep_wwm*dt=', DT_PROVIDED
@@ -66,8 +67,11 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' FIRST SUM IN MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 2')
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') ' ---- ALL CHECKS DONE'
+         CALL FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
@@ -194,7 +198,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SETTING BOUNDARY CONDITION IN MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 3')
          ENDIF
 
          IF (LFIRSTSTEP) THEN
@@ -205,11 +209,13 @@
 
          TIME2 = mpi_wtime() 
 
-
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 3'
+           WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 4')
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
+         CALL FLUSH(STAT%FHNDL)
 
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
@@ -219,13 +225,20 @@
          END IF
 
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 4'
+           WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 5') 
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE'
+         CALL FLUSH(STAT%FHNDL)
 
          TIME3 = mpi_wtime()
 
-         IF (myrank == 0) WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'nth call to WWM', SIMUTIME
+         IF (myrank == 0) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'nth call to WWM', SIMUTIME
+           CALL FLUSH(STAT%FHNDL)
+         ENDIF
+
          DO IP = 1, MNP
            ACLOC = AC2(IP,:,:)
            IF (DEP(IP) .GT. DMIN) THEN
@@ -268,7 +281,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
@@ -279,6 +292,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
+
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
          CALL FLUSH(STAT%FHNDL)
  
@@ -643,9 +657,11 @@
          INTEGER, INTENT(IN) :: K
 
          CALL OUTPUT_HISTORY_AND_STATION
+
          IF (LHOTF) THEN
            IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
              WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
+             CALL FLUSH(STAT%FHNDL)
              CALL OUTPUT_HOTFILE
              HOTF%TMJD = HOTF%TMJD + HOTF%DELT*SEC2DAY
            END IF

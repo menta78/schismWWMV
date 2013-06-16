@@ -496,10 +496,10 @@
            CALL PREPARE_SOURCE_ECMWF 
            CALL FLUSH(STAT%FHNDL)
          END IF
+
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
          CALL FLUSH(STAT%FHNDL)
          CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
-
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
          CALL FLUSH(STAT%FHNDL)
          CALL INITIAL_CONDITION(IFILE,IT)
@@ -507,16 +507,20 @@
          CALL FLUSH(STAT%FHNDL)
          CALL SET_WAVE_BOUNDARY
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Writing Initial Condition to Output and initialize Station Output'
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
          CALL FLUSH(STAT%FHNDL)
          CALL INIT_STATION_OUTPUT
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
+         CALL FLUSH(STAT%FHNDL)
          CALL WWM_OUTPUT(ZERO,.TRUE.)
+
          IF (LWXFN) THEN
            CALL WRINPGRD_XFN
          ELSE IF(LWSHP) THEN
            CALL WRINPGRD_SHP
          END IF
+
 #if !defined SELFE && !defined PGMCL_COUPLING
          IF (LCPL) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
@@ -555,11 +559,11 @@
          END IF
 #endif
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
          CALL FLUSH(STAT%FHNDL)
 
          AC1 = AC2
-
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1204,12 +1208,9 @@
            WATLEVLOC_SUM = 0.
 
            deallocate(rbuf_int)
+
          END IF
 #else
-
-         !WRITE(*,*) SIZE(INE(1,:)), SIZE(INE(:,1))
-         !WRITE(*,*) MAXVAL(INE), MINVAL(INE)
-
          IF (LOUTS) THEN
            XYTMP(1,:) = XP
            XYTMP(2,:) = YP
@@ -1250,8 +1251,8 @@
          END IF
 !
 #endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A)')'FINISHED WITH INIT_STATION_OUTPUT'        
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

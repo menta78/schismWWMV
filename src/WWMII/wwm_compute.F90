@@ -14,13 +14,13 @@
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          CALL FLUSH(STAT%FHNDL)
 
          AC1 = AC2 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 1'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1') 
          ENDIF
 
          IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
@@ -46,7 +46,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -1- ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
          ENDIF
   
          CALL CPU_TIME(TIME3)
@@ -56,7 +56,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -2- ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 3'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 3') 
          ENDIF
 
          CALL CPU_TIME(TIME4)
@@ -95,6 +95,8 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          CALL FLUSH(STAT%FHNDL)
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
@@ -161,8 +163,6 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME17-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 
-!        WRITE(*,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME2-TIME1
-
         IF (.NOT. LDIFR) LCALC = .FALSE.
 
         RETURN
@@ -176,6 +176,10 @@
 
         REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
         INTEGER          :: IP, IT
+
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_IMPLICIT'
+        CALL FLUSH(STAT%FHNDL)
 
         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
           DT4A = MAIN%DELT
@@ -219,6 +223,8 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME8-TIME7+TIME4-TIME3
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME8-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
         CALL FLUSH(STAT%FHNDL)
 
         RETURN
@@ -309,6 +315,9 @@
         USE DATAPOOL
         IMPLICIT NONE
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SPATIAL'
+        CALL FLUSH(STAT%FHNDL)
+
         IF (DIMMODE == 1) THEN
           CALL COMPUTE_ADVECTION1D_QUICKEST_A()
         ELSE IF (DIMMODE == 2) THEN
@@ -328,6 +337,9 @@
           IF ( ICOMP .GE. 1 .AND. (AMETHOD .EQ. 2 .OR. AMETHOD .EQ. 3 )) CALL RESCALE_SPECTRUM
         END IF
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SPATIAL'
+        CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE COMPUTE_SPATIAL
 !**********************************************************************
 !*                                                                    *
@@ -335,6 +347,9 @@
       SUBROUTINE COMPUTE_DIRECTION()
         USE DATAPOOL
         IMPLICIT NONE
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_DIRECTION'
+        CALL FLUSH(STAT%FHNDL)
  
         IF (DMETHOD > 0) THEN
           IF (DMETHOD == 1) THEN
@@ -348,6 +363,9 @@
           END IF
         END IF
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_DIRECTION'
+        CALL FLUSH(STAT%FHNDL)
+
         IF ( DMETHOD == 1) CALL RESCALE_SPECTRUM
 
       END SUBROUTINE COMPUTE_DIRECTION
@@ -358,9 +376,15 @@
         USE DATAPOOL
         IMPLICIT NONE
 
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_FREQUENCY'
+        CALL FLUSH(STAT%FHNDL)
+
         IF (FMETHOD == 1) THEN
           CALL COMPUTE_FREQUENCY_QUICKEST_A()
         END IF
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_FREQUENCY'
+        CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_FREQUENCY
 !**********************************************************************
@@ -370,9 +394,15 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-          IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
-            CALL SOURCE_INT_EXP()
-          END IF
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_EXP'
+        CALL FLUSH(STAT%FHNDL)
+
+        IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
+          CALL SOURCE_INT_EXP()
+        END IF
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_EXP'
+        CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SOURCES_EXP
 !**********************************************************************
@@ -382,9 +412,15 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-          IF (ICOMP >= 2  .AND. SMETHOD > 0) THEN
-            CALL SOURCE_INT_IMP()
-          END IF
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_IMP'
+        CALL FLUSH(STAT%FHNDL)
+
+        IF (ICOMP >= 2  .AND. SMETHOD > 0) THEN
+          CALL SOURCE_INT_IMP()
+        END IF
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_IMP'
+        CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SOURCES_IMP
 !**********************************************************************

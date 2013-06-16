@@ -717,7 +717,6 @@
 !
 ! ... output parameter ... wwmDoutput.mod
 !
-
          INTEGER, PARAMETER     :: OUTVARS  = 35 
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
@@ -845,17 +844,17 @@
 ! global hmax for wave breaking
 !
          REAL(rkind), ALLOCATABLE ::   HMAX(:)
-         INTEGER, ALLOCATABLE ::   ISHALLOW(:)
+         INTEGER, ALLOCATABLE     ::   ISHALLOW(:)
 
          REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
 !
 ! switch for the numerics ... wwmDnumsw.mod
 !
-         INTEGER                :: AMETHOD = 0
-         INTEGER                :: SMETHOD = 0
-         INTEGER                :: DMETHOD = 0
-         INTEGER                :: FMETHOD = 0
+         INTEGER                :: AMETHOD = 1
+         INTEGER                :: SMETHOD = 1
+         INTEGER                :: DMETHOD = 2
+         INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2
          REAL(rkind)            :: QSCFL   = 1.
          LOGICAL                :: LCHKCONV = .TRUE.
@@ -892,9 +891,9 @@
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
-         REAL(rkind), ALLOCATABLE      :: CFLCXY(:,:)
-         INTEGER, ALLOCATABLE   :: COUNTGROUP(:,:)
+         REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
 
+         INTEGER, ALLOCATABLE        :: COUNTGROUP(:,:)
 !
 !  convergence analysis and volume check ... wwmDconv.mod
 !
@@ -909,11 +908,11 @@
          REAL(rkind), ALLOCATABLE    :: TM02OLD(:)
 
 
-         REAL(rkind)                 :: EPSH1 = 0.001d0
-         REAL(rkind)                 :: EPSH2 = 0.001d0
-         REAL(rkind)                 :: EPSH3 = 0.001d0
-         REAL(rkind)                 :: EPSH4 = 0.001d0
-         REAL(rkind)                 :: EPSH5 = 0.001d0
+         REAL(rkind)                 :: EPSH1 = 0.01d0
+         REAL(rkind)                 :: EPSH2 = 0.01d0
+         REAL(rkind)                 :: EPSH3 = 0.01d0
+         REAL(rkind)                 :: EPSH4 = 0.01d0
+         REAL(rkind)                 :: EPSH5 = 0.01d0
 !
 ! Dislin
 !
@@ -921,11 +920,11 @@
 !
 !   WAM Cycle 4.5
 !
-         REAL(rkind), PARAMETER       :: ALPHA = 0.0090
+         REAL(rkind), PARAMETER       :: ALPHA   = 0.0090
          REAL(rkind), PARAMETER       :: BETAMAX = 1.20
-         REAL(rkind), PARAMETER       :: XKAPPA = 0.4
-         REAL(rkind), PARAMETER       :: ZALP =  0.0110
-         REAL(rkind), PARAMETER       :: UMAX = 50. ! Why this ? Never produced higher winds than this ?
+         REAL(rkind), PARAMETER       :: XKAPPA  = 0.4
+         REAL(rkind), PARAMETER       :: ZALP    =  0.0110
+         REAL(rkind), PARAMETER       :: UMAX    = 50. ! Why this ? Never produced higher winds than this ?
 
 
          INTEGER, PARAMETER    :: IUSTAR  = 100 !! TABLE DIMENSION
