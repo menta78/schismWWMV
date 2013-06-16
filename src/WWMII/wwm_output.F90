@@ -1223,8 +1223,8 @@
          OUTPAR(9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2 [-}
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WINDPAR'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WINDPAR'
+!         CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1293,8 +1293,8 @@
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
+!         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1548,8 +1548,8 @@
            OUTPAR(52) = STOKESBAROY
          END IF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE_LOC'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE_LOC'
+!         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1615,8 +1615,8 @@
 
          OUTPAR(26:31) = ZERO 
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR_LOC'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR_LOC'
+!         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1650,8 +1650,8 @@
            HS = 0.0
          END IF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTSPEC'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTSPEC'
+!         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1687,8 +1687,6 @@
          END DO
 
          CLOSE(MISC%FHNDL)
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_TEST'
-         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1851,8 +1849,8 @@
            END IF
          END DO
 
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH CLSPEC'
-        CALL FLUSH(STAT%FHNDL)
+!        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH CLSPEC'
+!        CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1914,8 +1912,8 @@
 # endif
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
 
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
-        CALL FLUSH(STAT%FHNDL)
+!        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
+!        CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

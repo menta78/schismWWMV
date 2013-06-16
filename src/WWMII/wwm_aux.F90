@@ -33,6 +33,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DDEP(IP,1)
                   END DO
+                  CALL FLUSH(STAT%FHNDL)
                END IF
 
             CASE (2)
@@ -58,16 +59,12 @@
                         WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD , 'MAXSLOPE'
                      END IF
                   END DO
+                  CALL FLUSH(STAT%FHNDL)
                END IF
-
-!              DO IP = 1, MNP
-!                 WRITE(STAT%FHNDL,'(1X,I5,6F15.7)') IP, DDEP(IP,1), DDEP(IP,2), DEP(IP)
-!              END DO
 
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -95,6 +92,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DCUX, DCUY
                   END DO
+                  CALL FLUSH(STAT%FHNDL)
                END IF
             CASE (2)
                CALL DIFFERENTIATE_XYDIR(CURTXY(:,1),DCUX(:,1),DCUX(:,2))
@@ -113,11 +111,11 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,4F15.7)') IP, DCUX(IP,1), DCUX(IP,2), DCUY(IP,1), DCUY(IP,2)
                   END DO
+                  CALL FLUSH(STAT%FHNDL)
                END IF
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -146,7 +144,6 @@
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -175,9 +172,7 @@
              DVDX(IP) = TMP1/TMP2
          END DO
 
-         RETURN
       END SUBROUTINE
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -322,10 +317,6 @@
          TABK(IS)  = WVK
          TABCG(IS) = WVCG
 
-         !WRITE(1201,*) TABK
-         !WRITE(1202,*) TABCG
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -636,8 +627,7 @@
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 4 REACHED IN', CONV4, '% GRIDPOINTS'
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 5 REACHED IN', CONV5, '% GRIDPOINTS'
 #endif
-
-         RETURN
+         CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -656,7 +646,7 @@
            DO ID = 1, MDC
              AC1D(ID + (IS-1) * MDC) = ACLOC(IS,ID)
            END DO
-        END DO
+         END DO
 
      END SUBROUTINE
 !**********************************************************************
@@ -703,7 +693,7 @@
          IF (YY > ABIG) YY = ABIG
          IF (YY < -ABIG) YY = -ABIG
          GAMMA_FUNC = EXP(YY)
-         RETURN
+
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -734,7 +724,6 @@
          END DO
          GAMMLN = TMP+LOG(STP*SER)
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -750,7 +739,6 @@
          IF (VEC2RAD < 0.0) VEC2RAD = VEC2RAD + 360.0_rkind
          VEC2RAD = VEC2RAD * PI/180.
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -764,7 +752,6 @@
          VEC2DEG = MyATAN2(V,U) * 180./PI
          IF (VEC2DEG < 0.0) VEC2DEG = VEC2DEG + 360.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -779,7 +766,6 @@
          IF (DVEC2RAD < 0.0_rkind) DVEC2RAD = DVEC2RAD + 360.0_rkind
          DVEC2RAD = DVEC2RAD * PI/180.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -794,7 +780,6 @@
          DVEC2DEG = MyATAN2(V,U) * 180.0_rkind/PI
          IF (DVEC2DEG < 0.0_rkind) DVEC2DEG = DVEC2DEG + 360.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -838,8 +823,7 @@
 !       DEG between 0 and 360; do nothing
       endif
 !
-      RETURN
-      END
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -908,7 +892,6 @@
             POSNEG = PO + NE
          END DO
 
-!         WRITE (*,*) 'CHECKCONS', SUMAC
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1224,7 +1207,6 @@
 #else
          SEVAL(:,:) = SEVAL2(:,:)
 #endif
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1262,8 +1244,7 @@
            ERR=1.0D0-C0*ER
            IF (X.LT.0.0) ERR=-ERR
         endif
-        RETURN
-        END
+        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1776,7 +1757,7 @@
       !dintspec = dintspec * maxvalue
 
       return
-      end
+      end function
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
