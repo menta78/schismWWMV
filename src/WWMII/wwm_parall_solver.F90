@@ -1715,7 +1715,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_LOW_2_UPP_ARRAYS(LocalColor, ListColor)
-      USE DATAPOOL, only : LocalColorInfo, MNP, rkind
+      USE DATAPOOL, only : LocalColorInfo, MNP, rkind, stat
       USE DATAPOOL, only : NNZ, IA, JA, NP_RES
       USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
