@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/client/bin/python
 import string
 import os.path as pth
 

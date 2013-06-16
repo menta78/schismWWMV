@@ -196,7 +196,8 @@
          REAL(rkind)         :: u(msc,mdc,mnp)
 #endif
          real starttime, endtime
-!          call cpu_time(starttime)
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
+         CALL FLUSH(STAT%FHNDL)
 #ifdef PETSC
          ! petsc block has its own loop over MSC MDC
          IF(AMETHOD == 5) THEN
@@ -280,7 +281,8 @@
 #endif
            END IF
          END IF
-         RETURN
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
+         CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

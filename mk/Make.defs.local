@@ -1,4 +1,4 @@
-#1###############################################################################
+################################################################################
 # Parallel SELFE Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
@@ -32,44 +32,31 @@
 ################################################################################
 
 ################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
-#################################################################################
-ENV = ARON
+## Environment for DKRZ (compile on blizzard) (IBM)
+## Attention: need to add '-WF,' in front of all -D (including some before this section)!
+## Submit: llsubmit <jobscript>
+######################################################################################
+ENV = DKRZ
 
 ################################################################################
 # Environment 
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCP = mpxlf90_r
 FLD = $(FCP)
 # MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
+PPFLAGS := $(PPFLAGS) -WF,-DMPIVERSION=2
+FCPFLAGS = $(PPFLAGS) -O2 -qx -qextname #MPI code
+FLDFLAGS = -O2 -qextname #for final linking of object files
 #####Libraries
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
-
+MTSLIBS = -L/pf/g/g260072/git/wwmIII/src/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L/sw/aix53/netcdf-3.6.3-ibm/lib -lnetcdf
+CDFMOD = -I/sw/aix53/netcdf-3.6.3-ibm/include/ # modules for netcdf
+  
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := $(HOME)/bin/pelfe_$(ENV)
+EXEC   := pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -98,16 +85,16 @@ EXEC   := $(HOME)/bin/pelfe_$(ENV)
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+   GTMMOD =  -I/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/modules/IFORT/ #modules
+   GTMLIBS = -L/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/lib/IFORT/ -lturbulence_prod  -lutil_prod
 else
-  GTMMOD =
-  GTMLIBS =
+   GTMMOD =
+   GTMLIBS =
 endif
 
 # Wind wave model WWM
  USE_WWM = yes
- EXEC := $(EXEC)_WWM
+# EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
  USE_PETSC = yes
  EXEC := $(EXEC)_PETSC
@@ -161,5 +148,15 @@ endif
 # USE_DEBUG = yes
 # EXEC := $(EXEC)_DEBUG
 
+
 ######### Specialty compiler flags and workarounds
+
+# Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
+# PPFLAGS := $(PPFLAGS) -DNO_TR_15581
+
+# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
+USE_OPEN64 = no
+
+# Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
+# PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 

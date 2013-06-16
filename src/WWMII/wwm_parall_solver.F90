@@ -1405,7 +1405,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_BLOCK_FREQDIR(LocalColor, Nblock, MSCeffect)
-      USE DATAPOOL, only : MNP, MDC, LocalColorInfo, rkind
+      USE DATAPOOL, only : MNP, MDC, LocalColorInfo, rkind, stat
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
       USE elfe_msgp, only : rtype, ierr, myrank
@@ -1420,6 +1420,10 @@ MODULE WWM_PARALL_SOLVER
       integer IC, nbCommon, eFirst, I, idxSend, idxRecv
       integer istat
       REAL(rkind) :: eFieldStackA(MNP,3)
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
+      CALL FLUSH(STAT%FHNDL)
+
       Ntot=MyREAL(MSCeffect*MDC)
       Hlen=INT(Ntot/Nblock)
       Delta=Ntot - Hlen*Nblock
@@ -1462,12 +1466,15 @@ MODULE WWM_PARALL_SOLVER
         LocalColor % BlockLength(iBlock)=lenBlock
       END DO
       LocalColor % maxBlockLength = maxBlockLength
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING INIT_BLOCK_FREQDIR'
+      CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_BLK_L2U_ARRAY(LocalColor)
-      USE DATAPOOL, only : MNP, MSC, MDC, LocalColorInfo, rkind
+      USE DATAPOOL, only : MNP, MSC, MDC, LocalColorInfo, rkind, stat
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
       USE DATAPOOL, only : wwm_ListDspl_send, wwm_ListDspl_recv
@@ -1487,6 +1494,10 @@ MODULE WWM_PARALL_SOLVER
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer, allocatable :: dspl_send(:), dspl_recv(:)
       integer istat
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLK_L2U_ARRAY'
+      CALL FLUSH(STAT%FHNDL)
+
       maxBlockLength=LocalColor % maxBlockLength
       ListFirstCommon_send=0
       DO I=2,wwm_nnbr_send
@@ -1589,12 +1600,16 @@ MODULE WWM_PARALL_SOLVER
         DEALLOCATE(dspl_recv)
       END DO
       deallocate(ListNeed, IdxRev)
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING INIT_BLK_L2U_ARRAY'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SYMM_INIT_COLORING(LocalColor, NbBlock, MSCeffect)
-      USE DATAPOOL, only : LocalColorInfo, MNP, rkind, XP, YP
+      USE DATAPOOL, only : LocalColorInfo, MNP, rkind, XP, YP, stat
       USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       USE elfe_msgp, only : myrank, nproc
@@ -1613,6 +1628,10 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: eFieldStackRevB(2,MNP)
       real(rkind) :: eFieldStackRevC(1,MNP)
       integer TheRes, istat
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
+      CALL FLUSH(STAT%FHNDL)
+
 # ifdef DEBUG
       CALL TEST_ASPAR_SYMMETRY
       WRITE(740+myrank,*) 'After TEST_ASPAR_SYMMETRY'
@@ -1687,6 +1706,10 @@ MODULE WWM_PARALL_SOLVER
       DO_SYNC_UPP_2_LOW=.TRUE.
       DO_SYNC_LOW_2_UPP=.TRUE.
       DO_SYNC_FINAL=.TRUE.
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH SYMM_INIT_COLORING'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1709,11 +1732,15 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: SumErr, SumDiff
       integer eColor, fColor, I, iRank, J
       integer nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
-      integer iProc, stat, eSize, iLow, iUpp, DoOper
+      integer iProc, eSize, iLow, iUpp, DoOper
       integer IC, eFirst, nbCommon, IP, IPloc, JP
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_LOW_2_UPP_ARRAYS'
+      CALL FLUSH(STAT%FHNDL)
+
       eColor=ListColor(myrank+1)
       nbUpp_send=0
       DO I=1,wwm_nnbr_send
@@ -1823,6 +1850,10 @@ MODULE WWM_PARALL_SOLVER
         END DO
       ENDIF
 # endif
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH INIT_LOW_2_UPP_ARRAYS'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1860,6 +1891,10 @@ MODULE WWM_PARALL_SOLVER
       integer, allocatable :: ListNeedSend(:), ListNeedRecv(:), IdxRev(:)
       integer nbNeedSend_u2l, nbNeedRecv_u2l
       integer lenMNP
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_COVLOWER_ARRAY'
+      CALL FLUSH(STAT%FHNDL)
+
       ListFirst=0
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
@@ -2374,6 +2409,10 @@ MODULE WWM_PARALL_SOLVER
 # endif
       allocate(LocalColor % ACexch(maxBlockLength, lenMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH INIT_COVLOWER_ARRAY'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3917,15 +3956,23 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_EIMPS(LocalColor, SolDat)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, stat
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING WWM_SOLVER_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
+
 # if defined PLAN_I4
       CALL I4_EIMPS(LocalColor, SolDat)
 # else
       CALL I5B_EIMPS(LocalColor, SolDat)
 # endif
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING WWM_SOLVER_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -4444,6 +4491,10 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
 # endif
       integer IS, ID, IP
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING I5B_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
+
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin I5B_EIMPS'
 # endif
@@ -4502,6 +4553,10 @@ MODULE WWM_PARALL_SOLVER
         Write(myrank+591,*) 'Clearing ENDING'
       END IF
 # endif
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING I5B_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -4524,6 +4579,10 @@ MODULE WWM_PARALL_SOLVER
       nbIterMax=0
       Max_L2=ZERO
       Max_LINF=ZERO
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING I4_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
+
       DO iMSCblock=1,LocalColor % NbMSCblock
 # ifdef DEBUG
         WRITE(240+myrank,*) 'iMSCblock=', iMSCblock
@@ -4562,6 +4621,8 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       WRITE(STAT%FHNDL,*) 'nbIter=', nbIterMax, 'L2/LINF=', Max_L2, Max_LINF
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED I4_EIMPS'
+      CALL FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

@@ -30,7 +30,7 @@
 #            these are just for testing)
 ################################################################################
 
-include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/conf/variables
 
 ################################################################################
 # Comment out the following line if you don't want the build dependent
@@ -55,8 +55,9 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = GORDON
 #ENV         = FRANZIUS
 #ENV         = MATHIEU
-ENV = ARON
+#ENV = ARON
 #ENV = ZANKE
+ENV = DKRZ
 
 ################################################################################
 # Executable
@@ -68,7 +69,7 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 # Comment out unwanted flags.
 ################################################################################
 # -DSELFE always on
-  PPFLAGS = -DSELFE 
+  PPFLAGS = -WF,-DSELFE 
 
 # Wave models need a coupler
 # SWAN (not active)
@@ -95,11 +96,11 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 
 # Wind wave model WWM
   USE_WWM = yes
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
+  PPFLAGS := $(PPFLAGS) -WF,-DUSE_WWM -WF,-DST42 -WF,-DNCDF -WF,-DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-  USE_PETSC = yes
-  PPFLAGS := $(PPFLAGS) -DPETSC 
+#  USE_PETSC = yes
+#  PPFLAGS := $(PPFLAGS) -DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes
@@ -584,6 +585,42 @@ ifeq ($(ENV),ARON)
   endif
 
 endif
+################################################################################
+# Environment for Linux / 32 bit /  Intel Compiler / MPICH
+################################################################################
+ifeq ($(ENV),DKRZ)
+  FCP = mpxlf90_r
+  FLD = $(FCP)
+  # MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -WF,-DMPIVERSION=2 
+  FCPFLAGS = $(PPFLAGS) -O2 -qx -qextname #MPI code
+  FLDFLAGS = -O2 -qextname #for final linking of object files
+  MTSLIBS = -L/pf/g/g260072/git/wwmIII/src/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+  CDFLIBS = -L/sw/aix53/netcdf-3.6.3-ibm/lib -lnetcdf
+  CDFMOD = -I/sw/aix53/netcdf-3.6.3-ibm/include/ # modules for netcdf
+
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+
+  #PETSC
+
+  ifdef USE_PETSC
+    include ${PETSC_DIR}/conf/variables
+    PETSCLIBS = -L${PETSC_DIR}/lib/ -lpetsc
+    PETSCMOD = -I${PETSC_DIR}/include/
+    CDFLIBS += ${PETSC_LIB}
+  else
+    PETSCLIBS =
+    PETSCMOD =
+  endif
+
+endif
+
 
 ifeq ($(ENV),ZANKE)
   FCP = mpif90
