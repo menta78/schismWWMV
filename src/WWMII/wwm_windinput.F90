@@ -243,7 +243,7 @@
               SWINB = AUX1 * ( AUX3  * COSDIF - 1.0_rkind )
               SWINB = MAX( 0.0_rkind, SWINB * SPSIG(IS) )
               SSINE(IS,ID) = SWINB * ACLOC(IS,ID)
-              !WRITE(*,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
+              !WRITE(DBG%FHNDL,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSINE(IS,ID)
             END DO
          END DO
@@ -513,9 +513,6 @@
          TAUTOT(IP) = MIN(TAUTOT(IP),UST2-EPS1)
          TAUTOT(IP) = MAX(TAUTOT(IP),0._rkind)
 
-        !WRITE(*,'(I10,7F15.8)') IP, UST2, ALPHA, DELALP, DELUST, Z0(IP)
-        !WRITE(*,'(I10,7F15.8)') IP, SQRT(UST2), TAUW(IP), TAUHF(IP), XSTRESS, YSTRESS
-
        END SUBROUTINE STRESSO_ECMWF
 !**********************************************************************
 !*                                                                    *
@@ -547,8 +544,6 @@
          END DO
 
          CONST  = SPSIG*XEPS*BETAMAX/XKAPPA**2
-
-         !WRITE(*,*) IP, WIND10, UFRIC(IP), Z0(IP)
 
          LWINDSEA = .FALSE. 
 
