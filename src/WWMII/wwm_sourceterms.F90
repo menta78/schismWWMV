@@ -200,8 +200,8 @@
                END IF
                IF (LNANINFCHK) THEN
                  IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-                   WRITE(*,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-                   STOP
+                   WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+                   CALL WWM_ABORT('NAN AT wwm_sourceterms.F90 l.204' 
                  END IF
                ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
@@ -307,8 +307,8 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+             CALL WWM_ABORT('NAN in wwm_sourceterm.F90 l.311'
            END IF
          ENDIF
 
@@ -328,10 +328,9 @@
                SPDIR_WRT = REAL(SPDIR)
                DEP_WRT   = DEP(IP)
                CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR)
-               WRITE (*,*) 'WRT IP =', IP, 'FERTIG !!!'
                IF (IERR .GT. 0) THEN
-                 WRITE (*,*) 'XNL_WRT ERROR', IERR
-                 STOP
+                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR
+                 CALL WWM_ABORT('XNL_WRT ERROR')    
                ELSE
                  IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
                  IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
@@ -365,8 +364,8 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SNL4'
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SNL4'
+             CALL WWM_ABORT('NAN at wwm_sourceterms.F90 l.368')
            END IF
          ENDIF
 
@@ -477,16 +476,14 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF'
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF' 
+             CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.481'
            END IF
          ENDIF
 
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
 
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
-
-           !WRITE(*,*) 'DOING RECALCULATION BASED ON NEW SPECTRA', SUM(ACLOC)
 
 !AR: this cannot work since crap was done here ... we need a better calling structure to this stuff ... 
            DISSIPATION(IP) = 0.
@@ -605,8 +602,6 @@
            ENDIF
          ENDIF
 
-         !WRITE(*,*) 'AFTER ALL', SUM(ACLOC), SUM(IMATRA), SUM(IMATDA)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -689,8 +684,6 @@
            SSBRL = ACLOC - RATIO * ACLOC
            ACLOC = RATIO * ACLOC
          END IF
-
-         !WRITE(*,*)  IP, HMAX(IP)
 
         RETURN
         END SUBROUTINE

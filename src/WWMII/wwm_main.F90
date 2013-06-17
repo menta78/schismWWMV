@@ -229,15 +229,10 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 5') 
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE'
-         CALL FLUSH(STAT%FHNDL)
-
          TIME3 = mpi_wtime()
 
-         IF (myrank == 0) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'nth call to WWM', SIMUTIME
-           CALL FLUSH(STAT%FHNDL)
-         ENDIF
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
+         CALL FLUSH(STAT%FHNDL)
 
          DO IP = 1, MNP
            ACLOC = AC2(IP,:,:)

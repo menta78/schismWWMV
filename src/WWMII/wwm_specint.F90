@@ -37,7 +37,6 @@
                  CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
                  CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
                  CALL INT_IP_DYN(IP, 4, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
-                 !IF (NIT_ALL .GT. 1) WRITE(*,*) NIT_ALL
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -96,8 +95,8 @@
            ENDIF
            IF (LNANINFCHK) THEN 
              IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
-               WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
-               STOP 'wwm_specint.F90 l.88'
+               WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
+               CALL WWM_ABORT('wwm_specint.F90 l.88')
              END IF
            ENDIF
            AC1(IP,:,:) = AC2(IP,:,:)

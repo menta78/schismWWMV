@@ -1068,198 +1068,143 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_STATION_OUTPUT()
-         USE DATAPOOL
+      USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-         USE elfe_glbl, only : iplg, ielg
+      USE elfe_msgp
+      USE elfe_glbl, only : iplg, ielg
 #endif
-         IMPLICIT NONE
+      IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
-         include 'mpif.h'
+      include 'mpif.h'
 #endif
-         INTEGER           :: I, NI(3), IP, IS
-         integer istat
-         REAL(rkind)              :: XYTMP(2,MNP)
+      INTEGER           :: I, NI(3), IP, IS
+      integer istat
+      REAL(rkind)              :: XYTMP(2,MNP)
 #ifdef MPI_PARALL_GRID
-         integer :: iProc
-         integer, allocatable :: rbuf_int(:)
+      integer :: iProc
+      integer, allocatable :: rbuf_int(:)
 #endif
 !
 !    set the site output
 !
-         IF (LOUTS) THEN
-           ALLOCATE (ACLOC_STATIONS(IOUTS,MSC,MDC), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 38')
+      IF (LOUTS) THEN
+        ALLOCATE (ACLOC_STATIONS(IOUTS,MSC,MDC), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 38')
 
-           ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 39')
+        ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 39')
 
-           ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 40')
-           ACLOC_STATIONS      = 0.
-           DEPLOC_STATIONS     = 0.
-           WKLOC_STATIONS      = 0.
-           CURTXYLOC_STATIONS  = 0.
-           USTARLOC_STATIONS   = 0.
-           CDLOC_STATIONS      = 0.
-           Z0LOC_STATIONS      = 0.
-           WINDXLOC_STATIONS   = 0.
-           WINDYLOC_STATIONS   = 0.
-           WATLEVLOC_STATIONS  = 0.
-         END IF
+        ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 40')
+        ACLOC_STATIONS      = 0.
+        DEPLOC_STATIONS     = 0.
+        WKLOC_STATIONS      = 0.
+        CURTXYLOC_STATIONS  = 0.
+        USTARLOC_STATIONS   = 0.
+        CDLOC_STATIONS      = 0.
+        Z0LOC_STATIONS      = 0.
+        WINDXLOC_STATIONS   = 0.
+        WINDYLOC_STATIONS   = 0.
+        WATLEVLOC_STATIONS  = 0.
+      END IF
+      IF (LOUTS .and. (DIMMODE .EQ. 2)) THEN
 #ifdef MPI_PARALL_GRID
-         IF (LOUTS) THEN
-           allocate(rbuf_int(1), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
-           XYTMP(1,:) = XP
-           XYTMP(2,:) = YP
+        XYTMP(1,:) = XP
+        XYTMP(2,:) = YP
+        WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
+        DO I = 1, IOUTS
+          CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
+          IF (STATION(I)%ELEMENT .GT. 0) THEN
+            STATION(I)%IFOUND  = 1
+            NI                 = INE(:,STATION(I)%ELEMENT)
+            STATION(I)%XELE(:) = XP(NI)
+            STATION(I)%YELE(:) = YP(NI)
+            CALL INTELEMENT_COEF(XP(NI),YP(NI), STATION(I)%XCOORD,STATION(I)%YCOORD, STATION(I)%WI)
+            WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
+            CALL FLUSH(DBG%FHNDL)
+          ELSE
+            STATION(I)%IFOUND  = 0
+            NI                 = 0
+            STATION(I)%XELE(:) = 0.
+            STATION(I)%YELE(:) = 0.
+            WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', STATION(I)%ELEMENT, STATION(I)%IFOUND
+            CALL FLUSH(DBG%FHNDL)
+          END IF
+        END DO
+        allocate(rbuf_int(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
+        DO I = 1, IOUTS
+          CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1, itype,MPI_SUM,0,COMM,IERR)
+          IF (myrank == 0) THEN
+            WRITE(DBG%FHNDL,'(A30,3I10)') 'SUM OF THE FOUND STATIONS MYRANK', MYRANK, I, STATION(I)%ISUM
+            CALL FLUSH(DBG%FHNDL)
+            rbuf_int(1)=STATION(I)%ISUM
+            DO iProc=2,nproc
+              CALL MPI_SEND(rbuf_int,1,itype, iProc-1, 144, COMM, ierr)
+            ENDDO
+          ELSE
+            CALL MPI_RECV(rbuf_int,1,itype, 0, 144, COMM, istatus, ierr)
+            STATION(I)%ISUM=rbuf_int(1)
+          END IF
+        END DO
+        deallocate(rbuf_int)
+        IF (myrank == 0) THEN
+          DO I = 1, IOUTS
+            IF (STATION(I)%ISUM .EQ. 0) THEN
+              WRITE(DBG%FHNDL,'(A20,I10,A10,2F15.8)') 'STATION NOT FOUND', I, STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD
+            ELSE
+              WRITE(DBG%FHNDL,'(A25,I10,A10,2F15.8)') 'STATION FOUND    ', I, STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD
+            END IF
+          END DO
+        END IF
 
-           IF (DIMMODE .EQ. 2) THEN
-
-              WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
-              DO I = 1, IOUTS ! Loop over stations ...
-! Find element of output locations ...
-                CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD,    &
-     &      STATION(I)%YCOORD,STATION(I)%ELEMENT )
-                IF (STATION(I)%ELEMENT .GT. 0) THEN
-                  STATION(I)%IFOUND  = 1
-                  NI                 = INE(:,STATION(I)%ELEMENT)
-                  STATION(I)%XELE(:) = XP(NI)
-                  STATION(I)%YELE(:) = YP(NI)
-                  CALL INTELEMENT_COEF(XP(NI),YP(NI),                   &
-     &                    STATION(I)%XCOORD,STATION(I)%YCOORD,          &
-     &                    STATION(I)%WI)
-                  WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)')         &
-     &   'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =',               &
-     &    IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
-                  CALL FLUSH(DBG%FHNDL)
-                ELSE
-                  STATION(I)%IFOUND  = 0
-                  NI                 = 0
-                  STATION(I)%XELE(:) = 0.
-                  STATION(I)%YELE(:) = 0.
-                  WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)')         &
-     &   'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =',               &
-     &    STATION(I)%ELEMENT, STATION(I)%IFOUND
-                  CALL FLUSH(DBG%FHNDL)
-                END IF
-              END DO
-
-              DO I = 1, IOUTS
-                CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1,    &
-     &    itype,MPI_SUM,0,COMM,IERR)
-                IF (myrank == 0) THEN
-                  WRITE(DBG%FHNDL,'(A30,3I10)')                         &
-     &   'SUM OF THE FOUND STATIONS MYRANK', MYRANK, I, STATION(I)%ISUM
-                  CALL FLUSH(DBG%FHNDL)
-                  rbuf_int(1)=STATION(I)%ISUM
-                  DO iProc=2,nproc
-                    CALL MPI_SEND(rbuf_int,1,itype, iProc-1,      &
-     &                            144, COMM, ierr)
-                  ENDDO
-                ELSE
-                  CALL MPI_RECV(rbuf_int,3,itype, 0, 144,         &
-     &                          COMM, istatus, ierr)
-                  STATION(I)%ISUM=rbuf_int(1)
-                END IF
-              END DO
-
-              IF (myrank == 0) THEN
-                DO I = 1, IOUTS ! Loop over stations ...
-                  IF (STATION(I)%ISUM .EQ. 0) THEN
-                    WRITE(DBG%FHNDL,'(A20,I10,A10,2F15.8)')             &
-     &  'STATION NOT FOUND', I, STATION(I)%NAME, STATION(I)%XCOORD,     &
-     &   STATION(I)%YCOORD
-                  ELSE
-                    WRITE(DBG%FHNDL,'(A25,I10,A10,2F15.8)')             &
-     &   'STATION FOUND    ', I, STATION(I)%NAME,                       &
-     &    STATION(I)%XCOORD, STATION(I)%YCOORD
-                  END IF
-                END DO
-              END IF
-
-              STATION(:)%ISMAX = MSC
-              IF (LSIGMAX) THEN
-                DO IP = 1, IOUTS
-                  DO IS = 1, MSC
-                    IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
-                      STATION(IP)%ISMAX = IS - 1
-                      EXIT
-                    END IF
-                  END DO
-                  WRITE(DBG%FHNDL,*) 'CUT-OFF FREQ. OF STATION =',      &
-     &  IP, STATION(IP)%CUTOFF, 'RAD - IS =', STATION(IP)%ISMAX
-                END DO
-              END IF
-
-           END IF
-
-           ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
-
-           ALLOCATE (ACLOC_SUM(IOUTS,MSC,MDC), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 43')
-
-           ALLOCATE (Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 44')
-
-           ACLOC_SUM           = 0.
-           WKLOC_SUM           = 0.
-           DEPLOC_SUM          = 0.
-           CURTXYLOC_SUM       = 0.
-           USTAR_SUM           = 0.
-           CD_SUM              = 0.
-           Z0_SUM              = 0.
-           WINDX_SUM           = 0.
-           WINDY_SUM           = 0.
-           WATLEVLOC_SUM = 0.
-
-           deallocate(rbuf_int)
-
-         END IF
+        ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(IOUTS,MSC,MDC), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
+        ACLOC_SUM           = 0.
+        WKLOC_SUM           = 0.
+        DEPLOC_SUM          = 0.
+        CURTXYLOC_SUM       = 0.
+        USTAR_SUM           = 0.
+        CD_SUM              = 0.
+        Z0_SUM              = 0.
+        WINDX_SUM           = 0.
+        WINDY_SUM           = 0.
+        WATLEVLOC_SUM = 0.
 #else
-         IF (LOUTS) THEN
-           XYTMP(1,:) = XP
-           XYTMP(2,:) = YP
-           IF (DIMMODE .EQ. 2) THEN
-              WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
-              DO I = 1, IOUTS ! Loop over stations ...
- ! Find element of output locations ...
-                CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD,    &
-     &  STATION(I)%YCOORD,STATION(I)%ELEMENT )
-                IF (STATION(I)%ELEMENT == 0) THEN
-                  STATION(I)%IFOUND = 0
-                  WRITE(STAT%FHNDL,*) STATION(I)%NAME,                  &
-     &  STATION(I)%XCOORD, STATION(I)%YCOORD, ' is out of mesh !'
-                ELSE
-                  STATION(I)%IFOUND = 1
-                  NI = INE(:,STATION(I)%ELEMENT)
-                  STATION(I)%XELE(:) = XP(NI)
-                  STATION(I)%YELE(:) = YP(NI)
-                  CALL INTELEMENT_COEF(XP(NI),YP(NI),                   &
-     &                    STATION(I)%XCOORD,STATION(I)%YCOORD,          &
-     &                    STATION(I)%WI)
-                  WRITE(STAT%FHNDL,*)'Site    ',STATION(I)%NAME,        &
-     & STATION(I)%XCOORD,STATION(I)%YCOORD,STATION(I)%IFOUND
-                END IF
-              END DO
-           END IF
-           STATION(:)%ISMAX = MSC
-           IF (LSIGMAX) THEN
-             DO IP = 1, IOUTS
-               DO IS = 1, MSC
-                 IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
-                   STATION(IP)%ISMAX = IS - 1
-                   EXIT
-                 END IF
-               END DO
-             END DO
-           END IF
-         END IF
-!
+        XYTMP(1,:) = XP
+        XYTMP(2,:) = YP
+        IF (DIMMODE .EQ. 2) THEN
+          WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
+          DO I = 1, IOUTS
+            CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
+            IF (STATION(I)%ELEMENT == 0) THEN
+              STATION(I)%IFOUND = 0
+              WRITE(STAT%FHNDL,*) STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD, ' is out of mesh !'
+            ELSE
+              STATION(I)%IFOUND = 1
+              NI = INE(:,STATION(I)%ELEMENT)
+              STATION(I)%XELE(:) = XP(NI)
+              STATION(I)%YELE(:) = YP(NI)
+              CALL INTELEMENT_COEF(XP(NI),YP(NI), STATION(I)%XCOORD,STATION(I)%YCOORD, STATION(I)%WI)
+              WRITE(STAT%FHNDL,*)'Site    ',STATION(I)%NAME, STATION(I)%XCOORD,STATION(I)%YCOORD,STATION(I)%IFOUND
+            END IF
+          END DO
+        END IF
 #endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A)')'FINISHED WITH INIT_STATION_OUTPUT'        
-
+        STATION(:)%ISMAX = MSC
+        IF (LSIGMAX) THEN
+          DO IP = 1, IOUTS
+            DO IS = 1, MSC
+              IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
+                STATION(IP)%ISMAX = IS - 1
+                EXIT
+              END IF
+            END DO
+            WRITE(DBG%FHNDL,*) 'CUT-OFF FREQ. OF STATION =', IP, STATION(IP)%CUTOFF, 'RAD - IS =', STATION(IP)%ISMAX
+          END DO
+        END IF
+      END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A)')'FINISHED WITH INIT_STATION_OUTPUT'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
