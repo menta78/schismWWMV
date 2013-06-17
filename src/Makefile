@@ -30,7 +30,7 @@
 #            these are just for testing)
 ################################################################################
 
-PPFLAGS = -WF,-DSELFE 
+PPFLAGS = -DSELFE 
 
 ########### Ensure that the user's Make.defs.local exists and include it
 
@@ -48,7 +48,7 @@ ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
   $(print Here)
   MODULEOUTDIR = -J
 else
-#  MODULEOUTDIR = -module 
+  MODULEOUTDIR = -module 
 endif
 
 
@@ -78,7 +78,7 @@ VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMII/ \
 
 # SURA project (remove afterwards)
 ifdef USE_ADC
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_ADC
+  PPFLAGS := $(PPFLAGS) -DUSE_ADC
 endif
 
 ifdef USE_PETSC
@@ -88,43 +88,43 @@ endif
 OBJS = elfe_glbl.o elfe_msgp.o selfe_driver.o
 
 ifdef USE_DEBUG
-  PPFLAGS := $(PPFLAGS) -WF,-DDEBUG 
+  PPFLAGS := $(PPFLAGS) -DDEBUG 
 endif
 
 ifdef USE_TIMER
-  PPFLAGS := $(PPFLAGS) -WF,-DINCLUDE_TIMING
+  PPFLAGS := $(PPFLAGS) -DINCLUDE_TIMING
 endif
 
 ifdef USE_TIMOR
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_TIMOR
+  PPFLAGS := $(PPFLAGS) -DUSE_TIMOR
 endif
 
 ifdef USE_GOTM
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_GOTM
+  PPFLAGS := $(PPFLAGS) -DUSE_GOTM
 endif
 
 ifdef USE_HA
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_HA
+  PPFLAGS := $(PPFLAGS) -DUSE_HA
   OBJS := $(OBJS) harm.o
 endif
 
 ifdef USE_ECO
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_ECO
+  PPFLAGS := $(PPFLAGS) -DUSE_ECO
   OBJS := $(OBJS) bio_param.o eclight.o biology.o bio_init.o ecosim.o read_ecoin.o specir.o
 endif
 
 ifdef USE_ICM
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_ICM
+  PPFLAGS := $(PPFLAGS) -DUSE_ICM
   OBJS := $(OBJS) icm_param.o icm_biology.o  icm.o  read_icm_input.o
 endif
 
 ifdef USE_NAPZD
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_NAPZD
+  PPFLAGS := $(PPFLAGS) -DUSE_NAPZD
   OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
 endif
 
 ifdef USE_SED
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_SED
+  PPFLAGS := $(PPFLAGS) -DUSE_SED
   OBJS := $(OBJS) sed_mod.o init_sed.o read_sed_input.o sed_init.o \
           set_vbc.o stress.o sediment.o stress_soulsby.o \
           sed_write_debug.o sed_bedload_mpm.o sed_bedload_vr.o\
@@ -134,18 +134,18 @@ ifdef USE_SED
 endif
 
 ifdef USE_SED2D
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_SED2D
+  PPFLAGS := $(PPFLAGS) -DUSE_SED2D
   OBJS := $(OBJS) sed2d_mod.o sed2d_init.o sed2d_read.o sed2d_transport.o \
                   sed2d_morpho.o sed2d_filter.o          
 endif
 
 ifdef USE_OIL
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_OIL
+  PPFLAGS := $(PPFLAGS) -DUSE_OIL
 endif
 
 ifdef USE_WWM
 # please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_WWM -WF,-DNCDF -WF,-DST42 -WF,-DWWM_SOLVER
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER
   OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
@@ -153,11 +153,10 @@ ifdef USE_WWM
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o \
        wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
-
 endif
 
 ifdef USE_PETSC
-  PPFLAGS := $(PPFLAGS) -WF,-DPETSC
+  PPFLAGS := $(PPFLAGS) -DPETSC
   PETSCMOD = ${PETSC_FC_INCLUDES}
   PETSCLIBS = ${PETSC_LIB}
 else
@@ -202,7 +201,6 @@ endif
 .PHONY: pelfe
 
 pelfe: $(EXEC) o/$(config)/.dummy
-
 
 
 .PHONY: all
