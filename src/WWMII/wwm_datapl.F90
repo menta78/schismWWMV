@@ -433,27 +433,27 @@
 
 
 
-! WRF PART I.J.
+! CF compliant wind PART I.J.
          integer nbtime_mjd
          REAL(rkind), ALLOCATABLE         :: tmp_wind1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
          REAL(rkind), ALLOCATABLE         :: wind_time_mjd(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_a(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_b(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_c(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_d(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_J(:)
-         INTEGER, ALLOCATABLE       :: wrf_c11(:,:)   
-         INTEGER, ALLOCATABLE       :: wrf_c21(:,:) 
-         INTEGER, ALLOCATABLE       :: wrf_c22(:,:)
-         INTEGER, ALLOCATABLE       :: wrf_c12(:,:)
-         INTEGER, ALLOCATABLE       :: WRF_IX(:), WRF_IY(:)
-         REAL(rkind), ALLOCATABLE   :: wrf_coeff(:,:)
+         REAL(rkind), ALLOCATABLE         :: cf_a(:)
+         REAL(rkind), ALLOCATABLE         :: cf_b(:)
+         REAL(rkind), ALLOCATABLE         :: cf_c(:)
+         REAL(rkind), ALLOCATABLE         :: cf_d(:)
+         REAL(rkind), ALLOCATABLE         :: cf_J(:)
+         INTEGER, ALLOCATABLE       :: cf_c11(:,:)   
+         INTEGER, ALLOCATABLE       :: cf_c21(:,:) 
+         INTEGER, ALLOCATABLE       :: cf_c22(:,:)
+         INTEGER, ALLOCATABLE       :: cf_c12(:,:)
+         INTEGER, ALLOCATABLE       :: CF_IX(:), CF_IY(:)
+         REAL(rkind), ALLOCATABLE   :: CF_coeff(:,:)
          integer, allocatable :: SHIFTXY(:,:)
          INTEGER                   :: REC1_old, REC2_old
          INTEGER                          :: REC1_new, REC2_new
-         real(rkind) :: wrf_scale_factor, wrf_add_offset
-! END WRF PART I.J.
+         real(rkind) :: cf_scale_factor, cf_add_offset
+! END CF comppliant wind PART I.J.
 
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
