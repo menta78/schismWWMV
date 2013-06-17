@@ -1475,7 +1475,7 @@
            OUTPAR(7)  = ETOTC     ! Etot energy in horizontal direction
            OUTPAR(8)  = ETOTS     ! Etot energy in vertical direction
            OUTPAR(9)  = DM        ! Mean average energy transport direction
-           OUTPAR(10)  = DSPR      ! Mean directional spreading
+           OUTPAR(10) = DSPR      ! Mean directional spreading
          END IF
 
          IF (VAROUT_STATION%ComputePeak) THEN
@@ -1613,7 +1613,7 @@
 
          OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
 
-         OUTPAR(26:31) = ZERO 
+         OUTPAR(26:35) = ZERO 
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR_LOC'
 !         CALL FLUSH(STAT%FHNDL)
