@@ -445,7 +445,7 @@
 !*                                                                    *
 !**********************************************************************
       function k(ip, is, is1, is2, id, is3, is4, is5, n1, emf) result(res)
-      use datapool, only : rkind, g9, one
+      use datapool, only : rkind, g9, one, stat
       implicit none
 
       integer, intent(in)        :: ip, is, is1, is2, is3, is4, is5, id, n1, emf
@@ -461,7 +461,7 @@
 !*                                                                    *
 !**********************************************************************
       function j(ip, is, is1, is2, id) result(res)
-      use datapool, only : rkind, one
+      use datapool, only : rkind, one, stat
       implicit none
      
       integer, intent(in)        :: ip, is, is1, is2, id 
@@ -478,7 +478,7 @@
 !*                                                                    *
 !**********************************************************************
      subroutine snl3ta(ip,snl3,dsnl3)
-     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir, fr
+     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir, fr, stat
      implicit none
 
      real(rkind), intent(out) :: snl3(msc,mdc), dsnl3(msc,mdc)
@@ -576,6 +576,7 @@
 !*                                                                    *
 !**********************************************************************
       function kron_delta(i, j) result(res)
+      use datapool, only : stat
       implicit none
 
       integer, intent(in)        :: i,j
