@@ -596,6 +596,7 @@
             enddo !i
           endif !sum3
           write(errmsg,*)'NaN from WWM:',sum1,sum2,sum3
+          call flush(12)
           call parallel_abort(errmsg)
         endif !sum
       endif !mod()
