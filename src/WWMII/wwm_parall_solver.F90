@@ -29,9 +29,13 @@
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
 ! New less memory intensive method obtained by rewriting the BCGS
-! Needs 7 times MSC*MDC*MNP versus 9 times.
+! Needs 7 times MSC*MDC*MNP versus 9 times. Still maybe more computations.
 #undef BCGS_REORG
 #define BCGS_REORG
+! For the SOR preconditioner, we can actually compute directly
+! from the matrix since it is so simple.
+#define SOR_DIRECT
+#undef SOR_DIRECT
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -923,8 +927,7 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(wwm_p2dsend_type(iNeigh), ierr)
         call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_send_tot,rtype,wwmtot_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwmtot_p2dsend_type(iNeigh), ierr)
-        deallocate(dspl_send)
-        deallocate(dspl_send_tot)
+        deallocate(dspl_send, dspl_send_tot)
       END DO
       idxDspl_recv=0
       DO iNeigh=1,wwm_nnbr_recv
@@ -951,8 +954,7 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(wwm_p2drecv_type(iNeigh), ierr)
         call mpi_type_create_indexed_block(nbCommon,MSCeffect*MDC,dspl_recv_tot,rtype,wwmtot_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(wwmtot_p2drecv_type(iNeigh), ierr)
-        deallocate(dspl_recv)
-        deallocate(dspl_recv_tot)
+        deallocate(dspl_recv, dspl_recv_tot)
       END DO
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Leaving CREATE_WWM_P2D_EXCH'
@@ -1382,8 +1384,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
         ListColor(iVertFound)=eColorF
       END DO
-      deallocate(ListPosFirst)
-      deallocate(CurrColor)
+      deallocate(ListPosFirst, CurrColor)
       ChromaticNr=maxval(ListColor)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'ChromaticNr=', ChromaticNr
@@ -1435,10 +1436,8 @@ MODULE WWM_PARALL_SOLVER
       ELSE
         maxBlockLength=Hlen+1
       ENDIF
-      allocate(LocalColor % ISindex(Nblock, maxBlockLength), stat=istat)
+      allocate(LocalColor % ISindex(Nblock, maxBlockLength), LocalColor % IDindex(Nblock, maxBlockLength), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 55')
-      allocate(LocalColor % IDindex(Nblock, maxBlockLength), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 56')
       DO IS=1,MSCeffect
         DO ID=1,MDC
           LocalColor % ISindex(iBlock, idx)=IS
@@ -1782,10 +1781,8 @@ MODULE WWM_PARALL_SOLVER
 # endif
       LocalColor % nbUpp_send=nbUpp_send
       LocalColor % nbLow_recv=nbLow_recv
-      allocate(LocalColor % ListIdxUpper_send(nbUpp_send), stat=istat)
+      allocate(LocalColor % ListIdxUpper_send(nbUpp_send), LocalColor % ListIdxLower_recv(nbLow_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 64')
-      allocate(LocalColor % ListIdxLower_recv(nbLow_recv), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 65')
       iUpp=0
       DO I=1,wwm_nnbr_send
         iRank=wwm_ListNeigh_send(I)
@@ -2614,13 +2611,11 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IP, JP, J, JP2, J2, J_FOUND, IS, ID
-      integer, allocatable :: ListJ(:)
+      integer :: ListJ(MNP)
       integer istat
       real(rkind) tl
       SolDat%ASPAR_pc=SolDat%ASPAR_block
       CALL I5_RECV_ASPAR_PC(LocalColor, SolDat)
-      allocate(ListJ(MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 107')
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
           DO J=IA(IP),IA(IP+1)-1
@@ -2655,7 +2650,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
-      deallocate(ListJ)
       CALL I5_SEND_ASPAR_PC(LocalColor, SolDat)
       END SUBROUTINE
 !**********************************************************************
@@ -2678,33 +2672,34 @@ MODULE WWM_PARALL_SOLVER
 !* We could with some effort assign values for all with some effort   *
 !* but the values would not be used                                   *
 !**********************************************************************
+# ifndef SOR_DIRECT
       SUBROUTINE I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
       USE DATAPOOL, only : MNP, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE elfe_msgp, only : exchange_p4d_wwm
-# ifdef DEBUG
+#  ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
+#  endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer IP, ID, IS, JP, JR, J1, J, IPglob, JPglob
       real(rkind) eVal
-# if defined DEBUG
+#  if defined DEBUG
       real(rkind) :: eSum, eSumB
-# endif
+#  endif
       DO IP=1,NP_RES
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
-# ifdef SELFE_EXCHANGE
+#  ifdef SELFE_EXCHANGE
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
-# else
+#  else
       CALL EXCHANGE_P4D_WWM(SolDat%AC4)
-# endif
+#  endif
       DO IP=1,NP_RES
         IF (LocalColor%CovLower(IP) == 1) THEN
-# if defined REORDER_ASPAR_PC
+#  if defined REORDER_ASPAR_PC
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_L(J) == 1) THEN
               JP=JA(J)
@@ -2721,7 +2716,7 @@ MODULE WWM_PARALL_SOLVER
               SolDat % ASPAR_pc(:,:,JR)=SolDat % ASPAR_block(:,:,J)
             END IF
           END DO
-# else
+#  else
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor%Jstatus_L(J) == 1) THEN
               JP=JA(J)
@@ -2736,10 +2731,11 @@ MODULE WWM_PARALL_SOLVER
               SolDat % ASPAR_pc(:,:,J)=SolDat % ASPAR_block(:,:,J)
             END IF
           END DO
-# endif
+#  endif
         END IF
       END DO
       END SUBROUTINE
+# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -2938,15 +2934,24 @@ MODULE WWM_PARALL_SOLVER
               IS=LocalColor % ISindex(iBlock, idx)
               ID=LocalColor % IDindex(iBlock, idx)
               eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-#  ifdef DEBUG
-              IF ((IS.eq.4).and.(ID.eq.4)) THEN
-                WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
-              END IF
-#  endif
               IF (DO_SOLVE_L) THEN
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END IF
             END DO
+          END DO
+# elif SOR_DIRECT
+          DO J=IA(IP),IA(IP+1)-1
+            IF (LocalColor % Jstatus_L(J) .eq. 1) THEN
+              JP=JA(J)
+              DO idx=1,lenBlock
+                IS=LocalColor % ISindex(iBlock, idx)
+                ID=LocalColor % IDindex(iBlock, idx)
+                eCoeff=SolDat % ASPAR_block(IS,ID,J)
+                IF (DO_SOLVE_L) THEN
+                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
+                END IF
+              END DO
+            END IF
           END DO
 # else
           DO J=IA(IP),IA(IP+1)-1
@@ -2956,12 +2961,6 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-#  ifdef DEBUG
-                IF ((IS.eq.4).and.(ID.eq.4)) THEN
-                  WRITE(myrank+1490,*) 'IP, JP, J=', IP, JP, J
-                  WRITE(myrank+790,*) 'eCoeff, AC12=', eCoeff, ACret(IS,ID,IP), ACret(IS,ID,JP)
-                END IF
-#  endif
                 IF (DO_SOLVE_L) THEN
                   ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
                 END IF
@@ -3023,6 +3022,29 @@ MODULE WWM_PARALL_SOLVER
             ID=LocalColor % IDindex(iBlock, idx)
             IF (DO_SOLVE_U) THEN
               ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
+            END IF
+          END DO
+# elif SOR_DIRECT
+          DO J=IA(IP),IA(IP+1)-1
+            IF (LocalColor % Jstatus_U(J) .eq. 1) THEN
+              JP=JA(J)
+              JPC=I_DIAG(JP)
+              DO idx=1,lenBlock
+                IS=LocalColor % ISindex(iBlock, idx)
+                ID=LocalColor % IDindex(iBlock, idx)
+                eCoeff=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,JPC)
+                IF (DO_SOLVE_U) THEN
+                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
+                END IF
+              END DO
+            END IF
+          END DO
+          J=I_DIAG(IP)
+          DO idx=1,lenBlock
+            IS=LocalColor % ISindex(iBlock, idx)
+            ID=LocalColor % IDindex(iBlock, idx)
+            IF (DO_SOLVE_U) THEN
+              ACret(IS,ID,IP)=ACret(IS,ID,IP)/SolDat % ASPAR_block(IS,ID,J)
             END IF
           END DO
 # else
@@ -3322,9 +3344,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(ACloc)
         END DO
-        deallocate(ListFirstMNP)
-        deallocate(ACtotal)
-        deallocate(eStatus)
+        deallocate(ListFirstMNP, ACtotal, eStatus)
         rbuf_real(1)=Lerror
         DO iProc=2,nproc
           CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
@@ -3836,7 +3856,12 @@ MODULE WWM_PARALL_SOLVER
       allocate(SolDat % AC8(MSCeffect,MDC,MNP), SolDat % AC9(MSCeffect,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 126')
 # endif
-      allocate(SolDat % ASPAR_block(MSCeffect,MDC,NNZ), SolDat % B_block(MSCeffect,MDC, MNP), SolDat % ASPAR_pc(MSCeffect,MDC,NNZ), stat=istat)
+      allocate(SolDat % ASPAR_block(MSCeffect,MDC,NNZ), SolDat % B_block(MSCeffect,MDC, MNP), stat=istat)
+# ifndef SOR_DIRECT
+      allocate(SolDat % ASPAR_pc(MSCeffect,MDC,NNZ), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 127')
+# endif
+
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 128')
       END SUBROUTINE
 !**********************************************************************
