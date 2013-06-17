@@ -46,7 +46,7 @@ FCP = mpxlf90_r
 FLD = $(FCP)
 # MPI vserion (1 or 2)
 PPFLAGS := $(PPFLAGS) -WF,-DMPIVERSION=2
-FCPFLAGS = $(PPFLAGS) -O2 -qx -qextname #MPI code
+FCPFLAGS = $(PPFLAGS)   -qx  -qextname #MPI code
 FLDFLAGS = -O2 -qextname #for final linking of object files
 #####Libraries
 MTSLIBS = -L/pf/g/g260072/git/wwmIII/src/ParMetis-3.1-Sep2010 -lparmetis -lmetis

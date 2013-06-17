@@ -2,12 +2,12 @@ include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 #PROG = wwmadv
 
-FFLAGS = -DST42
+FFLAGS = -WF,-DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on
+PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -16,13 +16,13 @@ OPENMP =
 DARKO =
 
 #F90 = gfortran
-F90 = mpif90
+#F90 = mpif90
 #F90 = mpif90-vt
 #F90 = ifort
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
-
+F90 = mpxlf90_r
 
 
 #INTEL
@@ -35,6 +35,10 @@ F90 = mpif90
 #F90OPTI = -ip -O2
 F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
+
+
+F90OPTI = -O2 -qx -qextname
+
 
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
@@ -93,14 +97,14 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
 ifdef NETCDF
   all: $(NETC) $(PROG)
   LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
-  FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
+  FFLAGS +=  -WF,-DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)
 endif
 
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER -DSHYFEM_COUPLING
+  MPIFLAG  = -WF,-DWWM_MPI -WF,-DMPIVERSION=2 -WF,-DUSE_WWM -WF,-DWWM_SOLVER -WF,-DSHYFEM_COUPLING
   OBJS= $(OBJSELFE) $(OBJWWM)
 else
   MPIFLAG = 
