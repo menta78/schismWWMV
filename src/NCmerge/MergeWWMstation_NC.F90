@@ -23,7 +23,7 @@
       integer len1, len2
       character (len = *), parameter :: CallFct="MergeWWMstation_NC"
 
-      integer, allocatable :: ListORIGIN(:), ISum(:), IFound(:)
+      integer, allocatable :: ListORIGIN(:), ISum(:), IFound(:), ISMAX(:)
       integer ifile, I
       integer :: eInt(1)
      
@@ -121,7 +121,11 @@
 !
 ! Read the "ifound" array
 !
-      allocate(ListORIGIN(IOUTS), IFound(IOUTS), ISum(IOUTS), stat=istat)
+      allocate(ListORIGIN(IOUTS), IFound(IOUTS), ISmax(IOUTS), ISum(IOUTS), stat=istat)
+      DO I=1,IOUTS
+        STATION(I)%IFOUND = 0
+        STATION(I)%ISMAX  = 0
+      END DO
       IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
       ListORIGIN=0
       ISum=0
@@ -136,10 +140,19 @@
 
         iret = NF90_GET_VAR(ncid, var_id, IFound)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+
+        iret = nf90_inq_varid(ncid, 'ismax', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+
+        iret = NF90_GET_VAR(ncid, var_id, ISMAX)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+
         DO I=1,IOUTS
           IF (IFound(I) .eq. 1) THEN
             ListORIGIN(I)=iProc
             ISum(I)=1
+            STATION(I)%IFOUND=1
+            STATION(I)%ISMAX = ISMAX(I)
           END IF
         END DO
         iret = NF90_CLOSE(ncid)

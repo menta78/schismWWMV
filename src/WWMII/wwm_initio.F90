@@ -1143,7 +1143,7 @@
               CALL MPI_SEND(rbuf_int,1,itype, iProc-1, 144, COMM, ierr)
             ENDDO
           ELSE
-            CALL MPI_RECV(rbuf_int,3,itype, 0, 144, COMM, istatus, ierr)
+            CALL MPI_RECV(rbuf_int,1,itype, 0, 144, COMM, istatus, ierr)
             STATION(I)%ISUM=rbuf_int(1)
           END IF
         END DO
