@@ -201,7 +201,7 @@
                IF (LNANINFCHK) THEN
                  IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
                    WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-                   CALL WWM_ABORT('NAN AT wwm_sourceterms.F90 l.204' 
+                   CALL WWM_ABORT('NAN AT wwm_sourceterms.F90 l.204')
                  END IF
                ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
@@ -308,7 +308,7 @@
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-             CALL WWM_ABORT('NAN in wwm_sourceterm.F90 l.311'
+             CALL WWM_ABORT('NAN in wwm_sourceterm.F90 l.311')
            END IF
          ENDIF
 
@@ -477,7 +477,7 @@
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF' 
-             CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.481'
+             CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.481')
            END IF
          ENDIF
 
