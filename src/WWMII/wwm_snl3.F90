@@ -38,7 +38,7 @@
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
-      if (ip == 1786) write(*,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
+      if (ip == 1786) write(stat%fhndl,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
 
 !      write(*,*) '---- calling snl3 -----', ip, iobp(ip)
 
@@ -51,7 +51,7 @@
       IF (ABS(FACSCL-2.).GT.0.05) THEN
          FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
          SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-         WRITE (*,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
+         WRITE(DBG%FHNDL,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
       END IF
 
       DEP_2 = DEP(IP)**2
@@ -454,7 +454,7 @@
       
        res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
 
-      if (ip == 157) write(*,*) 'k', res
+      if (ip == 157) write(stat%fhndl,*) 'k', res
 
       end function k
 !**********************************************************************
@@ -471,7 +471,7 @@
            
         res = - ( one / (delta(ip, is, is1, is2)**3)  ) * ddelta_dx(ip, is, is1, is2, id)
 
-       if (ip == 157) write(*,*) 'j', res 
+       if (ip == 157) write(stat%fhndl,*) 'j', res 
         
       end function j
 !**********************************************************************
@@ -567,7 +567,7 @@
 
      if (ip == 157) then
        do is = 1, msc
-         write(*,'(2i10,3f15.10)') ip, is, fr(is), sum(snl3(is,:)) * DDIR
+         write(stat%fhndl,'(2i10,3f15.10)') ip, is, fr(is), sum(snl3(is,:)) * DDIR
        enddo
      endif
 
@@ -583,7 +583,7 @@
 
         res = int((float(i+j)-abs(i-j)))/(float((i+j)+abs(i-j))) 
 
-        write(*,*) 'kron-delta', i, j, res
+        write(stat%fhndl,*) 'kron-delta', i, j, res
 
       end function kron_delta 
 !**********************************************************************
@@ -790,7 +790,6 @@
           ENDDO
         ENDDO
       ENDIF
-      RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

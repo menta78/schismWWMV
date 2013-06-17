@@ -1232,8 +1232,8 @@
 !     SPPARM(8), WBPKEN: peak enhancement factor for the JONSWAP spectra 3.3
 
       IF (LDEBUG) THEN
-        WRITE(*,*) 'HS    PER    DIR    DPSR    SHAPE   DEGEXP    GAUSS   PEAK'
-        WRITE(*,'(8F10.4)') SPPAR(8)
+        WRITE(DBG%FHNDL,*) 'HS    PER    DIR    DPSR    SHAPE   DEGEXP    GAUSS   PEAK'
+        WRITE(DBG%FHNDL,'(8F10.4)') SPPAR(8)
       ENDIF
 
       ETOT = 0.
@@ -1255,11 +1255,6 @@
 !
       PKPER = SPPAR(2)
       ITPER = 0
-
-!      WRITE(*,'(A20,9F15.8)') CALLFROM, SPPAR, PKPER
-!      WRITE(*,*) LOGPM, LSHAPE
-
-!      WRITE(*,*) PKPER, SPPAR
 
       IF (LSHAPE.EQ.3) THEN
 !       select bin closest to given period
@@ -1326,7 +1321,7 @@
 
           ACLOC(IS,MDC) = RA
 
-          IF (LDEBUG) WRITE(*,*) 'IS LOOP', IS, SF, FPK, SYF, RA
+          IF (LDEBUG) WRITE(DBG%FHNDL,*) 'IS LOOP', IS, SF, FPK, SYF, RA
 !
         ELSE IF (LSHAPE .EQ. 3) THEN
 
