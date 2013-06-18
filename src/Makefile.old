@@ -54,10 +54,10 @@
 #ENV         = BLKLGT
 #ENV         = GORDON
 #ENV         = FRANZIUS
-#ENV         = MATHIEU
+ENV         = MATHIEU
 #ENV = ARON
 #ENV = ZANKE
-ENV = DKRZ
+#ENV = DKRZ
 
 ################################################################################
 # Executable
@@ -69,7 +69,7 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 # Comment out unwanted flags.
 ################################################################################
 # -DSELFE always on
-  PPFLAGS = -WF,-DSELFE 
+  PPFLAGS = -DSELFE 
 
 # Wave models need a coupler
 # SWAN (not active)
@@ -96,7 +96,7 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
 
 # Wind wave model WWM
   USE_WWM = yes
-  PPFLAGS := $(PPFLAGS) -WF,-DUSE_WWM -WF,-DST42 -WF,-DNCDF -WF,-DWWM_SOLVER
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
 #  USE_PETSC = yes
@@ -676,10 +676,16 @@ ifeq ($(ENV),MATHIEU)
 # DEBUG + DEVELOPEMENT
 #  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
 #  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+
 # PERFORMANCE SAVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -check all -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -check all -assume byterecl
+
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -check all -assume byterecl
+#  FLDFLAGS = -O1 -g -traceback -check all -assume byterecl
+
 # AGGRESSIVE OPTIMIZATION
+
+  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
   #####Libraries
   MTSLIBS = $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a 
   CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x

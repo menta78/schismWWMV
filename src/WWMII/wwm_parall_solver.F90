@@ -4290,9 +4290,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
-# ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
@@ -4310,6 +4308,7 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel
+      REAL(rkind) :: eVal, eValB
       REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(MSC,MDC,2)
@@ -4471,14 +4470,19 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       IF (LBCWA .OR. LBCSP) THEN
-        IF (LINHOM) THEN
-          IPrel=IP
-        ELSE
-          IPrel=1
-        ENDIF
+        WRITE(3000+myrank,*) 'NNZ=', NNZ, 'MNP=', MNP
         DO IP = 1, IWBMNP
+          IF (LINHOM) THEN
+            IPrel=IP
+          ELSE
+            IPrel=1
+          ENDIF
           IPGL = IWBNDLC(IP)
+!          WRITE(3000+myrank,*) 'IP=', IP, 'IWBMNP=', IWBMNP
+!          WRITE(3000+myrank,*) 'IPGL=', IPGL, ' I_DIAG=', I_DIAG(IPGL)
           ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+!          WRITE(3000+myrank,*) 'Done with diag term'
+!          WRITE(3000+myrank,*) 'IPrel=', IPrel
           B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
         END DO
       END IF
