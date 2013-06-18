@@ -4243,12 +4243,12 @@ MODULE WWM_PARALL_SOLVER
       END DO
 # endif
       IF (LBCWA .OR. LBCSP) THEN
-        IF (LINHOM) THEN
-          IPrel=IP
-        ELSE
-          IPrel=1
-        ENDIF
         DO IP = 1, IWBMNP
+          IF (LINHOM) THEN
+            IPrel=IP
+          ELSE
+            IPrel=1
+          ENDIF
           IPGL = IWBNDLC(IP)
           ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
           DO IS=IS1,IS2
