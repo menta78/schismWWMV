@@ -4305,11 +4305,10 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind)      :: DIFRU, USOC, WVC
 # endif
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
+      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel
-      REAL(rkind) :: eVal, eValB
-      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(MSC,MDC,2)
 # ifdef DEBUG
@@ -4405,30 +4404,10 @@ MODULE WWM_PARALL_SOLVER
       END DO
 # if defined DEBUG
       WRITE(740+myrank,*) ' After MNE loop'
-      WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
       WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
       WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
       WRITE(3000+myrank,*)  'sum(KM    )=', sum(KM)
-      WRITE(3000+myrank,*)  'sum(FL11  )=', sum(FL11)
-      WRITE(3000+myrank,*)  'sum(FL12  )=', sum(FL11)
-      WRITE(3000+myrank,*)  'sum(FL21  )=', sum(FL21)
-      WRITE(3000+myrank,*)  'sum(FL22  )=', sum(FL22)
-      WRITE(3000+myrank,*)  'sum(FL31  )=', sum(FL31)
-      WRITE(3000+myrank,*)  'sum(FL32  )=', sum(FL32)
-      WRITE(3000+myrank,*)  'sum(CRFS  )=', sum(CRFS)
       WRITE(3000+myrank,*)  'sum(DELTAL)=', sum(DELTAL)
-      WRITE(3000+myrank,*)  'sum(NM    )=', sum(NM)
-      WRITE(3000+myrank,*)  'maxval(NM    )=', maxval(NM)
-      DO IS=1,MSC
-        DO ID=1,MDC
-          DO IE=1,MNE
-            IF (ABS(NM(IS,ID,IE)) > 1000000) THEN
-              WRITE(4000+myrank,*) 'IS, ID, IE=', IS, ID, IE
-              WRITE(4000+myrank,*) '   NM=', NM(IS,ID,IE)
-            END IF
-          END DO
-        END DO
-      END DO
 # endif
       J     = 0    ! Counter ...
       ASPAR = 0.0_rkind ! Mass matrix ...
@@ -4457,7 +4436,7 @@ MODULE WWM_PARALL_SOLVER
             DO ID=1,MDC
               B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
             END DO
-          END DO !I: loop over connected elements ...
+          END DO
         ELSE
           DO I = 1, CCON(IP)
             J = J + 1
@@ -4470,7 +4449,6 @@ MODULE WWM_PARALL_SOLVER
         END IF
       END DO
       IF (LBCWA .OR. LBCSP) THEN
-        WRITE(3000+myrank,*) 'NNZ=', NNZ, 'MNP=', MNP
         DO IP = 1, IWBMNP
           IF (LINHOM) THEN
             IPrel=IP
@@ -4478,11 +4456,7 @@ MODULE WWM_PARALL_SOLVER
             IPrel=1
           ENDIF
           IPGL = IWBNDLC(IP)
-!          WRITE(3000+myrank,*) 'IP=', IP, 'IWBMNP=', IWBMNP
-!          WRITE(3000+myrank,*) 'IPGL=', IPGL, ' I_DIAG=', I_DIAG(IPGL)
           ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-!          WRITE(3000+myrank,*) 'Done with diag term'
-!          WRITE(3000+myrank,*) 'IPrel=', IPrel
           B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
         END DO
       END IF
