@@ -1,4 +1,5 @@
       PROGRAM STATISTICS
+      USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
       
@@ -6,10 +7,24 @@
       REAL(rkind), ALLOCATABLE    :: WKLOC(:)
       REAL(rkind), ALLOCATABLE  :: TMPE(:), TMPES(:)
 
-      REAL(rkind)               :: DEPLOC, CURTXYLOC(2), WINDXY(2)
+      REAL(rkind)               :: DEPLOC, CURTXYLOC(2)
       REAL(rkind)               :: HS,TM01,TM02,KLM,WLM,ETMPO,ETMPS
+      REAL(rkind), ALLOCATABLE  :: HS_SP (:,:), TM01_SP(:,:), TM02_SP(:,:), TP_SP(:,:), TP_O(:,:)
+      REAL(rkind), ALLOCATABLE  :: EMAX_O(:,:), EMAX_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: FREQ_SP(:), DFREQ_SP(:)
+      REAL(rkind), ALLOCATABLE  :: ZEIT_SP(:)
+      REAL(rkind), ALLOCATABLE  :: ZEIT_O(:,:)
+      REAL(rkind), ALLOCATABLE  :: E_SP(:)
+      REAL(rkind), ALLOCATABLE  :: AUX_M0_SP(:), AUX_M1_SP(:), AUX_M2_SP(:), DS_INCR_SP(:)
+      REAL(rkind), ALLOCATABLE  ::  AUX_M0_O(:), AUX_M1_O(:), AUX_M2_O(:)   
 
       REAL(rkind)                :: ETOT, DELTAE, ETOT1
+      REAL(rkind) :: SGHIG, CUT_OFF
+      INTEGER BUOYS
+      INTEGER ncid, var_id, iret, nbFile, iFile
+      real(rkind), allocatable :: ListNbTime(:)
+      INTEGER DATAEND
+      CHARACTER(LEN=30),  ALLOCATABLE  :: BNAMES(:)
 
       CHARACTER(LEN = 30)  :: CTMP30 
       CHARACTER(LEN = 15)  :: CTMP15
@@ -24,16 +39,14 @@
 
 
       INTEGER              :: IS, ID, IB, I, J, K, IT, ISMAX, IBUOYS
-      INTEGER              :: IS_O, IT_O
+      INTEGER              :: IS_O, IT_O, N_DT_SP
       INTEGER              :: dateFMT = 0
+      INTEGER              :: ISTAT
 
       INTEGER, ALLOCATABLE :: I2DSPECOUT(:)
 
       INTEGER, ALLOCATABLE :: IFIND(:), FILETYPE(:)
       
-      PI  = 4.* DATAN(1.d0)
-      PI2 = 2.* PI
-
 !------------------------------------------------------------------------      
 ! open files  
 !------------------------------------------------------------------------

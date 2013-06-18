@@ -1,6 +1,6 @@
 PROG1 = $(HOME)/bin/stat3_NC
 
-OBJScommon = wwm_datapl.o wwm_netcdf.o wwm_gridcf.o wwm_mjdv2.o wwm_aux.o wwm_input.o
+OBJScommon = wwm_datapl.o wwm_netcdf.o wwm_mjdv2.o wwm_aux.o wwm_input.o
 OBJhistory = stat3_NC.o
 LIBS = -L$(NETCDF_LIBDIR) -lnetcdf
 
