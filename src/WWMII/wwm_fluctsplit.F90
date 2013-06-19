@@ -2123,10 +2123,7 @@
       SUBROUTINE DEALLOC_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         DEALLOCATE( CCON)
-         DEALLOCATE( SI)
-         DEALLOCATE( ITER_EXP)
-         DEALLOCATE( ITER_EXPD)
+         DEALLOCATE( CCON, SI, ITER_EXP, ITER_EXPD)
          IF (ICOMP .GE. 1) THEN
            DEALLOCATE(I_DIAG)
          END IF
@@ -2321,12 +2318,10 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ), IA(MNP+1), stat=istat)
+           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
-           ALLOCATE (POSI(3,COUNT_MAX), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 7')
            J = 0
            K = 0
            IA(1) = 1
@@ -2374,14 +2369,9 @@
       SUBROUTINE DEALLOC_FLUCT
       USE DATAPOOL
       implicit none
-      DEALLOCATE (IE_CELL)
-      DEALLOCATE (POS_CELL)
-      DEALLOCATE (IE_CELL2)
-      DEALLOCATE (POS_CELL2)
+      DEALLOCATE (IE_CELL, POS_CELL, IE_CELL2, POS_CELL2)
       IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
-        DEALLOCATE (JA)
-        DEALLOCATE (IA)
-        DEALLOCATE (POSI)
+        DEALLOCATE (JA, IA, POSI)
       END IF
       END SUBROUTINE
 !**********************************************************************
