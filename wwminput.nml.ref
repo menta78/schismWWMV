@@ -11,8 +11,8 @@
  LNAUTIN        = T                  ! Nautical convention for all inputs given in degrees (suggestion: T)
                                      ! If T, 0 is _from_ north, 90 is from east etc;
                                      ! If F, maths. convention - 0: to east; 90: going to north
- LMONO_IN       = F                  ! For prescribing monochromatic wave height Hmono as a boundary conditions 
- LMONO_OUT      = F                  ! Output wave heights in terms of Lmono
+ LMONO_IN       = F                  ! For prescribing monochromatic wave height Hmono as a boundary conditions (default F)
+ LMONO_OUT      = F                  ! Output wave heights in terms of monochromatic wave height (default F)
  BEGTC          = '20071101.000000'  ! Time for start the simulation, ex:yyyymmdd. hhmmss
  DELTC          = 600                ! Time step (not used with SELFE)
  UNITC          = 'SEC'              ! Unity of time step
@@ -25,12 +25,12 @@
  LROMS          = F                  ! ROMS (set as F)
  LTIMOR         = F                  ! TIMOR (set as F)
  LSHYFEM        = F                  ! SHYFEM (set as F)
- RADFLAG        = 'LON'
+ RADFLAG        = 'LON'              ! Applies only to SELFE
  LETOT          = F                  ! Option to compute the wave induced radiation stress. If .T. the radiation stress is based on the integrated wave spectrum
                                      ! e.g. Etot = Int,0,inf;Int,0,2*pi[N(sigma,theta)]dsigma,dtheta. If .F. the radiation stress is estimated as given in Roland et al. (2008) based
                                      ! on the directional spectra itself. It is always desirable to use .F., since otherwise the spectral informations are truncated and therefore
                                      ! LETOT = .T., is only for testing and developers!
- NLVT           = 10                 ! Number of vertical Layers; not used in other coupling modes except SELFE
+ NLVT           = 10                 ! Number of vertical Layers in SHYFEM
  DTCOUP         = 600.               ! Couple time step - not used when coupled to SELFE
 /
 
@@ -76,11 +76,6 @@
  DELTC          = 1                  ! Time step in FILEWAVE
  UNITC          = 'HR'               ! Unit
  ENDTC          = '20071102.000000'  ! End time
- IBNDTYPE       = 1                  ! 1: classical WWM boundary format
-                                     ! 2: SELFE boundary format
-                                     ! If unset then it is set according to
-                                     ! IGRIDTYPE = 1,2,4 ==> IBNDTYPE=1
-                                     ! IGRIDTYPE = 3     ==> IBNDTYPE=2
  FILEBOUND      = 'wwmbnd.gr3'       ! Boundary file defining boundary and Neumann nodes.
                                      ! Flag 0: not on bnd; 3: Neumann (0 gradient);
                                      ! 2: active bnd (Direchlet). Bnd flags imported from SELFE:
@@ -181,7 +176,7 @@
                                      ! values are read from disk
 /
 
-&NUMS
+&NUMS ! Numerical methods
  ICOMP          = 0
                                      ! This parameter controls the way how the splitting is done and whether implicit or explicit schemes are used for spectral advection
                                      ! ICOMP = 0
