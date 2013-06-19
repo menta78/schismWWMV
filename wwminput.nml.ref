@@ -25,7 +25,15 @@
  LROMS          = F                  ! ROMS (set as F)
  LTIMOR         = F                  ! TIMOR (set as F)
  LSHYFEM        = F                  ! SHYFEM (set as F)
- RADFLAG        = 'LON'              ! Applies only to SELFE
+ RADFLAG        = 'LON'              ! (default 'LON')
+                                     ! Possible values with SELFE:
+                                     ! 'LON' for Longuet Higgins
+                                     ! 'MEL' for Mellor 2005 formulation
+                                     ! 'XIA' for Xia formulation
+                                     ! Possible values with SHYFEM:
+                                     ! 'VORTEX' for vortex force formulation
+                                     ! 'LON' for Longuet Higgins formulation
+                                     ! 'XIA' for Xia formulation
  LETOT          = F                  ! Option to compute the wave induced radiation stress. If .T. the radiation stress is based on the integrated wave spectrum
                                      ! e.g. Etot = Int,0,inf;Int,0,2*pi[N(sigma,theta)]dsigma,dtheta. If .F. the radiation stress is estimated as given in Roland et al. (2008) based
                                      ! on the directional spectra itself. It is always desirable to use .F., since otherwise the spectral informations are truncated and therefore
@@ -50,22 +58,25 @@
                                      ! 4 ~ old WWM type 
  FILEGRID       = 'hgrid.gr3'        ! Name of the grid file. hgrid.gr3 or hgrid.ll if IGRIDTYPE = 3 (SELFE)
  LSLOP          = F                  ! Bottom Slope limiter (default=F)
- SLMAX          = 0.2                ! Max Slope;
- LVAR1D         = F                  ! For 1d-mode if variable dx is used; not used with SELFE
+ SLMAX          = 0.2                ! Maximum Slope (Default 0.2)
+ LVAR1D         = F                  ! For 1d-mode if variable dx is used
  LOPTSIG        = F                  ! Use optimal distributions of freq. in spectral space ... fi+1 = fi * 1.1. Take care what you high freq. limit is!
 /
 
 &INIT
- LHOTR          = F                  ! Use hotstart file
- LINID          = F                  ! Initial condition; F for default; use T if using WW3 as i.c. etc
+ LHOTR          = F                  ! Use hotstart file (default F)
+ LINID          = F                  ! Initial condition (default F)
+                                     ! T for using WW3 as initial condition
  INITSTYLE      = 1                  ! 1 - Parametric Jonswap, 2 - Read from Global NETCDF files, work only if IBOUNDFORMAT=3
 /
 
 &BOUC
- LBCSE          = F                  ! The wave boundary data is time dependent
- LBCWA          = F                  ! Parametric Wave Spectra
+ LBCSE          = F                  ! The wave boundary data is time dependent (default F)
+ LBCWA          = F                  ! Parametric Wave Spectra (default F)
  LBCSP          = F                  ! Specify (non-parametric) wave spectra, specified in 'FILEWAVE' below
- LINHOM         = F                  ! Non-uniform wave b.c. in space
+ LINHOM         = F                  ! homogeneity of b.c (default F)
+                                     ! T is space dependent b.c
+                                     ! F is homogoneous b.c.
  LBSP1D         = F                  ! 1D (freq. space only) format for FILEWAVE if LBCSP=T and LINHOM=F
  LBSP2D         = F                  ! not functional (freq. + directional space)
  LBINTER        = F                  ! Do interpolation in time if LBCSE=T (not available for quasi-steady mode within the subtime steps)
@@ -85,9 +96,12 @@
                                      ! LMONO_IN = F ! incident wave is defined as monochromatic wave height, which is Hmono = sqrt(2) * Hs
                                      ! The following are needed only if LBCWA=T and LINHOM=F
  WBHS           = 0.181              ! Hs at the boundary for parametric spectra
- WBSS           = 3.                 ! 1 or -1: Pierson-Moskowitz, 2 or -2: JONSWAP, 3 or -3: all in one BIN,
-                                     ! 4: Gauss. The sign decides whether WBTP below is
-                                     ! peak (+) or mean period (-)
+ WBSS           = 3.                 ! 1 or -1: Pierson-Moskowitz
+                                     ! 2 or -2: JONSWAP
+                                     ! 3 or -3: all in one BIN,
+                                     ! 4: Gauss.
+                                     ! The sign decides whether WBTP below 
+                                     ! is peak (+) or mean period (-)
  WBTP           = 1.50               ! Tp at the boundary (sec); mean or peak depending on the sign of WBSS
  WBDM           = 90.0               ! Avg. Wave Direction at the boundary
  WBDSMS         = 1.                 ! Directional spreading value in degrees (1) or as exponent (2)
@@ -123,7 +137,7 @@
                                      ! 2 - DWD_NETCDF
                                      ! 3 - NOAA CFRS
                                      ! 4 - NOAA NARR
-				     ! 5 - netCDF WRF/ROMS forcing (Uwind,Vwind,LON,LAT,wind_time are used), fast bilinear interp
+				     ! 5 - netCDF CF compilant wind (Uwind/Vwind)
 /
 
 &CURR !NOT USED WITH SELFE
