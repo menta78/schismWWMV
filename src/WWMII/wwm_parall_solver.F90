@@ -1609,7 +1609,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE SYMM_INIT_COLORING(LocalColor, NbBlock, MSCeffect)
       USE DATAPOOL, only : LocalColorInfo, MNP, rkind, XP, YP, stat
-      USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       USE elfe_msgp, only : myrank, nproc
       USE elfe_glbl, only : iplg
@@ -1700,8 +1699,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
       CALL DETERMINE_JSTATUS_L_U(LocalColor)
       !
-      DO_SOLVE_L=.TRUE.
-      DO_SOLVE_U=.TRUE.
       DO_SYNC_UPP_2_LOW=.TRUE.
       DO_SYNC_LOW_2_UPP=.TRUE.
       DO_SYNC_FINAL=.TRUE.
@@ -2908,7 +2905,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
-      USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
 # ifdef DEBUG
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
@@ -2934,22 +2930,19 @@ MODULE WWM_PARALL_SOLVER
               IS=LocalColor % ISindex(iBlock, idx)
               ID=LocalColor % IDindex(iBlock, idx)
               eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-              IF (DO_SOLVE_L) THEN
-                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-              END IF
+              ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
             END DO
           END DO
 # elif SOR_DIRECT
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_L(J) .eq. 1) THEN
               JP=JA(J)
+              Jb=I_DIAG(JP)
               DO idx=1,lenBlock
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
-                eCoeff=SolDat % ASPAR_block(IS,ID,J)
-                IF (DO_SOLVE_L) THEN
-                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-                END IF
+                eCoeff=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,Jb)
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
           END DO
@@ -2961,9 +2954,7 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-                IF (DO_SOLVE_L) THEN
-                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-                END IF
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
           END DO
@@ -2990,7 +2981,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_PARTIAL_SOLVE_U(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : MNP, IA, JA, I_DIAG, MSC, MDC, rkind, NP_RES
-      USE DATAPOOL, only : DO_SOLVE_L, DO_SOLVE_U
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
       implicit none
@@ -3011,31 +3001,24 @@ MODULE WWM_PARALL_SOLVER
               IS=LocalColor % ISindex(iBlock, idx)
               ID=LocalColor % IDindex(iBlock, idx)
               eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-              IF (DO_SOLVE_U) THEN
-                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-              END IF
+              ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
             END DO
           END DO
           J=LocalColor % IA_U(IP+1)-1
           DO idx=1,lenBlock
             IS=LocalColor % ISindex(iBlock, idx)
             ID=LocalColor % IDindex(iBlock, idx)
-            IF (DO_SOLVE_U) THEN
-              ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
-            END IF
+            ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
           END DO
 # elif SOR_DIRECT
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_U(J) .eq. 1) THEN
               JP=JA(J)
-              JPC=I_DIAG(JP)
               DO idx=1,lenBlock
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
-                eCoeff=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,JPC)
-                IF (DO_SOLVE_U) THEN
-                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-                END IF
+                eCoeff=SolDat % ASPAR_block(IS,ID,J)
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
           END DO
@@ -3043,9 +3026,7 @@ MODULE WWM_PARALL_SOLVER
           DO idx=1,lenBlock
             IS=LocalColor % ISindex(iBlock, idx)
             ID=LocalColor % IDindex(iBlock, idx)
-            IF (DO_SOLVE_U) THEN
-              ACret(IS,ID,IP)=ACret(IS,ID,IP)/SolDat % ASPAR_block(IS,ID,J)
-            END IF
+            ACret(IS,ID,IP)=ACret(IS,ID,IP)/SolDat % ASPAR_block(IS,ID,J)
           END DO
 # else
           DO J=IA(IP),IA(IP+1)-1
@@ -3055,9 +3036,7 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
-                IF (DO_SOLVE_U) THEN
-                  ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
-                END IF
+                ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
           END DO
@@ -3065,9 +3044,7 @@ MODULE WWM_PARALL_SOLVER
           DO idx=1,lenBlock
             IS=LocalColor % ISindex(iBlock, idx)
             ID=LocalColor % IDindex(iBlock, idx)
-            IF (DO_SOLVE_U) THEN
-              ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
-            END IF
+            ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
           END DO
 # endif
         ENDIF

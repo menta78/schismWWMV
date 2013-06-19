@@ -2146,11 +2146,19 @@
          INTEGER :: I1, I2, I3, NI(3)
          INTEGER :: CHILF(MNP), COUNT_MAX
          INTEGER :: ITMP(MNP)
+         INTEGER :: POS_TRICK(3,2)
 
          REAL(rkind)   :: TRIA03
 
          INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
          INTEGER, ALLOCATABLE :: PTABLE(:,:)
+
+         POS_TRICK(1,1) = 2
+         POS_TRICK(1,2) = 3
+         POS_TRICK(2,1) = 3
+         POS_TRICK(2,2) = 1
+         POS_TRICK(3,1) = 1
+         POS_TRICK(3,2) = 2
 
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE CONNECTED AREA SI '
 ! The situation is as follows with respect to MNP, NP_RES and friends.
@@ -2363,6 +2371,20 @@
            DEALLOCATE(PTABLE)
          END IF
          DEALLOCATE(CELLVERTEX)
+         J=0
+         DO IP=1,MNP
+           DO I = 1, CCON(IP)
+             IE    =  IE_CELL(J)
+             POS   =  POS_CELL(J)
+             I1    =  POSI(1,J)
+             I2    =  POSI(2,J)
+             I3    =  POSI(3,J)
+             JA_IE(POS,1,IE) = I1
+             JA_IE(POS,2,IE) = I2
+             JA_IE(POS,3,IE) = I3
+           END DO
+         END DO
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
