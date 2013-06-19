@@ -2254,6 +2254,8 @@
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+           ALLOCATE(JA_IE(3,3,MNE), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6.1')
 
            J = 0
            PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
@@ -2355,7 +2357,6 @@
                  IF (IP   == JA(K)) I_DIAG(IP) = K
                  IF (IP_J == JA(K)) POSI(2,J)  = K
                  IF (IP_K == JA(K)) POSI(3,J)  = K
-                 IF (K == 0) call wwm_abort('ERROR IN K .EQ. 0')
                END DO
              END DO
            END DO
