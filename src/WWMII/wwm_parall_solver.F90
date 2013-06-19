@@ -2745,6 +2745,11 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer, intent(in) :: TheMethod
+# ifdef SOR_DIRECT
+      IF (TheMethod.ne.1) THEN
+        CALL WWM_ABORT('With SOR_DIRECT, only SOR is possible')
+      END IF
+# else
       IF (TheMethod == 1) THEN ! SOR 
         CALL I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
       ELSE IF (TheMethod == 2) THEN ! ILU0
@@ -2752,6 +2757,7 @@ MODULE WWM_PARALL_SOLVER
       ELSE
         CALL WWM_ABORT('Wrong choice of preconditioner')
       ENDIF
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

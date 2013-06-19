@@ -2374,6 +2374,7 @@
          J=0
          DO IP=1,MNP
            DO I = 1, CCON(IP)
+             J=J+1
              IE    =  IE_CELL(J)
              POS   =  POS_CELL(J)
              I1    =  POSI(1,J)
