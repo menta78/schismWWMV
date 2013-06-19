@@ -15,8 +15,8 @@
 
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#undef REORDER_ASPAR_PC
 #define REORDER_ASPAR_PC
+#undef REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
 #undef ASPAR_B_COMPUTE_BLOCK
@@ -34,8 +34,14 @@
 #define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
-#define SOR_DIRECT
 #undef SOR_DIRECT
+#define SOR_DIRECT
+!
+! More complexity! Some options excludes other!
+!
+#if defined REORDER_ASPAR_PC && defined SOR_DIRECT
+# undef REORDER_ASPAR_PC
+#endif
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -2909,7 +2915,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG
       USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
 # ifdef DEBUG
       USE elfe_msgp, only : myrank
@@ -2922,7 +2928,7 @@ MODULE WWM_PARALL_SOLVER
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
       real(rkind) :: eCoeff
       integer IP, idx, ID, IS, J, IP_glob
-      integer lenBlock, JP
+      integer lenBlock, JP, Jb
 # ifdef DEBUG
       real(rkind) :: eSum
 # endif
@@ -2939,7 +2945,7 @@ MODULE WWM_PARALL_SOLVER
               ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
             END DO
           END DO
-# elif SOR_DIRECT
+# elif defined SOR_DIRECT
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_L(J) .eq. 1) THEN
               JP=JA(J)
@@ -3016,7 +3022,7 @@ MODULE WWM_PARALL_SOLVER
             ID=LocalColor % IDindex(iBlock, idx)
             ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
           END DO
-# elif SOR_DIRECT
+# elif defined SOR_DIRECT
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_U(J) .eq. 1) THEN
               JP=JA(J)
