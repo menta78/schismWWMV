@@ -15,8 +15,8 @@
 
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
-#define REORDER_ASPAR_PC
 #undef REORDER_ASPAR_PC
+#define REORDER_ASPAR_PC
 ! This is for the computation of ASPAR_block by a block algorithm
 ! with hopefully higher speed.
 #undef ASPAR_B_COMPUTE_BLOCK
@@ -34,8 +34,11 @@
 #define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
-#undef SOR_DIRECT
 #define SOR_DIRECT
+#undef SOR_DIRECT
+!
+#define SINGLE_LOOP_AMATRIX
+#undef SINGLE_LOOP_AMATRIX
 !
 ! More complexity! Some options excludes other!
 !
@@ -4293,8 +4296,13 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: CX(MSC,MDC,3), CY(MSC,MDC,3)
       REAL(rkind)      :: DIFRU, USOC, WVC
 # endif
+# ifndef SINGLE_LOOP_AMATRIX
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+# else
+      REAL(rkind) :: DELTAL(MSC,MDC,3)
+      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+# endif
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel
@@ -4329,8 +4337,6 @@ MODULE WWM_PARALL_SOLVER
         K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
         K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        KP(:,:,:,IE) = MAX(ZERO,K)
-        KM = MIN(0.0_rkind,K)
         FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
         FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
         FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
@@ -4376,8 +4382,6 @@ MODULE WWM_PARALL_SOLVER
         K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
         K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        KP(:,:,:,IE) = MAX(ZERO,K)
-        KM = MIN(0.0_rkind,K)
         FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
         FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
         FL21(:,:) = CX(:,:,3)*IEN(3,IE)+CY(:,:,3)*IEN(4,IE)
@@ -4388,8 +4392,32 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        KM = MIN(0.0_rkind,K)
+# ifndef SINGLE_LOOP_AMATRIX
+        KP(:,:,:,IE) = MAX(ZERO,K)
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+# else
+        KP(:,:,:) = MAX(ZERO,K)
+        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:,IE)
+        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        DO I=1,3
+          IP=INE(I,IE)
+          IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+            I1=JA_IE(I,1,IE)
+            I2=JA_IE(I,2,IE)
+            I3=JA_IE(I,3,IE)
+            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
+            TRIA03 = ONETHIRD * TRIA(IE)
+            DO ID=1,MDC
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+
+          ELSE
+          END IF
+        END DO
+# endif
       END DO
 # if defined DEBUG
       WRITE(740+myrank,*) ' After MNE loop'
@@ -4404,6 +4432,7 @@ MODULE WWM_PARALL_SOLVER
 !
 ! ... assembling the linear equation system ....
 !
+# ifndef SINGLE_LOOP_AMATRIX
       DO IP = 1, NP_RES
         IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
           DO I = 1, CCON(IP)
@@ -4437,6 +4466,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
+# endif
       IF (LBCWA .OR. LBCSP) THEN
         DO IP = 1, IWBMNP
           IF (LINHOM) THEN
