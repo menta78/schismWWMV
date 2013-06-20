@@ -4327,6 +4327,8 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) ' Before MNE loop'
 # endif
+      ASPAR = 0.0_rkind ! Mass matrix ...
+      B     = 0.0_rkind ! Right hand side ...
       DO IE = 1, MNE
 # ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
@@ -4399,40 +4401,36 @@ MODULE WWM_PARALL_SOLVER
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
 # else
         KP(:,:,:) = MAX(ZERO,K)
-        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:,IE)
+        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:)
         NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        TRIA03 = ONETHIRD * TRIA(IE)
         DO I=1,3
           IP=INE(I,IE)
           IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
             I1=JA_IE(I,1,IE)
             I2=JA_IE(I,2,IE)
             I3=JA_IE(I,3,IE)
-            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
-            TRIA03 = ONETHIRD * TRIA(IE)
+            K1(:,:) =  KP(:,:,I)
             DO ID=1,MDC
               DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
             END DO
             TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+            DO ID=1,MDC
+              B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
+            END DO
           ELSE
+            I1 = JA_IE(I,1,IE)
+            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+            B(:,:,IP)     =  ZERO
           END IF
         END DO
 # endif
       END DO
-# if defined DEBUG
-      WRITE(740+myrank,*) ' After MNE loop'
-      WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
-      WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
-      WRITE(3000+myrank,*)  'sum(KM    )=', sum(KM)
-      WRITE(3000+myrank,*)  'sum(DELTAL)=', sum(DELTAL)
-# endif
-      J     = 0    ! Counter ...
-      ASPAR = 0.0_rkind ! Mass matrix ...
-      B     = 0.0_rkind ! Right hand side ...
-!
-! ... assembling the linear equation system ....
-!
 # ifndef SINGLE_LOOP_AMATRIX
+      J     = 0    ! Counter ...
       DO IP = 1, NP_RES
         IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
           DO I = 1, CCON(IP)
