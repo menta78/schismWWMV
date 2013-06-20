@@ -34,11 +34,11 @@
 #define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
-#undef SOR_DIRECT
 #define SOR_DIRECT
+#undef SOR_DIRECT
 !
-#define SINGLE_LOOP_AMATRIX
 #undef SINGLE_LOOP_AMATRIX
+#define SINGLE_LOOP_AMATRIX
 !
 ! More complexity! Some options excludes other!
 !
@@ -2918,9 +2918,9 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG
-      USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES
-# ifdef DEBUG
+      USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES, THR, THR8
       USE elfe_msgp, only : myrank
+# ifdef DEBUG
       USE elfe_glbl, only : iplg
 # endif
       implicit none
@@ -2928,13 +2928,15 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
-      real(rkind) :: eCoeff
+      real(rkind) :: eCoeff, eCoeffB
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP, Jb
 # ifdef DEBUG
       real(rkind) :: eSum
 # endif
       lenBlock=LocalColor % BlockLength(iBlock)
+      WRITE(740+myrank,*) 'THR=', THR, 'THR8=', THR8
+      CALL FLUSH(740+myrank)
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
@@ -2964,10 +2966,17 @@ MODULE WWM_PARALL_SOLVER
           DO J=IA(IP),IA(IP+1)-1
             IF (LocalColor % Jstatus_L(J) .eq. 1) THEN
               JP=JA(J)
+              Jb=I_DIAG(JP)
               DO idx=1,lenBlock
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+!                eCoeffB=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,Jb)
+!                IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
+!                  WRITE(740+myrank,*) '1J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
+!                  WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
+!                  CALL FLUSH(740+myrank)
+!                END IF
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
@@ -2994,7 +3003,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_U(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MNP, IA, JA, I_DIAG, MSC, MDC, rkind, NP_RES
+      USE DATAPOOL, only : MNP, IA, JA, I_DIAG, MSC, MDC, rkind, NP_RES, ONE, THR
       USE elfe_msgp, only : myrank
       USE elfe_glbl, only : iplg
       implicit none
@@ -3002,7 +3011,7 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
-      real(rkind) :: eCoeff
+      real(rkind) :: eCoeff, eCoeffB
       integer lenBlock, IP, JP, idx, J, IS, ID, IP_glob
       integer DoOper
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -3050,6 +3059,12 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+!                eCoeffB=SolDat % ASPAR_block(IS,ID,J)
+!                IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
+!                  WRITE(740+myrank,*) '2J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
+!                  WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
+!                  CALL FLUSH(740+myrank)
+!                END IF
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
@@ -3058,6 +3073,13 @@ MODULE WWM_PARALL_SOLVER
           DO idx=1,lenBlock
             IS=LocalColor % ISindex(iBlock, idx)
             ID=LocalColor % IDindex(iBlock, idx)
+!            eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+!            eCoeffB=ONE/SolDat % ASPAR_block(IS,ID,J)
+!            IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
+!              WRITE(740+myrank,*) '3J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
+!              WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
+!              CALL FLUSH(740+myrank)
+!            END IF
             ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
           END DO
 # endif
@@ -4292,7 +4314,7 @@ MODULE WWM_PARALL_SOLVER
 # ifndef NO_MEMORY_CX_CY
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
 # else
-      REAL(rkind) :: CX(MSC,MDC,3), CY(MSC,MDC,3)
+      REAL(rkind) :: CXY(2,MSC,MDC,3)
       REAL(rkind)      :: DIFRU, USOC, WVC
 # endif
 # ifndef SINGLE_LOOP_AMATRIX
@@ -4306,7 +4328,7 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(MSC,MDC,2)
+      REAL(rkind) :: LAMBDA(2,MSC,MDC)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin of EIMPS_ASPAR_B_BLOCK'
 # endif
@@ -4333,11 +4355,11 @@ MODULE WWM_PARALL_SOLVER
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
-        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
-        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
-        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
-        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
-        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
+        LAMBDA(1,:,:) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
+        LAMBDA(2,:,:) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
         FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
         FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
         FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
@@ -4350,19 +4372,19 @@ MODULE WWM_PARALL_SOLVER
           DO IS=1,MSC
             DO ID=1,MDC
               IF (LSECU .OR. LSTCU) THEN
-                CX(IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CY(IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CX(IS,ID,I) = CG(IP,IS)*COSTH(ID)
-                CY(IS,ID,I) = CG(IP,IS)*SINTH(ID)
+                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
-                CX(IS,ID,I) = CX(IS,ID,I)*INVSPHTRANS(IP,1)
-                CY(IS,ID,I) = CY(IS,ID,I)*INVSPHTRANS(IP,2)
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*INVSPHTRANS(IP,2)
               END IF
               IF (LDIFR) THEN
-                CX(IS,ID,I) = CX(IS,ID,I)*DIFRM(IP)
-                CY(IS,ID,I) = CY(IS,ID,I)*DIFRM(IP)
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*DIFRM(IP)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IP)
                 IF (LSECU .OR. LSTCU) THEN
                   IF (IDIFFR .GT. 1) THEN
                     WVC = SPSIG(IS)/WK(IP,IS)
@@ -4371,24 +4393,23 @@ MODULE WWM_PARALL_SOLVER
                   ELSE
                     DIFRU = DIFRM(IP)
                   END IF
-                  CX(IS,ID,I) = CX(IS,ID,I) + DIFRU*CURTXY(IP,1)
-                  CY(IS,ID,I) = CY(IS,ID,I) + DIFRU*CURTXY(IP,2)
+                  CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IP,1)
+                  CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IP,2)
                 END IF
               END IF
             END DO
           END DO
         END DO
-        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
-        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
-        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
-        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
-        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
-        FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
-        FL21(:,:) = CX(:,:,3)*IEN(3,IE)+CY(:,:,3)*IEN(4,IE)
-        FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
-        FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
-        FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
+        LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
+        FL11(:,:) = CXY(1,:,:,2)*IEN(1,IE)+CXY(2,:,:,2)*IEN(2,IE)
+        FL12(:,:) = CXY(1,:,:,3)*IEN(1,IE)+CXY(2,:,:,3)*IEN(2,IE)
+        FL21(:,:) = CXY(1,:,:,3)*IEN(3,IE)+CXY(2,:,:,3)*IEN(4,IE)
+        FL22(:,:) = CXY(1,:,:,1)*IEN(3,IE)+CXY(2,:,:,1)*IEN(4,IE)
+        FL31(:,:) = CXY(1,:,:,1)*IEN(5,IE)+CXY(2,:,:,1)*IEN(6,IE)
+        FL32(:,:) = CXY(1,:,:,2)*IEN(5,IE)+CXY(2,:,:,2)*IEN(6,IE)
 # endif
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
@@ -4396,7 +4417,7 @@ MODULE WWM_PARALL_SOLVER
         KM = MIN(0.0_rkind,K)
 # ifndef SINGLE_LOOP_AMATRIX
         KP(:,:,:,IE) = MAX(ZERO,K)
-        DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
+        DELTAL(:,:,:,IE) = CRFS(:,:,:) - KP(:,:,:,IE)
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
 # else
         KP(:,:,:) = MAX(ZERO,K)
