@@ -970,7 +970,11 @@ MODULE WWM_PARALL_SOLVER
 # endif
       END SUBROUTINE
 !**********************************************************************
-!*                                                                    *
+!*  This subroutine creates array for exchanging matrix entries       *
+!*  Process cannot get all the matrix entries right, and so they need *
+!*  to exchange data.                                                 *
+!*  Matrix entries A(i,j) with i <= NP_RES are correct and are        *
+!*  exported                                                          *
 !**********************************************************************
       SUBROUTINE CREATE_WWM_MAT_P2D_EXCH(MSCeffect)
       USE DATAPOOL
@@ -1002,11 +1006,6 @@ MODULE WWM_PARALL_SOLVER
       ListMapped=0
       DO IP=1,MNP
         IP_glob=iplg(IP)
-# ifdef DEBUG
-        IF (ListMapped(IP_glob) .gt. 0) THEN
-          CALL WWM_ABORT('Clear error in ListMapped');
-        ENDIF
-# endif
         ListMapped(IP_glob)=IP
       END DO
       wwm_nnbr_m_recv=0
@@ -1019,11 +1018,6 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirstMNP(iProc))
-# ifdef DEBUG
-          IF (ListMappedB(IP_glob) .gt. 0) THEN
-            CALL WWM_ABORT('Clear error in ListMappedB');
-          ENDIF
-# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon_recv=0
@@ -1063,11 +1057,6 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirstMNP(iProc))
-# ifdef DEBUG
-          IF (ListMappedB(IP_glob) .gt. 0) THEN
-            CALL WWM_ABORT('Clear error in ListMappedB');
-          ENDIF
-# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon_send=0
@@ -1146,11 +1135,6 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirstMNP(iProc))
-# ifdef DEBUG
-          IF (ListMappedB(IP_glob) .gt. 0) THEN
-            CALL WWM_ABORT('Clear error in ListMappedB');
-          ENDIF
-# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon=wwm_ListNbCommon_m_send(iNeigh)
