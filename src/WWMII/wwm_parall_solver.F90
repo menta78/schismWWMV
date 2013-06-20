@@ -23,8 +23,8 @@
 #define ASPAR_B_COMPUTE_BLOCK
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef SELFE_EXCH
 #define SELFE_EXCH
+#undef SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
@@ -34,8 +34,8 @@
 #define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
-#define SOR_DIRECT
 #undef SOR_DIRECT
+#define SOR_DIRECT
 !
 #define SINGLE_LOOP_AMATRIX
 #undef SINGLE_LOOP_AMATRIX
@@ -2698,7 +2698,7 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
-#  ifdef SELFE_EXCHANGE
+#  ifdef SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
 #  else
       CALL EXCHANGE_P4D_WWM(SolDat%AC4)
@@ -2746,7 +2746,8 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_CREATE_PRECOND(LocalColor, SolDat, TheMethod)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, NP_RES
+      USE elfe_msgp, only : exchange_p4d_wwm
 # ifdef DEBUG
       USE elfe_msgp, only : myrank
 # endif
@@ -2754,10 +2755,24 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
       integer, intent(in) :: TheMethod
+      integer IP, J
 # ifdef SOR_DIRECT
       IF (TheMethod.ne.1) THEN
         CALL WWM_ABORT('With SOR_DIRECT, only SOR is possible')
       END IF
+      DO IP=1,NP_RES
+        J=I_DIAG(IP)
+        SolDat%AC4(:,:,IP)=SolDat % ASPAR_block(:,:,J)
+      END DO
+#  ifdef SELFE_EXCH
+      CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
+#  else
+      CALL EXCHANGE_P4D_WWM(SolDat%AC4)
+#  endif
+      DO IP=1,NP_RES
+        J=I_DIAG(IP)
+        SolDat % ASPAR_block(:,:,J)=SolDat%AC4(:,:,IP)
+      END DO
 # else
       IF (TheMethod == 1) THEN ! SOR 
         CALL I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
@@ -3181,7 +3196,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
         ACret(:,:,IP)=eSum
       END DO
-# ifdef SELFE_EXCHANGE
+# ifdef SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, ACret)
 # else
       CALL EXCHANGE_P4D_WWM(ACret)
@@ -4536,7 +4551,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After ASPAR init'
 # endif
-# ifdef SELFE_EXCHANGE
+# ifdef SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat % B_block)
 # else
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
