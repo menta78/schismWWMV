@@ -33,8 +33,8 @@ F90 = mpif90
 
 
 #F90OPTI = -ip -O2
-#F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
+F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
+#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone

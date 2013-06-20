@@ -37,8 +37,8 @@
 #define SOR_DIRECT
 #undef SOR_DIRECT
 !
-#undef SINGLE_LOOP_AMATRIX
 #define SINGLE_LOOP_AMATRIX
+#undef SINGLE_LOOP_AMATRIX
 !
 ! More complexity! Some options excludes other!
 !
