@@ -2935,8 +2935,10 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: eSum
 # endif
       lenBlock=LocalColor % BlockLength(iBlock)
+# ifdef DEBUG
       WRITE(740+myrank,*) 'THR=', THR, 'THR8=', THR8
       CALL FLUSH(740+myrank)
+# endif
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC

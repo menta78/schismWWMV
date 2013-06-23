@@ -24,31 +24,31 @@
          LAMBDA = PQUAD(1)
          LAMM2  = (1.0-LAMBDA)**2
          LAMP2  = (1.0+LAMBDA)**2
-         DELTH3 = ACOS((LAMM2**2+4.0-LAMP2**2)/(4.0*LAMM2))
-         AUX1   = SIN(DELTH3)
-         DELTH4 = ASIN(-AUX1*LAMM2/LAMP2)
+         DELTH3 = DACOS((LAMM2**2+4.0-LAMP2**2)/(4.0*LAMM2))
+         AUX1   = DSIN(DELTH3)
+         DELTH4 = DASIN(-AUX1*LAMM2/LAMP2)
 !
 !     *** Compute directional indices in sigma and theta space ***
 !
-         CIDP   = ABS(DELTH4/DDIR)
+         CIDP   = DABS(DELTH4/DDIR)
          IDP    = INT(CIDP)
          IDP1   = IDP + 1
          WIDP   = CIDP - MyREAL(IDP)
          WIDP1  = 1.0 - WIDP
 
-         CIDM   = ABS(DELTH3/DDIR)
+         CIDM   = DABS(DELTH3/DDIR)
          IDM    = INT(CIDM)
          IDM1   = IDM + 1
          WIDM   = CIDM - MyREAL(IDM)
          WIDM1  = 1.0 - WIDM
 
-         XISLN  = LOG(XIS)
-         ISP    = INT(LOG(1.0+LAMBDA)/XISLN)
+         XISLN  = DLOG(XIS)
+         ISP    = INT(DLOG(ONE+LAMBDA)/XISLN)
          ISP1   = ISP + 1
          WISP   = (1.0+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)
          WISP1  = 1.0 - WISP
 
-         ISM    = INT(LOG(1.0-LAMBDA)/XISLN)
+         ISM    = INT(DLOG(ONE-LAMBDA)/XISLN)
          ISM1   = ISM - 1
          WISM   = (XIS**ISM-(1.0-LAMBDA))/(XIS**ISM-XIS**ISM1)
          WISM1  = 1.0 - WISM
