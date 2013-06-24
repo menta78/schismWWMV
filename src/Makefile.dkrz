@@ -30,7 +30,7 @@
 #            these are just for testing)
 ################################################################################
 
-#include ${PETSC_DIR}/conf/variables
+include ${PETSC_DIR}/conf/variables
 
 ################################################################################
 # Comment out the following line if you don't want the build dependent
@@ -99,8 +99,8 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
   PPFLAGS := $(PPFLAGS) -WF,-DUSE_WWM -WF,-DST42 -WF,-DNCDF -WF,-DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-#  USE_PETSC = yes
-#  PPFLAGS := $(PPFLAGS) -DPETSC 
+  USE_PETSC = yes
+  PPFLAGS := $(PPFLAGS) -WF,-DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes

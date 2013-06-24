@@ -1917,7 +1917,7 @@
            END IF
            eX=XP(I)
            eY=YP(I)
-           MinDist=40404040404040
+           MinDist=404040
            DO IX=1,NDX_WIND_FD-1
              DO IY=1,NDY_WIND_FD-1
                eDist=(eX-CF_LON(IX,IY))**2 + (eY-CF_LAT(IX,IY))**2
