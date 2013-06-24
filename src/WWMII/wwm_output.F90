@@ -117,7 +117,6 @@
 
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
-         REAL(kind=4)              :: TIME_4
          LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
 
          INTEGER                   :: IP
@@ -131,20 +130,10 @@
          REAL(rkind)               :: WIND(NP_GLOBAL,WINDVARS)
          REAL(rkind)               :: ITER_GLOBAL(NP_GLOBAL), ITER_LOCAL(MNP)
          REAL(rkind)               :: ITERT(NP_GLOBAL)
-
-         REAL(kind=4)              :: OUTT_GLOBAL_4(NP_GLOBAL,OUTVARS)
-         REAL(kind=4)              :: CURR_GLOBAL_4(NP_GLOBAL,CURRVARS)
-         REAL(kind=4)              :: WIND_GLOBAL_4(NP_GLOBAL,WINDVARS)
-         REAL(kind=4)              :: ITER_GLOBAL_4(NP_GLOBAL)
-
 #else
          REAL(rkind)               :: OUTT(MNP,OUTVARS)
          REAL(rkind)               :: CURR(MNP,CURRVARS)
          REAL(rkind)               :: WIND(MNP,WINDVARS)
-         REAL(kind=4)              :: OUTT_4(MNP,OUTVARS)
-         REAL(kind=4)              :: CURR_4(MNP,CURRVARS)
-         REAL(kind=4)              :: WIND_4(MNP,WINDVARS)
-         REAL(kind=4)              :: ITER_4(MNP)
 #endif
          REAL(rkind)               :: ACLOC(MSC,MDC)
          REAL(rkind)               :: OUTPARS(OUTVARS)
@@ -154,14 +143,14 @@
          CHARACTER(LEN=15)  :: CTIME
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
-         DoAirSea=.TRUE.
+         DoAirSea=.FALSE.
 #ifdef MPI_PARALL_GRID
-        OUTT_GLOBAL = 0.
-        OUTT        = 0.
-        CURR_GLOBAL = 0.
-        CURR        = 0.
-        WIND_GLOBAL = 0.
-        WIND        = 0.
+         OUTT_GLOBAL = 0.
+         OUTT        = 0.
+         CURR_GLOBAL = 0.
+         CURR        = 0.
+         WIND_GLOBAL = 0.
+         WIND        = 0.
 #else
         OUTT = 0.
         CURR = 0.
@@ -206,15 +195,7 @@
              WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
              IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL(IP)  =ITER_GLOBAL(IP)  *nwild_gb(IP)
            enddo !IP
-           do IP=1,NP_GLOBAL
-             OUTT_GLOBAL_4(IP,:)=SNGL(OUTT_GLOBAL(IP,:))
-             CURR_GLOBAL_4(IP,:)=SNGL(CURR_GLOBAL(IP,:))
-             WIND_GLOBAL_4(IP,:)=SNGL(WIND_GLOBAL(IP,:))
-             IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL_4(IP)=SNGL(ITER_GLOBAL(IP))
-           enddo !IP
          endif !myrank
-
-         TIME_4 = SNGL(TIME)
 
          IF (myrank == 0) THEN
            IF (LINIT_OUTPUT) THEN
@@ -230,41 +211,40 @@
                OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
              END IF
            END IF
-           WRITE(OUT%FHNDL+1)  TIME_4
-           WRITE(OUT%FHNDL+1)  (OUTT_GLOBAL_4(IP,7), OUTT_GLOBAL_4(IP,8), OUTT_GLOBAL_4(IP,1)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+1)  SNGL(TIME)
+           WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+1)
-           WRITE(OUT%FHNDL+2)  TIME_4
-           WRITE(OUT%FHNDL+2)  (CURR_GLOBAL_4(IP,1), CURR_GLOBAL_4(IP,2), CURR_GLOBAL_4(IP,3)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+2)  SNGL(TIME)
+           WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+2)
-           WRITE(OUT%FHNDL+3)  TIME_4
-           WRITE(OUT%FHNDL+3)  (WIND_GLOBAL_4(IP,1), WIND_GLOBAL_4(IP,2), OUTT_GLOBAL_4(IP,10)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+3)  SNGL(TIME)
+           WRITE(OUT%FHNDL+3)  (SNGL(WIND_GLOBAL(IP,1)), SNGL(WIND_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,10))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+3)
-           WRITE(OUT%FHNDL+4)  TIME_4
-           WRITE(OUT%FHNDL+4)  (OUTT_GLOBAL_4(IP,1), OUTT_GLOBAL_4(IP,2), OUTT_GLOBAL_4(IP,3)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+4)  SNGL(TIME)
+           WRITE(OUT%FHNDL+4)  (SNGL(OUTT_GLOBAL(IP,1)), SNGL(OUTT_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+4)
-           WRITE(OUT%FHNDL+5)  TIME_4
-           WRITE(OUT%FHNDL+5)  (CURR_GLOBAL_4(IP,1), CURR_GLOBAL_4(IP,2), CURR_GLOBAL_4(IP,5)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+5)  SNGL(TIME)
+           WRITE(OUT%FHNDL+5)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,5))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+5)
-           WRITE(OUT%FHNDL+6)  TIME_4
-           WRITE(OUT%FHNDL+6)  (WIND_GLOBAL_4(IP,9), WIND_GLOBAL_4(IP,8), WIND_GLOBAL_4(IP,7)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+6)  SNGL(TIME)
+           WRITE(OUT%FHNDL+6)  (SNGL(WIND_GLOBAL(IP,9)), SNGL(WIND_GLOBAL(IP,8)), SNGL(WIND_GLOBAL(IP,7))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+6)
-           WRITE(OUT%FHNDL+7)  TIME_4
-           WRITE(OUT%FHNDL+7)  (WIND_GLOBAL_4(IP,4), WIND_GLOBAL_4(IP,5), WIND_GLOBAL_4(IP,6)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+7)  SNGL(TIME) 
+           WRITE(OUT%FHNDL+7)  (SNGL(WIND_GLOBAL(IP,4)), SNGL(WIND_GLOBAL(IP,5)), SNGL(WIND_GLOBAL(IP,6))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+7)
            IF (LQSTEA .AND. LCHKCONV) THEN
-             WRITE(OUT%FHNDL+8)  TIME_4
-             WRITE(OUT%FHNDL+8)  (ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP)  , IP = 1, NP_GLOBAL)
+             WRITE(OUT%FHNDL+8) SNGL(TIME) 
+             WRITE(OUT%FHNDL+8)  (SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP))  , IP = 1, NP_GLOBAL)
              CALL FLUSH(OUT%FHNDL+8)
            ENDIF
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
-               WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
+               WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND_GLOBAL(IP,:))
              ENDDO
              CALL FLUSH(OUT%FHNDL+9)
            END IF
-         END IF
+         END IF ! myrank
 #else
-         TIME_4 = SNGL(TIME)
 
 !$OMP DO PRIVATE (IP,ACLOC,OUTPARS,CURRPARS,WINDPARS)
          DO IP = 1, MNP
@@ -279,16 +259,14 @@
               CURRPARS = 0.
               WINDPARS = 0.
             END IF
-            OUTT_4(IP,:) = SNGL(OUTPARS(:))
-            CURR_4(IP,:) = SNGL(CURRPARS(:))
-            WIND_4(IP,:) = SNGL(WINDPARS(:))
-            !write(DBG%FHNDL,'(10F15.6)') WINDPARS
+            OUTT(IP,:) = OUTPARS(:)
+            CURR(IP,:) = CURRPARS(:)
+            WIND(IP,:) = WINDPARS(:)
          END DO
 
          IF (LMONO_OUT) THEN
 !$OMP WORKSHARE
            OUTT(:,1) = OUTT(:,1) / SQRT(2.)
-           ITER_4 = DBLE(IP_IS_STEADY)
 !$OMP END WORKSHARE
          ENDIF
 
@@ -306,35 +284,35 @@
              OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
            END IF
          END IF
-         WRITE(OUT%FHNDL+1)  TIME_4
-         WRITE(OUT%FHNDL+1)  (OUTT_4(IP,7), OUTT_4(IP,8), OUTT_4(IP,1), IP = 1, MNP)
+         WRITE(OUT%FHNDL+1) SNGL(TIME) 
+         WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+1)
-         WRITE(OUT%FHNDL+2)  TIME_4
-         WRITE(OUT%FHNDL+2)  (CURR_4(IP,1), CURR_4(IP,2), SNGL(DEP(IP)), IP = 1, MNP)
+         WRITE(OUT%FHNDL+2) SNGL(TIME)
+         WRITE(OUT%FHNDL+2)  (SNGL(CURR(IP,1)), SNGL(CURR(IP,2)), SNGL(DEP(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+2)
-         WRITE(OUT%FHNDL+3)  TIME_4
-         WRITE(OUT%FHNDL+3)  (OUTT_4(IP,7), OUTT_4(IP,8), WIND_4(IP,3), IP = 1, MNP)
+         WRITE(OUT%FHNDL+3) SNGL(TIME)
+         WRITE(OUT%FHNDL+3)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(WIND(IP,3)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+3)
-         WRITE(OUT%FHNDL+4)  TIME_4
-         WRITE(OUT%FHNDL+4)  (UFRIC(IP), Z0(IP), ALPHA_CH(IP), IP = 1, MNP)
+         WRITE(OUT%FHNDL+4) SNGL(TIME)
+         WRITE(OUT%FHNDL+4)  (SNGL(UFRIC(IP)), SNGL(Z0(IP)), SNGL(ALPHA_CH(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+4)
-         WRITE(OUT%FHNDL+5)  TIME_4
-         WRITE(OUT%FHNDL+5)  (OUTT_4(IP,1), OUTT_4(IP,2), OUTT_4(IP,3), IP = 1, MNP)
+         WRITE(OUT%FHNDL+5) SNGL(TIME)
+         WRITE(OUT%FHNDL+5)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(OUTT(IP,3)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+5)
-         WRITE(OUT%FHNDL+6)  TIME_4
-         WRITE(OUT%FHNDL+6)  (OUTT_4(IP,1), OUTT_4(IP,2), REAL(ISHALLOW(IP)), IP = 1, MNP)
+         WRITE(OUT%FHNDL+6)  SNGL(TIME)
+         WRITE(OUT%FHNDL+6)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(ISHALLOW(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+6)
-         WRITE(OUT%FHNDL+7)  TIME_4
-         WRITE(OUT%FHNDL+7)  (WIND_4(IP,8), WIND_4(IP,9), WIND_4(IP,8), IP = 1, MNP)
+         WRITE(OUT%FHNDL+7)  SNGL(TIME)
+         WRITE(OUT%FHNDL+7)  (SNGL(WIND(IP,8)), SNGL(WIND(IP,9)), SNGL(WIND(IP,8)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+7)
          IF (LQSTEA .AND. LCHKCONV) THEN
-           WRITE(OUT%FHNDL+8)  TIME_4
-           WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_TOTAL)
+           WRITE(OUT%FHNDL+8)  SNGL(TIME) 
+           WRITE(OUT%FHNDL+8)  (SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP))  , IP = 1, NP_TOTAL)
            CALL FLUSH(OUT%FHNDL+8)
          ENDIF
          IF (DoAirSea) THEN
            DO IP = 1, MNP
-             WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
+             WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND(IP,:))
            ENDDO
            CALL FLUSH(OUT%FHNDL+9)
          END IF

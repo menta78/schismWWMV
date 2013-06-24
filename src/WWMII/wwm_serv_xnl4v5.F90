@@ -219,7 +219,7 @@ if(x1(1) < x1(n1)) then             ! data increasing
   do i1=1,n1-1
     if(x1(i1) > x1(i1+1)) then
       ierr=1
-      write(*,*) 'z_intp1: i1 x1(i1) x1(i1+1):',i1,x1(i1),x1(i1+1)
+      write(stat%fhndl,*) 'z_intp1: i1 x1(i1) x1(i1+1):',i1,x1(i1),x1(i1+1)
       goto 9999
     end if
   end do
@@ -227,7 +227,7 @@ if(x1(1) < x1(n1)) then             ! data increasing
   do i2=1,n2-1
     if(x2(i2) > x2(i2+1)) then
       ierr=ierr+10
-      write(*,*) 'z_intp1: i2 x2(i2) x2(i2+1):',i2,x2(i2),x2(i2+1)
+      write(stat%fhndl,*) 'z_intp1: i2 x2(i2) x2(i2+1):',i2,x2(i2),x2(i2+1)
       goto 9999
     end if
   end do
@@ -236,7 +236,7 @@ else                                 ! data decreasing
   do i1=1,n1-1
     if(x1(i1) < x1(i1+1)) then
       ierr=2
-      write(*,*) 'z_intp1: i1 x1(i1) x1(i1+1):',i1,x1(i1),x1(i1+1)
+      write(stat%fhndl,*) 'z_intp1: i1 x1(i1) x1(i1+1):',i1,x1(i1),x1(i1+1)
       goto 9999
     end if
   end do
@@ -244,7 +244,7 @@ else                                 ! data decreasing
   do i2=1,n2-1
     if(x2(i2) < x2(i2+1)) then
       ierr=ierr + 20
-      write(*,*) 'z_intp1: i2 x2(i2) x2(i2+1):',i2,x2(i2),x2(i2+1)
+      write(stat%fhndl,*) 'z_intp1: i2 x2(i2) x2(i2+1):',i2,x2(i2),x2(i2+1)
       goto 9999
     end if
   end do
