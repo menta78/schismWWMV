@@ -48,8 +48,8 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ DEBUG + DEVELOPEMENT
 ##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
@@ -58,8 +58,8 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 ##########################################################################################
 #####Libraries
 #From my own dir
@@ -73,7 +73,7 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := pelfe_$(ENV)
+EXEC   := $(HOME)/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.

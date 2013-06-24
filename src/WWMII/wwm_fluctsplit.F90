@@ -2330,6 +2330,9 @@
 ! IA Pointer according to the convention in my thesis see p. 123
            ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+           JA = 0
+           IA = 0
+           POSI = 0
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
            J = 0
@@ -2368,23 +2371,22 @@
                END DO
              END DO
            END DO
-           DEALLOCATE(PTABLE)
-         END IF
-         DEALLOCATE(CELLVERTEX)
-         J=0
-         DO IP=1,MNP
-           DO I = 1, CCON(IP)
-             J=J+1
-             IE    =  IE_CELL(J)
-             POS   =  POS_CELL(J)
-             I1    =  POSI(1,J)
-             I2    =  POSI(2,J)
-             I3    =  POSI(3,J)
-             JA_IE(POS,1,IE) = I1
-             JA_IE(POS,2,IE) = I2
-             JA_IE(POS,3,IE) = I3
-           END DO
-         END DO
+
+           J=0
+           DO IP=1,MNP
+            DO I = 1, CCON(IP)
+              J=J+1
+              IE    =  IE_CELL(J)
+              POS   =  POS_CELL(J)
+              I1    =  POSI(1,J)
+              I2    =  POSI(2,J)
+              I3    =  POSI(3,J)
+              JA_IE(POS,1,IE) = I1
+              JA_IE(POS,2,IE) = I2
+              JA_IE(POS,3,IE) = I3
+            END DO
+          END DO
+        ENDIF
 
       END SUBROUTINE
 !**********************************************************************
