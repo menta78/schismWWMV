@@ -98,7 +98,8 @@ return
 end subroutine
 !
 !-----------------------------------------------------------------------------!
-subroutine z_intp1(x1,y1,x2,y2,n1,n2,ierr)                                    !
+subroutine z_intp1(x1,y1,x2,y2,n1,n2,ierr)
+use datapool, only : stat
 !-----------------------------------------------------------------------------!
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
