@@ -1064,8 +1064,8 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 !
-      INTEGER             :: J, IS, ID, IT, ITER
-      REAL(rkind)          :: ETOT4
+      INTEGER               :: J, IS, ID, IT, ITER
+      REAL(rkind)           :: ETOT4
       REAL*8                :: KI, KJ , ETOT
       REAL*8                :: PROPFAK, DBETA, DSIGMA
       REAL*8                :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
@@ -1075,7 +1075,7 @@
 
       ITER = 10
 
-      ETOT = DBLE(ETOT4)
+      ETOT = hs**2/FOUR
 
       DELTAK(1) = WK(IP,1)
       DO IS = 2, MSC

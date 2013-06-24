@@ -1,0 +1,146 @@
+\documentclass[12pt]{amsart}
+\usepackage{amsfonts, amsmath, latexsym, epsfig}
+\usepackage{amssymb}
+\usepackage{epsf}
+\usepackage{url}
+%\usepackage{tikz}
+
+
+\newcommand{\sfA}{\ensuremath{\mathsf{A}}}
+\newcommand{\RR}{\ensuremath{\mathbb{R}}}
+\newcommand{\NN}{\ensuremath{\mathbb{N}}}
+\newcommand{\QQ}{\ensuremath{\mathbb{Q}}}
+\newcommand{\CC}{\ensuremath{\mathbb{C}}}
+\newcommand{\ZZ}{\ensuremath{\mathbb{Z}}}
+\newcommand{\TT}{\ensuremath{\mathbb{T}}}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Q}{\ensuremath{\mathbb{Q}}}
+\newcommand{\C}{\ensuremath{\mathbb{C}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\T}{\ensuremath{\mathbb{T}}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{algorithm}{Algorithm}
+\newtheorem{lemma}{Lemma}
+\newtheorem{problem}{Problem}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{claim}{Claim}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+\def\QuotS#1#2{\leavevmode\kern-.0em\raise.2ex\hbox{$#1$}\kern-.1em/\kern-.1em\lower.25ex\hbox{$#2$}}
+
+
+\urlstyle{sf}
+
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\Sym}{Sym}
+\DeclareMathOperator{\Isom}{Isom}
+\DeclareMathOperator{\vertt}{vert}
+\DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator{\SC}{SC}
+\DeclareMathOperator{\SL}{SL}
+\DeclareMathOperator{\GL}{GL}
+\DeclareMathOperator{\PSL}{PSL}
+\DeclareMathOperator{\Out}{Out}
+\DeclareMathOperator{\Min}{Min}
+\DeclareMathOperator{\Dom}{Dom}
+\DeclareMathOperator{\cone}{cone}
+\DeclareMathOperator{\Stab}{Stab}
+
+
+\begin{document}
+
+\author{Mathieu Dutour Sikiri\'c}
+\address{Mathieu Dutour Sikiri\'c, Rudjer Boskovi\'c Institute, Bijenicka 54, 10000 Zagreb, Croatia}
+\email{mdsikir@irb.hr}
+
+
+\title{Short Manual of WWMIII}
+\date{}
+
+\maketitle
+
+
+\section{Introduction}
+WWMIII is a third generation wave model that solves the Wave Action Equation on an unstructured mesh
+It provides many feature similar to SWAN, WAM, WaveWatch III.
+
+Here we are describing how it can used.
+
+\section{description of input file}
+The input file is typically names {\tt wwminput.nml} and the program is run as
+\begin{verbatim}
+[mathieu@neptun ~]$ wwmadv
+\end{verbatim}
+But it is possible to give it other names, which are then used as
+\begin{verbatim}
+[mathieu@neptun ~]$ wwmadv wwminput_test.nml
+\end{verbatim}
+The {\tt wwminput.nml} file is using a standard NAMELIST type:
+\begin{enumerate}
+\item Logical tests are indicated as {\bf F/T}
+\item Optional items are set to a default value.
+\item Some systems are very strict with the input that they accept. All strings should be delimited by '   '. Final comma at the end 
+\end{enumerate}
+We will see below all aspects of it:
+
+\subsection{Section {\tt PROC}}
+\begin{verbatim}
+&PROC
+ PROCNAME       = 'wwm_test'         ! Project Name
+ DIMMODE        = 2                  ! Mode of run (ex: 1 = 1D, 2 = 2D) always 2D when coupled to SELFE
+ LSTEA          = F                  ! steady mode; under development
+ LQSTEA         = F                  ! Quasi-Steady Mode; In this case WWM-II is doing subiterations defined as DELTC/NQSITER unless QSCONVI is not reached
+ LSPHE          = F                  ! Spherical coordinates
+ LNAUTIN        = T                  ! Nautical convention for all inputs given in degrees (suggestion: T)
+                                     ! If T, 0 is _from_ north, 90 is from east etc;
+                                     ! If F, maths. convention - 0: to east; 90: going to north
+ LMONO_IN       = F                  ! For prescribing monochromatic wave height Hmono as a boundary conditions 
+ LMONO_OUT      = F                  ! Output wave heights in terms of Lmono
+ BEGTC          = '20071101.000000'  ! Time for start the simulation, ex:yyyymmdd. hhmmss
+ DELTC          = 600                ! Time step (not used with SELFE)
+ UNITC          = 'SEC'              ! Unity of time step
+ ENDTC          = '20071102.000000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
+ DMIN           = 0.001              ! Minimum water depth. This is not used in selfe; with selfe this is set automatically to h0 in param.in
+/
+\end{verbatim}
+The {\tt LMONO\_IN} and {\tt LMONO\_OUT} refer to the wave height that is accepted in input. If set to false then the wave height are considered to be significant wave height otherwise they are considered as monochromatic wave heights.
+
+
+\subsection{Section {\tt COUPL}}
+\begin{verbatim}
+&COUPL
+ LCPL           = T                  ! Couple with current model ... main switch - keep it on
+ LROMS          = F                  ! ROMS (set as F)
+ LTIMOR         = F                  ! TIMOR (set as F)
+ LSHYFEM        = F                  ! SHYFEM (set as F)
+ RADFLAG        = 'LON'
+ LETOT          = F                  ! Option to compute the wave induced radiation stress. If .T
+. the radiation stress is based on the integrated wave spectrum
+                                     ! e.g. Etot = Int,0,inf;Int,0,2*pi[N(sigma,theta)]dsigma,dth
+eta. If .F. the radiation stress is estimated as given in Roland et al. (2008) based
+                                     ! on the directional spectra itself. It is always desirable 
+to use .F., since otherwise the spectral informations are truncated and therefore
+                                     ! LETOT = .T., is only for testing and developers!
+ NLVT           = 10                 ! Number of vertical Layers; not used in other coupling mode
+s except SELFE
+ DTCOUP         = 600.               ! Couple time step - not used when coupled to SELFE
+/
+\end{verbatim}
+The logical {\tt LCPL} determines whether the WWM is coupled or not. If True, then it can be
+\begin{itemize}
+\item With SELFE when compiled with SELFE.
+\item With ROMS when compiled with the PGMCL library and ROMS
+\item With TIMOR (using pipes) if LTIMOR=T
+\item With ROMS (using pipes) if LROMS=T
+\item With SHYFEM (using pipes) if LSHYFEM=T
+\end{itemize}
+
+
+
+
+
+
+\end{document}

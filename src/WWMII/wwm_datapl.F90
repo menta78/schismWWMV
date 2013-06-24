@@ -878,6 +878,7 @@
          INTEGER, ALLOCATABLE   :: IA(:)
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
+         INTEGER, ALLOCATABLE   :: JA_IE(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)

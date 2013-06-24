@@ -555,10 +555,11 @@
 
 #if defined SELFE
          IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
-           WRITE(*,*) 'MSC_SELFE', MSC_SELFE
-           WRITE(*,*) 'MSC', MSC
-           WRITE(*,*) 'MDC_SELFE', MDC_SELFE
-           WRITE(*,*) 'MDC', MDC
+           WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
+           WRITE(DBG%FHNDL,*) 'MSC', MSC
+           WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
+           WRITE(DBG%FHNDL,*) 'MDC', MDC
+           CALL FLUSH(DBG%FHNDL)
            CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
          END IF
 #endif

@@ -15,8 +15,8 @@ F90 = ifort
 
 #INTEL
 #save opti
-#F90FLAGS = -O1 -axSSE4.2 -fpp -DWWMONLY -DNCDF -DST4 -assume byterecl -traceback -g 
-F90FLAGS = -O1 -mp1 -fpp -DWWMONLY -traceback -g -axSSE4.2 -g -traceback -check all -assume byterecl
+F90FLAGS = -O1 -axSSE4.2 -fpp -DWWMONLY -DNCDF -DST4 -assume byterecl -traceback -g 
+#F90FLAGS = -O1 -mp1 -fpp -DWWMONLY -traceback -g -axSSE4.2 -g -traceback -check all -assume byterecl
 
 #LDFLAGS = -Mprof=dwarf -Mprof=lines -Mprof=func -Mprof=time Minfo=ccff
 #TCFLAG  = -tcheck

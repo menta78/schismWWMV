@@ -1,4 +1,5 @@
       PROGRAM STATISTICS
+      USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
       
@@ -6,10 +7,99 @@
       REAL(rkind), ALLOCATABLE    :: WKLOC(:)
       REAL(rkind), ALLOCATABLE  :: TMPE(:), TMPES(:)
 
-      REAL(rkind)               :: DEPLOC, CURTXYLOC(2), WINDXY(2)
+      REAL(rkind)               :: DEPLOC, CURTXYLOC(2)
       REAL(rkind)               :: HS,TM01,TM02,KLM,WLM,ETMPO,ETMPS
+      REAL(rkind), ALLOCATABLE  :: HS_SP (:,:), TM01_SP(:,:), TM02_SP(:,:), TP_SP(:,:), TP_O(:,:)
+      REAL(rkind), ALLOCATABLE  :: EMAX_O(:,:), EMAX_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: FREQ_SP(:), DFREQ_SP(:)
+      REAL(rkind), ALLOCATABLE  :: ZEIT_SP(:)
+      REAL(rkind), ALLOCATABLE  :: ZEIT_O(:,:)
+      REAL(rkind), ALLOCATABLE  :: E_SP(:)
+      REAL(rkind), ALLOCATABLE  :: AUX_M0_SP(:), AUX_M1_SP(:), AUX_M2_SP(:), DS_INCR_SP(:)
+      REAL(rkind), ALLOCATABLE  ::  AUX_M0_O(:), AUX_M1_O(:), AUX_M2_O(:)   
+      REAL(rkind), ALLOCATABLE  :: E_B_TOT(:,:,:), AC_R(:,:,:,:)
+      REAL(rkind), ALLOCATABLE  :: E_O(:), E_B(:,:)
+      INTEGER, ALLOCATABLE      :: N_DT_O(:)
+      REAL(rkind), ALLOCATABLE  :: ACOUT_2D_R(:,:,:,:)
+      REAL(rkind), ALLOCATABLE  :: FREQ_O(:,:), DFREQ_O(:,:), E_OS(:,:)
+      REAL(rkind), ALLOCATABLE  :: E_OSF(:,:), E_BT(:,:), RMS_B(:,:)
+      REAL(rkind), ALLOCATABLE  :: HS_O(:,:), TM01_O(:,:), TM02_O(:,:)
+      INTEGER, ALLOCATABLE      :: MSC_O(:), N_OUT_TIME(:), N_OBSRV_ERR(:), N_STAT(:), N_DT_ERR(:,:)
+      REAL(rkind)               :: MINMAXFREQ_O, DX, DIFF_DX, YINTER, DT, DIFF_DT
+
+
+      character (len = *), parameter :: CallFct="PROGRAM STATISTICS"
+      CHARACTER(LEN=3)          :: CHTMP
+      CHARACTER(LEN=4)          :: YYYY
+      CHARACTER(LEN=2)          :: TMPCHAR
+      CHARACTER(LEN=30)         :: FMT_ERG_HEADER 
+      CHARACTER(LEN=30)         :: FMT_NAM_HEADER
+      CHARACTER(LEN=30)         :: FMT_ERG_RESULT 
+      CHARACTER(LEN=30)         :: FMT_ERG_ALL_STAT
+      CHARACTER(LEN=2)          :: MM, DD, hh, MINUTE, SEC
+      CHARACTER                 :: DUMP*500, DUMP2*15
+      CHARACTER                 :: DUMP3*1
+      REAL(rkind)               :: XMJD, DUMP_R
+      INTEGER                   :: DUMP_I, COUNTER
+      LOGICAL                   :: FOUND
+      REAL(rkind), ALLOCATABLE  :: DIFF_HS_SP(:,:), DIFF2_HS_SP(:,:), ABS_DIFF_HS_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: DIFF_TM01_SP(:,:), DIFF2_TM01_SP(:,:), ABS_DIFF_TM01_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: DIFF_TM02_SP(:,:), DIFF2_TM02_SP(:,:), ABS_DIFF_TM02_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: DIFF_TP_SP(:,:), DIFF2_TP_SP(:,:), ABS_DIFF_TP_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: DIFF3_HS_SP(:,:), DIFF3_TM01_SP(:,:), DIFF3_TM02_SP(:,:), DIFF3_TP_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: DIFF4_HS_SP(:,:), DIFF4_TM01_SP(:,:), DIFF4_TM02_SP(:,:), DIFF4_TP_SP(:,:)
+      REAL(rkind), ALLOCATABLE  :: HS_SP_CLEAN (:,:), TM01_SP_CLEAN(:,:), TM02_SP_CLEAN(:,:), TP_SP_CLEAN(:,:)
+      REAL(rkind), ALLOCATABLE  :: HS_O_CLEAN (:,:), TM01_O_CLEAN(:,:), TM02_O_CLEAN(:,:)
+      REAL(rkind), ALLOCATABLE  :: TP_O_CLEAN (:,:)
+      REAL(rkind), ALLOCATABLE  :: MEAN_HS_O(:), BIAS_HS_SP(:), MAE_HS_SP(:)
+      REAL(rkind), ALLOCATABLE  :: RMS_HS_SP(:)  , SCI_HS_SP(:)   , MEAN_HS_SP (:)
+      REAL(rkind), ALLOCATABLE  :: MEAN_TM01_O(:), BIAS_TM01_SP(:), MAE_TM01_SP(:)
+      REAL(rkind), ALLOCATABLE  :: RMS_TM01_SP(:), SCI_TM01_SP(:) , MEAN_TM01_SP(:)
+      REAL(rkind), ALLOCATABLE  :: MEAN_TM02_O(:), BIAS_TM02_SP(:), MAE_TM02_SP(:)
+      REAL(rkind), ALLOCATABLE  :: RMS_TM02_SP(:), SCI_TM02_SP(:) , MEAN_TM02_SP(:)  
+      REAL(rkind), ALLOCATABLE  :: MEAN_TP_O(:)  , BIAS_TP_SP(:)  , MAE_TP_SP(:)
+      REAL(rkind), ALLOCATABLE  :: RMS_TP_SP(:)  , SCI_TP_SP(:)   , MEAN_TP_SP (:)
+      REAL(rkind), ALLOCATABLE  :: KORR_HS(:), KORR_TM01(:), KORR_TM02(:), KORR_TP(:)
+      REAL(rkind)               :: MEAN_O_HS_ALL  , MEAN_SP_HS_ALL
+      REAL(rkind)               :: MEAN_O_TM01_ALL, MEAN_SP_TM01_ALL
+      REAL(rkind)               :: MEAN_O_TM02_ALL, MEAN_SP_TM02_ALL
+      REAL(rkind)               :: MEAN_O_TP_ALL  , MEAN_SP_TP_ALL
+      REAL(rkind)               :: BIAS_HS_ALL  
+      REAL(rkind)               :: BIAS_TM01_ALL
+      REAL(rkind)               :: BIAS_TM02_ALL
+      REAL(rkind)               :: RMS_HS_ALL  
+      REAL(rkind)               :: RMS_TM01_ALL
+      REAL(rkind)               :: RMS_TM02_ALL
+      REAL(rkind)               :: MAE_HS_ALL  
+      REAL(rkind)               :: MAE_TM01_ALL
+      REAL(rkind)               :: MAE_TM02_ALL  
+      REAL(rkind)               :: SCI_HS_ALL  
+      REAL(rkind)               :: SCI_TM01_ALL
+      REAL(rkind)               :: SCI_TM02_ALL      
+      REAL(rkind)               :: KORR_HS_ALL  
+      REAL(rkind)               :: KORR_TM01_ALL
+      REAL(rkind)               :: KORR_TM02_ALL
+      REAL(rkind)               :: BIAS_TP_ALL
+      REAL(rkind)               :: RMS_TP_ALL
+      REAL(rkind)               :: MAE_TP_ALL
+      REAL(rkind)               :: SCI_TP_ALL
+      REAL(rkind)               :: KORR_TP_ALL
+      REAL(rkind), ALLOCATABLE  :: DIFF1_ESP(:,:), DIFF2_ESP(:,:), DIFF1_K(:,:), DIFF2_K(:,:), DIFF3_K(:,:), DIFF4_K(:,:), MEAN_BSP(:,:), MEAN_OSP(:,:), KORR_SP(:,:), BIAS_SP(:,:)
+
+
+      integer posTime, nbTime, iTime, iFile
+      integer BUOYS_O, ISEMAX, N_DT_O_MAX
+      REAL(rkind) :: M0, M1, M2, INCR_DT, INTER_DT, INTER
+      INTEGER  :: MSC_O_MAX = 47
 
       REAL(rkind)                :: ETOT, DELTAE, ETOT1
+      REAL(rkind) :: SGHIG, CUT_OFF
+      INTEGER BUOYS
+      INTEGER ncid, var_id, iret, nbFile
+      real(rkind), allocatable :: ListNbTime(:)
+      INTEGER DATAEND
+      CHARACTER(LEN=30),  ALLOCATABLE  :: BNAMES(:)
+      character(len=1000) :: FILE_NAME
 
       CHARACTER(LEN = 30)  :: CTMP30 
       CHARACTER(LEN = 15)  :: CTMP15
@@ -24,16 +114,14 @@
 
 
       INTEGER              :: IS, ID, IB, I, J, K, IT, ISMAX, IBUOYS
-      INTEGER              :: IS_O, IT_O
+      INTEGER              :: IS_O, IT_O, N_DT_SP
       INTEGER              :: dateFMT = 0
+      INTEGER              :: ISTAT
 
       INTEGER, ALLOCATABLE :: I2DSPECOUT(:)
 
       INTEGER, ALLOCATABLE :: IFIND(:), FILETYPE(:)
       
-      PI  = 4.* DATAN(1.d0)
-      PI2 = 2.* PI
-
 !------------------------------------------------------------------------      
 ! open files  
 !------------------------------------------------------------------------
@@ -1417,16 +1505,18 @@
       character(len=1000), intent(in) :: FILE_NAME
       integer, intent(out) :: nbTimeLoc
       integer iret, ncid
+      character (len = *), parameter :: CallFct="GET_NBTIME"
+      integer, dimension(nf90_max_var_dims) :: dimIDs
       iret = nf90_open(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
       iret = nf90_inq_varid(ncid, 'ocean_time_day', itime_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
       iret = NF90_INQUIRE_VARIABLE(ncid, ITIME_ID, dimids = dimids)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
       iret = nf90_inquire_dimension(ncid, dimids(1), len = nbTimeLoc)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
-      iret = NF90_CLOSE(ncid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      iret = NF90_CLOSE(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1437,27 +1527,29 @@
       character(len=1000), intent(in) :: FILE_NAME
       integer, intent(in) :: nbTime
       integer, intent(inout) :: posTime
-      real(rkind), intent(inout) :: ListTime
+      real(rkind), intent(inout) :: ListTime(nbTime)
       real(rkind), allocatable :: TimeRead(:)
-      integer iret, ncid
+      character (len = *), parameter :: CallFct="GET_TheTime"
+      integer, dimension(nf90_max_var_dims) :: dimIDs
+      integer iret, ncid, nbTimeLoc
       iret = nf90_open(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
       iret = nf90_inq_varid(ncid, 'ocean_time_day', itime_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
       iret = NF90_INQUIRE_VARIABLE(ncid, ITIME_ID, dimids = dimids)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
       iret = nf90_inquire_dimension(ncid, dimids(1), len = nbTimeLoc)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       allocate(TimeRead(nbTimeLoc))
       iret = NF90_GET_VAR(ncid, itime_id, TimeRead)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
       DO iTimeLoc=1,nbTimeLoc
         posTime=posTime+1
         ListTime(posTime)=TimeRead(iTimeLoc)
       END DO
       DEALLOCATE(TimeRead)
       iret = NF90_CLOSE(ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1467,12 +1559,14 @@
       implicit none
       integer, intent(out) :: nbFile, nbTime
       character(len=1000) :: FILE_NAME
+      LOGICAL test
+      integer iFile, nbTimeLoc
       IF (OUT_STATION%IDEF.gt.0) THEN
         ifile=1
         nbTime=0
         DO
           CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
-          INQUIRE(FILE=TRIM(FILE_NAME_SPLIT),EXIST=test)
+          INQUIRE(FILE=TRIM(FILE_NAME),EXIST=test)
           IF (test .eqv. .FALSE.) THEN
             EXIT
           END IF
@@ -1485,7 +1579,7 @@
         nbFile=ifile-1
       ELSE
         CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
-        INQUIRE(FILE=TRIM(FILE_NAME_SPLIT),EXIST=test)
+        INQUIRE(FILE=TRIM(FILE_NAME),EXIST=test)
         IF (test .eqv. .FALSE.) THEN
           nbFile=0
           nbTime=0
@@ -1505,7 +1599,7 @@
       real(rkind), intent(out) :: ListNbTime(nbFile)
       real(rkind), intent(out) :: ListTime(nbTime)
       character(len=1000) :: FILE_NAME
-      integer posTime, posPRev
+      integer posTime, posPrev, iFile
       IF (OUT_STATION%IDEF.gt.0) THEN
         posTime=0
         DO iFile=1,nbFile
@@ -1518,7 +1612,8 @@
         ifile=1
         CALL GET_FILE_NAME_MERGE(FILE_NAME, ifile)
         ListNbTime(1)=nbTime
-        CALL GET_TheTime(FILE_NAME, nbTime, 0, ListTime)
+        posTime=0
+        CALL GET_TheTime(FILE_NAME, nbTime, posTime, ListTime)
       END IF
       END SUBROUTINE
 !**********************************************************************

@@ -2123,10 +2123,7 @@
       SUBROUTINE DEALLOC_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         DEALLOCATE( CCON)
-         DEALLOCATE( SI)
-         DEALLOCATE( ITER_EXP)
-         DEALLOCATE( ITER_EXPD)
+         DEALLOCATE( CCON, SI, ITER_EXP, ITER_EXPD)
          IF (ICOMP .GE. 1) THEN
            DEALLOCATE(I_DIAG)
          END IF
@@ -2149,11 +2146,19 @@
          INTEGER :: I1, I2, I3, NI(3)
          INTEGER :: CHILF(MNP), COUNT_MAX
          INTEGER :: ITMP(MNP)
+         INTEGER :: POS_TRICK(3,2)
 
          REAL(rkind)   :: TRIA03
 
          INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
          INTEGER, ALLOCATABLE :: PTABLE(:,:)
+
+         POS_TRICK(1,1) = 2
+         POS_TRICK(1,2) = 3
+         POS_TRICK(2,1) = 3
+         POS_TRICK(2,2) = 1
+         POS_TRICK(3,1) = 1
+         POS_TRICK(3,2) = 2
 
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE CONNECTED AREA SI '
 ! The situation is as follows with respect to MNP, NP_RES and friends.
@@ -2257,6 +2262,8 @@
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+           ALLOCATE(JA_IE(3,3,MNE), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6.1')
 
            J = 0
            PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
@@ -2321,12 +2328,10 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ), IA(MNP+1), stat=istat)
+           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
-           ALLOCATE (POSI(3,COUNT_MAX), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 7')
            J = 0
            K = 0
            IA(1) = 1
@@ -2360,13 +2365,27 @@
                  IF (IP   == JA(K)) I_DIAG(IP) = K
                  IF (IP_J == JA(K)) POSI(2,J)  = K
                  IF (IP_K == JA(K)) POSI(3,J)  = K
-                 IF (K == 0) call wwm_abort('ERROR IN K .EQ. 0')
                END DO
              END DO
            END DO
            DEALLOCATE(PTABLE)
          END IF
          DEALLOCATE(CELLVERTEX)
+         J=0
+         DO IP=1,MNP
+           DO I = 1, CCON(IP)
+             J=J+1
+             IE    =  IE_CELL(J)
+             POS   =  POS_CELL(J)
+             I1    =  POSI(1,J)
+             I2    =  POSI(2,J)
+             I3    =  POSI(3,J)
+             JA_IE(POS,1,IE) = I1
+             JA_IE(POS,2,IE) = I2
+             JA_IE(POS,3,IE) = I3
+           END DO
+         END DO
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2374,14 +2393,9 @@
       SUBROUTINE DEALLOC_FLUCT
       USE DATAPOOL
       implicit none
-      DEALLOCATE (IE_CELL)
-      DEALLOCATE (POS_CELL)
-      DEALLOCATE (IE_CELL2)
-      DEALLOCATE (POS_CELL2)
+      DEALLOCATE (IE_CELL, POS_CELL, IE_CELL2, POS_CELL2)
       IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
-        DEALLOCATE (JA)
-        DEALLOCATE (IA)
-        DEALLOCATE (POSI)
+        DEALLOCATE (JA, IA, POSI)
       END IF
       END SUBROUTINE
 !**********************************************************************

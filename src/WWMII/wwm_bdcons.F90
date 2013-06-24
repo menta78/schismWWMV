@@ -1391,7 +1391,7 @@
 
       IF (INT(SPPAR(6)) .EQ. 1) THEN
         DSPR = PI * SPPAR(4) / 180._rkind
-        MS = MAX (DSPR**(-2) - 2., 1._rkind)
+        MS = MAX (DSPR**(-2) - TWO, 1._rkind)
       ELSE
         MS = SPPAR(4)
       ENDIF

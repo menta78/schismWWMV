@@ -890,7 +890,8 @@
       integer, allocatable :: COUNTERMAT(:,:)
       integer, allocatable :: IMAT(:), JMAT(:)
       integer :: NbPoint, nbFail
-      real(rkind) :: Wi(3), eVal
+      real(rkind) :: Wi(3), eVal, XPW(3), YPW(3)
+      INTEGER NI(3)
 !
 ! I make the assumption that the year when the dataset beginns at the year indicated in the bouc section
 !
@@ -1101,7 +1102,10 @@
           WRITE(WINDBG%FHNDL,*) 'POINT OF THE MESH IS OUT OF THE WIND FIELD', IP, XP(IP), YP(IP)
           nbFail=nbFail+1
         ELSE
-          CALL INTELEMENT_COEF(XYPWIND(1,INE_WIND(:,WIND_ELE(IP))), XYPWIND(2,INE_WIND(:,WIND_ELE(IP))),XP(IP),YP(IP),Wi)
+          NI=INE_WIND(:,WIND_ELE(IP))
+          XPW=XYPWIND(1,NI)
+          YPW=XYPWIND(2,NI)
+          CALL INTELEMENT_COEF(XPW, YPW,XP(IP),YP(IP),Wi)
           WI_NARR(IP,:)=Wi
 !         WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' sumWi=', sum(Wi)
 !         WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' minW=', minval(Wi), ' maxW=', maxval(Wi)

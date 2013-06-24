@@ -117,7 +117,6 @@
 
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
-         REAL(kind=4)              :: TIME_4
          LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
 
          INTEGER                   :: IP
@@ -131,20 +130,10 @@
          REAL(rkind)               :: WIND(NP_GLOBAL,WINDVARS)
          REAL(rkind)               :: ITER_GLOBAL(NP_GLOBAL), ITER_LOCAL(MNP)
          REAL(rkind)               :: ITERT(NP_GLOBAL)
-
-         REAL(kind=4)              :: OUTT_GLOBAL_4(NP_GLOBAL,OUTVARS)
-         REAL(kind=4)              :: CURR_GLOBAL_4(NP_GLOBAL,CURRVARS)
-         REAL(kind=4)              :: WIND_GLOBAL_4(NP_GLOBAL,WINDVARS)
-         REAL(kind=4)              :: ITER_GLOBAL_4(NP_GLOBAL)
-
 #else
          REAL(rkind)               :: OUTT(MNP,OUTVARS)
          REAL(rkind)               :: CURR(MNP,CURRVARS)
          REAL(rkind)               :: WIND(MNP,WINDVARS)
-         REAL(kind=4)              :: OUTT_4(MNP,OUTVARS)
-         REAL(kind=4)              :: CURR_4(MNP,CURRVARS)
-         REAL(kind=4)              :: WIND_4(MNP,WINDVARS)
-         REAL(kind=4)              :: ITER_4(MNP)
 #endif
          REAL(rkind)               :: ACLOC(MSC,MDC)
          REAL(rkind)               :: OUTPARS(OUTVARS)
@@ -154,14 +143,14 @@
          CHARACTER(LEN=15)  :: CTIME
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
-         DoAirSea=.TRUE.
+         DoAirSea=.FALSE.
 #ifdef MPI_PARALL_GRID
-        OUTT_GLOBAL = 0.
-        OUTT        = 0.
-        CURR_GLOBAL = 0.
-        CURR        = 0.
-        WIND_GLOBAL = 0.
-        WIND        = 0.
+         OUTT_GLOBAL = 0.
+         OUTT        = 0.
+         CURR_GLOBAL = 0.
+         CURR        = 0.
+         WIND_GLOBAL = 0.
+         WIND        = 0.
 #else
         OUTT = 0.
         CURR = 0.
@@ -206,15 +195,7 @@
              WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
              IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL(IP)  =ITER_GLOBAL(IP)  *nwild_gb(IP)
            enddo !IP
-           do IP=1,NP_GLOBAL
-             OUTT_GLOBAL_4(IP,:)=SNGL(OUTT_GLOBAL(IP,:))
-             CURR_GLOBAL_4(IP,:)=SNGL(CURR_GLOBAL(IP,:))
-             WIND_GLOBAL_4(IP,:)=SNGL(WIND_GLOBAL(IP,:))
-             IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL_4(IP)=SNGL(ITER_GLOBAL(IP))
-           enddo !IP
          endif !myrank
-
-         TIME_4 = SNGL(TIME)
 
          IF (myrank == 0) THEN
            IF (LINIT_OUTPUT) THEN
@@ -230,41 +211,40 @@
                OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
              END IF
            END IF
-           WRITE(OUT%FHNDL+1)  TIME_4
-           WRITE(OUT%FHNDL+1)  (OUTT_GLOBAL_4(IP,7), OUTT_GLOBAL_4(IP,8), OUTT_GLOBAL_4(IP,1)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+1)  SNGL(TIME)
+           WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+1)
-           WRITE(OUT%FHNDL+2)  TIME_4
-           WRITE(OUT%FHNDL+2)  (CURR_GLOBAL_4(IP,1), CURR_GLOBAL_4(IP,2), CURR_GLOBAL_4(IP,3)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+2)  SNGL(TIME)
+           WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+2)
-           WRITE(OUT%FHNDL+3)  TIME_4
-           WRITE(OUT%FHNDL+3)  (WIND_GLOBAL_4(IP,1), WIND_GLOBAL_4(IP,2), OUTT_GLOBAL_4(IP,10)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+3)  SNGL(TIME)
+           WRITE(OUT%FHNDL+3)  (SNGL(WIND_GLOBAL(IP,1)), SNGL(WIND_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,10))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+3)
-           WRITE(OUT%FHNDL+4)  TIME_4
-           WRITE(OUT%FHNDL+4)  (OUTT_GLOBAL_4(IP,1), OUTT_GLOBAL_4(IP,2), OUTT_GLOBAL_4(IP,3)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+4)  SNGL(TIME)
+           WRITE(OUT%FHNDL+4)  (SNGL(OUTT_GLOBAL(IP,1)), SNGL(OUTT_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+4)
-           WRITE(OUT%FHNDL+5)  TIME_4
-           WRITE(OUT%FHNDL+5)  (CURR_GLOBAL_4(IP,1), CURR_GLOBAL_4(IP,2), CURR_GLOBAL_4(IP,5)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+5)  SNGL(TIME)
+           WRITE(OUT%FHNDL+5)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,5))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+5)
-           WRITE(OUT%FHNDL+6)  TIME_4
-           WRITE(OUT%FHNDL+6)  (WIND_GLOBAL_4(IP,9), WIND_GLOBAL_4(IP,8), WIND_GLOBAL_4(IP,7)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+6)  SNGL(TIME)
+           WRITE(OUT%FHNDL+6)  (SNGL(WIND_GLOBAL(IP,9)), SNGL(WIND_GLOBAL(IP,8)), SNGL(WIND_GLOBAL(IP,7))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+6)
-           WRITE(OUT%FHNDL+7)  TIME_4
-           WRITE(OUT%FHNDL+7)  (WIND_GLOBAL_4(IP,4), WIND_GLOBAL_4(IP,5), WIND_GLOBAL_4(IP,6)  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+7)  SNGL(TIME) 
+           WRITE(OUT%FHNDL+7)  (SNGL(WIND_GLOBAL(IP,4)), SNGL(WIND_GLOBAL(IP,5)), SNGL(WIND_GLOBAL(IP,6))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+7)
            IF (LQSTEA .AND. LCHKCONV) THEN
-             WRITE(OUT%FHNDL+8)  TIME_4
-             WRITE(OUT%FHNDL+8)  (ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP), ITER_GLOBAL_4(IP)  , IP = 1, NP_GLOBAL)
+             WRITE(OUT%FHNDL+8) SNGL(TIME) 
+             WRITE(OUT%FHNDL+8)  (SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP))  , IP = 1, NP_GLOBAL)
              CALL FLUSH(OUT%FHNDL+8)
            ENDIF
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
-               WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_GLOBAL_4(IP,:)
+               WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND_GLOBAL(IP,:))
              ENDDO
              CALL FLUSH(OUT%FHNDL+9)
            END IF
-         END IF
+         END IF ! myrank
 #else
-         TIME_4 = SNGL(TIME)
 
 !$OMP DO PRIVATE (IP,ACLOC,OUTPARS,CURRPARS,WINDPARS)
          DO IP = 1, MNP
@@ -279,16 +259,14 @@
               CURRPARS = 0.
               WINDPARS = 0.
             END IF
-            OUTT_4(IP,:) = SNGL(OUTPARS(:))
-            CURR_4(IP,:) = SNGL(CURRPARS(:))
-            WIND_4(IP,:) = SNGL(WINDPARS(:))
-            !write(DBG%FHNDL,'(10F15.6)') WINDPARS
+            OUTT(IP,:) = OUTPARS(:)
+            CURR(IP,:) = CURRPARS(:)
+            WIND(IP,:) = WINDPARS(:)
          END DO
 
          IF (LMONO_OUT) THEN
 !$OMP WORKSHARE
            OUTT(:,1) = OUTT(:,1) / SQRT(2.)
-           ITER_4 = DBLE(IP_IS_STEADY)
 !$OMP END WORKSHARE
          ENDIF
 
@@ -306,35 +284,35 @@
              OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
            END IF
          END IF
-         WRITE(OUT%FHNDL+1)  TIME_4
-         WRITE(OUT%FHNDL+1)  (OUTT_4(IP,7), OUTT_4(IP,8), OUTT_4(IP,1), IP = 1, MNP)
+         WRITE(OUT%FHNDL+1) SNGL(TIME) 
+         WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+1)
-         WRITE(OUT%FHNDL+2)  TIME_4
-         WRITE(OUT%FHNDL+2)  (CURR_4(IP,1), CURR_4(IP,2), SNGL(DEP(IP)), IP = 1, MNP)
+         WRITE(OUT%FHNDL+2) SNGL(TIME)
+         WRITE(OUT%FHNDL+2)  (SNGL(CURR(IP,1)), SNGL(CURR(IP,2)), SNGL(DEP(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+2)
-         WRITE(OUT%FHNDL+3)  TIME_4
-         WRITE(OUT%FHNDL+3)  (OUTT_4(IP,7), OUTT_4(IP,8), WIND_4(IP,3), IP = 1, MNP)
+         WRITE(OUT%FHNDL+3) SNGL(TIME)
+         WRITE(OUT%FHNDL+3)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(WIND(IP,3)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+3)
-         WRITE(OUT%FHNDL+4)  TIME_4
-         WRITE(OUT%FHNDL+4)  (UFRIC(IP), Z0(IP), ALPHA_CH(IP), IP = 1, MNP)
+         WRITE(OUT%FHNDL+4) SNGL(TIME)
+         WRITE(OUT%FHNDL+4)  (SNGL(UFRIC(IP)), SNGL(Z0(IP)), SNGL(ALPHA_CH(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+4)
-         WRITE(OUT%FHNDL+5)  TIME_4
-         WRITE(OUT%FHNDL+5)  (OUTT_4(IP,1), OUTT_4(IP,2), OUTT_4(IP,3), IP = 1, MNP)
+         WRITE(OUT%FHNDL+5) SNGL(TIME)
+         WRITE(OUT%FHNDL+5)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(OUTT(IP,3)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+5)
-         WRITE(OUT%FHNDL+6)  TIME_4
-         WRITE(OUT%FHNDL+6)  (OUTT_4(IP,1), OUTT_4(IP,2), REAL(ISHALLOW(IP)), IP = 1, MNP)
+         WRITE(OUT%FHNDL+6)  SNGL(TIME)
+         WRITE(OUT%FHNDL+6)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(ISHALLOW(IP)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+6)
-         WRITE(OUT%FHNDL+7)  TIME_4
-         WRITE(OUT%FHNDL+7)  (WIND_4(IP,8), WIND_4(IP,9), WIND_4(IP,8), IP = 1, MNP)
+         WRITE(OUT%FHNDL+7)  SNGL(TIME)
+         WRITE(OUT%FHNDL+7)  (SNGL(WIND(IP,8)), SNGL(WIND(IP,9)), SNGL(WIND(IP,8)), IP = 1, MNP)
          CALL FLUSH(OUT%FHNDL+7)
          IF (LQSTEA .AND. LCHKCONV) THEN
-           WRITE(OUT%FHNDL+8)  TIME_4
-           WRITE(OUT%FHNDL+8)  (ITER_4(IP), ITER_4(IP), ITER_4(IP)  , IP = 1, NP_TOTAL)
+           WRITE(OUT%FHNDL+8)  SNGL(TIME) 
+           WRITE(OUT%FHNDL+8)  (SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP))  , IP = 1, NP_TOTAL)
            CALL FLUSH(OUT%FHNDL+8)
          ENDIF
          IF (DoAirSea) THEN
            DO IP = 1, MNP
-             WRITE(OUT%FHNDL+9,'(10F15.6)') WIND_4(IP,:) 
+             WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND(IP,:))
            ENDDO
            CALL FLUSH(OUT%FHNDL+9)
          END IF
@@ -561,10 +539,7 @@
                WINDXLOC_STATIONS(I)     = WINDX_SUM(I)       / TheIsumR
                WINDYLOC_STATIONS(I)     = WINDY_SUM(I)       / TheIsumR
                !WRITE(STAT%FHNDL,*) 'SUM BEFORE INTPAR', SUM(ACLOC_STATIONS(I,:,:))
-               CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), & 
-     &                                            DEPLOC_STATIONS(I),   &
-     &                                         CURTXYLOC_STATIONS(I,:), & 
-     &                  ACLOC_STATIONS(I,:,:), STATION(I)%OUTPAR_NODE)
+               CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:), ACLOC_STATIONS(I,:,:), STATION(I)%OUTPAR_NODE)
                STATION(I)%OUTPAR_NODE(26) = USTARLOC_STATIONS(I)
                STATION(I)%OUTPAR_NODE(27) = Z0LOC_STATIONS(I)
                STATION(I)%OUTPAR_NODE(28) = ALPHALOC_STATIONS(I)
@@ -1003,19 +978,15 @@
 #ifndef MPI_PARALL_GRID
          DO I = 1, IOUTS ! Loop over stations ...
 
-           CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC_STATION,           &
-     &  DEPLOC_STATION, WATLEVLOC_STATION,WKLOC_STATION)
-           CALL INTPAR_LOC(I, STATION(I)%ISMAX,WKLOC_STATION,           &
-     &  DEPLOC_STATION,CURTXYLOC_STATION,ACLOC,STATION(I)%OUTPAR_NODE)
+           CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC_STATION, DEPLOC_STATION, WATLEVLOC_STATION,WKLOC_STATION)
+           CALL INTPAR_LOC(I, STATION(I)%ISMAX,WKLOC_STATION, DEPLOC_STATION,CURTXYLOC_STATION,ACLOC,STATION(I)%OUTPAR_NODE)
            !CALL INTELEMENT_WW3GLOBAL_LOC(STATION(I)%ELEMENT,STATION(I)%XCOORD,STATION(I)%YCOORD,WW3LOCAL)
 
            INQUIRE(FILE=TRIM(STATION(I)%NAME)//'.site',EXIST=ALIVE)
            IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-             OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site',    &
-     &    STATUS = 'OLD' , POSITION = 'APPEND')
+             OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site', STATUS = 'OLD' , POSITION = 'APPEND')
            ELSE
-             OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site',    &
-     &    STATUS = 'UNKNOWN')
+             OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site', STATUS = 'UNKNOWN')
              WRITE(OUTPARM%FHNDL, TITLEFORMAT) 'TIME', OUTT_VARNAMES
            END IF
            WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME, STATION(I)%OUTPAR_NODE
@@ -1028,19 +999,15 @@
            IF (LSP1D) THEN
              INQUIRE( FILE=TRIM(STATION(I)%NAME)//'.sp1d',EXIST=ALIVE)
              IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-               OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',  &
-     &    STATUS = 'OLD' , POSITION = 'APPEND')
+               OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d', STATUS = 'OLD' , POSITION = 'APPEND')
              ELSE
-               OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',  &
-     &    STATUS = 'UNKNOWN')
+               OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d', STATUS = 'UNKNOWN')
                WRITE(OUTSP1D%FHNDL,*) MSC, MDC
                WRITE(OUTSP1D%FHNDL,*) SPSIG, SPDIR, STATION(I)%IFOUND
              END IF
-             WRITE(OUTSP1D%FHNDL,*) CTIME, WKLOC_STATION,DEPLOC_STATION,&
-     &      CURTXYLOC_STATION
+             WRITE(OUTSP1D%FHNDL,*) CTIME, WKLOC_STATION,DEPLOC_STATION, CURTXYLOC_STATION
              DO IS = 1, MSC
-               WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2,    &
-     &    ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
+               WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2, ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
              END DO
              CLOSE(OUTSP1D%FHNDL)
            END IF
@@ -1048,11 +1015,9 @@
            IF (LSP2D) THEN
              INQUIRE(FILE=TRIM(STATION(I)%NAME)//'.sp2d',EXIST=ALIVE)
              IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-               OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d',  &
-     &     STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
+               OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d', STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
              ELSE
-               OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d',  &
-     &              STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
+               OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d', STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
                WRITE(OUTSP2D%FHNDL) MSC, MDC
                WRITE(OUTSP2D%FHNDL) SPSIG, SPDIR, STATION(I)%IFOUND
              END IF
@@ -1067,9 +1032,7 @@
 !
          DO I = 1, IOUTS ! Loop over stations ...
            IF (STATION(I)%IFOUND .EQ. 0) CYCLE
-           CALL INTELEMENT_AC_LOC(I, ACLOC_STATIONS(I,:,:),             &
-     &   CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I),                    &
-     &   WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
+           CALL INTELEMENT_AC_LOC(I, ACLOC_STATIONS(I,:,:), CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I), WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
            !WRITE(DBG%FHNDL,*) 'INTERPOLATED MYRANK =', MYRANK, I, DEPLOC(I), CURTXYLOC(I,:), SUM(WKLOC(I,:)), SUM(ACLOC_STATIONS(I,:,:))
          END DO
 
@@ -1091,11 +1054,9 @@
 
              INQUIRE(FILE=TRIM(STATION(I)%NAME)//'.site',EXIST=ALIVE )
              IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-               OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site',  &
-     &    STATUS = 'OLD' , POSITION = 'APPEND')
+               OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site', STATUS = 'OLD' , POSITION = 'APPEND')
              ELSE
-               OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site',  &
-     &    STATUS = 'UNKNOWN')
+               OPEN(OUTPARM%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.site', STATUS = 'UNKNOWN')
                WRITE(OUTPARM%FHNDL, TITLEFORMAT) 'TIME', OUTT_VARNAMES
              END IF
 
@@ -1112,37 +1073,28 @@
                CURTXYLOC_STATIONS(I,:)  = CURTXYLOC_SUM(I,:) / TheIsumR
                WKLOC_STATIONS(I,:)      = WKLOC_SUM(I,:)     / TheIsumR
                ACLOC           = ACLOC_SUM(I,:,:)   / TheIsumR
-               CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), &
-     &  DEPLOC_STATIONS(I),CURTXYLOC_STATIONS(I,:),ACLOC,               &
-     &  STATION(I)%OUTPAR_NODE)
+               CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I),CURTXYLOC_STATIONS(I,:),ACLOC, STATION(I)%OUTPAR_NODE)
              END IF
 
-             WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME,                   &
-     &  STATION(I)%OUTPAR_NODE(1:24), DEPLOC_STATIONS(I),               &
-     &  CURTXYLOC_STATIONS(I,:)
+             WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME, STATION(I)%OUTPAR_NODE(1:24), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:)
              CLOSE(OUTPARM%FHNDL)
 
              IF (LSP1D .OR. LSP2D) THEN
-               CALL CLSPEC( WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I),    &
-     &  CURTXYLOC_STATIONS(I,:), ACLOC, ACOUT_1d, ACOUT_2d )
+               CALL CLSPEC( WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:), ACLOC, ACOUT_1d, ACOUT_2d )
              END IF
 
              IF (LSP1D) THEN
                INQUIRE(FILE=TRIM(STATION(I)%NAME)//'.sp1d',EXIST=ALIVE)
                IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-                 OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',&
-     &   STATUS = 'OLD' , POSITION = 'APPEND')
+                 OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',STATUS = 'OLD' , POSITION = 'APPEND')
                ELSE
-                 OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',&
-     &   STATUS = 'UNKNOWN')
+                 OPEN(OUTSP1D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp1d',STATUS = 'UNKNOWN')
                  WRITE(OUTSP1D%FHNDL,*) MSC, MDC
                  WRITE(OUTSP1D%FHNDL,*) SPSIG, SPDIR, STATION(I)%ISUM
                END IF
-               WRITE(OUTSP1D%FHNDL,*) CTIME, WKLOC_STATIONS(I,:),       &
-     &   DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:)
+               WRITE(OUTSP1D%FHNDL,*) CTIME, WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:)
                DO IS = 1, MSC
-                 WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2,  &
-     &   ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
+                 WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2, ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
                END DO
                CLOSE(OUTSP1D%FHNDL)
              END IF
@@ -1150,16 +1102,13 @@
              IF (LSP2D) THEN
                INQUIRE(FILE=TRIM(STATION(I)%NAME)//'.sp2d',EXIST=ALIVE)
                IF (ALIVE .AND. .NOT. LINIT_OUTPUT) THEN
-                 OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d',&
-     &  STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
+                 OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d', STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
                ELSE
-                 OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d',&
-     &  STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
+                 OPEN(OUTSP2D%FHNDL,FILE=TRIM(STATION(I)%NAME)//'.sp2d', STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
                  WRITE(OUTSP2D%FHNDL) MSC, MDC
                  WRITE(OUTSP2D%FHNDL) SPSIG, SPDIR, STATION(I)%ISUM
                END IF
-               WRITE(OUTSP2D%FHNDL) CTIME, WKLOC_STATIONS(I,:),         &
-     &  DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:)
+               WRITE(OUTSP2D%FHNDL) CTIME, WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:)
                WRITE(OUTSP2D%FHNDL) ACLOC, ACOUT_2D
                CLOSE(OUTSP2D%FHNDL)
              END IF ! LSP2D

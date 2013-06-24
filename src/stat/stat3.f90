@@ -41,8 +41,8 @@
 
 !      WRITE(*,*) 'Please define desirted cut-off freq. for integration'
 !      READ(*,*) CUT_OFF 
-      !WRITE(*,*) 'Please define ramptime for output'
-      !READ(*,*) RAMPTIME 
+!      WRITE(*,*) 'Please define ramptime for output'
+!      READ(*,*) RAMPTIME 
       
       WRITE(*,*) 'Please define date format'
       WRITE(*,*) '(1) YYYY MM DD hh'
