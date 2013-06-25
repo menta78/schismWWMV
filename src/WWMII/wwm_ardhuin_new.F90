@@ -160,12 +160,24 @@
 
         ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
+        SIG = ZERO
+        SIG2 = ZERO
+        DSIP = ZERO
+        TH   = ZERO
         ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 2')
+        ESIN = ZERO
+        ECOS = ZERO
+        EC2  = ZERO
         ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 3')
+        ES2 = ZERO
+        ESC = ZERO
         ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 4')
+        DSII = ZERO
+        DDEN = ZERO
+        DDEN2 = ZERO
 
         DTH   = DDIR
         FR1   = SPSIG(1)/PI2
@@ -1902,7 +1914,8 @@
 !
 ! Determines roughness length
 !
-      SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
+!AR: Check for zero stress for zero wind !!!
+      IF (USTAR .GT. 0.001_rkind) SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
       Z0  = ZZWND*EXP(-KAPPA*SQRTCDM1)
 !AR: Here we need to start debugging ...       
       IF (USTAR.GT.0.001_rkind) THEN 
