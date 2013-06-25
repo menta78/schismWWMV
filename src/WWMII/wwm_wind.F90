@@ -1751,7 +1751,7 @@
        USE NETCDF
        USE DATAPOOL, ONLY : WIN, XP, YP, MNP, cf_c11, cf_c21, cf_c22, cf_c12
        USE DATAPOOL, only : cf_a, cf_b, cf_c, cf_d, cf_J, wind_time_mjd, nbtime_mjd
-       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, ZERO
+       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, ZERO, LARGE
        USE DATAPOOL, only : cf_add_offset, cf_scale_factor
        USE DATAPOOL, only : UWIND_FD, VWIND_FD
        USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
@@ -1917,7 +1917,7 @@
            END IF
            eX=XP(I)
            eY=YP(I)
-           MinDist=404040
+           MinDist=LARGE
            DO IX=1,NDX_WIND_FD-1
              DO IY=1,NDY_WIND_FD-1
                eDist=(eX-CF_LON(IX,IY))**2 + (eY-CF_LAT(IX,IY))**2
