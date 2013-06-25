@@ -4081,11 +4081,17 @@ MODULE WWM_PARALL_SOLVER
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(LocalColor%MSCeffect,MDC), FL12(LocalColor%MSCeffect,MDC), FL21(LocalColor%MSCeffect,MDC), FL22(LocalColor%MSCeffect,MDC), FL31(LocalColor%MSCeffect,MDC), FL32(LocalColor%MSCeffect,MDC)
       REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
-      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3,MNE)
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
       INTEGER :: I, J, IPGL, IPrel, ISr, IS1, IS2
+
+# ifdef SINGLE_LOOP_AMATRIX
+      REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3), NM(LocalColor%MSCeffect,MDC)
+      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3)
+# else
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
+      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3,MNE)
+# endif
       REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
 # ifdef NO_MEMORY_CX_CY
@@ -4110,6 +4116,8 @@ MODULE WWM_PARALL_SOLVER
 !
 !        Calculate countour integral quantities ...
 !
+      ASPAR = 0.0_rkind ! Mass matrix ...
+      B     = 0.0_rkind ! Right hand side ...
       DO IE = 1, MNE
 # ifndef NO_MEMORY_CX_CY
         I1 = INE(1,IE)
@@ -4168,7 +4176,6 @@ MODULE WWM_PARALL_SOLVER
         K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
         K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        KP(:,:,:,IE) = MAX(ZERO,K)
         KM = MIN(0.0_rkind,K)
         FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
         FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
@@ -4180,41 +4187,45 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+# ifndef SINGLE_LOOP_AMATRIX
+        KP(:,:,:,IE) = MAX(ZERO,K)
         DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
         NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
-      END DO
-# if defined DEBUG
-      WRITE(3000+myrank,*)  'sum(LAMBDA)=', sum(LAMBDA)
-      WRITE(3000+myrank,*)  'sum(K     )=', sum(K)
-      WRITE(3000+myrank,*)  'sum(KP    )=', sum(KP)
-      WRITE(3000+myrank,*)  'sum(KM    )=', sum(KM)
-      WRITE(3000+myrank,*)  'sum(FL11  )=', sum(FL11)
-      WRITE(3000+myrank,*)  'sum(FL12  )=', sum(FL11)
-      WRITE(3000+myrank,*)  'sum(FL21  )=', sum(FL21)
-      WRITE(3000+myrank,*)  'sum(FL22  )=', sum(FL22)
-      WRITE(3000+myrank,*)  'sum(FL31  )=', sum(FL31)
-      WRITE(3000+myrank,*)  'sum(FL32  )=', sum(FL32)
-      WRITE(3000+myrank,*)  'sum(CRFS  )=', sum(CRFS)
-      WRITE(3000+myrank,*)  'sum(DELTAL)=', sum(DELTAL)
-      WRITE(3000+myrank,*)  'sum(NM    )=', sum(NM)
-      WRITE(3000+myrank,*)  'maxval(NM    )=', maxval(NM)
-      DO IS=1,LocalColor%MSCeffect
-        DO ID=1,MDC
-          DO IE=1,MNE
-            IF (ABS(NM(IS,ID,IE)) > 1000000) THEN
-              WRITE(4000+myrank,*) 'IS, ID, IE=', IS, ID, IE
-              WRITE(4000+myrank,*) '   NM=', NM(IS,ID,IE)
-            END IF
-          END DO
+# else
+        KP(:,:,:) = MAX(ZERO,K)
+        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:)
+        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        TRIA03 = ONETHIRD * TRIA(IE)
+        DO I=1,3
+          IP=INE(I,IE)
+          IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+            I1=JA_IE(I,1,IE)
+            I2=JA_IE(I,2,IE)
+            I3=JA_IE(I,3,IE)
+            K1(:,:) =  KP(:,:,I)
+            DO ID=1,MDC
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+            DO ID=1,MDC
+              B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
+            END DO
+          ELSE
+            I1 = JA_IE(I,1,IE)
+            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+            B(:,:,IP)     =  ZERO
+          END IF
         END DO
-      END DO
 # endif
-      J     = 0    ! Counter ...
-      ASPAR = 0.0_rkind ! Mass matrix ...
-      B     = 0.0_rkind ! Right hand side ...
+      END DO
 !
 ! ... assembling the linear equation system ....
 !
+# ifndef SINGLE_LOOP_AMATRIX
+      J     = 0    ! Counter ...
       DO IP = 1, NP_RES
         IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
           DO I = 1, CCON(IP)
@@ -4250,6 +4261,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END IF
       END DO
+# endif
 # if defined DEBUG
       WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
       WRITE(3000+myrank,*) 'IS12=', IS1, IS2
