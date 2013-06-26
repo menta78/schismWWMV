@@ -23,8 +23,8 @@
 #define ASPAR_B_COMPUTE_BLOCK
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#define NO_SELFE_EXCH
 #undef NO_SELFE_EXCH
+#define NO_SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
@@ -207,17 +207,22 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P4D_WWM(LocalColor, AC)
-      USE DATAPOOL, only : MNP, MSC, MDC, rkind, LocalColorInfo
+      USE DATAPOOL, only : MSC, MDC, rkind, LocalColorInfo
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE DATAPOOL, only : wwmtot_p2dsend_type, wwmtot_p2drecv_type
       USE DATAPOOL, only : wwm_p2dsend_rqst, wwm_p2drecv_rqst
       USE DATAPOOL, only : wwm_p2dsend_stat, wwm_p2drecv_stat
+      USE DATAPOOL, only : ZERO, NP_RES, MNP
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(LocalColor%MSCeffect,MDC,MNP)
       integer iSync, iRank
+      integer IS, ID, IP
+      real(rkind) SumErr
+      real(rkind) :: ACtest(LocalColor%MSCeffect,MDC,MNP)
+      ACtest=AC
       DO iSync=1,wwm_nnbr_send
         iRank=wwm_ListNeigh_send(iSync)
         CALL mpi_isend(AC, 1, wwmtot_p2dsend_type(iSync), iRank-1, 1020, comm, wwm_p2dsend_rqst(iSync), ierr)
@@ -232,6 +237,15 @@ MODULE WWM_PARALL_SOLVER
       IF (wwm_nnbr_recv > 0) THEN
         call mpi_waitall(wwm_nnbr_recv, wwm_p2drecv_rqst, wwm_p2drecv_stat,ierr)
       END IF
+      SumErr=ZERO
+      DO IS=1,LocalColor%MSCeffect
+        DO ID=1,MDC
+          DO IP=1,NP_RES
+            SumErr=SumErr + abs(AC(IS,ID,IP) - ACtest(IS,ID,IP))
+          END DO
+        END DO
+      END DO
+      Print *, 'SumErr=', SumErr
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1564,17 +1578,11 @@ MODULE WWM_PARALL_SOLVER
       DO iUpp=1,nbUpp_send
         I=LocalColor % ListIdxUpper_send(iUpp)
         iRank=wwm_ListNeigh_send(i)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'ISEND: iUpp=', iUpp, 'I=', I, 'iRank=', iRank
-# endif
         call mpi_isend(p2d_data_send,1,wwm_p2dsend_type(i),iRank-1,13,comm,LocalColor % Upp_s_rq(iUpp),ierr)
       END DO
       DO iLow=1,nbLow_recv
         I=LocalColor % ListIdxLower_recv(iLow)
         iRank=wwm_ListNeigh_recv(i)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'IRECV: iLow=', iLow, 'I=', I, 'iRank=', iRank
-# endif
         nbCommon=wwm_ListNbCommon_recv(I)
         eFirst=ListFirstCommon_recv(I)
         DO IC=1,nbCommon
@@ -1602,10 +1610,8 @@ MODULE WWM_PARALL_SOLVER
         END DO
       ENDIF
 # endif
-
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH INIT_LOW_2_UPP_ARRAYS'
       CALL FLUSH(STAT%FHNDL)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2118,7 +2124,6 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, rkind
       USE DATAPOOL, only : NNZ, IA, JA, NP_RES, I_DIAG
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-      USE DATAPOOL, only : wwm_p2drecv_type, wwm_p2dsend_type
       USE elfe_msgp, only : myrank, nproc, comm, ierr, nbrrank_p
       implicit none
       include 'mpif.h'
@@ -2482,7 +2487,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2514,7 +2518,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2546,7 +2549,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_p2dsend_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2577,7 +2579,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE DATAPOOL, only : wwm_p2drecv_type
       USE elfe_msgp, only : comm, ierr, myrank
       implicit none
       include 'mpif.h'
