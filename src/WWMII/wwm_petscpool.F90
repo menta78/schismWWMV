@@ -733,6 +733,7 @@
 
         READ(INP%FHNDL, NML = PETScOptions)
         WRITE(CHK%FHNDL, NML = PETScOptions)
+        CALL FLUSH(CHK%FHNDL)
 
         ksptype = toLower(ksptype)
         pctype  = toLower(pctype)

@@ -169,6 +169,7 @@
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = HISTORY)
          wwm_print_namelist(HISTORY)
+         CALL FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
          END IF
@@ -404,6 +405,7 @@
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = STATION)
          wwm_print_namelist(STATION)
+         CALL FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
          END IF
@@ -758,6 +760,7 @@
 
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
+         CALL FLUSH(CHK%FHNDL)
 #ifdef SELFE
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
@@ -771,6 +774,7 @@
 #endif
          READ( INP%FHNDL,  NML = COUPL)
          wwm_print_namelist(COUPL)
+         CALL FLUSH(CHK%FHNDL)
 !
 !    *** Estimate various timings ...
 !
@@ -802,6 +806,7 @@
 !
          READ (INP%FHNDL,   NML = GRID)
          wwm_print_namelist(GRID)
+         CALL FLUSH(CHK%FHNDL)
 !#ifdef MPI_PARALL_GRID
 !         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
 !           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
@@ -844,6 +849,7 @@
 !
          READ(INP%FHNDL,  NML = INIT)
          wwm_print_namelist(INIT)
+         CALL FLUSH(CHK%FHNDL)
 
          IF (LHOTR) THEN
 !#ifdef SELFE
@@ -857,6 +863,7 @@
 !
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
+         CALL FLUSH(CHK%FHNDL)
 
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE
@@ -893,6 +900,7 @@
 !
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
+         CALL FLUSH(CHK%FHNDL)
 !         Print *, 'BEGTC', BEGTC
 !         Print *, 'ENDTC', ENDTC
 
@@ -923,6 +931,7 @@
 !
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
+         CALL FLUSH(CHK%FHNDL)
 
          CUR%FNAME = TRIM(FILECUR)
 
@@ -949,6 +958,7 @@
 !
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
+         CALL FLUSH(CHK%FHNDL)
 
          WAT%FNAME = FILEWATL
 
@@ -974,12 +984,14 @@
 !
          READ(INP%FHNDL, NML = ENGS)
          wwm_print_namelist(ENGS)
+         CALL FLUSH(CHK%FHNDL)
 
 !
 !     *** NUMS section
 !
          READ(INP%FHNDL, NML = NUMS)
          wwm_print_namelist(NUMS)
+         CALL FLUSH(CHK%FHNDL)
 
          CALL READ_HISTORY_STATION_NAMELIST()
 !
@@ -1003,6 +1015,7 @@
          MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
          wwm_print_namelist(HOTFILE)
+         CALL FLUSH(CHK%FHNDL)
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT
          IF (DELTC.lt.MAIN%DELT) THEN
