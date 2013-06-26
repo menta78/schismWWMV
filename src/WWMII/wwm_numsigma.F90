@@ -67,93 +67,66 @@
          END DO
 !$OMP END DO NOWAIT
 !$OMP END PARALLEL 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PROPSIGMA(IP,CAS)
-         USE DATAPOOL
-         IMPLICIT NONE
+      USE DATAPOOL
+      IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: IP
-         REAL(rkind), INTENT(OUT)   :: CAS(MSC,MDC)
-         INTEGER :: IS, ID
-         REAL(rkind)    :: CFL, DWDH, WKDEP
-
-         CAS = 0.
-
-         SELECT CASE (DIMMODE)
-
-             CASE (1)
-
-                IF (DEP(IP) .GT. DMIN) THEN ! obsolete call ... numtheta ..
-                  DO IS = 1, MSC
-                    WKDEP = WK(IP,IS) * DEP(IP)
-                     IF (WKDEP .LT. 13.) THEN
-                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-                    ELSE 
-                      DWDH = 0.
-                    END IF         
-                    DO ID = 1, MDC
-                      CAS(IS,ID) =                                      &
-     &     DWDH *( DEPDT(IP)+CURTXY(IP,1)*DDEP(IP,1) ) -                &
-     &     CG(IP,IS)*WK(IP,IS)*(COS2TH(ID)*DCUX(IP,1)+                  &
-     &                          SINCOSTH(ID)*DCUY(IP,1))
-                    END DO
-                  END DO
-                END IF
-
-             CASE (2)
-
-                IF (DEP(IP) .GT. DMIN) THEN
-                  DO IS = 1, MSC
-                    WKDEP = WK(IP,IS) * DEP(IP)
-                    IF (WKDEP .LT. 13.) THEN
-                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
-                    ELSE
-                      DWDH = 0.
-                    END IF
-                    DO ID = 1, MDC
-                        IF (.NOT. LDIFR) THEN
-
-                          CAS(IS,ID) =                                  &
-     &   DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1)*DDEP(IP,1)       &
-     &                                  + CURTXY(IP,2)*DDEP(IP,2) )     &
-     &   - CG(IP,IS) * WK(IP,IS) * ( COS2TH(ID)*DCUX(IP,1) +            &
-     &                               SIN2TH(ID)*DCUY(IP,2) +            &
-     &                     SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
-                      ELSE
-
-                          CAS(IS,ID) =                                  &
-     &   DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1)     &
-     &                                  + CURTXY(IP,2) * DDEP(IP,2) )   & 
-     &   - CG(IP,IS) * WK(IP,IS) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1)  &
-     &                                         + SIN2TH(ID)*DCUY(IP,2)  &
-     &                    + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
-                      END IF
-                    END DO
-                  END DO
-                END IF
-
-             CASE DEFAULT
-               call wwm_abort('CHECK PROPSIGMA CASE')
-         END SELECT
-
-         IF (LFILTERSIG) THEN
-            DO ID = 1, MDC
-              CFL = MAXVAL(ABS(CAS(:,ID)))*DT4F/MINVAL(DS_INCR) 
-              IF (CFL .GT. MAXCFLSIG) THEN
-                DO IS = 1, MSC
-                  CAS(IS,ID) = MAXCFLSIG/CFL*CAS(IS,ID)
-                END DO
-              END IF
+      INTEGER, INTENT(IN) :: IP
+      REAL(rkind), INTENT(OUT)   :: CAS(MSC,MDC)
+      INTEGER :: IS, ID
+      REAL(rkind)    :: CFL, DWDH, WKDEP
+      CAS = 0.
+      SELECT CASE (DIMMODE)
+        CASE (1)
+          IF (DEP(IP) .GT. DMIN) THEN ! obsolete call ... numtheta ..
+            DO IS = 1, MSC
+              WKDEP = WK(IP,IS) * DEP(IP)
+              IF (WKDEP .LT. 13.) THEN
+                DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
+              ELSE 
+                DWDH = 0.
+              END IF         
+              DO ID = 1, MDC
+                CAS(IS,ID) = DWDH *( DEPDT(IP)+CURTXY(IP,1)*DDEP(IP,1) ) - CG(IP,IS)*WK(IP,IS)*(COS2TH(ID)*DCUX(IP,1)+ SINCOSTH(ID)*DCUY(IP,1))
+              END DO
             END DO
-         END IF
+          END IF
+        CASE (2)
+          IF (DEP(IP) .GT. DMIN) THEN
+            DO IS = 1, MSC
+              WKDEP = WK(IP,IS) * DEP(IP)
+              IF (WKDEP .LT. 13.) THEN
+                DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
+              ELSE
+                DWDH = 0.
+              END IF
+              DO ID = 1, MDC
+                IF (.NOT. LDIFR) THEN
+                  CAS(IS,ID) = DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1)*DDEP(IP,1) + CURTXY(IP,2)*DDEP(IP,2) ) - CG(IP,IS) * WK(IP,IS) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+                ELSE
+                  CAS(IS,ID) = DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1) + CURTXY(IP,2) * DDEP(IP,2) ) - CG(IP,IS) * WK(IP,IS) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+                END IF
+              END DO
+            END DO
+          END IF
+        CASE DEFAULT
+          call wwm_abort('CHECK PROPSIGMA CASE')
+      END SELECT
 
-         !IF (SUM(CAS) .NE. SUM(CAS)) CALL WWM_ABORT('NaN CSIGMA l.183')
-
-         RETURN
+      IF (LFILTERSIG) THEN
+        DO ID = 1, MDC
+          CFL = MAXVAL(ABS(CAS(:,ID)))*DT4F/MINVAL(DS_INCR) 
+          IF (CFL .GT. MAXCFLSIG) THEN
+            DO IS = 1, MSC
+              CAS(IS,ID) = MAXCFLSIG/CFL*CAS(IS,ID)
+            END DO
+          END IF
+        END DO
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
