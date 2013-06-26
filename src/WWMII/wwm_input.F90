@@ -168,7 +168,11 @@
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = HISTORY)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = HISTORY)
+=======
+         wwm_print_namelist(HISTORY)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
@@ -404,7 +408,11 @@
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = STATION)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = STATION)
+=======
+         wwm_print_namelist(STATION)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
@@ -759,7 +767,11 @@
      &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
 
          READ( INP%FHNDL,  NML = PROC)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = PROC)
+=======
+         wwm_print_namelist(PROC)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 #ifdef SELFE
          IF (LSPHE) THEN
@@ -777,7 +789,11 @@
          END IF
 #endif
          READ( INP%FHNDL,  NML = COUPL)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = COUPL)
+=======
+         wwm_print_namelist(COUPL)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 !
 !    *** Estimate various timings ...
@@ -809,7 +825,11 @@
 !     *** GRID section
 !
          READ (INP%FHNDL,   NML = GRID)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = COUPL)
+=======
+         wwm_print_namelist(GRID)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 !#ifdef MPI_PARALL_GRID
 !         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
@@ -852,7 +872,11 @@
 !     *** INIT section
 !
          READ(INP%FHNDL,  NML = INIT)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = INIT)
+=======
+         wwm_print_namelist(INIT)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          IF (LHOTR) THEN
@@ -866,7 +890,11 @@
 !     *** BOUNDARY CONDITIONS section
 !
          READ(INP%FHNDL,  NML = BOUC )
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = BOUC )
+=======
+         wwm_print_namelist(BOUC)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          BND%FNAME = FILEBOUND
@@ -903,7 +931,11 @@
 !     *** WIND section
 !
          READ(INP%FHNDL, NML = WIND)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = WIND)
+=======
+         wwm_print_namelist(WIND)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 !         Print *, 'BEGTC', BEGTC
 !         Print *, 'ENDTC', ENDTC
@@ -934,7 +966,11 @@
 !     *** CURR section
 !
          READ(INP%FHNDL, NML = CURR)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = CURR)
+=======
+         wwm_print_namelist(CURR)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          CUR%FNAME = TRIM(FILECUR)
@@ -961,7 +997,11 @@
 !     *** water level section
 !
          READ(INP%FHNDL, NML = WALV)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = WALV)
+=======
+         wwm_print_namelist(WALV)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          WAT%FNAME = FILEWATL
@@ -987,16 +1027,27 @@
 !     *** ENGS section
 !
          READ(INP%FHNDL, NML = ENGS)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = ENGS)
          CALL FLUSH(CHK%FHNDL)
 
+=======
+         wwm_print_namelist(ENGS)
+         CALL FLUSH(CHK%FHNDL)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
 
 !
 !     *** NUMS section
 !
          READ(INP%FHNDL, NML = NUMS)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = NUMS)
          CALL FLUSH(CHK%FHNDL)
+=======
+         wwm_print_namelist(NUMS)
+         CALL FLUSH(CHK%FHNDL)
+
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL READ_HISTORY_STATION_NAMELIST()
 !
 !     **** HOTFILE section
@@ -1018,7 +1069,11 @@
          MULTIPLEOUT=0
          MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
+<<<<<<< HEAD
          WRITE(CHK%FHNDL, NML = HOTFILE)
+=======
+         wwm_print_namelist(HOTFILE)
+>>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT
