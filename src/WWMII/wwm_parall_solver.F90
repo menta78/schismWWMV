@@ -45,6 +45,9 @@
 #if defined REORDER_ASPAR_PC && defined SOR_DIRECT
 # undef REORDER_ASPAR_PC
 #endif
+#ifdef PLAN_I4
+
+#endif
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
 !* mixed: the ordering of the nodes, the ghost nodes, the aspar array *
@@ -260,9 +263,6 @@ MODULE WWM_PARALL_SOLVER
       USE elfe_msgp, only : myrank
       implicit none
       type(Graph), intent(inout) :: AdjGraph
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'wwm_nnbr=', wwm_nnbr
-# endif
       CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, wwm_nnbr, wwm_ListNeigh)
       END SUBROUTINE
 !**********************************************************************
@@ -294,9 +294,6 @@ MODULE WWM_PARALL_SOLVER
       integer idx, eDeg, nbEdge, iEdge
       integer istat
       AdjGraph % nbVert=nproc
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'myrank=', myrank, ' KERNEL_GRAPH_BUILD_PROC...'
-# endif
       IF (myrank.eq.0) THEN
         allocate(AdjGraph % ListDegree(nproc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 1')
@@ -313,9 +310,6 @@ MODULE WWM_PARALL_SOLVER
           nbEdge=nbEdge + AdjGraph % ListDegree(iProc)
         END DO
         AdjGraph % nbEdge=nbEdge
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'nbEdge=', nbEdge
-# endif
         allocate(AdjGraph % ListEdge(nbEdge,2), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 3')
         idx=0
@@ -364,9 +358,6 @@ MODULE WWM_PARALL_SOLVER
         DO iProc=2,nproc
           CALL MPI_SEND(rbuf_int,2*nbEdge,itype, iProc-1, 34, comm, ierr)
         END DO
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'ListEdge exported'
-# endif
       ELSE
         allocate(rbuf_int(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 8')
@@ -388,9 +379,6 @@ MODULE WWM_PARALL_SOLVER
         nbEdge=rbuf_int(1)
         deallocate(rbuf_int)
         AdjGraph % nbEdge=nbEdge
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'nbEdge=', nbEdge
-# endif
         !
         allocate(rbuf_int(nproc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 11')
@@ -399,9 +387,6 @@ MODULE WWM_PARALL_SOLVER
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 12')
         AdjGraph % ListDegree=rbuf_int
         deallocate(rbuf_int)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'ListDegree assigned'
-# endif
         !
         allocate(rbuf_int(2*nbEdge), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 13')
@@ -413,9 +398,6 @@ MODULE WWM_PARALL_SOLVER
           AdjGraph % ListEdge(iEdge,2)=rbuf_int(2*(iEdge-1)+2)
         END DO
         deallocate(rbuf_int)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'ListEdge assigned'
-# endif
       ENDIF
       AdjGraph % MaxDeg=maxval(AdjGraph % ListDegree)
       END SUBROUTINE
@@ -469,33 +451,6 @@ MODULE WWM_PARALL_SOLVER
       END IF
       result=0
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE GRAPH_TEST_UNIDIRECT(AdjGraph)
-      implicit none
-      type(Graph), intent(in) :: AdjGraph
-      integer nbEdge, iEdge, jEdge, jEdgeF
-      integer eVert1, eVert2, fVert1, fVert2
-      nbEdge=AdjGraph%nbEdge
-      DO iEdge=1,nbEdge
-        eVert1=AdjGraph%ListEdge(iEdge,1)
-        eVert2=AdjGraph%ListEdge(iEdge,2)
-        jEdgeF=-1
-        DO jEdge=1,nbEdge
-          fVert1=AdjGraph%ListEdge(jEdge,1)
-          fVert2=AdjGraph%ListEdge(jEdge,2)
-          IF ((eVert1.eq.fVert2).and.(eVert2.eq.fVert1)) THEN
-            jEdgeF=jEdge
-          END IF
-        END DO
-        IF (jEdgeF.eq.-1) THEN
-          CALL WWM_ABORT('Error at test of symmetry')
-        END IF
-      END DO
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -559,11 +514,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
-# ifdef DEBUG
-        IF (idx /= sumMNP) THEN
-          CALL WWM_ABORT('Inconsistency in IPLG creation')
-        END IF
-# endif
         DO iProc=2,nproc
           CALL MPI_SEND(ListIPLG,sumMNP,itype, iProc-1, 271, comm, ierr)
         END DO
@@ -604,11 +554,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
-# ifdef DEBUG
-        IF (idx /= sumMNP) THEN
-          CALL WWM_ABORT('Inconsistency in CovLower creation')
-        END IF
-# endif
         DO iProc=2,nproc
           CALL MPI_SEND(LocalColor % ListCovLower,sumMNP,itype, iProc-1, 811, comm, ierr)
         END DO
@@ -687,11 +632,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
           deallocate(rbuf_int)
         END DO
-# ifdef DEBUG
-        IF (idx /= sumIAsiz) THEN
-          CALL WWM_ABORT('Inconsistency in sumIAsiz')
-        END IF
-# endif
         DO iProc=2,nproc
           CALL MPI_SEND(ListIA,sumIAsiz,itype, iProc-1, 271, comm, ierr)
         END DO
@@ -733,39 +673,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE TEST_ASPAR_SYMMETRY
-      USE DATAPOOL, only : MNP, IA, JA
-      USE elfe_msgp, only : myrank
-      implicit none
-      integer :: IsSymm
-      integer IP, JP, IPB, J, J2, JFOUND
-      IsSymm=1
-      DO IP=1,MNP
-        DO J=IA(IP),IA(IP+1)-1
-          JP=JA(J)
-          JFOUND=-1
-          DO J2=IA(JP),IA(JP+1)-1
-            IPb=JA(J2)
-            IF (IPb == IP) THEN
-              JFOUND=J2
-            END IF
-          END DO
-          IF (JFOUND == -1) THEN
-            IsSymm=0
-          END IF
-        END DO
-      END DO
-      IF (IsSymm == 0) THEN
-        WRITE(740+myrank,*) 'NNZ_IA_JA is NOT symmetric'
-      ELSE
-        WRITE(740+myrank,*) 'NNZ_IA_JA IS symmetric'
-      END IF
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE CREATE_WWM_P2D_EXCH(MSCeffect)
       USE DATAPOOL
       USE elfe_msgp
@@ -796,11 +703,6 @@ MODULE WWM_PARALL_SOLVER
       ListMapped=0
       DO IP=1,MNP
         IP_glob=iplg(IP)
-# ifdef DEBUG
-        IF (ListMapped(IP_glob) .gt. 0) THEN
-          CALL WWM_ABORT('Clear error in ListMapped');
-        ENDIF
-# endif
         ListMapped(IP_glob)=IP
       END DO
       wwm_nnbr_send=0
@@ -814,11 +716,6 @@ MODULE WWM_PARALL_SOLVER
           ListMappedB=0
           DO IP=1,MNPloc
             IP_glob=ListIPLG(IP+ListFirst(iProc))
-# ifdef DEBUG
-            IF (ListMappedB(IP_glob) .gt. 0) THEN
-              CALL WWM_ABORT('Clear error in ListMappedB');
-            ENDIF
-# endif
             ListMappedB(IP_glob)=IP
           END DO
           !
@@ -847,10 +744,6 @@ MODULE WWM_PARALL_SOLVER
           END IF
         END IF
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_P2D: wwm_nnbr_send=', wwm_nnbr_send
-      WRITE(740+myrank,*) 'WWM_P2D: wwm_nnbr_recv=', wwm_nnbr_recv
-# endif
       allocate(wwm_ListNbCommon_send(wwm_nnbr_send), wwm_ListNbCommon_recv(wwm_nnbr_recv), wwm_ListNeigh_send(wwm_nnbr_send), wwm_ListNeigh_recv(wwm_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 29')
       idx_send=0
@@ -893,10 +786,6 @@ MODULE WWM_PARALL_SOLVER
           wwm_ListNeigh(idx)=iProc
         END IF
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_P2D: wwm_nnbr=', wwm_nnbr
-      WRITE(740+myrank,*) 'WWM_P2D: wwm_ListNeigh built'
-# endif
       allocate(wwm_p2dsend_rqst(wwm_nnbr_send), wwm_p2drecv_rqst(wwm_nnbr_recv), wwm_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_send), wwm_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv), wwm_p2dsend_type(wwm_nnbr_send), wwm_p2drecv_type(wwm_nnbr_recv), wwmtot_p2dsend_type(wwm_nnbr_send), wwmtot_p2drecv_type(wwm_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 32')
 # ifdef DEBUG
@@ -910,11 +799,6 @@ MODULE WWM_PARALL_SOLVER
         ListMappedB=0
         DO IP=1,MNPloc
           IP_glob=ListIPLG(IP+ListFirst(iProc))
-# ifdef DEBUG
-          IF (ListMappedB(IP_glob) .gt. 0) THEN
-            CALL WWM_ABORT('Clear error in ListMappedB');
-          ENDIF
-# endif
           ListMappedB(IP_glob)=IP
         END DO
         nbCommon=wwm_ListNbCommon_send(iNeigh)
@@ -1089,15 +973,8 @@ MODULE WWM_PARALL_SOLVER
           ListCommon_send(iProc)=nbCommon_send
         END IF
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_MAT_P2D: wwm_nnbr_m_send=', wwm_nnbr_m_send
-      WRITE(740+myrank,*) 'WWM_MAT_P2D: wwm_nnbr_m_recv=', wwm_nnbr_m_recv
-# endif
       allocate(wwmmat_p2dsend_rqst(wwm_nnbr_m_send), wwmmat_p2drecv_rqst(wwm_nnbr_m_recv), wwmmat_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_m_send), wwmmat_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_m_recv), wwmmat_p2dsend_type(wwm_nnbr_m_send), wwmmat_p2drecv_type(wwm_nnbr_m_recv), wwm_ListNbCommon_m_send(wwm_nnbr_m_send), wwm_ListNbCommon_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_send(wwm_nnbr_m_send), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 38')
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_MAT_P2D: alloc done'
-# endif
       idx=0
       sumNbCommon_send=0
       DO iProc=1,nproc
@@ -1109,9 +986,6 @@ MODULE WWM_PARALL_SOLVER
           sumNbCommon_send=sumNbCommon_send+nbCommon
         END IF
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_MAT_P2D: wwm_ListNeigh_m_send built'
-# endif
       idx=0
       sumNbCommon_recv=0
       DO iProc=1,nproc
@@ -1123,9 +997,6 @@ MODULE WWM_PARALL_SOLVER
           sumNbCommon_recv=sumNbCommon_recv+nbCommon
         END IF
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_MAT_P2D: wwm_ListNeigh_m_recv built'
-# endif
       allocate(wwm_ListDspl_m_send(sumNbCommon_send), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 43')
       idxDspl_send=0
@@ -1172,18 +1043,12 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(wwmmat_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'sumNbCommon_recv=', sumNbCommon_recv
-# endif
       allocate(wwm_ListDspl_m_recv(sumNbCommon_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 45')
       idxDspl_recv=0
       DO iNeigh=1,wwm_nnbr_m_recv
         iProc=wwm_ListNeigh_m_recv(iNeigh)+1
         nbCommon=wwm_ListNbCommon_m_recv(iNeigh)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'nbCommon=', nbCommon
-# endif
         allocate(dspl_recv(nbCommon), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 46')
         NP_RESloc=ListNP_RES(iProc)
@@ -1218,77 +1083,7 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(wwmmat_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'Leaving CREATE_WWM_MAT_P2D_EXCH'
-# endif
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE CHECK_STANDARD_SELFE_EXCH
-      USE elfe_msgp, only : exchange_p2d, myrank
-      USE DATAPOOL
-      REAL(rkind) :: XPcopy(MNP)
-      REAL(rkind) :: SumErr
-      XPcopy=XP
-      CALL exchange_p2d(XP)
-      SumErr=sum(abs(XPcopy - XP))
-!      WRITE(740+myrank,*) 'SELFE_EXCH SumErr=', SumErr
-      END SUBROUTINE
-# endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE WRITE_EXPLICIT_ORDERING(ListPos, ListPosRev, ListColor)
-      USE DATAPOOL, only : MNP, ListMNP, ListNP_RES, ListIPLG
-      USE elfe_msgp, only : nproc, myrank
-      USE elfe_glbl, only : np_global
-      IMPLICIT NONE
-      integer, intent(inout) :: ListPos(np_global)
-      integer, intent(inout) :: ListPosRev(np_global)
-      integer, intent(in) :: ListColor(nproc)
-      integer :: ListFirst(nproc)
-      integer :: ListTotal(np_global)
-      integer minColor, maxColor, eColor
-      integer iProc, idx, IP, IPglob
-      minColor=minval(ListColor)
-      maxColor=maxval(ListColor)
-      ListTotal=1
-      ListFirst=0
-      DO iProc=2,nproc
-        ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
-      END DO
-      ListPos=0
-      ListPosRev=0
-      idx=0
-      DO eColor=minColor,maxColor
-        DO iProc=1,nproc
-          IF (ListColor(iProc) .eq. eColor) THEN
-            DO IP=1,ListNP_RES(iProc)
-              IPglob=ListIPLG(IP+ListFirst(iProc))
-              IF (ListTotal(IPglob) .eq. 1) THEN
-                idx=idx+1
-                ListPos(idx)=IPglob
-                ListPosRev(IPglob)=idx
-                ListTotal(IPglob)=0
-              END IF
-            END DO
-          END IF
-        END DO
-      END DO
-      IF (minval(ListPosRev) .eq. 0) THEN
-        CALL WWM_ABORT('Please correct ')
-      END IF
-      IF (idx .ne. np_global) THEN
-        DO IP=1,np_global
-          WRITE(myrank+540,*) 'IP/Pos/PosR=', IP, ListPos(IP), ListPosRev(IP)
-        END DO
-        CALL WWM_ABORT('One more bug to solve')
-      END IF
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1622,11 +1417,6 @@ MODULE WWM_PARALL_SOLVER
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
       CALL FLUSH(STAT%FHNDL)
-
-# ifdef DEBUG
-      CALL TEST_ASPAR_SYMMETRY
-      WRITE(740+myrank,*) 'After TEST_ASPAR_SYMMETRY'
-# endif
 # ifdef DEBUG
       CALL COMPUTE_TOTAL_INDEX_SHIFT(TheRes)
       WRITE(740+myrank,*) 'Total residual shift=', TheRes
@@ -1648,11 +1438,6 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'After CREATE_WWM_MAT_P2D_EXCH'
 # endif
       CALL SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'After SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY'
-      CALL GRAPH_TEST_UNIDIRECT(AdjGraph)
-      WRITE(740+myrank,*) 'After GRAPH_TEST_UNIDIRECT'
-# endif
       CALL BUILD_MULTICOLORING(AdjGraph, ListColor)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After BUILD_MULTICOLORING'
@@ -1871,7 +1656,6 @@ MODULE WWM_PARALL_SOLVER
       integer sync_nnbr_send, sync_nnbr_recv
       integer eCov, eColor, fColor, iSync
       integer maxBlockLength
-      integer nbCase1, nbCase2
       integer nbMap0, nbMap1
       integer DoOper
       integer istat
@@ -2077,12 +1861,6 @@ MODULE WWM_PARALL_SOLVER
             END IF
           END IF
         END DO
-# ifdef DEBUG
-        IF (idx .ne. nbCommon) THEN
-          CALL WWM_ABORT('error in u2l_p2dsend')
-        END IF
-        WRITE(740+myrank,*) '   U2L idx=', idx, ' nbCommon=', nbCommon
-# endif
         call mpi_type_create_indexed_block(nbCommon,maxBlockLength,dspl_send,rtype,LocalColor % u2l_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(LocalColor % u2l_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
@@ -2136,12 +1914,6 @@ MODULE WWM_PARALL_SOLVER
             END IF
           END IF
         END DO
-# ifdef DEBUG
-        IF (idx .ne. nbCommon) THEN
-          CALL WWM_ABORT('error in u2l_p2drecv')
-        END IF
-        WRITE(740+myrank,*) '   U2L idx=', idx, ' nbCommon=', nbCommon
-# endif
         call mpi_type_create_indexed_block(nbCommon,maxBlockLength,dspl_recv,rtype,LocalColor % u2l_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(LocalColor % u2l_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
@@ -2160,9 +1932,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
       DO iNeigh=1,wwm_nnbr
         iProc=wwm_ListNeigh(iNeigh)
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'iNeigh=', iNeigh, 'iProc=', iProc
-# endif
         fColor=LocalColor % ListColor(iProc)
         MNPloc=ListMNP(iProc)
         NP_RESloc=ListNP_RES(iProc)
@@ -2179,27 +1948,20 @@ MODULE WWM_PARALL_SOLVER
           END IF
         END DO
         nbCommon_recv=0
-        nbCase1=0
-        nbCase2=0
         DO IP=1,NP_RESloc
           IP_glob=ListIPLG(IP+ListFirst(iProc))
           eCov=LocalColor % ListCovLower(IP+ListFirst(iProc))
           IF (eCov .eq. 1) THEN
             IF (ListMapped0(IP_glob) .gt. 0) THEN
               nbCommon_recv=nbCommon_recv+1
-              nbCase1=nbCase1+1
             ELSE
               IPmap=ListMapped1(IP_glob)
               IF ((IPmap .gt. 0).and.(IPmap .gt. NP_RES)) THEN
                 nbCommon_recv=nbCommon_recv+1
-                nbCase2=nbCase2+1
               ENDIF
             END IF
           END IF
         END DO
-# ifdef DEBUG
-        WRITE(740+myrank,*) 'i=', iProc-1,  ' RnbCase12=', nbCase1, nbCase2
-# endif
         IF (nbCommon_recv .gt. 0) THEN
           sync_nnbr_recv=sync_nnbr_recv+1
           ListCommon_recv(iProc)=nbCommon_recv
@@ -2366,9 +2128,6 @@ MODULE WWM_PARALL_SOLVER
           CALL WWM_ABORT('error in SYNC_p2drecv')
         END IF
         WRITE(740+myrank,*) '   SYNC_p2drecv iProc=', iProc-1, ' nbCommon=', nbCommon
-# endif
-# ifdef DEBUG
-        WRITE(740+myrank,*) '   nbCase1=', nbCase1, ' nbCase2=', nbCase2
 # endif
         call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,LocalColor % sync_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(LocalColor % sync_p2drecv_type(iNeigh), ierr)
