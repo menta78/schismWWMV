@@ -11,7 +11,7 @@
 #undef DEBUG
 
 #define PLAN_I4
-!#undef PLAN_I4
+#undef PLAN_I4
 
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
@@ -23,8 +23,8 @@
 #define ASPAR_B_COMPUTE_BLOCK
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef NO_SELFE_EXCH
 #define NO_SELFE_EXCH
+#undef NO_SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
@@ -491,14 +491,6 @@ MODULE WWM_PARALL_SOLVER
       END IF
       deallocate(rbuf_int)
       sumMNP=sum(ListMNP)
-# ifdef DEBUG
-      DO iProc=1,nproc
-        WRITE(740+myrank,*) 'iProc=', iProc, ' np_res=', ListNP_RES(iProc)
-      END DO
-      WRITE(740+myrank,*) 'max(np_res)=', maxval(ListNP_RES)
-      WRITE(740+myrank,*) 'nnproc=', nproc
-      WRITE(740+myrank,*) 'sumMNP=', sumMNP
-# endif
       allocate(ListIPLG(sumMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 17')
       IF (myrank == 0) THEN
@@ -565,10 +557,6 @@ MODULE WWM_PARALL_SOLVER
         CALL MPI_SEND(LocalColor % CovLower,MNP,itype, 0, 809, comm, ierr)
         CALL MPI_RECV(LocalColor % ListCovLower,sumMNP,itype, 0, 811, comm, istatus, ierr)
       END IF
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'COLLECT_ALL_COVLOWER'
-      WRITE(740+myrank,*) 'sum(ListCovLower)=', sum(LocalColor % ListCovLower)
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -611,12 +599,6 @@ MODULE WWM_PARALL_SOLVER
       ! Collecting IA
       !
       sumIAsiz=sum(ListMNP) + nproc
-# ifdef DEBUG
-      DO iProc=1,nproc
-        WRITE(740+myrank,*) 'iProc=', iProc, 'nnz=', ListNNZ(iProc)
-      END DO
-      WRITE(740+myrank,*) 'sumIAsiz=', sumIAsiz
-# endif
       allocate(ListIA(sumIAsiz), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 24')
       IF (myrank == 0) THEN
@@ -792,9 +774,6 @@ MODULE WWM_PARALL_SOLVER
       END DO
       allocate(wwm_p2dsend_rqst(wwm_nnbr_send), wwm_p2drecv_rqst(wwm_nnbr_recv), wwm_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_send), wwm_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv), wwm_p2dsend_type(wwm_nnbr_send), wwm_p2drecv_type(wwm_nnbr_recv), wwmtot_p2dsend_type(wwm_nnbr_send), wwmtot_p2drecv_type(wwm_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 32')
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'WWM_P2D: alloc done'
-# endif
       idxDspl_send=0
       DO iNeigh=1,wwm_nnbr_send
         iProc=wwm_ListNeigh_send(iNeigh)
@@ -853,9 +832,6 @@ MODULE WWM_PARALL_SOLVER
         call mpi_type_commit(wwmtot_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv, dspl_recv_tot)
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'Leaving CREATE_WWM_P2D_EXCH'
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*  This subroutine creates array for exchanging matrix entries       *
@@ -2067,19 +2043,10 @@ MODULE WWM_PARALL_SOLVER
             END IF
           END IF
         END DO
-# ifdef DEBUG
-        IF (idx .ne. nbCommon) THEN
-          CALL WWM_ABORT('error in SYNC_p2dsend')
-        END IF
-        WRITE(740+myrank,*) '   SYNC_p2dsend iProc=', iProc-1, ' nbCommon=', nbCommon
-# endif
         call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,LocalColor % sync_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(LocalColor % sync_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'SYNC sync_nnbr_recv=', sync_nnbr_recv
-# endif
       DO iNeigh=1,sync_nnbr_recv
         iProc=LocalColor % sync_ListNeigh_recv(iNeigh)+1
         MNPloc=ListMNP(iProc)
@@ -2097,9 +2064,6 @@ MODULE WWM_PARALL_SOLVER
           END IF
         END DO
         nbCommon=LocalColor%sync_ListNbCommon_recv(iNeigh)
-# ifdef DEBUG
-        WRITE(740+myrank,*) '   SYNC iNeigh=', iNeigh, ' nbCommon=', nbCommon
-# endif
         allocate(dspl_recv(nbCommon), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 102')
         idx=0
@@ -2120,19 +2084,9 @@ MODULE WWM_PARALL_SOLVER
             IF (DoOper == 1) THEN
               idx=idx+1
               dspl_recv(idx)=MSC*MDC*(IPmap-1)
-# ifdef DEBUG
-              WRITE(740+myrank,*) 'idx=', idx, 'IP=', IP
-              WRITE(740+myrank,*) '  IP_glob=', IP_glob, 'IPmap=', IPmap
-# endif
             END IF
           END IF
         END DO
-# ifdef DEBUG
-        IF (idx .ne. nbCommon) THEN
-          CALL WWM_ABORT('error in SYNC_p2drecv')
-        END IF
-        WRITE(740+myrank,*) '   SYNC_p2drecv iProc=', iProc-1, ' nbCommon=', nbCommon
-# endif
         call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,LocalColor % sync_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(LocalColor % sync_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
@@ -2150,13 +2104,6 @@ MODULE WWM_PARALL_SOLVER
       IF (LocalColor % nbNeedRecv_u2l > lenMNP) THEN
         lenMNP=LocalColor % nbNeedRecv_u2l
       END IF
-# ifdef DEBUG
-      WRITE(7000+myrank,*) 'nbNeedSend_blk=', LocalColor % nbNeedSend_blk
-      WRITE(7000+myrank,*) 'nbNeedRecv_blk=', LocalColor % nbNeedRecv_blk
-      WRITE(7000+myrank,*) 'nbNeedSend_u2l=', LocalColor % nbNeedSend_u2l
-      WRITE(7000+myrank,*) 'nbNeedRecv_u2l=', LocalColor % nbNeedRecv_u2l
-      WRITE(7000+myrank,*) 'lenMNP=', lenMNP
-# endif
       allocate(LocalColor % ACexch(maxBlockLength, lenMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
 
@@ -2765,19 +2712,6 @@ MODULE WWM_PARALL_SOLVER
 # endif
         ENDIF
       END DO
-# if defined DEBUG
-      WRITE(3000+myrank,*) 'Partial_SOLVE_L Sums of ACret'
-      DO IS=1,LocalColor%MSCeffect
-        DO ID=1,MDC
-          eSum=sum(ACret(IS,ID,:))
-          WRITE(3000+myrank,*) 'IS=', IS, 'ID=', ID, 'eSum=', eSum
-        END DO
-      END DO
-      WRITE(3000+myrank,*) 'End of sums'
-      CALL FLUSH(3000+myrank)
-      CALL FLUSH(790+myrank)
-      CALL FLUSH(1490+myrank)
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2911,52 +2845,23 @@ MODULE WWM_PARALL_SOLVER
       integer iBlock, lenBlock, idx, IS, ID
       integer maxBlockLength
       maxBlockLength=LocalColor % maxBlockLength
-# ifdef DEBUG
-      WRITE(myrank+7000,*) 'Nblock=', LocalColor % Nblock 
-# endif
       DO iBlock=1,LocalColor % Nblock
-# ifdef DEBUG
-        WRITE(myrank+7000,*) 'iBlock=', iBlock
-        WRITE(myrank+7000,*) '1: sum(ACret)=', sum(ACret)
-# endif
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, ACret, iBlock)
         END IF
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '2: sum(ACret)=', sum(ACret)
-# endif
         CALL I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '3: sum(ACret)=', sum(ACret)
-# endif
         IF (DO_SYNC_LOW_2_UPP) THEN
           CALL I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, ACret, iBlock)
         END IF
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '4: sum(ACret)=', sum(ACret)
-# endif
       END DO
       DO iBlock=1,LocalColor%Nblock
-# ifdef DEBUG
-        WRITE(myrank+7000,*) 'iBlock=', iBlock
-        WRITE(myrank+7000,*) '1: sum(ACret)=', sum(ACret)
-# endif
         IF (DO_SYNC_UPP_2_LOW) THEN
           CALL I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, ACret, iBlock)
         END IF
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '2: sum(ACret)=', sum(ACret)
-# endif
         CALL I5B_PARTIAL_SOLVE_U(LocalColor, SolDat, iBlock, ACret)
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '3: sum(ACret)=', sum(ACret)
-# endif
         IF (DO_SYNC_UPP_2_LOW) THEN
           CALL I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, ACret, iBlock)
         END IF
-# ifdef DEBUG
-        WRITE(myrank+7000,*) '4: sum(ACret)=', sum(ACret)
-# endif
       END DO
       IF (DO_SYNC_FINAL) THEN
         CALL I5B_SYNC_SENDRECV(LocalColor, ACret)
@@ -3228,9 +3133,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod, STAT
-# ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -3262,22 +3165,6 @@ MODULE WWM_PARALL_SOLVER
       SolDat % AC7=0                               ! s
       SolDat % AC8=0                               ! z
       SolDat % AC9=0                               ! t
-# ifdef DEBUG
-      write(2000+myrank,*) 'Before loop'
-      write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
-      write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(MSCeffect, SolDat%AC2)
-      write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(MSCeffect, SolDat%AC3)
-      write(2000+myrank,*) 'sumtot(AC4)=', I5B_SUMTOT(MSCeffect, SolDat%AC4)
-      write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
-      write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(MSCeffect, SolDat%AC6)
-      write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
-      write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
-      write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
-      CALL FLUSH(2000+myrank)
-      DO IS=1,LocalColor%MSCeffect
-        WRITE(myrank+240,*) 'IS, sum(AC3)=', IS, sum(SolDat%AC3(IS,:,:))
-      END DO
-# endif
       Rho=1
       Alpha=1
       Omega=1
@@ -3287,33 +3174,11 @@ MODULE WWM_PARALL_SOLVER
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
-# ifdef DEBUG
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC4, Lerror)
-        WRITE(myrank+240,*) 'error(AC4)=', Lerror
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
-        WRITE(myrank+240,*) 'error(AC3)=', Lerror
-        WRITE(myrank+240,*) 'sum(abs(AC4))=', sum(abs(SolDat%AC4))
-        WRITE(myrank+240,*) 'sum(abs(AC3))=', sum(abs(SolDat%AC3))
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC4)=', IS, sum(SolDat%AC4(IS,:,:))
-        END DO
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(Prov)=', IS, sum(Prov(IS,:))
-        END DO
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC4*AC3)=', IS, sum(SolDat%AC4(IS,:,:)*SolDat%AC2(IS,:,:))
-        END DO
-# endif
 
         ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
         Beta=(Prov/Rho)*(Alpha/Omega)
         CALL REPLACE_NAN_ZERO(LocalColor, Beta)
         Rho=Prov
-# ifdef DEBUG
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(Rho)=', IS, sum(Rho(IS,:))
-        END DO
-# endif
 
         ! L3: Pi = r(i-1) + Beta*(p(i-1) -omega(i-1)*v(i-1))
         DO IP=1,MNP
@@ -3321,101 +3186,35 @@ MODULE WWM_PARALL_SOLVER
      &      + Beta(:,:)*SolDat%AC6(:,:,IP)                            &
      &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(:,:,IP)
         END DO
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC6)=', I5B_SUMTOT(MSCeffect, SolDat%AC6)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC6, Lerror)
-        WRITE(myrank+240,*) 'error(AC6)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC6)=', IS, sum(SolDat%AC6(IS,:,:))
-        END DO
-# endif
 
         ! L4 y=K^(-1) Pi
         SolDat%AC1=SolDat%AC6
         IF (PCmethod .gt. 0) THEN
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
         ENDIF
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
-        WRITE(myrank+240,*) 'error(AC1)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC1)=', IS, sum(SolDat%AC1(IS,:,:))
-        END DO
-# endif
 
         ! L5 vi=Ay
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC1, SolDat%AC5)
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC5, Lerror)
-        WRITE(myrank+240,*) 'error(AC5)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC5)=', IS, sum(SolDat%AC5(IS,:,:))
-        END DO
-# endif
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC5, Prov)
-# ifdef DEBUG
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(Prov)=', IS, sum(Prov(IS,:))
-        END DO
-# endif
         Alpha(:,:)=Rho(:,:)/Prov(:,:)
         CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(Alpha)=', sum(Alpha)
-# endif
+
         ! L7 s=r(i-1) - alpha v(i)
         DO IP=1,MNP
           SolDat%AC7(:,:,IP)=SolDat%AC3(:,:,IP)                        &
      &      - Alpha(:,:)*SolDat%AC5(:,:,IP)
         END DO
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sum(AC7)=', sum(SolDat%AC7)
-        write(2000+myrank,*) 'sumtot(AC7)=', I5B_SUMTOT(MSCeffect, SolDat%AC7)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC7, Lerror)
-        WRITE(myrank+240,*) 'error(AC7)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC7)=', IS, sum(SolDat%AC7(IS,:,:))
-        END DO
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(Alpha)=', IS, sum(Alpha(IS,:))
-        END DO
-# endif
 
         ! L8 z=K^(-1) s
         SolDat%AC8=SolDat%AC7
         IF (PCmethod .gt. 0) THEN
           CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC8)
         END IF
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC8)=', I5B_SUMTOT(MSCeffect, SolDat%AC8)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC8, Lerror)
-        WRITE(myrank+240,*) 'error(AC8)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC8)=', IS, sum(SolDat%AC8(IS,:,:))
-        END DO
-# endif
 
         ! L9 t=Az
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC8, SolDat%AC9)
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC9, Lerror)
-        WRITE(myrank+240,*) 'error(AC9)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC9)=', IS, sum(SolDat%AC9(IS,:,:))
-        END DO
-# endif
 
         ! L10 omega=(t,s)/(t,t)
         CALL I5B_SCALAR(MSCeffect, SolDat % AC9, SolDat % AC7, Omega)
@@ -3429,27 +3228,9 @@ MODULE WWM_PARALL_SOLVER
      &      + Alpha(:,:)*SolDat%AC1(:,:,IP)                            &
      &      + Omega(:,:)*SolDat%AC8(:,:,IP)
         END DO
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC2)=', I5B_SUMTOT(MSCeffect, SolDat%AC2)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC2, Lerror)
-        WRITE(myrank+240,*) 'error(AC2)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC2)=', IS, sum(SolDat%AC2(IS,:,:))
-        END DO
-# endif
 
         ! L12 If x is accurate enough finish
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC1, Lerror)
-        WRITE(myrank+240,*) 'error(AC1)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC1)=', IS, sum(SolDat%AC1(IS,:,:))
-        END DO
-# endif
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
         IF (CritVal .lt. MaxError) THEN
@@ -3464,15 +3245,6 @@ MODULE WWM_PARALL_SOLVER
           SolDat%AC3(:,:,IP)=SolDat%AC7(:,:,IP)                        &
      &      - Omega(:,:)*SolDat%AC9(:,:,IP)
         END DO
-# ifdef DEBUG
-        write(2000+myrank,*) 'nbIter=', nbIter
-        write(2000+myrank,*) 'sumtot(AC3)=', I5B_SUMTOT(MSCeffect, SolDat%AC3)
-        CALL I5B_TOTAL_COHERENCY_ERROR(MSCeffect, SolDat%AC3, Lerror)
-        WRITE(myrank+240,*) 'error(AC3)=', Lerror
-        DO IS=1,LocalColor%MSCeffect
-          WRITE(myrank+240,*) 'IS, sum(AC3)=', IS, sum(SolDat%AC3(IS,:,:))
-        END DO
-# endif
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -3485,9 +3257,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
       USE DATAPOOL, only : PCmethod, STAT
-# ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -3586,6 +3356,9 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
+        IF (myrank .eq. 0) THEN
+          Print *, 'nbIter=', nbIter, 'CritVal=', CritVal
+        END IF
         IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
@@ -3742,36 +3515,6 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# ifdef DEBUG
-      SUBROUTINE I5_LOCATE_MAX(AC)
-      USE DATAPOOL, only : MNP, MSC, MDC, rkind, ZERO
-      implicit none
-      real(rkind), intent(in) :: AC(MNP,MSC,MDC)
-      real(rkind) :: TheMax
-      integer IP,IS,ID
-      integer IPf,ISf,IDf
-      TheMax=ZERO
-      IPf=0
-      ISf=0
-      IDf=0
-      DO IP=1,MNP
-        DO IS=1,MSC
-          DO ID=1,MDC
-            IF (AC(IP,IS,ID) .gt. TheMax) THEN
-              TheMax=AC(IP,IS,ID)
-              IPf=IP
-              ISf=IS
-              IDf=ID
-            END IF
-          END DO
-        END DO
-      END DO
-      Print *, 'f IP=', IPf, 'IS=', ISf, 'ID=', IDf
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
