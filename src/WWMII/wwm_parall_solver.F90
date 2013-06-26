@@ -34,8 +34,8 @@
 #define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
-#define SOR_DIRECT
 #undef SOR_DIRECT
+#define SOR_DIRECT
 !
 #undef SINGLE_LOOP_AMATRIX
 #define SINGLE_LOOP_AMATRIX
@@ -2917,7 +2917,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, ONE
       USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES, THR, THR8
       USE elfe_msgp, only : myrank
 # ifdef DEBUG
@@ -2928,9 +2928,10 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
-      real(rkind) :: eCoeff, eCoeffB
+      real(rkind) :: eCoeff, eCoeffB, hVal
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP, Jb
+!      real(rkind) :: ACtest(MSC, MDC,MNP)
 # ifdef DEBUG
       real(rkind) :: eSum
 # endif
@@ -2939,6 +2940,10 @@ MODULE WWM_PARALL_SOLVER
       WRITE(740+myrank,*) 'THR=', THR, 'THR8=', THR8
       CALL FLUSH(740+myrank)
 # endif
+!      DO IP=1,NP_RES
+!        J=I_DIAG(IP)
+!        ACtest(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
+!      END DO
       DO IP=1,NP_RES
         IF (LocalColor % CovLower(IP) == 1) THEN
 # if defined REORDER_ASPAR_PC
@@ -2973,12 +2978,23 @@ MODULE WWM_PARALL_SOLVER
                 IS=LocalColor % ISindex(iBlock, idx)
                 ID=LocalColor % IDindex(iBlock, idx)
                 eCoeff=SolDat % ASPAR_pc(IS,ID,J)
+!               This is the mystery: the two formulas for eCoeffB gives
+!               different results
+!                hVal=ONE/SolDat % ASPAR_block(IS,ID,Jb)
+!                IF (abs(hVal - ACtest(IS,ID,JP)) .gt. THR8) THEN
+!                  WRITE(740+myrank,*) 'hVal=', hVal, 'ACtest=', ACtest(IS,ID,JP)
+!                  WRITE(740+myrank,*) '      diff=', hVal - ACtest(IS,ID,JP)
+!                  CALL FLUSH(740+myrank)
+!                END IF
+!                eCoeffB=SolDat % ASPAR_block(IS,ID,J)*hVal
 !                eCoeffB=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,Jb)
 !                IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
 !                  WRITE(740+myrank,*) '1J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
 !                  WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
 !                  CALL FLUSH(740+myrank)
 !                END IF
+
+
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
             END IF
