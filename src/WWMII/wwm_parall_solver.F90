@@ -23,8 +23,8 @@
 #define ASPAR_B_COMPUTE_BLOCK
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#define SELFE_EXCH
-#undef SELFE_EXCH
+#undef NO_SELFE_EXCH
+#define NO_SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
@@ -45,8 +45,12 @@
 #if defined REORDER_ASPAR_PC && defined SOR_DIRECT
 # undef REORDER_ASPAR_PC
 #endif
+! In PLAN_I4 the size becomes (MSCeffect,MDC,MNP)
+! and so we cannot use the SELFE_EXCH
 #ifdef PLAN_I4
-
+# ifndef NO_SELFE_EXCH
+     Sorry PLAN_I4 requires NO_SELFE_EXCH
+# endif
 #endif
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
@@ -2441,7 +2445,7 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=ONE/SolDat % ASPAR_block(:,:,J)
       END DO
-#  ifdef SELFE_EXCH
+#  ifdef NO_SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
 #  else
       CALL EXCHANGE_P4D_WWM(SolDat%AC4)
@@ -2507,7 +2511,7 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         SolDat%AC4(:,:,IP)=SolDat % ASPAR_block(:,:,J)
       END DO
-#  ifdef SELFE_EXCH
+#  ifdef NO_SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%AC4)
 #  else
       CALL EXCHANGE_P4D_WWM(SolDat%AC4)
@@ -2961,16 +2965,17 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_APPLY_FCT(MSCeffect, SolDat,  ACin, ACret)
+      SUBROUTINE I5B_APPLY_FCT(LocalColor, SolDat,  ACin, ACret)
       USE DATAPOOL, only : I5_SolutionData, IA, JA, NP_RES, MDC, MNP, rkind
+      USE DATAPOOL, only : LocalColorInfo
       USE elfe_msgp, only : exchange_p4d_wwm
       implicit none
       integer IP, J, idx
+      type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-      integer, intent(in) :: MSCeffect
-      REAL(rkind), intent(in) :: ACin(MSCeffect, MDC, MNP)
-      REAL(rkind), intent(inout) :: ACret(MSCeffect, MDC, MNP)
-      REAL(rkind) :: eSum(MSCeffect,MDC)
+      REAL(rkind), intent(in) :: ACin(LocalColor%MSCeffect, MDC, MNP)
+      REAL(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
+      REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC)
       DO IP=1,NP_RES
         eSum=0
         DO J=IA(IP),IA(IP+1)-1
@@ -2979,7 +2984,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
         ACret(:,:,IP)=eSum
       END DO
-# ifdef SELFE_EXCH
+# ifdef NO_SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, ACret)
 # else
       CALL EXCHANGE_P4D_WWM(ACret)
@@ -3248,7 +3253,7 @@ MODULE WWM_PARALL_SOLVER
       integer IP, IS, ID, MSCeffect
       MaxError=SOLVERTHR
       MSCeffect=LocalColor % MSCeffect
-      CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
+      CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
@@ -3342,7 +3347,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L5 vi=Ay
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC5)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC1, SolDat%AC5)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC5)=', I5B_SUMTOT(MSCeffect, SolDat%AC5)
@@ -3401,7 +3406,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L9 t=Az
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC8, SolDat%AC9)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC8, SolDat%AC9)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC9)=', I5B_SUMTOT(MSCeffect, SolDat%AC9)
@@ -3435,7 +3440,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
         ! L12 If x is accurate enough finish
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC2, SolDat%AC1)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
 # ifdef DEBUG
         write(2000+myrank,*) 'nbIter=', nbIter
         write(2000+myrank,*) 'sumtot(AC1)=', I5B_SUMTOT(MSCeffect, SolDat%AC1)
@@ -3501,7 +3506,7 @@ MODULE WWM_PARALL_SOLVER
       integer IP, IS, ID, MSCeffect
       MaxError=SOLVERTHR
       MSCeffect=LocalColor % MSCeffect
-      CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat % AC2, SolDat % AC3)
+      CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat % AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
@@ -3537,7 +3542,7 @@ MODULE WWM_PARALL_SOLVER
         ENDIF
 
         ! L5 vi=Ay
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC5)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC1, SolDat%AC5)
 
         ! L6 Alpha=Rho/(hat(r)_0, v_i)
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC5, Prov)
@@ -3563,7 +3568,7 @@ MODULE WWM_PARALL_SOLVER
         END IF
 
         ! L9 t=Az
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC1, SolDat%AC7)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC1, SolDat%AC7)
 
         ! L10 omega=(t,s)/(t,t)
         CALL I5B_SCALAR(MSCeffect, SolDat % AC7, SolDat % AC3, Omega)
@@ -3578,7 +3583,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
 
         ! L12 If x is accurate enough finish
-        CALL I5B_APPLY_FCT(MSCeffect, SolDat,  SolDat%AC2, SolDat%AC1)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
         IF (CritVal .lt. MaxError) THEN
@@ -4345,7 +4350,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After ASPAR init'
 # endif
-# ifdef SELFE_EXCH
+# ifdef NO_SELFE_EXCH
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat % B_block)
 # else
       CALL EXCHANGE_P4D_WWM(SolDat % B_block)
