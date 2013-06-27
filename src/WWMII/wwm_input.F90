@@ -1625,16 +1625,16 @@
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           write(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
           ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
           ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
           ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
           ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
-          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
           write(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
         END DO
@@ -1642,22 +1642,22 @@
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
         WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
@@ -1667,10 +1667,10 @@
 ! read cooridantes from files ....
 !
         ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
         ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
@@ -1685,7 +1685,7 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(BND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1707,14 +1707,14 @@
         BND_TIME_ALL_FILES = 0.
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
           ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
           BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
           ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
           DO IT = 1, NDT_BND_FILE(IFILE)
              BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
@@ -1781,7 +1781,7 @@
          REAL(rkind),   ALLOCATABLE  :: TMP(:,:)
          REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
          REAL(rkind), SAVE           :: TIME, scale_factor
-
+         character (len = *), parameter :: CallFct = "READ_NETCDF_WW3"
          INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
          CHARACTER(LEN=80)    :: CHRTMP
          CHARACTER(LEN=100)   :: CHRERR
@@ -1792,13 +1792,13 @@
 
          WRITE(DBG%FHNDL,*) IT, IFILE, 'READING GLOBAL DATA'
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,3),NF90_NOWRITE,HS_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
          ISTAT = nf90_inq_varid(HS_BND_NCID, TRIM(NCDF_HS_NAME), HS_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
          ISTAT = nf90_get_att(HS_BND_NCID, HS_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
          IF (.NOT. ALLOCATED(HS_WW3)) THEN
            ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1806,20 +1806,20 @@
            HS_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
          HS_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(HS_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,2),NF90_NOWRITE,FP_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
          ISTAT = nf90_inq_varid(FP_BND_NCID, TRIM(NCDF_FP_NAME), FP_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
          ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
          IF (.NOT. ALLOCATED(FP_WW3)) THEN
            ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1827,20 +1827,20 @@
            FP_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
          FP_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(FP_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,5),NF90_NOWRITE,T02_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
          ISTAT = nf90_inq_varid(T02_BND_NCID, TRIM(NCDF_F02_NAME), T02_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 
          ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
          IF (.NOT. ALLOCATED(T02_WW3)) THEN
            ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1848,20 +1848,20 @@
            T02_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
          T02_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(T02_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,4),NF90_NOWRITE,DSPR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
          ISTAT = nf90_inq_varid(DSPR_BND_NCID, TRIM(NCDF_SPR_NAME), DSPR_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
          ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
          IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
            ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1869,20 +1869,20 @@
            DSPR_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
 
          DSPR_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(DSPR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,DIR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 21, ISTAT)
 
          ISTAT = nf90_inq_varid(DIR_BND_NCID, TRIM(NCDF_DIR_NAME), DIR_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 22, ISTAT)
 
          ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 38, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
 
          IF (.NOT. ALLOCATED(DIR_WW3)) THEN
            ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1890,11 +1890,11 @@
            DIR_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 39, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
 
          DIR_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(DIR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 40, iret)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 25, ISTAT)
 
          IF (LWRITE_WW3_RESULTS) THEN
            OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
