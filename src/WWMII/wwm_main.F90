@@ -764,6 +764,9 @@
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
+# ifdef MPI_PARALL_GRID
+      integer i, j
+# endif
       integer :: k
       character(len=15) CALLFROM
 # if !defined PGMCL_COUPLING && defined WWM_MPI

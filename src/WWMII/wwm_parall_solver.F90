@@ -3229,7 +3229,6 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: MaxError, CritVal
       REAL(rkind) :: eSum1, eSum2
-      REAL(rkind) :: TheTol
 # ifdef DEBUG
       integer IS1, IS2
       REAL(rkind) :: Lerror
@@ -3353,7 +3352,6 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: MaxError, CritVal
       REAL(rkind) :: eSum1, eSum2
-      REAL(rkind) :: TheTol
       integer :: MaxIter = 30
       integer IP, IS, ID, MSCeffect
       MaxError=SOLVERTHR
@@ -3688,6 +3686,9 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE, POS
+# ifndef SINGLE_LOOP_AMATRIX
+      INTEGER :: POS
+# endif
       INTEGER :: I, J, IPGL, IPrel, ISr, IS1, IS2
 
 # ifdef SINGLE_LOOP_AMATRIX

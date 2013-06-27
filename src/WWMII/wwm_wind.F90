@@ -545,17 +545,17 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 11')
 
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
         END DO
-        wind_x = tmp
+        wind_x = TMP
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
         END DO
-        wind_y = tmp
+        wind_y = TMP
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
         END DO
-        atmo_press = tmp
+        atmo_press = TMP
         DEALLOCATE(TMP)
       END IF
 
