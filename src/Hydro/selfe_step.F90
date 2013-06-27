@@ -7329,8 +7329,22 @@
         close(32)
       endif
 #endif
-      if(if_source==1) then
-        deallocate(msource)
-      endif
+
+!     Deallocate temp. arrays to avoid memory leak
+      if(if_source==1) deallocate(msource)
+      if(nonhydro==1) deallocate(qhat,dqnon_dxy,qmatr,qir)
       deallocate(hp_int)
+
+#ifdef DEBUG
+      deallocate(bpgr,wafo)
+#endif
+
+#ifdef USE_NAPZD
+      deallocate(Bio_bdefp)
+#endif
+
+#ifdef USE_SED
+      deallocate(tr_tc,tr_tl)
+#endif
+
       end subroutine selfe_step
