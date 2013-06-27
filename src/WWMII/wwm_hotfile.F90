@@ -229,8 +229,6 @@ MODULE wwm_hotfile_mod
       myrank=0
       allocate(iplg(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 4')
-!Mathieu ... again all crap ... where is ip defined in heaven? ... rather in hell!
-!        ... please use consistently ip as variable for nodes ...
       DO IP=1,MNP
         iplg(IP)=IP
       END DO
@@ -326,7 +324,7 @@ MODULE wwm_hotfile_mod
           END DO
         END IF
       END DO
-      deallocate(eStatus)
+      deallocate(eStatus, IPLGtot)
 #ifndef MPI_PARALL_GRID
       deallocate(iplg)
 #endif
