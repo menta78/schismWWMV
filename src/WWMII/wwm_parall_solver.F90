@@ -253,6 +253,24 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE CHECK_I5B_EXCHANGE(LocalColor)
+      USE DATAPOOL
+      IMPLICIT NONE
+      type(LocalColorInfo), intent(in) :: LocalColor
+      real(rkind) :: AC(LocalColor%MSCeffect,MDC,MNP)
+      integer IS, ID
+      DO IS=1,LocalColor%MSCeffect
+        DO ID=1,MDC
+          DO IP=1,MNP
+            AC(IS,ID,IP)=MyREAL(IS)*MyREAL(ID)*XP(IP)
+          END DO
+        END DO
+      END DO
+      CALL I5B_EXCHANGE_P4D_WWM(LocalColor, AC)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5B_EXCHANGE_ASPAR(LocalColor, ASPAR_bl)
       USE DATAPOOL
       USE elfe_msgp, only : comm, ierr, myrank
