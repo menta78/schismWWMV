@@ -169,8 +169,8 @@ ifdef USE_TIMOR
 endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
-        selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
-        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o
+		io_subs.o misc_subs.o transport.o sflux_9c.o lap.o \
+		selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
