@@ -26,7 +26,7 @@ MODULE wwm_hotfile_mod
       character(len=1), parameter :: ePoint = '.'
       integer, parameter :: powerproc = 6
       character(len=6) :: eStrProc
-      integer :: LPOS, I, len
+      integer :: LPOS
       integer POSITION_BEFORE_POINT
       IF (MULTIPLE.eq.0) THEN
         LPOS=POSITION_BEFORE_POINT(FILEHOT)
@@ -52,8 +52,7 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CREATE_LOCAL_HOTNAME(FILEHOT, FILERET,                &
-     &  MULTIPLE, HOTSTYLE)
+      SUBROUTINE CREATE_LOCAL_HOTNAME(FILEHOT, FILERET, MULTIPLE, HOTSTYLE)
 #ifdef MPI_PARALL_GRID
       USE elfe_msgp, only : myrank
 #endif
@@ -84,12 +83,11 @@ MODULE wwm_hotfile_mod
       INTEGER :: HMNP, HMNE
       INTEGER :: HMSC, HMDC
       REAL(rkind) :: HFRLOW, HFRHIGH
-      OPEN(HOTIN%FHNDL, FILE = TRIM(FILEHOT), STATUS = 'OLD',       &
-     &   FORM = 'UNFORMATTED')
+      OPEN(HOTIN%FHNDL, FILE = TRIM(FILEHOT), STATUS = 'OLD', FORM = 'UNFORMATTED')
       READ(HOTIN%FHNDL) HMNP, HMNE
       READ(HOTIN%FHNDL) HMSC, HMDC, HFRLOW, HFRHIGH
-      IF ( HMNP .NE. NP_TOTAL .OR. HMNE .NE. NE_TOTAL .OR.              &
-     &    HMSC .NE. MSC .OR. HFRLOW .NE. FRLOW .OR.                     &
+      IF ( HMNP .NE. NP_TOTAL .OR. HMNE .NE. NE_TOTAL .OR.          &
+     &     HMSC .NE. MSC      .OR. HFRLOW .NE. FRLOW .OR.           &
      &    HFRHIGH .NE. FRHIGH ) THEN
         CALL WWM_ABORT('THE HOTFILE GEOMETRY DOES NOT FIT THE INPUT FILE')
       ENDIF
@@ -115,8 +113,7 @@ MODULE wwm_hotfile_mod
       logical :: test
       iRankTest=1
       DO
-        CALL PRE_CREATE_LOCAL_HOTNAME(FILEHOT, FILERET,                &
-     &     MULTIPLE, HOTSTYLE, iRankTest)
+        CALL PRE_CREATE_LOCAL_HOTNAME(FILEHOT, FILERET, MULTIPLE, HOTSTYLE, iRankTest)
         INQUIRE(FILE=TRIM(FILERET), EXIST=test)
         IF (test.eqv..false.) THEN
           nbProc=iRankTest-1
@@ -150,16 +147,14 @@ MODULE wwm_hotfile_mod
       integer :: MULTIPLE, istat
       character(len=140) :: FILERET
       MULTIPLE=1
-      CALL PRE_CREATE_LOCAL_HOTNAME(FILEHOT, FILERET,                   &
-     &  MULTIPLE, HOTSTYLE, eRank)
+      CALL PRE_CREATE_LOCAL_HOTNAME(FILEHOT, FILERET, MULTIPLE, HOTSTYLE, eRank)
       IF (HOTSTYLE.eq.1) THEN
-        OPEN(HOTIN%FHNDL, FILE = TRIM(FILERET), STATUS = 'OLD',         &
-     &   FORM = 'UNFORMATTED')
+        OPEN(HOTIN%FHNDL, FILE = TRIM(FILERET), STATUS = 'OLD', FORM = 'UNFORMATTED')
         READ(HOTIN%FHNDL) HMNP, HMNE
         READ(HOTIN%FHNDL) HMSC, HMDC, HFRLOW, HFRHIGH
         IF ( HMNP .NE. NP_TOTAL .OR. HMNE .NE. NE_TOTAL .OR.            &
-     &    HMSC .NE. MSC .OR. HFRLOW .NE. FRLOW .OR.                     &
-     &    HFRHIGH .NE. FRHIGH ) THEN
+     &       HMSC .NE. MSC      .OR. HFRLOW .NE. FRLOW .OR.             &
+     &       HFRHIGH .NE. FRHIGH ) THEN
           CALL WWM_ABORT('THE HOTFILE GEOMETRY DOES NOT FIT THE INPUT FILE')
         ENDIF
         READ(HOTIN%FHNDL) NPLOC
@@ -224,7 +219,7 @@ MODULE wwm_hotfile_mod
       integer, allocatable :: IPLGtot(:)
       integer, allocatable :: eStatus(:)
       integer, allocatable :: ListAttained(:)
-      integer :: eDiff, I, iProc, idx, eIdx, eStat, nbProc, IP
+      integer :: eDiff, I, iProc, idx, eIdx, nbProc, IP
       integer :: nbNeedProc, nbF, NPLOC, nbZero, idxB
       integer istat
 #ifndef MPI_PARALL_GRID
@@ -234,8 +229,6 @@ MODULE wwm_hotfile_mod
       myrank=0
       allocate(iplg(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 4')
-!Mathieu ... again all crap ... where is ip defined in heaven? ... rather in hell!
-!        ... please use consistently ip as variable for nodes ...
       DO IP=1,MNP
         iplg(IP)=IP
       END DO
@@ -293,8 +286,7 @@ MODULE wwm_hotfile_mod
           ENDIF
         END DO
         IF (nbZero.gt.0) THEN
-          WRITE(errmsg, *) 'Not enough data nbProc=', nbProc,          &
-    &    ' nbMissedMode=', nbZero
+          WRITE(errmsg, *) 'Not enough data nbProc=', nbProc, ' nbMissedMode=', nbZero
           CALL WWM_ABORT(errmsg)
         ENDIF
         DEALLOCATE(ListAttained)
@@ -332,7 +324,7 @@ MODULE wwm_hotfile_mod
           END DO
         END IF
       END DO
-      deallocate(eStatus)
+      deallocate(eStatus, IPLGtot)
 #ifndef MPI_PARALL_GRID
       deallocate(iplg)
 #endif
@@ -380,11 +372,14 @@ MODULE wwm_hotfile_mod
         USE ELFE_GLBL, ONLY : iplg, np_global
 #endif
         IMPLICIT NONE
-        INTEGER IP, idxFil, idxMem, iProc, istat
+        INTEGER idxFil, idxMem, iProc, istat
         REAL(rkind), ALLOCATABLE :: ACinB(:,:,:)
         character(len=140) :: FILERET
         type(ReconstructInfo) :: eRecons
         integer :: nbF, NPLOC, eRank, I
+#ifdef MPI_PARALL_GRID
+        integer IP
+#endif
         IF (MULTIPLEIN_HOT.eq.0) THEN
 #ifdef MPI_PARALL_GRID
           ALLOCATE(ACinB(NP_GLOBAL,MSC,MDC), stat=istat)
@@ -398,19 +393,16 @@ MODULE wwm_hotfile_mod
           CALL READ_AC_SIMPLE(HOTIN%FNAME, MNP, AC2)
 #endif
         ELSE
-          CALL DETERMINE_NEEDED_HOTFILES(HOTSTYLE_IN, TRIM(HOTIN%FNAME), &
-     &         eRecons)
+          CALL DETERMINE_NEEDED_HOTFILES(HOTSTYLE_IN, TRIM(HOTIN%FNAME), eRecons)
           IF (eRecons % IsEasy) THEN
-            CALL CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,              &
-     &          MULTIPLEIN_HOT, HOTSTYLE_IN)
+            CALL CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN)
             CALL READ_AC_SIMPLE(FILERET, MNP, AC2)
           ELSE
             DO iProc=1,eRecons % nbNeedProc
               eRank=eRecons % ListSubset(iProc) % eRankProc
               nbF=eRecons % ListSubset(iProc) % nbNeedEntries
               NPLOC=eRecons % ListSubset(iProc) % NPLOC
-              CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,        &
-     &            MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
+              CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
               allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 12')
               CALL READ_AC_SIMPLE(FILERET, NPLOC, ACinB)
@@ -439,13 +431,13 @@ MODULE wwm_hotfile_mod
         include 'mpif.h'
 #endif
         CHARACTER(len=140) :: FILERET
-        REAL(rkind), ALLOCATABLE :: ACreturn(:,:,:)
-        REAL(rkind), ALLOCATABLE :: VALB(:), VALB_SUM(:)
-        INTEGER IP, ID, IS, istat
-        CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET,              &
-     &    MULTIPLEOUT_HOT, HOTSTYLE_OUT)
-        OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET),                      &
-     &    STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED')
+#ifdef MPI_PARALL_GRID
+        REAL(rkind), allocatable :: ACreturn(:,:,:)
+        integer IP, IS, ID, istat
+        REAL(rkind), allocatable :: VALB(:), VALB_SUM(:)
+#endif
+        CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
+        OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET), STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED')
         WRITE(HOTOUT%FHNDL) NP_TOTAL, NE_TOTAL
         WRITE(HOTOUT%FHNDL) MSC, MDC, FRLOW, FRHIGH
 #ifndef MPI_PARALL_GRID
@@ -464,8 +456,7 @@ MODULE wwm_hotfile_mod
               DO IP=1,MNP
                 VALB(iplg(IP))=AC2(IP,IS,ID)
               END DO
-              call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype,          &
-     &             MPI_SUM,0,comm,ierr)
+              call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype, MPI_SUM,0,comm,ierr)
               IF (myrank.eq.0) THEN
                 ACreturn(:,IS,ID)=VALB_SUM
               END IF
@@ -500,7 +491,7 @@ MODULE wwm_hotfile_mod
 # endif
         IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
-        INTEGER :: IP, ID, mnp_dims
+        INTEGER :: IP, ID
         REAL(rkind), ALLOCATABLE :: ACin(:,:)
 # endif
         INTEGER :: NPLOC, eRank, I
@@ -517,8 +508,7 @@ MODULE wwm_hotfile_mod
           allocate(ACin(np_global,MSC), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 14')
           DO ID=1,MDC
-            iret=nf90_get_var(ncid,ac_id,ACin,                        &
-     &    start=(/1,1,ID,IHOTPOS_IN/), count = (/MNP, MSC, MDC, 1 /))
+            iret=nf90_get_var(ncid,ac_id,ACin, start=(/1,1,ID,IHOTPOS_IN/), count = (/MNP, MSC, MDC, 1 /))
             DO IP=1,MNP
               AC2(IP,:,ID)=ACin(iplg(IP),:)
             END DO
@@ -528,34 +518,28 @@ MODULE wwm_hotfile_mod
 # else
           iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
           iret=nf90_inq_varid(ncid, "ac", ac_id)
-          iret=nf90_get_var(ncid,ac_id,AC2,                           &
-     &  start=(/1,1,1,IHOTPOS_IN/), count=(/MNP,MSC,MDC,1/))
+          iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/), count=(/MNP,MSC,MDC,1/))
           iret=nf90_close(ncid)
 # endif
         ELSE
-          CALL DETERMINE_NEEDED_HOTFILES(HOTSTYLE_IN,                 &
-     &         TRIM(HOTIN%FNAME), eRecons)
+          CALL DETERMINE_NEEDED_HOTFILES(HOTSTYLE_IN, TRIM(HOTIN%FNAME), eRecons)
           IF (eRecons % IsEasy) THEN
-            CALL CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,           &
-     &          MULTIPLEIN_HOT, HOTSTYLE_IN)
+            CALL CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN)
             iret=nf90_open(FILERET, nf90_nowrite, ncid)
             iret=nf90_inq_varid(ncid, "ac", ac_id)
-            iret=nf90_get_var(ncid,ac_id,AC2,                         &
-     &    start=(/1,1,1,IHOTPOS_IN/),  count = (/MNP, MSC, MDC, 1 /))
+            iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/),  count = (/MNP, MSC, MDC, 1 /))
             iret=nf90_close(ncid)
           ELSE
             DO iProc=1,eRecons % nbNeedProc
               eRank=eRecons % ListSubset(iProc) % eRankProc
               nbF=eRecons % ListSubset(iProc) % nbNeedEntries
               NPLOC=eRecons % ListSubset(iProc) % NPLOC
-              CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET,     &
-     &            MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
+              CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
               iret=nf90_open(TRIM(FILERET), nf90_nowrite, ncid)
               allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 15')
               iret=nf90_inq_varid(ncid, "ac", ac_id)
-              iret=nf90_get_var(ncid,ac_id,ACinB,                     &
-     &     start=(/1,1,1,IHOTPOS_IN/), count=(/NPLOC, MSC, MDC, 1 /))
+              iret=nf90_get_var(ncid,ac_id,ACinB, start=(/1,1,1,IHOTPOS_IN/), count=(/NPLOC, MSC, MDC, 1 /))
               iret=nf90_close(ncid)
               DO I=1,nbF
                 idxFil=eRecons % ListSubset(iProc) % ListNeedIndexFile(I)
@@ -583,20 +567,16 @@ MODULE wwm_hotfile_mod
       include 'mpif.h'
 # endif
       character (len = *), parameter :: CallFct="OUTPUT_HOTFILE_NETCDF"
-      INTEGER :: IP, IS, POS
+      INTEGER :: POS
       integer :: iret, ncid, ntime_dims, mnp_dims, msc_dims, mdc_dims
-      integer :: ac_id, frlow_id, frhigh_id, one_dims, fifteen_dims
-      integer :: oceantime_id, oceantimeday_id, oceantimestr_id
+      integer :: ac_id
       integer :: nbTime
       REAL(rkind)  :: eTimeDay
       character (len = *), parameter :: UNITS = "units"
       character(len=140) :: FILERET
       integer np_write, ne_write
-      integer :: i
-      integer istat
-      CHARACTER :: eChar
 # ifdef MPI_PARALL_GRID
-      integer ID
+      integer ID, IS, IP, ISTAT
       REAL(rkind), ALLOCATABLE :: ACreturn(:,:,:)
       REAL(rkind), ALLOCATABLE :: VALB(:), VALB_SUM(:)
 # endif
@@ -614,8 +594,7 @@ MODULE wwm_hotfile_mod
       np_write=MNP
       ne_write=MNE
 # endif
-      CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET,               &
-     &    MULTIPLEOUT_HOT, HOTSTYLE_OUT)
+      CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
       WRITE(STAT%FHNDL,*) 'FILERET=', TRIM(FILERET)
       WRITE(STAT%FHNDL,*) 'WriteOutputProcess_hot=', WriteOutputProcess_hot
       FLUSH(STAT%FHNDL)
@@ -675,8 +654,7 @@ MODULE wwm_hotfile_mod
             DO IP=1,MNP
               VALB(iplg(IP))=AC2(IP,IS,ID)
             END DO
-            call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype,        &
-     &        MPI_SUM,0,comm,ierr)
+            call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype, MPI_SUM,0,comm,ierr)
             IF (myrank.eq.0) THEN
               ACreturn(:,IS,ID)=VALB_SUM
             END IF

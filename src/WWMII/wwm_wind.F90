@@ -14,17 +14,7 @@
       IMPLICIT NONE
 
       INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
-      LOGICAL :: LFLIVE
       REAL(rkind)    :: WDIRT, cf_w1, cf_w2
-      CHARACTER(LEN=20) :: TIMESTRING
-#ifdef MPI_PARALL_GRID
-      INTEGER :: I
-      REAL(rkind)    :: tmp
-#endif
-#ifdef NCDF
-      REAL(rkind)    :: DTMP
-      REAL(rkind)    :: WI(3)
-#endif
 
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
@@ -204,12 +194,11 @@
       USE elfe_msgp
 #endif 
       IMPLICIT NONE
-      REAL(rkind)             :: TEST, TMP(MNP,2)
+      REAL(rkind)             :: TMP(MNP,2)
 #ifdef NCDF
-      REAL(rkind)             :: DTMP, cf_w1, cf_w2
-      REAL(rkind)             :: Wi(3)
+      REAL(rkind)             :: cf_w1, cf_w2
 #endif
-      INTEGER                 :: IP, ISTAT, IT, IFILE, ITMP
+      INTEGER                 :: IT, IFILE
       INTEGER, intent(in)     :: K
 !AR: All crap ... defining K without using means that nobody has ever checked the results or anything else, so why coding at all?
 !AR: Mathieu can you please fix this !!!
@@ -317,16 +306,12 @@
       USE NETCDF
       IMPLICIT NONE
 
-      INTEGER :: ISTAT, IT, IX, IY, IFILE
+      INTEGER :: ISTAT, IT, IFILE
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-      INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
-      REAL(rkind)    :: RTMP
       REAL(rkind)  :: DTMP
       REAL(rkind), ALLOCATABLE :: WIND_TIME(:)
       character ( len = 20 ) chrtmp
       character ( len = 15 ) chrdate
-      character ( len = 40 ) netcfd_fname
-      character ( len = 20 ) chrerr
 
       integer, dimension(nf90_max_var_dims) :: dimIDs
       character (len = *), parameter :: CallFct="INIT_NETCDF_DWD"
@@ -497,9 +482,8 @@
       INTEGER, INTENT(IN) :: IFILE, IT
       REAL(rkind), intent(inout) :: eField(MNP,2)
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
       INTEGER             :: numLons, numLats, numTime, iy, counter, ip, i, j
-      character(len=100) :: CHRERR
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
       REAL(rkind), SAVE          :: TIME
@@ -561,17 +545,17 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 11')
 
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = wind_x(:,IY)
         END DO
-        wind_x = tmp
+        wind_x = TMP
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = wind_y(:,IY)
         END DO
-        wind_y = tmp
+        wind_y = TMP
         DO IY = 1, NDY_WIND
-          tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
+          TMP(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
         END DO
-        atmo_press = tmp
+        atmo_press = TMP
         DEALLOCATE(TMP)
       END IF
 
@@ -648,16 +632,12 @@
 
 !for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
 
-      INTEGER :: ISTAT, IT, IX, IY, IFILE
+      INTEGER :: ISTAT, IT, IFILE
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-      INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
-      REAL(rkind)     :: RTMP
       REAL(rkind)   :: START_TIME
       REAL(rkind) , ALLOCATABLE :: WIND_TIME(:), WIND_TIME_NETCDF(:)
-      character ( len = 20 ) chrtmp
       character ( len = 15 ) chrdate
-      character ( len = 40 ) netcfd_fname, beginn_time
-      character ( len = 100) chrerr
+      character ( len = 40 ) beginn_time
       CHARACTER(LEN=15) :: eTimeStr
       character (len = *), parameter :: CallFct="INIT_NETCDF_CRFS"
       integer, dimension(nf90_max_var_dims) :: dimIDs
@@ -874,23 +854,18 @@
 !2do update ...
 !for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
 !
-      INTEGER :: ISTAT, IT, IX, IY, IFILE, II, IP, III
+      INTEGER :: ISTAT, IT, IFILE, II, IP
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-      INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
-      INTEGER(kind=4) :: TIMES
-      REAL(rkind)    :: RTMP
       REAL(rkind)  :: START_TIME, OFFSET_TIME
       REAL(rkind), ALLOCATABLE :: WIND_TIME_NETCDF(:)
       character ( len = 4 ) ch4
-      character ( len = 100 ) chrtmp
       character ( len = 15 ) chrdate
-      character ( len = 40 ) netcfd_fname, beginn_time
       character (len = *), parameter :: CallFct="INIT_NETCDF_NARR"
       integer, dimension(nf90_max_var_dims) :: dimIDs
       integer, allocatable :: COUNTERMAT(:,:)
       integer, allocatable :: IMAT(:), JMAT(:)
       integer :: NbPoint, nbFail
-      real(rkind) :: Wi(3), eVal, XPW(3), YPW(3)
+      real(rkind) :: Wi(3), XPW(3), YPW(3)
       INTEGER NI(3)
 !
 ! I make the assumption that the year when the dataset beginns at the year indicated in the bouc section
@@ -1305,12 +1280,11 @@
       REAL(rkind), intent(inout) :: eField(MNP,2)
       character (len = *), parameter :: CallFct="READ_NETCDF_CRFS"
 
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
       INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
-      REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
+      REAL(rkind), ALLOCATABLE   :: U(:), V(:)
       REAL(rkind), SAVE          :: TIME
-      CHARACTER (LEN=100)  :: CHRTMP
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
       IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
 
@@ -1462,17 +1436,15 @@
       INTEGER, INTENT(IN) :: IFILE, IT
       REAL(rkind), intent(out) :: eField(MNP,2)
 
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, DPRESS_ID, ISTAT
-      INTEGER             :: numLons, numLats, numHeights, iy, counter, ip, i, j, ix
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
+      INTEGER             :: numLons, numLats, counter, ip, i, j, ix
       character (len = *), parameter :: CallFct="READ_NETCDF_NARR"
 
       INTEGER(kind=2), ALLOCATABLE  :: WIND_X4(:,:), WIND_Y4(:,:)
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
-      REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
       REAL(rkind),SAVE           :: TIME
-      REAL(rkind)                :: scale_factor, eU, eV, eAng
-      REAL(rkind) :: WI(3), sumWi, eF1, eF2
-      CHARACTER (LEN=100)  :: CHRTMP
+      REAL(rkind)                :: scale_factor
+      REAL(rkind) :: sumWi, eF1, eF2
 
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
       real(rkind) :: ErrorCoord, XPinterp, YPinterp
@@ -1642,7 +1614,6 @@
        INTEGER, INTENT(OUT)                :: REC1, REC2
        REAL(rkind) :: eTime1, eTime2
        INTEGER  :: iTime
-       integer istat
  
        DO iTime=2,nbtime_mjd
          eTime1=wind_time_mjd(iTime-1)
@@ -1677,12 +1648,10 @@
        INTEGER, INTENT(in)                :: RECORD_IN
        REAL(rkind), INTENT(out)           :: varout(MNP,2)
        character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
-       INTEGER                            :: FID, dims(3), ID, ISTAT, I, J
-       INTEGER :: IX, IY, nbBad
+       INTEGER                            :: FID, ID, ISTAT, I, J
+       INTEGER :: IX, IY
        REAL(rkind) :: Uw, Vw, sumCOEFF
        LOGICAL :: METHOD1 = .FALSE.
-       logical isinf
-       character(len=100) CHRTMP
        ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1757,13 +1726,12 @@
        USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
        USE DATAPOOL, only : CF_coeff, CF_IX, CF_IY, SHIFTXY, THR, ONE
        IMPLICIT NONE
-       INTEGER                            :: ISTAT, fid, nlon, nlat, varid, dimids(2), closest(2), I
-       integer attid, nbChar
-       INTEGER ntime
-       REAL, ALLOCATABLE                  :: CF_LON(:,:), CF_LAT(:,:), dist(:,:)
-       REAL                               :: d_lon, d_lat
+       INTEGER           :: ISTAT, fid, varid, dimids(2), closest(2), I
+       integer nbChar
+       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:), dist(:,:)
+       REAL(rkind)              :: d_lon, d_lat
        integer i11, j11, i12, j12, i21, j21
-       character(len=100) :: CHRTMP, CHRERR
+       character(len=100) :: CHRERR
        character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
        character (len=200) :: eStrAtt
        character (len=15) :: eStrTime
