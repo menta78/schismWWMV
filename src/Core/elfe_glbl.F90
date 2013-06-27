@@ -30,10 +30,9 @@ module elfe_glbl
   real(rkind),save :: wtimer(0:mxtimer,2)  ! Array of wallclock timers
                                            ! (:,1)=execution time
                                            ! (:,2)=communication time
-  ! timer_comp: computation portion (non-comm) of the wallclock time(non-comm); used in
-  ! target routines for profiling
-  ! (1): upwind/TVD transport
-  real(rkind),save :: timer_comp(10)
+  ! timer_ns: used in target routines for profiling. Increase its dimension and use for your own purpose.
+  ! 1: upwind/TVD transport
+  real(rkind),save :: timer_ns(1)
 
   ! For debugging
   character(72) :: fdb  ! Name of debugging file

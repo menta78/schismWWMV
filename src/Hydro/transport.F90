@@ -228,7 +228,7 @@
       swild2(:,:)=flx_adv(1,:,:) !sides
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
-      timer_comp(1)=timer_comp(1)+cwtmp-cwtmp2
+      timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
       call exchange_s3dw(swild2)
 #ifdef INCLUDE_TIMING
@@ -472,7 +472,7 @@
         enddo !i=1,ne
 
 #ifdef INCLUDE_TIMING
-        timer_comp(1)=timer_comp(1)+mpi_wtime()-cwtmp2
+        timer_ns(1)=timer_ns(1)+mpi_wtime()-cwtmp2
 #endif
 
 !       Exchange up_rat
@@ -722,7 +722,7 @@
 
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
-        timer_comp(1)=timer_comp(1)+cwtmp-cwtmp2
+        timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
         buf(1,1)=dtbl; buf(2,1)=myrank
         call mpi_allreduce(buf,buf2,1,MPI_2DOUBLE_PRECISION,MPI_MINLOC,comm,ierr)
@@ -1076,7 +1076,7 @@
 !     Update ghosts
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
-      timer_comp(1)=timer_comp(1)+cwtmp-cwtmp2
+      timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
       call exchange_e3d_tr(tr_el)
 #ifdef INCLUDE_TIMING

@@ -354,8 +354,9 @@
  150          hax(ir)=hax(ir)-ha(ir,jr)*hax(jr)
             ir=ir-1
             if(ir.ge.1) goto 140
-            return
-            end subroutine
+      deallocate(c,y)
+      return
+      end subroutine
 
 !***********************************************************************
 !   Subroutine to solve the system and write output for elevation      *
@@ -382,7 +383,6 @@
       REAL(rkind) PHASEDE,EAV,ESQ,TIME,RSE,FTIME,EAVDIF,EVADIF
       REAL(rkind) ELAV(NP),ELVA(NP)
 !      REAL(rkind) ELAV(NP),ELVA(NP)
-      REAL(rkind),ALLOCATABLE  ::  PHASEE(:),EMAG(:)
 !
       INTEGER NTSTEPS,ITMV
       REAL(8) TIMEBEG
@@ -392,7 +392,6 @@
 !
       convrd=180.d0/pi
 !
-      ALLOCATE ( PHASEE(MNHARF),EMAG(MNHARF) )
 !
 !**** Open velocity station harmonic output file and write header information
 !
@@ -549,8 +548,6 @@
       REAL(8) CONVRD
 !      REAL(rkind) XVELAV(NP),YVELAV(NP),XVELVA(NP),YVELVA(NP)
       REAL(rkind) XVELAV(NP),YVELAV(NP),XVELVA(NP),YVELVA(NP)
-      REAL(rkind),ALLOCATABLE :: UMAG(:),VMAG(:),PHASEU(:),PHASEV(:)
-      REAL(rkind),ALLOCATABLE :: Y(:)
       INTEGER NTSTEPS,ITMV
       REAL(8) TIMEBEG
       REAL(rkind) DT,FMV
@@ -559,9 +556,6 @@
 !
       convrd=180.d0/pi
 !
-      ALLOCATE ( Y(2*MNHARF) )
-      ALLOCATE ( UMAG(MNHARF),VMAG(MNHARF) )
-      ALLOCATE ( PHASEU(MNHARF),PHASEV(MNHARF) )
 !
 !**** Open velocity station harmonic output file and write header information
 !
