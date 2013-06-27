@@ -1380,8 +1380,8 @@
            OUTPAR(58) = CFLCXY(3,IP)
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE'
-         CALL FLUSH(STAT%FHNDL)
+!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE'
+!         CALL FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************

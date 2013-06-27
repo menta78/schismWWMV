@@ -199,7 +199,7 @@ MODULE WWM_PARALL_SOLVER
       real(rkind) :: ACtest(LocalColor%MSCeffect,MDC,MNP)
       real(rkind) :: U1(MNP), U2(MNP)
       CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(LocalColor%MSCeffect, AC, Lerror)
-      Print *, 'NP_RES cohenrency error=', Lerror
+!      Print *, 'NP_RES cohenrency error=', Lerror
       ACtest=AC
       SumErr=ZERO
       DO IS=1,LocalColor%MSCeffect
@@ -225,7 +225,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
-      Print *, 'Total SumErr=', SumErr
+!      Print *, 'Total SumErr=', SumErr
       DO iSync=1,wwm_nnbr_send
         iRank=wwm_ListNeigh_send(iSync)
         CALL mpi_isend(ACtest, 1, wwmtot_p2dsend_type(iSync), iRank-1, 1020, comm, wwm_p2dsend_rqst(iSync), ierr)
@@ -248,7 +248,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
-      Print *, 'SumErr=', SumErr
+!      Print *, 'SumErr=', SumErr
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3436,9 +3436,9 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
-        IF (myrank .eq. 0) THEN
-          Print *, 'nbIter=', nbIter, 'CritVal=', CritVal
-        END IF
+!        IF (myrank .eq. 0) THEN
+!          Print *, 'nbIter=', nbIter, 'CritVal=', CritVal
+!        END IF
         IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
