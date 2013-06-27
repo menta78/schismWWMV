@@ -15,10 +15,6 @@
 
       INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
       REAL(rkind)    :: WDIRT, cf_w1, cf_w2
-#ifdef MPI_PARALL_GRID
-      INTEGER :: I
-      REAL(rkind)    :: tmp
-#endif
 
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
