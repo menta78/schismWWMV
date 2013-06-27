@@ -38,7 +38,7 @@
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
-      if (ip == 1786) write(stat%fhndl,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
+      !if (ip == 1786) write(stat%fhndl,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
 
 !      write(*,*) '---- calling snl3 -----', ip, iobp(ip)
 
