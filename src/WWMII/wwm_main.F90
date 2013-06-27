@@ -374,8 +374,6 @@
 
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
-         INTEGER :: IP
-
          CALL CPU_TIME(TIME1)
        
          CALL IO_1(K)
@@ -465,7 +463,7 @@
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
 
-         INTEGER :: IT, IP
+         INTEGER :: IT
          REAL(rkind)    :: ITERTIME
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
 
@@ -548,13 +546,8 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
-         REAL(rkind)                :: TEST, TMP(MNP,2)
-#ifdef NCDF
-         REAL(rkind)              :: DTMP, wrf_w1, wrf_w2
-         REAL(rkind)              :: Wi(3)
-#endif
          REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IP, ISTAT, IT, IFILE, ITMP, FORECASTHOURS 
+         INTEGER             :: IT, IFILE
 
 ! update wind ...
          IF (LWINDFROMWWM) THEN
@@ -768,14 +761,10 @@
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING
       include 'mpif.h'
 # endif
-# ifndef WWM_MPI
-      integer ierr
-# endif
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
-      integer :: i, j
-      integer :: k, IT
+      integer :: k
       character(len=15) CALLFROM
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)

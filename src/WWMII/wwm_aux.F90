@@ -123,7 +123,7 @@
       SUBROUTINE GRAD_CG_K()
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER :: IP, IS
+         INTEGER :: IS
 
          DCGDX(:,:) = 0.0
          DCGDY(:,:) = 0.0
@@ -415,7 +415,7 @@
          IMPLICIT NONE
          INTEGER        :: IP, IS
          REAL(rkind)    :: DEPLOC
-         REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
+         REAL(rkind)    :: WVK,WVCG,WVN,WVC,SPSIGLOC
 
          DO IP = 1, MNP
            DEPLOC = MAX(DMIN,DEP(IP))
@@ -1101,7 +1101,7 @@
       REAL(rkind), INTENT(OUT) :: ACLOC(MSC,MDC)
       REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC)
       REAL(rkind), SAVE         :: WI(3)
-      INTEGER :: IS, ID, NI(3), IE
+      INTEGER :: IS, NI(3), IE
       REAL(rkind) :: WVN, WVC, WVK, WVCG, WVKDEP
       integer IP, J
 
@@ -1710,7 +1710,7 @@
       real(rkind), intent(in)    :: y(msc), acloc(msc,mdc)
 
       integer             :: is, id
-      real(rkind)         :: dintspec_y, maxvalue, tmp(msc)
+      real(rkind)         :: dintspec_y, tmp(msc)
 
       dintspec_y = ZERO
 !     maxvalue   = maxval(ac2(ip,:,:))
