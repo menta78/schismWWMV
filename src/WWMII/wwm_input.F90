@@ -168,11 +168,7 @@
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = HISTORY)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = HISTORY)
-=======
          wwm_print_namelist(HISTORY)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
@@ -404,19 +400,12 @@
          CFL3=.FALSE.
 
          BEGTC = MAIN%BEGT
-         DELTC = -1
+         DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = STATION)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = STATION)
-=======
          wwm_print_namelist(STATION)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
-         IF (DELTC.lt.MAIN%DELT) THEN
-           DELTC=MAIN%DELT
-         END IF
 #ifdef NCDF
          PARAMWRITE_STAT=PARAMWRITE
          USE_SINGLE_OUT_STAT=USE_SINGLE_OUT
@@ -459,9 +448,6 @@
 #  endif
 # endif
 #endif
-!         IF (DELTC.lt.0.0_rkind) THEN
-!           CALL WWM_ABORT("DELTC is not an optional argument for STATION")
-!         END IF
          OUT_STATION%BEGT = BEGTC
          OUT_STATION%DELT = DELTC
          OUT_STATION%UNIT = UNITC
@@ -767,11 +753,7 @@
      &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
 
          READ( INP%FHNDL,  NML = PROC)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = PROC)
-=======
          wwm_print_namelist(PROC)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 #ifdef SELFE
          IF (LSPHE) THEN
@@ -789,11 +771,7 @@
          END IF
 #endif
          READ( INP%FHNDL,  NML = COUPL)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = COUPL)
-=======
          wwm_print_namelist(COUPL)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 !
 !    *** Estimate various timings ...
@@ -825,17 +803,13 @@
 !     *** GRID section
 !
          READ (INP%FHNDL,   NML = GRID)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = COUPL)
-=======
          wwm_print_namelist(GRID)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
-!#ifdef MPI_PARALL_GRID
-!         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
-!           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
-!         END IF
-!#endif
+#ifdef MPI_PARALL_GRID
+         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
+           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
+         END IF
+#endif
          GRD%FNAME = FILEGRID
 
          NSPEC=MDC*MSC
@@ -872,29 +846,17 @@
 !     *** INIT section
 !
          READ(INP%FHNDL,  NML = INIT)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = INIT)
-=======
          wwm_print_namelist(INIT)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          IF (LHOTR) THEN
-!#ifdef SELFE
-!           call parallel_abort('SELFEWWM: no hotstart implemented yet ... :(....')
-!#endif
-!           CALL TEST_FILE_EXIST_DIE("Missing hotfile : ", HOTIN%FNAME)
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'HOTFILE is used as Initital Condition'
          END IF
 !
 !     *** BOUNDARY CONDITIONS section
 !
          READ(INP%FHNDL,  NML = BOUC )
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = BOUC )
-=======
          wwm_print_namelist(BOUC)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          BND%FNAME = FILEBOUND
@@ -931,11 +893,7 @@
 !     *** WIND section
 !
          READ(INP%FHNDL, NML = WIND)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = WIND)
-=======
          wwm_print_namelist(WIND)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 !         Print *, 'BEGTC', BEGTC
 !         Print *, 'ENDTC', ENDTC
@@ -966,11 +924,7 @@
 !     *** CURR section
 !
          READ(INP%FHNDL, NML = CURR)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = CURR)
-=======
          wwm_print_namelist(CURR)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          CUR%FNAME = TRIM(FILECUR)
@@ -997,11 +951,7 @@
 !     *** water level section
 !
          READ(INP%FHNDL, NML = WALV)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = WALV)
-=======
          wwm_print_namelist(WALV)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
 
          WAT%FNAME = FILEWATL
@@ -1027,27 +977,15 @@
 !     *** ENGS section
 !
          READ(INP%FHNDL, NML = ENGS)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = ENGS)
-         CALL FLUSH(CHK%FHNDL)
-
-=======
          wwm_print_namelist(ENGS)
          CALL FLUSH(CHK%FHNDL)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
 
 !
 !     *** NUMS section
 !
          READ(INP%FHNDL, NML = NUMS)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = NUMS)
-         CALL FLUSH(CHK%FHNDL)
-=======
          wwm_print_namelist(NUMS)
          CALL FLUSH(CHK%FHNDL)
-
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL READ_HISTORY_STATION_NAMELIST()
 !
 !     **** HOTFILE section
@@ -1069,12 +1007,9 @@
          MULTIPLEOUT=0
          MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
-<<<<<<< HEAD
-         WRITE(CHK%FHNDL, NML = HOTFILE)
-=======
          wwm_print_namelist(HOTFILE)
->>>>>>> baffa98385517fd1f0c381d9b25b31cdf41bf230
          CALL FLUSH(CHK%FHNDL)
+
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT
          IF (DELTC.lt.MAIN%DELT) THEN
@@ -1320,12 +1255,10 @@
              END IF
              CLOSE(GRD%FHNDL)
            CASE (2)
-!AR: not logical crap ...
              OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
              IF ((MNP.eq.0).or.(MNE.eq.0)) THEN
                CALL WWM_ABORT('We have MNP=0 or MNE=0 before reading grid')
              END IF
-!AR: ends here ... mathieu please fix!
              IF (IGRIDTYPE == 1) THEN ! system.dat format ... XFN
                DO I = 1, 2
                  READ(GRD%FHNDL, '(A)') RHEADER
