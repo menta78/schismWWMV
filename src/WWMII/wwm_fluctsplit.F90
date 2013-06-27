@@ -2339,7 +2339,7 @@
            K = 0
            IA(1) = 1
            DO IP = 1, MNP ! Run through all rows
-             ITMP(:)=0
+             ITMP=0
              DO I = 1, CCON(IP) ! Check how many entries there are ...
                J = J + 1
                IP_J  = PTABLE(J,2)
