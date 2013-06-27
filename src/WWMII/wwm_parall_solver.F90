@@ -258,7 +258,7 @@ MODULE WWM_PARALL_SOLVER
       IMPLICIT NONE
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind) :: AC(LocalColor%MSCeffect,MDC,MNP)
-      integer IS, ID
+      integer IS, ID, IP
       DO IS=1,LocalColor%MSCeffect
         DO ID=1,MDC
           DO IP=1,MNP
