@@ -1903,7 +1903,11 @@
 ! Determines roughness length
 !
 !AR: Check for zero stress for zero wind !!!
-      IF (USTAR .GT. 0.001_rkind) SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
+      IF (USTAR .GT. 0.001_rkind) THEN 
+        SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
+      ELSE
+        SQRTCDM1  = ZERO
+      ENDIF
       Z0  = ZZWND*EXP(-KAPPA*SQRTCDM1)
 !AR: Here we need to start debugging ...       
       IF (USTAR.GT.0.001_rkind) THEN 
