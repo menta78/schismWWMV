@@ -1377,6 +1377,7 @@
      & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS,                    &
      & DIKCUMUL, CUMULW, QBI
    END IF
+   call flush(5002)
 # ifdef MPI_PARALL_GRID
    endif
 # endif
