@@ -18,7 +18,6 @@
       character (len = *), parameter :: CallFct="MERGE_WWM_NC_FILE"
 
       real*4 :: TIME_4
-      real*8, allocatable :: XPloc(:), YPloc(:)
       real*4, allocatable :: XP(:), YP(:)
       real*4, allocatable :: TheMat(:,:)
       real*4, allocatable :: TheR(:,:)
@@ -86,60 +85,52 @@
       ALLOCATE(XP(np_global))
       ALLOCATE(YP(np_global))
       ALLOCATE(TheMax(np_global))
+      WRITE (FILE_NAME,10) TRIM(HisPrefix),0
+
+      ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, 'x', var_id)
+      IF (ISTAT /= 0) THEN
+        ISTAT = nf90_inq_varid(ncid, 'lon', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+      END IF
+
+      ISTAT = NF90_GET_VAR(ncid, var_id, XP)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, 'y', var_id)
+      IF (ISTAT /= 0) THEN
+        ISTAT = nf90_inq_varid(ncid, 'lat', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+      END IF
+
+      ISTAT = NF90_GET_VAR(ncid, var_id, YP)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+
+      ISTAT = NF90_CLOSE(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+      Print *, 'XP, min=', minval(XP), ' max=', maxval(XP)
+      Print *, 'YP, min=', minval(YP), ' max=', maxval(YP)
+
       TheMax=0
       DO iProc=1,nbProc
         WRITE (FILE_NAME,10) TRIM(HisPrefix),iProc-1
         ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
-
-        ISTAT = nf90_inq_dimid(ncid, 'mnp', idim_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
-
-        ISTAT = nf90_inquire_dimension(ncid, idim_id, len = eMNP)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
-        ListMNP(iProc)=eMNP
-        Print *, 'iProc=', iProc, ' eMNP=', eMNP
-
-        ISTAT = nf90_inq_varid(ncid, 'x', var_id)
-        IF (ISTAT /= 0) THEN
-          ISTAT = nf90_inq_varid(ncid, 'lon', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
-        END IF
-
-        ALLOCATE(XPloc(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, XPloc)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
-
-        ISTAT = nf90_inq_varid(ncid, 'y', var_id)
-        IF (ISTAT /= 0) THEN
-          ISTAT = nf90_inq_varid(ncid, 'lat', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
-        END IF
-
-        ALLOCATE(YPloc(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, YPloc)
         CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
-        ISTAT = nf90_inq_varid(ncid, 'iplg', var_id)
+        ISTAT = nf90_inq_dimid(ncid, 'mnp', idim_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
-        ALLOCATE(iplg(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, iplg)
+        ISTAT = nf90_inquire_dimension(ncid, idim_id, len = eMNP)
         CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
-        DO IP=1,eMNP
-          XP(iplg(IP))=SNGL(XPloc(IP))
-          YP(iplg(IP))=SNGL(YPloc(IP))
-        END DO
-        deallocate(XPloc)
-        deallocate(YPloc)
-        deallocate(iplg)
+        ListMNP(iProc)=eMNP
+        Print *, 'iProc=', iProc, ' eMNP=', eMNP
 
         ISTAT = NF90_CLOSE(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
       END DO
-      Print *, 'XP, min=', minval(XP), ' max=', maxval(XP)
-      Print *, 'YP, min=', minval(YP), ' max=', maxval(YP)
 !
 !  Now loop
 !
@@ -186,7 +177,6 @@
 
           ISTAT = nf90_inquire_dimension(ncid, dimids(2), len = len2)
           CALL GENERIC_NETCDF_ERROR(CallFct, 26, ISTAT)
-
 
           ALLOCATE(TheR(eMNP, len))
 !          Print *, 'nb1=', nb1, 'len=', len
@@ -260,7 +250,7 @@
       character(len=500) :: CHRERR
       IF (iret .NE. nf90_noerr) THEN
         CHRERR = nf90_strerror(iret)
-        Print *, TRIM(CallFct), ' - ', idx, ' - ', CHRERR
+        Print *, TRIM(CallFct), ' - ', idx, ' - ', TRIM(CHRERR)
         STOP
       ENDIF
       END SUBROUTINE
