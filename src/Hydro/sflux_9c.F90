@@ -1682,8 +1682,6 @@
      &                        info%nx, info%ny, max_times, max_files)
 
 ! allocate memory for lon and lat
-          if (allocated(info%lon)) deallocate(info%lon)
-          if (allocated(info%lat)) deallocate(info%lat)
           allocate (info%lon(info%nx,info%ny), &
      &              info%lat(info%nx,info%ny), &
      &              stat=alloc_stat)
@@ -1710,11 +1708,6 @@
 !         write(*,*) info%name, info%num_nodes, info%num_elems
           
 ! allocate memory for grid conversion variables
-          if (allocated(info%node_i)) deallocate(info%node_i)
-          if (allocated(info%node_j)) deallocate(info%node_j)
-          if (allocated(info%node_num)) deallocate(info%node_num)
-          if (allocated(info%elem_nodes)) deallocate(info%elem_nodes)
-          if (allocated(info%in_elem_for_out_node)) deallocate(info%in_elem_for_out_node)
           allocate (info%node_i(info%num_nodes), &
      &              info%node_j(info%num_nodes), &
      &              info%node_num(info%nx,info%ny), &
@@ -1724,7 +1717,6 @@
           call check_allocation('integer grid variables', &
      &                          'get_dataset_info', alloc_stat)
 
-          if (allocated(info%weight)) deallocate(info%weight)
           allocate (info%weight(num_nodes_out,3), &
      &              stat=alloc_stat)
           call check_allocation('real grid variables', &
@@ -2003,7 +1995,6 @@
         endif
 
 ! allocate space for base_date
-        if (allocated(base_date)) deallocate(base_date)
         allocate(base_date(n_base_date), stat=allocate_stat)
         call check_allocation('base_date', 'get_file_times', &
      &                        allocate_stat)

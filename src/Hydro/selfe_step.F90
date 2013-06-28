@@ -124,7 +124,8 @@
       real(4) :: floatout,floatout2
 
 !     Inter-subdomain backtracking
-      logical :: lbt,lbtgb
+      logical :: lbt(1),lbtgb(1)
+!      logical :: lbt_l(1), lbtgb_l(1)
       integer :: nbtrk
       type(bt_type) :: btlist(mxnbt) !to avoid conflict with inter_btrack()
 
@@ -155,7 +156,7 @@
       real(rkind),allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
       real(rkind),allocatable :: hp_int(:,:,:),buf1(:,:),buf2(:,:),buf3(:),msource(:,:)
       real(rkind),allocatable :: fluxes_vol(:),fluxes_vol_gb(:) !volume fluxes output between regions
-      logical :: ltmp,ltmp1,ltmp2
+      logical :: ltmp,ltmp1(1),ltmp2(1)
 
       logical,save :: first_call=.true.
       logical :: up_tvd
@@ -1391,7 +1392,7 @@
         Cdp=0; Cd=0 !for dry pts
         Cdmax=-1 !max. Cd at node for this process (info only)
 !       Drag at nodes
-        ltmp1=.false. !for WBL iteration
+        ltmp1(1)=.false. !for WBL iteration
         do i=1,npa
           if(idry(i)==1) cycle
 
@@ -1422,7 +1423,7 @@
                 wfr=2*pi/max(0.1,out_wwm(i,12)) !angular freq.; out_wwm is not real*8
                 wdir=out_wwm(i,18) !wave direction
                 call wbl_GM(taubx,tauby,rough_p(i),ubm,wfr,wdir,z0b,fw,delta_wc,iter,ifl)
-                if(ifl==2) ltmp1=.true.                
+                if(ifl==2) ltmp1(1)=.true.                
                 if(iter>iwbl_itmax) iwbl_itmax=iter
                 !Debug
 !                if(it==1000) write(12,*)'WBL:',iplg(i),dp(i),ubm,out_wwm(i,5),wdir, &
@@ -1450,7 +1451,7 @@
 #ifdef USE_WWM
         if(iwbl==1) then
            call mpi_reduce(ltmp1,ltmp2,1,MPI_LOGICAL,MPI_LOR,0,comm,ierr)
-           if(myrank==0.and.ltmp2) write(16,*)'WBL-GM did not converge'
+           if(myrank==0.and.ltmp2(1)) write(16,*)'WBL-GM did not converge'
            if(myrank==0) write(16,*)'Cumulative max. for GM iteration for rank 0= ',iwbl_itmax
 !'
         endif !iwbl
@@ -2315,9 +2316,9 @@
               time_rm=dt
               time_rm2=-99 !leftover from previous subdomain; init. as flag
               call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild(1:3),swild10(1:3,1:3), &
-     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,lbt)
+     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
 
-              if(lbt) then !Backtracking exits augmented subdomain
+              if(ltmp) then !Backtracking exits augmented subdomain
                 !Add trajectory to inter-subdomain backtracking list
                 nbtrk=nbtrk+1
                 if(nbtrk>mxnbt) call parallel_abort('MAIN: nbtrk > mxnbt')
@@ -2477,7 +2478,7 @@
                     webt(j,ie0)=wwint
                   endif
                 endif 
-              endif !lbt
+              endif !ltmp
             endif !do backtrack
 
 !           Debug
@@ -2494,7 +2495,7 @@
 
 !     Complete inter-subdomain backtracking (if necessary)
       if(nproc>1) then
-        lbt=(nbtrk/=0)
+        lbt(1)=(nbtrk/=0)
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
 #endif
@@ -2505,13 +2506,13 @@
         if(ierr/=MPI_SUCCESS) call parallel_abort('MAIN: allreduce lbtgb',ierr)
 !'
 
-        if(lbtgb) then
+        if(lbtgb(1)) then
           if(myrank==0) write(16,*)'starting inter-subdomain btrack'
           call inter_btrack(it,nbtrk,btlist) !all ranks participate
           if(myrank==0) write(16,*)'done inter-subdomain btrack'
         endif
 
-        if(lbt) then !handle returned inter-subdomain trajectories
+        if(lbt(1)) then !handle returned inter-subdomain trajectories
           do ibt=1,nbtrk
             if(btlist(ibt)%rank/=myrank) call parallel_abort('MAIN: not right rank')
 !'
@@ -2568,7 +2569,7 @@
 !'
             endif !sides
           enddo !ibt
-        endif !lbt
+        endif !lbt(1)
       endif !nproc>1
 
 !     Update ghost backtracked momentum

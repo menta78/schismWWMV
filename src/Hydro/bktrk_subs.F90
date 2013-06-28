@@ -109,7 +109,7 @@ subroutine inter_btrack(itime,nbt,btlist)
   integer :: stat,i,ii,j,ie,irank,nnbrq,inbr,nbts,nbtd
   integer :: mxbtsend,mxbtrecv,mnbt
   real(rkind) :: xt,yt,zt,uuint,vvint,wwint,ttint,ssint
-  logical :: lexit,bt_donel,bt_done
+  logical :: lexit,bt_donel(1),bt_done(1)
   integer :: icw
   real(rkind) :: cwtmp
 
@@ -417,13 +417,13 @@ subroutine inter_btrack(itime,nbt,btlist)
 #endif
 
   ! Exit outer loop if all backtracks are completed
-  bt_donel=(nbts==0)
+  bt_donel(1)=(nbts==0)
   call mpi_allreduce(bt_donel,bt_done,1,MPI_LOGICAL,MPI_LAND,comm,ierr)
 #ifdef INCLUDE_TIMING
   ! Add to communication timer
   wtimer(icw,2)=wtimer(icw,2)+mpi_wtime()-cwtmp
 #endif
-  if(bt_done) exit outer_loop
+  if(bt_done(1)) exit outer_loop
 
   ! Initialize send queue for next cycle of outer loop
   btsendq(1:nbts)=bttmp(1:nbts)
