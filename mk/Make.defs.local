@@ -73,7 +73,7 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := pelfe_$(ENV)
+EXEC   := /home/aron/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -110,8 +110,8 @@ else
 endif
 
 # Wind wave model WWM
-# USE_WWM = yes
-# EXEC := $(EXEC)_WWM
+ USE_WWM = yes
+ EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
 # USE_PETSC = yes
 # EXEC := $(EXEC)_PETSC
