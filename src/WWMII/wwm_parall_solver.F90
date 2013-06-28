@@ -23,8 +23,8 @@
 #define ASPAR_B_COMPUTE_BLOCK
 ! Either we use the SELFE exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
-#undef NO_SELFE_EXCH
 #define NO_SELFE_EXCH
+#undef NO_SELFE_EXCH
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
