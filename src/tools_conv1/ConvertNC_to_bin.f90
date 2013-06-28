@@ -261,5 +261,6 @@
       IF (iret .NE. nf90_noerr) THEN
         CHRERR = nf90_strerror(iret)
         Print *, TRIM(CallFct), ' - ', idx, ' - ', CHRERR
+        STOP
       ENDIF
       END SUBROUTINE
