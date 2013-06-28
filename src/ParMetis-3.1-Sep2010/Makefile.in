@@ -1,6 +1,6 @@
 
 # Which compiler to use
-CC = mpcc_r 
+CC = mpicc 
 
 
 # What optimization level to use

@@ -15,9 +15,9 @@
       integer iTime, nbTime, iEnt
       integer np_global, len1, len2
       REAL*8, PARAMETER   :: DAY2SEC  = 86400
+      character (len = *), parameter :: CallFct="MERGE_WWM_NC_FILE"
 
       real*4 :: TIME_4
-      real*8, allocatable :: XPloc(:), YPloc(:)
       real*4, allocatable :: XP(:), YP(:)
       real*4, allocatable :: TheMat(:,:)
       real*4, allocatable :: TheR(:,:)
@@ -55,62 +55,29 @@
 !
       Print *, 'FILE_NAME=', TRIM(FILE_NAME)
       ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -1-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
       ISTAT = nf90_inq_varid(ncid, 'ocean_time_day', itime_id)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -2-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
       ISTAT = NF90_INQUIRE_VARIABLE(ncid, ITIME_ID, dimids = dimids)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -3-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
       ISTAT = nf90_inquire_dimension(ncid, dimids(1), len = nbTime)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -4-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
       ALLOCATE(LTimeDay(nbTime))
       ISTAT = NF90_GET_VAR(ncid, itime_id, LTimeDay)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -5-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
       ISTAT = nf90_inq_dimid(ncid, 'np_global', idim_id)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -6-', TRIM(CHRERR)
-        STOP
-      ENDIF
-
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
       ISTAT = nf90_inquire_dimension(ncid, idim_id, len = np_global)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -7-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
       ISTAT = NF90_CLOSE(ncid)
-      IF (ISTAT .NE. nf90_noerr) THEN
-        CHRERR = nf90_strerror(ISTAT)
-        Print *, 'ConvertNC_to_bin -8-', TRIM(CHRERR)
-        STOP
-      ENDIF
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 !
 !  Build XP, YP global
 !
@@ -118,96 +85,52 @@
       ALLOCATE(XP(np_global))
       ALLOCATE(YP(np_global))
       ALLOCATE(TheMax(np_global))
+      WRITE (FILE_NAME,10) TRIM(HisPrefix),0
+
+      ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, 'x', var_id)
+      IF (ISTAT /= 0) THEN
+        ISTAT = nf90_inq_varid(ncid, 'lon', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+      END IF
+
+      ISTAT = NF90_GET_VAR(ncid, var_id, XP)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, 'y', var_id)
+      IF (ISTAT /= 0) THEN
+        ISTAT = nf90_inq_varid(ncid, 'lat', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+      END IF
+
+      ISTAT = NF90_GET_VAR(ncid, var_id, YP)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+
+      ISTAT = NF90_CLOSE(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+      Print *, 'XP, min=', minval(XP), ' max=', maxval(XP)
+      Print *, 'YP, min=', minval(YP), ' max=', maxval(YP)
+
       TheMax=0
       DO iProc=1,nbProc
         WRITE (FILE_NAME,10) TRIM(HisPrefix),iProc-1
         ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -9-', TRIM(CHRERR)
-          STOP
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
         ISTAT = nf90_inq_dimid(ncid, 'mnp', idim_id)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -10-', TRIM(CHRERR)
-          STOP
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
         ISTAT = nf90_inquire_dimension(ncid, idim_id, len = eMNP)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -11-', TRIM(CHRERR)
-          STOP
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
         ListMNP(iProc)=eMNP
         Print *, 'iProc=', iProc, ' eMNP=', eMNP
 
-        ISTAT = nf90_inq_varid(ncid, 'x', var_id)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -12-', TRIM(CHRERR)
-          STOP
-        ENDIF
-
-        ALLOCATE(XPloc(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, XPloc)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -13-', TRIM(CHRERR)
-          STOP
-        ENDIF
-
-
-        ISTAT = nf90_inq_varid(ncid, 'y', var_id)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -14-', TRIM(CHRERR)
-          STOP
-        ENDIF
-
-        ALLOCATE(YPloc(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, YPloc)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -15-', TRIM(CHRERR)
-          STOP
-        ENDIF
-
-
-        ISTAT = nf90_inq_varid(ncid, 'iplg', var_id)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -16-', TRIM(CHRERR)
-          STOP
-        ENDIF
-
-        ALLOCATE(iplg(eMNP))
-        ISTAT = NF90_GET_VAR(ncid, var_id, iplg)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -17-', TRIM(CHRERR)
-          STOP
-        ENDIF
-        DO IP=1,eMNP
-          XP(iplg(IP))=SNGL(XPloc(IP))
-          YP(iplg(IP))=SNGL(YPloc(IP))
-        END DO
-        deallocate(XPloc)
-        deallocate(YPloc)
-        deallocate(iplg)
-
         ISTAT = NF90_CLOSE(ncid)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          Print *, 'ConvertNC_to_bin -18-', TRIM(CHRERR)
-          STOP
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
       END DO
-      Print *, 'XP, min=', minval(XP), ' max=', maxval(XP)
-      Print *, 'YP, min=', minval(YP), ' max=', maxval(YP)
 !
 !  Now loop
 !
@@ -229,84 +152,39 @@
           Print *, 'iEnt=', iEnt, ' iProc=', iProc
           WRITE (FILE_NAME,10) TRIM(HisPrefix),iProc-1
           ISTAT = NF90_OPEN(TRIM(FILE_NAME), NF90_NOWRITE, ncid)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -19-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
 
           ISTAT = nf90_inq_varid(ncid, TRIM(VarName), var_id)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -20-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
 
           eMNP=ListMNP(iProc)
 
           ISTAT = nf90_inq_varid(ncid, 'iplg', var_id)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -21-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 21, ISTAT)
 
           ALLOCATE(iplg(eMNP))
           ISTAT = NF90_GET_VAR(ncid, var_id, iplg)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -22-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 22, ISTAT)
 
           ISTAT = nf90_inq_varid(ncid, TRIM(VarName), var_id)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -23-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
 
           ISTAT = NF90_INQUIRE_VARIABLE(ncid, var_id, dimids = dimids)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -24-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
 
           ISTAT = nf90_inquire_dimension(ncid, dimids(1), len = len1)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -25-', TRIM(CHRERR)
-            STOP
-          ENDIF
-!          Print *, 'len1=', len1
+          CALL GENERIC_NETCDF_ERROR(CallFct, 25, ISTAT)
 
           ISTAT = nf90_inquire_dimension(ncid, dimids(2), len = len2)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -26-', TRIM(CHRERR)
-            STOP
-          ENDIF
-!          Print *, 'len2=', len2
-
-
+          CALL GENERIC_NETCDF_ERROR(CallFct, 26, ISTAT)
 
           ALLOCATE(TheR(eMNP, len))
 !          Print *, 'nb1=', nb1, 'len=', len
           ISTAT = NF90_GET_VAR(ncid, var_id, TheR, start=(/1,nb1/), count=(/eMNP,len/))
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -27-', TRIM(CHRERR)
-            STOP
-          ENDIF
-!          Print *, 'TheR min=', minval(TheR), ' max=', maxval(TheR)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 27, ISTAT)
 
           ISTAT = NF90_CLOSE(ncid)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            Print *, 'ConvertNC_to_bin -28-', TRIM(CHRERR)
-            STOP
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 28, ISTAT)
 
           DO IP=1,eMNP
             TheMat(:,iplg(IP))=TheR(IP,:)
@@ -361,4 +239,18 @@
       END DO
   10  FORMAT (a,i4.4,'.nc')
       END SUBROUTINE
-
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GENERIC_NETCDF_ERROR(CallFct, idx, iret)
+      USE NETCDF
+      implicit none
+      integer, intent(in) :: iret, idx
+      character(*), intent(in) :: CallFct
+      character(len=500) :: CHRERR
+      IF (iret .NE. nf90_noerr) THEN
+        CHRERR = nf90_strerror(iret)
+        Print *, TRIM(CallFct), ' - ', idx, ' - ', TRIM(CHRERR)
+        STOP
+      ENDIF
+      END SUBROUTINE

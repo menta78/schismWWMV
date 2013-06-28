@@ -75,23 +75,15 @@
       real(4) :: floatout,floatout2
       real(rkind) :: double1 !for hotstart.in
 
-! Input handles added by YC
-!      character(len=72) :: windfile,apssfile         !added by YC
-! arrays for waterquality model added by YC
-!      real(8),allocatable :: WSRP(:),WSLP(:),WSPB1(:),WSPB2(:), &
-!     &WSPB3(:),turb(:),WRea(:)    
-!      real(8),allocatable :: PSQ(:)
-!      integer,allocatable :: PSK(:)
-
 !     Misc. arrays
-      integer, allocatable :: icolor1(:),icolor2(:),ifront(:),ifront2(:),ipiv(:)
+      integer, allocatable :: ipiv(:)
       integer, allocatable :: nwild(:),nwild2(:),ibuf1(:,:),ibuf2(:,:)
       real(rkind), allocatable :: sigmap(:,:),sigma_prod(:,:,:),akr(:,:),akrp(:),work4(:),z_r2(:),xy_kr(:,:)
       real(rkind), allocatable :: swild(:),swild2(:,:) !swild2 dimension must match that in vinter()
       real(rkind), allocatable :: swild3(:),rwild(:,:)
       real(rkind), allocatable :: swild4(:,:),swild10(:,:) !double precision for hotstart.in
-      real(rkind), allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
-      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
+      real(rkind), allocatable :: swild99(:,:) !used for exchange (deallocate immediately afterwards)
+!      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
       real(4), allocatable :: swild8(:,:) !used in ST nudging
 
 !     Local variables
@@ -119,36 +111,12 @@
                      &et,qq,tr,ft1,dep,sim_year,sim_month,sim_day,sim_hour, &
                      &sim_minute,sim_second
 
-#ifdef USE_ECO 
-!...  MFR - other variables to atmospheric parameters (when nws=0 ... probably to clean later...)
-!      real(rkind), allocatable :: Pair(:), Tair(:), Hair(:), Uwind(:), Vwind(:), cloud(:)
-
-!...  MFR - Tracer models
-!      real(rkind) :: tr_tmp1
-#endif
-
 #ifdef USE_ICM
       real(rkind) :: yday
 #endif
 
-#ifdef USE_NAPZD
-!      allocatable :: Bio_bdefp(:,:)
-#endif
-
 #ifdef USE_OIL
 #endif
-
-#ifdef USE_HA
-!      INTEGER NTSTEPS,ITMV
-!      REAL(8) TIMEBEG
-!      REAL(rkind) FMV
-!      allocatable :: XVELAV(:),YVELAV(:),XVELVA(:),YVELVA(:),ELAV(:),ELVA(:)
-#endif
-
-!     Station and other output arrays
-!      allocatable :: xsta(:),ysta(:),zstal(:),zsta(:),iep_sta(:),iep_flag(:),arco_sta(:,:), &
-!     &iof_sta(:),sta_out(:,:),sta_out_gb(:,:),indx_out(:,:),indx_wwm_out(:), &
-!     &sta_out3d(:,:,:),zta_out3d(:,:,:),sta_out3d_gb(:,:,:),zta_out3d_gb(:,:,:)
 
 
 !-------------------------------------------------------------------------------
@@ -1213,7 +1181,7 @@
 !'
 
 !     All other arrays
-      allocate(sigmap(nvrt,10),sigma_prod(nvrt,nvrt,-4:4),icolor1(npa),icolor2(npa), &
+      allocate(sigmap(nvrt,10),sigma_prod(nvrt,nvrt,-4:4), &
          &  ptbt(4,nvrt,npa),sdbt(4,nvrt,nsa),webt(nvrt,nea),bubt(nea,2), & 
          &  windx1(npa),windy1(npa),windx2(npa),windy2(npa),windx(npa),windy(npa), &
          &  tau(npa,2),iadv(npa),windfactor(npa),pr1(npa),airt1(npa),shum1(npa), &
@@ -3395,6 +3363,8 @@
       enddo !k=1,ne
 
       write(12,*)'Max. error in inverting Kriging maxtrice= ',err_max
+
+      deallocate(ipiv,akr,akrp,work4,xy_kr)
 !...  End Kriging preparation
 
       if(myrank==0) write(16,*)'done init (1)...'
@@ -4115,7 +4085,7 @@
               close(10)
             enddo !m
           case(2)
-!	        Vertically varying
+!	    Vertically varying
             do m=1,ntracers
               write(ifile_char,'(i03)')m
               ifile_char=adjustl(ifile_char) 
@@ -4162,6 +4132,8 @@
                   tr_nd(m,k,i)=tr_nd(m,kbp(i),i)
                 enddo !k
               enddo !i=1,npa
+
+              deallocate(z_r2)
             enddo !m=1,ntracers
 
           case(0)
@@ -5029,4 +5001,8 @@
 !     Broadcast to global module
       iths_main=iths
  
+!     Deallocate temp. arrays to release memory
+      deallocate(nwild,nwild2,sigmap,sigma_prod,swild,swild2,swild3,swild4,swild8,swild10)
+      if(nws==4) deallocate(rwild)
+
       end subroutine selfe_init

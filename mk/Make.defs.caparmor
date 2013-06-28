@@ -41,7 +41,7 @@ ENV = ARON
 # Environment 
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCP = mpiifort #MPI compiler
 FLD = $(FCP)
 # MPI vserion (1 or 2)
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
@@ -63,17 +63,14 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+MTSLIBS = -L$(HOME)/GIT/selfe/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x
+CDFMOD  = -I$(NETCDF_INCDIR)
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := /home/aron/bin/pelfe_$(ENV)
+EXEC   := pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -110,8 +107,8 @@ else
 endif
 
 # Wind wave model WWM
- USE_WWM = yes
- EXEC := $(EXEC)_WWM
+# USE_WWM = yes
+# EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
 # USE_PETSC = yes
 # EXEC := $(EXEC)_PETSC
