@@ -733,13 +733,11 @@
 
         READ(INP%FHNDL, NML = PETScOptions)
         CLOSE(INP%FHNDL)
-
-        if (myrank == 0) then
-          WRITE(CHK%FHNDL, NML = PETScOptions)
-          CALL FLUSH(CHK%FHNDL)
-        endif
+        wwm_print_namelist(PETScOptions)
+        CALL FLUSH(CHK%FHNDL)
 
         ksptype = toLower(ksptype)
+        indif
         pctype  = toLower(pctype)
 
         ! check for strange input
