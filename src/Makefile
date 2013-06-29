@@ -146,8 +146,8 @@ endif
 ifdef USE_WWM
 # please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
   PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER
-  OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
-       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
+  OBJS := $(OBJS) wwm_datapl.o wwm_petscpool_new.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
+       wwm_petsc_block_new.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
@@ -345,7 +345,7 @@ make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
 
 o/$(config)/.dummy:
 	@echo $(make_defs_local_exists)
-        ifeq ( $(strip $(make_defs_local_exists)), )
+        ifeq ( $(strip $(make_defs_local_exists)),)
              $(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
              If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
         endif

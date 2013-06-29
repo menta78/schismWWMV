@@ -732,8 +732,11 @@
         maxitsStrange = .false.
 
         READ(INP%FHNDL, NML = PETScOptions)
-        WRITE(CHK%FHNDL, NML = PETScOptions)
-        CALL FLUSH(CHK%FHNDL)
+
+        if (myrank == 0) then
+          WRITE(CHK%FHNDL, NML = PETScOptions)
+          CALL FLUSH(CHK%FHNDL)
+        endif
 
         ksptype = toLower(ksptype)
         pctype  = toLower(pctype)
