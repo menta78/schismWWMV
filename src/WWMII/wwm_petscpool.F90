@@ -732,6 +732,7 @@
         maxitsStrange = .false.
 
         READ(INP%FHNDL, NML = PETScOptions)
+        CLOSE(INP%FHNDL)
 
         if (myrank == 0) then
           WRITE(CHK%FHNDL, NML = PETScOptions)
