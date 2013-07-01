@@ -719,11 +719,10 @@
       subroutine readPETSCnamelist()
         use datapool, only: inp, CHK, DBG
         use StringTools
+        use elfe_msgp, only : myrank
         implicit none
         ! true if one of the values seem strange
         logical :: rtolStrage, abstolStrange, dtolStrange, maxitsStrange
-
-
         namelist /PETScOptions/ ksptype, rtol, abstol, dtol, maxits, initialguessnonzero, gmrespreallocate, samePreconditioner, pctype
 
         rtolStrage    = .false.
@@ -733,11 +732,12 @@
 
         READ(INP%FHNDL, NML = PETScOptions)
         CLOSE(INP%FHNDL)
-        wwm_print_namelist(PETScOptions)
-        CALL FLUSH(CHK%FHNDL)
+        IF (myrank .eq. 0) THEN
+          WRITE(CHK%FHNDL, NML=PETScOptions)
+          CALL FLUSH(CHK%FHNDL)
+        END IF
 
         ksptype = toLower(ksptype)
-        indif
         pctype  = toLower(pctype)
 
         ! check for strange input
