@@ -448,6 +448,9 @@
 #  endif
 # endif
 #endif
+!         IF (DELTC.lt.0.0_rkind) THEN
+!           CALL WWM_ABORT("DELTC is not an optional argument for STATION")
+!         END IF
          OUT_STATION%BEGT = BEGTC
          OUT_STATION%DELT = DELTC
          OUT_STATION%UNIT = UNITC

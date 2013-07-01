@@ -59,8 +59,8 @@
       real(rkind) :: out2(12+nvrt),sutmp(nvrt),svtmp(nvrt),swild2(2,nvrt)
 
       real(rkind),allocatable :: swild(:,:,:)
-      logical :: srwt_xchng,prwt_xchng
-      logical :: srwt_xchng_gb,prwt_xchng_gb
+      logical :: srwt_xchng(1),prwt_xchng(1)
+      logical :: srwt_xchng_gb(1),prwt_xchng_gb(1)
       logical :: cwtime,lmorph
 !-------------------------------------------------------------------------------
 
