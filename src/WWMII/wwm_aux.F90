@@ -67,6 +67,30 @@
 
       END SUBROUTINE
 !**********************************************************************
+!* Some MPI_BARRIER are just not reliable                             *
+!**********************************************************************
+#ifdef MPI_PARALL_GRID
+      SUBROUTINE MYOWN_MPI_BARRIER
+      USE elfe_msgp
+      USE elfe_glbl
+      IMPLICIT NONE
+      integer eInt(1)
+      integer iRank, jRank
+      eInt(1)=4
+      DO iRank=0,nproc-1
+        IF (myrank .eq. iRank) THEN
+          DO jRank=0,nproc-1
+            IF (iRank.ne. jRank) THEN
+              CALL MPI_SEND(eInt,1,itype,jRank,comm,ierr)
+            END IF
+          END DO
+        ELSE
+          CALL MPI_RECV(eInt, 1, itype,iRank,137,comm,istatus,ierr)
+        END IF
+      END DO
+      END SUBROUTINE
+#endif
+!**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GRADCURT()

@@ -650,6 +650,8 @@ MODULE wwm_hotfile_mod
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 17')
         DO ID=1,MDC
           DO IS=1,MSC
+            WRITE(STAT%FHNDL,*) 'ID=', ID, 'IS=', IS
+            FLUSH(STAT%FHNDL)
             VALB=0
             DO IP=1,MNP
               VALB(iplg(IP))=AC2(IP,IS,ID)

@@ -329,7 +329,7 @@ MODULE WWM_PARALL_SOLVER
       integer, intent(in) :: ListNe(nb)
       type(Graph), intent(inout) :: AdjGraph
       integer, allocatable :: rbuf_int(:)
-      integer ierror, I, iProc
+      integer I, iProc
       integer idx, eDeg, nbEdge, iEdge
       integer istat
       AdjGraph % nbVert=nproc
@@ -340,7 +340,7 @@ MODULE WWM_PARALL_SOLVER
         allocate(rbuf_int(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 2')
         DO iProc=2,nproc
-          CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 19, comm, istatus, ierror)
+          CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 19, comm, istatus, ierr)
           AdjGraph % ListDegree(iProc)=rbuf_int(1)
         END DO
         deallocate(rbuf_int)
