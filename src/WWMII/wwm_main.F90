@@ -364,7 +364,7 @@
 #ifdef MPI_PARALL_GRID
          use elfe_msgp, only : myrank
 #endif
-
+         USE PGMCL_LIBRARY, only : MyRankGlobal
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
@@ -377,7 +377,7 @@
          CALL CPU_TIME(TIME1)
        
          CALL IO_1(K)
-
+        
          CALL CPU_TIME(TIME2)
 
 #if !defined MPI_PARALL_GRID
@@ -540,6 +540,7 @@
          USE NETCDF 
 #endif
          USE DATAPOOL
+         USE PGMCL_LIBRARY, only : MyRankGlobal
 #ifdef MPI_PARALL_GRID
          USE elfe_msgp
 #endif
@@ -547,7 +548,7 @@
 
          INTEGER, INTENT(IN) :: K
          REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IT, IFILE
+         INTEGER             :: IT, IFILE, TheRes
 
 ! update wind ...
          IF (LWINDFROMWWM) THEN
@@ -593,7 +594,13 @@
          END IF
 #endif
 #ifdef PGMCL_COUPLING
+         WRITE(MyRankGlobal+240,*) 'Before the PGMCL_ROMS_IN'
+         TheRes=K-INT(K/MAIN%ICPLT)*MAIN%ICPLT
+         WRITE(MyRankGlobal+240,*) 'TheRes=', TheRes
+         CALL FLUSH(MyRankGlobal+240)
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+           WRITE(MyRankGlobal+240,*) 'Before the PGMCL_ROMS_IN B'
+           CALL FLUSH(MyRankGlobal+240)
            CALL PGMCL_ROMS_IN(K,IFILE,IT)
 # ifdef ANALYTICAL_WIND_CURR
            DO IP=1,MNP
@@ -631,8 +638,6 @@
            IF (LCFL) CFLCXY = ZERO
            IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
          END IF
-
-!         IF (MAIN%TMJD .GT. 51545.) WINDXY = ZERO
 
       END SUBROUTINE
 !**********************************************************************

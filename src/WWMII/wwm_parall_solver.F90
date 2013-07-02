@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 
 #define PLAN_I4
 #undef PLAN_I4
@@ -2470,9 +2470,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_CREATE_PRECOND(LocalColor, SolDat, TheMethod)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, NP_RES, rkind
       USE elfe_msgp, only : exchange_p4d_wwm
-# ifdef DEBUG
       USE elfe_msgp, only : myrank
-# endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -2498,6 +2496,7 @@ MODULE WWM_PARALL_SOLVER
         J=I_DIAG(IP)
         SolDat % ASPAR_block(:,:,J)=SolDat%AC4(:,:,IP)
       END DO
+      WRITE(myrank+640,*) 'MIN ASPAR_block=', minval(SolDat % ASPAR_block)
 # else
       IF (TheMethod == 1) THEN ! SOR 
         CALL I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
@@ -3385,8 +3384,12 @@ MODULE WWM_PARALL_SOLVER
       Alpha=1
       Omega=1
       nbIter=0
+      WRITE(740+myrank,*) 'Beginning solution'
+      CALL FLUSH(740+myrank)
       DO
         nbIter=nbIter+1
+        WRITE(740+myrank,*) 'nbIter=', nbIter
+        CALL FLUSH(740+myrank)
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
@@ -3454,9 +3457,8 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
-!        IF (myrank .eq. 0) THEN
-!          Print *, 'nbIter=', nbIter, 'CritVal=', CritVal
-!        END IF
+        WRITE(740+myrank,*) 'CritVal=', CritVal
+        CALL FLUSH(740+myrank)
         IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
@@ -3470,6 +3472,8 @@ MODULE WWM_PARALL_SOLVER
      &      - Omega(:,:)*SolDat%AC7(:,:,IP)
         END DO
       END DO
+      WRITE(740+myrank,*) 'End BCGS_REORG'
+      CALL FLUSH(740+myrank)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -661,7 +661,7 @@ MODULE wwm_hotfile_mod
           END DO
         END DO
         IF (myrank.eq.0) THEN
-          DO IP=1,MNP
+          DO IP=1,np_global
             ACreturn(IP,:,:)=ACreturn(IP,:,:)*nwild_gb(IP)
           END DO
         END IF
@@ -683,7 +683,7 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT_HOT.eq.0) THEN
-          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ MNP, MSC, MDC, 1 /))
+          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ np_global, MSC, MDC, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
           deallocate(ACreturn);
         ELSE
@@ -698,6 +698,8 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
       ENDIF
       IDXHOTOUT=IDXHOTOUT+1
+      WRITE(STAT%FHNDL,*) 'End of OUTPUT_HOTFILE'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 END MODULE wwm_hotfile_mod
