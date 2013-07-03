@@ -1,6 +1,6 @@
 #include "wwm_functions.h"
-#undef DEBUG_WWM
 #define DEBUG_WWM
+#undef DEBUG_WWM
 #if !defined PGMCL_COUPLING
 !**********************************************************************
 !*                                                                    *

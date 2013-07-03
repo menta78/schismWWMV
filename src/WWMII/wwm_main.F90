@@ -375,7 +375,7 @@
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
          CALL CPU_TIME(TIME1)
-       
+
          CALL IO_1(K)
         
          CALL CPU_TIME(TIME2)
@@ -447,8 +447,6 @@
 #endif
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -594,13 +592,7 @@
          END IF
 #endif
 #ifdef PGMCL_COUPLING
-         WRITE(MyRankGlobal+240,*) 'Before the PGMCL_ROMS_IN'
-         TheRes=K-INT(K/MAIN%ICPLT)*MAIN%ICPLT
-         WRITE(MyRankGlobal+240,*) 'TheRes=', TheRes
-         CALL FLUSH(MyRankGlobal+240)
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           WRITE(MyRankGlobal+240,*) 'Before the PGMCL_ROMS_IN B'
-           CALL FLUSH(MyRankGlobal+240)
            CALL PGMCL_ROMS_IN(K,IFILE,IT)
 # ifdef ANALYTICAL_WIND_CURR
            DO IP=1,MNP

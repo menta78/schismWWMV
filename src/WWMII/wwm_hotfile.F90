@@ -352,7 +352,6 @@ MODULE wwm_hotfile_mod
         USE DATAPOOL
         IMPLICIT NONE
 
-        WRITE(STAT%FHNDL,*) 'Passing in OUTPUT_HOTFILE'
         IF (HOTSTYLE_OUT == 1) THEN
           CALL OUTPUT_HOTFILE_BINARY
 #ifdef NCDF
@@ -580,8 +579,6 @@ MODULE wwm_hotfile_mod
       REAL(rkind), ALLOCATABLE :: ACreturn(:,:,:)
       REAL(rkind), ALLOCATABLE :: VALB(:), VALB_SUM(:)
 # endif
-      WRITE(STAT%FHNDL,*) 'Begin OUTPUT_HOTFILE_NETCDF'
-      FLUSH(STAT%FHNDL)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         np_write=np_global
@@ -595,9 +592,6 @@ MODULE wwm_hotfile_mod
       ne_write=MNE
 # endif
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
-      WRITE(STAT%FHNDL,*) 'FILERET=', TRIM(FILERET)
-      WRITE(STAT%FHNDL,*) 'WriteOutputProcess_hot=', WriteOutputProcess_hot
-      FLUSH(STAT%FHNDL)
       IF (IDXHOTOUT.eq.0) THEN
 !$OMP MASTER
         IF (LCYCLEHOT) THEN
@@ -650,8 +644,6 @@ MODULE wwm_hotfile_mod
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 17')
         DO ID=1,MDC
           DO IS=1,MSC
-            WRITE(STAT%FHNDL,*) 'ID=', ID, 'IS=', IS
-            FLUSH(STAT%FHNDL)
             VALB=0
             DO IP=1,MNP
               VALB(iplg(IP))=AC2(IP,IS,ID)
@@ -700,8 +692,6 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
       ENDIF
       IDXHOTOUT=IDXHOTOUT+1
-      WRITE(STAT%FHNDL,*) 'End of OUTPUT_HOTFILE'
-      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 END MODULE wwm_hotfile_mod
