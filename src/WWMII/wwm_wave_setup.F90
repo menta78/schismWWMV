@@ -7,7 +7,7 @@
       real(rkind) :: U_X1(MNP), U_Y1(MNP)
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
       integer IP, ID, IS
-      REAL(rkind) :: COSE2, SINE2, WN, ELOC
+      REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
       DO IP = 1, MNP
         ACLOC = AC2(IP,:,:)
@@ -41,6 +41,7 @@
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
       REAL(rkind) :: h
+      integer I2, I3
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -49,7 +50,7 @@
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
       I2=POS_TRICK(I, 1)
-      I2=POS_TRICK(I, 2)
+      I3=POS_TRICK(I, 2)
       h=(XP(I1) - XP(I2))*(YP(I3) - YP(I2)) - (YP(I1) - YP(I2))*(XP(I3) - XP(I2))
       UGRAD= (YP(I3)-YP(I2))/h
       VGRAD=-(XP(I3)-XP(I2))/h
@@ -64,6 +65,9 @@
       real(rkind), intent(out) :: ASPAR(NNZ)
       real(rkind), intent(out) :: B(MNP)
       INTEGER :: POS_TRICK(3,2)
+      integer I2, I3, IP1, IP2, IP3
+      integer IDX, IDX1, IDX2, IDX3
+      real(rkind) :: eDep, eFX, eFY, eScal
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3

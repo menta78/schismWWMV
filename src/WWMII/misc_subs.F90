@@ -146,9 +146,9 @@
           if(nsdf_gb==0) exit loop15 !all wet
 
 !         Final extrapolation
-          srwt_xchng=istop==1
+          srwt_xchng(1)=istop==1
           call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LAND,comm,ierr)
-          if(srwt_xchng_gb) then !all ranks ready
+          if(srwt_xchng_gb(1)) then !all ranks ready
             if(myrank==0) write(16,*)'doing final extrapolation in levels1...'
 !'
             icolor=0 !frontier nodes for extrapolation
@@ -252,10 +252,10 @@
             call exchange_e2di(idry_e2)
             call exchange_p2d(eta2)
 
-            srwt_xchng=.false. !flag for wetting occurring
+            srwt_xchng(1)=.false. !flag for wetting occurring
             do i=1,ns
               if(inew(i)/=0) then
-                srwt_xchng=.true.
+                srwt_xchng(1)=.true.
                 su2(1:nvrt,i)=su2(1:nvrt,i)/inew(i)
                 sv2(1:nvrt,i)=sv2(1:nvrt,i)/inew(i)
               endif
@@ -286,7 +286,7 @@
 
 !         Wetting
           inew=0 !for initializing and counting su2 sv2
-          srwt_xchng=.false. !flag for wetting occurring
+          srwt_xchng(1)=.false. !flag for wetting occurring
           do i=1,nsdf !aug. domain for updating vel. at interfacial sides (between 2 sub-domains)
             isd=isdf(i) !must be internal side
             if(is(isd,1)<0.or.is(isd,2)<0) cycle !neither element can have interfacial sides
@@ -337,7 +337,7 @@
 !Debug
 !              write(12,*)'Make wet:',itr,iplg(nodeA),ielg(ie)
 
-              srwt_xchng=.true.
+              srwt_xchng(1)=.true.
               istop=0
               idry_e2(ie)=0
 
@@ -384,7 +384,7 @@
 991       continue
 
           call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
-          if(srwt_xchng_gb) then
+          if(srwt_xchng_gb(1)) then
             call exchange_e2di(idry_e2)
             allocate(swild(2,nvrt,nsa),stat=istat)
             if(istat/=0) call parallel_abort('Levels1: fail to allocate (9)')
@@ -418,7 +418,7 @@
             enddo !j
           enddo !i=1,nea
 
-          srwt_xchng=.false. !for vel. exchange
+          srwt_xchng(1)=.false. !for vel. exchange
           do i=1,ns
             if(.not.(idry_e2(is(i,1))==1.and.(is(i,2)==0.or.is(i,2)>0.and.idry_e2(max(1,is(i,2)))==1))) cycle
 !           Dry side that may need new vel.
@@ -462,7 +462,7 @@
               enddo !m=1,2; 2 elements
 
               if(icount/=0) then
-                srwt_xchng=.true.
+                srwt_xchng(1)=.true.
                 su2(1:nvrt,i)=sutmp(1:nvrt)/icount
                 sv2(1:nvrt,i)=svtmp(1:nvrt)/icount
               endif
@@ -472,7 +472,7 @@
           idry_e2=inew
 !          call exchange_e2di(idry_e2)
           call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
-          if(srwt_xchng_gb) then
+          if(srwt_xchng_gb(1)) then
             allocate(swild(2,nvrt,nsa),stat=istat)
             if(istat/=0) call parallel_abort('Levels1: fail to allocate (8)')
 !'
@@ -679,11 +679,11 @@
       enddo !i=1,nsa
 
 !     Compute vel., S,T for re-wetted nodes (q2 and xl are fine)
-      prwt_xchng=.false.
+      prwt_xchng(1)=.false.
       if(it/=iths) then
         do i=1,npa !ghosts not updated
           if(idry(i)==1.and.idry2(i)==0) then
-            if(.not.prwt_xchng.and.i>np) prwt_xchng=.true. !ghost rewetted; need exchange
+            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost rewetted; need exchange
             if(i>np) cycle !do rest for residents
 
             do k=1,nvrt
@@ -729,11 +729,11 @@
       endif !it/=iths
 
 !     Compute S,T for re-wetted sides 
-      srwt_xchng=.false.
+      srwt_xchng(1)=.false.
       if(it/=iths) then
         do i=1,nsa
           if(idry_s(i)==1.and.idry_s2(i)==0) then
-            if(.not.srwt_xchng.and.i>ns) srwt_xchng=.true. !rewetted ghost side; needs exchange
+            if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
             if(i>ns) cycle !do the rest only for residents
 
             n1=isidenode(i,1)
@@ -793,7 +793,7 @@
 #endif
 
 !       update ghost nodes
-        if(prwt_xchng_gb) then
+        if(prwt_xchng_gb(1)) then
           allocate(swild(4,nvrt,nsa),stat=istat)
           if(istat/=0) call parallel_abort('Levels0: fail to allocate swild')
 !'
@@ -816,7 +816,7 @@
         endif !prwt_xchng_gb
 
 !       update ghost sides
-        if(srwt_xchng_gb) then
+        if(srwt_xchng_gb(1)) then
           allocate(swild(2,nvrt,nsa),stat=istat)
           if(istat/=0) call parallel_abort('Levels0: fail to allocate swild')
 !'
@@ -871,8 +871,8 @@
       integer :: idry2(npa),idry_s2(nsa),idry_e2(nea)
       real(rkind) :: swild2(2)
       real(rkind),allocatable :: swild(:,:,:)
-      logical :: srwt_xchng,prwt_xchng
-      logical :: srwt_xchng_gb,prwt_xchng_gb
+      logical :: srwt_xchng(1),prwt_xchng(1)
+      logical :: srwt_xchng_gb(1),prwt_xchng_gb(1)
       logical :: cwtime,lmorph
 !-------------------------------------------------------------------------------
 
@@ -1055,11 +1055,11 @@
       enddo !i
 
 !     Compute vel., S,T for re-wetted nodes (q2 and xl are fine)
-      prwt_xchng=.false.
+      prwt_xchng(1)=.false.
       if(it/=iths) then
         do i=1,npa !ghosts not updated
           if(idry(i)==1.and.idry2(i)==0) then
-            if(.not.prwt_xchng.and.i>np) prwt_xchng=.true. !ghost rewetted; need exchange
+            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost rewetted; need exchange
             if(i>np) cycle !do rest for residents
 
             do k=1,nvrt
@@ -1183,11 +1183,11 @@
       enddo !i=1,nsa
 
 !     Compute vel., S,T for re-wetted sides 
-      srwt_xchng=.false.
+      srwt_xchng(1)=.false.
       if(it/=iths) then
         do i=1,nsa
           if(idry_s(i)==1.and.idry_s2(i)==0) then
-            if(.not.srwt_xchng.and.i>ns) srwt_xchng=.true. !rewetted ghost side; needs exchange
+            if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
             if(i>ns) cycle !do the rest only for residents
 
             n1=isidenode(i,1)
@@ -1263,14 +1263,14 @@
 #endif
 
 !       Allocate temporary array
-        if(prwt_xchng_gb.or.srwt_xchng_gb) then
+        if(prwt_xchng_gb(1).or.srwt_xchng_gb(1)) then
           allocate(swild(4,nvrt,nsa),stat=istat)
           if(istat/=0) call parallel_abort('Levels0: fail to allocate swild')
 !'
         endif
 
 !       update ghost nodes
-        if(prwt_xchng_gb) then
+        if(prwt_xchng_gb(1)) then
           swild(1,:,1:npa)=uu2(:,:)
           swild(2,:,1:npa)=vv2(:,:)
           swild(3,:,1:npa)=tnd(:,:)
@@ -1289,7 +1289,7 @@
         endif
 
 !       update ghost sides
-        if(srwt_xchng_gb) then
+        if(srwt_xchng_gb(1)) then
           swild(1,:,:)=su2(:,:)
           swild(2,:,:)=sv2(:,:)
           swild(3,:,:)=tsd(:,:)
@@ -1307,7 +1307,7 @@
           ssd(:,:)=swild(4,:,:)
         endif
 
-        if(prwt_xchng_gb.or.srwt_xchng_gb) deallocate(swild)
+        if(prwt_xchng_gb(1).or.srwt_xchng_gb(1)) deallocate(swild)
       endif !nproc>1
 
 !      close(10)
