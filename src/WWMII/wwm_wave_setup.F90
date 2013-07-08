@@ -80,7 +80,7 @@
       INTEGER :: POS_TRICK(3,2)
       integer I1, I2, I3, IP1, IP2, IP3
       integer IDX, IDX1, IDX2, IDX3
-      INTEGER IE, IP
+      INTEGER IE, IP, J
       real(rkind) :: eDep, eFX, eFY, eScal
       real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
       POS_TRICK(1,1) = 2
@@ -116,7 +116,8 @@
 !            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
 !            WRITE(200+MyRankD,*) 'eScal=', eScal, 'eDep=', eDep
 #endif
-            ASPAR(IDX)=ASPAR(IDX)+G9*eDep*eScal
+            J=JA_IE(I1,IDX,IE)
+            ASPAR(J)=ASPAR(J)+G9*eDep*eScal
           END DO
         END DO
       END DO
@@ -144,6 +145,11 @@
             eCoeff=ONE/ASPAR(J)
           ELSE
             J2=I_DIAG(JP)
+#ifdef DEBUG
+            WRITE(200+MyRankD,*) 'aspar(J1)=', ASPAR(J1)
+            WRITE(200+MyRankD,*) 'aspar(J2)=', ASPAR(J2)
+#endif
+            
             eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
           END IF
           TheOut(IP)=TheOut(IP) + eCoeff*TheIn(JP)
@@ -242,6 +248,13 @@
       CALL WAVE_SETUP_APPLY_PRECOND(ASPAR, V_R, V_Z)
       V_P=V_Z
       CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uO)
+#ifdef DEBUG
+      CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
+      WRITE(200+MyRankD,*) 'sum(V_R)=', sum(V_R)
+      WRITE(200+MyRankD,*) 'sum(V_Z)=', sum(V_Z)
+      WRITE(200+MyRankD,*) 'Before loop, |B|=', eNorm
+      FLUSH(200+MyRankD)
+#endif
       DO
         nbIter=nbIter + 1
         Print *, 'nbIter=', nbIter
@@ -252,6 +265,13 @@
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
+#ifdef DEBUG
+        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
+        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
+        WRITE(200+MyRankD,*) 'h2=', h2
+        WRITE(200+MyRankD,*) 'alphaV=', alphaV
+        FLUSH(200+MyRankD)
+#endif
         !
         DO IP=1,MNP
           V_X(IP) = V_X(IP) + alphaV * V_P(IP)
