@@ -430,6 +430,7 @@
       END IF
 # endif
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -438,9 +439,10 @@
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
-      REAL(rkind) :: ZETA_SETUP(MNP)
       CALL COMPUTE_LH_STRESS(F_X, F_Y)
-      CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
+      CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
       CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
       END SUBROUTINE
-#endif
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
