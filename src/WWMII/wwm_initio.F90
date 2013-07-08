@@ -238,6 +238,10 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
          HMAX = zero
          ISHALLOW = zero
+      IF (LZETA_SETUP) THEN
+         ALLOCATE(ZETA_SETUP(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

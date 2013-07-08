@@ -609,6 +609,8 @@
 !
 ! ... current field ...... TIMO neuer type DPL_CURT
 !
+         LOGICAL                     :: LZETA_SETUP = .FALSE.
+         REAL(rkind), ALLOCATABLE    :: ZETA_SETUP(:)
          REAL(rkind), ALLOCATABLE    :: CURTXY(:,:)
          REAL(rkind), ALLOCATABLE    :: DVCURT(:,:)
 

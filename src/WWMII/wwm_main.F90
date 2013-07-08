@@ -402,6 +402,9 @@
          ELSE IF (ICOMP .EQ. 2) THEN 
            CALL COMPUTE_IMPLICIT
          END IF
+         IF (LZETA_SETUP) THEN
+           CALL WAVE_SETUP_COMPUTATION
+         END IF
 
          CALL CPU_TIME(TIME4)
 
