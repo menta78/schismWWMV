@@ -1,9 +1,11 @@
 #include "wwm_functions.h"
-      SUBROUTINE COMPUTE_DIVERGENCE_LH_STRESS(TheDiv)
+      SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
       implicit none
       real(rkind), intent(inout) :: TheDiv(MNP)
-      real(rkind) :: U_X(MNP), U2(MNP), INPUT(MNP)
+      real(rkind) :: INPUT(MNP)
+      real(rkind) :: U_X1(MNP), U_Y1(MNP)
+      real(rkind) :: U_X2(MNP), U_Y2(MNP)
       integer IP, ID, IS
       REAL(rkind) :: COSE2, SINE2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
@@ -22,25 +24,13 @@
           ENDDO
         ENDDO
       END DO
-      CALL DIFFERENTIATE_XYDIR(RSXX,U_X, U_Y)
-      INPUT=U_X
-      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
-      TheDiv=-U_X
+      CALL DIFFERENTIATE_XYDIR(RSXX, U_X1, U_Y1)
+      CALL DIFFERENTIATE_XYDIR(RSXY, U_X2, U_Y2)
+      F_X = -U_X1 - U_Y2
       !
-      CALL DIFFERENTIATE_XYDIR(RSXY,U_X, U_Y)
-      INPUT=U_X
-      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
-      TheDiv=TheDiv-U_Y
-      !
-      CALL DIFFERENTIATE_XYDIR(RSXY,U_X, U_Y)
-      INPUT=U_Y
-      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
-      TheDiv=TheDiv-U_X
-      !
-      CALL DIFFERENTIATE_XYDIR(RSYY,U_X, U_Y)
-      INPUT=U_Y
-      CALL DIFFERENTIATE_XYDIR(INPUT ,U_X, U_Y)
-      TheDiv=TheDiv-U_Y
+      CALL DIFFERENTIATE_XYDIR(RSYY, U_X1, U_Y1)
+!     CALL DIFFERENTIATE_XYDIR(RSXY, U_X2, U_Y2)
+      F_Y = -U_Y1 - U_X2
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -67,7 +57,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SYSTEM_WAVE_SETUP(ASPAR, B, FX, FY)
+      SUBROUTINE WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
       USE DATAPOOL
       IMPLICIT NONE
       real(rkind), intent(in)  :: FX(MNP), FY(MNP)
@@ -110,14 +100,139 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE JCG_SOLVE_POISSON_NEUMANN(TheInp, TheOutPrev, TheOut)
+      SUBROUTINE WAVE_SETUP_APPLY_PRECOND(ASPAR, TheIn, TheOut)
       USE DATAPOOL
-! use jacobi preconditioner. Inspired from solve_jcg
-      real(rkind), intent(in) :: TheInp(MNP), TheOutPrev(MNP)
+#ifdef MPI_PARALL_GRID
+      USE elfe_msgp
+#endif
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: ASPAR(NNZ)
+      REAL(rkind), intent(in) :: TheIn(MNP)
+      REAL(rkind), intent(out) :: TheOut(MNP)
+      TheOut=0
+      DO IP=1,NP_RES
+        J1=I_DIAG(IP)
+        DO J=IA(IP),IA(IP+1)-1
+          JP=JA(J)
+          IF (J .eq. J1) THEN
+            eCoeff=ONE/ASPAR(J)
+          ELSE
+            J2=I_DIAG(JP)
+            eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
+          END IF
+          TheOut(IP)=TheOut(IP) + eCoeff*TheIn(JP)
+        END DO
+      END DO
+#ifdef MPI_PARALL_GRID
+      CALL EXCHANGE_P2D(TheOut)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WAVE_SETUP_APPLY_FCT(ASPAR, TheIn, TheOut)
+      USE DATAPOOL
+#ifdef MPI_PARALL_GRID
+      USE elfe_msgp
+#endif
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: ASPAR(NNZ)
+      REAL(rkind), intent(in) :: TheIn(MNP)
+      REAL(rkind), intent(out) :: TheOut(MNP)
+      TheOut=0
+      DO IP=1,NP_RES
+        J1=I_DIAG(IP)
+        DO J=IA(IP),IA(IP+1)-1
+          JP=JA(J)
+          eCoeff=ASPAR(J)
+          TheOut(IP)=TheOut(IP) + eCoeff*TheIn(JP)
+        END DO
+      END DO
+#ifdef MPI_PARALL_GRID
+      CALL EXCHANGE_P2D(TheOut)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WAVE_SETUP_SCALAR_PROD(V1, V2, eScal)
+      USE DATAPOOL, only : rkind, MNP
+      USE DATAPOOL, only : nwild_loc_res, NP_RES
+      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      implicit none
+      real(rkind), intent(in) :: V1(MNP), V2(MNP)
+      real(rkind), intent(inout) :: eScal
+#ifdef MPI_PARALL_GRID
+      real(rkind) :: rScal(1), lScal(1)
+      integer IP, iProc
+      lScal=0
+      DO IP=1,NP_RES
+        lScal(1)=lScal(1) + nwild_loc_res(IP)*V1(IP)*V2(IP)
+      END DO
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(rScal,1,rtype, iProc-1, 19, comm, istatus, ierr)
+          lScal = lScal + rScal
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(lScal,1,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(lScal,1,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(lScal,1,rtype, 0, 23, comm, istatus, ierr)
+        eScal=lScal(1)
+      END IF
+#else
+      eScal=0
+      DO IP=1,NP_RES
+        eScal=eScal + V1(IP)*V2(IP)
+      END DO
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, TheOut)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(in) :: ASPAR(NNZ)
+      real(rkind), intent(in) :: B(MNP), TheOutPrev(MNP)
       real(rkind), intent(out) :: TheOut(MNP)
-
-
-
+      real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
+      real(rkind) :: uO, uN, alpha, h1, h2
+      nbIter=0
+      CritVal=SOLVERTHR
+      V_X=ZERO
+      V_R=B
+      CALL WAVE_SETUP_APPLY_PRECOND(ASPAR, V_R, V_Z)
+      V_P=V_Z
+      CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uO)
+      DO
+        nbIter=nbIter + 1
+        CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
+        CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
+        alpha=uO/h2
+        !
+        DO IP=1,MNP
+          V_X(IP) = V_X(IP) + alpha * V_P(IP)
+          V_R(IP) = V_R(IP) - alpha * V_Y(IP)
+        END DO
+        !
+        CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
+        IF (eNorm .le. SOLVERTHR) THEN
+          EXIT
+        END IF
+        !
+        CALL WAVE_SETUP_APPLY_PRECOND(ASPAR, V_R, V_Z)
+        CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uN)
+        !
+        beta=uN/uO
+        uO=uN
+        !
+        DO IP=1,MNP
+          V_P(IP)=V_Z(IP) + beta * V_P(IP)
+        END DO
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -309,9 +424,11 @@
       SUBROUTINE COMPUTE_WAVE_SETUP
       USE DATAPOOL
       implicit none
-      REAL(rkind) :: TheDiv(MNP)
-      CALL COMPUTE_DIVERGENCE_LH_STRESS(TheDiv)
-
-
+      REAL(rkind) :: F_X(MNP), F_Y(MNP)
+      REAL(rkind) :: ASPAR(NNZ), B(MNP)
+      REAL(rkind) :: ZETA_SETUP(MNP)
+      CALL COMPUTE_LH_STRESS(F_X, F_Y)
+      CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
+      CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
       END SUBROUTINE
 #endif
