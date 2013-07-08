@@ -2,7 +2,7 @@
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(inout) :: TheDiv(MNP)
+      real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
       real(rkind) :: INPUT(MNP)
       real(rkind) :: U_X1(MNP), U_Y1(MNP)
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
@@ -49,8 +49,8 @@
       POS_TRICK(2,2) = 1
       POS_TRICK(3,1) = 1
       POS_TRICK(3,2) = 2
-      I2=POS_TRICK(I, 1)
-      I3=POS_TRICK(I, 2)
+      I2=POS_TRICK(I1, 1)
+      I3=POS_TRICK(I1, 2)
       h=(XP(I1) - XP(I2))*(YP(I3) - YP(I2)) - (YP(I1) - YP(I2))*(XP(I3) - XP(I2))
       UGRAD= (YP(I3)-YP(I2))/h
       VGRAD=-(XP(I3)-XP(I2))/h
@@ -65,9 +65,11 @@
       real(rkind), intent(out) :: ASPAR(NNZ)
       real(rkind), intent(out) :: B(MNP)
       INTEGER :: POS_TRICK(3,2)
-      integer I2, I3, IP1, IP2, IP3
+      integer I1, I2, I3, IP1, IP2, IP3
       integer IDX, IDX1, IDX2, IDX3
+      INTEGER IE, IP
       real(rkind) :: eDep, eFX, eFY, eScal
+      real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -113,6 +115,8 @@
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind), intent(in) :: TheIn(MNP)
       REAL(rkind), intent(out) :: TheOut(MNP)
+      integer IP, J1, J, JP, J2
+      REAL(rkind) :: eCoeff
       TheOut=0
       DO IP=1,NP_RES
         J1=I_DIAG(IP)
@@ -143,9 +147,10 @@
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind), intent(in) :: TheIn(MNP)
       REAL(rkind), intent(out) :: TheOut(MNP)
+      integer IP, J, JP
+      REAL(rkind) :: eCoeff
       TheOut=0
       DO IP=1,NP_RES
-        J1=I_DIAG(IP)
         DO J=IA(IP),IA(IP+1)-1
           JP=JA(J)
           eCoeff=ASPAR(J)
@@ -200,10 +205,12 @@
       USE DATAPOOL
       IMPLICIT NONE
       real(rkind), intent(in) :: ASPAR(NNZ)
-      real(rkind), intent(in) :: B(MNP), TheOutPrev(MNP)
+      real(rkind), intent(in) :: B(MNP)
       real(rkind), intent(out) :: TheOut(MNP)
       real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
-      real(rkind) :: uO, uN, alpha, h1, h2
+      real(rkind) :: uO, uN, alphaV, h1, h2
+      real(rkind) :: eNorm, CritVal, beta
+      integer IP, nbIter
       nbIter=0
       CritVal=SOLVERTHR
       V_X=ZERO
@@ -215,11 +222,11 @@
         nbIter=nbIter + 1
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
-        alpha=uO/h2
+        alphaV=uO/h2
         !
         DO IP=1,MNP
-          V_X(IP) = V_X(IP) + alpha * V_P(IP)
-          V_R(IP) = V_R(IP) - alpha * V_Y(IP)
+          V_X(IP) = V_X(IP) + alphaV * V_P(IP)
+          V_R(IP) = V_R(IP) - alphaV * V_Y(IP)
         END DO
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
@@ -237,6 +244,7 @@
           V_P(IP)=V_Z(IP) + beta * V_P(IP)
         END DO
       END DO
+      TheOut=V_X
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -425,7 +433,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_WAVE_SETUP
+      SUBROUTINE WAVE_SETUP_COMPUTATION
       USE DATAPOOL
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)

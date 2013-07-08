@@ -364,7 +364,6 @@
 #ifdef MPI_PARALL_GRID
          use elfe_msgp, only : myrank
 #endif
-         USE PGMCL_LIBRARY, only : MyRankGlobal
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
@@ -541,7 +540,6 @@
          USE NETCDF 
 #endif
          USE DATAPOOL
-         USE PGMCL_LIBRARY, only : MyRankGlobal
 #ifdef MPI_PARALL_GRID
          USE elfe_msgp
 #endif
