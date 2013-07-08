@@ -752,8 +752,6 @@
 # ifdef WWM_MPI
       use elfe_glbl
       use elfe_msgp
-# else
-      use datapool, only : MyRank, nproc, comm
 # endif
       implicit none
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING

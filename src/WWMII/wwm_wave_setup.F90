@@ -168,14 +168,20 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SCALAR_PROD(V1, V2, eScal)
       USE DATAPOOL, only : rkind, MNP
-      USE DATAPOOL, only : nwild_loc_res, NP_RES
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : nwild_loc_res
+#endif
+      USE DATAPOOL, only : NP_RES
+#ifdef MPI_PARALL_GRID
       USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+#endif
       implicit none
       real(rkind), intent(in) :: V1(MNP), V2(MNP)
       real(rkind), intent(inout) :: eScal
+      integer IP
 #ifdef MPI_PARALL_GRID
       real(rkind) :: rScal(1), lScal(1)
-      integer IP, iProc
+      integer iProc
       lScal=0
       DO IP=1,NP_RES
         lScal(1)=lScal(1) + nwild_loc_res(IP)*V1(IP)*V2(IP)
@@ -223,6 +229,10 @@
       DO
         nbIter=nbIter + 1
         Print *, 'nbIter=', nbIter
+#ifdef DEBUG
+        WRITE(200+MyRankD,*) 'nbIter=', nbIter
+        FLUSH(200+MyRankD)
+#endif
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
@@ -233,7 +243,10 @@
         END DO
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
-
+#ifdef DEBUG
+        WRITE(200+MyRankD,*) 'eNorm=', eNorm
+        FLUSH(200+MyRankD)
+#endif
         IF (eNorm .le. SOLVERTHR) THEN
           EXIT
         END IF
@@ -444,6 +457,10 @@
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
 #ifdef DEBUG
+      REAL(rkind) :: Xtest(MNP), Vimg(MNP)
+      REAL(rkind) :: eResidual
+#endif
+#ifdef DEBUG
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
       FLUSH(200 + MyRankD)
 #endif
@@ -455,6 +472,10 @@
 #endif
       CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
 #ifdef DEBUG
+      Xtest=ONE
+      CALL WAVE_SETUP_APPLY_FCT(ASPAR, B, Vimg)
+      CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eResidual)
+      WRITE(200 + MyRankD,*) 'eResidual=', eResidual
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
       FLUSH(200 + MyRankD)
 #endif
