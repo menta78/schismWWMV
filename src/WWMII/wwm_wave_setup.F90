@@ -73,6 +73,21 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE REV_IDX_IA_JA(J, IP, JP)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: J
+      INTEGER, intent(out) :: IP, JP
+      JP=JA(J)
+      DO IP=1,MNP
+        IF ((J .ge. IA(IP)) .and. (J .le. IA(IP+1)-1)) THEN
+          RETURN
+        END IF
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
       USE DATAPOOL
       IMPLICIT NONE
@@ -82,8 +97,8 @@
       INTEGER :: POS_TRICK(3,2), POS_SHIFT(3,3)
       integer I1, I2, I3, IP1, IP2, IP3
       integer IDX, IDX1, IDX2, IDX3
-      INTEGER IE, IP, I, J, K
-      real(rkind) :: eDep, eFX, eFY, eScal
+      INTEGER IE, IP, I, J, K, IPp, JPp
+      real(rkind) :: eDep, eFX, eFY, eScal, eFact, eArea
       real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -103,6 +118,14 @@
         END DO
       END DO
       DO IE=1,MNE
+        IP1=INE(1,IE)
+        IP2=INE(2,IE)
+        IP3=INE(3,IE)
+        eFX =( FX(IP1) +  FX(IP2) +  FX(IP3))/3.0_rkind
+        eFY =( FY(IP1) +  FY(IP2) +  FY(IP3))/3.0_rkind
+        eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
+        eArea=TRIA(IE)
+        eFact=G9*eDep*eArea
         DO I1=1,3
           I2=POS_TRICK(I1,1)
           I3=POS_TRICK(I1,2)
@@ -113,11 +136,8 @@
           IDX2=JA_IE(I1,2,IE)
           IDX3=JA_IE(I1,3,IE)
           CALL COMPUTE_DIFF(IE, I1, UGRAD1, VGRAD1)
-          eFX =( FX(IP1) +  FX(IP2) +  FX(IP3))/3.0_rkind
-          eFY =( FY(IP1) +  FY(IP2) +  FY(IP3))/3.0_rkind
-          eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
           eScal=UGRAD1*eFX + VGRAD1*eFY
-          B(IP1) = B(IP1) + eScal
+          B(IP1) = B(IP1) + eScal*eArea
 #ifdef DEBUG
 !          WRITE(200+MyRankD,*) 'eDep=', eDep
 !          FLUSH(200+MyRankD)
@@ -127,15 +147,20 @@
             K=POS_SHIFT(I1, IDX)
             CALL COMPUTE_DIFF(IE, K, UGRAD, VGRAD)
             eScal=UGRAD*UGRAD1 + VGRAD*VGRAD1
+            J=JA_IE(I1,IDX,IE)
 #ifdef DEBUG
 !            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
 !            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
-!            WRITE(200+MyRankD,*) 'eScal=', eScal, 'eDep=', eDep
+            WRITE(200+MyRankD,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
+            CALL REV_IDX_IA_JA(J, IPp, JPp)
+            WRITE(200+MyRankD,*) 'IPp=', IPp, ' JPp=', JPp
 #endif
-            J=JA_IE(I1,IDX,IE)
-            ASPAR(J)=ASPAR(J)+G9*eDep*eScal
+            ASPAR(J)=ASPAR(J)+eFact*eScal
           END DO
         END DO
+#ifdef DEBUG
+        WRITE(200+MyRankD,*) '--------------------------------------'
+#endif
       END DO
       END SUBROUTINE
 !**********************************************************************
