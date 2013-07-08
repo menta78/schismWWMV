@@ -43,7 +43,7 @@
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
       REAL(rkind) :: h
-      integer I2, I3
+      integer I2, I3, IP1, IP2, IP3
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -53,9 +53,20 @@
       POS_TRICK(3,2) = 2
       I2=POS_TRICK(I1, 1)
       I3=POS_TRICK(I1, 2)
-      h=(XP(I1) - XP(I2))*(YP(I3) - YP(I2)) - (YP(I1) - YP(I2))*(XP(I3) - XP(I2))
-      UGRAD= (YP(I3)-YP(I2))/h
-      VGRAD=-(XP(I3)-XP(I2))/h
+      IP1=INE(I1,IE)
+      IP2=INE(I2,IE)
+      IP3=INE(I3,IE)
+!      h=(YP(IP1) - YP(IP2))*(XP(IP3) - XP(IP2)) - (XP(IP1) - XP(IP2))*(YP(IP3) - YP(IP2))
+      h=TWO*TRIA(IE)
+!#ifdef DEBUG
+!      WRITE(200+MyRankD,*) 'I123=', I1, I2, I3
+!      WRITE(200+MyRankD,*) 'XP123=', XP(I1), XP(I2), XP(I3)
+!      WRITE(200+MyRankD,*) 'YP123=', YP(I1), YP(I2), YP(I3)
+!      WRITE(200+MyRankD,*) 'h=', h, 'TRIA=', 2*TRIA(IE)
+!      FLUSH(200+MyRankD)
+!#endif
+      UGRAD=-(YP(IP3)-YP(IP2))/h
+      VGRAD= (XP(IP3)-XP(IP2))/h
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -100,6 +111,11 @@
           DO IDX=1,3
             CALL COMPUTE_DIFF(IE, IDX, UGRAD, VGRAD)
             eScal=UGRAD*UGRAD1 + VGRAD*VGRAD1
+#ifdef DEBUG
+!            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
+!            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
+!            WRITE(200+MyRankD,*) 'eScal=', eScal, 'eDep=', eDep
+#endif
             ASPAR(IDX)=ASPAR(IDX)+G9*eDep*eScal
           END DO
         END DO
@@ -458,7 +474,7 @@
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
 #ifdef DEBUG
       REAL(rkind) :: Xtest(MNP), Vimg(MNP)
-      REAL(rkind) :: eResidual
+      REAL(rkind) :: eResidual, eResidual2
 #endif
 #ifdef DEBUG
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
@@ -473,9 +489,12 @@
       CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
 #ifdef DEBUG
       Xtest=ONE
-      CALL WAVE_SETUP_APPLY_FCT(ASPAR, B, Vimg)
+      CALL WAVE_SETUP_APPLY_FCT(ASPAR, Xtest, Vimg)
       CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eResidual)
+      CALL WAVE_SETUP_SCALAR_PROD(Xtest, B, eResidual2)
+      WRITE(200 + MyRankD,*) 'sum(ASPAR)=', sum(ASPAR)
       WRITE(200 + MyRankD,*) 'eResidual=', eResidual
+      WRITE(200 + MyRankD,*) 'eResidual2=', eResidual2
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
       FLUSH(200 + MyRankD)
 #endif
