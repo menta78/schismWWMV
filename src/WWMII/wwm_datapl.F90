@@ -61,7 +61,9 @@
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
      &                         YPTMP => ynd
 #endif
-
+#ifdef MPI_PARALL_GRID
+         USE elfe_msgp, only : MyRankD => myrank
+#endif
       IMPLICIT NONE
       SAVE
 !
@@ -71,7 +73,9 @@
            Error, you must compile in double precision
 #endif
 #ifndef MPI_PARALL_GRID
-        INTEGER :: MyRank, nproc, comm
+        INTEGER :: MyRankD = 0
+        INTEGER :: nproc = 1
+        INTEGER :: comm
         INTEGER :: NP_RES
 #endif
 #ifndef SELFE

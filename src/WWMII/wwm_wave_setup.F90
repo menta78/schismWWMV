@@ -1,4 +1,6 @@
 #include "wwm_functions.h"
+#undef DEBUG
+#define DEBUG
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
       implicit none
@@ -82,9 +84,9 @@
         DO I1=1,3
           I2=POS_TRICK(I1,1)
           I3=POS_TRICK(I1,2)
-          IP1=INE(IE,I1)
-          IP2=INE(IE,I2)
-          IP3=INE(IE,I3)
+          IP1=INE(I1,IE)
+          IP2=INE(I2,IE)
+          IP3=INE(I3,IE)
           IDX1=JA_IE(I1,1,IE)
           IDX2=JA_IE(I1,2,IE)
           IDX3=JA_IE(I1,3,IE)
@@ -93,7 +95,7 @@
           eFY =( FY(IP1) +  FY(IP2) +  FY(IP3))/3.0_rkind
           eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
           eScal=UGRAD1*eFX + VGRAD1*eFY
-          B(IP) = B(IP) + eScal
+          B(IP1) = B(IP1) + eScal
           !
           DO IDX=1,3
             CALL COMPUTE_DIFF(IE, IDX, UGRAD, VGRAD)
@@ -220,6 +222,7 @@
       CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uO)
       DO
         nbIter=nbIter + 1
+        Print *, 'nbIter=', nbIter
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
@@ -230,6 +233,7 @@
         END DO
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
+
         IF (eNorm .le. SOLVERTHR) THEN
           EXIT
         END IF
@@ -439,9 +443,26 @@
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
+#ifdef DEBUG
+      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
+      FLUSH(200 + MyRankD)
+#endif
       CALL COMPUTE_LH_STRESS(F_X, F_Y)
+      FLUSH(200 + MyRankD)
+#ifdef DEBUG
+      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 2'
+      FLUSH(200 + MyRankD)
+#endif
       CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
+#ifdef DEBUG
+      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
+      FLUSH(200 + MyRankD)
+#endif
       CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
+#ifdef DEBUG
+      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 4'
+      FLUSH(200 + MyRankD)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
