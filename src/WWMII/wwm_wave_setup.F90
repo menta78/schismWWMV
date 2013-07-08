@@ -43,6 +43,9 @@
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
       REAL(rkind) :: h
+#ifdef DEBUG
+      REAL(rkind) :: F1, F2, F3
+#endif
       integer I2, I3, IP1, IP2, IP3
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
@@ -56,17 +59,16 @@
       IP1=INE(I1,IE)
       IP2=INE(I2,IE)
       IP3=INE(I3,IE)
-!      h=(YP(IP1) - YP(IP2))*(XP(IP3) - XP(IP2)) - (XP(IP1) - XP(IP2))*(YP(IP3) - YP(IP2))
       h=TWO*TRIA(IE)
-!#ifdef DEBUG
-!      WRITE(200+MyRankD,*) 'I123=', I1, I2, I3
-!      WRITE(200+MyRankD,*) 'XP123=', XP(I1), XP(I2), XP(I3)
-!      WRITE(200+MyRankD,*) 'YP123=', YP(I1), YP(I2), YP(I3)
-!      WRITE(200+MyRankD,*) 'h=', h, 'TRIA=', 2*TRIA(IE)
-!      FLUSH(200+MyRankD)
-!#endif
       UGRAD=-(YP(IP3)-YP(IP2))/h
       VGRAD= (XP(IP3)-XP(IP2))/h
+#ifdef DEBUG
+!      F1=(XP(IP1) - XP(IP2))*UGRAD + (YP(IP1) - YP(IP2))*VGRAD
+!      F2=ZERO
+!      F3=(XP(IP3) - XP(IP2))*UGRAD + (YP(IP3) - YP(IP2))*VGRAD
+!      WRITE(200+MyRankD,*) 'F123=', F1, F2, F3
+!      FLUSH(200+MyRankD)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -77,10 +79,10 @@
       real(rkind), intent(in)  :: FX(MNP), FY(MNP)
       real(rkind), intent(out) :: ASPAR(NNZ)
       real(rkind), intent(out) :: B(MNP)
-      INTEGER :: POS_TRICK(3,2)
+      INTEGER :: POS_TRICK(3,2), POS_SHIFT(3,3)
       integer I1, I2, I3, IP1, IP2, IP3
       integer IDX, IDX1, IDX2, IDX3
-      INTEGER IE, IP, J
+      INTEGER IE, IP, I, J, K
       real(rkind) :: eDep, eFX, eFY, eScal
       real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
       POS_TRICK(1,1) = 2
@@ -91,6 +93,15 @@
       POS_TRICK(3,2) = 2
       ASPAR=0
       B=0
+      DO I=1,3
+        DO J=1,3
+          K= I-J+1
+          IF (K .le. 0) THEN
+            K=K+3
+          END IF
+          POS_SHIFT(I,J)=K
+        END DO
+      END DO
       DO IE=1,MNE
         DO I1=1,3
           I2=POS_TRICK(I1,1)
@@ -107,9 +118,14 @@
           eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
           eScal=UGRAD1*eFX + VGRAD1*eFY
           B(IP1) = B(IP1) + eScal
+#ifdef DEBUG
+!          WRITE(200+MyRankD,*) 'eDep=', eDep
+!          FLUSH(200+MyRankD)
+#endif
           !
           DO IDX=1,3
-            CALL COMPUTE_DIFF(IE, IDX, UGRAD, VGRAD)
+            K=POS_SHIFT(I1, IDX)
+            CALL COMPUTE_DIFF(IE, K, UGRAD, VGRAD)
             eScal=UGRAD*UGRAD1 + VGRAD*VGRAD1
 #ifdef DEBUG
 !            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
@@ -136,28 +152,59 @@
       REAL(rkind), intent(out) :: TheOut(MNP)
       integer IP, J1, J, JP, J2
       REAL(rkind) :: eCoeff
-      TheOut=0
-      DO IP=1,NP_RES
-        J1=I_DIAG(IP)
-        DO J=IA(IP),IA(IP+1)-1
-          JP=JA(J)
-          IF (J .eq. J1) THEN
-            eCoeff=ONE/ASPAR(J)
-          ELSE
-            J2=I_DIAG(JP)
+      INTEGER :: ThePrecond = 0
+      IF (ThePrecond .eq. 1) THEN
+        TheOut=0
+        DO IP=1,NP_RES
+          J1=I_DIAG(IP)
+          DO J=IA(IP),IA(IP+1)-1
+            JP=JA(J)
+            IF (J .eq. J1) THEN
+              eCoeff=ONE/ASPAR(J)
+            ELSE
+              J2=I_DIAG(JP)
 #ifdef DEBUG
-            WRITE(200+MyRankD,*) 'aspar(J1)=', ASPAR(J1)
-            WRITE(200+MyRankD,*) 'aspar(J2)=', ASPAR(J2)
+!            WRITE(200+MyRankD,*) 'aspar(J1)=', ASPAR(J1)
+!            WRITE(200+MyRankD,*) 'aspar(J2)=', ASPAR(J2)
 #endif
             
-            eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
-          END IF
-          TheOut(IP)=TheOut(IP) + eCoeff*TheIn(JP)
+              eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
+            END IF
+            TheOut(IP)=TheOut(IP) + eCoeff*TheIn(JP)
+          END DO
+        END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P2D(TheOut)
+#endif
+      END IF
+      IF (ThePrecond .eq. 0) THEN
+        TheOut=TheIn
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: ASPAR(NNZ)
+      REAL(rkind) :: eVal, fVal, eSum
+      INTEGER IP, J, JP, J2, IPb
+      eSum=ZERO
+      DO IP=1,NP_RES
+        DO J=IA(IP),IA(IP+1)-1
+          eVal=ASPAR(J)
+          JP=JA(J)
+          DO J2=IA(JP),IA(JP+1)-1
+            IPb=JA(J)
+            IF (IPb .eq. IP) THEN
+              fVal=ASPAR(J2)
+              eSum = eSum + abs(eVal - fVal)
+            END IF
+          END DO
         END DO
       END DO
-#ifdef MPI_PARALL_GRID
-      CALL EXCHANGE_P2D(TheOut)
-#endif
+      WRITE(200 + MyRankD,*) 'Symmetry error=', eSum
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -516,6 +563,7 @@
       WRITE(200 + MyRankD,*) 'eResidual=', eResidual
       WRITE(200 + MyRankD,*) 'eResidual2=', eResidual2
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
+      CALL WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
       FLUSH(200 + MyRankD)
 #endif
       CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
