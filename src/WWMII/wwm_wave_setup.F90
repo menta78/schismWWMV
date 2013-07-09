@@ -225,6 +225,9 @@
           J=I_DIAG(IP)
           TheOut(IP)=TheIn(IP)/ASPAR(J)
         END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P2D(TheOut)
+#endif
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -315,6 +318,7 @@
         DO iProc=2,nproc
           CALL MPI_SEND(lScal,1,rtype, iProc-1, 23, comm, ierr)
         END DO
+        eScal=lScal(1)
       ELSE
         CALL MPI_SEND(lScal,1,rtype, 0, 19, comm, ierr)
         CALL MPI_RECV(lScal,1,rtype, 0, 23, comm, istatus, ierr)
@@ -358,18 +362,23 @@
         nbIter=nbIter + 1
         Print *, 'nbIter=', nbIter
 #ifdef DEBUG
-!        WRITE(200+MyRankD,*) 'nbIter=', nbIter
-!        FLUSH(200+MyRankD)
+        WRITE(200+MyRankD,*) 'nbIter=', nbIter
+        WRITE(200+MyRankD,*) 'Before call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+MyRankD)
 #endif
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
+#ifdef DEBUG
+        WRITE(200+MyRankD,*) 'After call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+MyRankD)
+#endif
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
 #ifdef DEBUG
-!        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
-!        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
-!        WRITE(200+MyRankD,*) 'h2=', h2
-!        WRITE(200+MyRankD,*) 'alphaV=', alphaV
-!        FLUSH(200+MyRankD)
+        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
+        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
+        WRITE(200+MyRankD,*) 'h2=', h2
+        WRITE(200+MyRankD,*) 'alphaV=', alphaV
+        FLUSH(200+MyRankD)
 #endif
         !
         DO IP=1,MNP
