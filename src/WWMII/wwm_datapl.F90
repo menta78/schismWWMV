@@ -727,7 +727,7 @@
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 58
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 59
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.

@@ -16,7 +16,7 @@
      &   WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                    &
      &   STOKESBOTTX, STOKESBOTTY,                                      &
      &   STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,            &
-     &   RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &   RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
       LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
       LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
       integer iVar, idx, nbOutVarEff
@@ -79,6 +79,7 @@
       CFL1         = eVar%LVAR(56)
       CFL2         = eVar%LVAR(57)
       CFL3         = eVar%LVAR(58)
+      ZETA_SETUP   = eVar%LVAR(59)
       ComputeMean=.FALSE.
       ComputeDirSpread=.FALSE.
       ComputePeak=.FALSE.
@@ -660,6 +661,10 @@
         eStr="CFL3"
         eStrFullName="CFL number 3"
         eStrUnit="non-dimensional"
+      ELSE IF (IDX.eq.59) THEN
+        eStr="ZETA_SETUP"
+        eStrFullName="Free-surface elevation induced setup"
+        eStrUnit="m"
       ELSE
         CALL WWM_ABORT('Wrong Number')
       END IF

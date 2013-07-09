@@ -71,7 +71,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -86,7 +86,7 @@
      &      CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,              &
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          XOUTS = 0.
          YOUTS = 0.
@@ -163,6 +163,7 @@
          CFL1=.FALSE.
          CFL2=.FALSE.
          CFL3=.FALSE.
+         ZETA_SETUP=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
@@ -320,6 +321,7 @@
          LVAR_READ(56)=CFL1
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
+         LVAR_READ(59)=ZETA_SETUP
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -398,7 +400,7 @@
          CFL1=.FALSE.
          CFL2=.FALSE.
          CFL3=.FALSE.
-
+         ZETA_SETUP=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
@@ -550,6 +552,7 @@
          LVAR_READ(56)=CFL1
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
+         LVAR_READ(59)=ZETA_SETUP
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN

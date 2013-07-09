@@ -318,12 +318,11 @@
         DO iProc=2,nproc
           CALL MPI_SEND(lScal,1,rtype, iProc-1, 23, comm, ierr)
         END DO
-        eScal=lScal(1)
       ELSE
         CALL MPI_SEND(lScal,1,rtype, 0, 19, comm, ierr)
         CALL MPI_RECV(lScal,1,rtype, 0, 23, comm, istatus, ierr)
-        eScal=lScal(1)
       END IF
+      eScal=lScal(1)
 #else
       eScal=0
       DO IP=1,NP_RES

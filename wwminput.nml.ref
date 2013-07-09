@@ -415,6 +415,7 @@
  CFL1           = F                  !56: CFL number 1
  CFL2           = F                  !57: CFL number 2
  CFL3           = F                  !58: CFL number 3
+ ZETA_SETUP     = F                  !59: wave induced setup.
 /
 
 &STATION
@@ -516,6 +517,7 @@
  CFL1           = F                  !56: CFL number 1
  CFL2           = F                  !57: CFL number 2
  CFL3           = F                  !58: CFL number 3
+ ZETA_SETUP     = F                  !59: wave induced setup.
 /
 
 &HOTFILE

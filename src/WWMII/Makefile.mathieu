@@ -23,7 +23,6 @@ F90 = mpif90
 #F90 = pgf90
 #F90 = pathf95
 
-
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
