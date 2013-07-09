@@ -410,8 +410,9 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef PETSC
-      SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(TheInp, TheOut)
+      SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, X)
       USE DATAPOOL
+      USE PETSC_PARALLEL
       USE ELFE_GLBL, ONLY : iplg, np_global
       USE elfe_msgp, only : myrank, nproc, comm
       use elfe_glbl, only: ipgl1=> ipgl
@@ -420,16 +421,20 @@
       use petscsys
       use petscmat
       implicit none
-      real(rkind), intent(in) :: TheInp(MNP)
-      real(rkind), intent(out) :: TheOut(MNP)
+#include "finclude/petscsysdef.h"
+#include "finclude/petscaodef.h"
+#include "finclude/petscisdef.h"
+#include "finclude/petscvecdef.h"
+#include "finclude/petscmatdef.h"
+#include "finclude/petsckspdef.h"
+      real(rkind), intent(in) :: ASPAR(NNZ)
+      real(rkind), intent(in) :: B(MNP)
+      real(rkind), intent(out) :: X(MNP)
       integer :: I, J
       integer :: IP, IPGL, IE, POS
       integer :: I1, I2, I3
       integer :: POS_TRICK(3,2)
 
-      real(kind=8)  :: X(MNP)
-      real(kind=8)  :: B(MNP)
-      real(kind=8)  :: ASPAR(NNZ)
 
       REAL    ::  TIME2
       ! solver timings
@@ -490,7 +495,7 @@
 !and insert the value from B into RHS vector
       eEntry = 0;
       call VecSet(myB, eEntry, petscErr);CHKERRQ(petscErr)
-      do i= 1, np
+      do i= 1, NP_RES
         ! this is a interface node (row). ignore it. just increase counter
         if(ALOold2ALO(i-1) .eq. -999) then
           cycle
@@ -506,9 +511,9 @@
       call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr);
 
       ! Copy the old solution from AC2 to myX to make the solver faster
-      do i = 1, np
+      do i = 1, NP_RES
         eCol = AGO2PGO(iplg(i)-1)
-        eEntry = AC2(i, ISS, IDD)
+        eEntry = B(i)
         call VecSetValue(myX,eCol,eEntry,INSERT_VALUES,petscErr)
         CHKERRQ(petscErr)
       end do
@@ -568,14 +573,15 @@
       ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
       ! normally set to 0, because they do net exist in petsc
       !call exchange_p2d(X)
-      TheOut = X
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
+      USE DATAPOOL
+      IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
-      IF (AMETHOD ne 4) THEN
+      IF (AMETHOD .ne. 4) THEN
         CALL PETSC_INIT_PARALLEL
       END IF
 # endif
@@ -584,8 +590,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
+      USE DATAPOOL
+      IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
-      IF (AMETHOD ne 4) THEN
+      IF (AMETHOD .ne. 4) THEN
         CALL PETSC_FINALIZE_PARALLEL
       END IF
 # endif

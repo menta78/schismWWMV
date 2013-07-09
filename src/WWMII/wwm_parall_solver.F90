@@ -3494,6 +3494,7 @@ MODULE WWM_PARALL_SOLVER
       ENDIF
       LocalColor % NbMSCblock=NbMSCblock
       LocalColor % MSCeffect=MSCeffect
+      LocalColor % MDCeffect=MDC
       allocate(LocalColor % ISbegin(NbMSCblock), LocalColor % ISend(NbMSCblock), LocalColor % ISlen(NbMSCblock), stat=istat)
       IF (istat /=0) CALL WWM_ABORT('allocation error')
       ISbegin=0
@@ -3556,6 +3557,7 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       NblockFreqDir = NB_BLOCK
       MainLocalColor%MSCeffect=MSC
+      MainLocalColor%MDCeffect=MDC
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
 # ifdef DEBUG
       WRITE(myrank+740,*) 'After SYMM_INIT_COLORING'
