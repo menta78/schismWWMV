@@ -100,6 +100,7 @@
       INTEGER IE, IP, I, J, K, IPp, JPp
       real(rkind) :: eDep, eFX, eFY, eScal, eFact, eArea
       real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
+      INTEGER LIDX(2), KIDX(2), jdx
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -114,8 +115,24 @@
           IF (K .le. 0) THEN
             K=K+3
           END IF
+          IF (K .ge. 4) THEN
+            K=K-3
+          END IF
           POS_SHIFT(I,J)=K
         END DO
+      END DO
+      DO I=1,3
+        jdx=0
+        DO IDX=1,3
+          K=POS_SHIFT(I,IDX)
+          IF (K .ne. I) THEN
+            jdx=jdx+1
+            LIDX(jdx)=IDX
+            KIDX(jdx)=K
+          END IF
+        END DO
+        POS_SHIFT(I,LIDX(1))=KIDX(2)
+        POS_SHIFT(I,LIDX(2))=KIDX(1)
       END DO
       DO IE=1,MNE
         IP1=INE(1,IE)
@@ -138,10 +155,6 @@
           CALL COMPUTE_DIFF(IE, I1, UGRAD1, VGRAD1)
           eScal=UGRAD1*eFX + VGRAD1*eFY
           B(IP1) = B(IP1) + eScal*eArea
-#ifdef DEBUG
-!          WRITE(200+MyRankD,*) 'eDep=', eDep
-!          FLUSH(200+MyRankD)
-#endif
           !
           DO IDX=1,3
             K=POS_SHIFT(I1, IDX)
@@ -151,15 +164,17 @@
 #ifdef DEBUG
 !            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
 !            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
-            WRITE(200+MyRankD,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
-            CALL REV_IDX_IA_JA(J, IPp, JPp)
-            WRITE(200+MyRankD,*) 'IPp=', IPp, ' JPp=', JPp
+!            WRITE(200+MyRankD,*) 'I1=', I1, ' K=', K
+!            WRITE(200+MyRankD,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
+!            CALL REV_IDX_IA_JA(J, IPp, JPp)
+!            WRITE(200+MyRankD,*) 'IPp=', IPp, ' JPp=', JPp
+!            WRITE(200+MyRankD,*) '            -  -  -  -  -'
 #endif
             ASPAR(J)=ASPAR(J)+eFact*eScal
           END DO
         END DO
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) '--------------------------------------'
+!        WRITE(200+MyRankD,*) '--------------------------------------'
 #endif
       END DO
       END SUBROUTINE
@@ -177,7 +192,7 @@
       REAL(rkind), intent(out) :: TheOut(MNP)
       integer IP, J1, J, JP, J2
       REAL(rkind) :: eCoeff
-      INTEGER :: ThePrecond = 0
+      INTEGER :: ThePrecond = 1
       IF (ThePrecond .eq. 1) THEN
         TheOut=0
         DO IP=1,NP_RES
@@ -214,19 +229,25 @@
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind) :: eVal, fVal, eSum
-      INTEGER IP, J, JP, J2, IPb
+      INTEGER IP, J, JP, J2, IPb, nbM
       eSum=ZERO
       DO IP=1,NP_RES
         DO J=IA(IP),IA(IP+1)-1
           eVal=ASPAR(J)
           JP=JA(J)
+          nbM=0
           DO J2=IA(JP),IA(JP+1)-1
-            IPb=JA(J)
+            IPb=JA(J2)
             IF (IPb .eq. IP) THEN
               fVal=ASPAR(J2)
               eSum = eSum + abs(eVal - fVal)
+              nbM=nbM+1
             END IF
           END DO
+          IF (nbM .ne. 1) THEN
+            WRITE(*,*) 'IP=', IP, 'J=', J, ' nbM=', nbM
+            CALL WWM_ABORT('More errors to solve')
+          END IF
         END DO
       END DO
       WRITE(200 + MyRankD,*) 'Symmetry error=', eSum
@@ -331,18 +352,18 @@
         nbIter=nbIter + 1
         Print *, 'nbIter=', nbIter
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'nbIter=', nbIter
-        FLUSH(200+MyRankD)
+!        WRITE(200+MyRankD,*) 'nbIter=', nbIter
+!        FLUSH(200+MyRankD)
 #endif
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
-        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
-        WRITE(200+MyRankD,*) 'h2=', h2
-        WRITE(200+MyRankD,*) 'alphaV=', alphaV
-        FLUSH(200+MyRankD)
+!        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
+!        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
+!        WRITE(200+MyRankD,*) 'h2=', h2
+!        WRITE(200+MyRankD,*) 'alphaV=', alphaV
+!        FLUSH(200+MyRankD)
 #endif
         !
         DO IP=1,MNP
@@ -352,7 +373,7 @@
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'eNorm=', eNorm
+        WRITE(200+MyRankD,*) 'nbIter=', nbIter, 'eNorm=', eNorm
         FLUSH(200+MyRankD)
 #endif
         IF (eNorm .le. SOLVERTHR) THEN
@@ -584,7 +605,7 @@
       CALL WAVE_SETUP_APPLY_FCT(ASPAR, Xtest, Vimg)
       CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eResidual)
       CALL WAVE_SETUP_SCALAR_PROD(Xtest, B, eResidual2)
-      WRITE(200 + MyRankD,*) 'sum(ASPAR)=', sum(ASPAR)
+      WRITE(200 + MyRankD,*) 'sum(abs(ASPAR))=', sum(abs(ASPAR))
       WRITE(200 + MyRankD,*) 'eResidual=', eResidual
       WRITE(200 + MyRankD,*) 'eResidual2=', eResidual2
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
