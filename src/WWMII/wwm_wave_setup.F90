@@ -579,6 +579,7 @@
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
+      use petsc_parallel, only: PETSC_INIT_PARALLEL
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
       IF (AMETHOD .ne. 4) THEN
@@ -591,6 +592,7 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
+      use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
       IF (AMETHOD .ne. 4) THEN
