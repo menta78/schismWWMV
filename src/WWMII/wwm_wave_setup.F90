@@ -192,7 +192,10 @@
       REAL(rkind), intent(out) :: TheOut(MNP)
       integer IP, J1, J, JP, J2
       REAL(rkind) :: eCoeff
-      INTEGER :: ThePrecond = 1
+      INTEGER :: ThePrecond = 2
+      IF (ThePrecond .eq. 0) THEN
+        TheOut=TheIn
+      END IF
       IF (ThePrecond .eq. 1) THEN
         TheOut=0
         DO IP=1,NP_RES
@@ -217,8 +220,11 @@
         CALL EXCHANGE_P2D(TheOut)
 #endif
       END IF
-      IF (ThePrecond .eq. 0) THEN
-        TheOut=TheIn
+      IF (ThePrecond .eq. 2) THEN
+        DO IP=1,NP_RES
+          J=I_DIAG(IP)
+          TheOut(IP)=TheIn(IP)/ASPAR(J)
+        END DO
       END IF
       END SUBROUTINE
 !**********************************************************************
