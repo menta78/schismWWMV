@@ -55,7 +55,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER,                                &
