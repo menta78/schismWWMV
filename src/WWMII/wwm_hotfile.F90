@@ -352,7 +352,6 @@ MODULE wwm_hotfile_mod
         USE DATAPOOL
         IMPLICIT NONE
 
-        WRITE(STAT%FHNDL,*) 'Passing in OUTPUT_HOTFILE'
         IF (HOTSTYLE_OUT == 1) THEN
           CALL OUTPUT_HOTFILE_BINARY
 #ifdef NCDF
@@ -580,8 +579,6 @@ MODULE wwm_hotfile_mod
       REAL(rkind), ALLOCATABLE :: ACreturn(:,:,:)
       REAL(rkind), ALLOCATABLE :: VALB(:), VALB_SUM(:)
 # endif
-      WRITE(STAT%FHNDL,*) 'Begin OUTPUT_HOTFILE_NETCDF'
-      FLUSH(STAT%FHNDL)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         np_write=np_global
@@ -595,9 +592,6 @@ MODULE wwm_hotfile_mod
       ne_write=MNE
 # endif
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
-      WRITE(STAT%FHNDL,*) 'FILERET=', TRIM(FILERET)
-      WRITE(STAT%FHNDL,*) 'WriteOutputProcess_hot=', WriteOutputProcess_hot
-      FLUSH(STAT%FHNDL)
       IF (IDXHOTOUT.eq.0) THEN
 !$OMP MASTER
         IF (LCYCLEHOT) THEN
@@ -661,7 +655,7 @@ MODULE wwm_hotfile_mod
           END DO
         END DO
         IF (myrank.eq.0) THEN
-          DO IP=1,MNP
+          DO IP=1,np_global
             ACreturn(IP,:,:)=ACreturn(IP,:,:)*nwild_gb(IP)
           END DO
         END IF
@@ -683,7 +677,7 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT_HOT.eq.0) THEN
-          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ MNP, MSC, MDC, 1 /))
+          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ np_global, MSC, MDC, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
           deallocate(ACreturn);
         ELSE

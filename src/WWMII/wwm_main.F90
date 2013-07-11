@@ -364,7 +364,6 @@
 #ifdef MPI_PARALL_GRID
          use elfe_msgp, only : myrank
 #endif
-
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
@@ -375,9 +374,9 @@
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
          CALL CPU_TIME(TIME1)
-       
-         CALL IO_1(K)
 
+         CALL IO_1(K)
+        
          CALL CPU_TIME(TIME2)
 
 #if !defined MPI_PARALL_GRID
@@ -401,6 +400,9 @@
            END IF
          ELSE IF (ICOMP .EQ. 2) THEN 
            CALL COMPUTE_IMPLICIT
+         END IF
+         IF (LZETA_SETUP) THEN
+           CALL WAVE_SETUP_COMPUTATION
          END IF
 
          CALL CPU_TIME(TIME4)
@@ -447,8 +449,6 @@
 #endif
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -547,7 +547,7 @@
 
          INTEGER, INTENT(IN) :: K
          REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IT, IFILE
+         INTEGER             :: IT, IFILE, TheRes
 
 ! update wind ...
          IF (LWINDFROMWWM) THEN
@@ -631,8 +631,6 @@
            IF (LCFL) CFLCXY = ZERO
            IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
          END IF
-
-!         IF (MAIN%TMJD .GT. 51545.) WINDXY = ZERO
 
       END SUBROUTINE
 !**********************************************************************
@@ -754,8 +752,6 @@
 # ifdef WWM_MPI
       use elfe_glbl
       use elfe_msgp
-# else
-      use datapool, only : MyRank, nproc, comm
 # endif
       implicit none
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING

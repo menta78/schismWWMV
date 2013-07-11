@@ -1275,231 +1275,228 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PAR_COMPLETE(IP, ISMAX, ACLOC, OUTPAR)
+      USE DATAPOOL
+      IMPLICIT NONE
 
-         USE DATAPOOL
-         IMPLICIT NONE
+      INTEGER, INTENT(IN)           :: IP, ISMAX
+      REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind)   , INTENT(OUT)   :: OUTPAR(OUTVARS_COMPLETE)
 
-         INTEGER, INTENT(IN)           :: IP, ISMAX
-         REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(OUT)   :: OUTPAR(OUTVARS_COMPLETE)
+      REAL(rkind)                   :: HS,TM01,TM02,TM10,KLM,WLM
+      REAL(rkind)                   :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
+      REAL(rkind)                   :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
+      REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
+      REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
+      REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
 
-         REAL(rkind)                   :: HS,TM01,TM02,TM10,KLM,WLM
-         REAL(rkind)                   :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
-         REAL(rkind)                   :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
-         REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
-         REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
-         REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+      OUTPAR    = 0.
+      IF (DEP(IP) .LT. DMIN) THEN
+        RETURN
+      END IF
+      IF (VAROUT_HISTORY%ComputeMean) THEN
+        CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+        OUTPAR(1) = HS         ! Significant wave height
+        OUTPAR(2) = TM01       ! Mean average period
+        OUTPAR(3) = TM02       ! Zero down crossing period for comparison with buoy.
+        OUTPAR(4) = TM10       ! Mean period of wave overtopping/run-up 
+        OUTPAR(5) = KLM        ! Mean wave number
+        OUTPAR(6) = WLM        ! Mean wave length
+      END IF
 
-         OUTPAR    = 0.
-         IF (DEP(IP) .LT. DMIN) THEN
-           RETURN
-         END IF
-         IF (VAROUT_HISTORY%ComputeMean) THEN
-           CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
-           OUTPAR(1) = HS         ! Significant wave height
-           OUTPAR(2) = TM01       ! Mean average period
-           OUTPAR(3) = TM02       ! Zero down crossing period for comparison with buoy.
-           OUTPAR(4) = TM10       ! Mean period of wave overtopping/run-up 
-           OUTPAR(5) = KLM        ! Mean wave number
-           OUTPAR(6) = WLM        ! Mean wave length
-         END IF
+      IF (VAROUT_HISTORY%ComputeDirSpread) THEN
+        CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+        OUTPAR(7)   = ETOTC     ! Etot energy in horizontal direction
+        OUTPAR(8)   = ETOTS     ! Etot energy in vertical direction
+        OUTPAR(9)   = DM        ! Mean average energy transport direction
+        OUTPAR(10)  = DSPR      ! Mean directional spreading
+      END IF
 
-         IF (VAROUT_HISTORY%ComputeDirSpread) THEN
-           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
-           OUTPAR(7)   = ETOTC     ! Etot energy in horizontal direction
-           OUTPAR(8)   = ETOTS     ! Etot energy in vertical direction
-           OUTPAR(9)   = DM        ! Mean average energy transport direction
-           OUTPAR(10)  = DSPR      ! Mean directional spreading
-         END IF
+      IF (VAROUT_HISTORY%ComputePeak) THEN
+        CALL PEAK_PARAMETER(IP,ACLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
+        OUTPAR(11)  = TPPD     ! Discrete Peak Period
+        OUTPAR(12)  = CPPD     ! Discrete Peak speed
+        OUTPAR(13)  = KPPD     ! Discrete Peak wave number
+        OUTPAR(14)  = CGPD     ! Discrete Peak group speed
+        OUTPAR(15)  = TPP      ! Peak period
+        OUTPAR(16)  = CPP      ! Peak phase vel.
+        OUTPAR(17)  = WNPP     ! Peak n-factor
+        OUTPAR(18)  = CGPP     ! Peak group vel.
+        OUTPAR(19)  = KPP      ! Peak wave number
+        OUTPAR(20)  = LPP      ! Peak wave length.
+        OUTPAR(21)  = PEAKD    ! Peak direction
+        OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
+        OUTPAR(23)  = DPEAK    ! Discrete peak direction
+      END IF
 
-         IF (VAROUT_HISTORY%ComputePeak) THEN
-           CALL PEAK_PARAMETER(IP,ACLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
-           OUTPAR(11)  = TPPD     ! Discrete Peak Period
-           OUTPAR(12)  = CPPD     ! Discrete Peak speed
-           OUTPAR(13)  = KPPD     ! Discrete Peak wave number
-           OUTPAR(14)  = CGPD     ! Discrete Peak group speed
-           OUTPAR(15)  = TPP      ! Peak period
-           OUTPAR(16)  = CPP      ! Peak phase vel.
-           OUTPAR(17)  = WNPP     ! Peak n-factor
-           OUTPAR(18)  = CGPP     ! Peak group vel.
-           OUTPAR(19)  = KPP      ! Peak wave number
-           OUTPAR(20)  = LPP      ! Peak wave length.
-           OUTPAR(21)  = PEAKD    ! Peak direction
-           OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
-           OUTPAR(23)  = DPEAK    ! Discrete peak direction
-         END IF
+      IF (VAROUT_HISTORY%ComputeCurr) THEN
+        CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+        OUTPAR(24)  = UBOT     !
+        OUTPAR(25)  = ORBITAL  ! Orbital vel.
+        OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
+        OUTPAR(27)  = TMBOT    !
+      END IF
 
-         IF (VAROUT_HISTORY%ComputeCurr) THEN
-           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
-           OUTPAR(24)  = UBOT     !
-           OUTPAR(25)  = ORBITAL  ! Orbital vel.
-           OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
-           OUTPAR(27)  = TMBOT    !
-         END IF
+      IF (VAROUT_HISTORY%ComputeUrsell) THEN
+        CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
+        OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
+      END IF
 
-         IF (VAROUT_HISTORY%ComputeUrsell) THEN
-           CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
-           OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
-         END IF
+      OUTPAR(29) = UFRIC(IP)
+      OUTPAR(30) = Z0(IP)
+      OUTPAR(31) = ALPHA_CH(IP)
+      OUTPAR(32) = WINDXY(IP,1)
+      OUTPAR(33) = WINDXY(IP,2)
+      OUTPAR(34) = CD(IP)
 
-         OUTPAR(29) = UFRIC(IP)
-         OUTPAR(30) = Z0(IP)
-         OUTPAR(31) = ALPHA_CH(IP)
-         OUTPAR(32) = WINDXY(IP,1)
-         OUTPAR(33) = WINDXY(IP,2)
-         OUTPAR(34) = CD(IP)
+      OUTPAR(35) = CURTXY(IP,1)
+      OUTPAR(36) = CURTXY(IP,2)
+      OUTPAR(37) = WATLEV(IP)
+      OUTPAR(38) = WATLEVOLD(IP)
+      OUTPAR(39) = DEPDT(IP)
+      OUTPAR(40) = DEP(IP)
+      OUTPAR(41) = SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
+      OUTPAR(42) = TAUW(IP)
+      OUTPAR(43) = TAUW(IP)
+      OUTPAR(44) = TAUW(IP)
+      OUTPAR(45) = TAUHF(IP)
+      OUTPAR(46) = TAUTOT(IP)
 
-         OUTPAR(35) = CURTXY(IP,1)
-         OUTPAR(36) = CURTXY(IP,2)
-         OUTPAR(37) = WATLEV(IP)
-         OUTPAR(38) = WATLEVOLD(IP)
-         OUTPAR(39) = DEPDT(IP)
-         OUTPAR(40) = DEP(IP)
-         OUTPAR(41) = SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
-         OUTPAR(42) = TAUW(IP)
-         OUTPAR(43) = TAUW(IP)
-         OUTPAR(44) = TAUW(IP)
-         OUTPAR(45) = TAUHF(IP)
-         OUTPAR(46) = TAUTOT(IP)
-
-         IF (VAROUT_HISTORY%ComputeStokes) THEN
-           CALL STOKES_DRIFT_SURFACE_BAROTROPIC(IP,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
-           OUTPAR(47) = STOKESBOTTX
-           OUTPAR(48) = STOKESBOTTY
-           OUTPAR(49) = STOKESSURFX
-           OUTPAR(50) = STOKESSURFY
-           OUTPAR(51) = STOKESBAROX
-           OUTPAR(52) = STOKESBAROY
-         END IF
-         OUTPAR(53) = RSXX(IP)
-         OUTPAR(54) = RSXY(IP)
-         OUTPAR(55) = RSYY(IP)
-         IF (LCFL) THEN
-           OUTPAR(56) = CFLCXY(1,IP)
-           OUTPAR(57) = CFLCXY(2,IP)
-           OUTPAR(58) = CFLCXY(3,IP)
-         ENDIF
-
-!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE'
-!         CALL FLUSH(STAT%FHNDL)
-
+      IF (VAROUT_HISTORY%ComputeStokes) THEN
+        CALL STOKES_DRIFT_SURFACE_BAROTROPIC(IP,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
+        OUTPAR(47) = STOKESBOTTX
+        OUTPAR(48) = STOKESBOTTY
+        OUTPAR(49) = STOKESSURFX
+        OUTPAR(50) = STOKESSURFY
+        OUTPAR(51) = STOKESBAROX
+        OUTPAR(52) = STOKESBAROY
+      END IF
+      OUTPAR(53) = RSXX(IP)
+      OUTPAR(54) = RSXY(IP)
+      OUTPAR(55) = RSYY(IP)
+      IF (LCFL) THEN
+        OUTPAR(56) = CFLCXY(1,IP)
+        OUTPAR(57) = CFLCXY(2,IP)
+        OUTPAR(58) = CFLCXY(3,IP)
+      ENDIF
+      IF (LZETA_SETUP) THEN
+        OUTPAR(59) = ZETA_SETUP(IP)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************
       SUBROUTINE PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI, WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR) 
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN)    :: ISMAX, I
-         INTEGER, intent(in)    :: IELOC
-         REAL(rkind), intent(in)  :: WI(3)
-         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC), WKLOC(MSC), DEPLOC, CURTXYLOC(2)
-         REAL(rkind), INTENT(OUT) :: OUTPAR(OUTVARS_COMPLETE)
-         integer :: IP, J
-         REAL(rkind) :: HS,TM01,TM02,KLM,WLM,TM10
-         REAL(rkind) :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
-         REAL(rkind) :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
-         REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
-         REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
-         REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
-         REAL(rkind) :: eWindMag
-         OUTPAR    = 0.
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: ISMAX, I
+      INTEGER, intent(in)    :: IELOC
+      REAL(rkind), intent(in)  :: WI(3)
+      REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC), WKLOC(MSC), DEPLOC, CURTXYLOC(2)
+      REAL(rkind), INTENT(OUT) :: OUTPAR(OUTVARS_COMPLETE)
+      integer :: IP, J
+      REAL(rkind) :: HS,TM01,TM02,KLM,WLM,TM10
+      REAL(rkind) :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
+      REAL(rkind) :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
+      REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
+      REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
+      REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+      REAL(rkind) :: eWindMag
+      OUTPAR    = ZERO
 
-         IF (DEPLOC .LT. DMIN) THEN
-           RETURN
-         END IF
+      IF (DEPLOC .LT. DMIN) THEN
+        RETURN
+      END IF
 
-         IF (VAROUT_STATION%ComputeMean) THEN
-           CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
-           OUTPAR(1) = HS         ! Significant wave height
-           OUTPAR(2) = TM01       ! Mean average period
-           OUTPAR(3) = TM02       ! Zero down crossing period for comparison with buoy.
-           OUTPAR(4) = TM10       ! Mean period of wave overtopping/run-up 
-           OUTPAR(5) = KLM        ! Mean wave number
-           OUTPAR(6) = WLM        ! Mean wave length
-         END IF
+      IF (VAROUT_STATION%ComputeMean) THEN
+        CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+        OUTPAR(1) = HS         ! Significant wave height
+        OUTPAR(2) = TM01       ! Mean average period
+        OUTPAR(3) = TM02       ! Zero down crossing period for comparison with buoy.
+        OUTPAR(4) = TM10       ! Mean period of wave overtopping/run-up 
+        OUTPAR(5) = KLM        ! Mean wave number
+        OUTPAR(6) = WLM        ! Mean wave length
+      END IF
 
-         IF (VAROUT_STATION%ComputeDirSpread) THEN
-           CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
-           OUTPAR(7)  = ETOTC     ! Etot energy in horizontal direction
-           OUTPAR(8)  = ETOTS     ! Etot energy in vertical direction
-           OUTPAR(9)  = DM        ! Mean average energy transport direction
-           OUTPAR(10) = DSPR      ! Mean directional spreading
-         END IF
+      IF (VAROUT_STATION%ComputeDirSpread) THEN
+        CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+        OUTPAR(7)  = ETOTC     ! Etot energy in horizontal direction
+        OUTPAR(8)  = ETOTS     ! Etot energy in vertical direction
+        OUTPAR(9)  = DM        ! Mean average energy transport direction
+        OUTPAR(10) = DSPR      ! Mean directional spreading
+      END IF
 
-         IF (VAROUT_STATION%ComputePeak) THEN
-           CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
-           OUTPAR(11)  = TPPD     ! Discrete Peak Period
-           OUTPAR(12)  = CPPD     ! Discrete Peak speed
-           OUTPAR(13)  = KPPD     ! Discrete Peak wave number
-           OUTPAR(14)  = CGPD     ! Discrete Peak group speed
-           OUTPAR(15)  = TPP      ! Continues Peak period
-           OUTPAR(16)  = CPP      ! Peak phase vel.
-           OUTPAR(17)  = WNPP     ! Peak n-factor
-           OUTPAR(18)  = CGPP     ! Peak group vel.
-           OUTPAR(19)  = KPP      ! Peak wave number
-           OUTPAR(20)  = LPP      ! Peak wave length.
-           OUTPAR(21)  = PEAKD    ! Peak direction
-           OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
-           OUTPAR(23)  = DPEAK    ! Discrete peak direction
-         END IF
+      IF (VAROUT_STATION%ComputePeak) THEN
+        CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD)
+        OUTPAR(11)  = TPPD     ! Discrete Peak Period
+        OUTPAR(12)  = CPPD     ! Discrete Peak speed
+        OUTPAR(13)  = KPPD     ! Discrete Peak wave number
+        OUTPAR(14)  = CGPD     ! Discrete Peak group speed
+        OUTPAR(15)  = TPP      ! Continues Peak period
+        OUTPAR(16)  = CPP      ! Peak phase vel.
+        OUTPAR(17)  = WNPP     ! Peak n-factor
+        OUTPAR(18)  = CGPP     ! Peak group vel.
+        OUTPAR(19)  = KPP      ! Peak wave number
+        OUTPAR(20)  = LPP      ! Peak wave length.
+        OUTPAR(21)  = PEAKD    ! Peak direction
+        OUTPAR(22)  = PEAKDSPR ! Peak directional spreading
+        OUTPAR(23)  = DPEAK    ! Discrete peak direction
+      END IF
 
-         IF (VAROUT_STATION%ComputeCurr) THEN
-           CALL WAVE_CURRENT_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
-           OUTPAR(24)  = UBOT     !
-           OUTPAR(25)  = ORBITAL  ! Orbital vel.
-           OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
-           OUTPAR(27)  = TMBOT    !
-         END IF
+      IF (VAROUT_STATION%ComputeCurr) THEN
+        CALL WAVE_CURRENT_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+        OUTPAR(24)  = UBOT     !
+        OUTPAR(25)  = ORBITAL  ! Orbital vel.
+        OUTPAR(26)  = BOTEXPER ! Bottom excursion period.
+        OUTPAR(27)  = TMBOT    !
+      END IF
 
-         IF (VAROUT_STATION%ComputeUrsell) THEN
-           CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
-           OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
-         END IF
+      IF (VAROUT_STATION%ComputeUrsell) THEN
+        CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
+        OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
+      END IF
 
-         DO J=1,3
-           IP=INE(J, IELOC)
-           OUTPAR(29) = OUTPAR(26) + WI(J)*UFRIC(IP)
-           OUTPAR(30) = OUTPAR(27) + WI(J)*Z0(IP)
-           OUTPAR(31) = OUTPAR(28) + WI(J)*ALPHA_CH(IP)
-           OUTPAR(32) = OUTPAR(29) + WI(J)*WINDXY(IP,1)
-           OUTPAR(33) = OUTPAR(30) + WI(J)*WINDXY(IP,2)
-           OUTPAR(34) = OUTPAR(31) + WI(J)*CD(IP)
-           OUTPAR(35) = OUTPAR(32) + WI(J)*CURTXY(IP,1)
-           OUTPAR(36) = OUTPAR(33) + WI(J)*CURTXY(IP,2)
-           OUTPAR(37) = OUTPAR(34) + WI(J)*WATLEV(IP)
-           OUTPAR(38) = OUTPAR(35) + WI(J)*WATLEVOLD(IP)
-           OUTPAR(39) = OUTPAR(36) + WI(J)*DEPDT(IP)
-           OUTPAR(40) = OUTPAR(37) + WI(J)*DEP(IP)
-           eWindMag=SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
-           OUTPAR(41) = OUTPAR(38) + WI(J)*eWindMag
-           OUTPAR(42) = OUTPAR(39) + WI(J)*TAUW(IP)
-           OUTPAR(43) = OUTPAR(40) + WI(J)*TAUW(IP)
-           OUTPAR(44) = OUTPAR(41) + WI(J)*TAUW(IP)
-           OUTPAR(45) = OUTPAR(42) + WI(J)*TAUHF(IP)
-           OUTPAR(46) = OUTPAR(43) + WI(J)*TAUTOT(IP)
-           OUTPAR(53) = OUTPAR(44) + WI(J)*RSXX(IP)
-           OUTPAR(54) = OUTPAR(45) + WI(J)*RSXY(IP)
-           OUTPAR(55) = OUTPAR(46) + WI(J)*RSYY(IP)
-           IF (LCFL) THEN
-             OUTPAR(56) = OUTPAR(47) + WI(J)*CFLCXY(1,IP)
-             OUTPAR(57) = OUTPAR(48) + WI(J)*CFLCXY(2,IP)
-             OUTPAR(58) = OUTPAR(49) + WI(J)*CFLCXY(3,IP)
-           ENDIF
-         END DO
-         IF (VAROUT_STATION%ComputeStokes) THEN
-           CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
-           OUTPAR(47) = STOKESBOTTX
-           OUTPAR(48) = STOKESBOTTY
-           OUTPAR(49) = STOKESSURFX
-           OUTPAR(50) = STOKESSURFY
-           OUTPAR(51) = STOKESBAROX
-           OUTPAR(52) = STOKESBAROY
-         END IF
-
-!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH PAR_COMPLETE_LOC'
-!         CALL FLUSH(STAT%FHNDL)
-
+      DO J=1,3
+        IP=INE(J, IELOC)
+        OUTPAR(29) = OUTPAR(29) + WI(J)*UFRIC(IP)
+        OUTPAR(30) = OUTPAR(30) + WI(J)*Z0(IP)
+        OUTPAR(31) = OUTPAR(31) + WI(J)*ALPHA_CH(IP)
+        OUTPAR(32) = OUTPAR(22) + WI(J)*WINDXY(IP,1)
+        OUTPAR(33) = OUTPAR(33) + WI(J)*WINDXY(IP,2)
+        OUTPAR(34) = OUTPAR(34) + WI(J)*CD(IP)
+        OUTPAR(35) = OUTPAR(35) + WI(J)*CURTXY(IP,1)
+        OUTPAR(36) = OUTPAR(36) + WI(J)*CURTXY(IP,2)
+        OUTPAR(37) = OUTPAR(37) + WI(J)*WATLEV(IP)
+        OUTPAR(38) = OUTPAR(38) + WI(J)*WATLEVOLD(IP)
+        OUTPAR(39) = OUTPAR(39) + WI(J)*DEPDT(IP)
+        OUTPAR(40) = OUTPAR(40) + WI(J)*DEP(IP)
+        eWindMag=SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.)
+        OUTPAR(41) = OUTPAR(41) + WI(J)*eWindMag
+        OUTPAR(42) = OUTPAR(42) + WI(J)*TAUW(IP)
+        OUTPAR(43) = OUTPAR(43) + WI(J)*TAUW(IP)
+        OUTPAR(44) = OUTPAR(44) + WI(J)*TAUW(IP)
+        OUTPAR(45) = OUTPAR(45) + WI(J)*TAUHF(IP)
+        OUTPAR(46) = OUTPAR(46) + WI(J)*TAUTOT(IP)
+        OUTPAR(53) = OUTPAR(53) + WI(J)*RSXX(IP)
+        OUTPAR(54) = OUTPAR(54) + WI(J)*RSXY(IP)
+        OUTPAR(55) = OUTPAR(55) + WI(J)*RSYY(IP)
+        IF (LCFL) THEN
+          OUTPAR(56) = OUTPAR(56) + WI(J)*CFLCXY(1,IP)
+          OUTPAR(57) = OUTPAR(57) + WI(J)*CFLCXY(2,IP)
+          OUTPAR(58) = OUTPAR(58) + WI(J)*CFLCXY(3,IP)
+        ENDIF
+        IF (LZETA_SETUP) THEN
+          OUTPAR(59) = OUTPAR(59) + WI(J)*ZETA_SETUP(IP)
+        END IF
+      END DO
+      IF (VAROUT_STATION%ComputeStokes) THEN
+        CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
+        OUTPAR(47) = STOKESBOTTX
+        OUTPAR(48) = STOKESBOTTY
+        OUTPAR(49) = STOKESSURFX
+        OUTPAR(50) = STOKESSURFY
+        OUTPAR(51) = STOKESBAROX
+        OUTPAR(52) = STOKESBAROY
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1563,10 +1560,6 @@
          OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
 
          OUTPAR(26:35) = ZERO 
-
-!         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR_LOC'
-!         CALL FLUSH(STAT%FHNDL)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *

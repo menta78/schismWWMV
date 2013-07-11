@@ -746,6 +746,7 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 25, rnk=', myrank
+        WRITE(DBG%FHNDL,*) 'MyRankGlobal=', MyRankGlobal
         CALL FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 217, A_wav_rho)
