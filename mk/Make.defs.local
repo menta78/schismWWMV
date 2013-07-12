@@ -48,35 +48,32 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ DEBUG + DEVELOPEMENT
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers #-warn all,nounused -gen-interfaces 
-  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers #-warn interfaces,nouncalled -gen-interfaces 
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -fp-model precise -axSSE4.2 -unroll-aggressive -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -fp-model precise -axSSE4.2 -unroll-aggressive -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
 #  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 ##########################################################################################
-
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/ar69ovim/git/wwmIII/src/ParMetis-3.1-Sep2010/ -lparmetis -lmetis 
+MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
-#CDFLIBS = -L/home/ar69ovim/opt/netcdf-4.3.0_gcc/lib -lnetcdff -L/home/ar69ovim/opt/netcdf/lib -L/home/ar69ovim/opt/hdf5/lib -lnetcdf -lnetcdf -lhdf5_hl -lhdf5 -lz
-#CDFMOD = -I/home/ar69ovim/opt/netcdf/include  -I/home/ar69ovim/opt/hdf5/include/
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := $(HOME)/bin/pelfe_$(ENV)
+EXEC   := /home/aron/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -116,8 +113,8 @@ endif
  USE_WWM = yes
  EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
- USE_PETSC = yes
- EXEC := $(EXEC)_PETSC
+# USE_PETSC = yes
+# EXEC := $(EXEC)_PETSC
 
 # TIMOR 
 # USE_TIMOR = yes
