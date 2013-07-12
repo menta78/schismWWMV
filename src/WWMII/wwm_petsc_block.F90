@@ -1719,13 +1719,13 @@
         CHKERRQ(petscErr)
 
         ! check diagonal entries (in petsc global numbering) which are smaller then ...
-        call VecGetOwnershipRange(diagonal, start, PETSC_NULL, petscErr)
+        call VecGetOwnershipRange(diagonal, start, PETSC_NULL_REAL, petscErr)
         CHKERRQ(petscErr)
         call VecGetLocalSize(diagonal, localSize, petscErr)
         CHKERRQ(petscErr)
         ! use the solver relative convergence tolerance as criterion when an entrie is zero
-        call KSPGetTolerances(solver, epsilon, PETSC_NULL, PETSC_NULL,  &
-     &  PETSC_NULL, petscErr);CHKERRQ(petscErr)
+        call KSPGetTolerances(solver, epsilon, PETSC_NULL_REAL, PETSC_NULL_REAL,  &
+     &  PETSC_NULL_REAL, petscErr);CHKERRQ(petscErr)
 
         call VecGetArrayF90(diagonal, array, petscErr)
         CHKERRQ(petscErr)

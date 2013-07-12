@@ -184,8 +184,8 @@
 
         ! use the solver relative convergence tolerance as criterion
         ! when an entrie is zero
-        call KSPGetTolerances(solver, epsilon, PETSC_NULL, PETSC_NULL, &
-     &  PETSC_NULL, petscErr);CHKERRQ(petscErr)
+        call KSPGetTolerances(solver, epsilon, PETSC_NULL_REAL, PETSC_NULL_REAL, &
+     &  PETSC_NULL_REAL, petscErr);CHKERRQ(petscErr)
 
         ! calc the max and min and mean
         valueMax = diagonal(1)
@@ -461,8 +461,8 @@
       ! create vector and get matrix diagonale
       call MatGetVecs(matrix, diag, PETSC_NULL_OBJECT, petscErr);CHKERRQ(petscErr)
       call MatGetDiagonal(matrix, diag, petscErr);CHKERRQ(petscErr)
-      call VecMin(diag, PETSC_NULL, diagMin, petscErr);CHKERRQ(petscErr)
-      call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
+      call VecMin(diag, PETSC_NULL_REAL, diagMin, petscErr);CHKERRQ(petscErr)
+      call VecMax(diag, PETSC_NULL_REAL, diagMax, petscErr);CHKERRQ(petscErr)
 
       if(rank == 0) then
         write(DBG%FHNDL,*) "global matrix properties"
@@ -486,8 +486,8 @@
       ! create vector and get matrix diagonale
       call MatGetVecs(matdiag, diag, PETSC_NULL_OBJECT, petscErr);CHKERRQ(petscErr)
       call MatGetDiagonal(matdiag, diag, petscErr);CHKERRQ(petscErr)
-      call VecMin(diag, PETSC_NULL, diagMin, petscErr);CHKERRQ(petscErr)
-      call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
+      call VecMin(diag, PETSC_NULL_REAL, diagMin, petscErr);CHKERRQ(petscErr)
+      call VecMax(diag, PETSC_NULL_REAL, diagMax, petscErr);CHKERRQ(petscErr)
 
       write(DBG%FHNDL,*) rank, "NORM1", norm1
       write(DBG%FHNDL,*) rank, "NORM2", norm2
