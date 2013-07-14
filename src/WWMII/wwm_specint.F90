@@ -27,8 +27,8 @@
          DT4S_TQ = 0.75 * DT4S
          DT4S_TS = 2./3. * DT4S
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
-         DO IP = 1, MNP 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC)
+         DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -101,6 +101,7 @@
            ENDIF
            AC1(IP,:,:) = AC2(IP,:,:)
          ENDDO
+!$OMP END PARALLEL
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif
@@ -152,6 +153,7 @@
              ENDIF
            ENDIF  
          END DO
+!$OMP END PARALLEL
 
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
