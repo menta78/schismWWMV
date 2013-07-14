@@ -101,7 +101,6 @@
            ENDIF
            AC1(IP,:,:) = AC2(IP,:,:)
          ENDDO
-!$OMP END PARALLEL
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif
@@ -153,7 +152,6 @@
              ENDIF
            ENDIF  
          END DO
-!$OMP END PARALLEL
 
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
