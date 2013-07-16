@@ -2098,28 +2098,25 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FLUCT_ARRAYS
-
-         USE DATAPOOL
-         IMPLICIT NONE
-         integer istat
-         ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
-         CCON = 0_rkind
-         SI = 0._rkind
-         ITER_EXP = 0
-         ITER_EXPD = 0
-         IF (ICOMP .GE. 1) THEN
-           ALLOCATE( I_DIAG(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
-           I_DIAG = 0
-         END IF
-         IF (LCFL) THEN
-           ALLOCATE (CFLCXY(3,MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-           CFLCXY = 0._rkind
-         END IF
-
-         RETURN
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer istat
+      ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
+      CCON = ZERO
+      SI = ZERO
+      ITER_EXP = 0
+      ITER_EXPD = 0
+      IF ((ICOMP .GE. 1) .OR. LZETA_SETUP) THEN
+        ALLOCATE( I_DIAG(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
+        I_DIAG = 0
+      END IF
+      IF (LCFL) THEN
+        ALLOCATE (CFLCXY(3,MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+        CFLCXY = 0._rkind
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2128,7 +2125,7 @@
          USE DATAPOOL
          IMPLICIT NONE
          DEALLOCATE( CCON, SI, ITER_EXP, ITER_EXPD)
-         IF (ICOMP .GE. 1) THEN
+         IF ((ICOMP .GE. 1) .OR. LZETA_SETUP) THEN
            DEALLOCATE(I_DIAG)
          END IF
          IF (LCFL) THEN
@@ -2262,7 +2259,7 @@
            END DO
          END DO
 
-         IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
+         IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
