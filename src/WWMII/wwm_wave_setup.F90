@@ -359,7 +359,6 @@
 #endif
       DO
         nbIter=nbIter + 1
-        Print *, 'nbIter=', nbIter
 #ifdef DEBUG
         WRITE(200+MyRankD,*) 'nbIter=', nbIter
         WRITE(200+MyRankD,*) 'Before call to WAVE_SETUP_APPLY_FCT'
@@ -404,6 +403,8 @@
           V_P(IP)=V_Z(IP) + beta * V_P(IP)
         END DO
       END DO
+      WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
+
       TheOut=V_X
       END SUBROUTINE
 !**********************************************************************
@@ -579,6 +580,7 @@
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
+      use petscpool, only: petscpoolInit
       use petsc_parallel, only: PETSC_INIT_PARALLEL
       IMPLICIT NONE
       integer istat
@@ -586,6 +588,9 @@
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
 # ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
+        IF ((AMETHOD .ne. 4).and.(AMETHOD.ne.5)) THEN
+          call petscpoolInit
+        END IF
         IF (AMETHOD .ne. 4) THEN
           CALL PETSC_INIT_PARALLEL
         END IF
