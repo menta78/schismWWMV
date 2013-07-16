@@ -693,9 +693,10 @@
       !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
       subroutine petscpoolInit()
         use petscsys
-        USE DATAPOOL, only: IA, JA
+        USE DATAPOOL, only: IA, JA, IA_P, JA_P, NNZ, MNP
         USE elfe_msgp, only : comm
         implicit none
+        integer istat
 
         PETSC_COMM_WORLD=comm
         call PetscInitialize(PETSC_NULL_CHARACTER, petscErr);CHKERRQ(petscErr)
@@ -708,8 +709,11 @@
         call PetscLogStageRegister("Fin", stageFin, petscErr);CHKERRQ(petscErr)
 
         ! petsc wants indices startet from 0
-        IA = IA -1
-        JA = JA -1
+        ALLOCATE (JA_P(NNZ), IA_P(MNP+1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('petscpoolInit, allocate error 1')
+
+        IA_P = IA -1
+        JA_P = JA -1
 
         call readPETSCnamelist()
 

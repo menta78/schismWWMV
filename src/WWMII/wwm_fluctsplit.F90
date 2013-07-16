@@ -2387,7 +2387,7 @@
               JA_IE(POS,3,IE) = I3
             END DO
           END DO
-        ENDIF
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
