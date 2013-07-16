@@ -36,7 +36,7 @@
 !> - create the matrix and vectors
 !> - create the solver and preconditioner
       SUBROUTINE PETSC_INIT_PARALLEL
-        USE DATAPOOL, only: MNP, CCON, IA_P, JA_P, NNZ, DBG
+        USE DATAPOOL, only: MNP, CCON, NNZ, DBG
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost
@@ -112,7 +112,7 @@
 
       ! 1. create IA JA ASPAR petsc arrays
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, IA_P, JA_P, DBG
+        use datapool, only: NNZ, MNE, INE, MNP, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData

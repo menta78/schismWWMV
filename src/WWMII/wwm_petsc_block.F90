@@ -174,7 +174,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PETSC_INIT_BLOCK
-        USE DATAPOOL, only: MNP, CCON, IA_P, JA_P, NNZ, RKIND, DBG
+        USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG
         ! MSC      - # frequency
         ! MDC      - # directions
         use datapool, only: MSC, MDC
@@ -312,7 +312,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, IA_P, JA_P, MSC, MDC, RKIND, DBG
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -481,7 +481,7 @@
 !**********************************************************************
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
-        use datapool, only: NNZ, MNE, INE, MNP, IA_P, JA_P, RKIND, DBG
+        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData

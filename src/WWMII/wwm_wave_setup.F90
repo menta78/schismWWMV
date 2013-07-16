@@ -411,7 +411,6 @@
 !**********************************************************************
 #ifdef PETSC
       SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, X)
-      USE DATAPOOL, only : IA_P
       USE DATAPOOL, only : rkind, NNZ, MNP, NP_RES
       USE PETSC_PARALLEL
       USE ELFE_GLBL, ONLY : iplg, np_global
