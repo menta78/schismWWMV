@@ -341,10 +341,9 @@
       real(rkind), intent(out) :: TheOut(MNP)
       real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
       real(rkind) :: uO, uN, alphaV, h1, h2
-      real(rkind) :: eNorm, CritVal, beta
+      real(rkind) :: eNorm, beta
       integer IP, nbIter
       nbIter=0
-      CritVal=SOLVERTHR
       V_X=ZERO
       V_R=B
       CALL WAVE_SETUP_APPLY_PRECOND(ASPAR, V_R, V_Z)
@@ -412,7 +411,8 @@
 !**********************************************************************
 #ifdef PETSC
       SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, X)
-      USE DATAPOOL
+      USE DATAPOOL, only : IA_P
+      USE DATAPOOL, only : rkind, NNZ, MNP, NP_RES
       USE PETSC_PARALLEL
       USE ELFE_GLBL, ONLY : iplg, np_global
       USE elfe_msgp, only : myrank, nproc, comm
@@ -469,7 +469,7 @@
       counter = 1
       ncols = 0
       do i = 1, NP_RES
-        ncols = IA(i+1) - IA(i)
+        ncols = IA_P(i+1) - IA_P(i)
         ! this is a interface node (row). ignore it. just increase counter
         if(ALOold2ALO(i-1) .eq. -999) then
           counter = counter + ncols
@@ -627,7 +627,7 @@
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
 #ifdef DEBUG
       REAL(rkind) :: Xtest(MNP), Vimg(MNP)
-      REAL(rkind) :: eResidual, eResidual2
+      REAL(rkind) :: eResidual, eResidual2, eNorm
 #endif
 #ifdef DEBUG
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
@@ -657,15 +657,31 @@
       ENDIF
       IF (ZETA_METH .eq. 1) THEN
 #ifdef PETSC
+# ifdef DEBUG
+        WRITE(200 + MyRankD,*) 'Before PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + MyRankD)
+# endif
         CALL PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, ZETA_SETUP)
+# ifdef DEBUG
+        WRITE(200 + MyRankD,*) 'After PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + MyRankD)
+# endif
 #else
         CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
 #endif
       END IF
+      WRITE(200 + MyRankD,*) 'Before DEBUG statement'
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 4'
+      WRITE(200 + MyRankD,*) 'After DEBUG statement'
+      CALL WAVE_SETUP_APPLY_FCT(ASPAR, ZETA_SETUP, Vimg)
+      CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
+      WRITE(200 + MyRankD,*) 'Norm(B)=', eNorm
       FLUSH(200 + MyRankD)
+      Vimg = Vimg - B
+      CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eNorm)
+      WRITE(200 + MyRankD,*) 'Norm(residual)=', eNorm
 #endif
+      FLUSH(200 + MyRankD)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
