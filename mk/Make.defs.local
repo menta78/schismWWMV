@@ -73,7 +73,7 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := /home/aron/bin/pelfe_$(ENV)
+EXEC   := $(HOME)/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
