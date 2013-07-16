@@ -183,8 +183,7 @@
           stop 'wwm_petsc_parallel l.171'
         endif
 
-        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ),        &
-     &           stat=stat)
+        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ), stat=stat)
         if(stat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.178'

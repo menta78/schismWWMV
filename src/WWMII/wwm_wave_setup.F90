@@ -575,24 +575,35 @@
       ! normally set to 0, because they do net exist in petsc
       !call exchange_p2d(X)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
+#ifdef PETSC
       use petscpool, only: petscpoolInit
       use petsc_parallel, only: PETSC_INIT_PARALLEL
+#endif
       IMPLICIT NONE
       integer istat
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
-# ifdef MPI_PARALL_GRID
+#ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
         IF ((AMETHOD .ne. 4).and.(AMETHOD.ne.5)) THEN
+# ifdef PETSC
           call petscpoolInit
+# else
+          CALL WWM_ABORT('Missing PETSC module');
+# endif
         END IF
         IF (AMETHOD .ne. 4) THEN
+# ifdef PETSC
           CALL PETSC_INIT_PARALLEL
+# else
+          CALL WWM_ABORT('Missing PETSC module');
+# endif
         END IF
       END IF
       IF ((ZETA_METH .ne. 0) .and. (ZETA_METH .ne. 1)) THEN
@@ -605,18 +616,23 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
+#ifdef PETSC
       use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
+#endif
       IMPLICIT NONE
       deallocate(ZETA_SETUP)
-# ifdef MPI_PARALL_GRID
+#ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
         IF (AMETHOD .ne. 4) THEN
+# ifdef PETSC
           CALL PETSC_FINALIZE_PARALLEL
+# else
+          CALL WWM_ABORT('Missing PETSC module');
+# endif
         END IF
       END IF
-# endif
-      END SUBROUTINE
 #endif
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
