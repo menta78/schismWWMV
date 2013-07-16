@@ -614,6 +614,9 @@
 ! ... current field ...... TIMO neuer type DPL_CURT
 !
          LOGICAL                     :: LZETA_SETUP = .FALSE.
+         LOGICAL                     :: ZETA_METH = 0 ! 0: WWM simple precond
+                                           ! 1: PETSC precond
+                                           ! 2: WWMII parallel solver
          REAL(rkind), ALLOCATABLE    :: ZETA_SETUP(:)
          REAL(rkind), ALLOCATABLE    :: CURTXY(:,:)
          REAL(rkind), ALLOCATABLE    :: DVCURT(:,:)

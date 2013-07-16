@@ -581,9 +581,17 @@
       USE DATAPOOL
       use petsc_parallel, only: PETSC_INIT_PARALLEL
       IMPLICIT NONE
+      integer istat
+      ALLOCATE(ZETA_SETUP(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
 # ifdef MPI_PARALL_GRID
-      IF (AMETHOD .ne. 4) THEN
-        CALL PETSC_INIT_PARALLEL
+      IF (ZETA_METH .eq. 1) THEN
+        IF (AMETHOD .ne. 4) THEN
+          CALL PETSC_INIT_PARALLEL
+        END IF
+      END IF
+      IF ((ZETA_METH .ne. 0) .and. (ZETA_METH .ne. 1)) THEN
+        CALL WWM_ABORT('Wrong choice of ZETA_METH')
       END IF
 # endif
       END SUBROUTINE
@@ -594,9 +602,12 @@
       USE DATAPOOL
       use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
       IMPLICIT NONE
+      deallocate(ZETA_SETUP)
 # ifdef MPI_PARALL_GRID
-      IF (AMETHOD .ne. 4) THEN
-        CALL PETSC_FINALIZE_PARALLEL
+      IF (ZETA_METH .eq. 1) THEN
+        IF (AMETHOD .ne. 4) THEN
+          CALL PETSC_FINALIZE_PARALLEL
+        END IF
       END IF
 # endif
       END SUBROUTINE
@@ -636,7 +647,16 @@
       CALL WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
       FLUSH(200 + MyRankD)
 #endif
-      CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
+      IF (ZETA_METH .eq. 0) THEN
+        CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
+      ENDIF
+      IF (ZETA_METH .eq. 1) THEN
+#ifdef PETSC
+        CALL PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, ZETA_SETUP)
+#else
+        CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
+#endif
+      END IF
 #ifdef DEBUG
       WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 4'
       FLUSH(200 + MyRankD)
