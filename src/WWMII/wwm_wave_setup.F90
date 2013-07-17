@@ -3,6 +3,9 @@
 #define DEBUG
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       implicit none
       real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
       real(rkind) :: INPUT(MNP)
@@ -39,6 +42,9 @@
 !**********************************************************************
       SUBROUTINE COMPUTE_DIFF(IE, I1, UGRAD, VGRAD)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
@@ -66,8 +72,8 @@
 !      F1=(XP(IP1) - XP(IP2))*UGRAD + (YP(IP1) - YP(IP2))*VGRAD
 !      F2=ZERO
 !      F3=(XP(IP3) - XP(IP2))*UGRAD + (YP(IP3) - YP(IP2))*VGRAD
-!      WRITE(200+MyRankD,*) 'F123=', F1, F2, F3
-!      FLUSH(200+MyRankD)
+!      WRITE(200+myrank,*) 'F123=', F1, F2, F3
+!      FLUSH(200+myrank)
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -75,6 +81,9 @@
 !**********************************************************************
       SUBROUTINE REV_IDX_IA_JA(J, IP, JP)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: J
       INTEGER, intent(out) :: IP, JP
@@ -90,6 +99,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       real(rkind), intent(in)  :: FX(MNP), FY(MNP)
       real(rkind), intent(out) :: ASPAR(NNZ)
@@ -162,19 +174,19 @@
             eScal=UGRAD*UGRAD1 + VGRAD*VGRAD1
             J=JA_IE(I1,IDX,IE)
 #ifdef DEBUG
-!            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
-!            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
-!            WRITE(200+MyRankD,*) 'I1=', I1, ' K=', K
-!            WRITE(200+MyRankD,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
+!            WRITE(200+myrank,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
+!            WRITE(200+myrank,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
+!            WRITE(200+myrank,*) 'I1=', I1, ' K=', K
+!            WRITE(200+myrank,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
 !            CALL REV_IDX_IA_JA(J, IPp, JPp)
-!            WRITE(200+MyRankD,*) 'IPp=', IPp, ' JPp=', JPp
-!            WRITE(200+MyRankD,*) '            -  -  -  -  -'
+!            WRITE(200+myrank,*) 'IPp=', IPp, ' JPp=', JPp
+!            WRITE(200+myrank,*) '            -  -  -  -  -'
 #endif
             ASPAR(J)=ASPAR(J)+eFact*eScal
           END DO
         END DO
 #ifdef DEBUG
-!        WRITE(200+MyRankD,*) '--------------------------------------'
+!        WRITE(200+myrank,*) '--------------------------------------'
 #endif
       END DO
       END SUBROUTINE
@@ -207,8 +219,8 @@
             ELSE
               J2=I_DIAG(JP)
 #ifdef DEBUG
-!            WRITE(200+MyRankD,*) 'aspar(J1)=', ASPAR(J1)
-!            WRITE(200+MyRankD,*) 'aspar(J2)=', ASPAR(J2)
+!            WRITE(200+myrank,*) 'aspar(J1)=', ASPAR(J1)
+!            WRITE(200+myrank,*) 'aspar(J2)=', ASPAR(J2)
 #endif
             
               eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
@@ -235,6 +247,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind) :: eVal, fVal, eSum
@@ -259,7 +274,7 @@
           END IF
         END DO
       END DO
-      WRITE(200 + MyRankD,*) 'Symmetry error=', eSum
+      WRITE(200 + myrank,*) 'Symmetry error=', eSum
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -294,6 +309,9 @@
       USE DATAPOOL, only : rkind, MNP
 #ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
+#endif
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
 #endif
       USE DATAPOOL, only : NP_RES
 #ifdef MPI_PARALL_GRID
@@ -335,6 +353,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, TheOut)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       real(rkind), intent(in) :: ASPAR(NNZ)
       real(rkind), intent(in) :: B(MNP)
@@ -351,31 +372,31 @@
       CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uO)
 #ifdef DEBUG
       CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
-      WRITE(200+MyRankD,*) 'sum(V_R)=', sum(V_R)
-      WRITE(200+MyRankD,*) 'sum(V_Z)=', sum(V_Z)
-      WRITE(200+MyRankD,*) 'Before loop, |B|=', eNorm
-      FLUSH(200+MyRankD)
+      WRITE(200+myrank,*) 'sum(V_R)=', sum(V_R)
+      WRITE(200+myrank,*) 'sum(V_Z)=', sum(V_Z)
+      WRITE(200+myrank,*) 'Before loop, |B|=', eNorm
+      FLUSH(200+myrank)
 #endif
       DO
         nbIter=nbIter + 1
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'nbIter=', nbIter
-        WRITE(200+MyRankD,*) 'Before call to WAVE_SETUP_APPLY_FCT'
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'nbIter=', nbIter
+        WRITE(200+myrank,*) 'Before call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+myrank)
 #endif
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'After call to WAVE_SETUP_APPLY_FCT'
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'After call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+myrank)
 #endif
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
-        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
-        WRITE(200+MyRankD,*) 'h2=', h2
-        WRITE(200+MyRankD,*) 'alphaV=', alphaV
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'sum(V_P)=', sum(V_P)
+        WRITE(200+myrank,*) 'sum(V_Y)=', sum(V_Y)
+        WRITE(200+myrank,*) 'h2=', h2
+        WRITE(200+myrank,*) 'alphaV=', alphaV
+        FLUSH(200+myrank)
 #endif
         !
         DO IP=1,MNP
@@ -385,8 +406,8 @@
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'nbIter=', nbIter, 'eNorm=', eNorm
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'nbIter=', nbIter, 'eNorm=', eNorm
+        FLUSH(200+myrank)
 #endif
         IF (eNorm .le. SOLVERTHR) THEN
           EXIT
@@ -580,6 +601,9 @@
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
 #ifdef PETSC
       use petscpool, only: petscpoolInit
       use petsc_parallel, only: PETSC_INIT_PARALLEL
@@ -615,6 +639,9 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
 #ifdef PETSC
       use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
 #endif
@@ -637,6 +664,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTATION
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
@@ -645,14 +675,14 @@
       REAL(rkind) :: eResidual, eResidual2, eNorm
 #endif
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 1'
+      FLUSH(200 + myrank)
 #endif
       CALL COMPUTE_LH_STRESS(F_X, F_Y)
-      FLUSH(200 + MyRankD)
+      FLUSH(200 + myrank)
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 2'
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 2'
+      FLUSH(200 + myrank)
 #endif
       CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
 #ifdef DEBUG
@@ -660,12 +690,12 @@
       CALL WAVE_SETUP_APPLY_FCT(ASPAR, Xtest, Vimg)
       CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eResidual)
       CALL WAVE_SETUP_SCALAR_PROD(Xtest, B, eResidual2)
-      WRITE(200 + MyRankD,*) 'sum(abs(ASPAR))=', sum(abs(ASPAR))
-      WRITE(200 + MyRankD,*) 'eResidual=', eResidual
-      WRITE(200 + MyRankD,*) 'eResidual2=', eResidual2
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
+      WRITE(200 + myrank,*) 'sum(abs(ASPAR))=', sum(abs(ASPAR))
+      WRITE(200 + myrank,*) 'eResidual=', eResidual
+      WRITE(200 + myrank,*) 'eResidual2=', eResidual2
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 3'
       CALL WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
-      FLUSH(200 + MyRankD)
+      FLUSH(200 + myrank)
 #endif
       IF (ZETA_METH .eq. 0) THEN
         CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
@@ -673,30 +703,30 @@
       IF (ZETA_METH .eq. 1) THEN
 #ifdef PETSC
 # ifdef DEBUG
-        WRITE(200 + MyRankD,*) 'Before PETSC_SOLVE_POISSON_NEUMANN'
-        FLUSH(200 + MyRankD)
+        WRITE(200 + myrank,*) 'Before PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + myrank)
 # endif
         CALL PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, ZETA_SETUP)
 # ifdef DEBUG
-        WRITE(200 + MyRankD,*) 'After PETSC_SOLVE_POISSON_NEUMANN'
-        FLUSH(200 + MyRankD)
+        WRITE(200 + myrank,*) 'After PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + myrank)
 # endif
 #else
         CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
 #endif
       END IF
-      WRITE(200 + MyRankD,*) 'Before DEBUG statement'
+      WRITE(200 + myrank,*) 'Before DEBUG statement'
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'After DEBUG statement'
+      WRITE(200 + myrank,*) 'After DEBUG statement'
       CALL WAVE_SETUP_APPLY_FCT(ASPAR, ZETA_SETUP, Vimg)
       CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
-      WRITE(200 + MyRankD,*) 'Norm(B)=', eNorm
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'Norm(B)=', eNorm
+      FLUSH(200 + myrank)
       Vimg = Vimg - B
       CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eNorm)
-      WRITE(200 + MyRankD,*) 'Norm(residual)=', eNorm
+      WRITE(200 + myrank,*) 'Norm(residual)=', eNorm
 #endif
-      FLUSH(200 + MyRankD)
+      FLUSH(200 + myrank)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
