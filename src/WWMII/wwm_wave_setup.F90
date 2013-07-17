@@ -1,6 +1,27 @@
 #include "wwm_functions.h"
 #undef DEBUG
 #define DEBUG
+      MODULE WAVE_SETUP
+      IMPLICIT NONE
+#ifdef PETSC
+#include "finclude/petscsysdef.h"
+#include "finclude/petscmatdef.h"
+#include "finclude/petscvecdef.h"
+#include "finclude/petscviewerdef.h"
+#include "finclude/petscdrawdef.h"
+#include "finclude/petsckspdef.h"
+#include "finclude/petscsysdef.h"
+#include "finclude/petscaodef.h"
+#include "finclude/petscisdef.h"
+#include "petscversion.h"
+      KSP                :: solver_setup  ! Krylov solver
+      PC                 :: prec_setup    ! KSP associated preconditioner
+      Mat                :: matrix_setup;
+      Vec                :: myB_setup, myX_setup
+      PetscScalar, pointer :: myB_setuptemp(:), myX_setuptemp(:)
+#endif
+      CONTAINS
+
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
 #if defined DEBUG && defined MPI_PARALL_GRID
@@ -11,18 +32,18 @@
       real(rkind) :: INPUT(MNP)
       real(rkind) :: U_X1(MNP), U_Y1(MNP)
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
-      integer IP, ID, IS
+      integer IP, ID, ISS
       REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
       DO IP = 1, MNP
         ACLOC = AC2(IP,:,:)
         DO ID = 1, MDC
-          DO IS = 2, MSC
-            ELOC  = DS_INCR(IS)*DDIR*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))
+          DO ISS = 2, MSC
+            ELOC  = DS_INCR(ISS)*DDIR*(SPSIG(ISS)*ACLOC(ISS,ID)+SPSIG(ISS-1)*ACLOC(ISS-1,ID))
             COSE2 = COS(SPDIR(ID))**TWO
             SINE2 = SIN(SPDIR(ID))**TWO
             COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-            WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+            WN    = CG(IP,ISS) / ( SPSIG(ISS)/WK(IP,ISS) )
             RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC
             RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
             RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC
@@ -478,12 +499,6 @@
       call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
          
       iteration = 0
-!
-! code for ASPAR and B. Need to write it.
-!
-
-
-! fill the new matrix
       ASPAR_petsc = 0
       oASPAR_petsc = 0
       counter = 1
@@ -515,7 +530,7 @@
 !map it to petsc global ordering
 !and insert the value from B into RHS vector
       eEntry = 0;
-      call VecSet(myB, eEntry, petscErr);CHKERRQ(petscErr)
+      call VecSet(myB_setup, eEntry, petscErr);CHKERRQ(petscErr)
       do i= 1, NP_RES
         ! this is a interface node (row). ignore it. just increase counter
         if(ALOold2ALO(i-1) .eq. -999) then
@@ -524,70 +539,52 @@
         ! map to petsc global order
         eCol = AGO2PGO(iplg(i) - 1 )
         eEntry = B(i)
-        call VecSetValue(myB, eCol, eEntry, ADD_VALUES, petscErr)
+        call VecSetValue(myB_setup, eCol, eEntry, ADD_VALUES, petscErr)
         CHKERRQ(petscErr)
       end do
 
-      call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyBegin(myB_setup, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyEnd(myB_setup, petscErr);CHKERRQ(petscErr);
 
       ! Copy the old solution from AC2 to myX to make the solver faster
       do i = 1, NP_RES
         eCol = AGO2PGO(iplg(i)-1)
         eEntry = B(i)
-        call VecSetValue(myX,eCol,eEntry,INSERT_VALUES,petscErr)
+        call VecSetValue(myX_setup,eCol,eEntry,INSERT_VALUES,petscErr)
         CHKERRQ(petscErr)
       end do
-      call VecAssemblyBegin(myX, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myX, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyBegin(myX_setup, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyEnd(myX_setup, petscErr);CHKERRQ(petscErr);
 
       ! Solve
       ! To solve successive linear systems that have different preconditioner matrices (i.e., the matrix elements
       ! and/or the matrix data structure change), the user must call KSPSetOperators() and KSPSolve() for each
       ! solve.
-      if(samePreconditioner .eqv. .true.) call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
+      if(samePreconditioner .eqv. .true.) call KSPSetOperators(solver_setup, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
       call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
       call CPU_TIME(startTime)
       ! Solve!
-      call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
+      call KSPSolve(solver_setup, myB_setup, myX_setup, petscErr);CHKERRQ(petscErr);
       call CPU_TIME(endTime)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          
-      call KSPGetConvergedReason(Solver, reason, petscErr);CHKERRQ(petscErr);
+      call KSPGetConvergedReason(solver_setup, reason, petscErr);CHKERRQ(petscErr);
       if (reason .LT. 0) then
         !CALL WWM_ABORT('Failure to converge')
         !write(stat%fhndl,*) 'Failure to converge'
       endif
-
-#ifdef PETSC_DEBUG
-      if(rank == 0) then
-        if(reason .LT. 0 ) then
-          write(DBG%FHNDL,*) "Failure to converge\n"
-        else
-          call KSPGetIterationNumber(Solver, iteration, petscErr)
-          CHKERRQ(petscErr)
-          ! print only the mean number of iteration
-          iterationSum = iterationSum + iteration
-          solverTimeSum = solverTimeSum + (endTime - startTime)
-          if(ISS == MSC .and. IDD == MDC) then
-            write(DBG%FHNDL,*) "mean number of iterations", iterationSum / real((MSC*MDC))
-            print '("solver Time for all MSD MDC= ",f6.3," sec")', solverTimeSum
-          endif
-        endif
-      endif
-#endif
 
       X = 0.0_rkind
       !get the solution back to fortran.
       !iterate over all resident nodes (without interface and ghost nodes)
       !map the solution from petsc local ordering back to app old local ordering
       !(the app old ordering contains interface nodes)
-      call VecGetArrayF90(myX, myXtemp, petscErr); CHKERRQ(petscErr)
+      call VecGetArrayF90(myX_setup, myX_setuptemp, petscErr); CHKERRQ(petscErr)
       do i = 1, nNodesWithoutInterfaceGhosts
-        X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
+        X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myX_setuptemp(i)
       end do
-      call VecRestoreArrayF90(myX, myXtemp, petscErr)
+      call VecRestoreArrayF90(myX_setup, myX_setuptemp, petscErr)
       CHKERRQ(petscErr);
       !IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
       ! we have to fill the ghost and interface nodes with the solution from the other threads
@@ -605,29 +602,53 @@
       USE elfe_msgp, only : myrank
 #endif
 #ifdef PETSC
-      use petscpool, only: petscpoolInit
-      use petsc_parallel, only: PETSC_INIT_PARALLEL
+      use petscpool
+      use petscsys
+      use petsc_parallel, only: createMatrix
+      USE ELFE_GLBL, ONLY : np_global
 #endif
       IMPLICIT NONE
       integer istat
+#ifdef PETSC
+      logical :: initialguess = .false.
+      real(kind=8)       :: rtol_setup      = 1.D-20   ! relative convergence tolerance
+      real(kind=8)       :: abstol_setup    = 1.D-20   ! absolute convergence tolerance
+      real(kind=8)       :: dtol_setup      = 10000    ! divergence tolerance
+      integer            :: maxits_setup    = 0        ! maximum number of iterations to use
+      logical :: SAME_NONZERO_PATTERN =.true.
+#endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
-        IF ((AMETHOD .ne. 4).and.(AMETHOD.ne.5)) THEN
 # ifdef PETSC
-          call petscpoolInit
-# else
-          CALL WWM_ABORT('Missing PETSC module');
-# endif
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          CALL petscpoolInit
+          call PetscLogStagePush(stageInit, petscErr);CHKERRQ(petscErr)
         END IF
-        IF (AMETHOD .ne. 4) THEN
-# ifdef PETSC
-          CALL PETSC_INIT_PARALLEL
-# else
-          CALL WWM_ABORT('Missing PETSC module');
-# endif
+!   From PETSC_INIT_PARALLEL
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          call createMappings()
         END IF
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          call createMatrix
+        END IF
+        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myX_setup, petscErr);CHKERRQ(petscErr)
+        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myB_setup, petscErr);CHKERRQ(petscErr)
+!    From createSolver
+        call KSPCreate(PETSC_COMM_WORLD,solver_setup, petscErr);CHKERRQ(petscErr)
+        call KSPSetType(solver_setup, KSPCG, petscErr);CHKERRQ(petscErr)
+        call KSPSetInitialGuessNonzero(solver_setup, initialguess, petscErr);CHKERRQ(petscErr)
+
+        call KSPSetTolerances(solver, rtol_setup, abstol_setup, dtol_setup, maxits_setup, petscErr);CHKERRQ(petscErr)
+        call KSPGetPC(solver_setup, prec_setup, petscErr);CHKERRQ(petscErr);
+        call PCSetType(prec_setup, PCCHOLESKY, petscErr);CHKERRQ(petscErr);
+
+        call KSPSetOperators(solver_setup, matrix, matrix, SAME_NONZERO_PATTERN, petscErr);CHKERRQ(petscErr)
+        call KSPSetFromOptions(solver_setup, petscErr);CHKERRQ(petscErr)
+# else
+        CALL WWM_ABORT('Missing PETSC module');
+# endif
       END IF
       IF ((ZETA_METH .ne. 0) .and. (ZETA_METH .ne. 1)) THEN
         CALL WWM_ABORT('Wrong choice of ZETA_METH')
@@ -731,3 +752,4 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      END MODULE

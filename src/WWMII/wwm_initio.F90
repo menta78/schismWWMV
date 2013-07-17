@@ -337,6 +337,7 @@
          USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
+         USE WAVE_SETUP
 #ifdef PETSC
          USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
@@ -580,6 +581,7 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #endif
+         USE WAVE_SETUP
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
