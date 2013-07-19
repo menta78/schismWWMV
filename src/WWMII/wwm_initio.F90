@@ -4,245 +4,240 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE INIT_ARRAYS
-
-         USE DATAPOOL
-         IMPLICIT NONE
+       USE DATAPOOL
+       IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
-         INTEGER :: IE, IP
+       INTEGER :: IE, IP
 #endif
-         integer istat
+       integer istat
 
-         ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
-         DX1 = zero
-         DX2 = zero
+       ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
+       DX1 = zero
+       DX2 = zero
 
-         ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
-         DEP = zero
+       ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
+       DEP = zero
 
-         ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
-         INVSPHTRANS = zero
+       ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
+       INVSPHTRANS = zero
 
-         ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
-         INE = 0
-         IEN = zero
-         TRIA = zero
+       ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
+       INE = 0
+       IEN = zero
+       TRIA = zero
 #ifdef MPI_PARALL_GRID
-         DO IE = 1, MNE
-           INE(:,IE) = INETMP(IE,:)
-         END DO
+       DO IE = 1, MNE
+         INE(:,IE) = INETMP(IE,:)
+       END DO
 #else
-         XP  = zero
-         YP  = zero
+       XP  = zero
+       YP  = zero
 #endif
 !
 ! spectral grid - shared
 !
-         ALLOCATE(MSC_HF(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
-         MSC_HF = MSC
+       ALLOCATE(MSC_HF(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+       MSC_HF = MSC
 !
 ! action densities and source terms - shared
 !
-         ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
-         AC2 = zero
+       ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
+       AC2 = zero
 
-         ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-         AC1 = zero
+       ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+       AC1 = zero
 
-         IF (ICOMP .GE. 2) THEN
-           ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
-           IMATRAA = zero
-           IMATDAA = zero
-         END IF
+       IF (ICOMP .GE. 2) THEN
+         ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
+         IMATRAA = zero
+         IMATDAA = zero
+       END IF
 
-         IF (LITERSPLIT) THEN
-!           ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
-           ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
-           DAC_ADV = zero
-           DAC_THE = zero
-           DAC_SIG = zero
-           DAC_SOU = zero
-         END IF
+       IF (LITERSPLIT) THEN
+!         ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
+         ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
+         DAC_ADV = zero
+         DAC_THE = zero
+         DAC_SIG = zero
+         DAC_SOU = zero
+       END IF
 
 #ifdef SHYFEM_COUPLING
-         IF (LSHYFEM) THEN
-           ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 12')
-           SHYFZETA = ZERO
-           NLEV = 0
-           ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 13')
-           STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
-         END IF
+       IF (LSHYFEM) THEN
+         ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 12')
+         SHYFZETA = ZERO
+         NLEV = 0
+         ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 13')
+         STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
+       END IF
 #endif
 !
 ! WAM Cycle 4.5 - shared
 !
-         IF (MESIN .EQ. 2) THEN
-           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-           TAUHFT = zero; TAUT = zero
-         ELSE IF (MESIN .EQ. 6) THEN
-           ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
-           ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-           TAUHFT = zero; TAUT = zero
-           INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
-           INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
-           IF (LPRECOMP_EXIST) THEN
-             READ(5010) DELU, DELTAUW
-             READ(5010) TAUT
-             READ(5011) DELUST, DELALP 
-             READ(5011) TAUHFT
-           ENDIF
+       IF (MESIN .EQ. 2) THEN
+         ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
+         TAUHFT = zero; TAUT = zero
+       ELSE IF (MESIN .EQ. 6) THEN
+         ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
+         ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
+         TAUHFT = zero; TAUT = zero
+         INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
+         INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+         IF (LPRECOMP_EXIST) THEN
+           READ(5010) DELU, DELTAUW
+           READ(5010) TAUT
+           READ(5011) DELUST, DELALP 
+           READ(5011) TAUHFT
          ENDIF
+       ENDIF
 
 ! Boundary conditions - shared
 !
-         ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 15')
-         IOBDP  = 1
-         IOBPD  = 0
-         IOBP   = 0
-         IOBWB  = 1
+       ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 15')
+       IOBDP  = 1
+       IOBPD  = 0
+       IOBP   = 0
+       IOBWB  = 1
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-         ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
-         WK = ZERO 
-         CG = ZERO 
-         DWKDX = ZERO
-         DCGDX = ZERO
+       ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
+       WK = ZERO 
+       CG = ZERO 
+       DWKDX = ZERO
+       DCGDX = ZERO
 #ifdef SELFE
-!         ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
-!         ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
+!       ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
+!       ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
 #endif
 !
-         ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
-         TABK  = zero
-         TABCG = zero
+       ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
+       TABK  = zero
+       TABCG = zero
 !
 ! diffraction parameter - shared
 !
-         IF (LDIFR) THEN
-           ALLOCATE ( DIFRM(MNP), DIFRX(MNP), DIFRY(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 18')
-           DIFRM = zero
-           DIFRX = zero
-           DIFRY = zero
-         END IF
+       IF (LDIFR) THEN
+         ALLOCATE(DIFRM(MNP), DIFRX(MNP), DIFRY(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 18')
+         DIFRM = zero
+         DIFRX = zero
+         DIFRY = zero
+       END IF
 !
 ! water level, currents and depths ...
 !
-         ALLOCATE( WINDXY(MNP,2), PRESSURE(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 19')
-         WINDXY = zero
-         PRESSURE = zero
-         ALLOCATE( DVWIND(MNP,2), CURTXY(MNP,2), DVCURT(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 20')
-         DVWIND = zero
-         CURTXY = zero
-         DVCURT = zero
-         ALLOCATE( DDEP(MNP,2), DCUX(MNP,2), DCUY(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 21')
-         DDEP = zero
-         DCUX = zero
-         DCUY = zero
-         ALLOCATE( WATLEV(MNP), WATLEVOLD(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 22')
-         WATLEV = zero
-         WATLEVOLD = zero
-         ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
-         DVWALV = zero
-         WLDEP = zero
-         DEPDT = zero
+       ALLOCATE(WINDXY(MNP,2), PRESSURE(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 19')
+       WINDXY = zero
+       PRESSURE = zero
+       ALLOCATE( DVWIND(MNP,2), CURTXY(MNP,2), DVCURT(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 20')
+       DVWIND = zero
+       CURTXY = zero
+       DVCURT = zero
+       ALLOCATE( DDEP(MNP,2), DCUX(MNP,2), DCUY(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 21')
+       DDEP = zero
+       DCUX = zero
+       DCUY = zero
+       ALLOCATE( WATLEV(MNP), WATLEVOLD(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 22')
+       WATLEV = zero
+       WATLEVOLD = zero
+       ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
+       DVWALV = zero
+       WLDEP = zero
+       DEPDT = zero
 !
 !  convergence analysis - shared
 !
-         IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
-           IP_IS_STEADY = 0
-           IE_IS_STEADY = 0
-           SUMACOLD = zero
-           HSOLD  = zero
-           TM02OLD = zero
-           KHSOLD  = zero
-         END IF
+       IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
+         ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
+         IP_IS_STEADY = 0
+         IE_IS_STEADY = 0
+         SUMACOLD = zero
+         HSOLD  = zero
+         TM02OLD = zero
+         KHSOLD  = zero
+       END IF
 !
 !  output - shared
 !
-         ALLOCATE( QBLOCAL(MNP), DISSIPATION(MNP), AIRMOMENTUM(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 25')
-         QBLOCAL = zero
-         DISSIPATION = zero
-         AIRMOMENTUM = zero
+       ALLOCATE( QBLOCAL(MNP), DISSIPATION(MNP), AIRMOMENTUM(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 25')
+       QBLOCAL = zero
+       DISSIPATION = zero
+       AIRMOMENTUM = zero
 
-         ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
-         UFRIC = zero
-         ALPHA_CH = zero
+       ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
+       UFRIC = zero
+       ALPHA_CH = zero
 
-         ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
-         TAUW = zero
-         TAUTOT = zero
-         TAUWX = zero
-         TAUWY = zero
-         TAUHF = zero
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
+       TAUW = zero
+       TAUTOT = zero
+       TAUWX = zero
+       TAUWY = zero
+       TAUHF = zero
 
-         ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
-         Z0 = zero
-         CD = zero
-         USTDIR = zero
+       ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
+       Z0 = zero
+       CD = zero
+       USTDIR = zero
 
-         ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
-         RSXX = zero
-         RSXY = zero
-         RSYY = zero
+       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
+       RSXX = zero
+       RSXY = zero
+       RSYY = zero
 
 #ifdef SELFE
-         ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
-         SXX3D = zero
-         SXY3D = zero
-         SYY3D = zero
+       ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
+       SXX3D = zero
+       SXY3D = zero
+       SYY3D = zero
 #endif
 #ifndef SELFE
-         IF (LCPL) THEN
-           IF (LTIMOR.or.LSHYFEM) THEN
-             ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
-             SXX3D = zero
-             SXY3D = zero
-             SYY3D = zero
-           END IF
+       IF (LCPL) THEN
+         IF (LTIMOR.or.LSHYFEM) THEN
+           ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
+           SXX3D = zero
+           SXY3D = zero
+           SYY3D = zero
          END IF
+       END IF
 #endif
-         ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
-         HMAX = zero
-         ISHALLOW = zero
-      IF (LZETA_SETUP) THEN
-         ALLOCATE(ZETA_SETUP(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
-      END IF
-      END SUBROUTINE
+       ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
+       HMAX = zero
+       ISHALLOW = zero
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -342,6 +337,7 @@
          USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
+         USE WAVE_SETUP
 #ifdef PETSC
          USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
@@ -448,6 +444,10 @@
            END IF
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
            CALL FLUSH(STAT%FHNDL)
+         END IF
+
+         IF (LZETA_SETUP) THEN
+           CALL INIT_WAVE_SETUP
          END IF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
@@ -581,6 +581,7 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #endif
+         USE WAVE_SETUP
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
@@ -603,6 +604,9 @@
              CALL PETSC_FINALIZE
 #endif
            END IF
+         END IF
+         IF (LZETA_SETUP) THEN
+           CALL FINALIZE_WAVE_SETUP
          END IF
          CALL DEALLOC_SPECTRAL_GRID
          CALL CLOSE_IOBP

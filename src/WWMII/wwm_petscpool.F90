@@ -115,6 +115,10 @@
 
       PetscLogStage :: stageInit, stageFill, stageSolve, stageFin
 
+      ! CSR matrix. simply a copy of wwmIII IA, JA. The PETsc version start counting from 0
+      integer, allocatable :: IA_P(:)
+      integer, allocatable :: JA_P(:)
+
       contains
 
 #ifdef MPI_PARALL_GRID
@@ -690,12 +694,13 @@
       end subroutine
 #endif
 
-      !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
+      !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_INIT()
       subroutine petscpoolInit()
         use petscsys
-        USE DATAPOOL, only: IA, JA
+        USE DATAPOOL, only: IA, JA, NNZ, MNP
         USE elfe_msgp, only : comm
         implicit none
+        integer istat
 
         PETSC_COMM_WORLD=comm
         call PetscInitialize(PETSC_NULL_CHARACTER, petscErr);CHKERRQ(petscErr)
@@ -708,8 +713,11 @@
         call PetscLogStageRegister("Fin", stageFin, petscErr);CHKERRQ(petscErr)
 
         ! petsc wants indices startet from 0
-        IA = IA -1
-        JA = JA -1
+        ALLOCATE (JA_P(NNZ), IA_P(MNP+1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('petscpoolInit, allocate error 1')
+
+        IA_P = IA -1
+        JA_P = JA -1
 
         call readPETSCnamelist()
 
@@ -814,6 +822,9 @@
         if(allocated(onlyNodes)) deallocate(onlyNodes)
         if(allocated(onlyGhosts)) deallocate(onlyGhosts)
         if(allocated(onlyGhostsOldLocalMapping)) deallocate(onlyGhostsOldLocalMapping)
+
+        if(allocated(IA_P)) deallocate(IA_P)
+        if(allocated(JA_P)) deallocate(JA_P)
 
 
         call KSPDestroy(Solver, petscErr);CHKERRQ(petscErr)

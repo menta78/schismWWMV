@@ -1,25 +1,49 @@
 #include "wwm_functions.h"
 #undef DEBUG
 #define DEBUG
+      MODULE WAVE_SETUP
+      IMPLICIT NONE
+#ifdef PETSC
+#include "finclude/petscsysdef.h"
+#include "finclude/petscmatdef.h"
+#include "finclude/petscvecdef.h"
+#include "finclude/petscviewerdef.h"
+#include "finclude/petscdrawdef.h"
+#include "finclude/petsckspdef.h"
+#include "finclude/petscsysdef.h"
+#include "finclude/petscaodef.h"
+#include "finclude/petscisdef.h"
+#include "petscversion.h"
+      KSP                :: solver_setup  ! Krylov solver
+      PC                 :: prec_setup    ! KSP associated preconditioner
+      Mat                :: matrix_setup;
+      Vec                :: myB_setup, myX_setup
+      PetscScalar, pointer :: myB_setuptemp(:), myX_setuptemp(:)
+#endif
+      CONTAINS
+
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       implicit none
       real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
       real(rkind) :: INPUT(MNP)
       real(rkind) :: U_X1(MNP), U_Y1(MNP)
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
-      integer IP, ID, IS
+      integer IP, ID, ISS
       REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
       DO IP = 1, MNP
         ACLOC = AC2(IP,:,:)
         DO ID = 1, MDC
-          DO IS = 2, MSC
-            ELOC  = DS_INCR(IS)*DDIR*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))
+          DO ISS = 2, MSC
+            ELOC  = DS_INCR(ISS)*DDIR*(SPSIG(ISS)*ACLOC(ISS,ID)+SPSIG(ISS-1)*ACLOC(ISS-1,ID))
             COSE2 = COS(SPDIR(ID))**TWO
             SINE2 = SIN(SPDIR(ID))**TWO
             COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-            WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+            WN    = CG(IP,ISS) / ( SPSIG(ISS)/WK(IP,ISS) )
             RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC
             RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
             RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC
@@ -39,6 +63,9 @@
 !**********************************************************************
       SUBROUTINE COMPUTE_DIFF(IE, I1, UGRAD, VGRAD)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
@@ -66,8 +93,8 @@
 !      F1=(XP(IP1) - XP(IP2))*UGRAD + (YP(IP1) - YP(IP2))*VGRAD
 !      F2=ZERO
 !      F3=(XP(IP3) - XP(IP2))*UGRAD + (YP(IP3) - YP(IP2))*VGRAD
-!      WRITE(200+MyRankD,*) 'F123=', F1, F2, F3
-!      FLUSH(200+MyRankD)
+!      WRITE(200+myrank,*) 'F123=', F1, F2, F3
+!      FLUSH(200+myrank)
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -75,6 +102,9 @@
 !**********************************************************************
       SUBROUTINE REV_IDX_IA_JA(J, IP, JP)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: J
       INTEGER, intent(out) :: IP, JP
@@ -90,6 +120,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       real(rkind), intent(in)  :: FX(MNP), FY(MNP)
       real(rkind), intent(out) :: ASPAR(NNZ)
@@ -162,19 +195,19 @@
             eScal=UGRAD*UGRAD1 + VGRAD*VGRAD1
             J=JA_IE(I1,IDX,IE)
 #ifdef DEBUG
-!            WRITE(200+MyRankD,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
-!            WRITE(200+MyRankD,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
-!            WRITE(200+MyRankD,*) 'I1=', I1, ' K=', K
-!            WRITE(200+MyRankD,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
+!            WRITE(200+myrank,*) 'UGRAD=', UGRAD, 'VGRAD=', VGRAD
+!            WRITE(200+myrank,*) 'UGRAD1=', UGRAD1, 'VGRAD1=', VGRAD1
+!            WRITE(200+myrank,*) 'I1=', I1, ' K=', K
+!            WRITE(200+myrank,*) 'I1=', I1, ' IDX=', IDX, 'eScal=', eScal
 !            CALL REV_IDX_IA_JA(J, IPp, JPp)
-!            WRITE(200+MyRankD,*) 'IPp=', IPp, ' JPp=', JPp
-!            WRITE(200+MyRankD,*) '            -  -  -  -  -'
+!            WRITE(200+myrank,*) 'IPp=', IPp, ' JPp=', JPp
+!            WRITE(200+myrank,*) '            -  -  -  -  -'
 #endif
             ASPAR(J)=ASPAR(J)+eFact*eScal
           END DO
         END DO
 #ifdef DEBUG
-!        WRITE(200+MyRankD,*) '--------------------------------------'
+!        WRITE(200+myrank,*) '--------------------------------------'
 #endif
       END DO
       END SUBROUTINE
@@ -207,8 +240,8 @@
             ELSE
               J2=I_DIAG(JP)
 #ifdef DEBUG
-!            WRITE(200+MyRankD,*) 'aspar(J1)=', ASPAR(J1)
-!            WRITE(200+MyRankD,*) 'aspar(J2)=', ASPAR(J2)
+!            WRITE(200+myrank,*) 'aspar(J1)=', ASPAR(J1)
+!            WRITE(200+myrank,*) 'aspar(J2)=', ASPAR(J2)
 #endif
             
               eCoeff=-ASPAR(J) /(ASPAR(J1)*ASPAR(J2))
@@ -235,6 +268,9 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind) :: eVal, fVal, eSum
@@ -259,7 +295,7 @@
           END IF
         END DO
       END DO
-      WRITE(200 + MyRankD,*) 'Symmetry error=', eSum
+      WRITE(200 + myrank,*) 'Symmetry error=', eSum
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -294,6 +330,9 @@
       USE DATAPOOL, only : rkind, MNP
 #ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
+#endif
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
 #endif
       USE DATAPOOL, only : NP_RES
 #ifdef MPI_PARALL_GRID
@@ -335,16 +374,18 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, TheOut)
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       IMPLICIT NONE
       real(rkind), intent(in) :: ASPAR(NNZ)
       real(rkind), intent(in) :: B(MNP)
       real(rkind), intent(out) :: TheOut(MNP)
       real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
       real(rkind) :: uO, uN, alphaV, h1, h2
-      real(rkind) :: eNorm, CritVal, beta
+      real(rkind) :: eNorm, beta
       integer IP, nbIter
       nbIter=0
-      CritVal=SOLVERTHR
       V_X=ZERO
       V_R=B
       CALL WAVE_SETUP_APPLY_PRECOND(ASPAR, V_R, V_Z)
@@ -352,32 +393,31 @@
       CALL WAVE_SETUP_SCALAR_PROD(V_Z, V_R, uO)
 #ifdef DEBUG
       CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
-      WRITE(200+MyRankD,*) 'sum(V_R)=', sum(V_R)
-      WRITE(200+MyRankD,*) 'sum(V_Z)=', sum(V_Z)
-      WRITE(200+MyRankD,*) 'Before loop, |B|=', eNorm
-      FLUSH(200+MyRankD)
+      WRITE(200+myrank,*) 'sum(V_R)=', sum(V_R)
+      WRITE(200+myrank,*) 'sum(V_Z)=', sum(V_Z)
+      WRITE(200+myrank,*) 'Before loop, |B|=', eNorm
+      FLUSH(200+myrank)
 #endif
       DO
         nbIter=nbIter + 1
-        Print *, 'nbIter=', nbIter
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'nbIter=', nbIter
-        WRITE(200+MyRankD,*) 'Before call to WAVE_SETUP_APPLY_FCT'
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'nbIter=', nbIter
+        WRITE(200+myrank,*) 'Before call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+myrank)
 #endif
         CALL WAVE_SETUP_APPLY_FCT(ASPAR, V_P, V_Y)
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'After call to WAVE_SETUP_APPLY_FCT'
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'After call to WAVE_SETUP_APPLY_FCT'
+        FLUSH(200+myrank)
 #endif
         CALL WAVE_SETUP_SCALAR_PROD(V_P, V_Y, h2)
         alphaV=uO/h2
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'sum(V_P)=', sum(V_P)
-        WRITE(200+MyRankD,*) 'sum(V_Y)=', sum(V_Y)
-        WRITE(200+MyRankD,*) 'h2=', h2
-        WRITE(200+MyRankD,*) 'alphaV=', alphaV
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'sum(V_P)=', sum(V_P)
+        WRITE(200+myrank,*) 'sum(V_Y)=', sum(V_Y)
+        WRITE(200+myrank,*) 'h2=', h2
+        WRITE(200+myrank,*) 'alphaV=', alphaV
+        FLUSH(200+myrank)
 #endif
         !
         DO IP=1,MNP
@@ -387,8 +427,8 @@
         !
         CALL WAVE_SETUP_SCALAR_PROD(V_R, V_R, eNorm)
 #ifdef DEBUG
-        WRITE(200+MyRankD,*) 'nbIter=', nbIter, 'eNorm=', eNorm
-        FLUSH(200+MyRankD)
+        WRITE(200+myrank,*) 'nbIter=', nbIter, 'eNorm=', eNorm
+        FLUSH(200+myrank)
 #endif
         IF (eNorm .le. SOLVERTHR) THEN
           EXIT
@@ -404,6 +444,8 @@
           V_P(IP)=V_Z(IP) + beta * V_P(IP)
         END DO
       END DO
+      WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
+
       TheOut=V_X
       END SUBROUTINE
 !**********************************************************************
@@ -411,7 +453,7 @@
 !**********************************************************************
 #ifdef PETSC
       SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, X)
-      USE DATAPOOL
+      USE DATAPOOL, only : rkind, NNZ, MNP, NP_RES
       USE PETSC_PARALLEL
       USE ELFE_GLBL, ONLY : iplg, np_global
       USE elfe_msgp, only : myrank, nproc, comm
@@ -457,18 +499,12 @@
       call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
          
       iteration = 0
-!
-! code for ASPAR and B. Need to write it.
-!
-
-
-! fill the new matrix
       ASPAR_petsc = 0
       oASPAR_petsc = 0
       counter = 1
       ncols = 0
       do i = 1, NP_RES
-        ncols = IA(i+1) - IA(i)
+        ncols = IA_P(i+1) - IA_P(i)
         ! this is a interface node (row). ignore it. just increase counter
         if(ALOold2ALO(i-1) .eq. -999) then
           counter = counter + ncols
@@ -494,7 +530,7 @@
 !map it to petsc global ordering
 !and insert the value from B into RHS vector
       eEntry = 0;
-      call VecSet(myB, eEntry, petscErr);CHKERRQ(petscErr)
+      call VecSet(myB_setup, eEntry, petscErr);CHKERRQ(petscErr)
       do i= 1, NP_RES
         ! this is a interface node (row). ignore it. just increase counter
         if(ALOold2ALO(i-1) .eq. -999) then
@@ -503,70 +539,52 @@
         ! map to petsc global order
         eCol = AGO2PGO(iplg(i) - 1 )
         eEntry = B(i)
-        call VecSetValue(myB, eCol, eEntry, ADD_VALUES, petscErr)
+        call VecSetValue(myB_setup, eCol, eEntry, ADD_VALUES, petscErr)
         CHKERRQ(petscErr)
       end do
 
-      call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyBegin(myB_setup, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyEnd(myB_setup, petscErr);CHKERRQ(petscErr);
 
       ! Copy the old solution from AC2 to myX to make the solver faster
       do i = 1, NP_RES
         eCol = AGO2PGO(iplg(i)-1)
         eEntry = B(i)
-        call VecSetValue(myX,eCol,eEntry,INSERT_VALUES,petscErr)
+        call VecSetValue(myX_setup,eCol,eEntry,INSERT_VALUES,petscErr)
         CHKERRQ(petscErr)
       end do
-      call VecAssemblyBegin(myX, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myX, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyBegin(myX_setup, petscErr);CHKERRQ(petscErr);
+      call VecAssemblyEnd(myX_setup, petscErr);CHKERRQ(petscErr);
 
       ! Solve
       ! To solve successive linear systems that have different preconditioner matrices (i.e., the matrix elements
       ! and/or the matrix data structure change), the user must call KSPSetOperators() and KSPSolve() for each
       ! solve.
-      if(samePreconditioner .eqv. .true.) call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
+      if(samePreconditioner .eqv. .true.) call KSPSetOperators(solver_setup, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
       call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
       call CPU_TIME(startTime)
       ! Solve!
-      call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
+      call KSPSolve(solver_setup, myB_setup, myX_setup, petscErr);CHKERRQ(petscErr);
       call CPU_TIME(endTime)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          
-      call KSPGetConvergedReason(Solver, reason, petscErr);CHKERRQ(petscErr);
+      call KSPGetConvergedReason(solver_setup, reason, petscErr);CHKERRQ(petscErr);
       if (reason .LT. 0) then
         !CALL WWM_ABORT('Failure to converge')
         !write(stat%fhndl,*) 'Failure to converge'
       endif
-
-#ifdef PETSC_DEBUG
-      if(rank == 0) then
-        if(reason .LT. 0 ) then
-          write(DBG%FHNDL,*) "Failure to converge\n"
-        else
-          call KSPGetIterationNumber(Solver, iteration, petscErr)
-          CHKERRQ(petscErr)
-          ! print only the mean number of iteration
-          iterationSum = iterationSum + iteration
-          solverTimeSum = solverTimeSum + (endTime - startTime)
-          if(ISS == MSC .and. IDD == MDC) then
-            write(DBG%FHNDL,*) "mean number of iterations", iterationSum / real((MSC*MDC))
-            print '("solver Time for all MSD MDC= ",f6.3," sec")', solverTimeSum
-          endif
-        endif
-      endif
-#endif
 
       X = 0.0_rkind
       !get the solution back to fortran.
       !iterate over all resident nodes (without interface and ghost nodes)
       !map the solution from petsc local ordering back to app old local ordering
       !(the app old ordering contains interface nodes)
-      call VecGetArrayF90(myX, myXtemp, petscErr); CHKERRQ(petscErr)
+      call VecGetArrayF90(myX_setup, myX_setuptemp, petscErr); CHKERRQ(petscErr)
       do i = 1, nNodesWithoutInterfaceGhosts
-        X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
+        X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myX_setuptemp(i)
       end do
-      call VecRestoreArrayF90(myX, myXtemp, petscErr)
+      call VecRestoreArrayF90(myX_setup, myX_setuptemp, petscErr)
       CHKERRQ(petscErr);
       !IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
       ! we have to fill the ghost and interface nodes with the solution from the other threads
@@ -574,16 +592,66 @@
       ! normally set to 0, because they do net exist in petsc
       !call exchange_p2d(X)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
-      use petsc_parallel, only: PETSC_INIT_PARALLEL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
+#ifdef PETSC
+      use petscpool
+      use petscsys
+      use petsc_parallel, only: createMatrix
+      USE ELFE_GLBL, ONLY : np_global
+#endif
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      IF (AMETHOD .ne. 4) THEN
-        CALL PETSC_INIT_PARALLEL
+      integer istat
+#ifdef PETSC
+      logical :: initialguess = .false.
+      real(kind=8)       :: rtol_setup      = 1.D-20   ! relative convergence tolerance
+      real(kind=8)       :: abstol_setup    = 1.D-20   ! absolute convergence tolerance
+      real(kind=8)       :: dtol_setup      = 10000    ! divergence tolerance
+      integer            :: maxits_setup    = 0        ! maximum number of iterations to use
+      logical :: SAME_NONZERO_PATTERN =.true.
+#endif
+      ALLOCATE(ZETA_SETUP(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
+#ifdef MPI_PARALL_GRID
+      IF (ZETA_METH .eq. 1) THEN
+# ifdef PETSC
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          CALL petscpoolInit
+          call PetscLogStagePush(stageInit, petscErr);CHKERRQ(petscErr)
+        END IF
+!   From PETSC_INIT_PARALLEL
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          call createMappings()
+        END IF
+        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
+          call createMatrix
+        END IF
+        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myX_setup, petscErr);CHKERRQ(petscErr)
+        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myB_setup, petscErr);CHKERRQ(petscErr)
+!    From createSolver
+        call KSPCreate(PETSC_COMM_WORLD,solver_setup, petscErr);CHKERRQ(petscErr)
+        call KSPSetType(solver_setup, KSPCG, petscErr);CHKERRQ(petscErr)
+        call KSPSetInitialGuessNonzero(solver_setup, initialguess, petscErr);CHKERRQ(petscErr)
+
+        call KSPSetTolerances(solver, rtol_setup, abstol_setup, dtol_setup, maxits_setup, petscErr);CHKERRQ(petscErr)
+        call KSPGetPC(solver_setup, prec_setup, petscErr);CHKERRQ(petscErr);
+        call PCSetType(prec_setup, PCCHOLESKY, petscErr);CHKERRQ(petscErr);
+
+        call KSPSetOperators(solver_setup, matrix, matrix, SAME_NONZERO_PATTERN, petscErr);CHKERRQ(petscErr)
+        call KSPSetFromOptions(solver_setup, petscErr);CHKERRQ(petscErr)
+# else
+        CALL WWM_ABORT('Missing PETSC module');
+# endif
+      END IF
+      IF ((ZETA_METH .ne. 0) .and. (ZETA_METH .ne. 1)) THEN
+        CALL WWM_ABORT('Wrong choice of ZETA_METH')
       END IF
 # endif
       END SUBROUTINE
@@ -592,36 +660,50 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
-      use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
-      IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      IF (AMETHOD .ne. 4) THEN
-        CALL PETSC_FINALIZE_PARALLEL
-      END IF
-# endif
-      END SUBROUTINE
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
 #endif
+#ifdef PETSC
+      use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
+#endif
+      IMPLICIT NONE
+      deallocate(ZETA_SETUP)
+#ifdef MPI_PARALL_GRID
+      IF (ZETA_METH .eq. 1) THEN
+        IF (AMETHOD .ne. 4) THEN
+# ifdef PETSC
+          CALL PETSC_FINALIZE_PARALLEL
+# else
+          CALL WWM_ABORT('Missing PETSC module');
+# endif
+        END IF
+      END IF
+#endif
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTATION
       USE DATAPOOL
+#if defined DEBUG && defined MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank
+#endif
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
 #ifdef DEBUG
       REAL(rkind) :: Xtest(MNP), Vimg(MNP)
-      REAL(rkind) :: eResidual, eResidual2
+      REAL(rkind) :: eResidual, eResidual2, eNorm
 #endif
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 1'
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 1'
+      FLUSH(200 + myrank)
 #endif
       CALL COMPUTE_LH_STRESS(F_X, F_Y)
-      FLUSH(200 + MyRankD)
+      FLUSH(200 + myrank)
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 2'
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 2'
+      FLUSH(200 + myrank)
 #endif
       CALL WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, F_X, F_Y)
 #ifdef DEBUG
@@ -629,19 +711,45 @@
       CALL WAVE_SETUP_APPLY_FCT(ASPAR, Xtest, Vimg)
       CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eResidual)
       CALL WAVE_SETUP_SCALAR_PROD(Xtest, B, eResidual2)
-      WRITE(200 + MyRankD,*) 'sum(abs(ASPAR))=', sum(abs(ASPAR))
-      WRITE(200 + MyRankD,*) 'eResidual=', eResidual
-      WRITE(200 + MyRankD,*) 'eResidual2=', eResidual2
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 3'
+      WRITE(200 + myrank,*) 'sum(abs(ASPAR))=', sum(abs(ASPAR))
+      WRITE(200 + myrank,*) 'eResidual=', eResidual
+      WRITE(200 + myrank,*) 'eResidual2=', eResidual2
+      WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 3'
       CALL WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
-      FLUSH(200 + MyRankD)
+      FLUSH(200 + myrank)
 #endif
-      CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
+      IF (ZETA_METH .eq. 0) THEN
+        CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
+      ENDIF
+      IF (ZETA_METH .eq. 1) THEN
+#ifdef PETSC
+# ifdef DEBUG
+        WRITE(200 + myrank,*) 'Before PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + myrank)
+# endif
+        CALL PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, ZETA_SETUP)
+# ifdef DEBUG
+        WRITE(200 + myrank,*) 'After PETSC_SOLVE_POISSON_NEUMANN'
+        FLUSH(200 + myrank)
+# endif
+#else
+        CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
+#endif
+      END IF
+      WRITE(200 + myrank,*) 'Before DEBUG statement'
 #ifdef DEBUG
-      WRITE(200 + MyRankD,*) 'WAVE_SETUP_COMPUTATION, step 4'
-      FLUSH(200 + MyRankD)
+      WRITE(200 + myrank,*) 'After DEBUG statement'
+      CALL WAVE_SETUP_APPLY_FCT(ASPAR, ZETA_SETUP, Vimg)
+      CALL WAVE_SETUP_SCALAR_PROD(B, B, eNorm)
+      WRITE(200 + myrank,*) 'Norm(B)=', eNorm
+      FLUSH(200 + myrank)
+      Vimg = Vimg - B
+      CALL WAVE_SETUP_SCALAR_PROD(Vimg, Vimg, eNorm)
+      WRITE(200 + myrank,*) 'Norm(residual)=', eNorm
 #endif
+      FLUSH(200 + myrank)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      END MODULE

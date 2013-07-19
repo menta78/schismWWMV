@@ -361,6 +361,7 @@
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
          USE DATAPOOL
+         USE WAVE_SETUP
 #ifdef MPI_PARALL_GRID
          use elfe_msgp, only : myrank
 #endif

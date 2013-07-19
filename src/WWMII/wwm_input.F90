@@ -753,7 +753,7 @@
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR,           &
-     &      LNANINFCHK, LZETA_SETUP
+     &      LNANINFCHK, LZETA_SETUP, ZETA_METH
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
@@ -1392,6 +1392,13 @@
          END IF
          IF (SEBO%BMJD .GE. SEBO%EMJD) CALL WWM_ABORT('CHECK BOUNDARY TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
          
+#ifdef MPI_PARALL_GRID
+         IF (ICOMP .GE. 1) THEN
+           IF ((AMETHOD .eq. 1).or.(AMETHOD .eq. 2).or.(AMETHOD .eq. 3)) THEN
+             CALL WWM_ABORT('The AMETHOD=1,2,3 are not parallelized')
+           END IF
+         END IF
+#endif
 
 !        Check MSC,MDC for exchange
          if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')

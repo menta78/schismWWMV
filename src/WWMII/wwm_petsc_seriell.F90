@@ -27,7 +27,7 @@
         IMPLICIT NONE
 
 ! create sparse matrix
-!        call MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, MNP, MNP, IA, JA, ASPAR, matrix, ierr);CHKERRQ(ierr)
+!        call MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, MNP, MNP, IA_P, JA_P, ASPAR, matrix, ierr);CHKERRQ(ierr)
         call MatCreate(PETSC_COMM_SELF, matrix, ierr);CHKERRQ(ierr)
         call MatSetType(matrix, MATSEQAIJ , ierr);CHKERRQ(ierr)
         call MatSetSizes(matrix, PETSC_DECIDE, PETSC_DECIDE, MNP, MNP, ierr);CHKERRQ(ierr)
@@ -218,7 +218,7 @@
          nnznew=0
 
          do i = 1, MNP
-           ncols = IA(i+1) - IA(i)
+           ncols = IA_P(i+1) - IA_P(i)
            eRow = i - 1
 
            ! insert col by col into matrix
@@ -226,7 +226,7 @@
              ! the value we want to insert
              eValue=ASPAR(counter)
              ! get the col index in old counting
-             temp = JA(counter)
+             temp = JA_P(counter)
              counter = counter + 1
              nnznew=nnznew + 1
 

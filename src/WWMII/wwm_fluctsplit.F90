@@ -2144,7 +2144,6 @@
            CFLCXY(3,:) = LARGE 
          END IF
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2153,7 +2152,7 @@
          USE DATAPOOL
          IMPLICIT NONE
          DEALLOCATE( CCON, SI, ITER_EXP, ITER_EXPD)
-         IF (ICOMP .GE. 1) THEN
+         IF ((ICOMP .GE. 1) .OR. LZETA_SETUP) THEN
            DEALLOCATE(I_DIAG)
          END IF
          IF (LCFL) THEN
@@ -2287,7 +2286,7 @@
            END DO
          END DO
 
-         IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
+         IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
@@ -2415,7 +2414,7 @@
               JA_IE(POS,3,IE) = I3
             END DO
           END DO
-        ENDIF
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
