@@ -125,12 +125,12 @@
          REAL(rkind)                        :: DMIN      = 0.01_rkind
 
          REAL(rkind), PARAMETER             :: ERRCON    = 0.005_rkind
-         REAL(rkind), PARAMETER             :: REARTH    = 6378137.0_rkind ! WGS84
+         REAL(rkind), PARAMETER             :: REARTH    = 2.E7/PI ! WGS84 
          REAL(rkind), PARAMETER             :: DEGRAD    = PI/180._rkind
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
          REAL(rkind), PARAMETER             :: RHOA      = 1.25_rkind
-         REAL(rkind), PARAMETER             :: RHOW      = 1000._rkind
+         REAL(rkind), PARAMETER             :: RHOW      = 1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE

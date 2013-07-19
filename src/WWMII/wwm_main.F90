@@ -797,7 +797,6 @@
       enddo
       call partition_hgrid
       call aquire_hgrid(.true.)
-
       call msgp_tables
       call msgp_init
       call parallel_barrier

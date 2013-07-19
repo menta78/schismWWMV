@@ -18,7 +18,7 @@
          REAL(rkind)            :: TMPTLMAX 
          REAL(rkind)            :: DBLTMP, DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
          REAL(rkind)            :: PROV1, PROV2, PROV3
-         INTEGER           :: I1, I2, I3, TMPINE
+         INTEGER           :: I1, I2, I3, TMPINE, NI(3)
          INTEGER           :: IP, IE, IEWRONG, IEWRONGSUM
          LOGICAL           :: LWRONG
 
@@ -74,6 +74,7 @@
                    I1 = INE(1,IE)
                    I2 = INE(2,IE)
                    I3 = INE(3,IE)
+                   NI = INE(:,IE)
                    IF (IGRIDTYPE.ne.2) THEN
                      DXP1=XP(I2) - XP(I1)
                      DYP1=YP(I2) - YP(I1)
@@ -90,6 +91,7 @@
                      IEN(6,IE) =   DXP1
                      DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
                      TRIA(IE) = DBLTMP
+                     WRITE(22225,'(4I10,8F15.8)') IE, NI, IEN(:,IE), TRIA(IE)
                    END IF
 
 

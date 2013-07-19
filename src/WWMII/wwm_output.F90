@@ -243,6 +243,10 @@
              ENDDO
              CALL FLUSH(OUT%FHNDL+9)
            END IF
+           IF (LCFL) THEN
+             WRITE(OUT%FHNDL+10)  SNGL(TIME)
+             WRITE(OUT%FHNDL+10)  (SNGL(CFLCXY(IP,1)), SNGL(CFLCXY(IP,2)), SNGL(CFLCXY(IP,3)), IP = 1, MNP)
+           ENDIF
          END IF ! myrank
 #else
 
@@ -283,6 +287,7 @@
            IF (DoAirSea) THEN
              OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
            END IF
+           OPEN(OUT%FHNDL+10, FILE  = 'cflcxy.bin'  , FORM = 'UNFORMATTED')
          END IF
          WRITE(OUT%FHNDL+1) SNGL(TIME) 
          WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
@@ -316,6 +321,11 @@
            ENDDO
            CALL FLUSH(OUT%FHNDL+9)
          END IF
+         IF (LCFL) THEN
+           WRITE(OUT%FHNDL+10)  SNGL(TIME)
+           WRITE(OUT%FHNDL+10)  (SNGL(CFLCXY(1,IP)), SNGL(CFLCXY(2,IP)), SNGL(CFLCXY(3,IP)), IP = 1, MNP)
+         ENDIF
+         
 !$OMP END MASTER
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'

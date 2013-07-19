@@ -87,8 +87,8 @@
             ELSE
               DIFRM(IP) = ONE
             END IF
-            !IF (DIFRM(IP) .GT. 1.2) DIFRM(IP) = 1.2
-            !IF (DIFRM(IP) .LT. 0.8) DIFRM(IP) = 0.8
+            IF (DIFRM(IP) .GT. 1.2) DIFRM(IP) = 1.2
+            IF (DIFRM(IP) .LT. 0.8) DIFRM(IP) = 0.8
          END DO
 
          CALL DIFFERENTIATE_XYDIR(DIFRM, DIFRX, DIFRY)
@@ -100,8 +100,8 @@
 
          IF (.TRUE.) THEN
            OPEN(555, FILE  = 'ergdiffr.bin'  , FORM = 'UNFORMATTED')
-           WRITE(555) RTIME
-           WRITE(555)  (DIFRX(IP), DIFRY(IP),DIFRM(IP)-1., IP = 1, MNP)
+           WRITE(555) SNGL(RTIME)
+           WRITE(555) (SNGL(DIFRX(IP)), SNGL(DIFRY(IP)),SNGL(DIFRM(IP))-1., IP = 1, MNP)
          END IF
 
          !WRITE(WWMDBG%FHNDL,*) MAXVAL(DIFRM), MAXVAL(DIFRX), MAXVAL(DIFRY)

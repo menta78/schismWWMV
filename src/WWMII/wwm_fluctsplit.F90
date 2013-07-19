@@ -225,7 +225,6 @@
 !$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
                DO IS = 1, MSC
-                 CALL FLUCTCFL(IS,ID,DTMAX)
                  CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
                END DO
              END DO
@@ -467,7 +466,7 @@
 
          REAL(rkind)  :: KTMP(3)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), N(MNE), U3(3), ST3(3)
+         REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3), ST3(3)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
@@ -525,28 +524,28 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-           KKSUM = ZERO
-           DO IE = 1, MNE
+!           KKSUM = ZERO
+!           DO IE = 1, MNE
 !             IF (IE_IS_STEADY(IE) .GT. 2) THEN
 !               CYCLE
 !             ENDIF
-             NI = INE(:,IE)
-             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
-           END DO
+!             NI = INE(:,IE)
+!             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
+!           END DO
 !AR: Experimental ... improves speed by 20% but maybe unstable in
 !certain situations ... must be checked thoroughly
-!           KMAX = ZERO
-!           KSUM = ZERO
-!           J    = 0
-!           DO IP = 1, MNP
-!             DO I = 1, CCON(IP)
-!               J = J + 1
-!               IE    = IE_CELL(J)
-!               POS   = POS_CELL(J)
-!               KSUM(IP)  = KSUM(IP) + MAX(KELEM(POS,IE),ZERO)
-!               IF ( ABS(KELEM(POS,IE)) > KMAX(IP) ) KMAX(IP) = ABS(KELEM(POS,IE))
-!             END DO
-!           END DO
+           KKMAX = ZERO
+           KKSUM = ZERO
+           J    = 0
+           DO IP = 1, MNP
+             DO I = 1, CCON(IP)
+               J = J + 1
+               IE    = IE_CELL(J)
+               POS   = POS_CELL(J)
+               KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
+               IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
+             END DO
+           END DO
 
 #ifdef MPI_PARALL_GRID
            DTMAX_GLOBAL_EXP = VERYLARGE
@@ -556,11 +555,11 @@
 !              CYCLE
 !            ENDIF
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !write(DBG%FHNDL,*) IP, SI(IP), KKSUM(IP)
+             !WRITE(DBG%FHNDL,'(I10,3F15.6)') IP, SI(IP), KKSUM(IP), DEPTH(IP), DTMAX_EXP
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
            END DO
@@ -568,28 +567,32 @@
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
+             IF (IOBP(IP) .NE. 0) CYCLE 
 !            IF (IP_IS_STEADY(IP) .GT. 2) THEN
 !              CYCLE
 !            ENDIF
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !DTMAX_EXP = SI(IP)/MAX(THR,KMAX(IP))
+             !DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
+             DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(DT4A,MIN(CFLCXY(3,IP), DTMAX_EXP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
+             WRITE(22227,*) IP, CCON(IP), SI(IP)
+             IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
            END DO
 #endif
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
            REST  = ABS(MOD(CFLXY,ONE))
            IF (REST .LT. THR) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
+             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) 
            ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
            ELSE
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
            END IF
+
          END IF
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
@@ -793,7 +796,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN(DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
@@ -806,7 +809,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -911,7 +914,7 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT
+         INTEGER :: IP, IE, IT, I, J
          INTEGER :: I1, I2, I3, K
          INTEGER :: NI(3)
 !
@@ -934,8 +937,8 @@
          REAL(rkind)  :: UTMP(3)
          REAL(rkind)  :: WII(2,MNP), UL(MNP), USTARI(2,MNP)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), PM(MNP), PP(MNP), UIM(MNP)
-         REAL(rkind)  :: UIP(MNP)
+         REAL(rkind)  :: KKSUM(MNP), ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY, N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
@@ -947,7 +950,7 @@
 ! local parameter
 !
 
-         BL = 0.05_rkind
+         BL = ZERO
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -964,7 +967,7 @@
             KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
             KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
             KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-            N(IE) = - ONE/MIN(-THR,SUM(MIN(0._rkind,KELEM(:,IE))))
+            N(IE) = - ONE/MIN(-THR,SUM(MIN(ZERO,KELEM(:,IE))))
             FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
             FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
             FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
@@ -1000,7 +1003,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
@@ -1012,7 +1015,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -1059,11 +1062,11 @@
            DO IE = 1, MNE
               NI      = INE(:,IE)
               UTMP    = U(NI)
-              FT      =  - ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
+              FT      =  -ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
               TMP     =  MAX(ZERO,KELEM(:,IE))
               UTILDE  =  N(IE) * ( DOT_PRODUCT(TMP,UTMP) - FT )
               THETA_L(:,IE) =  TMP * ( UTMP - UTILDE )
-              IF (ABS(FT) .GT. THR) THEN
+              IF (ABS(FT) .GT. ZERO) THEN
                 BET1(:) = THETA_L(:,IE)/FT
                 IF (ANY( BET1 .LT. ZERO) ) THEN
                   BETAHAT(1)    = BET1(1) + ONEHALF * BET1(2)
@@ -1085,7 +1088,7 @@
               PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
             END DO
 !
-!            UL = MAX(0._rkind,U-DTSI*ST)*IOBPD(ID,:)
+!            UL = MAX(ZERO,U-DTSI*ST)*IOBPD(ID,:)
             DO IP = 1, MNP
               UL(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
             ENDDO
@@ -1102,29 +1105,49 @@
             UIM = 0.
             DO IE = 1, MNE
               NI = INE(:,IE)
-              UIP(NI) = MAX (UIP(NI), MAXVAL( USTARI(1,NI) ))
-              UIM(NI) = MIN (UIM(NI), MINVAL( USTARI(2,NI) ))
+              UIP(IE) = MAXVAL(USTARI(1,NI))
+              UIM(IE) = MINVAL(USTARI(2,NI))
             END DO
 
-            WII(1,:) = MIN(1._rkind,(UIP-UL)/MAX( VERYSMALL,PP))
-            WII(2,:) = MIN(1._rkind,(UIM-UL)/MIN(-VERYSMALL,PM))
+            J     = 0    ! Counter ...
+            UIPIP = 0.
+            UIMIP = 0.
+            DO IP = 1, MNP
+              DO I = 1, CCON(IP)
+               J = J + 1
+               IE    =  IE_CELL(J)
+               UIPIP(IP) = MAX(UIPIP(IP),UIP(IE)) 
+               UIMIP(IP) = MIN(UIMIP(IP),UIM(IE))
+              ENDDO
+            END DO !I: loop over connected elemen
+
+            DO IP = 1, MNP
+              WII(1,IP) = MIN(ONE,(UIPIP(IP)-UL(IP))/MAX( THR,PP(IP)))
+              WII(2,IP) = MIN(ONE,(UIMIP(IP)-UL(IP))/MIN(-THR,PM(IP)))
+              IF (ABS(PP(IP)) .LT. THR) THEN
+                WII(1,IP) = ZERO
+              ENDIF
+              IF (ABS(PM(IP)) .LT. THR) THEN
+                WII(2,IP) = ZERO
+              ENDIF
+            END DO
 
             ST = ZERO
             DO IE = 1, MNE
                I1 = INE(1,IE)
                I2 = INE(2,IE)
                I3 = INE(3,IE)
-               IF (THETA_ACE(1,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE
                  TMP(1) = WII(2,I1)
                END IF
-               IF (THETA_ACE(2,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(2,IE) .LT. ZERO) THEN
                  TMP(2) = WII(1,I2)
                ELSE
                  TMP(2) = WII(2,I2)
                END IF
-               IF (THETA_ACE(3,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(3,IE) .LT. ZERO) THEN
                  TMP(3) = WII(1,I3)
                ELSE
                  TMP(3) = WII(2,I3)
@@ -1144,7 +1167,7 @@
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(:,IS,ID) = U
+         AC2(:,IS,ID) = UL
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
@@ -2105,7 +2128,7 @@
          ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
          CCON = 0_rkind
-         SI = 0._rkind
+         SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
          IF (ICOMP .GE. 1) THEN
@@ -2116,7 +2139,9 @@
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-           CFLCXY = 0._rkind
+           CFLCXY(1,:) = ZERO
+           CFLCXY(2,:) = ZERO
+           CFLCXY(3,:) = LARGE 
          END IF
 
          RETURN
@@ -2994,12 +3019,12 @@
                    KELEM(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
 
 ! inverse of the positive sum ...
-                   N         = -ONE/MIN(-THR,SUM(MIN(0._rkind,KELEM))) ! N
+                   N         = -ONE/MIN(-THR,SUM(MIN(ZERO,KELEM))) ! N
 
 ! positive flux jacobians
-                   KELEM(1)  = MAX(0._rkind,KELEM(1)) ! K+
-                   KELEM(2)  = MAX(0._rkind,KELEM(2))
-                   KELEM(3)  = MAX(0._rkind,KELEM(3))
+                   KELEM(1)  = MAX(ZERO,KELEM(1)) ! K+
+                   KELEM(2)  = MAX(ZERO,KELEM(2))
+                   KELEM(3)  = MAX(ZERO,KELEM(3))
 
 ! simposon integration last step ...
                    FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1)
@@ -3164,11 +3189,11 @@
                  KTMP(1)  = KELEM(1,IE)
                  KTMP(2)  = KELEM(2,IE)
                  KTMP(3)  = KELEM(3,IE)
-                 TMP   = SUM(MIN(0._rkind,KTMP))
+                 TMP   = SUM(MIN(ZERO,KTMP))
                  N    = -1._rkind/MIN(-THR,TMP)
-                 KELEM(1,IE)  = MAX(0._rkind,KTMP(1))
-                 KELEM(2,IE)  = MAX(0._rkind,KTMP(2))
-                 KELEM(3,IE)  = MAX(0._rkind,KTMP(3))
+                 KELEM(1,IE)  = MAX(ZERO,KTMP(1))
+                 KELEM(2,IE)  = MAX(ZERO,KTMP(2))
+                 KELEM(3,IE)  = MAX(ZERO,KTMP(3))
 !                 WRITE(DBG%FHNDL,'(3I10,3F15.4)') IS, ID, IE, KELEM(:,IE)
                  FL11  = CX(I2) * IEN(1,IE) + CY(I2) * IEN(2,IE)
                  FL12  = CX(I3) * IEN(1,IE) + CY(I3) * IEN(2,IE)

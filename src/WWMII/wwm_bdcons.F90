@@ -896,17 +896,14 @@
         IMPLICIT NONE
         INTEGER              :: IP
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(IOBDP,DEP,MNP,DMIN) PRIVATE(IP)
-       DO IP = 1, MNP
+        DO IP = 1, MNP
           IF (DEP(IP) .LT. DMIN) THEN 
             IOBDP(IP) = 0 
           ELSE 
             IOBDP(IP) = 1
           ENDIF
-       END DO
-!$OMP END PARALLEL DO
+        END DO
 
-       RETURN
      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
