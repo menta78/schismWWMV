@@ -362,8 +362,8 @@
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
-        CALL FLUSH(STAT%FHNDL)
-        CALL FLUSH(IOBPOUT%FHNDL)
+        FLUSH(STAT%FHNDL)
+        FLUSH(IOBPOUT%FHNDL)
 #endif DEBUG
         
       END SUBROUTINE
@@ -697,7 +697,7 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         ENDIF 
 #endif
@@ -879,12 +879,12 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
 #endif
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 
         RETURN
       END SUBROUTINE
@@ -1376,7 +1376,7 @@
         ENDIF
       ELSE IF (ITPER.GE.100) THEN
         WRITE (STAT%FHNDL,*) 'No convergence calculating the spectrum'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       ENDIF
 
 
@@ -1517,7 +1517,7 @@
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
         WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
         WRITE (STAT%FHNDL,*) SPPAR
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END IF
 
@@ -1795,8 +1795,8 @@
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
       WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
-      CALL FLUSH(DBG%FHNDL)
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(DBG%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 

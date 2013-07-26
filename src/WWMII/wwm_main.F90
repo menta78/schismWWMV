@@ -36,7 +36,7 @@
          character(LEN=15) :: CALLFROM
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          TIME1 = mpi_wtime()
 
@@ -71,7 +71,7 @@
          ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') ' ---- ALL CHECKS DONE'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
@@ -215,7 +215,7 @@
          ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
@@ -232,7 +232,7 @@
          TIME3 = mpi_wtime()
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          DO IP = 1, MNP
            ACLOC = AC2(IP,:,:)
@@ -289,7 +289,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
  
       END SUBROUTINE WWM_II
 !**********************************************************************
@@ -302,27 +302,27 @@
       DO IP = 1, MNP
         IF (WINDXY(IP,1) .NE. WINDXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDX', IP, WINDXY(IP,1) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WINDXY(IP,2) .NE. WINDXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDY', IP, WINDXY(IP,2) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEV(IP) .NE. WATLEV(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEVOLD(IP) .NE. WATLEVOLD(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,1) .NE. CURTXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTX', IP, CURTXY(IP,1)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,2) .NE. CURTXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTY', IP, CURTXY(IP,2)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
       END DO
       END SUBROUTINE SELFE_NANCHECK_INPUT_A
@@ -337,19 +337,19 @@
         IF (SUM(OUTT_INTPAR(IP,:)) .NE. SUM(OUTT_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(OUTT_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in OUTT_INTPAR', IP, I, OUTT_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
         IF (SUM(WIND_INTPAR(IP,:)) .NE. SUM(WIND_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(WIND_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in WIND_INTPAR', IP, I, WIND_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
         IF (SUM(WWAVE_FORCE(:,IP,:)) .NE. SUM(WWAVE_FORCE(:,IP,:))) THEN
           DO I = 1, SIZE(WWAVE_FORCE(:,IP,1)) ! loop over layers ...
             WRITE(DBG%FHNDL,*) 'NaN in WWAVE_FORCE', IP, I, WWAVE_FORCE(I,IP,1), WWAVE_FORCE(I,IP,2)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF 
       END DO
@@ -444,7 +444,7 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'POSTPROCESSING                   ', TIME5-TIME4
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CHECK STEADY                     ', TIME6-TIME5
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 #ifdef MPI_PARALL_GRID
       ENDIF
 #endif
@@ -508,7 +508,7 @@
 #elif SELFE
                if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #endif
-               CALL FLUSH(QSTEA%FHNDL)
+               FLUSH(QSTEA%FHNDL)
                EXIT 
              END IF
            END IF
@@ -524,7 +524,7 @@
          RTIME = MAIN%TMJD - MAIN%BMJD
          WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          CALL IO_2(K)
 
@@ -648,7 +648,7 @@
          IF (LHOTF) THEN
            IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
              WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
-             CALL FLUSH(STAT%FHNDL)
+             FLUSH(STAT%FHNDL)
              CALL OUTPUT_HOTFILE
              HOTF%TMJD = HOTF%TMJD + HOTF%DELT*SEC2DAY
            END IF

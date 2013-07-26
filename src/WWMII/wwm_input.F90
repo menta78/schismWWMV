@@ -170,7 +170,7 @@
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = HISTORY)
          wwm_print_namelist(HISTORY)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
          END IF
@@ -407,7 +407,7 @@
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = STATION)
          wwm_print_namelist(STATION)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 #ifdef NCDF
          PARAMWRITE_STAT=PARAMWRITE
          USE_SINGLE_OUT_STAT=USE_SINGLE_OUT
@@ -594,7 +594,7 @@
            WRITE(DBG%FHNDL,*) STATION_P%YCOORD
            WRITE(DBG%FHNDL,*) 'STATION Names'
            WRITE(DBG%FHNDL,*) STATION_P%NAME
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
 
          END IF
 
@@ -628,7 +628,7 @@
            WRITE(DBG%FHNDL,*) STATION_P%YCOORD
            WRITE(DBG%FHNDL,*) 'STATION Names'
            WRITE(DBG%FHNDL,*) STATION_P%NAME
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
 
          END IF
       END SUBROUTINE
@@ -761,25 +761,25 @@
 
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 #ifdef SELFE
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
              WRITE(DBG%FHNDL) LSPHE, ICS
-             CALL FLUSH(DBG%FHNDL)
+             FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=T but then you need ics=2')
            END IF
          ELSE
            IF (ics /= 1) THEN
              WRITE(DBG%FHNDL) LSPHE, ICS
-             CALL FLUSH(DBG%FHNDL)
+             FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=F but then you need ics=1')
            END IF
          END IF
 #endif
          READ( INP%FHNDL,  NML = COUPL)
          wwm_print_namelist(COUPL)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 !
 !    *** Estimate various timings ...
 !
@@ -811,7 +811,7 @@
 !
          READ (INP%FHNDL,   NML = GRID)
          wwm_print_namelist(GRID)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 #ifdef MPI_PARALL_GRID
          IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
            CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
@@ -854,7 +854,7 @@
 !
          READ(INP%FHNDL,  NML = INIT)
          wwm_print_namelist(INIT)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
          IF (LHOTR) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'HOTFILE is used as Initital Condition'
@@ -864,7 +864,7 @@
 !
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE
@@ -901,7 +901,7 @@
 !
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 !         Print *, 'BEGTC', BEGTC
 !         Print *, 'ENDTC', ENDTC
 
@@ -932,7 +932,7 @@
 !
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
          CUR%FNAME = TRIM(FILECUR)
 
@@ -959,7 +959,7 @@
 !
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
          WAT%FNAME = FILEWATL
 
@@ -985,14 +985,14 @@
 !
          READ(INP%FHNDL, NML = ENGS)
          wwm_print_namelist(ENGS)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
 !
 !     *** NUMS section
 !
          READ(INP%FHNDL, NML = NUMS)
          wwm_print_namelist(NUMS)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
 !
 !     **** HOTFILE section
@@ -1015,7 +1015,7 @@
          MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
          wwm_print_namelist(HOTFILE)
-         CALL FLUSH(CHK%FHNDL)
+         FLUSH(CHK%FHNDL)
 
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT

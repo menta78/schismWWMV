@@ -18,7 +18,7 @@
           OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
         END IF
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_AND_STATION' 
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -34,7 +34,7 @@
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -65,7 +65,7 @@
          END SELECT
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -96,7 +96,7 @@
           END SELECT
         END IF
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -213,35 +213,35 @@
            END IF
            WRITE(OUT%FHNDL+1)  SNGL(TIME)
            WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+1)
+           FLUSH(OUT%FHNDL+1)
            WRITE(OUT%FHNDL+2)  SNGL(TIME)
            WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+2)
+           FLUSH(OUT%FHNDL+2)
            WRITE(OUT%FHNDL+3)  SNGL(TIME)
            WRITE(OUT%FHNDL+3)  (SNGL(WIND_GLOBAL(IP,1)), SNGL(WIND_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,10))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+3)
+           FLUSH(OUT%FHNDL+3)
            WRITE(OUT%FHNDL+4)  SNGL(TIME)
            WRITE(OUT%FHNDL+4)  (SNGL(OUTT_GLOBAL(IP,1)), SNGL(OUTT_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+4)
+           FLUSH(OUT%FHNDL+4)
            WRITE(OUT%FHNDL+5)  SNGL(TIME)
            WRITE(OUT%FHNDL+5)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,5))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+5)
+           FLUSH(OUT%FHNDL+5)
            WRITE(OUT%FHNDL+6)  SNGL(TIME)
            WRITE(OUT%FHNDL+6)  (SNGL(WIND_GLOBAL(IP,9)), SNGL(WIND_GLOBAL(IP,8)), SNGL(WIND_GLOBAL(IP,7))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+6)
+           FLUSH(OUT%FHNDL+6)
            WRITE(OUT%FHNDL+7)  SNGL(TIME) 
            WRITE(OUT%FHNDL+7)  (SNGL(WIND_GLOBAL(IP,4)), SNGL(WIND_GLOBAL(IP,5)), SNGL(WIND_GLOBAL(IP,6))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+7)
+           FLUSH(OUT%FHNDL+7)
            IF (LQSTEA .AND. LCHKCONV) THEN
              WRITE(OUT%FHNDL+8) SNGL(TIME) 
              WRITE(OUT%FHNDL+8)  (SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP))  , IP = 1, NP_GLOBAL)
-             CALL FLUSH(OUT%FHNDL+8)
+             FLUSH(OUT%FHNDL+8)
            ENDIF
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
                WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND_GLOBAL(IP,:))
              ENDDO
-             CALL FLUSH(OUT%FHNDL+9)
+             FLUSH(OUT%FHNDL+9)
            END IF
            IF (LCFL) THEN
              WRITE(OUT%FHNDL+10)  SNGL(TIME)
@@ -291,35 +291,35 @@
          END IF
          WRITE(OUT%FHNDL+1) SNGL(TIME) 
          WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+1)
+         FLUSH(OUT%FHNDL+1)
          WRITE(OUT%FHNDL+2) SNGL(TIME)
          WRITE(OUT%FHNDL+2)  (SNGL(CURR(IP,1)), SNGL(CURR(IP,2)), SNGL(DEP(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+2)
+         FLUSH(OUT%FHNDL+2)
          WRITE(OUT%FHNDL+3) SNGL(TIME)
          WRITE(OUT%FHNDL+3)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(WIND(IP,3)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+3)
+         FLUSH(OUT%FHNDL+3)
          WRITE(OUT%FHNDL+4) SNGL(TIME)
          WRITE(OUT%FHNDL+4)  (SNGL(UFRIC(IP)), SNGL(Z0(IP)), SNGL(ALPHA_CH(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+4)
+         FLUSH(OUT%FHNDL+4)
          WRITE(OUT%FHNDL+5) SNGL(TIME)
          WRITE(OUT%FHNDL+5)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(OUTT(IP,3)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+5)
+         FLUSH(OUT%FHNDL+5)
          WRITE(OUT%FHNDL+6)  SNGL(TIME)
          WRITE(OUT%FHNDL+6)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(ISHALLOW(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+6)
+         FLUSH(OUT%FHNDL+6)
          WRITE(OUT%FHNDL+7)  SNGL(TIME)
          WRITE(OUT%FHNDL+7)  (SNGL(WIND(IP,8)), SNGL(WIND(IP,9)), SNGL(WIND(IP,8)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+7)
+         FLUSH(OUT%FHNDL+7)
          IF (LQSTEA .AND. LCHKCONV) THEN
            WRITE(OUT%FHNDL+8)  SNGL(TIME) 
            WRITE(OUT%FHNDL+8)  (SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP))  , IP = 1, NP_TOTAL)
-           CALL FLUSH(OUT%FHNDL+8)
+           FLUSH(OUT%FHNDL+8)
          ENDIF
          IF (DoAirSea) THEN
            DO IP = 1, MNP
              WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND(IP,:))
            ENDDO
-           CALL FLUSH(OUT%FHNDL+9)
+           FLUSH(OUT%FHNDL+9)
          END IF
          IF (LCFL) THEN
            WRITE(OUT%FHNDL+10)  SNGL(TIME)
@@ -329,7 +329,7 @@
 !$OMP END MASTER
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -488,7 +488,7 @@
          END DO
 
 !         WRITE(STAT%FHNDL,*) 'DEPTH OF THE FOUND STATIONS', DEPLOC_STATIONS
-!         CALL FLUSH(DBG%FHNDL)
+!         FLUSH(DBG%FHNDL)
 
          DEPLOC_SUM = 0.
          WATLEVLOC_SUM = 0.
@@ -584,7 +584,7 @@
                OPEN(OUTPARM%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND')
              ENDIF
              WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME, STATION(I)%OUTPAR_NODE(1:OUTVARS)
-             CALL FLUSH(OUTPARM%FHNDL)
+             FLUSH(OUTPARM%FHNDL)
              CLOSE(OUTPARM%FHNDL)
 
              IF (LSP1D .OR. LSP2D) THEN
@@ -617,7 +617,7 @@
                DO IS = 1, MSC
                  WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2,  ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
                END DO
-               CALL FLUSH(OUTSP1D%FHNDL)
+               FLUSH(OUTSP1D%FHNDL)
                CLOSE(OUTSP1D%FHNDL)
              END IF
 
@@ -646,7 +646,7 @@
                WRITE(OUTSP2D%FHNDL) CURTXYLOC
                WRITE(OUTSP2D%FHNDL) ACLOC
                WRITE(OUTSP2D%FHNDL) ACOUT_2D
-               CALL FLUSH(OUTSP2D%FHNDL)
+               FLUSH(OUTSP2D%FHNDL)
                CLOSE(OUTSP2D%FHNDL)
              END IF ! LSP2D
            END DO
@@ -654,7 +654,7 @@
          END IF
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !* The netcdf output outs the most variables and is the most          *
@@ -1177,7 +1177,7 @@
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WINDPAR'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1247,7 +1247,7 @@
          OUTPAR(31) = WINDXY(IP,2) ! windy
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1597,7 +1597,7 @@
          END IF
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTSPEC'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1682,7 +1682,7 @@
 110      FORMAT (2X,I10,3(A2,F15.8))
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_SHP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -1795,7 +1795,7 @@
          END DO
 
 !        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH CLSPEC'
-!        CALL FLUSH(STAT%FHNDL)
+!        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1858,7 +1858,7 @@
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
 
 !        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
-!        CALL FLUSH(STAT%FHNDL)
+!        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2068,7 +2068,7 @@
         ENDIF
       ENDIF
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_NC'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************

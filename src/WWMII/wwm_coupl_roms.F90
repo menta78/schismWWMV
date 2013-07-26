@@ -14,17 +14,17 @@
       LSEWL = .TRUE.
       LSECU = .TRUE.
       WRITE(DBG%FHNDL,'("+TRACE...",A)') 'OPEN PIPE ROMS'
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 !     Pipes that are read by the wave model
       OPEN(1000,file='pipe/ExchRW'  ,form='unformatted', action='read')
       WRITE(DBG%FHNDL,*) 'WWM: open pipe ExchImport'
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 !     Pipes that are written by the wave modell
       OPEN(101 ,file='pipe/ExchWR' ,form='unformatted', action='write')
       WRITE(DBG%FHNDL,*) 'WWM: open pipe ExchExport'
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
       WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE ROMS'
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -58,7 +58,7 @@
 # endif
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
            WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
 # ifndef WWM_MPI
            DO IP = 1, MNP
              READ(1000) WINDXY(IP,1), WINDXY(IP,2), CURTXY(IP,1), CURTXY(IP,2), WATLEV(IP)
@@ -112,7 +112,7 @@
            deallocate(WATLEV_TOT)
 # endif
            WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
          END IF
 !
 !2do make a initialization section for ROMS and WWM
@@ -180,7 +180,7 @@
 !             WRITE(101)  HS, DM, TPP, WLM, KLM, TM01, ORBITAL, TMBOT, &
 !     &                   DISSIPATION(IP), QBLOCAL(IP), DSPR, PEAKDSPR,&
 !     &                   PEAKDM, TM02
-             CALL FLUSH(101)
+             FLUSH(101)
            END DO
 # else
            allocate(OUTT(np_global,16), OUTT_TOT(np_global,16), stat=istat)
@@ -230,7 +230,7 @@
 # endif
          END IF
          WRITE(DBG%FHNDL,*) 'export WWM: ending of writing data'
-         CALL FLUSH(DBG%FHNDL)
+         FLUSH(DBG%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -362,7 +362,7 @@
           END IF
         END DO
         WRITE(DBG%FHNDL,*) 'MinValIndex(Dir,Inv)=', MinValIndex, MinValIndexInv
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 #  endif
         deallocate(TheIndex)
         deallocate(NumberNode)
@@ -417,7 +417,7 @@
         IF ((nb1.ne.ne_global).or.(nb2.ne.np_global)) THEN
           WRITE(DBG%FHNDL,*) 'nb1=', nb1, ' ne_global=', ne_global
           WRITE(DBG%FHNDL,*) 'nb2=', nb2, ' np_global=', np_global
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
           CALL WWM_ABORT('Inconsistency')
         END IF
         do i=1,np_global
@@ -466,22 +466,22 @@
         real(rkind) SumDepReceive
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL SetComputationalNodes(ArrLocal, NnodesWAV, OCNid)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.2, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL WWM_CreateMatrixPartition
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.3, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL WWM_CreateGlobalLON_LAT_ListTrig
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 2, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         IF (MyRankLocal.eq.0) THEN
           CALL M2M_send_fem_r8(ArrLocal, OCNid,                         &
@@ -492,43 +492,43 @@
         ENDIF
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 3, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
      &   xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 4, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
      &   xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 5, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
      &   xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 6, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_node_partition(ArrLocal, OCNid,                   &
      &   NnodeRho, NnodesOCN, MatrixBelongingOCN_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 7, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_node_partition(ArrLocal, OCNid,                   &
      &   NnodeU, NnodesOCN, MatrixBelongingOCN_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 8, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL M2M_recv_node_partition(ArrLocal, OCNid,                   &
      &   NnodeV, NnodesOCN, MatrixBelongingOCN_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         allocate(rbuf_int(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 15')
@@ -537,7 +537,7 @@
         Nlevel=rbuf_int(1)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 10, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         ALLOCATE(z_w_loc(0:Nlevel), eUSTOKES_loc(Nlevel), eVSTOKES_loc(Nlevel), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 16')
@@ -545,7 +545,7 @@
         DoNearest=.TRUE.
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 11, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL GetString(MyRankGlobal, eStr)
         FileSave_OCNtoWAV_rho='InterpSave_OCNtoWAV_rho'
@@ -556,7 +556,7 @@
      &    np_total, LONtrig_wav, LATtrig_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 12, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         FileSave_OCNtoWAV_u='InterpSave_OCNtoWAV_u'
         CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
@@ -567,7 +567,7 @@
         FileSave_OCNtoWAV_v='InterpSave_OCNtoWAV_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 13, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
      &    FileSave_OCNtoWAV_v, eStr, mMat_OCNtoWAV_v, DoNearest,        &
@@ -576,7 +576,7 @@
      &    np_total, LONtrig_wav, LATtrig_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_rho, MatrixBelongingWAV,                   &
@@ -591,7 +591,7 @@
         WRITE(DBG%FHNDL,*) 'nbNeedTot=', TheArr_OCNtoWAV_rho % nbNeedTot
         WRITE(DBG%FHNDL,*) 'nbProc=', TheArr_OCNtoWAV_rho % nbProc
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 14'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_u, MatrixBelongingWAV,                     &
@@ -607,7 +607,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 15, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_v, MatrixBelongingWAV,                     &
@@ -623,7 +623,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 16, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
         CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
@@ -631,7 +631,7 @@
         FileSave_WAVtoOCN_rho='InterpSave_WAVtoOCN_rho'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 17, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
      &    FileSave_WAVtoOCN_rho, eStr, mMat_WAVtoOCN_rho, DoNearest,    &
@@ -640,7 +640,7 @@
      &    xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 18, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         FileSave_WAVtoOCN_u='InterpSave_WAVtoOCN_u'
         CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
@@ -651,7 +651,7 @@
         FileSave_WAVtoOCN_v='InterpSave_WAVtoOCN_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 19, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
      &    FileSave_WAVtoOCN_v, eStr, mMat_WAVtoOCN_v, DoNearest,        &
@@ -660,7 +660,7 @@
      &    xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 20, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_rho,                   &
@@ -671,7 +671,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 21, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_u,                     &
@@ -687,7 +687,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 22, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_v,                     &
@@ -703,22 +703,22 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.1'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.2'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.3'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef FIRST_ORDER_ARDHUIN
         allocate(A_wav_ur_3D(2,MNP), A_wav_vr_3D(2,MNP), U_wav(MNP, 2), V_wav(MNP, 2), stat=istat)
@@ -736,7 +736,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 17')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 24, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 23, A_wav_rho)
         DO idx=1,MNP
@@ -747,7 +747,7 @@
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 25, rnk=', myrank
         WRITE(DBG%FHNDL,*) 'MyRankGlobal=', MyRankGlobal
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 217, A_wav_rho)
 # ifdef DEBUG_WWM
@@ -764,7 +764,7 @@
         WRITE(DBG%FHNDL,*) 'SumDepReceive=', SumDepReceive
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 33'
         WRITE(DBG%FHNDL,*) 'WAV, rnk=', myrank
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
         AbsDiff=0
         SumDep1=0
         SumDep2=0
@@ -780,7 +780,7 @@
           END IF
         END DO
         WRITE(DBG%FHNDL,*) 'dep_rho, min=', minBathy, ' max=', maxBathy
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
         minBathy=140000
         maxBathy=0
         DO IP=1,MNP
@@ -792,7 +792,7 @@
           END IF
         END DO
         WRITE(DBG%FHNDL,*) 'DEP, min=', minBathy, ' max=', maxBathy
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 
 
         iNodeSel=-1
@@ -814,7 +814,7 @@
           IF ((DEP(IP).ge.200).and.(eDiff.ge.10)) THEN
             WRITE(DBG%FHNDL,*) 'AD, IP=', IP, dep_rho(IP), DEP(IP)
             WRITE(DBG%FHNDL,*) 'AD, xp, yp=', XP(IP), YP(IP)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END IF
         END DO
 !        close(745)
@@ -824,7 +824,7 @@
 !        WRITE(DBG%FHNDL,*) 'AD, xp, yp=', XP(iNodeSel), YP(iNodeSel)
         WRITE(DBG%FHNDL,*) 'AD, SumDep1=', SumDep1, ' SumDep2=', SumDep2
         WRITE(DBG%FHNDL,*) 'AD, SumDiff=', SumDiff
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         allocate(z_r(Nlevel), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18')
@@ -840,7 +840,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'End ROMS_COUPL_INITIALIZE'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -1104,7 +1104,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: Begin PGMCL_ROMS_IN'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1121,7 +1121,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, After Data receive'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DEBUG_WWM
         MaxUwind=0.0_r8
@@ -1160,7 +1160,7 @@
         WRITE(DBG%FHNDL,*) 'WAV, MaxUwind=', MaxUwind, ' avgUwind=', avgUwind
         WRITE(DBG%FHNDL,*) 'WAV, MaxVwind=', MaxVwind, ' avgVwind=', avgVwind
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 2'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1177,7 +1177,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 3'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         DO kLev=0,Nlevel
           DO idx=1,MNP
@@ -1187,7 +1187,7 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 4'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1212,7 +1212,7 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 5'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1233,7 +1233,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'After the receive'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         DO idx=1,MNP
           IP=ReindexPerm_wav(idx)
@@ -1241,7 +1241,7 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 6'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
         DO IP=1,MNP
 #ifdef FIRST_ORDER_ARDHUIN
@@ -1261,7 +1261,7 @@
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 7'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
       END SUBROUTINE PGMCL_ROMS_IN
 !**********************************************************************
@@ -1301,7 +1301,7 @@
         real(rkind) :: MaxTM02, SumTM02, AvgTM02
         real(rkind) :: MaxStokesNorm, SumStokesNorm, avgStokesNorm
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 1'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
         SumNormTau=0
         MaxNormTau=0
 # endif
@@ -1341,7 +1341,7 @@
         AvgNormTau=SumNormTau / MNP
         WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'MaxNormTau=', MaxNormTau
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.1'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1380,7 +1380,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.3'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DEBUG_WWM
         MaxHwave=0.0
@@ -1437,7 +1437,7 @@
             WRITE(DBG%FHNDL,*) 'KLM=', KLM, 'WLM=', WLM
             WRITE(DBG%FHNDL,*) 'cPhase=', cPhase, 'kD=', kD
             WRITE(DBG%FHNDL,*) 'HS=', HS, ' DEP=', DEP(IP)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END IF
           IF (eStokesNorm.gt.MaxStokesNorm) THEN
             MaxStokesNorm=eStokesNorm
@@ -1475,7 +1475,7 @@
         WRITE(DBG%FHNDL,*) 'WAV, MaxStokesNorm=', MaxStokesNorm
         WRITE(DBG%FHNDL,*) 'WAV, avgStokesNorm=', avgStokesNorm
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 6'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
         AvgUFRICsqr=SumUFRICsqr/MNP
         AvgStressCd=SumStressCd/MNP
         AvgAlpha=SumAlpha/NbAlpha
@@ -1485,7 +1485,7 @@
         WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'AvgCdU2=', AvgStressCd
         WRITE(DBG%FHNDL,*) 'AvgCd=', AvgCd, ' AvgAlpha=', AvgAlpha
         WRITE(DBG%FHNDL,*) 'AvgWind=', AvgWind
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
 # ifdef DUMMY_COUPLING
 #  ifdef DUMMYB
@@ -1502,7 +1502,7 @@
 # endif
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 11'
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 # endif
       END SUBROUTINE
 #endif

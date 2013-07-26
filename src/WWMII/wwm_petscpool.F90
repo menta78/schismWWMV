@@ -742,7 +742,7 @@
         CLOSE(INP%FHNDL)
         IF (myrank .eq. 0) THEN
           WRITE(CHK%FHNDL, NML=PETScOptions)
-          CALL FLUSH(CHK%FHNDL)
+          FLUSH(CHK%FHNDL)
         END IF
 
         ksptype = toLower(ksptype)

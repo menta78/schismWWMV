@@ -196,7 +196,7 @@
          REAL(rkind)         :: u(msc,mdc,mnp)
 #endif
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #ifdef PETSC
          ! petsc block has its own loop over MSC MDC
          IF(AMETHOD == 5) THEN
@@ -280,7 +280,7 @@
            END IF
          END IF
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2688,7 +2688,7 @@
              END IF
            END IF !IVECTOR
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF !LCALC
 
          DO IP = 1, MNP
@@ -2942,7 +2942,7 @@
              END DO ! IS
            END DO ! ID
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF ! LCALC
 
          DO IP = 1, MNP
@@ -3147,7 +3147,7 @@
            ITER_MAX = MAXVAL(ITER_EXP)
 
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
 
          END IF !LCALC
 

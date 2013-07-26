@@ -1308,7 +1308,7 @@ MODULE WWM_PARALL_SOLVER
       integer istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       Ntot=MyREAL(MSCeffect*MDC)
       Hlen=INT(Ntot/Nblock)
@@ -1352,7 +1352,7 @@ MODULE WWM_PARALL_SOLVER
       LocalColor % maxBlockLength = maxBlockLength
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING INIT_BLOCK_FREQDIR'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1380,7 +1380,7 @@ MODULE WWM_PARALL_SOLVER
       integer istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLK_L2U_ARRAY'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       maxBlockLength=LocalColor % maxBlockLength
       ListFirstCommon_send=0
@@ -1486,7 +1486,7 @@ MODULE WWM_PARALL_SOLVER
       deallocate(ListNeed, IdxRev)
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING INIT_BLK_L2U_ARRAY'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1507,7 +1507,7 @@ MODULE WWM_PARALL_SOLVER
       integer TheRes, istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 # ifdef DEBUG
       CALL COMPUTE_TOTAL_INDEX_SHIFT(TheRes)
       WRITE(740+myrank,*) 'Total residual shift=', TheRes
@@ -1576,7 +1576,7 @@ MODULE WWM_PARALL_SOLVER
       DO_SYNC_FINAL=.TRUE.
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH SYMM_INIT_COLORING'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1607,7 +1607,7 @@ MODULE WWM_PARALL_SOLVER
       integer istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_LOW_2_UPP_ARRAYS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       eColor=ListColor(myrank+1)
       nbUpp_send=0
@@ -1711,7 +1711,7 @@ MODULE WWM_PARALL_SOLVER
       ENDIF
 # endif
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH INIT_LOW_2_UPP_ARRAYS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1750,7 +1750,7 @@ MODULE WWM_PARALL_SOLVER
       integer lenMNP
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_COVLOWER_ARRAY'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       ListFirst=0
       DO iProc=2,nproc
@@ -2214,7 +2214,7 @@ MODULE WWM_PARALL_SOLVER
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH INIT_COVLOWER_ARRAY'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -2788,14 +2788,14 @@ MODULE WWM_PARALL_SOLVER
 !                IF (abs(hVal - ACtest(IS,ID,JP)) .gt. THR8) THEN
 !                  WRITE(740+myrank,*) 'hVal=', hVal, 'ACtest=', ACtest(IS,ID,JP)
 !                  WRITE(740+myrank,*) '      diff=', hVal - ACtest(IS,ID,JP)
-!                  CALL FLUSH(740+myrank)
+!                  FLUSH(740+myrank)
 !                END IF
 !                eCoeffB=SolDat % ASPAR_block(IS,ID,J)*hVal
 !                eCoeffB=SolDat % ASPAR_block(IS,ID,J)/SolDat % ASPAR_block(IS,ID,Jb)
 !                IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
 !                  WRITE(740+myrank,*) '1J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
 !                  WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
-!                  CALL FLUSH(740+myrank)
+!                  FLUSH(740+myrank)
 !                END IF
 
 
@@ -2872,7 +2872,7 @@ MODULE WWM_PARALL_SOLVER
 !                IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
 !                  WRITE(740+myrank,*) '2J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
 !                  WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
-!                  CALL FLUSH(740+myrank)
+!                  FLUSH(740+myrank)
 !                END IF
                 ACret(IS,ID,IP)=ACret(IS,ID,IP) - eCoeff*ACret(IS,ID,JP)
               END DO
@@ -2887,7 +2887,7 @@ MODULE WWM_PARALL_SOLVER
 !            IF (abs(eCoeff - eCoeffB) .gt. THR) THEN
 !              WRITE(740+myrank,*) '3J=', J, 'eCoeff=', eCoeff, 'eCoeffB=', eCoeffB
 !              WRITE(740+myrank,*) '      diff=', eCoeff - eCoeffB
-!              CALL FLUSH(740+myrank)
+!              FLUSH(740+myrank)
 !            END IF
             ACret(IS,ID,IP)=ACret(IS,ID,IP)*SolDat % ASPAR_pc(IS,ID,J)
           END DO
@@ -3480,11 +3480,11 @@ MODULE WWM_PARALL_SOLVER
       Omega=1
       nbIter=0
       WRITE(740+myrank,*) 'Beginning solution'
-      CALL FLUSH(740+myrank)
+      FLUSH(740+myrank)
       DO
         nbIter=nbIter+1
         WRITE(740+myrank,*) 'nbIter=', nbIter
-        CALL FLUSH(740+myrank)
+        FLUSH(740+myrank)
 
         ! L1: Rhoi =(\hat{r}_0, r_{i-1}
         CALL I5B_SCALAR(MSCeffect, SolDat % AC4, SolDat % AC3, Prov)
@@ -3553,7 +3553,7 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_L2_LINF(MSCeffect, SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
         WRITE(740+myrank,*) 'CritVal=', CritVal
-        CALL FLUSH(740+myrank)
+        FLUSH(740+myrank)
         IF (CritVal .lt. MaxError) THEN
           EXIT
         ENDIF
@@ -3568,7 +3568,7 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END DO
       WRITE(740+myrank,*) 'End BCGS_REORG'
-      CALL FLUSH(740+myrank)
+      FLUSH(740+myrank)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3656,12 +3656,12 @@ MODULE WWM_PARALL_SOLVER
       CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MSC)
 # ifdef DEBUG
       WRITE(myrank+740,*) 'After SYMM_INIT_COLORING'
-      CALL FLUSH(myrank+740)
+      FLUSH(myrank+740)
 # endif
       CALL I5B_ALLOCATE(SolDat, MSC)
 # ifdef DEBUG
       WRITE(myrank+740,*) 'After I5B_ALLOCATE'
-      CALL FLUSH(myrank+740)
+      FLUSH(myrank+740)
 # endif
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
@@ -3724,7 +3724,7 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING WWM_SOLVER_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
 # if defined PLAN_I4
       CALL I4_EIMPS(LocalColor, SolDat)
@@ -3733,7 +3733,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING WWM_SOLVER_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -4272,7 +4272,7 @@ MODULE WWM_PARALL_SOLVER
       integer IS, ID, IP
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING I5B_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin I5B_EIMPS'
@@ -4336,7 +4336,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING I5B_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -4362,7 +4362,7 @@ MODULE WWM_PARALL_SOLVER
       Max_LINF=ZERO
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING I4_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       DO iMSCblock=1,LocalColor % NbMSCblock
 # ifdef DEBUG
@@ -4403,7 +4403,7 @@ MODULE WWM_PARALL_SOLVER
       END DO
       WRITE(STAT%FHNDL,*) 'nbIter=', nbIterMax, 'L2/LINF=', Max_L2, Max_LINF
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED I4_EIMPS'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

@@ -33,7 +33,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DDEP(IP,1)
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
 
             CASE (2)
@@ -59,7 +59,7 @@
                         WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD , 'MAXSLOPE'
                      END IF
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
 
             CASE DEFAULT
@@ -124,7 +124,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DCUX, DCUY
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE (2)
                CALL DIFFERENTIATE_XYDIR(CURTXY(:,1),DCUX(:,1),DCUX(:,2))
@@ -143,7 +143,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,4F15.7)') IP, DCUX(IP,1), DCUX(IP,2), DCUY(IP,1), DCUY(IP,2)
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE DEFAULT
          END SELECT
@@ -656,7 +656,7 @@
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 4 REACHED IN', CONV4, '% GRIDPOINTS'
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 5 REACHED IN', CONV5, '% GRIDPOINTS'
 #endif
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1851,7 +1851,7 @@
       character(*), intent(in) :: string
 
       WRITE(DBG%FHNDL, *) TRIM(string)
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 
 #ifdef MPI_PARALL_GRID
       CALL PARALLEL_ABORT(TRIM(string))
