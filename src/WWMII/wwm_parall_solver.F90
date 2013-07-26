@@ -267,6 +267,37 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5B_EXCHANGE_SL_WWM(LocalColor, AC)
+      USE DATAPOOL, only : MDC, rkind, LocalColorInfo
+      USE DATAPOOL, only : wwm_nnbr_send_sl, wwm_nnbr_recv_sl
+      USE DATAPOOL, only : wwm_ListNeigh_send_sl, wwm_ListNeigh_recv_sl
+      USE DATAPOOL, only : wwmsl_send_type, wwmsl_recv_type
+      USE DATAPOOL, only : wwmsl_send_rqst, wwmsl_recv_rqst
+      USE DATAPOOL, only : wwmsl_send_stat, wwmsl_recv_stat
+      USE DATAPOOL, only : ZERO, NP_RES, MNP
+      USE elfe_msgp, only : comm, ierr, myrank
+      implicit none
+      type(LocalColorInfo), intent(in) :: LocalColor
+      real(rkind), intent(inout) :: AC(LocalColor%MSCeffect,MDC,MNP)
+      integer iSync, iRank
+      DO iSync=1,wwm_nnbr_send_sl
+        iRank=wwm_ListNeigh_send(iSync)
+        CALL mpi_isend(AC, 1, wwmsl_send_type(iSync), iRank-1, 1020, comm, wwmsl_send_rqst(iSync), ierr)
+      END DO
+      DO iSync=1,wwm_nnbr_recv_sl
+        iRank=wwm_ListNeigh_recv_sl(iSync)
+        call mpi_irecv(AC,1,wwmsl_recv_type(iSync),iRank-1,1020,comm,wwmsl_recv_rqst(iSync),ierr)
+      END DO
+      IF (wwm_nnbr_send_sl > 0) THEN
+        call mpi_waitall(wwm_nnbr_send_sl, wwmsl_send_rqst, wwmsl_send_stat,ierr)
+      END IF
+      IF (wwm_nnbr_recv_sl > 0) THEN
+        call mpi_waitall(wwm_nnbr_recv_sl, wwmsl_recv_rqst, wwmsl_recv_stat,ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE CHECK_I5B_EXCHANGE(LocalColor)
       USE DATAPOOL
       IMPLICIT NONE
