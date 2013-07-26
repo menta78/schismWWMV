@@ -138,6 +138,7 @@
                                      ! 3 - NOAA CFRS
                                      ! 4 - NOAA NARR
 				     ! 5 - netCDF CF compilant wind (Uwind/Vwind)
+                                     ! 6 - Same as 1 but in netcdf
 /
 
 &CURR !NOT USED WITH SELFE
