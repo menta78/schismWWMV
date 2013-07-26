@@ -1736,7 +1736,14 @@
        character (len=200) :: eStrAtt
        character (len=15) :: eStrTime
        character (len=200) :: CoordString
-       character (len=100) :: Xname, Yname
+       character (len=100) :: Xname, Yname, eStrUnitTime
+       character (len=10) :: YnameYear, YnameMonth, YnameDay
+       character (len=10) :: YnameHour, YnameMin, YnameSec
+       character (len=50) :: YnameB, YnameC, YnameD, YnameE
+       character (len=50) :: YnameDate, YnameTime
+       integer alenB, alenC, alenD, alenE, alenTime, alenDate
+       integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
+       real(rkind) :: ConvertToDay
        real(rkind) :: eTimeStart
        integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
        integer aShift, posBlank, alen
@@ -1814,24 +1821,142 @@
        ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 
-       ISTAT = nf90_get_att(fid, varid, "units", eStrAtt)
+       ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
-       eStrTime( 1: 1)=eStrAtt(12:12)
-       eStrTime( 2: 2)=eStrAtt(13:13)
-       eStrTime( 3: 3)=eStrAtt(14:14)
-       eStrTime( 4: 4)=eStrAtt(15:15)
-       eStrTime( 5: 5)=eStrAtt(17:17)
-       eStrTime( 6: 6)=eStrAtt(18:18)
-       eStrTime( 7: 7)=eStrAtt(20:20)
-       eStrTime( 8: 8)=eStrAtt(21:21)
+       alen=LEN_TRIM(eStrUnitTime)
+       posBlank=INDEX(eStrUnitTime(1:alen), ' ')
+       Xname=eStrUnitTime(1:posBlank-1) ! should be days/hours/seconds
+       IF (TRIM(Xname) .eq. 'days') THEN
+         ConvertToDay=1
+       ELSEIF (TRIM(Xname) .eq. 'hours') THEN
+         ConvertToDay=1/24
+       ELSEIF (TRIM(Xname) .eq. 'seconds') THEN
+         ConvertToDay=1/86400
+       ELSE
+         CALL WWM_ABORT('Error in the code for conversion')
+       END IF
+
+
+       Yname=eStrUnitTime(posBlank+1:alen)
+       alenB=LEN_TRIM(Yname)
+       posBlank=INDEX(Yname(1:alenB), ' ')
+       YnameB=Yname(posBlank+1:alenB) ! should be 1990-01-01 0:0:0
+       !
+       alenC=LEN_TRIM(YnameB)
+       posSepDateTime=INDEX(YnameB(1:alenC), ' ')
+       IF (posSepDateTime .gt. 0) THEN
+         YnameDate=YnameB(1:posSepDateTime-1) ! should be 1990-01-01
+         YnameTime=YnameB(posSepDateTime+1:alenC) ! should be 0:0:0
+       ELSE
+         YnameDate=YnameB
+         eStrTime(10:10)='0'
+         eStrTime(11:11)='0'
+         eStrTime(12:12)='0'
+         eStrTime(13:13)='0'
+         eStrTime(14:14)='0'
+         eStrTime(15:15)='0'
+       END IF
+       !
+       alenDate=LEN_TRIM(YnameDate)
+       posBlank=INDEX(YnameDate(1:alenDate), '-')
+       YnameYear=YnameDate(1:posBlank-1) ! should be 1990
+       YnameD=YnameDate(posBlank+1:alenDate)
+       alenD=LEN_TRIM(YnameD)
+       posBlank=INDEX(YnameD(1:alenD), '-')
+       YnameMonth=YnameD(1:posBlank-1) ! should be 01
+       YnameDay=YnameD(posBlank+1:alenD) ! should be 01
+       !
+       ! year
+       eStrTime( 1: 1)=YnameYear( 1: 1)
+       eStrTime( 2: 2)=YnameYear( 2: 2)
+       eStrTime( 3: 3)=YnameYear( 3: 3)
+       eStrTime( 4: 4)=YnameYear( 4: 4)
+       !
+       ! month
+       lenMonth=LEN_TRIM(YnameMonth)
+       IF (lenMonth .eq. 2) THEN
+         eStrTime( 5: 5)=YnameMonth( 1: 1)
+         eStrTime( 6: 6)=YnameMonth( 2: 2)
+       ELSE
+         IF (lenMonth .eq. 1) THEN
+           eStrTime( 5: 5)='0'
+           eStrTime( 5: 5)=YnameMonth( 1: 1)
+         ELSE
+           CALL WWM_ABORT('DIE in trying to get the month')
+         END IF
+       END IF
+       !
+       ! day
+       lenDay=LEN_TRIM(YnameDay)
+       IF (lenDay .eq. 2) THEN
+         eStrTime( 7: 7)=YnameDay( 1: 1)
+         eStrTime( 8: 8)=YnameDay( 2: 2)
+       ELSE
+         IF (lenDay .eq. 1) THEN
+           eStrTime( 7: 7)='0'
+           eStrTime( 8: 8)=YnameDay( 1: 1)
+         ELSE
+           CALL WWM_ABORT('DIE in trying to get the day')
+         END IF
+       END IF
+       !
        eStrTime( 9: 9)='.'
-       eStrTime(10:10)=eStrAtt(23:23)
-       eStrTime(11:11)=eStrAtt(24:24)
-       eStrTime(12:12)=eStrAtt(26:26)
-       eStrTime(13:13)=eStrAtt(27:27)
-       eStrTime(14:14)=eStrAtt(29:29)
-       eStrTime(15:15)=eStrAtt(30:30)
+       !
+       IF (posSepDateTime .gt. 0) THEN
+         !
+         alenTime=LEN_TRIM(YnameTime)
+         posBlank=INDEX(YnameTime(1:alenTime), ':')
+         YnameHour=YnameTime(1:posBlank-1) ! should be 0
+         YnameE=YnameTime(posBlank+1:alenTime)
+         alenE=LEN_TRIM(YnameE)
+         posBlank=INDEX(YnameE(1:alenE), ':')
+         YnameMin=YnameE(1:posBlank-1) ! should be 0
+         YnameSec=YnameE(posBlank+1:alenE) ! should be 0
+         !
+         !
+         ! Hour
+         lenHour=LEN_TRIM(YnameHour)
+         IF (lenHour .eq. 2) THEN
+           eStrTime(10:10)=YnameHour( 1: 1)
+           eStrTime(11:11)=YnameHour( 2: 2)
+         ELSE
+           IF (lenHour .eq. 1) THEN
+             eStrTime(10:10)='0'
+             eStrTime(11:11)=YnameHour( 1: 1)
+           ELSE
+             CALL WWM_ABORT('DIE in trying to get the hour')
+           END IF
+         END IF
+         !
+         ! Min
+         lenMin=LEN_TRIM(YnameMin)
+         IF (lenMin .eq. 2) THEN
+           eStrTime(12:12)=YnameMin( 1: 1)
+           eStrTime(13:13)=YnameMin( 2: 2)
+         ELSE
+           IF (lenMin .eq. 1) THEN
+             eStrTime(12:12)='0'
+             eStrTime(13:13)=YnameMin( 1: 1)
+           ELSE
+             CALL WWM_ABORT('DIE in trying to get the min')
+           END IF
+         END IF
+         !
+         ! Sec
+         lenSec=LEN_TRIM(YnameSec)
+         IF (lenSec .eq. 2) THEN
+           eStrTime(14:14)=YnameSec( 1: 1)
+           eStrTime(15:15)=YnameSec( 2: 2)
+         ELSE
+           IF (lenSec .eq. 1) THEN
+             eStrTime(14:14)='0'
+             eStrTime(15:15)=YnameSec( 1: 1)
+           ELSE
+             CALL WWM_ABORT('DIE in trying to get the sec')
+           END IF
+         END IF
+       END IF
        CALL CT2MJD(eStrTime, eTimeStart)
        WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
        WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
@@ -1852,7 +1977,7 @@
        ISTAT = nf90_close(fid)
        CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
-       wind_time_mjd(:) = wind_time_mjd(:) + eTimeStart
+       wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + eTimeStart
 
        ! compute nodes and coefs
 

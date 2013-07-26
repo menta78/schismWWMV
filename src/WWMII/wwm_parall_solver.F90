@@ -713,6 +713,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE NETCDF_WRITE_MATRIX(LocalColor, ASPAR)
       USE DATAPOOL
       USE NETCDF
+      USE elfe_glbl, only : iplg, np_global
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       integer, SAVE :: iSystem = 1
@@ -760,8 +761,11 @@ MODULE WWM_PARALL_SOLVER
       iret=nf90_put_var(ncid,var_id,ListPos,start=(/1/), count = (/ np_global/))
       iret = nf90_close(ncid)
       !
-
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE
 # endif
 !**********************************************************************
 !*                                                                    *
