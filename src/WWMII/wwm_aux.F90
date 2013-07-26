@@ -222,9 +222,6 @@
          REAL(rkind)            :: DVDXIE, DVDYIE
 
          REAL(rkind)            :: WEI(MNP)
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)            :: WILD(MNP)
-#endif
 
          WEI(:)  = 0.0_rkind
          DVDX(:) = 0.0_rkind
@@ -1133,7 +1130,7 @@
       REAL(rkind), INTENT(OUT) :: ACLOC(MSC,MDC)
       REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC)
       REAL(rkind), SAVE         :: WI(3)
-      INTEGER :: IS, ID, NI(3), IE
+      INTEGER :: IS, NI(3), IE
       REAL(rkind) :: WVN, WVC, WVK, WVCG, WVKDEP
       integer IP, J
 

@@ -2403,7 +2403,7 @@
 !-----------------------------------------------------------------------
 !     local variables
 !
-      integer       :: i, its
+      integer       :: its
 !      real          :: dtime, dt(2), time
 !     external dtime
       save its
@@ -2887,9 +2887,8 @@
         real(rkind) a(*), alu(*)
         integer, intent(in) :: ja(*), ia(*)
         integer, intent(inout) :: ju(*), jlu(*), iw(n)
-        integer ju0, ii, js, j, jcol, jf, jm, jrow, jj, jw, i, ierr
+        integer ju0, ii, js, j, jcol, ierr
         integer istat
-        real(rkind) tl
         integer, allocatable :: ListJ(:)
         ju0 = n+2
         jlu(1) = ju0

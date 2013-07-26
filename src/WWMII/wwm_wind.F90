@@ -1733,13 +1733,12 @@
        integer i11, j11, i12, j12, i21, j21
        character(len=100) :: CHRERR
        character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
-       character (len=200) :: eStrAtt
        character (len=15) :: eStrTime
        character (len=200) :: CoordString
        character (len=100) :: Xname, Yname, eStrUnitTime
        character (len=10) :: YnameYear, YnameMonth, YnameDay
        character (len=10) :: YnameHour, YnameMin, YnameSec
-       character (len=50) :: YnameB, YnameC, YnameD, YnameE
+       character (len=50) :: YnameB, YnameD, YnameE
        character (len=50) :: YnameDate, YnameTime
        integer alenB, alenC, alenD, alenE, alenTime, alenDate
        integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime

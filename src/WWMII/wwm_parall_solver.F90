@@ -1195,7 +1195,6 @@ MODULE WWM_PARALL_SOLVER
       integer MaxDeg, iVert, eVert, eColor, eDeg
       integer idx, I, ChromaticNr, nbVert
       integer, allocatable :: ListPosFirst(:)
-      integer, allocatable :: TheOrdering(:)
       integer eColorF, iVertFound, eAdjColor
       integer nbUndef, MinDeg, eAdj, MinUndef, PosMin
       integer istat
@@ -1305,9 +1304,8 @@ MODULE WWM_PARALL_SOLVER
       integer, intent(in) :: Nblock
       integer Ntot, Hlen, Delta, iBlock, idx, ID, IS
       integer lenBlock, maxBlockLength
-      integer IC, nbCommon, eFirst, I, idxSend, idxRecv
+      integer IC, nbCommon, eFirst, I
       integer istat
-      REAL(rkind) :: eFieldStackA(MNP,3)
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
       CALL FLUSH(STAT%FHNDL)
@@ -1506,12 +1504,6 @@ MODULE WWM_PARALL_SOLVER
       type(Graph) :: AdjGraph
       integer :: ListColor(nproc)
       integer :: ListColorWork(nproc)
-      real(rkind) :: eFieldStackA(MNP,3)
-      real(rkind) :: eFieldStackB(MNP,2)
-      real(rkind) :: eFieldStackC(MNP,1)
-      real(rkind) :: eFieldStackRevA(3,MNP)
-      real(rkind) :: eFieldStackRevB(2,MNP)
-      real(rkind) :: eFieldStackRevC(1,MNP)
       integer TheRes, istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
@@ -1604,12 +1596,12 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: ListColor(nproc)
       real(rkind) :: p2d_data_send(MNP)
-      real(rkind) :: CovLower(MNP), CovLower_meth2(MNP), CovLower_meth3(MNP)
-      real(rkind) :: SumErr, SumDiff
+      real(rkind) :: CovLower(MNP), CovLower_meth2(MNP)
+      real(rkind) :: SumErr
       integer eColor, fColor, I, iRank, J
-      integer nbLow_send, nbUpp_send, nbLow_recv, nbUpp_recv
+      integer nbLow_send, nbUpp_send, nbLow_recv
       integer iProc, eSize, iLow, iUpp, DoOper
-      integer IC, eFirst, nbCommon, IP, IPloc, JP
+      integer IC, eFirst, nbCommon, IP, IPloc
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
@@ -1748,7 +1740,7 @@ MODULE WWM_PARALL_SOLVER
       integer eType1, eType2
       integer u2l_nnbr_send, u2l_nnbr_recv
       integer sync_nnbr_send, sync_nnbr_recv
-      integer eCov, eColor, fColor, iSync
+      integer eCov, eColor, fColor
       integer maxBlockLength
       integer nbMap0, nbMap1
       integer DoOper
@@ -2474,10 +2466,6 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-      integer IP, JP, J, JP2, J2, J_FOUND, IS, ID
-      integer, allocatable :: ListJ(:)
-      integer istat
-      real(rkind) tl
       CALL WWM_ABORT('Please program it')
       END SUBROUTINE
 !**********************************************************************
@@ -2751,13 +2739,10 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(in) :: SolDat
       integer, intent(in) :: iBlock
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect,MDC,MNP)
-      real(rkind) :: eCoeff, eCoeffB, hVal
+      real(rkind) :: eCoeff, hVal
       integer IP, idx, ID, IS, J, IP_glob
       integer lenBlock, JP, Jb
 !      real(rkind) :: ACtest(MSC, MDC,MNP)
-# ifdef DEBUG
-      real(rkind) :: eSum
-# endif
       lenBlock=LocalColor % BlockLength(iBlock)
 !      DO IP=1,NP_RES
 !        J=I_DIAG(IP)
@@ -2919,7 +2904,7 @@ MODULE WWM_PARALL_SOLVER
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(MSC, MDC, MNP)
-      INTEGER :: IP, IS, ID, i, iRank
+      INTEGER :: IP, ID, i, iRank
       integer iSync
       integer nbSync_send, nbSync_recv
       nbSync_recv=LocalColor%sync_nnbr_recv
@@ -2951,7 +2936,7 @@ MODULE WWM_PARALL_SOLVER
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
-      integer iBlock, lenBlock, idx, IS, ID
+      integer iBlock, lenBlock, idx, ID
       integer maxBlockLength
       maxBlockLength=LocalColor % maxBlockLength
       DO iBlock=1,LocalColor % Nblock
@@ -3358,9 +3343,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Beta(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: MaxError, CritVal
-      REAL(rkind) :: eSum1, eSum2
 # ifdef DEBUG
-      integer IS1, IS2
       REAL(rkind) :: Lerror
 # endif
       integer :: MaxIter = 30
@@ -3481,9 +3464,8 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Beta(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: Omega(LocalColor%MSCeffect,MDC)
       REAL(rkind) :: MaxError, CritVal
-      REAL(rkind) :: eSum1, eSum2
       integer :: MaxIter = 30
-      integer IP, IS, ID, MSCeffect
+      integer IP, MSCeffect
       MaxError=SOLVERTHR
       MSCeffect=LocalColor % MSCeffect
       CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat % AC2, SolDat % AC3)
@@ -3822,11 +3804,11 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: FL11(LocalColor%MSCeffect,MDC), FL12(LocalColor%MSCeffect,MDC), FL21(LocalColor%MSCeffect,MDC), FL22(LocalColor%MSCeffect,MDC), FL31(LocalColor%MSCeffect,MDC), FL32(LocalColor%MSCeffect,MDC)
       REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
       INTEGER :: I1, I2, I3
-      INTEGER :: IP, ID, IS, IE, POS
+      INTEGER :: IP, ID, IS, IE
 # ifndef SINGLE_LOOP_AMATRIX
       INTEGER :: POS
 # endif
-      INTEGER :: I, J, IPGL, IPrel, ISr, IS1, IS2
+      INTEGER :: I, IPGL, IPrel, ISr, IS1, IS2
 
 # ifdef SINGLE_LOOP_AMATRIX
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3), NM(LocalColor%MSCeffect,MDC)
@@ -4077,13 +4059,14 @@ MODULE WWM_PARALL_SOLVER
 # ifndef SINGLE_LOOP_AMATRIX
       REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
       REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+      INTEGER     :: POS
 # else
       REAL(rkind) :: DELTAL(MSC,MDC,3)
       REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
 # endif
       INTEGER :: I1, I2, I3
-      INTEGER :: IP, ID, IS, IE, POS
-      INTEGER :: I, J, IPGL, IPrel
+      INTEGER :: IP, ID, IS, IE
+      INTEGER :: I, IPGL, IPrel
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
 # ifdef DEBUG
