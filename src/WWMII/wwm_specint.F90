@@ -15,10 +15,10 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID, NSTEP, iter
+         INTEGER        :: IP, IS, ID
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
-         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL1(MSC,MDC), SSBRL2(MSC,MDC)
-         REAL(rkind)    :: WIND10, WINDTH, DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
+         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
          DT4S_T = 1./3. * DT4S
          DT4S_E = 0.125 * DT4S
@@ -120,10 +120,10 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER :: IP, ID, ISELECT
+         INTEGER :: IP, ISELECT
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
-         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL(MSC,MDC)
+         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
 !$OMP WORKSHARE
          IMATDAA = 0.
@@ -176,7 +176,7 @@
 
          REAL(rkind)    :: NPF(MSC)
          REAL(rkind)    :: OLDAC
-         REAL(rkind)    :: NEWDAC, NEWAC(MSC,MDC)
+         REAL(rkind)    :: NEWDAC
          REAL(rkind)    :: MAXDAC, CONST, SND, USTAR
 
          CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
@@ -223,7 +223,6 @@
          LOGICAL, INTENT(IN) :: LIMITER
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind)                :: IMATRA_WAM(MSC,MDC), IMATDA_WAM(MSC,MDC)
 
 
 !         DELT = DT4S
@@ -363,11 +362,11 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         INTEGER :: IS, ID, IK, ITH, IS0
+         INTEGER :: IS, ID
 
          REAL(rkind)    :: ACOLD(MSC,MDC)
          REAL(rkind)    :: NPF(MSC)
-         REAL(rkind)    :: TMP1, TMP2, TMP3, AFILT
+         REAL(rkind)    :: AFILT
          REAL(rkind)    :: NEWDAC, CONST, SND, DAMAX, AFAC
          REAL(rkind)    :: MAXDAC, DTMAX, DTTOT, DTLEFT, DT4SI, USTAR
 

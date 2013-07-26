@@ -136,13 +136,13 @@
          INTEGER              :: IP, istat
          REAL(rkind)          :: ACLOC(MSC,MDC)
          REAL(rkind)          :: HS,WLM,LPP,FPP,CPP,BOTEXPER
-         REAL(rkind)          :: URSELL,UBOT,TM,TM01,TM10
-         REAL(rkind)          :: TMBOT,FP,CP,KPP,DM,DSPR,ORBITAL,ETOTS,ETOTC,WNPP,TPP,CGPP
-         REAL(rkind)          :: PEAKDSPR, PEAKDM, KME, SME, HSWE, HSLIM, TM02, KLM, DPEAK
+         REAL(rkind)          :: UBOT,TM01,TM10
+         REAL(rkind)          :: TMBOT, KPP,DM,DSPR,ORBITAL,ETOTS,ETOTC,WNPP,TPP,CGPP
+         REAL(rkind)          :: PEAKDSPR, PEAKDM, HSWE, HSLIM, TM02, KLM, DPEAK
          REAL(rkind)          :: TPPD,KPPD,CGPD,CPPD
 # ifdef WWM_MPI
          REAL(rkind), allocatable :: OUTT(:,:), OUTT_TOT(:,:)
-         REAL(rkind)    :: TP, MS, DEG
+         REAL(rkind)    :: TP
 # endif
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
 # ifndef WWM_MPI

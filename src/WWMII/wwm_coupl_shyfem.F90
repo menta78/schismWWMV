@@ -177,14 +177,12 @@
         USE DATAPOOL
         implicit none
         integer IP, k, ID, IS
-        real(rkind) eDep, eHeight
-        real(rkind) eFrac, eFracB
-        real(rkind) eQuot1, eScal, eZeta
-        real(rkind) eOmega, eMult, kD, eSinc
-        real(rkind) USTOKESpart, VSTOKESpart, eJPress
-        real(rkind) ACLOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        real(rkind) PPTAIL, CETAIL, CKTAIL
-        integer IDsel, ISsel, SelectedK
+        real(rkind) eDep
+        real(rkind) eFrac
+        real(rkind) eQuot1
+        real(rkind) eMult, kD
+        real(rkind) eJPress
+        real(rkind) eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
         logical DoTail
         real(rkind) eWkReal
         real(rkind) eJPress_loc, eProd, eUint, eVint
@@ -253,10 +251,10 @@
       INTEGER, INTENT(IN)  :: K
       INTEGER         :: IL, IP, istat
       REAL(rkind)     :: ACLOC(MSC,MDC)
-      REAL(rkind)     :: HS,WLM,LPP
-      REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2,URSELL,UBOT
-      REAL(rkind)     :: TMBOT,ETOT,FP,CP,KPP,DM,DSPR,PEAKDSPR,PEAKDM
-      REAL(rkind)     :: ORBITAL, USTOKES, USTOKES_X, USTOKES_Y
+      REAL(rkind)     :: HS,LPP
+      REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2, UBOT
+      REAL(rkind)     :: TMBOT,ETOT, KPP,DM,DSPR,PEAKDSPR,PEAKDM
+      REAL(rkind)     :: ORBITAL
       REAL(rkind)     :: BOTEXPER, ETOTS, ETOTC, DPEAK
       REAL(rkind)     :: FPP, TPP, CPP, WNPP, CGPP, TPPD,KPPD,CGPD,CPPD 
 # ifdef MPI_PARALL_GRID

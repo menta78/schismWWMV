@@ -337,7 +337,6 @@
       SUBROUTINE PRINT_HS_TRIPLE(eX, eY)
       USE DATAPOOL
       implicit none
-      INTEGER ListNode(3)
       REAL(rkind), intent(in) :: eX, eY
       REAL(rkind) :: HS, TM01, TM02, TM10, KLM, WLM
       REAL(rkind) :: X(3), Y(3), WI(3)
@@ -393,7 +392,6 @@
          character(len=256) :: FILEWRITE
          INTEGER           :: I, IP, NI(3), IS
          LOGICAL           :: ALIVE, LSAME
-         REAL(rkind)       :: USTARLOC,Z0LOC,WINDXLOC,WINDYLOC,ALPHALOC,CDLOC
          REAL(rkind)       :: WI(3)
 #ifdef MPI_PARALL_GRID
          REAL(rkind) :: TheIsumR
@@ -703,10 +701,9 @@
       INTEGER     :: LPOS
       integer istat
       character(len =256) :: FILE_NAME, PRE_FILE_NAME
-      integer :: iret, ncid, ntime_dims, nbstat_dims
-      integer :: msc_dims, mdc_dims, three_dims, one_dims
+      integer :: iret, ncid
       integer :: var_id
-      integer :: I, IE, irec_dim, IELOC, ISMAX
+      integer :: I, irec_dim, IELOC, ISMAX
       character (len = *), parameter :: CallFct = "OUTPUT_STATION_NC"
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: FULLNAME = "full-name"
@@ -717,14 +714,13 @@
       REAL(rkind)  :: OUTPAR(OUTVARS_COMPLETE)
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
-      INTEGER           :: IP, NI(3), IS, ID
       REAL(rkind)       :: WI(3)
       integer eInt(1)
       integer POSITION_BEFORE_POINT
 # ifdef MPI_PARALL_GRID
       REAL(rkind) :: TheIsumR
 # endif
-      REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2), ESUM
+      REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2)
 
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
@@ -733,13 +729,11 @@
       DO I = 1, IOUTS
         IF (STATION(I)%IFOUND == 1) THEN
           STATION(I)%OUTPAR_NODE = 0.
-          CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC,                    &
-     &                        DEPLOC,WATLOC,WKLOC)
+          CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC, DEPLOC,WATLOC,WKLOC)
           IELOC=STATION(I)%ELEMENT
           ISMAX=STATION(I)%ISMAX
           WI=STATION(I)%WI(3)
-          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,                    &
-     &       WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
+          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
           IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
             CALL CLSPEC(WKLOC,DEPLOC,CURTXYLOC,ACLOC,ACOUT_1D,ACOUT_2D)
           END IF
@@ -974,7 +968,7 @@
          REAL(rkind) :: TheIsumR
          CHARACTER(LEN=20) :: TITLEFORMAT,OUTPUTFORMAT
          CHARACTER(LEN=2)  :: CHRTMP
-         INTEGER           :: I, IP, IS, ID
+         INTEGER           :: I, IS
          LOGICAL           :: ALIVE
 
 #ifndef MPI_PARALL_GRID
