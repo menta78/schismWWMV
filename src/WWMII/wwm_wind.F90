@@ -1750,6 +1750,7 @@
       character (len=20) :: WindTimeStr
       real(rkind) :: ConvertToDay
       real(rkind) :: eTimeStart
+      character(len=100) :: CHRERR
       integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
       integer aShift, posBlank, alen
       real(rkind) :: X(3), Y(3), WI(3), a, b, eX, eY
@@ -1765,18 +1766,30 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
       ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
       ISTAT = nf90_inquire_dimension(fid, dimidsB(3), name=WindTimeStr)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      IF (ISTAT /= 0) THEN
+        CHRERR = nf90_strerror(ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+        cf_scale_factor=ONE
+      ENDIF
       WRITE(WINDBG%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
+      FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "add_offset", cf_add_offset)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      IF (ISTAT /= 0) THEN
+        CHRERR = nf90_strerror(ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+        cf_add_offset=ZERO
+      ENDIF
       WRITE(WINDBG%FHNDL,*) 'cf_add_offset=', cf_add_offset
+      FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "coordinates", CoordString)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
@@ -1786,6 +1799,7 @@
       Yname=CoordString(posBlank+1:alen)
       WRITE(WINDBG%FHNDL,*) 'Xname=', TRIM(Xname)
       WRITE(WINDBG%FHNDL,*) 'Yname=', TRIM(Yname)
+      FLUSH(WINDBG%FHNDL)
 
       ! Reading lontitude/latitude array
 
@@ -1803,6 +1817,7 @@
 
       WRITE(WINDBG%FHNDL,*) 'NDX_WIND_FD=', NDX_WIND_FD
       WRITE(WINDBG%FHNDL,*) 'NYX_WIND_FD=', NDY_WIND_FD
+      FLUSH(WINDBG%FHNDL)
 
       allocate(CF_LON(NDX_WIND_FD, NDY_WIND_FD), CF_LAT(NDX_WIND_FD, NDY_WIND_FD), UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
@@ -2094,8 +2109,11 @@
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor
       USE DATAPOOL, only : THR, ONE
       IMPLICIT NONE
-      INTEGER           :: ISTAT, fid, varid, dimids(2)
+      INTEGER           :: ISTAT, fid, varid
+      INTEGER           :: dimidsB(2), dimids(2)
       integer nbChar
+      character (len=20) :: WindTimeStr
+      character(len=100) :: CHRERR
       character (len = *), parameter :: CallFct="INIT_DIRECT_NETCDF_CF"
       character (len=100) :: eStrUnitTime
       real(rkind) :: ConvertToDay
@@ -2109,18 +2127,35 @@
       ISTAT = nf90_inq_varid(fid, "Uwind", varid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-      ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
+      ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
+      ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      FLUSH(WINDBG%FHNDL)
+
+      ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
+      IF (ISTAT /= 0) THEN
+        CHRERR = nf90_strerror(ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+        cf_scale_factor=ONE
+      ENDIF
       WRITE(WINDBG%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
+      FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "add_offset", cf_add_offset)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      IF (ISTAT /= 0) THEN
+        CHRERR = nf90_strerror(ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+        cf_add_offset=ZERO
+      ENDIF
       WRITE(WINDBG%FHNDL,*) 'cf_add_offset=', cf_add_offset
+      FLUSH(WINDBG%FHNDL)
 
       ! Reading time
        
-      ISTAT = nf90_inq_varid(fid, "wind_time", varid)
+      ISTAT = nf90_inq_varid(fid, WindTimeStr, varid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
       ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
