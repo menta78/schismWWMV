@@ -22,7 +22,7 @@
         IF (LCWIN) THEN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED' 
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT, LWDIR
-          CALL FLUSH(WINDBG%FHNDL)
+          FLUSH(WINDBG%FHNDL)
           IF (LWDIR) THEN
             CALL DEG2NAUT(WDIR, WDIRT, LNAUTIN)
             DO IP = 1, MNP
@@ -38,7 +38,7 @@
         ELSE ! LCWIN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)')  'SPATIAL VARIABLE WIND FIELD IS USED'
-          CALL FLUSH(WINDBG%FHNDL)
+          FLUSH(WINDBG%FHNDL)
           IF (IWINDFORMAT == 1) THEN
             CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .FALSE., 2, WINDXY)
 #ifdef NCDF
@@ -62,7 +62,7 @@
             CALL READ_NETCDF_NARR(IFILE, IT, WINDXY)
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF CF_COMPLIANT STATIONARY FIELD 
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
-            CALL FLUSH(WINDBG%FHNDL)
+            FLUSH(WINDBG%FHNDL)
             CALL INIT_NETCDF_CF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
@@ -72,7 +72,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
-              CALL FLUSH(WINDBG%FHNDL)
+              FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in CF wind')
             END IF
             IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
@@ -81,7 +81,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
-              CALL FLUSH(WINDBG%FHNDL)
+              FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in CF wind')
             END IF
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
@@ -94,7 +94,7 @@
             END IF
             write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
             write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
-            CALL FLUSH(WINDBG%FHNDL)
+            FLUSH(WINDBG%FHNDL)
 #endif
           ELSE
             CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need netcdf)')
@@ -108,14 +108,14 @@
         ELSE
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'NONSTATIONARY WIND FIELD IS USED        '
-          CALL FLUSH(WINDBG%FHNDL)
+          FLUSH(WINDBG%FHNDL)
           SEWI%TOTL = (SEWI%EMJD - SEWI%BMJD) * DAY2SEC
           SEWI%ISTP = NINT( SEWI%TOTL / SEWI%DELT ) + 1
           SEWI%TMJD = SEWI%BMJD
           WRITE(WINDBG%FHNDL,*) SEWI%BEGT, SEWI%ENDT, SEWI%ISTP, SEWI%TOTL/3600.0, SEWI%DELT
           WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL VARIABLE WIND FIELD IS USED'
           WRITE(WINDBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
-          CALL FLUSH(WINDBG%FHNDL)
+          FLUSH(WINDBG%FHNDL)
           IF (IWINDFORMAT == 1) THEN
             OPEN(WIN%FHNDL, FILE = TRIM(WIN%FNAME), STATUS = 'OLD')
             CALL CSEVAL( WIN%FHNDL, TRIM(WIN%FNAME), .TRUE., 2, WINDXY)
@@ -141,7 +141,7 @@
           ELSE IF (IWINDFORMAT == 5) THEN
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED CF NETCDF'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
-            CALL FLUSH(WINDBG%FHNDL)
+            FLUSH(WINDBG%FHNDL)
             CALL INIT_NETCDF_CF !load wind_time_mjd and compute interp coefs
             IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
               WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside CF wind_time range!'
@@ -149,7 +149,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
-              CALL FLUSH(WINDBG%FHNDL)
+              FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in CF wind')
             END IF
             IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
@@ -158,7 +158,7 @@
               WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
               WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
               WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
-              CALL FLUSH(WINDBG%FHNDL)
+              FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('Error in CF wind')
             END IF
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
@@ -173,7 +173,7 @@
             END IF
             write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
             write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
-            CALL FLUSH(WINDBG%FHNDL)
+            FLUSH(WINDBG%FHNDL)
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
@@ -1630,7 +1630,7 @@
        WRITE(DBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
        WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
        WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
-       CALL FLUSH(DBG%FHNDL)
+       FLUSH(DBG%FHNDL)
        CALL WWM_ABORT('Error in CF wind forcing time setup')
        END SUBROUTINE GET_CF_TIME_INDEX
 !**********************************************************************
@@ -1707,7 +1707,7 @@
        WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
        WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(varout(:,1)), maxval(varout(:,1))
        WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(varout(:,2)), maxval(varout(:,2))
-       CALL FLUSH(WINDBG%FHNDL)
+       FLUSH(WINDBG%FHNDL)
        END SUBROUTINE READ_INTERP_NETCDF_CF
 !****************************************************************************
 !*  CF_COMPLIANT WIND                                                       *
@@ -1739,7 +1739,7 @@
        character (len=10) :: YnameYear, YnameMonth, YnameDay
        character (len=10) :: YnameHour, YnameMin, YnameSec
        character (len=50) :: YnameB, YnameD, YnameE
-       character (len=50) :: YnameDate, YnameTime
+       character (len=50) :: YnameDate, YnameTime, YnameTimeP
        integer alenB, alenC, alenD, alenE, alenTime, alenDate
        integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
        real(rkind) :: ConvertToDay
@@ -1846,7 +1846,14 @@
        posSepDateTime=INDEX(YnameB(1:alenC), ' ')
        IF (posSepDateTime .gt. 0) THEN
          YnameDate=YnameB(1:posSepDateTime-1) ! should be 1990-01-01
-         YnameTime=YnameB(posSepDateTime+1:alenC) ! should be 0:0:0
+         YnameTimeP=YnameB(posSepDateTime+1:alenC) ! should be 0:0:0
+         alenC=LEN_TRIM(YnameTime)
+         posBlank=INDEX(YnameTimeP(1:alenC), ' ')
+         IF (posBlank .eq. 0) THEN
+           YnameTime=YnameTimeP
+         ELSE
+           YnameTime=YnameTimeP(1:posBlank-1)
+         END IF
        ELSE
          YnameDate=YnameB
          eStrTime(10:10)='0'
@@ -1904,6 +1911,10 @@
        !
        IF (posSepDateTime .gt. 0) THEN
          !
+         WRITE(WINDBG%FHNDL,*) 'YnameTime =', YnameTime
+         WRITE(WINDBG%FHNDL,*) 'YnameTimeP=', YnameTimeP
+         FLUSH(WINDBG%FHNDL)
+
          alenTime=LEN_TRIM(YnameTime)
          posBlank=INDEX(YnameTime(1:alenTime), ':')
          YnameHour=YnameTime(1:posBlank-1) ! should be 0
@@ -1952,6 +1963,9 @@
              eStrTime(14:14)='0'
              eStrTime(15:15)=YnameSec( 1: 1)
            ELSE
+             WRITE(WINDBG%FHNDL,*) 'YnameSec=', TRIM(Ynamesec)
+             WRITE(WINDBG%FHNDL,*) 'lenSec=', lenSec
+             FLUSH(WINDBG%FHNDL)
              CALL WWM_ABORT('DIE in trying to get the sec')
            END IF
          END IF
@@ -1959,7 +1973,7 @@
        CALL CT2MJD(eStrTime, eTimeStart)
        WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
        WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
-       CALL FLUSH(WINDBG%FHNDL)
+       FLUSH(WINDBG%FHNDL)
 
        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
@@ -2078,7 +2092,7 @@
                WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
                WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
                WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
-               CALL FLUSH(WINDBG%FHNDL)
+               FLUSH(WINDBG%FHNDL)
                CALL WWM_ABORT('Incorrect CF wind input')
              END IF
              aShift=aShift + 1
