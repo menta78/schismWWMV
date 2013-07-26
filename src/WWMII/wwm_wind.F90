@@ -1738,7 +1738,8 @@
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
       USE DATAPOOL, only : CF_coeff, CF_IX, CF_IY, SHIFTXY, THR, ONE
       IMPLICIT NONE
-      INTEGER           :: ISTAT, fid, varid, dimids(2), closest(2), I
+      INTEGER           :: ISTAT, fid, varid, dimids(2), dimidsB(3)
+      INTEGER           :: closest(2), I
       integer nbChar
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:), dist(:,:)
       REAL(rkind)              :: d_lon, d_lat
@@ -1746,6 +1747,7 @@
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
       character (len=200) :: CoordString
       character (len=100) :: Xname, Yname, eStrUnitTime
+      character (len=20) :: WindTimeStr
       real(rkind) :: ConvertToDay
       real(rkind) :: eTimeStart
       integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
@@ -1761,6 +1763,12 @@
 
       ISTAT = nf90_inq_varid(fid, "Uwind", varid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+      ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+
+      ISTAT = nf90_inquire_dimension(fid, dimidsB(3), name=WindTimeStr)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
@@ -1810,7 +1818,7 @@
 
       ! Reading time
 
-      ISTAT = nf90_inq_varid(fid, "wind_time", varid)
+      ISTAT = nf90_inq_varid(fid, TRIM(WindTimeStr), varid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
       ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
