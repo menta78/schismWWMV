@@ -270,7 +270,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_EXCHANGE_SL_WWM(LocalColor, AC)
       USE DATAPOOL, only : MDC, rkind, LocalColorInfo
       USE DATAPOOL, only : wwm_nnbr_send_sl, wwm_nnbr_recv_sl
-      USE DATAPOOL, only : wwm_ListNeigh_send_sl, wwm_ListNeigh_recv_sl
+      USE DATAPOOL, only : wwm_ListNeigh_send_sl, wwm_ListNeigh_recv_sl, wwm_ListNeigh_send
       USE DATAPOOL, only : wwmsl_send_type, wwmsl_recv_type
       USE DATAPOOL, only : wwmsl_send_rqst, wwmsl_recv_rqst
       USE DATAPOOL, only : wwmsl_send_stat, wwmsl_recv_stat
