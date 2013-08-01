@@ -75,7 +75,7 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
           ELSE IF (IWINDFORMAT == 6) THEN ! DIRECT WWM forcing (no interp)
-            CALL INIT_DIRECT_NETCDF_CF !load wind_time_mjd
+            CALL INIT_DIRECT_NETCDF_CF
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
@@ -162,6 +162,7 @@
 #endif
 #ifdef GRID
           ELSE IF (IWINDFORMAT == 7) THEN
+            CALL GRIB_INIT
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
@@ -250,6 +251,9 @@
           END IF
           REC1_old = REC1_new
           REC2_old = REC2_new
+#endif
+#ifdef GRID
+        ELSE IF (IWINDFORMAT == 7) THEN
 #endif
         END IF
         SEWI%TMJD = SEWI%TMJD + SEWI%DELT*SEC2DAY
@@ -2202,4 +2206,46 @@
       wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + eTimeStart
       CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
       END SUBROUTINE INIT_DIRECT_NETCDF_CF
+#endif
+#ifdef GRIB
+!****************************************************************************
+!* This is functionality for reading GRIB file from ECMWF                   *
+!* We use 
+!****************************************************************************
+      SUBROUTINE GRIB_INIT
+      USE DATAPOOL
+      USE GRIB_API
+      IMPLICIT NONE
+      INTEGER istat, IT
+
+      OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
+      NUM_NETCDF_FILES = 0
+      DO
+        READ( WIN%FHNDL, *, IOSTAT = ISTAT )
+        IF ( ISTAT /= 0 ) EXIT
+        NUM_GRIB_FILES = NUM_GRIB_FILES + 1
+      END DO
+      REWIND (WIN%FHNDL)
+
+      ALLOCATE(GRIB_FILE_NAMES(NUM_GRIB_FILES), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 18')
+      DO IT = 1, NUM_GRIB_FILES
+        READ( WIN%FHNDL, *) GRIB_FILE_NAMES(IT)
+        WRITE(WINDBG%FHNDL,*) IT, GRIB_FILE_NAMES(IT)
+      END DO
+      CLOSE (WIN%FHNDL)
+      FLUSH(WINDBG%FHNDL)
+      !
+      nbtime_mjd=NUM_GRIB_FILES
+      allocate(wind_time_mjd(nbtime_mjd), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+      DO IT=1, nbTime_mjd
+        CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
+        CALL GRIB_NEW_FROM_FILE(ifile, igrib)
+        CALL GRIB_CLOSE_FILE(ifile)
+      END DO
+
+
+
+      END SUBROUTINE GRIB_INIT
 #endif
