@@ -14,6 +14,9 @@ NETCDF = on
 OPENMP = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
+# Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
+GRIB = on
+
 
 #F90 = gfortran
 F90 = mpif90
@@ -109,6 +112,12 @@ endif
 ifdef OPENMP 
   OPENMPFLAG  = -openmp 
 endif
+
+ifdef GRIB
+  LIBS += $(GRIB_PATH)/lib/libgrib_api_f90.a
+  FFLAGS += -DGRIB -I$(GRIB_PATH)/include
+endif
+
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 

@@ -160,6 +160,9 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
+#ifdef GRID
+          ELSE IF (IWINDFORMAT == 7) THEN
+#endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
           ENDIF
@@ -226,28 +229,42 @@
           ELSE
             WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
           END IF
-          write(WINDBG%FHNDL,'("w1,w2:",2F6.3)') cf_w1, cf_w2
-          write(WINDBG%FHNDL,'("REC12_old, REC12_new:",4I8)')REC1_old,REC2_old, REC1_new,REC2_new
-          write(WINDBG%FHNDL,'("max WINDXY:",2F7.2)')maxval(WINDXY(:,1)),maxval(WINDXY(:,2))
-          write(WINDBG%FHNDL,'("min WINDXY:",2F7.2)')minval(WINDXY(:,1)),minval(WINDXY(:,2))
+          REC1_old = REC1_new
+          REC2_old = REC2_new
+        ELSE IF (IWINDFORMAT == 6) THEN
+          IF (K.EQ.1) THEN
+            REC1_old = 0
+            REC2_old = 0
+          END IF
+          CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
+          IF (REC1_new.NE.REC1_old) THEN
+            CALL READ_DIRECT_NETCDF_CF(REC1_new,tmp_wind1)
+          END IF
+          IF (REC2_new.NE.REC2_old) THEN
+            CALL READ_DIRECT_NETCDF_CF(REC2_new,tmp_wind2)
+          END IF
+          IF (cf_w1.NE.1) THEN
+            WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
+          ELSE
+            WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
+          END IF
           REC1_old = REC1_new
           REC2_old = REC2_new
 #endif
         END IF
         SEWI%TMJD = SEWI%TMJD + SEWI%DELT*SEC2DAY
       END IF
+      write(WINDBG%FHNDL,'("max WINDXY:",2F7.2)')maxval(WINDXY(:,1)),maxval(WINDXY(:,2))
+      write(WINDBG%FHNDL,'("min WINDXY:",2F7.2)')minval(WINDXY(:,1)),minval(WINDXY(:,2))
 
       IF (LWINDSWAN) THEN
         WRITE(3333,*) SEWI%TMJD
         WRITE(3333,*) WINDXY(:,1)
         WRITE(3333,*) WINDXY(:,2)
       END IF
-
-!AR: What is this all about? Mathieu please check this!
-      IF (LSEWD.AND.(IWINDFORMAT.NE.5) ) THEN
+      IF (LSEWD.AND.(IWINDFORMAT.NE.5).AND.(IWINDFORMAT.NE.6) ) THEN
         WINDXY = WINDXY + DVWIND
       END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
