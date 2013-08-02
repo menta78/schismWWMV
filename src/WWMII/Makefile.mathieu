@@ -19,9 +19,9 @@ GRIB = on
 
 
 #F90 = gfortran
-F90 = mpif90
+#F90 = mpif90
 #F90 = mpif90-vt
-#F90 = ifort
+F90 = ifort
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
@@ -115,7 +115,7 @@ endif
 
 ifdef GRIB
   LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
-  FFLAGS += -DGRIB -I$(GRIB_PATH)/include
+  FFLAGS += -DGRB -I$(GRIB_PATH)/include
 endif
 
 

@@ -877,7 +877,9 @@
       REAL(rkind), intent(out) :: YPtotal(np_total)
       REAL(rkind), intent(out) :: DEPtotal(np_total)
       integer, intent(out) :: INEtotal(3, ne_total)
-      integer NewId, nb1, nb2, i, k, idx, iegb, j, statfile
+# ifdef MPI_PARALL_GRID
+      integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
+# endif
 # ifdef MPI_PARALL_GRID
       NewId=78557
       open(NewId,file='hgrid.gr3',status='old',iostat=statfile)
@@ -1085,7 +1087,9 @@
       REAL(rkind), allocatable :: DEPtotal(:)
       integer, allocatable :: INEtotal(:,:)
       integer Oper
+#ifdef MPI_PARALL_GRID
       integer eInt(1)
+#endif
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT.eq.1) THEN
         iret=nf90_inq_varid(ncid, 'iplg', var_id)
@@ -1521,7 +1525,9 @@
       real(rkind) :: eWriteReal(1)
       integer var_id, iret
       integer I
+#ifdef MPI_PARALL_GRID
       integer eInt(1)
+#endif
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_2"
       !
 # ifdef MPI_PARALL_GRID

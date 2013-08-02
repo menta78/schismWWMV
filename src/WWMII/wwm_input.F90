@@ -1074,7 +1074,6 @@
 #endif
       IMPLICIT NONE
       INTEGER :: IP, ISTAT
-      REAL(rkind)    :: WDIRT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind) :: tmp
@@ -1152,8 +1151,7 @@
 #endif
       IMPLICIT NONE
 
-      INTEGER :: IP, ISTAT
-      REAL(rkind)    :: WDIRT
+      INTEGER :: ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind)    :: tmp
@@ -1220,7 +1218,7 @@
          INTEGER :: I, IP, IE, ISTAT, ITMP, JTMP
          REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
 
-         REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3, DBLTMP
+         REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
          INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
          CHARACTER(LEN=100)              :: RHEADER
 !
@@ -1362,7 +1360,6 @@
          IMPLICIT NONE
 
          REAL(rkind) :: TEST
-         REAL(rkind) :: DIFFTIME
 
 !        Check timings ...
 
@@ -1572,7 +1569,6 @@
 !        REAL(rkind)  :: DTMP, DTMP1, DTMP2
 !        character ( len = 15 ) chrdate
         REAL(rkind), ALLOCATABLE :: BND_TIME(:)
-        character ( len = 40 ) netcfd_fname
         character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
 
         integer, dimension(nf90_max_var_dims) :: dimIDs

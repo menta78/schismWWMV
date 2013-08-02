@@ -548,7 +548,7 @@
 
          INTEGER, INTENT(IN) :: K
          REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IT, IFILE, TheRes
+         INTEGER             :: IT, IFILE
 
 ! update wind ...
          IF (LWINDFROMWWM) THEN

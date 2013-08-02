@@ -915,7 +915,7 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 
-      INTEGER I1, I2, ID, IDDUM, IS, ISM, ISM1, ISMAX, ISP, ISP1, IJ1, IJ2, IRES
+      INTEGER I1, I2, ID, IS, ISM, ISM1, ISMAX, ISP, ISP1, IJ1, IJ2, IRES
       REAL(rkind)    AUX1, AUX2, BIPH, C0, CM, DEP_2, DEP_3, E0, ACTMP(MDC,MSC), URSELL
       REAL(rkind)    EM,FT, RINT, SIGPI, SINBPH, STRI, WISM, WISM1, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
       REAL(rkind)    WISP, WISP1,W0, WM, WN0, WNM,  XISLN, IMATRATMP(MDC,MSC)

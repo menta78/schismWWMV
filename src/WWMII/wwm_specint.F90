@@ -222,7 +222,7 @@
          INTEGER, INTENT(IN) :: IP, ISELECT
          LOGICAL, INTENT(IN) :: LIMITER
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+!         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
 
 !         DELT = DT4S

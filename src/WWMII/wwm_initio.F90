@@ -955,9 +955,10 @@
 #endif
          USE DATAPOOL
          IMPLICIT NONE
+#ifdef MPI_PARALL_GRID
          CHARACTER (LEN = 30) :: FDB
          INTEGER              :: LFDB
-
+#endif
 #ifdef SELFE
             INP%FNAME  = 'wwminput.nml'
 #endif
@@ -1845,11 +1846,11 @@
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
-        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3, M0_WWM, M1_WWM, M2_WWM
+        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID
 
-        REAL(rkind) :: JACOBIAN(MSC), AM, SM, OUTPAR(OUTVARS)
+        REAL(rkind) :: JACOBIAN(MSC), AM, SM
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
 

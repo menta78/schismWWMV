@@ -87,11 +87,17 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
+#ifdef GRB
+          ELSE IF (IWINDFORMAT == 7) THEN ! GRIB forcing from ecmwf
+            Print *, 'Need to program it'
+            STOP
+#endif
           ELSE
-            CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need netcdf)')
+            CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need NETCDF or GRIB)')
           END IF
         ENDIF
       ELSE IF (LSEWD) THEN
+        Print *, 'Case LSEWD'
         IF (LCWIN) THEN
           CALL wwm_abort('LSEWD + LCWIN NOT READY')
 !         CALL READ_WIND_TIME_SERIES(IT) ! set time according to wwminput.nml and get initial time step
@@ -160,15 +166,17 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-#ifdef GRID
+#ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN
+            Print *, 'Before GRIB_INIT'
             CALL GRIB_INIT
 #endif
           ELSE
-            CALL WWM_ABORT('Wrong choice of IWINDFORMAT or u need to use netcdf')
+            CALL WWM_ABORT('Wrong choice of IWINDFORMAT or you need to use NETCDF or GRIB')
           ENDIF
         ENDIF
       ENDIF
+      Print *, 'after the multiple tests'
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
       FLUSH(WINDBG%FHNDL)
@@ -2074,13 +2082,15 @@
 #ifdef MPI_PARALL_GRID
       USE elfe_glbl, only: iplg
 #endif
-
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
       real(rkind) :: UWIND_tot(np_total), VWIND_tot(np_total)
+#ifdef MPI_PARALL_GRID
+      integer IP_glob, IP
+#endif
 
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -2206,7 +2216,7 @@
       CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
       END SUBROUTINE INIT_DIRECT_NETCDF_CF
 #endif
-#ifdef GRIB
+#ifdef GRB
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
 !* We use 
@@ -2216,8 +2226,12 @@
       USE GRIB_API
       IMPLICIT NONE
       INTEGER istat, IT
-      INTEGER ifile, igrib
-
+      INTEGER ifile, i, n
+      integer, allocatable :: igrib(:)
+      integer dataDate, stepRange
+      integer eYear, eMonth, eDay, resYear, resMonth
+      character (len=15) :: eStrTime
+      REAL(rkind) :: eTimeBase, eTimeMjd
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
       DO
@@ -2225,6 +2239,8 @@
         IF ( ISTAT /= 0 ) EXIT
         NUM_GRIB_FILES = NUM_GRIB_FILES + 1
       END DO
+      Print *, 'NUM_GRIB_FILES=', NUM_GRIB_FILES
+      WRITE(WINDBG%FHNDL,*) 'NUM_GRIB_FILES=', NUM_GRIB_FILES
       REWIND (WIN%FHNDL)
 
       ALLOCATE(GRIB_FILE_NAMES(NUM_GRIB_FILES), stat=istat)
@@ -2240,12 +2256,65 @@
       allocate(wind_time_mjd(nbtime_mjd), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
       DO IT=1, nbTime_mjd
+        WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
-        CALL GRIB_NEW_FROM_FILE(ifile, igrib)
+        call grib_count_in_file(ifile,n)
+        allocate(igrib(n))
+        i=1
+        call grib_new_from_file(ifile, igrib(i))
+        call grib_get(igrib(i), 'dataDate', dataDate)
+        call grib_get(igrib(i), 'stepRange', stepRange)
+        eYear=(dataDate - mod(dataDate,10000))/10000
+        resYear=dataDate - 10000*eYear
+        eMonth=(resYear - mod(resYear,100))/100
+        resMonth=resYear - 100*eMonth;
+        eDay=resMonth
+        WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
+        WRITE(eStrTime,10) eYear, eMonth, eDay
+        CALL CT2MJD(eStrTime, eTimeBase)
+        eTimeMjd=eTimeBase + stepRange/24
+        WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
+        wind_time_mjd(IT)=eTimeMjd
+        CALL GRIB_CLOSE_FILE(ifile)
+        deallocate(igrib)
+      END DO
+      FLUSH(WINDBG%FHNDL)
+
+ 10   FORMAT(i4.4,i2.2,i2.2,'.000000')
+      END SUBROUTINE GRIB_INIT
+!****************************************************************************
+!* This is functionality for reading GRIB file from ECMWF                   *
+!* We use 
+!****************************************************************************
+      SUBROUTINE GRIB_READ(IT)
+      USE DATAPOOL
+      USE GRIB_API
+      IMPLICIT NONE
+      INTEGER istat, IT
+      INTEGER ifile, i, n, iret
+      integer, allocatable :: igrib(:)
+      character(len=100) eShortName
+      integer dataDate, stepRange
+      !
+      nbtime_mjd=NUM_GRIB_FILES
+      allocate(wind_time_mjd(nbtime_mjd), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+      nbTime_mjd=1
+      DO IT=1, nbTime_mjd
+        Print *, 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+        CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
+        call grib_count_in_file(ifile,n)
+        Print *, 'n=', n
+        allocate(igrib(n))
+        DO i=1,n
+          Print *, 'i=', i
+          call grib_new_from_file(ifile, igrib(i), iret)
+          call grib_get(igrib(i), 'shortName', eShortName)
+          call grib_get(igrib(i), 'dataDate', dataDate)
+          call grib_get(igrib(i), 'stepRange', stepRange)
+          Print *, 'eShortName=', TRIM(eShortName), 'dataDate=', dataDate, 'stepRange=', stepRange
+        END DO
         CALL GRIB_CLOSE_FILE(ifile)
       END DO
-
-
-
-      END SUBROUTINE GRIB_INIT
+      END SUBROUTINE
 #endif
