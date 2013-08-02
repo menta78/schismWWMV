@@ -89,8 +89,16 @@
 #endif
 #ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN ! GRIB forcing from ecmwf
-            Print *, 'Need to program it'
-            STOP
+            ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
+            CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
+            CALL GRIB_READ(REC1_new,tmp_wind1)
+            IF (cf_w1.NE.1) THEN
+              CALL GRIB_READ(REC2_new,tmp_wind2)
+              WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
+            ELSE
+              WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
+            END IF
 #endif
           ELSE
             CALL wwm_abort('Wrong choice of IWINDFORMAT (maybe need NETCDF or GRIB)')
@@ -168,8 +176,17 @@
 #endif
 #ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN
-            Print *, 'Before GRIB_INIT'
-            CALL GRIB_INIT
+            CALL GRIB_INIT !load wind_time_mjd and compute interp coefs
+            ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
+            CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
+            CALL READ_DIRECT_NETCDF_CF(REC1_new,tmp_wind1)
+            IF (cf_w1.NE.1) THEN
+              CALL READ_DIRECT_NETCDF_CF(REC2_new,tmp_wind2)
+              WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
+            ELSE
+              WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
+            END IF
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or you need to use NETCDF or GRIB')
@@ -2395,7 +2412,7 @@
         call grib_get(igrib(i), 'shortName', eShortName)
         IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
           WeFoundU=1
-!          CALL grib_get(igrib(i), 'values', UWIND_FD)
+!          CALL grib_get(igrib(i), 'values', pack(UWIND_FD, ))
         END IF
         IF ((TRIM(eShortName) .eq. '10v').and.(WeFoundV .eq. 0)) THEN
           WeFoundV=1
