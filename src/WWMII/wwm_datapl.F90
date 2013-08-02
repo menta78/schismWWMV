@@ -532,6 +532,10 @@
          CHARACTER(LEN=40)               :: NCDF_FP_NAME   = 'fp'
          CHARACTER(LEN=40)               :: NCDF_F02_NAME  = 't02'
 
+
+         INTEGER                         :: NUM_GRIB_FILES
+         CHARACTER(LEN=40), ALLOCATABLE  :: GRIB_FILE_NAMES(:)
+
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES(:)
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES_BND(:,:)
 

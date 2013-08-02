@@ -34,7 +34,6 @@
          CHARACTER(LEN=40)  :: FILEOUT
          INTEGER, PARAMETER :: INUMOUTS = 200 
          CHARACTER(LEN=20)  :: BEGTC, UNITC, ENDTC, NOUTS(INUMOUTS), NLOUTS(INUMOUTS)
-         INTEGER            :: NLPOINTS(INUMOUTS)
          REAL(rkind)        :: XOUTS(INUMOUTS), YOUTS(INUMOUTS), CUTOFF(INUMOUTS)
          REAL(rkind)        :: XLOUTS(INUMOUTS), YLOUTS(INUMOUTS)
          REAL(rkind) :: DEFINETC
@@ -699,11 +698,9 @@
 #endif
          IMPLICIT NONE
 
-         LOGICAL           :: LFLIVE
          CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
          REAL(rkind)            :: DELTC
 
-         INTEGER           :: I, NI(3)
          REAL(rkind)              :: DEG
          INTEGER :: MULTIPLEIN, MULTIPLEOUT
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
@@ -1076,10 +1073,8 @@
       USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
 #endif
       IMPLICIT NONE
-      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
-      LOGICAL :: LFLIVE
-      REAL(rkind)    :: WDIRT, wrf_w1, wrf_w2
-      CHARACTER(LEN=20) :: TIMESTRING
+      INTEGER :: IP, ISTAT
+      REAL(rkind)    :: WDIRT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind) :: tmp
@@ -1157,10 +1152,8 @@
 #endif
       IMPLICIT NONE
 
-      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
-      LOGICAL :: LFLIVE
-      REAL(rkind)    :: WDIRT, wrf_w1, wrf_w2
-      CHARACTER(LEN=20) :: TIMESTRING
+      INTEGER :: IP, ISTAT
+      REAL(rkind)    :: WDIRT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind)    :: tmp
@@ -1225,10 +1218,7 @@
          IMPLICIT NONE
 
          INTEGER :: I, IP, IE, ISTAT, ITMP, JTMP
-         REAL(rkind)    :: TMP
          REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
-         CHARACTER (LEN = 10) :: STRNGTMP
-         LOGICAL :: LFLIVE
 
          REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3, DBLTMP
          INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
@@ -1560,8 +1550,6 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IS, ID
-
          IF (LTEST) THEN
 
          END IF
@@ -1579,16 +1567,12 @@
          USE NETCDF
          IMPLICIT NONE
 
-        INTEGER :: ISTAT, IT, IX, IY, IFILE, IVAR, BND_NCID
+        INTEGER :: ISTAT, IT, IFILE, IVAR, BND_NCID
         INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-        INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
-        REAL(rkind)  :: DTMP, DTMP1, DTMP2
+!        REAL(rkind)  :: DTMP, DTMP1, DTMP2
+!        character ( len = 15 ) chrdate
         REAL(rkind), ALLOCATABLE :: BND_TIME(:)
-        character ( len = 40 ) chrtmp
-        character ( len = 15 ) chrdate
         character ( len = 40 ) netcfd_fname
-        character ( len = 20 ) dirname
-        character ( len = 100) chrerr
         character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
 
         integer, dimension(nf90_max_var_dims) :: dimIDs
@@ -1790,15 +1774,12 @@
          INTEGER              :: HS_WW3_ID, T02_WW3_ID, DIR_WW3_ID, FP_WW3_ID, DSPR_WW3_ID
          INTEGER              :: HS_BND_NCID, T02_BND_NCID, DIR_BND_NCID, FP_BND_NCID, DSPR_BND_NCID
          INTEGER              :: ISTAT
-         INTEGER              :: numLons, numLats, numTime, iy, counter, ip, i, j
+         INTEGER              :: counter, ip, i, j
          INTEGER, ALLOCATABLE :: ITMP(:,:)
-         REAL(rkind),   ALLOCATABLE  :: TMP(:,:)
          REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
          REAL(rkind), SAVE           :: TIME, scale_factor
          character (len = *), parameter :: CallFct = "READ_NETCDF_WW3"
          INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
-         CHARACTER(LEN=80)    :: CHRTMP
-         CHARACTER(LEN=100)   :: CHRERR
          CHARACTER(LEN=25)    :: CALLEDFROM
 
          ALLOCATE (ITMP(NDX_BND,NDY_BND), stat=istat)

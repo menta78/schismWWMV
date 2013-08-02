@@ -2081,7 +2081,6 @@
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
       real(rkind) :: UWIND_tot(np_total), VWIND_tot(np_total)
-      INTEGER :: IP_glob, IP
 
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -2217,6 +2216,7 @@
       USE GRIB_API
       IMPLICIT NONE
       INTEGER istat, IT
+      INTEGER ifile, igrib
 
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
