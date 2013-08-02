@@ -316,6 +316,241 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE KERNEL_INTERP_UV_WINDFD(outwind)
+      USE DATAPOOL
+      IMPLICIT NONE
+      LOGICAL :: METHOD1 = .FALSE.
+      INTEGER I, J
+      REAL(rkind), INTENT(out)           :: outwind(MNP,2)
+      REAL(rkind) :: Uw, Vw, sumCOEFF
+      INTEGER IX, IY
+      IF (METHOD1 .eqv. .FALSE.) THEN
+        DO I = 1, MNP
+          Uw=ZERO
+          Vw=ZERO
+          IX=CF_IX(I)
+          IY=CF_IY(I)
+          sumCOEFF=ZERO
+          DO J=1,4
+            Uw=Uw + CF_COEFF(J,I)*UWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
+            Vw=Vw + CF_COEFF(J,I)*VWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
+            sumCOEFF=sumCOEFF + CF_COEFF(J,I)
+          END DO
+!           Print *, 'sumCOEFF=', sumCOEFF
+          outwind(I,1)=Uw*cf_scale_factor + cf_add_offset
+          outwind(I,2)=Vw*cf_scale_factor + cf_add_offset
+        END DO
+      ELSE
+        DO I = 1, MNP
+          outwind(I,1) = cf_add_offset + cf_scale_factor*cf_J(I)*(    &
+     &      UWIND_FD(cf_c11(I,1),cf_c11(I,2))*cf_a(I)*cf_c(I)+        &
+     &      UWIND_FD(cf_c21(I,1),cf_c21(I,2))*cf_b(I)*cf_c(I)+        &
+     &      UWIND_FD(cf_c12(I,1),cf_c12(I,2))*cf_a(I)*cf_d(I)+        &
+     &      UWIND_FD(cf_c22(I,1),cf_c22(I,2))*cf_b(I)*cf_d(I) )
+          outwind(I,2) = cf_add_Offset + cf_scale_factor*cf_J(I)*(    &
+     &      VWIND_FD(cf_c11(I,1),cf_c11(I,2))*cf_a(I)*cf_c(I)+        &
+     &      VWIND_FD(cf_c21(I,1),cf_c21(I,2))*cf_b(I)*cf_c(I)+        &
+     &      VWIND_FD(cf_c12(I,1),cf_c12(I,2))*cf_a(I)*cf_d(I)+        &
+     &      VWIND_FD(cf_c22(I,1),cf_c22(I,2))*cf_b(I)*cf_d(I) )
+        END DO
+      END IF
+      WRITE(WINDBG%FHNDL,*) 'KERNEL_INTERP_UV_WINDFD'
+      WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
+      WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
+      WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(outwind(:,1)), maxval(outwind(:,1))
+      WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(outwind(:,2)), maxval(outwind(:,2))
+      FLUSH(WINDBG%FHNDL)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_CF_COEFFICIENTS(nx, ny, lon, lat)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: nx, ny
+      real(rkind), intent(in) :: lon(nx,ny), lat(nx,ny)
+      LOGICAL :: METHOD1 = .FALSE.
+      integer I, IX, IY, IXs, IYs, IXmin, IYmin, IXmax, IYmax
+      REAL(rkind) :: WI(3), X(3), Y(3), eX, eY, a, b
+      integer aShift, WeFind, istat
+      real(rkind) eDist, MinDist
+      real(rkind), allocatable :: dist(:,:)
+      real(rkind) closest(2)
+      real(rkind) d_lon, d_lat
+      integer i11, j11, i12, j12, i21, j21
+      WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
+      IF (METHOD1 .eqv. .FALSE.) THEN
+        allocate(CF_IX(MNP), CF_IY(MNP), SHIFTXY(4,2), CF_COEFF(4,MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+        cf_coeff=0
+        CF_IX=0
+        CF_IY=0
+        SHIFTXY(1,1)=0
+        SHIFTXY(1,2)=0
+        SHIFTXY(2,1)=1
+        SHIFTXY(2,2)=0
+        SHIFTXY(3,1)=0
+        SHIFTXY(3,2)=1
+        SHIFTXY(4,1)=1
+        SHIFTXY(4,2)=1
+        WRITE(WINDBG%FHNDL,*) 'min(lon)=', minval(lon)
+        WRITE(WINDBG%FHNDL,*) 'max(lon)=', maxval(lon)
+        WRITE(WINDBG%FHNDL,*) 'min(lat)=', minval(lat)
+        WRITE(WINDBG%FHNDL,*) 'max(lat)=', maxval(lat)
+        DO I = 1, MNP
+          IF (I .eq. 1) THEN
+            IXs=1
+            IYs=1
+          ELSE
+            IXs=CF_IX(I-1)
+            IYs=CF_IX(I-1)
+          END IF
+          eX=XP(I)
+          eY=YP(I)
+          MinDist=LARGE
+          DO IX=1,nx-1
+            DO IY=1,ny-1
+              eDist=(eX-lon(IX,IY))**2 + (eY-lat(IX,IY))**2
+              IF (eDist .lt. MinDist) THEN
+                MinDist=eDist
+                IXs=IX
+                IYs=IY
+              END IF
+            END DO
+          END DO
+          aShift=1
+          DO
+            WeFind=0
+            IXmin=max(1, IXs - aShift)
+            IYmin=max(1, IYs - aShift)
+            IXmax=min(NDX_WIND_FD-1, IXs+aShift)
+            IYmax=min(NDY_WIND_FD-1, IYs+aShift)
+            DO IX=IXmin,IXmax
+              DO IY=IYmin,IYmax
+                IF (WeFind .eq. 0) THEN
+                  X(1)=lon(IX, IY)
+                  X(2)=lon(IX+1, IY)
+                  X(3)=lon(IX, IY+1)
+                  Y(1)=lat(IX, IY)
+                  Y(2)=lat(IX+1, IY)
+                  Y(3)=lat(IX, IY+1)
+                  CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
+                  IF (minval(WI) .ge. -THR) THEN
+                    WeFind=1
+                    CF_IX(I)=IX
+                    CF_IY(I)=IY
+                    a=WI(2)
+                    b=WI(3)
+                    cf_coeff(1, I)=(1-a)*(1-b)
+                    cf_coeff(2, I)=a*(1-b)
+                    cf_coeff(3, I)=(1-a)*b
+                    cf_coeff(4, I)=a*b
+                  END IF
+                END IF
+                IF (WeFind .eq. 0) THEN
+                  X(1)=lon(IX+1, IY+1)
+                  X(2)=lon(IX+1, IY)
+                  X(3)=lon(IX, IY+1)
+                  Y(1)=lat(IX+1, IY+1)
+                  Y(2)=lat(IX+1, IY)
+                  Y(3)=lat(IX, IY+1)
+                  CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
+                  IF (minval(WI) .ge. -THR) THEN
+                    WeFind=1
+                    CF_IX(I)=IX
+                    CF_IY(I)=IY
+                    a=1 - WI(3)
+                    b=1 - WI(2)
+                    cf_coeff(1, I)=(1-a)*(1-b)
+                    cf_coeff(2, I)=a*(1-b)
+                    cf_coeff(3, I)=(1-a)*b
+                    cf_coeff(4, I)=a*b
+                  END IF
+                END IF
+              END DO
+            END DO
+            IF (WeFind .eq. 1) THEN
+              EXIT
+            END IF
+            IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
+              WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
+              WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
+              WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
+              FLUSH(WINDBG%FHNDL)
+              CALL WWM_ABORT('Incorrect CF wind input')
+            END IF
+            aShift=aShift + 1
+          END DO  
+        END DO
+      ELSE
+        ALLOCATE(cf_c11(MNP,2), cf_c12(MNP,2), cf_c21(MNP,2), cf_c22(MNP,2), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
+        ALLOCATE(cf_a(MNP), cf_b(MNP), cf_c(MNP), cf_d(MNP), cf_J(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
+        ALLOCATE(dist(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
+        DO I = 1, MNP
+          dist(:,:) = ABS( CMPLX(XP(I)-lon(:,:), YP(I)-lat(:,:)) )
+          closest(1:2) = MINLOC(dist)
+          d_lon = XP(I)-lon(closest(1),closest(2)) 
+          d_lat = YP(I)-lat(closest(1),closest(2))
+          IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
+            cf_c11(I,:) = closest(:)
+            cf_c21(I,1) = closest(1) + 1
+            cf_c22(I,1) = closest(1) + 1
+            cf_c12(I,1) = closest(1)
+            cf_c21(I,2) = closest(2)
+            cf_c22(I,2) = closest(2) + 1
+            cf_c12(I,2) = closest(2) + 1
+          END IF
+          IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
+            cf_c11(I,1) = closest(1)
+            cf_c21(I,1) = closest(1) + 1
+            cf_c22(I,1) = closest(1) + 1
+            cf_c12(I,:) = closest(:)
+            cf_c11(I,2) = closest(2) - 1
+            cf_c21(I,2) = closest(2) - 1
+            cf_c22(I,2) = closest(2) 
+          END IF
+          IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
+            cf_c11(I,1) = closest(1) - 1 
+            cf_c21(I,:) = closest(:)
+            cf_c22(I,1) = closest(1)
+            cf_c12(I,1) = closest(1) - 1
+            cf_c11(I,2) = closest(2)
+            cf_c22(I,2) = closest(2) + 1
+            cf_c12(I,2) = closest(2) + 1 
+          END IF
+          IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
+            cf_c11(I,1) = closest(1) - 1
+            cf_c21(I,1) = closest(1)
+            cf_c22(I,:) = closest(:)
+            cf_c12(I,1) = closest(1) - 1
+            cf_c11(I,2) = closest(2) - 1
+            cf_c21(I,2) = closest(2) - 1
+            cf_c12(I,2) = closest(2) 
+          END IF
+          ! J =1/((x2-x1)*(y2-y1))
+          i11=cf_c11(I,1)
+          j11=cf_c11(I,2)
+          i12=cf_c12(I,1)
+          j12=cf_c12(I,2)
+          i21=cf_c21(I,1)
+          j21=cf_c21(I,2)
+          cf_J(I)=1.0/( (lon(i21,j21)-lon(i11,j11))*(lat(i12,j12)-lat(i11,j11)) )
+          cf_a(I) = lon(i21,j21) - XP(I) ! x2-x
+          cf_b(I) = XP(I) - lon(i11,j11) ! x-x1
+          cf_c(I) = lat(i12,j12) - YP(I) ! y2-y
+          cf_d(I) = YP(I) - lat(i11,j11) ! y-y1
+        END DO
+        DEALLOCATE(dist)
+      END IF
+      WRITE(WINDBG%FHNDL,*) ' done interp calcs'
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 #ifdef NCDF
       SUBROUTINE INIT_NETCDF_DWD
       USE DATAPOOL
@@ -1690,10 +1925,7 @@
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
-      INTEGER                            :: FID, ID, ISTAT, I, J
-      INTEGER :: IX, IY
-      REAL(rkind) :: Uw, Vw, sumCOEFF
-      LOGICAL :: METHOD1 = .FALSE.
+      INTEGER                            :: FID, ID, ISTAT
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1712,43 +1944,7 @@
       ISTAT = NF90_CLOSE(FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-      IF (METHOD1 .eqv. .FALSE.) THEN
-        DO I = 1, MNP
-          Uw=ZERO
-          Vw=ZERO
-          IX=CF_IX(I)
-          IY=CF_IY(I)
-          sumCOEFF=ZERO
-          DO J=1,4
-            Uw=Uw + CF_COEFF(J,I)*UWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
-            Vw=Vw + CF_COEFF(J,I)*VWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
-            sumCOEFF=sumCOEFF + CF_COEFF(J,I)
-          END DO
-!           Print *, 'sumCOEFF=', sumCOEFF
-          varout(I,1)=Uw*cf_scale_factor + cf_add_offset
-          varout(I,2)=Vw*cf_scale_factor + cf_add_offset
-        END DO
-      ELSE
-        DO I = 1, MNP
-          varout(I,1) = cf_add_offset + cf_scale_factor*cf_J(I)*(     &
-     &      UWIND_FD(cf_c11(I,1),cf_c11(I,2))*cf_a(I)*cf_c(I)+        &
-     &      UWIND_FD(cf_c21(I,1),cf_c21(I,2))*cf_b(I)*cf_c(I)+        &
-     &      UWIND_FD(cf_c12(I,1),cf_c12(I,2))*cf_a(I)*cf_d(I)+        &
-     &      UWIND_FD(cf_c22(I,1),cf_c22(I,2))*cf_b(I)*cf_d(I) )
-          varout(I,2) = cf_add_Offset + cf_scale_factor*cf_J(I)*(     &
-     &      VWIND_FD(cf_c11(I,1),cf_c11(I,2))*cf_a(I)*cf_c(I)+        &
-     &      VWIND_FD(cf_c21(I,1),cf_c21(I,2))*cf_b(I)*cf_c(I)+        &
-     &      VWIND_FD(cf_c12(I,1),cf_c12(I,2))*cf_a(I)*cf_d(I)+        &
-     &      VWIND_FD(cf_c22(I,1),cf_c22(I,2))*cf_b(I)*cf_d(I) )
-        END DO
-      END IF
-      WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_CF'
-      WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
-      WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
-      WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
-      WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(varout(:,1)), maxval(varout(:,1))
-      WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(varout(:,2)), maxval(varout(:,2))
-      FLUSH(WINDBG%FHNDL)
+      CALL KERNEL_INTERP_UV_WINDFD(varout)
       END SUBROUTINE READ_INTERP_NETCDF_CF
 !****************************************************************************
 !*  CF_COMPLIANT WIND                                                       *
@@ -1765,14 +1961,11 @@
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor
       USE DATAPOOL, only : UWIND_FD, VWIND_FD
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
-      USE DATAPOOL, only : CF_coeff, CF_IX, CF_IY, SHIFTXY, THR, ONE
+      USE DATAPOOL, only : THR, ONE
       IMPLICIT NONE
       INTEGER           :: ISTAT, fid, varid, dimids(2), dimidsB(3)
-      INTEGER           :: closest(2), I
       integer nbChar
-      REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:), dist(:,:)
-      REAL(rkind)              :: d_lon, d_lat
-      integer i11, j11, i12, j12, i21, j21
+      REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
       character (len=200) :: CoordString
       character (len=100) :: Xname, Yname, eStrUnitTime
@@ -1780,11 +1973,7 @@
       real(rkind) :: ConvertToDay
       real(rkind) :: eTimeStart
       character(len=100) :: CHRERR
-      integer IXmin, IXmax, IYmin, IYmax, IXs, IYs, IX, IY, WeFind
-      integer aShift, posBlank, alen
-      real(rkind) :: X(3), Y(3), WI(3), a, b, eX, eY
-      real(rkind) :: eDist, MinDist
-      LOGICAL :: METHOD1 = .FALSE.
+      integer posBlank, alen
 
       ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1894,174 +2083,7 @@
 
       ! compute nodes and coefs
 
-      WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
-      IF (METHOD1 .eqv. .FALSE.) THEN
-        allocate(CF_IX(MNP), CF_IY(MNP), SHIFTXY(4,2), CF_COEFF(4,MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-        cf_coeff=0
-        CF_IX=0
-        CF_IY=0
-        SHIFTXY(1,1)=0
-        SHIFTXY(1,2)=0
-        SHIFTXY(2,1)=1
-        SHIFTXY(2,2)=0
-        SHIFTXY(3,1)=0
-        SHIFTXY(3,2)=1
-        SHIFTXY(4,1)=1
-        SHIFTXY(4,2)=1
-        WRITE(WINDBG%FHNDL,*) 'min(CF_LON)=', minval(CF_LON)
-        WRITE(WINDBG%FHNDL,*) 'max(CF_LON)=', maxval(CF_LON)
-        WRITE(WINDBG%FHNDL,*) 'min(CF_LAT)=', minval(CF_LAT)
-        WRITE(WINDBG%FHNDL,*) 'max(CF_LAT)=', maxval(CF_LAT)
-        DO I = 1, MNP
-          IF (I .eq. 1) THEN
-            IXs=1
-            IYs=1
-          ELSE
-            IXs=CF_IX(I-1)
-            IYs=CF_IX(I-1)
-          END IF
-          eX=XP(I)
-          eY=YP(I)
-          MinDist=LARGE
-          DO IX=1,NDX_WIND_FD-1
-            DO IY=1,NDY_WIND_FD-1
-              eDist=(eX-CF_LON(IX,IY))**2 + (eY-CF_LAT(IX,IY))**2
-              IF (eDist .lt. MinDist) THEN
-                MinDist=eDist
-                IXs=IX
-                IYs=IY
-              END IF
-            END DO
-          END DO
-          aShift=1
-          DO
-            WeFind=0
-            IXmin=max(1, IXs - aShift)
-            IYmin=max(1, IYs - aShift)
-            IXmax=min(NDX_WIND_FD-1, IXs+aShift)
-            IYmax=min(NDY_WIND_FD-1, IYs+aShift)
-            DO IX=IXmin,IXmax
-              DO IY=IYmin,IYmax
-                IF (WeFind .eq. 0) THEN
-                  X(1)=CF_LON(IX, IY)
-                  X(2)=CF_LON(IX+1, IY)
-                  X(3)=CF_LON(IX, IY+1)
-                  Y(1)=CF_LAT(IX, IY)
-                  Y(2)=CF_LAT(IX+1, IY)
-                  Y(3)=CF_LAT(IX, IY+1)
-                  CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                  IF (minval(WI) .ge. -THR) THEN
-                    WeFind=1
-                    CF_IX(I)=IX
-                    CF_IY(I)=IY
-                    a=WI(2)
-                    b=WI(3)
-                    cf_coeff(1, I)=(1-a)*(1-b)
-                    cf_coeff(2, I)=a*(1-b)
-                    cf_coeff(3, I)=(1-a)*b
-                    cf_coeff(4, I)=a*b
-                  END IF
-                END IF
-                IF (WeFind .eq. 0) THEN
-                  X(1)=CF_LON(IX+1, IY+1)
-                  X(2)=CF_LON(IX+1, IY)
-                  X(3)=CF_LON(IX, IY+1)
-                  Y(1)=CF_LAT(IX+1, IY+1)
-                  Y(2)=CF_LAT(IX+1, IY)
-                  Y(3)=CF_LAT(IX, IY+1)
-                  CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
-                  IF (minval(WI) .ge. -THR) THEN
-                    WeFind=1
-                    CF_IX(I)=IX
-                    CF_IY(I)=IY
-                    a=1 - WI(3)
-                    b=1 - WI(2)
-                    cf_coeff(1, I)=(1-a)*(1-b)
-                    cf_coeff(2, I)=a*(1-b)
-                    cf_coeff(3, I)=(1-a)*b
-                    cf_coeff(4, I)=a*b
-                  END IF
-                END IF
-              END DO
-            END DO
-            IF (WeFind .eq. 1) THEN
-              EXIT
-            END IF
-            IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
-              WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
-              WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
-              WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
-              FLUSH(WINDBG%FHNDL)
-              CALL WWM_ABORT('Incorrect CF wind input')
-            END IF
-            aShift=aShift + 1
-          END DO  
-        END DO
-      ELSE
-        ALLOCATE(cf_c11(MNP,2), cf_c12(MNP,2), cf_c21(MNP,2), cf_c22(MNP,2), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
-        ALLOCATE(cf_a(MNP), cf_b(MNP), cf_c(MNP), cf_d(MNP), cf_J(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
-        ALLOCATE(dist(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
-        DO I = 1, MNP
-          dist(:,:) = ABS( CMPLX(XP(I)-CF_LON(:,:), YP(I)-CF_LAT(:,:)) )
-          closest(1:2) = MINLOC(dist)
-          d_lon = XP(I)-CF_LON(closest(1),closest(2)) 
-          d_lat = YP(I)-CF_LAT(closest(1),closest(2))
-          IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
-            cf_c11(I,:) = closest(:)
-            cf_c21(I,1) = closest(1) + 1
-            cf_c22(I,1) = closest(1) + 1
-            cf_c12(I,1) = closest(1)
-            cf_c21(I,2) = closest(2)
-            cf_c22(I,2) = closest(2) + 1
-            cf_c12(I,2) = closest(2) + 1
-          END IF
-          IF ((d_lon.ge.0).and.(d_lat.le.0)) THEN ! point is in the IV kvadrant
-            cf_c11(I,1) = closest(1)
-            cf_c21(I,1) = closest(1) + 1
-            cf_c22(I,1) = closest(1) + 1
-            cf_c12(I,:) = closest(:)
-            cf_c11(I,2) = closest(2) - 1
-            cf_c21(I,2) = closest(2) - 1
-            cf_c22(I,2) = closest(2) 
-          END IF
-          IF ((d_lon.le.0).and.(d_lat.ge.0)) THEN ! point is in the II kvadrant
-            cf_c11(I,1) = closest(1) - 1 
-            cf_c21(I,:) = closest(:)
-            cf_c22(I,1) = closest(1)
-            cf_c12(I,1) = closest(1) - 1
-            cf_c11(I,2) = closest(2)
-            cf_c22(I,2) = closest(2) + 1
-            cf_c12(I,2) = closest(2) + 1 
-          END IF
-          IF ((d_lon.le.0).and.(d_lat.le.0)) THEN ! point is in the III kvadrant
-            cf_c11(I,1) = closest(1) - 1
-            cf_c21(I,1) = closest(1)
-            cf_c22(I,:) = closest(:)
-            cf_c12(I,1) = closest(1) - 1
-            cf_c11(I,2) = closest(2) - 1
-            cf_c21(I,2) = closest(2) - 1
-            cf_c12(I,2) = closest(2) 
-          END IF
-          ! J =1/((x2-x1)*(y2-y1))
-          i11=cf_c11(I,1)
-          j11=cf_c11(I,2)
-          i12=cf_c12(I,1)
-          j12=cf_c12(I,2)
-          i21=cf_c21(I,1)
-          j21=cf_c21(I,2)
-          cf_J(I)=1.0/( (CF_LON(i21,j21)-CF_LON(i11,j11))*(CF_LAT(i12,j12)-CF_LAT(i11,j11)) )
-          cf_a(I) = CF_LON(i21,j21) - XP(I) ! x2-x
-          cf_b(I) = XP(I) - CF_LON(i11,j11) ! x-x1
-          cf_c(I) = CF_LAT(i12,j12) - YP(I) ! y2-y
-          cf_d(I) = YP(I) - CF_LAT(i11,j11) ! y-y1
-        END DO
-        DEALLOCATE(dist)
-      END IF
-      WRITE(WINDBG%FHNDL,*) ' done interp calcs'
+      CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, CF_LON, CF_LAT)
       DEALLOCATE(CF_LON, CF_LAT)
       END SUBROUTINE INIT_NETCDF_CF
 !**********************************************************************
@@ -2077,7 +2099,6 @@
       USE DATAPOOL, only : cf_c22, cf_c12, cf_a, cf_b, cf_c, cf_d, cf_J
       USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
-      USE DATAPOOL, only : CF_IX, CF_IY, SHIFTXY, CF_coeff
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor, np_total
 #ifdef MPI_PARALL_GRID
       USE elfe_glbl, only: iplg
@@ -2229,9 +2250,17 @@
       INTEGER ifile, i, n
       integer, allocatable :: igrib(:)
       integer dataDate, stepRange
+      character(len=100) eShortName
       integer eYear, eMonth, eDay, resYear, resMonth
+      integer WeFound
+      REAL(rkind), ALLOCATABLE :: GRIB_LON(:,:), GRIB_LAT(:,:)
       character (len=15) :: eStrTime
       REAL(rkind) :: eTimeBase, eTimeMjd
+      REAL(rkind) ::longitudeOfFirstPointInDegrees, latitudeOfFirstPointInDegrees, longitudeOfLastPointInDegrees, latitudeOfLastPointInDegrees
+      REAL(rkind) :: deltaLAT, deltaLON
+      REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
+      integer iX, iY
+
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
       DO
@@ -2271,6 +2300,7 @@
         eDay=resMonth
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
         WRITE(eStrTime,10) eYear, eMonth, eDay
+ 10     FORMAT(i4.4,i2.2,i2.2,'.000000')
         CALL CT2MJD(eStrTime, eTimeBase)
         eTimeMjd=eTimeBase + stepRange/24
         WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
@@ -2279,42 +2309,101 @@
         deallocate(igrib)
       END DO
       FLUSH(WINDBG%FHNDL)
+      !
+      ! Now the longitude/latitude to read.
+      !
+      IT=1
+      CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
+      call grib_count_in_file(ifile,n)
+      allocate(igrib(n))
+      WeFound=0;
+      DO i=1,n
+        call grib_new_from_file(ifile, igrib(i))
+        call grib_get(igrib(i), 'shortName', eShortName)
+        IF ((TRIM(eShortName) .eq. '10u').and.(WeFound .eq. 0)) THEN
+          call grib_get(igrib(i),"numberOfPointsAlongAParallel", NDX_WIND_FD)
+          call grib_get(igrib(i),"numberOfPointsAlongAMeridian", NDY_WIND_FD)
+          WRITE(WINDBG%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
+          WRITE(WINDBG%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
 
- 10   FORMAT(i4.4,i2.2,i2.2,'.000000')
+          allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), GRIB_LON(NDX_WIND_FD, NDY_WIND_FD), GRIB_LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
+          call grib_get(igrib(i), 'longitudeOfFirstGridPointInDegrees', longitudeOfFirstPointInDegrees)
+          call grib_get(igrib(i), 'latitudeOfFirstGridPointInDegrees', latitudeOfFirstPointInDegrees)
+          call grib_get(igrib(i), 'longitudeOfLastGridPointInDegrees', longitudeOfLastPointInDegrees)
+          call grib_get(igrib(i), 'latitudeOfLastGridPointInDegrees', latitudeOfLastPointInDegrees)
+
+          call grib_get(igrib(i), 'iDirectionIncrementInDegrees', iDirectionIncrement)
+          call grib_get(igrib(i), 'jDirectionIncrementInDegrees', jDirectionIncrement)
+
+
+
+
+          WRITE(WINDBG%FHNDL, *) 'LONGITUDE'
+          WRITE(WINDBG%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
+          WRITE(WINDBG%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
+          WRITE(WINDBG%FHNDL, *) 'LATITUDE'
+          WRITE(WINDBG%FHNDL, *) 'latitudeOfFirstGridPointInDegrees=', latitudeOfFirstPointInDegrees
+          WRITE(WINDBG%FHNDL, *) 'latitudeOfLastGridPointInDegrees=', latitudeOfLastPointInDegrees
+
+          WRITE(WINDBG%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
+          WRITE(WINDBG%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
+          deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(NDX_WIND_FD - 1)
+          deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(NDY_WIND_FD - 1)
+          DO iX=1,NDX_WIND_FD
+            DO iY=1,NDY_WIND_FD
+              GRIB_LON(iX,iY)=longitudeOfFirstPointInDegrees + (iX-1)*deltaLON
+              GRIB_LAT(iX,iY)=latitudeOfFirstPointInDegrees + (iY-1)*deltaLAT
+            END DO
+          END DO
+          FLUSH(WINDBG%FHNDL)
+          !
+          CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, GRIB_LON, GRIB_LAT)
+          DEALLOCATE(GRIB_LON, GRIB_LAT)
+          WeFound=1
+        END IF
+      END DO
+      deallocate(igrib)
+      CALL GRIB_CLOSE_FILE(ifile)
+
       END SUBROUTINE GRIB_INIT
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
 !* We use 
 !****************************************************************************
-      SUBROUTINE GRIB_READ(IT)
+      SUBROUTINE GRIB_READ(IT, outwind)
       USE DATAPOOL
       USE GRIB_API
       IMPLICIT NONE
-      INTEGER istat, IT
+      integer, intent(in) :: IT
+      REAL(rkind), INTENT(out)           :: outwind(MNP,2)
       INTEGER ifile, i, n, iret
       integer, allocatable :: igrib(:)
+      integer WeFoundU, WeFoundV
       character(len=100) eShortName
-      integer dataDate, stepRange
       !
-      nbtime_mjd=NUM_GRIB_FILES
-      allocate(wind_time_mjd(nbtime_mjd), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
-      nbTime_mjd=1
-      DO IT=1, nbTime_mjd
-        Print *, 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
-        CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
-        call grib_count_in_file(ifile,n)
-        Print *, 'n=', n
-        allocate(igrib(n))
-        DO i=1,n
-          Print *, 'i=', i
-          call grib_new_from_file(ifile, igrib(i), iret)
-          call grib_get(igrib(i), 'shortName', eShortName)
-          call grib_get(igrib(i), 'dataDate', dataDate)
-          call grib_get(igrib(i), 'stepRange', stepRange)
-          Print *, 'eShortName=', TRIM(eShortName), 'dataDate=', dataDate, 'stepRange=', stepRange
-        END DO
-        CALL GRIB_CLOSE_FILE(ifile)
+      Print *, 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+      CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
+      call grib_count_in_file(ifile,n)
+      Print *, 'n=', n
+      allocate(igrib(n))
+      WeFoundU=0
+      WeFoundV=0
+      DO i=1,n
+        Print *, 'i=', i
+        call grib_new_from_file(ifile, igrib(i), iret)
+        call grib_get(igrib(i), 'shortName', eShortName)
+        IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
+          WeFoundU=1
+!          CALL grib_get(igrib(i), 'values', UWIND_FD)
+        END IF
+        IF ((TRIM(eShortName) .eq. '10v').and.(WeFoundV .eq. 0)) THEN
+          WeFoundV=1
+!          CALL grib_get(igrib(i), 'values', VWIND_FD)
+        END IF
+
       END DO
+      CALL GRIB_CLOSE_FILE(ifile)
+      CALL KERNEL_INTERP_UV_WINDFD(outwind)
       END SUBROUTINE
 #endif
