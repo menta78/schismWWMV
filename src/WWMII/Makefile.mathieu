@@ -114,7 +114,7 @@ ifdef OPENMP
 endif
 
 ifdef GRIB
-  LIBS += $(GRIB_PATH)/lib/libgrib_api_f90.a
+  LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
   FFLAGS += -DGRIB -I$(GRIB_PATH)/include
 endif
 
