@@ -13,7 +13,10 @@
 #endif
       IMPLICIT NONE
 
-      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
+#ifdef NCDF
+      INTEGER :: IT, IFILE
+#endif
+      INTEGER :: IP, ISTAT, FORECASTHOURS
       REAL(rkind)    :: WDIRT, cf_w1, cf_w2
 
       FORECASTHOURS = 0
@@ -179,9 +182,9 @@
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
-            CALL READ_DIRECT_NETCDF_CF(REC1_new,tmp_wind1)
+            CALL GRIB_READ(REC1_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL READ_DIRECT_NETCDF_CF(REC2_new,tmp_wind2)
+              CALL GRIB_READ(REC2_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -211,8 +214,8 @@
       REAL(rkind)             :: TMP(MNP,2)
 #ifdef NCDF
       REAL(rkind)             :: cf_w1, cf_w2
-#endif
       INTEGER                 :: IT, IFILE
+#endif
       INTEGER, intent(in)     :: K
 !AR: All crap ... defining K without using means that nobody has ever checked the results or anything else, so why coding at all?
 !AR: Mathieu can you please fix this !!!
@@ -262,10 +265,10 @@
           END IF
           CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
           IF (REC1_new.NE.REC1_old) THEN
-            CALL READ_DIRECT_NETCDF_CF(REC1_new,tmp_wind1)
+            CALL GRIB_READ(REC1_new,tmp_wind1)
           END IF
           IF (REC2_new.NE.REC2_old) THEN
-            CALL READ_DIRECT_NETCDF_CF(REC2_new,tmp_wind2)
+            CALL GRIB_READ(REC2_new,tmp_wind2)
           END IF
           IF (cf_w1.NE.1) THEN
             WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
@@ -563,6 +566,38 @@
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
 
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GET_CF_TIME_INDEX(REC1, REC2, w1, w2)
+      ! For given wwm_time and wind_time return records to get and weights for time
+      ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
+      !
+      USE DATAPOOL, ONLY : wind_time_mjd, nbtime_mjd, MAIN, WINDBG, rkind
+      IMPLICIT NONE
+      REAL(rkind), INTENT(OUT)            :: w1, w2
+      INTEGER, INTENT(OUT)                :: REC1, REC2
+      REAL(rkind) :: eTime1, eTime2
+      INTEGER  :: iTime
+ 
+      DO iTime=2,nbtime_mjd
+        eTime1=wind_time_mjd(iTime-1)
+        eTime2=wind_time_mjd(iTime)
+        IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
+          REC2=iTime
+          REC1=iTime-1
+          w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
+          w1=(eTime2 - MAIN % TMJD)/(eTime2-eTime1)
+          RETURN
+        END IF
+      END DO
+      WRITE(WINDBG%FHNDL,*) 'Time error in wind for CF'
+      WRITE(WINDBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
+      WRITE(WINDBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
+      WRITE(WINDBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
+      FLUSH(WINDBG%FHNDL)
+      CALL WWM_ABORT('Error in CF wind forcing time setup')
+      END SUBROUTINE GET_CF_TIME_INDEX
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1896,38 +1931,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_CF_TIME_INDEX(REC1, REC2, w1, w2)
-      ! For given wwm_time and wind_time return records to get and weights for time
-      ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
-      !
-      USE DATAPOOL, ONLY : wind_time_mjd, nbtime_mjd, MAIN, WINDBG, rkind
-      IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)            :: w1, w2
-      INTEGER, INTENT(OUT)                :: REC1, REC2
-      REAL(rkind) :: eTime1, eTime2
-      INTEGER  :: iTime
- 
-      DO iTime=2,nbtime_mjd
-        eTime1=wind_time_mjd(iTime-1)
-        eTime2=wind_time_mjd(iTime)
-        IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
-          REC2=iTime
-          REC1=iTime-1
-          w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
-          w1=(eTime2 - MAIN % TMJD)/(eTime2-eTime1)
-          RETURN
-        END IF
-      END DO
-      WRITE(WINDBG%FHNDL,*) 'Time error in wind for CF'
-      WRITE(WINDBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
-      WRITE(WINDBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
-      WRITE(WINDBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
-      FLUSH(WINDBG%FHNDL)
-      CALL WWM_ABORT('Error in CF wind forcing time setup')
-      END SUBROUTINE GET_CF_TIME_INDEX
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE READ_INTERP_NETCDF_CF(RECORD_IN, varout)
       USE NETCDF
       USE DATAPOOL, ONLY : XP,YP,WIN, MNP, cf_c11, cf_c21, rkind
@@ -1941,6 +1944,7 @@
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
+      Print *, 'Begin of READ_INTERP_NETCDF_CF'
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2121,7 +2125,7 @@
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
-      character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
+      character (len = *), parameter :: CallFct="READ_DIRECT_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
       real(rkind) :: UWIND_tot(np_total), VWIND_tot(np_total)
 #ifdef MPI_PARALL_GRID
@@ -2156,7 +2160,7 @@
       varout(:,1) = cf_add_offset + cf_scale_factor*UWIND_tot
       varout(:,2) = cf_add_offset + cf_scale_factor*VWIND_tot
 #endif
-      WRITE(WINDBG%FHNDL,*) 'READ_INTERP_NETCDF_CF'
+      WRITE(WINDBG%FHNDL,*) 'READ_DIRECT_NETCDF_CF'
       WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
       WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
       WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
