@@ -50,8 +50,9 @@
          include 'mpif.h'
 # endif
          INTEGER, INTENT(IN)  :: K,IFILE,IT
-         INTEGER              :: IP, istat
+         INTEGER              :: IP
 # ifdef WWM_MPI
+         INTEGER istat
          REAL(rkind), allocatable :: WINDXY_TOT(:,:), CURTXY_TOT(:,:), WATLEV_TOT(:)
          real(rkind), allocatable :: rbuf_real(:)
          integer idx, iProc
@@ -132,8 +133,11 @@
 # ifdef WWM_MPI
          include 'mpif.h'
 # endif
-         INTEGER, INTENT(IN)  :: K 
-         INTEGER              :: IP, istat
+         INTEGER, INTENT(IN)  :: K
+         INTEGER              :: IP
+# ifdef WWM_MPI
+         INTEGER              :: istat
+# endif
          REAL(rkind)          :: ACLOC(MSC,MDC)
          REAL(rkind)          :: HS,WLM,LPP,FPP,CPP,BOTEXPER
          REAL(rkind)          :: UBOT,TM01,TM10

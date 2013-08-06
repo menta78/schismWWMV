@@ -396,7 +396,9 @@
       real(rkind) closest(2)
       real(rkind) d_lon, d_lat
       integer i11, j11, i12, j12, i21, j21
+      integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
+      StatusUse=0
       IF (METHOD1 .eqv. .FALSE.) THEN
         allocate(CF_IX(MNP), CF_IY(MNP), SHIFTXY(4,2), CF_COEFF(4,MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
@@ -463,6 +465,10 @@
                     cf_coeff(2, I)=a*(1-b)
                     cf_coeff(3, I)=(1-a)*b
                     cf_coeff(4, I)=a*b
+                    StatusUse(IX  ,IY  )=1
+                    StatusUse(IX+1,IY  )=1
+                    StatusUse(IX  ,IY+1)=1
+                    StatusUse(IX+1,IY+1)=1
                   END IF
                 END IF
                 IF (WeFind .eq. 0) THEN
@@ -483,6 +489,10 @@
                     cf_coeff(2, I)=a*(1-b)
                     cf_coeff(3, I)=(1-a)*b
                     cf_coeff(4, I)=a*b
+                    StatusUse(IX  ,IY  )=1
+                    StatusUse(IX+1,IY  )=1
+                    StatusUse(IX  ,IY+1)=1
+                    StatusUse(IX+1,IY+1)=1
                   END IF
                 END IF
               END DO
@@ -563,6 +573,7 @@
         END DO
         DEALLOCATE(dist)
       END IF
+      WRITE(WINDBG%FHNDL,*) ' sum(StatusUse)=', sum(StatusUse)
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
 
       END SUBROUTINE
@@ -1944,7 +1955,6 @@
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
-      Print *, 'Begin of READ_INTERP_NETCDF_CF'
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2287,7 +2297,6 @@
         IF ( ISTAT /= 0 ) EXIT
         NUM_GRIB_FILES = NUM_GRIB_FILES + 1
       END DO
-      Print *, 'NUM_GRIB_FILES=', NUM_GRIB_FILES
       WRITE(WINDBG%FHNDL,*) 'NUM_GRIB_FILES=', NUM_GRIB_FILES
       REWIND (WIN%FHNDL)
 
@@ -2404,15 +2413,14 @@
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
       !
-      Print *, 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+      WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
       CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
       call grib_count_in_file(ifile,n)
-      Print *, 'n=', n
+      WRITE(WINDBG%FHNDL,*) 'n=', n
       allocate(igrib(n))
       WeFoundU=0
       WeFoundV=0
       DO irec=1,n
-        Print *, 'irec=', irec
         call grib_new_from_file(ifile, igrib(irec), iret)
         call grib_get(igrib(irec), 'shortName', eShortName)
         IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
