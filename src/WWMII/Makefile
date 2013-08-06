@@ -31,13 +31,13 @@ F90 = ifort
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-#F90OPTI = -O1 -axSSE4.2 -traceback -g -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
+F90OPTI = -O1 -axSSE4.2 -traceback -g -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
+#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
@@ -95,7 +95,7 @@ endif
 
 ifdef MPI
   MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
-  LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
+  LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
   MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER -DDEBUG
   OBJS= $(OBJSELFE) $(OBJWWM)
 else

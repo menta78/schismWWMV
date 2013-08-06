@@ -126,6 +126,8 @@
          REAL(rkind)               :: OUTT(NP_GLOBAL,OUTVARS)
          REAL(rkind)               :: CURR_GLOBAL(NP_GLOBAL,CURRVARS)
          REAL(rkind)               :: CURR(NP_GLOBAL,CURRVARS)
+         REAL(rkind)               :: FORCE_GLOBAL(NP_GLOBAL,2)
+         REAL(rkind)               :: FORCE(NP_GLOBAL,2)
          REAL(rkind)               :: WIND_GLOBAL(NP_GLOBAL,WINDVARS)
          REAL(rkind)               :: WIND(NP_GLOBAL,WINDVARS)
          REAL(rkind)               :: ITER_GLOBAL(NP_GLOBAL), ITER_LOCAL(MNP)
@@ -145,24 +147,28 @@
          CALL MJD2CT(MAIN%TMJD, CTIME)
          DoAirSea=.FALSE.
 #ifdef MPI_PARALL_GRID
-         OUTT_GLOBAL = 0.
-         OUTT        = 0.
-         CURR_GLOBAL = 0.
-         CURR        = 0.
-         WIND_GLOBAL = 0.
-         WIND        = 0.
+         OUTT_GLOBAL  = zero 
+         OUTT         = zero
+         CURR_GLOBAL  = zero
+         CURR         = zero
+         WIND_GLOBAL  = zero
+         WIND         = zero
+         FORCE_GLOBAL = zero
+         FORCE        = zero
 #else
-        OUTT = 0.
-        CURR = 0.
-        WIND = 0.
+         OUTT = zero 
+         CURR = zero 
+         WIND = zero 
 #endif
-        ACLOC = 0.
-        OUTPARS = 0.
-        CURRPARS = 0.
-        WINDPARS = 0.
+         ACLOC    = zero 
+         OUTPARS  = zero 
+         CURRPARS = zero 
+         WINDPARS = zero 
+
+         CALL WAVEFORCE 
 
 #ifdef MPI_PARALL_GRID
-        IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
+         IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
 #endif
 
 #ifdef MPI_PARALL_GRID
@@ -174,25 +180,33 @@
               CALL WINDPAR(IP, WINDPARS)
               IF (LMONO_OUT) OUTPARS(1) = OUTPARS(1) / SQRT(2.)
             ELSE
-              OUTPARS = 0.
-              CURRPARS = 0.
-              WINDPARS = 0.
+              OUTPARS     = zero 
+              CURRPARS    = zero 
+              WINDPARS    = zero 
             END IF
-            OUTT(iplg(IP),:) = OUTPARS(:)
-            CURR(iplg(IP),:) = CURRPARS(:)
-            WIND(iplg(IP),:) = WINDPARS(:)
+            OUTT(iplg(IP),:)   = OUTPARS(:)
+            CURR(iplg(IP),:)   = CURRPARS(:)
+            WIND(iplg(IP),:)   = WINDPARS(:)
+            FORCE(iplg(IP),:)  = FORCEXY(IP,:)
             IF (LQSTEA) ITERT(iplg(IP))  = ITER_LOCAL(IP)
          END DO
+
+         write(*,*) sum(FORCE), sum(FORCE_GLOBAL)
+
          call mpi_reduce(OUTT,OUTT_GLOBAL,NP_GLOBAL*OUTVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(CURR,CURR_GLOBAL,NP_GLOBAL*CURRVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(WIND,WIND_GLOBAL,NP_GLOBAL*WINDVARS,rtype,MPI_SUM,0,comm,ierr)
+         call mpi_reduce(FORCE,FORCE_GLOBAL,NP_GLOBAL*2,rtype,MPI_SUM,0,comm,ierr)
          IF (LQSTEA  .AND. LCHKCONV) call mpi_reduce(ITERT,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
+
+         write(*,*) 'AFTER' ,sum(FORCE), sum(FORCE_GLOBAL)
 
          if(myrank==0) then
            do IP=1,NP_GLOBAL
-             OUTT_GLOBAL(IP,:)=OUTT_GLOBAL(IP,:)*nwild_gb(IP)
-             CURR_GLOBAL(IP,:)=CURR_GLOBAL(IP,:)*nwild_gb(IP)
-             WIND_GLOBAL(IP,:)=WIND_GLOBAL(IP,:)*nwild_gb(IP)
+             OUTT_GLOBAL(IP,:) = OUTT_GLOBAL(IP,:)*nwild_gb(IP)
+             CURR_GLOBAL(IP,:) = CURR_GLOBAL(IP,:)*nwild_gb(IP)
+             WIND_GLOBAL(IP,:) = WIND_GLOBAL(IP,:)*nwild_gb(IP)
+             FORCE_GLOBAL(IP,:) = FORCE_GLOBAL(IP,:)*nwild_gb(IP)
              IF (LQSTEA .AND. LCHKCONV) ITER_GLOBAL(IP)  =ITER_GLOBAL(IP)  *nwild_gb(IP)
            enddo !IP
          endif !myrank
@@ -212,7 +226,7 @@
              END IF
            END IF
            WRITE(OUT%FHNDL+1)  SNGL(TIME)
-           WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
+           WRITE(OUT%FHNDL+1)  (SNGL(FORCE_GLOBAL(IP,1)), SNGL(FORCE_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
            CALL FLUSH(OUT%FHNDL+1)
            WRITE(OUT%FHNDL+2)  SNGL(TIME)
            WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)

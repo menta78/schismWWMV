@@ -209,11 +209,12 @@
        CD = zero
        USTDIR = zero
 
-       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), stat=istat)
+       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), FORCEXY(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
        RSXX = zero
        RSXY = zero
        RSYY = zero
+       FORCEXY = zero
 
 #ifdef SELFE
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)

@@ -1893,7 +1893,7 @@
       XI      = SQRT(TAUW_LOCAL)/DELTAUW
       IND     = MIN ( ITAUMAX-1, INT(XI)) ! index for stress table
       DELI1   = MIN(ONE,XI - MyREAL(IND))  !interpolation coefficient for stress table
-!      DELI2   = ONE - DELI1
+      DELI2   = ONE - DELI1
       XJ      = WINDSPEED/DELU
       XJ      = WINDSPEED/MAX(THR,DELU)
       J       = MIN ( JUMAX-1, INT(XJ) )

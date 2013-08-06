@@ -850,7 +850,7 @@
          REAL(rkind), ALLOCATABLE ::   HMAX(:)
          INTEGER, ALLOCATABLE     ::   ISHALLOW(:)
 
-         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:)
+         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:), FORCEXY(:,:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
 !
 ! switch for the numerics ... wwmDnumsw.mod

@@ -464,3 +464,92 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE WAVEFORCE
+
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER  ID, IS, IP
+
+      REAL(kind=rkind)  ::   COSE2, SINE2, COSI2
+      REAL(kind=rkind)  ::   ELOC
+      REAL(kind=rkind)  ::   CK
+      REAL(kind=rkind)  ::   DSIGMA
+      REAL(kind=rkind)  ::   D_RSXX(MNP,2)
+      REAL(kind=rkind)  ::   D_RSXY(MNP,2)
+      REAL(kind=rkind)  ::   D_RSYY(MNP,2)
+
+      RSXX(:) = zero 
+      RSXY(:) = zero 
+      RSYY(:) = zero
+
+      DO IP = 1, MNP
+
+        DO IS = 1, MSC
+
+        CK = CG(IP,IS) * WK(IP,IS) ! CG ~ Group Velocity ; K ~ Wave Number
+
+!       WE HAVE TO TAKE CARE ABOUT THE GROUP VELOCITY IF CURRENTS ARE PRESENT !!!
+!       THE GROUP VELOCITY WILL BE DOPPLER SHIFTET IN PRESENCE OF CURRENTS
+!       IT WILL BECOME A FUNCTION OF THE WAVE DIRECTION
+
+          DO ID = 1, MDC
+
+          ELOC = AC2(IP,IS,ID)  * DDIR * FRINTF
+
+!         AC2 ~ Local Action Density
+!         Directional Property of the Action Spectrum
+
+          COSE2 = COS(SPDIR(ID))**2
+          SINE2 = SIN(SPDIR(ID))**2
+          COSI2 = COS(SPDIR(ID))*SIN(SPDIR(ID))
+!                    /
+!     Sxx = rho grav | ((N cos^2(theta) + N - 1/2) sig Ac) d sig d theta
+!                   /
+!                     /
+!     Sxy = rho grav | (N sin(theta) cos(theta) sig Ac) d sig d theta
+!                   /
+!                     /
+!     Syy = rho grav | ((N sin^2(theta) + N - 1/2) sig Ac) d sig d theta
+!
+          RSXX(IP) = RSXX(IP) + (CK * COSE2 + CK - SPSIG(IS)/TWO) * ELOC
+          RSXY(IP) = RSXY(IP) +  CK * COSI2 * ELOC
+          RSYY(IP) = RSYY(IP) + (CK * SINE2 + CK - SPSIG(IS)/TWO) * ELOC
+!
+          ENDDO
+        ENDDO
+      END DO
+
+      RSXX(:) = RSXX(:) * RHOW * G9
+      RSXY(:) = RSXY(:) * RHOW * G9
+      RSYY(:) = RSYY(:) * RHOW * G9
+!
+!     Arrays are called by Adress and not by Value that means "Array(1,1)" ....
+!
+      CALL DIFFERENTIATE_XYDIR(RSXX(1),D_RSXX(1,1),D_RSXX(1,2))
+      CALL DIFFERENTIATE_XYDIR(RSXY(1),D_RSXY(1,1),D_RSXY(1,2))
+      CALL DIFFERENTIATE_XYDIR(RSYY(1),D_RSYY(1,1),D_RSYY(1,2))
+
+      IF (LSPHE) THEN
+         DO IP = 1, MNP
+            D_RSXX(IP,1) = D_RSXX(IP,1)/( DEGRAD*REARTH*COS(YP(IP)*DEGRAD) )
+            D_RSXY(IP,1) = D_RSXY(IP,1)/( DEGRAD*REARTH*COS(YP(IP)*DEGRAD) )
+            D_RSYY(IP,1) = D_RSYY(IP,1)/( DEGRAD*REARTH*COS(YP(IP)*DEGRAD) )
+            D_RSXX(IP,2) = D_RSXX(IP,2)/( DEGRAD*REARTH )
+            D_RSXY(IP,2) = D_RSXY(IP,2)/( DEGRAD*REARTH )
+            D_RSYY(IP,2) = D_RSYY(IP,2)/( DEGRAD*REARTH )
+         END DO
+      END IF
+
+!     Fx = - (@Sxx/@x + @Sxy/@y) = FORCE(IP,1) 
+!     Fy = - (@Sxy/@x + @Syy/@y) = FORCE(IP,2) 
+
+      FORCEXY(:,1) = - (D_RSXX(:,1)+D_RSXY(:,2))
+      FORCEXY(:,2) = - (D_RSXY(:,1)+D_RSYY(:,2))
+
+      !write(*,*) sum(forcexy)
+
+     END SUBROUTINE WAVEFORCE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+
