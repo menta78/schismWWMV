@@ -105,7 +105,6 @@
           END IF
         ENDIF
       ELSE IF (LSEWD) THEN
-        Print *, 'Case LSEWD'
         IF (LCWIN) THEN
           CALL wwm_abort('LSEWD + LCWIN NOT READY')
 !         CALL READ_WIND_TIME_SERIES(IT) ! set time according to wwminput.nml and get initial time step
@@ -193,7 +192,6 @@
           ENDIF
         ENDIF
       ENDIF
-      Print *, 'after the multiple tests'
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
       FLUSH(WINDBG%FHNDL)
@@ -1902,7 +1900,7 @@
       ! For given wwm_time and wind_time return records to get and weights for time
       ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
       !
-      USE DATAPOOL, ONLY : wind_time_mjd, nbtime_mjd, MAIN, DBG, rkind
+      USE DATAPOOL, ONLY : wind_time_mjd, nbtime_mjd, MAIN, WINDBG, rkind
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT)            :: w1, w2
       INTEGER, INTENT(OUT)                :: REC1, REC2
@@ -1920,11 +1918,11 @@
           RETURN
         END IF
       END DO
-      WRITE(DBG%FHNDL,*) 'Time error in wind for CF'
-      WRITE(DBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
-      WRITE(DBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
-      WRITE(DBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
-      FLUSH(DBG%FHNDL)
+      WRITE(WINDBG%FHNDL,*) 'Time error in wind for CF'
+      WRITE(WINDBG%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
+      WRITE(WINDBG%FHNDL,*) 'min(wind_time_mjd)=', minval(wind_time_mjd)
+      WRITE(WINDBG%FHNDL,*) 'max(wind_time_mjd)=', maxval(wind_time_mjd)
+      FLUSH(WINDBG%FHNDL)
       CALL WWM_ABORT('Error in CF wind forcing time setup')
       END SUBROUTINE GET_CF_TIME_INDEX
 !**********************************************************************
@@ -2315,11 +2313,13 @@
         eMonth=(resYear - mod(resYear,100))/100
         resMonth=resYear - 100*eMonth;
         eDay=resMonth
+        WRITE(WINDBG%FHNDL, *) 'dataDate=', dataDate
+        WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
         WRITE(eStrTime,10) eYear, eMonth, eDay
  10     FORMAT(i4.4,i2.2,i2.2,'.000000')
         CALL CT2MJD(eStrTime, eTimeBase)
-        eTimeMjd=eTimeBase + stepRange/24
+        eTimeMjd=eTimeBase + DBLE(stepRange)/24.0_rkind
         WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
         wind_time_mjd(IT)=eTimeMjd
         CALL GRIB_CLOSE_FILE(ifile)
