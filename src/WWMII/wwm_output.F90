@@ -18,7 +18,7 @@
           OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
         END IF
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_AND_STATION' 
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -34,7 +34,7 @@
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -65,7 +65,7 @@
          END SELECT
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -96,7 +96,7 @@
           END SELECT
         END IF
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -230,32 +230,32 @@
            CALL FLUSH(OUT%FHNDL+1)
            WRITE(OUT%FHNDL+2)  SNGL(TIME)
            WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+2)
+           FLUSH(OUT%FHNDL+2)
            WRITE(OUT%FHNDL+3)  SNGL(TIME)
            WRITE(OUT%FHNDL+3)  (SNGL(WIND_GLOBAL(IP,1)), SNGL(WIND_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,10))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+3)
+           FLUSH(OUT%FHNDL+3)
            WRITE(OUT%FHNDL+4)  SNGL(TIME)
            WRITE(OUT%FHNDL+4)  (SNGL(OUTT_GLOBAL(IP,1)), SNGL(OUTT_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,3))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+4)
+           FLUSH(OUT%FHNDL+4)
            WRITE(OUT%FHNDL+5)  SNGL(TIME)
            WRITE(OUT%FHNDL+5)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,5))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+5)
+           FLUSH(OUT%FHNDL+5)
            WRITE(OUT%FHNDL+6)  SNGL(TIME)
            WRITE(OUT%FHNDL+6)  (SNGL(WIND_GLOBAL(IP,9)), SNGL(WIND_GLOBAL(IP,8)), SNGL(WIND_GLOBAL(IP,7))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+6)
+           FLUSH(OUT%FHNDL+6)
            WRITE(OUT%FHNDL+7)  SNGL(TIME) 
            WRITE(OUT%FHNDL+7)  (SNGL(WIND_GLOBAL(IP,4)), SNGL(WIND_GLOBAL(IP,5)), SNGL(WIND_GLOBAL(IP,6))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+7)
+           FLUSH(OUT%FHNDL+7)
            IF (LQSTEA .AND. LCHKCONV) THEN
              WRITE(OUT%FHNDL+8) SNGL(TIME) 
              WRITE(OUT%FHNDL+8)  (SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP)), SNGL(ITER_GLOBAL(IP))  , IP = 1, NP_GLOBAL)
-             CALL FLUSH(OUT%FHNDL+8)
+             FLUSH(OUT%FHNDL+8)
            ENDIF
            IF (DoAirSea) THEN
              DO IP = 1, NP_GLOBAL
                WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND_GLOBAL(IP,:))
              ENDDO
-             CALL FLUSH(OUT%FHNDL+9)
+             FLUSH(OUT%FHNDL+9)
            END IF
            IF (LCFL) THEN
              WRITE(OUT%FHNDL+10)  SNGL(TIME)
@@ -305,35 +305,35 @@
          END IF
          WRITE(OUT%FHNDL+1) SNGL(TIME) 
          WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+1)
+         FLUSH(OUT%FHNDL+1)
          WRITE(OUT%FHNDL+2) SNGL(TIME)
          WRITE(OUT%FHNDL+2)  (SNGL(CURR(IP,1)), SNGL(CURR(IP,2)), SNGL(DEP(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+2)
+         FLUSH(OUT%FHNDL+2)
          WRITE(OUT%FHNDL+3) SNGL(TIME)
          WRITE(OUT%FHNDL+3)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(WIND(IP,3)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+3)
+         FLUSH(OUT%FHNDL+3)
          WRITE(OUT%FHNDL+4) SNGL(TIME)
          WRITE(OUT%FHNDL+4)  (SNGL(UFRIC(IP)), SNGL(Z0(IP)), SNGL(ALPHA_CH(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+4)
+         FLUSH(OUT%FHNDL+4)
          WRITE(OUT%FHNDL+5) SNGL(TIME)
          WRITE(OUT%FHNDL+5)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(OUTT(IP,3)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+5)
+         FLUSH(OUT%FHNDL+5)
          WRITE(OUT%FHNDL+6)  SNGL(TIME)
          WRITE(OUT%FHNDL+6)  (SNGL(OUTT(IP,1)), SNGL(OUTT(IP,2)), SNGL(ISHALLOW(IP)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+6)
+         FLUSH(OUT%FHNDL+6)
          WRITE(OUT%FHNDL+7)  SNGL(TIME)
          WRITE(OUT%FHNDL+7)  (SNGL(WIND(IP,8)), SNGL(WIND(IP,9)), SNGL(WIND(IP,8)), IP = 1, MNP)
-         CALL FLUSH(OUT%FHNDL+7)
+         FLUSH(OUT%FHNDL+7)
          IF (LQSTEA .AND. LCHKCONV) THEN
            WRITE(OUT%FHNDL+8)  SNGL(TIME) 
            WRITE(OUT%FHNDL+8)  (SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP)), SNGL(IP_IS_STEADY(IP))  , IP = 1, NP_TOTAL)
-           CALL FLUSH(OUT%FHNDL+8)
+           FLUSH(OUT%FHNDL+8)
          ENDIF
          IF (DoAirSea) THEN
            DO IP = 1, MNP
              WRITE(OUT%FHNDL+9,'(10F15.6)') SNGL(WIND(IP,:))
            ENDDO
-           CALL FLUSH(OUT%FHNDL+9)
+           FLUSH(OUT%FHNDL+9)
          END IF
          IF (LCFL) THEN
            WRITE(OUT%FHNDL+10)  SNGL(TIME)
@@ -343,7 +343,7 @@
 !$OMP END MASTER
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -351,7 +351,6 @@
       SUBROUTINE PRINT_HS_TRIPLE(eX, eY)
       USE DATAPOOL
       implicit none
-      INTEGER ListNode(3)
       REAL(rkind), intent(in) :: eX, eY
       REAL(rkind) :: HS, TM01, TM02, TM10, KLM, WLM
       REAL(rkind) :: X(3), Y(3), WI(3)
@@ -389,288 +388,288 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
-         USE DATAPOOL
+      USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-         USE elfe_msgp
+      USE elfe_msgp
 #endif
-         IMPLICIT NONE
+      IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
-         include 'mpif.h'
+      include 'mpif.h'
 #endif
-         CHARACTER(LEN=15), INTENT(IN) :: CTIME
-         LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
+      CHARACTER(LEN=15), INTENT(IN) :: CTIME
+      LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
-         REAL(rkind) :: ACLOC(MSC,MDC), ACOUT_1D(MSC,3), ACOUT_2D(MSC*MDC)
+      REAL(rkind) :: ACLOC(MSC,MDC), ACOUT_1D(MSC,3), ACOUT_2D(MSC*MDC)
 
-         CHARACTER(LEN=20) :: TITLEFORMAT,OUTPUTFORMAT
-         CHARACTER(LEN=2)  :: CHRTMP
-         character(len=256) :: FILEWRITE
-         INTEGER           :: I, IP, NI(3), IS
-         LOGICAL           :: ALIVE, LSAME
-         REAL(rkind)       :: USTARLOC,Z0LOC,WINDXLOC,WINDYLOC,ALPHALOC,CDLOC
-         REAL(rkind)       :: WI(3)
+      CHARACTER(LEN=20) :: TITLEFORMAT,OUTPUTFORMAT
+      CHARACTER(LEN=2)  :: CHRTMP
+      character(len=256) :: FILEWRITE
+      INTEGER           :: I, IP, NI(3), IS
+      LOGICAL           :: ALIVE, LSAME
+      REAL(rkind)       :: WI(3)
 #ifdef MPI_PARALL_GRID
-         REAL(rkind) :: TheIsumR
+      REAL(rkind) :: TheIsumR
 #endif
-         REAL(rkind) :: DEPLOC, WKLOC(MSC), CURTXYLOC(2)
+      REAL(rkind) :: DEPLOC, WKLOC(MSC), CURTXYLOC(2)
 #ifndef MPI_PARALL_GRID
-         REAL(rkind) :: WATLOC, ESUM
+      REAL(rkind) :: WATLOC, ESUM
+#endif
+#ifndef MPI_PARALL_GRID
+      REAL(rkind) :: USTARLOC, Z0LOC, ALPHALOC, WINDXLOC, WINDYLOC, CDLOC
 #endif
 
-         WRITE(CHRTMP,'(I2)') OUTVARS
-         TITLEFORMAT  = '(A15,X,X,'//TRIM(CHRTMP)//'A15)'
-         OUTPUTFORMAT = '(A15,X,X,'//TRIM(CHRTMP)//'F15.8)'
+      WRITE(CHRTMP,'(I2)') OUTVARS
+      TITLEFORMAT  = '(A15,X,X,'//TRIM(CHRTMP)//'A15)'
+      OUTPUTFORMAT = '(A15,X,X,'//TRIM(CHRTMP)//'F15.8)'
 
-         LSAME = .FALSE.
+      LSAME = .FALSE.
 
 #ifndef MPI_PARALL_GRID
-         DO I = 1, IOUTS ! Loop over stations ...
-           IF (STATION(I)%IFOUND == 1) THEN
-             STATION(I)%OUTPAR_NODE = 0.
-             CALL INTELEMENT_AC_LOC(I,ACLOC,CURTXYLOC,DEPLOC,WATLOC,WKLOC)
-             CALL INTPAR_LOC(I, STATION(I)%ISMAX,WKLOC,DEPLOC,CURTXYLOC,ACLOC,STATION(I)%OUTPAR_NODE)
-!             WRITE(DBG%FHNDL,*) 'HS=', STATION(I)%OUTPAR_NODE(1), 'sumAC=', sum(ACLOC)
-!             CALL PRINT_HS_TRIPLE(STATION(I)%XCOORD, STATION(I)%YCOORD)
-             NI = INE(:,STATION(I)%ELEMENT)
-             CALL INTELEMENT(XP(NI),YP(NI),UFRIC(NI), STATION(I)%XCOORD,STATION(I)%YCOORD,WI,USTARLOC,LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),Z0(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,Z0LOC,LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),ALPHA_CH(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,ALPHALOC,LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,1),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDXLOC,LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,2),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDYLOC,LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),CD(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,CDLOC,LSAME)
-           ELSE
-             USTARLOC = 0.
-             Z0LOC = 0.
-             ALPHALOC = 0.
-             WINDXLOC = 0.
-             WINDYLOC = 0.
-             CDLOC = 0.
-             WKLOC = 0.
-             DEPLOC = 0.
-             CURTXYLOC = 0.
-             ACLOC = 0.
-             WATLOC = 0.
-           END IF
-           ACLOC_STATIONS(I,:,:)=ACLOC
-           CDLOC_STATIONS(I)=CDLOC
-           Z0LOC_STATIONS(I)=Z0LOC
-           ALPHALOC_STATIONS(I)=ALPHALOC
-           WINDXLOC_STATIONS(I)=WINDXLOC
-           WINDYLOC_STATIONS(I)=WINDYLOC
-           USTARLOC_STATIONS(I)=USTARLOC
-           DEPLOC_STATIONS(I)=DEPLOC
-           WKLOC_STATIONS(I,:)=WKLOC
-           CURTXYLOC_STATIONS(I,:)=CURTXYLOC
-           WATLEVLOC_STATIONS(I)=WATLOC
+      DO I = 1, IOUTS ! Loop over stations ...
+        IF (STATION(I)%IFOUND == 1) THEN
+          STATION(I)%OUTPAR_NODE = 0.
+          CALL INTELEMENT_AC_LOC(I,ACLOC,CURTXYLOC,DEPLOC,WATLOC,WKLOC)
+          CALL INTPAR_LOC(I, STATION(I)%ISMAX,WKLOC,DEPLOC,CURTXYLOC,ACLOC,STATION(I)%OUTPAR_NODE)
+!          WRITE(DBG%FHNDL,*) 'HS=', STATION(I)%OUTPAR_NODE(1), 'sumAC=', sum(ACLOC)
+!          CALL PRINT_HS_TRIPLE(STATION(I)%XCOORD, STATION(I)%YCOORD)
+          NI = INE(:,STATION(I)%ELEMENT)
+          CALL INTELEMENT(XP(NI),YP(NI),UFRIC(NI), STATION(I)%XCOORD,STATION(I)%YCOORD,WI,USTARLOC,LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),Z0(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,Z0LOC,LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),ALPHA_CH(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,ALPHALOC,LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,1),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDXLOC,LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,2),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDYLOC,LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),CD(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,CDLOC,LSAME)
+        ELSE
+          USTARLOC = 0.
+          Z0LOC = 0.
+          ALPHALOC = 0.
+          WINDXLOC = 0.
+          WINDYLOC = 0.
+          CDLOC = 0.
+          WKLOC = 0.
+          DEPLOC = 0.
+          CURTXYLOC = 0.
+          ACLOC = 0.
+          WATLOC = 0.
+        END IF
+        ACLOC_STATIONS(I,:,:)=ACLOC
+        CDLOC_STATIONS(I)=CDLOC
+        Z0LOC_STATIONS(I)=Z0LOC
+        ALPHALOC_STATIONS(I)=ALPHALOC
+        WINDXLOC_STATIONS(I)=WINDXLOC
+        WINDYLOC_STATIONS(I)=WINDYLOC
+        USTARLOC_STATIONS(I)=USTARLOC
+        DEPLOC_STATIONS(I)=DEPLOC
+        WKLOC_STATIONS(I,:)=WKLOC
+        CURTXYLOC_STATIONS(I,:)=CURTXYLOC
+        WATLEVLOC_STATIONS(I)=WATLOC
 
-           STATION(I)%OUTPAR_NODE(26) = USTARLOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(27) = Z0LOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(28) = ALPHALOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(29) = WINDXLOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(30) = WINDYLOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(31) = CDLOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(32) = CURTXYLOC_STATIONS(I,1)
-           STATION(I)%OUTPAR_NODE(33) = CURTXYLOC_STATIONS(I,2)
-           STATION(I)%OUTPAR_NODE(34) = DEPLOC_STATIONS(I)
-           STATION(I)%OUTPAR_NODE(35) = WATLEVLOC_STATIONS(I)
-
-         END DO ! IOUTS
+        STATION(I)%OUTPAR_NODE(26) = USTARLOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(27) = Z0LOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(28) = ALPHALOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(29) = WINDXLOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(30) = WINDYLOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(31) = CDLOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(32) = CURTXYLOC_STATIONS(I,1)
+        STATION(I)%OUTPAR_NODE(33) = CURTXYLOC_STATIONS(I,2)
+        STATION(I)%OUTPAR_NODE(34) = DEPLOC_STATIONS(I)
+        STATION(I)%OUTPAR_NODE(35) = WATLEVLOC_STATIONS(I)
+      END DO
 !
 #else
 !
-         DO I = 1, IOUTS ! Loop over stations ... all threads 
-           IF (STATION(I)%IFOUND .GT. 0) THEN
-             CALL INTELEMENT_AC_LOC(I,ACLOC_STATIONS(I,:,:),CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I),WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
-             NI = INE(:,STATION(I)%ELEMENT)
-             CALL INTELEMENT(XP(NI),YP(NI),UFRIC(NI),STATION(I)%XCOORD, STATION(I)%YCOORD,WI,USTARLOC_STATIONS(I),LSAME) 
-             CALL INTELEMENT(XP(NI),YP(NI),Z0(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,Z0LOC_STATIONS(I),LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),ALPHA_CH(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,ALPHALOC_STATIONS(I),LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,1),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDXLOC_STATIONS(I),LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,2),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDYLOC_STATIONS(I),LSAME)
-             CALL INTELEMENT(XP(NI),YP(NI),CD(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,CDLOC_STATIONS(I),LSAME)
-           ELSE
-             ACLOC_STATIONS(I,:,:) = 0.
-             DEPLOC_STATIONS(I) = 0.
-             WKLOC_STATIONS(I,:) = 0.
-             USTARLOC_STATIONS(I) = 0.
-             Z0LOC_STATIONS(I) = 0.
-             ALPHALOC_STATIONS(I) = 0.
-             WINDXLOC_STATIONS(I) = 0.
-             WINDYLOC_STATIONS(I) = 0.
-             CDLOC_STATIONS(I) = 0.
-             WATLEVLOC_STATIONS(I) = 0.
-             CURTXYLOC_STATIONS(I,:) = 0.
-           END IF
-         END DO
+      DO I = 1, IOUTS ! Loop over stations ... all threads 
+        IF (STATION(I)%IFOUND .GT. 0) THEN
+          CALL INTELEMENT_AC_LOC(I,ACLOC_STATIONS(I,:,:),CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I),WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
+          NI = INE(:,STATION(I)%ELEMENT)
+          CALL INTELEMENT(XP(NI),YP(NI),UFRIC(NI),STATION(I)%XCOORD, STATION(I)%YCOORD,WI,USTARLOC_STATIONS(I),LSAME) 
+          CALL INTELEMENT(XP(NI),YP(NI),Z0(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,Z0LOC_STATIONS(I),LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),ALPHA_CH(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,ALPHALOC_STATIONS(I),LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,1),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDXLOC_STATIONS(I),LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),WINDXY(NI,2),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,WINDYLOC_STATIONS(I),LSAME)
+          CALL INTELEMENT(XP(NI),YP(NI),CD(NI),STATION(I)%XCOORD,STATION(I)%YCOORD,WI,CDLOC_STATIONS(I),LSAME)
+        ELSE
+          ACLOC_STATIONS(I,:,:) = 0.
+          DEPLOC_STATIONS(I) = 0.
+          WKLOC_STATIONS(I,:) = 0.
+          USTARLOC_STATIONS(I) = 0.
+          Z0LOC_STATIONS(I) = 0.
+          ALPHALOC_STATIONS(I) = 0.
+          WINDXLOC_STATIONS(I) = 0.
+          WINDYLOC_STATIONS(I) = 0.
+          CDLOC_STATIONS(I) = 0.
+          WATLEVLOC_STATIONS(I) = 0.
+          CURTXYLOC_STATIONS(I,:) = 0.
+        END IF
+      END DO
 
 !         WRITE(STAT%FHNDL,*) 'DEPTH OF THE FOUND STATIONS', DEPLOC_STATIONS
-!         CALL FLUSH(DBG%FHNDL)
+!         FLUSH(DBG%FHNDL)
 
-         DEPLOC_SUM = 0.
-         WATLEVLOC_SUM = 0.
-         CURTXYLOC_SUM = 0.
-         USTAR_SUM = 0.
-         Z0_SUM = 0.
-         ALPHA_SUM = 0.
-         CD_SUM = 0.
-         WINDX_SUM = 0.
-         WINDY_SUM = 0.
-         WKLOC_SUM = 0.
-         ACLOC_SUM = 0.
+      DEPLOC_SUM = 0.
+      WATLEVLOC_SUM = 0.
+      CURTXYLOC_SUM = 0.
+      USTAR_SUM = 0.
+      Z0_SUM = 0.
+      ALPHA_SUM = 0.
+      CD_SUM = 0.
+      WINDX_SUM = 0.
+      WINDY_SUM = 0.
+      WKLOC_SUM = 0.
+      ACLOC_SUM = 0.
 
-         DO I = 1, IOUTS
-           CALL MPI_REDUCE(   DEPLOC_STATIONS(I),DEPLOC_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(   WATLEVLOC_STATIONS(I),WATLEVLOC_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(CURTXYLOC_STATIONS(I,1),CURTXYLOC_SUM(I,1),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(CURTXYLOC_STATIONS(I,2),CURTXYLOC_SUM(I,2),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(   USTARLOC_STATIONS(I),USTAR_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(   Z0LOC_STATIONS(I),Z0_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(   ALPHALOC_STATIONS(I),ALPHA_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(   CDLOC_STATIONS(I),CD_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(WINDXLOC_STATIONS(I),WINDX_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(WINDYLOC_STATIONS(I),WINDY_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(WKLOC_STATIONS(I,:),   WKLOC_SUM(I,:),MSC,rtype,MPI_SUM,0,COMM,IERR)
-           CALL MPI_REDUCE(ACLOC_STATIONS(I,:,:),ACLOC_SUM(I,:,:),MSC*MDC,rtype,MPI_SUM,0,COMM,IERR)
-         END DO
+      DO I = 1, IOUTS
+        CALL MPI_REDUCE(   DEPLOC_STATIONS(I),DEPLOC_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(   WATLEVLOC_STATIONS(I),WATLEVLOC_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(CURTXYLOC_STATIONS(I,1),CURTXYLOC_SUM(I,1),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(CURTXYLOC_STATIONS(I,2),CURTXYLOC_SUM(I,2),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(   USTARLOC_STATIONS(I),USTAR_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(   Z0LOC_STATIONS(I),Z0_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(   ALPHALOC_STATIONS(I),ALPHA_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(   CDLOC_STATIONS(I),CD_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(WINDXLOC_STATIONS(I),WINDX_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(WINDYLOC_STATIONS(I),WINDY_SUM(I),1,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(WKLOC_STATIONS(I,:),   WKLOC_SUM(I,:),MSC,rtype,MPI_SUM,0,COMM,IERR)
+        CALL MPI_REDUCE(ACLOC_STATIONS(I,:,:),ACLOC_SUM(I,:,:),MSC*MDC,rtype,MPI_SUM,0,COMM,IERR)
+      END DO
 
-         IF (MYRANK == 0) THEN
-           DO I = 1, IOUTS
-             IF (STATION(I)%ISUM .EQ. 0) THEN
-               DEPLOC_STATIONS(I)           = -999.
-               CURTXYLOC_STATIONS(I,:)      = -999.
-               STATION(I)%OUTPAR_NODE(1:OUTVARS) = -999.
-               ACLOC_STATIONS(I,:,:)        = -999.
-               WKLOC_STATIONS(I,:)          = -999.
-               USTARLOC_STATIONS(I)         = -999.
-               ALPHALOC_STATIONS(I)         = -999.
-               Z0LOC_STATIONS(I)            = -999.
-               CDLOC_STATIONS(I)            = -999.
-               WINDXLOC_STATIONS(I)         = -999.
-               WINDYLOC_STATIONS(I)         = -999.
-               WRITE(DBG%FHNDL,*) 'STATION OUT OF MESH', I
-             ELSE
-               TheIsumR=MyREAL(STATION(I)%ISUM)
-               DEPLOC_STATIONS(I)       = DEPLOC_SUM(I)      / TheIsumR
-               CURTXYLOC_STATIONS(I,:)  = CURTXYLOC_SUM(I,:) / TheIsumR
-               CURTXYLOC_STATIONS(I,:)  = CURTXYLOC_SUM(I,:) / TheIsumR
-               WATLEVLOC_STATIONS(I)    = WATLEVLOC_SUM(I)   / TheIsumR
-               WKLOC_STATIONS(I,:)      = WKLOC_SUM(I,:)     / TheIsumR
-               ACLOC_STATIONS(I,:,:)    = ACLOC_SUM(I,:,:)   / TheIsumR
-               USTARLOC_STATIONS(I)     = USTAR_SUM(I)       / TheIsumR
-               Z0LOC_STATIONS(I)        = Z0_SUM(I)          / TheIsumR
-               ALPHALOC_STATIONS(I)     = USTAR_SUM(I)       / TheIsumR
-               CDLOC_STATIONS(I)        = CD_SUM(I)          / TheIsumR
-               WINDXLOC_STATIONS(I)     = WINDX_SUM(I)       / TheIsumR
-               WINDYLOC_STATIONS(I)     = WINDY_SUM(I)       / TheIsumR
-               !WRITE(STAT%FHNDL,*) 'SUM BEFORE INTPAR', SUM(ACLOC_STATIONS(I,:,:))
-               CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:), ACLOC_STATIONS(I,:,:), STATION(I)%OUTPAR_NODE)
-               STATION(I)%OUTPAR_NODE(26) = USTARLOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(27) = Z0LOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(28) = ALPHALOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(29) = WINDXLOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(30) = WINDYLOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(31) = CDLOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(32) = CURTXYLOC_STATIONS(I,1)
-               STATION(I)%OUTPAR_NODE(33) = CURTXYLOC_STATIONS(I,2)
-               STATION(I)%OUTPAR_NODE(34) = DEPLOC_STATIONS(I)
-               STATION(I)%OUTPAR_NODE(35) = WATLEVLOC_STATIONS(I)
-             END IF
-           END DO ! IOUTS
-         END IF ! myrank
+      IF (MYRANK == 0) THEN
+        DO I = 1, IOUTS
+          IF (STATION(I)%ISUM .EQ. 0) THEN
+            DEPLOC_STATIONS(I)           = -999.
+            CURTXYLOC_STATIONS(I,:)      = -999.
+            STATION(I)%OUTPAR_NODE(1:OUTVARS) = -999.
+            ACLOC_STATIONS(I,:,:)        = -999.
+            WKLOC_STATIONS(I,:)          = -999.
+            USTARLOC_STATIONS(I)         = -999.
+            ALPHALOC_STATIONS(I)         = -999.
+            Z0LOC_STATIONS(I)            = -999.
+            CDLOC_STATIONS(I)            = -999.
+            WINDXLOC_STATIONS(I)         = -999.
+            WINDYLOC_STATIONS(I)         = -999.
+            WRITE(DBG%FHNDL,*) 'STATION OUT OF MESH', I
+          ELSE
+            TheIsumR=MyREAL(STATION(I)%ISUM)
+            DEPLOC_STATIONS(I)       = DEPLOC_SUM(I)      / TheIsumR
+            CURTXYLOC_STATIONS(I,:)  = CURTXYLOC_SUM(I,:) / TheIsumR
+            CURTXYLOC_STATIONS(I,:)  = CURTXYLOC_SUM(I,:) / TheIsumR
+            WATLEVLOC_STATIONS(I)    = WATLEVLOC_SUM(I)   / TheIsumR
+            WKLOC_STATIONS(I,:)      = WKLOC_SUM(I,:)     / TheIsumR
+            ACLOC_STATIONS(I,:,:)    = ACLOC_SUM(I,:,:)   / TheIsumR
+            USTARLOC_STATIONS(I)     = USTAR_SUM(I)       / TheIsumR
+            Z0LOC_STATIONS(I)        = Z0_SUM(I)          / TheIsumR
+            ALPHALOC_STATIONS(I)     = USTAR_SUM(I)       / TheIsumR
+            CDLOC_STATIONS(I)        = CD_SUM(I)          / TheIsumR
+            WINDXLOC_STATIONS(I)     = WINDX_SUM(I)       / TheIsumR
+            WINDYLOC_STATIONS(I)     = WINDY_SUM(I)       / TheIsumR
+            !WRITE(STAT%FHNDL,*) 'SUM BEFORE INTPAR', SUM(ACLOC_STATIONS(I,:,:))
+            CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:), ACLOC_STATIONS(I,:,:), STATION(I)%OUTPAR_NODE)
+            STATION(I)%OUTPAR_NODE(26) = USTARLOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(27) = Z0LOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(28) = ALPHALOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(29) = WINDXLOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(30) = WINDYLOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(31) = CDLOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(32) = CURTXYLOC_STATIONS(I,1)
+            STATION(I)%OUTPAR_NODE(33) = CURTXYLOC_STATIONS(I,2)
+            STATION(I)%OUTPAR_NODE(34) = DEPLOC_STATIONS(I)
+            STATION(I)%OUTPAR_NODE(35) = WATLEVLOC_STATIONS(I)
+          END IF
+        END DO
+      END IF
 #endif
-
 #ifdef MPI_PARALL_GRID
-         IF (MYRANK == 0) THEN
+      IF (MYRANK == 0) THEN
 #endif
-           DO I = 1, IOUTS
-             ACLOC=ACLOC_STATIONS(I,:,:)
-!             WRITE(STAT%FHNDL,*) I, 'SUM ACLOC 1', SUM(ACLOC)
-             WKLOC=WKLOC_STATIONS(I,:)
-             DEPLOC=DEPLOC_STATIONS(I)
-             CURTXYLOC=CURTXYLOC_STATIONS(I,:)
-             FILEWRITE=TRIM(STATION(I)%NAME)//'.site'
-             INQUIRE(FILE=FILEWRITE,EXIST=ALIVE)
-             IF (LINIT_OUTPUT) THEN
-               OPEN(OUTPARM%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN')
-               WRITE(OUTPARM%FHNDL, TITLEFORMAT) 'TIME', OUTT_VARNAMES
-             ELSE
-               IF (ALIVE.eqv..false.) THEN
-                 CALL WWM_ABORT('Unexisting .site file please debug')
-               ENDIF
-               OPEN(OUTPARM%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND')
-             ENDIF
-             WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME, STATION(I)%OUTPAR_NODE(1:OUTVARS)
-             CALL FLUSH(OUTPARM%FHNDL)
-             CLOSE(OUTPARM%FHNDL)
+        DO I = 1, IOUTS
+          ACLOC=ACLOC_STATIONS(I,:,:)
+!          WRITE(STAT%FHNDL,*) I, 'SUM ACLOC 1', SUM(ACLOC)
+          WKLOC=WKLOC_STATIONS(I,:)
+          DEPLOC=DEPLOC_STATIONS(I)
+          CURTXYLOC=CURTXYLOC_STATIONS(I,:)
+          FILEWRITE=TRIM(STATION(I)%NAME)//'.site'
+          INQUIRE(FILE=FILEWRITE,EXIST=ALIVE)
+          IF (LINIT_OUTPUT) THEN
+            OPEN(OUTPARM%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN')
+            WRITE(OUTPARM%FHNDL, TITLEFORMAT) 'TIME', OUTT_VARNAMES
+          ELSE
+            IF (ALIVE.eqv..false.) THEN
+              CALL WWM_ABORT('Unexisting .site file please debug')
+            ENDIF
+            OPEN(OUTPARM%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND')
+          ENDIF
+          WRITE(OUTPARM%FHNDL,OUTPUTFORMAT) CTIME, STATION(I)%OUTPAR_NODE(1:OUTVARS)
+          FLUSH(OUTPARM%FHNDL)
+          CLOSE(OUTPARM%FHNDL)
 
-             IF (LSP1D .OR. LSP2D) THEN
-               CALL CLSPEC( WKLOC, DEPLOC, CURTXYLOC, ACLOC, ACOUT_1D, ACOUT_2D )
-             END IF
+          IF (LSP1D .OR. LSP2D) THEN
+            CALL CLSPEC( WKLOC, DEPLOC, CURTXYLOC, ACLOC, ACOUT_1D, ACOUT_2D )
+          END IF
 
-             IF (LSP1D) THEN
-               FILEWRITE=TRIM(STATION(I)%NAME)//'.sp1d'
-               INQUIRE(FILE=FILEWRITE,EXIST=ALIVE)
-               IF (LINIT_OUTPUT) THEN
-                 OPEN(OUTSP1D%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN')
-                 WRITE(OUTSP1D%FHNDL,*) MSC
-                 WRITE(OUTSP1D%FHNDL,*) MDC
-                 WRITE(OUTSP1D%FHNDL,*) SPSIG
-                 WRITE(OUTSP1D%FHNDL,*) SPDIR
+          IF (LSP1D) THEN
+            FILEWRITE=TRIM(STATION(I)%NAME)//'.sp1d'
+            INQUIRE(FILE=FILEWRITE,EXIST=ALIVE)
+            IF (LINIT_OUTPUT) THEN
+              OPEN(OUTSP1D%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN')
+              WRITE(OUTSP1D%FHNDL,*) MSC
+              WRITE(OUTSP1D%FHNDL,*) MDC
+              WRITE(OUTSP1D%FHNDL,*) SPSIG
+              WRITE(OUTSP1D%FHNDL,*) SPDIR
 #ifdef MPI_PARALL_GRID
-                 WRITE(OUTSP1D%FHNDL,*) STATION(I)%ISUM
+              WRITE(OUTSP1D%FHNDL,*) STATION(I)%ISUM
 #else
-                 WRITE(OUTSP1D%FHNDL,*) STATION(I)%IFOUND
+              WRITE(OUTSP1D%FHNDL,*) STATION(I)%IFOUND
 #endif
-               ELSE
-                 IF (ALIVE.eqv..false.) THEN
-                   CALL WWM_ABORT('Unexisting .sp1d file please debug')
-                 ENDIF
-                 OPEN(OUTSP1D%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND')
-               END IF
-               WRITE(OUTSP1D%FHNDL,*) CTIME
-               WRITE(OUTSP1D%FHNDL,*) DEPLOC
-               WRITE(OUTSP1D%FHNDL,*) CURTXYLOC
-               DO IS = 1, MSC
-                 WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2,  ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
-               END DO
-               CALL FLUSH(OUTSP1D%FHNDL)
-               CLOSE(OUTSP1D%FHNDL)
-             END IF
+            ELSE
+              IF (ALIVE.eqv..false.) THEN
+                CALL WWM_ABORT('Unexisting .sp1d file please debug')
+              ENDIF
+              OPEN(OUTSP1D%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND')
+            END IF
+            WRITE(OUTSP1D%FHNDL,*) CTIME
+            WRITE(OUTSP1D%FHNDL,*) DEPLOC
+            WRITE(OUTSP1D%FHNDL,*) CURTXYLOC
+            DO IS = 1, MSC
+              WRITE(OUTSP1D%FHNDL,'(F15.8,3F20.10)') SPSIG(IS)/PI2,  ACOUT_1D(IS,1), ACOUT_1D(IS,2), ACOUT_1D(IS,3)
+            END DO
+            FLUSH(OUTSP1D%FHNDL)
+            CLOSE(OUTSP1D%FHNDL)
+          END IF
 
-             IF (LSP2D) THEN
-               FILEWRITE=TRIM(STATION(I)%NAME)//'.sp2d'
-               INQUIRE(FILE=FILEWRITE,EXIST=ALIVE )
-               IF (LINIT_OUTPUT) THEN
-                 OPEN(OUTSP2D%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
-                 WRITE(OUTSP2D%FHNDL) MSC
-                 WRITE(OUTSP2D%FHNDL) MDC
-                 WRITE(OUTSP2D%FHNDL) SPSIG
-                 WRITE(OUTSP2D%FHNDL) SPDIR
+          IF (LSP2D) THEN
+            FILEWRITE=TRIM(STATION(I)%NAME)//'.sp2d'
+            INQUIRE(FILE=FILEWRITE,EXIST=ALIVE )
+            IF (LINIT_OUTPUT) THEN
+              OPEN(OUTSP2D%FHNDL,FILE=FILEWRITE, STATUS = 'UNKNOWN', FORM = 'UNFORMATTED')
+              WRITE(OUTSP2D%FHNDL) MSC
+              WRITE(OUTSP2D%FHNDL) MDC
+              WRITE(OUTSP2D%FHNDL) SPSIG
+              WRITE(OUTSP2D%FHNDL) SPDIR
 #ifdef MPI_PARALL_GRID
-                 WRITE(OUTSP2D%FHNDL) STATION(I)%ISUM
+              WRITE(OUTSP2D%FHNDL) STATION(I)%ISUM
 #else
-                 WRITE(OUTSP2D%FHNDL) STATION(I)%IFOUND
+              WRITE(OUTSP2D%FHNDL) STATION(I)%IFOUND
 #endif
-               ELSE
-                 IF (ALIVE.eqv..false.) THEN
-                   CALL WWM_ABORT('Unexisting .sp2d file please debug')
-                 ENDIF
-                 OPEN(OUTSP2D%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
-               END IF
-               WRITE(OUTSP2D%FHNDL) CTIME
-               WRITE(OUTSP2D%FHNDL) DEPLOC
-               WRITE(OUTSP2D%FHNDL) CURTXYLOC
-               WRITE(OUTSP2D%FHNDL) ACLOC
-               WRITE(OUTSP2D%FHNDL) ACOUT_2D
-               CALL FLUSH(OUTSP2D%FHNDL)
-               CLOSE(OUTSP2D%FHNDL)
-             END IF ! LSP2D
-           END DO
+            ELSE
+              IF (ALIVE.eqv..false.) THEN
+                CALL WWM_ABORT('Unexisting .sp2d file please debug')
+              ENDIF
+              OPEN(OUTSP2D%FHNDL,FILE=FILEWRITE, STATUS = 'OLD' , POSITION = 'APPEND', FORM = 'UNFORMATTED')
+            END IF
+            WRITE(OUTSP2D%FHNDL) CTIME
+            WRITE(OUTSP2D%FHNDL) DEPLOC
+            WRITE(OUTSP2D%FHNDL) CURTXYLOC
+            WRITE(OUTSP2D%FHNDL) ACLOC
+            WRITE(OUTSP2D%FHNDL) ACOUT_2D
+            FLUSH(OUTSP2D%FHNDL)
+            CLOSE(OUTSP2D%FHNDL)
+          END IF ! LSP2D
+        END DO
 #ifdef MPI_PARALL_GRID
-         END IF
+      END IF
 #endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
-        CALL FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !* The netcdf output outs the most variables and is the most          *
@@ -717,10 +716,9 @@
       INTEGER     :: LPOS
       integer istat
       character(len =256) :: FILE_NAME, PRE_FILE_NAME
-      integer :: iret, ncid, ntime_dims, nbstat_dims
-      integer :: msc_dims, mdc_dims, three_dims, one_dims
+      integer :: iret, ncid
       integer :: var_id
-      integer :: I, IE, irec_dim, IELOC, ISMAX
+      integer :: I, irec_dim, IELOC, ISMAX
       character (len = *), parameter :: CallFct = "OUTPUT_STATION_NC"
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: FULLNAME = "full-name"
@@ -731,14 +729,13 @@
       REAL(rkind)  :: OUTPAR(OUTVARS_COMPLETE)
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
-      INTEGER           :: IP, NI(3), IS, ID
       REAL(rkind)       :: WI(3)
       integer eInt(1)
       integer POSITION_BEFORE_POINT
 # ifdef MPI_PARALL_GRID
       REAL(rkind) :: TheIsumR
 # endif
-      REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2), ESUM
+      REAL(rkind) :: DEPLOC, WATLOC, WKLOC(MSC), CURTXYLOC(2)
 
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
@@ -747,13 +744,11 @@
       DO I = 1, IOUTS
         IF (STATION(I)%IFOUND == 1) THEN
           STATION(I)%OUTPAR_NODE = 0.
-          CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC,                    &
-     &                        DEPLOC,WATLOC,WKLOC)
+          CALL INTELEMENT_AC_LOC(I, ACLOC,CURTXYLOC, DEPLOC,WATLOC,WKLOC)
           IELOC=STATION(I)%ELEMENT
           ISMAX=STATION(I)%ISMAX
           WI=STATION(I)%WI(3)
-          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,                    &
-     &       WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
+          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
           IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
             CALL CLSPEC(WKLOC,DEPLOC,CURTXYLOC,ACLOC,ACOUT_1D,ACOUT_2D)
           END IF
@@ -988,7 +983,7 @@
          REAL(rkind) :: TheIsumR
          CHARACTER(LEN=20) :: TITLEFORMAT,OUTPUTFORMAT
          CHARACTER(LEN=2)  :: CHRTMP
-         INTEGER           :: I, IP, IS, ID
+         INTEGER           :: I, IS
          LOGICAL           :: ALIVE
 
 #ifndef MPI_PARALL_GRID
@@ -1197,7 +1192,7 @@
          OUTPAR(10)= CD(IP)       ! Drag Coefficient
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WINDPAR'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1267,7 +1262,7 @@
          OUTPAR(31) = WINDXY(IP,2) ! windy
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1617,7 +1612,7 @@
          END IF
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTSPEC'
-!         CALL FLUSH(STAT%FHNDL)
+!         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1702,7 +1697,7 @@
 110      FORMAT (2X,I10,3(A2,F15.8))
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_SHP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -1815,7 +1810,7 @@
          END DO
 
 !        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH CLSPEC'
-!        CALL FLUSH(STAT%FHNDL)
+!        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1878,7 +1873,7 @@
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
 
 !        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
-!        CALL FLUSH(STAT%FHNDL)
+!        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2088,7 +2083,7 @@
         ENDIF
       ENDIF
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_NC'
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************

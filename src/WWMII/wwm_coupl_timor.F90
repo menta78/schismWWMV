@@ -42,7 +42,7 @@
 ! write coupling tyme step
 !
            WRITE(1004) MAIN%DTCOUP
-           CALL FLUSH(1004)
+           FLUSH(1004)
 !
 ! read coupling tyme step
 !

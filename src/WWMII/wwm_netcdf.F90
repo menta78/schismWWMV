@@ -2,6 +2,168 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=100), intent(in) :: eStrUnitTime
+      real(rkind), intent(out) :: ConvertToDay, eTimeStart
+      character (len=100) :: Xname, Yname
+      character (len=10) :: YnameYear, YnameMonth, YnameDay
+      character (len=10) :: YnameHour, YnameMin, YnameSec
+      character (len=50) :: YnameB, YnameD, YnameE
+      character (len=50) :: YnameDate, YnameTime, YnameTimeP
+      character (len=15) :: eStrTime
+      integer alenB, alenC, alenD, alenE, alenTime, alenDate
+      integer alen, posBlank
+      integer lenHour, lenMin, lenSec, lenMonth, lenDay, posSepDateTime
+      alen=LEN_TRIM(eStrUnitTime)
+      posBlank=INDEX(eStrUnitTime(1:alen), ' ')
+      Xname=eStrUnitTime(1:posBlank-1) ! should be days/hours/seconds
+      IF (TRIM(Xname) .eq. 'days') THEN
+        ConvertToDay=1
+      ELSEIF (TRIM(Xname) .eq. 'hours') THEN
+        ConvertToDay=1/24
+      ELSEIF (TRIM(Xname) .eq. 'seconds') THEN
+        ConvertToDay=1/86400
+      ELSE
+        CALL WWM_ABORT('Error in the code for conversion')
+      END IF
+
+
+      Yname=eStrUnitTime(posBlank+1:alen)
+      alenB=LEN_TRIM(Yname)
+      posBlank=INDEX(Yname(1:alenB), ' ')
+      YnameB=Yname(posBlank+1:alenB) ! should be 1990-01-01 0:0:0
+      !
+      alenC=LEN_TRIM(YnameB)
+      posSepDateTime=INDEX(YnameB(1:alenC), ' ')
+      IF (posSepDateTime .gt. 0) THEN
+        YnameDate=YnameB(1:posSepDateTime-1) ! should be 1990-01-01
+        YnameTimeP=YnameB(posSepDateTime+1:alenC) ! should be 0:0:0
+        alenC=LEN_TRIM(YnameTime)
+        posBlank=INDEX(YnameTimeP(1:alenC), ' ')
+        IF (posBlank .eq. 0) THEN
+          YnameTime=YnameTimeP
+        ELSE
+          YnameTime=YnameTimeP(1:posBlank-1)
+        END IF
+      ELSE
+        YnameDate=YnameB
+        eStrTime(10:10)='0'
+        eStrTime(11:11)='0'
+        eStrTime(12:12)='0'
+        eStrTime(13:13)='0'
+        eStrTime(14:14)='0'
+        eStrTime(15:15)='0'
+      END IF
+      !
+      alenDate=LEN_TRIM(YnameDate)
+      posBlank=INDEX(YnameDate(1:alenDate), '-')
+      YnameYear=YnameDate(1:posBlank-1) ! should be 1990
+      YnameD=YnameDate(posBlank+1:alenDate)
+      alenD=LEN_TRIM(YnameD)
+      posBlank=INDEX(YnameD(1:alenD), '-')
+      YnameMonth=YnameD(1:posBlank-1) ! should be 01
+      YnameDay=YnameD(posBlank+1:alenD) ! should be 01
+      !
+      ! year
+      eStrTime( 1: 1)=YnameYear( 1: 1)
+      eStrTime( 2: 2)=YnameYear( 2: 2)
+      eStrTime( 3: 3)=YnameYear( 3: 3)
+      eStrTime( 4: 4)=YnameYear( 4: 4)
+      !
+      ! month
+      lenMonth=LEN_TRIM(YnameMonth)
+      IF (lenMonth .eq. 2) THEN
+        eStrTime( 5: 5)=YnameMonth( 1: 1)
+        eStrTime( 6: 6)=YnameMonth( 2: 2)
+      ELSE
+        IF (lenMonth .eq. 1) THEN
+          eStrTime( 5: 5)='0'
+          eStrTime( 5: 5)=YnameMonth( 1: 1)
+        ELSE
+          CALL WWM_ABORT('DIE in trying to get the month')
+        END IF
+      END IF
+      !
+      ! day
+      lenDay=LEN_TRIM(YnameDay)
+      IF (lenDay .eq. 2) THEN
+        eStrTime( 7: 7)=YnameDay( 1: 1)
+        eStrTime( 8: 8)=YnameDay( 2: 2)
+      ELSE
+        IF (lenDay .eq. 1) THEN
+          eStrTime( 7: 7)='0'
+          eStrTime( 8: 8)=YnameDay( 1: 1)
+        ELSE
+          CALL WWM_ABORT('DIE in trying to get the day')
+        END IF
+      END IF
+      !
+      eStrTime( 9: 9)='.'
+      !
+      IF (posSepDateTime .gt. 0) THEN
+        !
+        alenTime=LEN_TRIM(YnameTime)
+        posBlank=INDEX(YnameTime(1:alenTime), ':')
+        YnameHour=YnameTime(1:posBlank-1) ! should be 0
+        YnameE=YnameTime(posBlank+1:alenTime)
+        alenE=LEN_TRIM(YnameE)
+        posBlank=INDEX(YnameE(1:alenE), ':')
+        YnameMin=YnameE(1:posBlank-1) ! should be 0
+        YnameSec=YnameE(posBlank+1:alenE) ! should be 0
+        !
+        !
+        ! Hour
+        lenHour=LEN_TRIM(YnameHour)
+        IF (lenHour .eq. 2) THEN
+          eStrTime(10:10)=YnameHour( 1: 1)
+          eStrTime(11:11)=YnameHour( 2: 2)
+        ELSE
+          IF (lenHour .eq. 1) THEN
+            eStrTime(10:10)='0'
+            eStrTime(11:11)=YnameHour( 1: 1)
+          ELSE
+            CALL WWM_ABORT('DIE in trying to get the hour')
+          END IF
+        END IF
+        !
+        ! Min
+        lenMin=LEN_TRIM(YnameMin)
+        IF (lenMin .eq. 2) THEN
+          eStrTime(12:12)=YnameMin( 1: 1)
+          eStrTime(13:13)=YnameMin( 2: 2)
+        ELSE
+          IF (lenMin .eq. 1) THEN
+            eStrTime(12:12)='0'
+            eStrTime(13:13)=YnameMin( 1: 1)
+          ELSE
+            CALL WWM_ABORT('DIE in trying to get the min')
+          END IF
+        END IF
+        !
+        ! Sec
+        lenSec=LEN_TRIM(YnameSec)
+        IF (lenSec .eq. 2) THEN
+          eStrTime(14:14)=YnameSec( 1: 1)
+          eStrTime(15:15)=YnameSec( 2: 2)
+        ELSE
+          IF (lenSec .eq. 1) THEN
+            eStrTime(14:14)='0'
+            eStrTime(15:15)=YnameSec( 1: 1)
+          ELSE
+            WRITE(WINDBG%FHNDL,*) 'YnameSec=', TRIM(Ynamesec)
+            WRITE(WINDBG%FHNDL,*) 'lenSec=', lenSec
+            FLUSH(WINDBG%FHNDL)
+            CALL WWM_ABORT('DIE in trying to get the sec')
+          END IF
+        END IF
+      END IF
+      CALL CT2MJD(eStrTime, eTimeStart)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE DETERMINE_NEEDED_COMPUTATION(eVar)
       USE DATAPOOL, only : VAROUT, OUTVARS_COMPLETE
       implicit none
@@ -146,7 +308,6 @@
       INTEGER :: IE, I, IP, eIdx
       INTEGER :: ISFINISHED, INEXT, IPREV, IPNEXT, IPPREV, ZNEXT
       LOGICAL :: HaveError
-      integer istat
       NEIGHBOR=0
       STATUS = 0
       NEXTVERT = 0
@@ -679,12 +840,11 @@
       integer, intent(in) :: ncid, idx
       REAL(rkind), intent(IN) :: eTimeDay
       character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
-      integer ntime_dims, oceantimeday_id, oceantimestr_id, oceantime_id
+      integer oceantimeday_id, oceantimestr_id, oceantime_id
       integer iret, I
       CHARACTER          :: eChar
       REAL(rkind) eTimeSec
       CHARACTER(LEN=15) :: eTimeStr
-      CHARACTER(len=100) :: CHRERR
       !
       CALL MJD2CT(eTimeDay,eTimeStr)
       eTimeSec=eTimeDay*DAY2SEC
@@ -717,7 +877,9 @@
       REAL(rkind), intent(out) :: YPtotal(np_total)
       REAL(rkind), intent(out) :: DEPtotal(np_total)
       integer, intent(out) :: INEtotal(3, ne_total)
-      integer NewId, nb1, nb2, i, k, idx, iegb, j, statfile
+# ifdef MPI_PARALL_GRID
+      integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
+# endif
 # ifdef MPI_PARALL_GRID
       NewId=78557
       open(NewId,file='hgrid.gr3',status='old',iostat=statfile)
@@ -760,9 +922,11 @@
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
       integer mnp_dims, mne_dims, msc_dims, mdc_dims
-      integer nnode_dims, np_global_dims, ne_global_dims
+# ifdef MPI_PARALL_GRID
+      integer np_global_dims, ne_global_dims
+# endif
       integer iret, var_id
-      integer ntime_dims, oceantimeday_id, oceantimestr_id, oceantime_id
+      integer ntime_dims
       integer p_dims, e_dims
       integer istat
       REAL(rkind), allocatable :: XPtotal(:)
@@ -771,7 +935,6 @@
       integer, allocatable :: INEtotal(:,:)
       integer Oper
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_1"
-      character(len=100) :: CHRERR
       IF ((np_write.eq.0).or.(ne_write.eq.0)) THEN
         CALL WWM_ABORT('np_write=0 or ne_write=0, not allowed by any mean')
       ENDIF
@@ -916,21 +1079,17 @@
       integer, intent(in) :: ncid, MULTIPLEOUT
       logical, intent(in) :: WriteOutputProcess
       integer, intent(in) :: np_write, ne_write
-      integer var_id, iret, NewId
-      integer nb1, nb2
+      integer var_id, iret
       integer istat
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
       REAL(rkind), allocatable :: XPtotal(:)
       REAL(rkind), allocatable :: YPtotal(:)
       REAL(rkind), allocatable :: DEPtotal(:)
       integer, allocatable :: INEtotal(:,:)
-      integer I, J, K, IEGB, statfile
-      CHARACTER(LEN=80)    :: CHRTMP
       integer Oper
+#ifdef MPI_PARALL_GRID
       integer eInt(1)
-# ifdef MPI_PARALL_GRID
-      REAL(rkind), allocatable :: GRIDloc(:,:)
-# endif
+#endif
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT.eq.1) THEN
         iret=nf90_inq_varid(ncid, 'iplg', var_id)
@@ -1231,8 +1390,8 @@
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_1"
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, msc_dims, mdc_dims
-      integer nnode_dims, np_global_dims, nbstat_dims
+      integer msc_dims, mdc_dims
+      integer nbstat_dims
       integer iret, var_id
       integer ntime_dims
       iret = nf90_def_dim(ncid, 'one', 1, one_dims)
@@ -1366,7 +1525,9 @@
       real(rkind) :: eWriteReal(1)
       integer var_id, iret
       integer I
+#ifdef MPI_PARALL_GRID
       integer eInt(1)
+#endif
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_2"
       !
 # ifdef MPI_PARALL_GRID

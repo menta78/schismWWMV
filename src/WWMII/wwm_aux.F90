@@ -33,7 +33,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DDEP(IP,1)
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
 
             CASE (2)
@@ -59,7 +59,7 @@
                         WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD , 'MAXSLOPE'
                      END IF
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
 
             CASE DEFAULT
@@ -124,7 +124,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DCUX, DCUY
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE (2)
                CALL DIFFERENTIATE_XYDIR(CURTXY(:,1),DCUX(:,1),DCUX(:,2))
@@ -143,7 +143,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,4F15.7)') IP, DCUX(IP,1), DCUX(IP,2), DCUY(IP,1), DCUY(IP,2)
                   END DO
-                  CALL FLUSH(STAT%FHNDL)
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE DEFAULT
          END SELECT
@@ -222,9 +222,6 @@
          REAL(rkind)            :: DVDXIE, DVDYIE
 
          REAL(rkind)            :: WEI(MNP)
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)            :: WILD(MNP)
-#endif
 
          WEI(:)  = 0.0_rkind
          DVDX(:) = 0.0_rkind
@@ -659,7 +656,7 @@
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 4 REACHED IN', CONV4, '% GRIDPOINTS'
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 5 REACHED IN', CONV5, '% GRIDPOINTS'
 #endif
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1133,7 +1130,7 @@
       REAL(rkind), INTENT(OUT) :: ACLOC(MSC,MDC)
       REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC)
       REAL(rkind), SAVE         :: WI(3)
-      INTEGER :: IS, ID, NI(3), IE
+      INTEGER :: IS, NI(3), IE
       REAL(rkind) :: WVN, WVC, WVK, WVCG, WVKDEP
       integer IP, J
 
@@ -1854,7 +1851,7 @@
       character(*), intent(in) :: string
 
       WRITE(DBG%FHNDL, *) TRIM(string)
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 
 #ifdef MPI_PARALL_GRID
       CALL PARALLEL_ABORT(TRIM(string))

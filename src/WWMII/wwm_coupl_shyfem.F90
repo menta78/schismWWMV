@@ -177,14 +177,12 @@
         USE DATAPOOL
         implicit none
         integer IP, k, ID, IS
-        real(rkind) eDep, eHeight
-        real(rkind) eFrac, eFracB
-        real(rkind) eQuot1, eScal, eZeta
-        real(rkind) eOmega, eMult, kD, eSinc
-        real(rkind) USTOKESpart, VSTOKESpart, eJPress
-        real(rkind) ACLOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        real(rkind) PPTAIL, CETAIL, CKTAIL
-        integer IDsel, ISsel, SelectedK
+        real(rkind) eDep
+        real(rkind) eFrac
+        real(rkind) eQuot1
+        real(rkind) eMult, kD
+        real(rkind) eJPress
+        real(rkind) eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
         logical DoTail
         real(rkind) eWkReal
         real(rkind) eJPress_loc, eProd, eUint, eVint
@@ -253,10 +251,10 @@
       INTEGER, INTENT(IN)  :: K
       INTEGER         :: IL, IP, istat
       REAL(rkind)     :: ACLOC(MSC,MDC)
-      REAL(rkind)     :: HS,WLM,LPP
-      REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2,URSELL,UBOT
-      REAL(rkind)     :: TMBOT,ETOT,FP,CP,KPP,DM,DSPR,PEAKDSPR,PEAKDM
-      REAL(rkind)     :: ORBITAL, USTOKES, USTOKES_X, USTOKES_Y
+      REAL(rkind)     :: HS,LPP
+      REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2, UBOT
+      REAL(rkind)     :: TMBOT,ETOT, KPP,DM,DSPR,PEAKDSPR,PEAKDM
+      REAL(rkind)     :: ORBITAL
       REAL(rkind)     :: BOTEXPER, ETOTS, ETOTC, DPEAK
       REAL(rkind)     :: FPP, TPP, CPP, WNPP, CGPP, TPPD,KPPD,CGPD,CPPD 
 # ifdef MPI_PARALL_GRID
@@ -287,42 +285,42 @@
             WRITE(102)  SYY3D(IL,IP)             !ccf
             WRITE(142)  SXY3D(IL,IP)             !ccf
           END DO
-          CALL FLUSH(101)
-          CALL FLUSH(102)
-          CALL FLUSH(142)                        !ccf
+          FLUSH(101)
+          FLUSH(102)
+          FLUSH(142)                        !ccf
           ACLOC = AC2(IP,:,:)
           CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
           WRITE(103) HS
-          CALL FLUSH(103)
+          FLUSH(103)
           WRITE(104)  SME01
-          CALL FLUSH(104)
+          FLUSH(104)
           WRITE(105)  DM
-          CALL FLUSH(105)
+          FLUSH(105)
           WRITE(106)  KMWAM
-          CALL FLUSH(106)
+          FLUSH(106)
           WRITE(107)  TPP
-          CALL FLUSH(107)
+          FLUSH(107)
           WRITE(108)  KPP
-          CALL FLUSH(108)
+          FLUSH(108)
           WRITE(109)  ORBITAL
-          CALL FLUSH(109)
+          FLUSH(109)
           WRITE(110)  STOKES_X(:,IP)
-          CALL FLUSH(110)
+          FLUSH(110)
           WRITE(111)  STOKES_Y(:,IP)
-          CALL FLUSH(111)
+          FLUSH(111)
           IF (LWINDFROMWWM) THEN
             WRITE(112)  WINDXY(IP,1)
-            CALL FLUSH(112)
+            FLUSH(112)
             WRITE(113)  WINDXY(IP,2)
-            CALL FLUSH(113)
+            FLUSH(113)
           END IF
           WRITE(114)  CD(IP) 
-          CALL FLUSH(114)
+          FLUSH(114)
           WRITE(115)  JPRESS(IP)
-          CALL FLUSH(115)
+          FLUSH(115)
         END DO
 # else
         IF (LWINDFROMWWM) THEN
@@ -368,41 +366,41 @@
               WRITE(102)  OUTT(IP, IL+  NLVT)
               WRITE(142)  OUTT(IP, IL+2*NLVT)
             END DO
-            CALL FLUSH(101)
-            CALL FLUSH(102)
-            CALL FLUSH(142)                        !ccf
+            FLUSH(101)
+            FLUSH(102)
+            FLUSH(142)                        !ccf
             WRITE(103) OUTT(IP, 1 + 5*NLVT)
-            CALL FLUSH(103)
+            FLUSH(103)
             WRITE(104) OUTT(IP, 2 + 5*NLVT)
-            CALL FLUSH(104)
+            FLUSH(104)
             WRITE(105) OUTT(IP, 3 + 5*NLVT)
-            CALL FLUSH(105)
+            FLUSH(105)
             WRITE(106) OUTT(IP, 4 + 5*NLVT)
-            CALL FLUSH(106)
+            FLUSH(106)
             WRITE(107) OUTT(IP, 5 + 5*NLVT)
-            CALL FLUSH(107)
+            FLUSH(107)
             WRITE(108) OUTT(IP, 6 + 5*NLVT)
-            CALL FLUSH(108)
+            FLUSH(108)
             WRITE(109) OUTT(IP, 7 + 5*NLVT)
-            CALL FLUSH(109)
+            FLUSH(109)
             DO IL=1,NLVT
               STOKES_X_ret(IL) = OUTT(IP, IL+3*NLVT)
               STOKES_Y_ret(IL) = OUTT(IP, IL+4*NLVT)
             END DO
             WRITE(110) STOKES_X_ret
-            CALL FLUSH(110)
+            FLUSH(110)
             WRITE(111) STOKES_Y_ret
-            CALL FLUSH(111)
+            FLUSH(111)
             IF (LWINDFROMWWM) THEN
               WRITE(112) OUTT(IP, 10 + 5*NLVT)
-              CALL FLUSH(112)
+              FLUSH(112)
               WRITE(113) OUTT(IP, 11 + 5*NLVT)
-              CALL FLUSH(113)
+              FLUSH(113)
             END IF
             WRITE(114) OUTT(IP, 8 + 5*NLVT)
-            CALL FLUSH(114)
+            FLUSH(114)
             WRITE(115) OUTT(IP, 9 + 5*NLVT)
-            CALL FLUSH(115)
+            FLUSH(115)
           END DO
         END IF
         deallocate(OUTT)

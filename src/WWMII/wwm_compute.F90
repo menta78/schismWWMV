@@ -15,7 +15,7 @@
 
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          AC1 = AC2 
          IF (LNANINFCHK) THEN
@@ -97,7 +97,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
 
@@ -179,7 +179,7 @@
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_IMPLICIT'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
           DT4A = MAIN%DELT
@@ -225,7 +225,7 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         RETURN
       END SUBROUTINE
@@ -316,7 +316,7 @@
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SPATIAL'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF (DIMMODE == 1) THEN
           CALL COMPUTE_ADVECTION1D_QUICKEST_A()
@@ -338,7 +338,7 @@
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SPATIAL'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SPATIAL
 !**********************************************************************
@@ -349,7 +349,7 @@
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_DIRECTION'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
  
         IF (DMETHOD > 0) THEN
           IF (DMETHOD == 1) THEN
@@ -364,7 +364,7 @@
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_DIRECTION'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF ( DMETHOD == 1) CALL RESCALE_SPECTRUM
 
@@ -377,14 +377,14 @@
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_FREQUENCY'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF (FMETHOD == 1) THEN
           CALL COMPUTE_FREQUENCY_QUICKEST_A()
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_FREQUENCY'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_FREQUENCY
 !**********************************************************************
@@ -395,14 +395,14 @@
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_EXP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
           CALL SOURCE_INT_EXP()
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_EXP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SOURCES_EXP
 !**********************************************************************
@@ -413,14 +413,14 @@
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_IMP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
         IF (ICOMP >= 2  .AND. SMETHOD > 0) THEN
           CALL SOURCE_INT_IMP()
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_IMP'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SOURCES_IMP
 !**********************************************************************

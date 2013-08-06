@@ -12,7 +12,10 @@
         INTEGER :: I
         REAL(rkind) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
         REAL(rkind) :: x1, y1, x2, y2
-        INTEGER :: I1, I2, I3, IE, IP, ID, iwild(mnp)
+        INTEGER :: I1, I2, I3, IE, IP, ID
+#ifdef MPI_PARALL_GRID
+        INTEGER :: iwild(mnp)
+#endif
         REAL(rkind) :: EVX, EVY
         REAL(rkind) :: eDet1, eDet2
 
@@ -362,8 +365,8 @@
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
-        CALL FLUSH(STAT%FHNDL)
-        CALL FLUSH(IOBPOUT%FHNDL)
+        FLUSH(STAT%FHNDL)
+        FLUSH(IOBPOUT%FHNDL)
 #endif DEBUG
         
       END SUBROUTINE
@@ -471,7 +474,7 @@
       INTEGER :: STATUS(MNP)
       CHARACTER(LEN=200) :: wwmerr
 
-      INTEGER          :: I, ITMP, JTMP
+      INTEGER          :: I, ITMP
       REAL(rkind)      :: ATMP, BTMP
       CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
 
@@ -697,7 +700,7 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         ENDIF 
 #endif
@@ -879,12 +882,12 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
 #endif
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 
         RETURN
       END SUBROUTINE
@@ -1119,7 +1122,6 @@
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG
       REAL(rkind) :: HS, TM, DM, TheErr, DeltaPer, Tper
-      REAL(rkind) :: AUX2
       REAL(rkind) :: DiffAng, DEG, ADIR
       REAL(rkind) :: SPPARwork1(8), SPPARwork2(8), SPPARwork(8)
       integer :: iIter, nbIter, eSign, IS, ID
@@ -1376,7 +1378,7 @@
         ENDIF
       ELSE IF (ITPER.GE.100) THEN
         WRITE (STAT%FHNDL,*) 'No convergence calculating the spectrum'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       ENDIF
 
 
@@ -1517,7 +1519,7 @@
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
         WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
         WRITE (STAT%FHNDL,*) SPPAR
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END IF
 
@@ -1533,13 +1535,12 @@
 
          REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
          REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
-         REAL(rkind)                :: COEF(4,WBMSC-1)
          REAL(rkind)                :: INSPF(WBMSC)
          REAL(rkind)                :: INSPE(WBMSC)
          REAL(rkind)                :: INDIR(WBMSC)
          REAL(rkind)                :: INSPRD(WBMSC)
          REAL(rkind)                :: INMS(WBMSC)
-         REAL(rkind)                :: SPCDIR(MSC), SPLINEVL, ACLOC(MSC,MDC)
+         REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
          INTEGER                    :: IS, IS2, ID, istat
          REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
          REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
@@ -1795,8 +1796,8 @@
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
       WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
-      CALL FLUSH(DBG%FHNDL)
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(DBG%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
@@ -1831,7 +1832,7 @@
       SUBROUTINE SET_WAVE_BOUNDARY
         USE DATAPOOL
         IMPLICIT NONE
-        INTEGER :: IP, IPrel, IPGL
+        INTEGER :: IP, IPGL
         IF (LBCWA .OR. LBCSP) THEN
           IF (LINHOM) THEN
             DO IP = 1, IWBMNP

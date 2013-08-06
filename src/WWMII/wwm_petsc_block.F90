@@ -1243,7 +1243,7 @@
          real(kind=8), INTENT(OUT)  :: C2(2,MAXMNECON,MDC)
          real(kind=8), INTENT(OUT)  :: C3(2,MAXMNECON,MDC)
 
-         INTEGER     :: IP, i, IE, IP1, IP2, IP3
+         INTEGER     :: i, IE, IP1, IP2, IP3
 
          real(kind=8)      :: DIFRU1(MDC), USOC1(MDC), WVC1
          real(kind=8)      :: DIFRU2(MDC), USOC2(MDC), WVC2
