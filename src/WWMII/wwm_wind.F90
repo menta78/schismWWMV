@@ -2354,8 +2354,6 @@
           call grib_get(igrib(i), 'jDirectionIncrementInDegrees', jDirectionIncrement)
 
 
-
-
           WRITE(WINDBG%FHNDL, *) 'LONGITUDE'
           WRITE(WINDBG%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
           WRITE(WINDBG%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
@@ -2394,10 +2392,13 @@
       IMPLICIT NONE
       integer, intent(in) :: IT
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
-      INTEGER ifile, i, n, iret
+      INTEGER ifile, irec, n, iret
       integer, allocatable :: igrib(:)
       integer WeFoundU, WeFoundV
+      integer i, j, idx
       character(len=100) eShortName
+      real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
+      real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
       !
       Print *, 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
       CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
@@ -2406,20 +2407,28 @@
       allocate(igrib(n))
       WeFoundU=0
       WeFoundV=0
-      DO i=1,n
-        Print *, 'i=', i
-        call grib_new_from_file(ifile, igrib(i), iret)
-        call grib_get(igrib(i), 'shortName', eShortName)
+      DO irec=1,n
+        Print *, 'irec=', irec
+        call grib_new_from_file(ifile, igrib(irec), iret)
+        call grib_get(igrib(irec), 'shortName', eShortName)
         IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
           WeFoundU=1
-!          CALL grib_get(igrib(i), 'values', pack(UWIND_FD, ))
+          CALL grib_get(igrib(irec), 'values', valueU)
         END IF
         IF ((TRIM(eShortName) .eq. '10v').and.(WeFoundV .eq. 0)) THEN
           WeFoundV=1
-!          CALL grib_get(igrib(i), 'values', VWIND_FD)
+          CALL grib_get(igrib(irec), 'values', valueV)
         END IF
-
       END DO
+      idx=0
+      DO I=1,NDX_WIND_FD
+        DO J=1,NDY_WIND_FD
+          idx=idx+1
+          UWIND_FD(I,J)=valueU(idx)
+          VWIND_FD(I,J)=valueV(idx)
+        END DO
+      END DO
+
       CALL GRIB_CLOSE_FILE(ifile)
       CALL KERNEL_INTERP_UV_WINDFD(outwind)
       END SUBROUTINE
