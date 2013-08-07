@@ -16,6 +16,8 @@ OPENMP = on
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = on
+# Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
+GRIB = on
 
 #F90 = gfortran
 #F90 = mpif90
@@ -107,6 +109,12 @@ ifdef OPENMP
   OPENMPFLAG  = -openmp 
 endif
 
+ifdef GRIB
+  LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
+  FFLAGS += -DGRB -I$(GRIB_PATH)/include
+endif
+
+
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 
   LIBS  += ${PETSC_LIB}  
@@ -120,10 +128,12 @@ ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/  
+
+MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
+F90FLAGS += ${MPI_INCLUDE}
 
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG} ${MPI_INCLUDE}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 
@@ -132,7 +142,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS) $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS) $(TCFLAG) $(OBJS) $(LIBS) 
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)
@@ -143,7 +153,7 @@ cleanall:
 .SUFFIXES: $(SUFFIXES) .F90 .f .ftn
 
 .F90.o:
-	$(F90) $(F90FLAGS) $(TCFLAG)   -c $<
+	$(F90) $(F90FLAGS)   -c $<
 
 .ftn.o:
 	$(F90) $(F90FLAGS) -c $<

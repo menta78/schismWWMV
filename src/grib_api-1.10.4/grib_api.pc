@@ -1,0 +1,11 @@
+prefix=/home/aron/opt/gribapi
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: grib_api
+Description: The grib_api library
+Version: 1.10.4
+Cflags: -O1 -fPIE
+Libs:  -lm -ljasper 
