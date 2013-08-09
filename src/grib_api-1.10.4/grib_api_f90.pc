@@ -1,0 +1,12 @@
+prefix=/home/aron/opt/gribapi
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+FC=ifort
+
+Name: grib_api
+Description: The grib_api library for Fortran 90
+Version: 1.10.4
+Cflags: -O1 -fPIE "-I${prefix}/include"
+Libs: -L${exec_prefix}/lib  -lm -ljasper  -lgrib_api_f90 -lgrib_api

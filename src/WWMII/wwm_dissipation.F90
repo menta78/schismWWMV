@@ -17,11 +17,9 @@
 
          INTEGER :: IS, ID
 
-         REAL(rkind)    :: CDS, ALPHA_PM, POW, ALPHAD
-         REAL(rkind)    :: DELTA_WCAP
-         REAL(rkind)    :: SDSWCAP
-         REAL(rkind)    :: AUX, AUX1, STP_OV, STP_PM, N1, N2
-         REAL(rkind)    :: AUX2, C_K(MSC)
+         REAL(rkind)    :: CDS, ALPHA_PM
+         REAL(rkind)    :: STP_OV, STP_PM, N1, N2
+         REAL(rkind)    :: C_K(MSC)
 !
          ALPHA_PM     = 3.02E-3
          CDS          = -2.36E-5
@@ -146,7 +144,7 @@
          REAL(rkind), INTENT(INOUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
  
          INTEGER                      :: IS, ID
-         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC), WCAP(MSC)
+         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
          REAL(rkind)                  :: CDS, ALPH
          REAL(rkind)                  :: SATDIS, SIGMA, DELTA
          REAL(rkind)                  :: BSATR, N1, PMK, STP_OV, STP_LO
@@ -184,7 +182,7 @@
            IF (BSAT(IS) < BSATR) THEN
              PSAT(IS) = 0.
            ELSE
-             PSAT(IS)= 0.25*PMK*(1.+TANH(10.0*(BSAT(IS)/BSATR-1.0)))
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
            DO ID = 1, MDC
@@ -214,7 +212,7 @@
          REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
          INTEGER                      :: IS, ID
-         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC), WCAP(MSC)
+         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
          REAL(rkind)                  :: CDS, ALPHAPM, ALPH
          REAL(rkind)                  :: SATDIS, SIGMA
          REAL(rkind)                  :: BSATR, N1, N2, PMK, STP_OV
@@ -250,7 +248,7 @@
            IF (BSAT(IS) < BSATR) THEN
              PSAT(IS) = 0.
            ELSE
-             PSAT(IS)= 0.25*PMK*(1.+TANH(10.0*(BSAT(IS)/BSATR-1.0)))
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
            DO ID = 1, MDC
@@ -283,7 +281,7 @@
          REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
          REAL(rkind)                  :: BB, P
-         REAL(rkind)                  :: STP_OV, EF(MSC), WCAP(MSC)
+         REAL(rkind)                  :: STP_OV, EF(MSC)
 
 
          PWCAP(1) =  5.E-5
@@ -302,8 +300,8 @@
 
           BB =  CG(IP,IS) * WK(IP,IS)**3 * EF(IS)
 
-          PWCAP(10)= 3. + TANH(25.76*(UFRIC(IP)*WK(IP,IS)/SPSIG(IS)-0.1))
-          P = 0.5*PWCAP(10)*(1. + TANH( 10.*( (BB/PWCAP(12))**0.5 - 1.)))
+          PWCAP(10)= 3. + MyTANH(25.76*(UFRIC(IP)*WK(IP,IS)/SPSIG(IS)-0.1))
+          P = 0.5*PWCAP(10)*(1. + MyTANH( 10.*( (BB/PWCAP(12))**0.5 - 1.)))
 
           STP_OV   = KMESPC * SQRT(ETOT)
           SSDS(IS,ID) = PWCAP(1)*(BB/PWCAP(12))**(P*ONEHALF) *   &
@@ -337,8 +335,8 @@
          REAL(rkind), INTENT(OUT)      :: SSBF(MSC,MDC)
          REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          INTEGER                       :: IS, ID, J
-         REAL(rkind)                   :: KDEP, SFBOT
-         REAL(rkind)                   :: AKN , CFBOT, CFW, XDUM
+         REAL(rkind)                   :: KDEP
+         REAL(rkind)                   :: AKN , CFBOT, XDUM
          REAL(rkind)                   :: ADUM, CDUM, DDUM, FW
 
          PBOTF(1)   =  0.005
@@ -409,14 +407,14 @@
 
          REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
-         REAL(rkind) :: BETA, QQ, QB, BETA2, AUX, ARG
-         REAL(rkind) :: LP, L0, L0M, HLMAX, S0, LMEAN  
-         REAL(rkind) :: GAMMA_WB, DDDS
+         REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
+         REAL(rkind) :: S0
+         REAL(rkind) :: GAMMA_WB
          REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
 
          REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
 
-         INTEGER :: IS, ID, ISMAX
+         INTEGER :: IS, ID
 !
 !     *** depth-induced wave breaking term by Battjes and Janssen (1978)
 !
@@ -426,7 +424,7 @@
           CASE(2) ! Vorschlag Dingemans
             IF (KME .GT. VERYSMALL) THEN
               S0    = HS / (PI2/KME) 
-              GAMMA_WB  = 0.5_rkind + 0.4_rkind * TANH(33._rkind * S0)
+              GAMMA_WB  = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
               HMAX(IP)  = GAMMA_WB * DEP(IP)
             ELSE
               HMAX(IP)  = BRHD * DEP(IP)
@@ -435,7 +433,7 @@
             CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
             IF (LPP .GT. VERYSMALL) THEN
               S0    = HS/LPP
-              GAMMA_WB =  0.5_rkind + 0.4_rkind * TANH(33._rkind * S0)
+              GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
               HMAX(IP) = GAMMA_WB * DEP(IP)
             ELSE
               HMAX(IP) = BRHD * DEP(IP)

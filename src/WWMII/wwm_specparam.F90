@@ -25,7 +25,8 @@
          REAL(rkind)                :: SINHKD2(MSC), ACTOTDS(MSC), ETOTD0S(MSC)
          REAL(rkind)                :: ETOTD1S(MSC)
          REAL(rkind)                :: ETOTQKD(MSC), ETOTKSS(MSC), ETOTSKD(MSC)
-         REAL(rkind)                :: ETOTKDS(MSC), ETOTQKD2(MSC), ETOT_DSIG(MSC)
+         REAL(rkind)                :: ETOTKDS(MSC), ETOTQKD2(MSC)
+!         REAL(rkind)                :: ETOT_DSIG(MSC)
 
          REAL(rkind)                :: ACTOTDSbis(MSC), ETOTD0Sbis(MSC)
          REAL(rkind)                :: ETOTSKDbis(MSC), ETOTKDSbis(MSC)
@@ -414,13 +415,11 @@
          REAL(rkind)                :: ETOT_SPSIG
          REAL(rkind)                :: ETOT_WK
          REAL(rkind)                :: ETOT_ISQ_WK
-         REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SQ_WK
-         REAL(rkind)                :: ETOT_SKDSIG
 
-         REAL(rkind)                :: Y(MSC)
+         REAL(rkind)                :: Y(MSC), tmp(msc)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
-         REAL(rkind)                :: dintspec, dintspec_y, tmp(msc)
+!         REAL(rkind)                :: dintspec, dintspec_y
 !
 ! total energy ...
 ! 2do improve efficiency ... 
@@ -559,12 +558,11 @@
       INTEGER             :: ID, IS
 
       REAL(rkind)                :: Y(MSC)
-      REAL(rkind)                :: DS,ATAIL,ETAIL, ESIGTAIL
-      REAL(rkind)                :: OMEG2,OMEG,EAD,UXD,UYD,ETOT
-      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL, S2
+      REAL(rkind)                :: DS, ETAIL
+      REAL(rkind)                :: OMEG2, EAD, ETOT
+      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
       REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
-      REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-      REAL(rkind)                :: dintspec, dintspec_y, tmp(msc),actmp(msc)
+      REAL(rkind)                :: tmp(msc),actmp(msc)
 !
 ! total energy ...
 !
@@ -673,12 +671,12 @@
       INTEGER             :: ID, IS
 
       REAL(rkind)                :: Y(MSC)
-      REAL(rkind)                :: DS,ATAIL,ETAIL, ESIGTAIL
-      REAL(rkind)                :: OMEG2,OMEG,EAD,UXD,UYD,ETOT
-      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL, S2
+      REAL(rkind)                :: DS, ETAIL
+      REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
+      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
       REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
       REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-      REAL(rkind)                :: dintspec, dintspec_y, tmp(msc),actmp(msc)
+      REAL(rkind)                :: tmp(msc),actmp(msc)
 !
 ! total energy ...
 !
@@ -865,13 +863,11 @@
          REAL(rkind)                :: ETOT_SPSIG
          REAL(rkind)                :: ETOT_WK
          REAL(rkind)                :: ETOT_ISQ_WK
-         REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SQ_WK
-         REAL(rkind)                :: ETOT_SKDSIG
 
          REAL(rkind)                :: Y(MSC)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
-         REAL(rkind)                :: dintspec, dintspec_y, tmp(msc)
+         REAL(rkind)                :: tmp(msc)
 !
 ! total energy ...
 !
@@ -1001,7 +997,6 @@
          REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
 
-         REAL(rkind)                :: dintspec, dintspec_y
 !
 ! integrals ...
 !
@@ -1073,8 +1068,6 @@
 
          REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
-
-         REAL(rkind)                :: dintspec, dintspec_y
 !
 ! integrals ...
 !
@@ -1266,7 +1259,7 @@
 
          INTEGER                       :: IS, ID, IDIRM, ISIGMP
          REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF,WKDEPD,WNPD
-         REAL(rkind)                   :: FF, DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, WKDEPP
+         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, WKDEPP
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
@@ -1403,7 +1396,7 @@
 
          INTEGER                :: IS, ID, IDIRM, ISIGMP
          REAL(rkind)            :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF, WKDEPP
-         REAL(rkind)            :: FF, DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT,WKDEPD,WNPD
+         REAL(rkind)            :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT,WKDEPD,WNPD
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
@@ -1633,13 +1626,12 @@
 
          INTEGER             :: ID, IS
 
-         REAL(rkind)                :: Y(MSC)
-         REAL(rkind)                :: DS,ATAIL,ETAIL, ESIGTAIL
-         REAL(rkind)                :: OMEG2,OMEG,EAD,UXD,UYD,ETOT
+         REAL(rkind)                :: DS,ETAIL
+         REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
          REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
          REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
          REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-         REAL(rkind)                :: dintspec, dintspec_y, tmp(msc),actmp(msc)
+         REAL(rkind)                :: tmp(msc)
 !
 ! total energy ...
 !
@@ -1828,15 +1820,10 @@
 
          REAL(rkind)                :: ACTOT, ETOT
          REAL(rkind)                :: ETOT_SPSIG
-         REAL(rkind)                :: ETOT_WK
-         REAL(rkind)                :: ETOT_ISQ_WK
-         REAL(rkind)                :: ETOT_SKD
-         REAL(rkind)                :: ETOT_SQ_WK
-         REAL(rkind)                :: ETOT_SKDSIG
 
          REAL(rkind)                :: Y(MSC)
-         REAL(rkind)               :: DS, ATAIL, ETAIL, ESIGTAIL
-         REAL(rkind)                :: dintspec, dintspec_y, tmp(msc)
+         REAL(rkind)                :: DS, ATAIL, ETAIL
+         REAL(rkind)                :: tmp(msc)
 !
 ! total energy ...
 !
@@ -1929,13 +1916,11 @@
          REAL(rkind)                :: ETOT_SPSIG
          REAL(rkind)                :: ETOT_WK
          REAL(rkind)                :: ETOT_ISQ_WK
-         REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SQ_WK
-         REAL(rkind)                :: ETOT_SKDSIG
 
-         REAL(rkind)                :: Y(MSC)
+         REAL(rkind)                :: Y(MSC), tmp(msc)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
-         REAL(rkind)                :: dintspec, dintspec_y, tmp(msc)
+!         REAL(rkind)                :: dintspec, dintspec_y
 !
 ! total energy ...
 !

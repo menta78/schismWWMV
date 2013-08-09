@@ -532,6 +532,10 @@
          CHARACTER(LEN=40)               :: NCDF_FP_NAME   = 'fp'
          CHARACTER(LEN=40)               :: NCDF_F02_NAME  = 't02'
 
+
+         INTEGER                         :: NUM_GRIB_FILES
+         CHARACTER(LEN=40), ALLOCATABLE  :: GRIB_FILE_NAMES(:)
+
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES(:)
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES_BND(:,:)
 
@@ -850,7 +854,7 @@
          REAL(rkind), ALLOCATABLE ::   HMAX(:)
          INTEGER, ALLOCATABLE     ::   ISHALLOW(:)
 
-         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:)
+         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:), FORCEXY(:,:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
 !
 ! switch for the numerics ... wwmDnumsw.mod
@@ -1095,8 +1099,11 @@
       integer wwm_nnbr
       integer wwm_nnbr_m_send, wwm_nnbr_m_recv
       integer wwm_nnbr_send, wwm_nnbr_recv
+      integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
       integer, allocatable :: wwm_ListNbCommon_send(:)
       integer, allocatable :: wwm_ListNbCommon_recv(:)
+      integer, allocatable :: wwm_ListNbCommon_send_sl(:)
+      integer, allocatable :: wwm_ListNbCommon_recv_sl(:)
       integer, allocatable :: wwm_ListDspl_send(:)
       integer, allocatable :: wwm_ListDspl_recv(:)
       integer, allocatable :: wwm_p2dsend_type(:)
@@ -1121,9 +1128,17 @@
       integer, allocatable :: wwm_p2drecv_rqst(:)
       integer, allocatable :: wwm_p2dsend_stat(:,:)
       integer, allocatable :: wwm_p2drecv_stat(:,:)
+      integer, allocatable :: wwmsl_send_type(:)
+      integer, allocatable :: wwmsl_recv_type(:)
+      integer, allocatable :: wwmsl_send_rqst(:)
+      integer, allocatable :: wwmsl_recv_rqst(:)
+      integer, allocatable :: wwmsl_send_stat(:,:)
+      integer, allocatable :: wwmsl_recv_stat(:,:)
       integer, allocatable :: wwm_ListNeigh(:)
       integer, allocatable :: wwm_ListNeigh_send(:)
       integer, allocatable :: wwm_ListNeigh_recv(:)
+      integer, allocatable :: wwm_ListNeigh_send_sl(:)
+      integer, allocatable :: wwm_ListNeigh_recv_sl(:)
       LOGICAL DO_SOLVE_L, DO_SOLVE_U
       LOGICAL DO_SYNC_LOW_2_UPP
       LOGICAL DO_SYNC_UPP_2_LOW

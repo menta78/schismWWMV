@@ -28,25 +28,25 @@
          INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ, IERR
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
-         REAL(rkind)    :: SME01, SME10, KME01, KMWAM, URSELL, KMWAM2
-         REAL(rkind)    :: UBOT, TMBOT, SME01WS, SME10WS
-         REAL(rkind)    :: HS, ETOT, CP, WLM, FPMH,FPM4 
-         REAL(rkind)    :: KPP, WPINT, WIINT, FRP, LPOW, MPOW, a1, a2, DM, DSPR, ETOTWS
-         REAL(rkind)    :: PEAKDSPR, PEAKDM, ORBITAL, BOTEXPER, ETOTS, ETOTC, XRR, XPP, XFLT, XREL, FACP, XFILT
-         REAL(rkind)    :: FPP, CGPP, WNPP, CPP, TPP, LPP, TEMP2(MSC)
-         REAL(rkind)    :: AWW3(NSPEC), AWW32d(MSC,MDC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
-         REAL(rkind)    :: F(MDC,MSC), SL(MDC,MSC), FL(MDC,MSC), EDENS(MSC), KDS(MSC), ABAB(MSC)
-         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC), ACLOC2(MSC,MDC)
+         REAL(rkind)    :: SME01, SME10, KME01, KMWAM, KMWAM2
+         REAL(rkind)    :: SME01WS, SME10WS
+         REAL(rkind)    :: HS, ETOT, FPMH,FPM4 
+         REAL(rkind)    :: LPOW, MPOW, a1, a2, ETOTWS
+         REAL(rkind)    :: XRR, XPP, XFLT, XREL, FACP, XFILT
+         REAL(rkind)    :: TEMP2(MSC)
+         REAL(rkind)    :: AWW3(NSPEC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
+         REAL(rkind)    :: EDENS(MSC), KDS(MSC), ABAB(MSC)
+         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC)
          REAL(rkind)    :: ACLOC1(MSC,MDC)
 
 
          REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC)
-         REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC), SSBRL(MSC,MDC)
+         REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC)
          REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1, DAM(MSC*MDC)
 
-         REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, AS, ICE, TMP2
-         REAL(rkind)    :: CHARN, FMEANWS, TAUWAX, TAUWAY, ABRBOT, FP, TP, XJ, FLLOWEST, GADIAG
-         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), EAD, SUMACLOC, IMATRAT(MSC,MDC)
+         REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, AS, ICE
+         REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ, FLLOWEST, GADIAG
+         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), SUMACLOC, IMATRAT(MSC,MDC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1, SNL3(MSC,MDC), DSNL3(MSC,MDC)
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
          REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
@@ -665,10 +665,8 @@
          REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)    :: SSBRL(MSC,MDC)
 
-         INTEGER                     :: IS, ID
-
-         REAL(rkind)                 :: EFTAIL, HS, DS, EHFR, EAD
-         REAL(rkind)                 :: EMAX, RATIO, ETOT, FP, KPP
+         REAL(rkind)                 :: EFTAIL, HS
+         REAL(rkind)                 :: EMAX, RATIO, ETOT
          REAL(rkind)                 :: DINTSPEC
 
          ETOT   = 0.0
@@ -699,7 +697,7 @@
          IMPLICIT NONE
 
          INTEGER              :: IP
-         REAL(rkind)          :: EFTAIL, HS, EAD
+         REAL(rkind)          :: HS
          REAL(rkind)          :: EMAX, RATIO, ETOT
          REAL(rkind)          :: DINTSPEC
          REAL(rkind)          :: ACLOC(MSC, MDC)

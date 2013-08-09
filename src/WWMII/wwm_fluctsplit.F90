@@ -190,14 +190,13 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER             :: IS, ID, IP
+         INTEGER             :: IS, ID
          REAL(rkind)         :: DTMAX
 #ifdef PETSC
          REAL(rkind)         :: u(msc,mdc,mnp)
 #endif
-         real starttime, endtime
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #ifdef PETSC
          ! petsc block has its own loop over MSC MDC
          IF(AMETHOD == 5) THEN
@@ -281,7 +280,7 @@
            END IF
          END IF
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -373,7 +372,6 @@
          REAL(rkind)  :: KSUM, KMAX, LAMBDA(2)
          REAL(rkind)  :: DTMAX_EXP, DTMAX_GLOBAL_EXP
          REAL(rkind)  :: REST, C(2,MNP)
-         REAL(rkind)  :: DIFRU
 
          DTMAX_GLOBAL_EXP = 10.D14
 
@@ -445,11 +443,10 @@
 !
          INTEGER :: IP, IE, IT, IP_TEST
          INTEGER :: I1, I2, I3, I, J, IMETHOD, IPOS
-         INTEGER :: NI(3),K, POS
+         INTEGER :: NI(3), POS
 !
 ! local double
 !
-         REAL(rkind)  :: FT
          REAL(rkind)  :: UTILDE
 
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
@@ -466,7 +463,7 @@
 
          REAL(rkind)  :: KTMP(3)
 
-         REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3), ST3(3)
+         REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
@@ -915,7 +912,7 @@
 ! local integer
 !
          INTEGER :: IP, IE, IT, I, J
-         INTEGER :: I1, I2, I3, K
+         INTEGER :: I1, I2, I3
          INTEGER :: NI(3)
 !
 ! local double
@@ -1231,7 +1228,6 @@
          REAL(rkind)  :: WKSP( 20*MNP )
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
-         REAL(rkind)  :: WILD(MNP)
          REAL(rkind) ::  ASPAR(NNZ)
 
          REAL    :: TIME1, TIME2, TIME3, TIME4
@@ -1827,8 +1823,6 @@
          REAL(rkind)  :: U(MNP), X(MNP), ASPAR1(NNZ), B1(MNP), ASPAR2(NNZ), B2(MNP)
          REAL(rkind)  :: FL11, FL12, FL21, FL22, FL31, FL32, C(2,MNP)
 
-         REAL(rkind)  :: CTMP(MNP,2)
-
          INTEGER, PARAMETER :: IM = 30
 
          INTEGER :: IPAR(16), MBLOC
@@ -2171,7 +2165,7 @@
 
          INTEGER :: I, J, K, istat
          INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-         INTEGER :: I1, I2, I3, NI(3)
+         INTEGER :: I1, I2, I3
          INTEGER :: CHILF(MNP), COUNT_MAX
          INTEGER :: ITMP(MNP)
          INTEGER :: POS_TRICK(3,2)
@@ -2445,9 +2439,9 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, IPGL, IS, ID
+         INTEGER :: IP, IE, IT, IS, ID
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3),K, I, IPOS
+         INTEGER :: NI(3), I, IPOS
 !
 ! local double
 !
@@ -2455,7 +2449,6 @@
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
 
 #ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
          REAL(rkind)  :: WILD(MNP), WILD2D(MDC,MNP)
 #endif
          REAL(rkind)  :: REST, CFLXY
@@ -2469,7 +2462,7 @@
          REAL(rkind)  :: FLALL(3,MNE,MSC,MDC)
          REAL(rkind)  :: KELEM(3,MNE,MSC,MDC)
          REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
-         REAL(rkind)  :: UTILDE2(MSC,MDC), UTILDE3(MNE)
+         REAL(rkind)  :: UTILDE3(MNE)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
          REAL         :: TIME1, TIME2
@@ -2695,7 +2688,7 @@
              END IF
            END IF !IVECTOR
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF !LCALC
 
          DO IP = 1, MNP
@@ -2858,9 +2851,9 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, IPGL, IS, ID
+         INTEGER :: IP, IE, IT, IS, ID
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3),K, I, IPOS
+         INTEGER :: NI(3), I, IPOS
 !
 ! local double
 !
@@ -2949,7 +2942,7 @@
              END DO ! IS
            END DO ! ID
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF ! LCALC
 
          DO IP = 1, MNP
@@ -3154,7 +3147,7 @@
            ITER_MAX = MAXVAL(ITER_EXP)
 
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
 
          END IF !LCALC
 

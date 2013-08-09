@@ -209,11 +209,12 @@
        CD = zero
        USTDIR = zero
 
-       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), stat=istat)
+       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), FORCEXY(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
        RSXX = zero
        RSXY = zero
        RSYY = zero
+       FORCEXY = zero
 
 #ifdef SELFE
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
@@ -365,17 +366,17 @@
          CALL INIT_FILE_HANDLES
          CALL READ_WWMINPUT
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifdef VDISLIN
          CALL INIT_DISLIN()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #endif
 
          CALL INIT_ARRAYS
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifdef MPI_PARALL_GRID 
          DEP  = DEP8
@@ -390,17 +391,17 @@
 #endif
          CALL CHECK_LOGICS
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifndef MPI_PARALL_GRID
          CALL READ_SPATIAL_GRID
          WLDEP = DEP
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #endif
          CALL SPATIAL_GRID
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          IF (LADVTEST) THEN
            ALLOCATE(UTEST(MNP), stat=istat)
@@ -424,11 +425,11 @@
 #endif
          CALL SET_IOBPD_BY_DEP
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET DEPTH POINTER'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          IF (DIMMODE .EQ. 2) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS STARTED'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
            CALL INIT_FLUCT_ARRAYS
            CALL INIT_FLUCT
 
@@ -443,7 +444,7 @@
 #endif
            END IF
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF
 
          IF (LZETA_SETUP) THEN
@@ -451,11 +452,11 @@
          END IF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INIT_SPECTRAL_GRID
  
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #if defined SELFE 
          DMIN = DMIN_SELFE
          CALL SET_IOBP_SELFE
@@ -463,12 +464,12 @@
          CALL SET_IOBP_NEXTGENERATION
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL SET_IOBPD
 
 #ifndef PGMCL_COUPLING
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          IF (LWINDFROMWWM) THEN
            CALL INIT_WIND_INPUT
          ENd IF
@@ -478,7 +479,7 @@
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INITIATE_WAVE_PARAMETER
          CALL SETSHALLOW
          CALL SET_HMAX
@@ -487,7 +488,7 @@
 
          IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
 #ifdef ST41
            CALL PREPARE_ARDHUIN_OLD
 #elif ST42
@@ -495,31 +496,31 @@
 #endif
          ELSE IF (MESIN .EQ. 2 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
            CALL PREPARE_SOURCE
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          ELSE IF (MESIN .EQ. 6 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
            CALL PREPARE_SOURCE_ECMWF 
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INITIAL_CONDITION(IFILE,IT)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL SET_WAVE_BOUNDARY
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INIT_STATION_OUTPUT
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL WWM_OUTPUT(ZERO,.TRUE.)
 
          IF (LWXFN) THEN
@@ -531,7 +532,7 @@
 #if !defined SELFE && !defined PGMCL_COUPLING
          IF (LCPL) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
            IF (LTIMOR) THEN
              CALL INIT_PIPES_TIMOR()
 #ifdef SHYFEM_COUPLING
@@ -562,14 +563,14 @@
            WRITE(DBG%FHNDL,*) 'MSC', MSC
            WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
            WRITE(DBG%FHNDL,*) 'MDC', MDC
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
            CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
          END IF
 #endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          AC1 = AC2
        END SUBROUTINE
@@ -818,20 +819,20 @@
          INTEGER IQGRID, INODE, IERR
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL GRADDEP
          WRITE(STAT%FHNDL,*) 'GRADDEP'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          IF (LSTCU .OR. LSECU) CALL GRADCURT
          WRITE(STAT%FHNDL,*) 'GRADCURT'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL BASIC_PARAMETER
          WRITE(STAT%FHNDL,*) 'BASIC'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL MAKE_WAVE_TABLE
          CALL WAVE_K_C_CG
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 
          IF (MESNL .LT. 4) THEN
@@ -955,9 +956,10 @@
 #endif
          USE DATAPOOL
          IMPLICIT NONE
+#ifdef MPI_PARALL_GRID
          CHARACTER (LEN = 30) :: FDB
          INTEGER              :: LFDB
-
+#endif
 #ifdef SELFE
             INP%FNAME  = 'wwminput.nml'
 #endif
@@ -1129,14 +1131,14 @@
             STATION(I)%YELE(:) = YP(NI)
             CALL INTELEMENT_COEF(XP(NI),YP(NI), STATION(I)%XCOORD,STATION(I)%YCOORD, STATION(I)%WI)
             WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           ELSE
             STATION(I)%IFOUND  = 0
             NI                 = 0
             STATION(I)%XELE(:) = 0.
             STATION(I)%YELE(:) = 0.
             WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', STATION(I)%ELEMENT, STATION(I)%IFOUND
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END IF
         END DO
         allocate(rbuf_int(1), stat=istat)
@@ -1145,7 +1147,7 @@
           CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1, itype,MPI_SUM,0,COMM,IERR)
           IF (myrank == 0) THEN
             WRITE(DBG%FHNDL,'(A30,3I10)') 'SUM OF THE FOUND STATIONS MYRANK', MYRANK, I, STATION(I)%ISUM
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
             rbuf_int(1)=STATION(I)%ISUM
             DO iProc=2,nproc
               CALL MPI_SEND(rbuf_int,1,itype, iProc-1, 144, COMM, ierr)
@@ -1845,11 +1847,11 @@
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
-        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3, M0_WWM, M1_WWM, M2_WWM
+        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID
 
-        REAL(rkind) :: JACOBIAN(MSC), AM, SM, OUTPAR(OUTVARS)
+        REAL(rkind) :: JACOBIAN(MSC), AM, SM
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
 

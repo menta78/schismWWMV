@@ -14,11 +14,16 @@ NETCDF = on
 OPENMP = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
+# Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
+SNL4_TSA = 
+# Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
+GRIB =
+
 
 #F90 = gfortran
-F90 = mpif90
+#F90 = mpif90
 #F90 = mpif90-vt
-#F90 = ifort
+F90 = ifort
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
@@ -32,9 +37,9 @@ F90 = mpif90
 
 
 #F90OPTI = -ip -O2
-F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
+#F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fp-model precise
-#F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
+F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
@@ -110,6 +115,12 @@ ifdef OPENMP
   OPENMPFLAG  = -openmp 
 endif
 
+ifdef GRIB
+  LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
+  FFLAGS += -DGRB -I$(GRIB_PATH)/include
+endif
+
+
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 
   LIBS  += ${PETSC_LIB}  
@@ -119,12 +130,16 @@ ifdef DARKO
   DARKOFLAG = -DDARKO 
 endif
 
+ifdef SNL4_TSA 
+  SNL4_TSAFLAG = -DSNL4_TSA
+endif
+
 
 MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
 F90FLAGS += ${MPI_INCLUDE}
 
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 

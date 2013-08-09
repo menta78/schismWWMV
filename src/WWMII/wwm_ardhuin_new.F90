@@ -836,8 +836,8 @@
       IF (ISTAB.EQ.1) UST=USTAR*(1.-USTARsigma)
       IF (ISTAB.EQ.2) UST=USTAR*(1.+USTARsigma)
 # endif
-      TAUX = UST**2* COS(USDIR)
-      TAUY = UST**2* SIN(USDIR)
+      TAUX = UST**2* MyCOS(USDIR)
+      TAUY = UST**2* MySIN(USDIR)
 
       !WRITE(DBG%FHNDL,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
 !
@@ -862,8 +862,8 @@
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25_rkind,MAX(UST,0.3_rkind))
         !WRITE(DBG%FHNDL,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
         USDIRP=ATAN2(TAUPY,TAUPX)
-        COSU   = COS(USDIRP)
-        SINU   = SIN(USDIRP)
+        COSU   = MyCOS(USDIRP)
+        SINU   = MySIN(USDIRP)
         IS=1+(IK-1)*NTH
         CM=K(IS)/SIG2(IS) !inverse of phase speed
         UCN=USTP*CM+ZZALP  !this is the inverse wave age
@@ -1065,8 +1065,8 @@
         END IF
       TAUHFL = CONST0*TEMP*UST**2*TAU1
       TAUHF(IP) = TAUHFL
-      TAUWX = XSTRESS+TAUHFL*COS(USDIRP)
-      TAUWY = YSTRESS+TAUHFL*SIN(USDIRP)
+      TAUWX = XSTRESS+TAUHFL*MyCOS(USDIRP)
+      TAUWY = YSTRESS+TAUHFL*MySIN(USDIRP)
       TAUW(IP) = SQRT(XSTRESS**2+YSTRESS**2)
       !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
 !      
@@ -1213,7 +1213,7 @@
             IF (I_INT.GT.NTH) J_INT=I_INT-NTH
             SATINDICES(I_INT-(ITH-SDSNTH)+1,ITH)=J_INT
             SATWEIGHTS(I_INT-(ITH-SDSNTH)+1,ITH)=                       &
-     &              COS(TH(ITH)-TH(J_INT))**SSDSCOS
+     &              MyCOS(TH(ITH)-TH(J_INT))**SSDSCOS
             END DO
           END DO
       ELSE
@@ -1252,7 +1252,7 @@
             CALL ALL_FROM_TABLE(SIG(IKL),PROF,KIK,CGG,KDD,CN,CC)
             K1(IKL,ID)=KIK  ! wavenumber lower boundary (is directly related to the frequency indices, IK)
             K2(IKL,ID)=((BSUP/BINF)**2)*K1(IKL,ID)! wavenumber upper boundary
-            SIGTAB(IKL,ID)=SQRT(G9*K2(IKL,ID)*TANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
+            SIGTAB(IKL,ID)=SQRT(G9*K2(IKL,ID)*MyTANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
             IF(SIGTAB(IKL,ID) .LE. SIG(1)) THEN
               IKTAB(IKL,ID)=1
               END IF
@@ -1291,7 +1291,7 @@
         DO IKD=1,NKD
           KHS=0.
           KD=(FAC_KD1**(IKD-FAC_KD2))
-          XT=TANH(KD)
+          XT=MyTANH(KD)
           GAM=1.0314_rkind*(XT**3)-1.9958_rkind*(XT**2)                 &
      &    +1.5522_rkind*XT+0.1885_rkind
           GAM=GAM/2.15
@@ -1893,7 +1893,7 @@
       XI      = SQRT(TAUW_LOCAL)/DELTAUW
       IND     = MIN ( ITAUMAX-1, INT(XI)) ! index for stress table
       DELI1   = MIN(ONE,XI - MyREAL(IND))  !interpolation coefficient for stress table
-!      DELI2   = ONE - DELI1
+      DELI2   = ONE - DELI1
       XJ      = WINDSPEED/DELU
       XJ      = WINDSPEED/MAX(THR,DELU)
       J       = MIN ( JUMAX-1, INT(XJ) )
@@ -2157,7 +2157,7 @@
           IF (SSDSBM(0).EQ.1) THEN
             MICHE=ONE
           ELSE
-            X=TANH(MIN(K(IK)*DEPTH,10._rkind))
+            X=MyTANH(MIN(K(IK)*DEPTH,10._rkind))
             MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+                           &
      &             X*(SSDSBM(3)+X*SSDSBM(4)))))**2 ! Correction of saturation level for shallow-water kinematics
             END IF
@@ -2268,7 +2268,7 @@
             ELSE IF (IKHS < 1) THEN
               IKHS = 1
               END IF  
-            XT = TANH(KBAR(IKL)*DEPTH)
+            XT = MyTANH(KBAR(IKL)*DEPTH)
 !
 !  Gamma corrected for water depth
 !
@@ -2385,7 +2385,7 @@
 !
 ! Computes wave turbulence interaction
 !
-          COSWIND=(ECOS(IS)*COS(USDIR)+ESIN(IS)*SIN(USDIR))
+          COSWIND=(ECOS(IS)*MyCOS(USDIR)+ESIN(IS)*MySIN(USDIR))
           DTURB=-2.*SIG(IK)*K(IK)*FACTURB*COSWIND  ! Theory -> stress direction
 !
 ! Add effects
