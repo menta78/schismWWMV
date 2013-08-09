@@ -1875,7 +1875,7 @@
 ! 10. Source code :
 !-----------------------------------------------------------------------------!
 !/T      USE W3ODATMD, ONLY: NDST
-      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE
+      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, THR
 
       IMPLICIT NONE
 !
