@@ -17,7 +17,7 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 
 
 #F90 = gfortran

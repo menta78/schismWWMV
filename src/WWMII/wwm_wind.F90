@@ -265,6 +265,27 @@
           END IF
           CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
           IF (REC1_new.NE.REC1_old) THEN
+            CALL READ_DIRECT_NETCDF_CF(REC1_new,tmp_wind1)
+          END IF
+          IF (REC2_new.NE.REC2_old) THEN
+            CALL READ_DIRECT_NETCDF_CF(REC2_new,tmp_wind2)
+          END IF
+          IF (cf_w1.NE.1) THEN
+            WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
+          ELSE
+            WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
+          END IF
+          REC1_old = REC1_new
+          REC2_old = REC2_new
+#endif
+#ifdef GRB
+        ELSE IF (IWINDFORMAT == 7) THEN
+          IF (K.EQ.1) THEN
+            REC1_old = 0
+            REC2_old = 0
+          END IF
+          CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
+          IF (REC1_new.NE.REC1_old) THEN
             CALL GRIB_READ(REC1_new,tmp_wind1)
           END IF
           IF (REC2_new.NE.REC2_old) THEN
@@ -277,9 +298,6 @@
           END IF
           REC1_old = REC1_new
           REC2_old = REC2_new
-#endif
-#ifdef GRID
-        ELSE IF (IWINDFORMAT == 7) THEN
 #endif
         END IF
         SEWI%TMJD = SEWI%TMJD + SEWI%DELT*SEC2DAY
