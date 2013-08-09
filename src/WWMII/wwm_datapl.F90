@@ -1096,7 +1096,7 @@
       type(I5_SolutionData) :: SolDat
       integer :: NblockFreqDir = 10
       integer :: PCmethod =1
-      integer wwm_nnbr, wwm_nnbr_sl
+      integer wwm_nnbr
       integer wwm_nnbr_m_send, wwm_nnbr_m_recv
       integer wwm_nnbr_send, wwm_nnbr_recv
       integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
@@ -1135,7 +1135,6 @@
       integer, allocatable :: wwmsl_send_stat(:,:)
       integer, allocatable :: wwmsl_recv_stat(:,:)
       integer, allocatable :: wwm_ListNeigh(:)
-      integer, allocatable :: wwm_ListNeigh_sl(:)
       integer, allocatable :: wwm_ListNeigh_send(:)
       integer, allocatable :: wwm_ListNeigh_recv(:)
       integer, allocatable :: wwm_ListNeigh_send_sl(:)
