@@ -84,7 +84,7 @@
 
       IF ( URSELL .GT. PTRIAD(5) ) THEN
 
-        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
         SINBPH = ABS( SIN(BIPH) )
 
         DO ID = 1, MDC
@@ -223,9 +223,9 @@
       call dispu2 (aome2,  h, z1b, k2)
       if (omega2 .lt. 0.) k2 = - k2
       k = k1 + k2
-      cthk1h = 1. / tanh (k1*h)
-      cthk2h = 1. / tanh (k2*h)
-      cthkh  = 1. / tanh (k*h)
+      cthk1h = 1. / MyTANH (k1*h)
+      cthk2h = 1. / MyTANH (k2*h)
+      cthkh  = 1. / MyTANH (k*h)
       d2 = 0.5 *  (omega1**2 + omega2**2 + omega1*omega2 -              &
      &             omega1 * omega2 * cthk1h * cthk2h - omega *          & 
      &             omega1 * cthkh  * cthk1h - omega  * omega2 *         &
@@ -251,7 +251,7 @@
       real(rkind) :: z0, z2, fak1, fak2, sig 
 
       z0 = d*omega*omega/g
-   10    sig = tanh(z1)
+   10    sig = MyTANH(z1)
          fak1 = z1*sig
          fak2 = z1 + sig*(1.-fak1)
          z2 = z1 + (z0-fak1)/fak2
@@ -645,7 +645,7 @@
           IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
         END DO
         ISMAX = MAX(ISMAX,IRES+1)
-        BIPH  = PI/TWO*(TANH(0.2/URSELL)-ONE)
+        BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
         ASINB = ABS(SIN(BIPH))
         DO ID = 1, MDC
           ED = AC2(IP,:,ID)*SPSIG
@@ -847,7 +847,7 @@
 
       IF ( URSELL .GE. PTTRIAD(5) ) THEN
 
-        BIPH   = (0.5*PI)*(TANH(PTTRIAD(4)/URSELL)-1)
+        BIPH   = (0.5*PI)*(MyTANH(PTTRIAD(4)/URSELL)-1)
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
           DO IS = 1, MSC
@@ -988,7 +988,7 @@
       ISMAX = MAX ( ISMAX , ISP1 )
 
       IF ( URSELL .GT. PTRIAD(5) ) THEN
-        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
            DO IS = 1, MSC

@@ -31,8 +31,8 @@
             eWk=WK(IP,IS)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
-            eSinh2kd=DSINH(2*kD)
-            eSinhkd=DSINH(kD)
+            eSinh2kd=MySINH(2*kD)
+            eSinhkd=MySINH(kD)
             eSinhkd2=eSinhkd**2
             eSigma=SPSIG(IS)
             eUint=0
@@ -52,8 +52,8 @@
 !              eHeight=z_w_loc(k)-z_w_loc(k-1)
 !              eFracB=eHeight/eDep
 !              eSinc=SINH(kD*eFracB)/(kD*eFracB)
-!              eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
-              eQuot1=DCOSH(2*kD*eFrac)/eSinhkd2
+!              eQuot1=eSinc*MyCOSH(2*kD*eFrac)/eSinhkd2
+              eQuot1=MyCOSH(2*kD*eFrac)/eSinhkd2
               eProd=eSigma*eWkReal*eQuot1
               eUSTOKES_loc(k)=eUSTOKES_loc(k) + eUint*eProd
               eVSTOKES_loc(k)=eVSTOKES_loc(k) + eVint*eProd

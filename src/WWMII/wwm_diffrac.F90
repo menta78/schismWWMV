@@ -208,10 +208,10 @@
         COSH2KH = MyCOSH(MIN(KDMAX,2.0_rkind*DKH))        
         AUX = -4.*KH*COSHKH+SINH3KH+SINHKH+8.*(KH**2)*SINHKH
         AUX1 = 8.*COSHKH**3*(2.*KH+SINH2KH)
-        BOTFC = AUX/MAX(VERYSMALL,AUX1) - KH*TANH(KH)/MAX(VERYSMALL,(2.*(COSHKH)**2))
+        BOTFC = AUX/MAX(VERYSMALL,AUX1) - KH*MyTANH(KH)/MAX(VERYSMALL,(2.*(COSHKH)**2))
 
         IF (BOTFC .NE. BOTFC) THEN
-          WRITE(wwmerr,*)'BOTFC is NaN Aron', KH, AUX, AUX1, TANH(KH)
+          WRITE(wwmerr,*)'BOTFC is NaN Aron', KH, AUX, AUX1, MyTANH(KH)
           call wwm_abort(wwmerr)
         END IF
         
@@ -304,12 +304,12 @@
 
         AUX = -4.0_rkind*KH*COSHKH + SINH3KH + SINHKH + 8.0_rkind*(KH**2)*SINHKH
         AUX1 = 8.0_rkind*COSHKH**3.0_rkind*(TWO*KH + SINH2KH)
-        BOTFC2 = AUX / MAX(VERYSMALL,AUX1) - KH*TANH(KH) / (TWO*(COSHKH)**2)
+        BOTFC2 = AUX / MAX(VERYSMALL,AUX1) - KH*MyTANH(KH) / (TWO*(COSHKH)**2)
 
         IF (BOTFC2 .NE. BOTFC2) THEN
            WRITE(*,*) 'BOTFC2'
            WRITE(*,*) SINHKH, COSHKH, SINH2KH, SINH3KH, KH
-           WRITE(*,*) AUX, AUX1, KH*TANH(KH), (TWO*(COSHKH)**2)
+           WRITE(*,*) AUX, AUX1, KH*MyTANH(KH), (TWO*(COSHKH)**2)
            CALL WWM_ABORT('BOTFC2')
         ENDIF
 

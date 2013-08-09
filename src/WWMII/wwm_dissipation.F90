@@ -182,7 +182,7 @@
            IF (BSAT(IS) < BSATR) THEN
              PSAT(IS) = 0.
            ELSE
-             PSAT(IS)= 0.25*PMK*(1.+TANH(10.0*(BSAT(IS)/BSATR-1.0)))
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
            DO ID = 1, MDC
@@ -248,7 +248,7 @@
            IF (BSAT(IS) < BSATR) THEN
              PSAT(IS) = 0.
            ELSE
-             PSAT(IS)= 0.25*PMK*(1.+TANH(10.0*(BSAT(IS)/BSATR-1.0)))
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
            DO ID = 1, MDC
@@ -300,8 +300,8 @@
 
           BB =  CG(IP,IS) * WK(IP,IS)**3 * EF(IS)
 
-          PWCAP(10)= 3. + TANH(25.76*(UFRIC(IP)*WK(IP,IS)/SPSIG(IS)-0.1))
-          P = 0.5*PWCAP(10)*(1. + TANH( 10.*( (BB/PWCAP(12))**0.5 - 1.)))
+          PWCAP(10)= 3. + MyTANH(25.76*(UFRIC(IP)*WK(IP,IS)/SPSIG(IS)-0.1))
+          P = 0.5*PWCAP(10)*(1. + MyTANH( 10.*( (BB/PWCAP(12))**0.5 - 1.)))
 
           STP_OV   = KMESPC * SQRT(ETOT)
           SSDS(IS,ID) = PWCAP(1)*(BB/PWCAP(12))**(P*ONEHALF) *   &
@@ -424,7 +424,7 @@
           CASE(2) ! Vorschlag Dingemans
             IF (KME .GT. VERYSMALL) THEN
               S0    = HS / (PI2/KME) 
-              GAMMA_WB  = 0.5_rkind + 0.4_rkind * TANH(33._rkind * S0)
+              GAMMA_WB  = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
               HMAX(IP)  = GAMMA_WB * DEP(IP)
             ELSE
               HMAX(IP)  = BRHD * DEP(IP)
@@ -433,7 +433,7 @@
             CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
             IF (LPP .GT. VERYSMALL) THEN
               S0    = HS/LPP
-              GAMMA_WB =  0.5_rkind + 0.4_rkind * TANH(33._rkind * S0)
+              GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
               HMAX(IP) = GAMMA_WB * DEP(IP)
             ELSE
               HMAX(IP) = BRHD * DEP(IP)

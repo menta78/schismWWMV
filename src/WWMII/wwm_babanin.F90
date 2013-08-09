@@ -670,7 +670,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
              TEMP4=MAX(0.0_rkind,TEMP4)
              TEMP42=TEMP4**2
              TEMP5=10.0_rkind*SQRTBN(IS)*TEMP42-11.0_rkind
-             TEMP6=1.0_rkind+TANH(TEMP5)
+             TEMP6=1.0_rkind+MyTANH(TEMP5)
              GDONEL=2.8_rkind-TEMP6
              GAMMAD=GDONEL*SQRTBN(IS)*TEMP42
              SWINEB =  GAMMAD * SIGMA * RHOAW ! NEW SWINEB

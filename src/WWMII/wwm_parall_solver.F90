@@ -993,39 +993,38 @@ MODULE WWM_PARALL_SOLVER
       wwm_nnbr_recv_sl=0
       ListCommon_send=0
       ListCommon_recv=0
-      DO iProc=1,nproc
-        IF (iPROC .ne. myrank+1) THEN
-          MNPloc=ListMNP(iProc)
-          NP_RESloc=ListNP_RES(iProc)
-          ListMappedB=0
-          DO IP=NP_RESloc+1,MNPloc
-            IP_glob=ListIPLG(IP+ListFirst(iProc))
-            ListMappedB(IP_glob)=IP
-          END DO
-          !
-          nbCommon_recv_sl=0
-          DO IP=1,NP_RESloc
-            IP_glob=ListIPLG(IP+ListFirst(iProc))
-            IF (ListMapped(IP_glob).gt.0) THEN
-              nbCommon_recv_sl=nbCommon_recv_sl+1
-            END IF
-          END DO
-          IF (nbCommon_recv_sl .gt. 0) THEN
-            wwm_nnbr_recv_sl=wwm_nnbr_recv_sl+1
-            ListCommon_recv(iProc)=nbCommon_recv_sl
+      DO iNeigh=1,wwm_nnbr
+        iProc=wwm_ListNeigh(iNeigh)
+        MNPloc=ListMNP(iProc)
+        NP_RESloc=ListNP_RES(iProc)
+        ListMappedB=0
+        DO IP=NP_RESloc+1,MNPloc
+          IP_glob=ListIPLG(IP+ListFirst(iProc))
+          ListMappedB(IP_glob)=IP
+        END DO
+        !
+        nbCommon_recv_sl=0
+        DO IP=1,NP_RESloc
+          IP_glob=ListIPLG(IP+ListFirst(iProc))
+          IF (ListMapped(IP_glob).gt.0) THEN
+            nbCommon_recv_sl=nbCommon_recv_sl+1
           END IF
-          !
-          nbCommon_send_sl=0
-          DO IP=1,NP_RES
-            IP_glob=iplg(IP)
-            IF (ListMappedB(IP_glob).gt.0) THEN
-              nbCommon_send_sl=nbCommon_send_sl+1
-            END IF
-          END DO
-          IF (nbCommon_send_sl .gt. 0) THEN
-            wwm_nnbr_send_sl=wwm_nnbr_send_sl+1
-            ListCommon_send(iProc)=nbCommon_send_sl
+        END DO
+        IF (nbCommon_recv_sl .gt. 0) THEN
+          wwm_nnbr_recv_sl=wwm_nnbr_recv_sl+1
+          ListCommon_recv(iProc)=nbCommon_recv_sl
+        END IF
+        !
+        nbCommon_send_sl=0
+        DO IP=1,NP_RES
+          IP_glob=iplg(IP)
+          IF (ListMappedB(IP_glob).gt.0) THEN
+            nbCommon_send_sl=nbCommon_send_sl+1
           END IF
+        END DO
+        IF (nbCommon_send_sl .gt. 0) THEN
+          wwm_nnbr_send_sl=wwm_nnbr_send_sl+1
+          ListCommon_send(iProc)=nbCommon_send_sl
         END IF
       END DO
       allocate(wwm_ListNbCommon_send_sl(wwm_nnbr_send_sl), wwm_ListNbCommon_recv_sl(wwm_nnbr_recv_sl), wwm_ListNeigh_send_sl(wwm_nnbr_send_sl), wwm_ListNeigh_recv_sl(wwm_nnbr_recv_sl), stat=istat)

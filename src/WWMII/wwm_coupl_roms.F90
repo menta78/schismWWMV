@@ -990,8 +990,8 @@
             eWk=WK(IP,IS)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
-            eSinh2kd=DSINH(2*kD)
-            eSinhkd=DSINH(kD)
+            eSinh2kd=MySINH(2*kD)
+            eSinhkd=MySINH(kD)
             eSinhkd2=eSinhkd**2
             eSigma=SPSIG(IS)
 #  ifdef STOKES_DRIFT_USING_INTEGRAL
@@ -1016,7 +1016,7 @@
               eHeight=z_w_loc(k)-z_w_loc(k-1)
               eFracB=eHeight/eDep
               eSinc=SINH(kD*eFracB)/(kD*eFracB)
-              eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
+              eQuot1=eSinc*MyCOSH(2*kD*eFrac)/eSinhkd2
               eProd=eSigma*eWkReal*eQuot1
               eUSTOKES_loc(k)=eUSTOKES_loc(k) + eUint*eProd
               eVSTOKES_loc(k)=eVSTOKES_loc(k) + eVint*eProd
@@ -1029,8 +1029,8 @@
             eWk=WK(IP,IS)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
-            eSinh2kd=DSINH(2*kD)
-            eSinhkd=DSINH(kD)
+            eSinh2kd=MySINH(2*kD)
+            eSinhkd=MySINH(kD)
             eSinhkd2=eSinhkd**2
             eSigma=SPSIG(IS)
             DO ID=1,MDC
@@ -1041,8 +1041,8 @@
                 zMid=0.5*(z_w_loc(k)+z_w_loc(k-1))
                 eFrac=(zMid - z_w_loc(0))/eDep
                 eFracB=eHeight/eDep
-                eSinc=DSINH(eFracB*kD)/(eFracB*kD)
-                eQuot=eWkReal*2*DCOSH(2*kD*eFrac)/eSinh2kd
+                eSinc=MySINH(eFracB*kD)/(eFracB*kD)
+                eQuot=eWkReal*2*MyCOSH(2*kD*eFrac)/eSinh2kd
                 eFct=U_wav(IP,k)*COSTH(ID)+V_wav(IP,k)*SINTH(ID)
                 TheInt=TheInt+eHeight*eFct*eQuot*eSinc
               END DO
@@ -1056,11 +1056,11 @@
                 eHeight=z_w_loc(k)-z_w_loc(k-1)
                 eFracB=eHeight/eDep
                 eSinc=SINH(kD*eFracB)/(kD*eFracB)
-                eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
+                eQuot1=eSinc*MyCOSH(2*kD*eFrac)/eSinhkd2
                 USTOKES1=MFACT*eSigma*COSTH(ID)*eWkReal*eQuot1
                 VSTOKES1=MFACT*eSigma*SINTH(ID)*eWkReal*eQuot1
-                eQuot2=eSinc*DSINH(2*kD*eFrac)/eSinhkd2
-                eQuot3=eSinc*(DSINH(kD*eFrac)/eSinhkd)**2
+                eQuot2=eSinc*MySINH(2*kD*eFrac)/eSinhkd2
+                eQuot3=eSinc*(MySINH(kD*eFrac)/eSinhkd)**2
                 eScal=PartialU1(k)*COSTH(ID) + PartialV1(k)*SINTH(ID)
                 USTOKES2=0.5*(MFACT**2)*COSTH(ID)*eWkReal*eQuot2*eScal
                 USTOKES3=0.5*MFACT*PartialU2(k)*eQuot3
@@ -1434,7 +1434,7 @@
           ENDIF
           SumLwave=SumLwave + WLM
           kD=MIN(KDMAX, KLM*DEP(IP))
-          cPhase=SQRT((G9/KLM)*REAL(DSINH(kD)/DCOSH(kD)) )
+          cPhase=SQRT((G9/KLM)*REAL(MySINH(kD)/MyCOSH(kD)) )
           eStokesNorm=(G9*HS*HS/REAL(16))*2*(KLM/cPhase)
           IF (eStokesNorm.ne.eStokesNorm) THEN
             WRITE(DBG%FHNDL,*) 'eStokesNorm=', eStokesNorm

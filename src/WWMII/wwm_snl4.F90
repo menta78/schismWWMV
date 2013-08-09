@@ -24,9 +24,9 @@
          LAMBDA = PQUAD(1)
          LAMM2  = (1.0-LAMBDA)**2
          LAMP2  = (1.0+LAMBDA)**2
-         DELTH3 = DACOS((LAMM2**2+4.0-LAMP2**2)/(4.0*LAMM2))
-         AUX1   = DSIN(DELTH3)
-         DELTH4 = DASIN(-AUX1*LAMM2/LAMP2)
+         DELTH3 = MyACOS((LAMM2**2+4.0-LAMP2**2)/(4.0*LAMM2))
+         AUX1   = MySIN(DELTH3)
+         DELTH4 = MyASIN(-AUX1*LAMM2/LAMP2)
 !
 !     *** Compute directional indices in sigma and theta space ***
 !

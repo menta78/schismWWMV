@@ -841,8 +841,8 @@
       IF (ISTAB.EQ.1) UST=USTAR*(1.-USTARsigma)
       IF (ISTAB.EQ.2) UST=USTAR*(1.+USTARsigma)
 # endif
-      TAUX = UST**2* COS(USDIR)
-      TAUY = UST**2* SIN(USDIR)
+      TAUX = UST**2* MyCOS(USDIR)
+      TAUY = UST**2* MySIN(USDIR)
 
        !WRITE(DBG%FHNDL,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
 !
@@ -866,8 +866,8 @@
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25,MAX(UST,0.3_rkind))
         !WRITE(DBG%FHNDL,*) 'MESS', IK, UST, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
         USDIRP=ATAN2(TAUPY,TAUPX)
-        COSU   = COS(USDIRP)
-        SINU   = SIN(USDIRP)
+        COSU   = MyCOS(USDIRP)
+        SINU   = MySIN(USDIRP)
         IS=1+(IK-1)*NTH
         CM=K(IK)/SIG2(IS) !inverse of phase speed
         UCN=USTP*CM+ZZALP  !this is the inverse wave age
@@ -1049,8 +1049,8 @@
          +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
         END IF
       TAUHF = CONST0*TEMP*UST**2*TAU1
-      TAUWX = XSTRESS+TAUHF*COS(USDIRP)
-      TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
+      TAUWX = XSTRESS+TAUHF*MyCOS(USDIRP)
+      TAUWY = YSTRESS+TAUHF*MySIN(USDIRP)
       !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
 !      
 ! Reduces tail effect to make sure that wave-supported stress 
@@ -1190,7 +1190,7 @@
              IF (I_INT.GT.NTH) J_INT=I_INT-NTH
              SATINDICES(ITH,I_INT-(ITH-SDSNTH)+1)=J_INT
              SATWEIGHTS(ITH,I_INT-(ITH-SDSNTH)+1)=                      &
-     &               COS(TH(ITH)-TH(J_INT))**SSDSCOS
+     &               MyCOS(TH(ITH)-TH(J_INT))**SSDSCOS
             END DO
         END DO
       ELSE
@@ -1259,7 +1259,7 @@
               CALL ALL_FROM_TABLE(SIG(IKL),PROF,KIK,CGG,KDD,CN,CC)
               K1(IKL,ID)=KIK  ! wavenumber lower boundary (is directly related to the frequency indices, IK)
               K2(IKL,ID)=((BSUP/BINF)**2.)*K1(IKL,ID)! wavenumber upper boundary
-              SIGTAB(IKL,ID)=SQRT(G*K2(IKL,ID)*TANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
+              SIGTAB(IKL,ID)=SQRT(G*K2(IKL,ID)*MYTANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
               IF(SIGTAB(IKL,ID) .LE. SIG(1)) THEN
                 IKTAB(IKL,ID)=1
                 END IF
@@ -1296,7 +1296,7 @@
       DO IKD=1,NKD
         KHS=0.
         KD=(FAC_KD1**(IKD-FAC_KD2))
-        XT=TANH(KD)
+        XT=MYTANH(KD)
         GAM=1.0314*(XT**3)-1.9958*(XT**2)+1.5522*XT+0.1885 
         GAM=GAM/2.15
         DO IKHS=1,NKHS  ! max value of KHS=1.
@@ -2166,7 +2166,7 @@
             ELSE IF (IKHS < 1) THEN
               IKHS = 1
               END IF  
-            XT=TANH(KBAR(IKL)*DEPTH)
+            XT=MYTANH(KBAR(IKL)*DEPTH)
 !
 !  Gamma corrected for water depth
 !
@@ -2313,7 +2313,7 @@
         IF (SSDSBM(0).EQ.1) THEN
           MICHE=1.
         ELSE
-          X=TANH(MIN(K(IK)*DEPTH,10.0_rkind))
+          X=MYTANH(MIN(K(IK)*DEPTH,10.0_rkind))
           MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+X*(SSDSBM(3)                 &
      &          +X*SSDSBM(4)))))**2
           END IF
@@ -2344,10 +2344,10 @@
 !
 !  end of Cumulative effect
 !
-          SATURATION2=TANH(10*(((BTH(IS)/SSDSBR)**0.5)-SSDSBR2))
-          COSWIND=(ECOS(IS)*COS(USDIR)+ESIN(IS)*SIN(USDIR))
+          SATURATION2=MYTANH(10*(((BTH(IS)/SSDSBR)**0.5)-SSDSBR2))
+          COSWIND=(ECOS(IS)*MyCOS(USDIR)+ESIN(IS)*SIN(USDIR))
           DTURB=-2.*SIG(IK)*K(IK)*FACTURB*COSWIND  ! Theory -> stress direction
-          P0=SSDSP ! -0.5*SSDSC7*(1-TANH(W*USTAR*K(IK)/SIG(IK)-0.1))  ! for SDSC7=1 this is vdW et al. 
+          P0=SSDSP ! -0.5*SSDSC7*(1-MYTANH(W*USTAR*K(IK)/SIG(IK)-0.1))  ! for SDSC7=1 this is vdW et al. 
            
           IF (SSDSC2.NE.0) THEN 
             D(IS)=D(IS) + SSDSC2 * SIG(IK)                              &
@@ -2508,8 +2508,8 @@ SUBROUTINE KZEONE(X, Y, RE0, IM0, RE1, IM1)
       T2 = -Y2*IM0
       RE1 = RE1/R2
       R2 = Y2*IM1/R2
-      RTERM = 1.41421356237309_RKIND*DCOS(Y)
-      ITERM = -1.41421356237309_RKIND*DSIN(Y)
+      RTERM = 1.41421356237309_RKIND*MyCOS(Y)
+      ITERM = -1.41421356237309_RKIND*MySIN(Y)
 ! THE CONSTANT IN THE PREVIOUS STATEMENTS IS,OF COURSE,
 ! SQRT(2.0).
       IM0 = RE0*ITERM + T2*RTERM
@@ -2552,8 +2552,8 @@ SUBROUTINE KZEONE(X, Y, RE0, IM0, RE1, IM1)
       T2 = -Y/T1
       P1 = 8.86226925452758E-1_rkind/P2
 ! THIS CONSTANT IS SQRT(PI)/2.0, WITH PI=3.14159...
-      RTERM = P1*DCOS(Y)
-      ITERM = -P1*DSIN(Y)
+      RTERM = P1*MyCOS(Y)
+      ITERM = -P1*MySIN(Y)
       R1 = RE0*RTERM - IM0*ITERM
       R2 = RE0*ITERM + IM0*RTERM
       RE0 = T1*R1 - T2*R2
