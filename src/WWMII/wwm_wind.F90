@@ -93,7 +93,6 @@
 #endif
 #ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN ! GRIB forcing from ecmwf
-!            Print *, 'IWINDFORMAT 7, case 1'
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
@@ -180,7 +179,6 @@
 #endif
 #ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN
-!            Print *, 'IWINDFORMAT 7, case 2'
             CALL GRIB_INIT !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
@@ -224,9 +222,7 @@
 !AR: Mathieu can you please fix this !!!
 
       WRITE(WINDBG%FHNDL,*) MAIN%TMJD, SEWI%TMJD-1.E-8, MAIN%TMJD .ge. SEWI%TMJD-1.E-8, MAIN%TMJD .le. SEWI%EMJD, SEWI%EMJD
-!      Print *, 'Before test'
       IF ( LSEWD .AND. (MAIN%TMJD .ge. SEWI%TMJD-1.E-8) .AND. (MAIN%TMJD .le. SEWI%EMJD+1.e-8) ) THEN
-!        Print *, 'After test'
         IF (IWINDFORMAT == 1) THEN
 !NDM: Need to add the facility for LINTERWD
           CALL CSEVAL( WIN%FHNDL, WIN%FNAME, .TRUE., 2, TMP)
@@ -285,7 +281,6 @@
 #endif
 #ifdef GRB
         ELSE IF (IWINDFORMAT == 7) THEN
-!          Print *, 'IWINDFORMAT 7, case 3'
           IF (K.EQ.1) THEN
             REC1_old = 0
             REC2_old = 0

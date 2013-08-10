@@ -489,6 +489,11 @@
            END IF
          ENDIF
          OUT_STATION%FNAME = FILEOUT
+         IF ( TRIM(OUT_STATION%FNAME) == TRIM(OUT_HISTORY%FNAME) ) THEN
+           WRITE(DBG%FHNDL,*) 'OUT_STATION%FNAME=', TRIM(OUT_STATION%FNAME)
+           WRITE(DBG%FHNDL,*) 'OUT_HISTORY%FNAME=', TRIM(OUT_HISTORY%FNAME)
+           CALL WWM_ABORT('You cannot have same name for history and station')
+         END IF
          VAROUT_STATION%AC=AC
          VAROUT_STATION%WK=WK
          VAROUT_STATION%ACOUT_1D=ACOUT_1D
@@ -1082,7 +1087,6 @@
       INTEGER :: IP, ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
-      REAL(rkind) :: tmp
       REAL(rkind) :: tmp_arr(np_global)
 #endif
       CURTXY(:,:) = 0.0
@@ -1160,7 +1164,6 @@
       INTEGER :: ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
-      REAL(rkind)    :: tmp
       REAL(rkind)    :: tmp_arr(np_global)
 #endif
       WATLEV    = 0.

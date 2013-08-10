@@ -1982,6 +1982,7 @@
           END DO
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+          !
           iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         ENDIF
@@ -2049,9 +2050,6 @@
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_HISTORY%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
-            Print *, 'I=', I
-            Print *, 'eStr=', TRIM(eStr)
-            Print *, 'eStrFullName=', TRIM(eStrFullName)
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
             CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
             IF (PRINTMMA) THEN
