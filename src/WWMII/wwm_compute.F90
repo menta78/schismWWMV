@@ -65,7 +65,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SPATIAL ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 4'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
          ENDIF
 
          CALL CPU_TIME(TIME5)
@@ -74,7 +74,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 5'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
          ENDIF
 
          CALL CPU_TIME(TIME6)
@@ -83,7 +83,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER BREAK LIMIT ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN COMPUTE 6'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6'
          ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
