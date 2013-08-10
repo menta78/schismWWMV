@@ -7,7 +7,7 @@ FFLAGS = -DST42
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on
+PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -17,13 +17,13 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB =
+GRIB = on
 
 
 #F90 = gfortran
-#F90 = mpif90
+F90 = mpif90
 #F90 = mpif90-vt
-F90 = ifort
+#F90 = ifort
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95

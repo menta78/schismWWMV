@@ -360,7 +360,7 @@
       LOGICAL :: METHOD1 = .FALSE.
       INTEGER I, J
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
-      REAL(rkind) :: Uw, Vw, sumCOEFF
+      REAL(rkind) :: Uw, Vw
       INTEGER IX, IY
       IF (METHOD1 .eqv. .FALSE.) THEN
         DO I = 1, MNP
@@ -368,13 +368,10 @@
           Vw=ZERO
           IX=CF_IX(I)
           IY=CF_IY(I)
-          sumCOEFF=ZERO
           DO J=1,4
             Uw=Uw + CF_COEFF(J,I)*UWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
             Vw=Vw + CF_COEFF(J,I)*VWIND_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
-            sumCOEFF=sumCOEFF + CF_COEFF(J,I)
           END DO
-!           Print *, 'sumCOEFF=', sumCOEFF
           outwind(I,1)=Uw*cf_scale_factor + cf_add_offset
           outwind(I,2)=Vw*cf_scale_factor + cf_add_offset
         END DO
@@ -397,6 +394,10 @@
       WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
       WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(outwind(:,1)), maxval(outwind(:,1))
       WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(outwind(:,2)), maxval(outwind(:,2))
+!      WRITE(WINDBG%FHNDL,*) 'max(CF_COEFF)=', maxval(abs(CF_COEFF))
+!      WRITE(WINDBG%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
+!      WRITE(WINDBG%FHNDL,*) 'cf_add_offset=', cf_add_offset
+
       FLUSH(WINDBG%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -2359,6 +2360,8 @@
         deallocate(igrib)
       END DO
       FLUSH(WINDBG%FHNDL)
+      cf_scale_factor=ONE
+      cf_add_offset=ZERO
       !
       ! Now the longitude/latitude to read.
       !
