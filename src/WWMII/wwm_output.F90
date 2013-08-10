@@ -2049,6 +2049,9 @@
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_HISTORY%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
+            Print *, 'I=', I
+            Print *, 'eStr=', TRIM(eStr)
+            Print *, 'eStrFullName=', TRIM(eStrFullName)
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
             CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
             IF (PRINTMMA) THEN
