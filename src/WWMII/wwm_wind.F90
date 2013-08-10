@@ -2456,8 +2456,8 @@
         END IF
       END DO
       idx=0
-      DO I=1,NDX_WIND_FD
-        DO J=1,NDY_WIND_FD
+      DO J=1,NDY_WIND_FD
+        DO I=1,NDX_WIND_FD
           idx=idx+1
           UWIND_FD(I,J)=valueU(idx)
           VWIND_FD(I,J)=valueV(idx)
