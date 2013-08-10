@@ -922,6 +922,10 @@
          CALL CT2MJD(SEWI%ENDT, SEWI%EMJD)
 
          CALL CU2SEC(SEWI%UNIT, SEWI%DELT)
+         IF (IWINDFORMAT .ne. 1) THEN
+           SEWI%UNIT = UNITC
+           SEWI%ENDT = ENDTC
+         END IF
 
          SEWI%TMJD = 0.0
 !

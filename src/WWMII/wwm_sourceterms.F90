@@ -191,7 +191,7 @@
                  CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS) 
 #else
                  WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
-                 STOP 'stop wwm_sourceterms l.186'
+                 CALL WWM_ABORT('stop wwm_sourceterms l.186')
 #endif
                  !write(3001,'(10F15.8)') WIND10, UFRIC(IP), Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), ALPHA_CH(IP)
                  CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
@@ -514,7 +514,7 @@
              CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
 #else
              WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
-             STOP 'stop wwm_sourceterms l.186'
+             CALL WWM_ABORT('stop wwm_sourceterms l.186')
 #endif
            ELSEIF (MESIN == 2) THEN
 
