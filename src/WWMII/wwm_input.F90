@@ -907,6 +907,12 @@
          IF (LWINDFROMWWM .and. (LCWIN .eqv. .FALSE.)) THEN
            CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
          END IF
+         IF (IWINDFORMAT .ne. 1) THEN
+           BEGTC = MAIN%BEGT
+           DELTC = MAIN%DELT
+           UNITC = MAIN%UNIT
+           ENDTC = MAIN%ENDT
+         END IF
 
          SEWI%BEGT = BEGTC
          SEWI%DELT = DELTC
@@ -922,10 +928,6 @@
          CALL CT2MJD(SEWI%ENDT, SEWI%EMJD)
 
          CALL CU2SEC(SEWI%UNIT, SEWI%DELT)
-         IF (IWINDFORMAT .ne. 1) THEN
-           SEWI%UNIT = UNITC
-           SEWI%ENDT = ENDTC
-         END IF
 
          SEWI%TMJD = 0.0
 !
