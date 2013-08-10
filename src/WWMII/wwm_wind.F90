@@ -190,7 +190,6 @@
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
-            write(*,*) sum(tmp_wind1), sum(tmp_wind2)
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or you need to use NETCDF or GRIB')
