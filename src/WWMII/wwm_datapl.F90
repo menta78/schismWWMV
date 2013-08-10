@@ -170,6 +170,7 @@
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
 
          REAL(rkind)       :: WINDFAC    = 1.0
+         REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
          REAL(rkind)       ::  CURFAC    = 1.0
 

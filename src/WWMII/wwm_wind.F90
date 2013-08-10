@@ -2352,7 +2352,7 @@
         WRITE(eStrTime,10) eYear, eMonth, eDay
  10     FORMAT(i4.4,i2.2,i2.2,'.000000')
         CALL CT2MJD(eStrTime, eTimeBase)
-        eTimeMjd=eTimeBase + DBLE(stepRange)/24.0_rkind
+        eTimeMjd=eTimeBase + SHIFT_WIND_TIME + DBLE(stepRange)/24.0_rkind
         WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
         wind_time_mjd(IT)=eTimeMjd
         CALL GRIB_CLOSE_FILE(ifile)
