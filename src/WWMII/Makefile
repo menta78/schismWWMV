@@ -5,13 +5,13 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = 
+MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = 
+PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = on
+OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -98,7 +98,7 @@ endif
 ifdef MPI
   MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER -DDEBUG
+  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER 
   OBJS= $(OBJSELFE) $(OBJWWM)
 else
   MPIFLAG = 
@@ -110,7 +110,7 @@ ifdef OPENMP
 endif
 
 ifdef GRIB
-  LIBS += -L$(GRIB_PATH) -lgrib_api_f90 -lgrib_api
+  LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
   FFLAGS += -DGRB -I$(GRIB_PATH)/include
 endif
 

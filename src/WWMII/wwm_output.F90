@@ -191,15 +191,11 @@
             IF (LQSTEA) ITERT(iplg(IP))  = ITER_LOCAL(IP)
          END DO
 
-         write(*,*) sum(FORCE), sum(FORCE_GLOBAL)
-
          call mpi_reduce(OUTT,OUTT_GLOBAL,NP_GLOBAL*OUTVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(CURR,CURR_GLOBAL,NP_GLOBAL*CURRVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(WIND,WIND_GLOBAL,NP_GLOBAL*WINDVARS,rtype,MPI_SUM,0,comm,ierr)
          call mpi_reduce(FORCE,FORCE_GLOBAL,NP_GLOBAL*2,rtype,MPI_SUM,0,comm,ierr)
          IF (LQSTEA  .AND. LCHKCONV) call mpi_reduce(ITERT,ITER_GLOBAL,NP_GLOBAL,rtype,MPI_SUM,0,comm,ierr)
-
-         write(*,*) 'AFTER' ,sum(FORCE), sum(FORCE_GLOBAL)
 
          if(myrank==0) then
            do IP=1,NP_GLOBAL

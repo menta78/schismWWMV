@@ -19,6 +19,7 @@
       INTEGER :: IP, ISTAT, FORECASTHOURS
       REAL(rkind)    :: WDIRT, cf_w1, cf_w2
 
+
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
       IF (LSTWD) THEN
@@ -189,6 +190,7 @@
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
+            write(*,*) sum(tmp_wind1), sum(tmp_wind2)
 #endif
           ELSE
             CALL WWM_ABORT('Wrong choice of IWINDFORMAT or you need to use NETCDF or GRIB')

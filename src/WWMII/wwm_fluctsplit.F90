@@ -190,7 +190,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER             :: IS, ID
+         INTEGER             :: IS, ID, IX
          REAL(rkind)         :: DTMAX
 #ifdef PETSC
          REAL(rkind)         :: u(msc,mdc,mnp)
@@ -230,13 +230,21 @@
            END IF
          ELSE IF (ICOMP .GE. 1) THEN ! Implicit schemes ...
            IF (AMETHOD == 1) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-!                 CALL EIMPS( IS, ID)
-                 CALL EIMPS_V1( IS, ID)
-               END DO
+!$OMP PARALLEL PRIVATE (ID,IS,IX) 
+!$OMP DO SCHEDULE(GUIDED,MDC) 
+!             DO ID = 1, MDC
+!               DO IS = 1, MSC
+!                CALL EIMPS( IS, ID)
+!                 CALL EIMPS_V1( IS, ID)
+!               END DO
+!             END DO
+             DO IX = 1, NSPEC
+               ID = INT((IX-1)/MSC)+1
+               IS = IX - (ID-1) * MSC
+               CALL EIMPS( IS, ID)
              END DO
+!$OMP ENDDO
+!$OMP END PARALLEL
            ELSE IF (AMETHOD == 2) THEN
 !$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
@@ -253,7 +261,6 @@
              END DO
            ELSE IF (AMETHOD == 4) THEN
 #ifdef PETSC
-!$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
                DO IS = 1, MSC
                  CALL EIMPS_PETSC(IS, ID)
