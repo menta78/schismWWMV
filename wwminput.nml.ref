@@ -132,6 +132,8 @@
  CWINDX         = 30.0               ! wind x-vec if LWDIR=F
  CWINDY         = 0.0                ! wind y-vec
  FILEWIND       = 'wind.dat'         ! wind input data file; input file format: write(*,*) curtx; write(*,*) curty
+ SHIFT_WIND_TIME= 0.0                ! shift of wind time (in days)
+                                     ! (default 0)
  IWINDFORMAT    = 1                  ! kind of wind input
                                      ! 1 - ASCII,
                                      ! 2 - DWD_NETCDF

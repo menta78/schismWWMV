@@ -2127,7 +2127,7 @@
       ISTAT = nf90_close(fid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
 
-      WIND_TIME_MJD(:) = wind_time_mjd(:)*ConvertToDay + eTimeStart
+      WIND_TIME_MJD(:) = wind_time_mjd(:)*ConvertToDay + SHIFT_WIND_TIME + eTimeStart
       CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
 
       ! compute nodes and coefs
@@ -2282,7 +2282,7 @@
       ISTAT = nf90_close(fid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-      wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + eTimeStart
+      wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + WIND_TIME_MJD + eTimeStart
       CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
       END SUBROUTINE INIT_DIRECT_NETCDF_CF
 #endif
