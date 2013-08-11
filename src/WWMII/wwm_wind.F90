@@ -2008,7 +2008,7 @@
       USE DATAPOOL, only : cf_a, cf_b, cf_c, cf_d, cf_J, wind_time_mjd, nbtime_mjd
       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, ZERO, LARGE
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor
-      USE DATAPOOL, only : UWIND_FD, VWIND_FD
+      USE DATAPOOL, only : UWIND_FD, VWIND_FD, SHIFT_WIND_TIME
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
       USE DATAPOOL, only : THR, ONE
       IMPLICIT NONE
