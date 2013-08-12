@@ -323,7 +323,10 @@
  NDYNITER_SBR   =          10,       !
  NDYNITER_SNL3  =          10,       ! 
  NDYNITER_SBF   =          10,       !
-
+ LZETA_SETUP    = F,                 ! T/F, whether to compute the wave setup.
+ ZETA_METH      = 0,                 ! 0: use a simple conjugate gradient
+                                     !    preconditioner
+                                     ! 1: use PETSC
 /
 
 
