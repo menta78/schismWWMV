@@ -1291,10 +1291,6 @@
 !**********************************************************************
       SUBROUTINE PAR_COMPLETE(IP, ISMAX, ACLOC, OUTPAR)
       USE DATAPOOL
-#ifdef BEBUG
-      USE ELFE_MSGP, only : myrank
-#endif
-
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)           :: IP, ISMAX
@@ -1309,9 +1305,6 @@
       REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
 
       OUTPAR    = 0.
-#ifdef DEBUG
-      WRITE(200+myrank,*) 'IP=', IP, ' DEP=', DEP(IP)
-#endif
 
       IF (DEP(IP) .LT. DMIN) THEN
         RETURN
@@ -1401,18 +1394,9 @@
         OUTPAR(57) = CFLCXY(2,IP)
         OUTPAR(58) = CFLCXY(3,IP)
       ENDIF
-#ifdef DEBUG
-      WRITE(200+myrank,*) 'Before OUTPAR assign'
-#endif
       IF (LZETA_SETUP) THEN
         OUTPAR(59) = ZETA_SETUP(IP)
-#ifdef DEBUG
-        WRITE(200+myrank,*) 'IP=', IP, ZETA_SETUP(IP)
-#endif
       END IF
-#ifdef DEBUG
-      WRITE(200+myrank,*) 'After OUTPAR assign'
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -2016,14 +2000,11 @@
         ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 8')
         OUTT_LOC=0
-        WRITE(200+myrank,*) 'Before PAR_COMPLETE loop'
         DO IP = 1, MNP
           ACLOC(:,:) = AC2(IP,:,:)
-          WRITE(200+myrank,*) 'In loop IP=', IP
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
           OUTT_LOC(iplg(IP),:) = OUTPAR(:)
         END DO
-        WRITE(200+myrank,*) 'After PAR_COMPLETE loop'
         call mpi_reduce(OUTT_LOC,OUTT,NP_GLOBAL*OUTVARS_COMPLETE,rtype, MPI_SUM,0,comm,ierr)
         IF (myrank.eq.0) THEN
           DO IP=1,NP_GLOBAL
