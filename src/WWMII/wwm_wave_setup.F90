@@ -445,8 +445,14 @@
         END DO
       END DO
       WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
-
       TheOut=V_X
+!#ifdef DEBUG
+!      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
+!      DO IP=1,MNP
+!        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
+!      END DO
+!      FLUSH(200+myrank)
+!#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -618,6 +624,7 @@
       logical :: SAME_NONZERO_PATTERN =.true.
 #endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
+      ZETA_SETUP = ZERO
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
@@ -694,6 +701,7 @@
 #ifdef DEBUG
       REAL(rkind) :: Xtest(MNP), Vimg(MNP)
       REAL(rkind) :: eResidual, eResidual2, eNorm
+      INTEGER IP
 #endif
 #ifdef DEBUG
       WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 1'
