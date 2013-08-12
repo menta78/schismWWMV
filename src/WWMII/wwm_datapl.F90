@@ -61,7 +61,6 @@
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
      &                         YPTMP => ynd
 #endif
-
       IMPLICIT NONE
       SAVE
 !
@@ -71,7 +70,7 @@
            Error, you must compile in double precision
 #endif
 #ifndef MPI_PARALL_GRID
-        INTEGER :: MyRank, nproc, comm
+        INTEGER :: myrank = 0
         INTEGER :: NP_RES
 #endif
 #ifndef SELFE
@@ -121,12 +120,12 @@
          REAL(rkind)                        :: DMIN      = 0.01_rkind
 
          REAL(rkind), PARAMETER             :: ERRCON    = 0.005_rkind
-         REAL(rkind), PARAMETER             :: REARTH    = 6378137.0_rkind ! WGS84
+         REAL(rkind), PARAMETER             :: REARTH    = 2.E7/PI ! WGS84 
          REAL(rkind), PARAMETER             :: DEGRAD    = PI/180._rkind
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
          REAL(rkind), PARAMETER             :: RHOA      = 1.25_rkind
-         REAL(rkind), PARAMETER             :: RHOW      = 1000._rkind
+         REAL(rkind), PARAMETER             :: RHOW      = 1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE
@@ -171,6 +170,7 @@
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
 
          REAL(rkind)       :: WINDFAC    = 1.0
+         REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
          REAL(rkind)       ::  CURFAC    = 1.0
 
@@ -284,8 +284,8 @@
             INTEGER                  :: IDEF
          END TYPE
 
-         INTEGER                :: NB_BLOCK = 1
-         REAL(rkind)            :: SOLVERTHR = 1.E-20_rkind
+         INTEGER                :: NB_BLOCK = 3 
+         REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
 
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
 
@@ -433,27 +433,27 @@
 
 
 
-! WRF PART I.J.
+! CF compliant wind PART I.J.
          integer nbtime_mjd
          REAL(rkind), ALLOCATABLE         :: tmp_wind1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
          REAL(rkind), ALLOCATABLE         :: wind_time_mjd(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_a(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_b(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_c(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_d(:)
-         REAL(rkind), ALLOCATABLE         :: wrf_J(:)
-         INTEGER, ALLOCATABLE       :: wrf_c11(:,:)   
-         INTEGER, ALLOCATABLE       :: wrf_c21(:,:) 
-         INTEGER, ALLOCATABLE       :: wrf_c22(:,:)
-         INTEGER, ALLOCATABLE       :: wrf_c12(:,:)
-         INTEGER, ALLOCATABLE       :: WRF_IX(:), WRF_IY(:)
-         REAL(rkind), ALLOCATABLE   :: wrf_coeff(:,:)
+         REAL(rkind), ALLOCATABLE         :: cf_a(:)
+         REAL(rkind), ALLOCATABLE         :: cf_b(:)
+         REAL(rkind), ALLOCATABLE         :: cf_c(:)
+         REAL(rkind), ALLOCATABLE         :: cf_d(:)
+         REAL(rkind), ALLOCATABLE         :: cf_J(:)
+         INTEGER, ALLOCATABLE       :: cf_c11(:,:)   
+         INTEGER, ALLOCATABLE       :: cf_c21(:,:) 
+         INTEGER, ALLOCATABLE       :: cf_c22(:,:)
+         INTEGER, ALLOCATABLE       :: cf_c12(:,:)
+         INTEGER, ALLOCATABLE       :: CF_IX(:), CF_IY(:)
+         REAL(rkind), ALLOCATABLE   :: CF_coeff(:,:)
          integer, allocatable :: SHIFTXY(:,:)
          INTEGER                   :: REC1_old, REC2_old
          INTEGER                          :: REC1_new, REC2_new
-         real(rkind) :: wrf_scale_factor, wrf_add_offset
-! END WRF PART I.J.
+         real(rkind) :: cf_scale_factor, cf_add_offset
+! END CF comppliant wind PART I.J.
 
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
@@ -533,6 +533,10 @@
          CHARACTER(LEN=40)               :: NCDF_FP_NAME   = 'fp'
          CHARACTER(LEN=40)               :: NCDF_F02_NAME  = 't02'
 
+
+         INTEGER                         :: NUM_GRIB_FILES
+         CHARACTER(LEN=40), ALLOCATABLE  :: GRIB_FILE_NAMES(:)
+
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES(:)
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES_BND(:,:)
 
@@ -609,6 +613,11 @@
 !
 ! ... current field ...... TIMO neuer type DPL_CURT
 !
+         LOGICAL                     :: LZETA_SETUP = .FALSE.
+         INTEGER                     :: ZETA_METH = 0 ! 0: WWM simple precond
+                                           ! 1: PETSC precond
+                                           ! 2: WWMII parallel solver
+         REAL(rkind), ALLOCATABLE    :: ZETA_SETUP(:)
          REAL(rkind), ALLOCATABLE    :: CURTXY(:,:)
          REAL(rkind), ALLOCATABLE    :: DVCURT(:,:)
 
@@ -717,12 +726,11 @@
 !
 ! ... output parameter ... wwmDoutput.mod
 !
-
          INTEGER, PARAMETER     :: OUTVARS  = 35 
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 58
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 59
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.
@@ -845,17 +853,17 @@
 ! global hmax for wave breaking
 !
          REAL(rkind), ALLOCATABLE ::   HMAX(:)
-         INTEGER, ALLOCATABLE ::   ISHALLOW(:)
+         INTEGER, ALLOCATABLE     ::   ISHALLOW(:)
 
-         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:)
+         REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:), FORCEXY(:,:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
 !
 ! switch for the numerics ... wwmDnumsw.mod
 !
-         INTEGER                :: AMETHOD = 0
-         INTEGER                :: SMETHOD = 0
-         INTEGER                :: DMETHOD = 0
-         INTEGER                :: FMETHOD = 0
+         INTEGER                :: AMETHOD = 1
+         INTEGER                :: SMETHOD = 1
+         INTEGER                :: DMETHOD = 2
+         INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2
          REAL(rkind)            :: QSCFL   = 1.
          LOGICAL                :: LCHKCONV = .TRUE.
@@ -879,6 +887,7 @@
          INTEGER, ALLOCATABLE   :: IA(:)
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
+         INTEGER, ALLOCATABLE   :: JA_IE(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)
@@ -892,9 +901,9 @@
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
-         REAL(rkind), ALLOCATABLE      :: CFLCXY(:,:)
-         INTEGER, ALLOCATABLE   :: COUNTGROUP(:,:)
+         REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
 
+         INTEGER, ALLOCATABLE        :: COUNTGROUP(:,:)
 !
 !  convergence analysis and volume check ... wwmDconv.mod
 !
@@ -909,11 +918,11 @@
          REAL(rkind), ALLOCATABLE    :: TM02OLD(:)
 
 
-         REAL(rkind)                 :: EPSH1 = 0.001d0
-         REAL(rkind)                 :: EPSH2 = 0.001d0
-         REAL(rkind)                 :: EPSH3 = 0.001d0
-         REAL(rkind)                 :: EPSH4 = 0.001d0
-         REAL(rkind)                 :: EPSH5 = 0.001d0
+         REAL(rkind)                 :: EPSH1 = 0.01d0
+         REAL(rkind)                 :: EPSH2 = 0.01d0
+         REAL(rkind)                 :: EPSH3 = 0.01d0
+         REAL(rkind)                 :: EPSH4 = 0.01d0
+         REAL(rkind)                 :: EPSH5 = 0.01d0
 !
 ! Dislin
 !
@@ -921,11 +930,11 @@
 !
 !   WAM Cycle 4.5
 !
-         REAL(rkind), PARAMETER       :: ALPHA = 0.0090
+         REAL(rkind), PARAMETER       :: ALPHA   = 0.0090
          REAL(rkind), PARAMETER       :: BETAMAX = 1.20
-         REAL(rkind), PARAMETER       :: XKAPPA = 0.4
-         REAL(rkind), PARAMETER       :: ZALP =  0.0110
-         REAL(rkind), PARAMETER       :: UMAX = 50. ! Why this ? Never produced higher winds than this ?
+         REAL(rkind), PARAMETER       :: XKAPPA  = 0.4
+         REAL(rkind), PARAMETER       :: ZALP    =  0.0110
+         REAL(rkind), PARAMETER       :: UMAX    = 50. ! Why this ? Never produced higher winds than this ?
 
 
          INTEGER, PARAMETER    :: IUSTAR  = 100 !! TABLE DIMENSION
@@ -1020,7 +1029,8 @@
          integer, dimension(:,:), pointer :: IDindex
          ! variables for partitioning MSC
          integer, dimension(:), pointer :: ISbegin, ISend, ISlen
-         integer MSCeffect, NbMSCblock
+         integer MSCeffect, MDCeffect
+         integer NbMSCblock
          !
          integer, dimension(:), pointer :: Jstatus_L
          integer, dimension(:), pointer :: Jstatus_U
@@ -1090,8 +1100,11 @@
       integer wwm_nnbr
       integer wwm_nnbr_m_send, wwm_nnbr_m_recv
       integer wwm_nnbr_send, wwm_nnbr_recv
+      integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
       integer, allocatable :: wwm_ListNbCommon_send(:)
       integer, allocatable :: wwm_ListNbCommon_recv(:)
+      integer, allocatable :: wwm_ListNbCommon_send_sl(:)
+      integer, allocatable :: wwm_ListNbCommon_recv_sl(:)
       integer, allocatable :: wwm_ListDspl_send(:)
       integer, allocatable :: wwm_ListDspl_recv(:)
       integer, allocatable :: wwm_p2dsend_type(:)
@@ -1116,9 +1129,17 @@
       integer, allocatable :: wwm_p2drecv_rqst(:)
       integer, allocatable :: wwm_p2dsend_stat(:,:)
       integer, allocatable :: wwm_p2drecv_stat(:,:)
+      integer, allocatable :: wwmsl_send_type(:)
+      integer, allocatable :: wwmsl_recv_type(:)
+      integer, allocatable :: wwmsl_send_rqst(:)
+      integer, allocatable :: wwmsl_recv_rqst(:)
+      integer, allocatable :: wwmsl_send_stat(:,:)
+      integer, allocatable :: wwmsl_recv_stat(:,:)
       integer, allocatable :: wwm_ListNeigh(:)
       integer, allocatable :: wwm_ListNeigh_send(:)
       integer, allocatable :: wwm_ListNeigh_recv(:)
+      integer, allocatable :: wwm_ListNeigh_send_sl(:)
+      integer, allocatable :: wwm_ListNeigh_recv_sl(:)
       LOGICAL DO_SOLVE_L, DO_SOLVE_U
       LOGICAL DO_SYNC_LOW_2_UPP
       LOGICAL DO_SYNC_UPP_2_LOW

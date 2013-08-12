@@ -34,7 +34,6 @@
          CHARACTER(LEN=40)  :: FILEOUT
          INTEGER, PARAMETER :: INUMOUTS = 200 
          CHARACTER(LEN=20)  :: BEGTC, UNITC, ENDTC, NOUTS(INUMOUTS), NLOUTS(INUMOUTS)
-         INTEGER            :: NLPOINTS(INUMOUTS)
          REAL(rkind)        :: XOUTS(INUMOUTS), YOUTS(INUMOUTS), CUTOFF(INUMOUTS)
          REAL(rkind)        :: XLOUTS(INUMOUTS), YLOUTS(INUMOUTS)
          REAL(rkind) :: DEFINETC
@@ -55,7 +54,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER,                                &
@@ -71,7 +70,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -86,7 +85,7 @@
      &      CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,              &
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          XOUTS = 0.
          YOUTS = 0.
@@ -163,12 +162,14 @@
          CFL1=.FALSE.
          CFL2=.FALSE.
          CFL3=.FALSE.
+         ZETA_SETUP=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = HISTORY)
          wwm_print_namelist(HISTORY)
+         FLUSH(CHK%FHNDL)
          IF (DELTC.lt.MAIN%DELT) THEN
            DELTC=MAIN%DELT
          END IF
@@ -319,6 +320,7 @@
          LVAR_READ(56)=CFL1
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
+         LVAR_READ(59)=ZETA_SETUP
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -397,16 +399,14 @@
          CFL1=.FALSE.
          CFL2=.FALSE.
          CFL3=.FALSE.
-
+         ZETA_SETUP=.FALSE.
          BEGTC = MAIN%BEGT
-         DELTC = -1
+         DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
          ENDTC = MAIN%ENDT
          READ(INP%FHNDL, NML = STATION)
          wwm_print_namelist(STATION)
-         IF (DELTC.lt.MAIN%DELT) THEN
-           DELTC=MAIN%DELT
-         END IF
+         FLUSH(CHK%FHNDL)
 #ifdef NCDF
          PARAMWRITE_STAT=PARAMWRITE
          USE_SINGLE_OUT_STAT=USE_SINGLE_OUT
@@ -489,6 +489,11 @@
            END IF
          ENDIF
          OUT_STATION%FNAME = FILEOUT
+         IF ( TRIM(OUT_STATION%FNAME) == TRIM(OUT_HISTORY%FNAME) ) THEN
+           WRITE(DBG%FHNDL,*) 'OUT_STATION%FNAME=', TRIM(OUT_STATION%FNAME)
+           WRITE(DBG%FHNDL,*) 'OUT_HISTORY%FNAME=', TRIM(OUT_HISTORY%FNAME)
+           CALL WWM_ABORT('You cannot have same name for history and station')
+         END IF
          VAROUT_STATION%AC=AC
          VAROUT_STATION%WK=WK
          VAROUT_STATION%ACOUT_1D=ACOUT_1D
@@ -551,6 +556,7 @@
          LVAR_READ(56)=CFL1
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
+         LVAR_READ(59)=ZETA_SETUP
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN
@@ -592,7 +598,7 @@
            WRITE(DBG%FHNDL,*) STATION_P%YCOORD
            WRITE(DBG%FHNDL,*) 'STATION Names'
            WRITE(DBG%FHNDL,*) STATION_P%NAME
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
 
          END IF
 
@@ -626,7 +632,7 @@
            WRITE(DBG%FHNDL,*) STATION_P%YCOORD
            WRITE(DBG%FHNDL,*) 'STATION Names'
            WRITE(DBG%FHNDL,*) STATION_P%NAME
-           CALL FLUSH(DBG%FHNDL)
+           FLUSH(DBG%FHNDL)
 
          END IF
       END SUBROUTINE
@@ -697,11 +703,9 @@
 #endif
          IMPLICIT NONE
 
-         LOGICAL           :: LFLIVE
          CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
          REAL(rkind)            :: DELTC
 
-         INTEGER           :: I, NI(3)
          REAL(rkind)              :: DEG
          INTEGER :: MULTIPLEIN, MULTIPLEOUT
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
@@ -726,7 +730,8 @@
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
-     &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM
+     &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
+     &      SHIFT_WIND_TIME
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
@@ -750,7 +755,8 @@
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
-     &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR, LNANINFCHK
+     &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR,           &
+     &      LNANINFCHK, LZETA_SETUP, ZETA_METH
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
@@ -758,19 +764,25 @@
 
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
+         FLUSH(CHK%FHNDL)
 #ifdef SELFE
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
+             WRITE(DBG%FHNDL) LSPHE, ICS
+             FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=T but then you need ics=2')
            END IF
          ELSE
            IF (ics /= 1) THEN
-             CALL WWM_ABORT('You set LSPHE=T but then you need ics=1')
+             WRITE(DBG%FHNDL) LSPHE, ICS
+             FLUSH(DBG%FHNDL)
+             CALL WWM_ABORT('You set LSPHE=F but then you need ics=1')
            END IF
          END IF
 #endif
          READ( INP%FHNDL,  NML = COUPL)
          wwm_print_namelist(COUPL)
+         FLUSH(CHK%FHNDL)
 !
 !    *** Estimate various timings ...
 !
@@ -802,11 +814,12 @@
 !
          READ (INP%FHNDL,   NML = GRID)
          wwm_print_namelist(GRID)
-!#ifdef MPI_PARALL_GRID
-!         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
-!           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
-!         END IF
-!#endif
+         FLUSH(CHK%FHNDL)
+#ifdef MPI_PARALL_GRID
+         IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
+           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
+         END IF
+#endif
          GRD%FNAME = FILEGRID
 
          NSPEC=MDC*MSC
@@ -844,12 +857,9 @@
 !
          READ(INP%FHNDL,  NML = INIT)
          wwm_print_namelist(INIT)
+         FLUSH(CHK%FHNDL)
 
          IF (LHOTR) THEN
-!#ifdef SELFE
-!           call parallel_abort('SELFEWWM: no hotstart implemented yet ... :(....')
-!#endif
-!           CALL TEST_FILE_EXIST_DIE("Missing hotfile : ", HOTIN%FNAME)
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'HOTFILE is used as Initital Condition'
          END IF
 !
@@ -857,6 +867,7 @@
 !
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
+         FLUSH(CHK%FHNDL)
 
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE
@@ -893,6 +904,7 @@
 !
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
+         FLUSH(CHK%FHNDL)
 !         Print *, 'BEGTC', BEGTC
 !         Print *, 'ENDTC', ENDTC
 
@@ -900,6 +912,12 @@
          WIN%FNAME = TRIM(FILEWIND)
          IF (LWINDFROMWWM .and. (LCWIN .eqv. .FALSE.)) THEN
            CALL TEST_FILE_EXIST_DIE("Missing wind file : ", WIN%FNAME)
+         END IF
+         IF (IWINDFORMAT .ne. 1) THEN
+           BEGTC = MAIN%BEGT
+           DELTC = MAIN%DELT
+           UNITC = MAIN%UNIT
+           ENDTC = MAIN%ENDT
          END IF
 
          SEWI%BEGT = BEGTC
@@ -923,6 +941,7 @@
 !
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
+         FLUSH(CHK%FHNDL)
 
          CUR%FNAME = TRIM(FILECUR)
 
@@ -949,6 +968,7 @@
 !
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
+         FLUSH(CHK%FHNDL)
 
          WAT%FNAME = FILEWATL
 
@@ -974,13 +994,14 @@
 !
          READ(INP%FHNDL, NML = ENGS)
          wwm_print_namelist(ENGS)
+         FLUSH(CHK%FHNDL)
 
 !
 !     *** NUMS section
 !
          READ(INP%FHNDL, NML = NUMS)
          wwm_print_namelist(NUMS)
-
+         FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
 !
 !     **** HOTFILE section
@@ -1003,6 +1024,8 @@
          MULTIPLEIN=0
          READ(INP%FHNDL, NML = HOTFILE)
          wwm_print_namelist(HOTFILE)
+         FLUSH(CHK%FHNDL)
+
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT
          IF (DELTC.lt.MAIN%DELT) THEN
@@ -1062,13 +1085,9 @@
       USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
 #endif
       IMPLICIT NONE
-      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
-      LOGICAL :: LFLIVE
-      REAL(rkind)    :: WDIRT, wrf_w1, wrf_w2
-      CHARACTER(LEN=20) :: TIMESTRING
+      INTEGER :: IP, ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
-      REAL(rkind) :: tmp
       REAL(rkind) :: tmp_arr(np_global)
 #endif
       CURTXY(:,:) = 0.0
@@ -1143,13 +1162,9 @@
 #endif
       IMPLICIT NONE
 
-      INTEGER :: IP, ISTAT, IT, IFILE, FORECASTHOURS
-      LOGICAL :: LFLIVE
-      REAL(rkind)    :: WDIRT, wrf_w1, wrf_w2
-      CHARACTER(LEN=20) :: TIMESTRING
+      INTEGER :: ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
-      REAL(rkind)    :: tmp
       REAL(rkind)    :: tmp_arr(np_global)
 #endif
       WATLEV    = 0.
@@ -1211,12 +1226,9 @@
          IMPLICIT NONE
 
          INTEGER :: I, IP, IE, ISTAT, ITMP, JTMP
-         REAL(rkind)    :: TMP
          REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
-         CHARACTER (LEN = 10) :: STRNGTMP
-         LOGICAL :: LFLIVE
 
-         REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3, DBLTMP
+         REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
          INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
          CHARACTER(LEN=100)              :: RHEADER
 !
@@ -1248,12 +1260,10 @@
              END IF
              CLOSE(GRD%FHNDL)
            CASE (2)
-!AR: not logical crap ...
              OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
              IF ((MNP.eq.0).or.(MNE.eq.0)) THEN
                CALL WWM_ABORT('We have MNP=0 or MNE=0 before reading grid')
              END IF
-!AR: ends here ... mathieu please fix!
              IF (IGRIDTYPE == 1) THEN ! system.dat format ... XFN
                DO I = 1, 2
                  READ(GRD%FHNDL, '(A)') RHEADER
@@ -1360,7 +1370,6 @@
          IMPLICIT NONE
 
          REAL(rkind) :: TEST
-         REAL(rkind) :: DIFFTIME
 
 !        Check timings ...
 
@@ -1380,6 +1389,13 @@
          END IF
          IF (SEBO%BMJD .GE. SEBO%EMJD) CALL WWM_ABORT('CHECK BOUNDARY TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
          
+#ifdef MPI_PARALL_GRID
+         IF (ICOMP .GE. 1) THEN
+           IF ((AMETHOD .eq. 1).or.(AMETHOD .eq. 2).or.(AMETHOD .eq. 3)) THEN
+             CALL WWM_ABORT('The AMETHOD=1,2,3 are not parallelized')
+           END IF
+         END IF
+#endif
 
 !        Check MSC,MDC for exchange
          if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')
@@ -1541,8 +1557,6 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IS, ID
-
          IF (LTEST) THEN
 
          END IF
@@ -1560,16 +1574,12 @@
          USE NETCDF
          IMPLICIT NONE
 
-        INTEGER :: ISTAT, IT, IX, IY, IFILE, IVAR, BND_NCID
+        INTEGER :: ISTAT, IT, IFILE, IVAR, BND_NCID
         INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-        INTEGER :: D_WIND_X_ID, D_WIND_Y_ID, D_PRESS_ID
-        REAL(rkind)  :: DTMP, DTMP1, DTMP2
+!        REAL(rkind)  :: DTMP, DTMP1, DTMP2
+!        character ( len = 15 ) chrdate
         REAL(rkind), ALLOCATABLE :: BND_TIME(:)
-        character ( len = 40 ) chrtmp
-        character ( len = 15 ) chrdate
-        character ( len = 40 ) netcfd_fname
-        character ( len = 20 ) dirname
-        character ( len = 100) chrerr
+        character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
 
         integer, dimension(nf90_max_var_dims) :: dimIDs
 
@@ -1619,35 +1629,16 @@
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           write(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
           ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            WRITE(STAT%FHNDL,*) 'Error while opening ', TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
           ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
-
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
           ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
-
+          CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
           ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
           write(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
         END DO
@@ -1655,46 +1646,22 @@
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
         WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
@@ -1704,18 +1671,10 @@
 ! read cooridantes from files ....
 !
         ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
         ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
@@ -1730,11 +1689,7 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(BND_NCID)
-        IF (ISTAT .NE. nf90_noerr) THEN
-          CHRERR = nf90_strerror(ISTAT)
-          WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-          CALL WWM_ABORT(wwmerr)
-        ENDIF
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1756,21 +1711,15 @@
         BND_TIME_ALL_FILES = 0.
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+
           ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
           BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
           ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
-          IF (ISTAT .NE. nf90_noerr) THEN
-            CHRERR = nf90_strerror(ISTAT)
-            WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-            CALL WWM_ABORT(wwmerr)
-          ENDIF
+          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+
           DO IT = 1, NDT_BND_FILE(IFILE)
              BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
 !             CALL CT2MJD('19000101.000000',DTMP1)
@@ -1831,15 +1780,12 @@
          INTEGER              :: HS_WW3_ID, T02_WW3_ID, DIR_WW3_ID, FP_WW3_ID, DSPR_WW3_ID
          INTEGER              :: HS_BND_NCID, T02_BND_NCID, DIR_BND_NCID, FP_BND_NCID, DSPR_BND_NCID
          INTEGER              :: ISTAT
-         INTEGER              :: numLons, numLats, numTime, iy, counter, ip, i, j
+         INTEGER              :: counter, ip, i, j
          INTEGER, ALLOCATABLE :: ITMP(:,:)
-         REAL(rkind),   ALLOCATABLE  :: TMP(:,:)
          REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
          REAL(rkind), SAVE           :: TIME, scale_factor
-
+         character (len = *), parameter :: CallFct = "READ_NETCDF_WW3"
          INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
-         CHARACTER(LEN=80)    :: CHRTMP
-         CHARACTER(LEN=100)   :: CHRERR
          CHARACTER(LEN=25)    :: CALLEDFROM
 
          ALLOCATE (ITMP(NDX_BND,NDY_BND), stat=istat)
@@ -1847,120 +1793,109 @@
 
          WRITE(DBG%FHNDL,*) IT, IFILE, 'READING GLOBAL DATA'
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,3),NF90_NOWRITE,HS_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRTMP = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -1-: ', CHRTMP, CALLEDFROM
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
          ISTAT = nf90_inq_varid(HS_BND_NCID, TRIM(NCDF_HS_NAME), HS_WW3_ID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRTMP = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -2-: ', CHRTMP, CALLEDFROM
-           CALL WWM_ABORT(wwmerr)
-         END IF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
          ISTAT = nf90_get_att(HS_BND_NCID, HS_WW3_ID, 'scale_factor', scale_factor)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRTMP = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -3-: ', CHRTMP, CALLEDFROM
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
          IF (.NOT. ALLOCATED(HS_WW3)) THEN
            ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
            HS_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRTMP = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -4-: ', CHRTMP, IT, NDX_BND, NDY_BND, CALLEDFROM
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+
          HS_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(HS_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRTMP = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR READ_NETCDF_WW3 -5-: ', CHRTMP
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,2),NF90_NOWRITE,FP_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
          ISTAT = nf90_inq_varid(FP_BND_NCID, TRIM(NCDF_FP_NAME), FP_WW3_ID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 2'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+
          ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 3'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+
          IF (.NOT. ALLOCATED(FP_WW3)) THEN
            ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
            FP_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading fp - 4'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
          FP_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(FP_BND_NCID)
+         CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,5),NF90_NOWRITE,T02_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
          ISTAT = nf90_inq_varid(T02_BND_NCID, TRIM(NCDF_F02_NAME), T02_WW3_ID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 2'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
          ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 3'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+
          IF (.NOT. ALLOCATED(T02_WW3)) THEN
            ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
            T02_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading tm02 - 4'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+
          T02_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(T02_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRERR = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,4),NF90_NOWRITE,DSPR_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+
          ISTAT = nf90_inq_varid(DSPR_BND_NCID, TRIM(NCDF_SPR_NAME), DSPR_WW3_ID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 2'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+
          ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
+
          IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
            ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
            DSPR_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading spr - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
+
          DSPR_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(DSPR_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRERR = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
 
          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,DIR_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 1'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 21, ISTAT)
+
          ISTAT = nf90_inq_varid(DIR_BND_NCID, TRIM(NCDF_DIR_NAME), DIR_WW3_ID)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 2'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 22, ISTAT)
+
          ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 3'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
+
          IF (.NOT. ALLOCATED(DIR_WW3)) THEN
            ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
            DIR_WW3 = 0.
          END IF
          ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         IF (ISTAT .NE. nf90_noerr) WRITE(DBG%FHNDL,*) 'Erorr Reading dir - 4'
+         CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
+
          DIR_WW3 = MyREAL(ITMP) * scale_factor
          ISTAT = nf90_close(DIR_BND_NCID)
-         IF (ISTAT .NE. nf90_noerr) THEN
-           CHRERR = nf90_strerror(ISTAT)
-           WRITE(wwmerr,*) 'NETCDF ERROR ', TRIM(CHRERR)
-           CALL WWM_ABORT(wwmerr)
-         ENDIF
+         CALL GENERIC_NETCDF_ERROR(CallFct, 25, ISTAT)
 
          IF (LWRITE_WW3_RESULTS) THEN
            OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')

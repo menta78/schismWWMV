@@ -4,258 +4,241 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE INIT_ARRAYS
-
-         USE DATAPOOL
-         IMPLICIT NONE
+       USE DATAPOOL
+       IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
-         INTEGER :: IE, IP
+       INTEGER :: IE, IP
 #endif
-         integer istat
+       integer istat
 
-         ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
-         DX1 = zero
-         DX2 = zero
+       ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
+       DX1 = zero
+       DX2 = zero
 
-         ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
-         DEP = zero
+       ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
+       DEP = zero
 
-         ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
-         INVSPHTRANS = zero
+       ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
+       INVSPHTRANS = zero
 
-         ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
-         INE = 0
-         IEN = zero
-         TRIA = zero
+       ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
+       INE = 0
+       IEN = zero
+       TRIA = zero
 #ifdef MPI_PARALL_GRID
-         DO IE = 1, MNE
-           INE(:,IE) = INETMP(IE,:)
-         END DO
+       DO IE = 1, MNE
+         INE(:,IE) = INETMP(IE,:)
+       END DO
 #else
-         XP  = zero
-         YP  = zero
+       XP  = zero
+       YP  = zero
 #endif
 !
 ! spectral grid - shared
 !
-         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), MSC_HF(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
-         MSC_HF = MSC
-         SPSIG = zero
-         SPDIR = zero
-         FR    = zero
-
-         ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
-         COSTH = zero
-         SINTH = zero
-         COS2TH = zero
-         SIN2TH = zero
-
-         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
-         SINCOSTH = zero
-         SIGPOW = zero
-         DS_BAND = zero
-         DS_INCR = zero
+       ALLOCATE(MSC_HF(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+       MSC_HF = MSC
 !
 ! action densities and source terms - shared
 !
-         ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
-         AC2 = zero
+       ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
+       AC2 = zero
 
-         ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-         AC1 = zero
+       ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+       AC1 = zero
 
-         IF (ICOMP .GE. 2) THEN
-           ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
-           IMATRAA = zero
-           IMATDAA = zero
-         END IF
+       IF (ICOMP .GE. 2) THEN
+         ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
+         IMATRAA = zero
+         IMATDAA = zero
+       END IF
 
-         IF (LITERSPLIT) THEN
-!           ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
-           ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
-           DAC_ADV = zero
-           DAC_THE = zero
-           DAC_SIG = zero
-           DAC_SOU = zero
-         END IF
+       IF (LITERSPLIT) THEN
+!         ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
+         ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
+         DAC_ADV = zero
+         DAC_THE = zero
+         DAC_SIG = zero
+         DAC_SOU = zero
+       END IF
 
 #ifdef SHYFEM_COUPLING
-         IF (LSHYFEM) THEN
-           ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 12')
-           SHYFZETA = ZERO
-           NLEV = 0
-           ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 13')
-           STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
-         END IF
+       IF (LSHYFEM) THEN
+         ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 12')
+         SHYFZETA = ZERO
+         NLEV = 0
+         ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 13')
+         STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
+       END IF
 #endif
 !
 ! WAM Cycle 4.5 - shared
 !
-         IF (MESIN .EQ. 2) THEN
-           ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-           TAUHFT = zero; TAUT = zero
-         ELSE IF (MESIN .EQ. 6) THEN
-           ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
-           ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-           TAUHFT = zero; TAUT = zero
-           INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
-           INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
-           IF (LPRECOMP_EXIST) THEN
-             READ(5010) DELU, DELTAUW
-             READ(5010) TAUT
-             READ(5011) DELUST, DELALP 
-             READ(5011) TAUHFT
-           ENDIF
+       IF (MESIN .EQ. 2) THEN
+         ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
+         TAUHFT = zero; TAUT = zero
+       ELSE IF (MESIN .EQ. 6) THEN
+         ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
+         ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
+         TAUHFT = zero; TAUT = zero
+         INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
+         INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+         IF (LPRECOMP_EXIST) THEN
+           READ(5010) DELU, DELTAUW
+           READ(5010) TAUT
+           READ(5011) DELUST, DELALP 
+           READ(5011) TAUHFT
          ENDIF
+       ENDIF
 
 ! Boundary conditions - shared
 !
-         ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 15')
-         IOBDP  = 1
-         IOBPD  = 0
-         IOBP   = 0
-         IOBWB  = 1
+       ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 15')
+       IOBDP  = 1
+       IOBPD  = 0
+       IOBP   = 0
+       IOBWB  = 1
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-         ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
-         WK = ZERO 
-         CG = ZERO 
-         DWKDX = ZERO
-         DCGDX = ZERO
+       ALLOCATE( WK(MNP,MSC), CG(MNP,MSC), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
+       WK = ZERO 
+       CG = ZERO 
+       DWKDX = ZERO
+       DCGDX = ZERO
 #ifdef SELFE
-!         ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
-!         ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
+!       ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
+!       ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
 #endif
 !
-         ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
-         TABK  = zero
-         TABCG = zero
+       ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
+       TABK  = zero
+       TABCG = zero
 !
 ! diffraction parameter - shared
 !
-         IF (LDIFR) THEN
-           ALLOCATE ( DIFRM(MNP), DIFRX(MNP), DIFRY(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 18')
-           DIFRM = zero
-           DIFRX = zero
-           DIFRY = zero
-         END IF
+       IF (LDIFR) THEN
+         ALLOCATE(DIFRM(MNP), DIFRX(MNP), DIFRY(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 18')
+         DIFRM = zero
+         DIFRX = zero
+         DIFRY = zero
+       END IF
 !
 ! water level, currents and depths ...
 !
-         ALLOCATE( WINDXY(MNP,2), PRESSURE(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 19')
-         WINDXY = zero
-         PRESSURE = zero
-         ALLOCATE( DVWIND(MNP,2), CURTXY(MNP,2), DVCURT(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 20')
-         DVWIND = zero
-         CURTXY = zero
-         DVCURT = zero
-         ALLOCATE( DDEP(MNP,2), DCUX(MNP,2), DCUY(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 21')
-         DDEP = zero
-         DCUX = zero
-         DCUY = zero
-         ALLOCATE( WATLEV(MNP), WATLEVOLD(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 22')
-         WATLEV = zero
-         WATLEVOLD = zero
-         ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
-         DVWALV = zero
-         WLDEP = zero
-         DEPDT = zero
+       ALLOCATE(WINDXY(MNP,2), PRESSURE(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 19')
+       WINDXY = zero
+       PRESSURE = zero
+       ALLOCATE( DVWIND(MNP,2), CURTXY(MNP,2), DVCURT(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 20')
+       DVWIND = zero
+       CURTXY = zero
+       DVCURT = zero
+       ALLOCATE( DDEP(MNP,2), DCUX(MNP,2), DCUY(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 21')
+       DDEP = zero
+       DCUX = zero
+       DCUY = zero
+       ALLOCATE( WATLEV(MNP), WATLEVOLD(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 22')
+       WATLEV = zero
+       WATLEVOLD = zero
+       ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
+       DVWALV = zero
+       WLDEP = zero
+       DEPDT = zero
 !
 !  convergence analysis - shared
 !
-         IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-           ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
-           IP_IS_STEADY = 0
-           IE_IS_STEADY = 0
-           SUMACOLD = zero
-           HSOLD  = zero
-           TM02OLD = zero
-           KHSOLD  = zero
-         END IF
+       IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
+         ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
+         IP_IS_STEADY = 0
+         IE_IS_STEADY = 0
+         SUMACOLD = zero
+         HSOLD  = zero
+         TM02OLD = zero
+         KHSOLD  = zero
+       END IF
 !
 !  output - shared
 !
-         ALLOCATE( QBLOCAL(MNP), DISSIPATION(MNP), AIRMOMENTUM(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 25')
-         QBLOCAL = zero
-         DISSIPATION = zero
-         AIRMOMENTUM = zero
+       ALLOCATE( QBLOCAL(MNP), DISSIPATION(MNP), AIRMOMENTUM(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 25')
+       QBLOCAL = zero
+       DISSIPATION = zero
+       AIRMOMENTUM = zero
 
-         ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
-         UFRIC = zero
-         ALPHA_CH = zero
+       ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
+       UFRIC = zero
+       ALPHA_CH = zero
 
-         ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
-         TAUW = zero
-         TAUTOT = zero
-         TAUWX = zero
-         TAUWY = zero
-         TAUHF = zero
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
+       TAUW = zero
+       TAUTOT = zero
+       TAUWX = zero
+       TAUWY = zero
+       TAUHF = zero
 
-         ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
-         Z0 = zero
-         CD = zero
-         USTDIR = zero
+       ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
+       Z0 = zero
+       CD = zero
+       USTDIR = zero
 
-         ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
-         RSXX = zero
-         RSXY = zero
-         RSYY = zero
+       ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), FORCEXY(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
+       RSXX = zero
+       RSXY = zero
+       RSYY = zero
+       FORCEXY = zero
 
 #ifdef SELFE
-         ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
-         SXX3D = zero
-         SXY3D = zero
-         SYY3D = zero
+       ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
+       SXX3D = zero
+       SXY3D = zero
+       SYY3D = zero
 #endif
 #ifndef SELFE
-         IF (LCPL) THEN
-           IF (LTIMOR.or.LSHYFEM) THEN
-             ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
-             SXX3D = zero
-             SXY3D = zero
-             SYY3D = zero
-           END IF
+       IF (LCPL) THEN
+         IF (LTIMOR.or.LSHYFEM) THEN
+           ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
+           SXX3D = zero
+           SXY3D = zero
+           SYY3D = zero
          END IF
+       END IF
 #endif
-         ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
-         HMAX = zero
-         ISHALLOW = zero
-      END SUBROUTINE
+       ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
+       HMAX = zero
+       ISHALLOW = zero
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -355,6 +338,7 @@
          USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
+         USE WAVE_SETUP
 #ifdef PETSC
          USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
@@ -382,17 +366,17 @@
          CALL INIT_FILE_HANDLES
          CALL READ_WWMINPUT
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifdef VDISLIN
          CALL INIT_DISLIN()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #endif
 
          CALL INIT_ARRAYS
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifdef MPI_PARALL_GRID 
          DEP  = DEP8
@@ -407,17 +391,17 @@
 #endif
          CALL CHECK_LOGICS
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
 #ifndef MPI_PARALL_GRID
          CALL READ_SPATIAL_GRID
          WLDEP = DEP
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 #endif
          CALL SPATIAL_GRID
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          IF (LADVTEST) THEN
            ALLOCATE(UTEST(MNP), stat=istat)
@@ -441,10 +425,11 @@
 #endif
          CALL SET_IOBPD_BY_DEP
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET DEPTH POINTER'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          IF (DIMMODE .EQ. 2) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS STARTED'
+           FLUSH(STAT%FHNDL)
            CALL INIT_FLUCT_ARRAYS
            CALL INIT_FLUCT
 
@@ -459,15 +444,19 @@
 #endif
            END IF
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF
-         CLOSE(INP%FHNDL)
-         CLOSE(CHK%FHNDL)
+
+         IF (LZETA_SETUP) THEN
+           CALL INIT_WAVE_SETUP
+         END IF
+
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INIT_SPECTRAL_GRID
  
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
+         FLUSH(STAT%FHNDL)
 #if defined SELFE 
          DMIN = DMIN_SELFE
          CALL SET_IOBP_SELFE
@@ -475,11 +464,12 @@
          CALL SET_IOBP_NEXTGENERATION
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
+         FLUSH(STAT%FHNDL)
          CALL SET_IOBPD
 
 #ifndef PGMCL_COUPLING
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          IF (LWINDFROMWWM) THEN
            CALL INIT_WIND_INPUT
          ENd IF
@@ -489,7 +479,7 @@
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INITIATE_WAVE_PARAMETER
          CALL SETSHALLOW
          CALL SET_HMAX
@@ -498,7 +488,7 @@
 
          IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
 #ifdef ST41
            CALL PREPARE_ARDHUIN_OLD
 #elif ST42
@@ -506,38 +496,43 @@
 #endif
          ELSE IF (MESIN .EQ. 2 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
+           FLUSH(STAT%FHNDL)
            CALL PREPARE_SOURCE
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          ELSE IF (MESIN .EQ. 6 .AND. .NOT. LPRECOMP_EXIST) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
            CALL PREPARE_SOURCE_ECMWF 
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
-         CALL FLUSH(STAT%FHNDL)
-         CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
+         FLUSH(STAT%FHNDL)
+         CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL INITIAL_CONDITION(IFILE,IT)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
          CALL SET_WAVE_BOUNDARY
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Writing Initial Condition to Output and initialize Station Output'
-         CALL FLUSH(STAT%FHNDL)
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
+         FLUSH(STAT%FHNDL)
          CALL INIT_STATION_OUTPUT
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
+         FLUSH(STAT%FHNDL)
          CALL WWM_OUTPUT(ZERO,.TRUE.)
+
          IF (LWXFN) THEN
            CALL WRINPGRD_XFN
          ELSE IF(LWSHP) THEN
            CALL WRINPGRD_SHP
          END IF
+
 #if !defined SELFE && !defined PGMCL_COUPLING
          IF (LCPL) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
            IF (LTIMOR) THEN
              CALL INIT_PIPES_TIMOR()
 #ifdef SHYFEM_COUPLING
@@ -564,19 +559,20 @@
 
 #if defined SELFE
          IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
-           WRITE(*,*) 'MSC_SELFE', MSC_SELFE
-           WRITE(*,*) 'MSC', MSC
-           WRITE(*,*) 'MDC_SELFE', MDC_SELFE
-           WRITE(*,*) 'MDC', MDC
+           WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
+           WRITE(DBG%FHNDL,*) 'MSC', MSC
+           WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
+           WRITE(DBG%FHNDL,*) 'MDC', MDC
+           FLUSH(DBG%FHNDL)
            CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
          END IF
 #endif
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          AC1 = AC2
-
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -586,6 +582,7 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #endif
+         USE WAVE_SETUP
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
@@ -608,6 +605,9 @@
              CALL PETSC_FINALIZE
 #endif
            END IF
+         END IF
+         IF (LZETA_SETUP) THEN
+           CALL FINALIZE_WAVE_SETUP
          END IF
          CALL DEALLOC_SPECTRAL_GRID
          CALL CLOSE_IOBP
@@ -721,6 +721,7 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE DEALLOC_WILD_ARRAY
+!AR: what is this kind of shit ?
        USE DATAPOOL
        implicit none
        DEALLOCATE(nwild_loc)
@@ -818,15 +819,22 @@
          INTEGER IQGRID, INODE, IERR
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
+         FLUSH(STAT%FHNDL)
          CALL GRADDEP
          WRITE(STAT%FHNDL,*) 'GRADDEP'
+         FLUSH(STAT%FHNDL)
          IF (LSTCU .OR. LSECU) CALL GRADCURT
          WRITE(STAT%FHNDL,*) 'GRADCURT'
+         FLUSH(STAT%FHNDL)
          CALL BASIC_PARAMETER
          WRITE(STAT%FHNDL,*) 'BASIC'
+         FLUSH(STAT%FHNDL)
          CALL MAKE_WAVE_TABLE
          CALL WAVE_K_C_CG
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
+         FLUSH(STAT%FHNDL)
+
+
          IF (MESNL .LT. 4) THEN
            CALL PARAMETER4SNL
          ELSE IF (MESNL .EQ. 5) THEN
@@ -835,15 +843,10 @@
            IQGRID = 3
            INODE  = 1
            CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
-           IF (IERR .GT. 0) THEN
-             WRITE (STAT%FHNDL,*) 'IERR XNL_INIT', IERR
-             STOP
-           END IF
+           IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
          ENDIF
-         WRITE(STAT%FHNDL,*) 'SNL4'
-         IF (MESTR .GT. 0) CALL GRAD_CG_K 
-         WRITE(STAT%FHNDL,*) 'SNL3'
+
+         IF (MESTR .GT. 5) CALL GRAD_CG_K 
 
          RETURN
       END SUBROUTINE
@@ -953,9 +956,10 @@
 #endif
          USE DATAPOOL
          IMPLICIT NONE
+#ifdef MPI_PARALL_GRID
          CHARACTER (LEN = 30) :: FDB
          INTEGER              :: LFDB
-
+#endif
 #ifdef SELFE
             INP%FNAME  = 'wwminput.nml'
 #endif
@@ -1074,201 +1078,143 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_STATION_OUTPUT()
-         USE DATAPOOL
+      USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-         USE elfe_glbl, only : iplg, ielg
+      USE elfe_msgp
+      USE elfe_glbl, only : iplg, ielg
 #endif
-         IMPLICIT NONE
+      IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
-         include 'mpif.h'
+      include 'mpif.h'
 #endif
-         INTEGER           :: I, NI(3), IP, IS
-         integer istat
-         REAL(rkind)              :: XYTMP(2,MNP)
+      INTEGER           :: I, NI(3), IP, IS
+      integer istat
+      REAL(rkind)              :: XYTMP(2,MNP)
 #ifdef MPI_PARALL_GRID
-         integer :: iProc
-         integer, allocatable :: rbuf_int(:)
+      integer :: iProc
+      integer, allocatable :: rbuf_int(:)
 #endif
 !
 !    set the site output
 !
-         IF (LOUTS) THEN
-           ALLOCATE (ACLOC_STATIONS(IOUTS,MSC,MDC), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 38')
+      IF (LOUTS) THEN
+        ALLOCATE (ACLOC_STATIONS(IOUTS,MSC,MDC), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 38')
 
-           ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 39')
+        ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 39')
 
-           ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 40')
-           ACLOC_STATIONS      = 0.
-           DEPLOC_STATIONS     = 0.
-           WKLOC_STATIONS      = 0.
-           CURTXYLOC_STATIONS  = 0.
-           USTARLOC_STATIONS   = 0.
-           CDLOC_STATIONS      = 0.
-           Z0LOC_STATIONS      = 0.
-           WINDXLOC_STATIONS   = 0.
-           WINDYLOC_STATIONS   = 0.
-           WATLEVLOC_STATIONS  = 0.
-         END IF
+        ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 40')
+        ACLOC_STATIONS      = 0.
+        DEPLOC_STATIONS     = 0.
+        WKLOC_STATIONS      = 0.
+        CURTXYLOC_STATIONS  = 0.
+        USTARLOC_STATIONS   = 0.
+        CDLOC_STATIONS      = 0.
+        Z0LOC_STATIONS      = 0.
+        WINDXLOC_STATIONS   = 0.
+        WINDYLOC_STATIONS   = 0.
+        WATLEVLOC_STATIONS  = 0.
+      END IF
+      IF (LOUTS .and. (DIMMODE .EQ. 2)) THEN
 #ifdef MPI_PARALL_GRID
-         IF (LOUTS) THEN
-           allocate(rbuf_int(1), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
-           XYTMP(1,:) = XP
-           XYTMP(2,:) = YP
+        XYTMP(1,:) = XP
+        XYTMP(2,:) = YP
+        WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
+        DO I = 1, IOUTS
+          CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
+          IF (STATION(I)%ELEMENT .GT. 0) THEN
+            STATION(I)%IFOUND  = 1
+            NI                 = INE(:,STATION(I)%ELEMENT)
+            STATION(I)%XELE(:) = XP(NI)
+            STATION(I)%YELE(:) = YP(NI)
+            CALL INTELEMENT_COEF(XP(NI),YP(NI), STATION(I)%XCOORD,STATION(I)%YCOORD, STATION(I)%WI)
+            WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
+            FLUSH(DBG%FHNDL)
+          ELSE
+            STATION(I)%IFOUND  = 0
+            NI                 = 0
+            STATION(I)%XELE(:) = 0.
+            STATION(I)%YELE(:) = 0.
+            WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', STATION(I)%ELEMENT, STATION(I)%IFOUND
+            FLUSH(DBG%FHNDL)
+          END IF
+        END DO
+        allocate(rbuf_int(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
+        DO I = 1, IOUTS
+          CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1, itype,MPI_SUM,0,COMM,IERR)
+          IF (myrank == 0) THEN
+            WRITE(DBG%FHNDL,'(A30,3I10)') 'SUM OF THE FOUND STATIONS MYRANK', MYRANK, I, STATION(I)%ISUM
+            FLUSH(DBG%FHNDL)
+            rbuf_int(1)=STATION(I)%ISUM
+            DO iProc=2,nproc
+              CALL MPI_SEND(rbuf_int,1,itype, iProc-1, 144, COMM, ierr)
+            ENDDO
+          ELSE
+            CALL MPI_RECV(rbuf_int,1,itype, 0, 144, COMM, istatus, ierr)
+            STATION(I)%ISUM=rbuf_int(1)
+          END IF
+        END DO
+        deallocate(rbuf_int)
+        IF (myrank == 0) THEN
+          DO I = 1, IOUTS
+            IF (STATION(I)%ISUM .EQ. 0) THEN
+              WRITE(DBG%FHNDL,'(A20,I10,A10,2F15.8)') 'STATION NOT FOUND', I, STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD
+            ELSE
+              WRITE(DBG%FHNDL,'(A25,I10,A10,2F15.8)') 'STATION FOUND    ', I, STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD
+            END IF
+          END DO
+        END IF
 
-           IF (DIMMODE .EQ. 2) THEN
-
-              WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
-              DO I = 1, IOUTS ! Loop over stations ...
-! Find element of output locations ...
-                CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD,    &
-     &      STATION(I)%YCOORD,STATION(I)%ELEMENT )
-                IF (STATION(I)%ELEMENT .GT. 0) THEN
-                  STATION(I)%IFOUND  = 1
-                  NI                 = INE(:,STATION(I)%ELEMENT)
-                  STATION(I)%XELE(:) = XP(NI)
-                  STATION(I)%YELE(:) = YP(NI)
-                  CALL INTELEMENT_COEF(XP(NI),YP(NI),                   &
-     &                    STATION(I)%XCOORD,STATION(I)%YCOORD,          &
-     &                    STATION(I)%WI)
-                  WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)')         &
-     &   'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =',               &
-     &    IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
-                  CALL FLUSH(DBG%FHNDL)
-                ELSE
-                  STATION(I)%IFOUND  = 0
-                  NI                 = 0
-                  STATION(I)%XELE(:) = 0.
-                  STATION(I)%YELE(:) = 0.
-                  WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)')         &
-     &   'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =',               &
-     &    STATION(I)%ELEMENT, STATION(I)%IFOUND
-                  CALL FLUSH(DBG%FHNDL)
-                END IF
-              END DO
-
-              DO I = 1, IOUTS
-                CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1,    &
-     &    itype,MPI_SUM,0,COMM,IERR)
-                IF (myrank == 0) THEN
-                  WRITE(DBG%FHNDL,'(A30,3I10)')                         &
-     &   'SUM OF THE FOUND STATIONS MYRANK', MYRANK, I, STATION(I)%ISUM
-                  CALL FLUSH(DBG%FHNDL)
-                  rbuf_int(1)=STATION(I)%ISUM
-                  DO iProc=2,nproc
-                    CALL MPI_SEND(rbuf_int,1,itype, iProc-1,      &
-     &                            144, COMM, ierr)
-                  ENDDO
-                ELSE
-                  CALL MPI_RECV(rbuf_int,3,itype, 0, 144,         &
-     &                          COMM, istatus, ierr)
-                  STATION(I)%ISUM=rbuf_int(1)
-                END IF
-              END DO
-
-              IF (myrank == 0) THEN
-                DO I = 1, IOUTS ! Loop over stations ...
-                  IF (STATION(I)%ISUM .EQ. 0) THEN
-                    WRITE(DBG%FHNDL,'(A20,I10,A10,2F15.8)')             &
-     &  'STATION NOT FOUND', I, STATION(I)%NAME, STATION(I)%XCOORD,     &
-     &   STATION(I)%YCOORD
-                  ELSE
-                    WRITE(DBG%FHNDL,'(A25,I10,A10,2F15.8)')             &
-     &   'STATION FOUND    ', I, STATION(I)%NAME,                       &
-     &    STATION(I)%XCOORD, STATION(I)%YCOORD
-                  END IF
-                END DO
-              END IF
-
-              STATION(:)%ISMAX = MSC
-              IF (LSIGMAX) THEN
-                DO IP = 1, IOUTS
-                  DO IS = 1, MSC
-                    IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
-                      STATION(IP)%ISMAX = IS - 1
-                      EXIT
-                    END IF
-                  END DO
-                  WRITE(DBG%FHNDL,*) 'CUT-OFF FREQ. OF STATION =',      &
-     &  IP, STATION(IP)%CUTOFF, 'RAD - IS =', STATION(IP)%ISMAX
-                END DO
-              END IF
-
-           END IF
-
-           ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
-
-           ALLOCATE (ACLOC_SUM(IOUTS,MSC,MDC), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 43')
-
-           ALLOCATE (Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 44')
-
-           ACLOC_SUM           = 0.
-           WKLOC_SUM           = 0.
-           DEPLOC_SUM          = 0.
-           CURTXYLOC_SUM       = 0.
-           USTAR_SUM           = 0.
-           CD_SUM              = 0.
-           Z0_SUM              = 0.
-           WINDX_SUM           = 0.
-           WINDY_SUM           = 0.
-           WATLEVLOC_SUM = 0.
-
-           deallocate(rbuf_int)
-         END IF
+        ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(IOUTS,MSC,MDC), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
+        ACLOC_SUM           = 0.
+        WKLOC_SUM           = 0.
+        DEPLOC_SUM          = 0.
+        CURTXYLOC_SUM       = 0.
+        USTAR_SUM           = 0.
+        CD_SUM              = 0.
+        Z0_SUM              = 0.
+        WINDX_SUM           = 0.
+        WINDY_SUM           = 0.
+        WATLEVLOC_SUM = 0.
 #else
-
-         !WRITE(*,*) SIZE(INE(1,:)), SIZE(INE(:,1))
-         !WRITE(*,*) MAXVAL(INE), MINVAL(INE)
-
-         IF (LOUTS) THEN
-           XYTMP(1,:) = XP
-           XYTMP(2,:) = YP
-           IF (DIMMODE .EQ. 2) THEN
-              WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
-              DO I = 1, IOUTS ! Loop over stations ...
- ! Find element of output locations ...
-                CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD,    &
-     &  STATION(I)%YCOORD,STATION(I)%ELEMENT )
-                IF (STATION(I)%ELEMENT == 0) THEN
-                  STATION(I)%IFOUND = 0
-                  WRITE(STAT%FHNDL,*) STATION(I)%NAME,                  &
-     &  STATION(I)%XCOORD, STATION(I)%YCOORD, ' is out of mesh !'
-                ELSE
-                  STATION(I)%IFOUND = 1
-                  NI = INE(:,STATION(I)%ELEMENT)
-                  STATION(I)%XELE(:) = XP(NI)
-                  STATION(I)%YELE(:) = YP(NI)
-                  CALL INTELEMENT_COEF(XP(NI),YP(NI),                   &
-     &                    STATION(I)%XCOORD,STATION(I)%YCOORD,          &
-     &                    STATION(I)%WI)
-                  WRITE(STAT%FHNDL,*)'Site    ',STATION(I)%NAME,        &
-     & STATION(I)%XCOORD,STATION(I)%YCOORD,STATION(I)%IFOUND
-                END IF
-              END DO
-           END IF
-           STATION(:)%ISMAX = MSC
-           IF (LSIGMAX) THEN
-             DO IP = 1, IOUTS
-               DO IS = 1, MSC
-                 IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
-                   STATION(IP)%ISMAX = IS - 1
-                   EXIT
-                 END IF
-               END DO
-             END DO
-           END IF
-         END IF
-!
+        XYTMP(1,:) = XP
+        XYTMP(2,:) = YP
+        IF (DIMMODE .EQ. 2) THEN
+          WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
+          DO I = 1, IOUTS
+            CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
+            IF (STATION(I)%ELEMENT == 0) THEN
+              STATION(I)%IFOUND = 0
+              WRITE(STAT%FHNDL,*) STATION(I)%NAME, STATION(I)%XCOORD, STATION(I)%YCOORD, ' is out of mesh !'
+            ELSE
+              STATION(I)%IFOUND = 1
+              NI = INE(:,STATION(I)%ELEMENT)
+              STATION(I)%XELE(:) = XP(NI)
+              STATION(I)%YELE(:) = YP(NI)
+              CALL INTELEMENT_COEF(XP(NI),YP(NI), STATION(I)%XCOORD,STATION(I)%YCOORD, STATION(I)%WI)
+              WRITE(STAT%FHNDL,*)'Site    ',STATION(I)%NAME, STATION(I)%XCOORD,STATION(I)%YCOORD,STATION(I)%IFOUND
+            END IF
+          END DO
+        END IF
 #endif
-
-         RETURN
+        STATION(:)%ISMAX = MSC
+        IF (LSIGMAX) THEN
+          DO IP = 1, IOUTS
+            DO IS = 1, MSC
+              IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
+                STATION(IP)%ISMAX = IS - 1
+                EXIT
+              END IF
+            END DO
+            WRITE(DBG%FHNDL,*) 'CUT-OFF FREQ. OF STATION =', IP, STATION(IP)%CUTOFF, 'RAD - IS =', STATION(IP)%ISMAX
+          END DO
+        END IF
+      END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A)')'FINISHED WITH INIT_STATION_OUTPUT'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1901,11 +1847,11 @@
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
-        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, HSWW3, M0_WWM, M1_WWM, M2_WWM
+        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID
 
-        REAL(rkind) :: JACOBIAN(MSC), AM, SM, OUTPAR(OUTVARS)
+        REAL(rkind) :: JACOBIAN(MSC), AM, SM
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
 

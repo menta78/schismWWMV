@@ -85,7 +85,6 @@ ifdef USE_PETSC
   -include ${PETSC_DIR}/conf/variables/
 endif
 
-
 OBJS = elfe_glbl.o elfe_msgp.o selfe_driver.o
 
 ifdef USE_DEBUG
@@ -150,11 +149,10 @@ ifdef USE_WWM
   OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
-       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
+       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o \
-       wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
-
+       wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o  wwm_main.o
 endif
 
 ifdef USE_PETSC
@@ -171,8 +169,8 @@ ifdef USE_TIMOR
 endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
-        selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
-        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o
+		io_subs.o misc_subs.o transport.o sflux_9c.o lap.o \
+		selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
@@ -203,7 +201,6 @@ endif
 .PHONY: pelfe
 
 pelfe: $(EXEC) o/$(config)/.dummy
-
 
 
 .PHONY: all
@@ -348,7 +345,7 @@ make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
 
 o/$(config)/.dummy:
 	@echo $(make_defs_local_exists)
-        ifeq ( $(strip $(make_defs_local_exists)), )
+        ifeq ( $(strip $(make_defs_local_exists)),)
              $(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
              If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
         endif

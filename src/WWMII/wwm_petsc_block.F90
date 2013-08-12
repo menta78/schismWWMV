@@ -174,7 +174,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PETSC_INIT_BLOCK
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, RKIND, DBG
+        USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG
         ! MSC      - # frequency
         ! MDC      - # directions
         use datapool, only: MSC, MDC
@@ -312,7 +312,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, MSC, MDC, RKIND, DBG
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -345,8 +345,8 @@
         ! calc max number of adj nodes per node
         maxNumConnNode = 0
         do IP = 1, MNP
-          if(IA(IP+1) - IA(IP)-1 > maxNumConnNode) then
-            maxNumConnNode = IA(IP+1) - IA(IP)-1
+          if(IA_P(IP+1) - IA_P(IP)-1 > maxNumConnNode) then
+            maxNumConnNode = IA_P(IP+1) - IA_P(IP)-1
           end if
         end do
 
@@ -360,8 +360,8 @@
         o_nnz_new = 0
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
-          do i = 1, IA(IP+1) - IA(IP)
-              if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+          do i = 1, IA_P(IP+1) - IA_P(IP)
+              if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -422,23 +422,23 @@
               o_toSort(:)%id = HUGE(0)
               o_nToSort = 0
               ! over all nodes in this row
-              do i = 1, IA(IP+1) - IA(IP)
+              do i = 1, IA_P(IP+1) - IA_P(IP)
                 ! found a ghost node, treat them special
-                if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+                if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
                   o_ntoSort = o_ntoSort + 1
                   ! store the old position in ASPAR
-                  o_toSort(o_nToSort)%userData = IA(IP)+i
+                  o_toSort(o_nToSort)%userData = IA_P(IP)+i
                   !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
                   o_toSort(o_nToSort)%id =                              &
-     &  toRowIndex( AGO2PGO(iplg(JA( IA(IP)+i )+1)-1)+1, ISS, IDD)
+     &  toRowIndex( AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)+1, ISS, IDD)
                 ! not a ghost node
                 else
                   nToSort = nToSort + 1
                   ! petsc local node number to sort for
                   toSort(nToSort)%id =                                  &
-     &  toRowIndex( ALO2PLO(JA( IA(IP)+i ))+1, ISS, IDD )
+     &  toRowIndex( ALO2PLO(JA_P( IA_P(IP)+i ))+1, ISS, IDD )
                   ! store the old col for row IP
-                  toSort(nToSort)%userData = IA(IP)+i
+                  toSort(nToSort)%userData = IA_P(IP)+i
                 end if
               end do ! cols
 
@@ -481,7 +481,7 @@
 !**********************************************************************
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
-        use datapool, only: NNZ, MNE, INE, MNP, IA, JA, RKIND, DBG
+        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG
         use elfe_glbl, only: iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -511,8 +511,8 @@
         ! calc max number of adj nodes per node
         maxNumConnNode = 0
         do IP = 1, MNP
-          if(IA(IP+1) - IA(IP)-1 > maxNumConnNode) then
-            maxNumConnNode = IA(IP+1) - IA(IP)-1
+          if(IA_P(IP+1) - IA_P(IP)-1 > maxNumConnNode) then
+            maxNumConnNode = IA_P(IP+1) - IA_P(IP)-1
           end if
         end do
 
@@ -523,8 +523,8 @@
         o_nnz_new = 0
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
-          do i = 1, IA(IP+1) - IA(IP)
-              if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+          do i = 1, IA_P(IP+1) - IA_P(IP)
+              if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -583,25 +583,25 @@
           o_nToSort = 0
 
           ! over all nodes in this row
-          do i = 1, IA(IP+1) - IA(IP)
+          do i = 1, IA_P(IP+1) - IA_P(IP)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA( IA(IP)+i )) .eq. -999) then
+            if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
-              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA( IA(IP)+i )+1)-1)
+              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)
               ! maybe because ALO2PLO has wrong values for offsubmatrix (ghost) nodes? so sorting is not possible
-!               o_toSort(o_nToSort).id = ALO2PLO(JA( IA(IP)+i ))
+!               o_toSort(o_nToSort).id = ALO2PLO(JA_P( IA_P(IP)+i ))
 
               ! store the old position in ASPAR
-              o_toSort(o_nToSort)%userData = IA(IP)+i
+              o_toSort(o_nToSort)%userData = IA_P(IP)+i
 
             ! not a ghost node
             else
               nToSort = nToSort + 1
               ! petsc local node number to sort for
-              toSort(nToSort)%id = ALO2PLO(JA( IA(IP)+i ))
+              toSort(nToSort)%id = ALO2PLO(JA_P( IA_P(IP)+i ))
               ! store the old position in ASPAR
-              toSort(nToSort)%userData = IA(IP)+i
+              toSort(nToSort)%userData = IA_P(IP)+i
 
             end if
           end do
@@ -834,7 +834,7 @@
         use datapool, only : IMATDAA, IMATRAA
         use datapool, only : IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only : IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
-        use datapool, only : NP_RES, IA, JA, NNZ, MNE, AC2, WBAC
+        use datapool, only : NP_RES, NNZ, MNE, AC2, WBAC
         use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
         use elfe_glbl, only: rkind
         ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
@@ -1243,7 +1243,7 @@
          real(kind=8), INTENT(OUT)  :: C2(2,MAXMNECON,MDC)
          real(kind=8), INTENT(OUT)  :: C3(2,MAXMNECON,MDC)
 
-         INTEGER     :: IP, i, IE, IP1, IP2, IP3
+         INTEGER     :: i, IE, IP1, IP2, IP3
 
          real(kind=8)      :: DIFRU1(MDC), USOC1(MDC), WVC1
          real(kind=8)      :: DIFRU2(MDC), USOC2(MDC), WVC2
@@ -1719,13 +1719,13 @@
         CHKERRQ(petscErr)
 
         ! check diagonal entries (in petsc global numbering) which are smaller then ...
-        call VecGetOwnershipRange(diagonal, start, PETSC_NULL, petscErr)
+        call VecGetOwnershipRange(diagonal, start, PETSC_NULL_REAL, petscErr)
         CHKERRQ(petscErr)
         call VecGetLocalSize(diagonal, localSize, petscErr)
         CHKERRQ(petscErr)
         ! use the solver relative convergence tolerance as criterion when an entrie is zero
-        call KSPGetTolerances(solver, epsilon, PETSC_NULL, PETSC_NULL,  &
-     &  PETSC_NULL, petscErr);CHKERRQ(petscErr)
+        call KSPGetTolerances(solver, epsilon, PETSC_NULL_REAL, PETSC_NULL_REAL,  &
+     &  PETSC_NULL_REAL, petscErr);CHKERRQ(petscErr)
 
         call VecGetArrayF90(diagonal, array, petscErr)
         CHKERRQ(petscErr)

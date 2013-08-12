@@ -1,3 +1,4 @@
+#include "wwm_functions.h"
 !!
 !!    -----------------------------------------------------------------#
 !!                                                                     !
@@ -2416,7 +2417,7 @@
               th2  = atan2(wk2y(ipt),wk2x(ipt))       !* k2 direction
               if ( th2 .lt. 0. ) th2 = th2 + twopi
               wn2d = wn2*dep                      !* k2*depth
-              tnh2 = tanh(wn2d)                   !* tanh(k2*depth)
+              tnh2 = TANH(wn2d)                   !* tanh(k2*depth)
               om2  = sqrt(g*wn2*tnh2)             !* omega2 (rad)
               cg2  = 0.5*(om2/wn2)*(1.+wn2d*(1.-tnh2**2)/tnh2) !* group velocity
               f2   = om2/twopi                    !* f2 (Hz)
@@ -2428,7 +2429,7 @@
               th4  = atan2(wk4y(ipt),wk4x(ipt))
               if ( th4 .lt. 0. ) th4 = th4 + twopi
               wn4d = wn4*dep
-              tnh4 = tanh(wn4d)
+              tnh4 = TANH(wn4d)
               om4  = sqrt(g*wn4*tnh4)
               cg4  = 0.5*(om4/wn4)*(1.+wn4d*(1.-tnh4**2)/tnh4)
               f4   = om4/twopi
@@ -2737,7 +2738,7 @@
       np2p1 = npts/2 + 1                       !* npts=30 ==> np2p1=16
 !!
       wk1   = sqrt(wk1x**2+wk1y**2)            !* k1=wk1x since wk1y=0.0
-      f1    = sqrt(g*wk1*tanh(wk1*dep))/twopi  !* f1=f(k1,dep)
+      f1    = sqrt(g*wk1*TANH(wk1*dep))/twopi  !* f1=f(k1,dep)
 !!
       fx    = 4. * f1                          !* fx = 4*f1
       wkx   = wkfnc(fx,dep)                    !* kx = k(4*f1,dep)
@@ -3051,7 +3052,7 @@
 !!    ----------------------------------------------------------------72
 !sq
       thp  = atan2(py,px)
-      q    = sqrt(w3*tanh(w3)) - sqrt(w1*tanh(w1))
+      q    = sqrt(w3*TANH(w3)) - sqrt(w1*TANH(w1))
       qrtp = q / sqrt(p)
       qsqp = qrtp**2
 !!
@@ -3108,8 +3109,8 @@
       ierr_gr = 0
 !!
       rold1 = 0.5
-      tp    = tanh(rold1 * p)
-      tm    = tanh((1.-rold1) * p)
+      tp    = TANH(rold1 * p)
+      tm    = TANH((1.-rold1) * p)
       t     = tp + tm
       t1    = qsqp * (tp-tm)
       t2    = t  * tm
@@ -3119,8 +3120,8 @@
 !!
       do 10 n=1,4
         rold2 = rold1 + 0.1
-        tp    = tanh(rold2 * p)
-        tm    = tanh((1.-rold2) * p)
+        tp    = TANH(rold2 * p)
+        tm    = TANH((1.-rold2) * p)
         t     = tp + tm
         t1    = qsqp * (tp-tm)
         t2    = t  * tm
@@ -3140,8 +3141,8 @@
 !!
 !!    iterative replacement search for rmin
       do 20 n=1,50
-        tp   = tanh(rold * p)
-        tm   = tanh((1.-rold) * p)
+        tp   = TANH(rold * p)
+        tm   = TANH((1.-rold) * p)
         t    = tp + tm
         t1   = qsqp * (tp-tm)
         t2   = t  * tm
@@ -3216,8 +3217,8 @@
 !!
       do 30 n=1,200
         rold = rold + 10.
-        tp   = tanh(rold * p)
-        tm   = tanh((rold-1.) * p)
+        tp   = TANH(rold * p)
+        tm   = TANH((rold-1.) * p)
         t    = tp - tm
         t1   = tm + qsqp
         t2   = 4. * tp * qsqp
@@ -3239,8 +3240,8 @@
         dr = dr/10.
         do 50 n=1,10
           rold = rold + dr
-          tp   = tanh(rold * p)
-          tm   = tanh((rold-1.) * p)
+          tp   = TANH(rold * p)
+          tm   = TANH((rold-1.) * p)
           t    = tp - tm
           t1   = tm + qsqp
           t2   = 4. * tp * qsqp
@@ -3322,11 +3323,11 @@
         cdthold = dble(rcenter-rradius*cphi) / dbz
         dbt3    = (dbz**2) + 1.d0
         dbt4    = dbt3 / (2.d0*dbz)
-        dbt5    = ((dsqrt(dbz*dtanh(dbz*dbp))-dbqrtp)**4)/(2.d0*dbz)
+        dbt5    = ((dsqrt(dbz*TANH(dbz*dbp))-dbqrtp)**4)/(2.d0*dbz)
         dbt6    = dbp * dsqrt(dbt3-2.d0*dbz*cdthold)
 !!
         if ( dbt6 .gt. 0.55d0 ) then
-          wate1 = dtanh(dbt6)
+          wate1 = TANH(dbt6)
           wate2 = 1.d0 - wate1
         else
           wate1 = 0.5d0
@@ -3334,7 +3335,7 @@
         end if
 !!
         do 70 n=1,25
-          cdthnew = dbt4 - dbt5 / ((dtanh(dbt6))**2)
+          cdthnew = dbt4 - dbt5 / ((TANH(dbt6))**2)
           if ( dabs(cdthnew-cdthold) .lt. 0.0000001d0 ) go to 71
           cdthold = wate1 * cdthnew + wate2 * cdthold
           dbt6    = dbp * dsqrt(dbt3-2.d0*dbz*cdthold)
@@ -3545,9 +3546,9 @@
         k2  = dsqrt(k2x**2 + k2y**2)
         k3  = dsqrt(k3x**2 + k3y**2)
 !!
-        om1 = dsqrt(k1*dtanh(k1))         !* norm. omega (by sqrt(h/g))
-        om2 = dsqrt(k2*dtanh(k2))
-        om3 = dsqrt(k3*dtanh(k3))
+        om1 = dsqrt(k1*TANH(k1))         !* norm. omega (by sqrt(h/g))
+        om2 = dsqrt(k2*TANH(k2))
+        om3 = dsqrt(k3*TANH(k3))
 !!
         om1sq = om1**2
         om2sq = om2**2
@@ -3568,7 +3569,7 @@
         k23x   = k2x + k3x                !* (vector k2  +  vector k3)_x
         k23y   = k2y + k3y                !* (vector k2  +  vector k3)_y
         k23    = dsqrt(k23x**2+k23y**2)   !* |vector k2  +  vector k3|
-        omsq23 = k23 * dtanh(k23)         !* norm sq frq of v.k2+v.k3
+        omsq23 = k23 * TANH(k23)         !* norm sq frq of v.k2+v.k3
         dot123 = k1x*k23x + k1y*k23y      !* v.k1 dot (v.k2 + v.k3)
 !!      ----------------------------------------------------------------
 !!

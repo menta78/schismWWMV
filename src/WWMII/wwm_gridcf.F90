@@ -18,7 +18,7 @@
          REAL(rkind)            :: TMPTLMAX 
          REAL(rkind)            :: DBLTMP, DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
          REAL(rkind)            :: PROV1, PROV2, PROV3
-         INTEGER           :: I1, I2, I3, TMPINE
+         INTEGER           :: I1, I2, I3, TMPINE, NI(3)
          INTEGER           :: IP, IE, IEWRONG, IEWRONGSUM
          LOGICAL           :: LWRONG
 
@@ -74,6 +74,7 @@
                    I1 = INE(1,IE)
                    I2 = INE(2,IE)
                    I3 = INE(3,IE)
+                   NI = INE(:,IE)
                    IF (IGRIDTYPE.ne.2) THEN
                      DXP1=XP(I2) - XP(I1)
                      DYP1=YP(I2) - YP(I1)
@@ -90,6 +91,7 @@
                      IEN(6,IE) =   DXP1
                      DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
                      TRIA(IE) = DBLTMP
+                     WRITE(22225,'(4I10,8F15.8)') IE, NI, IEN(:,IE), TRIA(IE)
                    END IF
 
 
@@ -243,6 +245,26 @@
          INTEGER :: MSC1, MSC2
          REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
          REAL(rkind)    :: TMP, CO1
+
+         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+         SPSIG = zero
+         SPDIR = zero
+         FR    = zero
+
+         ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
+         COSTH = zero
+         SINTH = zero
+         COS2TH = zero
+         SIN2TH = zero
+
+         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
+         SINCOSTH = zero
+         SIGPOW = zero
+         DS_BAND = zero
+         DS_INCR = zero
 
          SGLOW  = PI2*FRLOW
          SGHIGH = PI2*FRHIGH

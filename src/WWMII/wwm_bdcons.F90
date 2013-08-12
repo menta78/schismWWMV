@@ -12,7 +12,10 @@
         INTEGER :: I
         REAL(rkind) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
         REAL(rkind) :: x1, y1, x2, y2
-        INTEGER :: I1, I2, I3, IE, IP, ID, iwild(mnp)
+        INTEGER :: I1, I2, I3, IE, IP, ID
+#ifdef MPI_PARALL_GRID
+        INTEGER :: iwild(mnp)
+#endif
         REAL(rkind) :: EVX, EVY
         REAL(rkind) :: eDet1, eDet2
 
@@ -362,8 +365,8 @@
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
-        CALL FLUSH(STAT%FHNDL)
-        CALL FLUSH(IOBPOUT%FHNDL)
+        FLUSH(STAT%FHNDL)
+        FLUSH(IOBPOUT%FHNDL)
 #endif DEBUG
         
       END SUBROUTINE
@@ -468,10 +471,10 @@
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, istat, SPsize
       REAL(rkind) :: BNDTMP
-      INTEGER, POINTER :: STATUS(:)
+      INTEGER :: STATUS(MNP)
       CHARACTER(LEN=200) :: wwmerr
 
-      INTEGER          :: I, ITMP, JTMP
+      INTEGER          :: I, ITMP
       REAL(rkind)      :: ATMP, BTMP
       CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
 
@@ -646,15 +649,12 @@
 !
 ! find islands and domain boundary ....
 !
-        ALLOCATE(STATUS(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 11')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
             IOBP(IP)=1
           END IF
         END DO
-        DEALLOCATE(STATUS)
 #ifdef MPI_PARALL_GRID
         CALL EXCHANGE_P2DI(IOBP)
 #endif
@@ -700,7 +700,7 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         ENDIF 
 #endif
@@ -745,7 +745,7 @@
         REAL(rkind)       :: dbndtmp
         REAL(rkind)       :: BNDTMP
         character(len=60) :: errmsg
-        INTEGER, POINTER  :: STATUS(:)
+        INTEGER           :: STATUS(MNP)
         INTEGER           :: ITMP, I
         REAL(rkind)       :: ATMP, BTMP
 !
@@ -823,15 +823,12 @@
 ! find islands and domain boundary ....
 !
 
-        ALLOCATE(STATUS(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
         CALL GET_BOUNDARY_STATUS(STATUS)
         DO IP=1,MNP
           IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
             IOBP(IP)=1
           END IF
         END DO
-        DEALLOCATE(STATUS)
 !
 ! allocate wave boundary arrays ...
 !
@@ -885,12 +882,12 @@
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-          CALL FLUSH(IOBPOUT%FHNDL)
+          FLUSH(IOBPOUT%FHNDL)
 #ifdef MPI_PARALL_GRID
         END IF
 #endif
 #endif
-        CALL FLUSH(DBG%FHNDL)
+        FLUSH(DBG%FHNDL)
 
         RETURN
       END SUBROUTINE
@@ -902,17 +899,14 @@
         IMPLICIT NONE
         INTEGER              :: IP
 
-!$OMP PARALLEL DO DEFAULT(NONE) SHARED(IOBDP,DEP,MNP,DMIN) PRIVATE(IP)
-       DO IP = 1, MNP
+        DO IP = 1, MNP
           IF (DEP(IP) .LT. DMIN) THEN 
             IOBDP(IP) = 0 
           ELSE 
             IOBDP(IP) = 1
           ENDIF
-       END DO
-!$OMP END PARALLEL DO
+        END DO
 
-       RETURN
      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1040,7 +1034,7 @@
                  WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
                  IF (LNANINFCHK) THEN
                    WRITE(DBG%FHNDL,*) ' AFTER CALL GET_BINARY_WW3_SPECTRA',  SUM(WBACOUT)
-                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
                  ENDIF
                ELSE IF (IBOUNDFORMAT .NE. 1 .OR. IBOUNDFORMAT .NE. 3) THEN
                  CALL WWM_ABORT('IBOUNDFORMAT is not defined for the chosen value')
@@ -1128,7 +1122,6 @@
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG
       REAL(rkind) :: HS, TM, DM, TheErr, DeltaPer, Tper
-      REAL(rkind) :: AUX2
       REAL(rkind) :: DiffAng, DEG, ADIR
       REAL(rkind) :: SPPARwork1(8), SPPARwork2(8), SPPARwork(8)
       integer :: iIter, nbIter, eSign, IS, ID
@@ -1238,8 +1231,8 @@
 !     SPPARM(8), WBPKEN: peak enhancement factor for the JONSWAP spectra 3.3
 
       IF (LDEBUG) THEN
-        WRITE(*,*) 'HS    PER    DIR    DPSR    SHAPE   DEGEXP    GAUSS   PEAK'
-        WRITE(*,'(8F10.4)') SPPAR(8)
+        WRITE(DBG%FHNDL,*) 'HS    PER    DIR    DPSR    SHAPE   DEGEXP    GAUSS   PEAK'
+        WRITE(DBG%FHNDL,'(8F10.4)') SPPAR(8)
       ENDIF
 
       ETOT = 0.
@@ -1261,11 +1254,6 @@
 !
       PKPER = SPPAR(2)
       ITPER = 0
-
-!      WRITE(*,'(A20,9F15.8)') CALLFROM, SPPAR, PKPER
-!      WRITE(*,*) LOGPM, LSHAPE
-
-!      WRITE(*,*) PKPER, SPPAR
 
       IF (LSHAPE.EQ.3) THEN
 !       select bin closest to given period
@@ -1332,7 +1320,7 @@
 
           ACLOC(IS,MDC) = RA
 
-          IF (LDEBUG) WRITE(*,*) 'IS LOOP', IS, SF, FPK, SYF, RA
+          IF (LDEBUG) WRITE(DBG%FHNDL,*) 'IS LOOP', IS, SF, FPK, SYF, RA
 !
         ELSE IF (LSHAPE .EQ. 3) THEN
 
@@ -1390,7 +1378,7 @@
         ENDIF
       ELSE IF (ITPER.GE.100) THEN
         WRITE (STAT%FHNDL,*) 'No convergence calculating the spectrum'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
       ENDIF
 
 
@@ -1402,7 +1390,7 @@
 
       IF (INT(SPPAR(6)) .EQ. 1) THEN
         DSPR = PI * SPPAR(4) / 180._rkind
-        MS = MAX (DSPR**(-2) - 2., 1._rkind)
+        MS = MAX (DSPR**(-2) - TWO, 1._rkind)
       ELSE
         MS = SPPAR(4)
       ENDIF
@@ -1531,7 +1519,7 @@
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
         WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
         WRITE (STAT%FHNDL,*) SPPAR
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 
       END IF
 
@@ -1547,13 +1535,12 @@
 
          REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
          REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
-         REAL(rkind)                :: COEF(4,WBMSC-1)
          REAL(rkind)                :: INSPF(WBMSC)
          REAL(rkind)                :: INSPE(WBMSC)
          REAL(rkind)                :: INDIR(WBMSC)
          REAL(rkind)                :: INSPRD(WBMSC)
          REAL(rkind)                :: INMS(WBMSC)
-         REAL(rkind)                :: SPCDIR(MSC), SPLINEVL, ACLOC(MSC,MDC)
+         REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
          INTEGER                    :: IS, IS2, ID, istat
          REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
          REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
@@ -1809,8 +1796,8 @@
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
       WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
-      CALL FLUSH(DBG%FHNDL)
-      CALL FLUSH(STAT%FHNDL)
+      FLUSH(DBG%FHNDL)
+      FLUSH(STAT%FHNDL)
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
@@ -1845,7 +1832,7 @@
       SUBROUTINE SET_WAVE_BOUNDARY
         USE DATAPOOL
         IMPLICIT NONE
-        INTEGER :: IP, IPrel, IPGL
+        INTEGER :: IP, IPGL
         IF (LBCWA .OR. LBCSP) THEN
           IF (LINHOM) THEN
             DO IP = 1, IWBMNP
@@ -1874,7 +1861,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1978'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1978')
          ENDIF
 
          IF (LBCSE) THEN 
@@ -1944,7 +1931,7 @@
                  WBACOLD =  WBACNEW
                  IF (LNANINFCHK) THEN
                    WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER TRUE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
                  ENDIF
                ELSE ! .NOT. LBINTER
                  IF (IBOUNDFORMAT == 3) THEN
@@ -1958,7 +1945,7 @@
                  END IF
                  IF (LNANINFCHK) THEN
                    WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER FALSE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                   IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1945'
+                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
                  ENDIF
                END IF ! LBINTER
 
@@ -1973,7 +1960,7 @@
 
                IF (LNANINFCHK) THEN
                  WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
-                 IF (SUM(WBAC) .NE. SUM(WBAC)) STOP 'NAN IN BOUNDARY CONDTITION l.1965'
+                 IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
                ENDIF
 
              END IF
@@ -1992,7 +1979,7 @@
 
            IF (LNANINFCHK) THEN
              WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
-             IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN BOUNDARY CONDTITION l.1978'
+             IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1978')
            ENDIF
 
          ENDIF ! LBCSE ... 

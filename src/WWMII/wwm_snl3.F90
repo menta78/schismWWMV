@@ -19,7 +19,8 @@
       real(rkind)    em,ft, rint, sigpi, sinbph, stri, wism, wism1 , fac1
       real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell,facres,facscl,siglow
       
-      real(rkind), allocatable :: e(:), sa(:,:)
+      real(rkind) :: E(MSC)
+      real(rkind), allocatable :: sa(:,:)
 
       PTRIAD(1)  = 0.1
       PTRIAD(2)  = 2.2
@@ -37,7 +38,7 @@
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
-      if (ip == 1786) write(*,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
+      !if (ip == 1786) write(stat%fhndl,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
 
 !      write(*,*) '---- calling snl3 -----', ip, iobp(ip)
 
@@ -50,7 +51,7 @@
       IF (ABS(FACSCL-2.).GT.0.05) THEN
          FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
          SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-         WRITE (*,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
+         WRITE(DBG%FHNDL,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
       END IF
 
       DEP_2 = DEP(IP)**2
@@ -68,7 +69,6 @@
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
 
-      ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MSC+ISP1,1:MDC))
       E  = 0.
       SA = 0.
@@ -84,7 +84,7 @@
 
       IF ( URSELL .GT. PTRIAD(5) ) THEN
 
-        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
         SINBPH = ABS( SIN(BIPH) )
 
         DO ID = 1, MDC
@@ -140,7 +140,7 @@
         WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
       ENDIF
 
-      deallocate(e,sa)
+      deallocate(sa)
 
       end subroutine 
 !**********************************************************************
@@ -158,7 +158,7 @@
         integer             :: is, is2, id
         real(rkind)         :: ecloc(msc,mdc), e2(msc,mdc), d20
         real(rkind)         :: df, domega, omega, omega1, fac, z1a, z1b
-        integer             :: j, j1, j2, jmin, j2abs
+        integer             :: j1, j2, jmin, j2abs
 
         do is = 1, msc
           do id = 1, mdc 
@@ -223,9 +223,9 @@
       call dispu2 (aome2,  h, z1b, k2)
       if (omega2 .lt. 0.) k2 = - k2
       k = k1 + k2
-      cthk1h = 1. / tanh (k1*h)
-      cthk2h = 1. / tanh (k2*h)
-      cthkh  = 1. / tanh (k*h)
+      cthk1h = 1. / MyTANH (k1*h)
+      cthk2h = 1. / MyTANH (k2*h)
+      cthkh  = 1. / MyTANH (k*h)
       d2 = 0.5 *  (omega1**2 + omega2**2 + omega1*omega2 -              &
      &             omega1 * omega2 * cthk1h * cthk2h - omega *          & 
      &             omega1 * cthkh  * cthk1h - omega  * omega2 *         &
@@ -251,7 +251,7 @@
       real(rkind) :: z0, z2, fak1, fak2, sig 
 
       z0 = d*omega*omega/g
-   10    sig = tanh(z1)
+   10    sig = MyTANH(z1)
          fak1 = z1*sig
          fak2 = z1 + sig*(1.-fak1)
          z2 = z1 + (z0-fak1)/fak2
@@ -445,7 +445,7 @@
 !*                                                                    *
 !**********************************************************************
       function k(ip, is, is1, is2, id, is3, is4, is5, n1, emf) result(res)
-      use datapool, only : rkind, g9, one
+      use datapool, only : rkind, g9, one, stat
       implicit none
 
       integer, intent(in)        :: ip, is, is1, is2, is3, is4, is5, id, n1, emf
@@ -454,14 +454,14 @@
       
        res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
 
-      if (ip == 157) write(*,*) 'k', res
+      if (ip == 157) write(stat%fhndl,*) 'k', res
 
       end function k
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       function j(ip, is, is1, is2, id) result(res)
-      use datapool, only : rkind, one
+      use datapool, only : rkind, one, stat
       implicit none
      
       integer, intent(in)        :: ip, is, is1, is2, id 
@@ -471,20 +471,20 @@
            
         res = - ( one / (delta(ip, is, is1, is2)**3)  ) * ddelta_dx(ip, is, is1, is2, id)
 
-       if (ip == 157) write(*,*) 'j', res 
+       if (ip == 157) write(stat%fhndl,*) 'j', res 
         
       end function j
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
      subroutine snl3ta(ip,snl3,dsnl3)
-     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir, fr
+     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir, fr, stat
      implicit none
 
      real(rkind), intent(out) :: snl3(msc,mdc), dsnl3(msc,mdc)
      integer, intent(in)      :: ip
-     integer :: is, is1, is2, id, em, kron_delta
-     real(rkind) :: SUPER, SUB, f, f1, f2, tt, j, SUPERD, SUBD, k, w, JAC
+     integer :: is, is1, is2, id
+     real(rkind) :: SUPER, SUB, f, f1, f2, SUPERD, SUBD, k, w, JAC
 
      do id = 1, mdc
        snl3(:,id) = zero
@@ -567,7 +567,7 @@
 
      if (ip == 157) then
        do is = 1, msc
-         write(*,'(2i10,3f15.10)') ip, is, fr(is), sum(snl3(is,:)) * DDIR
+         write(stat%fhndl,'(2i10,3f15.10)') ip, is, fr(is), sum(snl3(is,:)) * DDIR
        enddo
      endif
 
@@ -576,6 +576,7 @@
 !*                                                                    *
 !**********************************************************************
       function kron_delta(i, j) result(res)
+      use datapool, only : stat
       implicit none
 
       integer, intent(in)        :: i,j
@@ -583,7 +584,7 @@
 
         res = int((float(i+j)-abs(i-j)))/(float((i+j)+abs(i-j))) 
 
-        write(*,*) 'kron-delta', i, j, res
+        write(stat%fhndl,*) 'kron-delta', i, j, res
 
       end function kron_delta 
 !**********************************************************************
@@ -604,13 +605,12 @@
       REAL(rkind)    :: BIPH, ASINB, XISTRI
       REAL(rkind)    :: ED(MSC)
       INTEGER :: IS1, IS2, ISMAX
-      REAL(rkind)    :: KIS1, KIS2, CIS1, CIS2, CGIS1
       INTEGER :: IRES
       REAL(rkind)    :: AUX1, AUX2, FAC
-      REAL(rkind)    :: JAC, KP, DNL3IS1, DNL3IS2
-      REAL(rkind)    :: NL3IS1, NL3IS2, SIGG1, SIGG2
+      REAL(rkind)    :: JAC, DNL3IS1, DNL3IS2
+      REAL(rkind)    :: NL3IS1, NL3IS2
       REAL(rkind)    :: cgl(msc),cl(msc),wkl(msc), AA
-      REAL(rkind)    :: ALPHAEB, URSELL, BB, DEP1, DEP2, DEP3
+      REAL(rkind)    :: URSELL, BB, DEP1, DEP2, DEP3
       REAL(rkind)    :: SF3P(MSC,MDC), SF3M(MSC,MDC)
 
       PTRIAD(1)  = 1. 
@@ -645,7 +645,7 @@
           IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
         END DO
         ISMAX = MAX(ISMAX,IRES+1)
-        BIPH  = PI/TWO*(TANH(0.2/URSELL)-ONE)
+        BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
         ASINB = ABS(SIN(BIPH))
         DO ID = 1, MDC
           ED = AC2(IP,:,ID)*SPSIG
@@ -694,7 +694,7 @@
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
       
       INTEGER           :: I, J, I1, I2
-      INTEGER           :: IRES, ISMAX, ITRIAD
+      INTEGER           :: IRES, ISMAX
       INTEGER           :: IS, ID
       REAL(rkind)              :: PTTRIAD(5)
       REAL(rkind)              :: DEP_2, DEP_3, BB, BIPH
@@ -790,7 +790,6 @@
           ENDDO
         ENDDO
       ENDIF
-      RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -807,13 +806,13 @@
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 
       INTEGER           :: I, J, I1, I2
-      INTEGER           :: IRES, ISMAX, ITRIAD
+      INTEGER           :: IRES, ISMAX
       INTEGER           :: IS, ID
       REAL(rkind)              :: PTTRIAD(5)
-      REAL(rkind)              :: DEP_2, DEP_3, BB, BIPH, RINT
-      REAL(rkind)              :: TMN, URS, AUX1, AUX2
+      REAL(rkind)              :: DEP_2, DEP_3, BIPH, RINT
+      REAL(rkind)              :: AUX1, AUX2
       REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj,XISTRI,Ci,Cj
-      REAL(rkind)              :: ALPH, BETA, SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
+      REAL(rkind)              :: SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
       REAL(rkind)              :: E(MSC), URSELL
 
       LOGICAL  :: TRIEXP
@@ -848,7 +847,7 @@
 
       IF ( URSELL .GE. PTTRIAD(5) ) THEN
 
-        BIPH   = (0.5*PI)*(TANH(PTTRIAD(4)/URSELL)-1)
+        BIPH   = (0.5*PI)*(MyTANH(PTTRIAD(4)/URSELL)-1)
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
           DO IS = 1, MSC
@@ -916,15 +915,13 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 
-      INTEGER IDDLOW, IDDTOP, ISSTOP
-      INTEGER IDCMIN(MSC), IDCMAX(MSC)
-!
-      INTEGER I1, I2, ID, IDDUM, IENT, II, IS, ISM, ISM1, ISMAX, ISP, ISP1, IJ1, IJ2, IRES
-      REAL(rkind)    AUX1, AUX2, BIPH, C0, CM, DEP_2, DEP_3, E0, ACTMP(MDC,MSC), ABSGRAD, URSELL
+      INTEGER I1, I2, ID, IS, ISM, ISM1, ISMAX, ISP, ISP1, IJ1, IJ2, IRES
+      REAL(rkind)    AUX1, AUX2, BIPH, C0, CM, DEP_2, DEP_3, E0, ACTMP(MDC,MSC), URSELL
       REAL(rkind)    EM,FT, RINT, SIGPI, SINBPH, STRI, WISM, WISM1, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
-      REAL(rkind)    WISP, WISP1,W0, WM, WN0, WNM,  XISLN, TMPAC(MSC,MDC), TMPAC1D(MSC), IMATRATMP(MDC,MSC)
+      REAL(rkind)    WISP, WISP1,W0, WM, WN0, WNM,  XISLN, IMATRATMP(MDC,MSC)
 
-      REAL(rkind), ALLOCATABLE :: E(:), SA(:,:)
+      REAL(rkind) :: E(MSC)
+      REAL(rkind), ALLOCATABLE :: SA(:,:)
 
       PTRIAD(1)  = 0.25
       PTRIAD(2)  = 2.5
@@ -979,7 +976,6 @@
 !        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
 !      ENDIF
 
-      ALLOCATE (E (1:MSC))
       ALLOCATE (SA(1:MDC,1:MSC+ISP1))
       E  = 0.
       SA = 0.
@@ -992,7 +988,7 @@
       ISMAX = MAX ( ISMAX , ISP1 )
 
       IF ( URSELL .GT. PTRIAD(5) ) THEN
-        BIPH   = (0.5*PI)*(TANH(PTRIAD(4)/URSELL)-1.)
+        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
            DO IS = 1, MSC
@@ -1047,10 +1043,7 @@
         ENDIF
       END IF
 
-!      IF (IP == 1786) THEN
-!        WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-!      ENDIF
-    
+      DEALLOCATE (SA)
 
       END SUBROUTINE
 !**********************************************************************
@@ -1067,18 +1060,17 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 !
-      INTEGER             :: J, IS, ID, IT, ITER
-      REAL(rkind)          :: ETOT4
+      INTEGER               :: J, IS, ID, IT, ITER
       REAL*8                :: KI, KJ , ETOT
       REAL*8                :: PROPFAK, DBETA, DSIGMA
       REAL*8                :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
       REAL*8                :: DELTAK(MSC), DK, H, TMP1, TMP2, TMP3
       REAL*8                :: PART1(MSC), PART2(MSC), EPS(MSC)
-      REAL*8                :: SUMAC, KJKIKJ, KJKJKI, SNL(MSC)
+      REAL*8                :: SUMAC, KJKIKJ, KJKJKI
 
       ITER = 10
 
-      ETOT = DBLE(ETOT4)
+      ETOT = hs**2/FOUR
 
       DELTAK(1) = WK(IP,1)
       DO IS = 2, MSC

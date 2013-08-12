@@ -20,7 +20,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/netcdf.mod .
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
-all: $(NETC) $(PROG1) $(PROG2)
+all: $(NETC) $(PROG1) $(PROG2) $(PROG3)
 
 $(PROG1): $(OBJScommon) $(OBJhistory)
 	$(F90) -o $(PROG1) $(F90FLAGS) $(OBJScommon) $(OBJhistory) $(LIBS) $(LDFLAGS)
@@ -29,7 +29,7 @@ $(PROG2): $(OBJScommon) $(OBJhotfile)
 	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJhotfile) $(LIBS) $(LDFLAGS)
 
 $(PROG3): $(OBJScommon) $(OBJstation)
-	$(F90) -o $(PROG2) $(F90FLAGS) $(OBJScommon) $(OBJstation) $(LIBS) $(LDFLAGS)
+	$(F90) -o $(PROG3) $(F90FLAGS) $(OBJScommon) $(OBJstation) $(LIBS) $(LDFLAGS)
 
 clean:
 	rm -f *.o *.mod *_mod.* *_genmod.* $(PROG)

@@ -14,7 +14,7 @@
 !                    Lead: Joseph Zhang (OHSU & VIMS)
 !                    Air-sea exchange: Mike Zulauf (OHSU)
 !                    Ecology: Marta Rodrigues,Anabela Oliveira (LNEC)
-!                    Sediment: Ligia Pinto,Andre Fortunato (LNEC)
+!                    Sediment: Guillaume Dodet, Florian Ganthy, Ligia Pinto,Andre Fortunato (LNEC)
 !                    Oil Spill: Alberto Azvedo/Anabela Oliveira (LNEC)
 !                    Waves: Aron Roland (Zanke & Partner),Ulrich Zanke (Zanke & Partner) 
 !                    Water quality: Harry Wang (VIMS)

@@ -28,24 +28,25 @@
          INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ, IERR
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
-         REAL(rkind)    :: SME01, SME10, KME01, KMWAM, URSELL, KMWAM2
-         REAL(rkind)    :: UBOT, TMBOT, SME01WS, SME10WS
-         REAL(rkind)    :: HS, ETOT, CP, WLM, FPMH,FPM4 
-         REAL(rkind)    :: KPP, WPINT, WIINT, FRP, LPOW, MPOW, a1, a2, DM, DSPR, ETOTWS
-         REAL(rkind)    :: PEAKDSPR, PEAKDM, ORBITAL, BOTEXPER, ETOTS, ETOTC, XRR, XPP, XFLT, XREL, FACP, XFILT
-         REAL(rkind)    :: FPP, CGPP, WNPP, CPP, TPP, LPP, TEMP2(MSC)
-         REAL(rkind)    :: AWW3(NSPEC), AWW32d(MSC,MDC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
-         REAL(rkind)    :: F(MDC,MSC), SL(MDC,MSC), FL(MDC,MSC), EDENS(MSC), KDS(MSC), ABAB(MSC)
-         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC), ACLOC2(MSC,MDC)
+         REAL(rkind)    :: SME01, SME10, KME01, KMWAM, KMWAM2
+         REAL(rkind)    :: SME01WS, SME10WS
+         REAL(rkind)    :: HS, ETOT, FPMH,FPM4 
+         REAL(rkind)    :: LPOW, MPOW, a1, a2, ETOTWS
+         REAL(rkind)    :: XRR, XPP, XFLT, XREL, FACP, XFILT
+         REAL(rkind)    :: TEMP2(MSC)
+         REAL(rkind)    :: AWW3(NSPEC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
+         REAL(rkind)    :: EDENS(MSC), KDS(MSC), ABAB(MSC)
+         REAL(rkind)    :: WHITECAP(1:4),AKMEAN,XKMEAN,F1MEAN,TMPAC(MDC,MSC),TEMP(MSC), FCONST(MSC)
+         REAL(rkind)    :: ACLOC1(MSC,MDC)
 
 
          REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC)
-         REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC), SSBRL(MSC,MDC)
+         REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC)
          REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1, DAM(MSC*MDC)
 
-         REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, AS, ICE, TMP2
-         REAL(rkind)    :: CHARN, FMEANWS, TAUWAX, TAUWAY, ABRBOT, FP, TP, XJ, FLLOWEST, GADIAG
-         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), EAD, SUMACLOC, IMATRAT(MSC,MDC)
+         REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, AS, ICE
+         REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ, FLLOWEST, GADIAG
+         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), SUMACLOC, IMATRAT(MSC,MDC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1, SNL3(MSC,MDC), DSNL3(MSC,MDC)
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
          REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
@@ -62,7 +63,10 @@
 
          IDISP = 999
 
-         IF (.NOT. LRECALC) CALL MEAN_WAVE_PARAMETER(IP,AC1(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
+         IF (.NOT. LRECALC) THEN
+           ACLOC1=AC1(IP,:,:)
+           CALL MEAN_WAVE_PARAMETER(IP,ACLOC1,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
+         END IF
 
 !         if (ip == 26) then
 !           call MEAN_PARAMETER_LOC(ACLOC,CURTXY(IP,:),DEP(IP),WK(IP,:),MSC,HS,TM01,TM02,TM10,KLM,WLM)
@@ -187,7 +191,7 @@
                  CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS) 
 #else
                  WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
-                 STOP 'stop wwm_sourceterms l.186'
+                 CALL WWM_ABORT('stop wwm_sourceterms l.186')
 #endif
                  !write(3001,'(10F15.8)') WIND10, UFRIC(IP), Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), ALPHA_CH(IP)
                  CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
@@ -200,8 +204,8 @@
                END IF
                IF (LNANINFCHK) THEN
                  IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-                   WRITE(*,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-                   STOP
+                   WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT NORMAL', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+                   CALL WWM_ABORT('NAN AT wwm_sourceterms.F90 l.204')
                  END IF
                ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
@@ -307,8 +311,8 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+             CALL WWM_ABORT('NAN in wwm_sourceterm.F90 l.311')
            END IF
          ENDIF
 
@@ -328,10 +332,9 @@
                SPDIR_WRT = REAL(SPDIR)
                DEP_WRT   = DEP(IP)
                CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR)
-               WRITE (*,*) 'WRT IP =', IP, 'FERTIG !!!'
                IF (IERR .GT. 0) THEN
-                 WRITE (*,*) 'XNL_WRT ERROR', IERR
-                 STOP
+                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR
+                 CALL WWM_ABORT('XNL_WRT ERROR')    
                ELSE
                  IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
                  IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
@@ -365,8 +368,8 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SNL4'
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SNL4'
+             CALL WWM_ABORT('NAN at wwm_sourceterms.F90 l.368')
            END IF
          ENDIF
 
@@ -477,16 +480,14 @@
 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF'
-             STOP
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF' 
+             CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.481')
            END IF
          ENDIF
 
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
 
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
-
-           !WRITE(*,*) 'DOING RECALCULATION BASED ON NEW SPECTRA', SUM(ACLOC)
 
 !AR: this cannot work since crap was done here ... we need a better calling structure to this stuff ... 
            DISSIPATION(IP) = 0.
@@ -513,7 +514,7 @@
              CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
 #else
              WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
-             STOP 'stop wwm_sourceterms l.186'
+             CALL WWM_ABORT('stop wwm_sourceterms l.186')
 #endif
            ELSEIF (MESIN == 2) THEN
 
@@ -605,8 +606,6 @@
            ENDIF
          ENDIF
 
-         !WRITE(*,*) 'AFTER ALL', SUM(ACLOC), SUM(IMATRA), SUM(IMATDA)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -666,10 +665,8 @@
          REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)    :: SSBRL(MSC,MDC)
 
-         INTEGER                     :: IS, ID
-
-         REAL(rkind)                 :: EFTAIL, HS, DS, EHFR, EAD
-         REAL(rkind)                 :: EMAX, RATIO, ETOT, FP, KPP
+         REAL(rkind)                 :: EFTAIL, HS
+         REAL(rkind)                 :: EMAX, RATIO, ETOT
          REAL(rkind)                 :: DINTSPEC
 
          ETOT   = 0.0
@@ -690,8 +687,6 @@
            ACLOC = RATIO * ACLOC
          END IF
 
-         !WRITE(*,*)  IP, HMAX(IP)
-
         RETURN
         END SUBROUTINE
 !**********************************************************************
@@ -702,7 +697,7 @@
          IMPLICIT NONE
 
          INTEGER              :: IP
-         REAL(rkind)          :: EFTAIL, HS, EAD
+         REAL(rkind)          :: HS
          REAL(rkind)          :: EMAX, RATIO, ETOT
          REAL(rkind)          :: DINTSPEC
          REAL(rkind)          :: ACLOC(MSC, MDC)

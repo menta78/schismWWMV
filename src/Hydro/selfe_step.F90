@@ -39,12 +39,12 @@
 #ifdef USE_SED
        USE sed_mod, only : Wsed,Srho,Nbed,bedldu,bedldv,bed,bottom,    &
                            bed_frac,mcoefd,bed_fracn,bed_d50n,bed_taun,&
-                           bedforms_rough,bed_ripphgt,bed_ripplen,     &
-                           bed_rough,ibfmt
+                           bedforms_rough,bed_rough,izcr,izsw,izwr,izbld
 #endif USE_SED
 
 #ifdef USE_SED2D
       use sed2d_mod, only : Cdsed,dpdxy,qb,qs,qtot
+      use sed2d_mod, only : z0_e,z0cr_e,z0sw_e,z0wr_e
 #endif
 
 #ifdef USE_OIL
@@ -124,7 +124,8 @@
       real(4) :: floatout,floatout2
 
 !     Inter-subdomain backtracking
-      logical :: lbt,lbtgb
+      logical :: lbt(1),lbtgb(1)
+!      logical :: lbt_l(1), lbtgb_l(1)
       integer :: nbtrk
       type(bt_type) :: btlist(mxnbt) !to avoid conflict with inter_btrack()
 
@@ -155,7 +156,7 @@
       real(rkind),allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
       real(rkind),allocatable :: hp_int(:,:,:),buf1(:,:),buf2(:,:),buf3(:),msource(:,:)
       real(rkind),allocatable :: fluxes_vol(:),fluxes_vol_gb(:) !volume fluxes output between regions
-      logical :: ltmp,ltmp1,ltmp2
+      logical :: ltmp,ltmp1(1),ltmp2(1)
 
       logical,save :: first_call=.true.
       logical :: up_tvd
@@ -189,12 +190,6 @@
       allocate(hp_int(nvrt,nea,2),stat=istat)
       if(istat/=0) call parallel_abort('STEP: other allocation failure')
 
-!     The large array for nws=4 option (may consider changing to
-!     unformatted binary read)
-      if(nws==4) then
-        allocate(rwild(np_global,3),stat=istat)
-        if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
-      endif !nws=4
 #ifdef DEBUG
       allocate(bpgr(nsa,2),wafo(nvrt,nsa,2))
 #endif
@@ -418,6 +413,10 @@
           windx1=windx2
           windy1=windy2
           pr1=pr2
+!          The large array for nws=4 option (may consider changing to
+!          unformatted binary read)
+          allocate(rwild(np_global,3),stat=istat)
+          if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
           read(22,*)rwild(:,:) 
           do i=1,np_global
             if(ipgl(i)%rank==myrank) then
@@ -427,6 +426,7 @@
               pr2(nd)=rwild(i,3)
             endif
           enddo !i
+          deallocate(rwild)
         endif
 
         wtratio=(time-wtime1)/wtiminc
@@ -773,6 +773,16 @@
 
 !...  Compute hydraulic transfer blocks together with reading in flux values
 !...  in case the blocks are taken out
+!...  isblock_nd(1:2,1:npa): this array does not change over time iteration (static).
+!                            (1,:) points to the block # of either active or _inactive_ block or 0 (NEVER a part of a block)
+!                            (2,:) points to the face # of either active or _inactive_ block or 0
+!     isblock_el(1:nea): points to ACTIVE block #; 0 means it's either inactive or not part of a block;
+!     isblock_sd(1:2,1:nsa): (1,:) points to ACTIVE block #; 0 means it's either on an 
+!                            INACTIVE block or NEVER part of a block;
+!                            (2,:) when the block is active, it points to the face # or -1 (inside the block);!                             0 means it's either on an inactive block or never part of a block.
+!     q_block(1:nhtblocks): flow from face "1" to "2" at a step. If <=-1.e6, the block is deactivated; 
+!                           otherwise the block is active.
+
       if(ihydraulics/=0.and.nhtblocks>0) then
         ! reads time varying parameters
         call read_struct_ts(time)
@@ -870,35 +880,33 @@
           jblock=minval(isblock_nd(1,isidenode(i,1:2)))
           if(jblock>0) then; if(q_block(jblock)>-1.e6+1) then
             n1=isidenode(i,1); n2=isidenode(i,2)
-            if(isblock_nd(1,n1)/=isblock_nd(1,n2)) then
-              write(errmsg,*)'Check block nodes:',iplg(isidenode(i,1:2)),isblock_nd(1,n1),isblock_nd(1,n2)
-              call parallel_abort(errmsg)
-            endif
-            isblock_sd(1,i)=jblock !block #
-            if(isblock_nd(2,n1)==isblock_nd(2,n2)) then !not internal
-              jface=isblock_nd(2,n1)
-              isblock_sd(2,i)=jface !face #
+            if(isblock_nd(1,n1)==isblock_nd(1,n2)) then
+              isblock_sd(1,i)=jblock !block #
+              if(isblock_nd(2,n1)==isblock_nd(2,n2)) then !not internal; on same face
+                 jface=isblock_nd(2,n1)
+                 isblock_sd(2,i)=jface !face #
 
-              !Check
-              !write(12,*)'Block face side:',jblock,jface,iplg(isidenode(i,1:2)),i,ns
+                 !Check
+                 !write(12,*)'Block face side:',jblock,jface,iplg(isidenode(i,1:2)),i,ns
 
-              !For resident sides, compute local cross sectional area
-              if(i<=ns) then 
-                !Deal with interface sides
-                ifl=0 !logical flag
-                if(.not.associated(isgl(islg(i))%next)) ifl=1
-                if(associated(isgl(islg(i))%next)) then
-                  if(isgl(islg(i))%next%rank>=myrank) ifl=1
-                endif
+                 !For resident sides, compute local cross sectional area
+                 if(i<=ns) then 
+                    !Deal with interface sides
+                    ifl=0 !logical flag
+                    if(.not.associated(isgl(islg(i))%next)) ifl=1
+                    if(associated(isgl(islg(i))%next)) then
+                       if(isgl(islg(i))%next%rank>=myrank) ifl=1
+                    endif
 
-                if(ifl==1) then
-                  htot=max(h0,dps(i)+(eta2(n1)+eta2(n2))/2)
-                  buf1(jblock,jface)=buf1(jblock,jface)+htot*distj(i)
-                endif !ifl
-              endif !i<=ns
-            else
-              isblock_sd(2,i)=-1 !internal
-            endif
+                    if(ifl==1) then
+                       htot=max(h0,dps(i)+(eta2(n1)+eta2(n2))/2)
+                       buf1(jblock,jface)=buf1(jblock,jface)+htot*distj(i)
+                    endif !ifl
+                 endif !i<=ns
+              else
+                 isblock_sd(2,i)=-1 !internal
+              endif
+            endif ! isblock_nd(1,n1)==isblock_nd(1,n2)
           endif; endif 
         enddo !i=1,nsa
 
@@ -1384,7 +1392,7 @@
         Cdp=0; Cd=0 !for dry pts
         Cdmax=-1 !max. Cd at node for this process (info only)
 !       Drag at nodes
-        ltmp1=.false. !for WBL iteration
+        ltmp1(1)=.false. !for WBL iteration
         do i=1,npa
           if(idry(i)==1) cycle
 
@@ -1415,7 +1423,7 @@
                 wfr=2*pi/max(0.1,out_wwm(i,12)) !angular freq.; out_wwm is not real*8
                 wdir=out_wwm(i,18) !wave direction
                 call wbl_GM(taubx,tauby,rough_p(i),ubm,wfr,wdir,z0b,fw,delta_wc,iter,ifl)
-                if(ifl==2) ltmp1=.true.                
+                if(ifl==2) ltmp1(1)=.true.                
                 if(iter>iwbl_itmax) iwbl_itmax=iter
                 !Debug
 !                if(it==1000) write(12,*)'WBL:',iplg(i),dp(i),ubm,out_wwm(i,5),wdir, &
@@ -1443,7 +1451,7 @@
 #ifdef USE_WWM
         if(iwbl==1) then
            call mpi_reduce(ltmp1,ltmp2,1,MPI_LOGICAL,MPI_LOR,0,comm,ierr)
-           if(myrank==0.and.ltmp2) write(16,*)'WBL-GM did not converge'
+           if(myrank==0.and.ltmp2(1)) write(16,*)'WBL-GM did not converge'
            if(myrank==0) write(16,*)'Cumulative max. for GM iteration for rank 0= ',iwbl_itmax
 !'
         endif !iwbl
@@ -2308,9 +2316,9 @@
               time_rm=dt
               time_rm2=-99 !leftover from previous subdomain; init. as flag
               call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild(1:3),swild10(1:3,1:3), &
-     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,lbt)
+     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
 
-              if(lbt) then !Backtracking exits augmented subdomain
+              if(ltmp) then !Backtracking exits augmented subdomain
                 !Add trajectory to inter-subdomain backtracking list
                 nbtrk=nbtrk+1
                 if(nbtrk>mxnbt) call parallel_abort('MAIN: nbtrk > mxnbt')
@@ -2470,7 +2478,7 @@
                     webt(j,ie0)=wwint
                   endif
                 endif 
-              endif !lbt
+              endif !ltmp
             endif !do backtrack
 
 !           Debug
@@ -2487,7 +2495,7 @@
 
 !     Complete inter-subdomain backtracking (if necessary)
       if(nproc>1) then
-        lbt=(nbtrk/=0)
+        lbt(1)=(nbtrk/=0)
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
 #endif
@@ -2498,13 +2506,13 @@
         if(ierr/=MPI_SUCCESS) call parallel_abort('MAIN: allreduce lbtgb',ierr)
 !'
 
-        if(lbtgb) then
+        if(lbtgb(1)) then
           if(myrank==0) write(16,*)'starting inter-subdomain btrack'
           call inter_btrack(it,nbtrk,btlist) !all ranks participate
           if(myrank==0) write(16,*)'done inter-subdomain btrack'
         endif
 
-        if(lbt) then !handle returned inter-subdomain trajectories
+        if(lbt(1)) then !handle returned inter-subdomain trajectories
           do ibt=1,nbtrk
             if(btlist(ibt)%rank/=myrank) call parallel_abort('MAIN: not right rank')
 !'
@@ -2561,7 +2569,7 @@
 !'
             endif !sides
           enddo !ibt
-        endif !lbt
+        endif !lbt(1)
       endif !nproc>1
 
 !     Update ghost backtracked momentum
@@ -6538,6 +6546,7 @@
         write(9,'(f16.6,6000(1x,e14.4))')time/86400,fluxes_vol_gb(1:max_flreg)
         write(16,*)'done computing fluxes...'
       endif
+      deallocate(fluxes_vol, fluxes_vol_gb)
 !---------------------------------------------------------      
       endif !iflux ne 0
 !...  end compute flux balance
@@ -6748,12 +6757,6 @@
                else if (j==indx_out(1,1)+3+2*ntracers) then
                   !brough.61
                   floatout=bed_rough(i)*1000.d0 ! in mm
-                else if (j==indx_out(1,1)+4+2*ntracers) then
-                  !brip_h.61
-                  floatout=bed_ripphgt(i) ! in m
-                else if (j==indx_out(1,1)+5+2*ntracers) then
-                  !brip_l.61
-                  floatout=bed_ripplen(i) ! in m
                 endif
                 a_4 = transfer(source=floatout,mold=a_4)
 #ifdef AVOID_ADV_WRITE
@@ -6885,37 +6888,53 @@
         call elfe_output_custom(lwrite,9,1,204,'salt',nvrt,nea,tsel(2,:,:))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting salt.70'
       endif !iof_ns
+#ifdef USE_SED
+      if(iof_ns(5)==1)then
+        call elfe_output_custom(lwrite,5,1,209,'z0st',1,nea,bottom(:,izbld))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0st.66'
+      endif !iof_ns
+      if(iof_ns(7)==1)then
+        call elfe_output_custom(lwrite,5,1,206,'z0cr',1,nea,bottom(:,izcr))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
+      endif !iof_ns
+      if(iof_ns(8)==1)then
+        call elfe_output_custom(lwrite,5,1,207,'z0sw',1,nea,bottom(:,izsw))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
+      endif !iof_ns
+      if(iof_ns(9)==1)then
+        call elfe_output_custom(lwrite,5,1,208,'z0wr',1,nea,bottom(:,izwr))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
+      endif !iof_ns
+#elif USE_SED2D
+      if(iof_ns(6)==1)then
+        call elfe_output_custom(lwrite,5,1,206,'z0eq',1,nea,z0_e(:))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0eq.66'
+      endif !iof_ns
+      if(iof_ns(7)==1)then
+        call elfe_output_custom(lwrite,5,1,207,'z0cr',1,nea,z0cr_e(:))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
+      endif !iof_ns
+      if(iof_ns(8)==1)then
+        call elfe_output_custom(lwrite,5,1,208,'z0sw',1,nea,z0sw_e(:))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
+      endif !iof_ns
+      if(iof_ns(9)==1)then
+        call elfe_output_custom(lwrite,5,1,209,'z0wr',1,nea,z0wr_e(:))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
+      endif !iof_ns
+#endif
+
 #ifdef DEBUG
-      if(iof_ns(5)==1) then
-        call elfe_output_custom(lwrite,4,2,205,'bpgr',1,nsa,bpgr(:,1),bpgr(:,2))
+      if(iof_ns(10)==1) then
+        call elfe_output_custom(lwrite,4,2,210,'bpgr',1,nsa,bpgr(:,1),bpgr(:,2))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpgr.65'
       endif !iof_ns
 #ifdef USE_WWM
-      if(iof_ns(6)==1) then
-        call elfe_output_custom(lwrite,6,2,206,'wafo',nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
+      if(iof_ns(11)==1) then
+        call elfe_output_custom(lwrite,6,2,211,'wafo',nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting wafo.67'
       endif !iof_ns
-#ifdef USE_SED
-      if(iof_ns(7)==1)then
-        call elfe_output_custom(lwrite,5,1,207,'bfmt',1,nea,bottom(:,ibfmt))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
-      endif !iof_ns
-#endif
-#else /*not USE_WWM*/
-#ifdef USE_SED
-      if(iof_ns(6)==1)then
-        call elfe_output_custom(lwrite,5,1,206,'bfmt',1,nea,bottom(:,ibfmt))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
-      endif !iof_ns
-#endif
 #endif /*USE_WWM*/
-#else /*not DEBUG*/
-#ifdef USE_SED
-      if(iof_ns(5)==1)then
-        call elfe_output_custom(lwrite,5,1,205,'bfmt',1,nea,bottom(:,ibfmt))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bformt'
-      endif !iof_ns
-#endif
 #endif /*DEBUG*/
 
 !     Test 
@@ -7310,6 +7329,23 @@
         if(istat/=0) call parallel_abort('Aborting due to die.stam')
         close(32)
       endif
+#endif
+
+!     Deallocate temp. arrays to avoid memory leak
+      if(if_source==1) deallocate(msource)
+      if(nonhydro==1) deallocate(qhat,dqnon_dxy,qmatr,qir)
+      deallocate(hp_int)
+
+#ifdef DEBUG
+      deallocate(bpgr,wafo)
+#endif
+
+#ifdef USE_NAPZD
+      deallocate(Bio_bdefp)
+#endif
+
+#ifdef USE_SED
+      deallocate(tr_tc,tr_tl)
 #endif
 
       end subroutine selfe_step

@@ -30,7 +30,7 @@
 #            these are just for testing)
 ################################################################################
 
-include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/conf/variables
 
 ################################################################################
 # Comment out the following line if you don't want the build dependent
@@ -54,9 +54,10 @@ include ${PETSC_DIR}/conf/variables
 #ENV         = BLKLGT
 #ENV         = GORDON
 #ENV         = FRANZIUS
-#ENV         = MATHIEU
-ENV = ARON
+ENV         = MATHIEU
+#ENV = ARON
 #ENV = ZANKE
+#ENV = DKRZ
 
 ################################################################################
 # Executable
@@ -98,8 +99,8 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
   PPFLAGS := $(PPFLAGS) -DUSE_WWM -DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-  USE_PETSC = yes
-  PPFLAGS := $(PPFLAGS) -DPETSC 
+#  USE_PETSC = yes
+#  PPFLAGS := $(PPFLAGS) -DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes
@@ -584,6 +585,42 @@ ifeq ($(ENV),ARON)
   endif
 
 endif
+################################################################################
+# Environment for Linux / 32 bit /  Intel Compiler / MPICH
+################################################################################
+ifeq ($(ENV),DKRZ)
+  FCP = mpxlf90_r
+  FLD = $(FCP)
+  # MPI vserion (1 or 2)
+  PPFLAGS := $(PPFLAGS) -WF,-DMPIVERSION=2 
+  FCPFLAGS = $(PPFLAGS) -O2 -qx -qextname #MPI code
+  FLDFLAGS = -O2 -qextname #for final linking of object files
+  MTSLIBS = -L/pf/g/g260072/git/wwmIII/src/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+  CDFLIBS = -L/sw/aix53/netcdf-3.6.3-ibm/lib -lnetcdf
+  CDFMOD = -I/sw/aix53/netcdf-3.6.3-ibm/include/ # modules for netcdf
+
+  ifdef USE_GOTM
+    GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
+    GTMLIBS = -L/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/lib/IFORT/ -lturbulence_prod  -lutil_prod
+  else
+    GTMMOD =
+    GTMLIBS =
+  endif
+
+  #PETSC
+
+  ifdef USE_PETSC
+    include ${PETSC_DIR}/conf/variables
+    PETSCLIBS = -L${PETSC_DIR}/lib/ -lpetsc
+    PETSCMOD = -I${PETSC_DIR}/include/
+    CDFLIBS += ${PETSC_LIB}
+  else
+    PETSCLIBS =
+    PETSCMOD =
+  endif
+
+endif
+
 
 ifeq ($(ENV),ZANKE)
   FCP = mpif90
@@ -639,10 +676,16 @@ ifeq ($(ENV),MATHIEU)
 # DEBUG + DEVELOPEMENT
 #  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
 #  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+
 # PERFORMANCE SAVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -check all -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -check all -assume byterecl
+
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -check all -assume byterecl
+#  FLDFLAGS = -O1 -g -traceback -check all -assume byterecl
+
 # AGGRESSIVE OPTIMIZATION
+
+  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
   #####Libraries
   MTSLIBS = $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a 
   CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x

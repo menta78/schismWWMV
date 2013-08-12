@@ -5,22 +5,24 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = 
+MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = 
+PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on
+NETCDF = on 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP =  on
+OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = on
+# Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
+GRIB = on
 
 #F90 = gfortran
-F90 = mpif90
+#F90 = mpif90
 #F90 = mpif90-vt
-#F90 = ifort
+F90 = ifort
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
@@ -31,15 +33,15 @@ F90 = mpif90
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-#F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
+#F90OPTI = -O1 -axSSE4.2 -traceback -g -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
+F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp
@@ -75,7 +77,7 @@ OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs
 OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
-       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
+       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o \
        wwm_ecmwf.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
@@ -95,8 +97,8 @@ endif
 
 ifdef MPI
   MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
-  LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER -DDEBUG
+  LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
+  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER 
   OBJS= $(OBJSELFE) $(OBJWWM)
 else
   MPIFLAG = 
@@ -106,6 +108,12 @@ endif
 ifdef OPENMP 
   OPENMPFLAG  = -openmp 
 endif
+
+ifdef GRIB
+  LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
+  FFLAGS += -DGRB -I$(GRIB_PATH)/include
+endif
+
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 
@@ -120,10 +128,12 @@ ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/  
+
+MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
+F90FLAGS += ${MPI_INCLUDE}
 
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG} ${MPI_INCLUDE}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 
@@ -132,7 +142,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS) $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS) $(TCFLAG) $(OBJS) $(LIBS) 
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)
@@ -143,7 +153,7 @@ cleanall:
 .SUFFIXES: $(SUFFIXES) .F90 .f .ftn
 
 .F90.o:
-	$(F90) $(F90FLAGS) $(TCFLAG)   -c $<
+	$(F90) $(F90FLAGS)   -c $<
 
 .ftn.o:
 	$(F90) $(F90FLAGS) -c $<

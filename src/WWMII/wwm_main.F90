@@ -35,18 +35,18 @@
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
+         FLUSH(STAT%FHNDL)
+
          TIME1 = mpi_wtime()
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 1 AC2'
-           !IF (SUM(AC1) .NE. SUM(AC1)) STOP 'NAN IN MAIN 1 AC1'
+           IF (SUM(AC2) .NE. SUM(AC2)) call wwm_abort('NAN IN MAIN 1')
          ENDIF
 
-!zyl: check dimension
-!ar: obsolete since already checked in init_wwm, after model has been tested this should be removed
          if(WINDVARS/=size(WIND_INTPAR,2)) call wwm_abort('Dimension mismatch: OUTWINDPAR and out_wwm_windpar')
-         if(OUTVARS/=size(OUTT_INTPAR,2)) call wwm_abort('Dimension mismatch: OUTPAR and out_wwm')
+         if(OUTVARS/=size(OUTT_INTPAR,2))  call wwm_abort('Dimension mismatch: OUTPAR and out_wwm')
 
          NSTEPWWM = NSTEP_WWM0
 
@@ -56,6 +56,7 @@
          T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
          T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
          DT_PROVIDED=NSTEPWWM*DT_SELFE
+
          IF (abs(MAIN%DELT - DT_PROVIDED).gt.THR) THEN
            WRITE(DBG%FHNDL,*) 'MAIN%DELT=', MAIN%DELT, ' in wwminput.nml'
            WRITE(DBG%FHNDL,*) 'But nstep_wwm*dt=', DT_PROVIDED
@@ -66,8 +67,11 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' FIRST SUM IN MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 2')
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') ' ---- ALL CHECKS DONE'
+         FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
@@ -194,7 +198,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SETTING BOUNDARY CONDITION IN MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 3')
          ENDIF
 
          IF (LFIRSTSTEP) THEN
@@ -205,11 +209,13 @@
 
          TIME2 = mpi_wtime() 
 
-
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 3'
+           WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 4')
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
+         FLUSH(STAT%FHNDL)
 
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
@@ -219,13 +225,15 @@
          END IF
 
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 4'
+           WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 5') 
          ENDIF
 
          TIME3 = mpi_wtime()
 
-         IF (myrank == 0) WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'nth call to WWM', SIMUTIME
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
+         FLUSH(STAT%FHNDL)
+
          DO IP = 1, MNP
            ACLOC = AC2(IP,:,:)
            IF (DEP(IP) .GT. DMIN) THEN
@@ -268,7 +276,7 @@
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) STOP 'NAN IN MAIN 2'
+           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
@@ -279,8 +287,9 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
+
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
  
       END SUBROUTINE WWM_II
 !**********************************************************************
@@ -293,27 +302,27 @@
       DO IP = 1, MNP
         IF (WINDXY(IP,1) .NE. WINDXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDX', IP, WINDXY(IP,1) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WINDXY(IP,2) .NE. WINDXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDY', IP, WINDXY(IP,2) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEV(IP) .NE. WATLEV(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEVOLD(IP) .NE. WATLEVOLD(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,1) .NE. CURTXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTX', IP, CURTXY(IP,1)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,2) .NE. CURTXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTY', IP, CURTXY(IP,2)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
       END DO
       END SUBROUTINE SELFE_NANCHECK_INPUT_A
@@ -328,19 +337,19 @@
         IF (SUM(OUTT_INTPAR(IP,:)) .NE. SUM(OUTT_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(OUTT_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in OUTT_INTPAR', IP, I, OUTT_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
         IF (SUM(WIND_INTPAR(IP,:)) .NE. SUM(WIND_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(WIND_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in WIND_INTPAR', IP, I, WIND_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
         IF (SUM(WWAVE_FORCE(:,IP,:)) .NE. SUM(WWAVE_FORCE(:,IP,:))) THEN
           DO I = 1, SIZE(WWAVE_FORCE(:,IP,1)) ! loop over layers ...
             WRITE(DBG%FHNDL,*) 'NaN in WWAVE_FORCE', IP, I, WWAVE_FORCE(I,IP,1), WWAVE_FORCE(I,IP,2)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF 
       END DO
@@ -352,10 +361,10 @@
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
          USE DATAPOOL
+         USE WAVE_SETUP
 #ifdef MPI_PARALL_GRID
          use elfe_msgp, only : myrank
 #endif
-
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
@@ -365,12 +374,10 @@
 
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
-         INTEGER :: IP
-
          CALL CPU_TIME(TIME1)
-       
-         CALL IO_1(K)
 
+         CALL IO_1(K)
+        
          CALL CPU_TIME(TIME2)
 
 #if !defined MPI_PARALL_GRID
@@ -394,6 +401,9 @@
            END IF
          ELSE IF (ICOMP .EQ. 2) THEN 
            CALL COMPUTE_IMPLICIT
+         END IF
+         IF (LZETA_SETUP) THEN
+           CALL WAVE_SETUP_COMPUTATION
          END IF
 
          CALL CPU_TIME(TIME4)
@@ -434,14 +444,12 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'POSTPROCESSING                   ', TIME5-TIME4
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CHECK STEADY                     ', TIME6-TIME5
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-        CALL FLUSH(STAT%FHNDL)
+        FLUSH(STAT%FHNDL)
 #ifdef MPI_PARALL_GRID
       ENDIF
 #endif
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -456,7 +464,7 @@
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
 
-         INTEGER :: IT, IP
+         INTEGER :: IT
          REAL(rkind)    :: ITERTIME
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
 
@@ -500,7 +508,7 @@
 #elif SELFE
                if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #endif
-               CALL FLUSH(QSTEA%FHNDL)
+               FLUSH(QSTEA%FHNDL)
                EXIT 
              END IF
            END IF
@@ -516,7 +524,7 @@
          RTIME = MAIN%TMJD - MAIN%BMJD
          WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
-         CALL FLUSH(STAT%FHNDL)
+         FLUSH(STAT%FHNDL)
 
          CALL IO_2(K)
 
@@ -539,13 +547,8 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
-         REAL(rkind)                :: TEST, TMP(MNP,2)
-#ifdef NCDF
-         REAL(rkind)              :: DTMP, wrf_w1, wrf_w2
-         REAL(rkind)              :: Wi(3)
-#endif
          REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IP, ISTAT, IT, IFILE, ITMP, FORECASTHOURS 
+         INTEGER             :: IT, IFILE
 
 ! update wind ...
          IF (LWINDFROMWWM) THEN
@@ -630,8 +633,6 @@
            IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
          END IF
 
-!         IF (MAIN%TMJD .GT. 51545.) WINDXY = ZERO
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -643,9 +644,11 @@
          INTEGER, INTENT(IN) :: K
 
          CALL OUTPUT_HISTORY_AND_STATION
+
          IF (LHOTF) THEN
            IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
              WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
+             FLUSH(STAT%FHNDL)
              CALL OUTPUT_HOTFILE
              HOTF%TMJD = HOTF%TMJD + HOTF%DELT*SEC2DAY
            END IF
@@ -750,21 +753,18 @@
 # ifdef WWM_MPI
       use elfe_glbl
       use elfe_msgp
-# else
-      use datapool, only : MyRank, nproc, comm
 # endif
       implicit none
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING
       include 'mpif.h'
 # endif
-# ifndef WWM_MPI
-      integer ierr
-# endif
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
-      integer :: i, j
-      integer :: k, IT
+# ifdef MPI_PARALL_GRID
+      integer i, j
+# endif
+      integer :: k
       character(len=15) CALLFROM
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
@@ -798,7 +798,6 @@
       enddo
       call partition_hgrid
       call aquire_hgrid(.true.)
-
       call msgp_tables
       call msgp_init
       call parallel_barrier

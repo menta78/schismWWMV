@@ -102,9 +102,9 @@
 !     Report timing
       call report_timers
 
-!     Report computation portions of some targeted routines
-      do i=1,1
-        write(12,*)'Computation-only timers in hours:',i,myrank,real(timer_comp(i)/3600)
+!     Report wall-clock time of some targeted routines
+      do i=1,size(timer_ns)
+        write(12,*)'Custom timers in hours:',i,myrank,real(timer_ns(i)/3600)
       enddo !i
 #endif
 

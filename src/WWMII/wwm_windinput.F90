@@ -114,7 +114,7 @@
 
                   IF (I .GT. 1) UFRIC1 = UFRIC2
 
-                  fU10 = 0.02_rkind * MAX(ZERO, TANH(0.075_rkind*WIND10 - 0.75_rkind))   ! Eq. 6
+                  fU10 = 0.02_rkind * MAX(ZERO, MyTANH(0.075_rkind*WIND10 - 0.75_rkind))   ! Eq. 6
                   z0_t = MAX( THR, 0.1_rkind*(VISK/MAX(THR,UFRIC1)) + ( CZ0T + fU10 ) * UFRIC1**2/G9 )      ! Eq. 7
                   TAUHF(IP) = (KAPPA**2*WIND10**2) / LOG(TEN/z0_t)**2          ! Eq. 8
                   z00  = TEN * EXP( -( KAPPA*WIND10 / MAX(THR,UFRIC1) ) )
@@ -203,7 +203,7 @@
            AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
            DO ID = 1, MDC
              IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
-               AUX2 = ( UFRIC(IP) * MAX( 0._rkind , COS(SPDIR(ID)-WINDTH) ) )**4
+               AUX2 = ( UFRIC(IP) * MAX( 0._rkind , MyCOS(SPDIR(ID)-WINDTH) ) )**4
                SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
                SSINL(IS,ID) = SWINA / SPSIG(IS)
                IMATRA(IS,ID) = SSINL(IS,ID)
@@ -239,11 +239,11 @@
             CINV = WK(IP,IS)/SPSIG(IS)
             AUX3 = AUX2 * CINV
             DO ID = 1, MDC
-              COSDIF = COS(SPDIR(ID)-WINDTH)
+              COSDIF = MyCOS(SPDIR(ID)-WINDTH)
               SWINB = AUX1 * ( AUX3  * COSDIF - 1.0_rkind )
               SWINB = MAX( 0.0_rkind, SWINB * SPSIG(IS) )
               SSINE(IS,ID) = SWINB * ACLOC(IS,ID)
-              !WRITE(*,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
+              !WRITE(DBG%FHNDL,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSINE(IS,ID)
             END DO
          END DO
@@ -296,7 +296,7 @@
            RMK = 1 - MC_MK * AUX1 ** NC_MK
            DO ID = 1, MDC
              THETA  = SPDIR(ID)
-             COSWW  = COS(THETA-WINDTH)
+             COSWW  = MyCOS(THETA-WINDTH)
              IF (LATT) THEN
                IF (RMK .GE. 0.0_rkind) THEN
                  SWINB = MBETA * RMK * RHOAW * AUX2**2 * COSWW * ABS(COSWW) * SIGMA
@@ -360,8 +360,10 @@
 
          CALL STRESS_ECMWF ()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
+         FLUSH(STAT%FHNDL)
          CALL TAUHFR_ECMWF ()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
+         FLUSH(STAT%FHNDL)
 
        END SUBROUTINE PREPARE_SOURCE
 !**********************************************************************
@@ -376,8 +378,11 @@
 
          CALL STRESS()
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
+         FLUSH(STAT%FHNDL)
+
          CALL TAUHF_ECMWF_NEW
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
+         FLUSH(STAT%FHNDL)
 
        END SUBROUTINE PREPARE_SOURCE_ECMWF
 !**********************************************************************
@@ -493,13 +498,13 @@
 
          TEMP = 0._rkind
          DO ID = 1, MDC
-           TEMP = TEMP + ACLOC(MSC_HF(IP),ID) * MAX(0._rkind,COS(SPDIR(ID)-WINDTH))**3
+           TEMP = TEMP + ACLOC(MSC_HF(IP),ID) * MAX(0._rkind,MyCOS(SPDIR(ID)-WINDTH))**3
          END DO
 
          TAUHF(IP)= CONST0*TEMP*UST2*TAU1 ! rad/(m²s²)'m²s²/rad*m²/s² = m²/s²
 
-         XSTRESS  = XSTRESS + TAUHF(IP)*COS(WINDTH)
-         YSTRESS  = YSTRESS + TAUHF(IP)*SIN(WINDTH)
+         XSTRESS  = XSTRESS + TAUHF(IP)*MyCOS(WINDTH)
+         YSTRESS  = YSTRESS + TAUHF(IP)*MySIN(WINDTH)
 
          TAUWX(IP) = XSTRESS
          TAUWY(IP) = YSTRESS
@@ -507,9 +512,6 @@
          TAUTOT(IP) = SQRT(XSTRESS**2+YSTRESS**2)
          TAUTOT(IP) = MIN(TAUTOT(IP),UST2-EPS1)
          TAUTOT(IP) = MAX(TAUTOT(IP),0._rkind)
-
-        !WRITE(*,'(I10,7F15.8)') IP, UST2, ALPHA, DELALP, DELUST, Z0(IP)
-        !WRITE(*,'(I10,7F15.8)') IP, SQRT(UST2), TAUW(IP), TAUHF(IP), XSTRESS, YSTRESS
 
        END SUBROUTINE STRESSO_ECMWF
 !**********************************************************************
@@ -538,12 +540,10 @@
 
 
          DO ID = 1,MDC
-           TEMP(ID) = COS(SPDIR(ID)- WINDTH)
+           TEMP(ID) = MyCOS(SPDIR(ID)- WINDTH)
          END DO
 
          CONST  = SPSIG*XEPS*BETAMAX/XKAPPA**2
-
-         !WRITE(*,*) IP, WIND10, UFRIC(IP), Z0(IP)
 
          LWINDSEA = .FALSE. 
 

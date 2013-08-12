@@ -42,7 +42,7 @@
 #endif
 
 #ifdef USE_SED
-       USE sed_mod, only : Srho,Nbed,Zob,bed_frac,mcoefd
+       USE sed_mod, only : Srho
 #endif USE_SED
 
 #ifdef USE_OIL
@@ -75,23 +75,15 @@
       real(4) :: floatout,floatout2
       real(rkind) :: double1 !for hotstart.in
 
-! Input handles added by YC
-!      character(len=72) :: windfile,apssfile         !added by YC
-! arrays for waterquality model added by YC
-!      real(8),allocatable :: WSRP(:),WSLP(:),WSPB1(:),WSPB2(:), &
-!     &WSPB3(:),turb(:),WRea(:)    
-!      real(8),allocatable :: PSQ(:)
-!      integer,allocatable :: PSK(:)
-
 !     Misc. arrays
-      integer, allocatable :: icolor1(:),icolor2(:),ifront(:),ifront2(:),ipiv(:)
+      integer, allocatable :: ipiv(:)
       integer, allocatable :: nwild(:),nwild2(:),ibuf1(:,:),ibuf2(:,:)
       real(rkind), allocatable :: sigmap(:,:),sigma_prod(:,:,:),akr(:,:),akrp(:),work4(:),z_r2(:),xy_kr(:,:)
       real(rkind), allocatable :: swild(:),swild2(:,:) !swild2 dimension must match that in vinter()
       real(rkind), allocatable :: swild3(:),rwild(:,:)
       real(rkind), allocatable :: swild4(:,:),swild10(:,:) !double precision for hotstart.in
-      real(rkind), allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
-      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
+      real(rkind), allocatable :: swild99(:,:) !used for exchange (deallocate immediately afterwards)
+!      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
       real(4), allocatable :: swild8(:,:) !used in ST nudging
 
 !     Local variables
@@ -119,40 +111,12 @@
                      &et,qq,tr,ft1,dep,sim_year,sim_month,sim_day,sim_hour, &
                      &sim_minute,sim_second
 
-#ifdef USE_ECO 
-!...  MFR - other variables to atmospheric parameters (when nws=0 ... probably to clean later...)
-!      real(rkind), allocatable :: Pair(:), Tair(:), Hair(:), Uwind(:), Vwind(:), cloud(:)
-
-!...  MFR - Tracer models
-!      real(rkind) :: tr_tmp1
-#endif
-
 #ifdef USE_ICM
       real(rkind) :: yday
 #endif
 
-#ifdef USE_NAPZD
-!      allocatable :: Bio_bdefp(:,:)
-#endif
-
-#ifdef USE_SED
-!       allocatable :: dave(:) !,dahv(:,:)
-#endif /*USE_SED*/
-
 #ifdef USE_OIL
 #endif
-
-#ifdef USE_HA
-!      INTEGER NTSTEPS,ITMV
-!      REAL(8) TIMEBEG
-!      REAL(rkind) FMV
-!      allocatable :: XVELAV(:),YVELAV(:),XVELVA(:),YVELVA(:),ELAV(:),ELVA(:)
-#endif
-
-!     Station and other output arrays
-!      allocatable :: xsta(:),ysta(:),zstal(:),zsta(:),iep_sta(:),iep_flag(:),arco_sta(:,:), &
-!     &iof_sta(:),sta_out(:,:),sta_out_gb(:,:),indx_out(:,:),indx_wwm_out(:), &
-!     &sta_out3d(:,:,:),zta_out3d(:,:,:),sta_out3d_gb(:,:,:),zta_out3d_gb(:,:,:)
 
 
 !-------------------------------------------------------------------------------
@@ -502,10 +466,9 @@
 
       noutput=26+ntracers !all Hydro and generic tracers outputs
 #ifdef USE_SED
-      ! depth, d50, taub, bedforms heigth, bedforms length, z0,
-      !  qbdl(ntracers),bedfrac(ntracers)
-      noutput=noutput+6+2*ntracers
-      indx_out(1,1)=noutput-(5+2*ntracers)
+      ! depth, d50, taub, z0, qbdl(ntracers), bedfrac(ntracers)
+      noutput=noutput+4+2*ntracers
+      indx_out(1,1)=noutput-(3+2*ntracers)
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_SED2D
@@ -636,18 +599,10 @@
       variable_dim(indx2+3+2*ntracers)='2D scalar'
 
       outfile(indx2+4+2*ntracers)='brough.61'
-      variable_nm(indx2+4+2*ntracers)='bottom roughness lenght z0 (mm)'
+      variable_nm(indx2+4+2*ntracers)='bottom roughness lenght z0 (m)'
       variable_dim(indx2+4+2*ntracers)='2D scalar'
 
-      outfile(indx2+5+2*ntracers)='brip_h.61'
-      variable_nm(indx2+5+2*ntracers)='bed ripples height (m)'
-      variable_dim(indx2+5+2*ntracers)='2D scalar'
-
-      outfile(indx2+6+2*ntracers)='brip_l.61'
-      variable_nm(indx2+6+2*ntracers)='bed ripples lenght (m)'
-      variable_dim(indx2+6+2*ntracers)='2D scalar'
-
-      indx2=indx2+6+2*ntracers
+      indx2=indx2+4+2*ntracers
 #endif /*USE_SED*/
 
 #ifdef USE_SED2D
@@ -744,73 +699,34 @@
 !       68: 3D side and half level
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
-#ifdef DEBUG
 
-#ifdef USE_WWM
-      noutput_ns=6
-#ifdef USE_SED
-      noutput_ns=7
-#endif
-#else /*not WWM*/
-#ifdef USE_SED
-      noutput_ns=6
-#else
-      noutput_ns=5
-#endif
-#endif /*USE_WWM*/
-
-#else /*not DEBUG*/
-#ifdef USE_SED
-      noutput_ns=5
-#else
-      noutput_ns=4
-#endif
-#endif /*DEBUG*/
-
+      noutput_ns=11 !hvel.67,vert.69,temp.70,salt.70 etc
       allocate(outfile_ns(noutput_ns),varnm_ns(noutput_ns),iof_ns(noutput_ns), &
      &stat=istat)
       outfile_ns(1)='hvel.67'
       outfile_ns(2)='vert.69'
       outfile_ns(3)='temp.70'
       outfile_ns(4)='salt.70'
-#ifdef DEBUG
-      outfile_ns(5)='bpgr.65'
-#ifdef USE_WWM
-      outfile_ns(6)='wafo.67'
-#ifdef USE_SED
-      outfile_ns(7)='bfmt.66'
-#endif
-#else /*not WWM*/
-#ifdef USE_SED
-      outfile_ns(6)='bfmt.66'
-#endif
-#endif /*USE_WWM*/
-#else /*not DEBUG*/
-#ifdef USE_SED
-      outfile_ns(5)='bfmt.66'
-#endif
-#endif /*DEBUG*/
+      outfile_ns(5)='z0st.66'
+      outfile_ns(6)='z0eq.66'
+      outfile_ns(7)='z0cr.66'
+      outfile_ns(8)='z0sw.66'
+      outfile_ns(9)='z0wr.66'
+      outfile_ns(10)='bpgr.65'
+      outfile_ns(11)='wafo.67'
+
       varnm_ns(1)='3D horizontal vel. at sides and whole levels'
       varnm_ns(2)='Vertical vel. at centroids and whol levels'
       varnm_ns(3)='temperature at prism centers'
       varnm_ns(4)='salinity at prism centers'
-#ifdef DEBUG
-      varnm_ns(5)='barotropic pressure gradient force at side centers'
-#ifdef USE_WWM
-      varnm_ns(6)='wave force at side centers and whole levels'
-#ifdef USE_SED
-      varnm_ns(7)='bedforms type over the domain'
-#endif
-#else /*not USE_WWM*/
-#ifdef USE_SED
-      varnm_ns(6)='bedforms type over the domain'
-#endif
-#endif /*USE_WWM*/
-#else /*not DEBUG*/
-#ifdef USE_SED
-      varnm_ns(5)='bedforms type over the domain'
-#endif
-#endif /*DEBUG*/
+      varnm_ns(5)='Sediment transport z0 at prism center (m)'
+      varnm_ns(6)='Roughness length z0 at prism center(m)'
+      varnm_ns(7)='Current-ripples z0 at prism center(m)'
+      varnm_ns(8)='Sand-waves z0 at prism center (m)'
+      varnm_ns(9)='Wave-ripples z0 at prism center (m)'
+      varnm_ns(10)='barotropic pressure gradient force at side centers'
+      varnm_ns(11)='wave force at side centers and whole levels'
+
       do i=1,noutput_ns
         call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
         if(iof_ns(i)/=0.and.iof_ns(i)/=1) then
@@ -1102,7 +1018,24 @@
       hour=sim_hour
       minutes=sim_minute
       seconds=sim_second
-#endif      
+#endif
+     
+      call get_param('param.in','itr_met',1,itr_met,tmp,stringvalue)
+      if(itr_met/=1.and.itr_met/=2) then
+        write(errmsg,*)'Unknown tracer method',itr_met
+        call parallel_abort(errmsg)
+      endif
+      if(itr_met==2) then !TVD
+        call get_param('param.in','tvd_mid2',0,itmp,tmp,tvd_mid2)
+        call get_param('param.in','flimiter2',0,itmp,tmp,flimiter2)
+        call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
+      endif
+
+      call get_param('param.in','inu_tr',1,inu_tr,tmp,stringvalue)
+      if(inu_tr/=0.and.inu_tr/=1) then
+        write(errmsg,*)'Wrong inu_tr:',inu_tr
+        call parallel_abort(errmsg)
+      endif
 
 !...  Check parameter read in from param.in
       if(myrank==0) write(16,*)'done reading param.in; s2_mxnbt in param.in =',s2_mxnbt
@@ -1248,7 +1181,7 @@
 !'
 
 !     All other arrays
-      allocate(sigmap(nvrt,10),sigma_prod(nvrt,nvrt,-4:4),icolor1(npa),icolor2(npa), &
+      allocate(sigmap(nvrt,10),sigma_prod(nvrt,nvrt,-4:4), &
          &  ptbt(4,nvrt,npa),sdbt(4,nvrt,nsa),webt(nvrt,nea),bubt(nea,2), & 
          &  windx1(npa),windy1(npa),windx2(npa),windy2(npa),windx(npa),windy(npa), &
          &  tau(npa,2),iadv(npa),windfactor(npa),pr1(npa),airt1(npa),shum1(npa), &
@@ -1288,13 +1221,6 @@
       allocate(Bio_bdef(nvrt,nea),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: NAPZD allocation failure')
 #endif
-
-#ifdef USE_SED
-       allocate(Zob(nea),dave(nea),    &
-!     &          dahv(npa,2),mcoefd(np,0:(mnei+1)),stat=istat)
-     &          mcoefd(np,0:(mnei+1)),stat=istat)
-       if (istat/=0) call parallel_abort('Main: sed. allocation failure')
-#endif /*USE_SED*/
 
 !     Wave model arrays
 #ifdef  USE_WWM
@@ -1356,7 +1282,7 @@
       fluxsu00=0; srad00=0 !for nws/=3
       elevmax=-1.e34; dav_maxmag=-1; dav_max=0
       tsel=0; trel=0
-      timer_comp=0
+      timer_ns=0
 
 !     for output
       airt1=0; shum1=0;  airt2=0; shum2=0; srad=0; fluxsu=0; fluxlu=0
@@ -1818,13 +1744,6 @@
       ntrtype2=0 !total # of type II bnds (tr3D.th)
       nnode_tr=0 !total # of open bnd nodes that require tr3D.th
       if(ntracers>0) then
-        read(31,*) itr_met !=1: upwind; 2: TVD
-        if(itr_met/=1.and.itr_met/=2) then
-          write(errmsg,*)'Unknown tracer method',itr_met
-          call parallel_abort(errmsg)
-        endif
-        if(itr_met==2) read(31,*) tvd_mid2,flimiter2
-
 !       b.c.
         read(31,*) !nope_global
         do k=1,nope_global
@@ -1859,29 +1778,6 @@
             call parallel_abort(errmsg)
           endif
         enddo !k
-
-!       Nudging
-        read(31,*) inu_tr
-        if(inu_tr/=0.and.inu_tr/=1) then
-          write(errmsg,*)'Wrong inu_tr:',inu_tr
-          call parallel_abort(errmsg)
-        endif
-        if(inu_tr/=0) then
-          open(10,file='tracer_nudge.gr3',status='old')
-          read(10,*)
-          read(10,*) itmp1,itmp2
-          if(itmp1/=ne_global.or.itmp2/=np_global) &
-     &call parallel_abort('Check tracer_nudge.gr3')
-          do i=1,np_global
-            read(10,*)j,xtmp,ytmp,tmp1
-            if(tmp1<0.or.tmp1>1) then
-              write(errmsg,*)'Wrong nudging factor at node (1):',i,tmp1
-              call parallel_abort(errmsg)
-            endif
-            if(ipgl(i)%rank==myrank) tr_nudge(ipgl(i)%id)=tmp1
-          enddo !i
-          close(10)
-        endif !inu_tr/=0
       endif !ntracers
 
 !...  Done with bctides.in
@@ -2979,7 +2875,25 @@
           open(37,file='temp_nu.in',form='unformatted',status='old')
           open(35,file='salt_nu.in',form='unformatted',status='old')
         endif
-      endif
+      endif !inu_st
+
+!...  Nudging for tracers
+      if(inu_tr/=0) then
+        open(10,file='tracer_nudge.gr3',status='old')
+        read(10,*)
+        read(10,*) itmp1,itmp2
+        if(itmp1/=ne_global.or.itmp2/=np_global) &
+     &call parallel_abort('Check tracer_nudge.gr3')
+        do i=1,np_global
+          read(10,*)j,xtmp,ytmp,tmp1
+          if(tmp1<0.or.tmp1>1) then
+            write(errmsg,*)'Wrong nudging factor at node (1):',i,tmp1
+            call parallel_abort(errmsg)
+          endif
+          if(ipgl(i)%rank==myrank) tr_nudge(ipgl(i)%id)=tmp1
+        enddo !i
+        close(10)
+      endif !inu_tr/=0
 
 !...  Surface min. mixing length for f.s. and max. for all; inactive 
 !      read(15,*) !xlmax00
@@ -3023,10 +2937,10 @@
         enddo !k=1,nsig
       endif !mmm>0
 
-!     tvd_mid1: model AA (my own formulation); CC (Casulli's definition of upwind ratio)
-!     TVD scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd
+!     TVD scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd. itvd_e and h_tvd are shared 
+!     between T,S and all tracers
       itvd_e=0 !init. for upwind
-      if(iupwind_t==2) then
+      if(iupwind_t==2.or.itr_met==2) then
         open(32,file='tvd.prop',status='old')
         do i=1,ne_global
           read(32,*)j,tmp
@@ -3449,6 +3363,8 @@
       enddo !k=1,ne
 
       write(12,*)'Max. error in inverting Kriging maxtrice= ',err_max
+
+      deallocate(ipiv,akr,akrp,work4,xy_kr)
 !...  End Kriging preparation
 
       if(myrank==0) write(16,*)'done init (1)...'
@@ -3941,103 +3857,11 @@
             if(ics==2) call parallel_abort('MAIN: Sediment model cannot be used with lat/long coordinates (ics=2)')
             if(imm/=0) call parallel_abort('MAIN: imm and sediment model cannot be used at same time')
 !'
-
-!...        Initialize tracers indices and some scalars
-            call initialize_scalars
-            call initialize_ocean
-!#if defined BEDLOAD_VR 
-!Ligia: uu2,vv2=0 at this pt as nodalvel has not been called
-!...            Initialized htot1
-!                htot1=0.d0
-!                do i=1,npa
-!                  if(idry(i)==1)cycle
-!                  htot1(i)=dp(i)+eta2(i)
-!                enddo
-!----------------------------------------------------------------
-! Compute depth averaged hvel for VRIJN bedload
-!----------------------------------------------------------------------
-            dav=0.d0
-            dave=0.d0
-
-!                do i=1,npa
-!                  if(idry(i)==1) cycle
-!                  do k=kbp(i),nvrt-1
-!                    dav(i,1)=dav(i,1)+(uu2(k+1,i)+uu2(k,i))/2*(z(k+1,i)-z(k,i))
-!                    dav(i,2)=dav(i,2)+(vv2(k+1,i)+vv2(k,i))/2*(z(k+1,i)-z(k,i))
-!                  enddo !k
-!                  if(htot1(i)<=h0) then
-!                    write(errmsg,*)'Impossible 24n',i,htot1(i),eta2(i),dp(i),idry(i),h0
-!                    call parallel_abort(errmsg)
-!                  endif
-!                  dav(i,1)=dav(i,1)/htot1(i)
-!                  dav(i,2)=dav(i,2)/htot1(i)
-!                enddo !i=1,npa
-!#endif BEDLOAD_VR
-
-!#if defined BEDLOAD_MPM || defined BEDLOAD_VR && defined SED_MORPH
-!           Compute mass matrix
-            mcoefd=0
-            aux1=22./108
-            aux2=7./108
-            do i=1,np !residents
-              do j=1,nne(i)
-                ie=ine(i,j)
-                mcoefd(i,0)=mcoefd(i,0)+area(ie)*aux1 !diagonal
-                mcoefd(i,j)=mcoefd(i,j)+area(ie)*aux2 
-                if(isbnd(1,i)==0.and.j==nne(i)) then !internal ball
-                  mcoefd(i,1)=mcoefd(i,1)+area(ie)*aux2
-                else
-                  mcoefd(i,j+1)=mcoefd(i,j+1)+area(ie)*aux2
-                endif
-              enddo !j
-
-              !Debug
-              !tmp=sum(mcoefd(i,1:nnp(i)))
-              !write(12,*)i,isbnd(1,i),tmp/mcoefd(i,0)
-            enddo !i=1,np
-!#endif 
-
-!           reads sediment model inputs (sedim.in file)
-            if(myrank==0) write(16,*)'Reading sediment model parameters'
-            call read_sed_input
-            if(myrank==0) write(16,*)'End reading sediment parameters'
-
-!JZ:          Moved Jan's addition here
-!             to start with, the bottom grid will have 1 layer, so Nbed=1
-!             need to read in:
-!             - fraction of each sediment class in bed layer at each node
-!             reading directly to bed_frac(Nbed,nea,ntracers)
-
-            allocate(swild98(Nbed,npa,ntracers),stat=istat)
-
-            do i=1,Nbed
-              do m=1,ntracers
-                write(ifile_char,'(i03)')m
-                ifile_char=adjustl(ifile_char); ifile_len=len_trim(ifile_char)
-                inputfile='bed_frac_'//ifile_char(1:ifile_len)//'.ic'
-                open(10,file=inputfile,status='old')
-                read(10,*) !read in first line, no need to store it
-                read(10,*) !read in second line, no need to store it
-                do j=1,np_global
-                  read(10,*) itmp,xtmp,ytmp,tmp1
-                  if(ipgl(j)%rank==myrank) swild98(i,ipgl(j)%id,m)=tmp1
-                enddo !j
-              enddo !m
-            enddo !i
-            close(10)
-
-!           Convert bed_fraction at nodes to elements
-            do i=1,nea
-               do j=1,Nbed
-                 do k=1,ntracers
-                   bed_frac(j,i,k) = (swild98(j,nm(i,1),k)+                    &
-     &                                swild98(j,nm(i,2),k)+                    &
-     &                                swild98(j,nm(i,3),k))/3.0
-                 enddo
-               enddo
-            enddo
-
-            deallocate(swild98,stat=istat)
+! * FG. - Moving most of sediment initializations within sed_init.F90
+!           Reads sediment model inputs (sediment.in file)
+            CALL read_sed_input
+!           Allocation of sediment arrays
+            CALL sed_alloc
 #endif /*USE_SED*/
 !LLP end
 
@@ -4261,7 +4085,7 @@
               close(10)
             enddo !m
           case(2)
-!	        Vertically varying
+!	    Vertically varying
             do m=1,ntracers
               write(ifile_char,'(i03)')m
               ifile_char=adjustl(ifile_char) 
@@ -4308,6 +4132,8 @@
                   tr_nd(m,k,i)=tr_nd(m,kbp(i),i)
                 enddo !k
               enddo !i=1,npa
+
+              deallocate(z_r2)
             enddo !m=1,ntracers
 
           case(0)
@@ -5112,9 +4938,7 @@
       endif !itur==4 etc
 
 #ifdef USE_SED
-!...    initialize sediment variables
 !...    Bottom roughness length (m)
-        if(myrank==0) write(16,*)'initialize sediment...'
         if(nchi==0) then
           do j=1,npa
             if(idry(j)==1.or.Cdp(j)==0) then
@@ -5124,20 +4948,9 @@
             endif
           enddo !j
         endif !nchi
-
-        Zob=0.d0
-        do j=1,nea
-          n1=nm(j,1); n2=nm(j,2); n3=nm(j,3)
-          Zob(j)=(rough_p(n1)+rough_p(n2)+rough_p(n3))/3.0
-          if (Zob(j) == 0) then
-              write(errmsg,*) 'Zob(j),j,rank:', Zob(j), j, myrank
-              call parallel_abort(errmsg)
-          endif
-        enddo
-
-        if(myrank==0) write(16,*)'call sed_init'
+!...    Sediment model initialization
         call sed_init
-        if(myrank==0) write(16,*)'end sed_init' 
+!..     End of sediment model initialization
 
 #endif /*USE_SED*/
 
@@ -5188,4 +5001,8 @@
 !     Broadcast to global module
       iths_main=iths
  
+!     Deallocate temp. arrays to release memory
+      deallocate(nwild,nwild2,sigmap,sigma_prod,swild,swild2,swild3,swild4,swild8,swild10)
+      if(nws==4) deallocate(rwild)
+
       end subroutine selfe_init

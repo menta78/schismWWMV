@@ -1,4 +1,4 @@
-#1###############################################################################
+################################################################################
 # Parallel SELFE Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
@@ -62,9 +62,18 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 #  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 ##########################################################################################
 #####Libraries
+#From my own dir
 MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
+<<<<<<< HEAD
 CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf  -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
 CDFMOD  = -I$(NETCDF_INCDIR) -I$(HDF5_INCDIR) # modules for netcdf
+=======
+#From Harry's dir
+#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
+
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+>>>>>>> 85f0fd1a1cddf00dbd0ecbc7071c65652a93cea6
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
@@ -161,5 +170,17 @@ endif
 # USE_DEBUG = yes
 # EXEC := $(EXEC)_DEBUG
 
+
 ######### Specialty compiler flags and workarounds
 
+# Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
+# PPFLAGS := $(PPFLAGS) -DNO_TR_15581
+
+# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
+# USE_OPEN64 = no
+
+# Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
+# PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
+
+#Temporary fix for Stampede cluster; leave it on
+# PPFLAGS := $(PPFLAGS) -DSTAMPEDE

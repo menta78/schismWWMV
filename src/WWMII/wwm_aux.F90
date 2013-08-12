@@ -33,6 +33,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DDEP(IP,1)
                   END DO
+                  FLUSH(STAT%FHNDL)
                END IF
 
             CASE (2)
@@ -58,17 +59,45 @@
                         WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD , 'MAXSLOPE'
                      END IF
                   END DO
+                  FLUSH(STAT%FHNDL)
                END IF
-
-!              DO IP = 1, MNP
-!                 WRITE(STAT%FHNDL,'(1X,I5,6F15.7)') IP, DDEP(IP,1), DDEP(IP,2), DEP(IP)
-!              END DO
 
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
+!**********************************************************************
+!* Some MPI_BARRIER are just not reliable. This construction makes    *
+!* that every process receive and send to every other process         *
+!**********************************************************************
+#ifdef MPI_PARALL_GRID
+      SUBROUTINE MYOWN_MPI_BARRIER(istat)
+      USE DATAPOOL
+      USE elfe_msgp
+      USE elfe_glbl
+      IMPLICIT NONE
+      integer, intent(in) :: istat
+      integer eInt(1)
+      integer iRank, jRank, eTag
+      eInt(1)=4
+      WRITE(STAT%FHNDL,*) 'Before the loop of send/recv stat=', istat
+      FLUSH(STAT%FHNDL)
+      DO iRank=0,nproc-1
+        eTag=137 + iRank
+        IF (myrank .eq. iRank) THEN
+          DO jRank=0,nproc-1
+            IF (iRank.ne. jRank) THEN
+              CALL MPI_SEND(eInt,1,itype,jRank,eTag,comm,ierr)
+            END IF
+          END DO
+        ELSE
+          CALL MPI_RECV(eInt, 1, itype,iRank,eTag,comm,istatus,ierr)
+        END IF
+      END DO
+      WRITE(STAT%FHNDL,*) 'After the loop of send/recv stat=', istat
+      FLUSH(STAT%FHNDL)
+      END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -95,6 +124,7 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,3F10.5)') IP, DCUX, DCUY
                   END DO
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE (2)
                CALL DIFFERENTIATE_XYDIR(CURTXY(:,1),DCUX(:,1),DCUX(:,2))
@@ -113,11 +143,11 @@
                   DO IP = 1, MNP
                      WRITE(STAT%FHNDL,'(1X,I5,4F15.7)') IP, DCUX(IP,1), DCUX(IP,2), DCUY(IP,1), DCUY(IP,2)
                   END DO
+                  FLUSH(STAT%FHNDL)
                END IF
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -125,7 +155,7 @@
       SUBROUTINE GRAD_CG_K()
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER :: IP, IS
+         INTEGER :: IS
 
          DCGDX(:,:) = 0.0
          DCGDY(:,:) = 0.0
@@ -146,7 +176,6 @@
             CASE DEFAULT
          END SELECT
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -175,9 +204,7 @@
              DVDX(IP) = TMP1/TMP2
          END DO
 
-         RETURN
       END SUBROUTINE
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -195,9 +222,6 @@
          REAL(rkind)            :: DVDXIE, DVDYIE
 
          REAL(rkind)            :: WEI(MNP)
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)            :: WILD(MNP)
-#endif
 
          WEI(:)  = 0.0_rkind
          DVDX(:) = 0.0_rkind
@@ -322,10 +346,6 @@
          TABK(IS)  = WVK
          TABCG(IS) = WVCG
 
-         !WRITE(1201,*) TABK
-         !WRITE(1202,*) TABCG
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -430,8 +450,8 @@
            DEPLOC = MAX(DMIN,DEP(IP))
            DO IS = 1, MSC
              SPSIGLOC = SPSIG(IS)
-!             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
-             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
+             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+!             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
              WK(IP,IS) = WVK
              CG(IP,IS) = WVCG
              WC(IP,IS) = WVC
@@ -460,7 +480,7 @@
         INTEGER :: I, IP, IE, IS, ID, NI(3)
         INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5, ISCONV(MNP)
         REAL(rkind)  :: SUMAC, ACLOC(MSC,MDC)
-        REAL(rkind)  :: ETOT, EAD, DS, HS2
+        REAL(rkind)  :: ETOT, EAD, DS, HS2, KD
         REAL(rkind)  :: ETOTF3, ETOTF4, TP, KHS2, EFTOT, TM02
         REAL(rkind)  :: FP, CP, KPP, CGP, WNP, UXD, OMEG, OMEG2
         REAL(rkind)  :: CONVK1, CONVK2, CONVK3, CONVK4, CONVK5
@@ -505,8 +525,8 @@
 
           IF(ETOTF4 .GT. THR8 .AND. ETOTF3 .GT. THR8) THEN
              FP   = ETOTF3/ETOTF4
-             CALL WAVEKCG(DEP(IP), FP, WNP, CP, KPP, CGP)
-             !CALL ALL_FROM_TABLE(FP,DEP(IP),KPP,CGP,KD,WVN,CP)
+ !            CALL WAVEKCG(DEP(IP), FP, WNP, CP, KPP, CGP)
+             CALL ALL_FROM_TABLE(FP,DEP(IP),KPP,CGP,KD,WNP,CP)
              TP   = 1.0_rkind/FP/PI2
              KHS2 = HS2 * KPP
           ELSE
@@ -636,8 +656,7 @@
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 4 REACHED IN', CONV4, '% GRIDPOINTS'
          WRITE(STAT%FHNDL,*) 'CONVERGENCE CRIT. 5 REACHED IN', CONV5, '% GRIDPOINTS'
 #endif
-
-         RETURN
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -656,7 +675,7 @@
            DO ID = 1, MDC
              AC1D(ID + (IS-1) * MDC) = ACLOC(IS,ID)
            END DO
-        END DO
+         END DO
 
      END SUBROUTINE
 !**********************************************************************
@@ -703,7 +722,7 @@
          IF (YY > ABIG) YY = ABIG
          IF (YY < -ABIG) YY = -ABIG
          GAMMA_FUNC = EXP(YY)
-         RETURN
+
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -734,7 +753,6 @@
          END DO
          GAMMLN = TMP+LOG(STP*SER)
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -750,7 +768,6 @@
          IF (VEC2RAD < 0.0) VEC2RAD = VEC2RAD + 360.0_rkind
          VEC2RAD = VEC2RAD * PI/180.
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -764,7 +781,6 @@
          VEC2DEG = MyATAN2(V,U) * 180./PI
          IF (VEC2DEG < 0.0) VEC2DEG = VEC2DEG + 360.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -779,7 +795,6 @@
          IF (DVEC2RAD < 0.0_rkind) DVEC2RAD = DVEC2RAD + 360.0_rkind
          DVEC2RAD = DVEC2RAD * PI/180.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -794,7 +809,6 @@
          DVEC2DEG = MyATAN2(V,U) * 180.0_rkind/PI
          IF (DVEC2DEG < 0.0_rkind) DVEC2DEG = DVEC2DEG + 360.0_rkind
 
-         RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -838,8 +852,7 @@
 !       DEG between 0 and 360; do nothing
       endif
 !
-      RETURN
-      END
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -908,7 +921,6 @@
             POSNEG = PO + NE
          END DO
 
-!         WRITE (*,*) 'CHECKCONS', SUMAC
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1118,7 +1130,7 @@
       REAL(rkind), INTENT(OUT) :: ACLOC(MSC,MDC)
       REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC)
       REAL(rkind), SAVE         :: WI(3)
-      INTEGER :: IS, ID, NI(3), IE
+      INTEGER :: IS, NI(3), IE
       REAL(rkind) :: WVN, WVC, WVK, WVCG, WVKDEP
       integer IP, J
 
@@ -1224,7 +1236,6 @@
 #else
          SEVAL(:,:) = SEVAL2(:,:)
 #endif
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1262,8 +1273,7 @@
            ERR=1.0D0-C0*ER
            IF (X.LT.0.0) ERR=-ERR
         endif
-        RETURN
-        END
+        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1776,7 +1786,7 @@
       !dintspec = dintspec * maxvalue
 
       return
-      end
+      end function
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1841,11 +1851,13 @@
       character(*), intent(in) :: string
 
       WRITE(DBG%FHNDL, *) TRIM(string)
-      CALL FLUSH(DBG%FHNDL)
+      FLUSH(DBG%FHNDL)
 
 #ifdef MPI_PARALL_GRID
       CALL PARALLEL_ABORT(TRIM(string))
 #else
+      Print *, 'We have to abort. Reason:'
+      Print *, TRIM(string)
       STOP 'WWM_ABORT'
 #endif
       END SUBROUTINE WWM_ABORT

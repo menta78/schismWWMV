@@ -1,3 +1,4 @@
+#include "wwm_functions.h"
 !------------------------------------------------------------------------------
 module m_xnldata
 !------------------------------------------------------------------------------
@@ -454,6 +455,7 @@ subroutine xnl_init(sigma,dird,nsigma,ndir,pftail,x_grav,depth,ndepth, &
 !   +---+ |   |  Release: 5.03
 !         +---+
 !
+use datapool,only:stat
 use m_fileio
 use m_constants
 ! do not use m_xnldata
@@ -574,7 +576,7 @@ call q_setversion ! set version number
 q_mindepth = 0.1               ! Set minimum water depth
 q_maxdepth = 2000              ! Set maximum water depth
 q_dstep    = 0.1               ! Set minimum step for coding depth files
-iscreen    = 6                 ! Identifier for screen output (UNIX=0, WINDOWS=6)
+iscreen    = STAT%FHNDL        ! Put into STAT&FHNDL was screen before makes problems in parallel 
 iufind     = 1                 ! search for unit numbers automatically
 !----------------------------------------------------------------------------
 ! Initialisations
@@ -7492,8 +7494,8 @@ k4m = sqrt(x4**2 + y4**2)
 ang2 = atan2(x2,y2)
 ang4 = atan2(x4,y4)
 !
-sig2 = sqrt(q_grav*k2m*tanh(k2m*q_depth))
-sig4 = sqrt(q_grav*k4m*tanh(k4m*q_depth))
+sig2 = sqrt(q_grav*k2m*TANH(k2m*q_depth))
+sig4 = sqrt(q_grav*k4m*TANH(k4m*q_depth))
 !
 k2md = k2m*q_depth
 k4md = k4m*q_depth
@@ -7591,7 +7593,7 @@ select case(id)
   case (1)                           ! deep water w^2=g k
     x_disper = sqrt(q_grav*k)
   case (2)                           ! finite depth w^2 = g k tanh(k d)
-    x_disper = sqrt(q_grav*k*tanh(k*d))
+    x_disper = sqrt(q_grav*k*TANH(k*d))
   case default
     x_disper = -1.
 end select
@@ -8089,7 +8091,7 @@ z4y = z4y
       real x
 !      print *,'inside tanz '
       if (x.gt.20.) x=25.
-      tanz=tanh(x)
+      tanz=TANH(x)
 !      print *,'after def of tanz'
       return
       end  function

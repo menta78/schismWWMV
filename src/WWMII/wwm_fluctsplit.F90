@@ -190,13 +190,13 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER             :: IS, ID, IP
+         INTEGER             :: IS, ID, IX
          REAL(rkind)         :: DTMAX
 #ifdef PETSC
          REAL(rkind)         :: u(msc,mdc,mnp)
 #endif
-         real starttime, endtime
-!          call cpu_time(starttime)
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
+         FLUSH(STAT%FHNDL)
 #ifdef PETSC
          ! petsc block has its own loop over MSC MDC
          IF(AMETHOD == 5) THEN
@@ -224,20 +224,27 @@
 !$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
                DO IS = 1, MSC
-                 CALL FLUCTCFL(IS,ID,DTMAX)
                  CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
                END DO
              END DO
            END IF
          ELSE IF (ICOMP .GE. 1) THEN ! Implicit schemes ...
            IF (AMETHOD == 1) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-!                 CALL EIMPS( IS, ID)
-                 CALL EIMPS_V1( IS, ID)
-               END DO
+!$OMP PARALLEL PRIVATE (ID,IS,IX) 
+!$OMP DO SCHEDULE(GUIDED,MDC) 
+!             DO ID = 1, MDC
+!               DO IS = 1, MSC
+!                CALL EIMPS( IS, ID)
+!                 CALL EIMPS_V1( IS, ID)
+!               END DO
+!             END DO
+             DO IX = 1, NSPEC
+               ID = INT((IX-1)/MSC)+1
+               IS = IX - (ID-1) * MSC
+               CALL EIMPS( IS, ID)
              END DO
+!$OMP ENDDO
+!$OMP END PARALLEL
            ELSE IF (AMETHOD == 2) THEN
 !$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
@@ -254,7 +261,6 @@
              END DO
            ELSE IF (AMETHOD == 4) THEN
 #ifdef PETSC
-!$OMP DO PRIVATE (ID,IS)
              DO ID = 1, MDC
                DO IS = 1, MSC
                  CALL EIMPS_PETSC(IS, ID)
@@ -280,7 +286,8 @@
 #endif
            END IF
          END IF
-         RETURN
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
+         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -372,7 +379,6 @@
          REAL(rkind)  :: KSUM, KMAX, LAMBDA(2)
          REAL(rkind)  :: DTMAX_EXP, DTMAX_GLOBAL_EXP
          REAL(rkind)  :: REST, C(2,MNP)
-         REAL(rkind)  :: DIFRU
 
          DTMAX_GLOBAL_EXP = 10.D14
 
@@ -391,21 +397,21 @@
 
          J = 0
          DO IP = 1, MNP
-           KSUM = 0.0_rkind
-           KMAX = 0.0_rkind
+           KSUM = ZERO
+           KMAX = ZERO
            DO I = 1, CCON(IP)
              J = J + 1
              IE    = IE_CELL(J)
              POS   = POS_CELL(J)
-             KSUM  = KSUM + MAX(K(POS,IE),0.0_rkind)
+             KSUM  = KSUM + MAX(K(POS,IE),ZERO)
              IF ( ABS(K(POS,IE)) > KMAX ) KMAX = ABS(K(POS,IE))
            END DO
-           IF (KSUM > 0.0_rkind) THEN
+           IF (KSUM > ZERO) THEN
              DTMAX_EXP = SI(IP)/KSUM
            ELSE
              DTMAX_EXP = 10.d14
            END IF
-!           IF (KMAX > 0.0_rkind) THEN
+!           IF (KMAX > ZERO) THEN
 !             DTMAX_EXP =  SI(IP)/KMAX ! Somewhat smaller due to the CRD approach ...
 !           ELSE
 !             DTMAX_EXP = 10E14
@@ -444,11 +450,10 @@
 !
          INTEGER :: IP, IE, IT, IP_TEST
          INTEGER :: I1, I2, I3, I, J, IMETHOD, IPOS
-         INTEGER :: NI(3),K, POS
+         INTEGER :: NI(3), POS
 !
 ! local double
 !
-         REAL(rkind)  :: FT
          REAL(rkind)  :: UTILDE
 
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
@@ -465,7 +470,7 @@
 
          REAL(rkind)  :: KTMP(3)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), N(MNE), U3(3), ST3(3)
+         REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
@@ -501,9 +506,9 @@
             KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
             KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
             KTMP  = KELEM(:,IE)
-            TMP   = SUM(MIN(0.0_rkind,KTMP))
+            TMP   = SUM(MIN(ZERO,KTMP))
             N(IE) = - ONE/MIN(-THR,TMP)
-            KELEM(:,IE) = MAX(0.0_rkind,KTMP)
+            KELEM(:,IE) = MAX(ZERO,KTMP)
             FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
             FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
             FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
@@ -523,28 +528,28 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-           KKSUM = 0.0_rkind
-           DO IE = 1, MNE
+!           KKSUM = ZERO
+!           DO IE = 1, MNE
 !             IF (IE_IS_STEADY(IE) .GT. 2) THEN
 !               CYCLE
 !             ENDIF
-             NI = INE(:,IE)
-             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
-           END DO
+!             NI = INE(:,IE)
+!             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
+!           END DO
 !AR: Experimental ... improves speed by 20% but maybe unstable in
 !certain situations ... must be checked thoroughly
-!           KMAX = 0.0_rkind
-!           KSUM = 0.0_rkind
-!           J    = 0
-!           DO IP = 1, MNP
-!             DO I = 1, CCON(IP)
-!               J = J + 1
-!               IE    = IE_CELL(J)
-!               POS   = POS_CELL(J)
-!               KSUM(IP)  = KSUM(IP) + MAX(KELEM(POS,IE),0.0_rkind)
-!               IF ( ABS(KELEM(POS,IE)) > KMAX(IP) ) KMAX(IP) = ABS(KELEM(POS,IE))
-!             END DO
-!           END DO
+           KKMAX = ZERO
+           KKSUM = ZERO
+           J    = 0
+           DO IP = 1, MNP
+             DO I = 1, CCON(IP)
+               J = J + 1
+               IE    = IE_CELL(J)
+               POS   = POS_CELL(J)
+               KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
+               IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
+             END DO
+           END DO
 
 #ifdef MPI_PARALL_GRID
            DTMAX_GLOBAL_EXP = VERYLARGE
@@ -554,11 +559,11 @@
 !              CYCLE
 !            ENDIF
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !write(DBG%FHNDL,*) IP, SI(IP), KKSUM(IP)
+             !WRITE(DBG%FHNDL,'(I10,3F15.6)') IP, SI(IP), KKSUM(IP), DEPTH(IP), DTMAX_EXP
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
            END DO
@@ -566,28 +571,32 @@
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
+             IF (IOBP(IP) .NE. 0) CYCLE 
 !            IF (IP_IS_STEADY(IP) .GT. 2) THEN
 !              CYCLE
 !            ENDIF
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !DTMAX_EXP = SI(IP)/MAX(THR,KMAX(IP))
+             !DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
+             DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(DT4A,MIN(CFLCXY(3,IP), DTMAX_EXP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
+             WRITE(22227,*) IP, CCON(IP), SI(IP)
+             IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
            END DO
 #endif
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
            REST  = ABS(MOD(CFLXY,ONE))
            IF (REST .LT. THR) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
+             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) 
            ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
            ELSE
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
            END IF
+
          END IF
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
@@ -622,7 +631,7 @@
 !                 WRITE(DBG%FHNDL,*) '1st IP LOOP CYCLE', IT, IP, IP_IS_STEADY(IP)
 !                  CYCLE
 !               ENDIF
-               U(IP) = MAX(0.0_rkind,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+               U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
              ENDDO
 !             WRITE(*,'(2I10,F20.10,2I20,F20.10)') ID, IS, U(IP_TEST), IOBPD(ID,IP_TEST), IOBDP(IP_TEST), DEP(IP_TEST)
 #ifdef MPI_PARALL_GRID
@@ -632,7 +641,7 @@
          ELSE IF (IMETHOD == 2) THEN
            DO IT = 1, ITER_EXP(IS,ID)
              UTILDEE = N*(FLALL(1,:)*U(INE(1,:))+FLALL(2,:)*U(INE(2,:))+FLALL(3,:)*U(INE(3,:)))
-             ST = 0.0_rkind
+             ST = ZERO
              J = 0
              DO IP = 1, MNP
                DO I = 1, CCON(IP)
@@ -641,7 +650,7 @@
                  ST(IP) = ST(IP) + KELEM(IPOS,IE) * (U(IP) - UTILDEE(IE))
                END DO
              END DO
-             U = MAX(0.0_rkind,U-DTSI*ST*IOBWB)*IOBPD(ID,:)*IOBDP(:)
+             U = MAX(ZERO,U-DTSI*ST*IOBWB)*IOBPD(ID,:)*IOBDP(:)
 #ifdef MPI_PARALL_GRID
              CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
 #endif
@@ -755,9 +764,9 @@
             KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
             KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
             KTMP  = KELEM(:,IE)
-            TMP   = SUM(MIN(0.0_rkind,KTMP))
+            TMP   = SUM(MIN(ZERO,KTMP))
             N(IE) = - ONE/MIN(-THR,TMP)
-            KELEM(:,IE) = MAX(0.0_rkind,KTMP)
+            KELEM(:,IE) = MAX(ZERO,KTMP)
             FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
             FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
             FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
@@ -777,7 +786,7 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-           KKSUM = 0.0_rkind
+           KKSUM = ZERO
            DO IE = 1, MNE
              NI = INE(:,IE)
              KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
@@ -791,7 +800,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN(DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
@@ -804,7 +813,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -837,15 +846,15 @@
          U = AC2(:,IS,ID)
 
          DO IT = 1, ITER_EXP(IS,ID)
-           ST = 0.0_rkind
+           ST = ZERO
            DO IE = 1, MNE
              NI   = INE(:,IE)
              FT     = -ONESIXTH*DOT_PRODUCT(U(NI),FLALL(:,IE))
              UTILDE = N(IE) * ( DOT_PRODUCT(KELEM(:,IE),U(NI)) - FT )
              THETA_L(:) = KELEM(:,IE) * (U(NI) - UTILDE)
-             IF (ABS(FT) .GT. 0.0_rkind) THEN
+             IF (ABS(FT) .GT. ZERO) THEN
                BET1(:) = THETA_L(:)/FT
-               IF (ANY( BET1 .LT. 0.0_rkind) ) THEN
+               IF (ANY( BET1 .LT. ZERO) ) THEN
                  BETAHAT(1)    = BET1(1) + ONEHALF * BET1(2)
                  BETAHAT(2)    = BET1(2) + ONEHALF * BET1(3)
                  BETAHAT(3)    = BET1(3) + ONEHALF * BET1(1)
@@ -858,12 +867,15 @@
                  THETA_L(:) = FT * BET1
                END IF
              ELSE
-               THETA_L(:) = 0.0_rkind
+               THETA_L(:) = ZERO
              END IF
 ! the 2nd term are the theta values of each node ...
              ST(NI) = ST(NI) + THETA_L
            END DO
-           U = MAX(0.0_rkind,U-DTSI*ST*IOBWB)*IOBPD(ID,:)
+           U = MAX(ZERO,U-DTSI*ST*IOBWB)*IOBPD(ID,:)
+           DO IP = 1, MNP
+             U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+           END DO
 #ifdef MPI_PARALL_GRID
            CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
 #endif
@@ -906,8 +918,8 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT
-         INTEGER :: I1, I2, I3, K
+         INTEGER :: IP, IE, IT, I, J
+         INTEGER :: I1, I2, I3
          INTEGER :: NI(3)
 !
 ! local double
@@ -929,8 +941,8 @@
          REAL(rkind)  :: UTMP(3)
          REAL(rkind)  :: WII(2,MNP), UL(MNP), USTARI(2,MNP)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), PM(MNP), PP(MNP), UIM(MNP)
-         REAL(rkind)  :: UIP(MNP)
+         REAL(rkind)  :: KKSUM(MNP), ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY, N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
@@ -942,7 +954,7 @@
 ! local parameter
 !
 
-         BL = 0.05_rkind
+         BL = ZERO
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -959,7 +971,7 @@
             KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
             KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
             KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-            N(IE) = - ONE/MIN(-THR,SUM(MIN(0._rkind,KELEM(:,IE))))
+            N(IE) = - ONE/MIN(-THR,SUM(MIN(ZERO,KELEM(:,IE))))
             FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
             FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
             FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
@@ -980,10 +992,10 @@
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
 
-           KKSUM = 0.0_rkind
+           KKSUM = ZERO
            DO IE = 1, MNE
              NI = INE(:,IE)
-             KKSUM(NI) = KKSUM(NI) + MAX(0.0_rkind,KELEM(:,IE))
+             KKSUM(NI) = KKSUM(NI) + MAX(ZERO,KELEM(:,IE))
            END DO
 
 #ifdef MPI_PARALL_GRID
@@ -995,12 +1007,11 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
-           CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,    &
-     &                        1,rtype,MPI_MIN,comm,ierr)
+           CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP, 1,rtype,MPI_MIN,comm,ierr)
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
@@ -1008,7 +1019,7 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DT4A/DTMAX_EXP)
+               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -1049,43 +1060,42 @@
 !
 ! Element loop
 !
-           ST = 0.0_rkind
-           PM = 0.0_rkind
-           PP = 0.0_rkind
+           ST = ZERO
+           PM = ZERO
+           PP = ZERO
            DO IE = 1, MNE
               NI      = INE(:,IE)
               UTMP    = U(NI)
-              FT      =  - ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
-              TMP     =  MAX(0.0_rkind,KELEM(:,IE))
+              FT      =  -ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
+              TMP     =  MAX(ZERO,KELEM(:,IE))
               UTILDE  =  N(IE) * ( DOT_PRODUCT(TMP,UTMP) - FT )
               THETA_L(:,IE) =  TMP * ( UTMP - UTILDE )
-              IF (ABS(FT) .GT. THR) THEN
+              IF (ABS(FT) .GT. ZERO) THEN
                 BET1(:) = THETA_L(:,IE)/FT
-                IF (ANY( BET1 .LT. 0.0_rkind) ) THEN
+                IF (ANY( BET1 .LT. ZERO) ) THEN
                   BETAHAT(1)    = BET1(1) + ONEHALF * BET1(2)
                   BETAHAT(2)    = BET1(2) + ONEHALF * BET1(3)
                   BETAHAT(3)    = BET1(3) + ONEHALF * BET1(1)
-                  BET1(1)       = MAX(ZERO,MIN(BETAHAT(1),              &
-     &                                         ONE-BETAHAT(2),ONE))
-                  BET1(2)       = MAX(ZERO,MIN(BETAHAT(2),              &
-     &                                         ONE-BETAHAT(3),ONE))
-                  BET1(3)       = MAX(ZERO,MIN(BETAHAT(3),              &
-     &                                         ONE-BETAHAT(1),ONE))
+                  BET1(1)       = MAX(ZERO,MIN(BETAHAT(1),ONE-BETAHAT(2),ONE))
+                  BET1(2)       = MAX(ZERO,MIN(BETAHAT(2),ONE-BETAHAT(3),ONE))
+                  BET1(3)       = MAX(ZERO,MIN(BETAHAT(3),ONE-BETAHAT(1),ONE))
                   THETA_L(:,IE) = FT * BET1
                 END IF
               ELSE
-                THETA_L(:,IE) = 0.0_rkind
+                THETA_L(:,IE) = ZERO
               END IF
               ST(NI)          = ST(NI) + THETA_L(:,IE)
-!              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) *        &
-!     &                           KELEM(:,IE) ) * FT ! LAX
-              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(0.0_rkind,KELEM(:,IE))))*FT  ! CENTRAL
+              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) * KELEM(:,IE) ) * FT ! LAX
+!              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(ZERO,KELEM(:,IE))))*FT  ! CENTRAL
               THETA_ACE(:,IE) = THETA_H-THETA_L(:,IE)
               PP(NI) =  PP(NI) + MAX(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
               PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
             END DO
 !
-            UL = MAX(0._rkind,U-DTSI*ST)*IOBPD(ID,:)
+!            UL = MAX(ZERO,U-DTSI*ST)*IOBPD(ID,:)
+            DO IP = 1, MNP
+              UL(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+            ENDDO
 
 #ifdef MPI_PARALL_GRID
            CALL EXCHANGE_P2D(UL) ! Exchange after each update of the res. domain
@@ -1099,29 +1109,49 @@
             UIM = 0.
             DO IE = 1, MNE
               NI = INE(:,IE)
-              UIP(NI) = MAX (UIP(NI), MAXVAL( USTARI(1,NI) ))
-              UIM(NI) = MIN (UIM(NI), MINVAL( USTARI(2,NI) ))
+              UIP(IE) = MAXVAL(USTARI(1,NI))
+              UIM(IE) = MINVAL(USTARI(2,NI))
             END DO
 
-            WII(1,:) = MIN(1._rkind,(UIP-UL)/MAX( VERYSMALL,PP))
-            WII(2,:) = MIN(1._rkind,(UIM-UL)/MIN(-VERYSMALL,PM))
+            J     = 0    ! Counter ...
+            UIPIP = 0.
+            UIMIP = 0.
+            DO IP = 1, MNP
+              DO I = 1, CCON(IP)
+               J = J + 1
+               IE    =  IE_CELL(J)
+               UIPIP(IP) = MAX(UIPIP(IP),UIP(IE)) 
+               UIMIP(IP) = MIN(UIMIP(IP),UIM(IE))
+              ENDDO
+            END DO !I: loop over connected elemen
 
-            ST = 0.0_rkind
+            DO IP = 1, MNP
+              WII(1,IP) = MIN(ONE,(UIPIP(IP)-UL(IP))/MAX( THR,PP(IP)))
+              WII(2,IP) = MIN(ONE,(UIMIP(IP)-UL(IP))/MIN(-THR,PM(IP)))
+              IF (ABS(PP(IP)) .LT. THR) THEN
+                WII(1,IP) = ZERO
+              ENDIF
+              IF (ABS(PM(IP)) .LT. THR) THEN
+                WII(2,IP) = ZERO
+              ENDIF
+            END DO
+
+            ST = ZERO
             DO IE = 1, MNE
                I1 = INE(1,IE)
                I2 = INE(2,IE)
                I3 = INE(3,IE)
-               IF (THETA_ACE(1,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE
                  TMP(1) = WII(2,I1)
                END IF
-               IF (THETA_ACE(2,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(2,IE) .LT. ZERO) THEN
                  TMP(2) = WII(1,I2)
                ELSE
                  TMP(2) = WII(2,I2)
                END IF
-               IF (THETA_ACE(3,IE) .LT. 0._rkind) THEN
+               IF (THETA_ACE(3,IE) .LT. ZERO) THEN
                  TMP(3) = WII(1,I3)
                ELSE
                  TMP(3) = WII(2,I3)
@@ -1132,13 +1162,16 @@
                ST(I3) = ST(I3) + THETA_ACE(3,IE) * TMP1! * (ONE - BL) + BL * THETA_L(3,IE)
             END DO
 
-            U = MAX(0.0_rkind,UL-DTSI*ST*IOBWB)*IOBPD(ID,:)
+            !U = MAX(ZERO,UL-DTSI*ST*IOBWB)*IOBPD(ID,:)
+            DO IP = 1, MNP
+              U(IP) = MAX(ZERO,UL(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+            ENDDO
 #ifdef MPI_PARALL_GRID
             CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(:,IS,ID) = U
+         AC2(:,IS,ID) = UL
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
@@ -1202,7 +1235,6 @@
          REAL(rkind)  :: WKSP( 20*MNP )
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
-         REAL(rkind)  :: WILD(MNP)
          REAL(rkind) ::  ASPAR(NNZ)
 
          REAL    :: TIME1, TIME2, TIME3, TIME4
@@ -1215,7 +1247,7 @@
 !         CALL CPU_TIME(TIME1)
 
          IWKSP = 0
-         WKSP  = 0.0_rkind
+         WKSP  = ZERO
 
          POS_TRICK(1,1) = 2
          POS_TRICK(1,2) = 3
@@ -1237,12 +1269,12 @@
            K(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
            K(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
            K(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-           KP(1,IE) = MAX(0.0_rkind,K(1))
-           KP(2,IE) = MAX(0.0_rkind,K(2))
-           KP(3,IE) = MAX(0.0_rkind,K(3))
-           KM(1) = MIN(0.0_rkind,K(1))
-           KM(2) = MIN(0.0_rkind,K(2))
-           KM(3) = MIN(0.0_rkind,K(3))
+           KP(1,IE) = MAX(ZERO,K(1))
+           KP(2,IE) = MAX(ZERO,K(2))
+           KP(3,IE) = MAX(ZERO,K(3))
+           KM(1) = MIN(ZERO,K(1))
+           KM(2) = MIN(ZERO,K(2))
+           KM(3) = MIN(ZERO,K(3))
            FL11 = C(1,I2)*IEN(1,IE)+C(2,I2)*IEN(2,IE)
            FL12 = C(1,I3)*IEN(1,IE)+C(2,I3)*IEN(2,IE)
            FL21 = C(1,I3)*IEN(3,IE)+C(2,I3)*IEN(4,IE)
@@ -1259,8 +1291,8 @@
          U = AC2(:,IS,ID)
 
          J     = 0    ! Counter ...
-         ASPAR = 0.0_rkind ! Mass matrix ...
-         B     = 0.0_rkind ! Right hand side ...
+         ASPAR = ZERO ! Mass matrix ...
+         B     = ZERO ! Right hand side ...
 !
 ! ... assembling the linear equation system ....
 !
@@ -1327,7 +1359,7 @@
          IPAR(6) = 1000    ! use at most 1000 matvec's
          FPAR(1) = 1.0E-10  ! relative tolerance 1.0E-6
          FPAR(2) = 1.0E-12  ! absolute tolerance 1.0E-10
-         FPAR(11) = 0.0_rkind    ! clearing the FLOPS counter
+         FPAR(11) = ZERO    ! clearing the FLOPS counter
 
          AU    = 0.
          FLJAU = 0.
@@ -1348,11 +1380,11 @@
 !         WRITE(DBG%FHNDL,*) SUM(AU), SUM(FLJAU), SUM(FLJU)
 
           INIU = AC2(:,IS,ID) * IOBPD(ID,:)
-          X    = 0.0_rkind
+          X    = ZERO
           CALL RUNRC (MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, FLJAU, FLJU, BCGSTAB)
 
           DO IP = 1, MNP
-            AC2(IP,IS,ID) = MAX(0.0_rkind,X(IP)) * MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
           END DO
 
 !          CALL CPU_TIME(TIME4)
@@ -1424,12 +1456,12 @@
            K(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
            K(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
            K(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-           KP(1,IE) = MAX(0.0_rkind,K(1))
-           KP(2,IE) = MAX(0.0_rkind,K(2))
-           KP(3,IE) = MAX(0.0_rkind,K(3))
-           KM(1) = MIN(0.0_rkind,K(1))
-           KM(2) = MIN(0.0_rkind,K(2))
-           KM(3) = MIN(0.0_rkind,K(3))
+           KP(1,IE) = MAX(ZERO,K(1))
+           KP(2,IE) = MAX(ZERO,K(2))
+           KP(3,IE) = MAX(ZERO,K(3))
+           KM(1) = MIN(ZERO,K(1))
+           KM(2) = MIN(ZERO,K(2))
+           KM(3) = MIN(ZERO,K(3))
            FL11 = C(1,I2)*IEN(1,IE)+C(2,I2)*IEN(2,IE)
            FL12 = C(1,I3)*IEN(1,IE)+C(2,I3)*IEN(2,IE)
            FL21 = C(1,I3)*IEN(3,IE)+C(2,I3)*IEN(4,IE)
@@ -1444,8 +1476,8 @@
          END DO
 
          J     = 0    ! Counter ...
-         ASPAR = 0.0_rkind ! Mass matrix ...
-         B     = 0.0_rkind ! Right hand side ...
+         ASPAR = ZERO ! Mass matrix ...
+         B     = ZERO ! Right hand side ...
 !
 ! ... assembling the linear equation system ....
 !
@@ -1539,7 +1571,7 @@
          external gmres
 
          IWKSP = 0
-         WKSP  = 0.0_rkind
+         WKSP  = ZERO
          U = AC2(:,IS,ID)
          CALL EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
 !
@@ -1551,7 +1583,7 @@
          IPAR(6) = 1000    ! use at most 1000 matvec's
          FPAR(1) = 1.0E-10  ! relative tolerance 1.0E-6
          FPAR(2) = 1.0E-12  ! absolute tolerance 1.0E-10
-         FPAR(11) = 0.0_rkind    ! clearing the FLOPS counter
+         FPAR(11) = ZERO    ! clearing the FLOPS counter
 
          AU    = 0.
          FLJAU = 0.
@@ -1573,10 +1605,10 @@
 !         WRITE(DBG%FHNDL,*) SUM(AU), SUM(FLJAU), SUM(FLJU)
 
           INIU = AC2(:,IS,ID) * IOBPD(ID,:)
-          X    = 0.0_rkind
+          X    = ZERO
           CALL RUNRC (MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, FLJAU, FLJU, BCGSTAB)
           DO IP = 1, MNP
-            AC2(IP,IS,ID) = MAX(0.0_rkind,X(IP)) * MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
           END DO
 
 !          CALL CPU_TIME(TIME4)
@@ -1650,12 +1682,12 @@
            K(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
            K(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
            K(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-           KP(1,IE) = MAX(0.0_rkind,K(1))
-           KP(2,IE) = MAX(0.0_rkind,K(2))
-           KP(3,IE) = MAX(0.0_rkind,K(3))
-           KM(1,IE) = MIN(0.0_rkind,K(1))
-           KM(2,IE) = MIN(0.0_rkind,K(2))
-           KM(3,IE) = MIN(0.0_rkind,K(3))
+           KP(1,IE) = MAX(ZERO,K(1))
+           KP(2,IE) = MAX(ZERO,K(2))
+           KP(3,IE) = MAX(ZERO,K(3))
+           KM(1,IE) = MIN(ZERO,K(1))
+           KM(2,IE) = MIN(ZERO,K(2))
+           KM(3,IE) = MIN(ZERO,K(3))
            FL11 = C(1,I2)*IEN1(1)+C(2,I2)*IEN1(2)
            FL12 = C(1,I3)*IEN1(1)+C(2,I3)*IEN1(2)
            FL21 = C(1,I3)*IEN2(1)+C(2,I3)*IEN2(2)
@@ -1665,12 +1697,12 @@
            CRFS(1) =  - ONESIXTH *  (2. *FL31 + FL32 + FL21 + 2. * FL22 )
            CRFS(2) =  - ONESIXTH *  (2. *FL32 + 2. * FL11 + FL12 + FL31 )
            CRFS(3) =  - ONESIXTH *  (2. *FL12 + 2. * FL21 + FL22 + FL11 )
-           DELTAL(:,IE) = CRFS(:) - MAX(K(:),0.0_rkind)
+           DELTAL(:,IE) = CRFS(:) - MAX(K(:),ZERO)
            NM(IE)  = ONE/MIN(-THR,SUM(KM(:,IE)))
          END DO
 
-         B        = 0.0_rkind
-         ASPAR    = 0.0_rkind
+         B        = ZERO
+         ASPAR    = ZERO
          J        = 0
 
          DO IP = 1, MNP
@@ -1749,7 +1781,7 @@
 
          JU = 0
          IWKSP = 0
-         WKSP = 0.0_rkind
+         WKSP = ZERO
 
          INIU(:) = AC2(:,IS,ID)
 !        CALL MILU0 (MNP, ASPAR, JA, IA, AU, JAU, JU, IWKSP, IERROR)
@@ -1798,8 +1830,6 @@
          REAL(rkind)  :: U(MNP), X(MNP), ASPAR1(NNZ), B1(MNP), ASPAR2(NNZ), B2(MNP)
          REAL(rkind)  :: FL11, FL12, FL21, FL22, FL31, FL32, C(2,MNP)
 
-         REAL(rkind)  :: CTMP(MNP,2)
-
          INTEGER, PARAMETER :: IM = 30
 
          INTEGER :: IPAR(16), MBLOC
@@ -1832,8 +1862,8 @@
          POS_TRICK(3,2) = 2
 
          IWKSP = 0
-         WKSP  = 0.0_rkind
-         INIU  = 0.0_rkind
+         WKSP  = ZERO
+         INIU  = ZERO
 
          U = AC2(:,IS,ID)
 
@@ -1859,8 +1889,8 @@
            K(2,IE)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
            K(3,IE)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
 
-           KP(:,IE)  = MAX(K(:,IE),0.0_rkind)
-           KM(:,IE)  = MIN(K(:,IE),0.0_rkind)
+           KP(:,IE)  = MAX(K(:,IE),ZERO)
+           KM(:,IE)  = MIN(K(:,IE),ZERO)
 
            N(IE) = - ONE/MIN(-THR,SUM(KM(:,IE)))
 
@@ -1942,7 +1972,7 @@
          CALL ILU0 (MNP, ASPAR1, JA, IA, AU, JAU, JU, IWKSP, IERR)
          CALL RUNRC(MNP, NNZ, B1, X, IPAR, FPAR, WKSP, INIU, ASPAR1, JA, IA, AU, JAU, JU, BCGSTAB)
 
-         U(:) = MAX(X(:),0.0_rkind)
+         U(:) = MAX(X(:),ZERO)
 
          J     = 0
          DO IP = 1, MNP
@@ -1980,7 +2010,7 @@
          CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERR)
          CALL RUNRC(MNP, NNZ, B2, X, IPAR, FPAR, WKSP, INIU, ASPAR2, JA, IA, AU, JAU, JU, BCGSTAB)
 
-         AC2(:,IS,ID) = MAX(0.0_rkind,X) * IOBPD(ID,:)
+         AC2(:,IS,ID) = MAX(ZERO,X) * IOBPD(ID,:)
 
          RETURN
       END SUBROUTINE
@@ -2099,7 +2129,7 @@
          ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
          CCON = 0_rkind
-         SI = 0._rkind
+         SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
          IF (ICOMP .GE. 1) THEN
@@ -2110,10 +2140,11 @@
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-           CFLCXY = 0._rkind
+           CFLCXY(1,:) = ZERO
+           CFLCXY(2,:) = ZERO
+           CFLCXY(3,:) = LARGE 
          END IF
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2121,11 +2152,8 @@
       SUBROUTINE DEALLOC_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         DEALLOCATE( CCON)
-         DEALLOCATE( SI)
-         DEALLOCATE( ITER_EXP)
-         DEALLOCATE( ITER_EXPD)
-         IF (ICOMP .GE. 1) THEN
+         DEALLOCATE( CCON, SI, ITER_EXP, ITER_EXPD)
+         IF ((ICOMP .GE. 1) .OR. LZETA_SETUP) THEN
            DEALLOCATE(I_DIAG)
          END IF
          IF (LCFL) THEN
@@ -2144,14 +2172,22 @@
 
          INTEGER :: I, J, K, istat
          INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-         INTEGER :: I1, I2, I3, NI(3)
+         INTEGER :: I1, I2, I3
          INTEGER :: CHILF(MNP), COUNT_MAX
          INTEGER :: ITMP(MNP)
+         INTEGER :: POS_TRICK(3,2)
 
          REAL(rkind)   :: TRIA03
 
          INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
          INTEGER, ALLOCATABLE :: PTABLE(:,:)
+
+         POS_TRICK(1,1) = 2
+         POS_TRICK(1,2) = 3
+         POS_TRICK(2,1) = 3
+         POS_TRICK(2,2) = 1
+         POS_TRICK(3,1) = 1
+         POS_TRICK(3,2) = 2
 
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE CONNECTED AREA SI '
 ! The situation is as follows with respect to MNP, NP_RES and friends.
@@ -2251,10 +2287,12 @@
            END DO
          END DO
 
-         IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
+         IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+           ALLOCATE(JA_IE(3,3,MNE), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6.1')
 
            J = 0
            PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
@@ -2319,17 +2357,18 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ), IA(MNP+1), stat=istat)
+           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+           JA = 0
+           IA = 0
+           POSI = 0
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
-           ALLOCATE (POSI(3,COUNT_MAX), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 7')
            J = 0
            K = 0
            IA(1) = 1
            DO IP = 1, MNP ! Run through all rows
-             ITMP(:)=0
+             ITMP=0
              DO I = 1, CCON(IP) ! Check how many entries there are ...
                J = J + 1
                IP_J  = PTABLE(J,2)
@@ -2358,13 +2397,26 @@
                  IF (IP   == JA(K)) I_DIAG(IP) = K
                  IF (IP_J == JA(K)) POSI(2,J)  = K
                  IF (IP_K == JA(K)) POSI(3,J)  = K
-                 IF (K == 0) call wwm_abort('ERROR IN K .EQ. 0')
                END DO
              END DO
            END DO
-           DEALLOCATE(PTABLE)
-         END IF
-         DEALLOCATE(CELLVERTEX)
+
+           J=0
+           DO IP=1,MNP
+            DO I = 1, CCON(IP)
+              J=J+1
+              IE    =  IE_CELL(J)
+              POS   =  POS_CELL(J)
+              I1    =  POSI(1,J)
+              I2    =  POSI(2,J)
+              I3    =  POSI(3,J)
+              JA_IE(POS,1,IE) = I1
+              JA_IE(POS,2,IE) = I2
+              JA_IE(POS,3,IE) = I3
+            END DO
+          END DO
+         ENDIF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2372,14 +2424,9 @@
       SUBROUTINE DEALLOC_FLUCT
       USE DATAPOOL
       implicit none
-      DEALLOCATE (IE_CELL)
-      DEALLOCATE (POS_CELL)
-      DEALLOCATE (IE_CELL2)
-      DEALLOCATE (POS_CELL2)
+      DEALLOCATE (IE_CELL, POS_CELL, IE_CELL2, POS_CELL2)
       IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
-        DEALLOCATE (JA)
-        DEALLOCATE (IA)
-        DEALLOCATE (POSI)
+        DEALLOCATE (JA, IA, POSI)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2399,9 +2446,9 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, IPGL, IS, ID
+         INTEGER :: IP, IE, IT, IS, ID
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3),K, I, IPOS
+         INTEGER :: NI(3), I, IPOS
 !
 ! local double
 !
@@ -2409,7 +2456,6 @@
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
 
 #ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
          REAL(rkind)  :: WILD(MNP), WILD2D(MDC,MNP)
 #endif
          REAL(rkind)  :: REST, CFLXY
@@ -2423,7 +2469,7 @@
          REAL(rkind)  :: FLALL(3,MNE,MSC,MDC)
          REAL(rkind)  :: KELEM(3,MNE,MSC,MDC)
          REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
-         REAL(rkind)  :: UTILDE2(MSC,MDC), UTILDE3(MNE)
+         REAL(rkind)  :: UTILDE3(MNE)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
          REAL         :: TIME1, TIME2
@@ -2434,11 +2480,11 @@
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
-         FLALL = 0.0_rkind
-         KELEM = 0.0_rkind
-         KKSUM = 0.0_rkind
-         ST    = 0.0_rkind
-         N     = 0.0_rkind
+         FLALL = ZERO
+         KELEM = ZERO
+         KKSUM = ZERO
+         ST    = ZERO
+         N     = ZERO
 
          DO IS = 1, MSC
            DO ID = 1, MDC
@@ -2488,11 +2534,11 @@
             KTMP(1,:,:)  = KELEM(1,IE,:,:)
             KTMP(2,:,:)  = KELEM(2,IE,:,:)
             KTMP(3,:,:)  = KELEM(3,IE,:,:)
-            TMP(:,:)   = SUM(MIN(0.0_rkind,KTMP(:,:,:)),DIM=1)
+            TMP(:,:)   = SUM(MIN(ZERO,KTMP(:,:,:)),DIM=1)
             N(IE,:,:)    = -ONE/MIN(-THR,TMP(:,:))
-            KELEM(1,IE,:,:)  = MAX(0.0_rkind,KTMP(1,:,:))
-            KELEM(2,IE,:,:)  = MAX(0.0_rkind,KTMP(2,:,:))
-            KELEM(3,IE,:,:)  = MAX(0.0_rkind,KTMP(3,:,:))
+            KELEM(1,IE,:,:)  = MAX(ZERO,KTMP(1,:,:))
+            KELEM(2,IE,:,:)  = MAX(ZERO,KTMP(2,:,:))
+            KELEM(3,IE,:,:)  = MAX(ZERO,KTMP(3,:,:))
 !            WRITE(DBG%FHNDL,'(3I10,3F15.4)') IS, ID, IE, KELEM(:,IE)
             FL11  = CX(:,:,I2) * IEN(1,IE) + CY(:,:,I2) * IEN(2,IE)
             FL12  = CX(:,:,I3) * IEN(1,IE) + CY(:,:,I3) * IEN(2,IE)
@@ -2512,7 +2558,7 @@
          END DO
 
          IF (LCALC) THEN
-           KKSUM = 0.0_rkind
+           KKSUM = ZERO
            DO IE = 1, MNE
              NI = INE(:,IE)
              KKSUM(NI(1),:,:) = KKSUM(NI(1),:,:) + KELEM(1,IE,:,:)
@@ -2649,7 +2695,7 @@
              END IF
            END IF !IVECTOR
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF !LCALC
 
          DO IP = 1, MNP
@@ -2667,7 +2713,7 @@
            DO IS = 1, MSC
              DT4AI = DT4A/ITER_EXP(IS,ID)
              DO IT = 1, ITER_EXP(IS,ID)
-               ST(:,IS,ID) = 0.0_rkind ! Init. ... only used over the residual nodes see IP loop
+               ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
                  U3(:) = U(IS,ID,NI)
@@ -2676,7 +2722,7 @@
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(0.0_rkind,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
 #ifdef MPI_PARALL_GRID
                WILD = U(IS,ID,:)
                CALL EXCHANGE_P2D(WILD)
@@ -2690,7 +2736,7 @@
          DO IT = 1, ITER_MAX
            DO ID = 1, MDC
              DO IS = 1, MSC
-               ST(:,IS,ID) = 0.0_rkind ! Init. ... only used over the residual nodes see IP loop
+               ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
                  U3(:) = U(IS,ID,NI)
@@ -2699,7 +2745,7 @@
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(0.0_rkind,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
              END DO  !IS
            END DO !ID
 #ifdef MPI_PARALL_GRID
@@ -2712,7 +2758,7 @@
            DT4AI = DT4A/ITER_MAX
            DO IT = 1, ITER_MAX
              DO ID = 1, MDC
-               ST(:,IS,ID) = 0.0_rkind ! Init. ... only used over the residual nodes see IP loop
+               ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
                  U3(:) = U(IS,ID,NI)
@@ -2721,7 +2767,7 @@
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(0.0_rkind,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
              END DO! ID
 #ifdef MPI_PARALL_GRID
              WILD2D = U(IS,:,:)
@@ -2741,14 +2787,14 @@
                  U3(:)  = U(IS,ID,NI)
                  UTILDE3(IE) = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                END DO
-               ST(:,IS,ID) = 0.0_rkind
+               ST(:,IS,ID) = ZERO
                DO IP = 1, MNP
                  DO I = 1, CCON(IP)
                    IE     = IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
                    ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (U(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(0.0_rkind,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
+                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
                END DO
              END DO
 #ifdef MPI_PARALL_GRID
@@ -2768,14 +2814,14 @@
                  U3(:)  = U(IS,ID,NI)
                  UTILDE3(IE) = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                END DO !IE
-               ST(:,IS,ID) = 0.0_rkind
+               ST(:,IS,ID) = ZERO
                DO IP = 1, MNP
                  DO I = 1, CCON(IP)
                    IE     = IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
                    ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (U(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(0.0_rkind,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
+                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
              END DO !ID
            END DO !IS
@@ -2812,9 +2858,9 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, IPGL, IS, ID
+         INTEGER :: IP, IE, IT, IS, ID
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3),K, I, IPOS
+         INTEGER :: NI(3), I, IPOS
 !
 ! local double
 !
@@ -2841,17 +2887,17 @@
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
-         FLALL = 0.0_rkind
-         KELEM = 0.0_rkind
-         KKSUM = 0.0_rkind
-         ST    = 0.0_rkind
-         N     = 0.0_rkind
+         FLALL = ZERO
+         KELEM = ZERO
+         KKSUM = ZERO
+         ST    = ZERO
+         N     = ZERO
 
          IF (LCALC) THEN
            DO ID = 1, MDC
              DO IS = 1, MSC
-               KMAX = 0.0_rkind
-               KSUM = 0.0_rkind
+               KMAX = ZERO
+               KSUM = ZERO
                DO IP = 1, MNP
                  DO I = 1, CCON(IP)
                    IE     =  IE_CELL2(IP,I)
@@ -2865,9 +2911,9 @@
                    LAMBDA(1) = ONESIXTH * SUM(CX)
                    LAMBDA(2) = ONESIXTH * SUM(CY)
 ! flux jacobians
-                   KELEM(1)  = MAX(0.0_rkind, LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) )! K
-                   KELEM(2)  = MAX(0.0_rkind, LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE) )
-                   KELEM(3)  = MAX(0.0_rkind, LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE) )
+                   KELEM(1)  = MAX(ZERO, LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) )! K
+                   KELEM(2)  = MAX(ZERO, LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE) )
+                   KELEM(3)  = MAX(ZERO, LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE) )
 
                    KSUM(IP)  = KSUM(IP) + KELEM(IPOS)
 !2do check if also stable when abs removed
@@ -2903,7 +2949,7 @@
              END DO ! IS
            END DO ! ID
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
          END IF ! LCALC
 
          DO IP = 1, MNP
@@ -2930,7 +2976,7 @@
                UIP = U(IS,ID,:)
 !!$OMP DO PRIVATE(IP,I,IE,IPOS)
                DO IP = 1, MNP
-                 ST = 0.0_rkind
+                 ST = ZERO
                  DO I = 1, CCON(IP)
 
 ! get element and the position of IP in the element index
@@ -2972,12 +3018,12 @@
                    KELEM(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
 
 ! inverse of the positive sum ...
-                   N         = -ONE/MIN(-THR,SUM(MIN(0._rkind,KELEM))) ! N
+                   N         = -ONE/MIN(-THR,SUM(MIN(ZERO,KELEM))) ! N
 
 ! positive flux jacobians
-                   KELEM(1)  = MAX(0._rkind,KELEM(1)) ! K+
-                   KELEM(2)  = MAX(0._rkind,KELEM(2))
-                   KELEM(3)  = MAX(0._rkind,KELEM(3))
+                   KELEM(1)  = MAX(ZERO,KELEM(1)) ! K+
+                   KELEM(2)  = MAX(ZERO,KELEM(2))
+                   KELEM(3)  = MAX(ZERO,KELEM(3))
 
 ! simposon integration last step ...
                    FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1)
@@ -2994,7 +3040,7 @@
 
                  END DO
 ! time stepping ...
-                 UIP(IP) = MAX(0.0_rkind,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
+                 UIP(IP) = MAX(ZERO,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
                U(IS,ID,:) = UIP
              END DO !ID
@@ -3063,8 +3109,8 @@
                DTMAX_GLOBAL_EXP = VERYLARGE
                DTMAX_GLOBAL_EXP_LOC = VERYLARGE
                DO IP = 1, MNP
-                 KSUM = 0.0_rkind
-                 KMAX = 0.0_rkind
+                 KSUM = ZERO
+                 KMAX = ZERO
                  DO I = 1, CCON(IP)
                    IE     =  IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
@@ -3074,9 +3120,9 @@
                    LLAMBDA(1) = ONESIXTH * SUM(CX(NI))
                    LLAMBDA(2) = ONESIXTH * SUM(CY(NI))
 ! flux jacobians
-                   KKELEM(1)  = MAX(0.0_rkind, LLAMBDA(1) * IEN(1,IE) + LLAMBDA(2) * IEN(2,IE) )! K
-                   KKELEM(2)  = MAX(0.0_rkind, LLAMBDA(1) * IEN(3,IE) + LLAMBDA(2) * IEN(4,IE) )
-                   KKELEM(3)  = MAX(0.0_rkind, LLAMBDA(1) * IEN(5,IE) + LLAMBDA(2) * IEN(6,IE) )
+                   KKELEM(1)  = MAX(ZERO, LLAMBDA(1) * IEN(1,IE) + LLAMBDA(2) * IEN(2,IE) )! K
+                   KKELEM(2)  = MAX(ZERO, LLAMBDA(1) * IEN(3,IE) + LLAMBDA(2) * IEN(4,IE) )
+                   KKELEM(3)  = MAX(ZERO, LLAMBDA(1) * IEN(5,IE) + LLAMBDA(2) * IEN(6,IE) )
 ! sum over connected nodes
                    KSUM  = KSUM + KKELEM(IPOS)
 !2do check if also stable when abs removed
@@ -3108,7 +3154,7 @@
            ITER_MAX = MAXVAL(ITER_EXP)
 
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX
-           CALL FLUSH(STAT%FHNDL)
+           FLUSH(STAT%FHNDL)
 
          END IF !LCALC
 
@@ -3142,11 +3188,11 @@
                  KTMP(1)  = KELEM(1,IE)
                  KTMP(2)  = KELEM(2,IE)
                  KTMP(3)  = KELEM(3,IE)
-                 TMP   = SUM(MIN(0._rkind,KTMP))
+                 TMP   = SUM(MIN(ZERO,KTMP))
                  N    = -1._rkind/MIN(-THR,TMP)
-                 KELEM(1,IE)  = MAX(0._rkind,KTMP(1))
-                 KELEM(2,IE)  = MAX(0._rkind,KTMP(2))
-                 KELEM(3,IE)  = MAX(0._rkind,KTMP(3))
+                 KELEM(1,IE)  = MAX(ZERO,KTMP(1))
+                 KELEM(2,IE)  = MAX(ZERO,KTMP(2))
+                 KELEM(3,IE)  = MAX(ZERO,KTMP(3))
 !                 WRITE(DBG%FHNDL,'(3I10,3F15.4)') IS, ID, IE, KELEM(:,IE)
                  FL11  = CX(I2) * IEN(1,IE) + CY(I2) * IEN(2,IE)
                  FL12  = CX(I3) * IEN(1,IE) + CY(I3) * IEN(2,IE)
@@ -3178,7 +3224,7 @@
                    IPOS   = POS_CELL2(IP,I)
                    ST = ST + KELEM(IPOS,IE) * (U(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(0.0_rkind,U(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
+                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
              END DO !ID
            END DO !IS

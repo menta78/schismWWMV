@@ -15,10 +15,10 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID, NSTEP, iter
+         INTEGER        :: IP, IS, ID
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
-         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL1(MSC,MDC), SSBRL2(MSC,MDC)
-         REAL(rkind)    :: WIND10, WINDTH, DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
+         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
          DT4S_T = 1./3. * DT4S
          DT4S_E = 0.125 * DT4S
@@ -27,8 +27,8 @@
          DT4S_TQ = 0.75 * DT4S
          DT4S_TS = 2./3. * DT4S
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
-         DO IP = 1, MNP 
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC)
+         DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -37,7 +37,6 @@
                  CALL RKS_SP3(IP,30,DT4S,.FALSE.,ACLOC)
                  CALL INT_IP_STAT(IP,DT4S,20,LLIMT,ACLOC)
                  CALL INT_IP_DYN(IP, 4, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
-                 !IF (NIT_ALL .GT. 1) WRITE(*,*) NIT_ALL
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, 10,LLIMT,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
@@ -96,8 +95,8 @@
            ENDIF
            IF (LNANINFCHK) THEN 
              IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
-               WRITE(*,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
-               STOP 'wwm_specint.F90 l.88'
+               WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
+               CALL WWM_ABORT('wwm_specint.F90 l.88')
              END IF
            ENDIF
            AC1(IP,:,:) = AC2(IP,:,:)
@@ -121,10 +120,10 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER :: IP, ID, ISELECT
+         INTEGER :: IP, ISELECT
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
-         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL(MSC,MDC)
+         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
 !$OMP WORKSHARE
          IMATDAA = 0.
@@ -177,7 +176,7 @@
 
          REAL(rkind)    :: NPF(MSC)
          REAL(rkind)    :: OLDAC
-         REAL(rkind)    :: NEWDAC, NEWAC(MSC,MDC)
+         REAL(rkind)    :: NEWDAC
          REAL(rkind)    :: MAXDAC, CONST, SND, USTAR
 
          CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
@@ -223,8 +222,7 @@
          INTEGER, INTENT(IN) :: IP, ISELECT
          LOGICAL, INTENT(IN) :: LIMITER
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind)                :: IMATRA_WAM(MSC,MDC), IMATDA_WAM(MSC,MDC)
+!         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
 
 !         DELT = DT4S
@@ -364,11 +362,11 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         INTEGER :: IS, ID, IK, ITH, IS0
+         INTEGER :: IS, ID
 
          REAL(rkind)    :: ACOLD(MSC,MDC)
          REAL(rkind)    :: NPF(MSC)
-         REAL(rkind)    :: TMP1, TMP2, TMP3, AFILT
+         REAL(rkind)    :: AFILT
          REAL(rkind)    :: NEWDAC, CONST, SND, DAMAX, AFAC
          REAL(rkind)    :: MAXDAC, DTMAX, DTTOT, DTLEFT, DT4SI, USTAR
 

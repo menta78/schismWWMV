@@ -115,6 +115,10 @@
 
       PetscLogStage :: stageInit, stageFill, stageSolve, stageFin
 
+      ! CSR matrix. simply a copy of wwmIII IA, JA. The PETsc version start counting from 0
+      integer, allocatable :: IA_P(:)
+      integer, allocatable :: JA_P(:)
+
       contains
 
 #ifdef MPI_PARALL_GRID
@@ -184,8 +188,8 @@
 
         ! use the solver relative convergence tolerance as criterion
         ! when an entrie is zero
-        call KSPGetTolerances(solver, epsilon, PETSC_NULL, PETSC_NULL, &
-     &  PETSC_NULL, petscErr);CHKERRQ(petscErr)
+        call KSPGetTolerances(solver, epsilon, PETSC_NULL_REAL, PETSC_NULL_REAL, &
+     &  PETSC_NULL_REAL, petscErr);CHKERRQ(petscErr)
 
         ! calc the max and min and mean
         valueMax = diagonal(1)
@@ -349,7 +353,7 @@
         call KSPGetType(solver, ksp, petscErr);CHKERRQ(petscErr)
         write(DBG%FHNDL,*) "using KSP: ", trim(ksp)
         
-        call KSPGetOperators(solver, PETSC_NULL, PETSC_NULL, flag, petscErr);CHKERRQ(petscErr)
+        call KSPGetOperators(solver, Amat, Pmat, flag, petscErr);CHKERRQ(petscErr)
         if(flag == SAME_PRECONDITIONER) then
           write(DBG%FHNDL,*) "KSP using SAME_PRECONDITIONER"
         else if(flag == SAME_NONZERO_PATTERN) then
@@ -461,8 +465,8 @@
       ! create vector and get matrix diagonale
       call MatGetVecs(matrix, diag, PETSC_NULL_OBJECT, petscErr);CHKERRQ(petscErr)
       call MatGetDiagonal(matrix, diag, petscErr);CHKERRQ(petscErr)
-      call VecMin(diag, PETSC_NULL, diagMin, petscErr);CHKERRQ(petscErr)
-      call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
+      call VecMin(diag, PETSC_NULL_REAL, diagMin, petscErr);CHKERRQ(petscErr)
+      call VecMax(diag, PETSC_NULL_REAL, diagMax, petscErr);CHKERRQ(petscErr)
 
       if(rank == 0) then
         write(DBG%FHNDL,*) "global matrix properties"
@@ -486,8 +490,8 @@
       ! create vector and get matrix diagonale
       call MatGetVecs(matdiag, diag, PETSC_NULL_OBJECT, petscErr);CHKERRQ(petscErr)
       call MatGetDiagonal(matdiag, diag, petscErr);CHKERRQ(petscErr)
-      call VecMin(diag, PETSC_NULL, diagMin, petscErr);CHKERRQ(petscErr)
-      call VecMax(diag, PETSC_NULL, diagMax, petscErr);CHKERRQ(petscErr)
+      call VecMin(diag, PETSC_NULL_REAL, diagMin, petscErr);CHKERRQ(petscErr)
+      call VecMax(diag, PETSC_NULL_REAL, diagMax, petscErr);CHKERRQ(petscErr)
 
       write(DBG%FHNDL,*) rank, "NORM1", norm1
       write(DBG%FHNDL,*) rank, "NORM2", norm2
@@ -690,12 +694,13 @@
       end subroutine
 #endif
 
-      !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
+      !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_INIT()
       subroutine petscpoolInit()
         use petscsys
-        USE DATAPOOL, only: IA, JA
+        USE DATAPOOL, only: IA, JA, NNZ, MNP
         USE elfe_msgp, only : comm
         implicit none
+        integer istat
 
         PETSC_COMM_WORLD=comm
         call PetscInitialize(PETSC_NULL_CHARACTER, petscErr);CHKERRQ(petscErr)
@@ -708,8 +713,11 @@
         call PetscLogStageRegister("Fin", stageFin, petscErr);CHKERRQ(petscErr)
 
         ! petsc wants indices startet from 0
-        IA = IA -1
-        JA = JA -1
+        ALLOCATE (JA_P(NNZ), IA_P(MNP+1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('petscpoolInit, allocate error 1')
+
+        IA_P = IA -1
+        JA_P = JA -1
 
         call readPETSCnamelist()
 
@@ -719,11 +727,10 @@
       subroutine readPETSCnamelist()
         use datapool, only: inp, CHK, DBG
         use StringTools
+        use elfe_msgp, only : myrank
         implicit none
         ! true if one of the values seem strange
         logical :: rtolStrage, abstolStrange, dtolStrange, maxitsStrange
-
-
         namelist /PETScOptions/ ksptype, rtol, abstol, dtol, maxits, initialguessnonzero, gmrespreallocate, samePreconditioner, pctype
 
         rtolStrage    = .false.
@@ -732,7 +739,11 @@
         maxitsStrange = .false.
 
         READ(INP%FHNDL, NML = PETScOptions)
-        WRITE(CHK%FHNDL, NML = PETScOptions)
+        CLOSE(INP%FHNDL)
+        IF (myrank .eq. 0) THEN
+          WRITE(CHK%FHNDL, NML=PETScOptions)
+          FLUSH(CHK%FHNDL)
+        END IF
 
         ksptype = toLower(ksptype)
         pctype  = toLower(pctype)
@@ -812,6 +823,9 @@
         if(allocated(onlyGhosts)) deallocate(onlyGhosts)
         if(allocated(onlyGhostsOldLocalMapping)) deallocate(onlyGhostsOldLocalMapping)
 
+        if(allocated(IA_P)) deallocate(IA_P)
+        if(allocated(JA_P)) deallocate(JA_P)
+
 
         call KSPDestroy(Solver, petscErr);CHKERRQ(petscErr)
         call MatDestroy(matrix, petscErr);CHKERRQ(petscErr)
@@ -872,5 +886,4 @@
 
     end module
 
-
-#endif PETSC
+#endif 

@@ -141,6 +141,7 @@
       LOGICAL                 :: LFIRSTSOURCE = .TRUE.
 !/
       CONTAINS
+
 !/ ------------------------------------------------------------------- /
       SUBROUTINE PREPARE_ARDHUIN_NEW()
 
@@ -159,12 +160,24 @@
 
         ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
+        SIG = ZERO
+        SIG2 = ZERO
+        DSIP = ZERO
+        TH   = ZERO
         ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 2')
+        ESIN = ZERO
+        ECOS = ZERO
+        EC2  = ZERO
         ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 3')
+        ES2 = ZERO
+        ESC = ZERO
         ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 4')
+        DSII = ZERO
+        DDEN = ZERO
+        DDEN2 = ZERO
 
         DTH   = DDIR
         FR1   = SPSIG(1)/PI2
@@ -427,9 +440,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE W3SPR4_NEW (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN,   &
-     &         AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0,       &
-     &         CHARN, LLWS, FMEANWS)
+      SUBROUTINE W3SPR4_NEW (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -520,13 +531,12 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IKP1   ! wind sea peak index
-      INTEGER                 :: IS, IK, ITH, I1, ITT
+      INTEGER  :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
 
-      REAL(rkind)                    :: TAUW, EBAND, EMEANWS, RDCH,     &
-     &    FXPMC, WNP, UNZ, FP, TMP2,                                    &
-     &    R1, CP, EB(NK),EB2(NK),ALFA(NK)
+      REAL(rkind) :: TAUW, EBAND, EMEANWS
+      REAL(rkind) :: UNZ
+      REAL(rkind) :: EB(NK),EB2(NK),ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -625,8 +635,7 @@
 !/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE W3SIN4_NEW (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR,   &
-     &   Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, ICE, S, D, LLWS)
+      SUBROUTINE W3SIN4_NEW (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, ICE, S, D, LLWS)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -729,22 +738,16 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS,IK,ITH, IOMA, ICL
-!/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, ULAM,           &
-     &    CLAM, OMA, RD1, RD2, LAMBDA, COSFAC
-      REAL(rkind)                    :: COSU, SINU, TAUX, TAUY,         &
-     &    USDIRP, USTP
-      REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUWW, TAUWB
-      REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
-      REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
-      REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
-      REAL(rkind)                    :: BETA,                           &
-     &                    CM,ZCO,UCO,UCN,ZCN,                           &
-     &                    Z0VISC, Z0NOZ, EB,                            &
-     &                    EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2,     &
-     &                    RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: HSBLOW, ABJSEA, FACTOR
+      INTEGER               :: IS,IK,ITH
+!/S      INTEGER, SAVE      :: IENT = 0
+      REAL(rkind) :: FACLN1, FACLN2
+      REAL(rkind) :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
+      REAL(rkind) :: TAUPX, TAUPY, UST2, TAUWW, TAUWB
+      REAL(rkind), PARAMETER :: EPS1 = 0.00001, EPS2 = 0.000001
+      REAL(rkind) :: CM, UCN,ZCN
+      REAL(rkind) :: Z0VISC, Z0NOZ, EB
+      REAL(rkind) :: EBX, EBY, AORB, AORB1, FW, UORB
+      REAL(rkind) :: RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
       REAL(rkind) XI,DELI1,DELI2
       REAL(rkind) XJ,DELJ1,DELJ2
       REAL(rkind) XK,DELK1,DELK2
@@ -833,8 +836,8 @@
       IF (ISTAB.EQ.1) UST=USTAR*(1.-USTARsigma)
       IF (ISTAB.EQ.2) UST=USTAR*(1.+USTARsigma)
 # endif
-      TAUX = UST**2* COS(USDIR)
-      TAUY = UST**2* SIN(USDIR)
+      TAUX = UST**2* MyCOS(USDIR)
+      TAUY = UST**2* MySIN(USDIR)
 
       !WRITE(DBG%FHNDL,*) 'TAU USTAR', TAUX, TAUY, UST, USDIR, USTAR
 !
@@ -856,11 +859,11 @@
         TAUPY=TAUY-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,2)
 ! With MIN and MAX the bug should disappear.... but where did it come from?
 ! AR: This is ugly ...
-        USTP=MIN((TAUPX**2+TAUPY**2)**0.25,MAX(UST,0.3_rkind))
+        USTP=MIN((TAUPX**2+TAUPY**2)**0.25_rkind,MAX(UST,0.3_rkind))
         !WRITE(DBG%FHNDL,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
         USDIRP=ATAN2(TAUPY,TAUPX)
-        COSU   = COS(USDIRP)
-        SINU   = SIN(USDIRP)
+        COSU   = MyCOS(USDIRP)
+        SINU   = MySIN(USDIRP)
         IS=1+(IK-1)*NTH
         CM=K(IS)/SIG2(IS) !inverse of phase speed
         UCN=USTP*CM+ZZALP  !this is the inverse wave age
@@ -1062,8 +1065,8 @@
         END IF
       TAUHFL = CONST0*TEMP*UST**2*TAU1
       TAUHF(IP) = TAUHFL
-      TAUWX = XSTRESS+TAUHFL*COS(USDIRP)
-      TAUWY = YSTRESS+TAUHFL*SIN(USDIRP)
+      TAUWX = XSTRESS+TAUHFL*MyCOS(USDIRP)
+      TAUWY = YSTRESS+TAUHFL*MySIN(USDIRP)
       TAUW(IP) = SQRT(XSTRESS**2+YSTRESS**2)
       !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
 !      
@@ -1161,13 +1164,13 @@
 !/ ------------------------------------------------------------------- /
 !/
     INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 
-    INTEGER  IKL, IS, IS2, ID, ICON, IKD, IKHS, IKH, TOTO
+    INTEGER  IKL, IS, IS2, ID, IKD, IKHS, IKH, TOTO
     integer istat
     REAL(rkind)     C, C2
-    REAL(rkind)     DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG
+    REAL(rkind)     DIFF1, DIFF2, BINF, BSUP, CGG
     REAL(rkind)     PROF, W, EPS
-    REAL(rkind)     KIK, DHS, KD, KDD, KHS, KH, B, XT, GAM, DKH, PR
-    REAL(rkind)     DKD, DELTAFIT, NHI, H, IH, DH, CN ,CC
+    REAL(rkind)     KIK, DHS, KD, KDD, KHS, KH, XT, GAM, DKH, PR
+    REAL(rkind)     DKD, CN ,CC
     REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
     REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
@@ -1210,7 +1213,7 @@
             IF (I_INT.GT.NTH) J_INT=I_INT-NTH
             SATINDICES(I_INT-(ITH-SDSNTH)+1,ITH)=J_INT
             SATWEIGHTS(I_INT-(ITH-SDSNTH)+1,ITH)=                       &
-     &              COS(TH(ITH)-TH(J_INT))**SSDSCOS
+     &              MyCOS(TH(ITH)-TH(J_INT))**SSDSCOS
             END DO
           END DO
       ELSE
@@ -1249,7 +1252,7 @@
             CALL ALL_FROM_TABLE(SIG(IKL),PROF,KIK,CGG,KDD,CN,CC)
             K1(IKL,ID)=KIK  ! wavenumber lower boundary (is directly related to the frequency indices, IK)
             K2(IKL,ID)=((BSUP/BINF)**2)*K1(IKL,ID)! wavenumber upper boundary
-            SIGTAB(IKL,ID)=SQRT(G9*K2(IKL,ID)*TANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
+            SIGTAB(IKL,ID)=SQRT(G9*K2(IKL,ID)*MyTANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
             IF(SIGTAB(IKL,ID) .LE. SIG(1)) THEN
               IKTAB(IKL,ID)=1
               END IF
@@ -1288,7 +1291,7 @@
         DO IKD=1,NKD
           KHS=0.
           KD=(FAC_KD1**(IKD-FAC_KD2))
-          XT=TANH(KD)
+          XT=MyTANH(KD)
           GAM=1.0314_rkind*(XT**3)-1.9958_rkind*(XT**2)                 &
      &    +1.5522_rkind*XT+0.1885_rkind
           GAM=GAM/2.15
@@ -1374,6 +1377,7 @@
      & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS,                    &
      & DIKCUMUL, CUMULW, QBI
    END IF
+   call flush(5002)
 # ifdef MPI_PARALL_GRID
    endif
 # endif
@@ -1465,7 +1469,7 @@
 ! ----------------------------------------------------------------------
       INTEGER I,J,ITER
       REAL(rkind) ZTAUW,UTOP,CDRAG,WCD,USTOLD,TAUOLD
-      REAL(rkind) X,UST,ZZ0,ZNU,F,DELF,ZZ00,ALOGZ
+      REAL(rkind) X,UST,ZZ0,F,DELF,ZZ00,ALOGZ
 !
 !
       DELU    = UMAX/MyREAL(JUMAX)
@@ -1597,7 +1601,7 @@
       REAL(rkind), ALLOCATABLE       :: W(:)
       REAL(rkind)                    :: ZX,ZARG,ZMU,ZLOG,ZZ00,ZBETA
       REAL(rkind)                    :: Y,YC,DELY
-      INTEGER                 :: I,J,K,L
+      INTEGER                 :: J,K,L
       REAL(rkind)                    :: X0
       integer istat
 !
@@ -1649,7 +1653,6 @@
          END DO
       END DO
       DEALLOCATE(W)
-      RETURN
 !/T 9000 FORMAT ('TABU_HF, L, K, ALPHA, UST, TAUHFT(K,L) :',(2I4,3F8.3))    
       END SUBROUTINE TABU_TAUHF_NEW
 
@@ -1809,8 +1812,6 @@
            END DO
         END DO
       DEALLOCATE(W)
-
-      RETURN
 !/T 9000 FORMAT (' TEST TABU_HFT2, K, L, I, UST, ALPHA, LEVTAIL, TAUHFT2(K,L,I) :',(3I4,4F10.5))    
       END SUBROUTINE TABU_TAUHF2_NEW
 
@@ -1874,7 +1875,7 @@
 ! 10. Source code :
 !-----------------------------------------------------------------------------!
 !/T      USE W3ODATMD, ONLY: NDST
-      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE
+      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, THR
 
       IMPLICIT NONE
 !
@@ -1883,11 +1884,9 @@
       REAL(rkind), intent(in) :: WINDSPEED,TAUW
       REAL(rkind), intent(out) :: USTAR, Z0, CHARN
       ! local variables
-      real a,b  ! constants of parameterisation
-      real cd   ! drag coefficient
       REAL(rkind) SQRTCDM1
-      REAL(rkind) X,XI,DELI1,DELI2,XJ,delj1,delj2
-      REAL(rkind) UST,DELTOLD,TAUW_LOCAL
+      REAL(rkind) XI,DELI1,DELI2,XJ,delj1,delj2
+      REAL(rkind) TAUW_LOCAL
       INTEGER IND,J
 !
       TAUW_LOCAL=MAX(MIN(TAUW,TAUWMAX),ZERO)
@@ -1896,6 +1895,7 @@
       DELI1   = MIN(ONE,XI - MyREAL(IND))  !interpolation coefficient for stress table
       DELI2   = ONE - DELI1
       XJ      = WINDSPEED/DELU
+      XJ      = WINDSPEED/MAX(THR,DELU)
       J       = MIN ( JUMAX-1, INT(XJ) )
       DELJ1   = MIN(ONE,XJ - MyREAL(J))
       DELJ2   = ONE - DELJ1
@@ -1904,7 +1904,12 @@
 !
 ! Determines roughness length
 !
-      SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
+!AR: Check for zero stress for zero wind !!!
+      IF (USTAR .GT. 0.001_rkind) THEN 
+        SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
+      ELSE
+        SQRTCDM1  = ZERO
+      ENDIF
       Z0  = ZZWND*EXP(-KAPPA*SQRTCDM1)
 !AR: Here we need to start debugging ...       
       IF (USTAR.GT.0.001_rkind) THEN 
@@ -1988,45 +1993,39 @@
 !/ ------------------------------------------------------------------- /
 !/ Parameter list
 !/
-      REAL(rkind), INTENT(IN)        :: A(NSPEC), K(NK), CG(NK),        &
-     &               DEPTH, USTAR, USDIR 
+      REAL(rkind), INTENT(IN)        :: A(NSPEC), K(NK), CG(NK), DEPTH, USTAR, USDIR
       REAL(rkind), INTENT(OUT)       :: WHITECAP(1:4)
       REAL(rkind), INTENT(OUT)       :: S(NSPEC), D(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IS2, IS0, IS20, IA, J, IKL, ITOT,  &
-     &    NTOT, ID, NKL, IO
+      INTEGER                 :: IS, IS2, IS0, IKL, ID, NKL
 !/S      INTEGER, SAVE           :: IENT = 0
-      INTEGER                 :: IK, IT, ITH, I_INT, IK2, ITH2, IKIND,  &
-     &    L, IKHS, IKD, SDSNTH
+      INTEGER                 :: IK, IT, ITH, IK2, IKHS, IKD, SDSNTH
       INTEGER                 :: NSMOOTH(NK)
-      REAL(rkind)                    :: FACTOR, COSWIND, ASUM, SDIAGISO
-      REAL(rkind)                    :: COEF1, COEF2, COEF3, COEF4(NK)
-      REAL(rkind)                    :: ALFAMEAN, KB
-      REAL(rkind)                    :: FACTURB, DTURB, DCUMULATIVE
-      REAL(rkind)                    :: BREAKFRACTION
-      REAL(rkind)                    :: RENEWALFREQ, EPSR
-      REAL(rkind)                    :: NTIMES(NK), S1(NK), E1(NK)
-      REAL(rkind)                    :: GAM, XT, M1
-      REAL(rkind)                    :: DK(NK), HS(NK), KBAR(NK)
-      REAL(rkind)                    :: DCK(NK)
-      REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
+      REAL(rkind)             :: COSWIND, ASUM, SDIAGISO
+      REAL(rkind)             :: COEF1, COEF2, COEF3, COEF4(NK)
+      REAL(rkind)             :: FACTURB, DTURB
+      REAL(rkind)             :: BREAKFRACTION
+      REAL(rkind)             :: RENEWALFREQ, EPSR
+      REAL(rkind)             :: NTIMES(NK), S1(NK), E1(NK)
+      REAL(rkind)             :: GAM, XT
+      REAL(rkind)             :: DK(NK), HS(NK), KBAR(NK)
+      REAL(rkind)             :: DCK(NK)
+      REAL(rkind)             :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                 :: IKSUP(NK)
-      REAL(rkind)                    :: Q1(NK) 
       REAL(rkind)                    :: FACSAT, DKHS
       REAL(rkind)                    :: BTH0(NK)     !saturation spectrum 
       REAL(rkind)                    :: BTH(NSPEC)   !saturation spectrum 
       REAL(rkind)                    :: BTH0S(NK)    !smoothed saturation spectrum 
       REAL(rkind)                    :: BTHS(NSPEC)  !smoothed saturation spectrum  
-      REAL(rkind)                    :: W, MICHE, X
+      REAL(rkind)                    :: MICHE, X
 !/T0      REAL(rkind)                :: DOUT(NK,NTH)
-      REAL(rkind)                    :: QB(NK), S2(NK), KD, DC(NK)
+      REAL(rkind)                    :: QB(NK), S2(NK)
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
       REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC)
       REAL(rkind)                    :: LAMBDA(NSPEC)
-      LOGICAL                 :: MASK(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -2158,7 +2157,7 @@
           IF (SSDSBM(0).EQ.1) THEN
             MICHE=ONE
           ELSE
-            X=TANH(MIN(K(IK)*DEPTH,10._rkind))
+            X=MyTANH(MIN(K(IK)*DEPTH,10._rkind))
             MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+                           &
      &             X*(SSDSBM(3)+X*SSDSBM(4)))))**2 ! Correction of saturation level for shallow-water kinematics
             END IF
@@ -2269,7 +2268,7 @@
             ELSE IF (IKHS < 1) THEN
               IKHS = 1
               END IF  
-            XT = TANH(KBAR(IKL)*DEPTH)
+            XT = MyTANH(KBAR(IKL)*DEPTH)
 !
 !  Gamma corrected for water depth
 !
@@ -2386,7 +2385,7 @@
 !
 ! Computes wave turbulence interaction
 !
-          COSWIND=(ECOS(IS)*COS(USDIR)+ESIN(IS)*SIN(USDIR))
+          COSWIND=(ECOS(IS)*MyCOS(USDIR)+ESIN(IS)*MySIN(USDIR))
           DTURB=-2.*SIG(IK)*K(IK)*FACTURB*COSWIND  ! Theory -> stress direction
 !
 ! Add effects
