@@ -26,7 +26,7 @@
 
       integer, allocatable :: ListMNP(:)
       integer, allocatable :: iplg(:)
-      integer ifile, I
+      integer ifile, I, nproc
       integer :: eInt(1)
      
       logical test
@@ -163,11 +163,15 @@
         Print *, 'FILE_NAME_MERGE=', TRIM(FILE_NAME_MERGE)
         iret = nf90_create(TRIM(FILE_NAME_MERGE), NF90_CLOBBER, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+        Print *, 'step 1'
         CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, MNP, MNE)
+        Print *, 'step 2'
         iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+        Print *, 'step 3'
         iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+        Print *, 'step 4'
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_HISTORY%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
@@ -185,8 +189,10 @@
             CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
           END IF
         END DO
+        Print *, 'step 5'
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+        Print *, 'step 6'
         !
         iret=nf90_open(TRIM(FILE_NAME_MERGE), NF90_WRITE, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)

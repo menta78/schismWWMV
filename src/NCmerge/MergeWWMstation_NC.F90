@@ -24,7 +24,7 @@
       character (len = *), parameter :: CallFct="MergeWWMstation_NC"
 
       integer, allocatable :: ListORIGIN(:), ISum(:), IFound(:), ISMAX(:)
-      integer ifile, I
+      integer ifile, I, nproc
       integer :: eInt(1)
      
       logical test
