@@ -35,13 +35,13 @@
 ## Environment for TACC/Stampede
 ## Some modules are loaded at start-up thru .modules
 #################################################################################
-ENV = ARON_mvapich
+ENV = ARON
 
 ################################################################################
 # Environment 
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCP = mpiifort #MPI compiler
 FLD = $(FCP)
 # MPI vserion (1 or 2)
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
@@ -53,8 +53,8 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g #-traceback -assume byterecl
-  FLDFLAGS = -O1 -g #-traceback -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
@@ -62,8 +62,8 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 #  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 ##########################################################################################
 #####Libraries
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf  -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
+MTSLIBS = -L/home/ar69ovim/git/wwmIII/src/ParMetis-3.1-Sep2010 -lparmetis -lmetis 
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
 CDFMOD  = -I$(NETCDF_INCDIR) -I$(HDF5_INCDIR) # modules for netcdf
 
 ################################################################################
@@ -109,8 +109,10 @@ endif
  USE_WWM = yes
  EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
-# EXEC := $(EXEC)_PETSC
+ USE_PETSC = yes
+ EXEC := $(EXEC)_PETSC
+  
+
 
 # TIMOR 
 # USE_TIMOR = yes
