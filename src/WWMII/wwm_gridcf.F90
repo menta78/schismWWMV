@@ -91,7 +91,6 @@
                      IEN(6,IE) =   DXP1
                      DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
                      TRIA(IE) = DBLTMP
-                     WRITE(22225,'(4I10,8F15.8)') IE, NI, IEN(:,IE), TRIA(IE)
                    END IF
 
 
