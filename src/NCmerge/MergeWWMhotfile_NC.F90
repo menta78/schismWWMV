@@ -25,7 +25,7 @@
 
       integer, allocatable :: ListMNP(:)
       integer, allocatable :: iplg(:)
-      integer I
+      integer I, nproc
       integer :: eInt(1)
      
       logical test

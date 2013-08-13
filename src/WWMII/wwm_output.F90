@@ -1305,6 +1305,7 @@
       REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
 
       OUTPAR    = 0.
+
       IF (DEP(IP) .LT. DMIN) THEN
         RETURN
       END IF

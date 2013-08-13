@@ -445,8 +445,14 @@
         END DO
       END DO
       WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
-
       TheOut=V_X
+!#ifdef DEBUG
+!      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
+!      DO IP=1,MNP
+!        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
+!      END DO
+!      FLUSH(200+myrank)
+!#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -618,6 +624,7 @@
       logical :: SAME_NONZERO_PATTERN =.true.
 #endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
+      ZETA_SETUP = ZERO
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
@@ -658,6 +665,52 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SET_MEANVALUE_TO_ZERO(TheVar)
+      USE DATAPOOL
+#ifdef MPI_PARALL_GRID
+      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+#endif
+      IMPLICIT NONE
+      real(rkind), intent(inout) :: TheVar(MNP)
+      real(rkind) :: SUM_SI_Var, SUM_SI, TheMean
+      INTEGER IP
+#ifdef MPI_PARALL_GRID
+      real(rkind) :: eVect(2), rVect(2)
+      integer iProc
+#endif
+      SUM_SI_Var=ZERO
+      SUM_SI=ZERO
+      DO IP=1,NP_RES
+        SUM_SI_Var = SUM_SI_Var + nwild_loc_res(IP)*SI(IP)*TheVar(IP)
+        SUM_SI     = SUM_SI     + nwild_loc_res(IP)*SI(IP)
+      END DO
+#ifdef MPI_PARALL_GRID
+      eVect(1)=SUM_SI_Var
+      eVect(2)=SUM_SI
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(rVect,2,rtype, iProc-1, 367, comm, istatus\
+, ierr)   
+          eVect=eVect + rVect
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(eVect,2,rtype, iProc-1, 37, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(eVect,2,rtype, 0, 367, comm, ierr)
+        CALL MPI_RECV(eVect,2,rtype, 0, 37, comm, istatus, ierr)
+      END IF
+      SUM_SI_Var=eVect(1)
+      SUM_SI    =eVect(2)
+#endif
+      TheMean=SUM_SI_Var/SUM_SI
+      DO IP=1,MNP
+        TheVar(IP)=TheVar(IP) - TheMean
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
 #if defined DEBUG && defined MPI_PARALL_GRID
@@ -694,6 +747,7 @@
 #ifdef DEBUG
       REAL(rkind) :: Xtest(MNP), Vimg(MNP)
       REAL(rkind) :: eResidual, eResidual2, eNorm
+      INTEGER IP
 #endif
 #ifdef DEBUG
       WRITE(200 + myrank,*) 'WAVE_SETUP_COMPUTATION, step 1'
@@ -736,6 +790,7 @@
         CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
 #endif
       END IF
+      CALL SET_MEANVALUE_TO_ZERO(ZETA_SETUP)
       WRITE(200 + myrank,*) 'Before DEBUG statement'
 #ifdef DEBUG
       WRITE(200 + myrank,*) 'After DEBUG statement'
