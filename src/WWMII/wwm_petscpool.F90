@@ -156,10 +156,13 @@
         ! node numbers...
         integer :: IP_petsc, IP, IP_old
         ! time measurement
+#ifdef TIMINGS
         real :: startTime, endTime
+#endif
 
-        call CPU_TIME(startTime)
-
+#ifdef TIMINGS
+        call MY_WTIME(startTime)
+#endif
         diagonal = 0
         i = 0; j = 0
         valueMax = 0; valueMin = 0
@@ -230,7 +233,9 @@
           endif
         end do
         mean = mean / MNP
-        call CPU_TIME(endTime)
+#ifdef TIMINGS
+        call MY_WTIME(endTime)
+#endif
 
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
@@ -247,7 +252,9 @@
           end do
 
           write(DBG%FHNDL,*) rank, " There are total ",zeroElementsCounter," entries"
+#ifdef TIMINGS
           write(DBG%FHNDL,*) "check ASPAR diagonal Accuracy Ende. Time: ",endTime - startTime," sec"
+#endif
         endif
       end subroutine
 #endif

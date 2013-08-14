@@ -10,9 +10,10 @@
 
         IMPLICIT NONE
 
+#ifdef TIMINGS
         REAL              :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL              :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
-
+#endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
@@ -35,11 +36,15 @@
            DT4F = 0.5_rkind*DT4A
          END IF
 
-         CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
 
          CALL COMPUTE_DIFFRACTION
 
-         CALL CPU_TIME(TIME2)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME2)
+#endif
 
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
@@ -49,8 +54,9 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
          ENDIF
   
-         CALL CPU_TIME(TIME3)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME3)
+#endif
          IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY()
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
 
@@ -59,8 +65,9 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 3') 
          ENDIF
 
-         CALL CPU_TIME(TIME4)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME4)
+#endif
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
 
          IF (LNANINFCHK) THEN
@@ -68,8 +75,9 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
          ENDIF
 
-         CALL CPU_TIME(TIME5)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME5)
+#endif
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
          IF (LNANINFCHK) THEN
@@ -77,7 +85,9 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
          ENDIF
 
-         CALL CPU_TIME(TIME6)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME6)
+#endif
 
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
 
@@ -86,6 +96,7 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6')
          ENDIF
 
+#ifdef TIMINGS
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME6-TIME5
@@ -95,7 +106,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-
+#endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
 
@@ -133,7 +144,9 @@
           DT4F = DT4D 
         END IF
 
-        CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME1)
+#endif
 
         CALL COMPUTE_DIFFRACTION
 
@@ -152,7 +165,9 @@
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
 
-        CALL CPU_TIME(TIME17)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME17)
+#endif
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------DOUBLE STRANG SPLITTING----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1 + TIME5-TIME4 + TIME8-TIME7 + TIME14+TIME13
@@ -195,24 +210,43 @@
 
         AC1  = AC2
 
-        CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME1)
+#endif
+
         CALL COMPUTE_DIFFRACTION
-        CALL CPU_TIME(TIME2)
+
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME2)
+#endif
+
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0 .AND. (LSECU .OR. LSTCU .OR. LSEWL) ) CALL COMPUTE_FREQUENCY
-        CALL CPU_TIME(TIME3)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME3)
+#endif
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
-        CALL CPU_TIME(TIME4)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME4)
+#endif
         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
-        CALL CPU_TIME(TIME5)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME5)
+#endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-        CALL CPU_TIME(TIME6)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME6)
+#endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-        CALL CPU_TIME(TIME7)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME7)
+#endif
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
-        CALL CPU_TIME(TIME8)
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME8)
+#endif
 
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
@@ -238,9 +272,13 @@
 
         INTEGER          :: ITER, IS, ID, IP
 
+#ifdef TIMINGS
         REAL, SAVE       :: TIME1, TIME2
+#endif
 
-         CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
 
          DT4A = MAIN%DELT 
          DT4S = DT4A
@@ -249,8 +287,9 @@
 
 ! Set DAC's to Zero ... 
 
-         CALL CPU_TIME(TIME1)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
          DAC_THE = 0.
          DAC_SIG = 0.
          DAC_SOU = 0.
@@ -291,9 +330,9 @@
          CALL COMPUTE_DIRECTION()
          CALL COMPUTE_SOURCES_EXP()
 
-         CALL CPU_TIME(TIME2)
-
-        RETURN
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME2)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

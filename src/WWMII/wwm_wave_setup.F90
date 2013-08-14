@@ -484,9 +484,7 @@
       integer :: POS_TRICK(3,2)
 
 
-      REAL    ::  TIME2
       ! solver timings
-      real    ::  startTime, endTime
       real, save :: solverTimeSum = 0
 !
 ! Petsc stuff
@@ -569,10 +567,8 @@
       if(samePreconditioner .eqv. .true.) call KSPSetOperators(solver_setup, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
       call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
-      call CPU_TIME(startTime)
       ! Solve!
       call KSPSolve(solver_setup, myB_setup, myX_setup, petscErr);CHKERRQ(petscErr);
-      call CPU_TIME(endTime)
       call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          
       call KSPGetConvergedReason(solver_setup, reason, petscErr);CHKERRQ(petscErr);

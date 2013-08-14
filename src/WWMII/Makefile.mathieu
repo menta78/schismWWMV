@@ -18,6 +18,8 @@ DARKO =
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
+# Put TIMINGS = on for timings with
+TIME = on
 
 
 #F90 = gfortran
@@ -100,6 +102,10 @@ ifdef NETCDF
   FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)
+endif
+
+ifdef NETCDF
+  FFLAGS +=  -DTIMINGS
 endif
 
 ifdef MPI

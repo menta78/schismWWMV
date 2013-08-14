@@ -359,9 +359,13 @@
          integer FHNDLspec
          CHARACTER(LEN=40) :: FILEspec
 #endif
+#ifdef TIMINGS
          REAL           :: TIME1, TIME2
+#endif
          INTEGER        :: IT, IFILE
-         CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
 
          CALL INIT_FILE_HANDLES
          CALL READ_WWMINPUT
@@ -555,7 +559,9 @@
 !           call parallel_abort('OUTPUTSIZE IS NOT RIGHT CHECK VARS')
 !         END IF
 !#endif
-         CALL CPU_TIME(TIME2)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME2)
+#endif
 
 #if defined SELFE
          IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
@@ -569,7 +575,9 @@
 #endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
+#ifdef TIMINGS
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
+#endif
          FLUSH(STAT%FHNDL)
 
          AC1 = AC2

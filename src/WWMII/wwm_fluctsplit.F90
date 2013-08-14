@@ -1244,7 +1244,9 @@
          external bcgstab
          external gmres
 
-!         CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+!         CALL MY_WTIME(TIME1)
+#endif
 
          IWKSP = 0
          WKSP  = ZERO
@@ -1387,7 +1389,9 @@
             AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
           END DO
 
-!          CALL CPU_TIME(TIME4)
+#ifdef TIMINGS
+!          CALL MY_WTIME(TIME4)
+#endif
 
 !         WRITE(DBG%FHNDL,*) 'SOLUTION'
 !         WRITE(DBG%FHNDL,*) SUM(B), SUM(X)
@@ -1611,7 +1615,9 @@
             AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
           END DO
 
-!          CALL CPU_TIME(TIME4)
+#ifdef TIMINGS
+!          CALL MY_WTIME(TIME4)
+#endif
 
 !         WRITE(DBG%FHNDL,*) 'SOLUTION'
 !         WRITE(DBG%FHNDL,*) SUM(B), SUM(X)
@@ -2706,8 +2712,9 @@
            END DO
          END DO
 
-         CALL CPU_TIME(TIME1)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
          IF (IVECTOR == 1) THEN
          DO ID = 1, MDC
            DO IS = 1, MSC
@@ -2964,8 +2971,9 @@
            CALL EXCHANGE_P4D_WWM(U)
 #endif
 
-         CALL CPU_TIME(TIME1)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
          ITER_MAX = MAXVAL(ITER_EXP)
          DT4AI = DT4A/ITER_MAX
 
@@ -3164,8 +3172,9 @@
            END DO
          END DO
 
-         CALL CPU_TIME(TIME1)
-
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX
            DO IS = 1, MSC

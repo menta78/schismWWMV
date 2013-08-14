@@ -293,9 +293,10 @@
          real(kind=8)  :: B(MNP)
          real(kind=8)  :: ASPAR(NNZ)
 
-         REAL    ::  TIME2
          ! solver timings
+#ifdef TIMINGS
          real    ::  startTime, endTime
+#endif
          real, save :: solverTimeSum = 0
 !
 ! Petsc stuff
@@ -366,8 +367,6 @@
            DELTAL(:,IE) = CRFS(:)-KP(:,IE)
            NM(IE)       = 1.0_rkind/MIN(-THR,SUM(KM(:)))
          END DO
-
-         CALL CPU_TIME(TIME2)
 
          U = AC2(:,ISS,IDD)
 
@@ -507,10 +506,14 @@
          if(samePreconditioner .eqv. .true.) call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
          call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
-         call CPU_TIME(startTime)
+#ifdef TIMINGS
+         call MY_WTIME(startTime)
+#endif
          ! Solve!
          call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
-         call CPU_TIME(endTime)
+#ifdef TIMINGS
+         call MY_WTIME(endTime)
+#endif
          call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          
          call KSPGetConvergedReason(Solver, reason, petscErr);CHKERRQ(petscErr);

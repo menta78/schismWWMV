@@ -360,82 +360,94 @@
 !**********************************************************************
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
-         USE DATAPOOL
-         USE WAVE_SETUP
+      USE DATAPOOL
+      USE WAVE_SETUP
 #ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank
+      use elfe_msgp, only : myrank
 #endif
-         IMPLICIT NONE
+      IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: K
+      INTEGER, INTENT(IN) :: K
 
-         REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
-         REAL           :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
+      REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
+      REAL           :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
 
-         CHARACTER(LEN=15)   :: CTIME,CALLFROM
+      CHARACTER(LEN=15)   :: CTIME,CALLFROM
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME1)
+#endif
 
-         CALL CPU_TIME(TIME1)
+      CALL IO_1(K)
 
-         CALL IO_1(K)
-        
-         CALL CPU_TIME(TIME2)
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME2)
+#endif
 
 #if !defined MPI_PARALL_GRID
-         IF (LCFL) CALL CFLSPEC
+      IF (LCFL) CALL CFLSPEC
 #endif
 
-         CALL CPU_TIME(TIME3)
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME3)
+#endif
 
-         IF (ICOMP .EQ. 0) THEN
-           IF (LITERSPLIT) THEN
-            CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-             !CALL COMPUTE_ITERATIVE_SPLITTING
-           ELSE
-             CALL COMPUTE_SIMPLE_EXPLICIT
-           END IF
-         ELSE IF (ICOMP .EQ. 1) THEN 
-           IF (LITERSPLIT) THEN
-            CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-           ELSE
-             CALL COMPUTE_SIMPLE_EXPLICIT
-           END IF
-         ELSE IF (ICOMP .EQ. 2) THEN 
-           CALL COMPUTE_IMPLICIT
-         END IF
-         IF (LZETA_SETUP) THEN
-           CALL WAVE_SETUP_COMPUTATION
-         END IF
+      IF (ICOMP .EQ. 0) THEN
+        IF (LITERSPLIT) THEN
+          CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
+          !CALL COMPUTE_ITERATIVE_SPLITTING
+        ELSE
+          CALL COMPUTE_SIMPLE_EXPLICIT
+        END IF
+      ELSE IF (ICOMP .EQ. 1) THEN 
+        IF (LITERSPLIT) THEN
+          CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
+        ELSE
+          CALL COMPUTE_SIMPLE_EXPLICIT
+        END IF
+      ELSE IF (ICOMP .EQ. 2) THEN 
+        CALL COMPUTE_IMPLICIT
+      END IF
+      IF (LZETA_SETUP) THEN
+        CALL WAVE_SETUP_COMPUTATION
+      END IF
 
-         CALL CPU_TIME(TIME4)
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME4)
+#endif
 
-         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-         RTIME = MAIN%TMJD - MAIN%BMJD
+      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+      RTIME = MAIN%TMJD - MAIN%BMJD
 #ifndef SELFE
 # if defined WWM_MPI
-         IF (myrank.eq.0) THEN
+      IF (myrank.eq.0) THEN
 # endif
-         WRITE(*,101)  K, MAIN%ISTP, RTIME
+      WRITE(*,101)  K, MAIN%ISTP, RTIME
 # if defined WWM_MPI
-         ENDIF
+      ENDIF
 # endif
 #endif
-         CALL IO_2(K)
+      CALL IO_2(K)
 
-         CALL CPU_TIME(TIME5)
-
-         IF (LCONV) THEN
-            CALL CHECK_STEADY(RTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
-         END IF
-
-         CALL CPU_TIME(TIME6)
-
-         IF (.NOT. LDIFR) LCALC = .FALSE.
-
-         CALL MJD2CT(MAIN%TMJD, CTIME)
-
-#ifdef MPI_PARALL_GRID
-      IF (myrank == 0) THEN
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME5)
 #endif
+
+      IF (LCONV) THEN
+        CALL CHECK_STEADY(RTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
+      END IF
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME6)
+#endif
+
+      IF (.NOT. LDIFR) LCALC = .FALSE.
+
+      CALL MJD2CT(MAIN%TMJD, CTIME)
+
+#ifdef TIMINGS
+# ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+# endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6,A20)') '-----SIMULATION TIME-----        ', MAIN%TMJD, CTIME
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL RUN TIMES-----        '
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING                    ', TIME2-TIME1
@@ -445,8 +457,9 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CHECK STEADY                     ', TIME6-TIME5
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         FLUSH(STAT%FHNDL)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       ENDIF
+# endif
 #endif
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')

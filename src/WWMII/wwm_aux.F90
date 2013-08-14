@@ -101,6 +101,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef TIMINGS
+      SUBROUTINE MY_WTIME(wtime)
+      USE DATAPOOL, only : rkind
+      implicit none
+      real(rkind), intent(inout) :: wtime
+# ifdef MPI_PARALL_GRID
+      real(rkind) mpi_wtime
+# endif
+# ifdef MPI_PARALL_GRID
+      wtime=mpi_wtime()
+# else
+      CALL cpu_time(wtime)
+# endif
+      END SUBROUTINE
+#endif
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE GRADCURT()
          USE DATAPOOL
          IMPLICIT NONE

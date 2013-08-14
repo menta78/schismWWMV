@@ -93,7 +93,9 @@
 
          real(rkind) ::  ASPAR(NNZ)
 
+#ifdef TIMINGS
          REAL    :: TIME1, TIME2, TIME3, TIME4, TIME5
+#endif
 
          INTEGER :: POS_TRICK(3,2)
 
@@ -106,7 +108,9 @@
          PetscInt :: eCol, eRow
          PetscScalar :: eValue
 
-         CALL CPU_TIME(TIME1)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME1)
+#endif
 
          POS_TRICK(1,1) = 2
          POS_TRICK(1,2) = 3
@@ -147,7 +151,9 @@
            NM(IE)       = 1.0_rkind/MIN(-THR,SUM(KM(:)))
          END DO
 
-         CALL CPU_TIME(TIME2)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME2)
+#endif
 
          U = AC2(:,ISS,IDD)
 
@@ -209,7 +215,9 @@
            END DO
          ENDIF
 
-         CALL CPU_TIME(TIME3)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME3)
+#endif
 
 !> \todo for efficiency reason this will be moved out of this part when the code is working, AR.
 ! fill the matrix
@@ -245,11 +253,15 @@
          call VecAssemblyBegin(myB, ierr);CHKERRQ(ierr);
          call VecAssemblyEnd(myB, ierr);CHKERRQ(ierr);
 
-         CALL CPU_TIME(TIME4)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME4)
+#endif
 ! Solve
          call KSPSolve(Solver, myB, myX, ierr);CHKERRQ(ierr)
 
-         CALL CPU_TIME(TIME5)
+#ifdef TIMINGS
+         CALL MY_WTIME(TIME5)
+#endif
 
          !WRITE(*,*) TIME2-TIME1, TIME3-TIME2, TIME4-TIME3, TIME5-TIME4
 
@@ -274,9 +286,9 @@
 
          AC2(:,ISS,IDD) = X
 
-!          CALL CPU_TIME(TIME4)
-
-         RETURN
+#ifdef TIMINGS
+!          CALL MY_WTIME(TIME4)
+#endif
         END SUBROUTINE
 
       !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()

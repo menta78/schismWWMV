@@ -1361,7 +1361,9 @@
         use petscpool
 
         implicit none
+#ifdef TIMINGS
         real    ::  startTime, endTime
+#endif
         integer :: IP, rowLocal, IDD, ISS
         PetscScalar :: value
         ! for the exchange
@@ -1372,18 +1374,29 @@
 
         call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
 
-        call CPU_TIME(startTime)
+#ifdef TIMINGS
+        call MY_WTIME(startTime)
+#endif
         call calcASPAR()
-        call CPU_TIME(endTime)
+#ifdef TIMINGS
+        call MY_WTIME(endTime)
+#endif
+#ifdef TIMINGS
         if(rank == 0) print '("calcASPAR Time = ",f6.3," sec")',endTime - startTime
+#endif
 !         call printMatrixProperties(matrix)
 !         call plotMatrix(matrix)
 
-!         call CPU_TIME(startTime)
+#ifdef TIMINGS
+!         call MY_WTIME(startTime)
+#endif
         call calcB()
-!         call CPU_TIME(endTime)
+#ifdef TIMINGS
+!         call MY_WTIME(endTime)
+#endif
+#ifdef TIMINGS
 !         if(rank == 0) print '("calcB Time = ",f6.3," sec")',endTime - startTime
-
+#endif
         ! fill x
         call useOldSolution
 
@@ -1396,10 +1409,14 @@
         if(samePreconditioner .eqv. .true.) call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
         call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
-        call CPU_TIME(startTime)
+#ifdef TIMINGS
+        call MY_WTIME(startTime)
+#endif
         ! Solve!
         call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
-        call CPU_TIME(endTime)
+#ifdef TIMINGS
+        call MY_WTIME(endTime)
+#endif
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
 
         call KSPGetConvergedReason(Solver, reason, petscErr)
@@ -1418,7 +1435,9 @@
             CHKERRQ(petscErr)
             if(iteration /= 0)  write(DBG%FHNDL,*) "Number of iterations", iteration
           endif
+#ifdef TIMINGS
           print '("solver Time = ",f6.3," sec")', endTime - startTime
+#endif
         endif
 #endif
 
@@ -1679,9 +1698,13 @@
         ! node numbers...
         integer :: IP_petsc, IP, IP_old
         ! time measurement
+#ifdef TIMINGS
         real :: startTime, endTime
+#endif
 
-        call CPU_TIME(startTime)
+#ifdef TIMINGS
+        call MY_WTIME(startTime)
+#endif
 
         positionMax = -1
         positionMin = -1
@@ -1764,7 +1787,9 @@
         call VecRestoreArrayF90(diagonal, array, petscErr)
         CHKERRQ(petscErr);
         call VecDestroy(diagonal, petscErr);CHKERRQ(petscErr)
-        call CPU_TIME(endTime)
+#ifdef TIMINGS
+        call MY_WTIME(endTime)
+#endif
 
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
@@ -1783,10 +1808,10 @@
             write(DBG%FHNDL,*) entriesDetail(i,:)
           end do
 
-          write(DBG%FHNDL,*) rank, " There are total ", zeroElementsCounter,"   &
-     &   entries"
-          write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ",     &
-     &   endTime - startTime," sec"
+          write(DBG%FHNDL,*) rank, " There are total ", zeroElementsCounter," entries"
+#ifdef TIMINGS
+          write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ", endTime - startTime," sec"
+#endif
         endif
       end subroutine
 !**********************************************************************
