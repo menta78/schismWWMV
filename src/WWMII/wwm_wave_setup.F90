@@ -447,11 +447,11 @@
       WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
       TheOut=V_X
 !#ifdef DEBUG
-!      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
-!      DO IP=1,MNP
-!        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
-!      END DO
-!      FLUSH(200+myrank)
+      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
+      DO IP=1,MNP
+        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
+      END DO
+      FLUSH(200+myrank)
 !#endif
       END SUBROUTINE
 !**********************************************************************
