@@ -126,9 +126,9 @@
 #endif
         IMPLICIT NONE
 
-        REAL       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL       :: TIME6, TIME7, TIME8, TIME9, TIME10
-        REAL       :: TIME11, TIME12, TIME13, TIME14, TIME15, TIME16, TIME17
+        REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
+        REAL(rkind) :: TIME6, TIME7, TIME8, TIME9, TIME10
+        REAL(rkind) :: TIME11, TIME12, TIME13, TIME14, TIME15, TIME16, TIME17
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
 
@@ -189,7 +189,7 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL, SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
+        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
         INTEGER          :: IP, IT
 
 
@@ -273,7 +273,7 @@
         INTEGER          :: ITER, IS, ID, IP
 
 #ifdef TIMINGS
-        REAL, SAVE       :: TIME1, TIME2
+        REAL(rkind), SAVE       :: TIME1, TIME2
 #endif
 
 #ifdef TIMINGS

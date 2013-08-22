@@ -360,7 +360,7 @@
          CHARACTER(LEN=40) :: FILEspec
 #endif
 #ifdef TIMINGS
-         REAL           :: TIME1, TIME2
+         REAL(rkind)    :: TIME1, TIME2
 #endif
          INTEGER        :: IT, IFILE
 #ifdef TIMINGS
