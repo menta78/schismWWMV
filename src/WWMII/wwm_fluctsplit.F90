@@ -2138,11 +2138,9 @@
          SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
-         IF (ICOMP .GE. 1) THEN
-           ALLOCATE( I_DIAG(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
-           I_DIAG = 0
-         END IF
+         ALLOCATE( I_DIAG(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
+         I_DIAG = 0
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
