@@ -28,10 +28,10 @@
       USE elfe_msgp, only : myrank
 #endif
       implicit none
-      real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
+      real(rkind), intent(out) :: F_X(MNE), F_Y(MNE)
       real(rkind) :: INPUT(MNP)
-      real(rkind) :: U_X1(MNP), U_Y1(MNP)
-      real(rkind) :: U_X2(MNP), U_Y2(MNP)
+      real(rkind) :: U_X1(MNE), U_Y1(MNE)
+      real(rkind) :: U_X2(MNE), U_Y2(MNE)
       integer IP, ID, ISS
       REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
@@ -65,13 +65,55 @@
         eHS=4.0_rkind*SQRT(ETOT)
 !        WRITE(700,*) 'IP=', IP, 'HS=', eHS, 'RXX/RYY=', eRXX, eRYY
       END DO
-      CALL DIFFERENTIATE_XYDIR(RSXX, U_X1, U_Y1)
-      CALL DIFFERENTIATE_XYDIR(RSXY, U_X2, U_Y2)
+      CALL DIFFERENTIATE_XYDIR_ELE(RSXX, U_X1, U_Y1)
+      CALL DIFFERENTIATE_XYDIR_ELE(RSXY, U_X2, U_Y2)
       F_X = -U_X1 - U_Y2
       !
-      CALL DIFFERENTIATE_XYDIR(RSYY, U_X1, U_Y1)
-!     CALL DIFFERENTIATE_XYDIR(RSXY, U_X2, U_Y2)
+      CALL DIFFERENTIATE_XYDIR_ELE(RSYY, U_X1, U_Y1)
+!     CALL DIFFERENTIATE_XYDIR_ELE(RSXY, U_X2, U_Y2)
       F_Y = -U_Y1 - U_X2
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DIFFERENTIATE_XYDIR_ELE(F, DX, DY)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: F(MNP)
+      REAL(rkind), intent(out) :: DX(MNE), DY(MNE)
+      REAL(rkind) :: eDX, eDY, eYP, h
+      REAL(rkind) :: UGRAD, VGRAD
+      INTEGER IE, I1, I2, I3, IP1, IP2, IP3
+      INTEGER :: POS_TRICK(3,2)
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+      DO IE=1,MNE
+        h=TWO*TRIA(IE)
+        eDX=ZERO
+        eDY=ZERO
+        DO I1=1,3
+          I2=POS_TRICK(I1, 1)
+          I3=POS_TRICK(I1, 2)
+          IP1=INE(I1,IE)
+          IP2=INE(I2,IE)
+          IP3=INE(I3,IE)
+          UGRAD=-(YP(IP3)-YP(IP2))/h
+          VGRAD= (XP(IP3)-XP(IP2))/h
+          eDX = eDX + UGRAD*F(IP1)
+          eDY = eDY + VGRAD*F(IP1)
+        END DO
+        IF (LSPHE) THEN
+          eYP=(YP(IP1) + YP(IP2) + YP(IP3))/3.0_rkind
+          eDX=eDX/(DEGRAD*REARTH*COS(eYP*DEGRAD))
+          eDY=eDY/(DEGRAD*REARTH)
+        END IF
+        DX(IE)=eDX
+        DY(IE)=eDY
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -84,7 +126,7 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
-      REAL(rkind) :: h
+      REAL(rkind) :: h, eYP
 #ifdef DEBUG
       REAL(rkind) :: F1, F2, F3
 #endif
@@ -104,6 +146,11 @@
       h=TWO*TRIA(IE)
       UGRAD=-(YP(IP3)-YP(IP2))/h
       VGRAD= (XP(IP3)-XP(IP2))/h
+      IF (LSPHE) THEN
+        eYP=(YP(IP1) + YP(IP2) + YP(IP3))/3.0_rkind
+        UGRAD=UGRAD/(DEGRAD*REARTH*COS(eYP*DEGRAD))
+        VGRAD=VGRAD/(DEGRAD*REARTH)
+      END IF
 #ifdef DEBUG
 !      F1=(XP(IP1) - XP(IP2))*UGRAD + (YP(IP1) - YP(IP2))*VGRAD
 !      F2=ZERO
@@ -139,7 +186,7 @@
       USE elfe_msgp, only : myrank
 #endif
       IMPLICIT NONE
-      real(rkind), intent(in)  :: FX(MNP), FY(MNP)
+      real(rkind), intent(in)  :: FX(MNE), FY(MNE)
       real(rkind), intent(out) :: ASPAR(NNZ)
       real(rkind), intent(out) :: B(MNP)
       INTEGER :: POS_TRICK(3,2), POS_SHIFT(3,3)
@@ -186,8 +233,8 @@
         IP1=INE(1,IE)
         IP2=INE(2,IE)
         IP3=INE(3,IE)
-        eFX =( FX(IP1) +  FX(IP2) +  FX(IP3))/3.0_rkind
-        eFY =( FY(IP1) +  FY(IP2) +  FY(IP3))/3.0_rkind
+        eFX =FX(IE)
+        eFY =FY(IE)
         eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
         eArea=TRIA(IE)
         eFact=eDep*eArea
