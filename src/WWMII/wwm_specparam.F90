@@ -429,11 +429,11 @@
          ETOT = ZERO
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig 
-           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
-           do is = 2, msc - 1
+           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+           do is = 2, msc
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc) 
+           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -446,11 +446,11 @@
            y = ONE/SPSIG
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)
-             do is = 2, msc - 1
+             ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+             do is = 2, msc
                ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)
+             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
            !tmp = ONE/SPSIG
            !ACTOT       = DINTSPEC_Y(IP,ACLOC,tmp)
@@ -458,11 +458,11 @@
            y = SIGPOW(:,1) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1) 
-             do is = 2, msc - 1
+             ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
+             do is = 2, msc
                ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
            !tmp = SIGPOW(:,1)
            !ETOT_SPSIG  = DINTSPEC_Y(IP,ACLOC,tmp)
@@ -470,11 +470,11 @@
            y = WK(IP,:) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)
-             do is = 2, msc - 1
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
+             do is = 2, msc
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
            !tmp = WK(IP,:)
            !ETOT_WK     = DINTSPEC_Y(IP,ACLOC,tmp)
@@ -482,11 +482,11 @@
            y = ONE/SQRT(WK(IP,:))
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)
-             do is = 2, msc - 1
+             ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
+             do is = 2, msc
                ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)
+             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
            !tmp = ONE/SQRT(WK(IP,:))
            !ETOT_ISQ_WK = DINTSPEC_Y(IP,ACLOC,tmp)
@@ -494,11 +494,11 @@
            y = SQRT(WK(IP,:)) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
              do is = 2, msc -1 
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
            !tmp = SQRT(WK(IP,:))
            !ETOT_SQ_WK  = DINTSPEC_Y(IP,ACLOC,tmp) 
@@ -572,11 +572,11 @@
       ETOT = ZERO
       do id = 1, mdc
         tmp(:) = acloc(:,id) * spsig
-        ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
-        do is = 2, msc - 1
+        ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+        do is = 2, msc
           ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
         end do
-        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
       end do
 
       IF (ETOT .GT. THR) THEN
@@ -686,11 +686,11 @@
       ETOT = ZERO
       do id = 1, mdc
         tmp(:) = acloc(:,id) * spsig
-        ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
-        do is = 2, msc - 1
+        ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+        do is = 2, msc
           ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
         end do
-        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
       end do
 
       IF (ETOT .GT. THR) THEN
@@ -874,11 +874,11 @@
          ETOT = ZERO
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig
-           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
-           do is = 2, msc - 1
+           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+           do is = 2, msc
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -889,55 +889,55 @@
            y = ONE/SPSIG
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)
-             do is = 2, msc - 1
+             ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+             do is = 2, msc
                ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)
+             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
 
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1)
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1)
-             do is = 2, msc - 1
+             ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
+             do is = 2, msc
                ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
 
            ETOT_WK = ZERO
            y = WKLOC(:)
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)
-             do is = 2, msc - 1
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
+             do is = 2, msc
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
 
            ETOT_ISQ_WK = ZERO
            y = ONE/SQRT(WKLOC)
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)
+             ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
              do is = 2, msc -1 
                ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)
+             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
 
            ETOT_SQ_WK = ZERO
            y = SQRT(WKLOC)
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
              do is = 2, msc -1 
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
 !
            DS          = SPSIG(MSC) - SPSIG(MSC-1)
@@ -1009,22 +1009,22 @@
 
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
-           ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)
+           ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)*ddir
            do is = 2, msc -1 
              ETOT_SKD = ETOT_SKD + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)
+           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
          end do
 
          y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WK(IP,:)*DEP(IP)))**2
 
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
-           ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
            do is = 2, msc -1 
              ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do 
-           ETOT_SKDSIG = ETOT_SKDSIG + tmp(msc) * ONEHALF * ds_incr(msc)
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
          end do
 
          IF (ETOT_SKD .gt. verysmall) THEN 
@@ -1079,21 +1079,21 @@
          y = ONE/SINH(MIN(KDMAX,WKLOC*DEPLOC))**2
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
-           ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)
+           ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)*ddir
            do is = 2, msc -1
              ETOT_SKD = ETOT_SKD + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)
+           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
          end do
 
          y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WKLOC*DEPLOC))**2
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
-           ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
            do is = 2, msc -1
              ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKDSIG = tmp(msc) * ONEHALF * ds_incr(msc)
+           ETOT_SKDSIG = tmp(msc) * ONEHALF * ds_incr(msc)*ddir
          end do
 
          IF (ETOT_SKD .gt. verysmall) THEN 
@@ -1638,11 +1638,11 @@
          ETOT = ZERO
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig
-           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)
-           do is = 2, msc - 1
+           ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+           do is = 2, msc
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
          end do
 
          IF (ETOT .GT. verysmall) THEN
@@ -1830,11 +1830,11 @@
          ETOT = ZERO
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig 
-           ETOT = ETOT + ONEHALF * tmp(1) * ds_incr(1)
-           do is = 2, msc - 1
+           ETOT = ETOT + ONEHALF * tmp(1) * ds_incr(1)*ddir
+           do is = 2, msc
              IF (LWINDSEA(IS,ID)) ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)
+           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -1847,22 +1847,22 @@
            y = ONE/SPSIG
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ACTOT = ACTOT + ONEHALF * tmp(1) * ds_incr(1)
-             do is = 2, msc - 1
+             ACTOT = ACTOT + ONEHALF * tmp(1) * ds_incr(1)*ddir
+             do is = 2, msc
                IF (LWINDSEA(IS,ID)) ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
              end do
-             ACTOT = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)
+             ACTOT = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
 
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(1) * ds_incr(1)
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(1) * ds_incr(1)*ddir
              do is = 2, msc
                IF (LWINDSEA(IS,ID)) ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
 !
 ! tail factors ...
@@ -1927,7 +1927,7 @@
          !ETOT = DINTSPEC(IP,ACLOC)
          ETOT = ZERO
          do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig 
+           tmp(:) = acloc(:,id) * spsig
            do is = 2, msc
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
            end do
