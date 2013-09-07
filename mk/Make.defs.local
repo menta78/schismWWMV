@@ -64,16 +64,12 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 #####Libraries
 #From my own dir
 MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
-<<<<<<< HEAD
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf  -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
-CDFMOD  = -I$(NETCDF_INCDIR) -I$(HDF5_INCDIR) # modules for netcdf
-=======
+#CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf  -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
+#CDFMOD  = -I$(NETCDF_INCDIR) -I$(HDF5_INCDIR) # modules for netcdf
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
->>>>>>> 85f0fd1a1cddf00dbd0ecbc7071c65652a93cea6
+#CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+#CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 

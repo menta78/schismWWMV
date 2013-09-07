@@ -792,7 +792,7 @@
      &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
-     &      NUM_NETCDF_FILES_BND, LSECU
+     &      NUM_NETCDF_FILES_BND, LSECU, RKIND
 
 # ifdef WWM_MPI
       use elfe_glbl
