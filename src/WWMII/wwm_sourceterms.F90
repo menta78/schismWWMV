@@ -51,8 +51,17 @@
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
          REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
 
+#ifdef TIMINGS 
+         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind), SAVE  :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9
+#endif
+
          LOGICAL        :: LWINDSEA(MSC,MDC)
          REAL(rkind)    :: XLCKS(MDC,MSC)
+
+#ifdef TIMINGS
+         TIME1 = mpi_wtime()
+#endif 
 
          WIND10 = ZERO 
          SUMACLOC = SUM(ACLOC)
@@ -67,28 +76,6 @@
            ACLOC1=AC1(IP,:,:)
            CALL MEAN_WAVE_PARAMETER(IP,ACLOC1,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
          END IF
-
-!         if (ip == 26) then
-!           call MEAN_PARAMETER_LOC(ACLOC,CURTXY(IP,:),DEP(IP),WK(IP,:),MSC,HS,TM01,TM02,TM10,KLM,WLM)
-!           call PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
-!           call MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
-!           write(*,*) IP,HS,TM01,TM02,KLM,WLM,KPP,LPP,DM,DSPR
-!           stop 
-!         endif
-         
-!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'NEW', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
-!         CALL PARAMENG(IP,ACLOC,SME01,SME10,KME01,KMWAM,KMWAM2,WLM, &
-!         URSELL,UBOT,ABRBOT,TMBOT,HS,ETOT,FP,TP,CP,KPP,LPP,DM,DSPR, &
-!         PEAKDSPR,PEAKDM)
-
-!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'OLD', HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
-!         DO IS = 1, MSC
-!           DO ID = 1, MDC
-!             TMPAC(ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
-!           END DO
-!         END DO
-!         CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-!         WRITE(DBG%FHNDL,'(A5,7F15.4)') 'WAM 1', 4*SQRT(EMEAN),EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN
 
          SSINE       = zero
          SSINL       = zero
@@ -114,29 +101,34 @@
          END IF
 
 #ifdef ST_DEF
-      XPP     = 0.15
-      XRR     = 0.10
-      XFILT  = 0.05
-      XPP     = MAX ( 1.E-6_rkind , XPP )
-      XRR     = MAX ( 1.E-6_rkind , XRR )
-      XREL   = XRR
-      XFILT  = MAX ( ZERO , XFILT )
-      XFLT   = XFILT
-      FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2
+         XPP     = 0.15
+         XRR     = 0.10
+         XFILT  = 0.05
+         XPP     = MAX ( 1.E-6_rkind , XPP )
+         XRR     = MAX ( 1.E-6_rkind , XRR )
+         XREL   = XRR
+         XFILT  = MAX ( ZERO , XFILT )
+         XFLT   = XFILT
+         FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2
 
-      DO IK=1, NK
-        DAM(1+(IK-1)*NTH) = FACP / ( SIG(IK) * WK(IP,IK)**3 )
-        WN2(1+(IK-1)*NTH) = WK(IP,IK)
-        END DO
+         DO IK=1, NK
+           DAM(1+(IK-1)*NTH) = FACP / ( SIG(IK) * WK(IP,IK)**3 )
+           WN2(1+(IK-1)*NTH) = WK(IP,IK)
+         END DO
 !
-      DO IK=1, NK
-        IS0    = (IK-1)*NTH
-        DO ITH=2, NTH
-          DAM(ITH+IS0) = DAM(1+IS0)
-          WN2(ITH+IS0) = WN2(1+IS0)
-          END DO
-        END DO
+         DO IK=1, NK
+           IS0    = (IK-1)*NTH
+           DO ITH=2, NTH
+             DAM(ITH+IS0) = DAM(1+IS0)
+             WN2(ITH+IS0) = WN2(1+IS0)
+           END DO
+         END DO
 #endif
+
+#ifdef TIMINGS
+         TIME2 = TIME2 + mpi_wtime()
+#endif 
+
 
          IF ((ISELECT .EQ. 1 .OR. ISELECT .EQ. 10 .OR. ISELECT .EQ. 20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -182,8 +174,8 @@
 #ifdef ST41
                  CALL W3SPR4_OLD ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
                  CALL W3SIN4_OLD ( AWW3, CG(IP,:), WK(IP,:), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
-                 !CALL W3SPR4_OLD ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-                 !CALL W3SIN4_OLD ( AWW3, CG(IP,:), WK(IP,:), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
+                 CALL W3SPR4_OLD ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
+                 CALL W3SIN4_OLD ( AWW3, CG(IP,:), WK(IP,:), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
 #elif ST42
                  CALL W3SPR4_NEW ( AWW3, CG(IP,:), WK(IP,:), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
                  CALL W3SIN4_NEW ( IP, AWW3, CG(IP,:), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, ICE, IMATRA1D, IMATDA1D, LLWS)
@@ -306,7 +298,10 @@
              !PAUSE
            !END IF
          END IF ! ISELECT 
- 
+
+#ifdef TIMINGS
+         TIME3 = TIME3 + mpi_wtime()
+#endif 
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
          IF (LNANINFCHK) THEN
@@ -373,6 +368,9 @@
            END IF
          ENDIF
 
+#ifdef TIMINGS
+         TIME4 = TIME4 + mpi_wtime()
+#endif 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
            IMATRAT = IMATRA
@@ -433,6 +431,9 @@
 #endif
          END IF
 
+#ifdef TIMINGS
+         TIME5 = TIME5 +  mpi_wtime()
+#endif 
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10).AND.ISHALLOW(IP).EQ.1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. VERYSMALL) THEN
              IF (MESTR .EQ. 1 ) THEN
@@ -456,8 +457,9 @@
            END IF
          END IF
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SNL3', SUM(IMATRA), SUM(IMATDA)
-
+#ifdef TIMINGS
+         TIME6 = TIME6 + mpi_wtime()
+#endif 
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
              IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
@@ -466,7 +468,9 @@
            ENDIF
          END IF
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
+#ifdef TIMINGS
+         TIME7 = TIME7 + mpi_wtime()
+#endif 
 
          IF (MESBF .GE. 1) THEN
            IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
@@ -476,14 +480,16 @@
            END IF
          ENDIF
 
-         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'SBR', SUM(IMATRA), SUM(IMATDA)
-
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF' 
              CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.481')
            END IF
          ENDIF
+
+#ifdef TIMINGS
+        TIME8 = TIME8 + mpi_wtime()
+#endif 
 
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
 
@@ -606,6 +612,23 @@
            ENDIF
          ENDIF
 
+#ifdef TIMINGS 
+         IF (IP == MNP) THEN
+           TIME9 = TIME9 + mpi_wtime()
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOURCE TIMINGS-----'
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SIN                ', TIME3-TIME2
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SDS                ', TIME4-TIME3
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL4               ', TIME5-TIME4
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL3               ', TIME6-TIME5
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBR                ', TIME7-TIME6
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBF                ', TIME8-TIME7
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RECALC             ', TIME9-TIME8
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL              ', TIME9-TIME1
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
+         ENDIF
+#endif 
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -651,7 +674,6 @@
            END DO
          END DO
 
-         RETURN
          END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -687,7 +709,6 @@
            ACLOC = RATIO * ACLOC
          END IF
 
-        RETURN
         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -720,7 +741,6 @@
 
          END DO
 
-        RETURN
         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -761,7 +781,6 @@
             END DO
          END DO
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -779,7 +798,6 @@
            END IF
          END DO
 
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

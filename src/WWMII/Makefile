@@ -22,7 +22,7 @@ GRIB = on
 #F90 = gfortran
 #F90 = mpif90
 #F90 = mpif90-vt
-F90 = ifort
+F90 =  mpif90 
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
@@ -89,7 +89,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv
 
 ifdef NETCDF
   all: $(NETC) $(PROG)
-  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
   FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)

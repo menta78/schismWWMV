@@ -27,8 +27,10 @@
          REAL(rkind), INTENT(IN)    :: DT_SELFE0
 
          REAL(rkind), SAVE  :: SIMUTIME
+#ifdef TIMINGS 
          REAL(rkind)        :: T1, T2, mpi_wtime
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
+#endif
 
          INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT, IPGL
          REAL(rkind) :: DT_PROVIDED
@@ -38,7 +40,9 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
          FLUSH(STAT%FHNDL)
 
+#ifdef TIMINGS
          TIME1 = mpi_wtime()
+#endif 
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
@@ -207,7 +211,9 @@
            LCALC      = .TRUE.
          END IF
 
+#ifdef 
          TIME2 = mpi_wtime() 
+#endif
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' BEFORE COMPUTE ',  SUM(AC2)
@@ -229,7 +235,9 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 5') 
          ENDIF
 
+#ifdef TIMINGS
          TIME3 = mpi_wtime()
+#endif 
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
          FLUSH(STAT%FHNDL)
@@ -250,7 +258,9 @@
            END IF
          END DO
 
+#ifdef TIMINGS
          TIME4 = mpi_wtime()
+#endif
 !
 ! Compute radiation stress ...
 !
@@ -279,6 +289,7 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
 
+#ifdef TIMINGS
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION        ', TIME3-TIME2
@@ -290,6 +301,7 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
          FLUSH(STAT%FHNDL)
+#endif
  
       END SUBROUTINE WWM_II
 !**********************************************************************
@@ -774,6 +786,10 @@
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
+#ifdef TIMINGS 
+      REAL(rkind)        :: TIME1, TIME2
+#endif
+
 # ifdef MPI_PARALL_GRID
       integer i, j
 # endif
@@ -783,6 +799,9 @@
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME1)
+#endif
       CALL SET_WWMINPULNML
 # ifdef PGMCL_COUPLING
       comm=MyCOMM
@@ -835,6 +854,10 @@
         END IF
       END DO
 # endif
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME2)
+      WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
+#endif
 # if defined MPI_PARALL_GRID && !defined PGMCL_COUPLING
       call parallel_finalize
 # endif

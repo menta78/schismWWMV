@@ -79,11 +79,13 @@
                    CALL INT_IP_DYN(IP, 5, DT4S, LLIMT, DTMIN_SBR,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
                    CALL INT_IP_DYN(IP, 6, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                  END IF
-                 CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
-                 IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
-                   CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+                 IF (SMETHOD .GT. 0) THEN
+                   CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
+                   IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                     CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+                   ENDIF
+                   AC2(IP,:,:) = ACLOC
                  ENDIF
-                 AC2(IP,:,:) = ACLOC
                ENDIF
              ELSE
                ACLOC = AC2(IP,:,:)
