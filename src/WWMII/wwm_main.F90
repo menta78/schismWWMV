@@ -786,6 +786,15 @@
       USE mod_coupler, only : WAV_COMM_WORLD
 # endif
 
+#ifdef WWM_MPI
+      USE DATAPOOL, only: MAIN, SEBO,                                  &
+     &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
+     &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
+     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
+     &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
+     &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
+     &      NUM_NETCDF_FILES_BND, LSECU
+#else if
       USE DATAPOOL, only: MAIN, SEBO,                                  &
      &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
@@ -793,6 +802,7 @@
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
+#endif
 
 # ifdef WWM_MPI
       use elfe_glbl
