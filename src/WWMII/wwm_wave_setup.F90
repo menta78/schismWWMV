@@ -1,3 +1,4 @@
+#ifdef WWM_SETUP
 #include "wwm_functions.h"
 #undef DEBUG
 #define DEBUG
@@ -819,3 +820,4 @@
 !*                                                                    *
 !**********************************************************************
       END MODULE
+#endif WWM_SETUP

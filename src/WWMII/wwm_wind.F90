@@ -213,7 +213,7 @@
 #endif 
       IMPLICIT NONE
       REAL(rkind)             :: TMP(MNP,2)
-#ifdef NCDF
+#if defined NCDF || defined GRB 
       REAL(rkind)             :: cf_w1, cf_w2
       INTEGER                 :: IT, IFILE
 #endif

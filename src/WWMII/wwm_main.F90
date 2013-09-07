@@ -374,7 +374,9 @@
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
       USE DATAPOOL
+#ifdef WWM_SETUP
       USE WAVE_SETUP
+#endif
 #ifdef MPI_PARALL_GRID
       use elfe_msgp, only : myrank
 #endif
@@ -420,9 +422,11 @@
       ELSE IF (ICOMP .EQ. 2) THEN 
         CALL COMPUTE_IMPLICIT
       END IF
+#ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
         CALL WAVE_SETUP_COMPUTATION
       END IF
+#endif
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME4)
@@ -790,9 +794,6 @@
 # endif
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
-# endif
-# ifdef MPI_PARALL_GRID
-      integer i, j
 # endif
       integer :: i,j,k
       character(len=15) CALLFROM
