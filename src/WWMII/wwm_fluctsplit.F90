@@ -1237,7 +1237,7 @@
          REAL(rkind)  :: INIU(MNP)
          REAL(rkind) ::  ASPAR(NNZ)
 
-         REAL    :: TIME1, TIME2, TIME3, TIME4
+         REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
 
          INTEGER :: POS_TRICK(3,2)
 
@@ -1567,7 +1567,7 @@
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
 
-         REAL    :: TIME1, TIME2, TIME3, TIME4
+         REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
 
          INTEGER :: IP
 
@@ -2138,11 +2138,9 @@
          SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
-         IF (ICOMP .GE. 1) THEN
-           ALLOCATE( I_DIAG(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
-           I_DIAG = 0
-         END IF
+         ALLOCATE( I_DIAG(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
+         I_DIAG = 0
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
@@ -2478,7 +2476,7 @@
          REAL(rkind)  :: UTILDE3(MNE)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
-         REAL         :: TIME1, TIME2
+         REAL(rkind)  :: TIME1, TIME2
 !
 ! local parameter
 !
@@ -2888,7 +2886,7 @@
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: UTILDE3
          REAL(rkind)  :: KSUM(MNP), KMAX(MNP)
-         REAL         :: TIME1, TIME2
+         REAL(rkind)  :: TIME1, TIME2
 !
 ! local parameter
 !
@@ -3104,7 +3102,7 @@
          REAL(rkind)   :: KELEM(3,MNE), KKELEM(3) ! 3 * 20000 / 1024**2
          REAL(rkind)   :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)   :: UTILDE3(MNE) ! 20000 * 8 / 1024**2.
-         REAL          :: TIME1, TIME2
+         REAL(rkind)   :: TIME1, TIME2
 !
 !        Calculate K-Values and contour based quantities ...
 !

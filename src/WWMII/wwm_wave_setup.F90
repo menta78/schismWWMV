@@ -1,3 +1,4 @@
+#ifdef WWM_SETUP
 #include "wwm_functions.h"
 #undef DEBUG
 #define DEBUG
@@ -35,20 +36,35 @@
       integer IP, ID, ISS
       REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
       REAL(rkind) :: ACLOC(MSC,MDC)
+      REAL(rkind) :: eRXX, eRXY, eRYY
+      REAL(rkind) :: eHS, ETOT
+!      DO ISS=2,MSC
+!        WRITE(700,*) 'ISS=', ISS, 'INCR=', DS_INCR(ISS), 'diff=', SPSIG(ISS) - SPSIG(ISS-1)
+!      END DO
       DO IP = 1, MNP
         ACLOC = AC2(IP,:,:)
+        ETOT=ZERO
+        eRXX=ZERO
+        eRXY=ZERO
+        eRYY=ZERO
         DO ID = 1, MDC
           DO ISS = 2, MSC
-            ELOC  = DS_INCR(ISS)*DDIR*(SPSIG(ISS)*ACLOC(ISS,ID)+SPSIG(ISS-1)*ACLOC(ISS-1,ID))
+            ELOC  = 0.5_rkind*(SPSIG(ISS)*ACLOC(ISS,ID)+SPSIG(ISS-1)*ACLOC(ISS-1,ID))*DS_INCR(ISS)*DDIR
+            ETOT = ETOT + ELOC
             COSE2 = COS(SPDIR(ID))**TWO
             SINE2 = SIN(SPDIR(ID))**TWO
             COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
             WN    = CG(IP,ISS) / ( SPSIG(ISS)/WK(IP,ISS) )
-            RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC
-            RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
-            RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC
+            eRXX=eRXX + ( WN * COSE2 + WN - ONEHALF)*ELOC
+            eRXY=eRXY + ( WN * COSI2               )*ELOC
+            eRYY=eRYY + ( WN * SINE2 + WN - ONEHALF)*ELOC
           ENDDO
         ENDDO
+        RSXX(IP) = eRXX
+        RSXY(IP) = eRXY
+        RSYY(IP) = eRYY
+        eHS=4.0_rkind*SQRT(ETOT)
+!        WRITE(700,*) 'IP=', IP, 'HS=', eHS, 'RXX/RYY=', eRXX, eRYY
       END DO
       CALL DIFFERENTIATE_XYDIR(RSXX, U_X1, U_Y1)
       CALL DIFFERENTIATE_XYDIR(RSXY, U_X2, U_Y2)
@@ -175,7 +191,7 @@
         eFY =( FY(IP1) +  FY(IP2) +  FY(IP3))/3.0_rkind
         eDep=(DEP(IP1) + DEP(IP2) + DEP(IP3))/3.0_rkind
         eArea=TRIA(IE)
-        eFact=G9*eDep*eArea
+        eFact=eDep*eArea
         DO I1=1,3
           I2=POS_TRICK(I1,1)
           I3=POS_TRICK(I1,2)
@@ -447,11 +463,11 @@
       WRITE(STAT%FHNDL,*) 'wave_setup nbIter=', nbIter
       TheOut=V_X
 !#ifdef DEBUG
-!      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
-!      DO IP=1,MNP
-!        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
-!      END DO
-!      FLUSH(200+myrank)
+      WRITE(200+myrank,*) 'MNP=', MNP, ' TheOut:'
+      DO IP=1,MNP
+        WRITE(200+myrank,*) 'IP=', IP, ' setup=', TheOut(IP)
+      END DO
+      FLUSH(200+myrank)
 !#endif
       END SUBROUTINE
 !**********************************************************************
@@ -804,3 +820,4 @@
 !*                                                                    *
 !**********************************************************************
       END MODULE
+#endif WWM_SETUP

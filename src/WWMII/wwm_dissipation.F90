@@ -418,6 +418,7 @@
 !
 !     *** depth-induced wave breaking term by Battjes and Janssen (1978)
 !
+         Print *, 'BRHD=', BRHD
          SELECT CASE(ICRIT)
           CASE(1)
             HMAX(IP) = BRHD * DEP(IP)
@@ -440,8 +441,6 @@
             END IF
           CASE DEFAULT
         END SELECT
-
-        IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
 
         IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
           BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )

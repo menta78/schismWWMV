@@ -1306,9 +1306,6 @@
 
       OUTPAR    = 0.
 
-      IF (DEP(IP) .LT. DMIN) THEN
-        RETURN
-      END IF
       IF (VAROUT_HISTORY%ComputeMean) THEN
         CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
         OUTPAR(1) = HS         ! Significant wave height
@@ -1418,10 +1415,6 @@
       REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
       REAL(rkind) :: eWindMag
       OUTPAR    = ZERO
-
-      IF (DEPLOC .LT. DMIN) THEN
-        RETURN
-      END IF
 
       IF (VAROUT_STATION%ComputeMean) THEN
         CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)

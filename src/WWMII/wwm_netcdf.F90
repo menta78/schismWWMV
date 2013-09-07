@@ -1210,17 +1210,22 @@
       iret = nf90_def_var(ncid,'SMETHOD',NF90_INT,(/ one_dims/),var_id)
       CALL REPORT_ERROR_DEF(iret, 'SMETHOD')
       iret = nf90_put_att(ncid,var_id,'description','source term integration method')
+      !
+      iret = nf90_def_var(ncid,'LSPHE',NF90_INT,(/ one_dims/),var_id)
+      CALL REPORT_ERROR_DEF(iret, 'LSPHE')
+      iret = nf90_put_att(ncid,var_id,'description','spherical coordinates')
       END SUBROUTINE WRITE_PARAM_1
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WRITE_PARAM_2(ncid)
       USE DATAPOOL, only : FRLOW, FRHIGH, ICOMP, AMETHOD, FMETHOD,        &
-     &    DMETHOD, SMETHOD, MESIN, MESBF, MESDS, MESNL
+     &    DMETHOD, SMETHOD, MESIN, MESBF, MESDS, MESNL, LSPHE
       USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: ncid
       integer iret, var_id
+      integer LSPHE_INT
       character (len = *), parameter :: CallFct="WRITE_PARAM_2"
       iret=nf90_inq_varid(ncid, "frlow", var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
@@ -1231,6 +1236,26 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
       iret=nf90_put_var(ncid,var_id,FRHIGH, start=(/1/) )
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      !
+      iret=nf90_inq_varid(ncid, "MESIN", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+      iret = nf90_put_var(ncid,var_id,MESIN, start=(/1/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+      !
+      iret=nf90_inq_varid(ncid, "MESBF", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+      iret=nf90_put_var(ncid,var_id,MESBF, start=(/1/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+      !
+      iret=nf90_inq_varid(ncid, "MESDS", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      iret=nf90_put_var(ncid,var_id,MESDS, start=(/1/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      !
+      iret=nf90_inq_varid(ncid, "MESNL", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+      iret=nf90_put_var(ncid,var_id,MESNL, start=(/1/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
       !
       iret=nf90_inq_varid(ncid, "ICOMP", var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
@@ -1257,25 +1282,15 @@
       iret=nf90_put_var(ncid,var_id,SMETHOD, start=(/1/) )
       CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       !
-      iret=nf90_inq_varid(ncid, "MESIN", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
-      iret = nf90_put_var(ncid,var_id,MESIN, start=(/1/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
-      !
-      iret=nf90_inq_varid(ncid, "MESBF", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
-      iret=nf90_put_var(ncid,var_id,MESBF, start=(/1/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
-      !
-      iret=nf90_inq_varid(ncid, "MESDS", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
-      iret=nf90_put_var(ncid,var_id,MESDS, start=(/1/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
-      !
-      iret=nf90_inq_varid(ncid, "MESNL", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
-      iret=nf90_put_var(ncid,var_id,MESNL, start=(/1/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+      iret=nf90_inq_varid(ncid, "LSPHE", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      IF (LSPHE) THEN
+        LSPHE_INT=1
+      ELSE
+        LSPHE_INT=0
+      END IF
+      iret=nf90_put_var(ncid,var_id,LSPHE_INT, start=(/1/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       END SUBROUTINE WRITE_PARAM_2
 !**********************************************************************
 !*                                                                    *

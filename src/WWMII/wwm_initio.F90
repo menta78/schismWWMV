@@ -338,7 +338,9 @@
          USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
+#ifdef WWM_SETUP
          USE WAVE_SETUP
+#endif
 #ifdef PETSC
          USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
@@ -360,7 +362,7 @@
          CHARACTER(LEN=40) :: FILEspec
 #endif
 #ifdef TIMINGS
-         REAL           :: TIME1, TIME2
+         REAL(rkind)    :: TIME1, TIME2
 #endif
          INTEGER        :: IT, IFILE
 #ifdef TIMINGS
@@ -451,9 +453,11 @@
            FLUSH(STAT%FHNDL)
          END IF
 
+#ifdef WWM_SETUP
          IF (LZETA_SETUP) THEN
            CALL INIT_WAVE_SETUP
          END IF
+#endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
          FLUSH(STAT%FHNDL)
@@ -590,7 +594,9 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #endif
+#ifdef WWM_SETUP
          USE WAVE_SETUP
+#endif
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
@@ -614,9 +620,11 @@
 #endif
            END IF
          END IF
+#ifdef WWM_SETUP
          IF (LZETA_SETUP) THEN
            CALL FINALIZE_WAVE_SETUP
          END IF
+#endif
          CALL DEALLOC_SPECTRAL_GRID
          CALL CLOSE_IOBP
 
@@ -2158,7 +2166,7 @@
 
         HMAX = BRHD * DEP
 
-        IF (LMONO_IN) HMAX = HMAX * SQRT(2.)
+!        IF (LMONO_IN) HMAX = HMAX * SQRT(2.)
 
       END SUBROUTINE SET_HMAX
 !**********************************************************************

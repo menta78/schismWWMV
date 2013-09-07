@@ -5,17 +5,17 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42 -DTIMINGS
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI = 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on
+PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on 
+NETCDF = on  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP =
+OPENMP = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-SNL4_TSA = on
+SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
 

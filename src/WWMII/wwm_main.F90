@@ -7,9 +7,22 @@
 !  \__/\  /    \__/\  /\____|__  /___|___|___|
 !       \/          \/         \/             
 !
-!
-!
 ! WWM-III (Wind Wave Model) source code 
+! 
+! The source code is entirely rewritten with respect to WWM (Hsu et al., 2005). The numerics have been completely revised (Roland, 2008)
+! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
+! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
+! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SELFE (Roland et al. 2012). 
+! 
+! Developers:                                                   
+! Lead: Aron Roland (IT & E, Frankfurt), Mathieu-Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z & P, Hannover) 
+! Contributors: Christian Ferrarin, Fabrice Ardhuin, Yaron Toledo, Thomas Huxhorn, Ivica Janekovic, Will Perrie, Bash Toulany, Harry Wang 
+!                                                                                     
+! Copyright: 2008- IT & E 
+! All Rights Reserved                                      
+! Redistribution of any files contained in this package is strictly prohibited
+! Commercial use only allowed with permission!
+! For question please contact: aaronroland@gmx.de
 ! 
 !**********************************************************************
 !*                                                                    *
@@ -373,7 +386,9 @@
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
       USE DATAPOOL
+#ifdef WWM_SETUP
       USE WAVE_SETUP
+#endif
 #ifdef MPI_PARALL_GRID
       use elfe_msgp, only : myrank
 #endif
@@ -419,9 +434,11 @@
       ELSE IF (ICOMP .EQ. 2) THEN 
         CALL COMPUTE_IMPLICIT
       END IF
+#ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
         CALL WAVE_SETUP_COMPUTATION
       END IF
+#endif
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME4)
@@ -703,7 +720,6 @@
 #if !defined SELFE
       SUBROUTINE SET_WWMINPULNML
         USE DATAPOOL, only : INP
-!This is all to special stuff if PGMCL then the input file has other name and all this special shit that makes you the life easier and fucks up the code and nobody can reproduce it. 
 # ifndef PGMCL_COUPLING
         IMPLICIT NONE
         INTEGER nbArg
@@ -765,9 +781,11 @@
 # else
       PROGRAM WWMIII_MPI
 # endif
+
 # ifdef PGMCL_COUPLING
       USE mod_coupler, only : WAV_COMM_WORLD
 # endif
+
       USE DATAPOOL, only: MAIN, SEBO,                                  &
      &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
@@ -775,11 +793,14 @@
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
      &      NUM_NETCDF_FILES_BND, LSECU
+
 # ifdef WWM_MPI
       use elfe_glbl
       use elfe_msgp
 # endif
+
       implicit none
+
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING
       include 'mpif.h'
 # endif
@@ -790,10 +811,7 @@
       REAL(rkind)        :: TIME1, TIME2
 #endif
 
-# ifdef MPI_PARALL_GRID
-      integer i, j
-# endif
-      integer :: k
+      integer :: i,j,k
       character(len=15) CALLFROM
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
@@ -867,3 +885,6 @@
       END PROGRAM
 # endif
 #endif
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
