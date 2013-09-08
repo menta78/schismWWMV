@@ -418,7 +418,6 @@
 !
 !     *** depth-induced wave breaking term by Battjes and Janssen (1978)
 !
-         Print *, 'BRHD=', BRHD
          SELECT CASE(ICRIT)
           CASE(1)
             HMAX(IP) = BRHD * DEP(IP)

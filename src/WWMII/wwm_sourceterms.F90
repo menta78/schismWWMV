@@ -2,10 +2,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-
 !2do add mean quantities for 
       SUBROUTINE SOURCETERMS (IP, ISELECT, ACLOC, IMATRA, IMATDA, LRECALC)
-
+#ifdef WWM_MPI 
+         USE elfe_msgp, only : myrank
+#endif 
          USE DATAPOOL
          USE SdsBabanin
 #ifdef SNL4_TSA
@@ -144,7 +145,7 @@
                  ENDIF
 !                 MSC_HF(IP) = MSC
 #ifdef ST_DEF
- !                AWW3    = 0. 
+!                AWW3    = 0. 
 !                 LLWS    = .TRUE.
 !                 USTAR   = 0.
 !                 USTDIR  = 0.
@@ -613,19 +614,23 @@
          ENDIF
 
 #ifdef TIMINGS 
+         TIME9 = TIME9 + mpi_wtime()
+#ifdef WWM_MPI 
+         IF (IP == MNP .AND. myrank == 0 ) THEN
+#else if 
          IF (IP == MNP) THEN
-           TIME9 = TIME9 + mpi_wtime()
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOURCE TIMINGS-----'
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SIN                ', TIME3-TIME2
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SDS                ', TIME4-TIME3
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL4               ', TIME5-TIME4
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL3               ', TIME6-TIME5
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBR                ', TIME7-TIME6
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBF                ', TIME8-TIME7
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RECALC             ', TIME9-TIME8
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL              ', TIME9-TIME1
-           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
+#endif
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOURCE TIMINGS-----'
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SIN                ', TIME3-TIME2
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SDS                ', TIME4-TIME3
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL4               ', TIME5-TIME4
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SNL3               ', TIME6-TIME5
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBR                ', TIME7-TIME6
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SBF                ', TIME8-TIME7
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RECALC             ', TIME9-TIME8
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL              ', TIME9-TIME1
+!           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
          ENDIF
 #endif 
 
