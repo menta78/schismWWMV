@@ -575,16 +575,16 @@
 !            IF (IP_IS_STEADY(IP) .GT. 2) THEN
 !              CYCLE
 !            ENDIF
-             !DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
-             DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
+             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
+             !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
                CFLCXY(3,IP) = MIN(DT4A,MIN(CFLCXY(3,IP), DTMAX_EXP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
-             WRITE(22227,*) IP, CCON(IP), SI(IP)
-             IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
+             !WRITE(22227,*) IP, CCON(IP), SI(IP)
+             !IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
            END DO
 #endif
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
