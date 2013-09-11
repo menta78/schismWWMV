@@ -642,7 +642,7 @@
       SUBROUTINE READ_MNP_MNE
       USE DATAPOOL, only : MNP, MNE, IGRIDTYPE, FILEGRID, rkind, GRD, STAT, DBG
       implicit none
-      integer ISTAT, I, ITMP
+      integer ISTAT, I, ITMP, JTMP
       REAL(rkind) ATMP, BTMP, CTMP
       CHARACTER(LEN=100)  :: RHEADER
 
@@ -1277,8 +1277,6 @@
                DO I = 1, 7
                  READ(GRD%FHNDL, '(A)') RHEADER
                END DO
-               write(*,*) mnp, ktmp+jtmp
-                stop
                DO IP=1,MNP
                  READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XP(IP), YP(IP), DEP(IP)
                  IF (KTMP+1.ne.IP) THEN
@@ -1353,11 +1351,12 @@
              ELSE
                CALL WWM_ABORT('IGRIDTYPE WRONG')
              END IF
-             IF ((ITMP.ne.MNE).or.(JTMP.ne.MNP)) THEN
-               WRITE(DBG%FHNDL,*) 'ITMP=', ITMP, 'MNE=', MNE
-               WRITE(DBG%FHNDL,*) 'JTMP=', JTMP, 'MNP=', MNP
-               CALL WWM_ABORT('Inconsistency in reading')
-             END IF
+! this needs to be done for each gridtype seperatly ... for igridtype 
+!             IF ((ITMP.ne.MNE).or.(JTMP.ne.MNP)) THEN
+!               WRITE(DBG%FHNDL,*) 'ITMP=', ITMP, 'MNE=', MNE
+!               WRITE(DBG%FHNDL,*) 'JTMP=', JTMP, 'MNP=', MNP
+!               CALL WWM_ABORT('Inconsistency in reading')
+!             END IF
              CLOSE(GRD%FHNDL)
            CASE DEFAULT
                CALL WWM_ABORT('WRONG GRID DIMENSION')
