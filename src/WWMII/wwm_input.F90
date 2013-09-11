@@ -654,8 +654,9 @@
         READ(GRD%FHNDL, *, IOSTAT = ISTAT) ITMP
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
         READ(GRD%FHNDL, '(A)') RHEADER
-        READ(GRD%FHNDL, *, IOSTAT = ISTAT) MNP
+        READ(GRD%FHNDL, *, IOSTAT = ISTAT) JTMP 
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
+        MNP = ITMP + JTMP
         DO I = 1, 7
           READ(GRD%FHNDL, '(A)') RHEADER
         END DO
@@ -1276,6 +1277,8 @@
                DO I = 1, 7
                  READ(GRD%FHNDL, '(A)') RHEADER
                END DO
+               write(*,*) mnp, ktmp+jtmp
+                stop
                DO IP=1,MNP
                  READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XP(IP), YP(IP), DEP(IP)
                  IF (KTMP+1.ne.IP) THEN
@@ -1293,9 +1296,10 @@
                DO IE=1,MNE
                  READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, LTMP, MTMP, NTMP, OTMP
                  IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 5')
-                 IF (OTMP+1.ne.IE) THEN
-                   CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 6')
-                 ENDIF
+! why this?
+!                 IF (OTMP+1.ne.IE) THEN
+!                   CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 6')
+!                 ENDIF
                  INE(1,IE)=KTMP+1
                  INE(2,IE)=LTMP+1
                  INE(3,IE)=MTMP+1

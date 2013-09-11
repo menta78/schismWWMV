@@ -547,7 +547,7 @@
                IE    = IE_CELL(J)
                POS   = POS_CELL(J)
                KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
-               IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
+!               IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
              END DO
            END DO
 
@@ -563,11 +563,12 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = DTMAX_EXP/DT4A 
              END IF
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
            END DO
            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
+           WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
@@ -580,12 +581,13 @@
              IF (LCFL) THEN
                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
                CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MIN(DT4A,MIN(CFLCXY(3,IP), DTMAX_EXP))
+               CFLCXY(3,IP) = KKSUM(IP) 
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
              !WRITE(22227,*) IP, CCON(IP), SI(IP)
              !IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
            END DO
+           WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
 #endif
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
            REST  = ABS(MOD(CFLXY,ONE))
