@@ -105,13 +105,11 @@
       h=TWO*TRIA(IE)
       UGRAD=-(YP(IP3)-YP(IP2))/h
       VGRAD= (XP(IP3)-XP(IP2))/h
-#ifdef DEBUG
-!      F1=(XP(IP1) - XP(IP2))*UGRAD + (YP(IP1) - YP(IP2))*VGRAD
-!      F2=ZERO
-!      F3=(XP(IP3) - XP(IP2))*UGRAD + (YP(IP3) - YP(IP2))*VGRAD
-!      WRITE(200+myrank,*) 'F123=', F1, F2, F3
-!      FLUSH(200+myrank)
-#endif
+      IF (LSPHE) THEN
+        eYP=(YP(IP1) + YP(IP2) + YP(IP3))/3.0_rkind
+        UGRAD=UGRAD/(DEGRAD*REARTH*COS(eYP))
+        VGRAD=VGRAD/(DEGRAD*REARTH)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
