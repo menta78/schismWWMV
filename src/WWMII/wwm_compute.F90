@@ -219,7 +219,6 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME2)
 #endif
-
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
@@ -237,7 +236,7 @@
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME6)
+       CALL MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
 #ifdef TIMINGS
@@ -246,8 +245,6 @@
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
 #ifdef TIMINGS
         CALL MY_WTIME(TIME8)
-#endif
-
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5
@@ -257,9 +254,9 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME8-TIME7+TIME4-TIME3
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME8-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
         FLUSH(STAT%FHNDL)
+#endif
 
         RETURN
       END SUBROUTINE
