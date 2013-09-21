@@ -2,7 +2,7 @@ include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 #PROG = wwmadv
 
-FFLAGS = -DST42 #-DTIMINGS
+FFLAGS = -DST42 -DTIMINGS
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = on 

@@ -106,25 +106,13 @@
       USE DATAPOOL, only : rkind
       implicit none
       real(rkind), intent(inout) :: wtime
-      real(8) :: wtime_8
-      real(8) :: wtime_4
 # ifdef MPI_PARALL_GRID
       real(8) mpi_wtime
 # endif
 # ifdef MPI_PARALL_GRID
-      wtime_8=mpi_wtime()
-#  ifdef USE_SINGLE
-      wtime=wtime_8
-#  else
-      wtime=SNGL(wtime_8)
-#  endif
+      wtime=mpi_wtime()
 # else
-      CALL cpu_time(wtime_4)
-#  ifdef USE_SINGLE
-      wtime=wtime_4
-#  else
-      wtime=DBLE(wtime_4)
-#  endif
+      CALL cpu_time(wtime)
 # endif
       END SUBROUTINE
 #endif
