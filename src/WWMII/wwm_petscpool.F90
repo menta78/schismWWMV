@@ -88,7 +88,7 @@
       ! petsc parallel stuff
       PetscMPIInt        :: rank                = 0        ! rank of a process
       PetscMPIInt        :: nProcs              = 0        ! number of processors
-      PetscInt           :: ranges              = 0        ! accumulate range for every processor
+      
 
       integer            :: nNodesWithoutInterfaceGhosts = 0 ! number of resident nodes (without interface and ghost nodes)
       integer            :: nghost              = 0        ! number of ghost nodes (interface + ghost)
@@ -100,7 +100,6 @@
       ! App local <-> global
       PetscInt, allocatable :: ALO2AGO(:)
       PetscInt, allocatable :: AGO2ALO(:)
-      PetscInt, allocatable :: ALO2ALOold(:)
       PetscInt, allocatable :: ALOold2ALO(:)
       ! Petsc local <-> global
       PetscInt, allocatable :: PLO2PGO(:)
@@ -111,7 +110,7 @@
       PetscInt, allocatable :: ALO2PLO(:)
       PetscInt, allocatable :: PLO2ALO(:)
 
-      integer, allocatable :: onlyNodes(:), onlyGhosts(:), onlyGhostsOldLocalMapping(:)
+      integer, allocatable :: onlyNodes(:), onlyGhosts(:)
 
       PetscLogStage :: stageInit, stageFill, stageSolve, stageFin
 
@@ -551,8 +550,11 @@
         implicit none
 
         integer :: i
+        PetscInt :: ranges  ! accumulate range for every processor
         ! Application Ordering
         AO :: appOrdering
+
+        ranges = 0
 
 ! exclude interface nodes from the local mapping,list,iplg whatever
 ! a interface node is not a ghost node. so one can find them in the range from 1 to NP_RES.
@@ -579,8 +581,7 @@
 
 ! create App Local <-> App Global mappings
 ! create App Local Old <-> App Local new mapping (without interface nodes)
-        allocate(ALO2ALOold(0:nNodesWithoutInterfaceGhosts-1), &
-                ALOold2ALO(0:NP_RES + npg -1), &
+        allocate(ALOold2ALO(0:NP_RES + npg -1), &
                 AGO2ALO(0:np_global-1), &
                 ALO2AGO(0:nNodesWithoutInterfaceGhosts-1), &
                 stat=stat)
@@ -605,7 +606,6 @@
             AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
 
             ALOold2ALO(i-1) = nNodesWithoutInterfaceGhosts
-            ALO2ALOold(nNodesWithoutInterfaceGhosts) = i-1
 
             nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
         end do
@@ -633,7 +633,7 @@
           stop 'wwm_petscpool l.498'
         endif
 
-        call AOCreateBasic(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, ALO2AGO, PLO2PGO, appOrdering, petscErr)
+        call AOCreateBasic(comm, nNodesWithoutInterfaceGhosts, ALO2AGO, PLO2PGO, appOrdering, petscErr)
         CHKERRQ(petscErr)
 !         call AOView(appOrdering, PETSC_VIEWER_STDOUT_WORLD, petscErr) ;CHKERRQ(petscErr)
 
@@ -666,7 +666,7 @@
         ! create onlyGhosts array
         !> todo we don't need the onlyghost array with petsc block. only in petsc parallel. move code?
         nghost=NP_RES+npg-nNodesWithoutInterfaceGhosts
-        allocate(onlyGhosts(0:nghost-1), onlyGhostsOldLocalMapping(0:nghost-1), stat=stat)
+        allocate(onlyGhosts(0:nghost-1), stat=stat)
         if(stat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.581'
@@ -677,7 +677,6 @@
             if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
               if(( ipgl( iplg(i) )%next%rank .le. rank )) then
                 onlyGhosts(nghost)= AGO2PGO( iplg(i)-1 )
-                onlyGhostsOldLocalMapping(nghost) = i
                 nghost = nghost + 1
                 cycle
               end if
@@ -686,7 +685,6 @@
 
         do i=1,npg
           onlyGhosts(nghost) = AGO2PGO( iplg(NP_RES+i)-1)
-          onlyGhostsOldLocalMapping(nghost) = NP_RES+i
           nghost = nghost + 1
         end do
 
@@ -699,6 +697,123 @@
 !           write(DBG%FHNDL,*) rank, "Local Number of ghost + interface nodes", nghost
 !         end if
       end subroutine
+#endif
+
+! createMappings will only be called by PETSC_PARALLEL and PETSC_BLOCK, not by PETSC_SERIELL
+#ifdef MPI_PARALL_GRID
+#ifdef PDLIB
+      !> create all APP<->Petsc local<->global mappings with decomposition of pdlib (without interface nodes)
+      subroutine createMappingsPDlib()
+        use datapool, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG
+        ! np_global    - # nodes gloabal
+        ! np or NP_RES - # nodes local non augmented
+        ! npg          - # ghost
+        ! npa or MNP   - # nodes aufmented
+        ! int::iplg(ip)           global element index. local to global LUT
+        ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
+        use pd, only: npg, iplg, ipgl, np_global
+        use petscsys
+        implicit none
+        
+        integer :: i
+        PetscInt :: ranges  ! accumulate range for every processor
+        ! Application Ordering
+        AO :: appOrdering
+
+        ranges = 0
+
+        ! create App Local <-> App Global mappings
+        allocate(ALOold2ALO(0:NP_RES + npg -1), &
+                AGO2ALO(0:np_global-1), &
+                ALO2AGO(0:NP_RES-1), &
+                stat=stat)
+        if(stat /= 0) then
+          write(DBG%FHNDL,*) "error", __FILE__, " Line", __LINE__
+          stop "createMappingsPDlib"
+        endif
+
+        AGO2ALO = -1
+        ! nodes in the old App local mapping become a -990 to indicate, that this node is an interface node
+        ! with pdlib only ghost nodes become -999
+        ALOold2ALO = -999
+
+        do i = 1, NP_RES
+            ALO2AGO(i-1) = iplg(i) -1
+            AGO2ALO(iplg(i)-1) = i-1
+
+            ! with pdlib there are no interface nodes.but we have to fill the array for code which depends on it
+            ALOold2ALO(i-1) = i-1
+        end do
+
+        ! create PETsc Local -> Global mapping
+        allocate(PLO2PGO(0:NP_RES), PGO2PLO(0:np_global), stat=stat)
+        if(stat /= 0) then
+          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
+          stop 'createMappingsPDlib'
+        endif
+
+        PGO2PLO = -999
+        call MPI_Scan(NP_RES, ranges, 1, MPIU_INTEGER, MPI_SUM, comm, ierr)
+        
+        do i = 1, NP_RES
+          PLO2PGO(i-1) = ranges - NP_RES + i -1
+          PGO2PLO(ranges - NP_RES + i -1 ) = i - 1
+        end do
+
+        ! create App Global <-> PETsc Global mapping
+        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=stat)
+        if(stat /= 0) then
+          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
+          stop 'createMappingsPDlib'
+        endif
+
+        call AOCreateBasic(comm, NP_RES, ALO2AGO, PLO2PGO, appOrdering, petscErr)
+        CHKERRQ(petscErr)
+
+        do i = 1, np_global
+          AGO2PGO(i-1) = i-1
+          PGO2AGO(i-1) = i-1
+        end do
+
+        call AOApplicationToPetsc(appOrdering, np_global, AGO2PGO, petscErr);CHKERRQ(petscErr)
+        call AOPetscToApplication(appOrdering, np_global, PGO2AGO, petscErr);CHKERRQ(petscErr)
+        call AODestroy(appOrdering, petscErr);CHKERRQ(petscErr)
+
+        
+        ! create App local <-> Petsc local mappings
+        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:NP_RES-1), stat=stat)
+        if(stat /= 0) then
+          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
+          stop 'createMappingsPDlib'
+        endif
+        ALO2PLO = -999
+        PLO2ALO = -999
+
+        do i = 1, NP_RES
+          PLO2ALO(i-1) = ipgl(PGO2AGO(PLO2PGO(i-1)) +1) -1
+        end do
+
+        do i = 1, MNP
+          ALO2PLO(i-1) = PGO2PLO(AGO2PGO(iplg(i)-1))
+        end do
+
+       ! create onlyGhosts array
+        !> todo we don't need the onlyghost array with petsc block. only in petsc parallel. move code?
+        nghost=npg
+        allocate(onlyGhosts(0:nghost-1), stat=stat)
+        if(stat /= 0) then
+          write(DBG%FHNDL,*) "error:", __FILE__, " Line", __LINE__
+          stop 'createMappingsPDlib'
+        endif
+
+        do i=1, npg
+          onlyGhosts(i) = AGO2PGO(iplg(NP_RES+i)-1)
+        end do
+
+        ! this is the same because a decomposition with pdlib has no interface nodes
+        nNodesWithoutInterfaceGhosts = NP_RES
+      end subroutine
+#endif      
 #endif
 
       !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_INIT()
@@ -818,7 +933,6 @@
         ! we deallocate only arrays who are declared in this file!
         if(allocated(ALO2AGO)) deallocate(ALO2AGO)
         if(allocated(AGO2ALO)) deallocate(AGO2ALO)
-        if(allocated(ALO2ALOold)) deallocate(ALO2ALOold)
         if(allocated(ALOold2ALO)) deallocate(ALOold2ALO)
         if(allocated(PLO2PGO)) deallocate(PLO2PGO)
         if(allocated(PGO2PLO)) deallocate(PGO2PLO)
@@ -828,7 +942,6 @@
         if(allocated(PLO2ALO)) deallocate(PLO2ALO)
         if(allocated(onlyNodes)) deallocate(onlyNodes)
         if(allocated(onlyGhosts)) deallocate(onlyGhosts)
-        if(allocated(onlyGhostsOldLocalMapping)) deallocate(onlyGhostsOldLocalMapping)
 
         if(allocated(IA_P)) deallocate(IA_P)
         if(allocated(JA_P)) deallocate(JA_P)

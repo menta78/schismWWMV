@@ -809,6 +809,10 @@
       use elfe_msgp
 # endif
 
+#ifdef PDLIB
+      use pd
+#endif
+
       implicit none
 
 # if defined MPI_PARALL_GRID || defined PGMCL_COUPLING
@@ -827,10 +831,13 @@
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
+
       CALL SET_WWMINPULNML
+      
 # ifdef PGMCL_COUPLING
       comm=MyCOMM
       WAV_COMM_WORLD=MyCOMM
@@ -840,6 +847,7 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
+
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
@@ -856,11 +864,18 @@
           endif
         enddo
       enddo
+
+#ifdef PDLIB
+      call initPD(filename)
+     ! call parallel_barrier 
+#else
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
+#endif
+      
       CALL INITIALIZE_WWM
       CALLFROM='WWM_MPI'
 
@@ -871,7 +886,7 @@
           CALL UN_STEADY(K,CALLFROM)
         END IF
       END DO
-# else
+# else ! MPI_PARALL_GRID
       CALL INITIALIZE_WWM
       CALLFROM='WWM'
       DO K = 1, MAIN%ISTP
@@ -882,13 +897,16 @@
         END IF
       END DO
 # endif
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
 #endif
+
 # if defined MPI_PARALL_GRID && !defined PGMCL_COUPLING
       call parallel_finalize
 # endif
+
 # ifdef PGMCL_COUPLING
       END SUBROUTINE
 # else
