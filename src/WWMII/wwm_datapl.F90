@@ -52,16 +52,18 @@
 
 #ifdef WWM_MPI
 #ifdef PDLIB
-         use pd, only :        MNE => nea,       & ! Elements of the augmented domain
+         use pd, only :        MNE => ne,        & ! Elements of the resident domain. There are not ghost element in pdlib
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
-     &                         MNEI => MAXMNECONN,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         DEP8 => z,       & ! depth in the augmented domain
-     &                         XLON=>xlon,       & !longitude (in radians)
-     &                         INETMP => INE,     & ! Element connection table of the augmented domain?
-     &                         YLAT=>ylat,       &
-     &                         XPTMP => x,     & ! X-Coordinate augmented domain
-     &                         YPTMP => y
+     &                         DEP8 => z,        & ! depth in the augmented domain
+     &                         INETMP => INE,    & ! Element connection table of the augmented domain?
+! pdlib does not know about spheric data or not. So XLON/YLON points to the "normal" x/y data
+     &                         XLON => x,        & 
+     &                         YLAT => y,        &
+     &                         XPTMP => x,       & ! X-Coordinate augmented domain
+     &                         YPTMP => y,       &
+                               NP_GLOBAL => np_global, & ! global number of nodes
+                               NE_GLOBAL => ne_global    ! global number of elements
 #else
          use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain

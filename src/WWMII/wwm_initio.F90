@@ -19,6 +19,8 @@
 
        ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
+       XP  = zero
+       YP  = zero
        DEP = zero
 
        ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
@@ -31,12 +33,13 @@
        IEN = zero
        TRIA = zero
 #ifdef MPI_PARALL_GRID
+#ifdef PDLIB
+       INE(:,:) = INETMP(:,:)
+#else
        DO IE = 1, MNE
          INE(:,IE) = INETMP(IE,:)
-       END DO
-#else
-       XP  = zero
-       YP  = zero
+       END DO  
+#endif
 #endif
 !
 ! spectral grid - shared

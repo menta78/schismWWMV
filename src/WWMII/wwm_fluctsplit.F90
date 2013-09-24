@@ -2136,7 +2136,7 @@
          integer istat
          ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
-         CCON = 0_rkind
+         CCON = 0
          SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
@@ -2213,7 +2213,8 @@
 !
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'MEDIAN DUAL AREA and CCON' 
          SI(:)   = 0.0d0 ! Median Dual Patch Area of each Node
-         CCON(:) = 0     ! Number of connected Elements
+
+CCON(:) = 0     ! Number of connected Elements
          DO IE = 1 , MNE
            I1 = INE(1,IE)
            I2 = INE(2,IE)
@@ -2234,11 +2235,25 @@
          CALL EXCHANGE_P2D(SI)
 #endif
 
-#ifdef MPI_PARALL_GRID
-         MAXMNECON  = MNEI
-#else
+! We don't need MAXMNECON from selfe/pdlib if we compute CCON itself
+! #ifdef MPI_PARALL_GRID
+!          MAXMNECON  = MNEI
+! #else
+!          MAXMNECON  = MAXVAL(CCON)
+! #endif
          MAXMNECON  = MAXVAL(CCON)
+
+! check agains selfe to make sure that there is no problem
+#ifdef MPI_PARALL_GRID
+#ifndef PDLIB
+  if(MAXMNECON /= MNEI) then
+    write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
+    write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
+  endif
 #endif
+#endif
+         
+
 !
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
          ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
