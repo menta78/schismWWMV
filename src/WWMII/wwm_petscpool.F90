@@ -561,7 +561,7 @@
 ! a interface node is owned by two (or more threads?)
 ! to the detect an interface node i use this method:
 
-! a) first geht the global id
+! a) first get the global id
 ! b) with the gloabl id, get the local rank
 ! c) check if there is a linked list associated with the local node
 ! d) if the rank from the next node in the list ist less then the curren rank, ignore this node
@@ -711,7 +711,7 @@
         ! npa or MNP   - # nodes aufmented
         ! int::iplg(ip)           global element index. local to global LUT
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
-        use pd, only: npg, iplg, ipgl, np_global
+        use pd, only: npg, iplg, ipgl, np_global, comm
         use petscsys
         implicit none
         
@@ -790,7 +790,7 @@
         PLO2ALO = -999
 
         do i = 1, NP_RES
-          PLO2ALO(i-1) = ipgl(PGO2AGO(PLO2PGO(i-1)) +1) -1
+          PLO2ALO(i-1) = ipgl(PGO2AGO(PLO2PGO(i-1)) +1)%id -1
         end do
 
         do i = 1, MNP

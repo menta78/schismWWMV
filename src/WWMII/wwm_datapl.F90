@@ -49,17 +49,31 @@
      &                         ISBND, &                     !bnd flags
      &                         RKIND
 #endif
+
 #ifdef WWM_MPI
+#ifdef PDLIB
+         use pd, only :        MNE => nea,       & ! Elements of the augmented domain
+     &                         MNP => npa,       & ! Nodes in the augmented domain
+     &                         NP_RES => np,     & ! Local number of resident nodes
+     &                         MNEI => MAXMNECONN,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
+     &                         DEP8 => z,       & ! depth in the augmented domain
+     &                         XLON=>xlon,       & !longitude (in radians)
+     &                         INETMP => INE,     & ! Element connection table of the augmented domain?
+     &                         YLAT=>ylat,       &
+     &                         XPTMP => x,     & ! X-Coordinate augmented domain
+     &                         YPTMP => y
+#else
          use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
      &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         DEP8 => dp,       & ! depth in the
+     &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
      &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         YLAT=>ylat,       &
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
      &                         YPTMP => ynd
+#endif
 #endif
       IMPLICIT NONE
       SAVE
