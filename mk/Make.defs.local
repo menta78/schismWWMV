@@ -35,7 +35,7 @@
 ## Environment for TACC/Stampede
 ## Some modules are loaded at start-up thru .modules
 #################################################################################
-ENV = ARON_mvapich
+ENV = ARON
 
 ################################################################################
 # Environment 
@@ -48,13 +48,13 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ DEBUG + DEVELOPEMENT
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g #-traceback -assume byterecl
-#  FLDFLAGS = -O1 -g #-traceback -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
@@ -63,18 +63,17 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf  -L$(HDF5_LIBDIR) -lhdf5_hl -lhdf5 -lcurl
-CDFMOD  = -I$(NETCDF_INCDIR) -I$(HDF5_INCDIR) # modules for netcdf
+MTSLIBS = -L/home/aron/opt/ParMetis-3.1-Sep2010 -lparmetis -lmetis 
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-#CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-#CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := $(HOME)/bin/pelfe_$(ENV)
+EXEC   := /home/aron/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -114,8 +113,8 @@ endif
  USE_WWM = yes
  EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
- USE_PETSC = yes
- EXEC := $(EXEC)_PETSC
+# USE_PETSC = yes
+# EXEC := $(EXEC)_PETSC
 
 # TIMOR 
 # USE_TIMOR = yes
