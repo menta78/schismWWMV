@@ -106,10 +106,6 @@
 !     XFN TYPE OUTPUT
 !
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP
-         USE ELFE_GLBL, ONLY : Iplg, np_global
-#endif
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
          include 'mpif.h'
@@ -385,9 +381,6 @@
 !**********************************************************************
       SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif
       IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
       include 'mpif.h'
@@ -684,10 +677,6 @@
 #ifdef NCDF
       SUBROUTINE OUTPUT_STATION_NC
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, comm, IERR, rtype, itype, nproc
-      USE ELFE_GLBL, ONLY : Iplg, np_global, ne_global
-# endif
       USE DATAPOOL
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
@@ -965,9 +954,6 @@
 !**********************************************************************
       SUBROUTINE OUTPUT_LINE(CTIME,LINIT_OUTPUT)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
          include 'mpif.h'
@@ -1809,11 +1795,10 @@
 #ifdef NCDF
       SUBROUTINE HISTORY_NC_PRINTMMA(eStr, OUTT, NPWORK, NBVAR, I)
       USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG, STAT
-# ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
-      USE ELFE_MSGP, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
-      USE ELFE_GLBL, ONLY : np_global
-# endif
+      USE DATAPOOL, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
+      USE DATAPOOL, ONLY : np_global
+
       implicit none
       character(len=*) :: eStr
       integer, intent(in) :: I, NPWORK, NBVAR
@@ -1872,10 +1857,6 @@
 !
 !     NETCDF TYPE OUTPUT BY IVICA JANEKOVIC
 !
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, comm, IERR, rtype, itype
-      USE ELFE_GLBL, ONLY : Iplg, np_global, ne_global
-# endif
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE

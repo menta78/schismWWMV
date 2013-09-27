@@ -913,9 +913,6 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_GLBL, ONLY : np_global, ne_global
-# endif
       implicit none
       integer, intent(in) :: ncid, nbTime, MULTIPLEOUT
       integer, intent(in) :: np_write, ne_write
@@ -1071,10 +1068,6 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT, WriteOutputProcess, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, nproc
-      USE ELFE_GLBL, ONLY : np_global, iplg, ne_global
-# endif
       implicit none
       integer, intent(in) :: ncid, MULTIPLEOUT
       logical, intent(in) :: WriteOutputProcess
@@ -1531,9 +1524,6 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_STAT_2(ncid, MULTIPLEOUT)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, nproc
-# endif
       implicit none
       integer, intent(in) :: ncid, MULTIPLEOUT
       integer :: eWriteInt(1)

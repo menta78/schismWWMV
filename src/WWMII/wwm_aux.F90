@@ -4,9 +4,6 @@
 !**********************************************************************
       SUBROUTINE GRADDEP()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
-#endif
          IMPLICIT NONE
          INTEGER     :: IP
          REAL(rkind) :: GDL, GDD
@@ -73,8 +70,6 @@
 #ifdef MPI_PARALL_GRID
       SUBROUTINE MYOWN_MPI_BARRIER(istat)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       IMPLICIT NONE
       integer, intent(in) :: istat
       integer eInt(1)
@@ -108,8 +103,6 @@
       real(rkind), intent(inout) :: wtime
 # ifdef MPI_PARALL_GRID
       real(8) mpi_wtime
-# endif
-# ifdef MPI_PARALL_GRID
       wtime=mpi_wtime()
 # else
       CALL cpu_time(wtime)
@@ -200,9 +193,6 @@
 !**********************************************************************
       SUBROUTINE DIFFERENTIATE_XDIR(VAR, DVDX)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)  :: VAR(MNP)
          REAL(rkind), INTENT(OUT) :: DVDX(MNP)
@@ -228,9 +218,6 @@
 !**********************************************************************
       SUBROUTINE DIFFERENTIATE_XYDIR(VAR, DVDX, DVDY)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)  :: VAR(MNP)
          REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
@@ -481,10 +468,6 @@
 !**********************************************************************
       SUBROUTINE CHECK_STEADY(TIME, CONV1, CONV2, CONV3, CONV4, CONV5)
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, ONLY : IPGL, IPLG, np_global
-         USE ELFE_MSGP
-#endif
         IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
          include 'mpif.h'
@@ -1207,10 +1190,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CSEVAL ( NFU, FILEN, LSE, DIMS, SEVAL)
-         USE DATAPOOL, ONLY : STAT, RKIND, MNP
-#ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, only : np_global, iplg
-#endif
+         USE DATAPOOL, ONLY : STAT, RKIND, MNP, np_global, iplg
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)          :: NFU   
@@ -1296,10 +1276,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_XFN()
-         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP, ONLY : myrank, comm, ierr
-#endif
+         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, XP, YP, DEP, MNE, INE
          IMPLICIT NONE
          INTEGER :: I
 
@@ -1328,10 +1305,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_SHP()
-         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP, ONLY : myrank, comm, ierr
-#endif
+         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, MNE, XP, YP, DEP, INE
          IMPLICIT NONE
          INTEGER :: I
 
@@ -1861,10 +1835,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_ABORT(string)
-      USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : parallel_abort
-#endif
+      USE DATAPOOL, only : parallel_abort, DBG
       IMPLICIT NONE
       character(*), intent(in) :: string
 

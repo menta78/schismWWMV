@@ -188,7 +188,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_p2dsend_rqst, wwm_p2drecv_rqst
       USE DATAPOOL, only : wwm_p2dsend_stat, wwm_p2drecv_stat
       USE DATAPOOL, only : ZERO, NP_RES, MNP
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(LocalColor%MSCeffect,MDC,MNP)
@@ -274,7 +274,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwmsl_send_rqst, wwmsl_recv_rqst
       USE DATAPOOL, only : wwmsl_send_stat, wwmsl_recv_stat
       USE DATAPOOL, only : ZERO, NP_RES, MNP
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(LocalColor%MSCeffect,MDC,MNP)
@@ -317,8 +317,10 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_ASPAR(LocalColor, ASPAR_bl)
-      USE DATAPOOL
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE DATAPOOL, only: comm, ierr, myrank, ierr, wwm_nnbr_m_send, wwm_ListNeigh_m_send
+      use datapool, only: wwmmat_p2dsend_type, wwmmat_p2dsend_rqst, wwm_nnbr_m_recv, wwm_ListNeigh_m_recv
+      use datapool, only: wwmmat_p2drecv_type, wwmmat_p2drecv_rqst, LocalColorInfo, rkind
+      use datapool, only: wwmmat_p2drecv_stat, wwmmat_p2dsend_stat, MDC, NNZ
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: ASPAR_bl(LocalColor%MSCeffect,MDC,NNZ)
@@ -342,8 +344,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
-      USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh
-      USE elfe_msgp, only : myrank
+      USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh, myrank
       implicit none
       type(Graph), intent(inout) :: AdjGraph
       CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, wwm_nnbr, wwm_ListNeigh)
@@ -352,7 +353,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
-      USE elfe_msgp, only : nnbr_p, nbrrank_p
+      USE datapool, only : nnbr_p, nbrrank_p
       implicit none
       type(Graph), intent(inout) :: AdjGraph
       integer :: ListNe(nnbr_p)
@@ -366,7 +367,6 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, nb, ListNe)
-      USE elfe_msgp, only : myrank, nproc, ierr, comm, istatus, itype
       USE DATAPOOL
       implicit none
       integer, intent(in) :: nb
@@ -538,8 +538,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE COLLECT_ALL_IPLG
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx, sumMNP
@@ -601,8 +599,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE COLLECT_ALL_COVLOWER(LocalColor)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, allocatable :: rbuf_int(:)
@@ -641,8 +637,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE COLLECT_ALL_IA_JA
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx
@@ -741,7 +735,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE NETCDF_WRITE_MATRIX(LocalColor, ASPAR)
       USE DATAPOOL
       USE NETCDF
-      USE elfe_glbl, only : iplg, np_global
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       integer, SAVE :: iSystem = 1
@@ -800,8 +793,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE CREATE_WWM_P2D_EXCH(MSCeffect)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       include 'mpif.h'
       integer, intent(in) :: MSCeffect
@@ -1103,8 +1094,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE CREATE_WWM_MAT_P2D_EXCH(MSCeffect)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       include 'mpif.h'
       integer, intent(in) :: MSCeffect
@@ -1329,7 +1318,7 @@ MODULE WWM_PARALL_SOLVER
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE BUILD_MULTICOLORING(AdjGraph, ListColor)
-      USE elfe_msgp, only : myrank
+      USE datapool, only : myrank
       implicit none
       type(Graph), intent(in) :: AdjGraph
       integer, intent(out) :: ListColor(AdjGraph%nbVert)
@@ -1437,9 +1426,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : MNP, MDC, LocalColorInfo, rkind, stat
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
-      USE elfe_msgp, only : rtype, ierr, myrank
-      USE elfe_glbl, only : iplg
-      USE DATAPOOL, only : XP, YP
+      USE DATAPOOL, only : XP, YP, rtype, ierr, myrank, iplg
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: MSCeffect
@@ -1504,9 +1491,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
       USE DATAPOOL, only : wwm_ListDspl_send, wwm_ListDspl_recv
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
-      USE elfe_msgp, only : rtype, ierr, myrank
-      USE elfe_glbl, only : iplg
-      USE DATAPOOL, only : XP, YP
+      USE DATAPOOL, only : XP, YP, rtype, ierr, myrank, iplg
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, allocatable :: ListNeed(:), IdxRev(:)
@@ -1634,8 +1619,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE SYMM_INIT_COLORING(LocalColor, NbBlock, MSCeffect)
       USE DATAPOOL, only : LocalColorInfo, MNP, rkind, XP, YP, stat
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
-      USE elfe_msgp, only : myrank, nproc
-      USE elfe_glbl, only : iplg
+      USE datapool, only : myrank, nproc, iplg
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: MSCeffect
@@ -1729,7 +1713,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_p2drecv_type, wwm_p2dsend_type
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE DATAPOOL, only : wwm_ListDspl_recv
-      USE elfe_msgp, only : myrank, nproc, comm, ierr, nbrrank_p
+      USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
       implicit none
       include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1857,8 +1841,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE INIT_COVLOWER_ARRAY(LocalColor)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       implicit none
       include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -2359,7 +2341,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, rkind
       USE DATAPOOL, only : NNZ, IA, JA, NP_RES, I_DIAG
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-      USE elfe_msgp, only : myrank, nproc, comm, ierr, nbrrank_p
+      USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
       implicit none
       include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -2476,7 +2458,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5_RECV_ASPAR_PC(LocalColor, SolDat)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : ierr, comm, rtype, istatus, nbrrank_p
+      USE datapool, only : ierr, comm, rtype, istatus, nbrrank_p
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -2511,7 +2493,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5_SEND_ASPAR_PC(LocalColor, SolDat)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : MSC, MDC, rkind
-      USE elfe_msgp, only : ierr, comm, rtype, nbrrank_p
+      USE datapool, only : ierr, comm, rtype, nbrrank_p
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -2613,9 +2595,9 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_CREATE_PRECOND_SOR(LocalColor, SolDat)
       USE DATAPOOL, only : MNP, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE elfe_msgp, only : exchange_p4d_wwm
+      USE datapool, only : exchange_p4d_wwm
 #  ifdef DEBUG
-      USE elfe_msgp, only : myrank
+      USE datapool, only : myrank
 #  endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2680,8 +2662,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_CREATE_PRECOND(LocalColor, SolDat, TheMethod)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, NP_RES, rkind
-      USE elfe_msgp, only : exchange_p4d_wwm
-      USE elfe_msgp, only : myrank
+      USE datapool, only : exchange_p4d_wwm, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -2724,7 +2705,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
@@ -2755,7 +2736,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(LocalColor%MSCeffect, MDC, MNP)
@@ -2785,7 +2766,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
@@ -2815,7 +2796,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, AC, iBlock)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       include 'mpif.h'
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2866,9 +2847,9 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, ONE
       USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES, THR, THR8
-      USE elfe_msgp, only : myrank
+      USE datapool, only : myrank
 # ifdef DEBUG
-      USE elfe_glbl, only : iplg
+      USE datapool, only : iplg
 # endif
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2950,8 +2931,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_PARTIAL_SOLVE_U(LocalColor, SolDat, iBlock, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : MNP, IA, JA, I_DIAG, MSC, MDC, rkind, NP_RES, ONE, THR
-      USE elfe_msgp, only : myrank
-      USE elfe_glbl, only : iplg
+      USE datapool, only : myrank, iplg
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
@@ -3036,7 +3016,7 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_SYNC_SENDRECV(LocalColor, AC)
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE elfe_msgp, only : comm, ierr, myrank
+      USE datapool, only : comm, ierr, myrank
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(MSC, MDC, MNP)
@@ -3066,7 +3046,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_APPLY_PRECOND(LocalColor, SolDat, ACret)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : MSC, MDC, MNP, rkind
-      USE elfe_msgp, only : myrank
+      USE datapool, only : myrank
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -3101,7 +3081,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_APPLY_FCT(LocalColor, SolDat,  ACin, ACret)
       USE DATAPOOL, only : I5_SolutionData, IA, JA, NP_RES, MDC, MNP, rkind
       USE DATAPOOL, only : LocalColorInfo
-      USE elfe_msgp, only : exchange_p4d_wwm, myrank
+      USE datapool, only : exchange_p4d_wwm, myrank
       implicit none
       integer IP, J, idx
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -3174,7 +3154,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_L2_LINF(MSCeffect, ACw1, ACw2, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw1(MSCeffect, MDC, MNP)
@@ -3219,7 +3199,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_SCALAR(MSCeffect, ACw1, ACw2, LScal)
       USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw1(MSCeffect, MDC, MNP)
@@ -3251,8 +3231,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo
       USE DATAPOOL, only : MNP, MDC, rkind
       USE DATAPOOL, only : ListIPLG, ListMNP
-      USE elfe_msgp, only : istatus, ierr, comm, rtype, myrank, nproc
-      USE elfe_glbl, only : iplg, np_global
+      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(in) :: ACw(LocalColor%MSCeffect, MDC, MNP)
@@ -3320,8 +3299,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo
       USE DATAPOOL, only : MNP, MDC, NP_RES, rkind
       USE DATAPOOL, only : ListIPLG, ListMNP, ListNP_RES
-      USE elfe_msgp, only : istatus, ierr, comm, rtype, myrank, nproc
-      USE elfe_glbl, only : iplg, np_global
+      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(in) :: ACw(LocalColor%MSCeffect, MDC, MNP)
@@ -3392,7 +3370,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_SUM_MAX(MSCeffect, ACw, LSum, LMax)
       USE DATAPOOL, only : rkind, MNP, MDC
       USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
@@ -3463,8 +3441,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod, STAT
-      USE elfe_msgp, only : myrank
+      USE DATAPOOL, only : PCmethod, STAT, myrank
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -3584,8 +3561,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod, STAT
-      USE elfe_msgp, only : myrank
+      USE DATAPOOL, only : PCmethod, STAT, myrank
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -3780,9 +3756,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I5B_SOLVER_INIT
       USE DATAPOOL
-# ifdef DEBUG
-      USE elfe_msgp, only : myrank
-# endif
       implicit none
       NblockFreqDir = NB_BLOCK
       MainLocalColor%MSCeffect=MSC
@@ -3925,9 +3898,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE I4_EIMPS_ASPAR_B_BLOCK(LocalColor, ASPAR, B, U, iMSCblock)
       USE DATAPOOL
-# ifdef DEBUG
-      USE elfe_msgp, only : myrank
-# endif
       IMPLICIT NONE
       type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(inout) :: ASPAR(LocalColor%MSCeffect, MDC, NNZ)
@@ -3942,7 +3912,7 @@ MODULE WWM_PARALL_SOLVER
 # ifndef SINGLE_LOOP_AMATRIX
       INTEGER :: POS
 # endif
-      INTEGER :: I, IPGL, IPrel, ISr, IS1, IS2
+      INTEGER :: I, IPGL1, IPrel, ISr, IS1, IS2
 
 # ifdef SINGLE_LOOP_AMATRIX
       REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3), NM(LocalColor%MSCeffect,MDC)
@@ -4135,11 +4105,11 @@ MODULE WWM_PARALL_SOLVER
           ELSE
             IPrel=1
           ENDIF
-          IPGL = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
+          IPGL1 = IWBNDLC(IP)
+          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
           DO IS=IS1,IS2
             ISr=IS+1-IS1
-            B(ISr,:,IPGL)         = SI(IPGL) * WBAC(IS,:,IPrel)
+            B(ISr,:,IPGL1)         = SI(IPGL1) * WBAC(IS,:,IPrel)
           END DO
         END DO
       END IF
@@ -4176,7 +4146,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
       USE DATAPOOL
-      USE elfe_msgp, only : myrank
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
       REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
@@ -4200,7 +4169,7 @@ MODULE WWM_PARALL_SOLVER
 # endif
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE
-      INTEGER :: I, IPGL, IPrel
+      INTEGER :: I, IPGL1, IPrel
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
 # ifdef DEBUG
@@ -4366,9 +4335,9 @@ MODULE WWM_PARALL_SOLVER
           ELSE
             IPrel=1
           ENDIF
-          IPGL = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-          B(:,:,IPGL)             = SI(IPGL) * WBAC(:,:,IPrel)
+          IPGL1 = IWBNDLC(IP)
+          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+          B(:,:,IPGL1)             = SI(IPGL1) * WBAC(:,:,IPrel)
         END DO
       END IF
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
@@ -4394,7 +4363,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
       USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
-      USE elfe_msgp, only : myrank, exchange_p4d_wwm
+      USE datapool, only : myrank, exchange_p4d_wwm
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -4481,7 +4450,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
       USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
-      USE elfe_msgp, only : myrank, exchange_p4d_wwm
+      USE datapool, only : myrank, exchange_p4d_wwm
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat

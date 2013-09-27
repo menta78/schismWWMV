@@ -37,6 +37,7 @@
 !> - create the solver and preconditioner
       SUBROUTINE PETSC_INIT_PARALLEL
         USE DATAPOOL, only: MNP, CCON, NNZ, DBG
+        use datapool, only: comm, np_global
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost
@@ -46,14 +47,12 @@
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
         ! int::nnp(ip)            total # of surrounding nodes for node ip
         ! int::inp(ip, 1:nnp(ip)) list of surrounding nodes
-        use elfe_glbl, only: np_global, np, npg, npa, ne_global, nea,   &
-     &      iplg, ipgl, nnp, inp, llist_type
-        use elfe_msgp, only : comm
         use petscpool
         use petscsys
         
 !         use petscao
         implicit none
+        integer :: ierr
 
         call MPI_Comm_rank(comm, rank, ierr)
         call MPI_Comm_size(comm, nProcs, ierr)
@@ -83,8 +82,7 @@
 
       !> create PETSC matrix which uses fortran arrays
       subroutine createMatrix()
-        USE elfe_glbl, only: np_global
-        use elfe_msgp, only : comm
+        use datapool, only: np_global
         use petscpool
         use petscsys
         use petscmat
@@ -112,8 +110,7 @@
 
       ! 1. create IA JA ASPAR petsc arrays
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, DBG
-        use elfe_glbl, only: iplg
+        use datapool, only: NNZ, MNE, INE, MNP, DBG, iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -265,9 +262,6 @@
       !> fill matrix, RHs, call solver
       SUBROUTINE  EIMPS_PETSC_PARALLEL(ISS, IDD)
          USE DATAPOOL
-         use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
-         ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
-         use elfe_glbl, only: ipgl1=> ipgl
          use petscpool
          use petscsys
          use petscmat
@@ -278,7 +272,7 @@
          integer, intent(in) :: ISS, IDD
 
          integer :: I, J
-         integer :: IP, IPGL, IE, POS
+         integer :: IP, IPGL1, IE, POS
          integer :: I1, I2, I3
          integer :: POS_TRICK(3,2)
 
@@ -416,15 +410,15 @@
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Add source term to the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(ISS,IDD,IP)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Add source term to the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,IP)
              END DO
            ELSE
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL)
-               B(IPGL)             = SI(IPGL) * WBAC(ISS,IDD,1)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1)
+               B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,1)
              END DO
            ENDIF
          END IF
@@ -547,7 +541,7 @@
          !(the app old ordering contains interface nodes)
          call VecGetArrayF90(myX, myXtemp, petscErr); CHKERRQ(petscErr)
          do i = 1, nNodesWithoutInterfaceGhosts
-           X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
+           X(ipgl((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
          end do
          call VecRestoreArrayF90(myX, myXtemp, petscErr)
          CHKERRQ(petscErr);

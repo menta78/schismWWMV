@@ -4,10 +4,6 @@
 !**********************************************************************
       SUBROUTINE COMPUTE_SIMPLE_EXPLICIT()
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp
-#endif
-
         IMPLICIT NONE
 
 #ifdef TIMINGS
@@ -120,10 +116,6 @@
 !**********************************************************************
       SUBROUTINE COMPUTE_DOUBLE_STRANG_EXPLICIT()
         USE DATAPOOL
-
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp
-#endif
         IMPLICIT NONE
 
         REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5

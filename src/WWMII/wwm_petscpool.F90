@@ -61,7 +61,6 @@
 
       PetscErrorCode     :: petscErr             ! petsc error code
       integer            :: stat                 ! Fortran error code
-      integer            :: ierr                 ! MPI error code
 
       Mat                :: matrix;
       Vec                :: myB, myX
@@ -128,8 +127,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkAsparDiagonalAccuracy(ASPAR, IA, JA, ISS, IDD)
-        use datapool, only: MNP, IOBP, DBG
-        use elfe_glbl, only: iplg
+        use datapool, only: MNP, IOBP, DBG, iplg, rkind
         use petscsys
         implicit none
         real(kind=8), intent(in)  :: ASPAR(:)
@@ -156,7 +154,7 @@
         integer :: IP_petsc, IP, IP_old
         ! time measurement
 #ifdef TIMINGS
-        real :: startTime, endTime
+        real(rkind) :: startTime, endTime
 #endif
 
 #ifdef TIMINGS
@@ -519,13 +517,6 @@
 !         PetscDraw   :: draw   ! extended viewer. e.g. pause
 
         call PetscViewerDrawOpen(PETSC_COMM_WORLD, PETSC_NULL_CHARACTER, "matrix", PETSC_DECIDE, PETSC_DECIDE, 800, 800, viewer, petscErr);CHKERRQ(petscErr)
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-
         call MatView(matrix, viewer, petscErr );CHKERRQ(petscErr)
 !         call PetscViewerDrawGetDraw(viewer, 0, draw, petscErr);CHKERRQ(petscErr)
 !         call PetscDrawSetPause(draw,100, petscErr);CHKERRQ(petscErr);CHKERRQ(petscErr)
@@ -537,19 +528,17 @@
 #ifdef MPI_PARALL_GRID
       !> create all APP<->Petsc local<->global mappings.
       subroutine createMappings()
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG, npg, iplg, ipgl, np_global
         ! np_global    - # nodes gloabal
         ! np or NP_RES - # nodes local non augmented
         ! npg          - # ghost
         ! npa or MNP   - # nodes aufmented
         ! int::iplg(ip)           global element index. local to global LUT
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
-        use elfe_glbl, only: npg, iplg, ipgl, np_global
         use petscsys
-        use elfe_msgp
         implicit none
 
-        integer :: i
+        integer :: i, ierr
         PetscInt :: ranges  ! accumulate range for every processor
         ! Application Ordering
         AO :: appOrdering
@@ -618,7 +607,7 @@
         endif
 
         PGO2PLO = -999
-        call MPI_Scan(nNodesWithoutInterfaceGhosts, ranges, 1, MPIU_INTEGER, MPI_SUM, comm, ierr)
+        call MPI_Scan(nNodesWithoutInterfaceGhosts, ranges, 1, MPIU_INTEGER, MPI_SUM, PETSC_COMM_WORLD, ierr)
 !        CHKERRQ(petscErr)
 
         do i = 1, nNodesWithoutInterfaceGhosts
@@ -633,7 +622,7 @@
           stop 'wwm_petscpool l.498'
         endif
 
-        call AOCreateBasic(comm, nNodesWithoutInterfaceGhosts, ALO2AGO, PLO2PGO, appOrdering, petscErr)
+        call AOCreateBasic(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, ALO2AGO, PLO2PGO, appOrdering, petscErr)
         CHKERRQ(petscErr)
 !         call AOView(appOrdering, PETSC_VIEWER_STDOUT_WORLD, petscErr) ;CHKERRQ(petscErr)
 
@@ -699,132 +688,19 @@
       end subroutine
 #endif
 
-! createMappings will only be called by PETSC_PARALLEL and PETSC_BLOCK, not by PETSC_SERIELL
-#ifdef MPI_PARALL_GRID
-#ifdef PDLIB
-      !> create all APP<->Petsc local<->global mappings with decomposition of pdlib (without interface nodes)
-      subroutine createMappingsPDlib()
-        use datapool, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG
-        ! np_global    - # nodes gloabal
-        ! np or NP_RES - # nodes local non augmented
-        ! npg          - # ghost
-        ! npa or MNP   - # nodes aufmented
-        ! int::iplg(ip)           global element index. local to global LUT
-        ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
-        use pd, only: npg, iplg, ipgl, np_global, comm
-        use petscsys
-        implicit none
-        
-        integer :: i
-        PetscInt :: ranges  ! accumulate range for every processor
-        ! Application Ordering
-        AO :: appOrdering
-
-        ranges = 0
-
-        ! create App Local <-> App Global mappings
-        allocate(ALOold2ALO(0:NP_RES + npg -1), &
-                AGO2ALO(0:np_global-1), &
-                ALO2AGO(0:NP_RES-1), &
-                stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) "error", __FILE__, " Line", __LINE__
-          stop "createMappingsPDlib"
-        endif
-
-        AGO2ALO = -1
-        ! nodes in the old App local mapping become a -990 to indicate, that this node is an interface node
-        ! with pdlib only ghost nodes become -999
-        ALOold2ALO = -999
-
-        do i = 1, NP_RES
-            ALO2AGO(i-1) = iplg(i) -1
-            AGO2ALO(iplg(i)-1) = i-1
-
-            ! with pdlib there are no interface nodes.but we have to fill the array for code which depends on it
-            ALOold2ALO(i-1) = i-1
-        end do
-
-        ! create PETsc Local -> Global mapping
-        allocate(PLO2PGO(0:NP_RES), PGO2PLO(0:np_global), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
-          stop 'createMappingsPDlib'
-        endif
-
-        PGO2PLO = -999
-        call MPI_Scan(NP_RES, ranges, 1, MPIU_INTEGER, MPI_SUM, comm, ierr)
-        
-        do i = 1, NP_RES
-          PLO2PGO(i-1) = ranges - NP_RES + i -1
-          PGO2PLO(ranges - NP_RES + i -1 ) = i - 1
-        end do
-
-        ! create App Global <-> PETsc Global mapping
-        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
-          stop 'createMappingsPDlib'
-        endif
-
-        call AOCreateBasic(comm, NP_RES, ALO2AGO, PLO2PGO, appOrdering, petscErr)
-        CHKERRQ(petscErr)
-
-        do i = 1, np_global
-          AGO2PGO(i-1) = i-1
-          PGO2AGO(i-1) = i-1
-        end do
-
-        call AOApplicationToPetsc(appOrdering, np_global, AGO2PGO, petscErr);CHKERRQ(petscErr)
-        call AOPetscToApplication(appOrdering, np_global, PGO2AGO, petscErr);CHKERRQ(petscErr)
-        call AODestroy(appOrdering, petscErr);CHKERRQ(petscErr)
-
-        
-        ! create App local <-> Petsc local mappings
-        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:NP_RES-1), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) "Error:", __FILE__, " Line", __LINE__
-          stop 'createMappingsPDlib'
-        endif
-        ALO2PLO = -999
-        PLO2ALO = -999
-
-        do i = 1, NP_RES
-          PLO2ALO(i-1) = ipgl(PGO2AGO(PLO2PGO(i-1)) +1)%id -1
-        end do
-
-        do i = 1, MNP
-          ALO2PLO(i-1) = PGO2PLO(AGO2PGO(iplg(i)-1))
-        end do
-
-       ! create onlyGhosts array
-        !> todo we don't need the onlyghost array with petsc block. only in petsc parallel. move code?
-        nghost=npg
-        allocate(onlyGhosts(0:nghost-1), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) "error:", __FILE__, " Line", __LINE__
-          stop 'createMappingsPDlib'
-        endif
-
-        do i=1, npg
-          onlyGhosts(i) = AGO2PGO(iplg(NP_RES+i)-1)
-        end do
-
-        ! this is the same because a decomposition with pdlib has no interface nodes
-        nNodesWithoutInterfaceGhosts = NP_RES
-      end subroutine
-#endif      
-#endif
-
       !> initialize some variables. You never need to call this function by hand. It will automaticly called by PETSC_INIT()
       subroutine petscpoolInit()
         use petscsys
         USE DATAPOOL, only: IA, JA, NNZ, MNP
-        USE elfe_msgp, only : comm
+#ifdef MPI_PARALL_GRID
+        use datapool, only: comm
+#endif
         implicit none
         integer istat
 
+#ifdef MPI_PARALL_GRID
         PETSC_COMM_WORLD=comm
+#endif
         call PetscInitialize(PETSC_NULL_CHARACTER, petscErr);CHKERRQ(petscErr)
 
         call PetscLogBegin(petscErr);CHKERRQ(petscErr)
@@ -847,9 +723,8 @@
 
       !> reads KSP/PC Type etc. from PETScOptions namelist and check for strange values
       subroutine readPETSCnamelist()
-        use datapool, only: inp, CHK, DBG
+        use datapool, only: inp, CHK, DBG, myrank
         use StringTools
-        use elfe_msgp, only : myrank
         implicit none
         ! true if one of the values seem strange
         logical :: rtolStrage, abstolStrange, dtolStrange, maxitsStrange

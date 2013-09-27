@@ -174,10 +174,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PETSC_INIT_BLOCK
-        USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG
+        USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG, np_global, np, npg, ne_global, iplg, ipgl, inp
         ! MSC      - # frequency
         ! MDC      - # directions
-        use datapool, only: MSC, MDC
+        use datapool, only: MSC, MDC, comm
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost
@@ -187,8 +187,6 @@
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
         ! int::nnp(ip)            total # of surrounding nodes for node ip
         ! int::inp(ip, 1:nnp(ip)) list of surrounding nodes
-        USE elfe_glbl, only: np_global, np, npg, npa, ne_global, nea, iplg, ipgl, nnp, inp, llist_type
-        use elfe_msgp, only : comm
         use petscpool
         use petscsys
         use petscmat
@@ -196,7 +194,7 @@
 
 
         IMPLICIT NONE
-
+        integer :: ierr
         integer :: IP, ISS, IDD
         integer :: nghostBlock
         integer, allocatable :: onlyGhostsBlock(:)
@@ -279,9 +277,7 @@
 !**********************************************************************
       !> create PETSC matrix which uses fortran arrays
       subroutine createMatrix()
-        use elfe_glbl, only: np_global
-        use elfe_msgp, only : comm
-        use datapool, only: MSC, MDC
+        use datapool, only: MSC, MDC, comm, np_global
         use petscpool
         use petscsys
         use petscmat
@@ -312,8 +308,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG
-        use elfe_glbl, only: iplg
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -481,8 +476,7 @@
 !**********************************************************************
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
-        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG
-        use elfe_glbl, only: iplg
+        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -640,8 +634,7 @@
 !**********************************************************************
       !> copy the old solution back to the petsc myX vector
       subroutine useOldSolution()
-        use datapool, only: MSC, MDC, MNP, AC2, RKIND
-        use elfe_glbl, only: np, iplg
+        use datapool, only: MSC, MDC, MNP, AC2, RKIND, np, iplg
         use petscsys
         use petscmat
         use petscpool
@@ -692,16 +685,14 @@
         use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
         use datapool, only : IMATRAA, DT4A, MAXMNECON, AC2, RKIND
-        use datapool, only : TWO, RKIND
-        use elfe_glbl, only: iplg
-        use elfe_msgp, only: exchange_p2d
+        use datapool, only : TWO, RKIND, iplg, exchange_p2d
         use petscpool
         use petscsys
         use petscvec
         implicit none
         integer :: IP, IDD, ISS, IPpetsc
         INTEGER :: I
-        INTEGER :: IPGL, IE
+        INTEGER :: IPGL1, IE
         ! to temp store the element areas
         real(rkind) :: TRIA03arr(MAXMNECON)
         real(rkind) :: AC22(MDC, MSC, MNP)
@@ -773,23 +764,23 @@
         if (LBCWA .OR. LBCSP) then
           if (LINHOM) then
             do IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
-              if(ALOold2ALO(IPGL-1) .eq. -999) cycle  ! this is a interface node (row). ignore it
-              IPpetsc = ALO2PLO(IPGL-1) + 1
+              IPGL1 = IWBNDLC(IP)
+              if(ALOold2ALO(IPGL1-1) .eq. -999) cycle  ! this is a interface node (row). ignore it
+              IPpetsc = ALO2PLO(IPGL1-1) + 1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL) * WBAC(ISS,IDD,IP) 
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL1) * WBAC(ISS,IDD,IP)
                 end do ! MDC
               end do ! MSC
             end do ! IP
           else ! LINHOM
             do IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
-              if(ALOold2ALO(IPGL-1) .eq. -999) cycle  ! this is a interface node (row). ignore it. just increase counter
-              IPpetsc = ALO2PLO(IPGL-1) + 1
+              IPGL1 = IWBNDLC(IP)
+              if(ALOold2ALO(IPGL1-1) .eq. -999) cycle  ! this is a interface node (row). ignore it. just increase counter
+              IPpetsc = ALO2PLO(IPGL1-1) + 1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL) * WBAC(ISS,IDD,1) 
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL1) * WBAC(ISS,IDD,1)
                 end do ! MDC
               end do ! MSC
             end do ! IP
@@ -826,19 +817,16 @@
       !> assembling the linear equation system
       !> wite direct into the petsc matrix. with openmp improvement
       subroutine calcASPARomp(IP)
-        use datapool, only : MSC, MDC, MNP, INE
-        use datapool, only : ONESIXTH, ONETHIRD, ZERO, ONE
-        use datapool, only : THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
-        use datapool, only : DT4A, POSI, ZERO, ONE, TWO
-        use datapool, only : IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
-        use datapool, only : IMATDAA, IMATRAA
-        use datapool, only : IOBWB, DEP, DMIN, MAXMNECON, TWO
-        use datapool, only : IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
-        use datapool, only : NP_RES, NNZ, MNE, AC2, WBAC
-        use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
-        use elfe_glbl, only: rkind
-        ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
-        use elfe_glbl, only: ipgl1=> ipgl
+        use datapool, only: MSC, MDC, MNP, INE
+        use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
+        use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
+        use datapool, only: DT4A, POSI, ZERO, ONE, TWO
+        use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
+        use datapool, only: IMATDAA, IMATRAA
+        use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
+        use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
+        use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
+        use datapool, only: rkind, np_global, np, npg, inp, iplg
         use petscpool
         implicit none
         integer, intent(in) :: IP
@@ -846,7 +834,7 @@
         integer :: IDD, ISS, IPpetsc
 
         integer :: I
-        integer :: IPGL, IE, POS
+        integer :: IPGL1, IE, POS
         integer :: I1, I2, I3
         integer :: POS_TRICK(3,2)
 
@@ -915,7 +903,7 @@
 
 
         I      = 0
-        IPGL   = 0
+        IPGL1   = 0
         IE     = 0
         POS    = 0
         I1     = 0
@@ -1066,7 +1054,7 @@
         implicit none
 
         integer :: IP, IDD, ISS
-        integer :: IPGL
+        integer :: IPGL1
         PetscScalar value1
 
         !
@@ -1082,27 +1070,27 @@
         if (LBCWA .OR. LBCSP) then
           if (LINHOM) then
             do IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
+              IPGL1 = IWBNDLC(IP)
               ! ghost or interface node, ignore it
-              if(ALO2PLO(IPGL-1) .lt. 0) then
+              if(ALO2PLO(IPGL1-1) .lt. 0) then
                 cycle
               endif
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-                  ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  ASPAR_petsc(aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))) = SI(IPGL1)
                 end do ! IDD
               end do ! ISS
             end do ! IP
           else
             do IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
+              IPGL1 = IWBNDLC(IP)
               ! ghost or interface node, ignore it
-              if(ALO2PLO(IPGL-1) .lt. 0) then
+              if(ALO2PLO(IPGL1-1) .lt. 0) then
                 cycle
               endif
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-                  ASPAR_petsc(aspar2petscAspar(IPGL, ISS, IDD, I_DIAG(IPGL))) = SI(IPGL)
+                  ASPAR_petsc(aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))) = SI(IPGL1)
                 end do ! IDD
               end do ! ISS
             end do ! IP
@@ -1146,9 +1134,6 @@
 !> @param[out] C results for nodes
 
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 
@@ -1228,9 +1213,6 @@
 !> @param[out] C3 results for the third node conn to the element
 
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          implicit none
 
 
@@ -1354,8 +1336,7 @@
 !**********************************************************************
       subroutine  EIMPS_PETSC_BLOCK()
         use datapool, only: MSC, MDC, AC2, stat, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP, DBG
-        use elfe_glbl, only: ipgl
-        use elfe_msgp, only: exchange_p4d_wwm
+        use datapool, only: ipgl, exchange_p4d_wwm
         use petscsys
         use petscmat
         use petscpool
@@ -1450,7 +1431,7 @@
         ! get the soluton from X(IP, IS, ID)
         ! write the solutin to AC2(IP, IS, ID)
         AC2 = 0
-        call VecGetArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+        call VecGetArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
         ! loop over all local nodes (in petsc local order)
         do IP = 1, nNodesWithoutInterfaceGhosts
           ! map from petsc local to app local
@@ -1469,7 +1450,7 @@
 !wozu brauchen wir diesen call
 ! Thomas: VecGetArrayF90 returns a pointer to the local data. I suppose VecRestoreArrayF90 release the pointer.
 ! petsc doc: "You MUST call VecRestoreArrayF90() when you no longer need access to the array."
-        call VecRestoreArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+        call VecRestoreArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
 !only for debug ...
 !         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NaN in AC')
 
@@ -1665,8 +1646,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkBigMatrixDiagonalAccuracy(matrix_inp, ISS, IDD)
-        use datapool, only: IOBP, IOBPD, DBG
-        use elfe_glbl, only: ipgl
+        use datapool, only: IOBP, IOBPD, DBG, ipgl
         use petscpool
         use petscmat
         use petscvec

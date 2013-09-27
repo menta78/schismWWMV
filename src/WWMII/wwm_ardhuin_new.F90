@@ -1149,11 +1149,7 @@
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
       USE DATAPOOL, ONLY: ZERO, ONE, TWO
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP
-# endif
-
-!/
+      USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /

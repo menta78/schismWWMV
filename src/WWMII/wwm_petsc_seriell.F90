@@ -27,32 +27,32 @@
         IMPLICIT NONE
 
 ! create sparse matrix
-!        call MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, MNP, MNP, IA_P, JA_P, ASPAR, matrix, ierr);CHKERRQ(ierr)
-        call MatCreate(PETSC_COMM_SELF, matrix, ierr);CHKERRQ(ierr)
-        call MatSetType(matrix, MATSEQAIJ , ierr);CHKERRQ(ierr)
-        call MatSetSizes(matrix, PETSC_DECIDE, PETSC_DECIDE, MNP, MNP, ierr);CHKERRQ(ierr)
+!        call MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, MNP, MNP, IA_P, JA_P, ASPAR, matrix, petscErr);CHKERRQ(petscErr)
+        call MatCreate(PETSC_COMM_SELF, matrix, petscErr);CHKERRQ(petscErr)
+        call MatSetType(matrix, MATSEQAIJ , petscErr);CHKERRQ(petscErr)
+        call MatSetSizes(matrix, PETSC_DECIDE, PETSC_DECIDE, MNP, MNP, petscErr);CHKERRQ(petscErr)
 
 !create x vector
-         call VecCreate(PETSC_COMM_SELF, myX, ierr);CHKERRQ(ierr)
-         call VecSetSizes(myX, PETSC_DECIDE, MNP, ierr);CHKERRQ(ierr)
-         call VecSetType(myX,VECSEQ, ierr);CHKERRQ(ierr)
+         call VecCreate(PETSC_COMM_SELF, myX, petscErr);CHKERRQ(petscErr)
+         call VecSetSizes(myX, PETSC_DECIDE, MNP, petscErr);CHKERRQ(petscErr)
+         call VecSetType(myX,VECSEQ, petscErr);CHKERRQ(petscErr)
 
 ! create vec myB
-         call VecCreate(PETSC_COMM_SELF, myB, ierr);CHKERRQ(ierr)
-         call VecSetSizes(myB, PETSC_DECIDE, MNP, ierr);CHKERRQ(ierr)
-         call VecSetType(myB,VECSEQ, ierr);CHKERRQ(ierr)
+         call VecCreate(PETSC_COMM_SELF, myB, petscErr);CHKERRQ(petscErr)
+         call VecSetSizes(myB, PETSC_DECIDE, MNP, petscErr);CHKERRQ(petscErr)
+         call VecSetType(myB,VECSEQ, petscErr);CHKERRQ(petscErr)
 
 ! create solver
-         call KSPCreate(PETSC_COMM_SELF, Solver, ierr);CHKERRQ(ierr)
-!          call KSPSetOperators(Solver, matrix, matrix, SAME_NONZERO_PATTERN, ierr); CHKERRQ(ierr)
-         call KSPSetOperators(Solver, matrix, matrix, 0, ierr); CHKERRQ(ierr)
+         call KSPCreate(PETSC_COMM_SELF, Solver, petscErr);CHKERRQ(petscErr)
+!          call KSPSetOperators(Solver, matrix, matrix, SAME_NONZERO_PATTERN, petscErr); CHKERRQ(petscErr)
+         call KSPSetOperators(Solver, matrix, matrix, 0, petscErr); CHKERRQ(petscErr)
 
-        call KSPSetType(Solver,KSPBCGS, ierr);CHKERRQ(ierr)
-!          call KSPSetType(Solver, KSPIBCGS, ierr);CHKERRQ(ierr) ! this solver create a segfault
+        call KSPSetType(Solver,KSPBCGS, petscErr);CHKERRQ(petscErr)
+!          call KSPSetType(Solver, KSPIBCGS, petscErr);CHKERRQ(petscErr) ! this solver create a segfault
 
 ! Create preconditioner
-         call KSPGetPC(Solver, Prec, ierr);CHKERRQ(ierr)
-         call PCSetType(Prec, PCILU, ierr);CHKERRQ(ierr)
+         call KSPGetPC(Solver, Prec, petscErr);CHKERRQ(petscErr)
+         call PCSetType(Prec, PCILU, petscErr);CHKERRQ(petscErr)
 
 
       END SUBROUTINE
@@ -74,7 +74,7 @@
          INTEGER :: I, J
 !          INTEGER :: KK
 
-         INTEGER :: IP, IPGL, IE, POS
+         INTEGER :: IP, IPGL1, IE, POS
 
          INTEGER :: I1, I2, I3, IPrel
 
@@ -200,9 +200,9 @@
              ELSE
                IPrel=1
              ENDIF
-             IPGL = IWBNDLC(IP)
-             ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-             B(IPGL)             = SI(IPGL) *  WBAC(ISS,IDD,IPrel)
+             IPGL1 = IWBNDLC(IP)
+             ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+             B(IPGL1)             = SI(IPGL1) *  WBAC(ISS,IDD,IPrel)
            END DO
          END IF
 
@@ -221,7 +221,7 @@
 
 !> \todo for efficiency reason this will be moved out of this part when the code is working, AR.
 ! fill the matrix
-         call MatZeroEntries(matrix, ierr);CHKERRQ(ierr)
+         call MatZeroEntries(matrix, petscErr);CHKERRQ(petscErr)
          counter = 1
          nnznew=0
 
@@ -239,25 +239,25 @@
              nnznew=nnznew + 1
 
              eCol = temp
-             call MatSetValue(matrix, eRow, eCol, eValue, ADD_VALUES, ierr);CHKERRQ(ierr)
+             call MatSetValue(matrix, eRow, eCol, eValue, ADD_VALUES, petscErr);CHKERRQ(petscErr)
            end do
          end do ! np
-         call MatAssemblyBegin(matrix,MAT_FINAL_ASSEMBLY, ierr);CHKERRQ(ierr);
-         call MatAssemblyEnd(matrix,MAT_FINAL_ASSEMBLY, ierr);CHKERRQ(ierr);
+         call MatAssemblyBegin(matrix,MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr);
+         call MatAssemblyEnd(matrix,MAT_FINAL_ASSEMBLY, petscErr);CHKERRQ(petscErr);
 
 
 !fill RHS vector
-         call VecGetArrayF90(myB, myBtemp, ierr);CHKERRQ(ierr)
+         call VecGetArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
          myBtemp = B
-         call VecRestoreArrayF90(myB, myBtemp, ierr);CHKERRQ(ierr)
-         call VecAssemblyBegin(myB, ierr);CHKERRQ(ierr);
-         call VecAssemblyEnd(myB, ierr);CHKERRQ(ierr);
+         call VecRestoreArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
+         call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr);
+         call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr);
 
 #ifdef TIMINGS
          CALL MY_WTIME(TIME4)
 #endif
 ! Solve
-         call KSPSolve(Solver, myB, myX, ierr);CHKERRQ(ierr)
+         call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr)
 
 #ifdef TIMINGS
          CALL MY_WTIME(TIME5)
@@ -265,21 +265,21 @@
 
          !WRITE(*,*) TIME2-TIME1, TIME3-TIME2, TIME4-TIME3, TIME5-TIME4
 
-         call KSPGetConvergedReason(Solver, reason, ierr);CHKERRQ(ierr)
+         call KSPGetConvergedReason(Solver, reason, petscErr);CHKERRQ(petscErr)
          if (reason .LT. 0) then
            write(*,*) "Failure to converge\n"
           stop 'wwm_petsc_seriell l.260'
          else
-         call KSPGetIterationNumber(Solver, iterationen, ierr);CHKERRQ(ierr)
+         call KSPGetIterationNumber(Solver, iterationen, petscErr);CHKERRQ(petscErr)
             if(iterationen /= 0)  write(*,*) "Number of iterations", iss,idd,iterationen
 !            write(*,*) "Number of iterations", iterationen
          endif
 
          ! write the soluten from vec into fortran array
          X    = ZERO
-         call VecGetArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+         call VecGetArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
          X = myXtemp
-         call VecRestoreArrayF90(myX, myXtemp, ierr);CHKERRQ(ierr)
+         call VecRestoreArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
 
          IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
 !          AC2(:, ISS, IDD) = MAX(ZERO,X)

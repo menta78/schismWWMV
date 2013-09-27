@@ -9,15 +9,12 @@
 # define wwm_print_namelist(xinp) WRITE(CHK%FHNDL, NML=xinp)
 #endif
       SUBROUTINE READ_HISTORY_STATION_NAMELIST()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank
-#endif
          USE DATAPOOL, only : OUTSTYLE, LOUTITER,                       &
      &        LENERGY, LWXFN, OUT_HISTORY, OUT_STATION, INP, LSP1D,     &
      &        LSP2D, INP, CHK, LOUTS, IOUTS, LSIGMAX, LLOUTS,           &
      &        ILOUTS, OUT, DAY2SEC, FRHIGH, DBG, LINES, VAROUT_HISTORY, &
      &        VAROUT_STATION, GRIDWRITE, RKIND, LVAR_READ,              &
-     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL
+     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL, myrank
 #ifdef NCDF
          USE NETCDF
          USE DATAPOOL, only : USE_SINGLE_OUT_STAT, USE_SINGLE_OUT_HIS,  &
@@ -698,8 +695,7 @@
          USE NETCDF
 #endif
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
+#ifdef SELFE
          use elfe_glbl, only : ics
 #endif
          IMPLICIT NONE
@@ -1081,10 +1077,6 @@
 !**********************************************************************
       SUBROUTINE INIT_CURRENT_INPUT
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
       INTEGER :: IP, ISTAT
 #ifdef MPI_PARALL_GRID
@@ -1157,10 +1149,6 @@
 !**********************************************************************
       SUBROUTINE INIT_WATLEV_INPUT
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
 
       INTEGER :: ISTAT
@@ -1222,7 +1210,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1367,9 +1354,6 @@
 !**********************************************************************
       SUBROUTINE CHECK_LOGICS()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
-#endif
          IMPLICIT NONE
 
          REAL(rkind) :: TEST
@@ -1771,7 +1755,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_NETCDF_WW3(IFILE,IT,CALLEDFROM)
-
          USE DATAPOOL
          USE NETCDF
          IMPLICIT NONE

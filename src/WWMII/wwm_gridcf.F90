@@ -5,10 +5,6 @@
 !**********************************************************************
       SUBROUTINE SPATIAL_GRID()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, ONLY : ne_global
-         USE ELFE_MSGP, ONLY : IERR, COMM, MYRANK, rtype
-#endif
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID 
          INCLUDE 'mpif.h'

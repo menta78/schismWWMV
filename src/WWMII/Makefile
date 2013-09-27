@@ -19,7 +19,7 @@ SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
-PDLIB = 
+PDLIB =  
 
 #F90 = gfortran
 #F90 = mpif90
@@ -35,7 +35,7 @@ F90 =  mpif90
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-#F90OPTI = -O1 -axSSE4.2 -traceback -g -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
+#F90OPTI = -O1  -traceback -g -check uninit -check bounds -check pointers -warn all,nouncalled,nounused -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
@@ -98,14 +98,17 @@ else
 endif
 
 ifdef MPI
+ifdef PDLIB
+  OBJS = $(OBJWWM)
+  LIBS += $(HOME)/git/pdlib/libpd.a
+  FFLAGS += -I$(HOME)/git/pdlib/modules/ -DPDLIB
+else
+  OBJS= $(OBJSELFE) $(OBJWWM)
+endif
+
   MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
   MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER
-ifdef PDLIB
-  OBJS = $(OBJWWM)
-else 
-  OBJS= $(OBJSELFE) $(OBJWWM)
-endif
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)
@@ -132,11 +135,6 @@ endif
 
 ifdef SNL4_TSA 
   SNL4_TSAFLAG = -DSNL4_TSA
-endif
-
-ifdef PDLIB
-  LIBS += $(HOME)/git/pdlib/libpd.a
-  FFLAGS += -I$(HOME)/git/pdlib/modules/ -DPDLIB
 endif
 
 

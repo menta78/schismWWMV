@@ -181,7 +181,6 @@
 #ifdef PETSC
          use PETSC_CONTROLLER, only : EIMPS_PETSC
          use petsc_block,    only: EIMPS_PETSC_BLOCK
-         USE elfe_msgp, only : exchange_p4d_wwm
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
@@ -293,7 +292,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FLUCT_2()
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -349,7 +347,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FLUCT_3()
-
          USE DATAPOOL
 
          IMPLICIT NONE
@@ -433,11 +430,7 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID )
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
@@ -696,11 +689,7 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_PSI_SCHEME  ( IS, ID )
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
          include 'mpif.h'
@@ -906,9 +895,6 @@
 !**********************************************************************
        SUBROUTINE EXPLICIT_LFPSI_SCHEME(IS,ID)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
@@ -1194,12 +1180,7 @@
 !*
 !**********************************************************************
      SUBROUTINE  EIMPS_V1( IS, ID)
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only: iplg
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
@@ -1210,7 +1191,7 @@
 
          INTEGER :: I, J
 
-         INTEGER :: IP, IPGL, IE, POS
+         INTEGER :: IP, IPGL1, IE, POS
 
          INTEGER :: I1, I2, I3
 
@@ -1333,15 +1314,15 @@
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(IS,ID,IP)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,IP)
             END DO
            ELSE
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(IS,ID,1)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,1)
              END DO
            ENDIF
          END IF
@@ -1422,9 +1403,6 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
-#if defined DEBUG
-         USE elfe_msgp, only : myrank
-#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
@@ -1437,7 +1415,7 @@
          REAL(rkind) :: DELTAL(3,MNE)
          INTEGER :: I1, I2, I3
          INTEGER :: IP, IE, POS
-         INTEGER :: I, J, IPGL, IPrel
+         INTEGER :: I, J, IPGL1, IPrel
          REAL(rkind) :: KP(3,MNE), NM(MNE)
          REAL(rkind) :: DTK, TMP3
          REAL(rkind) :: LAMBDA(2)
@@ -1526,9 +1504,9 @@
              IPrel=1
            ENDIF
            DO IP = 1, IWBMNP
-             IPGL = IWBNDLC(IP)
-             ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-             B(IPGL)             = SI(IPGL) * WBAC(IS,ID,IPrel)
+             IPGL1 = IWBNDLC(IP)
+             ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+             B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,IPrel)
            END DO
          END IF
 
@@ -1546,7 +1524,6 @@
 !*
 !**********************************************************************
       SUBROUTINE EIMPS( IS, ID)
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1841,7 +1818,6 @@
          INTEGER, PARAMETER :: IM = 30
 
          INTEGER :: IPAR(16), MBLOC
-         INTEGER :: IERR! ERROR Indicator and Work Array Size
          INTEGER :: IWKSP( 8*MNP ) ! Integer Workspace
          INTEGER :: JU(MNP), JAU(NNZ+1), IWK, LFIL
 
@@ -2026,7 +2002,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CADVXY(IS,ID,C)
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -2130,7 +2105,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FLUCT_ARRAYS
-
          USE DATAPOOL
          IMPLICIT NONE
          integer istat
@@ -2171,9 +2145,6 @@
 !**********************************************************************
       SUBROUTINE INIT_FLUCT
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
          INTEGER :: I, J, K, istat
@@ -2214,7 +2185,7 @@
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'MEDIAN DUAL AREA and CCON' 
          SI(:)   = 0.0d0 ! Median Dual Patch Area of each Node
 
-CCON(:) = 0     ! Number of connected Elements
+         CCON(:) = 0     ! Number of connected Elements
          DO IE = 1 , MNE
            I1 = INE(1,IE)
            I2 = INE(2,IE)
@@ -2454,11 +2425,7 @@ CCON(:) = 0     ! Number of connected Elements
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : exchange_p3d_wwm, exchange_p4d_wwm, exchange_p2d, comm, rtype, ierr
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
@@ -2869,9 +2836,6 @@ CCON(:) = 0     ! Number of connected Elements
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
 
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
@@ -3087,11 +3051,7 @@ CCON(:) = 0     ! Number of connected Elements
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID

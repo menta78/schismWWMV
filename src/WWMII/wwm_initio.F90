@@ -353,11 +353,6 @@
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only : iplg, np_global, ne_global
-         use elfe_msgp, only : myrank, nproc, parallel_abort, comm, ierr
-         use elfe_msgp, only : rtype, itype
-#endif
          IMPLICIT NONE
          integer istat
 #ifdef MPI_PARALL_GRID
@@ -670,8 +665,8 @@
        SUBROUTINE BUILD_WILD_ARRAY
        USE DATAPOOL, only : MNP, NP_RES, ONE, rkind
        USE DATAPOOL, only : nwild_gb, nwild_loc, nwild_loc_res
-       USE elfe_glbl, only : iplg, np_global
-       USE elfe_msgp, only : istatus, itype, comm, ierr, myrank, rtype, nproc
+       USE datapool, only : iplg, np_global
+       USE datapool, only : istatus, itype, comm, ierr, myrank, rtype, nproc
        IMPLICIT NONE
        include 'mpif.h'
        integer, allocatable :: nwild_i(:), nwild_gbi(:)
@@ -829,7 +824,8 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
-         USE DATAPOOL
+         USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC
+         USE DATAPOOl, ONLY: G9, DEP, MNP, MESTR
          USE M_CONSTANTS
          USE M_XNLDATA
          USE M_FILEIO
@@ -877,11 +873,6 @@
          USE DATAPOOL
 #ifdef NCDF
          USE NETCDF
-#endif
-
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only : iplg, np_global
-         use elfe_msgp, only : myrank
 #endif
          IMPLICIT NONE
 
@@ -970,9 +961,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FILE_HANDLES()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          USE DATAPOOL
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -1079,9 +1067,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CLOSE_FILE_HANDLES()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          USE DATAPOOL
          IMPLICIT NONE
          CHARACTER (LEN = 30) :: FDB
@@ -1098,10 +1083,6 @@
 !**********************************************************************
       SUBROUTINE INIT_STATION_OUTPUT()
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-      USE elfe_glbl, only : iplg, ielg
-#endif
       IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
       include 'mpif.h'
@@ -1268,10 +1249,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWWM()
-#ifdef MPI_PARALL_GRID
-      USE elfe_glbl, only: ipgl
-      USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE
@@ -1334,10 +1311,6 @@
 !**********************************************************************
 !AR: check this for wave boundary nodes ....
       SUBROUTINE READWAVEPARFVCOM()
-#ifdef MPI_PARALL_GRID
-         USE elfe_glbl, only: ipgl
-         USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE
@@ -1701,7 +1674,9 @@
 !**********************************************************************
         SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
 
-        USE DATAPOOL
+        USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
+        USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
+        USE DATAPOOL, ONLY: MDC_WW3, XLON, YLAT
         IMPLICIT NONE
 
         INTEGER, INTENT(IN)      :: ISTEP
@@ -1825,7 +1800,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
-        USE DATAPOOL
+        USE DATAPOOL, ONLY: rkind
         IMPLICIT NONE
 !AR: Kai Li, please carefully describe the method and comment on the input parameters ...
 
@@ -2034,10 +2009,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWW3()
-#ifdef MPI_PARALL_GRID
-         USE elfe_glbl, only: ipgl
-         USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE

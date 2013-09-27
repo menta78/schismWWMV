@@ -7,10 +7,6 @@
       USE NETCDF
 #endif
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
 
 #ifdef NCDF
@@ -208,9 +204,6 @@
       USE NETCDF 
 #endif
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif 
       IMPLICIT NONE
       REAL(rkind)             :: TMP(MNP,2)
 #if defined NCDF || defined GRB 
@@ -2149,9 +2142,8 @@
       USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor, np_total
-#ifdef MPI_PARALL_GRID
-      USE elfe_glbl, only: iplg
-#endif
+      USE DATAPOOL, only : iplg
+
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)

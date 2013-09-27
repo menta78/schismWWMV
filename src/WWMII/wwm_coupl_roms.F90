@@ -41,10 +41,6 @@
 !**********************************************************************
       SUBROUTINE PIPE_ROMS_IN(K,IFILE,IT)
          USE DATAPOOL
-# ifdef WWM_MPI
-         USE ELFE_GLBL, ONLY : iplg, np_global
-         USE elfe_msgp, only : myrank, nproc, comm, istatus, ierr
-# endif
          IMPLICIT NONE
 # ifdef WWM_MPI
          include 'mpif.h'
@@ -125,10 +121,6 @@
 !**********************************************************************
       SUBROUTINE PIPE_ROMS_OUT(K)
          USE DATAPOOL
-# ifdef WWM_MPI
-         USE ELFE_GLBL, ONLY : iplg, np_global
-         USE elfe_msgp, only : myrank, comm, ierr, rtype
-# endif
          IMPLICIT NONE
 # ifdef WWM_MPI
          include 'mpif.h'
@@ -244,8 +236,6 @@
 # ifdef WWM_MPI
       SUBROUTINE WWM_CreateMatrixPartition
         USE DATAPOOL
-        USE elfe_glbl, only : np_global, iplg
-        USE elfe_msgp, only : myrank, istatus,itype, ierr
         USE mod_coupler
         implicit none
         integer, allocatable :: rbuf_int(:)
@@ -404,9 +394,7 @@
 # ifdef WWM_MPI
       SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
         USE mod_coupler
-        USE DATAPOOL, only : DBG
-        USE elfe_msgp, only : parallel_abort
-        USE elfe_glbl, only : np_global, ne_global
+        USE DATAPOOL, only : DBG, parallel_abort, np_global, ne_global
         implicit none
         integer i, j, k, iegb, stat, istat
         character(len=256) :: RHEADER
@@ -453,11 +441,10 @@
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_INITIALIZE
         USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total
-        USE DATAPOOL, only : DBG
+        USE DATAPOOL, only : DBG, istatus, ierr, itype, myrank
         USE mod_coupler
         USE PGMCL_LIBRARY
         USE pgmcl_interp
-        USE elfe_msgp, only : istatus, ierr, itype, myrank
         implicit none
         logical DoNearest
         integer, allocatable :: rbuf_int(:)
@@ -851,11 +838,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_DEALLOCATE
-        USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total
+        USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total, istatus, ierr, itype, myrank
         USE mod_coupler
         USE PGMCL_LIBRARY
         USE pgmcl_interp
-        USE elfe_msgp, only : istatus, ierr, itype, myrank
         implicit none
         logical DoNearest
         integer, allocatable :: rbuf_int(:)

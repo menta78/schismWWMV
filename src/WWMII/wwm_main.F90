@@ -29,11 +29,7 @@
 !**********************************************************************
 #ifdef SELFE
       SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-
          USE DATAPOOL
-         use elfe_msgp!, only : myrank,parallel_abort,itype,comm,ierr
-         use elfe_glbl, only : iplg,ielg
-
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)   :: NSTEP_WWM0, icou_elfe_wwm
@@ -45,7 +41,7 @@
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 #endif
 
-         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT, IPGL
+         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
@@ -70,8 +66,11 @@
          DT_SELFE      = DT_SELFE0
          DELTAT_WATLEV = DT_SELFE0
 
+#ifdef TIMINGS
          T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
          T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
+#endif TIMINGS
+
          DT_PROVIDED=NSTEPWWM*DT_SELFE
 
          IF (abs(MAIN%DELT - DT_PROVIDED).gt.THR) THEN
@@ -224,7 +223,7 @@
            LCALC      = .TRUE.
          END IF
 
-#ifdef 
+#ifdef TIMINGS
          TIME2 = mpi_wtime() 
 #endif
 
@@ -287,7 +286,9 @@
 !           ENDIF
          END IF 
 
+#ifdef TIMINGS
          TIME5 = mpi_wtime()
+#endif
  
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
@@ -295,7 +296,9 @@
 
          KKK = KKK + 1
 
+#ifdef TIMINGS
          TIME6 = mpi_wtime()
+#endif
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
@@ -384,13 +387,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE UN_STEADY(K,CALLFROM)
-
       USE DATAPOOL
 #ifdef WWM_SETUP
       USE WAVE_SETUP
-#endif
-#ifdef MPI_PARALL_GRID
-      use elfe_msgp, only : myrank
 #endif
       IMPLICIT NONE
 
@@ -497,12 +496,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE QUASI_STEADY(K)
-
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
          USE DATAPOOL
-
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
 
@@ -583,9 +577,6 @@
          USE NETCDF 
 #endif
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
@@ -746,7 +737,9 @@
 # if defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
+#ifndef PDLIB
       USE ELFE_GLBL, only : msc2, mdc2, ics
+#endif
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
@@ -762,15 +755,20 @@
       CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
       OPEN(FHNDL, FILE = TRIM(INP%FNAME))
       READ(FHNDL, NML = PROC)
+      READ(FHNDL, NML = GRID)
+      CLOSE(FHNDL)
+
+!> \todo This is confusing. When not using SELFE why we must set this variables?
+#ifndef PDLIB      
       IF (LSPHE) THEN
         ics=2
       ELSE
         ics=1
       ENDIF
-      READ(FHNDL, NML = GRID)
+      
       msc2=MSC
       mdc2=MDC
-      CLOSE(FHNDL)
+#endif      
       END SUBROUTINE
 # endif
 !**********************************************************************
@@ -786,15 +784,6 @@
       USE mod_coupler, only : WAV_COMM_WORLD
 # endif
 
-#ifdef WWM_MPI
-      USE DATAPOOL, only: MAIN, SEBO,                                  &
-     &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
-     &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
-     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
-     &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
-     &      NUM_NETCDF_FILES_BND, LSECU
-#else if
       USE DATAPOOL, only: MAIN, SEBO,                                  &
      &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
@@ -802,15 +791,13 @@
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
+
+#ifdef MPI_PARALL_GRID
+    use datapool, only: rkind, comm, myrank, ierr, nproc, msgp_tables, msgp_init, parallel_barrier, parallel_finalize, nx1, errmsg
 #endif
 
-# ifdef WWM_MPI
-      use elfe_glbl
-      use elfe_msgp
-# endif
-
 #ifdef PDLIB
-      use pd
+    use datapool, only: initPD
 #endif
 
       implicit none
@@ -827,6 +814,9 @@
 
       integer :: i,j,k
       character(len=15) CALLFROM
+      character(len=60) :: errmsg
+
+      
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
@@ -854,19 +844,23 @@
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
       CALL SIMPLE_PRE_READ
+      
+#ifdef MPI_PARALL_GRID
+! variable nx1 should be initialized in selfe code, not here!
       do i=1,3
         do j=1,2
-          nx(i,j)=i+j
-          if(nx(i,j)>3) nx(i,j)=nx(i,j)-3
-          if(nx(i,j)<1.or.nx(i,j)>3) then
-            write(errmsg,*)'MAIN: nx wrong',i,j,nx(i,j)
+          nx1(i,j)=i+j
+          if(nx1(i,j)>3) nx1(i,j)=nx1(i,j)-3
+          if(nx1(i,j)<1.or.nx1(i,j)>3) then
+            write(errmsg,*)'MAIN: nx1 wrong',i,j,nx1(i,j)
             call wwm_abort(errmsg)
           endif
         enddo
       enddo
+#endif
 
 #ifdef PDLIB
-      call initPD(filename)
+      call initPD("system.dat")
      ! call parallel_barrier 
 #else
       call partition_hgrid

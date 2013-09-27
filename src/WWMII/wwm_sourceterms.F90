@@ -4,9 +4,6 @@
 !**********************************************************************
 !2do add mean quantities for 
       SUBROUTINE SOURCETERMS (IP, ISELECT, ACLOC, IMATRA, IMATDA, LRECALC)
-#ifdef WWM_MPI 
-         USE elfe_msgp, only : myrank
-#endif 
          USE DATAPOOL
          USE SdsBabanin
 #ifdef SNL4_TSA
@@ -26,7 +23,7 @@
 
          LOGICAL, INTENT(IN) :: LRECALC
 
-         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ, IERR
+         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
          REAL(rkind)    :: SME01, SME10, KME01, KMWAM, KMWAM2

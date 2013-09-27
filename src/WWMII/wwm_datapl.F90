@@ -8,74 +8,102 @@
 #if defined SELFE && defined WWM_MPI
 #error "The combination of define SELFE and define MPI is illegal"
 #endif
-#ifdef SELFE
-         use elfe_glbl, only : MNE => nea, &! Elements of the augmented domain
-     &                         MNP => npa, &! Nodes in the augmented domain
-     &                         XPTMP => xnd,    &! X-Coordinate augmented domain
-     &                         YPTMP => ynd,    &! Y-Coordinate augmented domain
-     &                         DEP8 => dp,  &! depth in the augmented domain
-     &                         INETMP => nm,  &! Element connection table of the augmented domain?
-     &                         MNEI => mnei, &! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         NE_RES => ne, &! Local number of resident elements
-     &                         NP_RES => np, &! Local number of resident nodes
-     &                         NE_GLOBAL => ne_global, &! Global number of elements
-     &                         NP_GLOBAL => np_global, &! Global number of nodes
-     &                         DMIN_SELFE => h0, &      ! Dmin from SELFE
-     &                         NNE => nne, &!
-     &                         INE_SELFE => ine, &!
-     &                         ISELF => iself, & !
-     &                         NVRT => nvrt, & ! Max. Number of vertical Layers ...
-     &                         KBP  => KBP, &! Bottom index
-     &                         IDRY => IDRY, &! Dry/Wet flag
-     &                         ZETA => znl, &! Z-Levels of SELFE
-     &                         ibnd_ext_int => ibnd_ext_int, &! bounday flag ...
-     &                         nsa, &                   ! Sides in the augmented domain
-     &                         NS_RES => ns, &          ! Local number of resident sides
-     &                         isidenode, &             ! 2 nodes of a side
-     &                         idry_s,   &              ! wet/dry for a side
-     &                         eta1,eta2, &             ! elevation at 2 time steps
-     &                         uu2,vv2, &               ! horizontal vel.
-     &                         KZ,THETA_F, &            !vertical coord. parameters
-     &                         SIGMACOR=>SIGMA, &       !sigma coord.
-     &                         WINDX0=>WINDX, &         !x-wind
-     &                         WINDY0=>WINDY, &         !x-wind
-     &                         MSC_SELFE => MSC2, &     !msc2 from selfe ...
-     &                         MDC_SELFE => MDC2, &     !mdc2 from selfe ...
-     &                         WWAVE_FORCE=>wwave_force, &     !wave-induced force
-     &                         OUTT_INTPAR=>out_wwm, &         !outputs from WWM
-     &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
-     &                         XLON=>xlon, &             !longitude (in radians)
-     &                         YLAT=>ylat, &             !latitude (in radians)
-     &                         ISBND, &                     !bnd flags
-     &                         RKIND
+
+
+#ifdef PDLIB
+
+#ifdef WWM_SOLVER
+#error "Sorry PDLIB and WWM_SOLVER are not supported at the moment"
 #endif
 
-#ifdef WWM_MPI
-#ifdef PDLIB
-         use pd, only :        MNE => ne,        & ! Elements of the resident domain. There are not ghost element in pdlib
+         use pdWWM, only :     itype,            & ! MPI integer type
+     &                         rtype,            & ! MPI real type
+     &                         llist_type,       & ! ADT for global-to-local linked-lists
+     &                         comm,             & ! MPI Communicator
+     &                         ierr,             &
+     &                         istatus,          & ! Return status for MPI calls
+     &                         initPD,           & 
+     &                         parallel_abort,   &
+     &                         parallel_finalize,&
+     &                         myrank,           &
+     &                         nproc,            & ! Nuber of threads
+     &                         MNE => ne,        & ! Elements of the resident domain. There are not ghost element in pdlib
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
+     &                         np,               &
+     &                         npg,              & ! nuber of ghost nodes
      &                         DEP8 => z,        & ! depth in the augmented domain
      &                         INETMP => INE,    & ! Element connection table of the augmented domain?
 ! pdlib does not know about spheric data or not. So XLON/YLON points to the "normal" x/y data
-     &                         XLON => x,        & 
+     &                         XLON => x,        &
      &                         YLAT => y,        &
      &                         XPTMP => x,       & ! X-Coordinate augmented domain
      &                         YPTMP => y,       &
-                               NP_GLOBAL => np_global, & ! global number of nodes
-                               NE_GLOBAL => ne_global    ! global number of elements
+     &                         np_global,        & ! global number of nodes
+     &                         ne_global,        & ! global number of elements
+     &                         iplg,             & ! node local to global mapping
+     &                         ipgl,             & ! node global to local mapping
+     &                         ielg,             & ! element local to global mapping
+     &                         exchange_p2d,     & ! 2D node
+     &                         exchange_p2di,    &
+     &                         exchange_p3d_wwm, &
+     &                         exchange_p4d_wwm  
 #else
+
+#  if defined(SELFE) || defined(WWM_MPI)
+        use elfe_msgp ! , only: comm,             & ! MPI communicator
          use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
+     &                         np,               &
+     &                         npg,              & ! nuber of ghost nodes
      &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
      &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
-     &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         YLAT=>ylat,       &
+     &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
-     &                         YPTMP => ynd
-#endif
+     &                         YPTMP => ynd,     &
+     &                         NE_GLOBAL => ne_global, &! Global number of elements
+     &                         NP_GLOBAL => np_global, &! Global number of nodes
+     &                         iplg,             & ! node local to global mapping
+     &                         ipgl,             & ! node global to local mapping
+     &                         ielg,             & ! element local to global maping
+     &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
+
+     
+#  endif
+
+#  ifdef SELFE
+         use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
+     &                         DMIN_SELFE => h0,             & ! Dmin
+     &                         NNE => nne,                   & !
+     &                         INE_SELFE => ine,             & !
+     &                         ISELF => iself,               & !
+     &                         NVRT => nvrt,                 & ! Max. Number of vertical Layers ...
+     &                         KBP  => KBP,                  & ! Bottom index
+     &                         IDRY => IDRY,                 & ! Dry/Wet flag
+     &                         ZETA => znl,                  & ! Z-Levels of SELFE
+     &                         ibnd_ext_int => ibnd_ext_int, & ! bounday flag ...
+     &                         nsa,                          & ! Sides in the augmented domain
+     &                         NS_RES => ns,                 & ! Local number of resident sides
+     &                         isidenode,                    & ! 2 nodes of a side
+     &                         idry_s,                       & ! wet/dry for a side
+     &                         eta1,eta2,                    & ! elevation at 2 time steps
+     &                         uu2,vv2,                      & ! horizontal vel.
+     &                         KZ,THETA_F,                   & !vertical coord. parameters
+     &                         SIGMACOR=>SIGMA,              & !sigma coord.
+     &                         WINDX0=>WINDX,                & !x-wind
+     &                         WINDY0=>WINDY,                & !x-wind
+     &                         MSC_SELFE => MSC2,            & !msc2 from selfe ...
+     &                         MDC_SELFE => MDC2,            & !mdc2 from selfe ...
+     &                         WWAVE_FORCE=>wwave_force,     & !wave-induced force
+     &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
+     &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
+     &                         ISBND,                        & !bnd flags
+     &                         RKIND
+#  endif
+
 #endif
       IMPLICIT NONE
       SAVE
@@ -89,6 +117,7 @@
         INTEGER :: myrank = 0
         INTEGER :: NP_RES
 #endif
+
 #ifndef SELFE
 # ifdef USE_SINGLE
          integer,parameter :: rkind = 4
