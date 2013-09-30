@@ -509,9 +509,15 @@
         END IF
         ITMP=INT(BNDTMP)
 #ifdef MPI_PARALL_GRID
+# ifndef PDLIB
         IF (ipgl(ip)%rank == myrank) THEN
           IOBP(ipgl(ip)%id) = ITMP
         END IF
+# else
+        IF (ipgl(ip)%id .gt. 0) THEN
+          IOBP(ipgl(ip)%id) = ITMP
+        END IF
+# endif
 #else
         IOBP(IP) = ITMP
 #endif
