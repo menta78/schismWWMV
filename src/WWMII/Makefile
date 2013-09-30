@@ -19,7 +19,7 @@ SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
-PDLIB =  
+PDLIB = on
 
 #F90 = gfortran
 #F90 = mpif90
@@ -100,15 +100,15 @@ endif
 ifdef MPI
 ifdef PDLIB
   OBJS = $(OBJWWM)
-  LIBS += $(HOME)/git/pdlib/libpd.a
-  FFLAGS += -I$(HOME)/git/pdlib/modules/ -DPDLIB
+  LIBS += $(HOME)/GIT/pdlib/libpd.a
+  FFLAGS += -I$(HOME)/GIT/pdlib/modules/ -DPDLIB
 else
   OBJS= $(OBJSELFE) $(OBJWWM)
 endif
 
   MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER
+  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM #-DWWM_SOLVER
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)

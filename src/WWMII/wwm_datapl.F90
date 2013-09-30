@@ -1,4 +1,4 @@
-!2do ... kill save and save all
+!2dR ... kill save and save all
 #include "wwm_functions.h"
 ! add line
 !**********************************************************************
