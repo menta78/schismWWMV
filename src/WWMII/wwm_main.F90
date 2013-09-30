@@ -793,9 +793,9 @@
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
 
 #ifdef MPI_PARALL_GRID
-    use datapool, only: rkind, comm, myrank, ierr, nproc
+    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize
 # ifndef PDLIB
-    use datapool, only: msgp_tables, msgp_init, parallel_barrier, parallel_finalize, nx1
+    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
 # endif
 #endif
 
