@@ -408,7 +408,7 @@
          REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
          REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
-         REAL(rkind) :: S0
+         REAL(rkind) :: S0, AUX
          REAL(rkind) :: GAMMA_WB
          REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
 
@@ -457,8 +457,9 @@
 !
 ! 2.b. Iterate to obtain actual breaking fraction
 !
-        IF ( BETA .LE. 0.2_rkind ) THEN
-          QB     = ZERO 
+#ifdef WW3_QB
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
         ELSE IF ( BETA .LT. ONE ) THEN
           ARG    = EXP  (( QQ - 1. ) / BETA2 )
           QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
@@ -466,12 +467,22 @@
             QB     = EXP((QB-1.)/BETA2)
           END DO
         ELSE
-          QB = ONE - 10.E-10 
+          QB = ONE - 10.E-10
         END IF
-
+#elif SWAN_QB
+        IF (BETA .LT. 0.2D0) THEN
+           QB = 0.0D0
+        ELSE IF (BETA .LT. 1.0D0) THEN
+           BETA2 = BETA*BETA
+           AUX   = EXP((QQ-1.0d0)/BETA2)
+           QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
+        ELSE
+           QB = 1.0D0
+        END IF
+#endif
         QBLOCAL(IP) = QB
 
-        !WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
+        IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
 
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
           SURFA0 = 0.

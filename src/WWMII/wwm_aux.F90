@@ -1190,7 +1190,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CSEVAL ( NFU, FILEN, LSE, DIMS, SEVAL)
+!THOMAS PLEASE CHECK THIS FOR MPLIB
+#ifdef MPI_PARALL_GRID
          USE DATAPOOL, ONLY : STAT, RKIND, MNP, np_global, iplg
+#else
+         USE DATAPOOL, ONLY : STAT, RKIND, MNP
+#endif
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)          :: NFU   
@@ -1276,7 +1281,11 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_XFN()
+#ifdef MPI_PARALL_GRID
          USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, XP, YP, DEP, MNE, INE
+#else
+         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
+#endif
          IMPLICIT NONE
          INTEGER :: I
 
@@ -1305,7 +1314,11 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_SHP()
+#ifdef MPI_PARALL_GRID
          USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, MNE, XP, YP, DEP, INE
+#else
+         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
+#endif
          IMPLICIT NONE
          INTEGER :: I
 
@@ -1835,7 +1848,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_ABORT(string)
+#ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : parallel_abort, DBG
+#else
+      USE DATAPOOL, only : DBG
+#endif
+
       IMPLICIT NONE
       character(*), intent(in) :: string
 

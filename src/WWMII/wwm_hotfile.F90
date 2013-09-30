@@ -204,7 +204,11 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE DETERMINE_NEEDED_HOTFILES(HOTSTYLE, FILEHOT, eRecons)
-      USE DATAPOOL, only : MNP, np_total, iplg, myrank, nproc
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : MNP, np_total, iplg, myrank, nproc 
+#else
+      USE DATAPOOL, only : MNP
+#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: HOTSTYLE
       character(len=*), intent(in) :: FILEHOT
@@ -216,7 +220,7 @@ MODULE wwm_hotfile_mod
       integer :: eDiff, I, iProc, idx, eIdx, nbProc, IP
       integer :: nbNeedProc, nbF, NPLOC, nbZero, idxB
       integer istat
-#ifndef MPI_PARALL_GRID
+#ifdef MPI_PARALL_GRID
       integer, allocatable :: iplg(:)
       integer :: nproc, myrank
       nproc=1
@@ -226,8 +230,9 @@ MODULE wwm_hotfile_mod
       DO IP=1,MNP
         iplg(IP)=IP
       END DO
-#endif
       allocate(IPLGtot(np_total), stat=istat)
+#endif
+
       IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 5')
       CALL DETERMINE_NUMBER_PROC(FILEHOT, HOTSTYLE, nbProc)
       IF (nbProc.eq.nproc) THEN
@@ -360,7 +365,11 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INPUT_HOTFILE_BINARY
+#ifdef MPI_PARALL_GRID
         USE DATAPOOL, ONLY: iplg, np_global, rkind, MULTIPLEIN_HOT, MDC, MSC, MNP, HOTIN
+#else
+        USE DATAPOOL, ONLY: rkind, MULTIPLEIN_HOT, MDC, MSC, MNP, HOTIN
+#endif
         USE DATAPOOL, ONLY: AC2, HOTSTYLE_IN
         IMPLICIT NONE
         INTEGER idxFil, idxMem, iProc, istat
@@ -412,8 +421,10 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_BINARY
+#ifdef MPI_PARALL_GRID
         USE DATAPOOL, ONLY: iplg, np_global, myrank, comm, ierr, rtype
         USE DATAPOOL, ONLY: NP_TOTAL, NE_TOTAL, FRLOW, FRHIGH, nwild_gb
+#endif
         USE DATAPOOL, ONLY: MSC, MDC, MNP, AC2, rkind, HOTOUT, HOTSTYLE_OUT, MULTIPLEOUT_HOT
         IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -472,7 +483,11 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 #ifdef NCDF
       SUBROUTINE INPUT_HOTFILE_NETCDF
+# ifdef MPI_PARALL_GRID
         USE DATAPOOL, ONLY : iplg, np_global, rkind, MULTIPLEIN_HOT, MDC, AC2
+# else
+        USE DATAPOOL, ONLY : rkind, MULTIPLEIN_HOT, MDC, AC2
+# endif
         USE DATAPOOL, ONLY: HOTIN, MSC, MNP, IHOTPOS_IN, HOTSTYLE_IN
         USE NETCDF
         IMPLICIT NONE
@@ -542,10 +557,12 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_NETCDF
-      USE DATAPOOL, ONLY: ierr, comm, rtype, myrank, iplg, np_global, ne_global, rkind
-      use datapool, only: MULTIPLEOUT_HOT, MULTIPLEIN_HOT, HOTSTYLE_OUT, MDC, MSC, MNP, MNE
+# ifdef MPI_PARALL_GRID
+      USE DATAPOOL, ONLY: ierr, comm, rtype, myrank, iplg, np_global, ne_global, nwild_gb
+# endif
+      use datapool, only: MULTIPLEOUT_HOT, MULTIPLEIN_HOT, HOTSTYLE_OUT, MDC, MSC, MNP, MNE, RKIND
       use datapool, only: HOTOUT, IDXHOTOUT, LCYCLEHOT, WriteOutputProcess_hot, NF90_RUNTYPE
-      use datapool, only: AC2, nwild_gb, MAIN
+      use datapool, only: AC2, MAIN
       USE NETCDF
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
