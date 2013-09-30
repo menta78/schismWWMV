@@ -20,6 +20,8 @@ SNL4_TSA =
 GRIB = on
 # Put TIMINGS = on for timings with
 TIME = on
+# Put PDLIB = on for using the pdlib library.
+PDLIB = on
 
 
 #F90 = gfortran
@@ -110,8 +112,13 @@ endif
 
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DWWM_SOLVER -DSHYFEM_COUPLING
-  OBJS= $(OBJSELFE) $(OBJWWM)
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM
+  ifdef PDLIB
+    OBJS= $(OBJWWM)
+  else
+    OBJS= $(OBJSELFE) $(OBJWWM)
+    MPIFLAG += -DWWM_SOLVER -DSHYFEM_COUPLING
+  endif
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)
@@ -126,6 +133,10 @@ ifdef GRIB
   FFLAGS += -DGRB -I$(GRIB_PATH)/include
 endif
 
+ifdef PDLIB
+  LIBS += $(PDLIB_PATH)/libpd.a
+  FFLAGS += -I$(PDLIB_PATH)/modules/ -DPDLIB
+endif
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 

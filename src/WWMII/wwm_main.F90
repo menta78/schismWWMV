@@ -793,7 +793,10 @@
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
 
 #ifdef MPI_PARALL_GRID
-    use datapool, only: rkind, comm, myrank, ierr, nproc, msgp_tables, msgp_init, parallel_barrier, parallel_finalize, nx1
+    use datapool, only: rkind, comm, myrank, ierr, nproc
+# ifndef PDLIB
+    use datapool, only: msgp_tables, msgp_init, parallel_barrier, parallel_finalize, nx1
+# endif
 #endif
 
 #ifdef PDLIB
@@ -847,6 +850,7 @@
       
 #ifdef MPI_PARALL_GRID
 ! variable nx1 should be initialized in selfe code, not here!
+# ifndef PDLIB
       do i=1,3
         do j=1,2
           nx1(i,j)=i+j
@@ -857,6 +861,7 @@
           endif
         enddo
       enddo
+# endif
 #endif
 
 #ifdef PDLIB
