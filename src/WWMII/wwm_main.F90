@@ -865,7 +865,7 @@
 #endif
 
 #ifdef PDLIB
-      call initPD("system.dat")
+      call initPD("system.dat", comm)
      ! call parallel_barrier 
 #else
       call partition_hgrid
