@@ -110,6 +110,11 @@ ifdef NETCDF
   FFLAGS +=  -DTIMINGS
 endif
 
+ifdef PDLIB
+  LIBS += $(PDLIB_PATH)/libpd.a
+  FFLAGS += -I$(PDLIB_PATH)/modules/ -DPDLIB
+endif
+
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
   MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM
@@ -131,11 +136,6 @@ endif
 ifdef GRIB
   LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
   FFLAGS += -DGRB -I$(GRIB_PATH)/include
-endif
-
-ifdef PDLIB
-  LIBS += $(PDLIB_PATH)/libpd.a
-  FFLAGS += -I$(PDLIB_PATH)/modules/ -DPDLIB
 endif
 
 ifdef PETSC
