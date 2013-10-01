@@ -1820,7 +1820,7 @@
          INTEGER :: IPAR(16), MBLOC
          INTEGER :: IWKSP( 8*MNP ) ! Integer Workspace
          INTEGER :: JU(MNP), JAU(NNZ+1), IWK, LFIL
-
+         INTEGER :: IERROR
          REAL(rkind) :: FPAR(16), DROPTOL, PERMTOL
          REAL(rkind)  :: WKSP(8*MNP ) ! REAL WORKSPACES
          REAL(rkind)  :: AU(NNZ+1)
@@ -1953,7 +1953,7 @@
          MBLOC   = 4
          INIU(:) = 0.
 
-         CALL ILU0 (MNP, ASPAR1, JA, IA, AU, JAU, JU, IWKSP, IERR)
+         CALL ILU0 (MNP, ASPAR1, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL RUNRC(MNP, NNZ, B1, X, IPAR, FPAR, WKSP, INIU, ASPAR1, JA, IA, AU, JAU, JU, BCGSTAB)
 
          U(:) = MAX(X(:),ZERO)
@@ -1991,7 +1991,7 @@
 
          INIU(:) = U
 
-         CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERR)
+         CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL RUNRC(MNP, NNZ, B2, X, IPAR, FPAR, WKSP, INIU, ASPAR2, JA, IA, AU, JAU, JU, BCGSTAB)
 
          AC2(:,IS,ID) = MAX(ZERO,X) * IOBPD(ID,:)

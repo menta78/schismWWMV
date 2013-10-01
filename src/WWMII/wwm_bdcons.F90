@@ -453,7 +453,9 @@
       USE DATAPOOL, only : MSC, MDC, INE, MNE, DSPEC, NP_TOTAL, IGRIDTYPE
       USE DATAPOOL, only : LBCSE, SPPARM, LBCWA, LINHOM, LBCSP, IOBPOUT
       USE DATAPOOL, only : STAT
+#ifdef MPI_PARALL_GRID
       use datapool, only : exchange_p2di, myrank, ipgl, iplg
+#endif
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, istat, SPsize
       REAL(rkind) :: BNDTMP
