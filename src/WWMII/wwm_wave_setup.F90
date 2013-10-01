@@ -606,7 +606,6 @@
       ! we have to fill the ghost and interface nodes with the solution from the other threads
       ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
       ! normally set to 0, because they do net exist in petsc
-      !call exchange_p2d(X)
       END SUBROUTINE
 #endif
 !**********************************************************************

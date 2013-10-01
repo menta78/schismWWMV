@@ -205,10 +205,9 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
       SUBROUTINE DETERMINE_NEEDED_HOTFILES(HOTSTYLE, FILEHOT, eRecons)
 #ifdef MPI_PARALL_GRID
-      USE DATAPOOL, only : MNP, np_total, iplg, myrank, nproc 
-#else
-      USE DATAPOOL, only : MNP
+      USE DATAPOOL, only : iplg, myrank, nproc 
 #endif
+      USE DATAPOOL, only : MNP, np_total
       IMPLICIT NONE
       INTEGER, intent(in) :: HOTSTYLE
       character(len=*), intent(in) :: FILEHOT
@@ -220,7 +219,7 @@ MODULE wwm_hotfile_mod
       integer :: eDiff, I, iProc, idx, eIdx, nbProc, IP
       integer :: nbNeedProc, nbF, NPLOC, nbZero, idxB
       integer istat
-#ifdef MPI_PARALL_GRID
+#ifndef MPI_PARALL_GRID
       integer, allocatable :: iplg(:)
       integer :: nproc, myrank
       nproc=1
@@ -232,7 +231,6 @@ MODULE wwm_hotfile_mod
       END DO
       allocate(IPLGtot(np_total), stat=istat)
 #endif
-
       IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 5')
       CALL DETERMINE_NUMBER_PROC(FILEHOT, HOTSTYLE, nbProc)
       IF (nbProc.eq.nproc) THEN
@@ -422,9 +420,10 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_BINARY
 #ifdef MPI_PARALL_GRID
-        USE DATAPOOL, ONLY: iplg, np_global, myrank, comm, ierr, rtype
-        USE DATAPOOL, ONLY: NP_TOTAL, NE_TOTAL, FRLOW, FRHIGH, nwild_gb
+      USE DATAPOOL, ONLY: iplg, np_global, myrank, comm, ierr, rtype
+      USE DATAPOOL, ONLY: nwild_gb
 #endif
+      USE DATAPOOL, ONLY: NP_TOTAL, NE_TOTAL, FRLOW, FRHIGH
         USE DATAPOOL, ONLY: MSC, MDC, MNP, AC2, rkind, HOTOUT, HOTSTYLE_OUT, MULTIPLEOUT_HOT
         IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
