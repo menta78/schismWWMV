@@ -793,7 +793,7 @@
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
 
 #ifdef MPI_PARALL_GRID
-    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize
+    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize, mdc, msc
 # ifndef PDLIB
     use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
 # endif
@@ -865,7 +865,7 @@
 #endif
 
 #ifdef PDLIB
-      call initPD("system.dat", comm)
+      call initPD("system.dat", MDC, MSC, comm)
      ! call parallel_barrier 
 #else
       call partition_hgrid
