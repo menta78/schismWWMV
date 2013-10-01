@@ -1795,10 +1795,10 @@
 #ifdef NCDF
       SUBROUTINE HISTORY_NC_PRINTMMA(eStr, OUTT, NPWORK, NBVAR, I)
       USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG, STAT
-      USE DATAPOOL, only : nwild_loc_res
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : nwild_loc_res, np_global
       USE DATAPOOL, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
-      USE DATAPOOL, ONLY : np_global
-
+#endif
       implicit none
       character(len=*) :: eStr
       integer, intent(in) :: I, NPWORK, NBVAR

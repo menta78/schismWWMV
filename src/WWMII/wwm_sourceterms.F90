@@ -48,6 +48,7 @@
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1, SNL3(MSC,MDC), DSNL3(MSC,MDC)
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
          REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
+         INTEGER :: IERR_WRT
 
 #ifdef TIMINGS 
          REAL(rkind)        :: T1, T2, mpi_wtime
@@ -324,10 +325,10 @@
                SPSIG_WRT = REAL(SPSIG)
                SPDIR_WRT = REAL(SPDIR)
                DEP_WRT   = DEP(IP)
-               CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR)
-               IF (IERR .GT. 0) THEN
-                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR
-                 CALL WWM_ABORT('XNL_WRT ERROR')    
+               CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR_WRT)
+               IF (IERR_WRT .GT. 0) THEN
+                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR_WRT
+                 CALL WWM_ABORT('XNL_WRT ERROR')
                ELSE
                  IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
                  IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)

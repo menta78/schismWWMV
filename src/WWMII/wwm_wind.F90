@@ -2142,7 +2142,9 @@
       USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor, np_total
+#ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : iplg
+#endif
 
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
