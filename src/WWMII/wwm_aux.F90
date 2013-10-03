@@ -1886,6 +1886,60 @@
       END IF
       END SUBROUTINE
 !**********************************************************************
+!* Simple Gauss method for solving systems                            *
+!* We simply solve the equation A X = Y                               *
+!**********************************************************************
+      SUBROUTINE GAUSS_SOLVER(N, EMAT, X, Y)
+      USE DATAPOOL, ONLY: RKIND, ONE
+      IMPLICIT NONE
+      integer, intent(in) :: N
+      real(rkind), intent(in) :: EMAT(N,N)
+      real(rkind), intent(out) :: X(N)
+      real(rkind), intent(in) :: Y(N)
+      !
+      real(rkind) :: EMATW(N,N), YW(N)
+      integer U(N), Jsel, I, J, I2
+      real(rkind) :: alpha, ThePivot, eVal, MaxVal
+      U=0
+      EMATW=EMAT
+      YW=Y
+      DO I=1,N
+        MaxVal=0
+        Jsel=-1
+        DO J=1,N
+          IF (U(J) .eq. 0) THEN
+            eVal=EMATW(J,I)
+            IF (abs(eVal) .gt. MaxVal) THEN
+              MaxVal=abs(eVal)
+              Jsel=J
+            END IF
+          END IF
+        END DO
+        IF (Jsel == -1) THEN
+          CALL WWM_ABORT('Error in GAUSS_SOLVER, singular matrix')
+        END IF
+        ThePivot=ONE/EMATW(Jsel,I)
+        U(Jsel)=I
+        DO I2=I,N
+          EMATW(Jsel,I2)=EMATW(Jsel,I2)*ThePivot
+        END DO
+        YW(Jsel)=YW(Jsel)*ThePivot
+        DO J=1,N
+          IF (J .ne. Jsel) THEN
+            alpha=EMATW(J,I)
+            DO I2=I,N
+              EMATW(J,I2)=EMATW(J,I2) - alpha*EMATW(Jsel,I2)
+            END DO
+            YW(J)=YW(J) - alpha*YW(Jsel)
+          END IF
+        END DO
+      END DO
+      DO Jsel=1,N
+        I=U(Jsel)
+        X(I)=YW(Jsel)
+      END DO
+      END SUBROUTINE
+!**********************************************************************
 !*                                                                    *
 !**********************************************************************
             SUBROUTINE GAUS1D( M, AMAT, R, AM1, A1M )
