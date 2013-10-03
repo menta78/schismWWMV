@@ -68,7 +68,6 @@
                AC2(IP,IS,:) = TMPAC(:)
             END DO
          END DO
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -119,8 +118,6 @@
          END DO
 !$OMP END DO NOWAIT
 !$OMP END PARALLEL
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -163,14 +160,13 @@
                  LM(ID) = - 1./DDIR * ( CM(ID2) * U0(ID2) - CM(ID) * U0(ID) )
                  TMP(ID) = U0(ID) - DT4DI * ( -LM(ID) + LP(ID) )
                END DO
-               TMP(ID) = TMP(1)
+               TMP(ID) = TMP(1) ! That lines looks dangerous memorywise
+                                ! and useless.
                U0(:) = TMP(:)
              END DO
              AC2(IP,IS,:) = MAX(0._rkind,U0(:))
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -528,8 +524,6 @@
             AC2(IP,IS,:) = MAX(ZERO,MyREAL(U3(:)))
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -629,8 +623,6 @@
               END IF
             END DO
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
