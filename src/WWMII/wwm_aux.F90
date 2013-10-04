@@ -1893,7 +1893,7 @@
       USE DATAPOOL, ONLY: RKIND, ONE
       IMPLICIT NONE
       integer, intent(in) :: N
-      real(rkind), intent(in) :: EMAT(N,N)
+      real(rkind), intent(inout) :: EMAT(N,N)
       real(rkind), intent(out) :: X(N)
       real(rkind), intent(in) :: Y(N)
       !

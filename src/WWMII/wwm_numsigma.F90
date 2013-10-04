@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_FREQUENCY_QUICKEST_A()
+      SUBROUTINE COMPUTE_FREQUENCY_QUICKEST_A
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -67,6 +67,103 @@
          END DO
 !$OMP END DO NOWAIT
 !$OMP END PARALLEL 
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_FREQUENCY_UPWIND_EXPLICIT
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: IP, IS, ID, IT, ITER, IS1, IS2
+      LOGICAL :: ISEQ0
+      REAL(rkind)    :: CAS(MSC,MDC)
+      REAL(rkind)  :: ACQ (0:MSC+1)
+      REAL(rkind)  :: TMP (1:MSC)
+      REAL(rkind)  :: CASS(0:MSC+1), CP(0:MSC+1), CM(0:MSC+1)
+      REAL(rkind)  :: REST, DT4FI, CFLCAS, LP, LM
+      
+      DO IP = 1, MNP
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) CYCLE
+        IF (DEP(IP) .LT. DMIN) CYCLE
+        IF (IOBP(IP) .EQ. 2) CYCLE
+        CALL PROPSIGMA(IP,CAS)
+        DO ID = 1, MDC
+          ACQ(1:MSC)  = AC2(IP,:,ID)
+          CASS(1:MSC) = CAS(:,ID)
+          CASS(0)     = 0.
+          CASS(MSC+1) = CASS(MSC)
+
+          CP = MAX(ZERO,CASS)
+          CM = MIN(ZERO,CASS)
+          CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND)
+          REST    = ABS(MOD(CFLCAS,ONE))
+          IF (ISEQ0(CFLCAS)) CYCLE
+          REST  = ABS(MOD(CFLCAS,ONE))
+          IF (REST .GT. THR .AND. REST .LT. 0.5) THEN
+            ITER = ABS(NINT(CFLCAS)) + 1
+          ELSE
+            ITER = ABS(NINT(CFLCAS))
+          END IF
+          DT4FI = DT4F / MyREAL(ITER)
+          DO IT = 1, ITER
+            ACQ(0)      = ACQ(1)
+            ACQ(MSC+1)  = ACQ(MSC) * PTAIL(5)
+            DO IS = 1, MSC
+              IS1 = IS - 1
+              IS2 = IS + 1
+              LP = - 1./DS_INCR(IS-1) * ( CP(IS1)*ACQ(IS1) - CP(IS)*ACQ(IS) )
+              LM = - 1./DS_INCR(IS)   * ( CM(IS2)*ACQ(IS2) - CM(IS)*ACQ(IS) )
+              TMP(IS) = ACQ(IS) - DT4FI * ( -LM + LP )
+            END DO
+            ACQ(1:MSC)=TMP
+          END DO
+          AC2(IP,:,ID) = MAX(ZERO,ACQ(1:MSC))
+        END DO
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_FREQUENCY_UPWIND_IMPLICIT
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: IP, IS, ID, IT, ITER
+      REAL(rkind)    :: CAS(MSC,MDC)
+      REAL(rkind)  :: ACQ (MSC)
+      REAL(rkind)  :: TMP (MSC)
+      REAL(rkind)  :: CASS(0:MSC+1), CP(0:MSC+1), CM(0:MSC+1)
+      REAL(rkind)  :: REST, DT4FI, CFLCAS
+      REAL(rkind)  :: A(MSC), B(MSC), C(MSC)
+      DO IP = 1, MNP
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) CYCLE
+        IF (DEP(IP) .LT. DMIN) CYCLE
+        IF (IOBP(IP) .EQ. 2) CYCLE
+        CALL PROPSIGMA(IP,CAS)
+        DO ID = 1, MDC
+          ACQ  = AC2(IP,:,ID)
+          CASS(1:MSC) = CAS(:,ID)
+          CASS(0)     = 0.
+          CASS(MSC+1) = CASS(MSC)
+          CP = MAX(ZERO,CASS)
+          CM = MIN(ZERO,CASS)
+          ! Now forming the tridiagonal system
+          DO IS=1,MSC
+            B(IS)= ONE + DT4F*(CP(IS)/DS_INCR(IS-1) - CM(IS) /DS_INCR(IS))
+          END DO
+          !
+          DO IS=2,MSC
+            A(IS) = - DT4F*CP(IS-1)/DS_INCR(IS-1)
+          END DO
+          !
+          DO IS=1,MSC-1
+            C(IS) = DT4F*CM(IS+1)/DS_INCR(IS)
+          END DO
+          B(MSC) = B(MSC) + DT4F*CM(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+          !
+          CALL SOLVE_TRIDIAG(A,B,C,ACQ,TMP,MSC)
+          AC2(IP,:,ID) = MAX(ZERO,TMP)
+        END DO
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -1,7 +1,7 @@
 #include "wwm_functions.h"
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_CNTG_A()
+      SUBROUTINE COMPUTE_DIRECTION_CNTG_A
 !
 !     *** Crank - Nicolson Method ( Implicit )
 !
@@ -72,7 +72,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_QUICKEST_A()
+      SUBROUTINE COMPUTE_DIRECTION_QUICKEST_A
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -122,7 +122,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_UPWIND_A()
+      SUBROUTINE COMPUTE_DIRECTION_UPWIND_A
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -208,7 +208,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_WENO_A()
+      SUBROUTINE COMPUTE_DIRECTION_WENO_A
 
          USE DATAPOOL
          IMPLICIT NONE
