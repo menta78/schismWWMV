@@ -75,8 +75,6 @@
               AC2(:,IS,ID) = ACQ(1:MNP)
             END DO
           END DO 
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -136,8 +134,6 @@
          DO IXY = 1, MX
             Q(IXY) = MAX(ZERO,Q(IXY) + FLA(IXY-INC) - FLA(IXY))
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -187,8 +183,6 @@
          DO IXY = 1, MX
            Q(IXY) = MAX(ZERO, Q(IXY) - ( FLA(IXY)-FLA(IXY-1) ) * DT/DX1(IXY))
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -266,8 +260,6 @@
          DO IXY = 1, MX
            Q(IXY) = MAX(ZERO,Q(IXY) + FLA(IXY-INC) - FLA(IXY))
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -284,6 +276,7 @@
          REAL(rkind)              :: FLA(0:MX+1)
          INTEGER                  :: IXY, IXYC, IXYU, IXYD
          REAL(rkind)              :: CSM, CFL
+
          REAL(rkind)              :: DQ, DQNZ, QCN, QBN, QBR, QB
          REAL(rkind)              :: CFAC
 !
@@ -337,8 +330,6 @@
          DO IXY = 1, MX
            Q(IXY) = MAX(ZERO, Q(IXY) - (FLA(IXY)-FLA(IXY-1)) * DT/DX1(IXY))
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
