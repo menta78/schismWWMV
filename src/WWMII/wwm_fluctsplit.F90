@@ -1282,14 +1282,14 @@
 ! ... assembling the linear equation system ....
 !
          DO IP = 1, MNP
-           IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+!           IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
              DO I = 1, CCON(IP)
                J = J + 1
                IE    =  IE_CELL(J)
                POS   =  POS_CELL(J)
                K1    =  KP(POS,IE) ! Flux Jacobian
                TRIA03 = ONETHIRD * TRIA(IE)
-               DTK   =  K1 * DT4A * IOBPD(ID,IP)
+               DTK   =  K1 * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
                TMP3  =  DTK * NM(IE)
                I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                I2    =  POSI(2,J)
@@ -1299,16 +1299,16 @@
                ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
                B(IP)     =  B(IP) + TRIA03 * U(IP)
              END DO !I: loop over connected elements ...
-           ELSE
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    =  IE_CELL(J)
-               TRIA03 = ONETHIRD * TRIA(IE)
-               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
-               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
-             END DO !I: loop over connected elements ...
-           END IF
+!           ELSE
+!             DO I = 1, CCON(IP)
+!               J = J + 1
+!               IE    =  IE_CELL(J)
+!               TRIA03 = ONETHIRD * TRIA(IE)
+!               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+!               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
+!               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
+!             END DO !I: loop over connected elements ...
+!           END IF
          END DO !IP
 
          IF (LBCWA .OR. LBCSP) THEN
@@ -3152,8 +3152,8 @@
 #endif
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX
-           DO IS = 1, MSC
-             DO ID = 1, MDC
+           DO ID = 1, MSC
+             DO IS = 1, MDC
 !!$OMP WORKSHARE
                CX = (CG(:,IS)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
                CY = (CG(:,IS)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
@@ -3210,8 +3210,8 @@
                  END DO
                  U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
-             END DO !ID
-           END DO !IS
+             END DO !IS
+           END DO !ID
 #ifdef MPI_PARALL_GRID
            CALL EXCHANGE_P4D_WWM(U)
 #endif

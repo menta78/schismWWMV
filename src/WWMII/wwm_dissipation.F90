@@ -482,7 +482,7 @@
 #endif
         QBLOCAL(IP) = QB
 
-        IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
+        !IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
 
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
           SURFA0 = 0.
