@@ -250,6 +250,8 @@
                                      ! RK5-WENO
                                      ! DMETHOD = 4
                                      ! Explicit FVM Upwind scheme
+                                     ! DMETHOD = 5
+                                     ! Implicit FVM Upwind scheme
 
  RTHETA         = 0.5                ! Weighing factor for DMETHOD = 1, not really useful since Crank Nicholson integration can only be montotone for CFL .le. 2
  LITERSPLIT     = F                  ! T: double Strang split; F: simple split (more efficienct). Default: F
@@ -264,6 +266,10 @@
                                      ! No Advection in spectral space
                                      ! = 1
                                      ! Ultimate Quickest as in WW3 (best)
+                                     ! = 2
+                                     ! Explicit UPWIND 
+                                     ! = 3
+                                     ! Implicit UPWIND
  LFILTERSIG     = F                  ! Limit the advection velocitiy in freq. space (usually F)
  MAXCFLSIG      = 1.0                ! Max Cfl in freq. space; used only if LFILTERSIG=T
  LLIMT          = T                  ! Switch on/off Action limiter, Action limiter must mostly be turned on.

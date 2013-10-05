@@ -272,8 +272,6 @@
            WRITE(2305) 1.
            WRITE(2305) (DVDX(IP), DVDY(IP), SQRT(DVDY(IP)**2+DVDY(IP)**2), IP = 1, MNP)
          ENDIF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -317,8 +315,6 @@
             WVK  = 10.
             WVCG2 = 0.
           END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1893,7 +1889,7 @@
       USE DATAPOOL, ONLY: RKIND, ONE
       IMPLICIT NONE
       integer, intent(in) :: N
-      real(rkind), intent(in) :: EMAT(N,N)
+      real(rkind), intent(inout) :: EMAT(N,N)
       real(rkind), intent(out) :: X(N)
       real(rkind), intent(in) :: Y(N)
       !
@@ -2038,8 +2034,6 @@
                END DO
 
                R(M) = R(M) / SPALTE(M)
-
-               RETURN
             END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2394,8 +2388,7 @@
             X(I) = -X(I)
   200    CONTINUE
       ENDIF
-      RETURN
-      END
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************
