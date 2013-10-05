@@ -16,7 +16,7 @@
 #error "Sorry PDLIB and WWM_SOLVER are not supported at the moment"
 #endif
 
-         use pdWWM, only :     itype,            & ! MPI integer type
+         use yowpdWWM, only :     itype,            & ! MPI integer type
      &                         rtype,            & ! MPI real type
      &                         llist_type,       & ! ADT for global-to-local linked-lists
      &                         comm,             & ! MPI Communicator
