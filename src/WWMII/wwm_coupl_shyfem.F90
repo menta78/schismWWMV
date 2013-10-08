@@ -15,37 +15,37 @@
 
            WRITE(DBG%FHNDL,'("+TRACE...",A)') 'OPEN PIPE'
 !          Pipes that are read by the wave model
-           OPEN(1000,file='p_velx.dat'    ,form='unformatted', action='read')
-           OPEN(1001,file='p_vely.dat'    ,form='unformatted', action='read')
-           OPEN(1002,file='p_lev.dat'     ,form='unformatted', action='read')
-           OPEN(1003,file='p_bot.dat'     ,form='unformatted', action='read')
-           OPEN(1004,file='p_zeta3d.dat'  ,form='unformatted', action='read')
+           OPEN(10000,file='p_velx.dat'    ,form='unformatted', action='read')
+           OPEN(10001,file='p_vely.dat'    ,form='unformatted', action='read')
+           OPEN(10002,file='p_lev.dat'     ,form='unformatted', action='read')
+           OPEN(10003,file='p_bot.dat'     ,form='unformatted', action='read')
+           OPEN(10004,file='p_zeta3d.dat'  ,form='unformatted', action='read')
 !          Pipes that are written by the wave model
-           OPEN(101 ,file='p_stressx.dat' ,form='unformatted', action='write')
-           OPEN(102 ,file='p_stressy.dat' ,form='unformatted', action='write')
-           OPEN(142 ,file='p_stresxy.dat' ,form='unformatted', action='write')  !ccf
-           OPEN(103 ,file='p_waveh.dat'   ,form='unformatted', action='write')
-           OPEN(104 ,file='p_wavet.dat'   ,form='unformatted', action='write')
-           OPEN(105 ,file='p_waved.dat'   ,form='unformatted', action='write')
-           OPEN(106 ,file='p_wavekm.dat'  ,form='unformatted', action='write')
-           OPEN(107 ,file='p_wavetp.dat'  ,form='unformatted', action='write')
-           OPEN(108 ,file='p_wavekp.dat'  ,form='unformatted', action='write')
-           OPEN(109 ,file='p_orbit.dat'   ,form='unformatted', action='write')
-           OPEN(110 ,file='p_stokesx.dat' ,form='unformatted', action='write')
-           OPEN(111 ,file='p_stokesy.dat' ,form='unformatted', action='write')
+           OPEN(11101 ,file='p_stressx.dat' ,form='unformatted', action='write')
+           OPEN(11102 ,file='p_stressy.dat' ,form='unformatted', action='write')
+           OPEN(11142 ,file='p_stresxy.dat' ,form='unformatted', action='write')  !ccf
+           OPEN(11103 ,file='p_waveh.dat'   ,form='unformatted', action='write')
+           OPEN(11104 ,file='p_wavet.dat'   ,form='unformatted', action='write')
+           OPEN(11105 ,file='p_waved.dat'   ,form='unformatted', action='write')
+           OPEN(11106 ,file='p_wavekm.dat'  ,form='unformatted', action='write')
+           OPEN(11107 ,file='p_wavetp.dat'  ,form='unformatted', action='write')
+           OPEN(11108 ,file='p_wavekp.dat'  ,form='unformatted', action='write')
+           OPEN(11109 ,file='p_orbit.dat'   ,form='unformatted', action='write')
+           OPEN(11110 ,file='p_stokesx.dat' ,form='unformatted', action='write')
+           OPEN(11111 ,file='p_stokesy.dat' ,form='unformatted', action='write')
 
            IF (.NOT. LWINDFROMWWM) THEN
 !            *** WIND FROM SHYFEM *** ccf
-             OPEN(112,file='p_windx.dat'  ,form='unformatted', action='read')
-             OPEN(113,file='p_windy.dat'  ,form='unformatted', action='read')
+             OPEN(11112,file='p_windx.dat'  ,form='unformatted', action='read')
+             OPEN(11113,file='p_windy.dat'  ,form='unformatted', action='read')
             ELSE
 !            *** WIND FROM WWM *** ccf
-             OPEN(112 ,file='p_windx.dat',form='unformatted', action='write')
-             OPEN(113 ,file='p_windy.dat',form='unformatted', action='write')
+             OPEN(11112 ,file='p_windx.dat',form='unformatted', action='write')
+             OPEN(11113 ,file='p_windy.dat',form='unformatted', action='write')
            END IF
 
-           OPEN(114 ,file='p_cd.dat' ,form='unformatted', action='write')
-           OPEN(115 ,file='p_jpress.dat' ,form='unformatted', action='write')
+           OPEN(11114 ,file='p_cd.dat' ,form='unformatted', action='write')
+           OPEN(11115 ,file='p_jpress.dat' ,form='unformatted', action='write')
 
            WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE'
 
@@ -56,27 +56,27 @@
       SUBROUTINE TERMINATE_PIPES_SHYFEM()
       USE DATAPOOL
       IMPLICIT NONE
-      close(1000)
-      close(1001)
-      close(1002)
-      close(1003)
-      close(1004)
-      close(101)
-      close(102)
-      close(142)
-      close(103)
-      close(104)
-      close(105)
-      close(106)
-      close(107)
-      close(108)
-      close(109)
-      close(110)
-      close(111)
-      close(112)
-      close(113)
-      close(114)
-      close(115)
+      close(10000)
+      close(10001)
+      close(10002)
+      close(10003)
+      close(10004)
+      close(11101)
+      close(11102)
+      close(11142)
+      close(11103)
+      close(11104)
+      close(11105)
+      close(11106)
+      close(11107)
+      close(11108)
+      close(11109)
+      close(11110)
+      close(11111)
+      close(11112)
+      close(11113)
+      close(11114)
+      close(11115)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -100,17 +100,17 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READING PIPE'
 #ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
-          READ(1000) CURTXY(IP,1)
-          READ(1001) CURTXY(IP,2)
-          READ(1002) WATLEV(IP)
-          READ(1003) WLDEP(IP)
-          READ(1003) NLEV(IP)
+          READ(10000) CURTXY(IP,1)
+          READ(10001) CURTXY(IP,2)
+          READ(10002) WATLEV(IP)
+          READ(10003) WLDEP(IP)
+          READ(10003) NLEV(IP)
           DO IL = 1,NLVT
-            READ(1004) SHYFZETA(IL,IP)
+            READ(10004) SHYFZETA(IL,IP)
           END DO
           IF (.NOT. LWINDFROMWWM) THEN
-            READ(112) WINDXY(IP,1)
-            READ(113) WINDXY(IP,2)
+            READ(11112) WINDXY(IP,1)
+            READ(11113) WINDXY(IP,2)
           END IF
         END DO
 #else
@@ -123,17 +123,17 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_shyfem, allocate error 1')
         IF (myrank.eq.0) THEN
           DO IP = 1, np_global
-            READ(1000) VAR_REAL_TOT(IP,NLVT+1)
-            READ(1001) VAR_REAL_TOT(IP,NLVT+2)
-            READ(1002) VAR_REAL_TOT(IP,NLVT+3)
-            READ(1003) VAR_REAL_TOT(IP,NLVT+4)
-            READ(1003) VAR_INT_TOT(IP)
+            READ(10000) VAR_REAL_TOT(IP,NLVT+1)
+            READ(10001) VAR_REAL_TOT(IP,NLVT+2)
+            READ(10002) VAR_REAL_TOT(IP,NLVT+3)
+            READ(10003) VAR_REAL_TOT(IP,NLVT+4)
+            READ(10003) VAR_INT_TOT(IP)
             DO IL = 1,NLVT
-              READ(1004) VAR_REAL_TOT(IP, IL)
+              READ(10004) VAR_REAL_TOT(IP, IL)
             END DO
             IF (.NOT. LWINDFROMWWM) THEN
-              READ(112) VAR_REAL_TOT(IP,NLVT+5)
-              READ(113) VAR_REAL_TOT(IP,NLVT+6)
+              READ(11112) VAR_REAL_TOT(IP,NLVT+5)
+              READ(11113) VAR_REAL_TOT(IP,NLVT+6)
             END IF
           END DO
           DO iProc=2,nproc
@@ -281,46 +281,46 @@
 # ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
           DO IL = 1, NLVT
-            WRITE(101)  SXX3D(IL,IP)             !ccf
-            WRITE(102)  SYY3D(IL,IP)             !ccf
-            WRITE(142)  SXY3D(IL,IP)             !ccf
+            WRITE(11101)  SXX3D(IL,IP)             !ccf
+            WRITE(11102)  SYY3D(IL,IP)             !ccf
+            WRITE(11142)  SXY3D(IL,IP)             !ccf
           END DO
-          FLUSH(101)
-          FLUSH(102)
-          FLUSH(142)                        !ccf
+          FLUSH(11101)
+          FLUSH(11102)
+          FLUSH(11142)                        !ccf
           ACLOC = AC2(IP,:,:)
           CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
-          WRITE(103) HS
-          FLUSH(103)
-          WRITE(104)  SME01
-          FLUSH(104)
-          WRITE(105)  DM
-          FLUSH(105)
-          WRITE(106)  KMWAM
-          FLUSH(106)
-          WRITE(107)  TPP
-          FLUSH(107)
-          WRITE(108)  KPP
-          FLUSH(108)
-          WRITE(109)  ORBITAL
-          FLUSH(109)
-          WRITE(110)  STOKES_X(:,IP)
-          FLUSH(110)
-          WRITE(111)  STOKES_Y(:,IP)
-          FLUSH(111)
+          WRITE(11103) HS
+          FLUSH(11103)
+          WRITE(11104)  SME01
+          FLUSH(11104)
+          WRITE(11105)  DM
+          FLUSH(11105)
+          WRITE(11106)  KMWAM
+          FLUSH(11106)
+          WRITE(11107)  TPP
+          FLUSH(11107)
+          WRITE(11108)  KPP
+          FLUSH(11108)
+          WRITE(11109)  ORBITAL
+          FLUSH(11109)
+          WRITE(11110)  STOKES_X(:,IP)
+          FLUSH(11110)
+          WRITE(11111)  STOKES_Y(:,IP)
+          FLUSH(11111)
           IF (LWINDFROMWWM) THEN
-            WRITE(112)  WINDXY(IP,1)
-            FLUSH(112)
-            WRITE(113)  WINDXY(IP,2)
-            FLUSH(113)
+            WRITE(11112)  WINDXY(IP,1)
+            FLUSH(11112)
+            WRITE(11113)  WINDXY(IP,2)
+            FLUSH(11113)
           END IF
-          WRITE(114)  CD(IP) 
-          FLUSH(114)
-          WRITE(115)  JPRESS(IP)
-          FLUSH(115)
+          WRITE(11114)  CD(IP) 
+          FLUSH(11114)
+          WRITE(11115)  JPRESS(IP)
+          FLUSH(11115)
         END DO
 # else
         IF (LWINDFROMWWM) THEN
@@ -362,45 +362,45 @@
           DO IP=1,NP_GLOBAL
             OUTT_TOT(IP,:)=OUTT_TOT(IP,:)/nwild_gb(IP)
             DO IL = 1, NLVT
-              WRITE(101)  OUTT(IP, IL       )
-              WRITE(102)  OUTT(IP, IL+  NLVT)
-              WRITE(142)  OUTT(IP, IL+2*NLVT)
+              WRITE(11101)  OUTT(IP, IL       )
+              WRITE(11102)  OUTT(IP, IL+  NLVT)
+              WRITE(11142)  OUTT(IP, IL+2*NLVT)
             END DO
-            FLUSH(101)
-            FLUSH(102)
-            FLUSH(142)                        !ccf
-            WRITE(103) OUTT(IP, 1 + 5*NLVT)
-            FLUSH(103)
-            WRITE(104) OUTT(IP, 2 + 5*NLVT)
-            FLUSH(104)
-            WRITE(105) OUTT(IP, 3 + 5*NLVT)
-            FLUSH(105)
-            WRITE(106) OUTT(IP, 4 + 5*NLVT)
-            FLUSH(106)
-            WRITE(107) OUTT(IP, 5 + 5*NLVT)
-            FLUSH(107)
-            WRITE(108) OUTT(IP, 6 + 5*NLVT)
-            FLUSH(108)
-            WRITE(109) OUTT(IP, 7 + 5*NLVT)
-            FLUSH(109)
+            FLUSH(11101)
+            FLUSH(11102)
+            FLUSH(11142)                        !ccf
+            WRITE(11103) OUTT(IP, 1 + 5*NLVT)
+            FLUSH(11103)
+            WRITE(11104) OUTT(IP, 2 + 5*NLVT)
+            FLUSH(11104)
+            WRITE(11105) OUTT(IP, 3 + 5*NLVT)
+            FLUSH(11105)
+            WRITE(11106) OUTT(IP, 4 + 5*NLVT)
+            FLUSH(11106)
+            WRITE(11107) OUTT(IP, 5 + 5*NLVT)
+            FLUSH(11107)
+            WRITE(11108) OUTT(IP, 6 + 5*NLVT)
+            FLUSH(11108)
+            WRITE(11109) OUTT(IP, 7 + 5*NLVT)
+            FLUSH(11109)
             DO IL=1,NLVT
               STOKES_X_ret(IL) = OUTT(IP, IL+3*NLVT)
               STOKES_Y_ret(IL) = OUTT(IP, IL+4*NLVT)
             END DO
-            WRITE(110) STOKES_X_ret
-            FLUSH(110)
-            WRITE(111) STOKES_Y_ret
-            FLUSH(111)
+            WRITE(11110) STOKES_X_ret
+            FLUSH(11110)
+            WRITE(11111) STOKES_Y_ret
+            FLUSH(11111)
             IF (LWINDFROMWWM) THEN
-              WRITE(112) OUTT(IP, 10 + 5*NLVT)
-              FLUSH(112)
-              WRITE(113) OUTT(IP, 11 + 5*NLVT)
-              FLUSH(113)
+              WRITE(11112) OUTT(IP, 10 + 5*NLVT)
+              FLUSH(11112)
+              WRITE(11113) OUTT(IP, 11 + 5*NLVT)
+              FLUSH(11113)
             END IF
-            WRITE(114) OUTT(IP, 8 + 5*NLVT)
-            FLUSH(114)
-            WRITE(115) OUTT(IP, 9 + 5*NLVT)
-            FLUSH(115)
+            WRITE(11114) OUTT(IP, 8 + 5*NLVT)
+            FLUSH(11114)
+            WRITE(11115) OUTT(IP, 9 + 5*NLVT)
+            FLUSH(11115)
           END DO
         END IF
         deallocate(OUTT)

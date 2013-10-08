@@ -1089,7 +1089,6 @@
            CALL EXCHANGE_P2D(UL) ! Exchange after each update of the res. domain
            CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
 #endif
-
             USTARI(1,:) = MAX(UL,U) * IOBPD(ID,:)
             USTARI(2,:) = MIN(UL,U) * IOBPD(ID,:)
 
