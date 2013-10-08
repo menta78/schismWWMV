@@ -601,13 +601,13 @@
            SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
            LCALC = .TRUE.
          END IF
-
-         CALL SET_WAVE_BOUNDARY_CONDITION
-
+#endif
+#ifndef SELFE
          IF (LSEWL .OR. LSECU .AND. LCALC) THEN
            DELTAT_WATLEV = MAIN%DELT
            WATLEVOLD = WATLEV
          END IF
+         CALL SET_WAVE_BOUNDARY_CONDITION
 #endif
 !
 !      *** coupling via pipe *** read pipe
