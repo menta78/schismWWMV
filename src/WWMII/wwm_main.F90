@@ -571,25 +571,30 @@
       END IF
 #ifndef SELFE
       IF (.NOT. LCPL) THEN
-        IF ( LSECU .AND. (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
-          CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
-          DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
-          SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
-          LCALC = .TRUE.
+        IF (LSECU) THEN
+          IF ( (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
+            CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
+            DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
+            SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
+            LCALC = .TRUE.
+          END IF
+          CURTXY = CURTXY + DVCURT
         END IF
-        IF ( LSEWL .AND. (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
-          CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
-          DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
-          SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-          LCALC = .TRUE.
+        IF (LSEWL) THEN
+          IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
+            CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
+            DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
+            SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
+            LCALC = .TRUE.
+          END IF
+          DELTAT_WATLEV = MAIN%DELT
+          WATLEVOLD = WATLEV
+          WATLEV    = WATLEV + DVWALV
+          DEPDT     = DVWALV / MAIN%DELT
         END IF
       END IF
 #endif
 #ifndef SELFE
-      IF (LSEWL .OR. LSECU .AND. LCALC) THEN
-        DELTAT_WATLEV = MAIN%DELT
-        WATLEVOLD = WATLEV
-      END IF
       CALL SET_WAVE_BOUNDARY_CONDITION
 #endif
 !
@@ -616,13 +621,7 @@
 !      *** recalculate water level and current related values 
 !
       IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
-        IF (.NOT. LCPL) THEN
-          WATLEV = WATLEVOLD + DVWALV
-          DEPDT  = DVWALV / MAIN%DELT
-          CURTXY = CURTXY + DVCURT
-        ELSE
-          DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
-        END IF
+        DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
         DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
         CALL SETSHALLOW
         CALL GRADDEP
