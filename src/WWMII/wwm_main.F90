@@ -610,15 +610,12 @@
 #if !defined SELFE && !defined PGMCL_COUPLING
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_IN(K)
-        LCALC = .TRUE.
 # ifdef SHYFEM_COUPLING
       ELSE IF (LCPL .AND. LSHYFEM) THEN
         CALL PIPE_SHYFEM_IN(K)
-        LCALC = .TRUE.
 # endif
       ELSE IF (LCPL .AND. LROMS) THEN
         CALL PIPE_ROMS_IN(K,IFILE,IT)
-        LCALC = .TRUE.
       END IF
 #endif
 #ifdef PGMCL_COUPLING
