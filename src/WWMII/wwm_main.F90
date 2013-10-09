@@ -103,7 +103,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 0) THEN ! No interaction at all 
            WLDEP       = DEP8
            WATLEV      = ZERO 
@@ -117,7 +116,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE. 
          ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -131,7 +129,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ZERO
@@ -145,7 +142,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in selfe
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -159,7 +155,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ETA2
@@ -173,7 +168,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO 
@@ -187,7 +181,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -201,8 +194,8 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          END IF
+         LCALC       = .TRUE.
 
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_A
@@ -220,7 +213,6 @@
          IF (LFIRSTSTEP) THEN
            IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SELFE
            LFIRSTSTEP = .FALSE.
-           LCALC      = .TRUE.
          END IF
 
 #ifdef TIMINGS
@@ -496,43 +488,42 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE QUASI_STEADY(K)
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN) :: K
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: K
+      INTEGER :: IT
+      REAL(rkind)    :: ITERTIME
+      REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
 
-         INTEGER :: IT
-         REAL(rkind)    :: ITERTIME
-         REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
+      CALL IO_1(K)
 
-         CALL IO_1(K)
+      IF (LCFL) CALL CFLSPEC()
 
-         IF (LCFL) CALL CFLSPEC()
-
-         IF (LCHKCONV) IP_IS_STEADY = 0 ! Reset local convergence indicators ...
-         IF (LCHKCONV) IE_IS_STEADY = 0
+      IF (LCHKCONV) IP_IS_STEADY = 0 ! Reset local convergence indicators ...
+      IF (LCHKCONV) IE_IS_STEADY = 0
 
 #ifdef MPI_PARALL_GRID
 !         NQSITER = NSTEPWWM ! this is not very flexible!
 #endif
 
-         DO IT = 1, NQSITER
+      DO IT = 1, NQSITER
 
-           DT_ITER = MAIN%DELT/MyREAL(NQSITER)
+        DT_ITER = MAIN%DELT/MyREAL(NQSITER)
 
-           IF (ICOMP .LT. 2) THEN
-             CALL COMPUTE_SIMPLE_EXPLICIT
-           ELSE
-             CALL COMPUTE_IMPLICIT
-           END IF
+        IF (ICOMP .LT. 2) THEN
+          CALL COMPUTE_SIMPLE_EXPLICIT
+        ELSE
+          CALL COMPUTE_IMPLICIT
+        END IF
 
-           ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
+        ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
 
-           IF (LCHKCONV) THEN
-             CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
+        IF (LCHKCONV) THEN
+          CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
 !             DO IP = 1, MNP
 !               IF (IP_IS_STEADY(IP) .GE. 1) AC2(IP,:,:) = AC1(IP,:,:)
 !             ENDDO
-             IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                  &
+          IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                       &
      &             CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
      &             CONV3 .GT. 100._rkind*QSCONV3 .AND.                    &
      &             CONV4 .GT. 100._rkind*QSCONV4 .AND.                    &
@@ -540,34 +531,31 @@
      &             K .NE. 1) .OR.                                         &
      &             IT .EQ. NQSITER ) THEN
 #ifndef SELFE
-               WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
-#elif SELFE
-               if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
+            WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
+#else
+            if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #endif
-               FLUSH(QSTEA%FHNDL)
-               EXIT 
-             END IF
-           END IF
-           IF (LOUTITER) CALL WWM_OUTPUT(ITERTIME,.FALSE.)
-         END DO
+            FLUSH(QSTEA%FHNDL)
+            EXIT 
+          END IF
+        END IF
+        IF (LOUTITER) CALL WWM_OUTPUT(ITERTIME,.FALSE.)
+      END DO
 
 #ifdef MPI_PARALL_GRID
-         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-         RTIME = MAIN%TMJD - MAIN%BMJD
-         IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
+      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+      RTIME = MAIN%TMJD - MAIN%BMJD
+      IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #else
-         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-         RTIME = MAIN%TMJD - MAIN%BMJD
-         WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
+      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+      RTIME = MAIN%TMJD - MAIN%BMJD
+      WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
-         FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
+      CALL IO_2(K)
+      IF (.NOT. LDIFR) LCALC = .FALSE.
 
-         CALL IO_2(K)
-
-         IF (.NOT. LDIFR) LCALC = .FALSE.
-
-101      FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
-         RETURN
+101   FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -769,7 +757,7 @@
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
      &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
+     &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
 
 #ifdef MPI_PARALL_GRID
