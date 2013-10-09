@@ -53,7 +53,11 @@
       real(rkind), allocatable :: rbuf_real(:)
       integer idx, iProc
 # endif
+        LCALC=.TRUE.
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+        WATLEVOLD=WATLEV
+        DELTAT_WATLEV = MAIN%DTCOUP
+        LCALC=.TRUE.
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
         FLUSH(DBG%FHNDL)
 # ifndef WWM_MPI
@@ -110,7 +114,6 @@
 # endif
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
         FLUSH(DBG%FHNDL)
-        LCALC=.TRUE.
       END IF
       IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
       END SUBROUTINE
@@ -1117,6 +1120,7 @@
 # endif
         WATLEVOLD=WATLEV
         DELTAT_WATLEV = MAIN%DTCOUP
+        LCALC=.TRUE.
         DO idx=1,MNP
           u1=A_wav_uvz(1,idx)
           v1=A_wav_uvz(2,idx)

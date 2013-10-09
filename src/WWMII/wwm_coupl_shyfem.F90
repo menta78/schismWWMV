@@ -96,7 +96,9 @@
       integer,  allocatable :: VAR_INT_TOT(:)
 #endif
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-
+        LCALC = .TRUE.
+        WATLEVOLD=WATLEV
+        DELTAT_WATLEV = MAIN%DTCOUP
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READING PIPE'
 #ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
@@ -167,7 +169,6 @@
         WRITE(2001,*) 'CHECK MIN UX,UY,H'
         WRITE(2001,*) MINVAL(CURTXY(:,1)), MINVAL(CURTXY(:,2)), MINVAL(WATLEV)
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'END READ PIPE WWM'
-        LCALC = .TRUE.
       END IF
       END SUBROUTINE
 !**********************************************************************
