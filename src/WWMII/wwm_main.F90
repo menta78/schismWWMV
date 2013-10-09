@@ -573,101 +573,82 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_1(K)
-#ifdef NCDF
-         USE NETCDF 
-#endif
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN) :: K
-         REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IT, IFILE
-
-! update wind ...
-         IF (LWINDFROMWWM) THEN
-           CALL UPDATE_WIND(K)
-         END IF
-
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: K
+      REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
+      INTEGER             :: IT, IFILE
+      IF (LWINDFROMWWM) THEN
+        CALL UPDATE_WIND(K)
+      END IF
 #ifndef SELFE
-         IF (.NOT. LCPL) THEN
-           IF ( LSECU .AND. (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
-             CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
-             DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
-             SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
-             LCALC = .TRUE.
-           END IF
-           IF ( LSEWL .AND. (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
-             CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
-             DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
-             SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-             LCALC = .TRUE.
-           END IF
-         END IF
+      IF (.NOT. LCPL) THEN
+        IF ( LSECU .AND. (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
+          CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
+          DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
+          SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
+          LCALC = .TRUE.
+        END IF
+        IF ( LSEWL .AND. (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
+          CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
+          DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
+          SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
+          LCALC = .TRUE.
+        END IF
+      END IF
 #endif
 #ifndef SELFE
-         IF (LSEWL .OR. LSECU .AND. LCALC) THEN
-           DELTAT_WATLEV = MAIN%DELT
-           WATLEVOLD = WATLEV
-         END IF
-         CALL SET_WAVE_BOUNDARY_CONDITION
+      IF (LSEWL .OR. LSECU .AND. LCALC) THEN
+        DELTAT_WATLEV = MAIN%DELT
+        WATLEVOLD = WATLEV
+      END IF
+      CALL SET_WAVE_BOUNDARY_CONDITION
 #endif
 !
 !      *** coupling via pipe *** read pipe
 !
 #if !defined SELFE && !defined PGMCL_COUPLING
-         IF (LCPL .AND. LTIMOR) THEN
-           CALL PIPE_TIMOR_IN(K)
-           LCALC = .TRUE.
+      IF (LCPL .AND. LTIMOR) THEN
+        CALL PIPE_TIMOR_IN(K)
+        LCALC = .TRUE.
 # ifdef SHYFEM_COUPLING
-         ELSE IF (LCPL .AND. LSHYFEM) THEN
-           CALL PIPE_SHYFEM_IN(K)
-           LCALC = .TRUE.
+      ELSE IF (LCPL .AND. LSHYFEM) THEN
+        CALL PIPE_SHYFEM_IN(K)
+        LCALC = .TRUE.
 # endif
-         ELSE IF (LCPL .AND. LROMS) THEN
-           CALL PIPE_ROMS_IN(K,IFILE,IT)
-           LCALC = .TRUE.
-         END IF
+      ELSE IF (LCPL .AND. LROMS) THEN
+        CALL PIPE_ROMS_IN(K,IFILE,IT)
+        LCALC = .TRUE.
+      END IF
 #endif
 #ifdef PGMCL_COUPLING
-         IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           CALL PGMCL_ROMS_IN(K,IFILE,IT)
-# ifdef ANALYTICAL_WIND_CURR
-           DO IP=1,MNP
-             WINDXY(IP,1)=ZERO
-             WINDXY(IP,2)=XP(IP)/5.0_rkind
-             CURTXY(IP,1)=XP(IP)/30.0_rkind
-             CURTXY(IP,2)=ZERO
-             WATLEV(IP)=ZERO
-             WATLEVOLD(IP)=ZERO
-           END DO
-# endif
-         END IF
-         IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
+      IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+        CALL PGMCL_ROMS_IN(K,IFILE,IT)
+      END IF
+      IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
 #endif
 !
 !      *** recalculate water level and current related values 
 !
-         IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
-           IF (.NOT. LCPL) THEN
-             WATLEV = WATLEVOLD + DVWALV
-             DEP    = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
-             DEPDT  = DVWALV / MAIN%DELT
-             CURTXY = CURTXY + DVCURT
-           ELSE
-             DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
-           END IF
-           DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
-           CALL SETSHALLOW
-           CALL GRADDEP
-           CALL GRAD_CG_K
-           CALL WAVE_K_C_CG
-           CALL GRADCURT
-           CALL SET_IOBPD
-           CALL SET_IOBPD_BY_DEP
-           IF (LCFL) CFLCXY = ZERO
-           IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
-         END IF
-
+      IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
+        IF (.NOT. LCPL) THEN
+          WATLEV = WATLEVOLD + DVWALV
+          DEPDT  = DVWALV / MAIN%DELT
+          CURTXY = CURTXY + DVCURT
+        ELSE
+          DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
+        END IF
+        DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
+        CALL SETSHALLOW
+        CALL GRADDEP
+        CALL GRAD_CG_K
+        CALL WAVE_K_C_CG
+        CALL GRADCURT
+        CALL SET_IOBPD
+        CALL SET_IOBPD_BY_DEP
+        IF (LCFL) CFLCXY = ZERO
+        IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
