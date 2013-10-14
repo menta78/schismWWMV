@@ -152,6 +152,9 @@
           WATLEV(IP)  =VAR_REAL_TOT(iplg(IP),NLVT+3)
           WLDEP (IP)  =VAR_REAL_TOT(iplg(IP),NLVT+4)
           NLEV(IP)=VAR_INT_TOT(iplg(IP))
+          DO IL=1,NLVT
+            SHYFZETA(IL,IP)=VAR_REAL_TOT(iplg(IP),IL)
+          END DO
           IF (.NOT. LWINDFROMWWM) THEN
             WINDXY(IP,1)=VAR_REAL_TOT(iplg(IP),NLVT+5)
             WINDXY(IP,2)=VAR_REAL_TOT(iplg(IP),NLVT+6)
