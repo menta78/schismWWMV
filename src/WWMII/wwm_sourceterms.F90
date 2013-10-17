@@ -51,7 +51,7 @@
          INTEGER :: IERR_WRT
 
 #ifdef TIMINGS 
-         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind)        :: T1, T2
          REAL(rkind), SAVE  :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9
 #endif
 
@@ -59,7 +59,7 @@
          REAL(rkind)    :: XLCKS(MDC,MSC)
 
 #ifdef TIMINGS
-         TIME1 = mpi_wtime()
+         call MY_WTIME(TIME1)
 #endif 
 
          WIND10 = ZERO 

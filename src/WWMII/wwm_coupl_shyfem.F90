@@ -249,9 +249,6 @@
       USE elfe_msgp, only : myrank, comm, ierr, rtype
 # endif  
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
       INTEGER, INTENT(IN)  :: K
       INTEGER         :: IL, IP, istat
       REAL(rkind)     :: ACLOC(MSC,MDC)

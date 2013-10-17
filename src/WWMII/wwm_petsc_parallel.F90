@@ -289,7 +289,7 @@
 
          ! solver timings
 #ifdef TIMINGS
-         real    ::  startTime, endTime
+         real(rkind)    ::  startTime, endTime
 #endif
          real, save :: solverTimeSum = 0
 !

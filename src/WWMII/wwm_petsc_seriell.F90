@@ -67,8 +67,6 @@
          !use elfe_msgp
          IMPLICIT NONE
 
-         include 'mpif.h'
-
          INTEGER, INTENT(IN) :: ISS,IDD
 
          INTEGER :: I, J
