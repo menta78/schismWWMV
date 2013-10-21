@@ -154,7 +154,7 @@
       !> colum index in CSR format for the small matrix in petsc local order
 
       ! map from app aspar position to petsc aspar position (small matrix)
-      integer, allocatable :: asparApp2Petsc_small(:)
+      integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -346,16 +346,15 @@
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           do i = 1, IA_P(IP+1) - IA_P(IP)
-              if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
-                o_nnz_new = o_nnz_new + 1
-              else
-                nnz_new = nnz_new + 1
-             endif
+            if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+              o_nnz_new = o_nnz_new + 1
+            else
+              nnz_new = nnz_new + 1
+            endif
           end do
         end do
         nnz_new = nnz_new * MSC * MDC
         o_nnz_new  = o_nnz_new * MSC * MDC
-!         write(DBG%FHNDL,*) rank, "nnz_new", nnz_new, " old", NNZ, "o_nnz_new", o_nnz_new
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -507,7 +506,7 @@
      &           oIA_petsc_small(nNodesWithoutInterfaceGhosts+1),       &
      &           toSort(maxNumConnNode+1),                              &
      &           o_toSort(maxNumConnNode+1),                            &
-     &           asparApp2Petsc_small(NNZ),                             &
+     &           AsparApp2Petsc_small(NNZ),                             &
      &           oAsparApp2Petsc_small(NNZ),                            &
      &           stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 6')
@@ -516,7 +515,7 @@
 
         oIA_petsc_small = 0
 
-        asparApp2Petsc_small = -999
+        AsparApp2Petsc_small = -999
         oAsparApp2Petsc_small = -999
 
         ! to create IA_petsc JA_petsc we have to iterate over all nodes and
@@ -566,7 +565,7 @@
           ! write the sorted cols to the mappings
           do i = 1, nToSort
             ! rein app aspar position. raus petsc aspar position
-            asparApp2Petsc_small(toSort(i)%userData) = J
+            AsparApp2Petsc_small(toSort(i)%userData) = J
             J = J + 1
           end do
           IA_petsc_small(IP_petsc+1) = IA_petsc_small(IP_petsc) + nToSort
@@ -956,22 +955,22 @@
                 value2 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
                 value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
 
-                petscAsparPosi4 = petscAsparPosi3 +  (asparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
+                petscAsparPosi4 = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
 
                 ASPAR_petsc(petscAsparPosi4) = value1 + ASPAR_petsc(petscAsparPosi4)
 
 
-                if(asparApp2Petsc_small(I2) .eq. -999) then
+                if(AsparApp2Petsc_small(I2) .eq. -999) then
                   oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2)) = value2 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2))
                 else
-                  petscAsparPosi4 = petscAsparPosi3 + (asparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
+                  petscAsparPosi4 = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
                   ASPAR_petsc(petscAsparPosi4) = value2 + ASPAR_petsc(petscAsparPosi4)
                 endif
 
-                if(asparApp2Petsc_small(I3) .eq. -999) then
+                if(AsparApp2Petsc_small(I3) .eq. -999) then
                   oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3)) = value3 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3))
                 else
-                  petscAsparPosi4 = petscAsparPosi3 + (asparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                  petscAsparPosi4 = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
                   ASPAR_petsc(petscAsparPosi4) = value3 + ASPAR_petsc(petscAsparPosi4)
                 endif
               end do !I: loop over connected elements ...
@@ -1436,7 +1435,6 @@
         implicit none
         integer, intent(in) :: IP, ISS, IDD
         toRowIndex = (IP-1) * MSC * MDC + (ISS-1) * MDC + (IDD-1)
-        return
       end function
 !**********************************************************************
 !*                                                                    *
@@ -1449,7 +1447,6 @@
         implicit none
         integer, intent(in) :: bigMatrixRow
         toNodeIndex = bigmatrixRow / (MSC * MDC) + 1
-
       end function
 !**********************************************************************
 !*                                                                    *
@@ -1502,26 +1499,20 @@
 
         ! ! +1 +1 because IA_petsc_small starts from 1 and we have to access the next IA_petsc element
         ! we must use IA_petsc_small here because IA has ghost and interface nodes
-        nConnNode = IA_petsc_small(IPpetscLocal+1+1) -                  &
-     &              IA_petsc_small(IPpetscLocal+1)
+        nConnNode = IA_petsc_small(IPpetscLocal+1+1) - IA_petsc_small(IPpetscLocal+1)
 
         aspar2petscAspar = 0
         ! in den entsprechenden Block springen.
-        aspar2petscAspar = aspar2petscAspar + MSC*MDC *                 &
-     &                  IA_petsc_small(IPpetscLocal+1)
+        aspar2petscAspar = aspar2petscAspar + MSC*MDC * IA_petsc_small(IPpetscLocal+1)
         ! von dort aus in den IS block
         aspar2petscAspar = aspar2petscAspar + (ISS-1)* MDC *nConnNode
         ! und noch den IS offset
         aspar2petscAspar = aspar2petscAspar + (IDD-1)*nConnNode
 
-        aspar2petscAspar = aspar2petscAspar +                           &
-     &  (asparApp2Petsc_small(asparPosition) -                          &
-     &   IA_petsc_small(IPpetscLocal+1))  + 1
+        aspar2petscAspar = aspar2petscAspar + (AsparApp2Petsc_small(asparPosition) - IA_petsc_small(IPpetscLocal+1))  + 1
 
         if(aspar2petscAspar < 1) then
-          write(DBG%FHNDL,*) rank,                                              &
-     &   "aspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi",        &
-     &    IPpetscLocal, ISS, IDD, asparPosition
+          write(DBG%FHNDL,*) rank, "aspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
         endif
       end function
 !**********************************************************************
@@ -1579,7 +1570,7 @@
         if(allocated(oASPAR_petsc)) deallocate(oASPAR_petsc)
         if(allocated(IA_petsc_small)) deallocate(IA_petsc_small)
         if(allocated(oIA_petsc_small)) deallocate(oIA_petsc_small)
-        if(allocated(asparApp2Petsc_small)) deallocate(asparApp2Petsc_small)
+        if(allocated(AsparApp2Petsc_small)) deallocate(AsparApp2Petsc_small)
         if(allocated(oAsparApp2Petsc_small)) deallocate(oAsparApp2Petsc_small)
 
       end subroutine
@@ -1699,8 +1690,7 @@
                 !  boundary characteristic
                 entriesDetail(counter, 4) = IOBP(ipgl(IP)%id)
                 !
-                entriesDetail(counter, 5) = IOBPD(toIDD(start + i - 1), &
-     &                                            ipgl(IP)%id)
+                entriesDetail(counter, 5) = IOBPD(toIDD(start + i - 1), ipgl(IP)%id)
                 ! ISS
                 entriesDetail(counter, 6) = toISS(start + i - 1)
                 ! IDD
@@ -1719,12 +1709,9 @@
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
           write(DBG%FHNDL,*) "check matrix diagonal Accuracy"
-          if(present(ISS) .and. present(IDD)) write(DBG%FHNDL,*)                &
-     &                "ISS IDD", ISS, IDD
-          write(DBG%FHNDL,*) "minimum at (big matrix row)" , positionMin,       &
-     &                ": ", valueMin
-          write(DBG%FHNDL,*) "maximum at (big matrix row)" , positionMax,       &
-     &                ": ", valueMax
+          if(present(ISS) .and. present(IDD)) write(DBG%FHNDL,*) "ISS IDD", ISS, IDD
+          write(DBG%FHNDL,*) "minimum at (big matrix row)" , positionMin, ": ", valueMin
+          write(DBG%FHNDL,*) "maximum at (big matrix row)" , positionMax, ": ", valueMax
           write(DBG%FHNDL,*) "mean" , summe / globalSize
 
           write(DBG%FHNDL,*) "first 10 entries which are smaller than", epsilon
