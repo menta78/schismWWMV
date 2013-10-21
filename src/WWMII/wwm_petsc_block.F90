@@ -216,10 +216,7 @@
 ! create ghost blocks
         nghostBlock = nghost * MSC * MDC
         allocate(onlyGhostsBlock(0:nghostBlock-1), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.203'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 1')
         nghostBlock = 0
 
         do IP = 1, nghost
@@ -254,17 +251,11 @@
 #endif
 
         deallocate(onlyGhostsBlock, stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.241'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 2')
 
 ! create  cumulative J sparse counter
         allocate(Jcum(MNP+1), stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.251'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 3')
         Jcum = 0
 
         do IP=1, MNP
@@ -370,18 +361,12 @@
         ! iterate over connNode array to create IA and JA
         ! +1 because we have to store the diagonal node number too
         allocate(IA_petsc(nLocalRowBigMatrix+1),                        &
-     &           JA_petsc(nnz_new),                                     &
-     &           ASPAR_petsc(nnz_new),                                  &
-     &           oIA_petsc(nLocalRowBigMatrix+1),                       &
-     &           oJA_petsc(o_nnz_new),                                  &
-     &           oASPAR_petsc(o_nnz_new),                               &
-     &           toSort(maxNumConnNode+1),                              &
-     &           o_toSort(maxNumConnNode+1),                            &
-     &           stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.345'
-        endif
+     &    JA_petsc(nnz_new), ASPAR_petsc(nnz_new),                      &
+     &    oIA_petsc(nLocalRowBigMatrix+1),                              &
+     &    oJA_petsc(o_nnz_new), oASPAR_petsc(o_nnz_new),                &
+     &    toSort(maxNumConnNode+1), o_toSort(maxNumConnNode+1),         &
+     &    stat=stat)
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
 
         IA_petsc = 0
         JA_petsc = 0
@@ -404,7 +389,6 @@
         ! over all petsc IP rows
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
-
           ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
           do ISS = 1, MSC
             do IDD = 1, MDC
@@ -423,14 +407,12 @@
                   ! store the old position in ASPAR
                   o_toSort(o_nToSort)%userData = IA_P(IP)+i
                   !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
-                  o_toSort(o_nToSort)%id =                              &
-     &  toRowIndex( AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)+1, ISS, IDD)
+                  o_toSort(o_nToSort)%id = toRowIndex( AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)+1, ISS, IDD)
                 ! not a ghost node
                 else
                   nToSort = nToSort + 1
                   ! petsc local node number to sort for
-                  toSort(nToSort)%id =                                  &
-     &  toRowIndex( ALO2PLO(JA_P( IA_P(IP)+i ))+1, ISS, IDD )
+                  toSort(nToSort)%id = toRowIndex( ALO2PLO(JA_P( IA_P(IP)+i ))+1, ISS, IDD )
                   ! store the old col for row IP
                   toSort(nToSort)%userData = IA_P(IP)+i
                 end if
@@ -440,8 +422,7 @@
               call bubbleSort(o_toSort, o_nToSort)
 
               ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
-              IA_petsc( toRowIndex(IP_petsc, ISS, IDD) +1 + 1) =        &
-     &  IA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + nToSort
+              IA_petsc( toRowIndex(IP_petsc, ISS, IDD) +1 + 1) = IA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + nToSort
               ! write the sorted cols to the mappings
               do i = 1, nToSort
                 J = J + 1
@@ -449,8 +430,7 @@
               end do
 
               ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
-              oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1+1) =         &
-     &  oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + o_nToSort
+              oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1+1) = oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + o_nToSort
               do i = 1, o_nToSort
                 o_J = o_J + 1
                 oJA_petsc(o_J) = o_toSort(i)%id
@@ -461,10 +441,7 @@
         end do ! petsc IP rows
 
         deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.432'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
       end subroutine
 !**********************************************************************
 !*                                                                    *
@@ -533,10 +510,7 @@
      &           asparApp2Petsc_small(NNZ),                             &
      &           oAsparApp2Petsc_small(NNZ),                            &
      &           stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.510'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 6')
 
         IA_petsc_small = 0
 
@@ -595,21 +569,16 @@
             asparApp2Petsc_small(toSort(i)%userData) = J
             J = J + 1
           end do
-          IA_petsc_small(IP_petsc+1) =                                  &
-     &    IA_petsc_small(IP_petsc) + nToSort
+          IA_petsc_small(IP_petsc+1) = IA_petsc_small(IP_petsc) + nToSort
 
           do i = 1, o_nToSort
               oAsparApp2Petsc_small(o_toSort(i)%userData) = oJ
               oJ = oJ + 1
           end do
-          oIA_petsc_small(IP_petsc+1) =                                 &
-     &    oIA_petsc_small(IP_petsc) + o_nToSort
+          oIA_petsc_small(IP_petsc+1) = oIA_petsc_small(IP_petsc) + o_nToSort
         end do
         deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) then
-          write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
-          stop 'wwm_petsc_block l.591'
-        endif
+        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
       end subroutine
 !**********************************************************************
 !*                                                                    *
@@ -1577,25 +1546,19 @@
 
         ! ! +1 +1 because IA_petsc_small starts from 1 and we have to access the next IA_petsc element
         ! we must use IA_petsc_small here because IA has ghost and interface nodes
-        nConnNode = oIA_petsc_small(IPpetscLocal+1+1) -                 &
-     &              oIA_petsc_small(IPpetscLocal+1)
+        nConnNode = oIA_petsc_small(IPpetscLocal+1+1) - oIA_petsc_small(IPpetscLocal+1)
 
         oAspar2petscAspar = 0
         ! in den entsprechenden Block springen.
-        oAspar2petscAspar = oAspar2petscAspar + MSC*MDC *               &
-     &   oIA_petsc_small(IPpetscLocal+1)
+        oAspar2petscAspar = oAspar2petscAspar + MSC*MDC * oIA_petsc_small(IPpetscLocal+1)
         ! von dort aus in den IS block
         oAspar2petscAspar = oAspar2petscAspar + (ISS-1)* MDC *nConnNode
         ! und noch den IS offset
         oAspar2petscAspar = oAspar2petscAspar + (IDD-1)*nConnNode
 
-        oAspar2petscAspar = oAspar2petscAspar +                         &
-     &  (oAsparApp2Petsc_small(asparPosition) -                         &
-     &   oIA_petsc_small(IPpetscLocal+1))  + 1
+        oAspar2petscAspar = oAspar2petscAspar + (oAsparApp2Petsc_small(asparPosition) - oIA_petsc_small(IPpetscLocal+1))  + 1
         if(oAspar2petscAspar < 1) then
-          write(DBG%FHNDL,*) rank,                                              &
-     &  "oAspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi",        &
-     &    IPpetscLocal, ISS, IDD, asparPosition
+          write(DBG%FHNDL,*) rank, "oAspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
         endif
       end function
 !**********************************************************************
