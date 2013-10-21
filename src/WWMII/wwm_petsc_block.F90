@@ -152,7 +152,6 @@
       !> for the small matrix in petsc order
       integer, allocatable :: IA_petsc_small(:), oIA_petsc_small(:)
       !> colum index in CSR format for the small matrix in petsc local order
-!       PetscInt, allocatable :: JA_petsc_small(:)
 
       ! map from app aspar position to petsc aspar position (small matrix)
       integer, allocatable :: asparApp2Petsc_small(:)
@@ -459,11 +458,7 @@
 
             end do ! ID
           end do ! IS
-
         end do ! petsc IP rows
-
-!         write(DBG%FHNDL,*) rank, "IA_petsc", IA_petsc
-!         write(DBG%FHNDL,*) rank, "JA_petsc", JA_petsc
 
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) then
@@ -532,12 +527,7 @@
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
         allocate(IA_petsc_small(nNodesWithoutInterfaceGhosts+1),        &
-!                  JA_petsc_small(nnz_new), &
-!                  ASPAR_petsc(nnz_new), &
      &           oIA_petsc_small(nNodesWithoutInterfaceGhosts+1),       &
-!                  oJA_petsc(o_nnz_new), &
-!                  oASPAR_petsc(o_nnz_new), &
-                 ! +1 because we have to store the diagonal node number too
      &           toSort(maxNumConnNode+1),                              &
      &           o_toSort(maxNumConnNode+1),                            &
      &           asparApp2Petsc_small(NNZ),                             &
@@ -549,12 +539,8 @@
         endif
 
         IA_petsc_small = 0
-!         JA_petsc_small = 0
-!         ASPAR_petsc = 0
 
         oIA_petsc_small = 0
-!         oJA_petsc_small = 0
-!         oASPAR_petsc = 0
 
         asparApp2Petsc_small = -999
         oAsparApp2Petsc_small = -999
@@ -608,7 +594,6 @@
             ! rein app aspar position. raus petsc aspar position
             asparApp2Petsc_small(toSort(i)%userData) = J
             J = J + 1
-!             JA_petsc_small(J) = toSort(i).id
           end do
           IA_petsc_small(IP_petsc+1) =                                  &
      &    IA_petsc_small(IP_petsc) + nToSort
@@ -616,13 +601,10 @@
           do i = 1, o_nToSort
               oAsparApp2Petsc_small(o_toSort(i)%userData) = oJ
               oJ = oJ + 1
-!             oJA_petsc(oJ) = o_toSort(i).id
           end do
           oIA_petsc_small(IP_petsc+1) =                                 &
      &    oIA_petsc_small(IP_petsc) + o_nToSort
         end do
-
-!         write(DBG%FHNDL,*) rank, "asparApp2Petsc_small maxvalue" , maxval(asparApp2Petsc_small)
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
