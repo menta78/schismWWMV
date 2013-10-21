@@ -346,7 +346,7 @@
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           do i = IA_P(IP)+1, IA_P(IP+1)
-            if(ALOold2ALO(JA_P(i)) .eq. -999) then
+            if(ALOold2ALO(JA_P(i)+1) .eq. -999) then
               o_nnz_new = o_nnz_new + 1
             else
               nnz_new = nnz_new + 1
@@ -400,7 +400,7 @@
               ! over all nodes in this row
               do i = 1, IA_P(IP+1) - IA_P(IP)
                 ! found a ghost node, treat them special
-                if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+                if(ALOold2ALO(JA_P( IA_P(IP)+i )+1) .eq. -999) then
                   o_ntoSort = o_ntoSort + 1
                   ! store the old position in ASPAR
                   o_toSort(o_nToSort)%userData = IA_P(IP)+i
@@ -488,7 +488,7 @@
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           do i = 1, IA_P(IP+1) - IA_P(IP)
-              if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+              if(ALOold2ALO(JA_P( IA_P(IP)+i )+1) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -537,7 +537,7 @@
           ! over all nodes in this row
           do i = IA_P(IP)+1, IA_P(IP+1)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA_P( i )) .eq. -999) then
+            if(ALOold2ALO(JA_P( i )+1) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
               o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA_P(i)+1)-1)
@@ -603,7 +603,7 @@
         do IP = 1, np ! over all local nodes
 
           ! this is a interface node (row). ignore it. just increase counter
-          if(ALOold2ALO(IP-1) .eq. -999) then
+          if(ALOold2ALO(IP) .eq. -999) then
             cycle
           end if
 
@@ -662,7 +662,7 @@
 
         do IP = 1, MNP
           ! this is a interface node (row). ignore it.
-          if(ALOold2ALO(IP-1) .eq. -999) then
+          if(ALOold2ALO(IP) .eq. -999) then
             cycle
           end if
 
@@ -713,7 +713,7 @@
           if (LINHOM) then
             do IP = 1, IWBMNP
               IPGL1 = IWBNDLC(IP)
-              if(ALOold2ALO(IPGL1-1) .eq. -999) cycle  ! this is a interface node (row). ignore it
+              if(ALOold2ALO(IPGL1) .eq. -999) cycle  ! this is a interface node (row). ignore it
               IPpetsc = ALO2PLO(IPGL1-1) + 1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
@@ -724,7 +724,7 @@
           else ! LINHOM
             do IP = 1, IWBMNP
               IPGL1 = IWBNDLC(IP)
-              if(ALOold2ALO(IPGL1-1) .eq. -999) cycle  ! this is a interface node (row). ignore it. just increase counter
+              if(ALOold2ALO(IPGL1) .eq. -999) cycle  ! this is a interface node (row). ignore it. just increase counter
               IPpetsc = ALO2PLO(IPGL1-1) + 1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
@@ -737,7 +737,7 @@
 
         if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then ! ! nur wenn wind und so, schleife auch ausfuehren...
           do IP = 1, MNP
-            if(ALOold2ALO(IP-1) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter
+            if(ALOold2ALO(IP) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter
             if (IOBWB(IP) .EQ. 1) then
               IPpetsc = ALO2PLO(IP-1) + 1
               do ISS = 1, MSC ! over all frequency

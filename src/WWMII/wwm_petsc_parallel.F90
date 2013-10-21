@@ -152,7 +152,7 @@
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           do i = IA_P(IP)+1, IA_P(IP+1)
-              if(ALOold2ALO(JA_P(i)) .eq. -999) then
+              if(ALOold2ALO(JA_P(i)+1) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -216,7 +216,7 @@
           ! over all nodes in this row
           do i = IA_P(IP) + 1, IA_P(IP+1)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA_P(i)) .eq. -999) then
+            if(ALOold2ALO(JA_P(i)+1) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               ! store the old position in ASPAR
               o_toSort(o_nToSort)%userData = i
@@ -441,7 +441,7 @@
          do i = 1, NP_RES
            ncols = IA_P(i+1) - IA_P(i)
            ! this is a interface node (row). ignore it. just increase counter
-           if(ALOold2ALO(i-1) .eq. -999) then
+           if(ALOold2ALO(i) .eq. -999) then
              counter = counter + ncols
              cycle
            end if
@@ -469,7 +469,7 @@
 !          call VecSet(myBAppOrder, eEntry, petscErr);CHKERRQ(petscErr)
          do i= 1, np
            ! this is a interface node (row). ignore it. just increase counter
-           if(ALOold2ALO(i-1) .eq. -999) then
+           if(ALOold2ALO(i) .eq. -999) then
              cycle
            end if
            ! map to petsc global order

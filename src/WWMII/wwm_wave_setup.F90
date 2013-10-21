@@ -524,7 +524,7 @@
       do i = 1, NP_RES
         ncols = IA_P(i+1) - IA_P(i)
         ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i-1) .eq. -999) then
+        if(ALOold2ALO(i) .eq. -999) then
           counter = counter + ncols
           cycle
         end if
@@ -551,7 +551,7 @@
       call VecSet(myB_setup, eEntry, petscErr);CHKERRQ(petscErr)
       do i= 1, NP_RES
         ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i-1) .eq. -999) then
+        if(ALOold2ALO(i) .eq. -999) then
           cycle
         end if
         ! map to petsc global order
