@@ -152,7 +152,7 @@
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           do i = IA_P(IP)+1, IA_P(IP+1)
-              if(ALOold2ALO(JA_P(i)+1) .eq. -999) then
+              if(ALOold2ALO(JA(i)) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -216,12 +216,12 @@
           ! over all nodes in this row
           do i = IA_P(IP) + 1, IA_P(IP+1)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA_P(i)+1) .eq. -999) then
+            if(ALOold2ALO(JA(i)) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               ! store the old position in ASPAR
               o_toSort(o_nToSort)%userData = i
               !> todo offdiagonal part with petsc global order? don't know why but it seems to work
-              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA_P(i)+1)-1)
+              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA(i))-1)
             ! not a ghost node
             else
               nToSort = nToSort + 1
