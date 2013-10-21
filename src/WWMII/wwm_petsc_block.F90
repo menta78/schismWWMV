@@ -312,7 +312,7 @@
         ! running direction
         integer :: IDD = 0
         ! running variable
-        integer :: i = 0, j = 0, o_j = 0
+        integer :: i = 0, J = 0, o_J = 0
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new = 0
@@ -384,14 +384,13 @@
         ! After sort: adj=[11,44,67,76]
         ! Do the sort with a simple bubble sort. yes, bubble sort is vey slow,
         ! but we have only a few numbers to sort (max 10 I assume).
-        J = 0
         ! over all petsc IP rows
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
           do ISS = 1, MSC
             do IDD = 1, MDC
-              bigMatrixRow = toRowIndex(IP_petsc, ISS, IDD) +1
+              bigMatrixRow = toRowIndex(IP_petsc, ISS, IDD) + 1
               ! fill with the largest numner petscInt can hold
               toSort(:)%id = HUGE(0)
               nToSort = 0
@@ -837,7 +836,7 @@
 
         ! posistion in aspar for big matrix. see function aspar2petscAspar
         integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
-        integer :: petscAsparPosi4
+        integer :: petscAsparPosi4, idx
         ! number of connected nodes for IPpetsc
         integer :: nConnNode
 
@@ -954,24 +953,30 @@
                 value1 =  TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
                 value2 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
                 value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
+                ! I1
 
-                petscAsparPosi4 = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
+                idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
 
-                ASPAR_petsc(petscAsparPosi4) = value1 + ASPAR_petsc(petscAsparPosi4)
+                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
 
+                ! I2
 
                 if(AsparApp2Petsc_small(I2) .eq. -999) then
-                  oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2)) = value2 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I2))
+                  idx=oAspar2petscAspar(IP, ISS, IDD, I2)
+                  oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
                 else
-                  petscAsparPosi4 = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
-                  ASPAR_petsc(petscAsparPosi4) = value2 + ASPAR_petsc(petscAsparPosi4)
+                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
                 endif
 
+                ! I3
+
                 if(AsparApp2Petsc_small(I3) .eq. -999) then
-                  oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3)) = value3 + oASPAR_petsc(oAspar2petscAspar(IP, ISS, IDD, I3))
+                  idx=oAspar2petscAspar(IP, ISS, IDD, I3)
+                  oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
                 else
-                  petscAsparPosi4 = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
-                  ASPAR_petsc(petscAsparPosi4) = value3 + ASPAR_petsc(petscAsparPosi4)
+                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(idx) = value3 + ASPAR_petsc(idx)
                 endif
               end do !I: loop over connected elements ...
 
@@ -980,10 +985,14 @@
               do I = 1, CCON(IP)
                 I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                 value1 =  TRIA03arr(i)   ! Diagonal entry
-                ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1)) = value1 + ASPAR_petsc(aspar2petscAspar(IP, ISS, IDD, I1))
+                idx=aspar2petscAspar(IP, ISS, IDD, I1)
+                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
               end do !I: loop over connected elements ...
 
             end if
+
+
+
 
           end do !IDD
         end do !ISS
