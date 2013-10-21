@@ -535,25 +535,25 @@
           o_nToSort = 0
 
           ! over all nodes in this row
-          do i = 1, IA_P(IP+1) - IA_P(IP)
+          do i = IA_P(IP)+1, IA_P(IP+1)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+            if(ALOold2ALO(JA_P( i )) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
-              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)
+              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA_P( i )+1)-1)
               ! maybe because ALO2PLO has wrong values for offsubmatrix (ghost) nodes? so sorting is not possible
-!               o_toSort(o_nToSort).id = ALO2PLO(JA_P( IA_P(IP)+i ))
+!               o_toSort(o_nToSort).id = ALO2PLO(JA_P( i ))
 
               ! store the old position in ASPAR
-              o_toSort(o_nToSort)%userData = IA_P(IP)+i
+              o_toSort(o_nToSort)%userData = i
 
             ! not a ghost node
             else
               nToSort = nToSort + 1
               ! petsc local node number to sort for
-              toSort(nToSort)%id = ALO2PLO(JA_P( IA_P(IP)+i ))
+              toSort(nToSort)%id = ALO2PLO(JA_P( i ))
               ! store the old position in ASPAR
-              toSort(nToSort)%userData = IA_P(IP)+i
+              toSort(nToSort)%userData = i
 
             end if
           end do
