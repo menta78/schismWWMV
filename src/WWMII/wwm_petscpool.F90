@@ -585,18 +585,18 @@
 
         nNodesWithoutInterfaceGhosts=0
         do i = 1, NP_RES
-            if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
-              if(( ipgl( iplg(i) )%next%rank .le. rank )) then
-                cycle
-              end if
+          if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
+            if(( ipgl( iplg(i) )%next%rank .le. rank )) then
+              cycle
             end if
+          end if
 
-            ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
-            AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
+          ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
+          AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
 
-            ALOold2ALO(i-1) = nNodesWithoutInterfaceGhosts
+          ALOold2ALO(i-1) = nNodesWithoutInterfaceGhosts
 
-            nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
+          nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
         end do
 
 ! create PETsc Local -> Global mapping
