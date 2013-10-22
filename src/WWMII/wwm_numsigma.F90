@@ -132,7 +132,7 @@
       REAL(rkind)  :: ACQ (MSC)
       REAL(rkind)  :: TMP (MSC)
       REAL(rkind)  :: CASS(0:MSC+1), CP(0:MSC+1), CM(0:MSC+1)
-      REAL(rkind)  :: REST, DT4FI, CFLCAS
+      REAL(rkind)  :: REST, CFLCAS
       REAL(rkind)  :: A(MSC), B(MSC), C(MSC)
       DO IP = 1, MNP
         IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) CYCLE
