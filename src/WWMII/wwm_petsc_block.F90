@@ -158,6 +158,13 @@
       integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
+#ifdef DIRECT_METHOD
+      integer, allocatable :: AsparApp2Petsc(:), 
+      integer, allocatable :: oAsparApp2Petsc(:)
+      integer, allocatable :: IA_Ptotal(:,:,:)
+      integer, allocatable :: I_DIAGtotal(:,:,:)
+#endif
+
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
       ! locality ..., stack overflow danger...
 !       real(kind=8), allocatable  ::  ASPAR(:)
@@ -379,7 +386,6 @@
      &    toSort(maxNumConnNode), o_toSort(maxNumConnNode),             &
 #ifdef DIRECT_METHOD
      &    AsparApp2Petsc(NNZint), oAsparApp2Petsc(NNZint),              &
-     &    NconnTotal(MSC,MDC,nNodesWithoutInterfaceGhosts),             &
      &    IA_Ptotal(MSC,MDC,nNodesWithoutInterfaceGhosts),              &
      &    I_DIAGtotal(MSC,MDC,nNodesWithoutInterfaceGhosts),            &
 #endif
@@ -390,27 +396,6 @@
         AsparApp2Petsc = -999
         oAsparApp2Petsc = -999
         IA_Ptotal=0
-        DO IPpetsc=1,nNodesWithoutInterfaceGhosts
-          IP = PLO2ALO(IPpetsc-1)+1
-          DO ISS=1,MSC
-            DO IDD=1,MDC
-              Nconn=IA_P(IP+1)-IA_P(IP)
-              IF (FREQ_SHIFT_IMPL) THEN
-                IF (ISS == 1) THEN
-                  Nconn=Nconn+1
-                ELSEIF (ISS == MSC)
-                  Nconn=Nconn+1
-                ELSE
-                  Nconn=Nconn+2
-                END IF
-              END IF
-              IF (REFRACTION_IMPL) THEN
-                Nconn=Nconn+2
-              END IF
-              NconnTotal(ISS,IDD,IPpetsc)=Nconn
-            END DO
-          END DO
-        END DO
 #endif
         IA_petsc = 0
         JA_petsc = 0
@@ -438,7 +423,7 @@
           ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
           do ISS = 1, MSC
             do IDD = 1, MDC
-              bigMatrixRow = toRowIndex(IPpetsc, ISS, IDD) + 1
+              bigMatrixRow = toRowIndex(IPpetsc, ISS, IDD)
               ! fill with the largest numner petscInt can hold
               toSort(:)%id = HUGE(0)
               nToSort = 0
@@ -466,11 +451,14 @@
                 ! not a ghost node
                 else
                   nToSort = nToSort + 1
-                  ! petsc local node number to sort for
                   ThePos=toRowIndex( ALO2PLO(JA_P(i))+1, ISS, IDD )
                   toSort(nToSort)%id = ThePos
-                  ! store the old col for row IP
+#ifndef DIRECT_METHOD
                   toSort(nToSort)%userData = i
+#else
+                  idxpos=idxpos+1
+                  toSort(nToSort)%userData = idxpos
+#endif
                 end if
               end do ! cols
 #ifdef DIRECT_METHOD
@@ -520,6 +508,11 @@
                 AsparApp2Petsc(toSort(i)%userData) = J
 #endif
                 JA_petsc(J) = toSort(i)%id
+#ifdef DIRECT_METHOD
+                IF (JA_petsc(J) .eq. bigMatrixRow) THEN
+                  I_DIAGtotal(ISS,IDD,IPpetsc)=J
+                END IF
+#endif
               end do
 
               oIA_petsc(idx + 1) = oIA_petsc(idx) + o_nToSort
