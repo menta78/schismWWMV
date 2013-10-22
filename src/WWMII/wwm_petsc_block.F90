@@ -419,16 +419,14 @@
               call bubbleSort(toSort, nToSort)
               call bubbleSort(o_toSort, o_nToSort)
 
-              ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
-              IA_petsc( toRowIndex(IP_petsc, ISS, IDD) +1 + 1) = IA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + nToSort
-              ! write the sorted cols to the mappings
+              idx= toRowIndex(IP_petsc, ISS, IDD) +1
+              IA_petsc(idx + 1) = IA_petsc(idx) + nToSort
               do i = 1, nToSort
                 J = J + 1
                 JA_petsc(J) = toSort(i)%id
               end do
 
-              ! +1 +1 because IA_petsc starts from 1 and we have to fill the next IA_petsc element
-              oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1+1) = oIA_petsc(toRowIndex(IP_petsc, ISS, IDD) + 1) + o_nToSort
+              oIA_petsc(idx + 1) = oIA_petsc(idx) + o_nToSort
               do i = 1, o_nToSort
                 o_J = o_J + 1
                 oJA_petsc(o_J) = o_toSort(i)%id
@@ -609,9 +607,8 @@
 
           IPglobal = AGO2PGO( iplg(IP)-1 ) + 1 ! map to petsc global order
 
-          do ISS = 1, MSC   ! over all frequency
-            do IDD = 1, MDC ! over all directions
-              ! map to
+          do ISS = 1, MSC
+            do IDD = 1, MDC
               rowGlobal = toRowIndex(IPglobal, ISS, IDD)
               eEntry = AC2(IP, ISS, IDD)
               call VecSetValue(myX, rowGlobal, eEntry, ADD_VALUES, petscErr);CHKERRQ(petscErr)
@@ -676,21 +673,19 @@
 
           ! wenn der knoten tief genug liegt und was mitm rand ist, dann alle richtungen/frequenezn auf ihn loslassen
           if(IOBWB(IP) .EQ. 1) then
-            ! over all frequency
             do ISS = 1, MSC
-              ! over all directions
               do IDD = 1, MDC
                 ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
+                idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                 if(IOBPD(IDD,IP) .EQ. 1) then
 !                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(IP, ISS, IDD))
                   value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
                   ! IP in Petsc local order
-                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value + myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1)
-!                   B(IP, ISS, IDD) = B(IP, ISS, IDD) + TRIA03 * U(IP)
+                  myBtemp(idx) = value + myBtemp(idx)
 
                 ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
                 else
-                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+                  myBtemp(idx) = 0
                 endif
 
               end do ! IDD
@@ -699,13 +694,11 @@
           ! set node to 0 for all frequency/directions
           else
             value = 0.
-            ! over all frequency
             do ISS = 1, MSC
-              ! over all directions
               do IDD = 1, MDC
-                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
-              end do !IDD
-            end do ! ISS
+                myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+              end do
+            end do
           endif
         end do ! IP
 
@@ -1395,10 +1388,7 @@
           ! map from petsc local to app local
           ! row represent the local app order
           rowLocal = ipgl( (PGO2AGO( PLO2PGO( IP-1 ) ))+1 )%id
-          ! over all frequency
           DO ISS = 1, MSC
-
-           ! over all directions
             DO IDD = 1, MDC
               value = myXtemp(toRowIndex(IP, ISS, IDD) + 1)
               AC2(rowLocal, ISS, IDD) = MAX(ZERO, value) !* IOBPD(IDD,IP)
