@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define DIRECT_METHOD
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -162,7 +163,7 @@
 !       real(kind=8), allocatable  ::  ASPAR(:)
 
       ! max number of adj nodes per node
-      integer :: maxNumConnNode = 0
+      integer :: maxNumConnNode
 
       ! cumulative J sparse counter. size 1:MNP. 
       integer, allocatable :: Jcum(:)
@@ -276,7 +277,9 @@
         nLocalRowBigMatrix = nNodesWithoutInterfaceGhosts * MSC*MDC
         nGlobalRowBigMatrix = np_global * MSC*MDC
         call createCSR_petsc()
+#ifndef DIRECT_METHOD
         call createCSR_petsc_small()
+#endif
         call MatCreateMPIAIJWithSplitArrays(PETSC_COMM_WORLD,           &
      &       nLocalRowBigMatrix, nLocalRowBigMatrix,                    &
      &       nGlobalRowBigMatrix, nGlobalRowBigMatrix,                  &
@@ -330,8 +333,8 @@
         ! calc max number of adj nodes per node
         maxNumConnNode = 0
         do IP = 1, MNP
-          if(IA_P(IP+1) - IA_P(IP)-1 > maxNumConnNode) then
-            maxNumConnNode = IA_P(IP+1) - IA_P(IP)-1
+          if(IA_P(IP+1) - IA_P(IP) > maxNumConnNode) then
+            maxNumConnNode = IA_P(IP+1) - IA_P(IP)
           end if
         end do
 
@@ -347,14 +350,24 @@
           IP = PLO2ALO(IP_petsc-1)+1
           do i = IA_P(IP)+1, IA_P(IP+1)
             if(ALOold2ALO(JA(i)) .eq. -999) then
-              o_nnz_new = o_nnz_new + 1
+              o_nnz_new = o_nnz_new + MSC*MDC
             else
-              nnz_new = nnz_new + 1
+              nnz_new = nnz_new + MSC*MDC
             endif
           end do
         end do
-        nnz_new = nnz_new * MSC * MDC
-        o_nnz_new  = o_nnz_new * MSC * MDC
+
+#ifdef DIRECT_METHOD
+        IF (FREQ_SHIFT_IMPL) THEN
+          nnz_new=nnz_new + MDC*(2*(MSC-1))*nNodesWithoutInterfaceGhosts
+          maxNumConnNode = maxNumConnNode +2
+        END IF
+        IF (REFRACTION_IMPL) THEN
+          nnz_new=nnz_new + MSC*(2*MDC)*nNodesWithoutInterfaceGhosts
+          maxNumConnNode = maxNumConnNode +2
+        END IF
+        NNZint=nnz_new+o_nnz_new
+#endif
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -363,10 +376,39 @@
      &    JA_petsc(nnz_new), ASPAR_petsc(nnz_new),                      &
      &    oIA_petsc(nLocalRowBigMatrix+1),                              &
      &    oJA_petsc(o_nnz_new), oASPAR_petsc(o_nnz_new),                &
-     &    toSort(maxNumConnNode+1), o_toSort(maxNumConnNode+1),         &
+     &    toSort(maxNumConnNode), o_toSort(maxNumConnNode),             &
+#ifdef DIRECT_METHOD
+     &    AsparApp2Petsc(NNZint), oAsparApp2Petsc(NNZint),              &
+     &    NconnTotal(MSC,MDC,nNodesWithoutInterfaceGhosts),             &
+#endif
      &    stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
 
+#ifdef DIRECT_METHOD
+        AsparApp2Petsc = -999
+        oAsparApp2Petsc = -999
+        DO IP_petsc=1,nNodesWithoutInterfaceGhosts
+          IP = PLO2ALO(IP_petsc-1)+1
+          DO ISS=1,MSC
+            DO IDD=1,MDC
+              Nconn=IA_P(IP+1)-IA_P(IP)
+              IF (FREQ_SHIFT_IMPL) THEN
+                IF (ISS == 1) THEN
+                  Nconn=Nconn+1
+                ELSEIF (ISS == MSC)
+                  Nconn=Nconn+1
+                ELSE
+                  Nconn=Nconn+2
+                END IF
+              END IF
+              IF (REFRACTION_IMPL) THEN
+                Nconn=Nconn+2
+              END IF
+              NconnTotal(ISS,IDD,IP_petsc)=Nconn
+            END DO
+          END DO
+        END DO
+#endif
         IA_petsc = 0
         JA_petsc = 0
         ASPAR_petsc = 0
@@ -385,6 +427,9 @@
         ! Do the sort with a simple bubble sort. yes, bubble sort is vey slow,
         ! but we have only a few numbers to sort (max 10 I assume).
         ! over all petsc IP rows
+#ifdef DIRECT_METHOD
+        idxpos=0
+#endif
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
           ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
@@ -403,32 +448,81 @@
                 if(ALOold2ALO(JA(i)) .eq. -999) then
                   o_ntoSort = o_ntoSort + 1
                   ! store the old position in ASPAR
+#ifndef DIRECT_METHOD
                   o_toSort(o_nToSort)%userData = i
+#else
+                  idxpos=idxpos+1
+                  o_toSort(o_nToSort)%userData = idxpos
+#endif
                   !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
-                  o_toSort(o_nToSort)%id = toRowIndex( AGO2PGO(iplg(JA(i))-1)+1, ISS, IDD)
+                  ThePos=toRowIndex( AGO2PGO(iplg(JA(i))-1)+1, ISS, IDD)
+                  o_toSort(o_nToSort)%id = ThePos
                 ! not a ghost node
                 else
                   nToSort = nToSort + 1
                   ! petsc local node number to sort for
-                  toSort(nToSort)%id = toRowIndex( ALO2PLO(JA_P(i))+1, ISS, IDD )
+                  ThePos=toRowIndex( ALO2PLO(JA_P(i))+1, ISS, IDD )
+                  toSort(nToSort)%id = ThePos
                   ! store the old col for row IP
                   toSort(nToSort)%userData = i
                 end if
               end do ! cols
 
+#ifdef DIRECT_METHOD
+              IF (FREQ_SHIFT_IMPL) THEN
+                IF (ISS .gt. 1) THEN
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS-1, IDD)
+                  o_toSort(o_nToSort)%userData = idxpos
+                  o_toSort(o_nToSort)%id = ThePos
+                END IF
+                IF (ISS .lt. MSC) THEN
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS+1, IDD)
+                  o_toSort(o_nToSort)%userData = idxpos
+                  o_toSort(o_nToSort)%id = ThePos
+                END IF
+              END IF
+              IF (REFRACTION_IMPL) THEN
+                IF (IDD == 1) THEN
+                  IDprev=MDC
+                ELSE
+                  IDprev=IDD-1
+                END IF
+                IF (IDD == MDC) THEN
+                  IDnext=1
+                ELSE
+                  IDnext=IDD+1
+                END IF
+                idxpos=idxpos+1
+                ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDprev)
+                o_toSort(o_nToSort)%userData = idxpos
+                o_toSort(o_nToSort)%id = ThePos
+                idxpos=idxpos+1
+                ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDnext)
+                o_toSort(o_nToSort)%userData = idxpos
+                o_toSort(o_nToSort)%id = ThePos
+              END IF
+#endif
               call bubbleSort(toSort, nToSort)
               call bubbleSort(o_toSort, o_nToSort)
 
-              idx= toRowIndex(IP_petsc, ISS, IDD) +1
+              idx=toRowIndex(IP_petsc, ISS, IDD) +1
               IA_petsc(idx + 1) = IA_petsc(idx) + nToSort
               do i = 1, nToSort
                 J = J + 1
+#ifdef DIRECT_METHOD
+                AsparApp2Petsc(toSort(i)%userData) = J
+#endif
                 JA_petsc(J) = toSort(i)%id
               end do
 
               oIA_petsc(idx + 1) = oIA_petsc(idx) + o_nToSort
               do i = 1, o_nToSort
                 o_J = o_J + 1
+#ifdef DIRECT_METHOD
+                oAsparApp2Petsc(o_toSort(i)%userData) = J
+#endif
                 oJA_petsc(o_J) = o_toSort(i)%id
               end do
 
@@ -442,6 +536,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifndef DIRECT_METHOD
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
         use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg
@@ -450,7 +545,7 @@
         implicit none
 
         ! max number of adj nodes per node
-        integer :: maxNumConnNode = 0
+        integer :: maxNumConnNode
 
         ! running variable node number
         integer :: IP = 0
@@ -473,8 +568,8 @@
         ! calc max number of adj nodes per node
         maxNumConnNode = 0
         do IP = 1, MNP
-          if(IA_P(IP+1) - IA_P(IP)-1 > maxNumConnNode) then
-            maxNumConnNode = IA_P(IP+1) - IA_P(IP)-1
+          if(IA_P(IP+1) - IA_P(IP) > maxNumConnNode) then
+            maxNumConnNode = IA_P(IP+1) - IA_P(IP)
           end if
         end do
 
@@ -501,10 +596,8 @@
         ! iterate over connNode array to create IA and JA
         allocate(IA_petsc_small(nNodesWithoutInterfaceGhosts+1),        &
      &           oIA_petsc_small(nNodesWithoutInterfaceGhosts+1),       &
-     &           toSort(maxNumConnNode+1),                              &
-     &           o_toSort(maxNumConnNode+1),                            &
-     &           AsparApp2Petsc_small(NNZ),                             &
-     &           oAsparApp2Petsc_small(NNZ),                            &
+     &           toSort(maxNumConnNode), o_toSort(maxNumConnNode),      &
+     &           AsparApp2Petsc_small(NNZ), oAsparApp2Petsc_small(NNZ), &
      &           stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 6')
 
@@ -575,6 +668,7 @@
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
       end subroutine
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -740,19 +834,16 @@
                     idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                     myBtemp(idx) = value + myBtemp(idx)
                   endif 
-                end do ! MDC
-              end do ! MSC
+                end do
+              end do
             end if
           end do
         endif
-
         call VecRestoreArrayF90(myB, myBtemp, petscErr)
         CHKERRQ(petscErr)
         call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
         call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr)
-
       end subroutine
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
