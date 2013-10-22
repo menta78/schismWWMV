@@ -737,7 +737,8 @@
                 do IDD = 1, MDC ! over all directions
                   if(IOBPD(IDD,IP) .EQ. 1) then    
                     value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
-                    myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = value + myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) 
+                    idx=toRowIndex(IPpetsc, ISS, IDD) + 1
+                    myBtemp(idx) = value + myBtemp(idx)
                   endif 
                 end do ! MDC
               end do ! MSC
