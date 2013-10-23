@@ -674,7 +674,8 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP, &
-     &                      ZERO, ONE
+     &                      ZERO, ONE, & 
+     &                      SRCDBG 
 
       IMPLICIT NONE
 
@@ -754,7 +755,8 @@
       WRITE(5011) TAUHFT
 
       DEALLOCATE(W)
-!      WRITE(STAT%FHNDL,*) 'STRESS TABLE DONE'
+      WRITE(SRCDBG%FHNDL,*) 'RESULTS HIGH FREQ STRESS TABLE'
+      WRITE(SRCDBG%FHNDL,*) TAUHFT
 
       RETURN
       END SUBROUTINE TAUHF_ECMWF_NEW
@@ -941,7 +943,8 @@
      &                 EPSMIN => SMALL, &
      &                 NANG => MDC, &
      &                 NFRE => MSC, &
-     &                 INDEP => DEP
+     &                 INDEP => DEP, &
+     &                 SRCDBG
       IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
@@ -985,6 +988,7 @@
       write(5010) DELU, DELTAUW
 
       WRITE(STAT%FHNDL,*) 'STRESS INIT', DELU, DELTAUW
+      WRITE(SRCDBG%FHNDL,*) 'STRESS INIT', DELU, DELTAUW
 !
 !*    1.2 DETERMINE STRESS.
 !         -----------------
@@ -1030,6 +1034,8 @@
       ENDDO
 
       write(5010) TAUT
+      WRITE(SRCDBG%FHNDL,*) 'RESULTS STRESS TABLE'
+      WRITE(SRCDBG%FHNDL,*) TAUT 
 
       RETURN
       END SUBROUTINE STRESS

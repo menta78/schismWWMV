@@ -392,7 +392,8 @@
      &                             DBG,                                  &
      &                             CHK,                                  &
      &                             MISC,                                 &
-     &                             WINDBG
+     &                             WINDBG,                               & 
+     &                             SRCDBG
 
          INTEGER                :: IDXHOTOUT = 0
          CHARACTER(LEN=140)     :: FILEGRID

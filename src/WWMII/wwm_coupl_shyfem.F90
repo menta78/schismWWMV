@@ -296,31 +296,31 @@
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
           WRITE(11103) HS
           FLUSH(11103)
-          WRITE(11104)  SME01
+          WRITE(11104) SME01
           FLUSH(11104)
-          WRITE(11105)  DM
+          WRITE(11105) DM
           FLUSH(11105)
-          WRITE(11106)  KMWAM
+          WRITE(11106) KMWAM
           FLUSH(11106)
-          WRITE(11107)  TPP
+          WRITE(11107) TPP
           FLUSH(11107)
-          WRITE(11108)  KPP
+          WRITE(11108) KPP
           FLUSH(11108)
-          WRITE(11109)  ORBITAL
+          WRITE(11109) ORBITAL
           FLUSH(11109)
-          WRITE(11110)  STOKES_X(:,IP)
+          WRITE(11110) STOKES_X(:,IP)
           FLUSH(11110)
-          WRITE(11111)  STOKES_Y(:,IP)
+          WRITE(11111) STOKES_Y(:,IP)
           FLUSH(11111)
           IF (LWINDFROMWWM) THEN
-            WRITE(11112)  WINDXY(IP,1)
+            WRITE(11112) WINDXY(IP,1)
             FLUSH(11112)
-            WRITE(11113)  WINDXY(IP,2)
+            WRITE(11113) WINDXY(IP,2)
             FLUSH(11113)
           END IF
-          WRITE(11114)  CD(IP) 
+          WRITE(11114) CD(IP) 
           FLUSH(11114)
-          WRITE(11115)  JPRESS(IP)
+          WRITE(11115) JPRESS(IP)
           FLUSH(11115)
         END DO
 # else

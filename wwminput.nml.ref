@@ -292,8 +292,8 @@
  QSCONV1        = 0.98               ! Number of grid points [%/100] that have to fulfill abs. wave height criteria EPSH1
  QSCONV2        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. wave height criteria EPSH2
  QSCONV3        = 0.98               ! Number of grid points [%/100] that have to fulfill sum. rel. wave action criteria EPSH3
- QSCONV4        = 0.98               ! Number of grid points [%/100] that have to fulfill avg. rel. wave period criteria EPSH4
- QSCONV5        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. avg. wave steepness criteria EPSH5
+ QSCONV4        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. avg. wave steepness criteria EPSH4
+ QSCONV5        = 0.98               ! Number of grid points [%/100] that have to fulfill avg. rel. wave period criteria EPSH5
  LEXPIMP        = F                  ! Use implicit schemes for freq. lower than given below by FREQEXP; used only if ICOMP=0
  FREQEXP        = 0.1                ! Minimum frequency for explicit schemes; only used if LEXPIMP=T and ICOMP=0
  EPSH1          = 0.01               ! Convergence criteria for rel. wave height ! EPSH1 < CONVK1 = REAL(ABS(HSOLD(IP)-HS2)/HS2)
