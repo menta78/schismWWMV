@@ -159,10 +159,12 @@
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
 #  ifdef DIRECT_METHOD
-      integer, allocatable :: AsparApp2Petsc(:), 
+      integer, allocatable :: AsparApp2Petsc(:)
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
+      logical :: FREQ_SHIFT_IMPL = .TRUE.
+      logical :: REFRACTION_IMPL = .TRUE.
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -308,7 +310,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -325,9 +327,14 @@
         integer :: i = 0, J = 0, o_J = 0
 
         ! number of nonzero without interface and ghosts
-        integer :: nnz_new = 0
+        integer :: nnz_new
         ! number of nonzeros in the offdiagonal submatrix without interface and ghosts
-        integer :: o_nnz_new = 0
+        integer :: o_nnz_new
+#  ifdef DIRECT_METHOD
+        integer NNZint, idxpos, ThePos
+        integer IDprev, IDnext
+#  endif
+        integer idx        
 
         type(genericData), allocatable :: toSort(:)
         integer :: nToSort = 0
@@ -730,6 +737,7 @@
         integer :: IP, IDD, ISS, IPpetsc
         INTEGER :: I
         INTEGER :: IPGL1, IE
+        integer idx
         ! to temp store the element areas
         real(rkind) :: TRIA03arr(MAXMNECON)
         real(rkind) :: AC22(MDC, MSC, MNP)
@@ -858,6 +866,7 @@
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
         use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
+        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
         use petscpool
         implicit none
         integer, intent(in) :: IP
@@ -866,7 +875,7 @@
 
         integer :: I
         integer :: IPGL1, IE, POS
-        integer :: I1, I2, I3
+        integer :: I1, I2, I3, IDD1, IDD2, idxpos
         integer :: POS_TRICK(3,2)
 
         real(rkind)  :: DTK, TMP3
@@ -1023,14 +1032,14 @@
             DO ISS=1,MSC-1
               C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           END DO
         END IF
         IF (REFRACTION_IMPL) THEN
           CALL PROPTHETA(IP,CAD)
           DO ISS = 1, MSC
-            CP = MAX(ZERO,CAD(ISS,:))
-            CM = MIN(ZERO,CAD(ISS,:))
+            CP_THE = MAX(ZERO,CAD(ISS,:))
+            CM_THE = MIN(ZERO,CAD(ISS,:))
             DO IDD=1,MDC
               IDD1 = IDD - 1
               IDD2 = IDD + 1
@@ -1210,7 +1219,7 @@
         implicit none
 
         integer :: IP, IDD, ISS
-        integer :: IPGL1
+        integer :: IPGL1, idx, IPpetsc
         PetscScalar value1
 
         !

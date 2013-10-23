@@ -81,7 +81,7 @@
       END SUBROUTINE
 
       !> create PETSC matrix which uses fortran arrays
-      subroutine createMatrix()
+      SUBROUTINE createMatrix()
         use datapool, only: np_global
         use petscpool
         use petscsys
@@ -106,11 +106,11 @@
         ! This avoids all reductions in the zero row routines and thus improves performance for very large process counts.
         call MatSetOption(matrix, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE, petscErr);CHKERRQ(petscErr)
 
-      end subroutine
+      end SUBROUTINE
 
       ! 1. create IA JA ASPAR petsc arrays
-      subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, DBG, iplg
+      SUBROUTINE createCSR_petsc()
+        use datapool, only: NNZ, MNE, INE, MNP, DBG, iplg, JA
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -256,7 +256,7 @@
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.250'
         endif
-      end subroutine
+      end SUBROUTINE
 
       !> fill matrix, RHs, call solver
       SUBROUTINE  EIMPS_PETSC_PARALLEL(ISS, IDD)
@@ -546,14 +546,14 @@
          CHKERRQ(petscErr);
          !IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
          ! we have to fill the ghost and interface nodes with the solution from the other threads
-         ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
+         ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
          ! normally set to 0, because they do net exist in petsc
          !call exchange_p2d(X)
          AC2(:, ISS, IDD) = MAX(0.0_rkind,X)
       END SUBROUTINE
 
       !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
-      subroutine PETSC_FINALIZE_PARALLEL()
+      SUBROUTINE PETSC_FINALIZE_PARALLEL()
         implicit none
 
         ! we deallocate only arrays who are declared in this file!
@@ -566,7 +566,7 @@
         if(allocated(CSR_App2PetscLUT)) deallocate(CSR_App2PetscLUT)
         if(allocated(o_CSR_App2PetscLUT)) deallocate(o_CSR_App2PetscLUT)
 
-      end subroutine
+      end SUBROUTINE
 
     END MODULE
 # endif
