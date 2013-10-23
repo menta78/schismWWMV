@@ -158,12 +158,12 @@
       integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
       integer, allocatable :: AsparApp2Petsc(:), 
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-#endif
+#  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
       ! locality ..., stack overflow danger...
@@ -210,14 +210,14 @@
         call MPI_Comm_rank(comm, rank, ierr)
         call MPI_Comm_size(comm, nProcs, ierr)
 
-#ifdef PETSC_DEBUG
+#  ifdef PETSC_DEBUG
         call PetscPrintf(PETSC_COMM_WORLD, "PETSC_INIT_BLOCK\n", petscErr);CHKERRQ(petscErr)
 !!$OMP PARALLEL
 !        nOMPthreads =  omp_get_num_threads()
 !!$OMP END PARALLEL
 !        write(DBG%FHNDL,*) "openmp threads", nOMPthreads
 
-#endif
+#  endif
         call createMappings
         call createMatrix
 
@@ -253,10 +253,10 @@
 
          call createSolver()
 
-#ifdef PETSC_DEBUG
+#  ifdef PETSC_DEBUG
          if(rank == 0) call printSolverTolerance(solver)
          if(rank == 0) call printKSPType(Solver);
-#endif
+#  endif
 
         deallocate(onlyGhostsBlock, stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 2')
@@ -284,9 +284,9 @@
         nLocalRowBigMatrix = nNodesWithoutInterfaceGhosts * MSC*MDC
         nGlobalRowBigMatrix = np_global * MSC*MDC
         call createCSR_petsc()
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
         call createCSR_petsc_small()
-#endif
+#  endif
         call MatCreateMPIAIJWithSplitArrays(PETSC_COMM_WORLD,           &
      &       nLocalRowBigMatrix, nLocalRowBigMatrix,                    &
      &       nGlobalRowBigMatrix, nGlobalRowBigMatrix,                  &
@@ -364,7 +364,7 @@
           end do
         end do
 
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
           nnz_new=nnz_new + MDC*(2*(MSC-1))*nNodesWithoutInterfaceGhosts
           maxNumConnNode = maxNumConnNode +2
@@ -374,7 +374,7 @@
           maxNumConnNode = maxNumConnNode +2
         END IF
         NNZint=nnz_new+o_nnz_new
-#endif
+#  endif
 
         ! we have now for every node their connected nodes
         ! iterate over connNode array to create IA and JA
@@ -384,19 +384,19 @@
      &    oIA_petsc(nLocalRowBigMatrix+1),                              &
      &    oJA_petsc(o_nnz_new), oASPAR_petsc(o_nnz_new),                &
      &    toSort(maxNumConnNode), o_toSort(maxNumConnNode),             &
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
      &    AsparApp2Petsc(NNZint), oAsparApp2Petsc(NNZint),              &
      &    IA_Ptotal(MSC,MDC,nNodesWithoutInterfaceGhosts),              &
      &    I_DIAGtotal(MSC,MDC,nNodesWithoutInterfaceGhosts),            &
-#endif
+#  endif
      &    stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
 
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
         AsparApp2Petsc = -999
         oAsparApp2Petsc = -999
         IA_Ptotal=0
-#endif
+#  endif
         IA_petsc = 0
         JA_petsc = 0
         ASPAR_petsc = 0
@@ -415,9 +415,9 @@
         ! Do the sort with a simple bubble sort. yes, bubble sort is vey slow,
         ! but we have only a few numbers to sort (max 10 I assume).
         ! over all petsc IP rows
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
         idxpos=0
-#endif
+#  endif
         do IPpetsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IPpetsc-1)+1
           ! die anzahl NNZ pro zeile ist fuer alle IS ID gleich.
@@ -431,20 +431,20 @@
               o_toSort(:)%id = HUGE(0)
               o_nToSort = 0
               ! over all nodes in this row
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
               IA_Ptotal(ISS,IDD,IPpetsc)=idxpos
-#endif
+#  endif
               do i = IA_P(IP)+1, IA_P(IP+1)
                 ! found a ghost node, treat them special
                 if(ALOold2ALO(JA(i)) .eq. -999) then
                   o_ntoSort = o_ntoSort + 1
                   ! store the old position in ASPAR
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   o_toSort(o_nToSort)%userData = i
-#else
+#  else
                   idxpos=idxpos+1
                   o_toSort(o_nToSort)%userData = idxpos
-#endif
+#  endif
                   !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
                   ThePos=toRowIndex( AGO2PGO(iplg(JA(i))-1)+1, ISS, IDD)
                   o_toSort(o_nToSort)%id = ThePos
@@ -453,15 +453,15 @@
                   nToSort = nToSort + 1
                   ThePos=toRowIndex( ALO2PLO(JA_P(i))+1, ISS, IDD )
                   toSort(nToSort)%id = ThePos
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   toSort(nToSort)%userData = i
-#else
+#  else
                   idxpos=idxpos+1
                   toSort(nToSort)%userData = idxpos
-#endif
+#  endif
                 end if
               end do ! cols
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
               IF (FREQ_SHIFT_IMPL) THEN
                 IF (ISS .gt. 1) THEN
                   idxpos=idxpos+1
@@ -496,7 +496,7 @@
                 o_toSort(o_nToSort)%userData = idxpos
                 o_toSort(o_nToSort)%id = ThePos
               END IF
-#endif
+#  endif
               call bubbleSort(toSort, nToSort)
               call bubbleSort(o_toSort, o_nToSort)
 
@@ -504,23 +504,23 @@
               IA_petsc(idx + 1) = IA_petsc(idx) + nToSort
               do i = 1, nToSort
                 J = J + 1
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
                 AsparApp2Petsc(toSort(i)%userData) = J
-#endif
+#  endif
                 JA_petsc(J) = toSort(i)%id
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
                 IF (JA_petsc(J) .eq. bigMatrixRow) THEN
                   I_DIAGtotal(ISS,IDD,IPpetsc)=J
                 END IF
-#endif
+#  endif
               end do
 
               oIA_petsc(idx + 1) = oIA_petsc(idx) + o_nToSort
               do i = 1, o_nToSort
                 o_J = o_J + 1
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
                 oAsparApp2Petsc(o_toSort(i)%userData) = J
-#endif
+#  endif
                 oJA_petsc(o_J) = o_toSort(i)%id
               end do
 
@@ -534,7 +534,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
         use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg
@@ -666,7 +666,7 @@
         deallocate(toSort, o_toSort, stat=stat)
         if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
       end subroutine
-#endif
+#  endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -884,13 +884,13 @@
         real(rkind)  :: K1
         real(rkind)  :: DELTAL(3,MAXMNECON)
         real(rkind)  :: NM(MAXMNECON)
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
         real(rkind)  :: A_SIG(MSC, MDC), B_SIG(MSC, MDC), C_SIG(MSC, MDC)
         real(rkind)  :: A_THE(MSC, MDC), B_THE(MSC, MDC), C_THE(MSC, MDC)
         REAL(rkind)  :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
         REAL(rkind)  :: CP_THE(MDC), CM_THE(MDC)
         REAL(rkind)  :: CAD(MSC,MDC), CAS(MSC,MDC)
-#endif
+#  endif
                 ! uncomment this for CADVXY2
         ! store all node numbers for CADVXY2
         !> \todo MAXMNECON*3 is too much. we only need maxNumConnNode
@@ -964,9 +964,9 @@
 
         IPpetsc = ALO2PLO(IP-1)+1
         ! update position in petsc aspar array
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
         petscAsparPosi1 =  MSC*MDC * IA_petsc_small(IPpetsc)
-#endif
+#  endif
 
         nConnNode = IA_petsc_small(IPpetsc+1) - IA_petsc_small(IPpetsc)
 !
@@ -1002,7 +1002,7 @@
           elementList(i) = IE
         enddo
         NECON = CCON(IP)
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
           CALL PROPSIGMA(IP,CAS)
           DO IDD = 1, MDC
@@ -1042,24 +1042,22 @@
             END DO
           END DO
         END IF
-#endif
+#  endif
         ! over all frequency
         do ISS = 1, MSC
           ! update position in petsc aspar array
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
           petscAsparPosi2 = petscAsparPosi1 + (ISS-1)* MDC *nConnNode
-#endif
+#  endif
 !             CALL CADVXY2(ISS, nodeList, nodeListSize, C)
           call CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
-          
-#endif
           do IDD = 1, MDC ! over all directions
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
             idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
-#endif
-#ifndef DIRECT_METHOD
+#  endif
+#  ifndef DIRECT_METHOD
             petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
-#endif
+#  endif
 
             if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
               !
@@ -1091,51 +1089,51 @@
                 value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
                 ! I1
 
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                 idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
-#else
+#  else
                 idxpos=idxpos+1
                 idx=AsparApp2Petsc(idxpos)
-#endif
+#  endif
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
 
                 ! I2
 
                 if(AsparApp2Petsc_small(I2) .eq. -999) then
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx=oAspar2petscAspar(IP, ISS, IDD, I2)
-#else
+#  else
                   idxpos=idxpos+1
                   idx=oAsparApp2Petsc(idxpos)
-#endif
+#  endif
                   oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
                 else
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
-#else
+#  else
                   idxpos=idxpos+1
                   idx=AsparApp2Petsc(idxpos)
-#endif
+#  endif
                   ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
                 endif
 
                 ! I3
 
                 if(AsparApp2Petsc_small(I3) .eq. -999) then
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx=oAspar2petscAspar(IP, ISS, IDD, I3)
-#else
+#  else
                   idxpos=idxpos+1
                   idx=oAsparApp2Petsc(idxpos)
-#endif
+#  endif
                   oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
                 else
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
-#else
+#  else
                   idxpos=idxpos+1
                   idx=AsparApp2Petsc(idxpos)
-#endif
+#  endif
                   ASPAR_petsc(idx) = value3 + ASPAR_petsc(idx)
                 endif
               end do !I: loop over connected elements ...
@@ -1145,17 +1143,17 @@
               do I = 1, CCON(IP)
                 I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                 value1 =  TRIA03arr(i)   ! Diagonal entry
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                 idx=aspar2petscAspar(IP, ISS, IDD, I1)
-#else
+#  else
                 idxpos=idxpos+1
                 idx=AsparApp2Petsc(idxpos)
-#endif
+#  endif
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
               end do !I: loop over connected elements ...
             end if
 
-#ifdef DIRECT_METHOD
+#  ifdef DIRECT_METHOD
             IF (FREQ_SHIFT_IMPL) THEN
               IF (ISS .gt. 1) THEN
                 idxpos=idxpos+1
@@ -1192,7 +1190,7 @@
               idx=AsparApp2Petsc(idxpos)
               ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
             END IF
-#endif
+#  endif
           end do !IDD
         end do !ISS
       end subroutine
@@ -1236,11 +1234,11 @@
               IPpetsc = ALO2PLO(IPGL1-1)+1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx=aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))
-#else
+#  else
                   idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-#endif
+#  endif
                   ASPAR_petsc(idx) = SI(IPGL1)
                 end do ! IDD
               end do ! ISS
@@ -1255,11 +1253,11 @@
               IPpetsc = ALO2PLO(IPGL1-1)+1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                   idx=aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))
-#else
+#  else
                   idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-#endif
+#  endif
                   ASPAR_petsc(idx) = SI(IPGL1)
                 end do ! IDD
               end do ! ISS
@@ -1280,11 +1278,11 @@
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then 
                     value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
                     idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
-#else
+#  else
                     idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-#endif
+#  endif
                     ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
                   endif
                 end do ! IDD
@@ -1518,9 +1516,9 @@
         use petscpool
 
         implicit none
-#ifdef TIMINGS
+#  ifdef TIMINGS
         real    ::  startTime, endTime
-#endif
+#  endif
         integer :: IP, rowLocal, IDD, ISS
         PetscScalar :: value
         ! for the exchange
@@ -1531,29 +1529,29 @@
 
         call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
 
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(startTime)
-#endif
+#  endif
         call calcASPAR()
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(endTime)
 #endif
-#ifdef TIMINGS
+#  ifdef TIMINGS
         if(rank == 0) print '("calcASPAR Time = ",f6.3," sec")',endTime - startTime
-#endif
+#  endif
 !         call printMatrixProperties(matrix)
 !         call plotMatrix(matrix)
 
-#ifdef TIMINGS
+#  ifdef TIMINGS
 !         call MY_WTIME(startTime)
-#endif
+#  endif
         call calcB()
-#ifdef TIMINGS
+#  ifdef TIMINGS
 !         call MY_WTIME(endTime)
-#endif
-#ifdef TIMINGS
+#  endif
+#  ifdef TIMINGS
 !         if(rank == 0) print '("calcB Time = ",f6.3," sec")',endTime - startTime
-#endif
+#  endif
         ! fill x
         call useOldSolution
 
@@ -1566,14 +1564,14 @@
         if(samePreconditioner .eqv. .true.) call KSPSetOperators(Solver, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
         call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(startTime)
-#endif
+#  endif
         ! Solve!
         call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(endTime)
-#endif
+#  endif
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
 
         call KSPGetConvergedReason(Solver, reason, petscErr)
@@ -1583,7 +1581,7 @@
           !write(stat%fhndl,*) 'Failure to converge'
         endif
 
-#ifdef PETSC_DEBUG
+#  ifdef PETSC_DEBUG
         if(rank == 0) then
           if(reason .LT. 0 ) then
              write(DBG%FHNDL,*) "Failure to converge\n"
@@ -1592,11 +1590,11 @@
             CHKERRQ(petscErr)
             if(iteration /= 0)  write(DBG%FHNDL,*) "Number of iterations", iteration
           endif
-#ifdef TIMINGS
+#   ifdef TIMINGS
           print '("solver Time = ",f6.3," sec")', endTime - startTime
-#endif
+#   endif
         endif
-#endif
+#  endif
 
 !         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
 !         if(rank == 0) print '("overall Time = ",f6.3," sec")',endTime - startTime
@@ -1703,7 +1701,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
       !> @brief convert from app order position in ASPAR to petsc bigmatrix position in aspar_petsc
       !> @param IP local node  index in app. counts from 1
       !> @param ISS current frequency. (counts from 1)
@@ -1739,11 +1737,11 @@
           write(DBG%FHNDL,*) rank, "aspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
         endif
       end function
-#endif
+#  endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifndef DIRECT_METHOD
+#  ifndef DIRECT_METHOD
       !> @brief convert from app order position in ASPAR to petsc bigmatrix position in oaspar_petsc (for offdiagonal submatrix)
       !> @param IP local node  index in app. counts from 1
       !> @param ISS current frequency. counts from 1
@@ -1778,7 +1776,7 @@
           write(DBG%FHNDL,*) rank, "oAspar2petscAspar < 1 !! IPpetsclocal IS ID asparposi", IPpetscLocal, ISS, IDD, asparPosition
         endif
       end function
-#endif
+#  endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1841,13 +1839,13 @@
         ! node numbers...
         integer :: IPpetsc, IP, IP_old
         ! time measurement
-#ifdef TIMINGS
+#  ifdef TIMINGS
         real :: startTime, endTime
-#endif
+#  endif
 
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(startTime)
-#endif
+#  endif
 
         positionMax = -1
         positionMin = -1
@@ -1929,9 +1927,9 @@
         call VecRestoreArrayF90(diagonal, array, petscErr)
         CHKERRQ(petscErr);
         call VecDestroy(diagonal, petscErr);CHKERRQ(petscErr)
-#ifdef TIMINGS
+#  ifdef TIMINGS
         call MY_WTIME(endTime)
-#endif
+#  endif
 
         ! print only a detailed info if there are zero diagonal entries
         if(zeroElementsCounter /= 0) then
@@ -1948,9 +1946,9 @@
           end do
 
           write(DBG%FHNDL,*) rank, " There are total ", zeroElementsCounter," entries"
-#ifdef TIMINGS
+#  ifdef TIMINGS
           write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ", endTime - startTime," sec"
-#endif
+#  endif
         endif
       end subroutine
 !**********************************************************************

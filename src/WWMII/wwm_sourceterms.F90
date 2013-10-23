@@ -125,7 +125,7 @@
 #endif
 
 #ifdef TIMINGS
-         TIME2 = TIME2 + mpi_wtime()
+         call MY_WTIME(TIME2)
 #endif 
 
 
@@ -299,7 +299,7 @@
          END IF ! ISELECT 
 
 #ifdef TIMINGS
-         TIME3 = TIME3 + mpi_wtime()
+         call MY_WTIME(TIME3)
 #endif 
          !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
 
@@ -368,7 +368,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         TIME4 = TIME4 + mpi_wtime()
+         call MY_WTIME(TIME4)
 #endif 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
@@ -431,7 +431,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME5 = TIME5 +  mpi_wtime()
+         call MY_WTIME(TIME5)
 #endif 
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10).AND.ISHALLOW(IP).EQ.1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. VERYSMALL) THEN
@@ -457,7 +457,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME6 = TIME6 + mpi_wtime()
+         call MY_WTIME(TIME6)
 #endif 
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
@@ -468,7 +468,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME7 = TIME7 + mpi_wtime()
+         call MY_WTIME(TIME7)
 #endif 
 
          IF (MESBF .GE. 1) THEN
@@ -487,7 +487,7 @@
          ENDIF
 
 #ifdef TIMINGS
-        TIME8 = TIME8 + mpi_wtime()
+        call MY_WTIME(TIME8)
 #endif 
 
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
@@ -612,7 +612,7 @@
          ENDIF
 
 #ifdef TIMINGS 
-         TIME9 = TIME9 + mpi_wtime()
+         call MY_WTIME(TIME9)
 #ifdef WWM_MPI 
          IF (IP == MNP .AND. myrank == 0 ) THEN
 #else if 
