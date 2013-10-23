@@ -42,9 +42,6 @@
       SUBROUTINE PIPE_ROMS_IN(K,IFILE,IT)
       USE DATAPOOL
       IMPLICIT NONE
-# ifdef WWM_MPI
-      include 'mpif.h'
-# endif
       INTEGER, INTENT(IN)  :: K,IFILE,IT
       INTEGER              :: IP
 # ifdef WWM_MPI
@@ -123,9 +120,6 @@
       SUBROUTINE PIPE_ROMS_OUT(K)
       USE DATAPOOL
       IMPLICIT NONE
-# ifdef WWM_MPI
-      include 'mpif.h'
-# endif
       INTEGER, INTENT(IN)  :: K
       INTEGER              :: IP
 # ifdef WWM_MPI

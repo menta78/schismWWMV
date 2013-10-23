@@ -465,9 +465,6 @@
       SUBROUTINE CHECK_STEADY(TIME, CONV1, CONV2, CONV3, CONV4, CONV5)
         USE DATAPOOL
         IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 !AR: Joseph please check this code ...
 !

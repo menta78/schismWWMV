@@ -667,8 +667,8 @@
        USE DATAPOOL, only : nwild_gb, nwild_loc, nwild_loc_res
        USE datapool, only : iplg, np_global
        USE datapool, only : istatus, itype, comm, ierr, myrank, rtype, nproc
+       use datapool, only : MPI_SUM
        IMPLICIT NONE
-       include 'mpif.h'
        integer, allocatable :: nwild_i(:), nwild_gbi(:)
        integer :: iProc, istat
        INTEGER :: IP
@@ -1087,9 +1087,6 @@
       SUBROUTINE INIT_STATION_OUTPUT()
       USE DATAPOOL
       IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-#endif
       INTEGER           :: I, NI(3), IP, IS
       integer istat
       REAL(rkind)              :: XYTMP(2,MNP)

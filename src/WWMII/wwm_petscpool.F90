@@ -570,7 +570,7 @@
 
 ! create App Local <-> App Global mappings
 ! create App Local Old <-> App Local new mapping (without interface nodes)
-        allocate(ALOold2ALO(0:NP_RES + npg -1), &
+        allocate(ALOold2ALO(NP_RES + npg), &
                 AGO2ALO(0:np_global-1), &
                 ALO2AGO(0:nNodesWithoutInterfaceGhosts-1), &
                 stat=stat)
@@ -585,18 +585,18 @@
 
         nNodesWithoutInterfaceGhosts=0
         do i = 1, NP_RES
-            if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
-              if(( ipgl( iplg(i) )%next%rank .le. rank )) then
-                cycle
-              end if
+          if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
+            if(( ipgl( iplg(i) )%next%rank .le. rank )) then
+              cycle
             end if
+          end if
 
-            ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
-            AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
+          ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
+          AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
 
-            ALOold2ALO(i-1) = nNodesWithoutInterfaceGhosts
+          ALOold2ALO(i) = nNodesWithoutInterfaceGhosts
 
-            nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
+          nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
         end do
 
 ! create PETsc Local -> Global mapping

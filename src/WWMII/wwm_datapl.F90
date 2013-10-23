@@ -16,38 +16,7 @@
 #error "Sorry PDLIB and WWM_SOLVER are not supported at the moment"
 #endif
 
-         use yowpdWWM, only :     itype,            & ! MPI integer type
-     &                         rtype,            & ! MPI real type
-     &                         llist_type,       & ! ADT for global-to-local linked-lists
-     &                         comm,             & ! MPI Communicator
-     &                         ierr,             &
-     &                         istatus,          & ! Return status for MPI calls
-     &                         initPD,           & 
-     &                         parallel_abort,   &
-     &                         parallel_finalize,&
-     &                         myrank,           &
-     &                         nproc,            & ! Nuber of threads
-     &                         MNE => ne,        & ! Elements of the resident domain. There are not ghost element in pdlib
-     &                         MNP => npa,       & ! Nodes in the augmented domain
-     &                         NP_RES => np,     & ! Local number of resident nodes
-     &                         np,               &
-     &                         npg,              & ! nuber of ghost nodes
-     &                         DEP8 => z,        & ! depth in the augmented domain
-     &                         INETMP => INE,    & ! Element connection table of the augmented domain?
-! pdlib does not know about spheric data or not. So XLON/YLON points to the "normal" x/y data
-     &                         XLON => x,        &
-     &                         YLAT => y,        &
-     &                         XPTMP => x,       & ! X-Coordinate augmented domain
-     &                         YPTMP => y,       &
-     &                         np_global,        & ! global number of nodes
-     &                         ne_global,        & ! global number of elements
-     &                         iplg,             & ! node local to global mapping
-     &                         ipgl,             & ! node global to local mapping
-     &                         ielg,             & ! element local to global mapping
-     &                         exchange_p2d,     & ! 2D node
-     &                         exchange_p2di,    &
-     &                         exchange_p3d_wwm, &
-     &                         exchange_p4d_wwm  
+         use wwm_pdlib
 #else
 
 #  if defined(SELFE) || defined(WWM_MPI)
@@ -70,7 +39,7 @@
      &                         ipgl,             & ! node global to local mapping
      &                         ielg,             & ! element local to global maping
      &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
-
+      use MPI
      
 #  endif
 
@@ -119,10 +88,12 @@
 #endif
 
 #ifndef SELFE
-# ifdef USE_SINGLE
+#  ifndef PDLIB
+#   ifdef USE_SINGLE
          integer,parameter :: rkind = 4
-# else
+#   else
          integer,parameter :: rkind = 8      ! Default real datatype
+#   endif
 # endif
 #endif
          INTEGER    :: NP_TOTAL, NE_TOTAL

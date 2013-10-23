@@ -6,9 +6,6 @@
       SUBROUTINE SPATIAL_GRID()
          USE DATAPOOL
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID 
-         INCLUDE 'mpif.h'
-#endif
          REAL(rkind)            :: TL1, TL2, TL3
          REAL(rkind)            :: TMPTLMIN
          REAL(rkind)            :: TMPTLMAX 

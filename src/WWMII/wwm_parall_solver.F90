@@ -794,7 +794,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE CREATE_WWM_P2D_EXCH(MSCeffect)
       USE DATAPOOL
       implicit none
-      include 'mpif.h'
       integer, intent(in) :: MSCeffect
       integer :: ListFirst(nproc)
       integer :: ListCommon_recv(nproc)
@@ -1095,7 +1094,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE CREATE_WWM_MAT_P2D_EXCH(MSCeffect)
       USE DATAPOOL
       implicit none
-      include 'mpif.h'
       integer, intent(in) :: MSCeffect
       integer :: ListFirstMNP(nproc), ListFirstNNZ(nproc)
       integer :: ListCommon_send(nproc), ListCommon_recv(nproc)
@@ -1714,8 +1712,9 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
       USE DATAPOOL, only : wwm_ListDspl_recv
       USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
+      USE datapool, only : MPI_STATUS_SIZE
       implicit none
-      include 'mpif.h'
+
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: ListColor(nproc)
       real(rkind) :: p2d_data_send(MNP)
@@ -1842,7 +1841,6 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE INIT_COVLOWER_ARRAY(LocalColor)
       USE DATAPOOL
       implicit none
-      include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer :: ListFirst(nproc)
       integer :: ListCommon_recv(nproc)
@@ -2343,7 +2341,6 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
       USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
       implicit none
-      include 'mpif.h'
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer Jstatus_L(NNZ), Jstatus_U(NNZ)
       integer IP, J, JP, DoOper
@@ -2798,7 +2795,6 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
       USE datapool, only : comm, ierr, myrank
       implicit none
-      include 'mpif.h'
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(LocalColor % MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock

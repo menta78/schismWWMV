@@ -107,10 +107,6 @@
 !
          USE DATAPOOL
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
          LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
@@ -382,9 +378,7 @@
       SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
       USE DATAPOOL
       IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-#endif
+
       CHARACTER(LEN=15), INTENT(IN) :: CTIME
       LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
@@ -679,9 +673,7 @@
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
+
 # ifdef MPI_PARALL_GRID
       REAL(rkind) :: OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE)
       REAL(rkind) :: WK_STATIONS_SUM(IOUTS,MSC)
@@ -955,9 +947,7 @@
       SUBROUTINE OUTPUT_LINE(CTIME,LINIT_OUTPUT)
          USE DATAPOOL
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
+
          CHARACTER(LEN=15), INTENT(IN) :: CTIME
          LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
@@ -1805,7 +1795,6 @@
       real(rkind), intent(in) :: OUTT(NPWORK, NBVAR)
       integer istat
 # ifdef MPI_PARALL_GRID
-      include 'mpif.h'
       REAL(rkind), allocatable :: LVect(:,:)
       REAL(rkind) :: eVect(3)
       integer :: iProc
@@ -1860,9 +1849,6 @@
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
       INTEGER            :: IP, istat
 # ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable  :: OUTT_LOC(:,:)

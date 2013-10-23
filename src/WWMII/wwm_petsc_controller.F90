@@ -58,9 +58,9 @@
         integer, intent(in) :: ISS, IDD
 
 #ifdef MPI_PARALL_GRID
-          call EIMPS_PETSC_PARALLEL(ISS, IDD)
+        call EIMPS_PETSC_PARALLEL(ISS, IDD)
 #else
-          call EIMPS_PETSC_SERIELL(ISS, IDD)
+        call EIMPS_PETSC_SERIELL(ISS, IDD)
 #endif
       end subroutine
 

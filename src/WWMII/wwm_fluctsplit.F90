@@ -432,11 +432,6 @@
        SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID )
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -691,11 +686,6 @@
        SUBROUTINE EXPLICIT_PSI_SCHEME  ( IS, ID )
          USE DATAPOOL
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -896,12 +886,6 @@
        SUBROUTINE EXPLICIT_LFPSI_SCHEME(IS,ID)
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -1181,10 +1165,6 @@
      SUBROUTINE  EIMPS_V1( IS, ID)
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 
          INTEGER, INTENT(IN)    :: IS,ID
 
@@ -2426,10 +2406,6 @@
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
@@ -2836,10 +2812,6 @@
 
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
@@ -3052,10 +3024,6 @@
        SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
