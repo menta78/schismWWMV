@@ -2257,7 +2257,7 @@
              POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
            END DO
          END DO
-
+         deallocate(CELLVERTEX)
          IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
