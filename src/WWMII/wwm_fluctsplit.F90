@@ -2387,7 +2387,7 @@
             END DO
           END DO
          ENDIF
-
+      DEALLOCATE(PTABLE)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
