@@ -388,14 +388,14 @@
         USE mod_coupler
         USE DATAPOOL, only : DBG, parallel_abort, np_global, ne_global
         implicit none
-        integer i, j, k, iegb, stat, istat
+        integer i, j, k, iegb, istat
         character(len=256) :: RHEADER
         integer nb1, nb2
         integer TheId
         allocate(LONtrig_wav(np_global), LATtrig_wav(np_global), ListTrig_wav(ne_global,3), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 13')
         TheId=13000
-        open(TheId,file='hgrid.gr3',status='old',iostat=stat)
+        open(TheId,file='hgrid.gr3',status='old',iostat=istat)
         read(TheId,*) RHEADER
         read(TheId,*) nb1, nb2
         IF ((nb1.ne.ne_global).or.(nb2.ne.np_global)) THEN
