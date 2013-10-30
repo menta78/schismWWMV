@@ -1518,7 +1518,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine  EIMPS_PETSC_BLOCK()
-        use datapool, only: MSC, MDC, AC2, stat, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP, DBG
+        use datapool, only: MSC, MDC, AC2, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP, DBG
         use datapool, only: ipgl, exchange_p4d_wwm
         use petscsys
         use petscmat
