@@ -975,6 +975,7 @@
          WINDBG%FNAME  = 'winddbg.out'
          IOBPOUT%FNAME = 'iobp.out'
         IOBPDOUT%FNAME = 'iobpd.out'
+        SRCDBG%FNAME = 'srcdbg.out'
 !
 !2do ... dinstinguish between binary and ascii stuff ...
 !
@@ -998,11 +999,13 @@
          DBG%FHNDL      = STARTHNDL + 15 
          STAT%FHNDL     = STARTHNDL + 16 
          WINDBG%FHNDL   = STARTHNDL + 17 
+         SRCDBG%FHNDL   = STARTHNDL + 18
 
 #ifndef MPI_PARALL_GRID
          open(DBG%FHNDL,file='wwmdbg.out',status='unknown') !non-fatal errors
          open(STAT%FHNDL,file='wwmstat.out',status='unknown') !non-fatal errors
          open(WINDBG%FHNDL,file='windbg.out',status='unknown') !non-fatal errors
+         open(SRCDBG%FHNDL,file='srcdbg.out',status='unknown') !non-fatal errors
 #else
 # ifdef SELFE
          FDB  ='wwmdbg_0000'
@@ -1054,13 +1057,13 @@
          OPEN( IOBPOUT%FHNDL,  FILE = TRIM(IOBPOUT%FNAME))
          OPEN( IOBPDOUT%FHNDL, FILE = TRIM(IOBPDOUT%FNAME))
 
-           OUT1D%FHNDL = STARTHNDL + 18 
-            MISC%FHNDL = STARTHNDL + 19 
-         OUTSP1D%FHNDL = STARTHNDL + 20 
-         OUTPARM%FHNDL = STARTHNDL + 21 
-         OUTSP2D%FHNDL = STARTHNDL + 22 
+           OUT1D%FHNDL = STARTHNDL + 19 
+            MISC%FHNDL = STARTHNDL + 20 
+         OUTSP1D%FHNDL = STARTHNDL + 21 
+         OUTPARM%FHNDL = STARTHNDL + 22 
+         OUTSP2D%FHNDL = STARTHNDL + 23 
 
-         OUT%FHNDL     = STARTHNDL + 23 
+         OUT%FHNDL     = STARTHNDL + 24 
 
       END SUBROUTINE
 !**********************************************************************
