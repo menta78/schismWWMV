@@ -1,178 +1,177 @@
 #include "wwm_functions.h"
-! don't forget to uncomment if() )in wwm_compute
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 0 Fully Explicit
-!       SUBROUTINE FLUCT_EXPLICIT()
-!         USE DATAPOOL
-!         IMPLICIT NONE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 0 Fully Explicit
+       SUBROUTINE FLUCT_EXPLICIT()
+         USE DATAPOOL
+         IMPLICIT NONE
+ 
+         INTEGER             :: IS, ID, IP
+         REAL(rkind)         :: DTMAX
+ 
+!$OMP PARALLEL
+         IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_N_SCHEME(IS,ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_PSI_SCHEME(IS,ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
+             END DO
+           END DO
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 1
+       SUBROUTINE FLUCT_SEMIIMPLICIT()
+       USE DATAPOOL
+#ifdef PETSC
+       use PETSC_CONTROLLER, only : EIMPS_PETSC
+       use petsc_block,    only: EIMPS_PETSC_BLOCK
+#endif
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+       USE WWM_PARALL_SOLVER, only : I5_EIMPS
+# endif
+#endif
+       IMPLICIT NONE
+ 
+       INTEGER             :: IS, ID, IP
+       REAL(rkind)         :: DTMAX
+ 
+#ifdef PETSC
+       ! petsc block has its own loop over MSC MDC
+       IF(AMETHOD == 5) THEN
+         call EIMPS_PETSC_BLOCK
+         RETURN
+       END IF
+#endif
 ! 
-!         INTEGER             :: IS, ID, IP
-!         REAL(rkind)         :: DTMAX
+       IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+ !                 CALL EIMPS( IS, ID)
+               CALL EIMPS_V1( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNIMPS( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNEIMPS( IS, ID, DTMAX)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 4) THEN
+#ifdef PETSC
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EIMPS_PETSC(IS, ID)
+             END DO
+           END DO
+#endif
+         ELSE IF (AMETHOD == 6) THEN
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+           CALL I5_EIMPS(MainLocalColor, SolDat)
+# endif
+#endif
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 2
+       SUBROUTINE FLUCT_IMPLICIT()
+       USE DATAPOOL
+#ifdef PETSC
+       use PETSC_CONTROLLER, only : EIMPS_PETSC
+       use petsc_block,    only: EIMPS_PETSC_BLOCK
+#endif
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+        USE WWM_PARALL_SOLVER, only : I5_EIMPS
+# endif
+#endif
+       IMPLICIT NONE
+ 
+       INTEGER             :: IS, ID, IP
+       REAL(rkind)         :: DTMAX
+ 
+#ifdef PETSC
+       ! petsc block has its own loop over MSC MDC
+       IF(AMETHOD == 5) THEN
+         call EIMPS_PETSC_BLOCK
+         RETURN
+       END IF
+#endif
 ! 
-!         IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EXPLICIT_N_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EXPLICIT_PSI_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL FLUCTCFL(IS,ID,DTMAX)
-!               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         END IF
-!       END SUBROUTINE
-! 
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 1
-!       SUBROUTINE FLUCT_SEMIIMPLICIT()
-!       USE DATAPOOL
-! #ifdef PETSC
-!       use PETSC_CONTROLLER, only : EIMPS_PETSC
-!       use petsc_block,    only: EIMPS_PETSC_BLOCK
-! #endif
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!          USE WWM_PARALL_SOLVER, only : I5_EIMPS
-! # endif
-! #endif
-!       IMPLICIT NONE
-! 
-!       INTEGER             :: IS, ID, IP
-!       REAL(rkind)         :: DTMAX
-! 
-! #ifdef PETSC
-!       ! petsc block has its own loop over MSC MDC
-!       IF(AMETHOD == 5) THEN
-!         call EIMPS_PETSC_BLOCK
-!         RETURN
-!       END IF
-! #endif
-! 
-!       IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-! !                 CALL EIMPS( IS, ID)
-!               CALL EIMPS_V1( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNIMPS( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNEIMPS( IS, ID, DTMAX)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 4) THEN
-! #ifdef PETSC
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EIMPS_PETSC(IS, ID)
-!             END DO
-!           END DO
-! #endif
-!         ELSE IF (AMETHOD == 6) THEN
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!           CALL I5_EIMPS(MainLocalColor, SolDat)
-! # endif
-! #endif
-!         END IF
-!       END SUBROUTINE
-! 
-! 
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 2
-!       SUBROUTINE FLUCT_IMPLICIT()
-!       USE DATAPOOL
-! #ifdef PETSC
-!       use PETSC_CONTROLLER, only : EIMPS_PETSC
-!       use petsc_block,    only: EIMPS_PETSC_BLOCK
-! #endif
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!          USE WWM_PARALL_SOLVER, only : I5_EIMPS
-! # endif
-! #endif
-!       IMPLICIT NONE
-! 
-!       INTEGER             :: IS, ID, IP
-!       REAL(rkind)         :: DTMAX
-! 
-! #ifdef PETSC
-!       ! petsc block has its own loop over MSC MDC
-!       IF(AMETHOD == 5) THEN
-!         call EIMPS_PETSC_BLOCK
-!         RETURN
-!       END IF
-! #endif
-! 
-!       IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-! !                 CALL EIMPS( IS, ID)
-!               CALL EIMPS_V1( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNIMPS( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNEIMPS( IS, ID, DTMAX)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 4) THEN
-! #ifdef PETSC
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EIMPS_PETSC(IS, ID)
-!             END DO
-!           END DO
-! #endif
-!         ELSE IF (AMETHOD == 6) THEN
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!           CALL I5_EIMPS(MainLocalColor, SolDat)
-! # endif
-! #endif
-!         END IF
-!       END SUBROUTINE
-
+!$OMP PARALLEL
+       IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+ !                 CALL EIMPS( IS, ID)
+               CALL EIMPS_V1( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNIMPS( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNEIMPS( IS, ID, DTMAX)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 4) THEN
+#ifdef PETSC
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EIMPS_PETSC(IS, ID)
+             END DO
+           END DO
+#endif
+         ELSE IF (AMETHOD == 6) THEN
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+           CALL I5_EIMPS(MainLocalColor, SolDat)
+# endif
+#endif
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
