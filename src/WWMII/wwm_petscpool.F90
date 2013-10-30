@@ -538,7 +538,7 @@
         use petscsys
         implicit none
 
-        integer :: i, ierr
+        integer :: i, ierr, istat
         PetscInt :: ranges  ! accumulate range for every processor
         ! Application Ordering
         AO :: appOrdering
@@ -573,8 +573,8 @@
         allocate(ALOold2ALO(NP_RES + npg), &
                 AGO2ALO(0:np_global-1), &
                 ALO2AGO(0:nNodesWithoutInterfaceGhosts-1), &
-                stat=stat)
-        if(stat /= 0) then
+                stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
@@ -600,8 +600,8 @@
         end do
 
 ! create PETsc Local -> Global mapping
-        allocate(PLO2PGO(0:nNodesWithoutInterfaceGhosts), PGO2PLO(0:np_global), stat=stat)
-        if(stat /= 0) then
+        allocate(PLO2PGO(0:nNodesWithoutInterfaceGhosts), PGO2PLO(0:np_global), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.526'
         endif
@@ -616,8 +616,8 @@
         end do
 
 ! create App Global <-> PETsc Global mapping
-        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=stat)
-        if(stat /= 0) then
+        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
@@ -636,8 +636,8 @@
         call AODestroy(appOrdering, petscErr);CHKERRQ(petscErr)
 
 ! create App local <-> Petsc local mappings
-        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:nNodesWithoutInterfaceGhosts-1), stat=stat)
-        if(stat /= 0) then
+        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:nNodesWithoutInterfaceGhosts-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.562'
         endif
@@ -655,8 +655,8 @@
         ! create onlyGhosts array
         !> todo we don't need the onlyghost array with petsc block. only in petsc parallel. move code?
         nghost=NP_RES+npg-nNodesWithoutInterfaceGhosts
-        allocate(onlyGhosts(0:nghost-1), stat=stat)
-        if(stat /= 0) then
+        allocate(onlyGhosts(0:nghost-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.581'
         endif
