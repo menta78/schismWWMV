@@ -112,7 +112,7 @@ implicit none
   subroutine fillPublicVars()    
     use yowpd,only: nTasks, ipgl1=>ipgl, npa, ne, np, ng, x, y, z, INE, abort
     implicit  none
-    integer :: stat
+    integer :: istat
 
     nproc = nTasks
     MNP = npa
@@ -130,8 +130,8 @@ implicit none
     INETMP => INE
 
     if(allocated(ipgl)) deallocate(ipgl)
-    allocate(ipgl(np_global), stat=stat)
-    if(stat/=0) ABORT("allocate")
+    allocate(ipgl(np_global), stat=istat)
+    if(istat/=0) ABORT("allocate")
     ipgl(:)%id = 0
     ipgl(1:np_global)%id = ipgl1(1:np_global)
     ipgl(:)%rank = -1

@@ -203,7 +203,7 @@
 
 
         IMPLICIT NONE
-        integer :: ierr
+        integer :: ierr, istat
         integer :: IP, ISS, IDD
         integer :: nghostBlock
         integer, allocatable :: onlyGhostsBlock(:)
@@ -225,8 +225,8 @@
 
 ! create ghost blocks
         nghostBlock = nghost * MSC * MDC
-        allocate(onlyGhostsBlock(0:nghostBlock-1), stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 1')
+        allocate(onlyGhostsBlock(0:nghostBlock-1), stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 1')
         nghostBlock = 0
 
         do IP = 1, nghost
@@ -260,12 +260,12 @@
          if(rank == 0) call printKSPType(Solver);
 #  endif
 
-        deallocate(onlyGhostsBlock, stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 2')
+        deallocate(onlyGhostsBlock, stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 2')
 
 ! create  cumulative J sparse counter
-        allocate(Jcum(MNP+1), stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 3')
+        allocate(Jcum(MNP+1), stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 3')
         Jcum = 0
 
         do IP=1, MNP
@@ -325,6 +325,7 @@
         integer :: IDD = 0
         ! running variable
         integer :: i = 0, J = 0, o_J = 0
+        integer :: istat
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new
@@ -396,8 +397,8 @@
      &    IA_Ptotal(MSC,MDC,nNodesWithoutInterfaceGhosts),              &
      &    I_DIAGtotal(MSC,MDC,nNodesWithoutInterfaceGhosts),            &
 #  endif
-     &    stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
+     &    stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
 
 #  ifdef DIRECT_METHOD
         AsparApp2Petsc = -999
@@ -535,8 +536,8 @@
           end do ! IS
         end do ! petsc IP rows
 
-        deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
+        deallocate(toSort, o_toSort, stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
       end subroutine
 !**********************************************************************
 !*                                                                    *
@@ -603,8 +604,8 @@
      &           oIA_petsc_small(nNodesWithoutInterfaceGhosts+1),       &
      &           toSort(maxNumConnNode), o_toSort(maxNumConnNode),      &
      &           AsparApp2Petsc_small(NNZ), oAsparApp2Petsc_small(NNZ), &
-     &           stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 6')
+     &           stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 6')
 
         IA_petsc_small = 0
 
@@ -670,8 +671,8 @@
           end do
           oIA_petsc_small(IPpetsc+1) = oIA_petsc_small(IPpetsc) + o_nToSort
         end do
-        deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
+        deallocate(toSort, o_toSort, stat=istat)
+        if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
       end subroutine
 #  endif
 !**********************************************************************

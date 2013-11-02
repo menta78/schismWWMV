@@ -117,6 +117,7 @@
 
         ! max number of adj nodes per node
         integer :: maxNumConnNode = 0
+        integer :: istat
 
         ! running variable node number
         integer :: IP = 0
@@ -174,14 +175,14 @@
                  ! +1 because we have to store the diagonal node number too
      &            toSort(maxNumConnNode+1),                             &
      &            o_toSort(maxNumConnNode+1),                           &
-     &            stat=stat)
-        if(stat /= 0) then
+     &            stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.171'
         endif
 
-        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ), stat=stat)
-        if(stat /= 0) then
+        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.178'
         endif
@@ -251,8 +252,8 @@
           oIA_petsc(IP_petsc+1) = oIA_petsc(IP_petsc) + o_nToSort
         end do
 
-        deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) then
+        deallocate(toSort, o_toSort, stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.250'
         endif
