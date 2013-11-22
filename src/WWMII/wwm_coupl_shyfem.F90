@@ -238,7 +238,7 @@
           END DO
           STOKES_X(:,IP)=eUSTOKES_loc
           STOKES_Y(:,IP)=eVSTOKES_loc
-          JPRESS(IP)=eJPress
+          JPRESS(IP)=eJPress_loc
         ENDDO
       END SUBROUTINE
 !**********************************************************************
