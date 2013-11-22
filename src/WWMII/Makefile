@@ -1,15 +1,16 @@
 include ${PETSC_DIR}/conf/variables
-PROG = $(HOME)/bin/wwmadv
-#PROG = wwmadv
+#PROG = $(HOME)/bin/wwmadv
+PROG = wwmadv
 
-FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
+#FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
+FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on  
+NETCDF =  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -17,7 +18,7 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on 
+GRIB = 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
 PDLIB = 
 
@@ -35,14 +36,14 @@ F90 =  mpif90
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-F90OPTI =  -traceback -g -check all #-warn all,nouncalled,nounused -gen-interface
+##F90OPTI =  -traceback -g -check all #-warn all,nouncalled,nounused -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
-#F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
+F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g

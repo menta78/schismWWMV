@@ -195,7 +195,9 @@
         real(rkind) :: ZZETA
 
         DO IP=1,MNP
-          eDep=SHYFZETA(NLEV(IP),MNP)
+          !eDep=SHYFZETA(NLEV(IP),MNP)
+          !eDep=SHYFZETA(NLEV(IP),IP)		!ccfwwmIII
+          eDep=DEP(IP)				!ccfwwmIII
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
@@ -272,7 +274,7 @@
 !            *** COMPUTE RADIATION STRESSES 2D OR 3D *** ccf
 !
         IF (LCPL) THEN
-          IF (RADFLAG == 'VORTEX') THEN
+          IF (RADFLAG == 'VOR') THEN
             CALL STOKES_STRESS_INTEGRAL_SHYFEM
           ELSE
             CALL RADIATION_STRESS_SHYFEM

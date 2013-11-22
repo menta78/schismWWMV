@@ -657,7 +657,7 @@
 # if !defined PGMCL_COUPLING
          IF (LCPL .AND. LTIMOR) THEN
            CALL PIPE_TIMOR_OUT(K)
-#  ifdef SHYFEM_COUPING
+#  ifdef SHYFEM_COUPLING
          ELSE IF (LCPL .AND. LSHYFEM) THEN
            CALL PIPE_SHYFEM_OUT(K)
 #  endif
