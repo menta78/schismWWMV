@@ -3,7 +3,7 @@
 !*                                                                    *
 !**********************************************************************
 ! for ICOMP == 0 Fully Explicit
-       SUBROUTINE FLUCT_EXPLICIT()
+       SUBROUTINE FLUCT_EXPLICIT
          USE DATAPOOL
          IMPLICIT NONE
  
@@ -39,7 +39,7 @@
 !*                                                                    *
 !**********************************************************************
 ! for ICOMP == 1
-       SUBROUTINE FLUCT_SEMIIMPLICIT()
+       SUBROUTINE FLUCT_SEMIIMPLICIT
        USE DATAPOOL
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
@@ -107,7 +107,7 @@
 !*                                                                    *
 !**********************************************************************
 ! for ICOMP == 2
-       SUBROUTINE FLUCT_IMPLICIT()
+       SUBROUTINE FLUCT_IMPLICIT
        USE DATAPOOL
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
@@ -175,117 +175,22 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE FLUCT_1()
+      SUBROUTINE FLUCT_1
          USE DATAPOOL
-#ifdef PETSC
-         use PETSC_CONTROLLER, only : EIMPS_PETSC
-         use petsc_block,    only: EIMPS_PETSC_BLOCK
-#endif
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
-# endif
-#endif
          IMPLICIT NONE
 
-         INTEGER             :: IS, ID, IX
-         REAL(rkind)         :: DTMAX
-#ifdef PETSC
-         REAL(rkind)         :: u(msc,mdc,mnp)
-#endif
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCTUATIN SPLITTING PART'
          FLUSH(STAT%FHNDL)
-#ifdef PETSC
-         ! petsc block has its own loop over MSC MDC
-         IF(AMETHOD == 5) THEN
-           call EIMPS_PETSC_BLOCK
-           RETURN
-         END IF
-#endif
+         IF (ICOMP .EQ. 0) THEN
+           CALL FLUCT_EXPLICIT
+         ELSE IF (ICOMP .EQ. 1) THEN
+           CALL FLUCT_SEMIIMPLICIT
+         ELSE IF (ICOMP .EQ. 2) THEN
+           CALL FLUCT_IMPLICIT
+         ENDIF
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH FLUCTUATIN SPLITTING PART'
+         FLUSH(STAT%FHNDL)
 
-         IF (ICOMP == 0) THEN ! Fully Explicit
-           IF (AMETHOD == 1) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_N_SCHEME(IS,ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 2) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_PSI_SCHEME(IS,ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 3) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-               END DO
-             END DO
-           END IF
-         ELSE IF (ICOMP .GE. 1) THEN ! Implicit schemes ...
-           IF (AMETHOD == 1) THEN
-!$OMP PARALLEL PRIVATE (ID,IS,IX) 
-!$OMP DO SCHEDULE(GUIDED,MDC) 
-!             DO ID = 1, MDC
-!               DO IS = 1, MSC
-!                CALL EIMPS( IS, ID)
-!                 CALL EIMPS_V1( IS, ID)
-!               END DO
-!             END DO
-             DO IX = 1, NSPEC
-               ID = INT((IX-1)/MSC)+1
-               IS = IX - (ID-1) * MSC
-               CALL EIMPS( IS, ID)
-             END DO
-!$OMP ENDDO
-!$OMP END PARALLEL
-           ELSE IF (AMETHOD == 2) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL CNIMPS( IS, ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 3) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL CNEIMPS( IS, ID, DTMAX)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 4) THEN
-#ifdef PETSC
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EIMPS_PETSC(IS, ID)
-               END DO
-             END DO
-             do IS = 1, MSC
-               do ID = 1, MDC
-                 U(IS,ID,:) = AC2(:,IS,ID)
-               end do
-             end do
-             call exchange_p4d_wwm(U)
-             do IS = 1, MSC
-               do ID = 1, MDC
-                 AC2(:,IS,ID) = U(IS,ID,:)
-               end do
-             end do
-#endif
-           ELSE IF (AMETHOD == 6) THEN
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-             CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
-# endif
-#endif
-           END IF
-         END IF
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
-         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2385,8 +2290,8 @@
               JA_IE(POS,3,IE) = I3
             END DO
           END DO
+          DEALLOCATE(PTABLE)
          ENDIF
-      DEALLOCATE(PTABLE)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

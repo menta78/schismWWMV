@@ -303,8 +303,8 @@
 !        WRITE(5001,*) SSWELLF
 
         AALPHA = 0.0095_rkind
-        BBETA  = 1.75_rkind ! 1.54 for ECMWF
-        ZZALP   = 0.008_rkind
+        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+        ZZALP   = 0.006_rkind
         ZZWND   = 10._rkind
 
         SWELLFPAR = 1

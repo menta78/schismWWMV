@@ -423,7 +423,7 @@
         FLUSH(STAT%FHNDL)
 
         IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
-          CALL SOURCE_INT_EXP()
+          CALL SOURCE_INT_EXP
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_EXP'
