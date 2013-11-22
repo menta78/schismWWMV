@@ -527,7 +527,7 @@
               do i = 1, o_nToSort
                 o_J = o_J + 1
 #  ifdef DIRECT_METHOD
-                oAsparApp2Petsc(o_toSort(i)%userData) = J
+                oAsparApp2Petsc(o_toSort(i)%userData) = o_J
 #  endif
                 oJA_petsc(o_J) = o_toSort(i)%id
               end do
