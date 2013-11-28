@@ -497,12 +497,12 @@
                 END IF
                 idxpos=idxpos+1
                 ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDprev)
-                o_toSort(o_nToSort)%userData = idxpos
-                o_toSort(o_nToSort)%id = ThePos
+                toSort(nToSort)%userData = idxpos
+                toSort(nToSort)%id = ThePos
                 idxpos=idxpos+1
                 ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDnext)
-                o_toSort(o_nToSort)%userData = idxpos
-                o_toSort(o_nToSort)%id = ThePos
+                toSort(nToSort)%userData = idxpos
+                toSort(nToSort)%id = ThePos
               END IF
 #  endif
               call bubbleSort(toSort, nToSort)
@@ -936,7 +936,9 @@
         integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
         integer :: petscAsparPosi4, idx
         ! number of connected nodes for IPpetsc
+#  ifndef DIRECT_METHOD
         integer :: nConnNode
+#  endif
 
         
 
@@ -978,7 +980,9 @@
         petscAsparPosi1 =  MSC*MDC * IA_petsc_small(IPpetsc)
 #  endif
 
+#  ifndef DIRECT_METHOD
         nConnNode = IA_petsc_small(IPpetsc+1) - IA_petsc_small(IPpetsc)
+#  endif
 !
         ! uncomment this for CADVXY2
 !           nodeList = 0
