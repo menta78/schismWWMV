@@ -163,10 +163,10 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-      logical :: FREQ_SHIFT_IMPL = .TRUE.
-!      logical :: FREQ_SHIFT_IMPL = .FALSE.
-      logical :: REFRACTION_IMPL = .TRUE.
-!      logical :: REFRACTION_IMPL = .FALSE.
+!      logical :: FREQ_SHIFT_IMPL = .TRUE.
+      logical :: FREQ_SHIFT_IMPL = .FALSE.
+!      logical :: REFRACTION_IMPL = .TRUE.
+      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -312,7 +312,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -373,7 +373,6 @@
             endif
           end do
         end do
-        Print *, 'nnz_new=', nnz_new, 'o_nnz_new=', o_nnz_new
 #  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
           nnz_new=nnz_new + MDC*(2*(MSC-1))*nNodesWithoutInterfaceGhosts
@@ -401,6 +400,7 @@
 #  endif
      &    stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
+        Print *, 'NNZint=', NNZint
 
 #  ifdef DIRECT_METHOD
         AsparApp2Petsc = -999
@@ -443,6 +443,8 @@
               ! over all nodes in this row
 #  ifdef DIRECT_METHOD
               IA_Ptotal(ISS,IDD,IPpetsc)=idxpos
+              WRITE(740+myrank,*) 'IS/ID/IP=', ISS, IDD, IPpetsc
+              WRITE(740+myrank,*) 'idxpos=', idxpos
 #  endif
               do i = IA_P(IP)+1, IA_P(IP+1)
                 ! found a ghost node, treat them special
@@ -540,11 +542,10 @@
                 oJA_petsc(o_J) = o_toSort(i)%id
               end do
 
-            end do ! ID
-          end do ! IS
-        end do ! petsc IP rows
-        Print *, 'o_J=', o_J, 'J=', J
-        Print *, 'NNZint=', NNZint
+            end do
+          end do
+        end do
+        Print *, 'idxpos=', idxpos
 
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
@@ -867,7 +868,7 @@
       !> assembling the linear equation system
       !> wite direct into the petsc matrix. with openmp improvement
       subroutine calcASPARomp(IP)
-        use datapool, only: MSC, MDC, MNP, INE
+        use datapool, only: MSC, MDC, MNP, INE, myrank
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO
@@ -1078,11 +1079,11 @@
           do IDD = 1, MDC ! over all directions
 #  ifdef DIRECT_METHOD
             idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
+            WRITE(640+myrank,*) 'IS/ID/IP=', ISS,IDD, IPpetsc, idxpos
 #  endif
 #  ifndef DIRECT_METHOD
             petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
 #  endif
-
             if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
               !
               LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
@@ -1175,7 +1176,7 @@
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
               end do !I: loop over connected elements ...
             end if
-
+            WRITE(640+myrank,*) 'idxposfinal=', idxpos
 #  ifdef DIRECT_METHOD
             IF (FREQ_SHIFT_IMPL) THEN
               IF (ISS .gt. 1) THEN
