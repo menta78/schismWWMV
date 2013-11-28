@@ -164,7 +164,9 @@
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
       logical :: FREQ_SHIFT_IMPL = .TRUE.
+!      logical :: FREQ_SHIFT_IMPL = .FALSE.
       logical :: REFRACTION_IMPL = .TRUE.
+!      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -371,7 +373,7 @@
             endif
           end do
         end do
-
+        Print *, 'nnz_new=', nnz_new, 'o_nnz_new=', o_nnz_new
 #  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
           nnz_new=nnz_new + MDC*(2*(MSC-1))*nNodesWithoutInterfaceGhosts
@@ -472,12 +474,14 @@
 #  ifdef DIRECT_METHOD
               IF (FREQ_SHIFT_IMPL) THEN
                 IF (ISS .gt. 1) THEN
+                  nToSort = nToSort + 1
                   idxpos=idxpos+1
                   ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS-1, IDD)
                   toSort(nToSort)%userData = idxpos
                   toSort(nToSort)%id = ThePos
                 END IF
                 IF (ISS .lt. MSC) THEN
+                  nToSort = nToSort + 1
                   idxpos=idxpos+1
                   ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS+1, IDD)
                   toSort(nToSort)%userData = idxpos
@@ -495,10 +499,14 @@
                 ELSE
                   IDnext=IDD+1
                 END IF
+                !
+                nToSort = nToSort + 1
                 idxpos=idxpos+1
                 ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDprev)
                 toSort(nToSort)%userData = idxpos
                 toSort(nToSort)%id = ThePos
+                !
+                nToSort = nToSort + 1
                 idxpos=idxpos+1
                 ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDnext)
                 toSort(nToSort)%userData = idxpos
@@ -535,6 +543,8 @@
             end do ! ID
           end do ! IS
         end do ! petsc IP rows
+        Print *, 'o_J=', o_J, 'J=', J
+        Print *, 'NNZint=', NNZint
 
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
@@ -1103,53 +1113,52 @@
                 value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
                 ! I1
 
+
 #  ifndef DIRECT_METHOD
                 idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
-#  else
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-#  endif
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
 
                 ! I2
-
                 if(AsparApp2Petsc_small(I2) .eq. -999) then
-#  ifndef DIRECT_METHOD
                   idx=oAspar2petscAspar(IP, ISS, IDD, I2)
-#  else
-                  idxpos=idxpos+1
-                  idx=oAsparApp2Petsc(idxpos)
-#  endif
                   oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
                 else
-#  ifndef DIRECT_METHOD
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
-#  else
-                  idxpos=idxpos+1
-                  idx=AsparApp2Petsc(idxpos)
-#  endif
                   ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
                 endif
 
                 ! I3
-
                 if(AsparApp2Petsc_small(I3) .eq. -999) then
-#  ifndef DIRECT_METHOD
                   idx=oAspar2petscAspar(IP, ISS, IDD, I3)
-#  else
-                  idxpos=idxpos+1
-                  idx=oAsparApp2Petsc(idxpos)
-#  endif
                   oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
                 else
-#  ifndef DIRECT_METHOD
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                endif
 #  else
-                  idxpos=idxpos+1
+                idxpos=idxpos+1
+                idx=AsparApp2Petsc(idxpos)
+                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+
+                ! I2
+                idxpos=idxpos+1
+                if(AsparApp2Petsc(idxpos) .eq. -999) then
+                  idx=oAsparApp2Petsc(idxpos)
+                  oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
+                else
                   idx=AsparApp2Petsc(idxpos)
-#  endif
+                  ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
+                endif
+
+                ! I3
+                idxpos=idxpos+1
+                if(AsparApp2Petsc(idxpos) .eq. -999) then
+                  idx=oAsparApp2Petsc(idxpos)
+                  oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
+                else
+                  idx=AsparApp2Petsc(idxpos)
                   ASPAR_petsc(idx) = value3 + ASPAR_petsc(idx)
                 endif
+#  endif
               end do !I: loop over connected elements ...
 
             else ! add only triangle area
