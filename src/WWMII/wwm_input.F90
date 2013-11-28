@@ -1527,7 +1527,7 @@
 
          ! if using PETSc with AMETHOD 4 or 5 ICOMP must be greater equal 1 to init JA IA
          IF (AMETHOD .GE. 4 .AND. ICOMP .LT. 1) THEN
-           call wwm_abort('ICMP must be greater equal 1 to use PETSc')
+           call wwm_abort('ICOMP must be greater equal 1 to use PETSc')
          END IF
 
          ! if using PETSc with AMETHOD 4 or 5 LVECTOR must be FALSE

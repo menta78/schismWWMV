@@ -474,14 +474,14 @@
                 IF (ISS .gt. 1) THEN
                   idxpos=idxpos+1
                   ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS-1, IDD)
-                  o_toSort(o_nToSort)%userData = idxpos
-                  o_toSort(o_nToSort)%id = ThePos
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
                 END IF
                 IF (ISS .lt. MSC) THEN
                   idxpos=idxpos+1
                   ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS+1, IDD)
-                  o_toSort(o_nToSort)%userData = idxpos
-                  o_toSort(o_nToSort)%id = ThePos
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
                 END IF
               END IF
               IF (REFRACTION_IMPL) THEN
@@ -1527,7 +1527,7 @@
 
         implicit none
 #  ifdef TIMINGS
-        real    ::  startTime, endTime
+        real(rkind)    ::  startTime, endTime
 #  endif
         integer :: IP, rowLocal, IDD, ISS
         PetscScalar :: value
@@ -1817,7 +1817,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkBigMatrixDiagonalAccuracy(matrix_inp, ISS, IDD)
-        use datapool, only: IOBP, IOBPD, DBG, ipgl
+        use datapool, only: IOBP, IOBPD, DBG, ipgl, rkind
         use petscpool
         use petscmat
         use petscvec
@@ -1850,7 +1850,7 @@
         integer :: IPpetsc, IP, IP_old
         ! time measurement
 #  ifdef TIMINGS
-        real :: startTime, endTime
+        real(rkind) :: startTime, endTime
 #  endif
 
 #  ifdef TIMINGS
