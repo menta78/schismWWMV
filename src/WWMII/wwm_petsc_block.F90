@@ -448,13 +448,15 @@
 #  endif
               do i = IA_P(IP)+1, IA_P(IP+1)
                 ! found a ghost node, treat them special
+#  ifdef DIRECT_METHOD
+                idxpos=idxpos+1
+#  endif
                 if(ALOold2ALO(JA(i)) .eq. -999) then
                   o_ntoSort = o_ntoSort + 1
                   ! store the old position in ASPAR
 #  ifndef DIRECT_METHOD
                   o_toSort(o_nToSort)%userData = i
 #  else
-                  idxpos=idxpos+1
                   o_toSort(o_nToSort)%userData = idxpos
 #  endif
                   !> \todo offdiagonal part with petsc global order? don't know why but it seems to work
@@ -468,7 +470,6 @@
 #  ifndef DIRECT_METHOD
                   toSort(nToSort)%userData = i
 #  else
-                  idxpos=idxpos+1
                   toSort(nToSort)%userData = idxpos
 #  endif
                 end if
@@ -867,6 +868,7 @@
 !**********************************************************************
       !> assembling the linear equation system
       !> wite direct into the petsc matrix. with openmp improvement
+#ifndef DIRECT_METHOD
       subroutine calcASPARomp(IP)
         use datapool, only: MSC, MDC, MNP, INE, myrank
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
@@ -905,13 +907,6 @@
         real(rkind)  :: K1
         real(rkind)  :: DELTAL(3,MAXMNECON)
         real(rkind)  :: NM(MAXMNECON)
-#  ifdef DIRECT_METHOD
-        real(rkind)  :: A_SIG(MSC, MDC), B_SIG(MSC, MDC), C_SIG(MSC, MDC)
-        real(rkind)  :: A_THE(MSC, MDC), B_THE(MSC, MDC), C_THE(MSC, MDC)
-        REAL(rkind)  :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
-        REAL(rkind)  :: CP_THE(MDC), CM_THE(MDC)
-        REAL(rkind)  :: CAD(MSC,MDC), CAS(MSC,MDC)
-#  endif
                 ! uncomment this for CADVXY2
         ! store all node numbers for CADVXY2
         !> \todo MAXMNECON*3 is too much. we only need maxNumConnNode
@@ -947,10 +942,7 @@
         integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
         integer :: petscAsparPosi4, idx
         ! number of connected nodes for IPpetsc
-#  ifndef DIRECT_METHOD
         integer :: nConnNode
-#  endif
-
         
 
         POS_TRICK(1,1) = 2
@@ -987,13 +979,9 @@
 
         IPpetsc = ALO2PLO(IP-1)+1
         ! update position in petsc aspar array
-#  ifndef DIRECT_METHOD
         petscAsparPosi1 =  MSC*MDC * IA_petsc_small(IPpetsc)
-#  endif
 
-#  ifndef DIRECT_METHOD
         nConnNode = IA_petsc_small(IPpetsc+1) - IA_petsc_small(IPpetsc)
-#  endif
 !
         ! uncomment this for CADVXY2
 !           nodeList = 0
@@ -1027,7 +1015,220 @@
           elementList(i) = IE
         enddo
         NECON = CCON(IP)
-#  ifdef DIRECT_METHOD
+        ! over all frequency
+        do ISS = 1, MSC
+          ! update position in petsc aspar array
+          petscAsparPosi2 = petscAsparPosi1 + (ISS-1)* MDC *nConnNode
+!             CALL CADVXY2(ISS, nodeList, nodeListSize, C)
+          call CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
+          do IDD = 1, MDC ! over all directions
+            petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
+            if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
+              !
+              LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
+              K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
+              K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
+              K(3,1:NECON)=LAMBDA(1,1:NECON) * IEN(5,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(6,IEarr(1:NECON))
+              KP(:,1:NECON) = MAX(ZERO,K(:, 1:NECON))
+              KM(:,1:NECON) = MIN(ZERO,K(:, 1:NECON))
+              FL11(1:NECON)=C2(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL12(1:NECON)=C3(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL21(1:NECON)=C3(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL22(1:NECON)=C1(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL31(1:NECON)=C1(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              FL32(1:NECON)=C2(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              CRFS(1,1:NECON)=- ONESIXTH * (TWO * FL31(1:NECON)       + FL32(1:NECON) + FL21(1:NECON)  + TWO * FL22(1:NECON) )
+              CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)       + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
+              CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)       + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
+              DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
+              NM(1:NECON) = ONE/MIN(-THR,SUM(KM(:, 1:NECON),DIM=1))
+
+              do I = 1, CCON(IP)
+                DTK = KP(POSarr(i), i) * DT4A
+                I1 = I1arr(i)
+                I2 = I2arr(i)
+                I3 = I3arr(i)
+                value1 =  TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
+                value2 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
+                value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
+                ! I1
+
+
+                idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
+                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+
+                ! I2
+                if(AsparApp2Petsc_small(I2) .eq. -999) then
+                  idx=oAspar2petscAspar(IP, ISS, IDD, I2)
+                  oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
+                else
+                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
+                endif
+
+                ! I3
+                if(AsparApp2Petsc_small(I3) .eq. -999) then
+                  idx=oAspar2petscAspar(IP, ISS, IDD, I3)
+                  oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
+                else
+                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                endif
+              end do !I: loop over connected elements ...
+
+            else ! add only triangle area
+
+              do I = 1, CCON(IP)
+                I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+                value1 =  TRIA03arr(i)   ! Diagonal entry
+                idx=aspar2petscAspar(IP, ISS, IDD, I1)
+                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+              end do !I: loop over connected elements ...
+            end if
+            WRITE(640+myrank,*) 'idxposfinal=', idxpos
+          end do !IDD
+        end do !ISS
+      end subroutine
+#else
+!**********************************************************************
+!* Now the second scheme DIRECT_METHOD.                                *
+!**********************************************************************
+      subroutine calcASPARomp(IP)
+        use datapool, only: MSC, MDC, MNP, INE, myrank
+        use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
+        use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
+        use datapool, only: DT4A, POSI, ZERO, ONE, TWO
+        use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
+        use datapool, only: IMATDAA, IMATRAA
+        use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
+        use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
+        use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
+        use datapool, only: rkind, np_global, np, npg, inp, iplg
+        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
+        use petscpool
+        implicit none
+        integer, intent(in) :: IP
+
+        integer :: IDD, ISS, IPpetsc
+
+        integer :: I, J, L
+        integer :: IPGL1, IE, POS
+        integer :: I1, I2, I3, IDD1, IDD2, idxpos
+        integer :: POS_TRICK(3,2)
+
+        real(rkind)  :: DTK, TMP3
+        real(rkind)  :: LAMBDA(2, MAXMNECON)
+!         real(kind=8)  :: LAMBDA(2)
+        real(rkind)  :: FL11(MAXMNECON), FL12(MAXMNECON)
+        real(rkind)       :: FL21(MAXMNECON), FL22(MAXMNECON)
+        real(rkind)       :: FL31(MAXMNECON), FL32(MAXMNECON)
+!         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
+        real(rkind)  :: CRFS(3, MAXMNECON), K(3, MAXMNECON)
+        real(rkind)  :: KP(3,MAXMNECON)
+!         real(kind=8)  :: CRFS(3), K(3)
+        real(rkind)  :: KM(3, MAXMNECON)
+!         real(kind=8)  :: KM(3)
+        real(rkind)  :: K1, eValue, value(3)
+        real(rkind)  :: DELTAL(3,MAXMNECON)
+        real(rkind)  :: NM(MAXMNECON)
+        real(rkind)  :: A_SIG(MSC, MDC), B_SIG(MSC, MDC), C_SIG(MSC, MDC)
+        real(rkind)  :: A_THE(MSC, MDC), B_THE(MSC, MDC), C_THE(MSC, MDC)
+        REAL(rkind)  :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+        REAL(rkind)  :: CP_THE(MDC), CM_THE(MDC)
+        REAL(rkind)  :: CAD(MSC,MDC), CAS(MSC,MDC)
+        REAL(rkind)  :: ASPAR_block(MSC,MDC,maxNumConnNode)
+                ! uncomment this for CADVXY2
+        ! store all node numbers for CADVXY2
+        !> \todo MAXMNECON*3 is too much. we only need maxNumConnNode
+!         integer :: nodeList(MAXMNECON*3)
+        ! number of nodes in the nodeList array
+!         integer :: nodeListSize
+!         real(kind=rkind)  :: C(2, MAXMNECON*3, MDC)
+
+        ! uncomment this for CADVXY3
+        ! element numbers to compute for
+        integer :: elementList(MAXMNECON)
+        ! nukber of element in the elementList array
+        integer :: elementListSize
+        ! store the result from CADVXY3. one frequency, all directions and conn nodes from IP
+        ! first index: x/y
+        ! second index: conn nodes from IP. Three nodes per element. This is not optimal. Some nodes are calculated twice
+        ! size of array C1-C3 ca 15kb. Fit into a cache line :)
+        real(kind=rkind)  :: C1(2, MAXMNECON, MDC)
+        real(kind=rkind)  :: C2(2, MAXMNECON, MDC)
+        real(kind=rkind)  :: C3(2, MAXMNECON, MDC)
+
+        PetscScalar value1, value2, value3
+
+         ! to temporays save some values.
+        integer :: IEarr(MAXMNECON), POSarr(MAXMNECON)
+        integer :: I1arr(MAXMNECON), I2arr(MAXMNECON), I3arr(MAXMNECON)
+        real(kind=rkind)  :: TRIA03arr(MAXMNECON)
+
+         ! number of elements connected to a node
+        integer :: NECON
+
+        ! posistion in aspar for big matrix. see function aspar2petscAspar
+        integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
+        integer :: petscAsparPosi4, idx
+        ! number of connected nodes for IPpetsc
+
+        POS_TRICK(1,1) = 2
+        POS_TRICK(1,2) = 3
+        POS_TRICK(2,1) = 3
+        POS_TRICK(2,2) = 1
+        POS_TRICK(3,1) = 1
+        POS_TRICK(3,2) = 2
+        I      = 0
+        IPGL1   = 0
+        IE     = 0
+        POS    = 0
+        I1     = 0
+        I2     = 0
+        I3     = 0
+        DTK    = 0
+        TMP3   = 0
+        FL11   = 0
+        FL12   = 0
+        FL21   = 0
+        FL22   = 0
+        FL31   = 0
+        FL32   = 0
+        CRFS   = 0
+        K1     = 0
+        
+      ! this is an ghost or interface node. ignore it
+        if(ALO2PLO(IP-1) .lt. 0) then
+          return
+        endif
+
+        IPpetsc = ALO2PLO(IP-1)+1
+        ! update position in petsc aspar array
+        ! uncomment this for CADVXY2
+!           nodeList = 0
+!           nodeListSize = CCON(IP) * 3
+
+        ! uncomment this for CADVXY3
+        elementListSize = CCON(IP)
+
+        ! loop over all connectec elements and nodes from IP
+        ! and temporays save some values
+        ! To fill the matrix we loop over MNP MSC MDC. The following values
+        ! dosen't change in the MSC MDC loop so we can temporays store them.
+        do i = 1, CCON(IP)
+          IE        = IE_CELL(Jcum(IP)+i)
+          IEarr(i)  = IE
+          POS       = POS_CELL(Jcum(IP)+i)
+          POSarr(i) = POS
+          TRIA03arr(i) = ONETHIRD * TRIA(IE)
+          ! uncomment this for CADVXY2
+!             ! nodenumbers connected to IE.Store them sequential in a 1D array
+!             nodeList((i-1)*3 +1) = INE(1,IE)
+!             nodeList((i-1)*3 +2) = INE(2,IE)
+!             nodeList((i-1)*3 +3) = INE(3,IE)
+
+          ! uncomment this for CADVXY3
+          elementList(i) = IE
+        enddo
         IF (FREQ_SHIFT_IMPL) THEN
           CALL PROPSIGMA(IP,CAS)
           DO IDD = 1, MDC
@@ -1067,25 +1268,15 @@
             END DO
           END DO
         END IF
-#  endif
-        ! over all frequency
+        !
+        ! Computing the ASPAR_block terms
+        ! 
+        ASPAR_block=ZERO
+        NECON = CCON(IP)
         do ISS = 1, MSC
-          ! update position in petsc aspar array
-#  ifndef DIRECT_METHOD
-          petscAsparPosi2 = petscAsparPosi1 + (ISS-1)* MDC *nConnNode
-#  endif
-!             CALL CADVXY2(ISS, nodeList, nodeListSize, C)
           call CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
           do IDD = 1, MDC ! over all directions
-#  ifdef DIRECT_METHOD
-            idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
-            WRITE(640+myrank,*) 'IS/ID/IP=', ISS,IDD, IPpetsc, idxpos
-#  endif
-#  ifndef DIRECT_METHOD
-            petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
-#  endif
             if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
-              !
               LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
               K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
               K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
@@ -1106,78 +1297,40 @@
 
               do I = 1, CCON(IP)
                 DTK = KP(POSarr(i), i) * DT4A
-                I1 = I1arr(i)
-                I2 = I2arr(i)
-                I3 = I3arr(i)
-                value1 =  TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
-                value2 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
-                value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
-                ! I1
-
-
-#  ifndef DIRECT_METHOD
-                idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
-                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
-
-                ! I2
-                if(AsparApp2Petsc_small(I2) .eq. -999) then
-                  idx=oAspar2petscAspar(IP, ISS, IDD, I2)
-                  oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
-                else
-                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
-                  ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
-                endif
-
-                ! I3
-                if(AsparApp2Petsc_small(I3) .eq. -999) then
-                  idx=oAspar2petscAspar(IP, ISS, IDD, I3)
-                  oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
-                else
-                  idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
-                endif
-#  else
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
-
-                ! I2
-                idxpos=idxpos+1
-                if(AsparApp2Petsc(idxpos) .eq. -999) then
-                  idx=oAsparApp2Petsc(idxpos)
-                  oASPAR_petsc(idx) = value2 + oASPAR_petsc(idx)
-                else
-                  idx=AsparApp2Petsc(idxpos)
-                  ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
-                endif
-
-                ! I3
-                idxpos=idxpos+1
-                if(AsparApp2Petsc(idxpos) .eq. -999) then
-                  idx=oAsparApp2Petsc(idxpos)
-                  oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
-                else
-                  idx=AsparApp2Petsc(idxpos)
-                  ASPAR_petsc(idx) = value3 + ASPAR_petsc(idx)
-                endif
-#  endif
-              end do !I: loop over connected elements ...
-
-            else ! add only triangle area
-
-              do I = 1, CCON(IP)
-                I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-                value1 =  TRIA03arr(i)   ! Diagonal entry
-#  ifndef DIRECT_METHOD
-                idx=aspar2petscAspar(IP, ISS, IDD, I1)
-#  else
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-#  endif
-                ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
-              end do !I: loop over connected elements ...
-            end if
-            WRITE(640+myrank,*) 'idxposfinal=', idxpos
-#  ifdef DIRECT_METHOD
+                J=IA_P(IP) + I
+                value(1)=TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
+                value(2)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
+                value(3)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
+                DO L=1,3
+                  idx=POSI(L,J) - IA_P(IP)
+                  ASPAR_block(ISS,IDD,idx)=ASPAR_block(ISS,IDD,idx) + value(L)
+                END DO
+              END DO
+            ELSE
+              DO I = 1, CCON(IP)
+                J=IA_P(IP)+I
+                idx=POSI(1,J) - IA_P(IP)
+                value1 =  TRIA03arr(i)
+                ASPAR_block(ISS,IDD,idx) = value1 + ASPAR_block(ISS,IDD,idx)
+              END DO
+            END IF
+          end do
+        end do
+        do ISS = 1, MSC
+          do IDD = 1, MDC
+            idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
+            WRITE(640+myrank,*) 'IS/ID/IP=', ISS,IDD, IPpetsc, idxpos
+            DO i = IA_P(IP)+1, IA_P(IP+1)
+              idxpos=idxpos+1
+              idx=AsparApp2Petsc(idxpos)
+              eValue=ASPAR_block(ISS,IDD,I)
+              IF (idx .eq. -999) THEN
+                idx=oAsparApp2Petsc(idxpos)
+                oASPAR_petsc(idx)=oASPAR_petsc(idx) + eValue
+              ELSE
+                ASPAR_petsc (idx)= ASPAR_petsc(idx) + eValue
+              END IF
+            END DO
             IF (FREQ_SHIFT_IMPL) THEN
               IF (ISS .gt. 1) THEN
                 idxpos=idxpos+1
@@ -1214,10 +1367,10 @@
               idx=AsparApp2Petsc(idxpos)
               ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
             END IF
-#  endif
-          end do !IDD
-        end do !ISS
+          end do
+        end do
       end subroutine
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
