@@ -163,8 +163,8 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-!      logical :: FREQ_SHIFT_IMPL = .TRUE.
-      logical :: FREQ_SHIFT_IMPL = .FALSE.
+      logical :: FREQ_SHIFT_IMPL = .TRUE.
+!      logical :: FREQ_SHIFT_IMPL = .FALSE.
       logical :: REFRACTION_IMPL = .TRUE.
 !      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
@@ -478,14 +478,14 @@
                 IF (ISS .gt. 1) THEN
                   nToSort = nToSort + 1
                   idxpos=idxpos+1
-                  ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS-1, IDD)
+                  ThePos=toRowIndex(IPpetsc, ISS-1, IDD)
                   toSort(nToSort)%userData = idxpos
                   toSort(nToSort)%id = ThePos
                 END IF
                 IF (ISS .lt. MSC) THEN
                   nToSort = nToSort + 1
                   idxpos=idxpos+1
-                  ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS+1, IDD)
+                  ThePos=toRowIndex(IPpetsc, ISS+1, IDD)
                   toSort(nToSort)%userData = idxpos
                   toSort(nToSort)%id = ThePos
                 END IF
@@ -504,13 +504,15 @@
                 !
                 nToSort = nToSort + 1
                 idxpos=idxpos+1
-                ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDprev)
+                ThePos=toRowIndex(IPpetsc, ISS, IDprev)
+!                Print *, '1: ThePos=', ThePos
                 toSort(nToSort)%userData = idxpos
                 toSort(nToSort)%id = ThePos
                 !
                 nToSort = nToSort + 1
                 idxpos=idxpos+1
-                ThePos=toRowIndex( AGO2PGO(iplg(IP)-1)+1, ISS, IDnext)
+                ThePos=toRowIndex(IPpetsc, ISS, IDnext)
+!                Print *, '2: ThePos=', ThePos
                 toSort(nToSort)%userData = idxpos
                 toSort(nToSort)%id = ThePos
               END IF
