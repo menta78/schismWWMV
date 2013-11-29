@@ -1093,7 +1093,7 @@
 !* Now the second scheme DIRECT_METHOD.                                *
 !**********************************************************************
       subroutine calcASPARomp(IP)
-        use datapool, only: MSC, MDC, MNP, INE, myrank
+        use datapool, only: MSC, MDC, MNP, INE, myrank, IA
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO
@@ -1110,23 +1110,19 @@
 
         integer :: IDD, ISS, IPpetsc
 
-        integer :: I, J, L
+        integer :: I, J, L, idx1
         integer :: IPGL1, IE, POS
         integer :: I1, I2, I3, IDD1, IDD2, idxpos
         integer :: POS_TRICK(3,2)
 
         real(rkind)  :: DTK, TMP3
         real(rkind)  :: LAMBDA(2, MAXMNECON)
-!         real(kind=8)  :: LAMBDA(2)
         real(rkind)  :: FL11(MAXMNECON), FL12(MAXMNECON)
         real(rkind)       :: FL21(MAXMNECON), FL22(MAXMNECON)
         real(rkind)       :: FL31(MAXMNECON), FL32(MAXMNECON)
-!         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
         real(rkind)  :: CRFS(3, MAXMNECON), K(3, MAXMNECON)
         real(rkind)  :: KP(3,MAXMNECON)
-!         real(kind=8)  :: CRFS(3), K(3)
         real(rkind)  :: KM(3, MAXMNECON)
-!         real(kind=8)  :: KM(3)
         real(rkind)  :: K1, eValue, value(3)
         real(rkind)  :: DELTAL(3,MAXMNECON)
         real(rkind)  :: NM(MAXMNECON)
@@ -1136,42 +1132,19 @@
         REAL(rkind)  :: CP_THE(MDC), CM_THE(MDC)
         REAL(rkind)  :: CAD(MSC,MDC), CAS(MSC,MDC)
         REAL(rkind)  :: ASPAR_block(MSC,MDC,maxNumConnNode)
-                ! uncomment this for CADVXY2
-        ! store all node numbers for CADVXY2
-        !> \todo MAXMNECON*3 is too much. we only need maxNumConnNode
-!         integer :: nodeList(MAXMNECON*3)
-        ! number of nodes in the nodeList array
-!         integer :: nodeListSize
-!         real(kind=rkind)  :: C(2, MAXMNECON*3, MDC)
-
-        ! uncomment this for CADVXY3
-        ! element numbers to compute for
         integer :: elementList(MAXMNECON)
-        ! nukber of element in the elementList array
         integer :: elementListSize
-        ! store the result from CADVXY3. one frequency, all directions and conn nodes from IP
-        ! first index: x/y
-        ! second index: conn nodes from IP. Three nodes per element. This is not optimal. Some nodes are calculated twice
-        ! size of array C1-C3 ca 15kb. Fit into a cache line :)
         real(kind=rkind)  :: C1(2, MAXMNECON, MDC)
         real(kind=rkind)  :: C2(2, MAXMNECON, MDC)
         real(kind=rkind)  :: C3(2, MAXMNECON, MDC)
 
         PetscScalar value1, value2, value3
-
-         ! to temporays save some values.
         integer :: IEarr(MAXMNECON), POSarr(MAXMNECON)
         integer :: I1arr(MAXMNECON), I2arr(MAXMNECON), I3arr(MAXMNECON)
         real(kind=rkind)  :: TRIA03arr(MAXMNECON)
-
-         ! number of elements connected to a node
         integer :: NECON
-
-        ! posistion in aspar for big matrix. see function aspar2petscAspar
         integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
         integer :: petscAsparPosi4, idx
-        ! number of connected nodes for IPpetsc
-
         POS_TRICK(1,1) = 2
         POS_TRICK(1,2) = 3
         POS_TRICK(2,1) = 3
@@ -1179,7 +1152,7 @@
         POS_TRICK(3,1) = 1
         POS_TRICK(3,2) = 2
         I      = 0
-        IPGL1   = 0
+        IPGL1  = 0
         IE     = 0
         POS    = 0
         I1     = 0
@@ -1220,13 +1193,6 @@
           POS       = POS_CELL(Jcum(IP)+i)
           POSarr(i) = POS
           TRIA03arr(i) = ONETHIRD * TRIA(IE)
-          ! uncomment this for CADVXY2
-!             ! nodenumbers connected to IE.Store them sequential in a 1D array
-!             nodeList((i-1)*3 +1) = INE(1,IE)
-!             nodeList((i-1)*3 +2) = INE(2,IE)
-!             nodeList((i-1)*3 +3) = INE(3,IE)
-
-          ! uncomment this for CADVXY3
           elementList(i) = IE
         enddo
         IF (FREQ_SHIFT_IMPL) THEN
@@ -1301,21 +1267,24 @@
                 value(1)=TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
                 value(2)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
                 value(3)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
+                idx1=Jcum(IP) + I
                 DO L=1,3
-                  idx=POSI(L,J) - IA_P(IP)
+                  idx=POSI(L,idx1) - IA_P(IP)
                   ASPAR_block(ISS,IDD,idx)=ASPAR_block(ISS,IDD,idx) + value(L)
                 END DO
               END DO
             ELSE
               DO I = 1, CCON(IP)
-                J=IA_P(IP)+I
-                idx=POSI(1,J) - IA_P(IP)
+                idx=POSI(1, Jcum(IP) + I) - IA_P(IP)
                 value1 =  TRIA03arr(i)
                 ASPAR_block(ISS,IDD,idx) = value1 + ASPAR_block(ISS,IDD,idx)
               END DO
             END IF
           end do
         end do
+        !
+        ! Puts everything together.
+        ! 
         do ISS = 1, MSC
           do IDD = 1, MDC
             idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
@@ -1323,7 +1292,7 @@
             DO i = IA_P(IP)+1, IA_P(IP+1)
               idxpos=idxpos+1
               idx=AsparApp2Petsc(idxpos)
-              eValue=ASPAR_block(ISS,IDD,I)
+              eValue=ASPAR_block(ISS,IDD,I - IA_P(IP))
               IF (idx .eq. -999) THEN
                 idx=oAsparApp2Petsc(idxpos)
                 oASPAR_petsc(idx)=oASPAR_petsc(idx) + eValue

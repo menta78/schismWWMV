@@ -2260,7 +2260,6 @@
              END DO
              IA(IP + 1) = K + 1
            END DO
-           POSI = 0
            J = 0
            DO IP = 1, MNP
              DO I = 1, CCON(IP)
