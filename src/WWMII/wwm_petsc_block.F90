@@ -163,10 +163,10 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-!      logical :: FREQ_SHIFT_IMPL = .TRUE.
-      logical :: FREQ_SHIFT_IMPL = .FALSE.
-!      logical :: REFRACTION_IMPL = .TRUE.
-      logical :: REFRACTION_IMPL = .FALSE.
+      logical :: FREQ_SHIFT_IMPL = .TRUE.
+!      logical :: FREQ_SHIFT_IMPL = .FALSE.
+      logical :: REFRACTION_IMPL = .TRUE.
+!      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -400,7 +400,6 @@
 #  endif
      &    stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
-        Print *, 'NNZint=', NNZint
 
 #  ifdef DIRECT_METHOD
         AsparApp2Petsc = -999
@@ -542,11 +541,9 @@
 #  endif
                 oJA_petsc(o_J) = o_toSort(i)%id
               end do
-
             end do
           end do
         end do
-        Print *, 'idxpos=', idxpos
 
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
