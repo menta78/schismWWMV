@@ -163,8 +163,8 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-      logical :: FREQ_SHIFT_IMPL = .TRUE.
-!      logical :: FREQ_SHIFT_IMPL = .FALSE.
+!      logical :: FREQ_SHIFT_IMPL = .TRUE.
+      logical :: FREQ_SHIFT_IMPL = .FALSE.
       logical :: REFRACTION_IMPL = .TRUE.
 !      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
