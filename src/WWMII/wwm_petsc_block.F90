@@ -191,7 +191,7 @@
         USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG, np_global, np, npg, ne_global, iplg, ipgl, inp
         ! MSC      - # frequency
         ! MDC      - # directions
-        use datapool, only: MSC, MDC, comm
+        use datapool, only: MSC, MDC, comm, ICOMP
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost

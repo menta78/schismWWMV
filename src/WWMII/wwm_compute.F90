@@ -516,6 +516,8 @@
         DT4D = 0.5_rkind*DT4A
         DT4F = 0.5_rkind*DT4A
       END IF
+      AC1  = AC2
+      CALL COMPUTE_DIFFRACTION
       !
       ! Below is for debugging purpose only. 
       ! Only used if the refraction/freq_shift/source implicit
