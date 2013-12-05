@@ -1,6 +1,6 @@
 #include "wwm_functions.h"
-!#define DIRECT_METHOD
-#undef DIRECT_METHOD
+#define DIRECT_METHOD
+!#undef DIRECT_METHOD
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -293,7 +293,7 @@
 !*                                                                    *
 !**********************************************************************
       !> create PETSC matrix which uses fortran arrays
-      subroutine createMatrix()
+      SUBROUTINE createMatrix()
         use datapool, only: MSC, MDC, comm, np_global
         use petscpool
         use petscsys
@@ -323,10 +323,10 @@
         ! This avoids all reductions in the zero row routines and thus improves performance for very large process counts. 
         call MatSetOption(matrix, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE, petscErr);CHKERRQ(petscErr)
 
-      end subroutine
+      end SUBROUTINE
 
       !> create IA JA ASPAR petsc array for big sparse matrix
-      subroutine createCSR_petsc()
+      SUBROUTINE createCSR_petsc()
         use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -349,7 +349,7 @@
         ! number of nonzeros in the offdiagonal submatrix without interface and ghosts
         integer :: o_nnz_new
 #  ifdef DIRECT_METHOD
-        integer NNZint, idxpos, ThePos
+        integer NNZint, idxpos
         integer IDprev, IDnext
 #  endif
         integer idx        
@@ -564,13 +564,13 @@
 
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
 #  ifndef DIRECT_METHOD
       !> create IA petsc array for the small sparse matrix
-      subroutine createCSR_petsc_small()
+      SUBROUTINE createCSR_petsc_small()
         use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg, JA
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -700,13 +700,13 @@
         end do
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 7')
-      end subroutine
+      end SUBROUTINE
 #  endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       !> copy the old solution back to the petsc myX vector
-      subroutine useOldSolution()
+      SUBROUTINE useOldSolution()
         use datapool, only: MSC, MDC, MNP, AC2, RKIND, np, iplg
         use petscsys
         use petscmat
@@ -745,13 +745,13 @@
         call VecAssemblyBegin(myX, petscErr);CHKERRQ(petscErr)
         call VecAssemblyEnd(myX, petscErr);CHKERRQ(petscErr)
 
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       !> calc only rhs and fill direct into petsc myB
       !> use newer code from fluct
-      subroutine calcB()
+      SUBROUTINE calcB()
         use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD
         use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL
         use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP
@@ -879,14 +879,14 @@
         CHKERRQ(petscErr)
         call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
         call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr)
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       !> assembling the linear equation system
       !> wite direct into the petsc matrix. with openmp improvement
 #ifndef DIRECT_METHOD
-      subroutine calcASPARomp(IP)
+      SUBROUTINE calcASPARomp(IP)
         use datapool, only: MSC, MDC, MNP, INE, myrank
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
@@ -1103,12 +1103,12 @@
             WRITE(640+myrank,*) 'idxposfinal=', idxpos
           end do !IDD
         end do !ISS
-      end subroutine
+      end SUBROUTINE
 #else
 !**********************************************************************
 !* Now the second scheme DIRECT_METHOD.                                *
 !**********************************************************************
-      subroutine calcASPARomp(IP)
+      SUBROUTINE calcASPARomp(IP)
         use datapool, only: MSC, MDC, MNP, INE, myrank, IA
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
@@ -1353,14 +1353,14 @@
             END IF
           end do
         end do
-      end subroutine
+      end SUBROUTINE
 #endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       !> calc only aspar and fill direct into the petsc matrix
       !> use newer code from fluct
-      subroutine calcASPAR()
+      SUBROUTINE calcASPAR()
         use datapool, only : MSC, MDC, MNP
         use datapool, only : LBCWA, LBCSP, LINHOM, IWBMNP, I_DIAG, SI, IMATDAA
         use datapool, only : IWBNDLC, IOBWB, IOBPD, DT4A
@@ -1458,7 +1458,7 @@
         CHKERRQ(petscErr)
         call MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY, petscErr)
         CHKERRQ(petscErr)
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1666,12 +1666,11 @@
         enddo
 ! !$OMP ENDDO
 ! !$OMP END PARALLEL
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine  EIMPS_PETSC_BLOCK()
+      SUBROUTINE EIMPS_PETSC_BLOCK
         use datapool, only: MSC, MDC, AC2, MNP, RKIND, ZERO, ONE, TWO, IOBPD, IOBP, DBG
         use datapool, only: ipgl, exchange_p4d_wwm
         use petscsys
@@ -1689,7 +1688,7 @@
 
         KSPConvergedReason reason;
         PetscInt iteration;
-
+        Print *, 'Running in EIMPS_PETSC_BLOCK'
         call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
 
 #  ifdef TIMINGS
@@ -1789,7 +1788,7 @@
 !         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NaN in AC')
 
         ! we have to fill the ghost and interface nodes with the solution from the other threads.
-        ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
+        ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
         ! normally set to 0, because they do net exist in petsc
 !AR: Replace 
         do ISS = 1, MSC
@@ -1803,7 +1802,7 @@
             AC2(:,ISS,IDD) = U(ISS,IDD,:) 
           end do
         end do
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1944,7 +1943,7 @@
 !*                                                                    *
 !**********************************************************************
       !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
-      subroutine PETSC_FINALIZE_BLOCK()
+      SUBROUTINE PETSC_FINALIZE_BLOCK()
         use petscpool
         use petscsys
         implicit none
@@ -1961,7 +1960,7 @@
         if(allocated(AsparApp2Petsc_small)) deallocate(AsparApp2Petsc_small)
         if(allocated(oAsparApp2Petsc_small)) deallocate(oAsparApp2Petsc_small)
 
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1969,7 +1968,7 @@
       !> @param[in] matrix the big PETSC matrix
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
-      subroutine checkBigMatrixDiagonalAccuracy(matrix_inp, ISS, IDD)
+      SUBROUTINE checkBigMatrixDiagonalAccuracy(matrix_inp, ISS, IDD)
         use datapool, only: IOBP, IOBPD, DBG, ipgl, rkind
         use petscpool
         use petscmat
@@ -2113,7 +2112,7 @@
           write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ", endTime - startTime," sec"
 #  endif
         endif
-      end subroutine
+      end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
