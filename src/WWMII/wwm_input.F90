@@ -1383,6 +1383,15 @@
            END IF
          END IF
 #endif
+         IF (ICOMP .eq. 3) THEN
+#if !defined PETSC || !defined MPI_PARALL_GRID
+           CALL WWM_ABORT('For ICOMP=3 we need PETSC and in parallel')
+#endif
+           IF (AMETHOD .ne. 5) THEN
+             CALL WWM_ABORT('We need AMETHOD=5 for ICOMP=3')
+           END IF
+         END IF
+
 
 !        Check MSC,MDC for exchange
          if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')
