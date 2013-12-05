@@ -217,7 +217,14 @@
         call MPI_Comm_rank(comm, rank, ierr)
         call MPI_Comm_size(comm, nProcs, ierr)
 
-
+        IF (ICOMP .lt. 3) THEN
+          IF (REFRACTION_IMPL) THEN
+            CALL WWM_ABORT('You need ICOMP=3 for REFRACTION_IMPL')
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            CALL WWM_ABORT('You need ICOMP=3 for FREQ_SHIFT_IMPL')
+          END IF
+        END IF
 #  ifndef DIRECT_METHOD
         IF (REFRACTION_IMPL) THEN
           CALL WWM_ABORT('You need DIRECT_METHOD for REFRACTION_IMPL')

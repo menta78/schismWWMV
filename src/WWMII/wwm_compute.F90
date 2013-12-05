@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SIMPLE_EXPLICIT()
+      SUBROUTINE COMPUTE_SIMPLE_EXPLICIT
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -505,6 +505,17 @@
       USE DATAPOOL
       USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
       IMPLICIT NONE
+      IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+        DT4A = MAIN%DELT
+        DT4S = DT4A
+        DT4D = 0.5_rkind*DT4A
+        DT4F = 0.5_rkind*DT4A 
+      ELSE IF (LQSTEA) THEN
+        DT4A = DT_ITER
+        DT4S = DT4A
+        DT4D = 0.5_rkind*DT4A
+        DT4F = 0.5_rkind*DT4A
+      END IF
       !
       ! Below is for debugging purpose only. 
       ! Only used if the refraction/freq_shift/source implicit
