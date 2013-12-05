@@ -250,7 +250,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
+      SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -500,3 +500,32 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef PETSC
+      SUBROUTINE COMPUTE_FULL_IMPLICIT_PATANKAR
+      USE DATAPOOL
+      USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
+      IMPLICIT NONE
+      !
+      ! Below is for debugging purpose only. 
+      ! Only used if the refraction/freq_shift/source implicit
+      ! are not selected
+      !
+      CALL SOURCE_INT_IMP()
+      IF (SOURCE_IMPL .eqv. .FALSE.) THEN
+        ! Do something clearly
+      END IF
+      IF (REFRACTION_IMPL .eqv. .FALSE.) THEN
+        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+      END IF
+      IF (FREQ_SHIFT_IMPL .eqv. .FALSE.) THEN
+        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY()
+      END IF
+      !
+      ! the Mother of all implicit computations.
+      !
+      CALL EIMPS_PETSC_BLOCK
+
+      IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+      IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+      END SUBROUTINE
+#endif

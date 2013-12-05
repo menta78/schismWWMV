@@ -158,15 +158,17 @@
       integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
+      logical :: FREQ_SHIFT_IMPL = .TRUE.
+!      logical :: FREQ_SHIFT_IMPL = .FALSE.
+      logical :: REFRACTION_IMPL = .TRUE.
+!      logical :: REFRACTION_IMPL = .FALSE.
+      logical :: SOURCE_IMPL = .TRUE.
+!      logical :: SOURCE_IMPL = .FALSE.
 #  ifdef DIRECT_METHOD
       integer, allocatable :: AsparApp2Petsc(:)
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-      logical :: FREQ_SHIFT_IMPL = .TRUE.
-!      logical :: FREQ_SHIFT_IMPL = .FALSE.
-      logical :: REFRACTION_IMPL = .TRUE.
-!      logical :: REFRACTION_IMPL = .FALSE.
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -214,6 +216,18 @@
         call MPI_Comm_rank(comm, rank, ierr)
         call MPI_Comm_size(comm, nProcs, ierr)
 
+
+#  ifndef DIRECT_METHOD
+        IF (REFRACTION_IMPL) THEN
+          CALL WWM_ABORT('You need DIRECT_METHOD for REFRACTION_IMPL')
+        END IF
+        IF (FREQ_SHIFT_IMPL) THEN
+          CALL WWM_ABORT('You need DIRECT_METHOD for FREQ_SHIFT_IMPL')
+        END IF
+        IF (SOURCE_IMPL) THEN
+          CALL WWM_ABORT('You need DIRECT_METHOD for SOURCE_IMPL')
+        END IF
+#  endif
 #  ifdef PETSC_DEBUG
         call PetscPrintf(PETSC_COMM_WORLD, "PETSC_INIT_BLOCK\n", petscErr);CHKERRQ(petscErr)
 !!$OMP PARALLEL
@@ -847,10 +861,12 @@
               IPpetsc = ALO2PLO(IP-1) + 1
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
-                  if(IOBPD(IDD,IP) .EQ. 1) then    
-                    value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
-                    idx=toRowIndex(IPpetsc, ISS, IDD) + 1
-                    myBtemp(idx) = value + myBtemp(idx)
+                  if(IOBPD(IDD,IP) .EQ. 1) then
+                    IF (SOURCE_IMPL) THEN
+                      value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                      idx=toRowIndex(IPpetsc, ISS, IDD) + 1
+                      myBtemp(idx) = value + myBtemp(idx)
+                    END IF
                   endif 
                 end do
               end do
@@ -874,7 +890,6 @@
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO
         use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
-        use datapool, only: IMATDAA, IMATRAA
         use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
         use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
@@ -1097,7 +1112,6 @@
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO
         use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
-        use datapool, only: IMATDAA, IMATRAA
         use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
         use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
@@ -1410,7 +1424,7 @@
           endif
         end if
 
-        ! wind und so
+        ! source terms
         if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then
           DO IP = 1, MNP
             ! ghost or interface node, ignore it
@@ -1422,13 +1436,15 @@
               do ISS = 1, MSC ! over all frequency
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then 
-                    value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
+                    IF (SOURCE_IMPL) THEN
+                      value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
 #  ifndef DIRECT_METHOD
-                    idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
+                      idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
 #  else
-                    idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+                      idx=I_DIAGtotal(ISS,IDD,IPpetsc)
 #  endif
-                    ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+                      ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+                    END IF
                   endif
                 end do ! IDD
               end do ! ISS
