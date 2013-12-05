@@ -523,6 +523,7 @@
       !
       ! the Mother of all implicit computations.
       !
+      Print *, 'Before EIMPS_PETSC_BLOCK'
       CALL EIMPS_PETSC_BLOCK
 
       IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER

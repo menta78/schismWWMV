@@ -343,16 +343,16 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      SUBROUTINE SYMM_GRAPH_BUILD_ADJ(AdjGraph)
       USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh, myrank
       implicit none
       type(Graph), intent(inout) :: AdjGraph
-      CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, wwm_nnbr, wwm_ListNeigh)
+      CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, wwm_nnbr, wwm_ListNeigh)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      SUBROUTINE GRAPH_BUILD_ADJ(AdjGraph)
       USE datapool, only : nnbr_p, nbrrank_p
       implicit none
       type(Graph), intent(inout) :: AdjGraph
@@ -361,12 +361,12 @@ MODULE WWM_PARALL_SOLVER
       DO I=1,nnbr_p
         ListNe(I)=nbrrank_p(I)+1
       END DO
-      CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, nnbr_p, ListNe)
+      CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nnbr_p, ListNe)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, nb, ListNe)
+      SUBROUTINE KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nb, ListNe)
       USE DATAPOOL
       implicit none
       integer, intent(in) :: nb
@@ -1652,7 +1652,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After CREATE_WWM_MAT_P2D_EXCH'
 # endif
-      CALL SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      CALL SYMM_GRAPH_BUILD_ADJ(AdjGraph)
       CALL BUILD_MULTICOLORING(AdjGraph, ListColor)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After BUILD_MULTICOLORING'

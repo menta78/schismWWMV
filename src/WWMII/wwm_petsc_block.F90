@@ -1,5 +1,6 @@
 #include "wwm_functions.h"
-#define DIRECT_METHOD
+!#define DIRECT_METHOD
+#undef DIRECT_METHOD
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -341,7 +342,7 @@
         integer :: IDD = 0
         ! running variable
         integer :: i = 0, J = 0, o_J = 0
-        integer :: istat
+        integer :: istat, ThePos
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new
@@ -570,7 +571,7 @@
 #  ifndef DIRECT_METHOD
       !> create IA petsc array for the small sparse matrix
       subroutine createCSR_petsc_small()
-        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg
+        use datapool, only: NNZ, MNE, INE, MNP, RKIND, DBG, iplg, JA
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -584,6 +585,7 @@
         integer :: IPpetsc = 0
         ! running variable
         integer :: i = 0, j = 0, oj = 0
+        integer :: istat
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new = 0
@@ -1301,7 +1303,7 @@
         do ISS = 1, MSC
           do IDD = 1, MDC
             idxpos=IA_Ptotal(ISS,IDD,IPpetsc)
-            WRITE(640+myrank,*) 'IS/ID/IP=', ISS,IDD, IPpetsc, idxpos
+!            WRITE(640+myrank,*) 'IS/ID/IP=', ISS,IDD, IPpetsc, idxpos
             DO i = IA_P(IP)+1, IA_P(IP+1)
               idxpos=idxpos+1
               idx=AsparApp2Petsc(idxpos)
