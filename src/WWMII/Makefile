@@ -12,13 +12,13 @@ PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF =  
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = 
+OPENMP = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = 
+GRIB = on
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
 PDLIB = 
 
