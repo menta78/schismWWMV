@@ -1,24 +1,23 @@
 include ${PETSC_DIR}/conf/variables
-#PROG = $(HOME)/bin/wwmadv
-PROG = wwmadv
+PROG = $(HOME)/bin/wwmadv
 
 #FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
-FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DSHYFEM_COUPLING
+FFLAGS = -DST42 -DTIMINGS -DSWAN_QB #-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = 
+MPI = on 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = 
+PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF =  
+NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = on
+OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-DARKO =
+DARKO = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
 PDLIB = 
 
