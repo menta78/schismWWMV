@@ -1093,6 +1093,20 @@
         Oper=1
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
         DEALLOCATE(INEtotal, XPtotal, YPtotal, DEPtotal)
+        !
+      END IF
+      IF (IOBPD_HISTORY) THEN
+# ifdef MPI_PARALL_GRID
+        IF (MULTIPLEOUT.eq.1) THEN
+          p_dims=np_global_dims
+        ELSE
+          p_dims=mnp_dims
+        END IF
+# else
+        p_dims=mnp_dims
+# endif
+        iret=nf90_def_var(ncid,'IOBPD',NF90_RUNTYPE,(/ mdc_dims, p_dims, ntime_dims/), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       END IF
       END SUBROUTINE
 !**********************************************************************

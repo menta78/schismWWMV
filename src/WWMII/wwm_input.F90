@@ -22,6 +22,7 @@
      &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS
 #endif
          USE DATAPOOL, only : STATION_P => STATION
+         USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
          USE DATAPOOL, only : MAIN, PRINTMMA, ZERO
          USE DATAPOOL, only : WriteOutputProcess_hot
          USE DATAPOOL, only : WriteOutputProcess_his
@@ -54,7 +55,7 @@
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
-     &      OUTSTYLE, FILEOUT, LOUTITER,                                &
+     &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
      &      LENERGY, LWXFN, GRIDWRITE, PARAMWRITE,                      &
      &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &

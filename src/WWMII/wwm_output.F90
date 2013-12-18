@@ -2008,27 +2008,32 @@
         IF (recs_his.ne.recs_his2) THEN
            CALL WWM_ABORT('There are more bugs to be solved');
         ENDIF
+        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
+        IF (IOBPD_HISTORY) THEN
+          iret=nf90_inq_varid(ncid, "IOBPD", var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+          iret=nf90_put_var(ncid,var_id,IOBPD,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        END IF
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_HISTORY%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
             IF (PRINTMMA) THEN
               CALL HISTORY_NC_PRINTMMA(eStr, OUTT,np_write,OUTVARS_COMPLETE,I)
             END IF
             IF (NF90_RUNTYPE == NF90_OUTTYPE_HIS) THEN
               iret=nf90_put_var(ncid,var_id,OUTT(:,I),start = (/1, recs_his/), count = (/ np_write, 1 /))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(OUTT(:,I)),start = (/1, recs_his/), count = (/ np_write, 1 /))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
             ENDIF
           END IF
         END DO
-        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
-        !write(DBG%FHNDL,*) 'Writing netcdf history record recs_his=',recs_his
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
 !$OMP END MASTER
       ENDIF
 # ifdef MPI_PARALL_GRID

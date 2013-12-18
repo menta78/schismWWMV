@@ -200,6 +200,7 @@
          LOGICAL           :: LSIGBOUND  = .FALSE.
          LOGICAL           :: LTHBOUND   = .FALSE.
          LOGICAL           :: LSOUBOUND  = .FALSE.
+         LOGICAL           :: IOBPD_HISTORY = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
