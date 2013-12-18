@@ -939,6 +939,53 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+      USE DATAPOOL, only : MDC, IOBPD, np_total, MULTIPLEOUT_HIS, MNP
+      USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
+      IMPLICIT NONE
+      INTEGER, intent(in)  :: np_write
+      INTEGER, INTENT(OUT) :: IOBPDoutput(MDC, np_write)
+# ifdef MPI_PARALL_GRID
+      integer, allocatable :: rIOBPD(:,:), rStatus(:), Status(:)
+      integer iProc, IP, istat
+      IF (MULTIPLEOUT_HIS .eq. 1) THEN
+        IOBPDoutput=IOBPD
+      ELSE
+        allocate(rIOBPD(MDC, np_total), rStatus(np_total), Status(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
+        IOBPDoutput=0
+        Status=0
+        DO IP=1,MNP
+          IOBPDoutput(:, iplg(IP))=IOBPD(:,IP)
+          Status(iplg(IP)) = 1
+        END DO
+        IF (myrank .eq. 0) THEN
+          DO iProc=2,nproc
+            CALL MPI_RECV(rIOBPD, MDC*np_total, itype, iProc-1, 193, comm, istatus, ierr)
+            CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 197, comm, istatus, ierr)
+            DO IP=1,np_total
+              IF (rStatus(IP) .eq. 1) THEN
+                IOBPDoutput(:,IP)=rIOBPD(:,IP)
+              END IF
+            END DO
+          END DO
+          DO iProc=2,nproc
+            CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, iProc-1, 199, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, 0, 193, comm, ierr)
+          CALL MPI_SEND(Status, np_total, itype, 0, 197, comm, ierr)
+          CALL MPI_RECV(IOBPDoutput, MDC*np_total, itype, 0, 199, comm, istatus, ierr)
+        ENDIF
+        deallocate(rIOBPD, rStatus, Status)
+      END IF
+# else
+      IOBPDoutput=IOBPD
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
@@ -1105,7 +1152,7 @@
 # else
         p_dims=mnp_dims
 # endif
-        iret=nf90_def_var(ncid,'IOBPD',NF90_RUNTYPE,(/ mdc_dims, p_dims, ntime_dims/), var_id)
+        iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ mdc_dims, p_dims, ntime_dims/), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       END IF
       END SUBROUTINE

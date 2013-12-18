@@ -716,7 +716,7 @@
 
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
       ENDIF
       DO I = 1, IOUTS
         IF (STATION(I)%IFOUND == 1) THEN
@@ -751,7 +751,7 @@
         AC_STATIONS_SUM=0
         IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
           allocate(ACOUT_1D_STATIONS_SUM(IOUTS,MSC,3), ACOUT_2D_STATIONS_SUM(IOUTS,MSC,MDC), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 2')
           ACOUT_1D_STATIONS_SUM=0
           ACOUT_2D_STATIONS_SUM=0
         END IF
@@ -1811,7 +1811,7 @@
         eVect(3)=sum(OUTT(:,I)*nwild_loc_res)
         IF (myrank.eq.0) THEN
           allocate(LVect(nproc,3), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 7')
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
           LVect(1,:)=eVect
           DO iProc=2,nproc
             CALL MPI_RECV(eVect,3,rtype, iProc-1, 190, comm, istatus, ierr)
@@ -1877,6 +1877,7 @@
       integer :: np_write, ne_write
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
+      integer, allocatable :: IOBPDoutput(:,:)
 !
       eTimeDay=MAIN%TMJD
 # ifdef MPI_PARALL_GRID
@@ -1958,7 +1959,7 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
         ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 8')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 4')
         OUTT_LOC=0
         DO IP = 1, MNP
           ACLOC(:,:) = AC2(IP,:,:)
@@ -1974,7 +1975,7 @@
         DEALLOCATE(OUTT_LOC)
       ELSE
         ALLOCATE(OUTT(NP_RES,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 10')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
         DO IP = 1, NP_RES
           ACLOC(:,:) = AC2(IP,:,:)
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
@@ -1995,6 +1996,11 @@
       IF (LMONO_OUT) THEN
         OUTT(:,1) = OUTT(:,1) / SQRT(2.)
       ENDIF
+      IF (IOBPD_HISTORY) THEN
+        allocate(IOBPDoutput(MDC, np_write), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
+        CALL GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+      END IF
       recs_his2=recs_his2 + 1
       IF (WriteOutputProcess_his) THEN
 !$OMP MASTER
@@ -2012,7 +2018,7 @@
         IF (IOBPD_HISTORY) THEN
           iret=nf90_inq_varid(ncid, "IOBPD", var_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-          iret=nf90_put_var(ncid,var_id,IOBPD,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
+          iret=nf90_put_var(ncid,var_id,IOBPDoutput,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
         END IF
         DO I=1,OUTVARS_COMPLETE
@@ -2036,6 +2042,9 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
 !$OMP END MASTER
       ENDIF
+      IF (IOBPD_HISTORY) THEN
+        deallocate(IOBPDoutput)
+      END IF
 # ifdef MPI_PARALL_GRID
       DEALLOCATE(OUTT)
 # endif
