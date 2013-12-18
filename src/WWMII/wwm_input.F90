@@ -172,11 +172,6 @@
            DELTC=MAIN%DELT
          END IF
 #ifdef NCDF
-# ifdef MPI_PARALL_GRID
-         IF (myrank .gt. 0) THEN
-           GRIDWRITE=.FALSE.
-         END IF
-# endif
          PARAMWRITE_HIS=PARAMWRITE
          USE_SINGLE_OUT_HIS=USE_SINGLE_OUT
          MULTIPLEOUT_HIS=MULTIPLEOUT

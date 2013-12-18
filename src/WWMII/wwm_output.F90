@@ -1921,7 +1921,7 @@
 ! create nc file, vars, and do all time independant job
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
@@ -1949,8 +1949,7 @@
           iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         ENDIF
-        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS,      &
-    &       WriteOutputProcess_his, np_write, ne_write)
+        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
         IF (WriteOutputProcess_his) THEN
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)

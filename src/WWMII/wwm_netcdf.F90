@@ -986,11 +986,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, np_write, ne_write)
+      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, WriteOutputProcess, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
       implicit none
       integer, intent(in) :: ncid, nbTime, MULTIPLEOUT
+      logical, intent(in) :: WriteOutputProcess
       integer, intent(in) :: np_write, ne_write
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
@@ -1076,7 +1077,7 @@
       !
       iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
-      IF (GRIDWRITE) THEN
+      IF (GRIDWRITE.and.WriteOutputProcess) THEN
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT.eq.1) THEN
           e_dims=ne_global_dims

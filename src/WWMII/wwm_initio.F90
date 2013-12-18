@@ -529,9 +529,11 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
          FLUSH(STAT%FHNDL)
+         Print *, 'GRIDWRITE=', GRIDWRITE
          IF (GRIDWRITE) THEN
            CALL GET_XYID_INE_TOTAL
          END IF
+         Print *, 'After GET_XYID'
          CALL WWM_OUTPUT(ZERO,.TRUE.)
 
          IF (LWXFN) THEN
