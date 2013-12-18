@@ -171,6 +171,7 @@
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
       logical, allocatable :: DoDirectionImpl(:)
+      logical, allocatable :: DoFrequencyImpl(:)
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -335,7 +336,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       SUBROUTINE createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, DEP, DMIN
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, LSIGBOUND, DEP, DMIN
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -350,7 +351,7 @@
         integer :: IDD = 0
         ! running variable
         integer :: i = 0, J = 0, o_J = 0
-        integer :: istat, ThePos, NbRefr, TheVal
+        integer :: istat, ThePos, NbRefr, NbFreq, TheVal
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new
@@ -398,7 +399,23 @@
         end do
 #  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
-          nnz_new=nnz_new + MDC*(2*(MSC-1))*nNodesWithoutInterfaceGhosts
+          ALLOCATE(DoFrequencyImpl(nNodesWithoutInterfaceGhosts), stat=istat)
+          if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
+          NbFreq=0
+          DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
+            IP = PLO2ALO(IPpetsc-1)+1
+            TheVal=1
+            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+            IF (DEP(IP) .LT. DMIN) TheVal=0
+            IF (IOBP(IP) .EQ. 2) TheVal=0
+            IF (TheVal .eq. 1) THEN
+              DoFrequencyImpl(IPpetsc)=.TRUE.
+            ELSE
+              DoFrequencyImpl(IPpetsc)=.FALSE.
+            END IF
+            NbFreq=NbFreq + TheVal
+          END DO
+          nnz_new=nnz_new + MDC*(2*(MSC-1))*NbFreq
           maxNumConnNode = maxNumConnNode +2
         END IF
         IF (REFRACTION_IMPL) THEN
@@ -406,6 +423,7 @@
           if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
           NbRefr=0
           DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
+            IP = PLO2ALO(IPpetsc-1)+1
             TheVal=1
             IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
             IF (DEP(IP) .LT. DMIN) TheVal=0
@@ -512,7 +530,7 @@
                 end if
               end do ! cols
 #  ifdef DIRECT_METHOD
-              IF (FREQ_SHIFT_IMPL) THEN
+              IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
                 IF (ISS .gt. 1) THEN
                   nToSort = nToSort + 1
                   idxpos=idxpos+1
@@ -1231,7 +1249,7 @@
           TRIA03arr(i) = ONETHIRD * TRIA(IE)
           elementList(i) = IE
         enddo
-        IF (FREQ_SHIFT_IMPL) THEN
+        IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
           CALL PROPSIGMA(IP,CAS)
           DO IDD = 1, MDC
             CASS(1:MSC) = CAS(:,IDD)
@@ -1336,7 +1354,7 @@
                 ASPAR_petsc (idx)= ASPAR_petsc(idx) + eValue
               END IF
             END DO
-            IF (FREQ_SHIFT_IMPL) THEN
+            IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
               IF (ISS .gt. 1) THEN
                 idxpos=idxpos+1
                 idx=AsparApp2Petsc(idxpos)
