@@ -170,6 +170,7 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
+      logical, allocatable :: DoDirectionImpl(:)
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -334,7 +335,7 @@
 
       !> create IA JA ASPAR petsc array for big sparse matrix
       SUBROUTINE createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank
+        use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, DEP, DMIN
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -349,7 +350,7 @@
         integer :: IDD = 0
         ! running variable
         integer :: i = 0, J = 0, o_J = 0
-        integer :: istat, ThePos
+        integer :: istat, ThePos, NbRefr, TheVal
 
         ! number of nonzero without interface and ghosts
         integer :: nnz_new
@@ -401,8 +402,23 @@
           maxNumConnNode = maxNumConnNode +2
         END IF
         IF (REFRACTION_IMPL) THEN
-          nnz_new=nnz_new + MSC*(2*MDC)*nNodesWithoutInterfaceGhosts
-          maxNumConnNode = maxNumConnNode +2
+          ALLOCATE(DoDirectionImpl(nNodesWithoutInterfaceGhosts), stat=istat)
+          if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
+          NbRefr=0
+          DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
+            TheVal=1
+            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+            IF (DEP(IP) .LT. DMIN) TheVal=0
+            IF (IOBP(IP) .EQ. 2) TheVal=0
+            IF (TheVal .eq. 1) THEN
+              DoDirectionImpl(IPpetsc)=.TRUE.
+            ELSE
+              DoDirectionImpl(IPpetsc)=.FALSE.
+            END IF
+            NbRefr=NbRefr + TheVal
+          END DO
+          nnz_new=nnz_new + MSC*(2*MDC)*NbRefr
+          maxNumConnNode = maxNumConnNode + 2
         END IF
         NNZint=nnz_new+o_nnz_new
 #  endif
@@ -512,7 +528,7 @@
                   toSort(nToSort)%id = ThePos
                 END IF
               END IF
-              IF (REFRACTION_IMPL) THEN
+              IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
                 IF (IDD == 1) THEN
                   IDprev=MDC
                 ELSE
@@ -527,14 +543,12 @@
                 nToSort = nToSort + 1
                 idxpos=idxpos+1
                 ThePos=toRowIndex(IPpetsc, ISS, IDprev)
-!                Print *, '1: ThePos=', ThePos
                 toSort(nToSort)%userData = idxpos
                 toSort(nToSort)%id = ThePos
                 !
                 nToSort = nToSort + 1
                 idxpos=idxpos+1
                 ThePos=toRowIndex(IPpetsc, ISS, IDnext)
-!                Print *, '2: ThePos=', ThePos
                 toSort(nToSort)%userData = idxpos
                 toSort(nToSort)%id = ThePos
               END IF
@@ -1240,7 +1254,7 @@
             B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           END DO
         END IF
-        IF (REFRACTION_IMPL) THEN
+        IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
           CALL PROPTHETA(IP,CAD)
           DO ISS = 1, MSC
             CP_THE = MAX(ZERO,CAD(ISS,:))
@@ -1336,7 +1350,7 @@
                 ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_SIG(ISS,IDD)*SI(IP)
               END IF
             END IF
-            IF (REFRACTION_IMPL) THEN
+            IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
               IF (IDD == 1) THEN
                 IDD1=MDC
               ELSE
