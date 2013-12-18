@@ -869,20 +869,20 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_INE_TOTAL(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
+      SUBROUTINE GET_XYID_INE_TOTAL
+      USE DATAPOOL, only : XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal
       USE DATAPOOL, only : np_total, ne_total, rkind, DBG
       USE DATAPOOL, only : XP, YP, DEP, INE, MNP, IOBP
       USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
       implicit none
-      REAL(rkind), intent(out) :: XPtotal(np_total)
-      REAL(rkind), intent(out) :: YPtotal(np_total)
-      integer    , intent(out) :: IOBPtotal(np_total)
-      REAL(rkind), intent(out) :: DEPtotal(np_total)
-      integer, intent(out) :: INEtotal(3, ne_total)
 # ifdef MPI_PARALL_GRID
       integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
       integer IP, iProc, Status(np_total), rStatus(np_total), rIOBP(np_total)
 # endif
+      integer istat
+      ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
+      Print *, 'After INEtotal ALLOCATION'
 # ifdef MPI_PARALL_GRID
       NewId=78557
       open(NewId,file='hgrid.gr3',status='old',iostat=statfile)
@@ -1002,11 +1002,6 @@
       integer ntime_dims
       integer p_dims, e_dims
       integer istat
-      REAL(rkind), allocatable :: XPtotal(:)
-      REAL(rkind), allocatable :: YPtotal(:)
-      integer,     allocatable :: IOBPtotal(:)
-      REAL(rkind), allocatable :: DEPtotal(:)
-      integer, allocatable :: INEtotal(:,:)
       integer Oper
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_1"
       IF ((np_write.eq.0).or.(ne_write.eq.0)) THEN
@@ -1134,12 +1129,8 @@
         iret=nf90_put_att(ncid,var_id,UNITS,'meters')
         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
 ! boundary
-        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
-        CALL GET_INE_TOTAL(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
         Oper=1
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
-        DEALLOCATE(INEtotal, XPtotal, YPtotal, DEPtotal)
         !
       END IF
       IF (IOBPD_HISTORY) THEN
@@ -1169,11 +1160,6 @@
       integer var_id, iret
       integer istat
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
-      REAL(rkind), allocatable :: XPtotal(:)
-      REAL(rkind), allocatable :: YPtotal(:)
-      integer, allocatable :: IOBPtotal(:)
-      REAL(rkind), allocatable :: DEPtotal(:)
-      integer, allocatable :: INEtotal(:,:)
       integer Oper
 #ifdef MPI_PARALL_GRID
       integer eInt(1)
@@ -1204,9 +1190,6 @@
         CALL WRITE_PARAM_2(ncid)
       END IF
       IF (GRIDWRITE.and.WriteOutputProcess) THEN
-        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 8')
-        CALL GET_INE_TOTAL(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
         !
         iret=nf90_inq_varid(ncid, "ele", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
@@ -1243,11 +1226,6 @@
         !
         Oper=2
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
-        !
-        DEALLOCATE(INEtotal)
-        DEALLOCATE(XPtotal)
-        DEALLOCATE(YPtotal)
-        DEALLOCATE(DEPtotal)
       ENDIF
       END SUBROUTINE
 !**********************************************************************

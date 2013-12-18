@@ -329,7 +329,9 @@
          END IF
 #endif
          DEALLOCATE(HMAX, ISHALLOW)
-         RETURN
+      IF (GRIDWRITE) THEN
+        DEALLOCATE(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -527,6 +529,9 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
          FLUSH(STAT%FHNDL)
+         IF (GRIDWRITE) THEN
+           CALL GET_XYID_INE_TOTAL
+         END IF
          CALL WWM_OUTPUT(ZERO,.TRUE.)
 
          IF (LWXFN) THEN
