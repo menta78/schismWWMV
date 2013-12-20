@@ -1952,6 +1952,8 @@
             ELSE IF (IWINDFORMAT == 3) THEN
               HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
               HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
+            ELSE
+              CALL WWM_ABORT('Write your HX1/HX2 code here')
             END IF
             VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
          END DO

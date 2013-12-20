@@ -159,7 +159,7 @@
 
         INTEGER     :: IP
 
-        LOGICAL     :: ISNAN, ISINF
+        LOGICAL     :: MY_ISNAN, MY_ISINF
 
 !        CALL SMOOTH( -1.1, MNP, XP, YP, DEP )  
 
@@ -176,7 +176,7 @@
           KH = EWK(IP)*DEP(IP)
           IF (KH > PI) CYCLE
           DFBOT(IP) = (BOTFC(KH)*CURH(IP)+BOTFS(KH)*EWK(IP)*SLPH(IP))*G9
-          IF (ISINF(DFBOT(IP)) .OR. ISNAN(DFBOT(IP))) THEN
+          IF (MY_ISINF(DFBOT(IP)) .OR. MY_ISNAN(DFBOT(IP))) THEN
             WRITE(wwmerr,*)'DFBOT is NaN', IP,KH, CURH(IP), BOTFS(KH), BOTFC(KH), EWK(IP), SLPH(IP)
             call wwm_abort(wwmerr)
           END IF

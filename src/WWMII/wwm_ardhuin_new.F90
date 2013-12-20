@@ -317,7 +317,7 @@
         SSDSABK    = 1.5_rkind
 
         SSDSBR     = 9.E-4_rkind
-        SSDSBRFDF  = 0.0_rkind
+        SSDSBRFDF  = 0
         SSDSBRF1   = 0.5_rkind
         SSDSBRF2   = 0._rkind
         SSDSBR2    = 0.8_rkind
@@ -2217,7 +2217,7 @@
         EFDF=ZERO
         KBAR=ZERO
         EFDF=ZERO
-        NKL=ZERO !number of windows
+        NKL=0 !number of windows
         DO IKL=1,NK 
           IKSUP(IKL)=IKTAB(IKL,ID)
           IF (IKSUP(IKL) .LE. NK) THEN
@@ -2246,8 +2246,8 @@
 !
 ! gets indices for tabulated dissipation DCKI and breaking probability QBI
 !
-            IKD = FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1))
-            IKHS= 1+ANINT(KBAR(IKL)*HS(IKL)/DKHS)
+            IKD = INT(FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1)))
+            IKHS= INT(1+ANINT(KBAR(IKL)*HS(IKL)/DKHS))
             IF (IKD > NKD) THEN    ! Deep water
               IKD = NKD
             ELSE IF (IKD < 1) THEN ! Shallow water

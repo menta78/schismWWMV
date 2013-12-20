@@ -850,26 +850,26 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       logical function isnan(a)
+       logical function my_isnan(a)
          use datapool, only : rkind
          real(rkind) :: a
          if (a.ne.a) then
-           isnan = .true.
+           my_isnan = .true.
          else
-           isnan = .false.
+           my_isnan = .false.
          end if
          return
          end
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         logical function isinf(a)
+         logical function my_isinf(a)
          use datapool, only : rkind
          real(rkind) :: a
          if (int(a*0) .ne. 0) then
-           isinf = .true.
+           my_isinf = .true.
          else
-           isinf = .false.
+           my_isinf = .false.
          end if
          return
          end
@@ -1737,7 +1737,7 @@
       real(rkind), intent(in)    :: y(msc), acloc(msc,mdc)
 
       integer             :: is, id
-      real(rkind)         :: dintspec_y, maxvalue, tmp(msc)
+      real(rkind)         :: dintspec_y, tmp(msc)
 
       dintspec_y = ZERO
 !     maxvalue   = maxval(ac2(ip,:,:))

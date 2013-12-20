@@ -313,7 +313,7 @@
 
          SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
          SSB                =  (SPSIG(2)-SPSIG(1))/PI2
-         MSCL               =  SPECTRAL_BANDWIDTH/SSB
+         MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
 
          ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
         
