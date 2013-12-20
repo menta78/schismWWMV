@@ -140,7 +140,9 @@ MODULE wwm_hotfile_mod
       INTEGER :: HMNP, HMNE
       INTEGER :: HMSC, HMDC
       INTEGER, allocatable :: IPLGin(:)
+#ifdef NCDF
       INTEGER :: iplg_id
+#endif
       REAL(rkind) :: HFRLOW, HFRHIGH
       integer :: MULTIPLE, istat
       character(len=140) :: FILERET

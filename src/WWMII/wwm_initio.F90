@@ -240,7 +240,7 @@
        ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
-       ISHALLOW = zero
+       ISHALLOW = 0
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -329,9 +329,11 @@
          END IF
 #endif
          DEALLOCATE(HMAX, ISHALLOW)
+#ifdef NCDF
       IF (GRIDWRITE) THEN
         DEALLOCATE(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -1436,8 +1436,8 @@ MODULE WWM_PARALL_SOLVER
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
       FLUSH(STAT%FHNDL)
 
-      Ntot=MyREAL(MSCeffect*MDC)
-      Hlen=INT(Ntot/Nblock)
+      Ntot=MSCeffect*MDC
+      Hlen=INT(MyREAL(Ntot)/Nblock)
       Delta=Ntot - Hlen*Nblock
       iBlock=1
       idx=1
@@ -1625,7 +1625,7 @@ MODULE WWM_PARALL_SOLVER
       type(Graph) :: AdjGraph
       integer :: ListColor(nproc)
       integer :: ListColorWork(nproc)
-      integer TheRes, istat
+      integer istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
       FLUSH(STAT%FHNDL)
@@ -1723,7 +1723,7 @@ MODULE WWM_PARALL_SOLVER
       integer eColor, fColor, I, iRank
       integer nbUpp_send, nbLow_recv
       integer iLow, iUpp
-      integer IC, eFirst, nbCommon, IP, IPloc
+      integer IC, eFirst, nbCommon, IPloc
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
@@ -2704,7 +2704,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
       USE datapool, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
@@ -2765,7 +2765,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
       USE datapool, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, IS, ID, nbLow_send, IP
@@ -3045,7 +3045,7 @@ MODULE WWM_PARALL_SOLVER
       USE datapool, only : myrank
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
       integer iBlock
@@ -3084,7 +3084,7 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
       REAL(rkind), intent(in) :: ACin(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
-      REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC), Lerror
+      REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC)
 #ifdef DEBUG
       REAL(rkind) :: ACtest1(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: ACtest2(LocalColor%MSCeffect, MDC, MNP)
