@@ -549,7 +549,7 @@
          ! we have to fill the ghost and interface nodes with the solution from the other threads
          ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
          ! normally set to 0, because they do net exist in petsc
-         !call exchange_p2d(X)
+         call exchange_p2d(X)
          AC2(:, ISS, IDD) = MAX(0.0_rkind,X)
       END SUBROUTINE
 
