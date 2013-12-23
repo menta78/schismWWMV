@@ -343,16 +343,16 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      SUBROUTINE SYMM_GRAPH_BUILD_ADJ(AdjGraph)
       USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh, myrank
       implicit none
       type(Graph), intent(inout) :: AdjGraph
-      CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, wwm_nnbr, wwm_ListNeigh)
+      CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, wwm_nnbr, wwm_ListNeigh)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      SUBROUTINE GRAPH_BUILD_ADJ(AdjGraph)
       USE datapool, only : nnbr_p, nbrrank_p
       implicit none
       type(Graph), intent(inout) :: AdjGraph
@@ -361,12 +361,12 @@ MODULE WWM_PARALL_SOLVER
       DO I=1,nnbr_p
         ListNe(I)=nbrrank_p(I)+1
       END DO
-      CALL KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, nnbr_p, ListNe)
+      CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nnbr_p, ListNe)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE KERNEL_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph, nb, ListNe)
+      SUBROUTINE KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nb, ListNe)
       USE DATAPOOL
       implicit none
       integer, intent(in) :: nb
@@ -1436,8 +1436,8 @@ MODULE WWM_PARALL_SOLVER
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
       FLUSH(STAT%FHNDL)
 
-      Ntot=MyREAL(MSCeffect*MDC)
-      Hlen=INT(Ntot/Nblock)
+      Ntot=MSCeffect*MDC
+      Hlen=INT(MyREAL(Ntot)/Nblock)
       Delta=Ntot - Hlen*Nblock
       iBlock=1
       idx=1
@@ -1625,7 +1625,7 @@ MODULE WWM_PARALL_SOLVER
       type(Graph) :: AdjGraph
       integer :: ListColor(nproc)
       integer :: ListColorWork(nproc)
-      integer TheRes, istat
+      integer istat
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
       FLUSH(STAT%FHNDL)
@@ -1652,7 +1652,7 @@ MODULE WWM_PARALL_SOLVER
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After CREATE_WWM_MAT_P2D_EXCH'
 # endif
-      CALL SYMM_GRAPH_BUILD_PROCESSOR_ADJACENCY(AdjGraph)
+      CALL SYMM_GRAPH_BUILD_ADJ(AdjGraph)
       CALL BUILD_MULTICOLORING(AdjGraph, ListColor)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After BUILD_MULTICOLORING'
@@ -1723,7 +1723,7 @@ MODULE WWM_PARALL_SOLVER
       integer eColor, fColor, I, iRank
       integer nbUpp_send, nbLow_recv
       integer iLow, iUpp
-      integer IC, eFirst, nbCommon, IP, IPloc
+      integer IC, eFirst, nbCommon, IPloc
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
@@ -2704,7 +2704,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
       USE datapool, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
@@ -2765,7 +2765,7 @@ MODULE WWM_PARALL_SOLVER
       USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
       USE datapool, only : comm, ierr, myrank
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(LocalColor%MSCeffect, MDC, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, IS, ID, nbLow_send, IP
@@ -3045,7 +3045,7 @@ MODULE WWM_PARALL_SOLVER
       USE datapool, only : myrank
       USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
       implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
+      type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDat
       real(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
       integer iBlock
@@ -3084,7 +3084,7 @@ MODULE WWM_PARALL_SOLVER
       type(I5_SolutionData), intent(inout) :: SolDat
       REAL(rkind), intent(in) :: ACin(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
-      REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC), Lerror
+      REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC)
 #ifdef DEBUG
       REAL(rkind) :: ACtest1(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: ACtest2(LocalColor%MSCeffect, MDC, MNP)

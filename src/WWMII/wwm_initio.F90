@@ -8,7 +8,7 @@
        IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
-       INTEGER :: IE, IP
+       INTEGER :: IE
 #endif
        integer istat
 
@@ -33,13 +33,13 @@
        IEN = zero
        TRIA = zero
 #ifdef MPI_PARALL_GRID
-#ifdef PDLIB
+# ifdef PDLIB
        INE(:,:) = INETMP(:,:)
-#else
+# else
        DO IE = 1, MNE
          INE(:,IE) = INETMP(IE,:)
        END DO  
-#endif
+# endif
 #endif
 !
 ! spectral grid - shared
@@ -240,20 +240,14 @@
        ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
-       ISHALLOW = zero
+       ISHALLOW = 0
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE DEALLOC_ARRAYS
-
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         INTEGER :: IE, IP
-#endif
-
          DEALLOCATE( DX1, DX2, XP, YP, INVSPHTRANS, DEP, INE, IEN, TRIA)
 !
 ! spectral grid - shared
@@ -329,7 +323,11 @@
          END IF
 #endif
          DEALLOCATE(HMAX, ISHALLOW)
-         RETURN
+#ifdef NCDF
+      IF (GRIDWRITE) THEN
+        DEALLOCATE(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -355,10 +353,6 @@
 #endif
          IMPLICIT NONE
          integer istat
-#ifdef MPI_PARALL_GRID
-         integer FHNDLspec
-         CHARACTER(LEN=40) :: FILEspec
-#endif
 #ifdef TIMINGS
          REAL(rkind)    :: TIME1, TIME2
 #endif
@@ -527,6 +521,11 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
          FLUSH(STAT%FHNDL)
+#ifdef NCDF
+         IF (GRIDWRITE) THEN
+           CALL GET_XYID_INE_TOTAL
+         END IF
+#endif
          CALL WWM_OUTPUT(ZERO,.TRUE.)
 
          IF (LWXFN) THEN
@@ -885,9 +884,9 @@
          REAL(rkind)     :: ACLOC(MSC,MDC)
          REAL(rkind)     :: DEG
          REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
-
+#ifdef NCDF
          CHARACTER(len=25) :: CALLFROM
-
+#endif
          TMPPAR = 0.
 
          IF (.NOT. LHOTR .AND. LINID) THEN
@@ -1072,8 +1071,6 @@
       SUBROUTINE CLOSE_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
-         CHARACTER (LEN = 30) :: FDB
-         INTEGER              :: LFDB
          close(DBG%FHNDL)
          close(STAT%FHNDL)
          close( QSTEA%FHNDL)
@@ -1685,7 +1682,7 @@
         REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
 
 
-        INTEGER     :: I,J,IB,IPGL,IBWW3,STEP,TIME(2),IS
+        INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
         REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
         REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
@@ -1782,11 +1779,8 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE INIT_BINARY_WW3_SPECTRA 
-
         USE DATAPOOL
         IMPLICIT NONE
-
-        INTEGER :: I,J
 !
 ! Read header to get grid dimension, frequencies and directions, 
 ! output locations and first time step
@@ -1842,7 +1836,7 @@
         REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
-        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
+        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
         REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID

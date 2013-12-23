@@ -363,7 +363,8 @@
  PARAMWRITE      = T                 ! T: Write the physical parametrization
                                      !    and chosen numerical method
                                      !    in the netcdf file (default T)
- GRIDWRITE       = T                  ! T/F: Write the grid in the netcdf history file (default T)
+ GRIDWRITE       = T                 ! T/F: Write the grid in the netcdf history file (default T)
+ IOBPD           = F                 ! T/F: Write IOBPD (default F)
  PRINTMMA       = F                  ! T/F: Print minimum, maximum and average
                                      ! value of statistics during runtime
                                      ! (Default F)

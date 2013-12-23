@@ -140,7 +140,9 @@ MODULE wwm_hotfile_mod
       INTEGER :: HMNP, HMNE
       INTEGER :: HMSC, HMDC
       INTEGER, allocatable :: IPLGin(:)
+#ifdef NCDF
       INTEGER :: iplg_id
+#endif
       REAL(rkind) :: HFRLOW, HFRHIGH
       integer :: MULTIPLE, istat
       character(len=140) :: FILERET
@@ -229,8 +231,8 @@ MODULE wwm_hotfile_mod
       DO IP=1,MNP
         iplg(IP)=IP
       END DO
-      allocate(IPLGtot(np_total), stat=istat)
 #endif
+      allocate(IPLGtot(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 5')
       CALL DETERMINE_NUMBER_PROC(FILEHOT, HOTSTYLE, nbProc)
       IF (nbProc.eq.nproc) THEN

@@ -457,6 +457,7 @@
 !
 ! 2.b. Iterate to obtain actual breaking fraction
 !
+
 #ifdef WW3_QB
         IF ( BETA .LT. 0.2_rkind ) THEN
           QB     = ZERO
@@ -479,6 +480,8 @@
         ELSE
            QB = 1.0D0
         END IF
+#else
+        QB = ZERO
 #endif
         QBLOCAL(IP) = QB
 

@@ -12,9 +12,12 @@
 #ifdef NCDF
       INTEGER :: IT, IFILE
 #endif
-      INTEGER :: IP, ISTAT, FORECASTHOURS
-      REAL(rkind)    :: WDIRT, cf_w1, cf_w2
-
+      INTEGER :: IP, FORECASTHOURS
+      REAL(rkind)    :: WDIRT
+#ifdef NCDF
+      REAL(rkind)    :: cf_w1, cf_w2
+      INTEGER :: istat
+#endif
 
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
@@ -406,7 +409,8 @@
       integer aShift, WeFind, istat
       real(rkind) eDist, MinDist
       real(rkind), allocatable :: dist(:,:)
-      real(rkind) closest(2)
+      real(rkind) closest_r(2)
+      integer     closest(2)
       real(rkind) d_lon, d_lat
       integer i11, j11, i12, j12, i21, j21
       integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
@@ -532,7 +536,8 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
         DO I = 1, MNP
           dist(:,:) = ABS( CMPLX(XP(I)-lon(:,:), YP(I)-lat(:,:)) )
-          closest(1:2) = MINLOC(dist)
+          closest_r(1:2) = MINLOC(dist)
+          closest=INT(closest_r)
           d_lon = XP(I)-lon(closest(1),closest(2)) 
           d_lat = YP(I)-lat(closest(1),closest(2))
           IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant

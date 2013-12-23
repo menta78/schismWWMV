@@ -47,7 +47,7 @@
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-       USE WWM_PARALL_SOLVER, only : I5_EIMPS
+       USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
 # endif
 #endif
        IMPLICIT NONE
@@ -62,8 +62,13 @@
          RETURN
        END IF
 #endif
+<<<<<<< HEAD
 ! 
 !$OMP PARALLEL		!ccf
+=======
+!
+!$OMP PARALLEL
+>>>>>>> 78f9726c2cb0a4f9a4c701871480c16f57a0b811
        IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
@@ -98,7 +103,7 @@
          ELSE IF (AMETHOD == 6) THEN
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-           CALL I5_EIMPS(MainLocalColor, SolDat)
+           CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
 # endif
 #endif
          END IF
@@ -116,7 +121,7 @@
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-        USE WWM_PARALL_SOLVER, only : I5_EIMPS
+        USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
 # endif
 #endif
        IMPLICIT NONE
@@ -167,7 +172,7 @@
          ELSE IF (AMETHOD == 6) THEN
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-           CALL I5_EIMPS(MainLocalColor, SolDat)
+           CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
 # endif
 #endif
          END IF
@@ -2261,7 +2266,6 @@
              END DO
              IA(IP + 1) = K + 1
            END DO
-           POSI = 0
            J = 0
            DO IP = 1, MNP
              DO I = 1, CCON(IP)

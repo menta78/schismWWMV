@@ -22,6 +22,7 @@
      &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS
 #endif
          USE DATAPOOL, only : STATION_P => STATION
+         USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
          USE DATAPOOL, only : MAIN, PRINTMMA, ZERO
          USE DATAPOOL, only : WriteOutputProcess_hot
          USE DATAPOOL, only : WriteOutputProcess_his
@@ -54,7 +55,7 @@
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
-     &      OUTSTYLE, FILEOUT, LOUTITER,                                &
+     &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
      &      LENERGY, LWXFN, GRIDWRITE, PARAMWRITE,                      &
      &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &
@@ -171,11 +172,6 @@
            DELTC=MAIN%DELT
          END IF
 #ifdef NCDF
-# ifdef MPI_PARALL_GRID
-         IF (myrank .gt. 0) THEN
-           GRIDWRITE=.FALSE.
-         END IF
-# endif
          PARAMWRITE_HIS=PARAMWRITE
          USE_SINGLE_OUT_HIS=USE_SINGLE_OUT
          MULTIPLEOUT_HIS=MULTIPLEOUT
@@ -1383,6 +1379,15 @@
            END IF
          END IF
 #endif
+         IF (ICOMP .eq. 3) THEN
+#if !defined PETSC || !defined MPI_PARALL_GRID
+           CALL WWM_ABORT('For ICOMP=3 we need PETSC and in parallel')
+#endif
+           IF (AMETHOD .ne. 5) THEN
+             CALL WWM_ABORT('We need AMETHOD=5 for ICOMP=3')
+           END IF
+         END IF
+
 
 !        Check MSC,MDC for exchange
          if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')
@@ -1527,7 +1532,7 @@
 
          ! if using PETSc with AMETHOD 4 or 5 ICOMP must be greater equal 1 to init JA IA
          IF (AMETHOD .GE. 4 .AND. ICOMP .LT. 1) THEN
-           call wwm_abort('ICMP must be greater equal 1 to use PETSc')
+           call wwm_abort('ICOMP must be greater equal 1 to use PETSc')
          END IF
 
          ! if using PETSc with AMETHOD 4 or 5 LVECTOR must be FALSE
@@ -1947,6 +1952,8 @@
             ELSE IF (IWINDFORMAT == 3) THEN
               HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
               HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
+            ELSE
+              CALL WWM_ABORT('Write your HX1/HX2 code here')
             END IF
             VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
          END DO

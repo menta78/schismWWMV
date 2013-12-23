@@ -424,6 +424,10 @@
         END IF
       ELSE IF (ICOMP .EQ. 2) THEN 
         CALL COMPUTE_IMPLICIT
+#ifdef PETSC
+      ELSE IF (ICOMP .EQ. 3) THEN 
+        CALL COMPUTE_FULL_IMPLICIT_PATANKAR
+#endif
       END IF
 #ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN

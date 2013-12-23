@@ -200,6 +200,7 @@
          LOGICAL           :: LSIGBOUND  = .FALSE.
          LOGICAL           :: LTHBOUND   = .FALSE.
          LOGICAL           :: LSOUBOUND  = .FALSE.
+         LOGICAL           :: IOBPD_HISTORY = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
@@ -781,6 +782,11 @@
 #ifdef NCDF
          INTEGER        :: MULTIPLEOUT_HIS
          INTEGER        :: MULTIPLEOUT_STAT
+         REAL(rkind), allocatable :: XPtotal(:)
+         REAL(rkind), allocatable :: YPtotal(:)
+         integer,     allocatable :: IOBPtotal(:)
+         REAL(rkind), allocatable :: DEPtotal(:)
+         integer, allocatable :: INEtotal(:,:)
 #endif
          INTEGER        :: MULTIPLEOUT_HOT
          INTEGER        :: MULTIPLEIN_HOT
@@ -996,6 +1002,8 @@
          REAL(rkind)                  :: DELU
          REAL(rkind)                  :: DELUST
          REAL(rkind)                  :: DELALP
+
+
 
 !
 ! Data types of our linear equation solver.

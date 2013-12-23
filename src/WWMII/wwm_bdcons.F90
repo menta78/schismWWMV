@@ -89,11 +89,10 @@
         ENDDO
 #endif
 
-#ifdef MPI_PARALL_GRID
-        IF (myrank == 0) THEN
-#endif
-
 #ifdef DEBUG
+# ifdef MPI_PARALL_GRID
+        IF (myrank == 0) THEN
+# endif
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
           END DO
@@ -102,12 +101,10 @@
               WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
             ENDDO
           END DO
-#endif DEBUG
-
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
         END IF
+# endif
 #endif
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -910,7 +907,9 @@
          CHARACTER(len=25)          :: CALLFROM
          REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
          INTEGER                    :: IP, istat
+#ifdef NCDF
          CHARACTER(len=25)          :: CHR
+#endif
 
 !AR: WAVE BOUNDARY
 
@@ -1841,7 +1840,7 @@
          IMPLICIT NONE
          REAL(rkind)      :: DTMP
          integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
-         CHARACTER(len=25) :: CHR
+         CHARACTER(len=29) :: CHR
 
 !BUG: LBINTER = .FALSE. has some bug
 
