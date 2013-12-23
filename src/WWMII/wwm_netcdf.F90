@@ -28,8 +28,7 @@
       ELSE
         CALL WWM_ABORT('Error in the code for conversion')
       END IF
-
-
+      !
       Yname=eStrUnitTime(posBlank+1:alen)
       alenB=LEN_TRIM(Yname)
       posBlank=INDEX(Yname(1:alenB), ' ')
@@ -159,6 +158,7 @@
           END IF
         END IF
       END IF
+      WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
       CALL CT2MJD(eStrTime, eTimeStart)
       END SUBROUTINE
 !**********************************************************************

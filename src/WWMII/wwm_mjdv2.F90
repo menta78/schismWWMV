@@ -56,34 +56,27 @@
          WRITE(STIME(10:11),'(I2.2)') IH
          WRITE(STIME(12:13),'(I2.2)') IMIN
          WRITE(STIME(14:15),'(I2.2)') ISEC
-
-         RETURN
       END SUBROUTINE
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CU2SEC(UNITT, DT)
-         USE DATAPOOL, ONLY : DBG, RKIND
-         IMPLICIT NONE
-         CHARACTER(LEN=*), INTENT(IN) :: UNITT
-         real(rkind), INTENT(INOUT) :: DT
-
-         SELECT CASE (UNITT)
-            CASE ('H', 'h', 'HR', 'hr')
-               DT = DT * 3600.0
-            CASE ('M', 'm', 'MIN', 'min')
-               DT = DT * 60.0
-            CASE ('S', 's', 'SEC', 'sec')
-               DT = DT
-            CASE DEFAULT
-               WRITE(DBG%FHNDL,*) 'ERROR WRONG UNIT, UNIT = ', UNITT
-               DT = 0.0
-         END SELECT
-
-         RETURN
+      USE DATAPOOL, ONLY : DBG, RKIND
+      IMPLICIT NONE
+      CHARACTER(LEN=*), INTENT(IN) :: UNITT
+      real(rkind), INTENT(INOUT) :: DT
+      SELECT CASE (UNITT)
+         CASE ('H', 'h', 'HR', 'hr')
+            DT = DT * 3600.0
+         CASE ('M', 'm', 'MIN', 'min')
+            DT = DT * 60.0
+         CASE ('S', 's', 'SEC', 'sec')
+            DT = DT
+         CASE DEFAULT
+            WRITE(DBG%FHNDL,*) 'ERROR WRONG UNIT, UNIT = ', UNITT
+            DT = 0.0
+      END SELECT
       END SUBROUTINE
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -171,8 +164,6 @@
          ELSE
            CALL WWM_ABORT('!!! ERROR IN <MJDYMD>. IFLAG SHOULD BE 1 OR 2.')
          ENDIF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

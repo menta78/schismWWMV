@@ -2123,6 +2123,7 @@
       ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
       CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
       CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+      WRITE(WINDBG%FHNDL,*) 'eStrUnitTime=', TRIM(eStrUnitTime)
       WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
       FLUSH(WINDBG%FHNDL)
 
@@ -2247,7 +2248,7 @@
 
       ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(WindTimeStr)
       FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
