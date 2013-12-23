@@ -1034,6 +1034,8 @@
          open(WINDBG%FHNDL,file=fdb,status='replace')
 # endif
 #endif
+
+
          WRITE(DBG%FHNDL, *) 'THR=', THR
          WRITE(DBG%FHNDL, *) 'THR8=', THR8
          CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))

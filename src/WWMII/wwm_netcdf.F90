@@ -882,7 +882,6 @@
       integer istat
       ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
-      Print *, 'After INEtotal ALLOCATION'
 # ifdef MPI_PARALL_GRID
       NewId=78557
       open(NewId,file='hgrid.gr3',status='old',iostat=statfile)

@@ -1934,27 +1934,31 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
-      USE DATAPOOL, only : SEWI, WINDBG, rkind, THR
+      USE DATAPOOL, only : SEWI, WINDBG, rkind, THR, wwmerr
       IMPLICIT NONE
       integer, intent(in) :: nbtime_mjd
       real(rkind), intent(in) :: WIND_TIME_MJD(nbtime_mjd)
       IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
+        WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside CF wind_time range!'
         WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
         WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
         WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
         WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
         FLUSH(WINDBG%FHNDL)
-        CALL WWM_ABORT('Error in WIND_TIME_MJD 1')
+        WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 1, read ', TRIM(WINDBG%FNAME)
+        CALL WWM_ABORT(wwmerr)
       END IF
       IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
+        WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside CF wind_time range!'
         WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
         WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
         WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
         WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
         FLUSH(WINDBG%FHNDL)
-        CALL WWM_ABORT('Error in WIND_TIME_MJD 2')
+        WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 2, read ', TRIM(WINDBG%FNAME)
+        CALL WWM_ABORT(wwmerr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2036,6 +2040,7 @@
       ISTAT = nf90_inquire_dimension(fid, dimidsB(3), name=WindTimeStr)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
       WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      WRITE(WINDBG%FHNDL,*) 'Checking for scale_factor'
       FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
@@ -2047,6 +2052,8 @@
       WRITE(WINDBG%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
       FLUSH(WINDBG%FHNDL)
 
+      WRITE(WINDBG%FHNDL,*) 'Checking for add_offset'
+      FLUSH(WINDBG%FHNDL)
       ISTAT = nf90_get_att(fid, varid, "add_offset", cf_add_offset)
       IF (ISTAT /= 0) THEN
         CHRERR = nf90_strerror(ISTAT)

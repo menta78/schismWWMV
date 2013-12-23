@@ -1912,7 +1912,6 @@
   40     FORMAT (a,'_',i4.4,'.nc')
 # endif
       ENDIF
-      Print *, 'OUTPUT_HISTORY, step 1'
       IF (IsInitDone.eqv..FALSE.) THEN ! At the beginning ...
         IsInitDone=.TRUE.
         recs_his2=0
@@ -1956,7 +1955,6 @@
         ENDIF
 !$OMP END MASTER
       END IF
-      Print *, 'OUTPUT_HISTORY, step 2'
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
         ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
@@ -1997,13 +1995,11 @@
       IF (LMONO_OUT) THEN
         OUTT(:,1) = OUTT(:,1) / SQRT(2.)
       ENDIF
-      Print *, 'OUTPUT_HISTORY, step 3'
       IF (IOBPD_HISTORY) THEN
         allocate(IOBPDoutput(MDC, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
         CALL GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
       END IF
-      Print *, 'OUTPUT_HISTORY, step 4'
       recs_his2=recs_his2 + 1
       IF (WriteOutputProcess_his) THEN
 !$OMP MASTER
