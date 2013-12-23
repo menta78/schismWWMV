@@ -27,7 +27,8 @@
            OPEN(11103 ,file='p_waveh.dat'   ,form='unformatted', action='write')
            OPEN(11104 ,file='p_wavet.dat'   ,form='unformatted', action='write')
            OPEN(11105 ,file='p_waved.dat'   ,form='unformatted', action='write')
-           OPEN(11106 ,file='p_wavekm.dat'  ,form='unformatted', action='write')
+           !OPEN(11106 ,file='p_wavekm.dat'  ,form='unformatted', action='write')
+           OPEN(11106 ,file='p_wtauw.dat'  ,form='unformatted', action='write')
            OPEN(11107 ,file='p_wavetp.dat'  ,form='unformatted', action='write')
            OPEN(11108 ,file='p_wavekp.dat'  ,form='unformatted', action='write')
            OPEN(11109 ,file='p_orbit.dat'   ,form='unformatted', action='write')
@@ -302,7 +303,8 @@
           FLUSH(11104)
           WRITE(11105) DM
           FLUSH(11105)
-          WRITE(11106) KMWAM
+          !WRITE(11106) KMWAM
+          WRITE(11106) TAUW(IP)
           FLUSH(11106)
           WRITE(11107) TPP
           FLUSH(11107)
@@ -349,7 +351,8 @@
           OUTT(iplg(IP), 1 + 5*NLVT) = HS
           OUTT(iplg(IP), 2 + 5*NLVT) = SME01
           OUTT(iplg(IP), 3 + 5*NLVT) = DM
-          OUTT(iplg(IP), 4 + 5*NLVT) = KMWAM
+          !OUTT(iplg(IP), 4 + 5*NLVT) = KMWAM
+          OUTT(iplg(IP), 4 + 5*NLVT) = TAUW(IP)
           OUTT(iplg(IP), 5 + 5*NLVT) = TPP
           OUTT(iplg(IP), 6 + 5*NLVT) = KPP
           OUTT(iplg(IP), 7 + 5*NLVT) = ORBITAL
@@ -598,12 +601,14 @@
      &                               ELOC * SHYFZETA(IL,IP) / DEP(IP)**TWO        + &
      &                               ELOC * KW * SINHKW / ( DEP(IP) * COSHKD )   - &
      &                               ELOC / DEP(IP) *  (ONE - COSHKW / COSHKD)
+                      tmp=tmp*G9
+
                       SXX3D(IL,IP) = SXX3D(IL,IP) + &
-     &                               ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
+     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
                       SYY3D(IL,IP) = SYY3D(IL,IP) + &
-     &                               ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
+     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
                       SXY3D(IL,IP) = SXY3D(IL,IP) + &
-     &                ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
+     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
                   END DO
                 END DO
               END DO

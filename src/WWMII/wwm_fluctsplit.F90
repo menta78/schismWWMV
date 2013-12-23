@@ -63,6 +63,7 @@
        END IF
 #endif
 ! 
+!$OMP PARALLEL		!ccf
        IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
