@@ -1938,13 +1938,18 @@
       IMPLICIT NONE
       integer, intent(in) :: nbtime_mjd
       real(rkind), intent(in) :: WIND_TIME_MJD(nbtime_mjd)
+      CHARACTER(LEN=15) :: eTimeStr
       IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
         WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside CF wind_time range!'
-        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
-        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
-        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
-        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD), ' date=', eTimeStr
         FLUSH(WINDBG%FHNDL)
         WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 1, read ', TRIM(WINDBG%FNAME)
         CALL WWM_ABORT(wwmerr)
@@ -1952,10 +1957,14 @@
       IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
         WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside CF wind_time range!'
-        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
-        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
-        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
-        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD), ' date=', eTimeStr
         FLUSH(WINDBG%FHNDL)
         WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 2, read ', TRIM(WINDBG%FNAME)
         CALL WWM_ABORT(wwmerr)
