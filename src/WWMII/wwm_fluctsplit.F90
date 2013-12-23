@@ -62,13 +62,7 @@
          RETURN
        END IF
 #endif
-<<<<<<< HEAD
-! 
-!$OMP PARALLEL		!ccf
-=======
-!
 !$OMP PARALLEL
->>>>>>> 78f9726c2cb0a4f9a4c701871480c16f57a0b811
        IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
