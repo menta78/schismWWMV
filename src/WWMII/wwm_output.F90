@@ -1367,9 +1367,11 @@
         OUTPAR(57) = CFLCXY(2,IP)
         OUTPAR(58) = CFLCXY(3,IP)
       ENDIF
+#ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
         OUTPAR(59) = ZETA_SETUP(IP)
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1469,9 +1471,11 @@
           OUTPAR(57) = OUTPAR(57) + WI(J)*CFLCXY(2,IP)
           OUTPAR(58) = OUTPAR(58) + WI(J)*CFLCXY(3,IP)
         ENDIF
+#ifdef WWM_SETUP
         IF (LZETA_SETUP) THEN
           OUTPAR(59) = OUTPAR(59) + WI(J)*ZETA_SETUP(IP)
         END IF
+#endif
       END DO
       IF (VAROUT_STATION%ComputeStokes) THEN
         CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)

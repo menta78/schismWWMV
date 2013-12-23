@@ -445,11 +445,13 @@
            FLUSH(STAT%FHNDL)
          END IF
 
-#ifdef WWM_SETUP
          IF (LZETA_SETUP) THEN
+#ifdef WWM_SETUP
            CALL INIT_WAVE_SETUP
-         END IF
+#else
+           CALL WWM_ABORT('Need WWM_SEZUP if LZETA is selected')
 #endif
+         END IF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
          FLUSH(STAT%FHNDL)

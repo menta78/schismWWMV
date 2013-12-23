@@ -633,8 +633,8 @@
       logical :: SAME_NONZERO_PATTERN =.true.
 #endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
-      ZETA_SETUP = ZERO
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
+      ZETA_SETUP = ZERO
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
 # ifdef PETSC
@@ -817,4 +817,4 @@
 !*                                                                    *
 !**********************************************************************
       END MODULE
-#endif WWM_SETUP
+#endif
