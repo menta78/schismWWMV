@@ -278,7 +278,7 @@
  FILEOUT = station.dat                             ,
  LOUTITER        = F,
  IOUTS =  1,
- NOUTS     = 'ST4TSA'
+ NOUTS     = 'station'
  XOUTS     = 250.,
  YOUTS     = 250.,
  CUTOFF  = 1.  ,
