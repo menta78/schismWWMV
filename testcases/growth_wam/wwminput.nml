@@ -133,7 +133,7 @@
  /
  &ENGS
  MESNL   =           3,
- MESIN   =           1, 
+ MESIN   =           6, 
  IFRIC   =           1,
  MESBF   =           0,
  FRICC   =        0.019,
@@ -142,7 +142,7 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
- MESDS   =           1, 
+ MESDS   =           6, 
  MESTR   =           0,
  TRICO   =          1.,
  TRIRA   =         2.5,
@@ -164,8 +164,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  = 0.1,
- MELIM   = 1,
+ LIMFAK  = 0.6,
+ MELIM   = 2,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
