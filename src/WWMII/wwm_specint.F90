@@ -95,12 +95,14 @@
                ENDIF
              ENDIF 
            ENDIF
+
            IF (LNANINFCHK) THEN 
              IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
                WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
                CALL WWM_ABORT('wwm_specint.F90 l.88')
              END IF
            ENDIF
+
            AC1(IP,:,:) = AC2(IP,:,:)
          ENDDO
 #if defined ST41 || defined ST42

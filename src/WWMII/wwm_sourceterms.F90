@@ -300,7 +300,6 @@
 #ifdef TIMINGS
          call MY_WTIME(TIME3)
 #endif 
-!
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
