@@ -873,7 +873,9 @@
       USE DATAPOOL, only : XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal
       USE DATAPOOL, only : np_total, ne_total, rkind, DBG
       USE DATAPOOL, only : XP, YP, DEP, INE, MNP, IOBP
+# ifdef MPI_PARALL_GRID
       USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
+# endif
       implicit none
 # ifdef MPI_PARALL_GRID
       integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
@@ -940,7 +942,9 @@
 !**********************************************************************
       SUBROUTINE GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
       USE DATAPOOL, only : MDC, IOBPD, np_total, MULTIPLEOUT_HIS, MNP
+# ifdef MPI_PARALL_GRID
       USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
+# endif
       IMPLICIT NONE
       INTEGER, intent(in)  :: np_write
       INTEGER, INTENT(OUT) :: IOBPDoutput(MDC, np_write)
