@@ -5,13 +5,13 @@
  LQSTEA  = F,
  LSPHE   = T,
  LNAUTIN = T,
- LNAUTOUT        = T,
+ LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030910.000000     ,
- DELTC   = 600.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20040930.000000     ,
+ ENDTC   = 20030912.000000     ,
  DMIN    =  0.100000000000000     
  /
  &COUPL
@@ -30,7 +30,7 @@
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
  MDC     =          36,
- FRLOW   =   0.04,
+ FRLOW   =   0.05,
  FRHIGH  =   1.,
  MSC     =          36,
  FILEGRID        = system.dat                                                                                                        
@@ -43,7 +43,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = F,
+ LINID   = T,
  INITSTYLE       =    1 
  /
  &BOUC
@@ -164,8 +164,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  = 0.6,
- MELIM   = 2,
+ LIMFAK  = 0.1,
+ MELIM   = 1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,

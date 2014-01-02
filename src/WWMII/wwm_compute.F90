@@ -74,7 +74,13 @@
 #ifdef TIMINGS
          CALL MY_WTIME(TIME5)
 #endif
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+         IF (SMETHOD .GT. 0) THEN 
+           CALL COMPUTE_SOURCES_EXP
+         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+           CALL IMPLSCH
+         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
+           !!!!
+         ENDIF
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)

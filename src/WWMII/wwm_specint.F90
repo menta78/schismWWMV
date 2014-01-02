@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define LTESTWAMSOURCES 
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -15,10 +16,14 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID
+         INTEGER        :: IP, IS, ID, I, K, M
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
+         INTEGER, SAVE  :: IFIRST 
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+
+         DATA IFIRST/1/
+
 
          DT4S_T = 1./3. * DT4S
          DT4S_E = 0.125 * DT4S

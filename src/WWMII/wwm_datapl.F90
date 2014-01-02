@@ -263,6 +263,9 @@
          LOGICAL    :: LOPTSIG     = .FALSE.
          LOGICAL    :: LWINDSWAN   = .FALSE.
          LOGICAL    :: LZYLINDER   = .TRUE.
+         LOGICAL    :: LSOURCESWAM = .FALSE. 
+         LOGICAL    :: LSOURCESWWIII = .FALSE. 
+
          integer :: idxWind
 
 
@@ -997,14 +1000,26 @@
          REAL(rkind), ALLOCATABLE     :: Z0(:)       ! Roughness Length
          REAL(rkind), ALLOCATABLE     :: USTDIR(:)   ! Direction of Stress
          REAL(rkind), ALLOCATABLE     :: CD(:)       ! Drag Coefficient
+!AR: Below stuff must be allocated ...
+         REAL(rkind), ALLOCATABLE     :: FMEAN(:)    ! Mean Freq.
+         REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
+         REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
+         REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
+         REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
+
+         INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
+         REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
+
+         REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
+         REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
+         REAL(rkind), PARAMETER :: FRIC    = 28.d0
+         REAL(rkind), PARAMETER :: DKMAX   = 40.d0
+         REAL(rkind)            :: FLOGSPRDM1
 
          REAL(rkind)                  :: DELTAUW
          REAL(rkind)                  :: DELU
          REAL(rkind)                  :: DELUST
          REAL(rkind)                  :: DELALP
-
-
-
 !
 ! Data types of our linear equation solver.
 !

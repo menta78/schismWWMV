@@ -1,4 +1,6 @@
 #include "wwm_functions.h"
+#define LTESTWAMSOURCES
+!#undef LTESTWAMSOURCES
 #undef DEBUG
 !**********************************************************************
 !*                                                                    *
@@ -877,7 +879,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER         :: IP, IFILE, IT
+         INTEGER         :: IP, IFILE, IT, I, K, L, M, IS, ID
          REAL(rkind)     :: SPPAR(8)
          REAL(rkind)     :: MS
          REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
@@ -889,6 +891,9 @@
 #ifdef NCDF
          CHARACTER(len=25) :: CALLFROM
 #endif
+         INTEGER, SAVE  :: IFIRST
+         DATA IFIRST/1/
+
          TMPPAR = 0.
 
          IF (.NOT. LHOTR .AND. LINID) THEN
@@ -905,15 +910,15 @@
               WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
             END IF
             DO IP = 1, MNP
+               IF (ABS(IOBP(IP)) .GT. 0) CYCLE
                ACLOC = 0.
                WINDX  = WINDXY(IP,1)
                WINDY  = WINDXY(IP,2)
                WIND10 = SQRT(WINDX**2+WINDY**2)
-!AR: SELFEWWM: WE HAVE TO CHECK WHY THE INITIAL WIND FIELD IS ZERO WHEN COUPLING TO SELFE
                IF(DEP(IP) .GT. DMIN) THEN
                  IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
                  IF (INITSTYLE == 1) THEN
-                   IF (WIND10 .GT. 1.) THEN
+                   IF (WIND10 .GT. 1.) THEN !AR: why one? 
                      WINDTH = VEC2DEG(WINDX,WINDY)
                      CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
                      FDLESS = G9*AVETL/WIND10**2
@@ -951,12 +956,23 @@
                  WINDTH      = 0.
                  AC2(IP,:,:) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
+#ifdef LTESTWAMSOURCES 
+               IF (IFIRST .EQ. 1) THEN
+                 OPEN(100003,FILE='fort.10003',STATUS='OLD')
+                 DO ID=1,MDC
+                   DO IS=1,MSC
+                     READ(100003,*) I, K, M, AC2(IP,IS,ID)
+                     AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
+                   ENDDO
+                 ENDDO
+                 IFIRST = 0
+               ENDIF
+#endif
             END DO ! IP
-         END IF
-         IF (LHOTR) THEN
+         ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-         RETURN
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

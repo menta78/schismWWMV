@@ -413,7 +413,10 @@
            DFIMOFR(IS) = DFIM(IS)/FR(IS)
            FR5(IS)     = FR(IS)**5
            FRM5(IS)    = ONE/FR5(IS)
+           COFRM4(IS) = COEF4*G9/FR(IS)**4
          END DO
+
+         FLOGSPRDM1=1./LOG10(FRATIO)
 
       END SUBROUTINE
 !**********************************************************************

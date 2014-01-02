@@ -93,7 +93,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SDS_ECMWF (IP, EMEAN, FMEAN, AKMEAN, ACLOC, IMATRA, IMATDA, SSDS)
-         USE DATAPOOL
+         USE DATAPOOL, ONLY : MDC, MSC, RKIND, PI2, WK, ICOMP
          IMPLICIT NONE
 !
 !     Cycle 4 Dissipation from WAM according to BAJ, 2005 
