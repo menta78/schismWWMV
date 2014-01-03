@@ -77,7 +77,14 @@
          IF (SMETHOD .GT. 0) THEN 
            CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-           CALL IMPLSCH
+           CALL IMPLSCH (FL3, FL, 1, MNP, 1, &
+     &                   THWOLD, USOLD, &
+     &                   TAUW, Z0OLD, &
+     &                   ROAIRO, ZIDLOLD, &
+     &                   U10NEW, THWNEW, USNEW, &
+     &                   Z0NEW, ROAIRN, ZIDLNEW, &
+     &                   SL, FCONST)
+
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF

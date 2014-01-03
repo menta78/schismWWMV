@@ -43,6 +43,7 @@ F90 = ifort
 #extreme aggressive opti ...
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
+F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g

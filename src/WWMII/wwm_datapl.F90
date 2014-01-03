@@ -1000,15 +1000,21 @@
          REAL(rkind), ALLOCATABLE     :: Z0(:)       ! Roughness Length
          REAL(rkind), ALLOCATABLE     :: USTDIR(:)   ! Direction of Stress
          REAL(rkind), ALLOCATABLE     :: CD(:)       ! Drag Coefficient
-!AR: Below stuff must be allocated ...
+!AR: Below stuff must be allocated ... wam
          REAL(rkind), ALLOCATABLE     :: FMEAN(:)    ! Mean Freq.
          REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
          REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
+         REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
+         REAL(rkind), ALLOCATABLE     :: THWOLD(:), THWNEW(:), Z0OLD(:), Z0NEW(:), ROAIRO(:), ROAIRN(:)
+         REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:), ZIDLNEW(:), U10NEW(:), USNEW(:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
+
+         REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
          REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
