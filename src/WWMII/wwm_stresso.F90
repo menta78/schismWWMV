@@ -66,7 +66,7 @@
 !      USE YOWTABL  , ONLY : IUSTAR   ,IALPHA   ,EPS1     ,TAUHFT   ,
 !     &            DELUST   ,DELALP
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, TH, SINTH, COSTH, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, STAT, &
+     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, STAT, EPS1, &
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, RKIND, &
      &                      DELUST, DELALP, TAUT, DELTAUW, ITAUMAX, &
      &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, FR5, &
@@ -77,7 +77,8 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP, &
-     &                      ZERO, ONE
+     &                      ZERO, ONE, & 
+     &                      ROWATER => RHOA
 
 ! ----------------------------------------------------------------------
 
@@ -193,9 +194,8 @@
         TAUW(IJ) = MAX(TAUW(IJ),0.)
       ENDDO
 
-      IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
+      !IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
 
-      RETURN
       END SUBROUTINE STRESSO
 ! ----------------------------------------------------------------------
 !

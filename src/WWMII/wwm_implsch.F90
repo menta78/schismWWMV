@@ -130,14 +130,17 @@
 !      USE YOWTABL  , ONLY : JUMAX    ,DELU
 !      USE YOWTEST  , ONLY : IU06     ,ITEST
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, &
+     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
+     &                      JUMAX, DT4S, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
-     &                      INDEP => DEP
+     &                      INDEP => DEP, &
+     &                      ROWATER => RHOW, &
+     &                      RHOAIR => RHOA
 
 ! ----------------------------------------------------------------------
 
@@ -163,6 +166,10 @@
       REAL(rkind), DIMENSION(MNP,NANG,NFRE) :: XLLWS
 
       INTEGER, SAVE :: IFIRST
+
+      INTEGER, PARAMETER :: ITEST = 0
+
+      IDELT = INT(DT4S)
 
 !      REAL ZHOOK_HANDLE
 
@@ -432,7 +439,7 @@
 
 ! ----------------------------------------------------------------------
 
-      IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
+      !IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
       RETURN
       END SUBROUTINE IMPLSCH

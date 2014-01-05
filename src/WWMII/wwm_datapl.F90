@@ -1020,12 +1020,16 @@
          REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
          REAL(rkind), PARAMETER :: FRIC    = 28.d0
          REAL(rkind), PARAMETER :: DKMAX   = 40.d0
-         REAL(rkind)            :: FLOGSPRDM1
+         REAL(rkind), PARAMETER :: EPS1    = 0.00001
+         INTEGER, PARAMETER     :: ISNONLIN = 0
+         INTEGER, PARAMETER     :: KFRH=30
+         REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
 
          REAL(rkind)                  :: DELTAUW
          REAL(rkind)                  :: DELU
          REAL(rkind)                  :: DELUST
          REAL(rkind)                  :: DELALP
+         REAL(rkind)                  :: DELTR
 !
 ! Data types of our linear equation solver.
 !

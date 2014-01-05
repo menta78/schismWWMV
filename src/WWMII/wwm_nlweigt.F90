@@ -50,9 +50,11 @@
 !      USE YOWPARAM , ONLY : NANG     ,NFRE
 !      USE YOWPCONS , ONLY : PI       ,DEG
 !      USE YOWTEST  , ONLY : IU06
-       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
+       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, KFRH, PI, RADDEG, &
+     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, FRATIO, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
+     &                      CL11, CL21, DAL1, DAL2, &
+     &                      MNP, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -80,7 +82,9 @@
 !     LOCAL ARRAYS
       INTEGER, ALLOCATABLE :: JA1(:,:)
       INTEGER, ALLOCATABLE :: JA2(:,:)
-      REAL, ALLOCATABLE :: FRLON(:)
+      REAL(rkind), ALLOCATABLE :: FRLON(:)
+
+      IU06 = 100004
 
 ! ----------------------------------------------------------------------
 
@@ -121,7 +125,7 @@
       DELPHI2 = 180./PI*ACOS(COSTH4)
       CON     = 3000.
 
-      DELTHA = DELTH*DEG
+      DELTHA = DELTH*RADDEG
       CL1 = DELPHI1/DELTHA
       CL2 = DELPHI2/DELTHA
 
@@ -295,10 +299,10 @@
 !      IF (ISNONLIN.NE.0) THEN
         ENH_MAX=10.
 !        IF (ISHALLO.NE.1) THEN
-!          DO IG=1,IGL
+          DO IG=1,IGL
             DO M=1,NFRE
                DO IJ=1, MNP!NSTART(IRANK),NEND(IRANK)
-                 D = DEPTH(IJ,IG)
+                 D = DEP(IJ)
                  OM = ZPI*FR(M)
                  XK = AKI(OM,D)
                  ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
@@ -306,7 +310,7 @@
             ENDDO
             DO M=NFRE+1,NFRE+4
                DO IJ=1, MNP!NSTART(IRANK),NEND(IRANK)
-                 D = DEPTH(IJ,IG)
+                 D = DEP(IJ)
                  OM = ZPI*FR(NFRE)*FRATIO**(M-NFRE)
 !                NOTE THAT TFAK IS NOT DEFINED BEYOND M=NFRE
 !                HENCE THE USE OF FUNCTIOn AKI.
@@ -314,7 +318,7 @@
                  ENH(IJ,M,IG) = MIN(ENH_MAX,TRANSF(XK,D))
                ENDDO
             ENDDO
-!          ENDDO
+          ENDDO
 !        ELSE
 !          DO IG=1,IGL
 !            DO M=1,NFRE+4

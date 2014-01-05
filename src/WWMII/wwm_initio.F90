@@ -95,7 +95,7 @@
          ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
          TAUHFT = zero; TAUT = zero
-       ELSE IF (MESIN .EQ. 6) THEN
+       ELSE IF (MESIN .EQ. 6 .OR. LSOURCESWAM) THEN
          ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
          ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
@@ -235,7 +235,7 @@
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
            SXX3D = zero
            SXY3D = zero
-           SYY3D = zero
+            SYY3D = zero
          END IF
        END IF
 #endif
@@ -243,6 +243,40 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
        ISHALLOW = 0
+
+       ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+       FL = ZERO
+       FL3 = ZERO
+       SL = ZERO
+
+       ALLOCATE( FMEAN(MNP), EMEAN(MNP), ENH(MNP,MSC+4,1), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
+       FMEAN = ZERO
+       EMEAN = ZERO
+       ENH = ZERO
+       
+       ALLOCATE( USOLD(MNP,1), THWOLD(MNP), THWNEW(MNP), Z0OLD(MNP), Z0NEW(MNP), ROAIRO(MNP), ROAIRN(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
+       USOLD = ZERO
+       THWOLD = ZERO 
+       THWNEW = ZERO
+       Z0OLD = ZERO
+       Z0NEW = ZERO 
+       ROAIRO = ZERO
+       ROAIRN = ZERO
+
+       ALLOCATE( ZIDLOLD(MNP), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
+       ZIDLOLD = ZERO
+       ZIDLNEW = ZERO
+       U10NEW = ZERO
+       USNEW = ZERO
+
+       ALLOCATE( FCONST(MNP,MSC), stat=istat) 
+       
+       
+
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -490,7 +524,7 @@
 
          !CALL NLWEIGT(MSC,MDC)
 
-         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0) THEN
+         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
            FLUSH(STAT%FHNDL)
 #ifdef ST41
@@ -828,7 +862,7 @@
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC
-         USE DATAPOOl, ONLY: G9, DEP, MNP, MESTR
+         USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM
          USE M_CONSTANTS
          USE M_XNLDATA
          USE M_FILEIO
@@ -852,16 +886,21 @@
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
          FLUSH(STAT%FHNDL)
 
-
-         IF (MESNL .LT. 4) THEN
-           CALL PARAMETER4SNL
-         ELSE IF (MESNL .EQ. 5) THEN
-           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           CALL INIT_CONSTANTS()
-           IQGRID = 3
-           INODE  = 1
-           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
+         IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
+           IF (MESNL .LT. 4) THEN
+             CALL PARAMETER4SNL
+           ELSE IF (MESNL .EQ. 5) THEN
+             CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+             CALL INIT_CONSTANTS
+             IQGRID = 3
+             INODE  = 1
+             CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+             IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
+           ENDIF
+         ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
+           CALL NLWEIGT(MSC,MDC)
+           CALL PREPARE_SOURCE
+         ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF
 
          IF (MESTR .GT. 5) CALL GRAD_CG_K 

@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE PARAMETER4SNL()
+      SUBROUTINE PARAMETER4SNL
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IS
