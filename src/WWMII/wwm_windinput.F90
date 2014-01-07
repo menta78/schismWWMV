@@ -443,8 +443,6 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), PARAMETER    :: EPS1    = 0.00001_rkind
-
          INTEGER, INTENT(IN)  :: IP
          REAL(rkind), INTENT(IN)     :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)     :: IMATRA(MSC,MDC)

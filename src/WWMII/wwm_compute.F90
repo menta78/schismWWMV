@@ -6,6 +6,8 @@
         USE DATAPOOL
         IMPLICIT NONE
 
+        INTEGER           :: IS, ID, IP
+
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
@@ -77,14 +79,61 @@
          IF (SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
            CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-           CALL IMPLSCH (FL3, FL, 1, MNP, 1, &
-     &                   THWOLD, USOLD, &
-     &                   TAUW, Z0OLD, &
-     &                   ROAIRO, ZIDLOLD, &
-     &                   U10NEW, THWNEW, USNEW, &
-     &                   Z0NEW, ROAIRN, ZIDLNEW, &
-     &                   SL, FCONST)
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               FL3(:,ID,IS) =  AC2(:,IS,ID) * PI2 * SPSIG(IS)
+             END DO
+           END DO
 
+           DO IP = 1, MNP
+
+              IF (IOBP(IP) .NE. 0) CYCLE
+
+         WRITE(111112,'(A10,I10)') 'AFTER', IP
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL1', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+
+           CALL IMPLSCH (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                   THWOLD(IP,1), USOLD(IP,1), &
+     &                   TAUW(IP), Z0OLD(IP,1), &
+     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                   SL(IP,:,:), FCONST(IP,:))
+
+         WRITE(111112,'(A10,I10)') 'AFTER', IP 
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL1', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+
+           END DO
+
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               AC2(:,IS,ID) =  FL3(:,ID,IS) / PI2 / SPSIG(IS)
+             END DO
+           END DO
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF

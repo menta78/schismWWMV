@@ -137,8 +137,8 @@
         DEPTHTRS=50.
         IF(LBIWBK) THEN
           DO IJ=IJS,IJL
-             IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
-               EMAX = (GAM_B_J*DEPTH(IJ,IG))**2/16.
+             IF(DEP(IJ).LT.DEPTHTRS) THEN
+               EMAX = (GAM_B_J*DEP(IJ))**2/16.
                ALPH = 2.*EMAX/(EMEAN(IJ))
                ARG  = MIN(ALPH,50.)
 !!!!!!!! test an iterative scheme
@@ -157,7 +157,7 @@
           DO M=1,NFRE
              DO K=1,NANG
                 DO IJ=IJS,IJL
-                  IF(DEPTH(IJ,IG).LT.DEPTHTRS) THEN
+                  IF(DEP(IJ).LT.DEPTHTRS) THEN
                     SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
                     FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
                   ENDIF

@@ -256,7 +256,7 @@
        EMEAN = ZERO
        ENH = ZERO
        
-       ALLOCATE( USOLD(MNP,1), THWOLD(MNP), THWNEW(MNP), Z0OLD(MNP), Z0NEW(MNP), ROAIRO(MNP), ROAIRN(MNP), stat=istat)
+       ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
        USOLD = ZERO
        THWOLD = ZERO 
@@ -266,7 +266,7 @@
        ROAIRO = ZERO
        ROAIRN = ZERO
 
-       ALLOCATE( ZIDLOLD(MNP), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
+       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
        ZIDLOLD = ZERO
        ZIDLNEW = ZERO
@@ -899,7 +899,8 @@
            ENDIF
          ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
            CALL NLWEIGT(MSC,MDC)
-           CALL PREPARE_SOURCE
+           CALL STRESS
+           CALL TAUHF(MSC) 
          ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF
 
@@ -930,9 +931,6 @@
 #ifdef NCDF
          CHARACTER(len=25) :: CALLFROM
 #endif
-         INTEGER, SAVE  :: IFIRST
-         DATA IFIRST/1/
-
          TMPPAR = 0.
 
          IF (.NOT. LHOTR .AND. LINID) THEN
@@ -996,16 +994,15 @@
                  AC2(IP,:,:) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
 #ifdef LTESTWAMSOURCES 
-               IF (IFIRST .EQ. 1) THEN
-                 OPEN(100003,FILE='fort.10003',STATUS='OLD')
-                 DO ID=1,MDC
-                   DO IS=1,MSC
-                     READ(100003,*) I, K, M, AC2(IP,IS,ID)
-                     AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
-                   ENDDO
+               OPEN(100003,FILE='fort.10003',STATUS='OLD')
+               DO ID=1,MDC
+                 DO IS=1,MSC
+                   READ(100003,*) K, M, AC2(IP,IS,ID)
+                   WRITE(*,*) K, M, AC2(IP,IS,ID)
+                   AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
                  ENDDO
-                 IFIRST = 0
-               ENDIF
+               ENDDO
+               REWIND(100003)
 #endif
             END DO ! IP
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN

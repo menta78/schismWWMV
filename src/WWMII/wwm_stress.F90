@@ -171,6 +171,8 @@
         ENDDO
       ENDDO
 
+      WRITE(111111,'(A10,F20.10)') 'TAUT', SUM(TAUT)
+
       RETURN
       END SUBROUTINE STRESS
 

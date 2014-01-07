@@ -131,7 +131,7 @@
 !      USE YOWTEST  , ONLY : IU06     ,ITEST
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
-     &                      JUMAX, DT4S, &
+     &                      JUMAX, DT4S, FRM5, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -192,18 +192,6 @@
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !         ------------------------
-
-!AR: Write initial condition 
-      IF (IFIRST .EQ. 1) THEN
-        DO K=1,NANG
-          DO M=1,NFRE
-            DO IJ=IJS,IJL
-              WRITE(10003,*) IJ, K, M, FL3(IJ,K,M) 
-            ENDDO
-          ENDDO
-        ENDDO
-        IFIRST = 0
-      ENDIF
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
      &            F1MEAN, AKMEAN, XKMEAN)
