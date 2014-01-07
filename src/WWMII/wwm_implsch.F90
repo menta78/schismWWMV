@@ -142,28 +142,33 @@
      &                      ROWATER => RHOW, &
      &                      RHOAIR => RHOA
 
+      IMPLICIT NONE
+
 ! ----------------------------------------------------------------------
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL(rkind) :: FL(MNP,NANG,NFRE),FL3(MNP,NANG,NFRE),SL(MNP,NANG,NFRE)
-      REAL(rkind),DIMENSION(MNP,NFRE) :: FCONST 
-      REAL(rkind),DIMENSION(MNP) :: THWOLD,USOLD,Z0OLD,TAUW, &
+      REAL(rkind) :: FL(IJS:IJL,NANG,NFRE),FL3(IJS:IJL,NANG,NFRE),SL(IJS:IJL,NANG,NFRE)
+      REAL(rkind),DIMENSION(IJS:IJL,NFRE) :: FCONST 
+      REAL(rkind),DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW, &
      &                           ROAIRO,ZIDLOLD
-      REAL(rkind),DIMENSION(MNP) :: U10NEW,THWNEW,USNEW,Z0NEW, &
+      REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
-
-      INTEGER :: MIJ(MNP)
-      INTEGER :: JU(MNP)
-      REAL :: GADIAG(MNP), TEMP(MNP,NFRE), TEMP2(MNP,NFRE), &
+ 
+      INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
+      INTEGER :: MIJ(IJS:IJL)
+      INTEGER :: JU(IJS:IJL)
+      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), TEMP2(IJS:IJL,NFRE), &
      &        DELFL(NFRE)
-      REAL(rkind) :: SPRD(MNP,NANG)
-      REAL(rkind), DIMENSION(MNP) :: EMEANWS, FMEANWS
-      REAL(rkind), DIMENSION(MNP) :: USFM
-      REAL(rkind), DIMENSION(MNP) :: F1MEAN, AKMEAN, XKMEAN 
-      REAL(rkind), DIMENSION(MNP,NANG,NFRE) :: XLLWS
+      REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
+      REAL(rkind) :: AK2VGM1
+      REAL(rkind) :: SPRD(IJS:IJL,NANG)
+      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
+      REAL(rkind), DIMENSION(IJS:IJL) :: USFM
+      REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
+      REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       INTEGER, SAVE :: IFIRST
 
@@ -323,7 +328,8 @@
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
+            write(*,*) ij, k, m, size(FL3(:,1,1)), size(FL3(1,:,1)), size(FL3(1,1,:))
+            FL3(IJ,K,M) = FL3(IJ,K,M) + 1.!SIGN(FLHAB,GTEMP2) 
 !AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
 !AR: ICE            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
           ENDDO

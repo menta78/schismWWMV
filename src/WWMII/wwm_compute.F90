@@ -87,7 +87,7 @@
 
            DO IP = 1, MNP
 
-              IF (IOBP(IP) .NE. 0) CYCLE
+              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
 
          WRITE(111112,'(A10,I10)') 'AFTER', IP
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
