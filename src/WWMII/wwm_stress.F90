@@ -61,10 +61,10 @@
      !&            DELTAUW  ,DELU
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, &
-     &                 DFIM, DFIMOFR, DFFR, DFFR2, WK, CD, &
+     &                 DFIM, DFIMOFR, DFFR, DFFR2, WK, CD, ITEST, &
      &                 IUSTAR, IALPHA, USTARM, TAUT, XNLEV, STAT, &
      &                 DELUST, DELALP, ITAUMAX, JPLEVT, JPLEVC, JUMAX, &
-     &                 DELU, UMAX, DELTAUW, ALPHA, XKAPPA, RKIND, &
+     &                 DELU, UMAX, DELTAUW, ALPHA, XKAPPA, RKIND, IU06, &
      &                 DELTH => DDIR, &
      &                 G => G9, &
      &                 ZPI => PI2, &
@@ -77,7 +77,6 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER :: ITEST
       REAL(rkind), PARAMETER :: XM=0.50
       INTEGER, PARAMETER :: NITER=10
       INTEGER         :: I, J, K, L, M, JL, ITER
@@ -107,16 +106,15 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
-      ITEST = 0 
-
       TAUWMAX = SQRT(5.)
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 
       write(5010) DELU, DELTAUW
 
-      WRITE(STAT%FHNDL,*) 'STRESS INIT', DELU, DELTAUW
-      WRITE(SRCDBG%FHNDL,*) 'STRESS INIT', DELU, DELTAUW
+      write(100003,*) DELU, DELTAUW
+
+      WRITE(IU06,*) 'STRESS INIT', DELU, DELTAUW
 !
 !*    1.2 DETERMINE STRESS.
 !         -----------------
@@ -125,8 +123,10 @@
 
         XL=XNLEV(JL)
         IF(ITEST.GE.1) THEN
-          WRITE(STAT%FHNDL,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
+          WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
+
+        WRITE(100003,*) JL, JPLEVT, JPLEVC, XL
 
         CDRAG = 0.0012875
         WCD = SQRT(CDRAG)
@@ -146,6 +146,7 @@
               DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST*(1.-(XM+1)*X)/(1.-X)
               UST    = UST-F/DELF
               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
+              WRITE(100003,'(3I10,10F15.8)') I, J, ITER, UTOP, USTOLD, TAUOLD, X, UST, Z0, F, DELF, UST, TAUOLD
             ENDDO
             TAUT(I,J,JL)  = SQRT(TAUOLD)
 !            WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)

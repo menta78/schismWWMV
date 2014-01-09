@@ -256,15 +256,16 @@
        EMEAN = ZERO
        ENH = ZERO
        
-       ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), stat=istat)
+       ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
+       U10OLD = ZERO
        USOLD = ZERO
        THWOLD = ZERO 
        THWNEW = ZERO
        Z0OLD = ZERO
        Z0NEW = ZERO 
-       ROAIRO = ZERO
-       ROAIRN = ZERO
+       ROAIRO = 1.2250000238 
+       ROAIRN = 1.2250000238 
 
        ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
@@ -901,6 +902,7 @@
            CALL NLWEIGT(MSC,MDC)
            CALL STRESS
            CALL TAUHF(MSC) 
+           CALL BUILDSTRESS
          ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF
 
@@ -994,15 +996,14 @@
                  AC2(IP,:,:) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
 #ifdef LTESTWAMSOURCES 
-               OPEN(100003,FILE='fort.10003',STATUS='OLD')
+               OPEN(1113,FILE='fort.10003',STATUS='OLD')
                DO ID=1,MDC
                  DO IS=1,MSC
-                   READ(100003,*) K, M, AC2(IP,IS,ID)
-                   WRITE(*,*) K, M, AC2(IP,IS,ID)
+                   READ(1113,*) K, M, AC2(IP,IS,ID)
                    AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
                  ENDDO
                ENDDO
-               REWIND(100003)
+               REWIND(1113)
 #endif
             END DO ! IP
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN

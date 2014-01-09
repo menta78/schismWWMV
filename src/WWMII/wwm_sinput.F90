@@ -145,6 +145,8 @@
 
       CONST3 = IDAMPING*CONST3
 
+      WRITE(111116, '(10F15.7)') CONST1, CONST3, XKAPPAD, CONST3 
+
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
 
@@ -175,12 +177,14 @@
      &                         0.5*XKAPPA*ZIDLNEW(IJ)**3)**ONETHIRD &
      &                           /U10 &
      &                 )
+        WRITE(111116, '(I10,10F15.7)') IJ, U10, C_D, DC_DDU, SIG_CONV, SIG_N(IJ), USP(IJ), USM(IJ)
       ENDDO
 
       DO IJ=IJS,IJL
         USP(IJ) = USNEW(IJ)*(1.+SIG_N(IJ))
         USM(IJ) = USNEW(IJ)*(1.-SIG_N(IJ))
       ENDDO
+
 ! ----------------------------------------------------------------------
 
 !*    2. LOOP OVER FREQUENCIES.
@@ -224,6 +228,7 @@
 
           XV1D(IJ) = 1.D0/XV1
           XV2D(IJ) = 1.D0/XV2
+
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -242,6 +247,7 @@
 
             ZBETA1 = CONST3*(TEMP1(IJ,K)-XV1D(IJ))*UCN1(IJ)**2 
             ZBETA2 = CONST3*(TEMP1(IJ,K)-XV2D(IJ))*UCN2(IJ)**2             
+
             IF (LZ(IJ,K)) THEN
               IF (L1) THEN
                 ZLOG2X=ZLOG1*ZLOG1*X1
@@ -263,6 +269,7 @@
               UFAC2(IJ,K) = ZBETA1+ZBETA2
               XLLWS(IJ,K,M)= 0.
             ENDIF
+            WRITE(111116, '(3I10,10F15.7)') M, K, IJ, UFAC2(IJ,M), XLLWS(IJ, K,M), FAC(M), CONST(M), CM(IJ), XV1D(IJ), XV2D(IJ)
           ENDDO
         ENDDO
 
@@ -273,6 +280,7 @@
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
+      WRITE(111116, '(3I10,10F15.7)') M, K, IJ, FL(IJ,K,M), SL(IJ,K,M)
           ENDDO
         ENDDO
 
@@ -457,8 +465,11 @@
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
       SIG_N = MIN(0.5_rkind, SIG_CONV * (BG_GUST*USNEW**3+ 0.5*XKAPPA*ZIDLNEW**3)**ONETHIRD/U10)
 
+
       USP = USNEW*(1.+SIG_N)
       USM = USNEW*(1.-SIG_N)
+
+      WRITE(111116, '(10F15.7)') U10, C_D, DC_DDU, SIG_CONV, SIG_N, USP, USM
 ! ----------------------------------------------------------------------
 
 !*    2. LOOP OVER FREQUENCIES.
@@ -492,6 +503,8 @@
         XV2      = -USM*XKAPPAD*ZCN*CM
         XV1D = 1.D0/XV1
         XV2D = 1.D0/XV2
+
+        WRITE(111116, '(I10,10F15.7)') M, FAC(M), CONST(M), CM, XV1D, XV2D 
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -528,6 +541,9 @@
             UFAC2(K) = ZBETA1+ZBETA2
             XLLWS(K,M)= 0.
           ENDIF
+
+          WRITE(111116, '(I10,10F15.7)') M, K, L1, L2, UFAC2(M), ZBETA2, XLLWS(K,M)
+
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.

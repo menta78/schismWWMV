@@ -65,8 +65,8 @@
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
-      REAL(rkind),INTENT(IN)  :: U10(MNP),TAUW(MNP)
-      REAL(rkind),INTENT(OUT) :: US(MNP),Z0(MNP)
+      REAL(rkind),INTENT(IN)  :: U10(IJS:IJL),TAUW(IJS:IJL)
+      REAL(rkind),INTENT(OUT) :: US(IJS:IJL),Z0(IJS:IJL)
       INTEGER, INTENT(IN)     :: IJS, IJL, KLEV
 !      REAL(KIND=JPRB) ::ZHOOK_HANDLE
       INTEGER                :: I, J, IJ, ILEV

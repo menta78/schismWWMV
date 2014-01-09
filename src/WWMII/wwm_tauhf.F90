@@ -80,6 +80,8 @@
 
       CONST1 = BETAMAX/XKAPPA**2
 
+      WRITE(100005,*) ALPHAMCOEF, ALPHAM, DELUST, DELALP, CONST1
+
       ALLOCATE(W(JTOT))
       W=1.
       W(1)=0.5
@@ -119,6 +121,7 @@
               ZLOG         = MIN(LOG(ZMU),0.)
               ZBETA        = CONST1*ZMU*ZLOG**4
               TAUHFT(K,L,M)= TAUHFT(K,L,M)+W(J)*ZBETA/Y*DELY
+              !WRITE(100005,'(3I10,10F15.7)') L, K, J, DELY, ZMU, TAUHFT(K,L,M)
             ENDDO
           ENDDO
         ENDDO

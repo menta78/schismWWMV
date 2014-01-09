@@ -1008,7 +1008,7 @@
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
          REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
-         REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:)
+         REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
          REAL(rkind), ALLOCATABLE     :: FCONST(:,:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
@@ -1021,8 +1021,12 @@
          REAL(rkind), PARAMETER :: FRIC    = 28.d0
          REAL(rkind), PARAMETER :: DKMAX   = 40.d0
          REAL(rkind), PARAMETER :: EPS1    = 0.00001
+         REAL(rkind), PARAMETER :: EPSU10  = 1.0E-3
+         REAL(rkind), PARAMETER :: EPSUS   = 1.0E-6
          INTEGER, PARAMETER     :: ISNONLIN = 0
          INTEGER, PARAMETER     :: KFRH=30
+         INTEGER, PARAMETER     :: IU06 = 222222
+         INTEGER, PARAMETER     :: ILEV = 1
          REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
 
          REAL(rkind)                  :: DELTAUW

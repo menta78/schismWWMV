@@ -1,4 +1,4 @@
-      SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG, &
+    SUBROUTINE IMPLSCH (FL3, FL, IJS, IJL, IG, &
      &                    THWOLD, USOLD, &
      &                    TAUW, Z0OLD, &
      &                    ROAIRO, ZIDLOLD, &
@@ -201,10 +201,15 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
      &            F1MEAN, AKMEAN, XKMEAN)
 
+      WRITE(111115,'(I10,10F15.7)') IJS, EMEAN(IJS), FMEAN(IJS), F1MEAN, AKMEAN, XKMEAN
+
+      WRITE(10005,*) IJS, IJL, 4*SQRT(EMEAN(IJS))
+
 
       DO K=1,NANG
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+          WRITE(111115,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
         ENDDO
       ENDDO
 
@@ -212,6 +217,7 @@
         XJ=U10NEW(IJ)/DELU
         JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
       ENDDO
+      WRITE(111115,'(I10,10F15.7)') IJ,JU(IJS:IJL),JUMAX,MAX(NINT(XJ),1)
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
@@ -230,6 +236,9 @@
         CALL FLUSH (IU06)
       ENDIF
 
+      WRITE(111115,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
+     &                              USNEW(IJS), Z0NEW(IJS), ILEV
+
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
@@ -239,6 +248,9 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
+
+      WRITE(111115,'(I10,10F15.7)') IJS, SUM(FL3), SUM(FL), SUM(SL), &
+     &                              SUM(XLLWS)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
@@ -328,8 +340,7 @@
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))
-            write(*,*) ij, k, m, size(FL3(:,1,1)), size(FL3(1,:,1)), size(FL3(1,1,:))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + 1.!SIGN(FLHAB,GTEMP2) 
+            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
 !AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
 !AR: ICE            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
           ENDDO

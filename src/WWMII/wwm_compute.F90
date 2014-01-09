@@ -7,6 +7,7 @@
         IMPLICIT NONE
 
         INTEGER           :: IS, ID, IP
+        REAL(rkind)       :: VEC2RAD, DEG
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -85,15 +86,29 @@
              END DO
            END DO
 
+           FL = FL3 
+           THWOLD(:,1) = THWNEW
+           U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+           
            DO IP = 1, MNP
+ 
+              THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+!              WRITE(*,*) THWNEW(IP)
+!              THWNEW(IP) = THWNEW(IP)*RADDEG
+!              CALL DEG2NAUT (THWNEW(IP), DEG, .TRUE.) 
+!              THWNEW(IP) = DEG
+!              WRITE(*,*) THWNEW(IP)
+!              STOP
 
               IF (ABS(IOBP(IP)) .GT. 0) CYCLE
 
-         WRITE(111112,'(A10,I10)') 'AFTER', IP
+         WRITE(111112,'(A10,I10)') 'BEFORE', IP
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FL1', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
          WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
          WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
@@ -114,9 +129,11 @@
 
          WRITE(111112,'(A10,I10)') 'AFTER', IP 
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FL1', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
          WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
          WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
