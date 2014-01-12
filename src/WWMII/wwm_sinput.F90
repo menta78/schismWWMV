@@ -145,7 +145,7 @@
 
       CONST3 = IDAMPING*CONST3
 
-      WRITE(111116, '(10F15.7)') CONST1, CONST3, XKAPPAD, CONST3 
+!      WRITE(111116, '(10F15.7)') CONST1, CONST3, XKAPPAD, CONST3 
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
@@ -177,7 +177,7 @@
      &                         0.5*XKAPPA*ZIDLNEW(IJ)**3)**ONETHIRD &
      &                           /U10 &
      &                 )
-        WRITE(111116, '(I10,10F15.7)') IJ, U10, C_D, DC_DDU, SIG_CONV, SIG_N(IJ), USP(IJ), USM(IJ)
+!        WRITE(111116, '(I10,10F15.7)') IJ, U10, C_D, DC_DDU, SIG_CONV, SIG_N(IJ), USP(IJ), USM(IJ)
       ENDDO
 
       DO IJ=IJS,IJL
@@ -269,7 +269,7 @@
               UFAC2(IJ,K) = ZBETA1+ZBETA2
               XLLWS(IJ,K,M)= 0.
             ENDIF
-            WRITE(111116, '(3I10,10F15.7)') M, K, IJ, UFAC2(IJ,M), XLLWS(IJ, K,M), FAC(M), CONST(M), CM(IJ), XV1D(IJ), XV2D(IJ)
+!            WRITE(111116, '(3I10,10F15.7)') M, K, IJ, UFAC2(IJ,M), XLLWS(IJ, K,M), FAC(M), CONST(M), CM(IJ), XV1D(IJ), XV2D(IJ)
           ENDDO
         ENDDO
 
@@ -280,7 +280,7 @@
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-      WRITE(111116, '(3I10,10F15.7)') M, K, IJ, FL(IJ,K,M), SL(IJ,K,M)
+!      WRITE(111116, '(3I10,10F15.7)') M, K, IJ, FL(IJ,K,M), SL(IJ,K,M)
           ENDDO
         ENDDO
 
@@ -469,7 +469,7 @@
       USP = USNEW*(1.+SIG_N)
       USM = USNEW*(1.-SIG_N)
 
-      WRITE(111116, '(10F15.7)') U10, C_D, DC_DDU, SIG_CONV, SIG_N, USP, USM
+!      WRITE(111116, '(10F15.7)') U10, C_D, DC_DDU, SIG_CONV, SIG_N, USP, USM
 ! ----------------------------------------------------------------------
 
 !*    2. LOOP OVER FREQUENCIES.
@@ -504,7 +504,7 @@
         XV1D = 1.D0/XV1
         XV2D = 1.D0/XV2
 
-        WRITE(111116, '(I10,10F15.7)') M, FAC(M), CONST(M), CM, XV1D, XV2D 
+!        WRITE(111116, '(I10,10F15.7)') M, FAC(M), CONST(M), CM, XV1D, XV2D 
 
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
@@ -542,7 +542,7 @@
             XLLWS(K,M)= 0.
           ENDIF
 
-          WRITE(111116, '(I10,10F15.7)') M, K, L1, L2, UFAC2(M), ZBETA2, XLLWS(K,M)
+!          WRITE(111116, '(I10,10F15.7)') M, K, L1, L2, UFAC2(M), ZBETA2, XLLWS(K,M)
 
         ENDDO
 

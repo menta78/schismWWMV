@@ -106,15 +106,15 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
-      TAUWMAX = SQRT(5.)
+      TAUWMAX = USTARM 
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 
       write(5010) DELU, DELTAUW
 
-      write(100003,*) DELU, DELTAUW
+!      write(100003,*) DELU, DELTAUW
 
-      WRITE(IU06,*) 'STRESS INIT', DELU, DELTAUW
+!      WRITE(IU06,*) 'STRESS INIT', DELU, DELTAUW
 !
 !*    1.2 DETERMINE STRESS.
 !         -----------------
@@ -123,17 +123,19 @@
 
         XL=XNLEV(JL)
         IF(ITEST.GE.1) THEN
+          WRITE(IU06,*)' '
           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
 
-        WRITE(100003,*) JL, JPLEVT, JPLEVC, XL
+!        WRITE(100003,*) JL, JPLEVT, JPLEVC, XL
 
         CDRAG = 0.0012875
-        WCD = SQRT(CDRAG)
-        WCD = SQRT(CDRAG)
+        WCD = SQRT(CDRAG) 
 
         DO I=0,ITAUMAX
+
           ZTAUW   = (REAL(I)*DELTAUW)**2
+
           DO J=0,JUMAX
             UTOP    = REAL(J)*DELU
             USTOLD  = UTOP*WCD
@@ -143,15 +145,17 @@
               UST    = SQRT(TAUOLD)
               Z0     = ALPHA*TAUOLD/(G)/(1.-X)**XM
               F      = UST-XKAPPA*UTOP/(LOG(XL/Z0))
-              DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST*(1.-(XM+1)*X)/(1.-X)
+              DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST* &
+     &         (1.-(XM+1)*X)/(1.-X)
               UST    = UST-F/DELF
               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
-              WRITE(100003,'(3I10,10F15.8)') I, J, ITER, UTOP, USTOLD, TAUOLD, X, UST, Z0, F, DELF, UST, TAUOLD
             ENDDO
             TAUT(I,J,JL)  = SQRT(TAUOLD)
-!            WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)
+!           WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)
           ENDDO
+
         ENDDO
+
       ENDDO
 
 !*    FORCE ZERO WIND TO HAVE ZERO STRESS
@@ -164,13 +168,13 @@
         ENDDO
       ENDDO
 
-      DO JL=1,MIN(JPLEVT,JPLEVC)
-        DO I=0,ITAUMAX
-          DO J=0,JUMAX
-            WRITE(100001,*) I,J,JL,TAUT(I,J,JL)
-          ENDDO
-        ENDDO
-      ENDDO
+!      DO JL=1,MIN(JPLEVT,JPLEVC)
+!        DO I=0,ITAUMAX
+!          DO J=0,JUMAX
+!            WRITE(100001,*) I,J,JL,TAUT(I,J,JL)
+!          ENDDO
+!        ENDDO
+!      ENDDO
 
       WRITE(111111,'(A10,F20.10)') 'TAUT', SUM(TAUT)
 

@@ -952,25 +952,7 @@
 !
 ! Dislin
 !
-         LOGICAL               :: LDISLIN = .FALSE.
-!
-!   WAM Cycle 4.5
-!
-         REAL(rkind), PARAMETER       :: ALPHA   = 0.0090
-         REAL(rkind), PARAMETER       :: BETAMAX = 1.20
-         REAL(rkind), PARAMETER       :: XKAPPA  = 0.4
-         REAL(rkind), PARAMETER       :: ZALP    =  0.0110
-         REAL(rkind), PARAMETER       :: UMAX    = 50. ! Why this ? Never produced higher winds than this ?
-
-
-         INTEGER, PARAMETER    :: IUSTAR  = 100 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: IALPHA  = 400 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: ITAUMAX = 200 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JUMAX   = 200 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JPLEVT  = 1 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JPLEVC  = 1
-         INTEGER, PARAMETER    :: IDAMPING = 1
-         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL                      :: LDISLIN = .FALSE.
 
          REAL(rkind)                  :: XNLEV(1) = 10.
 
@@ -1000,7 +982,6 @@
          REAL(rkind), ALLOCATABLE     :: Z0(:)       ! Roughness Length
          REAL(rkind), ALLOCATABLE     :: USTDIR(:)   ! Direction of Stress
          REAL(rkind), ALLOCATABLE     :: CD(:)       ! Drag Coefficient
-!AR: Below stuff must be allocated ... wam
          REAL(rkind), ALLOCATABLE     :: FMEAN(:)    ! Mean Freq.
          REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
          REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
@@ -1016,6 +997,8 @@
 
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
+         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
          REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
          REAL(rkind), PARAMETER :: FRIC    = 28.d0
@@ -1023,10 +1006,27 @@
          REAL(rkind), PARAMETER :: EPS1    = 0.00001
          REAL(rkind), PARAMETER :: EPSU10  = 1.0E-3
          REAL(rkind), PARAMETER :: EPSUS   = 1.0E-6
+
+         REAL(rkind), PARAMETER        :: UMAX = 50.d0
+         REAL(rkind), PARAMETER        :: XKAPPA = 0.4d0
+
+         INTEGER                :: IPHYS
+         INTEGER                :: IDAMPING = 0 ! AR: Put in namelist ...
          INTEGER, PARAMETER     :: ISNONLIN = 0
          INTEGER, PARAMETER     :: KFRH=30
          INTEGER, PARAMETER     :: IU06 = 222222
          INTEGER, PARAMETER     :: ILEV = 1
+         INTEGER, PARAMETER     :: ITAUMAX=400
+         INTEGER, PARAMETER     :: JUMAX=200
+         INTEGER, PARAMETER     :: IUSTAR=500
+         INTEGER, PARAMETER     :: IALPHA=400
+         INTEGER, PARAMETER     :: ILEVTAIL=50
+         INTEGER, PARAMETER     :: IAB=200
+         INTEGER, PARAMETER     :: JPLEVT=1
+         INTEGER, PARAMETER     :: NFREHF=49
+         INTEGER, PARAMETER     :: JPLEVC=1
+ 
+         REAL(rkind)            :: SWELLFT(IAB)
          REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
 
          REAL(rkind)                  :: DELTAUW
@@ -1034,6 +1034,10 @@
          REAL(rkind)                  :: DELUST
          REAL(rkind)                  :: DELALP
          REAL(rkind)                  :: DELTR
+         REAL(rkind)                  :: ZALP
+         REAL(rkind)                  :: BETAMAX
+         REAL(rkind)                  :: ALPHA
+         REAL(rkind)                  :: TAUWSHELTER
 !
 ! Data types of our linear equation solver.
 !

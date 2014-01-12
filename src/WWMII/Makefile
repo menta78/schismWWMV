@@ -9,9 +9,9 @@ MPI =
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = 
+NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP =
+OPENMP = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -44,10 +44,10 @@ F90 = ifort
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
+#F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #aggressive opti
-#F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
+F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 -fpp
 #debug 1
@@ -83,9 +83,10 @@ OBJWWM = wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_filei
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
-       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o \
+       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o wwm_wsigstar.o \
        wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
-       wwm_sinput.o wwm_sdissip.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
+       wwm_sinput.o wwm_sdissip.o wwm_sinput_ard.o wwm_sdiss_ardh_vec.o \
+       wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
        wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 
 #       dislin.o diclass.o \

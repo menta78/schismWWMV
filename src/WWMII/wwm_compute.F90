@@ -80,31 +80,26 @@
          IF (SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
            CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               FL3(:,ID,IS) =  AC2(:,IS,ID) * PI2 * SPSIG(IS)
-             END DO
-           END DO
 
            FL = FL3 
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
            
            DO IP = 1, MNP
- 
-              THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-!              WRITE(*,*) THWNEW(IP)
-!              THWNEW(IP) = THWNEW(IP)*RADDEG
-!              CALL DEG2NAUT (THWNEW(IP), DEG, .TRUE.) 
-!              THWNEW(IP) = DEG
-!              WRITE(*,*) THWNEW(IP)
-!              STOP
 
-              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
+             IF (ABS(IOBP(IP)) .GT. 0) CYCLE
+
+             DO IS = 1, MSC
+               DO ID = 1, MDC
+                 FL3(1,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+               END DO
+             END DO
+ 
+             THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
 
          WRITE(111112,'(A10,I10)') 'BEFORE', IP
-         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
@@ -116,20 +111,20 @@
          WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
          WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
 
-           CALL IMPLSCH (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+           CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                   THWOLD(IP,1), USOLD(IP,1), &
      &                   TAUW(IP), Z0OLD(IP,1), &
      &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                   SL(IP,:,:), FCONST(IP,:))
+     &                   SL(1,:,:), FCONST(1,:))
 
          WRITE(111112,'(A10,I10)') 'AFTER', IP 
-         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
          WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
@@ -141,16 +136,17 @@
          WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
          WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
 
-           END DO
-
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               AC2(:,IS,ID) =  FL3(:,ID,IS) / PI2 / SPSIG(IS)
+             DO IS = 1, MSC
+               DO ID = 1, MDC
+                 AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               END DO
              END DO
+
            END DO
+
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF

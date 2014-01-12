@@ -60,7 +60,7 @@
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, EMEAN, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, &
      &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, &
-     &                      DELUST, DELALP, LBIWBK, DEP,&
+     &                      DELUST, DELALP, LBIWBK, DEP, LBIWBK, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &

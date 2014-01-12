@@ -244,7 +244,7 @@
        HMAX = zero
        ISHALLOW = 0
 
-       ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
+       ALLOCATE( FL(1,MDC,MSC), FL3(1,MDC,MSC), SL(1,MDC,MSC), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
        FL = ZERO
        FL3 = ZERO
@@ -274,9 +274,44 @@
        U10NEW = ZERO
        USNEW = ZERO
 
-       ALLOCATE( FCONST(MNP,MSC), stat=istat) 
-       
-       
+       ALLOCATE( FCONST(1,MSC), stat=istat) 
+!
+!      init source term parameter 
+!      
+       IF (IPHYS.EQ.0) THEN
+!        ECMWF PHYSICS:
+         BETAMAX = 1.20
+         ZALP    = 0.008
+         TAUWSHELTER=0.0
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.0060
+         ELSE
+           ALPHA   = 0.0075
+         ENDIF
+       ELSE IF (IPHYS.EQ.1) THEN
+!        METEO FRANCE PHYSICS:
+         BETAMAX = 1.52
+         ZALP    = 0.0060
+         TAUWSHELTER=0.6
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.0090
+         ELSE
+           ALPHA   = 0.0095
+         ENDIF
+       ELSE IF (IPHYS.EQ.2) THEN
+!       COMBINED ECMWF/METEO FRANCE PHYSICS:
+         BETAMAX = 1.52
+         ZALP    = 0.0060
+         TAUWSHELTER=0.0
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.003
+         ELSE
+           ALPHA   = 0.004
+         ENDIF
+       ELSE
+         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
+      ENDIF
+
 
        END SUBROUTINE
 !**********************************************************************

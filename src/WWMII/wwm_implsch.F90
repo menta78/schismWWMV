@@ -131,7 +131,7 @@
 !      USE YOWTEST  , ONLY : IU06     ,ITEST
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
-     &                      JUMAX, DT4S, FRM5, &
+     &                      JUMAX, DT4S, FRM5, IPHYS, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -160,21 +160,26 @@
       INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
       INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
-      REAL :: GADIAG(IJS:IJL), TEMP(IJS:IJL,NFRE), TEMP2(IJS:IJL,NFRE), &
-     &        DELFL(NFRE)
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
-      REAL(rkind) :: AK2VGM1
-      REAL(rkind) :: SPRD(IJS:IJL,NANG)
-      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS
-      REAL(rkind), DIMENSION(IJS:IJL) :: USFM
-      REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN 
+      REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
+      REAL(rkind), DIMENSION(NFRE) :: DELFL
+      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
+      REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
+      REAL(rkind), DIMENSION(IJS:IJL) :: PHIEPS, TAUOC, PHIAW
+      REAL(rkind), DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,PHIWA 
+      REAL(rkind), DIMENSION(IJS:IJL,NANG) :: SPRD
+      REAL(rkind), DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
+      REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       INTEGER, SAVE :: IFIRST
 
       INTEGER, PARAMETER :: ITEST = 0
 
+      LOGICAL, PARAMETER :: LCFLX = .FALSE. 
+
       IDELT = INT(DT4S)
+      
 
 !      REAL ZHOOK_HANDLE
 
@@ -186,6 +191,7 @@
 !*    1. INITIALISATION.
 !        ---------------
 
+      ! LCFLX=LWFLUX.OR.LWFLUXOUT.OR.LWNEMOCOU
 ! ----------------------------------------------------------------------
 
 !*    2. COMPUTATION OF IMPLICIT INTEGRATION.
@@ -196,20 +202,19 @@
 
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
-!         ------------------------
+!        ------------------------
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
      &            F1MEAN, AKMEAN, XKMEAN)
 
-      WRITE(111115,'(I10,10F15.7)') IJS, EMEAN(IJS), FMEAN(IJS), F1MEAN, AKMEAN, XKMEAN
-
-      WRITE(10005,*) IJS, IJL, 4*SQRT(EMEAN(IJS))
+!      WRITE(111115,'(I10,10F15.7)') IJS, EMEAN(IJS), FMEAN(IJS), F1MEAN, AKMEAN, XKMEAN
+!      WRITE(10005,*) IJS, IJL, 4*SQRT(EMEAN(IJS))
 
 
       DO K=1,NANG
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
-          WRITE(111115,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
+!          WRITE(111115,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
         ENDDO
       ENDDO
 
@@ -217,7 +222,7 @@
         XJ=U10NEW(IJ)/DELU
         JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
       ENDDO
-      WRITE(111115,'(I10,10F15.7)') IJ,JU(IJS:IJL),JUMAX,MAX(NINT(XJ),1)
+!      WRITE(111115,'(I10,10F15.7)') IJ,JU(IJS:IJL),JUMAX,MAX(NINT(XJ),1)
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
@@ -236,30 +241,36 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      WRITE(111115,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
-     &                              USNEW(IJS), Z0NEW(IJS), ILEV
+ !     WRITE(111115,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
+!     &                              USNEW(IJS), Z0NEW(IJS), ILEV
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
-
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+      IF(IPHYS.EQ.0) THEN
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      ELSE
+        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      ENDIF
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
-      WRITE(111115,'(I10,10F15.7)') IJS, SUM(FL3), SUM(FL), SUM(SL), &
-     &                              SUM(XLLWS)
+!      WRITE(111115,'(I10,10F15.7)') IJS, SUM(FL3), SUM(FL), SUM(SL), &
+!     &                              SUM(XLLWS)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
       CALL FRCUTINDEX(IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
 
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, SL, MIJ)
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              PHIAWDIAG, PHIAWUNR, SL, &
+     &              MIJ, .FALSE.)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
@@ -271,10 +282,10 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
-
+!AR: The below call to the WS part is not present in the new version, why? 
 !     MEAN CHARACTERISTICS FOR WIND SEA
 !     ---------------------------------
-      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
+!      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
 
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
@@ -282,10 +293,20 @@
 
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
       IF (ITEST.GE.2) THEN
-        WRITE(IU06,*) '   SUB. IMPLSCH: SNOLIN CALLED'
+        WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
-      CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN)
+      IF(IPHYS.EQ.0) THEN
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ, .FALSE.)
+      ELSE
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ, .FALSE.)
+      ENDIF
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
+        CALL FLUSH (IU06)
+      ENDIF
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
 !SHALLOW
@@ -361,7 +382,7 @@
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
@@ -409,15 +430,22 @@
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
 !           --------------------------------------------------
 
-      CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN,ZIDLNEW, SL, XLLWS)
+      IF(IPHYS.EQ.0) THEN
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+     &             ROAIRN, ZIDLNEW, SL, XLLWS) 
+      ELSE
+        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      ENDIF
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, SL, MIJ)
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              PHIAWDIAG, PHIAWUNR, SL, MIJ, &
+     &              LCFLX)
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -428,6 +456,33 @@
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
+      ENDIF
+
+      IF(IPHYS.EQ.0) THEN
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ, LCFLX)
+      ELSE
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ, LCFLX)
+      ENDIF
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
+        CALL FLUSH (IU06)
+      ENDIF
+
+!*    2.5.6 DETERMINE FLUXES FROM AIR TO WAVE AND FROM WAVE TO OCEAN.
+!           -------------------------------------------------------
+
+      IF(LCFLX) THEN
+        DO IJ=IJS,IJL
+          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
+          XN        = ROAIRN(IJ)*USNEW(IJ)**3
+
+          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
+          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
+          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
+          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
+        ENDDO
       ENDIF
 
 ! ----------------------------------------------------------------------
