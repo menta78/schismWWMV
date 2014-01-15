@@ -1,4 +1,11 @@
       INTEGER FUNCTION JAFU (CL, J, IAN)
+      USE DATAPOOL, ONLY : RKIND
+      IMPLICIT NONE
+
+      REAL(rkind), INTENT(IN) :: CL
+      INTEGER, INTENT(IN) :: J, IAN
+ 
+      INTEGER             :: IDPH, JA 
 
 ! ----------------------------------------------------------------------
 

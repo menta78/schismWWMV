@@ -200,13 +200,14 @@
        UFRIC = zero
        ALPHA_CH = zero
 
-       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
        TAUW = zero
        TAUTOT = zero
        TAUWX = zero
        TAUWY = zero
        TAUHF = zero
+       TAUHFT2 = zero
 
        ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
@@ -267,7 +268,7 @@
        ROAIRO = 1.2250000238 
        ROAIRN = 1.2250000238 
 
-       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
+       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), INLCOEF(NINL,1:MLSTHG), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
        ZIDLOLD = ZERO
        ZIDLNEW = ZERO
@@ -934,7 +935,7 @@
              IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
          ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
-           CALL NLWEIGT(MSC,MDC)
+           CALL NLWEIGT
            CALL STRESS
            CALL TAUHF(MSC) 
            CALL BUILDSTRESS

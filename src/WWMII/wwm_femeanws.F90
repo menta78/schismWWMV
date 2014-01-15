@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEANWS (F, IJS, IJL, USNEW, THWNEW, EM, FM, XLLWS)
+      SUBROUTINE FEMEANWS (F, IJS, IJL, EM, FM, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -67,7 +67,6 @@
       INTEGER :: IJ,M,K,IJS,IJL
       REAL(rkind) :: DELT25, DELT2, CM, CHECKTA
       REAL(rkind) :: F(IJS:IJL,NANG,NFRE)
-      REAL(rkind),DIMENSION(IJS:IJL) :: THWNEW,USNEW
       REAL(rkind),DIMENSION(IJS:IJL) :: TEMP2, EM, FM, THRESHOLD
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 

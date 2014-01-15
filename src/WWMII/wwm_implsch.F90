@@ -298,10 +298,10 @@
       ENDIF
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ, .FALSE.)
+     &                PHIOC, TAUWD, MIJ)
       ELSE
         CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ, .FALSE.)
+     &                PHIOC, TAUWD, MIJ)
       ENDIF
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
@@ -459,11 +459,9 @@
       ENDIF
 
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ, LCFLX)
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ, LCFLX)
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ)
       ENDIF
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'

@@ -971,6 +971,7 @@
          REAL(rkind), ALLOCATABLE     :: TAUWX(:)    ! X Component of the total stress (m^2/s/s)
          REAL(rkind), ALLOCATABLE     :: TAUWY(:)    ! Y Component of the total stress (m^2/s/s)
          REAL(rkind), ALLOCATABLE     :: TAUHF(:)    ! Stress coming from the high. freq. part (parametric) part of the waves
+         REAL(rkind), ALLOCATABLE     :: TAUHFT2(:,:,:)    ! Stress coming from the high. freq. part (parametric) part of the waves
          REAL(rkind), ALLOCATABLE     :: TAUW(:)     ! Stress coming from the discrete part of the spectrum ...
          REAL(rkind), ALLOCATABLE     :: UFRIC(:)    ! Friction vel.
          REAL(rkind), ALLOCATABLE     :: FR5(:)      ! FR**5
@@ -990,14 +991,16 @@
          REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
          REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
-         REAL(rkind), ALLOCATABLE     :: FCONST(:,:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
-         REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
+         INTEGER, ALLOCATABLE         :: INLCOEF(:,:)
 
+         REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
          LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
          REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
@@ -1006,14 +1009,18 @@
          REAL(rkind), PARAMETER :: EPS1    = 0.00001
          REAL(rkind), PARAMETER :: EPSU10  = 1.0E-3
          REAL(rkind), PARAMETER :: EPSUS   = 1.0E-6
+         REAL(rkind), PARAMETER :: DEPTHRS = 50.d0
+         REAL(rkind), PARAMETER :: UMAX = 50.d0
+         REAL(rkind), PARAMETER :: XKAPPA = 0.4d0
 
-         REAL(rkind), PARAMETER        :: UMAX = 50.d0
-         REAL(rkind), PARAMETER        :: XKAPPA = 0.4d0
-
-         INTEGER                :: IPHYS
+         INTEGER                :: IPHYS = 0
          INTEGER                :: IDAMPING = 0 ! AR: Put in namelist ...
+         INTEGER, PARAMETER     :: NINL = 5
+         INTEGER, PARAMETER     :: NRNL = 25
+
+         INTEGER                :: KFRH, MFRSTLW, MLSTHG         
+
          INTEGER, PARAMETER     :: ISNONLIN = 0
-         INTEGER, PARAMETER     :: KFRH=30
          INTEGER, PARAMETER     :: IU06 = 222222
          INTEGER, PARAMETER     :: ILEV = 1
          INTEGER, PARAMETER     :: ITAUMAX=400
@@ -1029,15 +1036,16 @@
          REAL(rkind)            :: SWELLFT(IAB)
          REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
 
-         REAL(rkind)                  :: DELTAUW
-         REAL(rkind)                  :: DELU
-         REAL(rkind)                  :: DELUST
-         REAL(rkind)                  :: DELALP
-         REAL(rkind)                  :: DELTR
-         REAL(rkind)                  :: ZALP
-         REAL(rkind)                  :: BETAMAX
-         REAL(rkind)                  :: ALPHA
-         REAL(rkind)                  :: TAUWSHELTER
+         REAL(rkind)            :: DELTAUW
+         REAL(rkind)            :: DELU
+         REAL(rkind)            :: DELUST
+         REAL(rkind)            :: DELALP
+         REAL(rkind)            :: DELTAIL 
+         REAL(rkind)            :: DELTR
+         REAL(rkind)            :: ZALP
+         REAL(rkind)            :: BETAMAX
+         REAL(rkind)            :: ALPHA
+         REAL(rkind)            :: TAUWSHELTER
 !
 ! Data types of our linear equation solver.
 !
