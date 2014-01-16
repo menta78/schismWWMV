@@ -69,7 +69,7 @@
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, ISNONLIN, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
-     &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, &
+     &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -77,12 +77,25 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP
+
+      IMPLICIT NONE
 ! ----------------------------------------------------------------------
 
-      INTEGER :: MFR1STFR, MFRLSTFR
-      REAL(rkind),DIMENSION(IJS:IJL) :: FTEMP,AD,DELAD,DELAP,DELAM
-      REAL(rkind),DIMENSION(IJS:IJL) :: AKMEAN,ENHFR
+      INTEGER                                  :: MFR1STFR, MFRLSTFR, FTAIL
+      INTEGER                                  :: MP, MC1, MP1, MM, MM1, MC
+      INTEGER                                  :: IJ, IG, IP, IP1, IC, IM, IM1
+      INTEGER                                  :: K, K1, K2, KH, K11, K21, IJS, IJL
+
+      REAL(rkind),DIMENSION(IJS:IJL)           :: FTEMP,AD,DELAD,DELAP,DELAM
+      REAL(rkind),DIMENSION(IJS:IJL)           :: AKMEAN,ENHFR
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
+
+      REAL(rkind)                              :: FKLAMMA, FKLAMMB, FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
+      REAL(rkind)                              :: FKLAMP2, FKLAPA2, FKLAPB2, FKLAP12, FKLAP22, FKLAMM, FKLAMM1
+      REAL(rkind)                              :: FKLAMP, FKLAMP1, FKLAMPA, FKLAMPB
+      REAL(rkind)                              :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
+      REAL(rkind)                              :: FIJ, SAP, SAM , FAD1, FAD2, FCEN
+
 
 !      REAL ZHOOK_HANDLE
 
