@@ -35,7 +35,7 @@
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, FLOGSPRDM1, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, IPHYS, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -59,17 +59,24 @@
 ! ----------------------------------------------------------------------
 
 !*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-!*    FREQUENCIES LE 2.5*MAX(FMWS,FM).
+!*    FREQUENCIES LE 2.5*MAX(FMWS,FM) (ECMWF PHYSICS).
 !     ------------------------------------------------------------
 
-      TAILFACTOR=2.5
-      FPMH = TAILFACTOR/FR(1)
-     
-      DO IJ=IJS,IJL
-        FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
-        MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-        MIJ(IJ) = MIN(MIJ(IJ),NFRE)
-      ENDDO
+      IF(IPHYS.EQ.1) THEN
+        MIJ(IJS:IJL)=NFRE
+      ELSE
+        TAILFACTOR=2.5
+        FPMH = TAILFACTOR/FR(1)
+        DO IJ=IJS,IJL
+!          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+!            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
+!            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+!            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+!          ELSE
+            MIJ(IJ) = NFRE
+!          ENDIF
+        ENDDO
+      ENDIF
 
       !IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',1,ZHOOK_HANDLE)
 

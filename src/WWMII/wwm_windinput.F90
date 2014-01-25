@@ -380,7 +380,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
          FLUSH(STAT%FHNDL)
 
-         CALL TAUHF_ECMWF_NEW
+         CALL TAUHF_WAM(MSC)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
          FLUSH(STAT%FHNDL)
 

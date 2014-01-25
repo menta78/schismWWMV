@@ -176,7 +176,7 @@
 
       INTEGER, PARAMETER :: ITEST = 0
 
-      LOGICAL, PARAMETER :: LCFLX = .FALSE. 
+      LOGICAL :: LCFLX
 
       IDELT = INT(DT4S)
       
@@ -207,14 +207,15 @@
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
      &            F1MEAN, AKMEAN, XKMEAN)
 
-!      WRITE(111115,'(I10,10F15.7)') IJS, EMEAN(IJS), FMEAN(IJS), F1MEAN, AKMEAN, XKMEAN
-!      WRITE(10005,*) IJS, IJL, 4*SQRT(EMEAN(IJS))
+      WRITE(111113,*) 'HS and TM'
+      WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
 
 
+      WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
       DO K=1,NANG
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
-!          WRITE(111115,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
+          WRITE(111113,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
         ENDDO
       ENDDO
 
@@ -222,7 +223,9 @@
         XJ=U10NEW(IJ)/DELU
         JU(IJ)=MIN(JUMAX, MAX(NINT(XJ),1))
       ENDDO
-!      WRITE(111115,'(I10,10F15.7)') IJ,JU(IJS:IJL),JUMAX,MAX(NINT(XJ),1)
+
+      WRITE(111113,*) 'SOME THINKS THAT DO NOT NEED TO BE ALWAYS RECOMPUTED'
+      WRITE(111113,'(I10,10F15.7)') IJ,JU(IJS:IJL),JUMAX,MAX(NINT(XJ),1)
 ! ----------------------------------------------------------------------
 
 !*    2.3 COMPUTATION OF SOURCE FUNCTIONS.
@@ -241,11 +244,13 @@
         CALL FLUSH (IU06)
       ENDIF
 
- !     WRITE(111115,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
-!     &                              USNEW(IJS), Z0NEW(IJS), ILEV
+      WRITE(111113,*) 'AFTER AIRSEA'
+      WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
+      &                              USNEW(IJS), Z0NEW(IJS), ILEV
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
+
       IF(IPHYS.EQ.0) THEN
         CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
@@ -253,13 +258,12 @@
         CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
       ENDIF
+      WRITE(111113,*) 'AFTER SINPUT'
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
         CALL FLUSH (IU06)
       ENDIF
-
-!      WRITE(111115,'(I10,10F15.7)') IJS, SUM(FL3), SUM(FL), SUM(SL), &
-!     &                              SUM(XLLWS)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
       CALL FEMEANWS(FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
@@ -271,6 +275,7 @@
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, &
      &              MIJ, .FALSE.)
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
@@ -278,31 +283,32 @@
 
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
      &             IJS, IJL, ILEV)
+      WRITE(111113,*) 'AFTER AIRSEA'
+      WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
+     &             USNEW(IJS), Z0NEW(IJS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
       ENDIF
-!AR: The below call to the WS part is not present in the new version, why? 
-!     MEAN CHARACTERISTICS FOR WIND SEA
-!     ---------------------------------
-!      CALL FEMEANWS(FL3,IJS,IJL,USNEW,THWNEW,EMEANWS,FMEANWS,XLLWS)
-
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
+      WRITE(111113,*) 'AFTER SNON'
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ)
       ENDIF
+      WRITE(111113,*) 'AFTER DISSIP' 
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
@@ -427,8 +433,8 @@
       ENDDO
 
 
-!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM AND WAVE STRESS.
-!           --------------------------------------------------
+!*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
+!           -------------------------------------------------------
 
       IF(IPHYS.EQ.0) THEN
         CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
@@ -459,9 +465,11 @@
       ENDIF
 
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ)
+        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ)
+        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+     &                PHIOC, TAUWD, MIJ)
       ENDIF
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'

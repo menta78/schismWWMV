@@ -89,28 +89,6 @@
        END IF
 #endif
 !
-! WAM Cycle 4.5 - shared
-!
-       IF (MESIN .EQ. 2) THEN
-         ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-         TAUHFT = zero; TAUT = zero
-       ELSE IF (MESIN .EQ. 6 .OR. LSOURCESWAM) THEN
-         ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
-         ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-         TAUHFT = zero; TAUT = zero
-         INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
-         INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
-         IF (LPRECOMP_EXIST) THEN
-           READ(5010) DELU, DELTAUW
-           READ(5010) TAUT
-           READ(5011) DELUST, DELALP 
-           READ(5011) TAUHFT
-         ENDIF
-       ENDIF
-
 ! Boundary conditions - shared
 !
        ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
@@ -128,10 +106,6 @@
        CG = ZERO 
        DWKDX = ZERO
        DCGDX = ZERO
-#ifdef SELFE
-!       ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
-!       ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
-#endif
 !
        ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
@@ -200,7 +174,7 @@
        UFRIC = zero
        ALPHA_CH = zero
 
-       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), stat=istat)
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,MSC), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
        TAUW = zero
        TAUTOT = zero
@@ -268,7 +242,7 @@
        ROAIRO = 1.2250000238 
        ROAIRN = 1.2250000238 
 
-       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), INLCOEF(NINL,1:MLSTHG), stat=istat)
+       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
        ZIDLOLD = ZERO
        ZIDLNEW = ZERO
@@ -899,7 +873,9 @@
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC
-         USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM
+         USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
+         USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHF, TAUHFT2, TAUT, DELU, DELTAUW
+         USE DATAPOOL, ONLY: IPHYS
          USE M_CONSTANTS
          USE M_XNLDATA
          USE M_FILEIO
@@ -935,9 +911,34 @@
              IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
          ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
+
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS' 
            CALL NLWEIGT
-           CALL STRESS
-           CALL TAUHF(MSC) 
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
+           CALL INISNONLIN
+         
+           INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+           IF (LPRECOMP_EXIST) THEN
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
+             OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
+             IF (IPHYS == 0) THEN
+               READ(5011) TAUHF
+               READ(5011) DELU, DELTAUW
+               READ(5011) TAUT 
+             ELSE
+               READ(5011) DELTAIL
+               READ(5011) TAUHF, TAUHFT2
+               READ(5011) DELU, DELTAUW
+               READ(5011) TAUT
+             ENDIF
+           ELSE
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
+             CALL STRESS
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING HF TABLES'
+             IF (.NOT. LPRECOMP_EXIST) CALL TAUHF_WAM(MSC)
+           ENDIF
+
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'INITIALIZING STRESS ARRAYS'
            CALL BUILDSTRESS
          ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF

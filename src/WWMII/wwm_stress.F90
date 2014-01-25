@@ -106,16 +106,16 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
+      write(111111,'(A20)') 'STRESS'
+
       TAUWMAX = USTARM 
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 
-      write(5010) DELU, DELTAUW
+      write(111111,'(A30,I10)') 'TOTAL NUMBER OF ENTRIES -- STRESS --', &
+     &                 MIN(JPLEVT,JPLEVC)*ITAUMAX*JUMAX
 
-!      write(100003,*) DELU, DELTAUW
 
-!      WRITE(IU06,*) 'STRESS INIT', DELU, DELTAUW
-!
 !*    1.2 DETERMINE STRESS.
 !         -----------------
 
@@ -127,7 +127,7 @@
           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
 
-!        WRITE(100003,*) JL, JPLEVT, JPLEVC, XL
+        WRITE(111111,'(3I10,F15.8)') JL, JPLEVT, JPLEVC, XL
 
         CDRAG = 0.0012875
         WCD = SQRT(CDRAG) 
@@ -150,8 +150,8 @@
               UST    = UST-F/DELF
               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
             ENDDO
+!            WRITE(111111,'(10F15.8)') I,J,JL,TAUT(I,J,JL),UTOP,USTOLD,TAUOLD
             TAUT(I,J,JL)  = SQRT(TAUOLD)
-!           WRITE(STAT%FHNDL,*) I, J, JL, TAUT(I,J,JL)
           ENDDO
 
         ENDDO
@@ -160,23 +160,14 @@
 
 !*    FORCE ZERO WIND TO HAVE ZERO STRESS
 
-      WRITE(5010) TAUT
-
       DO JL=1,JPLEVT
         DO I=0,ITAUMAX
           TAUT(I,0,JL)=0.0
         ENDDO
       ENDDO
 
-!      DO JL=1,MIN(JPLEVT,JPLEVC)
-!        DO I=0,ITAUMAX
-!          DO J=0,JUMAX
-!            WRITE(100001,*) I,J,JL,TAUT(I,J,JL)
-!          ENDDO
-!        ENDDO
-!      ENDDO
-
-      WRITE(111111,'(A10,F20.10)') 'TAUT', SUM(TAUT)
+      WRITE(5011) TAUT
+      WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
 
       RETURN
       END SUBROUTINE STRESS

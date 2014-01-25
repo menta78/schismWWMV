@@ -92,7 +92,10 @@
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(1,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                 FL(1,ID,IS) = FL3(1,ID,IS)
+                 SL(1,ID,IS) = FL(1,ID,IS)
                END DO
+               Z0NEW(IP) = Z0OLD(IP,1) 
              END DO
  
              THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
@@ -138,6 +141,9 @@
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+
+             STOP 'END OF TEST IN COMPUTE'
+
 
              DO IS = 1, MSC
                DO ID = 1, MDC

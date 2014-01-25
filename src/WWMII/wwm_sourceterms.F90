@@ -17,6 +17,9 @@
 #elif ST42
          USE W3SRC4MD_NEW
 #endif
+#ifdef WWM_MPI
+         USE elfe_msgp, only : myrank
+#endif
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP

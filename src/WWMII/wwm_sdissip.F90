@@ -1,4 +1,5 @@
-      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, PHIEPS, TAUWD, MIJ)
+      SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+     &                    PHIEPS, TAUWD, MIJ)
 
 ! ----------------------------------------------------------------------
 
@@ -21,7 +22,8 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN)*
+!       *CALL* *SDISSIP (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN,)*
+!                        PHIEPS, TAUWD, MIJ, LCFLX)
 !          *F*   - SPECTRUM.
 !          *FL*  - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS* - INDEX OF FIRST GRIDPOINT
@@ -57,13 +59,14 @@
 
 ! ----------------------------------------------------------------------
 
-!      USE YOWFRED  , ONLY : FR
+!      USE YOWFRED  , ONLY : FR       ,DELTH    ,DFIM     ,FRATIO
 !      USE YOWMEAN  , ONLY : EMEAN
 !      USE YOWPARAM , ONLY : NANG     ,NFRE
-!      USE YOWPCONS , ONLY : G        ,ZPI
+!      USE YOWPCONS , ONLY : G        ,ZPI      ,ROWATER
 !      USE YOWSHAL  , ONLY : DEPTH    ,TFAK     ,INDEP
 !      USE YOWSTAT  , ONLY : ISHALLO  ,LBIWBK
-!      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+!      USE YOMHOOK   ,ONLY : LHOOK    ,DR_HOOK
+!      USE YOWTEST  , ONLY : IU06     ,ITEST
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, EMEAN, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, LCFLX, &
@@ -81,18 +84,13 @@
 
 ! ----------------------------------------------------------------------
 
-      INTEGER, INTENT(IN) :: IJS, IJL, IG
-
-      INTEGER :: IJ, IC, K, M, MIJ(IJS:IJL)
-
-      REAL(rkind) :: SCDFM, ARG, EMAX, ALPH, ROG, CONSD, X, SDISS, CONSS
-      REAL(rkind) :: Q_OLD , Q, REL_ERR
-
+      INTEGER :: IJ, IJS, IJL, M, K, MIJ(IJS:IJL), IC, IG
+      REAL(rkind) :: SCDFM, ROG, ALPH, ARG, CONSD, CONSS, X, SDISS, EMAX, Q_OLD, Q, REL_ERR
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       REAL(rkind),DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
       REAL(rkind),DIMENSION(IJS:IJL) :: TEMP1, SDS
-      REAL(rkind), DIMENSION(NFRE) :: FAC
-      REAL(rkind), DIMENSION(IJS:IJL,NFRE) :: CONSTFM
+      REAL(rkind),DIMENSION(NFRE) :: FAC
+      REAL(rkind),DIMENSION(IJS:IJL,NFRE) :: CONSTFM
 
       REAL(rkind), PARAMETER :: CDIS = 1.33d0
       REAL(rkind), PARAMETER :: DELTA = 0.5d0
@@ -222,4 +220,3 @@
 
       RETURN
       END SUBROUTINE SDISSIP
-! ----------------------------------------------------------------------
