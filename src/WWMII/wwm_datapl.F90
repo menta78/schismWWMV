@@ -141,7 +141,7 @@
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
          REAL(rkind), PARAMETER             :: RHOA      = 1.25_rkind
-         REAL(rkind), PARAMETER             :: RHOW      = 1025._rkind ! average salinity of sea water!
+         REAL(rkind), PARAMETER             :: RHOW      = 1000.d0!1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE
@@ -1020,7 +1020,7 @@
 
          INTEGER                :: KFRH, MFRSTLW, MLSTHG         
 
-         INTEGER, PARAMETER     :: ISNONLIN = 0
+         INTEGER, PARAMETER     :: ISNONLIN = 1 
          INTEGER, PARAMETER     :: IU06 = 222222
          INTEGER, PARAMETER     :: ILEV = 1
          INTEGER, PARAMETER     :: ITAUMAX=400

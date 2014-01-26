@@ -115,6 +115,8 @@
       write(111111,'(A30,I10)') 'TOTAL NUMBER OF ENTRIES -- STRESS --', &
      &                 MIN(JPLEVT,JPLEVC)*ITAUMAX*JUMAX
 
+      WRITE(5011) DELU, DELTAUW
+
 
 !*    1.2 DETERMINE STRESS.
 !         -----------------

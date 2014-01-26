@@ -83,7 +83,7 @@
 
       INTEGER                                  :: MFR1STFR, MFRLSTFR, FTAIL
       INTEGER                                  :: MP, MC1, MP1, MM, MM1, MC
-      INTEGER                                  :: IJ, IG, IP, IP1, IC, IM, IM1
+      INTEGER                                  :: IJ, IG, IP, IP1, IC, IM, IM1, M 
       INTEGER                                  :: K, K1, K2, KH, K11, K21, IJS, IJL
 
       REAL(rkind),DIMENSION(IJS:IJL)           :: FTEMP,AD,DELAD,DELAP,DELAM
@@ -92,9 +92,12 @@
 
       REAL(rkind)                              :: FKLAMMA, FKLAMMB, FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(rkind)                              :: FKLAMP2, FKLAPA2, FKLAPB2, FKLAP12, FKLAP22, FKLAMM, FKLAMM1
-      REAL(rkind)                              :: FKLAMP, FKLAMP1, FKLAMPA, FKLAMPB
+      REAL(rkind)                              :: FKLAMP, FKLAMP1, FKLAMPA, FKLAMPB, FLSUM, SLSUM
       REAL(rkind)                              :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
       REAL(rkind)                              :: FIJ, SAP, SAM , FAD1, FAD2, FCEN
+
+      FLSUM = 0.d0
+      SLSUM = 0.d0
 
 
 !      REAL ZHOOK_HANDLE
@@ -123,12 +126,21 @@
         ENDIF
       ENDIF
 
-
 !*    2. FREQUENCY LOOP.
 !        ---------------
 
       MFR1STFR=-MFRSTLW+1
       MFRLSTFR=NFRE-KFRH+MFR1STFR
+
+      WRITE(111117,'(I10,10F15.8)') IG, SUM(F), SUM(FL),SUM(SL), AKMEAN
+      DO IJ=IJS,IJL
+        WRITE(111117,'(5I10,10F15.8)') ISHALLO, ISNONLIN, MLSTHG, & 
+     &   MFRSTLW, MFR1STFR, SUM(ENH(IJ,:,:))
+      ENDDO
+      WRITE(111117,'(5I10,10F15.8)') SUM(INLCOEF), SUM(IKP), SUM(IKP1), & 
+     &SUM(IKM), SUM(IKM1), SUM(FKLAP), SUM(FKLAP1), SUM(RNLCOEF)
+      WRITE(111117,'(4I10,10F20.8)') SUM(K1W), SUM(K2W), SUM(K11W), &
+     &SUM(K21W), SUM(AF11)
 
       DO MC=1,MLSTHG
         MP  = IKP (MC)
@@ -272,6 +284,7 @@
           ENDDO
 
         ELSEIF (MC.GE.MFRLSTFR ) THEN
+
           DO KH=1,2
             DO K=1,NANG
               K1  = K1W (K,KH)
@@ -446,8 +459,30 @@
         ENDIF
 
 !*    BRANCH BACK TO 2. FOR NEXT FREQUENCY.
-
+        DO IJ=IJS,IJL
+        IF (MC.LE.NFRE) THEN
+                        FLSUM = FLSUM + SUM(FL(IJ,:,MC))
+                        SLSUM = SLSUM + SUM(SL(IJ,:,MC))
+            WRITE(111117,'(I10,4F30.25)') MC, &
+     &                  SUM(FL(IJ,:,MC)),SUM(SL(IJ,:,MC)),&
+     &                  FLSUM, SLSUM
+        ENDIF
+        ENDDO
+  
       ENDDO
+
+        DO IJ=IJS,IJL
+        WRITE(111117,'(2F30.25)') & 
+     &                  SUM(FL(IJ,:,:)),SUM(SL(IJ,:,:))
+        WRITE(111117,*) 'NOW THE FULL THING'
+        DO K = 1, NANG
+          DO M = 1, NFRE
+            WRITE(111117,'(2I10,2F30.25)') &
+     &         K, M, FL(IJ,K,M), SL(IJ,K,M)
+          ENDDO
+        ENDDO
+
+        ENDDO      
 
 !      IF (LHOOK) CALL DR_HOOK('SNONLIN',1,ZHOOK_HANDLE)
       RETURN

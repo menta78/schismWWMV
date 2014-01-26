@@ -244,7 +244,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      WRITE(111113,*) 'AFTER AIRSEA'
+      WRITE(111113,*) 'AFTER AIRSEA 1'
       WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
       &                              USNEW(IJS), Z0NEW(IJS), ILEV
 
@@ -274,16 +274,22 @@
       CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, &
-     &              MIJ, .FALSE.)
-
+     &              MIJ, LCFLX)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED'
         CALL FLUSH (IU06)
       ENDIF
 
+      WRITE(111113,*) 'AFTER STRESSO 1'
+      WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
+     &              THWNEW, USNEW, Z0NEW, &
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
+     &              MIJ
+
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
      &             IJS, IJL, ILEV)
-      WRITE(111113,*) 'AFTER AIRSEA'
+      WRITE(111113,*) 'AFTER AIRSEA 2'
       WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
      &             USNEW(IJS), Z0NEW(IJS)
       IF (ITEST.GE.2) THEN
@@ -459,10 +465,15 @@
 
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
      & IJS, IJL, ILEV)
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
+
+      WRITE(111113,*) 'AFTER AIRSEA 3'
+      WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
+      &                              USNEW(IJS), Z0NEW(IJS), ILEV
 
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &

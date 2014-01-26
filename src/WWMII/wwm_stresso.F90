@@ -97,7 +97,7 @@
      &                      NFRE => MSC, &
      &                      INDEP => DEP, &
      &                      ZERO, ONE, & 
-     &                      ROWATER => RHOA
+     &                      ROWATER => RHOW
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
@@ -145,9 +145,12 @@
       ENDDO
 
       DO M=1,NFRE
-        ZPIROFR(M) =ZPI*ROWATER*FR(M)
+        ZPIROFR(M) = ZPI*ROWATER*FR(M)
       ENDDO
 
+      DO IJ=IJS,IJL
+        WRITE(111116,'(10F15.8)') CONST, ROG, ROWATER, G, CONST0(IJ), SUM(ZPIROFR)
+      ENDDO
 
 !     !!!! CONSTFM is only defined up to M=MIJ(IJ)
       SCDFM = 0.5*DELTH*(1.-1./FRATIO)
@@ -157,6 +160,7 @@
           CONSTFM(IJ,M) = ZPIROFR(M)*DFIM(M)
         ENDDO
         CONSTFM(IJ,MIJ(IJ)) = ZPIROFR(MIJ(IJ))*SCDFM*FR(MIJ(IJ))
+        WRITE(111116,'(10F15.8)') SCDFM, CONSTFM(IJ,MIJ(IJ)) 
       ENDDO
 
 
@@ -195,6 +199,10 @@
             YSTRESS(IJ) = YSTRESS(IJ)+CNST*COSTH(K)
           ENDDO
         ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+        WRITE(111116,'(2F15.8)') XSTRESS(IJ), YSTRESS(IJ)
       ENDDO
 
       IF (LCFLX) THEN
@@ -251,6 +259,10 @@
           TEMP1(IJ) = TEMP1(IJ)+F(IJ,K,MIJ(IJ))*COSW**3
           TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,NFRE)*COSW**2
         ENDDO
+      ENDDO
+
+      DO IJ=IJS,IJL
+        WRITE(111116,'(4F15.8)') USDIRP(IJ), COSW, TEMP1(IJ), TEMP2(IJ)
       ENDDO
 
       IF (TAUWSHELTER.LE.0.) THEN
@@ -322,6 +334,7 @@
 
         TAUW(IJ) = MIN(TAUW(IJ),UST2(IJ)-EPS1)
         TAUW(IJ) = MAX(TAUW(IJ),0.)
+        WRITE(111116,'(4F15.8)') XSTRESS(IJ), YSTRESS(IJ) , TAUW(IJ), TAUHF(IJ)
       ENDDO
 !
 !*    4. UNRESOLVED PART ENERGY FLUX.

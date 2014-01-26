@@ -229,7 +229,7 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
        FMEAN = ZERO
        EMEAN = ZERO
-       ENH = ZERO
+       ENH = 1.d0
        
        ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
@@ -922,14 +922,14 @@
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
              OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
              IF (IPHYS == 0) THEN
-               READ(5011) TAUHF
-               READ(5011) DELU, DELTAUW
-               READ(5011) TAUT 
-             ELSE
-               READ(5011) DELTAIL
-               READ(5011) TAUHF, TAUHFT2
                READ(5011) DELU, DELTAUW
                READ(5011) TAUT
+               READ(5011) TAUHF
+             ELSE
+               READ(5011) DELU, DELTAUW
+               READ(5011) TAUT
+               READ(5011) DELTAIL
+               READ(5011) TAUHF, TAUHFT2
              ENDIF
            ELSE
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
