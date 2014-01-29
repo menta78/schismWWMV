@@ -107,6 +107,9 @@
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
+      WRITE(111119,'(5F20.10)')SUM(F), SUM(FL), SUM(SL), &
+     &                F1MEAN, XKMEAN
+                       
 
       ROG = ROWATER*G
 
@@ -179,6 +182,11 @@
             ENDDO
           ENDDO
         ENDDO
+    
+        DO IJ=IJS,IJL 
+          WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
+     &                   CM(IJ),TAUWD(IJ),PHIEPS(IJ)
+        ENDDO
 !
 !*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
 !        ----------- -- -------------- -----------------------
@@ -215,6 +223,8 @@
      
 !SHALLOW
       ENDIF
+
+      WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
 
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 

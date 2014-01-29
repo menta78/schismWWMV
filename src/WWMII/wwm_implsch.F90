@@ -214,7 +214,7 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
-          WRITE(111113,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
+!          WRITE(111113,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
         ENDDO
       ENDDO
 
@@ -348,7 +348,7 @@
       DO M=1,NFRE
         DO IJ=IJS,IJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
-          WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
+!          WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
         ENDDO
       ENDDO
 
@@ -366,11 +366,11 @@
 !AR: WAM TABLE REPLACES BY WWM CG            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
             AK2VGM1 = AKM1**2/CG(IJ,M)
             TEMP2(IJ,M) = AKM1*AK2VGM1
-            WRITE(111113,'(4F20.10)') AKM1, AK2VGM1, TEMP2(IJ,M) 
+!            WRITE(111113,'(4F20.10)') AKM1, AK2VGM1, TEMP2(IJ,M) 
           ENDDO
         ENDDO
       ENDIF
-      WRITE(111113,*) 'MORE TEST'
+!      WRITE(111113,*) 'MORE TEST'
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -381,7 +381,7 @@
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
 !AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
 !AR: ICE            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
-      WRITE(111113,'(4F20.10)')GTEMP2,FLHAB,TEMP(IJ,M)
+!      WRITE(111113,'(4F20.10)')GTEMP2,FLHAB,TEMP(IJ,M)
           ENDDO
         ENDDO
       ENDDO
@@ -414,7 +414,7 @@
       DO IJ=IJS,IJL
         GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
         WRITE(111113,*) 'AFTER MEAN PARAMETER'
-        WRITE(111113,'(5F20.10)') AKMEAN, FMEANWS, MIJ(IJ), GADIAG(IJ)
+        WRITE(111113,'(I10,5F20.10)') MIJ(IJ), AKMEAN, FMEANWS, TEMP2(IJ,MIJ(IJ)), GADIAG(IJ)
       ENDDO
 
 
@@ -425,12 +425,12 @@
         DO M=1,MIJ(IJ)
           FCONST(IJ,M) = 1.
           TEMP(IJ,M) = 0.
-          WRITE(111113,'(I10,2F15.10)') M, FCONST(IJ,M), TEMP(IJ,M)
+      !    WRITE(111113,'(I10,2F15.10)') M, FCONST(IJ,M), TEMP(IJ,M)
         ENDDO
         DO M=MIJ(IJ)+1,NFRE
           FCONST(IJ,M) = 0.
           TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
-      WRITE(111113,'(I10,3F15.10)')M,FCONST(IJ,M),TEMP(IJ,M),GADIAG(IJ)
+      !WRITE(111113,'(I10,3F15.10)')M,FCONST(IJ,M),TEMP(IJ,M),GADIAG(IJ)
         ENDDO
       ENDDO
 
@@ -438,7 +438,7 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
-          WRITE(111113,'(I10,10F20.10)') K, FL3(IJ,K,MIJ(IJ))
+      !    WRITE(111113,'(I10,10F20.10)') K, FL3(IJ,K,MIJ(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -447,8 +447,8 @@
 !AR: ICE     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M) &
      &       + FL3(IJ,K,M)*FCONST(IJ,M)
-            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
-     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
+!            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
+!     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
           ENDDO
         ENDDO
       ENDDO

@@ -68,13 +68,13 @@
         TAILFACTOR=2.5
         FPMH = TAILFACTOR/FR(1)
         DO IJ=IJS,IJL
-!          IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
-!            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
-!            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-!            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
-!          ELSE
+          IF (.TRUE.) THEN! IF (CICVR(IJ).LE.CITHRSH_TAIL) THEN
+            FPM4 = MAX(FMWS(IJ),FM(IJ))*FPMH
+            MIJ(IJ) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+            MIJ(IJ) = MIN(MAX(1,MIJ(IJ)),NFRE)
+          ELSE
             MIJ(IJ) = NFRE
-!          ENDIF
+          ENDIF
         ENDDO
       ENDIF
 

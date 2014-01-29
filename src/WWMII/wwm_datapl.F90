@@ -146,7 +146,7 @@
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE
          REAL(rkind), PARAMETER             :: THR       = TINY(1.)
-         REAL(rkind), PARAMETER             :: THR8      = TINY(1.d0)
+         REAL(rkind), PARAMETER             :: THR8      = TINY(1.)
          REAL(rkind), PARAMETER             :: INVTHR    = ONE/THR
          REAL(rkind), PARAMETER             :: INVTHR8   = ONE/THR8
          REAL(rkind), PARAMETER             :: KDMAX     = 10.0_rkind

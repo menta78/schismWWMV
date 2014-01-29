@@ -398,25 +398,23 @@
          FR5 = ZERO
          FRM5 = ZERO 
 
-      DELTH = PI2/REAL(MDC)
-      DELTR = DELTH*REARTH
-      DO ID=1,MDC
+         DELTH = PI2/REAL(MDC)
+         DELTR = DELTH*REARTH
+         DO ID=1,MDC
 !CCC        TH(K) = REAL(K-1)*DELTH
 !CCC the previous line should be used if spectra should not be rotated.
 !CCC the next line should be used if rotated spectra are used
-        TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
-        COSTH(ID) = COS(TH(ID))
-        SINTH(ID) = SIN(TH(ID))
-      ENDDO
-
-         CO1     = 0.5_rkind*FRINTF*DELTH
-         DFIM(1) = CO1*FR(1)
-
-         DO IS=2,MSC-1
-           DFIM(IS)=CO1*(FR(IS)+FR(IS-1))
+           TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
+           COSTH(ID) = COS(TH(ID))
+           SINTH(ID) = SIN(TH(ID))
          ENDDO
 
-         DFIM(MSC)=CO1*FR(MSC)
+         CO1 = 0.5*(FRATIO-1.)*DELTH
+         DFIM(1)= CO1*FR(1)
+         DO IS=2,MSC-1
+           DFIM(IS)=CO1 * (FR(IS)+FR(IS-1))
+         ENDDO
+         DFIM(IS)=CO1*FR(IS-1)
 
          DO IS = 1, MSC
            DFFR(IS)    = DFIM(IS)*FR(IS)
