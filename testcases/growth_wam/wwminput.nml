@@ -4,14 +4,14 @@
  LSTEA   = F,
  LQSTEA  = F,
  LSPHE   = T,
- LNAUTIN = T,
+ LNAUTIN = F,
  LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030910.000000     ,
- DELTC   = 10.000000000000     ,
+ DELTC   = 300.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030912.000000     ,
+ ENDTC   = 20040930.000000     ,
  DMIN    =  0.100000000000000     
  /
  &COUPL
@@ -89,7 +89,7 @@
  UNITC   = HR                  ,
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
- WDIR    =   90.0000000000000     ,
+ WDIR    =  0.0000000000000     ,
  WVEL    =   10.00000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
@@ -133,7 +133,7 @@
  /
  &ENGS
  MESNL   =           3,
- MESIN   =           6, 
+ MESIN   =           1, 
  IFRIC   =           1,
  MESBF   =           0,
  FRICC   =        0.019,
@@ -142,7 +142,7 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
- MESDS   =           6, 
+ MESDS   =           1, 
  MESTR   =           0,
  TRICO   =          1.,
  TRIRA   =         2.5,
@@ -153,6 +153,8 @@
  AMETHOD =           0,
  SMETHOD =           2, 
  DMETHOD =           0,
+ LSOURCESWWIII   = F
+ LSOURCESWAM     = T
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -278,7 +280,7 @@
  FILEOUT = station.dat                             ,
  LOUTITER        = F,
  IOUTS =  1,
- NOUTS     = 'station'
+ NOUTS     = 'ST4TSA'
  XOUTS     = 250.,
  YOUTS     = 250.,
  CUTOFF  = 1.  ,

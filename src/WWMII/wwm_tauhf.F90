@@ -180,7 +180,7 @@
               ZARG     = MIN(XKAPPA/ZX,20.)
               ZMU      = MIN(G*Z0/CM**2*EXP(ZARG),1.)
 
-              ZLOG         = MIN(DLOG(ZMU),0.)
+              ZLOG         = MIN(LOG(ZMU),0.)
               ZBETA        = CONST1*ZMU*ZLOG**4
               TAUHFT2(K,L,I)= &
      &           TAUHFT2(K,L,I)+W(J)*ZBETA*(UST/UST0)**2/Y*DELY 

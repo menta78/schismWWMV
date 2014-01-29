@@ -1,4 +1,0 @@
-Purpose:
-purpose of this test is to check growth curves of janssen formulations
-Notes:
-this case must be run without mpi et al. --- hgrid.gr3 read will fail due to very stupid restrictions in selfe msg passing

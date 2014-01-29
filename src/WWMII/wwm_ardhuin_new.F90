@@ -877,7 +877,11 @@
            ! this CM parameter is 1 / C_phi
            ! this is the "correct" shallow-water expression
            ! here Z0 corresponds to Z0+Z1 of the Janssen eq. 14
+#ifdef USE_SINGLE
+        ZCN=LOG(K(IS)*Z0)
+#else
         ZCN=DLOG(K(IS)*Z0)
+#endif
            ! below is the original WAM version (OK for deep water)  g*z0/C^2
            ! ZCN=LOG(G*Z0b(I)*CM(I)**2)
 !

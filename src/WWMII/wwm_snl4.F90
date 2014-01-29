@@ -30,25 +30,25 @@
 !
 !     *** Compute directional indices in sigma and theta space ***
 !
-         CIDP   = DABS(DELTH4/DDIR)
+         CIDP   = ABS(DELTH4/DDIR)
          IDP    = INT(CIDP)
          IDP1   = IDP + 1
          WIDP   = CIDP - MyREAL(IDP)
          WIDP1  = 1.0 - WIDP
 
-         CIDM   = DABS(DELTH3/DDIR)
+         CIDM   = ABS(DELTH3/DDIR)
          IDM    = INT(CIDM)
          IDM1   = IDM + 1
          WIDM   = CIDM - MyREAL(IDM)
          WIDM1  = 1.0 - WIDM
 
-         XISLN  = DLOG(XIS)
-         ISP    = INT(DLOG(ONE+LAMBDA)/XISLN)
+         XISLN  = LOG(XIS)
+         ISP    = INT(LOG(ONE+LAMBDA)/XISLN)
          ISP1   = ISP + 1
          WISP   = (1.0+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)
          WISP1  = 1.0 - WISP
 
-         ISM    = INT(DLOG(ONE-LAMBDA)/XISLN)
+         ISM    = INT(LOG(ONE-LAMBDA)/XISLN)
          ISM1   = ISM - 1
          WISM   = (XIS**ISM-(1.0-LAMBDA))/(XIS**ISM-XIS**ISM1)
          WISM1  = 1.0 - WISM

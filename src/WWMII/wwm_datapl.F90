@@ -140,7 +140,7 @@
          REAL(rkind), PARAMETER             :: DEGRAD    = PI/180._rkind
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
-         REAL(rkind), PARAMETER             :: RHOA      = 1.25_rkind
+         REAL(rkind), PARAMETER             :: RHOA      = 1.225_rkind
          REAL(rkind), PARAMETER             :: RHOW      = 1000.d0!1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
@@ -1003,7 +1003,7 @@
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
-         REAL(rkind), PARAMETER :: COEF4   = 3.0E-07
+         REAL(rkind), PARAMETER :: COEF4   = 5.0E-07
          REAL(rkind), PARAMETER :: FRIC    = 28.d0
          REAL(rkind), PARAMETER :: DKMAX   = 40.d0
          REAL(rkind), PARAMETER :: EPS1    = 0.00001

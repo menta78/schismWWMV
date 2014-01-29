@@ -342,11 +342,13 @@
       ENDDO
       DO IJ=IJS,IJL
         USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
+        WRITE(111113,'(4F20.10)') USNEW(IJ), FMEANWS(IJ), FMEAN(IJ)
       ENDDO
 
       DO M=1,NFRE
         DO IJ=IJS,IJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
+          WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
         ENDDO
       ENDDO
 
@@ -364,10 +366,11 @@
 !AR: WAM TABLE REPLACES BY WWM CG            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
             AK2VGM1 = AKM1**2/CG(IJ,M)
             TEMP2(IJ,M) = AKM1*AK2VGM1
+            WRITE(111113,'(4F20.10)') AKM1, AK2VGM1, TEMP2(IJ,M) 
           ENDDO
         ENDDO
       ENDIF
-
+      WRITE(111113,*) 'MORE TEST'
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -378,7 +381,7 @@
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
 !AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
 !AR: ICE            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
-!      WRITE(111113,'(4F20.10)')GTEMP1,DELT5,FL(IJ,K,M)
+      WRITE(111113,'(4F20.10)')GTEMP2,FLHAB,TEMP(IJ,M)
           ENDDO
         ENDDO
       ENDDO
@@ -444,8 +447,8 @@
 !AR: ICE     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M) &
      &       + FL3(IJ,K,M)*FCONST(IJ,M)
-!            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
-!     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
+            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
+     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
           ENDDO
         ENDDO
       ENDDO
@@ -512,6 +515,8 @@
         CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ)
       ENDIF
+      WRITE(111113,*) 'AFTER DISSIP' 
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(FL3), SUM(SL) 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
         CALL FLUSH (IU06)
