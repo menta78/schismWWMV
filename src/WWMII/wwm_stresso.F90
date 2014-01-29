@@ -197,6 +197,7 @@
             CNST = SL(IJ,K,M)*CONSTFM(IJ,M)
             XSTRESS(IJ) = XSTRESS(IJ)+CNST*SINTH(K)
             YSTRESS(IJ) = YSTRESS(IJ)+CNST*COSTH(K)
+!      WRITE(111116,'(3I10,F30.20)')IJ,K,M,SL(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
@@ -258,11 +259,8 @@
           COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
           TEMP1(IJ) = TEMP1(IJ)+F(IJ,K,MIJ(IJ))*COSW**3
           TEMP2(IJ) = TEMP2(IJ)+F(IJ,K,NFRE)*COSW**2
+          WRITE(111116,'(4F15.8)') USDIRP(IJ), COSW, TEMP1(IJ), TEMP2(IJ)
         ENDDO
-      ENDDO
-
-      DO IJ=IJS,IJL
-        WRITE(111116,'(4F15.8)') USDIRP(IJ), COSW, TEMP1(IJ), TEMP2(IJ)
       ENDDO
 
       IF (TAUWSHELTER.LE.0.) THEN
@@ -289,6 +287,9 @@
      &             TAUHFT(I+1,J+1,MIJ(IJ))*DELI1 )*DELJ1 
 
           TAUHF(IJ) = CONST0(IJ)*TEMP1(IJ)*UST2(IJ)*TAU1
+          WRITE(111116,'(A10,2F20.10,2I10)') 'T1', XI, XJ, I, J
+          WRITE(111116,'(A10,4F20.10)') 'T2', DELI2, DELI1, DELJ2, DELJ1
+          WRITE(111116,'(A10,4F20.10)') 'T3', CONST0(IJ), TEMP1(IJ), UST2(IJ), TAU1
         ENDDO
       ELSE
         DO IJ=IJS,IJL

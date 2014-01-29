@@ -632,8 +632,6 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        INTEGER, PARAMETER :: JTOT    = 250
-
         INTEGER :: L, K, J
         REAL(rkind)    :: ALPHAM, CONST1, OMEGAC, X0, UST, Z00, ALPHAMCOEF
         REAL(rkind)    :: OMEGACC, YC, DELY, Y, OMEGA, CM, ZX, ZARG, ZMU, ZLOG, ZBETA

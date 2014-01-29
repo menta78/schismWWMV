@@ -179,7 +179,6 @@
       LOGICAL :: LCFLX
 
       IDELT = INT(DT4S)
-      
 
 !      REAL ZHOOK_HANDLE
 
@@ -209,7 +208,7 @@
 
       WRITE(111113,*) 'HS and TM'
       WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
-
+      WRITE(55555,*) 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
 
       WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
       DO K=1,NANG
@@ -236,6 +235,7 @@
 
 !!            FL AND SL ARE INITIALISED IN SINPUT
 
+      
       ILEV=1
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
      &   IJS, IJL, ILEV)
@@ -258,7 +258,7 @@
         CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
       ENDIF
-      WRITE(111113,*) 'AFTER SINPUT'
+      WRITE(111113,*) 'AFTER SINPUT 1'
       WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED'
@@ -281,7 +281,7 @@
       ENDIF
 
       WRITE(111113,*) 'AFTER STRESSO 1'
-      WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
+      WRITE(111113,'(2I10,15F15.7)') IJS, IJL, SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
@@ -322,6 +322,8 @@
 !SHALLOW
       IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
 !SHALLOW
+      WRITE(111113,*) 'AFTER SBOTTOM' 
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
 
 ! ----------------------------------------------------------------------
 
@@ -376,9 +378,13 @@
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
 !AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
 !AR: ICE            FL3(IJ,K,M) = MAX(FL3(IJ,K,M),FLLOWEST)
+!      WRITE(111113,'(4F20.10)')GTEMP1,DELT5,FL(IJ,K,M)
           ENDDO
         ENDDO
       ENDDO
+
+      WRITE(111113,*) 'AFTER INTEGRATION' 
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL), SUM(FL3)
 
 
 ! ----------------------------------------------------------------------
@@ -404,6 +410,8 @@
 
       DO IJ=IJS,IJL
         GADIAG(IJ) = 1./TEMP2(IJ,MIJ(IJ))
+        WRITE(111113,*) 'AFTER MEAN PARAMETER'
+        WRITE(111113,'(5F20.10)') AKMEAN, FMEANWS, MIJ(IJ), GADIAG(IJ)
       ENDDO
 
 
@@ -414,10 +422,12 @@
         DO M=1,MIJ(IJ)
           FCONST(IJ,M) = 1.
           TEMP(IJ,M) = 0.
+          WRITE(111113,'(I10,2F15.10)') M, FCONST(IJ,M), TEMP(IJ,M)
         ENDDO
         DO M=MIJ(IJ)+1,NFRE
           FCONST(IJ,M) = 0.
           TEMP(IJ,M) = TEMP2(IJ,M)*GADIAG(IJ)
+      WRITE(111113,'(I10,3F15.10)')M,FCONST(IJ,M),TEMP(IJ,M),GADIAG(IJ)
         ENDDO
       ENDDO
 
@@ -425,6 +435,7 @@
       DO K=1,NANG
         DO IJ=IJS,IJL
           GADIAG(IJ) = FL3(IJ,K,MIJ(IJ))
+          WRITE(111113,'(I10,10F20.10)') K, FL3(IJ,K,MIJ(IJ))
         ENDDO
         DO M=1,NFRE
           DO IJ=IJS,IJL
@@ -433,11 +444,18 @@
 !AR: ICE     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
             FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M) &
      &       + FL3(IJ,K,M)*FCONST(IJ,M)
-
+!            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
+!     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
           ENDDO
         ENDDO
       ENDDO
 
+      DO IJ=IJS,IJL
+        WRITE(111113,*) 'BEFORE WIND INPUT 2'
+        WRITE(111113,'(8F20.10)') SUM(FL3) , SUM(FL), THWNEW(IJ)
+        WRITE(111113,'(8F20.10)') USNEW(IJ), Z0NEW(IJ), ZIDLNEW(IJ)
+        WRITE(111113,'(8F20.10)') SUM(SL), SUM(XLLWS(IJ,:,:))
+      ENDDO
 
 !*    2.5.5 REEVALUATE WIND INPUT SOURCE TERM, AND WAVE DISSIPATION.
 !           -------------------------------------------------------
@@ -449,6 +467,10 @@
         CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
       ENDIF
+
+      WRITE(111113,*) 'AFTER SINPUT 2'
+      WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
+
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -457,6 +479,14 @@
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, MIJ, &
      &              LCFLX)
+
+      WRITE(111113,*) 'AFTER STRESSO 2'
+      WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
+     &              THWNEW, USNEW, Z0NEW, &
+     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
+     &              MIJ
+
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'

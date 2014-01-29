@@ -95,11 +95,10 @@
       !USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       !USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, RKIND, &
-     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, &
+     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, &
      &                ROWATER => RHOW, &
-     &                TH => SPDIR, &
      &                DELTH => DDIR, &
      &                G => G9, &
      &                ZPI => PI2, &
@@ -147,7 +146,17 @@
 
       CONST3 = IDAMPING*CONST3
 
-      WRITE(111114, '(10F15.7)') CONST1, CONST3, XKAPPAD, CONST3 
+!      WRITE(111114,'(10F15.7)')CONST3,XKAPPAD,CONST3,SUM(F),SUM(FL)
+
+      DO M = 1, NFRE
+        DO K = 1, NANG
+          DO IJ=IJS,IJL 
+!            WRITE(111114,'(2F30.20)') F(IJ,K,M), FL(IJ,K,M)
+          END DO 
+        END DO
+      END DO
+
+
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
@@ -162,6 +171,7 @@
             LZ(IJ,K) = .FALSE.
             TEMPD(IJ,K) = 1.D0
           ENDIF
+!          WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
         ENDDO
       ENDDO
 
@@ -225,6 +235,9 @@
           XV1D(IJ) = 1.D0/XV1
           XV2D(IJ) = 1.D0/XV2
 
+          !WRITE(111114,'(5F30.20)') UCN1(IJ),UCN2(IJ),ZCN(IJ)
+          !WRITE(111114,'(5F30.20)') CNSN(IJ),XV1D(IJ),XV2D(IJ)
+
         ENDDO
 
 !*    2.1 LOOP OVER DIRECTIONS.
@@ -259,8 +272,7 @@
               UFAC2(IJ,K) = ZBETA1+ZBETA2
               XLLWS(IJ,K,M)= 0.
             ENDIF
-            WRITE(111114, '(3I10,10F15.7)') M, K, IJ, UFAC2(IJ,M), &
-     &            XLLWS(IJ, K,M), FAC(M), CONST(M), CM(IJ), XV1D(IJ), XV2D(IJ)
+!        WRITE(111114,'(2I10,10F15.7)') M, K, TEMPD(IJ,K) 
           ENDDO
         ENDDO
 
@@ -271,7 +283,7 @@
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-      WRITE(111114, '(3I10,10F15.7)') M, K, IJ, FL(IJ,K,M), SL(IJ,K,M)
+!      WRITE(111114, '(5F30.20)') CNSN(IJ), UFAC2(IJ,K)
           ENDDO
         ENDDO
 

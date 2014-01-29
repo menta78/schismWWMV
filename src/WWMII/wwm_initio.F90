@@ -872,9 +872,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
-         USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC
+         USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
-         USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHF, TAUHFT2, TAUT, DELU, DELTAUW
+         USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
          USE DATAPOOL, ONLY: IPHYS
          USE M_CONSTANTS
          USE M_XNLDATA
@@ -916,26 +916,27 @@
            CALL NLWEIGT
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
            CALL INISNONLIN
-         
            INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+
            IF (LPRECOMP_EXIST) THEN
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
              OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
              IF (IPHYS == 0) THEN
                READ(5011) DELU, DELTAUW
                READ(5011) TAUT
-               READ(5011) TAUHF
+               READ(5011) DELALP, DELUST, DELTAIL
+               READ(5011) TAUHFT
              ELSE
                READ(5011) DELU, DELTAUW
                READ(5011) TAUT
-               READ(5011) DELTAIL
-               READ(5011) TAUHF, TAUHFT2
+               READ(5011) DELALP, DELUST, DELTAIL
+               READ(5011) TAUHFT, TAUHFT2
              ENDIF
            ELSE
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
              CALL STRESS
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING HF TABLES'
-             IF (.NOT. LPRECOMP_EXIST) CALL TAUHF_WAM(MSC)
+             CALL TAUHF_WAM(MSC)
            ENDIF
 
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'INITIALIZING STRESS ARRAYS'

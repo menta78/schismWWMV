@@ -142,7 +142,7 @@
          WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
 
-             STOP 'END OF TEST IN COMPUTE'
+           STOP 'END OF TEST IN COMPUTE'
 
 
              DO IS = 1, MSC

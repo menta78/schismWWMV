@@ -44,7 +44,7 @@
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, ILEVTAIL, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, DELTAIL, IPHYS, &
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, STAT, TAUHFT2, &
-     &                      DELUST, DELALP, ALPHA, BETAMAX, RKIND, &
+     &                      DELUST, DELALP, ALPHA, BETAMAX, RKIND, JTOT, &
      &                      XKAPPA, ZALP, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
@@ -62,7 +62,6 @@
 
       INTEGER, INTENT(IN)  :: ML
       INTEGER              :: I, J, K, L, M
-      INTEGER, PARAMETER :: JTOT=250
 
 !      REAL(rkind), ALLOCATABLE :: W(:)
       REAL(rkind) :: ALPHAM, ALPHAMCOEF, CONST1, OMEGAC, X0, UST, Z0, OMEGACC, YC
@@ -195,11 +194,12 @@
 
       WRITE(111111,'(A10,I10)') 'IPHYS=', IPHYS
       IF (IPHYS == 0) THEN
+        WRITE(5011) DELALP, DELUST, DELTAIL
         WRITE(5011) TAUHFT
         WRITE(111111,'(F20.10)') SUM(TAUHFT)
       ELSE
-        WRITE(5011) DELTAIL
-        WRITE(5011) TAUHFT, TAUHFT2
+        WRITE(5011) DELALP, DELUST, DELTAIL
+        WRITE(5011) TAUHFT, TAUHFT2, TAUW
         WRITE(111111,'(3F20.10)') DELTAIL, SUM(TAUHFT), SUM(TAUHFT2) 
       ENDIF
 

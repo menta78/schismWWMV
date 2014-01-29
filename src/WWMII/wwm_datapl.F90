@@ -1018,7 +1018,7 @@
          INTEGER, PARAMETER     :: NINL = 5
          INTEGER, PARAMETER     :: NRNL = 25
 
-         INTEGER                :: KFRH, MFRSTLW, MLSTHG         
+         INTEGER                :: KFRH, MFRSTLW, MLSTHG
 
          INTEGER, PARAMETER     :: ISNONLIN = 1 
          INTEGER, PARAMETER     :: IU06 = 222222
@@ -1029,6 +1029,7 @@
          INTEGER, PARAMETER     :: IALPHA=400
          INTEGER, PARAMETER     :: ILEVTAIL=50
          INTEGER, PARAMETER     :: IAB=200
+         INTEGER, PARAMETER     :: JTOT=250
          INTEGER, PARAMETER     :: JPLEVT=1
          INTEGER, PARAMETER     :: NFREHF=49
          INTEGER, PARAMETER     :: JPLEVC=1
