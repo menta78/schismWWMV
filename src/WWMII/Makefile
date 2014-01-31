@@ -5,9 +5,9 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42 -DTIMINGS -DSWAN_QB #-DUSE_SINGLE#-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = 
+MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = 
+PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -111,8 +111,7 @@ ifdef PDLIB
 else
   OBJS= $(OBJSELFE) $(OBJWWM)
 endif
-
-  MPI_INCLUDE = -I/opt/mpich2_1.4_intel/include/
+  MPI_INCLUDE = -I/home/aron/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
   MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM #-DWWM_SOLVER
 else
