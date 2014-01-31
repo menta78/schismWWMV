@@ -63,17 +63,17 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-Sep2010 -lparmetis -lmetis 
+MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf 
 CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := /home/aron/bin/pelfe_$(ENV)
+EXEC   := pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -110,8 +110,8 @@ else
 endif
 
 # Wind wave model WWM
- USE_WWM = yes
- EXEC := $(EXEC)_WWM
+# USE_WWM = yes
+# EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
 # USE_PETSC = yes
 # EXEC := $(EXEC)_PETSC
