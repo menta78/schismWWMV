@@ -85,7 +85,7 @@
 
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, TH, SINTH, COSTH, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, STAT, EPS1, FRATIO, &
+     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, STAT, EPS1, FRATIO, TAUHF, &
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, RKIND, IPHYS, ILEVTAIL, &
      &                      DELUST, DELALP, TAUT, DELTAUW, ITAUMAX, TAUWSHELTER, &
      &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, FR5, DELTAIL, TAUHFT2, &
@@ -124,7 +124,7 @@
       REAL(rkind) :: SCDFM, SCDFP
       REAL(rkind) :: BETAM, CONSTPHI
       REAL(rkind) :: ZPIROFR(NFRE)
-      REAL(rkind), DIMENSION(IJS:IJL) :: TAUHF, TEMP1, TEMP2, XSTRESS, YSTRESS, &
+      REAL(rkind), DIMENSION(IJS:IJL) :: TEMP1, TEMP2, XSTRESS, YSTRESS, &
      &                            UST2
       REAL(rkind), DIMENSION(NFRE) :: CONSTFT
       REAL(rkind), DIMENSION(IJS:IJL,NFRE) :: CONSTFM, CONSTFE

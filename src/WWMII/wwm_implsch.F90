@@ -131,7 +131,7 @@
 !      USE YOWTEST  , ONLY : IU06     ,ITEST
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
-     &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, &
+     &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -547,6 +547,13 @@
         Z0OLD(IJ) = Z0NEW(IJ)
         ROAIRO(IJ) = ROAIRN(IJ)
         ZIDLOLD(IJ) = ZIDLNEW(IJ)
+      ENDDO
+
+      DO IJ=IJS,IJL
+        UFRIC(IJ) = USNEW(IJ)
+        Z0(IJ)    = Z0NEW(IJ)
+        CD(IJ)    = (USNEW(IJ)/U10NEW(IJ))**2
+        ALPHA_CH(IJ) = G*Z0NEW(IJ)/USNEW(IJ)**2
       ENDDO
 
 ! ----------------------------------------------------------------------
