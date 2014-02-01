@@ -36,8 +36,9 @@
          REAL(rkind), INTENT(IN)    :: DT_SELFE0
 
          REAL(rkind), SAVE  :: SIMUTIME
+         REAL(rkind)        :: T1, T2
 #ifdef TIMINGS 
-         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind)        :: mpi_wtime
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 #endif
 
@@ -215,7 +216,11 @@
            LFIRSTSTEP = .FALSE.
          END IF
 
+<<<<<<< HEAD
+#ifdef TIMINGS 
+=======
 #ifdef TIMINGS
+>>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
          TIME2 = mpi_wtime() 
 #endif
 
@@ -281,6 +286,10 @@
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
 #endif
+<<<<<<< HEAD
+
+=======
+>>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
  
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
