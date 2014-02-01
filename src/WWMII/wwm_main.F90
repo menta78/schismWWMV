@@ -40,8 +40,9 @@
          REAL(rkind), INTENT(IN)    :: DT_SELFE0
 
          REAL(rkind), SAVE  :: SIMUTIME
+         REAL(rkind)        :: T1, T2
 #ifdef TIMINGS 
-         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind)        :: mpi_wtime
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 #endif
 
@@ -224,7 +225,7 @@
            LCALC      = .TRUE.
          END IF
 
-#ifdef 
+#ifdef TIMINGS 
          TIME2 = mpi_wtime() 
 #endif
 
@@ -287,7 +288,10 @@
 !           ENDIF
          END IF 
 
+#ifdef TIMINGS
          TIME5 = mpi_wtime()
+#endif
+
  
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
@@ -295,7 +299,9 @@
 
          KKK = KKK + 1
 
+#ifdef TIMINGS
          TIME6 = mpi_wtime()
+#endif
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
