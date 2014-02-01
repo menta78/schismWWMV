@@ -1,4 +1,6 @@
 #include "wwm_functions.h"
+#define LTESTWAMSOURCES
+!#undef LTESTWAMSOURCES
 #undef DEBUG
 !**********************************************************************
 !*                                                                    *
@@ -8,7 +10,7 @@
        IMPLICIT NONE
 
 #ifdef MPI_PARALL_GRID
-       INTEGER :: IE, IP
+       INTEGER :: IE
 #endif
        integer istat
 
@@ -19,6 +21,8 @@
 
        ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
+       XP  = zero
+       YP  = zero
        DEP = zero
 
        ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
@@ -31,12 +35,13 @@
        IEN = zero
        TRIA = zero
 #ifdef MPI_PARALL_GRID
+# ifdef PDLIB
+       INE(:,:) = INETMP(:,:)
+# else
        DO IE = 1, MNE
          INE(:,IE) = INETMP(IE,:)
-       END DO
-#else
-       XP  = zero
-       YP  = zero
+       END DO  
+# endif
 #endif
 !
 ! spectral grid - shared
@@ -84,28 +89,6 @@
        END IF
 #endif
 !
-! WAM Cycle 4.5 - shared
-!
-       IF (MESIN .EQ. 2) THEN
-         ALLOCATE ( TAUHFT(0:IUSTAR,0:IALPHA,1), TAUT(0:ITAUMAX,0:JUMAX,1),stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 14')
-         TAUHFT = zero; TAUT = zero
-       ELSE IF (MESIN .EQ. 6) THEN
-         ALLOCATE(TAUHFT(0:IUSTAR,0:IALPHA,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14a')
-         ALLOCATE(TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_ecmwf, allocate error 14b')
-         TAUHFT = zero; TAUT = zero
-         INQUIRE(FILE='fort.5010',EXIST=LPRECOMP_EXIST)
-         INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
-         IF (LPRECOMP_EXIST) THEN
-           READ(5010) DELU, DELTAUW
-           READ(5010) TAUT
-           READ(5011) DELUST, DELALP 
-           READ(5011) TAUHFT
-         ENDIF
-       ENDIF
-
 ! Boundary conditions - shared
 !
        ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
@@ -123,10 +106,6 @@
        CG = ZERO 
        DWKDX = ZERO
        DCGDX = ZERO
-#ifdef SELFE
-!       ALLOCATE( CGX(MNP,MSC,MDC) ); CGX = zero
-!       ALLOCATE( CGY(MNP,MSC,MDC) ); CGY = zero
-#endif
 !
        ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
@@ -195,13 +174,14 @@
        UFRIC = zero
        ALPHA_CH = zero
 
-       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), stat=istat)
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,MSC), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
        TAUW = zero
        TAUTOT = zero
        TAUWX = zero
        TAUWY = zero
        TAUHF = zero
+       TAUHFT2 = zero
 
        ALLOCATE( Z0(MNP), CD(MNP), USTDIR(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 28')
@@ -230,27 +210,91 @@
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
            SXX3D = zero
            SXY3D = zero
-           SYY3D = zero
+            SYY3D = zero
          END IF
        END IF
 #endif
        ALLOCATE(HMAX(MNP), ISHALLOW(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
-       ISHALLOW = zero
+       ISHALLOW = 0
+
+       ALLOCATE( FL(1,MDC,MSC), FL3(1,MDC,MSC), SL(1,MDC,MSC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+       FL = ZERO
+       FL3 = ZERO
+       SL = ZERO
+
+       ALLOCATE( FMEAN(MNP), EMEAN(MNP), ENH(MNP,MSC+4,1), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
+       FMEAN = ZERO
+       EMEAN = ZERO
+       ENH = 1.d0
+       
+       ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
+       U10OLD = ZERO
+       USOLD = ZERO
+       THWOLD = ZERO 
+       THWNEW = ZERO
+       Z0OLD = ZERO
+       Z0NEW = ZERO 
+       ROAIRO = 1.2250000238 
+       ROAIRN = 1.2250000238 
+
+       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
+       ZIDLOLD = ZERO
+       ZIDLNEW = ZERO
+       U10NEW = ZERO
+       USNEW = ZERO
+
+       ALLOCATE( FCONST(1,MSC), stat=istat) 
+!
+!      init source term parameter 
+!      
+       IF (IPHYS.EQ.0) THEN
+!        ECMWF PHYSICS:
+         BETAMAX = 1.20
+         ZALP    = 0.008
+         TAUWSHELTER=0.0
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.0060
+         ELSE
+           ALPHA   = 0.0075
+         ENDIF
+       ELSE IF (IPHYS.EQ.1) THEN
+!        METEO FRANCE PHYSICS:
+         BETAMAX = 1.52
+         ZALP    = 0.0060
+         TAUWSHELTER=0.6
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.0090
+         ELSE
+           ALPHA   = 0.0095
+         ENDIF
+       ELSE IF (IPHYS.EQ.2) THEN
+!       COMBINED ECMWF/METEO FRANCE PHYSICS:
+         BETAMAX = 1.52
+         ZALP    = 0.0060
+         TAUWSHELTER=0.0
+         IF(MSC.GT.30) THEN
+           ALPHA   = 0.003
+         ELSE
+           ALPHA   = 0.004
+         ENDIF
+       ELSE
+         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
+      ENDIF
+
+
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE DEALLOC_ARRAYS
-
          USE DATAPOOL
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         INTEGER :: IE, IP
-#endif
-
          DEALLOCATE( DX1, DX2, XP, YP, INVSPHTRANS, DEP, INE, IEN, TRIA)
 !
 ! spectral grid - shared
@@ -326,7 +370,11 @@
          END IF
 #endif
          DEALLOCATE(HMAX, ISHALLOW)
-         RETURN
+#ifdef NCDF
+      IF (GRIDWRITE) THEN
+        DEALLOCATE(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -350,17 +398,8 @@
 #ifdef ST42
          USE W3SRC4MD_NEW
 #endif
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only : iplg, np_global, ne_global
-         use elfe_msgp, only : myrank, nproc, parallel_abort, comm, ierr
-         use elfe_msgp, only : rtype, itype
-#endif
          IMPLICIT NONE
          integer istat
-#ifdef MPI_PARALL_GRID
-         integer FHNDLspec
-         CHARACTER(LEN=40) :: FILEspec
-#endif
 #ifdef TIMINGS
          REAL(rkind)    :: TIME1, TIME2
 #endif
@@ -453,11 +492,13 @@
            FLUSH(STAT%FHNDL)
          END IF
 
-#ifdef WWM_SETUP
          IF (LZETA_SETUP) THEN
+#ifdef WWM_SETUP
            CALL INIT_WAVE_SETUP
-         END IF
+#else
+           CALL WWM_ABORT('Need WWM_SEZUP if LZETA is selected')
 #endif
+         END IF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
          FLUSH(STAT%FHNDL)
@@ -494,7 +535,7 @@
 
          !CALL NLWEIGT(MSC,MDC)
 
-         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0) THEN
+         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
            FLUSH(STAT%FHNDL)
 #ifdef ST41
@@ -529,6 +570,11 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
          FLUSH(STAT%FHNDL)
+#ifdef NCDF
+         IF (GRIDWRITE) THEN
+           CALL GET_XYID_INE_TOTAL
+         END IF
+#endif
          CALL WWM_OUTPUT(ZERO,.TRUE.)
 
          IF (LWXFN) THEN
@@ -667,10 +713,10 @@
        SUBROUTINE BUILD_WILD_ARRAY
        USE DATAPOOL, only : MNP, NP_RES, ONE, rkind
        USE DATAPOOL, only : nwild_gb, nwild_loc, nwild_loc_res
-       USE elfe_glbl, only : iplg, np_global
-       USE elfe_msgp, only : istatus, itype, comm, ierr, myrank, rtype, nproc
+       USE datapool, only : iplg, np_global
+       USE datapool, only : istatus, itype, comm, ierr, myrank, rtype, nproc
+       use datapool, only : MPI_SUM
        IMPLICIT NONE
-       include 'mpif.h'
        integer, allocatable :: nwild_i(:), nwild_gbi(:)
        integer :: iProc, istat
        INTEGER :: IP
@@ -826,7 +872,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIATE_WAVE_PARAMETER()
-         USE DATAPOOL
+         USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
+         USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
+         USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
+         USE DATAPOOL, ONLY: IPHYS
          USE M_CONSTANTS
          USE M_XNLDATA
          USE M_FILEIO
@@ -850,16 +899,49 @@
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
          FLUSH(STAT%FHNDL)
 
+         IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
+           IF (MESNL .LT. 4) THEN
+             CALL PARAMETER4SNL
+           ELSE IF (MESNL .EQ. 5) THEN
+             CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+             CALL INIT_CONSTANTS
+             IQGRID = 3
+             INODE  = 1
+             CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
+             IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
+           ENDIF
+         ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
 
-         IF (MESNL .LT. 4) THEN
-           CALL PARAMETER4SNL
-         ELSE IF (MESNL .EQ. 5) THEN
-           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           CALL INIT_CONSTANTS()
-           IQGRID = 3
-           INODE  = 1
-           CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IERR)
-           IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS' 
+           CALL NLWEIGT
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
+           CALL INISNONLIN
+           INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
+
+           IF (LPRECOMP_EXIST) THEN
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
+             OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
+             IF (IPHYS == 0) THEN
+               READ(5011) DELU, DELTAUW
+               READ(5011) TAUT
+               READ(5011) DELALP, DELUST, DELTAIL
+               READ(5011) TAUHFT
+             ELSE
+               READ(5011) DELU, DELTAUW
+               READ(5011) TAUT
+               READ(5011) DELALP, DELUST, DELTAIL
+               READ(5011) TAUHFT, TAUHFT2
+             ENDIF
+           ELSE
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
+             CALL STRESS
+             WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING HF TABLES'
+             CALL TAUHF_WAM(MSC)
+           ENDIF
+
+           WRITE(STAT%FHNDL,'("+TRACE...",A)')'INITIALIZING STRESS ARRAYS'
+           CALL BUILDSTRESS
+         ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF
 
          IF (MESTR .GT. 5) CALL GRAD_CG_K 
@@ -875,14 +957,9 @@
 #ifdef NCDF
          USE NETCDF
 #endif
-
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only : iplg, np_global
-         use elfe_msgp, only : myrank
-#endif
          IMPLICIT NONE
 
-         INTEGER         :: IP, IFILE, IT
+         INTEGER         :: IP, IFILE, IT, I, K, L, M, IS, ID
          REAL(rkind)     :: SPPAR(8)
          REAL(rkind)     :: MS
          REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
@@ -891,9 +968,9 @@
          REAL(rkind)     :: ACLOC(MSC,MDC)
          REAL(rkind)     :: DEG
          REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
-
+#ifdef NCDF
          CHARACTER(len=25) :: CALLFROM
-
+#endif
          TMPPAR = 0.
 
          IF (.NOT. LHOTR .AND. LINID) THEN
@@ -910,15 +987,15 @@
               WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
             END IF
             DO IP = 1, MNP
+               IF (ABS(IOBP(IP)) .GT. 0) CYCLE
                ACLOC = 0.
                WINDX  = WINDXY(IP,1)
                WINDY  = WINDXY(IP,2)
                WIND10 = SQRT(WINDX**2+WINDY**2)
-!AR: SELFEWWM: WE HAVE TO CHECK WHY THE INITIAL WIND FIELD IS ZERO WHEN COUPLING TO SELFE
                IF(DEP(IP) .GT. DMIN) THEN
                  IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
                  IF (INITSTYLE == 1) THEN
-                   IF (WIND10 .GT. 1.) THEN
+                   IF (WIND10 .GT. 1.) THEN !AR: why one? 
                      WINDTH = VEC2DEG(WINDX,WINDY)
                      CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
                      FDLESS = G9*AVETL/WIND10**2
@@ -956,20 +1033,26 @@
                  WINDTH      = 0.
                  AC2(IP,:,:) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
+#ifdef LTESTWAMSOURCES 
+               OPEN(1113,FILE='fort.10003',STATUS='OLD')
+               DO ID=1,MDC
+                 DO IS=1,MSC
+                   READ(1113,*) K, M, AC2(IP,IS,ID)
+                   AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
+                 ENDDO
+               ENDDO
+               REWIND(1113)
+#endif
             END DO ! IP
-         END IF
-         IF (LHOTR) THEN
+         ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-         RETURN
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FILE_HANDLES()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          USE DATAPOOL
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -984,6 +1067,7 @@
          WINDBG%FNAME  = 'winddbg.out'
          IOBPOUT%FNAME = 'iobp.out'
         IOBPDOUT%FNAME = 'iobpd.out'
+        SRCDBG%FNAME = 'srcdbg.out'
 !
 !2do ... dinstinguish between binary and ascii stuff ...
 !
@@ -1007,11 +1091,13 @@
          DBG%FHNDL      = STARTHNDL + 15 
          STAT%FHNDL     = STARTHNDL + 16 
          WINDBG%FHNDL   = STARTHNDL + 17 
+         SRCDBG%FHNDL   = STARTHNDL + 18
 
 #ifndef MPI_PARALL_GRID
          open(DBG%FHNDL,file='wwmdbg.out',status='unknown') !non-fatal errors
          open(STAT%FHNDL,file='wwmstat.out',status='unknown') !non-fatal errors
          open(WINDBG%FHNDL,file='windbg.out',status='unknown') !non-fatal errors
+         open(SRCDBG%FHNDL,file='srcdbg.out',status='unknown') !non-fatal errors
 #else
 # ifdef SELFE
          FDB  ='wwmdbg_0000'
@@ -1041,6 +1127,8 @@
          open(WINDBG%FHNDL,file=fdb,status='replace')
 # endif
 #endif
+
+
          WRITE(DBG%FHNDL, *) 'THR=', THR
          WRITE(DBG%FHNDL, *) 'THR8=', THR8
          CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
@@ -1063,26 +1151,21 @@
          OPEN( IOBPOUT%FHNDL,  FILE = TRIM(IOBPOUT%FNAME))
          OPEN( IOBPDOUT%FHNDL, FILE = TRIM(IOBPDOUT%FNAME))
 
-           OUT1D%FHNDL = STARTHNDL + 18 
-            MISC%FHNDL = STARTHNDL + 19 
-         OUTSP1D%FHNDL = STARTHNDL + 20 
-         OUTPARM%FHNDL = STARTHNDL + 21 
-         OUTSP2D%FHNDL = STARTHNDL + 22 
+           OUT1D%FHNDL = STARTHNDL + 19 
+            MISC%FHNDL = STARTHNDL + 20 
+         OUTSP1D%FHNDL = STARTHNDL + 21 
+         OUTPARM%FHNDL = STARTHNDL + 22 
+         OUTSP2D%FHNDL = STARTHNDL + 23 
 
-         OUT%FHNDL     = STARTHNDL + 23 
+         OUT%FHNDL     = STARTHNDL + 24 
 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CLOSE_FILE_HANDLES()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          USE DATAPOOL
          IMPLICIT NONE
-         CHARACTER (LEN = 30) :: FDB
-         INTEGER              :: LFDB
          close(DBG%FHNDL)
          close(STAT%FHNDL)
          close( QSTEA%FHNDL)
@@ -1095,14 +1178,7 @@
 !**********************************************************************
       SUBROUTINE INIT_STATION_OUTPUT()
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-      USE elfe_glbl, only : iplg, ielg
-#endif
       IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-#endif
       INTEGER           :: I, NI(3), IP, IS
       integer istat
       REAL(rkind)              :: XYTMP(2,MNP)
@@ -1265,10 +1341,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWWM()
-#ifdef MPI_PARALL_GRID
-      USE elfe_glbl, only: ipgl
-      USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE
@@ -1331,10 +1403,6 @@
 !**********************************************************************
 !AR: check this for wave boundary nodes ....
       SUBROUTINE READWAVEPARFVCOM()
-#ifdef MPI_PARALL_GRID
-         USE elfe_glbl, only: ipgl
-         USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE
@@ -1698,14 +1766,18 @@
 !**********************************************************************
         SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
 
-        USE DATAPOOL
+        USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
+        USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
+        USE DATAPOOL, ONLY: MDC_WW3
+#ifdef MPI_PARALL_GRID
+        USE DATAPOOL, ONLY: XLON, YLAT
+#endif
         IMPLICIT NONE
-
         INTEGER, INTENT(IN)      :: ISTEP
         REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
 
 
-        INTEGER     :: I,J,IB,IPGL,IBWW3,STEP,TIME(2),IS
+        INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
         REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
         REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
         REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
@@ -1802,11 +1874,8 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE INIT_BINARY_WW3_SPECTRA 
-
         USE DATAPOOL
         IMPLICIT NONE
-
-        INTEGER :: I,J
 !
 ! Read header to get grid dimension, frequencies and directions, 
 ! output locations and first time step
@@ -1822,7 +1891,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
-        USE DATAPOOL
+        USE DATAPOOL, ONLY: rkind
         IMPLICIT NONE
 !AR: Kai Li, please carefully describe the method and comment on the input parameters ...
 
@@ -1862,7 +1931,7 @@
         REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
         REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
 
-        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3),tmp(msc)
+        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
         REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
 
         INTEGER     :: IP,IS,ID
@@ -2031,10 +2100,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWW3()
-#ifdef MPI_PARALL_GRID
-         USE elfe_glbl, only: ipgl
-         USE elfe_msgp
-#endif
       USE DATAPOOL
 
       IMPLICIT NONE

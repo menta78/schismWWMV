@@ -2,13 +2,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SIMPLE_EXPLICIT()
+      SUBROUTINE COMPUTE_SIMPLE_EXPLICIT
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp
-#endif
-
         IMPLICIT NONE
+
+        INTEGER           :: IS, ID, IP
+        REAL(rkind)       :: VEC2RAD, DEG
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -78,7 +77,89 @@
 #ifdef TIMINGS
          CALL MY_WTIME(TIME5)
 #endif
-         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
+         IF (SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
+           CALL COMPUTE_SOURCES_EXP
+         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+
+           FL = FL3 
+           THWOLD(:,1) = THWNEW
+           U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+           
+           DO IP = 1, MNP
+
+             IF (ABS(IOBP(IP)) .GT. 0) CYCLE
+
+             DO IS = 1, MSC
+               DO ID = 1, MDC
+                 FL3(1,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                 FL(1,ID,IS) = FL3(1,ID,IS)
+                 SL(1,ID,IS) = FL(1,ID,IS)
+               END DO
+               Z0NEW(IP) = Z0OLD(IP,1) 
+             END DO
+ 
+             THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+
+         IF (LOUTWAM) THEN
+         WRITE(111112,'(A10,I10)') 'BEFORE', IP
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+         ENDIF
+
+           CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                   THWOLD(IP,1), USOLD(IP,1), &
+     &                   TAUW(IP), Z0OLD(IP,1), &
+     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                   SL(1,:,:), FCONST(1,:))
+
+         IF (LOUTWAM) THEN
+         WRITE(111112,'(A10,I10)') 'AFTER', IP 
+         WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+         WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+         WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+         WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
+         WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+         ENDIF 
+
+         !  STOP 'END OF TEST IN COMPUTE'
+
+
+             DO IS = 1, MSC
+               DO ID = 1, MDC
+                 AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               END DO
+             END DO
+
+           END DO
+
+         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
+           !!!!
+         ENDIF
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
@@ -112,18 +193,13 @@
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
 
-!        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,AC2(137,:,:),10,MSC,MDC,'BEFORE ANY CALL')    
-        RETURN
+!        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,AC2(137,:,:),10,MSC,MDC,'BEFORE ANY CALL')
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE COMPUTE_DOUBLE_STRANG_EXPLICIT()
         USE DATAPOOL
-
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp
-#endif
         IMPLICIT NONE
 
         REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -179,8 +255,6 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 
         IF (.NOT. LDIFR) LCALC = .FALSE.
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -257,13 +331,11 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
         FLUSH(STAT%FHNDL)
 #endif
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
+      SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -355,7 +427,7 @@
         FLUSH(STAT%FHNDL)
 
         IF (DIMMODE == 1) THEN
-          CALL COMPUTE_ADVECTION1D_QUICKEST_A()
+          CALL COMPUTE_ADVECTION1D_QUICKEST_A
         ELSE IF (DIMMODE == 2) THEN
           IF (LVECTOR) THEN
             CALL FLUCT_3
@@ -389,13 +461,15 @@
  
         IF (DMETHOD > 0) THEN
           IF (DMETHOD == 1) THEN
-            CALL COMPUTE_DIRECTION_CNTG_A()
+            CALL COMPUTE_DIRECTION_CNTG_A
           ELSE IF (DMETHOD == 2) THEN
-            CALL COMPUTE_DIRECTION_QUICKEST_A()
+            CALL COMPUTE_DIRECTION_QUICKEST_A
           ELSE IF (DMETHOD == 3) THEN
-            CALL COMPUTE_DIRECTION_WENO_A()
+            CALL COMPUTE_DIRECTION_WENO_A
           ELSE IF (DMETHOD == 4) THEN
-            CALL COMPUTE_DIRECTION_UPWIND_A()
+            CALL COMPUTE_DIRECTION_UPWIND_A
+          ELSE IF (DMETHOD == 5) THEN
+            CALL COMPUTE_DIRECTION_UPWIND_IMPLICIT
           END IF
         END IF
 
@@ -415,9 +489,9 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_FREQUENCY'
         FLUSH(STAT%FHNDL)
 
-        IF (FMETHOD == 1) THEN
-          CALL COMPUTE_FREQUENCY_QUICKEST_A()
-        END IF
+        IF (FMETHOD == 1) CALL COMPUTE_FREQUENCY_QUICKEST_A
+        IF (FMETHOD == 2) CALL COMPUTE_FREQUENCY_UPWIND_EXPLICIT
+        IF (FMETHOD == 3) CALL COMPUTE_FREQUENCY_UPWIND_IMPLICIT
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_FREQUENCY'
         FLUSH(STAT%FHNDL)
@@ -434,7 +508,7 @@
         FLUSH(STAT%FHNDL)
 
         IF (ICOMP < 2 .AND. SMETHOD > 0) THEN
-          CALL SOURCE_INT_EXP()
+          CALL SOURCE_INT_EXP
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_EXP'
@@ -507,9 +581,49 @@
          WRITE (310) (SNGL(TMPCAD(IP)), SNGL(TMPCAD(IP)), SNGL(TMPCFLCAD(IP)), IP = 1, MNP)
          WRITE (311) SNGL(RTIME)
          WRITE (311) (SNGL(TMPCAS(IP)), SNGL(TMPCAS(IP)), SNGL(TMPCFLCAS(IP)), IP = 1, MNP)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef PETSC
+      SUBROUTINE COMPUTE_FULL_IMPLICIT_PATANKAR
+      USE DATAPOOL
+      USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
+      IMPLICIT NONE
+      IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+        DT4A = MAIN%DELT
+        DT4S = DT4A
+        DT4D = 0.5_rkind*DT4A
+        DT4F = 0.5_rkind*DT4A 
+      ELSE IF (LQSTEA) THEN
+        DT4A = DT_ITER
+        DT4S = DT4A
+        DT4D = 0.5_rkind*DT4A
+        DT4F = 0.5_rkind*DT4A
+      END IF
+      AC1  = AC2
+      CALL COMPUTE_DIFFRACTION
+      !
+      ! Below is for debugging purpose only. 
+      ! Only used if the refraction/freq_shift/source implicit
+      ! are not selected
+      !
+      CALL SOURCE_INT_IMP()
+      IF (SOURCE_IMPL .eqv. .FALSE.) THEN
+        ! Do something clearly
+      END IF
+      IF (REFRACTION_IMPL .eqv. .FALSE.) THEN
+        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+      END IF
+      IF (FREQ_SHIFT_IMPL .eqv. .FALSE.) THEN
+        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY()
+      END IF
+      !
+      ! the Mother of all implicit computations.
+      !
+      CALL EIMPS_PETSC_BLOCK
+
+      IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+      IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+      END SUBROUTINE
+#endif

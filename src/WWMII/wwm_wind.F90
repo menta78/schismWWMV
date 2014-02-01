@@ -7,18 +7,17 @@
       USE NETCDF
 #endif
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
 
 #ifdef NCDF
       INTEGER :: IT, IFILE
 #endif
-      INTEGER :: IP, ISTAT, FORECASTHOURS
-      REAL(rkind)    :: WDIRT, cf_w1, cf_w2
-
+      INTEGER :: IP, FORECASTHOURS
+      REAL(rkind)    :: WDIRT
+#ifdef NCDF
+      REAL(rkind)    :: cf_w1, cf_w2
+      INTEGER :: istat
+#endif
 
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
@@ -208,9 +207,6 @@
       USE NETCDF 
 #endif
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif 
       IMPLICIT NONE
       REAL(rkind)             :: TMP(MNP,2)
 #if defined NCDF || defined GRB 
@@ -413,7 +409,8 @@
       integer aShift, WeFind, istat
       real(rkind) eDist, MinDist
       real(rkind), allocatable :: dist(:,:)
-      real(rkind) closest(2)
+      real(rkind) closest_r(2)
+      integer     closest(2)
       real(rkind) d_lon, d_lat
       integer i11, j11, i12, j12, i21, j21
       integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
@@ -539,7 +536,8 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 51')
         DO I = 1, MNP
           dist(:,:) = ABS( CMPLX(XP(I)-lon(:,:), YP(I)-lat(:,:)) )
-          closest(1:2) = MINLOC(dist)
+          closest_r(1:2) = MINLOC(dist)
+          closest=INT(closest_r)
           d_lon = XP(I)-lon(closest(1),closest(2)) 
           d_lat = YP(I)-lat(closest(1),closest(2))
           IF ((d_lon.ge.0).and.(d_lat.ge.0)) THEN ! point is in the I kvadrant
@@ -1936,27 +1934,40 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
-      USE DATAPOOL, only : SEWI, WINDBG, rkind, THR
+      USE DATAPOOL, only : SEWI, WINDBG, rkind, THR, wwmerr
       IMPLICIT NONE
       integer, intent(in) :: nbtime_mjd
       real(rkind), intent(in) :: WIND_TIME_MJD(nbtime_mjd)
+      CHARACTER(LEN=15) :: eTimeStr
       IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
+        WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside CF wind_time range!'
-        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
-        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
-        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
-        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD), ' date=', eTimeStr
         FLUSH(WINDBG%FHNDL)
-        CALL WWM_ABORT('Error in WIND_TIME_MJD 1')
+        WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 1, read ', TRIM(WINDBG%FNAME)
+        CALL WWM_ABORT(wwmerr)
       END IF
       IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
+        WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside CF wind_time range!'
-        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD
-        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD
-        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD)
-        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD)
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'min(WIND_TIME_MJD)=', minval(WIND_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(WIND_TIME_MJD),eTimeStr)
+        WRITE(WINDBG%FHNDL,*) 'max(WIND_TIME_MJD)=', maxval(WIND_TIME_MJD), ' date=', eTimeStr
         FLUSH(WINDBG%FHNDL)
-        CALL WWM_ABORT('Error in WIND_TIME_MJD 2')
+        WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 2, read ', TRIM(WINDBG%FNAME)
+        CALL WWM_ABORT(wwmerr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2038,6 +2049,7 @@
       ISTAT = nf90_inquire_dimension(fid, dimidsB(3), name=WindTimeStr)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
       WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      WRITE(WINDBG%FHNDL,*) 'Checking for scale_factor'
       FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
@@ -2049,6 +2061,8 @@
       WRITE(WINDBG%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
       FLUSH(WINDBG%FHNDL)
 
+      WRITE(WINDBG%FHNDL,*) 'Checking for add_offset'
+      FLUSH(WINDBG%FHNDL)
       ISTAT = nf90_get_att(fid, varid, "add_offset", cf_add_offset)
       IF (ISTAT /= 0) THEN
         CHRERR = nf90_strerror(ISTAT)
@@ -2109,6 +2123,7 @@
       ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
       CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
       CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+      WRITE(WINDBG%FHNDL,*) 'eStrUnitTime=', TRIM(eStrUnitTime)
       WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
       FLUSH(WINDBG%FHNDL)
 
@@ -2150,8 +2165,9 @@
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor, np_total
 #ifdef MPI_PARALL_GRID
-      USE elfe_glbl, only: iplg
+      USE DATAPOOL, only : iplg
 #endif
+
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
@@ -2232,7 +2248,7 @@
 
       ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      WRITE(WINDBG%FHNDL,*) 'WindTimeStr=', TRIM(WindTimeStr)
+      WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(WindTimeStr)
       FLUSH(WINDBG%FHNDL)
 
       ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)

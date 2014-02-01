@@ -523,6 +523,7 @@
 ! integral parameters ...
 !
            HS          = MAX(ZERO,4.*SQRT(ETOT))
+	   IF (LMONO_OUT) HS = HS / SQRT(2.)
            SME01       = ETOT_SPSIG / ETOT
            KME01       = ETOT_WK / ETOT
            SME10       = ETOT / ACTOT

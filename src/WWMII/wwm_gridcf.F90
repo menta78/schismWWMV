@@ -5,14 +5,7 @@
 !**********************************************************************
       SUBROUTINE SPATIAL_GRID()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, ONLY : ne_global
-         USE ELFE_MSGP, ONLY : IERR, COMM, MYRANK, rtype
-#endif
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID 
-         INCLUDE 'mpif.h'
-#endif
          REAL(rkind)            :: TL1, TL2, TL3
          REAL(rkind)            :: TMPTLMIN
          REAL(rkind)            :: TMPTLMAX 
@@ -320,7 +313,7 @@
 
          SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
          SSB                =  (SPSIG(2)-SPSIG(1))/PI2
-         MSCL               =  SPECTRAL_BANDWIDTH/SSB
+         MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
 
          ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
         
@@ -396,23 +389,32 @@
 
          DELTH = PI2/MyREAL(MDC)
 
-         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), stat=istat)
+         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), TH(MDC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
-         DFIM = 0._rkind
-         DFFR = 0._rkind
-         DFFR2 = 0._rkind
-         DFIMOFR = 0._rkind
-         FR5 = 0._rkind
-         FRM5 = 0._rkind
+         DFIM = ZERO
+         DFFR = ZERO
+         DFFR2 = ZERO 
+         DFIMOFR = ZERO
+         FR5 = ZERO
+         FRM5 = ZERO 
 
-         CO1     = 0.5_rkind*FRINTF*DELTH
-         DFIM(1) = CO1*FR(1)
-
-         DO IS=2,MSC-1
-           DFIM(IS)=CO1*(FR(IS)+FR(IS-1))
+         DELTH = PI2/REAL(MDC)
+         DELTR = DELTH*REARTH
+         DO ID=1,MDC
+!CCC        TH(K) = REAL(K-1)*DELTH
+!CCC the previous line should be used if spectra should not be rotated.
+!CCC the next line should be used if rotated spectra are used
+           TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
+           COSTH(ID) = COS(TH(ID))
+           SINTH(ID) = SIN(TH(ID))
          ENDDO
 
-         DFIM(MSC)=CO1*FR(MSC)
+         CO1 = 0.5*(FRATIO-1.)*DELTH
+         DFIM(1)= CO1*FR(1)
+         DO IS=2,MSC-1
+           DFIM(IS)=CO1 * (FR(IS)+FR(IS-1))
+         ENDDO
+         DFIM(IS)=CO1*FR(IS-1)
 
          DO IS = 1, MSC
            DFFR(IS)    = DFIM(IS)*FR(IS)
@@ -420,7 +422,10 @@
            DFIMOFR(IS) = DFIM(IS)/FR(IS)
            FR5(IS)     = FR(IS)**5
            FRM5(IS)    = ONE/FR5(IS)
+           COFRM4(IS)  = COEF4*G9/FR(IS)**4
          END DO
+
+         FLOGSPRDM1=1./LOG10(FRATIO)
 
       END SUBROUTINE
 !**********************************************************************

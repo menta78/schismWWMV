@@ -37,6 +37,7 @@
 !> - create the solver and preconditioner
       SUBROUTINE PETSC_INIT_PARALLEL
         USE DATAPOOL, only: MNP, CCON, NNZ, DBG
+        use datapool, only: comm, np_global
         ! np_global - # nodes gloabl
         ! np        - # nodes local non augmented
         ! npg       - # ghost
@@ -46,14 +47,12 @@
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
         ! int::nnp(ip)            total # of surrounding nodes for node ip
         ! int::inp(ip, 1:nnp(ip)) list of surrounding nodes
-        use elfe_glbl, only: np_global, np, npg, npa, ne_global, nea,   &
-     &      iplg, ipgl, nnp, inp, llist_type
-        use elfe_msgp, only : comm
         use petscpool
         use petscsys
         
 !         use petscao
         implicit none
+        integer :: ierr
 
         call MPI_Comm_rank(comm, rank, ierr)
         call MPI_Comm_size(comm, nProcs, ierr)
@@ -82,9 +81,8 @@
       END SUBROUTINE
 
       !> create PETSC matrix which uses fortran arrays
-      subroutine createMatrix()
-        USE elfe_glbl, only: np_global
-        use elfe_msgp, only : comm
+      SUBROUTINE createMatrix()
+        use datapool, only: np_global
         use petscpool
         use petscsys
         use petscmat
@@ -108,18 +106,18 @@
         ! This avoids all reductions in the zero row routines and thus improves performance for very large process counts.
         call MatSetOption(matrix, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE, petscErr);CHKERRQ(petscErr)
 
-      end subroutine
+      end SUBROUTINE
 
       ! 1. create IA JA ASPAR petsc arrays
-      subroutine createCSR_petsc()
-        use datapool, only: NNZ, MNE, INE, MNP, DBG
-        use elfe_glbl, only: iplg
+      SUBROUTINE createCSR_petsc()
+        use datapool, only: NNZ, MNE, INE, MNP, DBG, iplg, JA
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
 
         ! max number of adj nodes per node
         integer :: maxNumConnNode = 0
+        integer :: istat
 
         ! running variable node number
         integer :: IP = 0
@@ -154,8 +152,8 @@
         o_nnz_new = 0
         do IP_petsc = 1, nNodesWithoutInterfaceGhosts
           IP = PLO2ALO(IP_petsc-1)+1
-          do i = 1, IA_P(IP+1) - IA_P(IP)
-              if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+          do i = IA_P(IP)+1, IA_P(IP+1)
+              if(ALOold2ALO(JA(i)) .eq. -999) then
                 o_nnz_new = o_nnz_new + 1
               else
                 nnz_new = nnz_new + 1
@@ -177,14 +175,14 @@
                  ! +1 because we have to store the diagonal node number too
      &            toSort(maxNumConnNode+1),                             &
      &            o_toSort(maxNumConnNode+1),                           &
-     &            stat=stat)
-        if(stat /= 0) then
+     &            stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.171'
         endif
 
-        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ), stat=stat)
-        if(stat /= 0) then
+        allocate(CSR_App2PetscLUT(NNZ), o_CSR_App2PetscLUT(NNZ), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.178'
         endif
@@ -217,22 +215,21 @@
           o_nToSort = 0
 
           ! over all nodes in this row
-          do i = 1, IA_P(IP+1) - IA_P(IP)
+          do i = IA_P(IP) + 1, IA_P(IP+1)
             ! found a ghost node, treat them special
-            if(ALOold2ALO(JA_P( IA_P(IP)+i )) .eq. -999) then
+            if(ALOold2ALO(JA(i)) .eq. -999) then
               o_ntoSort = o_ntoSort + 1
               ! store the old position in ASPAR
-              o_toSort(o_nToSort)%userData = IA_P(IP)+i
+              o_toSort(o_nToSort)%userData = i
               !> todo offdiagonal part with petsc global order? don't know why but it seems to work
-              o_toSort(o_nToSort)%id =                                  &
-     &                AGO2PGO(iplg(JA_P( IA_P(IP)+i )+1)-1)
+              o_toSort(o_nToSort)%id = AGO2PGO(iplg(JA(i))-1)
             ! not a ghost node
             else
               nToSort = nToSort + 1
               ! petsc local node number to sort for
-              toSort(nToSort)%id = ALO2PLO(JA_P( IA_P(IP)+i ))
+              toSort(nToSort)%id = ALO2PLO(JA_P(i))
               ! store the old position in ASPAR
-              toSort(nToSort)%userData = IA_P(IP)+i
+              toSort(nToSort)%userData = i
             end if
           end do
 
@@ -255,19 +252,16 @@
           oIA_petsc(IP_petsc+1) = oIA_petsc(IP_petsc) + o_nToSort
         end do
 
-        deallocate(toSort, o_toSort, stat=stat)
-        if(stat /= 0) then
+        deallocate(toSort, o_toSort, stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petsc_parallel l.250'
         endif
-      end subroutine
+      end SUBROUTINE
 
       !> fill matrix, RHs, call solver
       SUBROUTINE  EIMPS_PETSC_PARALLEL(ISS, IDD)
          USE DATAPOOL
-         use elfe_glbl, only: np_global, np, npg, npa, nnp, inp, iplg
-         ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
-         use elfe_glbl, only: ipgl1=> ipgl
          use petscpool
          use petscsys
          use petscmat
@@ -278,7 +272,7 @@
          integer, intent(in) :: ISS, IDD
 
          integer :: I, J
-         integer :: IP, IPGL, IE, POS
+         integer :: IP, IPGL1, IE, POS
          integer :: I1, I2, I3
          integer :: POS_TRICK(3,2)
 
@@ -295,7 +289,7 @@
 
          ! solver timings
 #ifdef TIMINGS
-         real    ::  startTime, endTime
+         real(rkind)    ::  startTime, endTime
 #endif
          real, save :: solverTimeSum = 0
 !
@@ -416,15 +410,15 @@
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Add source term to the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(ISS,IDD,IP)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Add source term to the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,IP)
              END DO
            ELSE
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL)
-               B(IPGL)             = SI(IPGL) * WBAC(ISS,IDD,1)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1)
+               B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,1)
              END DO
            ENDIF
          END IF
@@ -448,7 +442,7 @@
          do i = 1, NP_RES
            ncols = IA_P(i+1) - IA_P(i)
            ! this is a interface node (row). ignore it. just increase counter
-           if(ALOold2ALO(i-1) .eq. -999) then
+           if(ALOold2ALO(i) .eq. -999) then
              counter = counter + ncols
              cycle
            end if
@@ -476,7 +470,7 @@
 !          call VecSet(myBAppOrder, eEntry, petscErr);CHKERRQ(petscErr)
          do i= 1, np
            ! this is a interface node (row). ignore it. just increase counter
-           if(ALOold2ALO(i-1) .eq. -999) then
+           if(ALOold2ALO(i) .eq. -999) then
              cycle
            end if
            ! map to petsc global order
@@ -547,20 +541,20 @@
          !(the app old ordering contains interface nodes)
          call VecGetArrayF90(myX, myXtemp, petscErr); CHKERRQ(petscErr)
          do i = 1, nNodesWithoutInterfaceGhosts
-           X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
+           X(ipgl((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myXtemp(i)
          end do
          call VecRestoreArrayF90(myX, myXtemp, petscErr)
          CHKERRQ(petscErr);
          !IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
          ! we have to fill the ghost and interface nodes with the solution from the other threads
-         ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
+         ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
          ! normally set to 0, because they do net exist in petsc
-         !call exchange_p2d(X)
+         call exchange_p2d(X)
          AC2(:, ISS, IDD) = MAX(0.0_rkind,X)
       END SUBROUTINE
 
       !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()
-      subroutine PETSC_FINALIZE_PARALLEL()
+      SUBROUTINE PETSC_FINALIZE_PARALLEL()
         implicit none
 
         ! we deallocate only arrays who are declared in this file!
@@ -573,7 +567,7 @@
         if(allocated(CSR_App2PetscLUT)) deallocate(CSR_App2PetscLUT)
         if(allocated(o_CSR_App2PetscLUT)) deallocate(o_CSR_App2PetscLUT)
 
-      end subroutine
+      end SUBROUTINE
 
     END MODULE
 # endif

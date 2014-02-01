@@ -4,10 +4,10 @@
 !**********************************************************************
 !2do add mean quantities for 
       SUBROUTINE SOURCETERMS (IP, ISELECT, ACLOC, IMATRA, IMATDA, LRECALC)
-#ifdef WWM_MPI 
-         USE elfe_msgp, only : myrank
-#endif 
-         USE DATAPOOL
+         USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC, CD, TAUTOT, TAUWX, TAUWY, AC1, AC2, DEP, PI2, CG, G9, &
+     &                        ZERO, ALPHA_CH, QBLOCAL, USTDIR, Z0, SMALL, VERYSMALL, MSC_HF, DDIR, SPSIG, SPDIR, FRINTF, & 
+     &                        ONE, RHOA, RHOAW, TAUHF, TAUW, FR, MESNL, MESIN, MESDS, MESBF, MESBR, MESTR, ISHALLOW, DS_INCR, &
+     &                        IOBP, IOBPD, LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION, AIRMOMENTUM, ONEHALF, NSPEC
          USE SdsBabanin
 #ifdef SNL4_TSA
          USE W3SNLXMD
@@ -16,6 +16,9 @@
          USE W3SRC4MD_OLD
 #elif ST42
          USE W3SRC4MD_NEW
+#endif
+#ifdef WWM_MPI
+         USE elfe_msgp, only : myrank
 #endif
          IMPLICIT NONE
 
@@ -26,7 +29,7 @@
 
          LOGICAL, INTENT(IN) :: LRECALC
 
-         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ, IERR
+         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
          REAL(rkind)    :: SME01, SME10, KME01, KMWAM, KMWAM2
@@ -51,9 +54,10 @@
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1, SNL3(MSC,MDC), DSNL3(MSC,MDC)
          REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
          REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
+         INTEGER :: IERR_WRT
 
 #ifdef TIMINGS 
-         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind)        :: T1, T2
          REAL(rkind), SAVE  :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9
 #endif
 
@@ -61,7 +65,7 @@
          REAL(rkind)    :: XLCKS(MDC,MSC)
 
 #ifdef TIMINGS
-         TIME1 = mpi_wtime()
+         call MY_WTIME(TIME1)
 #endif 
 
          WIND10 = ZERO 
@@ -127,9 +131,8 @@
 #endif
 
 #ifdef TIMINGS
-         TIME2 = TIME2 + mpi_wtime()
+         call MY_WTIME(TIME2)
 #endif 
-
 
          IF ((ISELECT .EQ. 1 .OR. ISELECT .EQ. 10 .OR. ISELECT .EQ. 20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -247,49 +250,49 @@
                    !write(*,*) 'cavaleri mellanote rizzoli', ip, sum(acloc), sum(imatra), sum(imatda) 
                  ENDIF
                  XLCKS = ONE 
-                 CALL SINPUT (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-                 CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
-                 CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
-                 CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
-                 CALL AIRSEA (WIND10, TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
-                 CALL SDISSIP (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
+!                 CALL SINPUT_WWM (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!                 CALL AIRSEA_WWM (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
+!                 CALL FKMEAN_WWM (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!                 CALL STRESSO_WWM (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
+!                 CALL AIRSEA_WWM (WIND10, TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!                 CALL SDISSIP_WWM (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
                  !write(*,*) 'initial condition', ip, sum(acloc), sum(imatra), sum(imatra_wam), sum(imatda_wam)  
                ELSE IF (RTIME .GT. THR .AND. WIND10 .GT. SMALL) THEN
-                 CALL SET_WIND( IP, WIND10, WINDTH )
-                 CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-                 CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
-                 CALL SINPUT (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
-                 TAILFACTOR=2.5
-                 FPMH = TAILFACTOR/FR(1)
-                 FPM4 = MAX(FMEANWS,FMEAN)*FPMH
-                 FLOGSPRDM1=1./LOG10(FRINTF+ONE)
-                 MSC_HF(IP) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
-                 MSC_HF(IP) = MIN(MSC_HF(IP),MSC)
-                 CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC_HF(IP)) ! Check for MIJ
-                 CALL AIRSEA  (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
-                 CALL SDISSIP (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
+!                 CALL SET_WIND( IP, WIND10, WINDTH )
+!                 CALL FKMEAN_WWM (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+!                 CALL AIRSEA_WWM (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
+!                 CALL SINPUT_WWM (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!                 TAILFACTOR=2.5
+!                 FPMH = TAILFACTOR/FR(1)
+!                 FPM4 = MAX(FMEANWS,FMEAN)*FPMH
+!                 FLOGSPRDM1=1./LOG10(FRINTF+ONE)
+!                 MSC_HF(IP) = INT(LOG10(FPM4)*FLOGSPRDM1)+1
+!                 MSC_HF(IP) = MIN(MSC_HF(IP),MSC)
+!                 CALL STRESSO_WWM (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC_HF(IP)) ! Check for MIJ
+!                 CALL AIRSEA_WWM  (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!                 CALL SDISSIP_WWM (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
                  !write(*,*) 'normal growth', ip, sum(imatra_wam), sum(imatda_wam) 
                ELSE IF (RTIME .GT. THR .AND. WIND10 .GT. SMALL .AND. SUMACLOC .LT. SMALL) THEN ! AR: To Do improve this crap!
-                 CALL SET_WIND( IP, WIND10, WINDTH )
-                 TMPAC = SMALL
-                 XLCKS = ZERO 
-                 CALL SINPUT (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-                 CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
-                 CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
-                 CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
-                 CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
-                 CALL FEMEANWS(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS, XLCKS)
-                 CALL SDISSIP (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
+!                 CALL SET_WIND( IP, WIND10, WINDTH )
+!                 TMPAC = SMALL
+!                 XLCKS = ZERO 
+!                 CALL SINPUT_WWM (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!                 CALL AIRSEA_WWM (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
+!                 CALL FKMEAN_WWM (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!                 CALL STRESSO_WWM (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
+!                 CALL AIRSEA_WWM (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
+!                 CALL FEMEANWS_WWM(IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS, XLCKS)
+!                 CALL SDISSIP_WWM (IP,TMPAC,IMATDA_WAM,1,IMATRA_WAM,EMEAN,F1MEAN,XKMEAN)
                  !write(*,*) 'zero initial energy', sum(imatra_wam), sum(imatda_wam)
                END IF
                DO ID = 1, MDC 
                  IMATRA(:,ID) = IMATRA(:,ID) + IMATRA_WAM(ID,:)/PI2/SPSIG
-                 !IMATDA(:,ID) = IMATRA(:,ID) + IMATDA_WAM(ID,:)
+                 IMATDA(:,ID) = IMATRA(:,ID) + IMATDA_WAM(ID,:)
                END DO
                !write(*,*) 'sum after wind', sum(imatra), sum(imatda)
              END IF ! MESIN
@@ -301,10 +304,8 @@
          END IF ! ISELECT 
 
 #ifdef TIMINGS
-         TIME3 = TIME3 + mpi_wtime()
+         call MY_WTIME(TIME3)
 #endif 
-         !IF (IOBP(IP) .EQ. 0) WRITE(DBG%FHNDL,*) 'WIND', SUM(IMATRA), SUM(IMATDA)
-
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
@@ -327,10 +328,10 @@
                SPSIG_WRT = REAL(SPSIG)
                SPDIR_WRT = REAL(SPDIR)
                DEP_WRT   = DEP(IP)
-               CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR)
-               IF (IERR .GT. 0) THEN
-                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR
-                 CALL WWM_ABORT('XNL_WRT ERROR')    
+               CALL WWMQUAD_WRT (ACLOC_WRT,SPSIG_WRT,SPDIR_WRT,MDC,MSC,DEP_WRT,1,XNL,DDIAG,IERR_WRT)
+               IF (IERR_WRT .GT. 0) THEN
+                 WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR_WRT
+                 CALL WWM_ABORT('XNL_WRT ERROR')
                ELSE
                  IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
                  IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
@@ -370,7 +371,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         TIME4 = TIME4 + mpi_wtime()
+         call MY_WTIME(TIME4)
 #endif 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
@@ -433,7 +434,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME5 = TIME5 +  mpi_wtime()
+         call MY_WTIME(TIME5)
 #endif 
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10).AND.ISHALLOW(IP).EQ.1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. VERYSMALL) THEN
@@ -459,7 +460,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME6 = TIME6 + mpi_wtime()
+         call MY_WTIME(TIME6)
 #endif 
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
@@ -470,7 +471,7 @@
          END IF
 
 #ifdef TIMINGS
-         TIME7 = TIME7 + mpi_wtime()
+         call MY_WTIME(TIME7)
 #endif 
 
          IF (MESBF .GE. 1) THEN
@@ -489,14 +490,13 @@
          ENDIF
 
 #ifdef TIMINGS
-        TIME8 = TIME8 + mpi_wtime()
+        call MY_WTIME(TIME8)
 #endif 
 
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
 
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
 
-!AR: this cannot work since crap was done here ... we need a better calling structure to this stuff ... 
            DISSIPATION(IP) = 0.
            AIRMOMENTUM(IP) = 0.
            DO ID = 1, MDC
@@ -548,12 +548,13 @@
              XJ=WIND10/50._rkind/REAL(200)
              JU=MIN(200, MAX(NINT(XJ),1))
 
-             CALL FKMEAN  (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-             CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-             CALL AIRSEA (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
-             CALL FKMEAN (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
-             CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
-             CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!             CALL FKMEAN_WWM  (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+!             CALL SINPUT_WWM  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!             CALL AIRSEA_WWM (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1) ! Take care with ILEV check in WAM
+!             CALL FKMEAN_WWM (IP,TMPAC,EMEAN,FMEAN,F1MEAN,AKMEAN,XKMEAN)
+!             CALL FEMEANWS_WWM (IP,TMPAC,UFRIC(IP),WINDTH,EMEAN,FMEANWS,XLCKS)
+!             CALL STRESSO_WWM (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC)
+!             CALL SINPUT_WWM  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
 
              TAILFACTOR=2.5
              FPMH = TAILFACTOR/FR(1)
@@ -566,17 +567,17 @@
 !
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
-             IF(ISHALLO.EQ.1) THEN
-               DO IS=1,MSC
-                 TEMP2(IS) = FRM5(IS)
-               ENDDO
-             ELSE
+!             IF(ISHALLO.EQ.1) THEN
+!               DO IS=1,MSC
+!                 TEMP2(IS) = FRM5(IS)
+!               ENDDO
+!             ELSE
                DO IS=1,MSC
                  AKM1      = ONE/WK(IP,IS)
                  AK2VGM1   = AKM1**2/CG(IP,IS)
                  TEMP2(IS) = AKM1*AK2VGM1
                ENDDO
-             ENDIF
+!             ENDIF
 
              GADIAG = ONE/TEMP2(MSC_HF(IP))
 
@@ -604,9 +605,9 @@
                END DO
              END DO
 
-             CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
-             CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC_HF(IP)) 
-             CALL AIRSEA  (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
+!             CALL SINPUT  (IP,TMPAC,IMATDA_WAM,WINDTH,UFRIC(IP),Z0(IP),RHOA,ZERO,IMATRA_WAM,XLCKS)
+!             CALL STRESSO (TMPAC,WINDTH,UFRIC(IP),Z0(IP),RHOA,TAUHF(IP),TAUW(IP),TAUTOT(IP),IMATRA_WAM,MSC_HF(IP)) 
+!             CALL AIRSEA  (WIND10,TAUW(IP),UFRIC(IP),Z0(IP),CD(IP),ALPHA_CH(IP),1)
 
              AC2(IP,:,:) = ACLOC
 
@@ -614,7 +615,7 @@
          ENDIF
 
 #ifdef TIMINGS 
-         TIME9 = TIME9 + mpi_wtime()
+         call MY_WTIME(TIME9)
 #ifdef WWM_MPI 
          IF (IP == MNP .AND. myrank == 0 ) THEN
 #else if 

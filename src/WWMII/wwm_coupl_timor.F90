@@ -90,15 +90,16 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE PIPE_TIMOR_IN(K)
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN)  :: K
-
-         IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
-           WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
-         END IF
-
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)  :: K
+      IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+        WATLEVOLD=WATLEV
+        DELTAT_WATLEV = MAIN%DTCOUP
+        LCALC=.TRUE.
+        WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
+        WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

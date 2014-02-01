@@ -1,299 +1,201 @@
 #include "wwm_functions.h"
-! don't forget to uncomment if() )in wwm_compute
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 0 Fully Explicit
-!       SUBROUTINE FLUCT_EXPLICIT()
-!         USE DATAPOOL
-!         IMPLICIT NONE
-! 
-!         INTEGER             :: IS, ID, IP
-!         REAL(rkind)         :: DTMAX
-! 
-!         IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EXPLICIT_N_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EXPLICIT_PSI_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL FLUCTCFL(IS,ID,DTMAX)
-!               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-!             END DO
-!           END DO
-!         END IF
-!       END SUBROUTINE
-! 
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 1
-!       SUBROUTINE FLUCT_SEMIIMPLICIT()
-!       USE DATAPOOL
-! #ifdef PETSC
-!       use PETSC_CONTROLLER, only : EIMPS_PETSC
-!       use petsc_block,    only: EIMPS_PETSC_BLOCK
-! #endif
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!          USE WWM_PARALL_SOLVER, only : I5_EIMPS
-! # endif
-! #endif
-!       IMPLICIT NONE
-! 
-!       INTEGER             :: IS, ID, IP
-!       REAL(rkind)         :: DTMAX
-! 
-! #ifdef PETSC
-!       ! petsc block has its own loop over MSC MDC
-!       IF(AMETHOD == 5) THEN
-!         call EIMPS_PETSC_BLOCK
-!         RETURN
-!       END IF
-! #endif
-! 
-!       IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-! !                 CALL EIMPS( IS, ID)
-!               CALL EIMPS_V1( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNIMPS( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNEIMPS( IS, ID, DTMAX)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 4) THEN
-! #ifdef PETSC
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EIMPS_PETSC(IS, ID)
-!             END DO
-!           END DO
-! #endif
-!         ELSE IF (AMETHOD == 6) THEN
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!           CALL I5_EIMPS(MainLocalColor, SolDat)
-! # endif
-! #endif
-!         END IF
-!       END SUBROUTINE
-! 
-! 
-! !**********************************************************************
-! !*                                                                    *
-! !**********************************************************************
-! ! for ICOMP == 2
-!       SUBROUTINE FLUCT_IMPLICIT()
-!       USE DATAPOOL
-! #ifdef PETSC
-!       use PETSC_CONTROLLER, only : EIMPS_PETSC
-!       use petsc_block,    only: EIMPS_PETSC_BLOCK
-! #endif
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!          USE WWM_PARALL_SOLVER, only : I5_EIMPS
-! # endif
-! #endif
-!       IMPLICIT NONE
-! 
-!       INTEGER             :: IS, ID, IP
-!       REAL(rkind)         :: DTMAX
-! 
-! #ifdef PETSC
-!       ! petsc block has its own loop over MSC MDC
-!       IF(AMETHOD == 5) THEN
-!         call EIMPS_PETSC_BLOCK
-!         RETURN
-!       END IF
-! #endif
-! 
-!       IF (AMETHOD == 1) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-! !                 CALL EIMPS( IS, ID)
-!               CALL EIMPS_V1( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 2) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNIMPS( IS, ID)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 3) THEN
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL CNEIMPS( IS, ID, DTMAX)
-!             END DO
-!           END DO
-!         ELSE IF (AMETHOD == 4) THEN
-! #ifdef PETSC
-! !$OMP DO PRIVATE (ID,IS)
-!           DO ID = 1, MDC
-!             DO IS = 1, MSC
-!               CALL EIMPS_PETSC(IS, ID)
-!             END DO
-!           END DO
-! #endif
-!         ELSE IF (AMETHOD == 6) THEN
-! #ifdef WWM_SOLVER
-! # ifdef MPI_PARALL_GRID
-!           CALL I5_EIMPS(MainLocalColor, SolDat)
-! # endif
-! #endif
-!         END IF
-!       END SUBROUTINE
-
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE FLUCT_1()
+! for ICOMP == 0 Fully Explicit
+       SUBROUTINE FLUCT_EXPLICIT
          USE DATAPOOL
+         IMPLICIT NONE
+ 
+         INTEGER             :: IS, ID, IP
+         REAL(rkind)         :: DTMAX
+ 
+!$OMP PARALLEL
+         IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_N_SCHEME(IS,ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_PSI_SCHEME(IS,ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
+             END DO
+           END DO
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 1
+       SUBROUTINE FLUCT_SEMIIMPLICIT
+       USE DATAPOOL
 #ifdef PETSC
-         use PETSC_CONTROLLER, only : EIMPS_PETSC
-         use petsc_block,    only: EIMPS_PETSC_BLOCK
-         USE elfe_msgp, only : exchange_p4d_wwm
+       use PETSC_CONTROLLER, only : EIMPS_PETSC
+       use petsc_block,    only: EIMPS_PETSC_BLOCK
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
+       USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
 # endif
 #endif
+       IMPLICIT NONE
+ 
+       INTEGER             :: IS, ID, IP
+       REAL(rkind)         :: DTMAX
+ 
+#ifdef PETSC
+       ! petsc block has its own loop over MSC MDC
+       IF(AMETHOD == 5) THEN
+         call EIMPS_PETSC_BLOCK
+         RETURN
+       END IF
+#endif
+!$OMP PARALLEL
+       IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+ !                 CALL EIMPS( IS, ID)
+               CALL EIMPS_V1( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNIMPS( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNEIMPS( IS, ID, DTMAX)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 4) THEN
+#ifdef PETSC
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EIMPS_PETSC(IS, ID)
+             END DO
+           END DO
+#endif
+         ELSE IF (AMETHOD == 6) THEN
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+           CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
+# endif
+#endif
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 2
+       SUBROUTINE FLUCT_IMPLICIT
+       USE DATAPOOL
+#ifdef PETSC
+       use PETSC_CONTROLLER, only : EIMPS_PETSC
+       use petsc_block,    only: EIMPS_PETSC_BLOCK
+#endif
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+        USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
+# endif
+#endif
+       IMPLICIT NONE
+ 
+       INTEGER             :: IS, ID, IP
+       REAL(rkind)         :: DTMAX
+ 
+#ifdef PETSC
+       ! petsc block has its own loop over MSC MDC
+       IF(AMETHOD == 5) THEN
+         call EIMPS_PETSC_BLOCK
+         RETURN
+       END IF
+#endif
+! 
+!$OMP PARALLEL
+       IF (AMETHOD == 1) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+ !                 CALL EIMPS( IS, ID)
+               CALL EIMPS_V1( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 2) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNIMPS( IS, ID)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 3) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL CNEIMPS( IS, ID, DTMAX)
+             END DO
+           END DO
+         ELSE IF (AMETHOD == 4) THEN
+#ifdef PETSC
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EIMPS_PETSC(IS, ID)
+             END DO
+           END DO
+#endif
+         ELSE IF (AMETHOD == 6) THEN
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+           CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
+# endif
+#endif
+         END IF
+!$OMP END PARALLEL
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE FLUCT_1
+         USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER             :: IS, ID, IX
-         REAL(rkind)         :: DTMAX
-#ifdef PETSC
-         REAL(rkind)         :: u(msc,mdc,mnp)
-#endif
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCT_1'
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING FLUCTUATIN SPLITTING PART'
          FLUSH(STAT%FHNDL)
-#ifdef PETSC
-         ! petsc block has its own loop over MSC MDC
-         IF(AMETHOD == 5) THEN
-           call EIMPS_PETSC_BLOCK
-           RETURN
-         END IF
-#endif
+         IF (ICOMP .EQ. 0) THEN
+           CALL FLUCT_EXPLICIT
+         ELSE IF (ICOMP .EQ. 1) THEN
+           CALL FLUCT_SEMIIMPLICIT
+         ELSE IF (ICOMP .EQ. 2) THEN
+           CALL FLUCT_IMPLICIT
+         ENDIF
+         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED WITH FLUCTUATIN SPLITTING PART'
+         FLUSH(STAT%FHNDL)
 
-         IF (ICOMP == 0) THEN ! Fully Explicit
-           IF (AMETHOD == 1) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_N_SCHEME(IS,ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 2) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_PSI_SCHEME(IS,ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 3) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-               END DO
-             END DO
-           END IF
-         ELSE IF (ICOMP .GE. 1) THEN ! Implicit schemes ...
-           IF (AMETHOD == 1) THEN
-!$OMP PARALLEL PRIVATE (ID,IS,IX) 
-!$OMP DO SCHEDULE(GUIDED,MDC) 
-!             DO ID = 1, MDC
-!               DO IS = 1, MSC
-!                CALL EIMPS( IS, ID)
-!                 CALL EIMPS_V1( IS, ID)
-!               END DO
-!             END DO
-             DO IX = 1, NSPEC
-               ID = INT((IX-1)/MSC)+1
-               IS = IX - (ID-1) * MSC
-               CALL EIMPS( IS, ID)
-             END DO
-!$OMP ENDDO
-!$OMP END PARALLEL
-           ELSE IF (AMETHOD == 2) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL CNIMPS( IS, ID)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 3) THEN
-!$OMP DO PRIVATE (ID,IS)
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL CNEIMPS( IS, ID, DTMAX)
-               END DO
-             END DO
-           ELSE IF (AMETHOD == 4) THEN
-#ifdef PETSC
-             DO ID = 1, MDC
-               DO IS = 1, MSC
-                 CALL EIMPS_PETSC(IS, ID)
-               END DO
-             END DO
-             do IS = 1, MSC
-               do ID = 1, MDC
-                 U(IS,ID,:) = AC2(:,IS,ID)
-               end do
-             end do
-             call exchange_p4d_wwm(U)
-             do IS = 1, MSC
-               do ID = 1, MDC
-                 AC2(:,IS,ID) = U(IS,ID,:)
-               end do
-             end do
-#endif
-           ELSE IF (AMETHOD == 6) THEN
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-             CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
-# endif
-#endif
-           END IF
-         END IF
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING FLUCT_1'
-         FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FLUCT_2()
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -349,7 +251,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FLUCT_3()
-
          USE DATAPOOL
 
          IMPLICIT NONE
@@ -433,17 +334,8 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID )
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -568,7 +460,7 @@
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
            END DO
            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
-           WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
+           !WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
 #else
            DTMAX_GLOBAL_EXP = VERYLARGE
            DO IP = 1, MNP
@@ -587,7 +479,7 @@
              !WRITE(22227,*) IP, CCON(IP), SI(IP)
              !IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
            END DO
-           WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
+           !WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP !AR: Makes very strange error in the code ...
 #endif
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
            REST  = ABS(MOD(CFLXY,ONE))
@@ -696,17 +588,8 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_PSI_SCHEME  ( IS, ID )
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -906,16 +789,7 @@
 !**********************************************************************
        SUBROUTINE EXPLICIT_LFPSI_SCHEME(IS,ID)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
-
          INTEGER, INTENT(IN)    :: IS,ID
 !
 ! local integer
@@ -1103,7 +977,6 @@
            CALL EXCHANGE_P2D(UL) ! Exchange after each update of the res. domain
            CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
 #endif
-
             USTARI(1,:) = MAX(UL,U) * IOBPD(ID,:)
             USTARI(2,:) = MIN(UL,U) * IOBPD(ID,:)
 
@@ -1194,23 +1067,14 @@
 !*
 !**********************************************************************
      SUBROUTINE  EIMPS_V1( IS, ID)
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_glbl, only: iplg
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 
          INTEGER, INTENT(IN)    :: IS,ID
 
          INTEGER :: I, J
 
-         INTEGER :: IP, IPGL, IE, POS
+         INTEGER :: IP, IPGL1, IE, POS
 
          INTEGER :: I1, I2, I3
 
@@ -1301,14 +1165,14 @@
 ! ... assembling the linear equation system ....
 !
          DO IP = 1, MNP
-           IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+!           IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
              DO I = 1, CCON(IP)
                J = J + 1
                IE    =  IE_CELL(J)
                POS   =  POS_CELL(J)
                K1    =  KP(POS,IE) ! Flux Jacobian
                TRIA03 = ONETHIRD * TRIA(IE)
-               DTK   =  K1 * DT4A * IOBPD(ID,IP)
+               DTK   =  K1 * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
                TMP3  =  DTK * NM(IE)
                I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                I2    =  POSI(2,J)
@@ -1318,30 +1182,30 @@
                ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
                B(IP)     =  B(IP) + TRIA03 * U(IP)
              END DO !I: loop over connected elements ...
-           ELSE
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    =  IE_CELL(J)
-               TRIA03 = ONETHIRD * TRIA(IE)
-               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
-               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
-             END DO !I: loop over connected elements ...
-           END IF
+!           ELSE
+!             DO I = 1, CCON(IP)
+!               J = J + 1
+!               IE    =  IE_CELL(J)
+!               TRIA03 = ONETHIRD * TRIA(IE)
+!               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+!               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
+!               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
+!             END DO !I: loop over connected elements ...
+!           END IF
          END DO !IP
 
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(IS,ID,IP)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,IP)
             END DO
            ELSE
              DO IP = 1, IWBMNP
-               IPGL = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-               B(IPGL)             = SI(IPGL) * WBAC(IS,ID,1)
+               IPGL1 = IWBNDLC(IP)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+               B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,1)
              END DO
            ENDIF
          END IF
@@ -1422,9 +1286,6 @@
 !**********************************************************************
       SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
          USE DATAPOOL
-#if defined DEBUG
-         USE elfe_msgp, only : myrank
-#endif
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
          REAL(rkind), intent(inout) :: ASPAR(NNZ)
@@ -1437,7 +1298,7 @@
          REAL(rkind) :: DELTAL(3,MNE)
          INTEGER :: I1, I2, I3
          INTEGER :: IP, IE, POS
-         INTEGER :: I, J, IPGL, IPrel
+         INTEGER :: I, J, IPGL1, IPrel
          REAL(rkind) :: KP(3,MNE), NM(MNE)
          REAL(rkind) :: DTK, TMP3
          REAL(rkind) :: LAMBDA(2)
@@ -1526,9 +1387,9 @@
              IPrel=1
            ENDIF
            DO IP = 1, IWBMNP
-             IPGL = IWBNDLC(IP)
-             ASPAR(I_DIAG(IPGL)) = SI(IPGL) ! Set boundary on the diagonal
-             B(IPGL)             = SI(IPGL) * WBAC(IS,ID,IPrel)
+             IPGL1 = IWBNDLC(IP)
+             ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+             B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,IPrel)
            END DO
          END IF
 
@@ -1546,7 +1407,6 @@
 !*
 !**********************************************************************
       SUBROUTINE EIMPS( IS, ID)
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1841,10 +1701,9 @@
          INTEGER, PARAMETER :: IM = 30
 
          INTEGER :: IPAR(16), MBLOC
-         INTEGER :: IERR! ERROR Indicator and Work Array Size
          INTEGER :: IWKSP( 8*MNP ) ! Integer Workspace
          INTEGER :: JU(MNP), JAU(NNZ+1), IWK, LFIL
-
+         INTEGER :: IERROR
          REAL(rkind) :: FPAR(16), DROPTOL, PERMTOL
          REAL(rkind)  :: WKSP(8*MNP ) ! REAL WORKSPACES
          REAL(rkind)  :: AU(NNZ+1)
@@ -1977,7 +1836,7 @@
          MBLOC   = 4
          INIU(:) = 0.
 
-         CALL ILU0 (MNP, ASPAR1, JA, IA, AU, JAU, JU, IWKSP, IERR)
+         CALL ILU0 (MNP, ASPAR1, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL RUNRC(MNP, NNZ, B1, X, IPAR, FPAR, WKSP, INIU, ASPAR1, JA, IA, AU, JAU, JU, BCGSTAB)
 
          U(:) = MAX(X(:),ZERO)
@@ -2015,7 +1874,7 @@
 
          INIU(:) = U
 
-         CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERR)
+         CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL RUNRC(MNP, NNZ, B2, X, IPAR, FPAR, WKSP, INIU, ASPAR2, JA, IA, AU, JAU, JU, BCGSTAB)
 
          AC2(:,IS,ID) = MAX(ZERO,X) * IOBPD(ID,:)
@@ -2026,7 +1885,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CADVXY(IS,ID,C)
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -2130,13 +1988,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FLUCT_ARRAYS
-
          USE DATAPOOL
          IMPLICIT NONE
          integer istat
          ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
-         CCON = 0_rkind
+         CCON = 0
          SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
@@ -2171,9 +2028,6 @@
 !**********************************************************************
       SUBROUTINE INIT_FLUCT
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
 
          INTEGER :: I, J, K, istat
@@ -2213,6 +2067,7 @@
 !
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'MEDIAN DUAL AREA and CCON' 
          SI(:)   = 0.0d0 ! Median Dual Patch Area of each Node
+
          CCON(:) = 0     ! Number of connected Elements
          DO IE = 1 , MNE
            I1 = INE(1,IE)
@@ -2234,11 +2089,25 @@
          CALL EXCHANGE_P2D(SI)
 #endif
 
-#ifdef MPI_PARALL_GRID
-         MAXMNECON  = MNEI
-#else
+! We don't need MAXMNECON from selfe/pdlib if we compute CCON itself
+! #ifdef MPI_PARALL_GRID
+!          MAXMNECON  = MNEI
+! #else
+!          MAXMNECON  = MAXVAL(CCON)
+! #endif
          MAXMNECON  = MAXVAL(CCON)
+
+! check agains selfe to make sure that there is no problem
+#ifdef MPI_PARALL_GRID
+#ifndef PDLIB
+  if(MAXMNECON /= MNEI) then
+    write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
+    write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
+  endif
 #endif
+#endif
+         
+
 !
          WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
          ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
@@ -2292,7 +2161,7 @@
              POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
            END DO
          END DO
-
+         deallocate(CELLVERTEX)
          IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
            ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
@@ -2391,7 +2260,6 @@
              END DO
              IA(IP + 1) = K + 1
            END DO
-           POSI = 0
            J = 0
            DO IP = 1, MNP
              DO I = 1, CCON(IP)
@@ -2421,8 +2289,8 @@
               JA_IE(POS,3,IE) = I3
             END DO
           END DO
+          DEALLOCATE(PTABLE)
          ENDIF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2439,16 +2307,8 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : exchange_p3d_wwm, exchange_p4d_wwm, exchange_p2d, comm, rtype, ierr
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
@@ -2854,14 +2714,7 @@
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
 
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
@@ -3072,16 +2925,8 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
-
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 ! local integer
 !
@@ -3177,8 +3022,8 @@
 #endif
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX
-           DO IS = 1, MSC
-             DO ID = 1, MDC
+           DO ID = 1, MSC
+             DO IS = 1, MDC
 !!$OMP WORKSHARE
                CX = (CG(:,IS)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
                CY = (CG(:,IS)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
@@ -3235,8 +3080,8 @@
                  END DO
                  U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
-             END DO !ID
-           END DO !IS
+             END DO !IS
+           END DO !ID
 #ifdef MPI_PARALL_GRID
            CALL EXCHANGE_P4D_WWM(U)
 #endif

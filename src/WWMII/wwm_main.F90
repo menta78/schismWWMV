@@ -29,11 +29,7 @@
 !**********************************************************************
 #ifdef SELFE
       SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-
          USE DATAPOOL
-         use elfe_msgp!, only : myrank,parallel_abort,itype,comm,ierr
-         use elfe_glbl, only : iplg,ielg
-
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)   :: NSTEP_WWM0, icou_elfe_wwm
@@ -46,7 +42,7 @@
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 #endif
 
-         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT, IPGL
+         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
@@ -71,8 +67,11 @@
          DT_SELFE      = DT_SELFE0
          DELTAT_WATLEV = DT_SELFE0
 
+#ifdef TIMINGS
          T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
          T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
+#endif TIMINGS
+
          DT_PROVIDED=NSTEPWWM*DT_SELFE
 
          IF (abs(MAIN%DELT - DT_PROVIDED).gt.THR) THEN
@@ -105,7 +104,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 0) THEN ! No interaction at all 
            WLDEP       = DEP8
            WATLEV      = ZERO 
@@ -119,7 +117,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE. 
          ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -133,7 +130,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SELFE 
            WLDEP       = DEP8
            WATLEV      = ZERO
@@ -147,7 +143,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in selfe
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -161,7 +156,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ETA2
@@ -175,7 +169,6 @@
            END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO 
@@ -189,7 +182,6 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in selfe  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -203,8 +195,8 @@
            END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          END IF
+         LCALC       = .TRUE.
 
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_A
@@ -222,10 +214,13 @@
          IF (LFIRSTSTEP) THEN
            IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SELFE
            LFIRSTSTEP = .FALSE.
-           LCALC      = .TRUE.
          END IF
 
+<<<<<<< HEAD
 #ifdef TIMINGS 
+=======
+#ifdef TIMINGS
+>>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
          TIME2 = mpi_wtime() 
 #endif
 
@@ -291,7 +286,10 @@
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
 #endif
+<<<<<<< HEAD
 
+=======
+>>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
  
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
@@ -390,13 +388,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE UN_STEADY(K,CALLFROM)
-
       USE DATAPOOL
 #ifdef WWM_SETUP
       USE WAVE_SETUP
-#endif
-#ifdef MPI_PARALL_GRID
-      use elfe_msgp, only : myrank
 #endif
       IMPLICIT NONE
 
@@ -439,6 +433,10 @@
         END IF
       ELSE IF (ICOMP .EQ. 2) THEN 
         CALL COMPUTE_IMPLICIT
+#ifdef PETSC
+      ELSE IF (ICOMP .EQ. 3) THEN 
+        CALL COMPUTE_FULL_IMPLICIT_PATANKAR
+#endif
       END IF
 #ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
@@ -503,48 +501,42 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE QUASI_STEADY(K)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: K
+      INTEGER :: IT
+      REAL(rkind)    :: ITERTIME
+      REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
 
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
-         USE DATAPOOL
+      CALL IO_1(K)
 
-         IMPLICIT NONE
-         INTEGER, INTENT(IN) :: K
+      IF (LCFL) CALL CFLSPEC()
 
-         INTEGER :: IT
-         REAL(rkind)    :: ITERTIME
-         REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
-
-         CALL IO_1(K)
-
-         IF (LCFL) CALL CFLSPEC()
-
-         IF (LCHKCONV) IP_IS_STEADY = 0 ! Reset local convergence indicators ...
-         IF (LCHKCONV) IE_IS_STEADY = 0
+      IF (LCHKCONV) IP_IS_STEADY = 0 ! Reset local convergence indicators ...
+      IF (LCHKCONV) IE_IS_STEADY = 0
 
 #ifdef MPI_PARALL_GRID
 !         NQSITER = NSTEPWWM ! this is not very flexible!
 #endif
 
-         DO IT = 1, NQSITER
+      DO IT = 1, NQSITER
 
-           DT_ITER = MAIN%DELT/MyREAL(NQSITER)
+        DT_ITER = MAIN%DELT/MyREAL(NQSITER)
 
-           IF (ICOMP .LT. 2) THEN
-             CALL COMPUTE_SIMPLE_EXPLICIT
-           ELSE
-             CALL COMPUTE_IMPLICIT
-           END IF
+        IF (ICOMP .LT. 2) THEN
+          CALL COMPUTE_SIMPLE_EXPLICIT
+        ELSE
+          CALL COMPUTE_IMPLICIT
+        END IF
 
-           ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
+        ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
 
-           IF (LCHKCONV) THEN
-             CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
+        IF (LCHKCONV) THEN
+          CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
 !             DO IP = 1, MNP
 !               IF (IP_IS_STEADY(IP) .GE. 1) AC2(IP,:,:) = AC1(IP,:,:)
 !             ENDDO
-             IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                  &
+          IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                       &
      &             CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
      &             CONV3 .GT. 100._rkind*QSCONV3 .AND.                    &
      &             CONV4 .GT. 100._rkind*QSCONV4 .AND.                    &
@@ -552,135 +544,108 @@
      &             K .NE. 1) .OR.                                         &
      &             IT .EQ. NQSITER ) THEN
 #ifndef SELFE
-               WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
-#elif SELFE
-               if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
+            WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
+#else
+            if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #endif
-               FLUSH(QSTEA%FHNDL)
-               EXIT 
-             END IF
-           END IF
-           IF (LOUTITER) CALL WWM_OUTPUT(ITERTIME,.FALSE.)
-         END DO
+            FLUSH(QSTEA%FHNDL)
+            EXIT 
+          END IF
+        END IF
+        IF (LOUTITER) CALL WWM_OUTPUT(ITERTIME,.FALSE.)
+      END DO
 
 #ifdef MPI_PARALL_GRID
-         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-         RTIME = MAIN%TMJD - MAIN%BMJD
-         IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
+      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+      RTIME = MAIN%TMJD - MAIN%BMJD
+      IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #else
-         MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-         RTIME = MAIN%TMJD - MAIN%BMJD
-         WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
+      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
+      RTIME = MAIN%TMJD - MAIN%BMJD
+      WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
-         FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
+      CALL IO_2(K)
+      IF (.NOT. LDIFR) LCALC = .FALSE.
 
-         CALL IO_2(K)
-
-         IF (.NOT. LDIFR) LCALC = .FALSE.
-
-101      FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
-         RETURN
+101   FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_1(K)
-#ifdef NCDF
-         USE NETCDF 
-#endif
-         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN) :: K
-         REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
-         INTEGER             :: IT, IFILE
-
-! update wind ...
-         IF (LWINDFROMWWM) THEN
-           CALL UPDATE_WIND(K)
-         END IF
-
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: K
+      REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
+      INTEGER             :: IT, IFILE
+      IF (LWINDFROMWWM) THEN
+        CALL UPDATE_WIND(K)
+      END IF
 #ifndef SELFE
-         IF ( LSECU .AND. (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
-           CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
-           DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
-           SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
-           LCALC = .TRUE.
-         END IF
-         IF ( LSEWL .AND. (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
-           CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
-           DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
-           SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-           LCALC = .TRUE.
-         END IF
-
-         CALL SET_WAVE_BOUNDARY_CONDITION
-
-         IF (LSEWL .OR. LSECU .AND. LCALC) THEN
-           DELTAT_WATLEV = MAIN%DELT
-           WATLEVOLD = WATLEV
-         END IF
+      IF (.NOT. LCPL) THEN
+        IF (LSECU) THEN
+          IF ( (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
+            CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR)
+            DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
+            SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
+            LCALC = .TRUE.
+          END IF
+          CURTXY = CURTXY + DVCURT
+        END IF
+        IF (LSEWL) THEN
+          IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
+            CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT)
+            DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
+            SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
+            LCALC = .TRUE.
+          END IF
+          DELTAT_WATLEV = MAIN%DELT
+          WATLEVOLD = WATLEV
+          WATLEV    = WATLEV + DVWALV
+          DEPDT     = DVWALV / MAIN%DELT
+        END IF
+      END IF
+#endif
+#ifndef SELFE
+      CALL SET_WAVE_BOUNDARY_CONDITION
 #endif
 !
 !      *** coupling via pipe *** read pipe
 !
 #if !defined SELFE && !defined PGMCL_COUPLING
-         IF (LCPL .AND. LTIMOR) THEN
-           CALL PIPE_TIMOR_IN(K)
-           LCALC = .TRUE.
+      IF (LCPL .AND. LTIMOR) THEN
+        CALL PIPE_TIMOR_IN(K)
 # ifdef SHYFEM_COUPLING
-         ELSE IF (LCPL .AND. LSHYFEM) THEN
-           CALL PIPE_SHYFEM_IN(K)
-           LCALC = .TRUE.
+      ELSE IF (LCPL .AND. LSHYFEM) THEN
+        CALL PIPE_SHYFEM_IN(K)
 # endif
-         ELSE IF (LCPL .AND. LROMS) THEN
-           CALL PIPE_ROMS_IN(K,IFILE,IT)
-           LCALC = .TRUE.
-         END IF
+      ELSE IF (LCPL .AND. LROMS) THEN
+        CALL PIPE_ROMS_IN(K,IFILE,IT)
+      END IF
 #endif
 #ifdef PGMCL_COUPLING
-         IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           CALL PGMCL_ROMS_IN(K,IFILE,IT)
-# ifdef ANALYTICAL_WIND_CURR
-           DO IP=1,MNP
-             WINDXY(IP,1)=ZERO
-             WINDXY(IP,2)=XP(IP)/5.0_rkind
-             CURTXY(IP,1)=XP(IP)/30.0_rkind
-             CURTXY(IP,2)=ZERO
-             WATLEV(IP)=ZERO
-             WATLEVOLD(IP)=ZERO
-           END DO
-# endif
-         END IF
-         IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
+      IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+        CALL PGMCL_ROMS_IN(K,IFILE,IT)
+      END IF
+      IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
 #endif
 !
 !      *** recalculate water level and current related values 
 !
-         IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
-           IF (.NOT. LCPL) THEN
-             WATLEV = WATLEVOLD + DVWALV
-             DEP    = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
-             DEPDT  = DVWALV / MAIN%DELT
-             CURTXY = CURTXY + DVCURT
-           ELSE
-             DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
-           END IF
-           DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
-           CALL SETSHALLOW
-           CALL GRADDEP
-           CALL GRAD_CG_K
-           CALL WAVE_K_C_CG
-           CALL GRADCURT
-           CALL SET_IOBPD
-           CALL SET_IOBPD_BY_DEP
-           IF (LCFL) CFLCXY = ZERO
-           IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
-         END IF
-
+      IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
+        DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
+        DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
+        CALL SETSHALLOW
+        CALL GRADDEP
+        CALL GRAD_CG_K
+        CALL WAVE_K_C_CG
+        CALL GRADCURT
+        CALL SET_IOBPD
+        CALL SET_IOBPD_BY_DEP
+        IF (LCFL) CFLCXY = ZERO
+        IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -705,7 +670,7 @@
 # if !defined PGMCL_COUPLING
          IF (LCPL .AND. LTIMOR) THEN
            CALL PIPE_TIMOR_OUT(K)
-#  ifdef SHYFEM_COUPING
+#  ifdef SHYFEM_COUPLING
          ELSE IF (LCPL .AND. LSHYFEM) THEN
            CALL PIPE_SHYFEM_OUT(K)
 #  endif
@@ -752,7 +717,9 @@
 # if defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
+#ifndef PDLIB
       USE ELFE_GLBL, only : msc2, mdc2, ics
+#endif
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
@@ -768,15 +735,20 @@
       CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
       OPEN(FHNDL, FILE = TRIM(INP%FNAME))
       READ(FHNDL, NML = PROC)
+      READ(FHNDL, NML = GRID)
+      CLOSE(FHNDL)
+
+!> \todo This is confusing. When not using SELFE why we must set this variables?
+#ifndef PDLIB      
       IF (LSPHE) THEN
         ics=2
       ELSE
         ics=1
       ENDIF
-      READ(FHNDL, NML = GRID)
+      
       msc2=MSC
       mdc2=MDC
-      CLOSE(FHNDL)
+#endif      
       END SUBROUTINE
 # endif
 !**********************************************************************
@@ -792,28 +764,24 @@
       USE mod_coupler, only : WAV_COMM_WORLD
 # endif
 
-#ifdef WWM_MPI
       USE DATAPOOL, only: MAIN, SEBO,                                  &
      &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
      &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
-     &      NUM_NETCDF_FILES_BND, LSECU
-#else if
-      USE DATAPOOL, only: MAIN, SEBO,                                  &
-     &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
-     &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
-     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
-     &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, LCALC, DAY2SEC, SEC2DAY,             &
+     &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND
+
+#ifdef MPI_PARALL_GRID
+    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize, mdc, msc
+# ifndef PDLIB
+    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
+# endif
 #endif
 
-# ifdef WWM_MPI
-      use elfe_glbl
-      use elfe_msgp
-# endif
+#ifdef PDLIB
+    use datapool, only: initPD
+#endif
 
       implicit none
 
@@ -829,14 +797,20 @@
 
       integer :: i,j,k
       character(len=15) CALLFROM
+      character(len=60) :: errmsg
+
+      
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
+
       CALL SET_WWMINPULNML
+      
 # ifdef PGMCL_COUPLING
       comm=MyCOMM
       WAV_COMM_WORLD=MyCOMM
@@ -846,27 +820,41 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
+
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
       CALL SIMPLE_PRE_READ
+      
+#ifdef MPI_PARALL_GRID
+! variable nx1 should be initialized in selfe code, not here!
+# ifndef PDLIB
       do i=1,3
         do j=1,2
-          nx(i,j)=i+j
-          if(nx(i,j)>3) nx(i,j)=nx(i,j)-3
-          if(nx(i,j)<1.or.nx(i,j)>3) then
-            write(errmsg,*)'MAIN: nx wrong',i,j,nx(i,j)
+          nx1(i,j)=i+j
+          if(nx1(i,j)>3) nx1(i,j)=nx1(i,j)-3
+          if(nx1(i,j)<1.or.nx1(i,j)>3) then
+            write(errmsg,*)'MAIN: nx1 wrong',i,j,nx1(i,j)
             call wwm_abort(errmsg)
           endif
         enddo
       enddo
+# endif
+#endif
+
+#ifdef PDLIB
+      call initPD("system.dat", MDC, MSC, comm)
+     ! call parallel_barrier 
+#else
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
+#endif
+      
       CALL INITIALIZE_WWM
       CALLFROM='WWM_MPI'
 
@@ -877,7 +865,7 @@
           CALL UN_STEADY(K,CALLFROM)
         END IF
       END DO
-# else
+# else ! MPI_PARALL_GRID
       CALL INITIALIZE_WWM
       CALLFROM='WWM'
       DO K = 1, MAIN%ISTP
@@ -888,13 +876,16 @@
         END IF
       END DO
 # endif
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
 #endif
+
 # if defined MPI_PARALL_GRID && !defined PGMCL_COUPLING
       call parallel_finalize
 # endif
+
 # ifdef PGMCL_COUPLING
       END SUBROUTINE
 # else

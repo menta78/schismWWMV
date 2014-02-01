@@ -28,8 +28,7 @@
       ELSE
         CALL WWM_ABORT('Error in the code for conversion')
       END IF
-
-
+      !
       Yname=eStrUnitTime(posBlank+1:alen)
       alenB=LEN_TRIM(Yname)
       posBlank=INDEX(Yname(1:alenB), ' ')
@@ -159,6 +158,7 @@
           END IF
         END IF
       END IF
+      WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
       CALL CT2MJD(eStrTime, eTimeStart)
       END SUBROUTINE
 !**********************************************************************
@@ -869,17 +869,21 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
+      SUBROUTINE GET_XYID_INE_TOTAL
+      USE DATAPOOL, only : XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal
       USE DATAPOOL, only : np_total, ne_total, rkind, DBG
-      USE DATAPOOL, only : XP, YP, DEP, INE
+      USE DATAPOOL, only : XP, YP, DEP, INE, MNP, IOBP
+# ifdef MPI_PARALL_GRID
+      USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
+# endif
       implicit none
-      REAL(rkind), intent(out) :: XPtotal(np_total)
-      REAL(rkind), intent(out) :: YPtotal(np_total)
-      REAL(rkind), intent(out) :: DEPtotal(np_total)
-      integer, intent(out) :: INEtotal(3, ne_total)
 # ifdef MPI_PARALL_GRID
       integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
+      integer IP, iProc, Status(np_total), rStatus(np_total), rIOBP(np_total)
 # endif
+      integer istat
+      ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
 # ifdef MPI_PARALL_GRID
       NewId=78557
       open(NewId,file='hgrid.gr3',status='old',iostat=statfile)
@@ -900,9 +904,35 @@
         read(NewId,*) iegb,j,(INEtotal(k,i),k=1,3)
       enddo
       close(NewId)
+      !
+      IOBPtotal=0
+      Status=0
+      DO IP=1,MNP
+        IOBPtotal(iplg(IP))=IOBP(IP)
+        Status(iplg(IP)) = 1
+      END DO
+      IF (myrank .eq. 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(rIOBP, np_total, itype, iProc-1, 37, comm, istatus, ierr)
+          CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 41, comm, istatus, ierr)
+          DO I=1,np_total
+            IF (rStatus(I) .eq. 1) THEN
+              IOBPtotal(I)=rIOBP(I)
+            END IF
+          END DO
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(IOBPtotal, np_total, itype, iProc-1, 43, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(IOBPtotal, np_total, itype, 0, 37, comm, ierr)
+        CALL MPI_SEND(Status, np_total, itype, 0, 41, comm, ierr)
+        CALL MPI_RECV(IOBPtotal, np_total, itype, 0, 43, comm, istatus, ierr)
+      ENDIF
 # else
       XPtotal=XP
       YPtotal=YP
+      IOBPtotal=IOBP
       DEPtotal=DEP
       INEtotal=INE
 # endif
@@ -910,14 +940,61 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, np_write, ne_write)
+      SUBROUTINE GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+      USE DATAPOOL, only : MDC, IOBPD, np_total, MULTIPLEOUT_HIS, MNP
+# ifdef MPI_PARALL_GRID
+      USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
+# endif
+      IMPLICIT NONE
+      INTEGER, intent(in)  :: np_write
+      INTEGER, INTENT(OUT) :: IOBPDoutput(MDC, np_write)
+# ifdef MPI_PARALL_GRID
+      integer, allocatable :: rIOBPD(:,:), rStatus(:), Status(:)
+      integer iProc, IP, istat
+      IF (MULTIPLEOUT_HIS .eq. 1) THEN
+        IOBPDoutput=IOBPD
+      ELSE
+        allocate(rIOBPD(MDC, np_total), rStatus(np_total), Status(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
+        IOBPDoutput=0
+        Status=0
+        DO IP=1,MNP
+          IOBPDoutput(:, iplg(IP))=IOBPD(:,IP)
+          Status(iplg(IP)) = 1
+        END DO
+        IF (myrank .eq. 0) THEN
+          DO iProc=2,nproc
+            CALL MPI_RECV(rIOBPD, MDC*np_total, itype, iProc-1, 193, comm, istatus, ierr)
+            CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 197, comm, istatus, ierr)
+            DO IP=1,np_total
+              IF (rStatus(IP) .eq. 1) THEN
+                IOBPDoutput(:,IP)=rIOBPD(:,IP)
+              END IF
+            END DO
+          END DO
+          DO iProc=2,nproc
+            CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, iProc-1, 199, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, 0, 193, comm, ierr)
+          CALL MPI_SEND(Status, np_total, itype, 0, 197, comm, ierr)
+          CALL MPI_RECV(IOBPDoutput, MDC*np_total, itype, 0, 199, comm, istatus, ierr)
+        ENDIF
+        deallocate(rIOBPD, rStatus, Status)
+      END IF
+# else
+      IOBPDoutput=IOBPD
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, WriteOutputProcess, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_GLBL, ONLY : np_global, ne_global
-# endif
       implicit none
       integer, intent(in) :: ncid, nbTime, MULTIPLEOUT
+      logical, intent(in) :: WriteOutputProcess
       integer, intent(in) :: np_write, ne_write
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
@@ -929,10 +1006,6 @@
       integer ntime_dims
       integer p_dims, e_dims
       integer istat
-      REAL(rkind), allocatable :: XPtotal(:)
-      REAL(rkind), allocatable :: YPtotal(:)
-      REAL(rkind), allocatable :: DEPtotal(:)
-      integer, allocatable :: INEtotal(:,:)
       integer Oper
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_1"
       IF ((np_write.eq.0).or.(ne_write.eq.0)) THEN
@@ -1007,7 +1080,7 @@
       !
       iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
-      IF (GRIDWRITE) THEN
+      IF (GRIDWRITE.and.WriteOutputProcess) THEN
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT.eq.1) THEN
           e_dims=ne_global_dims
@@ -1051,18 +1124,31 @@
           iret=nf90_put_att(ncid,var_id,UNITS,'meter')
         END IF
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
+! IOBP
+        iret=nf90_def_var(ncid,"IOBP",NF90_RUNTYPE,(/ p_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
 ! depth
         iret=nf90_def_var(ncid,'depth',NF90_RUNTYPE,(/ p_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'meters')
         CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'meters')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
 ! boundary
-        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
-        CALL GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
         Oper=1
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
-        DEALLOCATE(INEtotal, XPtotal, YPtotal, DEPtotal)
+        !
+      END IF
+      IF (IOBPD_HISTORY) THEN
+# ifdef MPI_PARALL_GRID
+        IF (MULTIPLEOUT.eq.1) THEN
+          p_dims=np_global_dims
+        ELSE
+          p_dims=mnp_dims
+        END IF
+# else
+        p_dims=mnp_dims
+# endif
+        iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ mdc_dims, p_dims, ntime_dims/), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1071,10 +1157,6 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT, WriteOutputProcess, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, nproc
-      USE ELFE_GLBL, ONLY : np_global, iplg, ne_global
-# endif
       implicit none
       integer, intent(in) :: ncid, MULTIPLEOUT
       logical, intent(in) :: WriteOutputProcess
@@ -1082,10 +1164,6 @@
       integer var_id, iret
       integer istat
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
-      REAL(rkind), allocatable :: XPtotal(:)
-      REAL(rkind), allocatable :: YPtotal(:)
-      REAL(rkind), allocatable :: DEPtotal(:)
-      integer, allocatable :: INEtotal(:,:)
       integer Oper
 #ifdef MPI_PARALL_GRID
       integer eInt(1)
@@ -1116,9 +1194,6 @@
         CALL WRITE_PARAM_2(ncid)
       END IF
       IF (GRIDWRITE.and.WriteOutputProcess) THEN
-        ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 8')
-        CALL GET_INE_TOTAL(XPtotal, YPtotal, DEPtotal, INEtotal)
         !
         iret=nf90_inq_varid(ncid, "ele", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
@@ -1143,18 +1218,18 @@
         iret=nf90_put_var(ncid,var_id,YPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
         !
-        iret=nf90_inq_varid(ncid, "depth", var_id)
+        iret=nf90_inq_varid(ncid, "IOBP", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_var(ncid,var_id,DEPtotal, start = (/1/), count = (/ np_write/))
+        iret=nf90_put_var(ncid,var_id,IOBPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        !
+        iret=nf90_inq_varid(ncid, "depth", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+        iret=nf90_put_var(ncid,var_id,DEPtotal, start = (/1/), count = (/ np_write/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
         !
         Oper=2
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
-        !
-        DEALLOCATE(INEtotal)
-        DEALLOCATE(XPtotal)
-        DEALLOCATE(YPtotal)
-        DEALLOCATE(DEPtotal)
       ENDIF
       END SUBROUTINE
 !**********************************************************************
@@ -1531,9 +1606,6 @@
       SUBROUTINE WRITE_NETCDF_HEADERS_STAT_2(ncid, MULTIPLEOUT)
       USE DATAPOOL
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, nproc
-# endif
       implicit none
       integer, intent(in) :: ncid, MULTIPLEOUT
       integer :: eWriteInt(1)

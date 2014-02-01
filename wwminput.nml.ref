@@ -250,6 +250,8 @@
                                      ! RK5-WENO
                                      ! DMETHOD = 4
                                      ! Explicit FVM Upwind scheme
+                                     ! DMETHOD = 5
+                                     ! Implicit FVM Upwind scheme
 
  RTHETA         = 0.5                ! Weighing factor for DMETHOD = 1, not really useful since Crank Nicholson integration can only be montotone for CFL .le. 2
  LITERSPLIT     = F                  ! T: double Strang split; F: simple split (more efficienct). Default: F
@@ -264,6 +266,10 @@
                                      ! No Advection in spectral space
                                      ! = 1
                                      ! Ultimate Quickest as in WW3 (best)
+                                     ! = 2
+                                     ! Explicit UPWIND 
+                                     ! = 3
+                                     ! Implicit UPWIND
  LFILTERSIG     = F                  ! Limit the advection velocitiy in freq. space (usually F)
  MAXCFLSIG      = 1.0                ! Max Cfl in freq. space; used only if LFILTERSIG=T
  LLIMT          = T                  ! Switch on/off Action limiter, Action limiter must mostly be turned on.
@@ -286,8 +292,8 @@
  QSCONV1        = 0.98               ! Number of grid points [%/100] that have to fulfill abs. wave height criteria EPSH1
  QSCONV2        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. wave height criteria EPSH2
  QSCONV3        = 0.98               ! Number of grid points [%/100] that have to fulfill sum. rel. wave action criteria EPSH3
- QSCONV4        = 0.98               ! Number of grid points [%/100] that have to fulfill avg. rel. wave period criteria EPSH4
- QSCONV5        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. avg. wave steepness criteria EPSH5
+ QSCONV4        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. avg. wave steepness criteria EPSH4
+ QSCONV5        = 0.98               ! Number of grid points [%/100] that have to fulfill avg. rel. wave period criteria EPSH5
  LEXPIMP        = F                  ! Use implicit schemes for freq. lower than given below by FREQEXP; used only if ICOMP=0
  FREQEXP        = 0.1                ! Minimum frequency for explicit schemes; only used if LEXPIMP=T and ICOMP=0
  EPSH1          = 0.01               ! Convergence criteria for rel. wave height ! EPSH1 < CONVK1 = REAL(ABS(HSOLD(IP)-HS2)/HS2)
@@ -357,7 +363,8 @@
  PARAMWRITE      = T                 ! T: Write the physical parametrization
                                      !    and chosen numerical method
                                      !    in the netcdf file (default T)
- GRIDWRITE       = T                  ! T/F: Write the grid in the netcdf history file (default T)
+ GRIDWRITE       = T                 ! T/F: Write the grid in the netcdf history file (default T)
+ IOBPD           = F                 ! T/F: Write IOBPD (default F)
  PRINTMMA       = F                  ! T/F: Print minimum, maximum and average
                                      ! value of statistics during runtime
                                      ! (Default F)

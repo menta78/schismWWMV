@@ -380,7 +380,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB STRESS DONE         '
          FLUSH(STAT%FHNDL)
 
-         CALL TAUHF_ECMWF_NEW
+         CALL TAUHF_WAM(MSC)
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SUB TAUHF DONE          '
          FLUSH(STAT%FHNDL)
 
@@ -442,8 +442,6 @@
 !
          USE DATAPOOL
          IMPLICIT NONE
-
-         REAL(rkind), PARAMETER    :: EPS1    = 0.00001_rkind
 
          INTEGER, INTENT(IN)  :: IP
          REAL(rkind), INTENT(IN)     :: ACLOC(MSC,MDC)
@@ -633,8 +631,6 @@
 !
         USE DATAPOOL
         IMPLICIT NONE
-
-        INTEGER, PARAMETER :: JTOT    = 250
 
         INTEGER :: L, K, J
         REAL(rkind)    :: ALPHAM, CONST1, OMEGAC, X0, UST, Z00, ALPHAMCOEF

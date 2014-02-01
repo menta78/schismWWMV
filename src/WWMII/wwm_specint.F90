@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define LTESTWAMSOURCES 
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -15,10 +16,14 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID
+         INTEGER        :: IP, IS, ID, I, K, M
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
+         INTEGER, SAVE  :: IFIRST 
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+
+         DATA IFIRST/1/
+
 
          DT4S_T = 1./3. * DT4S
          DT4S_E = 0.125 * DT4S
@@ -51,7 +56,7 @@
                  CALL INT_IP_DYN(IP, 5, DT4S, LLIMT, DTMIN_SBR,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
                  CALL INT_IP_DYN(IP, 6, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
-               CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
+               !CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                ENDIF
@@ -80,7 +85,7 @@
                    CALL INT_IP_DYN(IP, 6, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                  END IF
                  IF (SMETHOD .GT. 0) THEN
-                   CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
+                   !CALL SOURCETERMS(IP, 1, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
                    IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                      CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                    ENDIF
@@ -95,12 +100,14 @@
                ENDIF
              ENDIF 
            ENDIF
+
            IF (LNANINFCHK) THEN 
              IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
                WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
                CALL WWM_ABORT('wwm_specint.F90 l.88')
              END IF
            ENDIF
+
            AC1(IP,:,:) = AC2(IP,:,:)
          ENDDO
 #if defined ST41 || defined ST42

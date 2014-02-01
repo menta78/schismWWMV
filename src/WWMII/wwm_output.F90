@@ -106,15 +106,7 @@
 !     XFN TYPE OUTPUT
 !
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP
-         USE ELFE_GLBL, ONLY : Iplg, np_global
-#endif
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
-
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
          LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
@@ -145,7 +137,7 @@
          CHARACTER(LEN=15)  :: CTIME
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
-         DoAirSea=.FALSE.
+         DoAirSea=.TRUE.
 #ifdef MPI_PARALL_GRID
          OUTT_GLOBAL  = zero 
          OUTT         = zero
@@ -385,13 +377,8 @@
 !**********************************************************************
       SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif
       IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-#endif
+
       CHARACTER(LEN=15), INTENT(IN) :: CTIME
       LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
@@ -684,15 +671,9 @@
 #ifdef NCDF
       SUBROUTINE OUTPUT_STATION_NC
       USE NETCDF
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, comm, IERR, rtype, itype, nproc
-      USE ELFE_GLBL, ONLY : Iplg, np_global, ne_global
-# endif
       USE DATAPOOL
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
+
 # ifdef MPI_PARALL_GRID
       REAL(rkind) :: OUTPAR_STATIONS_SUM(IOUTS,OUTVARS_COMPLETE)
       REAL(rkind) :: WK_STATIONS_SUM(IOUTS,MSC)
@@ -735,7 +716,7 @@
 
       IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
         allocate(ACOUT_1D_STATIONS(IOUTS, MSC, 3), ACOUT_2D_STATIONS(IOUTS, MSC, MDC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 1')
       ENDIF
       DO I = 1, IOUTS
         IF (STATION(I)%IFOUND == 1) THEN
@@ -770,7 +751,7 @@
         AC_STATIONS_SUM=0
         IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
           allocate(ACOUT_1D_STATIONS_SUM(IOUTS,MSC,3), ACOUT_2D_STATIONS_SUM(IOUTS,MSC,MDC), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 2')
           ACOUT_1D_STATIONS_SUM=0
           ACOUT_2D_STATIONS_SUM=0
         END IF
@@ -965,13 +946,8 @@
 !**********************************************************************
       SUBROUTINE OUTPUT_LINE(CTIME,LINIT_OUTPUT)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE elfe_msgp
-#endif
          IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
+
          CHARACTER(LEN=15), INTENT(IN) :: CTIME
          LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
@@ -1391,9 +1367,11 @@
         OUTPAR(57) = CFLCXY(2,IP)
         OUTPAR(58) = CFLCXY(3,IP)
       ENDIF
+#ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
         OUTPAR(59) = ZETA_SETUP(IP)
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1493,9 +1471,11 @@
           OUTPAR(57) = OUTPAR(57) + WI(J)*CFLCXY(2,IP)
           OUTPAR(58) = OUTPAR(58) + WI(J)*CFLCXY(3,IP)
         ENDIF
+#ifdef WWM_SETUP
         IF (LZETA_SETUP) THEN
           OUTPAR(59) = OUTPAR(59) + WI(J)*ZETA_SETUP(IP)
         END IF
+#endif
       END DO
       IF (VAROUT_STATION%ComputeStokes) THEN
         CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
@@ -1809,18 +1789,16 @@
 #ifdef NCDF
       SUBROUTINE HISTORY_NC_PRINTMMA(eStr, OUTT, NPWORK, NBVAR, I)
       USE DATAPOOL, only : rkind, MULTIPLEOUT_HIS, MNP, DBG, STAT
-# ifdef MPI_PARALL_GRID
-      USE DATAPOOL, only : nwild_loc_res
-      USE ELFE_MSGP, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
-      USE ELFE_GLBL, ONLY : np_global
-# endif
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : nwild_loc_res, np_global
+      USE DATAPOOL, only : COMM, IERR, NPROC, myrank, rtype, istatus, ierr
+#endif
       implicit none
       character(len=*) :: eStr
       integer, intent(in) :: I, NPWORK, NBVAR
       real(rkind), intent(in) :: OUTT(NPWORK, NBVAR)
       integer istat
 # ifdef MPI_PARALL_GRID
-      include 'mpif.h'
       REAL(rkind), allocatable :: LVect(:,:)
       REAL(rkind) :: eVect(3)
       integer :: iProc
@@ -1837,7 +1815,7 @@
         eVect(3)=sum(OUTT(:,I)*nwild_loc_res)
         IF (myrank.eq.0) THEN
           allocate(LVect(nproc,3), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 7')
+          IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 3')
           LVect(1,:)=eVect
           DO iProc=2,nproc
             CALL MPI_RECV(eVect,3,rtype, iProc-1, 190, comm, istatus, ierr)
@@ -1872,16 +1850,9 @@
 !
 !     NETCDF TYPE OUTPUT BY IVICA JANEKOVIC
 !
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : myrank, comm, IERR, rtype, itype
-      USE ELFE_GLBL, ONLY : Iplg, np_global, ne_global
-# endif
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
       INTEGER            :: IP, istat
 # ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable  :: OUTT_LOC(:,:)
@@ -1910,6 +1881,7 @@
       integer :: np_write, ne_write
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
+      integer, allocatable :: IOBPDoutput(:,:)
 !
       eTimeDay=MAIN%TMJD
 # ifdef MPI_PARALL_GRID
@@ -1952,7 +1924,7 @@
 ! create nc file, vars, and do all time independant job
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
@@ -1980,8 +1952,7 @@
           iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         ENDIF
-        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS,      &
-    &       WriteOutputProcess_his, np_write, ne_write)
+        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
         IF (WriteOutputProcess_his) THEN
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
@@ -1991,7 +1962,7 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
         ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 8')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 4')
         OUTT_LOC=0
         DO IP = 1, MNP
           ACLOC(:,:) = AC2(IP,:,:)
@@ -2007,7 +1978,7 @@
         DEALLOCATE(OUTT_LOC)
       ELSE
         ALLOCATE(OUTT(NP_RES,OUTVARS_COMPLETE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 10')
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
         DO IP = 1, NP_RES
           ACLOC(:,:) = AC2(IP,:,:)
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
@@ -2028,6 +1999,11 @@
       IF (LMONO_OUT) THEN
         OUTT(:,1) = OUTT(:,1) / SQRT(2.)
       ENDIF
+      IF (IOBPD_HISTORY) THEN
+        allocate(IOBPDoutput(MDC, np_write), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
+        CALL GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+      END IF
       recs_his2=recs_his2 + 1
       IF (WriteOutputProcess_his) THEN
 !$OMP MASTER
@@ -2041,29 +2017,37 @@
         IF (recs_his.ne.recs_his2) THEN
            CALL WWM_ABORT('There are more bugs to be solved');
         ENDIF
+        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
+        IF (IOBPD_HISTORY) THEN
+          iret=nf90_inq_varid(ncid, "IOBPD", var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+          iret=nf90_put_var(ncid,var_id,IOBPDoutput,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        END IF
         DO I=1,OUTVARS_COMPLETE
           IF (VAROUT_HISTORY%LVAR(I)) THEN
             CALL NAMEVARIABLE(I, eStr, eStrFullName, eStrUnit)
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
             IF (PRINTMMA) THEN
               CALL HISTORY_NC_PRINTMMA(eStr, OUTT,np_write,OUTVARS_COMPLETE,I)
             END IF
             IF (NF90_RUNTYPE == NF90_OUTTYPE_HIS) THEN
               iret=nf90_put_var(ncid,var_id,OUTT(:,I),start = (/1, recs_his/), count = (/ np_write, 1 /))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
             ELSE
               iret=nf90_put_var(ncid,var_id,SNGL(OUTT(:,I)),start = (/1, recs_his/), count = (/ np_write, 1 /))
-              CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
             ENDIF
           END IF
         END DO
-        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
-        !write(DBG%FHNDL,*) 'Writing netcdf history record recs_his=',recs_his
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
 !$OMP END MASTER
       ENDIF
+      IF (IOBPD_HISTORY) THEN
+        deallocate(IOBPDoutput)
+      END IF
 # ifdef MPI_PARALL_GRID
       DEALLOCATE(OUTT)
 # endif

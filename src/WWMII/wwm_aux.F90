@@ -4,9 +4,6 @@
 !**********************************************************************
       SUBROUTINE GRADDEP()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
-#endif
          IMPLICIT NONE
          INTEGER     :: IP
          REAL(rkind) :: GDL, GDD
@@ -73,8 +70,6 @@
 #ifdef MPI_PARALL_GRID
       SUBROUTINE MYOWN_MPI_BARRIER(istat)
       USE DATAPOOL
-      USE elfe_msgp
-      USE elfe_glbl
       IMPLICIT NONE
       integer, intent(in) :: istat
       integer eInt(1)
@@ -108,8 +103,6 @@
       real(rkind), intent(inout) :: wtime
 # ifdef MPI_PARALL_GRID
       real(8) mpi_wtime
-# endif
-# ifdef MPI_PARALL_GRID
       wtime=mpi_wtime()
 # else
       CALL cpu_time(wtime)
@@ -200,9 +193,6 @@
 !**********************************************************************
       SUBROUTINE DIFFERENTIATE_XDIR(VAR, DVDX)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)  :: VAR(MNP)
          REAL(rkind), INTENT(OUT) :: DVDX(MNP)
@@ -228,9 +218,6 @@
 !**********************************************************************
       SUBROUTINE DIFFERENTIATE_XYDIR(VAR, DVDX, DVDY)
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp
-#endif
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)  :: VAR(MNP)
          REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
@@ -285,8 +272,6 @@
            WRITE(2305) 1.
            WRITE(2305) (DVDX(IP), DVDY(IP), SQRT(DVDY(IP)**2+DVDY(IP)**2), IP = 1, MNP)
          ENDIF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -330,8 +315,6 @@
             WVK  = 10.
             WVCG2 = 0.
           END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -481,14 +464,7 @@
 !**********************************************************************
       SUBROUTINE CHECK_STEADY(TIME, CONV1, CONV2, CONV3, CONV4, CONV5)
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, ONLY : IPGL, IPLG, np_global
-         USE ELFE_MSGP
-#endif
         IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-         include 'mpif.h'
-#endif
 !
 !AR: Joseph please check this code ...
 !
@@ -874,26 +850,26 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       logical function isnan(a)
+       logical function my_isnan(a)
          use datapool, only : rkind
          real(rkind) :: a
          if (a.ne.a) then
-           isnan = .true.
+           my_isnan = .true.
          else
-           isnan = .false.
+           my_isnan = .false.
          end if
          return
          end
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         logical function isinf(a)
+         logical function my_isinf(a)
          use datapool, only : rkind
          real(rkind) :: a
          if (int(a*0) .ne. 0) then
-           isinf = .true.
+           my_isinf = .true.
          else
-           isinf = .false.
+           my_isinf = .false.
          end if
          return
          end
@@ -1207,9 +1183,11 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CSEVAL ( NFU, FILEN, LSE, DIMS, SEVAL)
-         USE DATAPOOL, ONLY : STAT, RKIND, MNP
+!THOMAS PLEASE CHECK THIS FOR MPLIB
 #ifdef MPI_PARALL_GRID
-         USE ELFE_GLBL, only : np_global, iplg
+         USE DATAPOOL, ONLY : STAT, RKIND, MNP, np_global, iplg
+#else
+         USE DATAPOOL, ONLY : STAT, RKIND, MNP
 #endif
          IMPLICIT NONE
 
@@ -1296,9 +1274,10 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_XFN()
-         USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP, ONLY : myrank, comm, ierr
+         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, XP, YP, DEP, MNE, INE
+#else
+         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
 #endif
          IMPLICIT NONE
          INTEGER :: I
@@ -1328,9 +1307,10 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_SHP()
-         USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-         USE ELFE_MSGP, ONLY : myrank, comm, ierr
+         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, MNE, XP, YP, DEP, INE
+#else
+         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
 #endif
          IMPLICIT NONE
          INTEGER :: I
@@ -1757,7 +1737,7 @@
       real(rkind), intent(in)    :: y(msc), acloc(msc,mdc)
 
       integer             :: is, id
-      real(rkind)         :: dintspec_y, maxvalue, tmp(msc)
+      real(rkind)         :: dintspec_y, tmp(msc)
 
       dintspec_y = ZERO
 !     maxvalue   = maxval(ac2(ip,:,:))
@@ -1861,10 +1841,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_ABORT(string)
-      USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : parallel_abort
+      USE DATAPOOL, only : parallel_abort, DBG
+#else
+      USE DATAPOOL, only : DBG
 #endif
+
       IMPLICIT NONE
       character(*), intent(in) :: string
 
@@ -1896,6 +1878,95 @@
         CALL WWM_ABORT(TRIM(ErrMsg))
       END IF
       END SUBROUTINE
+!**********************************************************************
+!* Simple Gauss method for solving systems                            *
+!* We simply solve the equation A X = Y                               *
+!**********************************************************************
+      SUBROUTINE GAUSS_SOLVER(N, EMAT, X, Y)
+      USE DATAPOOL, ONLY: RKIND, ONE
+      IMPLICIT NONE
+      integer, intent(in) :: N
+      real(rkind), intent(inout) :: EMAT(N,N)
+      real(rkind), intent(out) :: X(N)
+      real(rkind), intent(in) :: Y(N)
+      !
+      real(rkind) :: EMATW(N,N), YW(N)
+      integer U(N), Jsel, I, J, I2
+      real(rkind) :: alpha, ThePivot, eVal, MaxVal
+      U=0
+      EMATW=EMAT
+      YW=Y
+      DO I=1,N
+        MaxVal=0
+        Jsel=-1
+        DO J=1,N
+          IF (U(J) .eq. 0) THEN
+            eVal=EMATW(J,I)
+            IF (abs(eVal) .gt. MaxVal) THEN
+              MaxVal=abs(eVal)
+              Jsel=J
+            END IF
+          END IF
+        END DO
+        IF (Jsel == -1) THEN
+          CALL WWM_ABORT('Error in GAUSS_SOLVER, singular matrix')
+        END IF
+        ThePivot=ONE/EMATW(Jsel,I)
+        U(Jsel)=I
+        DO I2=I,N
+          EMATW(Jsel,I2)=EMATW(Jsel,I2)*ThePivot
+        END DO
+        YW(Jsel)=YW(Jsel)*ThePivot
+        DO J=1,N
+          IF (J .ne. Jsel) THEN
+            alpha=EMATW(J,I)
+            DO I2=I,N
+              EMATW(J,I2)=EMATW(J,I2) - alpha*EMATW(Jsel,I2)
+            END DO
+            YW(J)=YW(J) - alpha*YW(Jsel)
+          END IF
+        END DO
+      END DO
+      DO Jsel=1,N
+        I=U(Jsel)
+        X(I)=YW(Jsel)
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!* from http://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm     *
+!**********************************************************************
+      subroutine SOLVE_TRIDIAG(a,b,c,d,x,n)
+      use datapool, only : rkind
+      implicit none
+!        a - sub-diagonal (means it is the diagonal below the main diagonal)
+!        b - the main diagonal
+!        c - sup-diagonal (means it is the diagonal above the main diagonal)
+!        d - right part
+!        x - the answer
+!        n - number of equations
+      integer,intent(in) :: n
+      real(rkind), intent(in) :: a(n), b(n), c(n), d(n)
+      real(rkind), intent(out) :: x(n)
+      real(rkind) :: cp(n),dp(n)
+      real(rkind) :: m
+      integer i
+ 
+! initialize c-prime and d-prime
+      cp(1) = c(1)/b(1)
+      dp(1) = d(1)/b(1)
+! solve for vectors c-prime and d-prime
+      do i = 2,n
+        m = b(i)-cp(i-1)*a(i)
+        cp(i) = c(i)/m
+        dp(i) = (d(i)-dp(i-1)*a(i))/m
+      enddo
+! initialize x
+      x(n) = dp(n)
+! solve for x from the vectors c-prime and d-prime
+      do i = n-1, 1, -1
+        x(i) = dp(i)-cp(i)*x(i+1)
+      end do
+      end subroutine SOLVE_TRIDIAG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1960,8 +2031,6 @@
                END DO
 
                R(M) = R(M) / SPALTE(M)
-
-               RETURN
             END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2316,8 +2385,7 @@
             X(I) = -X(I)
   200    CONTINUE
       ENDIF
-      RETURN
-      END
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************

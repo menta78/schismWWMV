@@ -1,4 +1,4 @@
-!2do ... kill save and save all
+!2dR ... kill save and save all
 #include "wwm_functions.h"
 ! add line
 !**********************************************************************
@@ -8,58 +8,71 @@
 #if defined SELFE && defined WWM_MPI
 #error "The combination of define SELFE and define MPI is illegal"
 #endif
-#ifdef SELFE
-         use elfe_glbl, only : MNE => nea, &! Elements of the augmented domain
-     &                         MNP => npa, &! Nodes in the augmented domain
-     &                         XPTMP => xnd,    &! X-Coordinate augmented domain
-     &                         YPTMP => ynd,    &! Y-Coordinate augmented domain
-     &                         DEP8 => dp,  &! depth in the augmented domain
-     &                         INETMP => nm,  &! Element connection table of the augmented domain?
-     &                         MNEI => mnei, &! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         NE_RES => ne, &! Local number of resident elements
-     &                         NP_RES => np, &! Local number of resident nodes
-     &                         NE_GLOBAL => ne_global, &! Global number of elements
-     &                         NP_GLOBAL => np_global, &! Global number of nodes
-     &                         DMIN_SELFE => h0, &      ! Dmin from SELFE
-     &                         NNE => nne, &!
-     &                         INE_SELFE => ine, &!
-     &                         ISELF => iself, & !
-     &                         NVRT => nvrt, & ! Max. Number of vertical Layers ...
-     &                         KBP  => KBP, &! Bottom index
-     &                         IDRY => IDRY, &! Dry/Wet flag
-     &                         ZETA => znl, &! Z-Levels of SELFE
-     &                         ibnd_ext_int => ibnd_ext_int, &! bounday flag ...
-     &                         nsa, &                   ! Sides in the augmented domain
-     &                         NS_RES => ns, &          ! Local number of resident sides
-     &                         isidenode, &             ! 2 nodes of a side
-     &                         idry_s,   &              ! wet/dry for a side
-     &                         eta1,eta2, &             ! elevation at 2 time steps
-     &                         uu2,vv2, &               ! horizontal vel.
-     &                         KZ,THETA_F, &            !vertical coord. parameters
-     &                         SIGMACOR=>SIGMA, &       !sigma coord.
-     &                         WINDX0=>WINDX, &         !x-wind
-     &                         WINDY0=>WINDY, &         !x-wind
-     &                         MSC_SELFE => MSC2, &     !msc2 from selfe ...
-     &                         MDC_SELFE => MDC2, &     !mdc2 from selfe ...
-     &                         WWAVE_FORCE=>wwave_force, &     !wave-induced force
-     &                         OUTT_INTPAR=>out_wwm, &         !outputs from WWM
-     &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
-     &                         XLON=>xlon, &             !longitude (in radians)
-     &                         YLAT=>ylat, &             !latitude (in radians)
-     &                         ISBND, &                     !bnd flags
-     &                         RKIND
+
+
+#ifdef PDLIB
+
+#ifdef WWM_SOLVER
+#error "Sorry PDLIB and WWM_SOLVER are not supported at the moment"
 #endif
-#ifdef WWM_MPI
+
+         use wwm_pdlib
+#else
+
+#  if defined(SELFE) || defined(WWM_MPI)
+        use elfe_msgp ! , only: comm,             & ! MPI communicator
          use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
+     &                         np,               &
+     &                         npg,              & ! nuber of ghost nodes
      &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         DEP8 => dp,       & ! depth in the
+     &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
-     &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         YLAT=>ylat,       &
+     &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
-     &                         YPTMP => ynd
+     &                         YPTMP => ynd,     &
+     &                         NE_GLOBAL => ne_global, &! Global number of elements
+     &                         NP_GLOBAL => np_global, &! Global number of nodes
+     &                         iplg,             & ! node local to global mapping
+     &                         ipgl,             & ! node global to local mapping
+     &                         ielg,             & ! element local to global maping
+     &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
+      use MPI
+     
+#  endif
+
+#  ifdef SELFE
+         use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
+     &                         DMIN_SELFE => h0,             & ! Dmin
+     &                         NNE => nne,                   & !
+     &                         INE_SELFE => ine,             & !
+     &                         ISELF => iself,               & !
+     &                         NVRT => nvrt,                 & ! Max. Number of vertical Layers ...
+     &                         KBP  => KBP,                  & ! Bottom index
+     &                         IDRY => IDRY,                 & ! Dry/Wet flag
+     &                         ZETA => znl,                  & ! Z-Levels of SELFE
+     &                         ibnd_ext_int => ibnd_ext_int, & ! bounday flag ...
+     &                         nsa,                          & ! Sides in the augmented domain
+     &                         NS_RES => ns,                 & ! Local number of resident sides
+     &                         isidenode,                    & ! 2 nodes of a side
+     &                         idry_s,                       & ! wet/dry for a side
+     &                         eta1,eta2,                    & ! elevation at 2 time steps
+     &                         uu2,vv2,                      & ! horizontal vel.
+     &                         KZ,THETA_F,                   & !vertical coord. parameters
+     &                         SIGMACOR=>SIGMA,              & !sigma coord.
+     &                         WINDX0=>WINDX,                & !x-wind
+     &                         WINDY0=>WINDY,                & !x-wind
+     &                         MSC_SELFE => MSC2,            & !msc2 from selfe ...
+     &                         MDC_SELFE => MDC2,            & !mdc2 from selfe ...
+     &                         WWAVE_FORCE=>wwave_force,     & !wave-induced force
+     &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
+     &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
+     &                         ISBND,                        & !bnd flags
+     &                         RKIND
+#  endif
+
 #endif
       IMPLICIT NONE
       SAVE
@@ -73,11 +86,14 @@
         INTEGER :: myrank = 0
         INTEGER :: NP_RES
 #endif
+
 #ifndef SELFE
-# ifdef USE_SINGLE
+#  ifndef PDLIB
+#   ifdef USE_SINGLE
          integer,parameter :: rkind = 4
-# else
+#   else
          integer,parameter :: rkind = 8      ! Default real datatype
+#   endif
 # endif
 #endif
          INTEGER    :: NP_TOTAL, NE_TOTAL
@@ -124,13 +140,13 @@
          REAL(rkind), PARAMETER             :: DEGRAD    = PI/180._rkind
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
-         REAL(rkind), PARAMETER             :: RHOA      = 1.25_rkind
-         REAL(rkind), PARAMETER             :: RHOW      = 1025._rkind ! average salinity of sea water!
+         REAL(rkind), PARAMETER             :: RHOA      = 1.225_rkind
+         REAL(rkind), PARAMETER             :: RHOW      = 1000.d0!1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE
          REAL(rkind), PARAMETER             :: THR       = TINY(1.)
-         REAL(rkind), PARAMETER             :: THR8      = TINY(1.d0)
+         REAL(rkind), PARAMETER             :: THR8      = TINY(1.)
          REAL(rkind), PARAMETER             :: INVTHR    = ONE/THR
          REAL(rkind), PARAMETER             :: INVTHR8   = ONE/THR8
          REAL(rkind), PARAMETER             :: KDMAX     = 10.0_rkind
@@ -164,7 +180,7 @@
          INTEGER    :: HOTSTYLE_IN  = 1
          INTEGER    :: HOTSTYLE_OUT = 1
 #endif
-         INTEGER    :: ITEST      = 99
+         INTEGER    :: ITEST      = 0 
          INTEGER    :: KKK        = 1
 
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
@@ -184,6 +200,7 @@
          LOGICAL           :: LSIGBOUND  = .FALSE.
          LOGICAL           :: LTHBOUND   = .FALSE.
          LOGICAL           :: LSOUBOUND  = .FALSE.
+         LOGICAL           :: IOBPD_HISTORY = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
@@ -246,6 +263,9 @@
          LOGICAL    :: LOPTSIG     = .FALSE.
          LOGICAL    :: LWINDSWAN   = .FALSE.
          LOGICAL    :: LZYLINDER   = .TRUE.
+         LOGICAL    :: LSOURCESWAM = .FALSE. 
+         LOGICAL    :: LSOURCESWWIII = .FALSE. 
+
          integer :: idxWind
 
 
@@ -317,7 +337,7 @@
 !
 ! ... file control ...
 !
-         INTEGER, PARAMETER     :: STARTHNDL = 1000
+         INTEGER, PARAMETER     :: STARTHNDL = 50000 
 
          TYPE FILEDEF
             CHARACTER(LEN=140)  :: FNAME
@@ -347,7 +367,8 @@
      &                             DBG,                                  &
      &                             CHK,                                  &
      &                             MISC,                                 &
-     &                             WINDBG
+     &                             WINDBG,                               & 
+     &                             SRCDBG
 
          INTEGER                :: IDXHOTOUT = 0
          CHARACTER(LEN=140)     :: FILEGRID
@@ -764,6 +785,11 @@
 #ifdef NCDF
          INTEGER        :: MULTIPLEOUT_HIS
          INTEGER        :: MULTIPLEOUT_STAT
+         REAL(rkind), allocatable :: XPtotal(:)
+         REAL(rkind), allocatable :: YPtotal(:)
+         integer,     allocatable :: IOBPtotal(:)
+         REAL(rkind), allocatable :: DEPtotal(:)
+         integer, allocatable :: INEtotal(:,:)
 #endif
          INTEGER        :: MULTIPLEOUT_HOT
          INTEGER        :: MULTIPLEIN_HOT
@@ -926,25 +952,7 @@
 !
 ! Dislin
 !
-         LOGICAL               :: LDISLIN = .FALSE.
-!
-!   WAM Cycle 4.5
-!
-         REAL(rkind), PARAMETER       :: ALPHA   = 0.0090
-         REAL(rkind), PARAMETER       :: BETAMAX = 1.20
-         REAL(rkind), PARAMETER       :: XKAPPA  = 0.4
-         REAL(rkind), PARAMETER       :: ZALP    =  0.0110
-         REAL(rkind), PARAMETER       :: UMAX    = 50. ! Why this ? Never produced higher winds than this ?
-
-
-         INTEGER, PARAMETER    :: IUSTAR  = 100 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: IALPHA  = 400 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: ITAUMAX = 200 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JUMAX   = 200 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JPLEVT  = 1 !! TABLE DIMENSION
-         INTEGER, PARAMETER    :: JPLEVC  = 1
-         INTEGER, PARAMETER    :: IDAMPING = 1
-         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL                      :: LDISLIN = .FALSE.
 
          REAL(rkind)                  :: XNLEV(1) = 10.
 
@@ -963,6 +971,7 @@
          REAL(rkind), ALLOCATABLE     :: TAUWX(:)    ! X Component of the total stress (m^2/s/s)
          REAL(rkind), ALLOCATABLE     :: TAUWY(:)    ! Y Component of the total stress (m^2/s/s)
          REAL(rkind), ALLOCATABLE     :: TAUHF(:)    ! Stress coming from the high. freq. part (parametric) part of the waves
+         REAL(rkind), ALLOCATABLE     :: TAUHFT2(:,:,:)    ! Stress coming from the high. freq. part (parametric) part of the waves
          REAL(rkind), ALLOCATABLE     :: TAUW(:)     ! Stress coming from the discrete part of the spectrum ...
          REAL(rkind), ALLOCATABLE     :: UFRIC(:)    ! Friction vel.
          REAL(rkind), ALLOCATABLE     :: FR5(:)      ! FR**5
@@ -974,12 +983,72 @@
          REAL(rkind), ALLOCATABLE     :: Z0(:)       ! Roughness Length
          REAL(rkind), ALLOCATABLE     :: USTDIR(:)   ! Direction of Stress
          REAL(rkind), ALLOCATABLE     :: CD(:)       ! Drag Coefficient
+         REAL(rkind), ALLOCATABLE     :: FMEAN(:)    ! Mean Freq.
+         REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
+         REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
+         REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
+         REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
+         REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
+         REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
+         REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:)
 
-         REAL(rkind)                  :: DELTAUW
-         REAL(rkind)                  :: DELU
-         REAL(rkind)                  :: DELUST
-         REAL(rkind)                  :: DELALP
+         INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
+         INTEGER, ALLOCATABLE         :: INLCOEF(:,:)
 
+         REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
+         REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
+
+         LOGICAL, PARAMETER    :: LBIWBK = .TRUE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
+
+         REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
+         REAL(rkind), PARAMETER :: COEF4   = 5.0E-07
+         REAL(rkind), PARAMETER :: FRIC    = 28.d0
+         REAL(rkind), PARAMETER :: DKMAX   = 40.d0
+         REAL(rkind), PARAMETER :: EPS1    = 0.00001
+         REAL(rkind), PARAMETER :: EPSU10  = 1.0E-3
+         REAL(rkind), PARAMETER :: EPSUS   = 1.0E-6
+         REAL(rkind), PARAMETER :: DEPTHRS = 50.d0
+         REAL(rkind), PARAMETER :: UMAX = 50.d0
+         REAL(rkind), PARAMETER :: XKAPPA = 0.4d0
+
+         LOGICAL, PARAMETER     :: LOUTWAM = .FALSE. 
+
+         INTEGER                :: IPHYS = 0 
+         INTEGER                :: IDAMPING = 1 ! AR: Put in namelist ...
+         INTEGER, PARAMETER     :: NINL = 5
+         INTEGER, PARAMETER     :: NRNL = 25
+
+         INTEGER                :: KFRH, MFRSTLW, MLSTHG
+
+         INTEGER, PARAMETER     :: ISNONLIN = 1 
+         INTEGER, PARAMETER     :: IU06 = 222222
+         INTEGER, PARAMETER     :: ILEV = 1
+         INTEGER, PARAMETER     :: ITAUMAX=400
+         INTEGER, PARAMETER     :: JUMAX=200
+         INTEGER, PARAMETER     :: IUSTAR=500
+         INTEGER, PARAMETER     :: IALPHA=400
+         INTEGER, PARAMETER     :: ILEVTAIL=50
+         INTEGER, PARAMETER     :: IAB=200
+         INTEGER, PARAMETER     :: JTOT=250
+         INTEGER, PARAMETER     :: JPLEVT=1
+         INTEGER, PARAMETER     :: NFREHF=49
+         INTEGER, PARAMETER     :: JPLEVC=1
+ 
+         REAL(rkind)            :: SWELLFT(IAB)
+         REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
+
+         REAL(rkind)            :: DELTAUW
+         REAL(rkind)            :: DELU
+         REAL(rkind)            :: DELUST
+         REAL(rkind)            :: DELALP
+         REAL(rkind)            :: DELTAIL 
+         REAL(rkind)            :: DELTR
+         REAL(rkind)            :: ZALP
+         REAL(rkind)            :: BETAMAX
+         REAL(rkind)            :: ALPHA
+         REAL(rkind)            :: TAUWSHELTER
 !
 ! Data types of our linear equation solver.
 !

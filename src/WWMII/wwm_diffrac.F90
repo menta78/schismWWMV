@@ -106,8 +106,6 @@
 
          !WRITE(WWMDBG%FHNDL,*) MAXVAL(DIFRM), MAXVAL(DIFRX), MAXVAL(DIFRY)
          !WRITE(WWMDBG%FHNDL,*) MINVAL(DIFRM), MINVAL(DIFRX), MINVAL(DIFRY)
-         
-         RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -142,8 +140,6 @@
             VART(I) = SWQ / SW
          END DO
          VAR(:) = VART(:)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -163,7 +159,7 @@
 
         INTEGER     :: IP
 
-        LOGICAL     :: ISNAN, ISINF
+        LOGICAL     :: MY_ISNAN, MY_ISINF
 
 !        CALL SMOOTH( -1.1, MNP, XP, YP, DEP )  
 
@@ -180,13 +176,11 @@
           KH = EWK(IP)*DEP(IP)
           IF (KH > PI) CYCLE
           DFBOT(IP) = (BOTFC(KH)*CURH(IP)+BOTFS(KH)*EWK(IP)*SLPH(IP))*G9
-          IF (ISINF(DFBOT(IP)) .OR. ISNAN(DFBOT(IP))) THEN
+          IF (MY_ISINF(DFBOT(IP)) .OR. MY_ISNAN(DFBOT(IP))) THEN
             WRITE(wwmerr,*)'DFBOT is NaN', IP,KH, CURH(IP), BOTFS(KH), BOTFC(KH), EWK(IP), SLPH(IP)
             call wwm_abort(wwmerr)
           END IF
         END DO
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -214,8 +208,6 @@
           WRITE(wwmerr,*)'BOTFC is NaN Aron', KH, AUX, AUX1, MyTANH(KH)
           call wwm_abort(wwmerr)
         END IF
-        
-        RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -253,8 +245,6 @@
           WRITE(wwmerr,*)'BOTFS is NaN', BOTFS, AUX, AUX1
           call wwm_abort(wwmerr)
         ENDIF
-
-        RETURN
       END FUNCTION      
 !**********************************************************************
 !*                                                                    *
@@ -278,8 +268,6 @@
          CALL DIFFERENTIATE_XYDIR(AUXY, DYAUXY, AUX)
          
          DFCUR(:) = DXAUXX(:) + DYAUXY(:)
-         
-         RETURN
       END SUBROUTINE     
 !**********************************************************************
 !*                                                                    *
@@ -312,8 +300,6 @@
            WRITE(*,*) AUX, AUX1, KH*MyTANH(KH), (TWO*(COSHKH)**2)
            CALL WWM_ABORT('BOTFC2')
         ENDIF
-
-        RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -354,8 +340,6 @@
           WRITE(*,*) AUX, AUX1, KH, SECH, SECH**2, COSHKH
           CALL WWM_ABORT('BOTFS2')
         END IF
-
-        RETURN
       END FUNCTION
 !**********************************************************************
 !*                                                                    *
@@ -377,8 +361,6 @@
          CALL DIFFERENTIATE_XYDIR(AUXY, DYAUXY, AUX)
 
          DFCUR(:) = DXAUXX(:) + DYAUXY(:)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -414,8 +396,6 @@
             CALL WWM_ABORT('DFBOT')
           ENDIF
         END DO
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -534,8 +514,6 @@
             !IF (DIFRM(IP) .LT. 0.8) DIFRM(IP) = 0.8
          END DO
          CALL DIFFERENTIATE_XYDIR(DIFRM, DIFRX, DIFRY)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

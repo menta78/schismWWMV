@@ -53,9 +53,7 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CREATE_LOCAL_HOTNAME(FILEHOT, FILERET, MULTIPLE, HOTSTYLE)
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
+      USE datapool, only : myrank
       IMPLICIT NONE
       character(LEN=*), intent(in) :: FILEHOT
       character(LEN=140), intent(OUT) :: FILERET
@@ -142,7 +140,9 @@ MODULE wwm_hotfile_mod
       INTEGER :: HMNP, HMNE
       INTEGER :: HMSC, HMDC
       INTEGER, allocatable :: IPLGin(:)
+#ifdef NCDF
       INTEGER :: iplg_id
+#endif
       REAL(rkind) :: HFRLOW, HFRHIGH
       integer :: MULTIPLE, istat
       character(len=140) :: FILERET
@@ -206,11 +206,10 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE DETERMINE_NEEDED_HOTFILES(HOTSTYLE, FILEHOT, eRecons)
-      USE DATAPOOL, only : MNP, np_total
 #ifdef MPI_PARALL_GRID
-      USE ELFE_GLBL, ONLY : iplg
-      USE elfe_msgp, only : myrank, nproc
+      USE DATAPOOL, only : iplg, myrank, nproc 
 #endif
+      USE DATAPOOL, only : MNP, np_total
       IMPLICIT NONE
       INTEGER, intent(in) :: HOTSTYLE
       character(len=*), intent(in) :: FILEHOT
@@ -366,10 +365,12 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INPUT_HOTFILE_BINARY
-        USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-        USE ELFE_GLBL, ONLY : iplg, np_global
+        USE DATAPOOL, ONLY: iplg, np_global, rkind, MULTIPLEIN_HOT, MDC, MSC, MNP, HOTIN
+#else
+        USE DATAPOOL, ONLY: rkind, MULTIPLEIN_HOT, MDC, MSC, MNP, HOTIN
 #endif
+        USE DATAPOOL, ONLY: AC2, HOTSTYLE_IN
         IMPLICIT NONE
         INTEGER idxFil, idxMem, iProc, istat
         REAL(rkind), ALLOCATABLE :: ACinB(:,:,:)
@@ -420,11 +421,12 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_BINARY
-        USE DATAPOOL
 #ifdef MPI_PARALL_GRID
-        USE ELFE_GLBL, ONLY : iplg, np_global
-        USE elfe_msgp, only : myrank, comm, ierr, rtype
+      USE DATAPOOL, ONLY: iplg, np_global, myrank, comm, ierr, rtype
+      USE DATAPOOL, ONLY: nwild_gb
 #endif
+      USE DATAPOOL, ONLY: NP_TOTAL, NE_TOTAL, FRLOW, FRHIGH
+        USE DATAPOOL, ONLY: MSC, MDC, MNP, AC2, rkind, HOTOUT, HOTSTYLE_OUT, MULTIPLEOUT_HOT
         IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
         include 'mpif.h'
@@ -482,12 +484,13 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 #ifdef NCDF
       SUBROUTINE INPUT_HOTFILE_NETCDF
-        USE DATAPOOL
-        USE NETCDF
 # ifdef MPI_PARALL_GRID
-        USE ELFE_MSGP
-        USE ELFE_GLBL, ONLY : iplg, np_global
+        USE DATAPOOL, ONLY : iplg, np_global, rkind, MULTIPLEIN_HOT, MDC, AC2
+# else
+        USE DATAPOOL, ONLY : rkind, MULTIPLEIN_HOT, MDC, AC2
 # endif
+        USE DATAPOOL, ONLY: HOTIN, MSC, MNP, IHOTPOS_IN, HOTSTYLE_IN
+        USE NETCDF
         IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
         INTEGER :: IP, ID
@@ -555,12 +558,13 @@ MODULE wwm_hotfile_mod
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_NETCDF
-      USE DATAPOOL
-      USE NETCDF
 # ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, only : ierr, comm, rtype, myrank
-      USE ELFE_GLBL, ONLY : iplg, np_global, ne_global
+      USE DATAPOOL, ONLY: ierr, comm, rtype, myrank, iplg, np_global, ne_global, nwild_gb
 # endif
+      use datapool, only: MULTIPLEOUT_HOT, MULTIPLEIN_HOT, HOTSTYLE_OUT, MDC, MSC, MNP, MNE, RKIND
+      use datapool, only: HOTOUT, IDXHOTOUT, LCYCLEHOT, WriteOutputProcess_hot, NF90_RUNTYPE
+      use datapool, only: AC2, MAIN
+      USE NETCDF
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
       include 'mpif.h'

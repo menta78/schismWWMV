@@ -4,9 +4,6 @@
 !**********************************************************************
       SUBROUTINE SET_IOBPD
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp, only : myrank, exchange_p2di
-#endif
         IMPLICIT NONE
 
         INTEGER :: I
@@ -92,11 +89,10 @@
         ENDDO
 #endif
 
-#ifdef MPI_PARALL_GRID
-        IF (myrank == 0) THEN
-#endif
-
 #ifdef DEBUG
+# ifdef MPI_PARALL_GRID
+        IF (myrank == 0) THEN
+# endif
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
           END DO
@@ -105,21 +101,17 @@
               WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
             ENDDO
           END DO
-#endif DEBUG
-
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
         END IF
+# endif
 #endif
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef MPI_PARALL_GRID
+#ifdef SELFE
       SUBROUTINE SET_IOBP_SELFE
         USE DATAPOOL
-        use elfe_msgp, only : exchange_p2di, myrank
-        use elfe_glbl, only : ibnd_ext_int, ipgl, np_global, iplg 
         IMPLICIT NONE
 
          INTEGER     :: IP, IE, ID
@@ -356,15 +348,12 @@
 ! write test output ...
 !
 #ifdef DEBUG
-#ifdef MPI_PARALL_GRID
         IF (myrank == 0) THEN
-#endif
           DO IP = 1, MNP
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
-#ifdef MPI_PARALL_GRID
         END IF
-#endif
+        
         FLUSH(STAT%FHNDL)
         FLUSH(IOBPOUT%FHNDL)
 #endif DEBUG
@@ -376,9 +365,6 @@
 !**********************************************************************
       SUBROUTINE GET_BOUNDARY_STATUS(STATUS)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp, only : exchange_p2di
-#endif
       implicit none
       integer, intent(inout) :: STATUS(MNP)
       INTEGER :: COLLECTED(MNP), NEXTVERT(MNP), PREVVERT(MNP)
@@ -465,8 +451,7 @@
       USE DATAPOOL, only : LBCSE, SPPARM, LBCWA, LINHOM, LBCSP, IOBPOUT
       USE DATAPOOL, only : STAT
 #ifdef MPI_PARALL_GRID
-      use elfe_msgp, only : exchange_p2di, myrank
-      use elfe_glbl, only : ibnd_ext_int, ipgl, iplg
+      use datapool, only : exchange_p2di, myrank, ipgl, iplg
 #endif
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, istat, SPsize
@@ -523,9 +508,15 @@
         END IF
         ITMP=INT(BNDTMP)
 #ifdef MPI_PARALL_GRID
+# ifndef PDLIB
         IF (ipgl(ip)%rank == myrank) THEN
           IOBP(ipgl(ip)%id) = ITMP
         END IF
+# else
+        IF (ipgl(ip)%id .gt. 0) THEN
+          IOBP(ipgl(ip)%id) = ITMP
+        END IF
+# endif
 #else
         IOBP(IP) = ITMP
 #endif
@@ -737,9 +728,6 @@
 !**********************************************************************
       SUBROUTINE SET_IOBP
         USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-        use elfe_msgp, only : myrank
-#endif
         IMPLICIT NONE
         INTEGER           :: IP, IFSTAT, istat
         REAL(rkind)       :: dbndtmp
@@ -919,7 +907,9 @@
          CHARACTER(len=25)          :: CALLFROM
          REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
          INTEGER                    :: IP, istat
+#ifdef NCDF
          CHARACTER(len=25)          :: CHR
+#endif
 
 !AR: WAVE BOUNDARY
 
@@ -1201,11 +1191,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
-
       USE DATAPOOL
-#ifdef SELFE
-      use elfe_msgp
-#endif
       IMPLICIT NONE
 
       REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
@@ -1528,7 +1514,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SPECTRUM_INT(WBACOUT)
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1830,7 +1815,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_WAVE_BOUNDARY
-        USE DATAPOOL
+        USE DATAPOOL, ONLY: LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, AC2, WBAC
         IMPLICIT NONE
         INTEGER :: IP, IPGL
         IF (LBCWA .OR. LBCSP) THEN
@@ -1855,7 +1840,7 @@
          IMPLICIT NONE
          REAL(rkind)      :: DTMP
          integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
-         CHARACTER(len=25) :: CHR
+         CHARACTER(len=29) :: CHR
 
 !BUG: LBINTER = .FALSE. has some bug
 

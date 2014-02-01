@@ -1,7 +1,7 @@
 #include "wwm_functions.h"
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_CNTG_A()
+      SUBROUTINE COMPUTE_DIRECTION_CNTG_A
 !
 !     *** Crank - Nicolson Method ( Implicit )
 !
@@ -68,12 +68,11 @@
                AC2(IP,IS,:) = TMPAC(:)
             END DO
          END DO
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_QUICKEST_A()
+      SUBROUTINE COMPUTE_DIRECTION_QUICKEST_A
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -119,13 +118,11 @@
          END DO
 !$OMP END DO NOWAIT
 !$OMP END PARALLEL
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_UPWIND_A()
+      SUBROUTINE COMPUTE_DIRECTION_UPWIND_A
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -163,19 +160,55 @@
                  LM(ID) = - 1./DDIR * ( CM(ID2) * U0(ID2) - CM(ID) * U0(ID) )
                  TMP(ID) = U0(ID) - DT4DI * ( -LM(ID) + LP(ID) )
                END DO
-               TMP(ID) = TMP(1)
+               TMP(ID) = TMP(1) ! That lines looks dangerous memorywise
+                                ! and useless.
                U0(:) = TMP(:)
              END DO
              AC2(IP,IS,:) = MAX(0._rkind,U0(:))
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION_WENO_A()
+      SUBROUTINE COMPUTE_DIRECTION_UPWIND_IMPLICIT
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      INTEGER        :: IP, IS, ID, IT, ISTEP, ID1, ID2
+      REAL(rkind)    :: CAD(MSC,MDC)
+      REAL(rkind)    :: TMP(MDC)
+      REAL(rkind)    :: LP(MDC), LM(MDC), CP(MDC), CM(MDC), U0(MDC)
+      REAL(rkind)    :: EMAT(MDC,MDC)
+
+      DO IP = 1, MNP
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) CYCLE
+        IF (DEP(IP) .LT. DMIN) CYCLE
+        IF (IOBP(IP) .EQ. 2) CYCLE
+        CALL PROPTHETA(IP,CAD)
+        DO IS = 1, MSC
+          U0 = AC2(IP,IS,:)
+          CP = MAX(ZERO,CAD(IS,:))
+          CM = MIN(ZERO,CAD(IS,:))
+          EMAT=ZERO
+          DO ID=1,MDC
+            ID1 = ID - 1
+            ID2 = ID + 1
+            IF (ID .EQ. 1) ID1 = MDC
+            IF (ID .EQ. MDC) ID2 = 1 
+            EMAT(ID,ID ) = 1 + (DT4D/DDIR) * (CP(ID) - CM(ID))
+            EMAT(ID,ID1) =   - (DT4D/DDIR) *  CP(ID1)
+            EMAT(ID,ID2) =     (DT4D/DDIR) *  CM(ID2)
+          END DO
+          CALL GAUSS_SOLVER(MDC, EMAT, TMP, U0)
+          AC2(IP,IS,:) = MAX(0._rkind,TMP)
+        END DO
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_DIRECTION_WENO_A
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -528,8 +561,6 @@
             AC2(IP,IS,:) = MAX(ZERO,MyREAL(U3(:)))
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -629,8 +660,6 @@
               END IF
             END DO
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

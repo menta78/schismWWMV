@@ -524,7 +524,7 @@
       do i = 1, NP_RES
         ncols = IA_P(i+1) - IA_P(i)
         ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i-1) .eq. -999) then
+        if(ALOold2ALO(i) .eq. -999) then
           counter = counter + ncols
           cycle
         end if
@@ -551,7 +551,7 @@
       call VecSet(myB_setup, eEntry, petscErr);CHKERRQ(petscErr)
       do i= 1, NP_RES
         ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i-1) .eq. -999) then
+        if(ALOold2ALO(i) .eq. -999) then
           cycle
         end if
         ! map to petsc global order
@@ -606,7 +606,6 @@
       ! we have to fill the ghost and interface nodes with the solution from the other threads
       ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
       ! normally set to 0, because they do net exist in petsc
-      !call exchange_p2d(X)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -634,8 +633,8 @@
       logical :: SAME_NONZERO_PATTERN =.true.
 #endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
-      ZETA_SETUP = ZERO
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
+      ZETA_SETUP = ZERO
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
 # ifdef PETSC
@@ -818,4 +817,4 @@
 !*                                                                    *
 !**********************************************************************
       END MODULE
-#endif WWM_SETUP
+#endif

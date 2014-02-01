@@ -1129,7 +1129,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY: LPRECOMPST4, G9, INVPI2, RADDEG, RKIND
+      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST 
 # ifdef MPI_PARALL_GRID
       USE ELFE_MSGP
 # endif
@@ -1259,7 +1259,7 @@
               CALL ALL_FROM_TABLE(SIG(IKL),PROF,KIK,CGG,KDD,CN,CC)
               K1(IKL,ID)=KIK  ! wavenumber lower boundary (is directly related to the frequency indices, IK)
               K2(IKL,ID)=((BSUP/BINF)**2.)*K1(IKL,ID)! wavenumber upper boundary
-              SIGTAB(IKL,ID)=SQRT(G*K2(IKL,ID)*MYTANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
+              SIGTAB(IKL,ID)=SQRT(G*K2(IKL,ID)*TANH(K2(IKL,ID)*ID)) ! corresponding frequency upper boundary
               IF(SIGTAB(IKL,ID) .LE. SIG(1)) THEN
                 IKTAB(IKL,ID)=1
                 END IF
@@ -1296,7 +1296,7 @@
       DO IKD=1,NKD
         KHS=0.
         KD=(FAC_KD1**(IKD-FAC_KD2))
-        XT=MYTANH(KD)
+        XT=TANH(KD)
         GAM=1.0314*(XT**3)-1.9958*(XT**2)+1.5522*XT+0.1885 
         GAM=GAM/2.15
         DO IKHS=1,NKHS  ! max value of KHS=1.
@@ -1324,8 +1324,7 @@
 # ifdef MPI_PARALL_GRID
    if (myrank == 0) then
 # endif
-!2do check WWNMEANP, WWNMEANPTAIL
-       IF (LPRECOMPST4) THEN
+       IF (.NOT. LPRECOMP_EXIST) THEN
           WRITE (5002)                                                  &
      &     ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                &
      &    TTAUWSHELTER, SSWELLFPAR, SSWELLF,                            &
@@ -1339,7 +1338,7 @@
      &    DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,                   &
      &    SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS,                 &
      &    DIKCUMUL, CUMULW
-   END IF
+       END IF
 # ifdef MPI_PARALL_GRID
    endif
 # endif
@@ -1958,6 +1957,7 @@
       DELI2   = ONE - DELI1
       XJ      = WINDSPEED/DELU
       J       = MIN ( JUMAX-1, INT(XJ) )
+      write(*,*) J, JUMAX, XJ, WINDSPEED, DELU
       DELJ1   = MIN ( ONE,XJ - MyREAL(J))
       DELJ2   = ONE - DELJ1
       USTAR=(TAUT(IND,J)*DELI2+TAUT(IND+1,J  )*DELI1)*DELJ2 &
@@ -2166,7 +2166,7 @@
             ELSE IF (IKHS < 1) THEN
               IKHS = 1
               END IF  
-            XT=MYTANH(KBAR(IKL)*DEPTH)
+            XT=TANH(KBAR(IKL)*DEPTH)
 !
 !  Gamma corrected for water depth
 !
@@ -2313,7 +2313,7 @@
         IF (SSDSBM(0).EQ.1) THEN
           MICHE=1.
         ELSE
-          X=MYTANH(MIN(K(IK)*DEPTH,10.0_rkind))
+          X=TANH(MIN(K(IK)*DEPTH,10.0_rkind))
           MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+X*(SSDSBM(3)                 &
      &          +X*SSDSBM(4)))))**2
           END IF
@@ -2344,7 +2344,7 @@
 !
 !  end of Cumulative effect
 !
-          SATURATION2=MYTANH(10*(((BTH(IS)/SSDSBR)**0.5)-SSDSBR2))
+          SATURATION2=TANH(10.d0*(((BTH(IS)/SSDSBR)**0.5)-SSDSBR2))
           COSWIND=(ECOS(IS)*MyCOS(USDIR)+ESIN(IS)*SIN(USDIR))
           DTURB=-2.*SIG(IK)*K(IK)*FACTURB*COSWIND  ! Theory -> stress direction
           P0=SSDSP ! -0.5*SSDSC7*(1-MYTANH(W*USTAR*K(IK)/SIG(IK)-0.1))  ! for SDSC7=1 this is vdW et al. 

@@ -9,15 +9,12 @@
 # define wwm_print_namelist(xinp) WRITE(CHK%FHNDL, NML=xinp)
 #endif
       SUBROUTINE READ_HISTORY_STATION_NAMELIST()
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank
-#endif
          USE DATAPOOL, only : OUTSTYLE, LOUTITER,                       &
      &        LENERGY, LWXFN, OUT_HISTORY, OUT_STATION, INP, LSP1D,     &
      &        LSP2D, INP, CHK, LOUTS, IOUTS, LSIGMAX, LLOUTS,           &
      &        ILOUTS, OUT, DAY2SEC, FRHIGH, DBG, LINES, VAROUT_HISTORY, &
      &        VAROUT_STATION, GRIDWRITE, RKIND, LVAR_READ,              &
-     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL
+     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL, myrank
 #ifdef NCDF
          USE NETCDF
          USE DATAPOOL, only : USE_SINGLE_OUT_STAT, USE_SINGLE_OUT_HIS,  &
@@ -25,6 +22,7 @@
      &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS
 #endif
          USE DATAPOOL, only : STATION_P => STATION
+         USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
          USE DATAPOOL, only : MAIN, PRINTMMA, ZERO
          USE DATAPOOL, only : WriteOutputProcess_hot
          USE DATAPOOL, only : WriteOutputProcess_his
@@ -57,7 +55,7 @@
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
-     &      OUTSTYLE, FILEOUT, LOUTITER,                                &
+     &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
      &      LENERGY, LWXFN, GRIDWRITE, PARAMWRITE,                      &
      &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &
@@ -174,11 +172,6 @@
            DELTC=MAIN%DELT
          END IF
 #ifdef NCDF
-# ifdef MPI_PARALL_GRID
-         IF (myrank .gt. 0) THEN
-           GRIDWRITE=.FALSE.
-         END IF
-# endif
          PARAMWRITE_HIS=PARAMWRITE
          USE_SINGLE_OUT_HIS=USE_SINGLE_OUT
          MULTIPLEOUT_HIS=MULTIPLEOUT
@@ -698,8 +691,7 @@
          USE NETCDF
 #endif
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
+#ifdef SELFE
          use elfe_glbl, only : ics
 #endif
          IMPLICIT NONE
@@ -757,7 +749,8 @@
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR,           &
-     &      LNANINFCHK, LZETA_SETUP, ZETA_METH
+     &      LNANINFCHK, LZETA_SETUP, ZETA_METH, LSOURCESWAM,            &
+     &      LSOURCESWWIII
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
@@ -1081,10 +1074,6 @@
 !**********************************************************************
       SUBROUTINE INIT_CURRENT_INPUT
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
       INTEGER :: IP, ISTAT
 #ifdef MPI_PARALL_GRID
@@ -1157,10 +1146,6 @@
 !**********************************************************************
       SUBROUTINE INIT_WATLEV_INPUT
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP, ONLY : myrank, comm, ierr
-      USE ELFE_GLBL, ONLY : ipgl, NP_GLOBAL
-#endif
       IMPLICIT NONE
 
       INTEGER :: ISTAT
@@ -1222,7 +1207,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1367,9 +1351,6 @@
 !**********************************************************************
       SUBROUTINE CHECK_LOGICS()
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank,parallel_abort
-#endif
          IMPLICIT NONE
 
          REAL(rkind) :: TEST
@@ -1399,6 +1380,15 @@
            END IF
          END IF
 #endif
+         IF (ICOMP .eq. 3) THEN
+#if !defined PETSC || !defined MPI_PARALL_GRID
+           CALL WWM_ABORT('For ICOMP=3 we need PETSC and in parallel')
+#endif
+           IF (AMETHOD .ne. 5) THEN
+             CALL WWM_ABORT('We need AMETHOD=5 for ICOMP=3')
+           END IF
+         END IF
+
 
 !        Check MSC,MDC for exchange
          if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')
@@ -1543,7 +1533,7 @@
 
          ! if using PETSc with AMETHOD 4 or 5 ICOMP must be greater equal 1 to init JA IA
          IF (AMETHOD .GE. 4 .AND. ICOMP .LT. 1) THEN
-           call wwm_abort('ICMP must be greater equal 1 to use PETSc')
+           call wwm_abort('ICOMP must be greater equal 1 to use PETSc')
          END IF
 
          ! if using PETSc with AMETHOD 4 or 5 LVECTOR must be FALSE
@@ -1771,7 +1761,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_NETCDF_WW3(IFILE,IT,CALLEDFROM)
-
          USE DATAPOOL
          USE NETCDF
          IMPLICIT NONE
@@ -1964,6 +1953,8 @@
             ELSE IF (IWINDFORMAT == 3) THEN
               HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
               HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
+            ELSE
+              CALL WWM_ABORT('Write your HX1/HX2 code here')
             END IF
             VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
          END DO

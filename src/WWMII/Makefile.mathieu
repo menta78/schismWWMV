@@ -5,21 +5,23 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI =
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-OPENMP = on
+OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
+# Put PDLIB = on for using the pdlib library.
+PDLIB =
 
 
 #F90 = gfortran
@@ -39,8 +41,8 @@ F90 = mpif90
 
 
 #F90OPTI = -ip -O2
-#F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fp-model precise
+F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
+#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fp-model precise
 #F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
@@ -66,7 +68,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 #F90OPTI  = -g -Mbounds -Mchkfpstk -Mchkptr -Mchkstk
 
 #GFORTRAN
-#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -fopenmp -Wall
+#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 
 #LDFLAGS = -Mprof=dwarf -Mprof=lines -Mprof=func -Mprof=time Minfo=ccff
 #TCFLAG  = -tcheck
@@ -108,10 +110,20 @@ ifdef NETCDF
   FFLAGS +=  -DTIMINGS
 endif
 
+ifdef PDLIB
+  LIBS += $(PDLIB_PATH)/libpd.a
+  FFLAGS += -I$(PDLIB_PATH)/modules/ -I$(PDLIB_PATH)/include -DPDLIB
+endif
+
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DWWM_SOLVER -DSHYFEM_COUPLING
-  OBJS= $(OBJSELFE) $(OBJWWM)
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM
+  ifdef PDLIB
+    OBJS= wwm_pdlib.o $(OBJWWM)
+  else
+    OBJS= $(OBJSELFE) $(OBJWWM)
+    MPIFLAG += -DWWM_SOLVER -DSHYFEM_COUPLING
+  endif
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)
@@ -125,7 +137,6 @@ ifdef GRIB
   LIBS += -L$(GRIB_PATH)/lib -lgrib_api_f90 -lgrib_api
   FFLAGS += -DGRB -I$(GRIB_PATH)/include
 endif
-
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} 

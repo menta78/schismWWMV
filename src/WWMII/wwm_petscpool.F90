@@ -61,7 +61,6 @@
 
       PetscErrorCode     :: petscErr             ! petsc error code
       integer            :: stat                 ! Fortran error code
-      integer            :: ierr                 ! MPI error code
 
       Mat                :: matrix;
       Vec                :: myB, myX
@@ -88,7 +87,7 @@
       ! petsc parallel stuff
       PetscMPIInt        :: rank                = 0        ! rank of a process
       PetscMPIInt        :: nProcs              = 0        ! number of processors
-      PetscInt           :: ranges              = 0        ! accumulate range for every processor
+      
 
       integer            :: nNodesWithoutInterfaceGhosts = 0 ! number of resident nodes (without interface and ghost nodes)
       integer            :: nghost              = 0        ! number of ghost nodes (interface + ghost)
@@ -100,7 +99,6 @@
       ! App local <-> global
       PetscInt, allocatable :: ALO2AGO(:)
       PetscInt, allocatable :: AGO2ALO(:)
-      PetscInt, allocatable :: ALO2ALOold(:)
       PetscInt, allocatable :: ALOold2ALO(:)
       ! Petsc local <-> global
       PetscInt, allocatable :: PLO2PGO(:)
@@ -111,7 +109,7 @@
       PetscInt, allocatable :: ALO2PLO(:)
       PetscInt, allocatable :: PLO2ALO(:)
 
-      integer, allocatable :: onlyNodes(:), onlyGhosts(:), onlyGhostsOldLocalMapping(:)
+      integer, allocatable :: onlyNodes(:), onlyGhosts(:)
 
       PetscLogStage :: stageInit, stageFill, stageSolve, stageFin
 
@@ -129,8 +127,7 @@
       !> @param[in] ISS optional, frequency running variable
       !> @param[in] IDD optional, direction running variable
       subroutine checkAsparDiagonalAccuracy(ASPAR, IA, JA, ISS, IDD)
-        use datapool, only: MNP, IOBP, DBG
-        use elfe_glbl, only: iplg
+        use datapool, only: MNP, IOBP, DBG, iplg, rkind
         use petscsys
         implicit none
         real(kind=8), intent(in)  :: ASPAR(:)
@@ -157,7 +154,7 @@
         integer :: IP_petsc, IP, IP_old
         ! time measurement
 #ifdef TIMINGS
-        real :: startTime, endTime
+        real(rkind) :: startTime, endTime
 #endif
 
 #ifdef TIMINGS
@@ -520,13 +517,6 @@
 !         PetscDraw   :: draw   ! extended viewer. e.g. pause
 
         call PetscViewerDrawOpen(PETSC_COMM_WORLD, PETSC_NULL_CHARACTER, "matrix", PETSC_DECIDE, PETSC_DECIDE, 800, 800, viewer, petscErr);CHKERRQ(petscErr)
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-
         call MatView(matrix, viewer, petscErr );CHKERRQ(petscErr)
 !         call PetscViewerDrawGetDraw(viewer, 0, draw, petscErr);CHKERRQ(petscErr)
 !         call PetscDrawSetPause(draw,100, petscErr);CHKERRQ(petscErr);CHKERRQ(petscErr)
@@ -538,28 +528,29 @@
 #ifdef MPI_PARALL_GRID
       !> create all APP<->Petsc local<->global mappings.
       subroutine createMappings()
-        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG
+        USE DATAPOOL, only: MNP, CCON, IA, JA, NNZ, NP_RES, DBG, npg, iplg, ipgl, np_global
         ! np_global    - # nodes gloabal
         ! np or NP_RES - # nodes local non augmented
         ! npg          - # ghost
         ! npa or MNP   - # nodes aufmented
         ! int::iplg(ip)           global element index. local to global LUT
         ! llsit_type::ipgl(ipgb)  ipgb is a global node. global to local LUT
-        use elfe_glbl, only: npg, iplg, ipgl, np_global
         use petscsys
-        use elfe_msgp
         implicit none
 
-        integer :: i
+        integer :: i, ierr, istat
+        PetscInt :: ranges  ! accumulate range for every processor
         ! Application Ordering
         AO :: appOrdering
+
+        ranges = 0
 
 ! exclude interface nodes from the local mapping,list,iplg whatever
 ! a interface node is not a ghost node. so one can find them in the range from 1 to NP_RES.
 ! a interface node is owned by two (or more threads?)
 ! to the detect an interface node i use this method:
 
-! a) first geht the global id
+! a) first get the global id
 ! b) with the gloabl id, get the local rank
 ! c) check if there is a linked list associated with the local node
 ! d) if the rank from the next node in the list ist less then the curren rank, ignore this node
@@ -579,12 +570,11 @@
 
 ! create App Local <-> App Global mappings
 ! create App Local Old <-> App Local new mapping (without interface nodes)
-        allocate(ALO2ALOold(0:nNodesWithoutInterfaceGhosts-1), &
-                ALOold2ALO(0:NP_RES + npg -1), &
+        allocate(ALOold2ALO(NP_RES + npg), &
                 AGO2ALO(0:np_global-1), &
                 ALO2AGO(0:nNodesWithoutInterfaceGhosts-1), &
-                stat=stat)
-        if(stat /= 0) then
+                stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
@@ -595,30 +585,29 @@
 
         nNodesWithoutInterfaceGhosts=0
         do i = 1, NP_RES
-            if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
-              if(( ipgl( iplg(i) )%next%rank .le. rank )) then
-                cycle
-              end if
+          if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
+            if(( ipgl( iplg(i) )%next%rank .le. rank )) then
+              cycle
             end if
+          end if
 
-            ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
-            AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
+          ALO2AGO(nNodesWithoutInterfaceGhosts) = iplg(i) -1
+          AGO2ALO(iplg(i)-1) = nNodesWithoutInterfaceGhosts
 
-            ALOold2ALO(i-1) = nNodesWithoutInterfaceGhosts
-            ALO2ALOold(nNodesWithoutInterfaceGhosts) = i-1
+          ALOold2ALO(i) = nNodesWithoutInterfaceGhosts
 
-            nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
+          nNodesWithoutInterfaceGhosts = nNodesWithoutInterfaceGhosts + 1
         end do
 
 ! create PETsc Local -> Global mapping
-        allocate(PLO2PGO(0:nNodesWithoutInterfaceGhosts), PGO2PLO(0:np_global), stat=stat)
-        if(stat /= 0) then
+        allocate(PLO2PGO(0:nNodesWithoutInterfaceGhosts), PGO2PLO(0:np_global), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.526'
         endif
 
         PGO2PLO = -999
-        call MPI_Scan(nNodesWithoutInterfaceGhosts, ranges, 1, MPIU_INTEGER, MPI_SUM, comm, ierr)
+        call MPI_Scan(nNodesWithoutInterfaceGhosts, ranges, 1, MPIU_INTEGER, MPI_SUM, PETSC_COMM_WORLD, ierr)
 !        CHKERRQ(petscErr)
 
         do i = 1, nNodesWithoutInterfaceGhosts
@@ -627,8 +616,8 @@
         end do
 
 ! create App Global <-> PETsc Global mapping
-        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=stat)
-        if(stat /= 0) then
+        allocate(AGO2PGO(0:np_global-1), PGO2AGO(0:np_global-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.498'
         endif
@@ -647,8 +636,8 @@
         call AODestroy(appOrdering, petscErr);CHKERRQ(petscErr)
 
 ! create App local <-> Petsc local mappings
-        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:nNodesWithoutInterfaceGhosts-1), stat=stat)
-        if(stat /= 0) then
+        allocate(ALO2PLO(0:MNP-1), PLO2ALO(0:nNodesWithoutInterfaceGhosts-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.562'
         endif
@@ -666,8 +655,8 @@
         ! create onlyGhosts array
         !> todo we don't need the onlyghost array with petsc block. only in petsc parallel. move code?
         nghost=NP_RES+npg-nNodesWithoutInterfaceGhosts
-        allocate(onlyGhosts(0:nghost-1), onlyGhostsOldLocalMapping(0:nghost-1), stat=stat)
-        if(stat /= 0) then
+        allocate(onlyGhosts(0:nghost-1), stat=istat)
+        if(istat /= 0) then
           write(DBG%FHNDL,*) __FILE__, " Line", __LINE__
           stop 'wwm_petscpool l.581'
         endif
@@ -677,7 +666,6 @@
             if(ASSOCIATED(ipgl( iplg(i) )%next) ) then
               if(( ipgl( iplg(i) )%next%rank .le. rank )) then
                 onlyGhosts(nghost)= AGO2PGO( iplg(i)-1 )
-                onlyGhostsOldLocalMapping(nghost) = i
                 nghost = nghost + 1
                 cycle
               end if
@@ -686,7 +674,6 @@
 
         do i=1,npg
           onlyGhosts(nghost) = AGO2PGO( iplg(NP_RES+i)-1)
-          onlyGhostsOldLocalMapping(nghost) = NP_RES+i
           nghost = nghost + 1
         end do
 
@@ -705,11 +692,15 @@
       subroutine petscpoolInit()
         use petscsys
         USE DATAPOOL, only: IA, JA, NNZ, MNP
-        USE elfe_msgp, only : comm
+#ifdef MPI_PARALL_GRID
+        use datapool, only: comm
+#endif
         implicit none
         integer istat
 
+#ifdef MPI_PARALL_GRID
         PETSC_COMM_WORLD=comm
+#endif
         call PetscInitialize(PETSC_NULL_CHARACTER, petscErr);CHKERRQ(petscErr)
 
         call PetscLogBegin(petscErr);CHKERRQ(petscErr)
@@ -732,9 +723,8 @@
 
       !> reads KSP/PC Type etc. from PETScOptions namelist and check for strange values
       subroutine readPETSCnamelist()
-        use datapool, only: inp, CHK, DBG
+        use datapool, only: inp, CHK, DBG, myrank
         use StringTools
-        use elfe_msgp, only : myrank
         implicit none
         ! true if one of the values seem strange
         logical :: rtolStrage, abstolStrange, dtolStrange, maxitsStrange
@@ -818,7 +808,6 @@
         ! we deallocate only arrays who are declared in this file!
         if(allocated(ALO2AGO)) deallocate(ALO2AGO)
         if(allocated(AGO2ALO)) deallocate(AGO2ALO)
-        if(allocated(ALO2ALOold)) deallocate(ALO2ALOold)
         if(allocated(ALOold2ALO)) deallocate(ALOold2ALO)
         if(allocated(PLO2PGO)) deallocate(PLO2PGO)
         if(allocated(PGO2PLO)) deallocate(PGO2PLO)
@@ -828,7 +817,6 @@
         if(allocated(PLO2ALO)) deallocate(PLO2ALO)
         if(allocated(onlyNodes)) deallocate(onlyNodes)
         if(allocated(onlyGhosts)) deallocate(onlyGhosts)
-        if(allocated(onlyGhostsOldLocalMapping)) deallocate(onlyGhostsOldLocalMapping)
 
         if(allocated(IA_P)) deallocate(IA_P)
         if(allocated(JA_P)) deallocate(JA_P)

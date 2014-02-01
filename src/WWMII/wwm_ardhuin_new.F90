@@ -303,8 +303,8 @@
 !        WRITE(5001,*) SSWELLF
 
         AALPHA = 0.0095_rkind
-        BBETA  = 1.75_rkind ! 1.54 for ECMWF
-        ZZALP   = 0.008_rkind
+        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+        ZZALP   = 0.006_rkind
         ZZWND   = 10._rkind
 
         SWELLFPAR = 1
@@ -317,7 +317,7 @@
         SSDSABK    = 1.5_rkind
 
         SSDSBR     = 9.E-4_rkind
-        SSDSBRFDF  = 0.0_rkind
+        SSDSBRFDF  = 0
         SSDSBRF1   = 0.5_rkind
         SSDSBRF2   = 0._rkind
         SSDSBR2    = 0.8_rkind
@@ -877,7 +877,11 @@
            ! this CM parameter is 1 / C_phi
            ! this is the "correct" shallow-water expression
            ! here Z0 corresponds to Z0+Z1 of the Janssen eq. 14
+#ifdef USE_SINGLE
         ZCN=LOG(K(IS)*Z0)
+#else
+        ZCN=DLOG(K(IS)*Z0)
+#endif
            ! below is the original WAM version (OK for deep water)  g*z0/C^2
            ! ZCN=LOG(G*Z0b(I)*CM(I)**2)
 !
@@ -905,8 +909,7 @@
               ! The source term Sp is beta * omega * X**2
               ! as given by Janssen 1991 eq. 19
               ! for a faster performance EXP(X)*X**4 should be tabulated   
-              DSTAB(ISTAB,IS) = CONST*EXP(ZLOG)*ZLOG**4*UCN*            &
-     &  UCN*COSWIND**SSINTHP 
+              DSTAB(ISTAB,IS) = CONST*EXP(ZLOG)*ZLOG**4*UCN*UCN*COSWIND**SSINTHP 
               LLWS(IS)=.TRUE.
             ELSE
               DSTAB(ISTAB,IS) = 0.
@@ -920,7 +923,7 @@
             IF (28._rkind*CM*USTAR*COSWIND.GE.1) THEN
               LLWS(IS)=.TRUE.
               END IF
-          ELSE
+          ELSE  ! (COSWIND.LE.0.01) 
             DSTAB(ISTAB,IS) = 0.
             LLWS(IS)=.FALSE.
             END IF
@@ -1016,9 +1019,6 @@
       ! Computes the high-frequency contribution
       ! the difference in spectal density (kx,ky) to (f,theta)
       ! is integrated in this modified CONST0
-
-
-!AR: Check in WW3 how sig is defined 
       CONST0=DTH*SIG(NK)**5/((G9**2)*PI2) &
      &   *PI2*SIG(NK) / CG(NK)  !conversion WAM (E(f,theta) to WW3 A(k,theta)
       TEMP=0.
@@ -1149,11 +1149,7 @@
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
       USE DATAPOOL, ONLY: ZERO, ONE, TWO
-# ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP
-# endif
-
-!/
+      USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /
@@ -1302,8 +1298,7 @@
               KH=KH+DKH
               PR=(4.*KH/(KHS**2))*exp(-(2*((KH/KHS)**2)))
 !              W=1.5*(((KHS)/(SQRT(2.)*GAM*XT))**2)*(1-exp(-(((KH)/(GAM*XT))**4.))) !CK2002 parameterization
-              W=SSDSABK*(((KHS)/(SQRT(2.)*GAM*XT))**2)*                 &
-     &   (ONE-exp(-(((KH)/(GAM*XT))**SSDSPBK))) 
+              W=SSDSABK*(((KHS)/(SQRT(2.)*GAM*XT))**2)*(ONE-exp(-(((KH)/(GAM*XT))**SSDSPBK))) 
               EPS=-((((SSDSBCK/(XT**SSDSHCK))*KH)**3)/4)*SQRT(G9/XT)
               DCKI(IKHS, IKD)= DCKI(IKHS, IKD)+PR*W*EPS*DKH
               QBI(IKHS, IKD) = QBI(IKHS, IKD) +PR*W*    DKH
@@ -1345,8 +1340,7 @@
               !C2 = SIG(IK2)/K(IK2) ! Valid in all water depth ???
               DO ITH2=1,NTH
                 IS2=ITH2+(IK2-1)*NTH
-                CUMULW(IS2,IS)=SQRT(C**2+C2**2-2*C*C2*                  &
-     &  ECOS(1+ABS(ITH2-ITH)))                                          & ! = deltaC
+                CUMULW(IS2,IS)=SQRT(C**2+C2**2-2*C*C2*ECOS(1+ABS(ITH2-ITH)))                                          & ! = deltaC
      &  *DSIP(IK2)/(0.5*C2) * DTH                   ! = dk*dtheta (Valid in deep water only)
                                    !*DDEN(IK)/(DTH*SIG(IK)*CG(IK))* DTH         ! = dk*dtheta (Valid in all water depth ???)
                 END DO
@@ -2227,7 +2221,7 @@
         EFDF=ZERO
         KBAR=ZERO
         EFDF=ZERO
-        NKL=ZERO !number of windows
+        NKL=0 !number of windows
         DO IKL=1,NK 
           IKSUP(IKL)=IKTAB(IKL,ID)
           IF (IKSUP(IKL) .LE. NK) THEN
@@ -2256,8 +2250,8 @@
 !
 ! gets indices for tabulated dissipation DCKI and breaking probability QBI
 !
-            IKD = FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1))
-            IKHS= 1+ANINT(KBAR(IKL)*HS(IKL)/DKHS)
+            IKD = INT(FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1)))
+            IKHS= INT(1+ANINT(KBAR(IKL)*HS(IKL)/DKHS))
             IF (IKD > NKD) THEN    ! Deep water
               IKD = NKD
             ELSE IF (IKD < 1) THEN ! Shallow water

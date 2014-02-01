@@ -62,6 +62,19 @@
       include 'mpif.h'
 !#endif
 
+
+      interface
+        subroutine elfe_output_custom(lwrite,i23d,ivs,ichanout,fname,idim1,idim2,outvar1,outvar2)
+          use elfe_glbl, only: rkind
+          implicit none
+          integer,intent(in) :: i23d,ivs,ichanout,idim1,idim2
+          character(len=4),intent(in) :: fname
+          real(rkind),intent(in) :: outvar1(idim1,idim2)
+          real(rkind),optional,intent(in) :: outvar2(idim1,idim2)
+          integer,intent(out) :: lwrite
+        end subroutine elfe_output_custom
+      end interface
+
       integer, intent(in) :: it
 
 !     External functions
