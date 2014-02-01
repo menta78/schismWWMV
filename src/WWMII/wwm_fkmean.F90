@@ -58,7 +58,7 @@
 !      USE YOWSHAL  , ONLY : TFAK     ,INDEP
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, RKIND, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, LOUTWAM, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -155,7 +155,7 @@
             F1(IJ) = F1(IJ)+DFFR(M)*TEMP2(IJ)
             AK(IJ) = AK(IJ)+TEMPA(IJ)*TEMP2(IJ)
             XK(IJ) = XK(IJ)+TEMPX(IJ)*TEMP2(IJ)
-            WRITE(111118,'(4F20.10)') DFIM(M), DFIMOFR(M), DFFR(M)
+            IF (LOUTWAM) WRITE(111118,'(4F20.10)') DFIM(M), DFIMOFR(M), DFFR(M)
           ENDDO
         ENDDO
 
@@ -189,12 +189,12 @@
           XK(IJ) = (XK(IJ)/EM(IJ))**2
         ENDDO
 
-        WRITE(111118,'(4F20.10)') XK(IJ), AK(IJ), F1(IJ), EM(IJ)
+        IF (LOUTWAM)  WRITE(111118,'(4F20.10)') XK(IJ), AK(IJ), F1(IJ), EM(IJ)
 
       ENDIF
 
       DO IJ=IJS,IJL
-        WRITE(111118,'(4F20.10)') XK(IJ), AK(IJ), F1(IJ), EM(IJ)
+      IF (LOUTWAM)  WRITE(111118,'(4F20.10)') XK(IJ), AK(IJ), F1(IJ), EM(IJ)
       END DO
 
       

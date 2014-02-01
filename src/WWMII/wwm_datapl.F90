@@ -180,7 +180,7 @@
          INTEGER    :: HOTSTYLE_IN  = 1
          INTEGER    :: HOTSTYLE_OUT = 1
 #endif
-         INTEGER    :: ITEST      = 99
+         INTEGER    :: ITEST      = 0 
          INTEGER    :: KKK        = 1
 
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
@@ -337,7 +337,7 @@
 !
 ! ... file control ...
 !
-         INTEGER, PARAMETER     :: STARTHNDL = 1000
+         INTEGER, PARAMETER     :: STARTHNDL = 50000 
 
          TYPE FILEDEF
             CHARACTER(LEN=140)  :: FNAME
@@ -999,7 +999,7 @@
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
-         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL, PARAMETER    :: LBIWBK = .TRUE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
@@ -1012,6 +1012,8 @@
          REAL(rkind), PARAMETER :: DEPTHRS = 50.d0
          REAL(rkind), PARAMETER :: UMAX = 50.d0
          REAL(rkind), PARAMETER :: XKAPPA = 0.4d0
+
+         LOGICAL, PARAMETER     :: LOUTWAM = .FALSE. 
 
          INTEGER                :: IPHYS = 0 
          INTEGER                :: IDAMPING = 1 ! AR: Put in namelist ...

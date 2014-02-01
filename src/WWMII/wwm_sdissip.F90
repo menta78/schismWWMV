@@ -72,7 +72,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, LCFLX, &
      &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, &
      &                      DELUST, DELALP, LBIWBK, DEP, LBIWBK, ITEST, FRATIO, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, LOUTWAM, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -107,7 +107,7 @@
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
-      WRITE(111119,'(5F20.10)')SUM(F), SUM(FL), SUM(SL), &
+      IF (LOUTWAM) WRITE(111119,'(5F20.10)')SUM(F), SUM(FL), SUM(SL), &
      &                F1MEAN, XKMEAN
                        
 
@@ -184,7 +184,7 @@
         ENDDO
     
         DO IJ=IJS,IJL 
-          WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
+          IF (LOUTWAM) WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
      &                   CM(IJ),TAUWD(IJ),PHIEPS(IJ)
         ENDDO
 !
@@ -224,7 +224,7 @@
 !SHALLOW
       ENDIF
 
-      WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
+      IF (LOUTWAM) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
 
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 

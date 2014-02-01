@@ -65,7 +65,7 @@
      &                 IUSTAR, IALPHA, USTARM, TAUT, XNLEV, STAT, &
      &                 DELUST, DELALP, ITAUMAX, JPLEVT, JPLEVC, JUMAX, &
      &                 DELU, UMAX, DELTAUW, ALPHA, XKAPPA, RKIND, IU06, &
-     &                 DELTH => DDIR, &
+     &                 DELTH => DDIR, LOUTWAM, &
      &                 G => G9, &
      &                 ZPI => PI2, &
      &                 EPSMIN => SMALL, &
@@ -106,13 +106,13 @@
 !*    1.1 INITIALISE CONSTANTS.
 !         ---------------------
 
-      write(111111,'(A20)') 'STRESS'
+      IF (LOUTWAM) WRITE(111111,'(A20)') 'STRESS'
 
       TAUWMAX = USTARM 
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
 
-      write(111111,'(A30,I10)') 'TOTAL NUMBER OF ENTRIES -- STRESS --', &
+      IF (LOUTWAM) WRITE(111111,'(A30,I10)') 'TOTAL NUMBER OF ENTRIES -- STRESS --', &
      &                 MIN(JPLEVT,JPLEVC)*ITAUMAX*JUMAX
 
       WRITE(5011) DELU, DELTAUW
@@ -129,7 +129,7 @@
           WRITE(IU06,*)' STRESS FOR LEVEL HEIGHT ',XL,' m'
         ENDIF
 
-        WRITE(111111,'(3I10,F15.8)') JL, JPLEVT, JPLEVC, XL
+        IF (LOUTWAM) WRITE(111111,'(3I10,F15.8)') JL, JPLEVT, JPLEVC, XL
 
         CDRAG = 0.0012875
         WCD = SQRT(CDRAG) 
@@ -169,7 +169,7 @@
       ENDDO
 
       WRITE(5011) TAUT
-      WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
+      IF (LOUTWAM) WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
 
       RETURN
       END SUBROUTINE STRESS

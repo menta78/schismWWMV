@@ -100,6 +100,7 @@
  
              THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
 
+         IF (LOUTWAM) THEN
          WRITE(111112,'(A10,I10)') 'BEFORE', IP
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
@@ -116,6 +117,7 @@
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+         ENDIF
 
            CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                   THWOLD(IP,1), USOLD(IP,1), &
@@ -125,6 +127,7 @@
      &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                   SL(1,:,:), FCONST(1,:))
 
+         IF (LOUTWAM) THEN
          WRITE(111112,'(A10,I10)') 'AFTER', IP 
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
@@ -141,6 +144,7 @@
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+         ENDIF 
 
          !  STOP 'END OF TEST IN COMPUTE'
 

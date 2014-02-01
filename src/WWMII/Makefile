@@ -9,7 +9,7 @@ MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC = on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = 
+NETCDF = on 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -35,7 +35,7 @@ F90 = ifort
 #INTEL
 #save opti
 #F90OPTI = -fpp -traceback -g
-##F90OPTI =  -traceback -g -check all #-warn all,nouncalled,nounused -gen-interface
+#F90OPTI = -traceback -g -check all #-warn all,nouncalled,nounused -gen-interface
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
@@ -43,9 +43,9 @@ F90 = ifort
 #extreme aggressive opti ...
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#F90OPTI = -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-#F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
+F90OPTI = -g -traceback -O3 -axSSE4.2 -unroll-aggressive -assume byterecl #-guide -vec-report 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp

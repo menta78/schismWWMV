@@ -70,7 +70,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
      &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, LOUTWAM, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -476,8 +476,8 @@
       ENDDO
 
         DO IJ=IJS,IJL
-        WRITE(111117,'(2F30.25)') & 
-     &                  SUM(FL(IJ,:,:)),SUM(SL(IJ,:,:))
+!        WRITE(111117,'(2F30.25)') & 
+!     &                  SUM(FL(IJ,:,:)),SUM(SL(IJ,:,:))
 !        WRITE(111117,*) 'NOW THE FULL THING'
 !        DO K = 1, NANG
 !          DO M = 1, NFRE

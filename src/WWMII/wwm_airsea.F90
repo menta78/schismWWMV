@@ -53,7 +53,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, STAT, &
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, RKIND, &
      &                      DELUST, DELALP, TAUT, DELTAUW, ITAUMAX, &
-     &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, &
+     &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, LOUTWAM, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -101,7 +101,7 @@
         DELJ2   = 1. - DELJ1
         US(IJ)  = (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2 &
      &       +(TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
-        WRITE(111115,'(I10,5F15.8)') I, ITAUMAX, XI, TAUW(IJ), DELTAUW 
+        IF (LOUTWAM) WRITE(111115,'(I10,5F15.8)') I, ITAUMAX, XI, TAUW(IJ), DELTAUW 
       ENDDO
 
 !*    3. DETERMINE ROUGHNESS LENGTH.
@@ -113,7 +113,7 @@
         UST2 = US(IJ)**2
         ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
         Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
-        WRITE(111115,'(5F15.8)') UST2, ARG, TAUW(IJ), EPS1,  Z0(IJ)
+        IF (LOUTWAM) WRITE(111115,'(5F15.8)') UST2, ARG, TAUW(IJ), EPS1,  Z0(IJ)
       ENDDO
 
 !      IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)

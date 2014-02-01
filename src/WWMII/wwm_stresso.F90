@@ -89,7 +89,7 @@
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, RKIND, IPHYS, ILEVTAIL, &
      &                      DELUST, DELALP, TAUT, DELTAUW, ITAUMAX, TAUWSHELTER, &
      &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, FR5, DELTAIL, TAUHFT2, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, LOUTWAM, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -149,7 +149,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        WRITE(111116,'(10F15.8)') CONST, ROG, ROWATER, G, CONST0(IJ), SUM(ZPIROFR)
+        IF (LOUTWAM) WRITE(111116,'(10F15.8)') CONST, ROG, ROWATER, G, CONST0(IJ), SUM(ZPIROFR)
       ENDDO
 
 !     !!!! CONSTFM is only defined up to M=MIJ(IJ)
@@ -160,7 +160,7 @@
           CONSTFM(IJ,M) = ZPIROFR(M)*DFIM(M)
         ENDDO
         CONSTFM(IJ,MIJ(IJ)) = ZPIROFR(MIJ(IJ))*SCDFM*FR(MIJ(IJ))
-        WRITE(111116,'(10F15.8)') SCDFM, CONSTFM(IJ,MIJ(IJ)) 
+        IF (LOUTWAM) WRITE(111116,'(10F15.8)') SCDFM, CONSTFM(IJ,MIJ(IJ)) 
       ENDDO
 
 
@@ -203,7 +203,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-        WRITE(111116,'(2F15.8)') XSTRESS(IJ), YSTRESS(IJ)
+        IF (LOUTWAM) WRITE(111116,'(2F15.8)') XSTRESS(IJ), YSTRESS(IJ)
       ENDDO
 
       IF (LCFLX) THEN
@@ -335,7 +335,7 @@
 
         TAUW(IJ) = MIN(TAUW(IJ),UST2(IJ)-EPS1)
         TAUW(IJ) = MAX(TAUW(IJ),0.)
-        WRITE(111116,'(4F15.8)') XSTRESS(IJ), YSTRESS(IJ) , TAUW(IJ), TAUHF(IJ)
+        IF (LOUTWAM) WRITE(111116,'(4F15.8)') XSTRESS(IJ), YSTRESS(IJ) , TAUW(IJ), TAUHF(IJ)
       ENDDO
 !
 !*    4. UNRESOLVED PART ENERGY FLUX.
