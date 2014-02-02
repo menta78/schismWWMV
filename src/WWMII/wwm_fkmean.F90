@@ -189,7 +189,9 @@
           XK(IJ) = (XK(IJ)/EM(IJ))**2
         ENDDO
 
+        DO IJ=IJS,IJL
         IF (LOUTWAM)  WRITE(111118,'(4F20.10)') XK(IJ), AK(IJ), F1(IJ), EM(IJ)
+        ENDDO
 
       ENDIF
 

@@ -991,10 +991,10 @@
          REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
          REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
-         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:), FMEANWS(:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
-         INTEGER, ALLOCATABLE         :: INLCOEF(:,:)
+         INTEGER, ALLOCATABLE         :: INLCOEF(:,:), MIJ(:)
 
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
@@ -1013,7 +1013,7 @@
          REAL(rkind), PARAMETER :: UMAX = 50.d0
          REAL(rkind), PARAMETER :: XKAPPA = 0.4d0
 
-         LOGICAL, PARAMETER     :: LOUTWAM = .FALSE. 
+         LOGICAL, PARAMETER     :: LOUTWAM = .TRUE. 
 
          INTEGER                :: IPHYS = 0 
          INTEGER                :: IDAMPING = 1 ! AR: Put in namelist ...

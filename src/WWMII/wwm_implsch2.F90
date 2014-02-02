@@ -7,7 +7,7 @@
      &                    ROAIRO, ZIDLOLD, &
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST)
+     &                    SL, FCONST, FMEANWS, MIJ)
 
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
@@ -28,21 +28,21 @@
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL(rkind) :: FL(IJS:IJL,NANG,NFRE),FL3(IJS:IJL,NANG,NFRE),SL(IJS:IJL,NANG,NFRE)
-      REAL(rkind),DIMENSION(IJS:IJL,NFRE) :: FCONST 
+      REAL(rkind),DIMENSION(IJS:IJL,NFRE) :: FCONST
       REAL(rkind),DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW, &
-     &                           ROAIRO,ZIDLOLD
+     &                           ROAIRO,ZIDLOLD,FMEANWS 
       REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
  
       INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
-      INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
+      INTEGER :: MIJ(IJS:IJL)
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
       REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
       REAL(rkind), DIMENSION(NFRE) :: DELFL
-      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG 
+      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, USFM, GADIAG 
       REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(rkind), DIMENSION(IJS:IJL) :: PHIEPS, TAUOC, PHIAW
       REAL(rkind), DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,PHIWA 
@@ -156,7 +156,7 @@
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
-     &              MIJ
+     &              MIJ(IJS)
 
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
      &             IJS, IJL, ILEV)
@@ -196,6 +196,13 @@
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SBOTTOM' 
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
 
+      DO IJ=IJS,IJL
+        USOLD(IJ) = USNEW(IJ)
+        Z0OLD(IJ) = Z0NEW(IJ)
+        ROAIRO(IJ) = ROAIRN(IJ)
+        ZIDLOLD(IJ) = ZIDLNEW(IJ)
+      ENDDO
+
       RETURN
       END SUBROUTINE PREINTRHS 
 ! ----------------------------------------------------------------------
@@ -207,7 +214,7 @@
      &                    ROAIRO, ZIDLOLD, &
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST)
+     &                    SL, FCONST, FMEANWS, MIJ)
 
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
@@ -237,14 +244,14 @@
 ! ----------------------------------------------------------------------
 
       INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
-      INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
+      INTEGER :: MIJ(IJS:IJL)
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
       REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
       REAL(rkind), DIMENSION(NFRE) :: DELFL
-      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG
+      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, USFM, GADIAG
       REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
-      REAL(rkind), DIMENSION(IJS:IJL) :: PHIEPS, TAUOC, PHIAW
+      REAL(rkind), DIMENSION(IJS:IJL) :: PHIEPS, TAUOC, PHIAW, FMEANWS
       REAL(rkind), DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,PHIWA
       REAL(rkind), DIMENSION(IJS:IJL,NANG) :: SPRD
       REAL(rkind), DIMENSION(IJS:IJL,NFRE) :: TEMP, TEMP2
@@ -326,7 +333,7 @@
      &                    ROAIRO, ZIDLOLD, &
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST)
+     &                    SL, FCONST, FMEANWS, MIJ)
 
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
@@ -349,19 +356,19 @@
       REAL(rkind) :: FL(IJS:IJL,NANG,NFRE),FL3(IJS:IJL,NANG,NFRE),SL(IJS:IJL,NANG,NFRE)
       REAL(rkind),DIMENSION(IJS:IJL,NFRE) :: FCONST
       REAL(rkind),DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW, &
-     &                           ROAIRO,ZIDLOLD
+     &                           ROAIRO,ZIDLOLD,FMEANWS
       REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
       INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
-      INTEGER :: MIJ(IJS:IJL)
       INTEGER :: JU(IJS:IJL)
+      INTEGER :: MIJ(IJS:IJL)
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
       REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
       REAL(rkind), DIMENSION(NFRE) :: DELFL
-      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, FMEANWS, USFM, GADIAG
+      REAL(rkind), DIMENSION(IJS:IJL) :: EMEANWS, USFM, GADIAG
       REAL(rkind), DIMENSION(IJS:IJL) :: F1MEAN, AKMEAN, XKMEAN
       REAL(rkind), DIMENSION(IJS:IJL) :: PHIEPS, TAUOC, PHIAW
       REAL(rkind), DIMENSION(IJS:IJL) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,PHIWA
@@ -371,7 +378,34 @@
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
       IDELT = INT(DT4S)
+      ILEV=1
 
+      IF(ISHALLO.EQ.1) THEN
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+            TEMP2(IJ,M) = FRM5(M)
+          ENDDO
+        ENDDO
+      ELSE
+        DO M=1,NFRE
+          DO IJ=IJS,IJL
+!AR: WAM TABLE REPLACES BY WWM WK            AKM1 = 1./TFAK(INDEP(IJ),M)
+            AKM1 = 1./WK(IJ,M)
+!AR: WAM TABLE REPLACES BY WWM CG            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
+            AK2VGM1 = AKM1**2/CG(IJ,M)
+            TEMP2(IJ,M) = AKM1*AK2VGM1
+!            WRITE(111113,'(4F20.10)') AKM1, AK2VGM1, TEMP2(IJ,M) 
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF(IPHYS.EQ.0) THEN
+        CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      ELSE
+        CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+      ENDIF
 
 !*    2.5 REPLACE DIAGNOSTIC PART OF SPECTRA BY A F**(-5) TAIL.
 !         -----------------------------------------------------
@@ -469,7 +503,7 @@
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
-     &              MIJ
+     &              MIJ(IJS:IJL)
 
 
       IF (ITEST.GE.2) THEN
