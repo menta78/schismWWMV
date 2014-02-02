@@ -198,6 +198,7 @@
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Uwind ",F7.2,2x,F7.2)')minval(WINDXY(:,1)),maxval(WINDXY(:,1))
       write(WINDBG%FHNDL,'("+TRACE... Done with CF init, Vwind ",F7.2,2x,F7.2)')minval(WINDXY(:,2)),maxval(WINDXY(:,2))
       FLUSH(WINDBG%FHNDL)
+ 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
