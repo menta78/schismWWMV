@@ -131,7 +131,7 @@
 !      USE YOWTEST  , ONLY : IU06     ,ITEST
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
-     &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, &
+     &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, ITEST, LCFLX,&
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -172,17 +172,9 @@
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: CIWAB 
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
 
-      INTEGER, SAVE :: IFIRST
-
-      INTEGER, PARAMETER :: ITEST = 0
-
-      LOGICAL :: LCFLX
-
       IDELT = INT(DT4S)
 
 !      REAL ZHOOK_HANDLE
-
-      DATA IFIRST/1/
 
 !      IF (LHOOK) CALL DR_HOOK('IMPLSCH',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------

@@ -119,6 +119,7 @@
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
          ENDIF
 
+         IF (.TRUE.) THEN
            CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                   THWOLD(IP,1), USOLD(IP,1), &
      &                   TAUW(IP), Z0OLD(IP,1), &
@@ -126,6 +127,29 @@
      &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                   SL(1,:,:), FCONST(1,:))
+         ELSE
+          CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                   THWOLD(IP,1), USOLD(IP,1), &
+     &                   TAUW(IP), Z0OLD(IP,1), &
+     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                   SL(1,:,:), FCONST(1,:))
+          CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                   THWOLD(IP,1), USOLD(IP,1), &
+     &                   TAUW(IP), Z0OLD(IP,1), &
+     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                   SL(1,:,:), FCONST(1,:))
+          CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                   THWOLD(IP,1), USOLD(IP,1), &
+     &                   TAUW(IP), Z0OLD(IP,1), &
+     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                   SL(1,:,:), FCONST(1,:))
+         ENDIF
 
          IF (LOUTWAM) THEN
          WRITE(111112,'(A10,I10)') 'AFTER', IP 

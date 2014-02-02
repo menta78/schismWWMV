@@ -86,7 +86,7 @@ OBJWWM = wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_filei
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o wwm_wsigstar.o \
        wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
        wwm_sinput.o wwm_sdissip.o wwm_sinput_ard.o wwm_sdiss_ardh_vec.o \
-       wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
+       wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_implsch2.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
        wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 
 #       dislin.o diclass.o \
