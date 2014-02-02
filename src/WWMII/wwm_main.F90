@@ -216,11 +216,7 @@
            LFIRSTSTEP = .FALSE.
          END IF
 
-<<<<<<< HEAD
-#ifdef TIMINGS 
-=======
 #ifdef TIMINGS
->>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
          TIME2 = mpi_wtime() 
 #endif
 
@@ -286,11 +282,6 @@
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
 #endif
-<<<<<<< HEAD
-
-=======
->>>>>>> a3a8f20bb5d7d56009cc5c61b66e97cb30eb8ff5
- 
          IF (LNANINFCHK) THEN
            CALL SELFE_NANCHECK_INPUT_B
          END IF
