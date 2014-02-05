@@ -19,9 +19,9 @@ module elfe_msgp
 !  use mpi
 !#endif
   use elfe_glbl, only : rkind, llist_type,nvrt, &
-                        ne_global,ne,neg,nea,ielg,iegl,iegrpv,nm,js, &
-                        np_global,np,npg,npa,iplg,ipgl,nne,ine,dp, &
-                        ns_global,ns,nsg,nsa,islg,isgl,is,isidenode, &
+                        ne_global,ne,neg,nea,ielg,iegl,iegrpv,elnode,elside, &
+                        np_global,np,npg,npa,iplg,ipgl,nne,indel,dp, &
+                        ns_global,ns,nsg,nsa,islg,isgl,isdel,isidenode, &
                         errmsg,fdb,lfdb,mntr,ntracers,msc2,mdc2
   implicit none
 !#ifndef USE_MPIMODULE
@@ -670,9 +670,9 @@ subroutine msgp_tables
     iegb=ielg(ie)
     nbr_p(iegrpv(iegb))=.true.
     do j=1,3 !nodes
-      itmp=nm(ie,j) !nmgb(iegb,j)
+      itmp=elnode(j,ie) !nmgb(j,iegb)
       do l=1,nne(itmp) !nnegb(itmp)
-        k=ine(itmp,l) !inegb(itmp,l)
+        k=indel(l,itmp) !inegb(itmp,l)
         if(k==0) then
           call parallel_abort('msgp_tables: bomb (6)')
         else if(k>0) then
@@ -1049,7 +1049,7 @@ subroutine msgp_tables
 !      call parallel_abort(errmsg)
     endif
     do j=1,nsrecv(i)
-      write(10,'(t1,4i8)') isrecv(j,i),isgrecv(j,i),iplg(isidenode(isrecv(j,i),1:2))
+      write(10,'(t1,4i8)') isrecv(j,i),isgrecv(j,i),iplg(isidenode(1:2,isrecv(j,i)))
     enddo
   enddo
   write(10,'(a)') '##########################################################'
@@ -1128,7 +1128,7 @@ subroutine msgp_tables
 !      call parallel_abort(errmsg)
     endif
     do j=1,nssend(i)
-      write(10,'(t1,4i8)') issend(j,i),isgsend(j,i),iplg(isidenode(issend(j,i),1:2))
+      write(10,'(t1,4i8)') issend(j,i),isgsend(j,i),iplg(isidenode(1:2,issend(j,i)))
     enddo
   enddo
   write(10,'(a)') '##########################################################'

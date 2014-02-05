@@ -43,7 +43,7 @@
       open(10,file='outputs/'//fdb,status='replace')
       write(10,*)np,nproc
       do i=1,np
-        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(dav_maxmag(i)),real(dav_max(i,1:2))
+        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(dav_maxmag(i)),real(dav_max(1:2,i))
       enddo !i
       close(10)
 

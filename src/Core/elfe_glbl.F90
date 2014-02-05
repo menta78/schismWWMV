@@ -14,6 +14,9 @@ module elfe_glbl
 !#endif
 
   ! Some constants
+  integer,parameter :: nthfiles=5 !# of type I (ASCII) .th files (for dimensioning)
+  integer,parameter :: nthfiles2=5 !# of *3D.th files (for dimensioning)
+  integer,parameter :: nthfiles3=3 !# of source/sink .th (for dimensioning)
   real(rkind),parameter :: small1=1.d-6 !small non-negative number
   real(rkind),parameter :: small2=small1*100 !slightly larger number
   real(rkind),parameter :: pi=3.141592653589793d0
@@ -32,7 +35,7 @@ module elfe_glbl
                                            ! (:,2)=communication time
   ! timer_ns: used in target routines for profiling. Increase its dimension and use for your own purpose.
   ! 1: upwind/TVD transport
-  real(rkind),save :: timer_ns(1)
+  real(rkind),save :: timer_ns(11)
 
   ! For debugging
   character(72) :: fdb  ! Name of debugging file
@@ -52,13 +55,15 @@ module elfe_glbl
                   &ibc,nrampbc,nrampwind,nramp,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,inu_st,irec_nu,itur,iupwind_t,iupwind_s,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,icst,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
-                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl
+                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
+                  &inv_atm_bnd,ishapiro,ishapiro_violation
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,wtiminc,npstime,npstiminc, &
                       &surf_time1,surf_time2,time_nu,step_nu,dzb_min,vdmax_pp1, &
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
-                      &shapiro,vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man
+                      &shapiro,vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
+                      &prmsl_ref,cdh,hmin_radstress,dzb_decay
 
   ! Misc. variables shared between routines
   character(len=2),save :: tvd_mid1,flimiter1,tvd_mid2,flimiter2 !,stringvalue
@@ -132,7 +137,9 @@ module elfe_glbl
   integer,save :: mxnbt      ! Dimension of btlist()
 
   ! Vertical layer data
-  integer,save :: ivcor                   ! SZ coordinates; use for sflux routines
+  !Vertical coord. types. 2: SZ; -1: Z (only significant in sflux_subs.F90); 1:
+  !localized sigma
+  integer,save :: ivcor
   integer,save :: nvrt                    ! Number of vertical layers
   integer,save :: kz                      ! Number of Z levels
   integer,save :: nsig                     ! Number of S levels
@@ -141,6 +148,7 @@ module elfe_glbl
   real(rkind),save,allocatable :: sigma(:) ! sigma coordinates
   real(rkind),save,allocatable :: cs(:) ! function in S-coordinate
   real(rkind),save,allocatable :: dcs(:) ! derivative of cs()
+  real(rkind),save,allocatable :: sigma_lcl(:,:) !localized sigma; ivcor=1
 
   ! Element geometry data
   integer,save :: ne_global    ! Global number of elements
@@ -151,12 +159,12 @@ module elfe_glbl
   type(llist_type),save,pointer :: iegl(:) ! Global-to-local element index table (augmented)
   integer,save,allocatable :: iegrpv(:)    ! Global element to resident processor vector
   integer,save :: nx(3,2)                       ! Cyclic index of nodes in an element
-  integer,save,allocatable :: nm(:,:)      ! Element-node tables,i34
+  integer,save,allocatable :: elnode(:,:)      ! Element-node tables,i34
 !  integer,save,allocatable :: nmgb(:,:)  ! Global element-node tables;
   integer,save,allocatable :: iself(:,:)          ! Index of node in element-node table
   integer,save,allocatable :: ic3(:,:)            ! Element-side-element tables
 !  integer,save,allocatable :: ic3gb(:,:)          ! Global element-side-element table
-  integer,save,allocatable :: js(:,:)             ! Element-side tables
+  integer,save,allocatable :: elside(:,:)             ! Element-side tables
   real(rkind),save,allocatable :: ssign(:,:)      ! Sign associated with each side of an element
   real(rkind),save,allocatable :: area(:)        ! Element areas
   real(rkind),save,allocatable :: radiel(:)       ! Element equivalent radii
@@ -175,8 +183,8 @@ module elfe_glbl
   !Derivatives of shape function in an element
   !For ics=1, the global coordinates are used
   !For ics=2, element frame is used
-  !dl(ie,j,k)=dL_{j}/dx_{k}, where j=1:3 (shape function index), k=1:2; ie is the local element index
-  real(rkind),save,allocatable :: dl(:,:,:)
+  !dldxy(j,k,ie)=dL_{j}/dx_{k}, where j=1:3 (shape function index), k=1:2; ie is the local element index
+  real(rkind),save,allocatable :: dldxy(:,:,:)
   !Transformation tensor for element frame: eframe(i,j,ie) for ics=2
   !where j is the axis id, i is the component id, ie is the local element id (aug.)
   !xe axis points from local node 2 to 3 (i.e. side 1)
@@ -207,15 +215,15 @@ module elfe_glbl
   real(rkind),save,allocatable :: dp(:),dp00(:)           ! Node depths
 !  integer,save,allocatable :: ibad(:)             ! Reliable bndry elevation flag
 !  integer,save,allocatable :: nnegb(:),inegb(:,:) ! Global node-element tables
-  integer,save,allocatable :: nne(:),ine(:,:)     ! Node-element tables
-  integer,save,allocatable :: nnp(:),inp(:,:)     ! Node-node tables
+  integer,save,allocatable :: nne(:),indel(:,:)     ! Node-element tables
+  integer,save,allocatable :: nnp(:),indnd(:,:)     ! Node-node tables
   integer,save,allocatable :: isbnd(:,:)        ! local node to _global_ open bndry segment flags
   integer,save,allocatable :: ibnd_ext_int(:)        ! interior (-1) /exterior (1) bnd node flag for an aug. node (0: not on bnd) 
 !  real(rkind),save,allocatable :: edge_angle(:,:) !angles (orientation) at a bnd node of 2 adjacent sides
 !  integer,save,allocatable :: isbnd_global(:) ! Node to open bndry segment flags (global)
   integer,save,allocatable :: kfp(:),kbp(:),kbp00(:),kbp_e(:) ! Node surface & bottom vertical indices; kfp used only for sflux routines
   integer,save,allocatable :: idry(:)        ! wet/dry flag
-  integer,save,allocatable :: iback(:)        ! back-up flag for abnormal cases in S-coord.
+!  integer,save,allocatable :: iback(:)        ! back-up flag for abnormal cases in S-coord.
   real(rkind),save,allocatable :: hmod(:)        ! constrained depth
   real(rkind),save,allocatable :: znl(:,:)        ! z-coord in local Z-axis (vertical up)
   ! Transformation tensor for node frame: pframe(i,j,ip) for ics=2.
@@ -230,7 +238,7 @@ module elfe_glbl
   integer,save :: nsa          ! Local number of sides in augmented subdomain (ns+nsg)
   integer,save,allocatable :: islg(:)      ! Local-to-global side index table (augmented)
   type(llist_type),save,pointer :: isgl(:) ! Global-to-local side index table (augmented)
-  integer,save,allocatable :: is(:,:)             ! Side-element tables
+  integer,save,allocatable :: isdel(:,:)             ! Side-element tables
   integer,save,allocatable :: isidenode(:,:)      ! Side-node tables
   !Cartesian coordinates of side centers; see the comments for xnd
   real(rkind),save,allocatable :: xcj(:),ycj(:),zcj(:)
@@ -242,10 +250,8 @@ module elfe_glbl
 !  integer,save,allocatable :: isbs_global(:)    ! Side to open bndry segment mapping (global)
   integer,save,allocatable :: kbs(:)       ! Side bottom vertical indices
   integer,save,allocatable :: idry_s(:)        ! wet/dry flag
-  integer,save,allocatable :: isidenei(:,:),isidenei2(:,:)        !side neighborhood 
+  integer,save,allocatable :: isidenei2(:,:)        !side neighborhood 
   real(rkind),save,allocatable :: zs(:,:)         ! z-coord. (local frame - vertical up)
-  real(rkind),save,allocatable :: side_ac(:,:,:)         ! used in horizontal viscosity
-  real(rkind),save,allocatable :: side_x(:,:)         ! used in horizontal viscosity
   !Transformation tensor for side frame: sframe(i,j,isd)
   ! where j is the axis id, i is the component id, isd is the local side id (aug.)
   ! For ics=1, only sframe(1:2,1:2,isd) are used
@@ -266,6 +272,13 @@ module elfe_glbl
   integer,save,allocatable :: nond_global(:)   ! Number of nodes in each open global bndry segment
   integer,save,allocatable :: iond_global(:,:) ! Node list for each open bndry segment (global)
   real(rkind),save,allocatable :: cwidth(:)    ! length of each global open bnd segment for imposing discharge
+  real(rkind),save,allocatable :: th_dt(:,:) !time step for .th (ascii)
+  real(rkind),save,allocatable :: th_time(:,:,:) !2 time stamps for reading .th (ascii)
+  real(rkind),save :: th_dt2(nthfiles2) !time step for .th (binary)
+  real(rkind),save :: th_time2(2,nthfiles2) !2 time stamps for reading .th (binary)
+  integer,save :: irec_th(nthfiles2) !binary record # for reading .th (binary)
+  real(rkind),save :: th_dt3(nthfiles3) !time step for source/sink .th (ascii)
+  real(rkind),save :: th_time3(2,nthfiles3) !2 time stamps for reading source/sink .th (ascii)
   real(rkind),save,allocatable :: tth(:,:,:),sth(:,:,:),trth(:,:,:,:) !time series of b.c. for T,S, tracers
 !  logical,save,allocatable :: lelbc(:)
   integer,save,allocatable :: iettype(:),ifltype(:),itetype(:),isatype(:),itrtype(:), &
@@ -275,9 +288,9 @@ module elfe_glbl
                                   &tnf(:),tfreq(:),tear(:),amig(:),ff(:),face(:), &
                                   &emo(:,:,:),efa(:,:,:),vmo(:,:),vfa(:,:),eth(:,:), &
                                   &qthcon(:),uth(:,:),vth(:,:),uthnd(:,:,:),vthnd(:,:,:), &
-                                  &ath(:),carea(:),eta_mean(:),q_block(:),vnth_block(:,:), &
-                                  &dir_block(:,:),q_block_lcl(:)
-  real(4),save,allocatable :: a2th(:,:,:)
+                                  &ath(:,:,:,:),carea(:),eta_mean(:),q_block(:),vnth_block(:,:), &
+                                  &dir_block(:,:),q_block_lcl(:),ath3(:,:,:,:)
+  real(4),save,allocatable :: ath2(:,:,:,:,:)
 
   ! Land boundary segment data
   integer,save :: nland_global                 ! Global number of local land bndry segments
@@ -348,7 +361,7 @@ module elfe_glbl
   real(rkind),save,allocatable :: Cdp(:)         ! drag at node
   real(rkind),save,allocatable :: rmanning(:)         ! Manning's n at node
   real(rkind),save,allocatable :: windx(:),windy(:) !wind vector
-  real(rkind),save,allocatable :: ptbt(:,:,:),sdbt(:,:,:),webt(:,:),bubt(:,:), & !out3(:,:),out2(:), &
+  real(rkind),save,allocatable :: ptbt(:,:,:),sdbt(:,:,:),webt(:,:), &
                                   &windx1(:),windy1(:),windx2(:),windy2(:), &
                                   &surf_t1(:),surf_t2(:),surf_t(:), & !YC
                                   &tau(:,:),windfactor(:),pr1(:),airt1(:), &

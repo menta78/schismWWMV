@@ -24,13 +24,14 @@
 #   MPI_VERSION = 1 or 2: Version of MPI (try 2 first, if compile fails due to mpi
 #     related errors then switch to version 1;
 #
-# Libraries (needed for parallel code)
+# Libraries (needed for parallel code). Need to re-compile these when compilers are changed.
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
-#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#   netcdf: v3.x has been tested
+#   GOTM:    v3.2.5
+#   ALTLIBS: (obsolete) Flags for linking alternate solver libraries (LAPACK or ITPACK,
 #            these are just for testing)
 ################################################################################
 
-PPFLAGS = -DSELFE 
 
 ########### Ensure that the user's Make.defs.local exists and include it
 
@@ -41,14 +42,18 @@ endif
 
 
 -include ../mk/Make.defs.local  #optional include
--include ../mk/Make.defs.config
+include ../mk/Make.defs.config
 
 
 ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
   $(print Here)
   MODULEOUTDIR = -J
 else
-  MODULEOUTDIR = -module 
+  ifeq ($(ENV),DKRZ) ##please edit here, Eli
+    MODULEOUTDIR = -qmoddir=
+  else
+    MODULEOUTDIR = -module 
+  endif
 endif
 
 
@@ -56,15 +61,20 @@ endif
 # Derived compiler flags
 ###########
 
+ifeq ($(ENV),DKRZ)
+  IBMCPP = -WF,
+else
+  IBMCPP =
+endif
+
+PPFLAGS := $(PPFLAGS) $(IBMCPP)-DSELFE 
+
 ifneq ($(USE_OPEN64),)
     ifeq ($(USE_64), yes)
       AVOID_ADV_WRITE := $(USE_OPEN64)
-      PPFLAGS := $(PPFLAGS) -DAVOID_ADV_WRITE -DUSE_OPEN64
+      PPFLAGS := $(PPFLAGS) $(IBMCPP)-DAVOID_ADV_WRITE $(IBMCPP)-DUSE_OPEN64
     endif
 endif
-
-
-
 
 ################################################################################
 # Object files; modules compile first; modules that depend on other modules compile last.
@@ -76,92 +86,93 @@ endif
 VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMII/ \
         /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ 
 
-# SURA project (remove afterwards)
-ifdef USE_ADC
-  PPFLAGS := $(PPFLAGS) -DUSE_ADC
-endif
-
 ifdef USE_PETSC
-  -include ${PETSC_DIR}/conf/variables/
+  include ${PETSC_DIR}/conf/variables
 endif
 
-OBJS = elfe_glbl.o elfe_msgp.o selfe_driver.o
+OBJS = elfe_glbl.o elfe_msgp.o misc_modules.o selfe_driver.o
+
+ifdef CHOOSE_TVD
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DCHOOSE_TVD
+endif
 
 ifdef USE_DEBUG
-  PPFLAGS := $(PPFLAGS) -DDEBUG 
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DDEBUG 
 endif
 
 ifdef USE_TIMER
-  PPFLAGS := $(PPFLAGS) -DINCLUDE_TIMING
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DINCLUDE_TIMING
 endif
 
 ifdef USE_TIMOR
-  PPFLAGS := $(PPFLAGS) -DUSE_TIMOR
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
 endif
 
 ifdef USE_GOTM
-  PPFLAGS := $(PPFLAGS) -DUSE_GOTM
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_GOTM
 endif
 
 ifdef USE_HA
-  PPFLAGS := $(PPFLAGS) -DUSE_HA
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_HA
   OBJS := $(OBJS) harm.o
 endif
 
 ifdef USE_ECO
-  PPFLAGS := $(PPFLAGS) -DUSE_ECO
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ECO
   OBJS := $(OBJS) bio_param.o eclight.o biology.o bio_init.o ecosim.o read_ecoin.o specir.o
 endif
 
 ifdef USE_ICM
-  PPFLAGS := $(PPFLAGS) -DUSE_ICM
-  OBJS := $(OBJS) icm_param.o icm_biology.o  icm.o  read_icm_input.o
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ICM
+  OBJS := $(OBJS) icm_param.o icm_sed_param.o icm_init.o icm_biology.o  icm.o  read_icm_input.o
 endif
 
 ifdef USE_NAPZD
-  PPFLAGS := $(PPFLAGS) -DUSE_NAPZD
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_NAPZD
   OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
 endif
 
 ifdef USE_SED
-  PPFLAGS := $(PPFLAGS) -DUSE_SED
-  OBJS := $(OBJS) sed_mod.o init_sed.o read_sed_input.o sed_init.o \
-          set_vbc.o stress.o sediment.o stress_soulsby.o \
-          sed_write_debug.o sed_bedload_mpm.o sed_bedload_vr.o\
-          sed_morphology.o
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SED
+  OBJS := $(OBJS) sed_mod.o sed_misc_subs.o \
+                  read_sed_input.o sed_init.o  \
+                  sed_friction.o sed_filter.o \
+                  sediment.o sed_bedload.o
 
-
-endif
-
-ifdef USE_SED2D
-  PPFLAGS := $(PPFLAGS) -DUSE_SED2D
-  OBJS := $(OBJS) sed2d_mod.o sed2d_init.o sed2d_read.o sed2d_transport.o \
-                  sed2d_morpho.o sed2d_filter.o          
 endif
 
 ifdef USE_OIL
-  PPFLAGS := $(PPFLAGS) -DUSE_OIL
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_OIL
 endif
 
 ifdef USE_WWM
 # please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER
-
-  OBJS := $(OBJS) = wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42
+  OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
-       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
-       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
+       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_initio.o wwm_input.o wwm_bdcons.o \
+       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o wwm_wsigstar.o \
        wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
        wwm_sinput.o wwm_sdissip.o wwm_sinput_ard.o wwm_sdiss_ardh_vec.o \
-       wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
+       wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_implsch2.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
        wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 
+#  OBJS := $(OBJS) = wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
+#       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
+#       wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_dislin.o wwm_diclass.o \
+#       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
+#       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
+#       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o wwm_wsigstar.o \
+#       wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
+#       wwm_sinput.o wwm_sdissip.o wwm_sinput_ard.o wwm_sdiss_ardh_vec.o \
+#       wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
+#       wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 endif
 
 ifdef USE_PETSC
-  PPFLAGS := $(PPFLAGS) -DPETSC
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSC
   PETSCMOD = ${PETSC_FC_INCLUDES}
   PETSCLIBS = ${PETSC_LIB}
 else
@@ -169,13 +180,20 @@ else
   PETSCMOD =
 endif
 
+ifdef USE_SED2D
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SED2D
+  OBJS := $(OBJS) sed2d_mod.o sed2d_read.o sed2d_filter.o sed2d_transport.o \
+                  sed2d_friction.o sed2d_morpho.o sed2d_check.o sed2d_init.o \
+                  sed2d_main.o
+endif
+
 ifdef USE_TIMOR
 #Add TIMOR routines here
 endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
-		io_subs.o misc_subs.o transport.o sflux_9c.o lap.o \
-		selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o
+        selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
+        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
@@ -206,6 +224,7 @@ endif
 .PHONY: pelfe
 
 pelfe: $(EXEC) o/$(config)/.dummy
+
 
 
 .PHONY: all
@@ -350,7 +369,7 @@ make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
 
 o/$(config)/.dummy:
 	@echo $(make_defs_local_exists)
-        ifeq ( $(strip $(make_defs_local_exists)),)
+        ifeq ( $(strip $(make_defs_local_exists)), )
              $(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
              If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
         endif

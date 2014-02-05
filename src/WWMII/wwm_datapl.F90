@@ -27,10 +27,10 @@
      &                         np,               &
      &                         npg,              & ! nuber of ghost nodes
      &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
+     &                         INETMP => elnode, &! Element connection table of the augmented domain?
      &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
      &                         YLAT=>ylat,       &
-     &                         INETMP => nm,     & ! Element connection table of the augmented domain?
      &                         XPTMP => xnd,     & ! X-Coordinate augmented domain
      &                         YPTMP => ynd,     &
      &                         NE_GLOBAL => ne_global, &! Global number of elements
@@ -39,6 +39,7 @@
      &                         ipgl,             & ! node global to local mapping
      &                         ielg,             & ! element local to global maping
      &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
+
       use MPI
      
 #  endif
@@ -47,7 +48,6 @@
          use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
      &                         DMIN_SELFE => h0,             & ! Dmin
      &                         NNE => nne,                   & !
-     &                         INE_SELFE => ine,             & !
      &                         ISELF => iself,               & !
      &                         NVRT => nvrt,                 & ! Max. Number of vertical Layers ...
      &                         KBP  => KBP,                  & ! Bottom index

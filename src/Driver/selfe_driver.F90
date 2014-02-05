@@ -70,9 +70,9 @@ program selfe_driver
 end program selfe_driver
 
 subroutine selfe_main
+  use elfe_msgp, only:myrank !! debug only
   implicit none
   integer :: it,iths,ntime
-
   call selfe_init(iths,ntime)
   do it=iths+1,ntime
     call selfe_step(it)

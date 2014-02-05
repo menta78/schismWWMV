@@ -2,7 +2,7 @@ include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 
 #FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
-FFLAGS = -DST42 -DTIMINGS -DSWAN_QB #-DUSE_SINGLE#-DSHYFEM_COUPLING
+FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DWWM_SOLVER#-DUSE_SINGLE#-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = 
@@ -113,7 +113,7 @@ else
 endif
   MPI_INCLUDE = -I/home/aron/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM #-DWWM_SOLVER
+  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)

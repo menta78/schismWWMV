@@ -119,6 +119,7 @@
           read(31,*) itimeseries
           if (itimeseries /= 0) then
             structures(iblock)%ts_unit = TS_DISABLED + 1
+            structures(iblock)%install = .FALSE.
           else 
             structures(iblock)%ts_unit = TS_DISABLED
           end if

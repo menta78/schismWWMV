@@ -189,7 +189,7 @@
 ! Note: the names and values of the grid dimensions are arbitrary.
 !       The 'base_date' MUST correspond to the date that corresponds to
 !       time = zero for the data.  Variable names are required to be
-!       as shown.
+!       as shown.  The 'hour' component of base_date is unused.
 !
 !       Other metadata is optional - but shown here to document the
 !       required names, units, etc.
@@ -309,7 +309,8 @@
 !       the 2 grids, and if some nodes in hgrid.ll fall outside grid "2" the interpolation
 !       will be done on grid "1" only (see combine_sflux_data, in particular, bad_node_2
 !       based on area coordinates outside [0,1]). Both grids must start from stack
-!       1 and have same # of stacks for each variable. However, within each nc file #
+!       1 and may have different # of stacks for each variable (and starting times of 
+!       '1' and '2' may be different). However, within each nc file #
 !       of time steps can vary;
 !   (5) air_1_max_window_hours (etc) are set in netcdf_io to define the max. time stamp
 !       (offset from start time in each) within each nc file. Besides those in netcdf_io, 
@@ -366,11 +367,11 @@
 ! define the local variables num_nodes
         num_nodes = npa
 
-        fdb='sflux1_0000'
-        lfdb=len_trim(fdb)
-        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-        open(38,file='outputs/'//fdb,status='unknown')       
-        rewind(38)
+!        fdb='sflux_0000'
+!        lfdb=len_trim(fdb)
+!        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+!        open(38,file='outputs/'//fdb,status='unknown')       
+!        rewind(38)
         write(38,*)
         write(38,*) 'enter surf_fluxes'
 
@@ -507,8 +508,6 @@
             endif
           endif
         enddo
-
-        close(38)
 
 ! set first_call to false, so subsequent calls will know that they're
 ! not the first call
@@ -1184,14 +1183,8 @@
         real(rkind) :: start_frac_jdate = -9999.0
 
         !relative weights for air; can be >1 (will be weight-averaged)
-#ifdef USE_ADC
-!SURA option (remove later)
-        real(rkind) :: air_1_relative_weight = 1.e-4
-        real(rkind) :: air_2_relative_weight = 99.9999
-#else
         real(rkind) :: air_1_relative_weight = 1.0
         real(rkind) :: air_2_relative_weight = 99.0
-#endif
         real(rkind) :: air_1_max_window_hours = 120.0
         real(rkind) :: air_2_max_window_hours = 120.0
         logical             :: air_1_fail_if_missing = .true.
@@ -1271,10 +1264,10 @@
 
 ! for the first call only, initialize starting date, datasets, etc 
         if (first_call) then
-          fdb='sflux2_0000'
-          lfdb=len_trim(fdb)
-          write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-          open(39,file='outputs/'//fdb,status='replace')
+!          fdb='sflux2_0000'
+!          lfdb=len_trim(fdb)
+!          write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+!          open(39,file='outputs/'//fdb,status='replace')
         
           call get_sflux_inputs ()
           
@@ -1337,13 +1330,13 @@
         time_now = start_frac_jdate + time/secs_per_day
 
 ! output info to debug file
-        write(39,*)
-        write(39,*) 'get_wind: time (sec)   = ', time
-        write(39,*) 'first_call             = ', first_call
-        write(39,*) 'num_nodes_out          = ', num_nodes_out
-        write(39,*) 'current jdate        = ', time_now
-        write(39,*) 'dataset 1 exist = ', dataset_1%exist
-        write(39,*) 'dataset 2 exist = ', dataset_2%exist
+        write(38,*)
+        write(38,*) 'get_wind: time (sec)   = ', time
+        write(38,*) 'first_call             = ', first_call
+        write(38,*) 'num_nodes_out          = ', num_nodes_out
+        write(38,*) 'current jdate        = ', time_now
+        write(38,*) 'dataset 1 exist = ', dataset_1%exist
+        write(38,*) 'dataset 2 exist = ', dataset_2%exist
 
 ! get the data at this time
         data_name = trim(uwind_name)
@@ -1386,15 +1379,10 @@
      &     num_nodes_out)
         
 ! convert air temperatures to Celcius
-#ifndef USE_ADC
-! In SURA, use airt as tauxz
         t_air_node = t_air_node - t_freeze
-#endif
 
 ! rotate the winds from geographic to the grid's map projection
         call rotate_winds (u_air_node, v_air_node, num_nodes_out)
-
-!        close(39)
 
 ! set first_call to false, so subsequent calls will know that they're
 ! not the first call
@@ -1426,17 +1414,17 @@
 ! define the local variables num_nodes_out
         num_nodes_out = npa
 
-        fdb='sflux3_0000'
-        lfdb=len_trim(fdb)
-        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-        open(40,file='outputs/'//fdb,status='unknown')
-        rewind(40)
+!        fdb='sflux3_0000'
+!        lfdb=len_trim(fdb)
+!        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+!        open(40,file='outputs/'//fdb,status='unknown')
+!        rewind(40)
 
 ! output info to debug file
-        write(40,*)
-        write(40,*) 'get_rad:  time         = ', time
-        write(40,*) 'first_call             = ', first_call
-        write(40,*) 'num_nodes_out          = ', num_nodes_out
+        write(38,*)
+        write(38,*) 'get_rad:  time         = ', time
+        write(38,*) 'first_call             = ', first_call
+        write(38,*) 'num_nodes_out          = ', num_nodes_out
 
 ! for the first call only, initialize starting date, datasets, etc 
         if (first_call) then
@@ -1494,7 +1482,7 @@
 
 ! get the current time
         time_now = start_frac_jdate + time/secs_per_day
-        write(40,*) 'current jdate        = ', time_now
+        write(38,*) 'current jdate        = ', time_now
 
 ! get the data at this time
         data_name = trim(dlwrf_name)
@@ -1512,19 +1500,17 @@
      &     num_nodes_out)
 
 ! get the albedo
-!        write(40,*) 'calculating albedo'
+!        write(38,*) 'calculating albedo'
 !        call get_albedo (albedo, num_nodes_out)
 
 ! reduce the downwards shortwave flux at the surface by the albedo
 ! (ensure there are no negative values from interpolation, etc)
-        write(40,*) 'reducing shortwave'
+        write(38,*) 'reducing shortwave'
         do i_node = 1, num_nodes_out
           shortwave_d(i_node) = &
      &      max( (1.0- albedo(i_node))*shortwave_d(i_node), &
      &           0.0_rkind)
         enddo
-
-        close(40)
 
 ! set first_call to false, so subsequent calls will know that they're
 ! not the first call
@@ -1554,17 +1540,17 @@
 ! define the local variables num_nodes_out
         num_nodes_out = npa
 
-        fdb='sflux4_0000'
-        lfdb=len_trim(fdb)
-        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-        open(41,file='outputs/'//fdb,status='unknown')
-        rewind(41)
+!        fdb='sflux4_0000'
+!        lfdb=len_trim(fdb)
+!        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+!        open(41,file='outputs/'//fdb,status='unknown')
+!        rewind(41)
 
 ! output info to debug file
-        write(41,*)
-        write(41,*) 'get_precip_flux:  time = ', time
-        write(41,*) 'first_call             = ', first_call
-        write(41,*) 'num_nodes_out          = ', num_nodes_out
+        write(38,*)
+        write(38,*) 'get_precip_flux:  time = ', time
+        write(38,*) 'first_call             = ', first_call
+        write(38,*) 'num_nodes_out          = ', num_nodes_out
 
 ! for the first call only, initialize starting date, datasets, etc 
         if (first_call) then
@@ -1620,7 +1606,7 @@
 
 ! get the current time
         time_now = start_frac_jdate + time/secs_per_day
-        write(41,*) 'current jdate        = ', time_now
+        write(38,*) 'current jdate        = ', time_now
 
 ! get the data at this time
         data_name = trim(prate_name)
@@ -1630,8 +1616,6 @@
      &     data_name, precip_flux, &
      &     num_nodes_out)
         
-        close(41)
-
 ! set first_call to false, so subsequent calls will know that they're
 ! not the first call
         first_call = .false.
@@ -1974,6 +1958,9 @@
         
 ! determine number of times stored in the time dimension
         iret = nf_inq_dimlen(ncid, time_dim, num_file_times)
+        if (num_file_times .gt. max_file_times) then
+          call halt_error ('sflux:num_file_times .gt. max_file_times!')
+        endif
         call check_err(iret)
 
 ! read the time vector for this file
@@ -1986,6 +1973,7 @@
         enddo
 
 ! get the base_date - the time and date which corresponds with time zero
+!                     Note that only year,month,day of base_date are used (not 'hour').
         attr_name = 'base_date'
 
 ! get size of base_date (make sure it is at least 3)
@@ -2002,7 +1990,7 @@
 ! read base_date
         iret = nf_get_att_int(ncid, time_id, attr_name, base_date)
 
-! convert base_date to fractional Julian date
+! convert base_date to integer Julian date
         year = base_date(1)
         month = base_date(2)
         day = base_date(3)

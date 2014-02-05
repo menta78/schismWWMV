@@ -2,6 +2,7 @@
 !===============================================================================
 ! ELFE MISCELLANEOUS SUBROUTINES
 !
+! subroutine zcoor
 ! subroutine levels1
 ! subroutine levels0
 ! subroutine nodalvel
@@ -27,6 +28,106 @@
 ! subroutine area_coord
 
 !===============================================================================
+!===============================================================================
+      subroutine zcoor(itag,inode,kbpl,ztmp)
+!-------------------------------------------------------------------------------
+!     Calculate z-coord. at a _wet_ node
+!     Search for 'ivcor' for other changes
+!-------------------------------------------------------------------------------
+!#ifdef USE_MPIMODULE
+!      use mpi
+!#endif
+      use elfe_glbl, only: rkind,errmsg,lm2d,ivcor,eta2,dp,kbp,nvrt,kz,h0,h_s,h_c,theta_b,theta_f,s_con1,sigma,ztot,cs, &
+                          &sigma_lcl,iplg
+      use elfe_msgp, only: parallel_abort
+      implicit none
+!#ifndef USE_MPIMODULE
+      include 'mpif.h'
+!#endif
+      integer, intent(in) :: itag,inode !tag to indicate where this routine is called from
+!      real(rkind), intent(in) :: dep,etal
+      integer, intent(out) :: kbpl
+      real(rkind), intent(out) :: ztmp(nvrt)
+
+!     Local
+      integer :: k,kin,m
+      real(rkind) :: hmod2,z0,z_1,sp,tmp,z_pws(nvrt),z_sigma(nvrt)
+
+      !Make sure it's wet
+      if(dp(inode)+eta2(inode)<=h0) then
+        write(errmsg,*)'ZCOOR: dry location:',dp(inode),eta2(inode),itag
+        call parallel_abort(errmsg)
+      endif
+
+!     WARNING: explicitly specify bottom/surface to avoid underflow
+      if(lm2d.or.ivcor==2) then !SZ
+        hmod2=min(dp(inode),h_s)
+        ztmp(kz)=-hmod2 !to avoid underflow
+        ztmp(nvrt)=eta2(inode)
+
+        do k=kz+1,nvrt-1
+          kin=k-kz+1
+          if(hmod2<=h_c) then
+            ztmp(k)=sigma(kin)*(hmod2+eta2(inode))+eta2(inode)
+          !todo: assert
+          else if(eta2(inode)<=-h_c-(dp(inode)-h_c)*theta_f/s_con1) then
+            write(errmsg,*)'ZCOOR: Pls choose a larger h_c:',eta2(inode),h_c,itag
+            call parallel_abort(errmsg)
+          else
+            ztmp(k)=eta2(inode)*(1+sigma(kin))+h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
+          endif
+        enddo !k
+
+        if(dp(inode)<=h_s) then
+          kbpl=kz
+        else !z levels
+!         Find bottom index
+          kbpl=0
+          do k=1,kz-1
+            if(-dp(inode)>=ztot(k).and.-dp(inode)<ztot(k+1)) then
+              kbpl=k
+              exit
+            endif
+          enddo !k
+          !todo: assert
+          if(kbpl==0) then
+            write(errmsg,*)'ZCOOR: Cannot find a bottom level:',dp(inode),itag
+            call parallel_abort(errmsg)
+          endif
+          ztmp(kbpl)=-dp(inode)
+          do k=kbpl+1,kz-1
+            ztmp(k)=ztot(k)
+          enddo !k
+        endif !dep<=h_s
+
+      else if(ivcor==1) then !localized simga
+!        if(eta<=-hsm(m_pws)) then
+!          write(errmsg,*)'ZCOOR: elev<hsm:',eta,itag
+!          call parallel_abort(errmsg)
+!        endif
+
+        kbpl=kbp(inode)
+        do k=kbpl,nvrt
+          ztmp(k)=(eta2(inode)+dp(inode))*sigma_lcl(k,inode)+eta2(inode)
+        enddo !k
+
+        ztmp(kbpl)=-dp(inode) !to avoid underflow
+        ztmp(nvrt)=eta2(inode) !to avoid underflow
+      else
+        call parallel_abort('ZCOOR: unknown z-coor.')
+      endif !ivcor
+
+      do k=kbpl+1,nvrt
+        !todo: assert
+        if(ztmp(k)-ztmp(k-1)<=0) then
+          write(12,*)'ZCOOR: Inverted z-level:',itag,ivcor,k,kbpl,iplg(inode),eta2(inode),dp(inode),ztmp(k),ztmp(k-1),sigma_lcl(kbpl:nvrt,inode)
+          write(errmsg,*)'ZCOOR: Inverted z-level:',itag,ivcor,k,kbpl,iplg(inode),eta2(inode),dp(inode),ztmp(k),ztmp(k-1)
+          call parallel_abort(errmsg)
+        endif
+      enddo !k
+
+      end subroutine zcoor
+      
 !===============================================================================
 
       subroutine levels1(iths,it)
@@ -75,7 +176,7 @@
         idry_e=0
         do i=1,nea
           do j=1,3
-            nd=nm(i,j)
+            nd=elnode(j,i)
             if(eta2(nd)+dp(nd)<=h0) then
               idry_e(i)=1
               exit
@@ -92,7 +193,7 @@
 
 !       Make dry first (to speed up ietration)
         do i=1,np
-          if(dp(i)+eta2(i)<=h0) idry_e2(ine(i,1:nne(i)))=1
+          if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
         enddo !i
         call exchange_e2di(idry_e2)
 
@@ -109,7 +210,7 @@
 !          enddo !i
 !          write(10,*)ns
 !          do i=1,ns
-!            write(10,*)i,iplg(isidenode(i,1:)),real(su2(nvrt,i)),real(sv2(nvrt,i))
+!            write(10,*)i,iplg(isidenode(1:2,i)),real(su2(nvrt,i)),real(sv2(nvrt,i))
 !          enddo !i
 !          close(10)
 !        endif
@@ -125,8 +226,8 @@
           icolor=0 !nodes on the interface sides
           icolor2=0 !interface sides
           do i=1,ns
-            if(is(i,2)/=0) then; if(idry_e2(is(i,1))+idry_e2(is(i,2))==1) then
-              icolor(isidenode(i,1:2))=1
+            if(isdel(2,i)/=0) then; if(idry_e2(isdel(1,i))+idry_e2(isdel(2,i))==1) then
+              icolor(isidenode(1:2,i))=1
               icolor2(i)=1
             endif; endif
           enddo !i
@@ -155,21 +256,21 @@
             inew=0 !for initializing and counting su2 sv2
             do i=1,nsdf !aug.
               isd=isdf(i)
-              if(is(isd,1)<0.or.is(isd,2)<0) cycle
-              if(is(isd,1)==0.or.is(isd,2)==0) then
-                write(errmsg,*)'LEVELS1: bnd side (2):',is(isd,:),iplg(isidenode(isd,1:2))
+              if(isdel(1,isd)<0.or.isdel(2,isd)<0) cycle
+              if(isdel(1,isd)==0.or.isdel(2,isd)==0) then
+                write(errmsg,*)'LEVELS1: bnd side (2):',isdel(:,isd),iplg(isidenode(1:2,isd))
                 call parallel_abort(errmsg)
               endif
-              if(idry_e2(is(isd,1))+idry_e2(is(isd,2))/=1) cycle
+              if(idry_e2(isdel(1,isd))+idry_e2(isdel(2,isd))/=1) cycle
 
-              if(idry_e2(is(isd,1))==1) then
-                ie=is(isd,1)
+              if(idry_e2(isdel(1,isd))==1) then
+                ie=isdel(1,isd)
               else 
-                ie=is(isd,2)
+                ie=isdel(2,isd)
               endif
-              n1=isidenode(isd,1)
-              n2=isidenode(isd,2)
-              nodeA=nm(ie,1)+nm(ie,2)+nm(ie,3)-n1-n2
+              n1=isidenode(1,isd)
+              n2=isidenode(2,isd)
+              nodeA=elnode(1,ie)+elnode(2,ie)+elnode(3,ie)-n1-n2
 
               if(icolor(nodeA)==1) cycle !this node is done
 
@@ -179,19 +280,19 @@
 
               inun=0 !inundation flag
               do j=1,nne(nodeA)
-                ie2=ine(nodeA,j)
-                id=iself(nodeA,j)
-                isd2=js(ie2,id)
+                ie2=indel(j,nodeA)
+                id=iself(j,nodeA)
+                isd2=elside(id,ie2)
                 if(icolor2(isd2)==1) then
                   if(ics==1) then
                     tmp=su2(nvrt,isd2)*sframe(1,1,isd2)+sv2(nvrt,isd2)*sframe(2,1,isd2)
                   else !ics=2
                     tmp=su2(nvrt,isd2)
                   endif !ics
-                  flux_t=-tmp*ssign(ie2,id) !inward normal
+                  flux_t=-tmp*ssign(id,ie2) !inward normal
                   if(flux_t>0) then
-                    n1=isidenode(isd2,1)
-                    n2=isidenode(isd2,2)
+                    n1=isidenode(1,isd2)
+                    n2=isidenode(2,isd2)
 !                    avh=(eta2(n1)+dp(n1)+eta2(n2)+dp(n2))/2
 !                    vol=flux_t*dt*avh*distj(isd2) !inflow volume in one step
 !                    avh3=(eta2(n1)+dp(n1)+eta2(n2)+dp(n2))/3 !assume total depth at nodeA=0
@@ -208,12 +309,12 @@
               if(inun==1) then
                 eta2(nodeA)=max(eta2(nodeA),-dp(nodeA)+2*h0)
                 do j=1,nne(nodeA)
-                  ie2=ine(nodeA,j)
-                  id=iself(nodeA,j)
-                  isd2=js(ie2,id)
+                  ie2=indel(j,nodeA)
+                  id=iself(j,nodeA)
+                  isd2=elside(id,ie2)
                   if(icolor2(isd2)==1) then
                     do l=1,3
-                      nd=nm(ie2,l)
+                      nd=elnode(l,ie2)
                       if(eta2(nd)+dp(nd)<=h0) then 
                         write(errmsg,*)'LEVELS1: Failed to wet element:',ielg(ie2),iplg(nodeA)
                         call parallel_abort(errmsg)
@@ -221,7 +322,7 @@
                     enddo !l=1,3
                     idry_e2(ie2)=0
                     do l=1,2 !sides sharing nodeA
-                      id1=js(ie2,nx(id,l))
+                      id1=elside(nx(id,l),ie2)
                       if(ics==1) then
                         swild2(1,1:nvrt)=su2(1:nvrt,isd2)
                         swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
@@ -269,14 +370,14 @@
           do i=1,nsdf !aug.
             isd=isdf(i)
             do j=1,2
-              nd=isidenode(isd,j)
+              nd=isidenode(j,isd)
               if(eta2(nd)+dp(nd)<=h0) then
 !Debug
 !                write(12,*)'Make dry:',itr,iplg(nd)
 
                 istop=0
                 do l=1,nne(nd)
-                  ie=ine(nd,l)
+                  ie=indel(l,nd)
                   if(ie>0) idry_e2(ie)=1
                 enddo !l
               endif
@@ -289,22 +390,22 @@
           srwt_xchng(1)=.false. !flag for wetting occurring
           do i=1,nsdf !aug. domain for updating vel. at interfacial sides (between 2 sub-domains)
             isd=isdf(i) !must be internal side
-            if(is(isd,1)<0.or.is(isd,2)<0) cycle !neither element can have interfacial sides
-            if(is(isd,1)==0.or.is(isd,2)==0) then
-              write(errmsg,*)'LEVELS1: bnd side:',is(isd,:),iplg(isidenode(isd,1:2))
+            if(isdel(1,isd)<0.or.isdel(2,isd)<0) cycle !neither element can have interfacial sides
+            if(isdel(1,isd)==0.or.isdel(2,isd)==0) then
+              write(errmsg,*)'LEVELS1: bnd side:',isdel(:,isd),iplg(isidenode(1:2,isd))
               call parallel_abort(errmsg)
             endif
-            if(idry_e2(is(isd,1))+idry_e2(is(isd,2))/=1) cycle
+            if(idry_e2(isdel(1,isd))+idry_e2(isdel(2,isd))/=1) cycle
 !           2 end nodes have total depths > h0
 
-            if(idry_e2(is(isd,1))==1) then
-              ie=is(isd,1) !>0
+            if(idry_e2(isdel(1,isd))==1) then
+              ie=isdel(1,isd) !>0
             else
-              ie=is(isd,2) !>0
+              ie=isdel(2,isd) !>0
             endif
-            n1=isidenode(isd,1)
-            n2=isidenode(isd,2)
-            nodeA=nm(ie,1)+nm(ie,2)+nm(ie,3)-n1-n2
+            n1=isidenode(1,isd)
+            n2=isidenode(2,isd)
+            nodeA=elnode(1,ie)+elnode(2,ie)+elnode(3,ie)-n1-n2   ! eli: is the 2,ie one right?
             l0=lindex(nodeA,ie)
 !            if(l0==0.or.icolor(nodeA)==1.or.nodeA==n1.or.nodeA==n2) then
             if(l0==0.or.nodeA==n1.or.nodeA==n2) then
@@ -314,8 +415,8 @@
               write(12,*)'LEVELS1: fatal error message'
               do l=1,ns
                 if(icolor2(l)==1) then
-                  write(12,*)l,iplg(isidenode(l,1:2))
-                  write(12,*)l,ielg(is(l,1:2)),idry_e2(is(l,1:2)),idry_e(is(l,1:2))
+                  write(12,*)l,iplg(isidenode(1:2,l))
+                  write(12,*)l,ielg(isdel(1:2,l)),idry_e2(isdel(1:2,l)),idry_e(isdel(1:2,l))
                 endif
               enddo !l
               do l=1,nea
@@ -327,7 +428,7 @@
             if(eta2(nodeA)+dp(nodeA)>h0) then !all 3 nodes have depths > h0
 !             Check
               do j=1,3
-                nd=nm(ie,j)
+                nd=elnode(j,ie)
                 if(eta2(nd)+dp(nd)<=h0) then
                   write(errmsg,*)'Failed to wet element (13):',ielg(ie),iplg(nd),iplg(nodeA)
                   call parallel_abort(errmsg)
@@ -342,7 +443,7 @@
               idry_e2(ie)=0
 
               do j=1,2 !sides sharing nodeA
-                id1=js(ie,nx(l0,j))
+                id1=elside(nx(l0,j),ie)
                 if(icolor2(id1)==0) then
 
                   if(ics==1) then
@@ -406,7 +507,7 @@
 !         Enforce wet/dry flag consistency between nodes and elements due to added wet elements
           idry2=1
           do i=1,nea
-            if(idry_e2(i)==0) idry2(nm(i,1:3))=0
+            if(idry_e2(i)==0) idry2(elnode(1:3,i))=0
           enddo !i
           call exchange_p2di(idry2)
 
@@ -414,32 +515,32 @@
           do i=1,nea
             inew(i)=0 !use for temp. storage of new element wet/dry flags
             do j=1,3
-              if(idry2(nm(i,j))==1) inew(i)=1
+              if(idry2(elnode(j,i))==1) inew(i)=1
             enddo !j
           enddo !i=1,nea
 
           srwt_xchng(1)=.false. !for vel. exchange
           do i=1,ns
-            if(.not.(idry_e2(is(i,1))==1.and.(is(i,2)==0.or.is(i,2)>0.and.idry_e2(max(1,is(i,2)))==1))) cycle
+            if(.not.(idry_e2(isdel(1,i))==1.and.(isdel(2,i)==0.or.isdel(2,i)>0.and.idry_e2(max(1,isdel(2,i)))==1))) cycle
 !           Dry side that may need new vel.
 
             iwet=0 !flag
             do j=1,2
-              ie=is(i,j)
+              ie=isdel(j,i)
               if(ie>0.and.idry_e2(max(1,ie))==1.and.inew(max(1,ie))==0) iwet=1
             enddo !j
 
             if(iwet==1) then !vel. as average
               sutmp=0; svtmp=0; icount=0
               do m=1,2 !2 elements
-                ie=is(i,m)
+                ie=isdel(m,i)
                 if(ie<=0) cycle
 
                 do jj=1,3 !3 sides
                   !Find wet side
-                  isd2=js(ie,jj)
-                  if(is(isd2,1)>0.and.idry_e2(max(1,is(isd2,1)))==0.or. &
-     &is(isd2,2)>0.and.idry_e2(max(1,is(isd2,2)))==0) then !at least one wet element
+                  isd2=elside(jj,ie)
+                  if(isdel(1,isd2)>0.and.idry_e2(max(1,isdel(1,isd2)))==0.or. &
+     &isdel(2,isd2)>0.and.idry_e2(max(1,isdel(2,isd2)))==0) then !at least one wet element
                     icount=icount+1
 
                     if(ics==1) then
@@ -505,7 +606,7 @@
 
 !...  Isolated dry nodes (do nothing for isolated wet)
       do i=1,np
-        if(dp(i)+eta2(i)<=h0) idry_e2(ine(i,1:nne(i)))=1
+        if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
       enddo !i
       call exchange_e2di(idry_e2)
 
@@ -513,8 +614,8 @@
       idry2=1; idry_s2=1
       do i=1,nea
         if(idry_e2(i)==0) then
-          idry2(nm(i,1:3))=0
-          idry_s2(js(i,1:3))=0
+          idry2(elnode(1:3,i))=0
+          idry_s2(elside(1:3,i))=0
         endif
       enddo !i
       call exchange_p2di(idry2)
@@ -545,75 +646,73 @@
         lmorph=.false.
 #endif 
 
-      iback=0
+      !iback=0
       do i=1,npa
-        if(eta2(i)<=h0-h_s) then
+        if(ivcor==2) then; if(eta2(i)<=h0-h_s) then
           write(errmsg,*)'Deep depth dry:',iplg(i)
           call parallel_abort(errmsg)
-        endif
+        endif; endif
 
         if(idry2(i)==1) then
-          kbp(i)=0
+          if(ivcor/=1) kbp(i)=0
         else !wet
-          if(dp(i)+eta2(i)<=h0) then
-            write(errmsg,*)'levels1: (2):',i,dp(i)+eta2(i)
-            call parallel_abort(errmsg)
-          endif
+          call zcoor(1,i,kbp(i),znl(:,i))
 
-!         S-levels
-          do k=kz,nvrt
-            kin=k-kz+1
+          !if(dp(i)+eta2(i)<=h0) then
+          !  write(errmsg,*)'levels1: (2):',i,dp(i)+eta2(i)
+          !  call parallel_abort(errmsg)
+          !endif
 
-            if(hmod(i)<=h_c) then
-!              if(ifort12(12)==0) then
-!                ifort12(12)=1
-!                write(12,*)'Initial depth too shallow for S:',iplg(i),hmod(i),h_c
+!!         S-levels
+!          do k=kz,nvrt
+!            kin=k-kz+1
+!
+!            if(hmod(i)<=h_c) then
+!              !iback(i)=1
+!              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
+!            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
+!              write(errmsg,*)'Pls choose a larger h_c (2):',eta2(i),h_c
+!              call parallel_abort(errmsg)
+!            else
+!              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
+!            endif
+!          enddo !k=kz,nvrt
+!
+!!         z-levels
+!          if(dp(i)<=h_s) then
+!            kbp(i)=kz
+!          else !bottom index 
+!            if(imm>0.or.it==iths.or.lmorph) then
+!              kbp(i)=0 !flag
+!              do k=1,kz-1
+!                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
+!                  kbp(i)=k
+!                  exit
+!                endif
+!              enddo !k
+!              if(kbp(i)==0) then
+!                write(errmsg,*)'Cannot find a bottom level for node (3):',i
+!!'
+!                call parallel_abort(errmsg)
 !              endif
-              iback(i)=1
-              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
-            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
-              write(errmsg,*)'Pls choose a larger h_c (2):',eta2(i),h_c
-              call parallel_abort(errmsg)
-            else
-              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
-            endif
-          enddo !k=kz,nvrt
-
-!         z-levels
-          if(dp(i)<=h_s) then
-            kbp(i)=kz
-          else !bottom index 
-            if(imm>0.or.it==iths.or.lmorph) then
-              kbp(i)=0 !flag
-              do k=1,kz-1
-                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
-                  kbp(i)=k
-                  exit
-                endif
-              enddo !k
-              if(kbp(i)==0) then
-                write(errmsg,*)'Cannot find a bottom level for node (3):',i
-!'
-                call parallel_abort(errmsg)
-              endif
-            endif !imm
-
-            if(kbp(i)>=kz.or.kbp(i)<1) then
-              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
-              call parallel_abort(errmsg)
-            endif
-            znl(kbp(i),i)=-dp(i)
-            do k=kbp(i)+1,kz-1
-              znl(k,i)=ztot(k)
-            enddo !k
-          endif
-
-          do k=kbp(i)+1,nvrt
-            if(znl(k,i)-znl(k-1,i)<=0) then
-              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
-              call parallel_abort(errmsg)
-            endif
-          enddo !k
+!            endif !imm
+!
+!            if(kbp(i)>=kz.or.kbp(i)<1) then
+!              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
+!              call parallel_abort(errmsg)
+!            endif
+!            znl(kbp(i),i)=-dp(i)
+!            do k=kbp(i)+1,kz-1
+!              znl(k,i)=ztot(k)
+!            enddo !k
+!          endif
+!
+!          do k=kbp(i)+1,nvrt
+!            if(znl(k,i)-znl(k-1,i)<=0) then
+!              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
+!              call parallel_abort(errmsg)
+!            endif
+!          enddo !k
         endif !wet ot dry
       enddo !i=1,npa
 
@@ -635,15 +734,15 @@
         if(idry_e2(i)/=0) cycle
 
 !       Wet
-        n1=nm(i,1); n2=nm(i,2); n3=nm(i,3)
+        n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
         if(idry2(n1)/=0.or.idry2(n2)/=0.or.idry2(n3)/=0) then
           write(errmsg,*)'level1: Element-node inconsistency (0):',ielg(i),idry_e(i), &
-                    iplg(nm(i,1:3)),idry2(nm(i,1:3))
+                    iplg(elnode(1:3,i)),idry2(elnode(1:3,i))
           call parallel_abort(errmsg)
         endif
-        kbe(i)=max0(kbp(n1),kbp(n2),kbp(n3))
+        kbe(i)=min(kbp(n1),kbp(n2),kbp(n3))
         do k=kbe(i),nvrt
-          ze(k,i)=(znl(k,n1)+znl(k,n2)+znl(k,n3))/3
+          ze(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3))/3
           if(k>=kbe(i)+1) then; if(ze(k,i)-ze(k-1,i)<=0) then
             write(errmsg,*)'Weird element:',k,i,ze(k,i),ze(k-1,i)
             call parallel_abort(errmsg)
@@ -651,27 +750,29 @@
         enddo !k
       enddo !i
 
-!     Compute side bottom index
+!     Compute side bottom index. For wet side and its wet adjacent element,
+!     kbs>=kbe
       do i=1,nsa
         kbs(i)=0 !dry
         if(idry_s2(i)==0) then !wet side with 2 wet nodes
-          n1=isidenode(i,1)
-          n2=isidenode(i,2)
+          n1=isidenode(1,i)
+          n2=isidenode(2,i)
           if(idry2(n1)/=0.or.idry2(n2)/=0) then
             write(errmsg,*)'Side-node inconsistency:',it,islg(i),'node:',iplg(n1),iplg(n2), &
               eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
-              (is(i,j),ielg(is(i,j)),idry_e2(is(i,j)),j=1,2)
+              (isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
             write(errmsg,*)'Weird side:',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
             call parallel_abort(errmsg)
           endif
-          kbs(i)=max0(kbp(n1),kbp(n2))
+          kbs(i)=min(kbp(n1),kbp(n2))
           do k=kbs(i),nvrt
-            zs(k,i)=(znl(k,n1)+znl(k,n2))/2
+            zs(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2))/2
             if(k>=kbs(i)+1) then; if(zs(k,i)-zs(k-1,i)<=0) then
-              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(k,n1),znl(k,n2),znl(k-1,n1),znl(k-1,n2)
+              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
+     &znl(max(k,kbp(n2)),n2),znl(max(k-1,kbp(n1)),n1),znl(max(k-1,kbp(n2)),n2)
               call parallel_abort(errmsg)
             endif; endif
           enddo !k
@@ -695,7 +796,7 @@
               stmp=0
               icount=0
               do j=1,nnp(i)
-                nd=inp(i,j) !must be inside the aug. domain
+                nd=indnd(j,i) !must be inside the aug. domain
 !               Wet nbrs not affected by this part and so each sub-domain should use same values
                 if(idry(nd)==0) then !all indices extended
                   icount=icount+1
@@ -736,8 +837,8 @@
             if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
             if(i>ns) cycle !do the rest only for residents
 
-            n1=isidenode(i,1)
-            n2=isidenode(i,2)
+            n1=isidenode(1,i)
+            n2=isidenode(2,i)
             do k=1,nvrt
 !              tsd(k,i)=0
 !              ssd(k,i)=0
@@ -745,11 +846,11 @@
               stmp=0
               icount=0
               do j=1,2
-                ie=is(i,j)
+                ie=isdel(j,i)
                 if(ie/=0) then
                   if(ie<0) call parallel_abort('levels1: ghost element')
                   do jj=1,3 !side; in the aug. domain
-                    isd=js(ie,jj)
+                    isd=elside(jj,ie)
                     if(isd/=i.and.idry_s(isd)==0) then
                       icount=icount+1
 !                      tsd(k,i)=tsd(k,i)+tsd(k,isd)
@@ -888,71 +989,69 @@
       lmorph=.false.
 #endif 
 
-      iback=0
+      !iback=0
       do i=1,npa
         if(dp(i)+eta2(i)<=h0) then !dry
           idry2(i)=1 
-          if(dp(i)>=h_s) then
+          if(ivcor==2) then; if(dp(i)>=h_s) then
             write(errmsg,*)'Deep depth dry:',i
             call parallel_abort(errmsg)
-          endif
-          kbp(i)=0
+          endif; endif
+          if(ivcor/=1) kbp(i)=0
         else !wet
           idry2(i)=0
-!         S-levels
-          do k=kz,nvrt
-            kin=k-kz+1
+          call zcoor(0,i,kbp(i),znl(:,i))
 
-            if(hmod(i)<=h_c) then
-!              if(ifort12(12)==0) then
-!                ifort12(12)=1
-!                write(12,*)'Initial depth too shallow for S:',iplg(i),hmod(i),h_c
+!!         S-levels
+!          do k=kz,nvrt
+!            kin=k-kz+1
+!
+!            if(hmod(i)<=h_c) then
+!              !iback(i)=1
+!              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
+!            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
+!              write(errmsg,*)'Pls choose a larger h_c (1):', ' node:', iplg(i), ', elev prev:', eta1(i), ', elev cur:', eta2(i), ', h_c:', h_c
+!              call parallel_abort(errmsg)
+!            else
+!              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
+!            endif
+!          enddo !k=kz,nvrt
+!
+!!         z-levels
+!          if(dp(i)<=h_s) then
+!            kbp(i)=kz
+!          else !bottom index 
+!            if(imm>0.or.it==iths.or.lmorph) then
+!              kbp(i)=0 !flag
+!              do k=1,kz-1
+!                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
+!                  kbp(i)=k
+!                  exit
+!                endif
+!              enddo !k
+!              if(kbp(i)==0) then
+!                write(errmsg,*)'Cannot find a bottom level for node (3):',i
+!!'
+!                call parallel_abort(errmsg)
 !              endif
-              iback(i)=1
-              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
-            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
-              write(errmsg,*)'Pls choose a larger h_c (1):', ' node:', iplg(i), ', elev prev:', eta1(i), ', elev cur:', eta2(i), ', h_c:', h_c
-              call parallel_abort(errmsg)
-            else
-              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
-            endif
-          enddo !k=kz,nvrt
-
-!         z-levels
-          if(dp(i)<=h_s) then
-            kbp(i)=kz
-          else !bottom index 
-            if(imm>0.or.it==iths.or.lmorph) then
-              kbp(i)=0 !flag
-              do k=1,kz-1
-                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
-                  kbp(i)=k
-                  exit
-                endif
-              enddo !k
-              if(kbp(i)==0) then
-                write(errmsg,*)'Cannot find a bottom level for node (3):',i
-!'
-                call parallel_abort(errmsg)
-              endif
-            endif !imm
-
-            if(kbp(i)>=kz.or.kbp(i)<1) then
-              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
-              call parallel_abort(errmsg)
-            endif
-            znl(kbp(i),i)=-dp(i)
-            do k=kbp(i)+1,kz-1
-              znl(k,i)=ztot(k)
-            enddo !k
-          endif
-
-          do k=kbp(i)+1,nvrt
-            if(znl(k,i)-znl(k-1,i)<=0) then
-              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
-              call parallel_abort(errmsg)
-            endif
-          enddo !k
+!            endif !imm
+!
+!            if(kbp(i)>=kz.or.kbp(i)<1) then
+!              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
+!              call parallel_abort(errmsg)
+!            endif
+!            znl(kbp(i),i)=-dp(i)
+!            do k=kbp(i)+1,kz-1
+!              znl(k,i)=ztot(k)
+!            enddo !k
+!          endif
+!
+!          do k=kbp(i)+1,nvrt
+!            if(znl(k,i)-znl(k-1,i)<=0) then
+!              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
+!              call parallel_abort(errmsg)
+!            endif
+!          enddo !k
         endif !wet ot dry
       enddo !i=1,npa
 
@@ -975,7 +1074,7 @@
 !      if(it/=iths) idry_e0=idry_e !save only for upwindtrack()
 
       do i=1,nea
-        idry_e2(i)=max0(idry2(nm(i,1)),idry2(nm(i,2)),idry2(nm(i,3)))
+        idry_e2(i)=max0(idry2(elnode(1,i)),idry2(elnode(2,i)),idry2(elnode(3,i)))
       enddo !i
 
 !      write(10,*)'Element'
@@ -987,7 +1086,7 @@
       idry2=1 !dry unless wet
       do i=1,np
         do j=1,nne(i)
-          ie=ine(i,j)
+          ie=indel(j,i)
           if(idry_e2(ie)==0) then
             idry2(i)=0; exit
           endif
@@ -1020,13 +1119,13 @@
 !        if(i>np) cycle !do rest for residents only
 !        ifl=0
 !        do j=1,nne(i)
-!          ie=ine(i,j)
+!          ie=indel(j,i)
 !          if(idry_e2(ie)==0) then
 !            ifl=1; exit
 !          endif 
 !        enddo !j
 !        if(ifl==0) then
-!          write(errmsg,*)'Node-element inconsistency:',iplg(i),idry2(i),(idry_e2(ine(i,j)),j=1,nne(i))
+!          write(errmsg,*)'Node-element inconsistency:',iplg(i),idry2(i),(idry_e2(indel(j,i)),j=1,nne(i))
 !          call parallel_abort(errmsg)
 !        endif
 !      enddo !i=1,npa
@@ -1038,15 +1137,15 @@
         if(idry_e2(i)/=0) cycle
 
 !       Wet
-        n1=nm(i,1); n2=nm(i,2); n3=nm(i,3)
+        n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
         if(idry2(n1)/=0.or.idry2(n2)/=0.or.idry2(n3)/=0) then
           write(errmsg,*)'level0: Element-node inconsistency (0):',ielg(i),idry_e2(i), &
-                    iplg(nm(i,1:3)),idry2(nm(i,1:3)),idry(nm(i,1:3))
+     &iplg(elnode(1:3,i)),idry2(elnode(1:3,i)),idry(elnode(1:3,i))
           call parallel_abort(errmsg)
         endif
-        kbe(i)=max0(kbp(n1),kbp(n2),kbp(n3))
+        kbe(i)=min(kbp(n1),kbp(n2),kbp(n3))
         do k=kbe(i),nvrt
-          ze(k,i)=(znl(k,n1)+znl(k,n2)+znl(k,n3))/3
+          ze(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3))/3
           if(k>=kbe(i)+1) then; if(ze(k,i)-ze(k-1,i)<=0) then
             write(errmsg,*)'Weird element:',k,i,ze(k,i),ze(k-1,i)
             call parallel_abort(errmsg)
@@ -1071,7 +1170,7 @@
               stmp=0
               icount=0
               do j=1,nnp(i)
-                nd=inp(i,j) !must be inside the aug. domain
+                nd=indnd(j,i) !must be inside the aug. domain
 !               Wet nbrs not affected by this part and so each sub-domain should use same values
                 if(idry(nd)==0) then !all indices extended
                   icount=icount+1
@@ -1105,7 +1204,7 @@
       idry_s2=1 !reinitialize to wipe out previous temp. storage
       do i=1,ns
         do j=1,2 !elements
-          ie=is(i,j)
+          ie=isdel(j,i)
           if(ie/=0.and.idry_e2(max(1,ie))==0) idry_s2(i)=0
         enddo !j
       enddo !i
@@ -1129,7 +1228,7 @@
 !        if(idry_e2(i)/=0) cycle
 !!       Wet
 !        do j=1,3
-!          isd=js(i,j)
+!          isd=elside(j,i)
 !          if(idry_s2(isd)/=0) then
 !            write(errmsg,*)'Element-side inconsistency:',ielg(i),islg(isd),idry_s2(isd)
 !            call parallel_abort(errmsg)
@@ -1142,14 +1241,14 @@
 !
 !        ifl=0
 !        do j=1,2
-!          ie=is(i,j)
+!          ie=isdel(j,i)
 !          if(ie/=0.and.idry_e2(max(1,ie))==0) then
 !            ifl=1; exit
 !          endif
 !        enddo !j
 !        if(ifl==0) then
 !          write(errmsg,*)'Side-element inconsistency:',islg(i),idry_s2(i), &
-!                         (is(i,j),idry_e2(is(i,j)),j=1,2)
+!                         (isdel(j,i),idry_e2(isdel(j,i)),j=1,2)
 !          call parallel_abort(errmsg)
 !        endif
 !      enddo !i
@@ -1157,25 +1256,26 @@
 
 !     Compute side bottom index
       do i=1,nsa
-        n1=isidenode(i,1)
-        n2=isidenode(i,2)
+        n1=isidenode(1,i)
+        n2=isidenode(2,i)
         kbs(i)=0 !dry
         if(idry_s2(i)==0) then !wet side with 2 wet nodes
           if(idry2(n1)/=0.or.idry2(n2)/=0) then
             write(errmsg,*)'Side-node inconsistency:',it,islg(i),'node:',iplg(n1),iplg(n2), &
               eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
-              (is(i,j),ielg(is(i,j)),idry_e2(is(i,j)),j=1,2)
+              (isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
             write(errmsg,*)'Weird side:',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
             call parallel_abort(errmsg)
           endif
-          kbs(i)=max0(kbp(n1),kbp(n2))
+          kbs(i)=min(kbp(n1),kbp(n2))
           do k=kbs(i),nvrt
-            zs(k,i)=(znl(k,n1)+znl(k,n2))/2
+            zs(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2))/2
             if(k>=kbs(i)+1) then; if(zs(k,i)-zs(k-1,i)<=0) then
-              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(k,n1),znl(k,n2),znl(k-1,n1),znl(k-1,n2)
+              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
+     &znl(max(k,kbp(n2)),n2),znl(max(k-1,kbp(n1)),n1),znl(max(k-1,kbp(n2)),n2)
               call parallel_abort(errmsg)
             endif; endif
           enddo !k
@@ -1190,8 +1290,8 @@
             if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
             if(i>ns) cycle !do the rest only for residents
 
-            n1=isidenode(i,1)
-            n2=isidenode(i,2)
+            n1=isidenode(1,i)
+            n2=isidenode(2,i)
             do k=1,nvrt
 !              su2(k,i)=0
 !              sv2(k,i)=0
@@ -1201,11 +1301,11 @@
               stmp=0
               icount=0
               do j=1,2
-                ie=is(i,j)
+                ie=isdel(j,i)
                 if(ie/=0) then
                   if(ie<0) call parallel_abort('levels0: ghost element')
                   do jj=1,3 !side; in the aug. domain
-                    isd=js(ie,jj)
+                    isd=elside(jj,ie)
                     if(idry_s(isd)==0) then
                       icount=icount+1
 
@@ -1354,9 +1454,9 @@
       do i=1,nea
         do k=1,nvrt
           do j=1,3
-            nwild(1)=js(i,j)
-            nwild(2)=js(i,nx(j,1))
-            nwild(3)=js(i,nx(j,2))
+            nwild(1)=elside(j,i)
+            nwild(2)=elside(nx(j,1),i)
+            nwild(3)=elside(nx(j,2),i)
             if(ics==1) then
               ufg(k,i,j)=su2(k,nwild(2))+su2(k,nwild(3))-su2(k,nwild(1))
               vfg(k,i,j)=sv2(k,nwild(2))+sv2(k,nwild(3))-sv2(k,nwild(1))
@@ -1394,8 +1494,8 @@
           weit_w=0
           icount=0
           do j=1,nne(i)
-            ie=ine(i,j)
-            id=iself(i,j)
+            ie=indel(j,i)
+            id=iself(j,i)
             if(idry_e(ie)==0) then
               icount=icount+1
 
@@ -1419,7 +1519,7 @@
 !                kbb=kbe(ie)
 !                swild3(kbb:nvrt)=ze(kbb:nvrt,ie) 
 !                swild2(kbb:nvrt,1)=we(kbb:nvrt,ie)
-!                call vinter(nvrt,2,1,znl(k,i),kbb,nvrt,k,swild3,swild2,swild,ibelow)
+!                call vinter
 !              endif
 !            else !along S
             swild(1)=we(k,ie)
@@ -1456,7 +1556,7 @@
 !       Wet node
 !        icase=2
 !        do j=1,nne(i)
-!          ie=ine(i,j)
+!          ie=indel(j,i)
 !          if(interpol(ie)==1) icase=1
 !        enddo !j
 
@@ -1465,11 +1565,11 @@
           weit_w=0
 
           do j=1,nne(i)
-            ie=ine(i,j)
-            id=iself(i,j)
+            ie=indel(j,i)
+            id=iself(j,i)
             do l=1,2
-              isd=js(ie,nx(id,l))
-              if(is(isd,2)==0) then !bnd side (even for ghost) - contribution doubles
+              isd=elside(nx(id,l),ie)
+              if(isdel(2,isd)==0) then !bnd side (even for ghost) - contribution doubles
                 nfac0=2
               else
                 nfac0=1
@@ -1507,7 +1607,7 @@
 !                                      &sv2(kbb:nvrt,isd)*dot_product(sframe(:,2,isd),pframe(:,2,i))
 !                  endif !ics
 !                  swild3(kbb:nvrt)=zs(kbb:nvrt,isd)
-!                  call vinter(nvrt,2,2,znl(k,i),kbb,nvrt,k,swild3,swild2,swild,ibelow)
+!                  call vinter
 !                endif
 !              else !along S
               if(ics==1) then
@@ -1534,7 +1634,7 @@
 !                kbb=kbe(ie)
 !                swild3(kbb:nvrt)=ze(kbb:nvrt,ie) 
 !                swild2(kbb:nvrt,1)=we(kbb:nvrt,ie)
-!                call vinter(nvrt,2,1,znl(k,i),kbb,nvrt,k,swild3,swild2,swild,ibelow)
+!                call vinter
 !              endif
 !            else !along S
             swild(1)=we(k,ie)
@@ -1588,10 +1688,10 @@
 !	do k=1,nvrt
 !	  testa(i,k)=0
 !          do j=1,nne(i)
-!	    iel=ine(i,j)
+!	    iel=indel(j,i)
 !	    index=0
 !	    do l=1,3
-!	      if(nm(iel,l).eq.i) index=l
+!	      if(elnode(l,iel).eq.i) index=l
 !	    enddo !l
 !	    if(index.eq.0) then
 !	      write(*,*)'Wrong element ball'
@@ -1612,25 +1712,25 @@
 !     Routine to do vertical linear interpolation in z
 !     Inputs:
 !       (nmax1,nmax2) : dimension of sint() in the calling routine
-!       nc: actual # of variables
-!       k1,k2: lower and upper limits for za, sint
+!       nc: actual # of variables (<=nmax1)
+!       k1,k2: lower and upper limits for za, sint (k2<=nmax2)
 !       k3: initial guess for level index (to speed up)
 !       zt: desired interpolation level
 !       za(k1:k2): z-cor for sint (must be in ascending order)
-!       sint(k1:k2,1:nc): values to be interpolated from; dimensions must match driving program
+!       sint(1:nc,k1:k2): values to be interpolated from; dimensions must match driving program
+!                         and so nc<=nmax1, k2<=nmax2.
 !     Outputs:
 !       sout(1:nc): interpolated value @ z=zt (bottom value if ibelow=1). Constant extrapolation
 !                   is used below bottom or above surface.
 !       ibelow: flag indicating if zt is below za(k1)
 !
-!  TODO: change index order for sint()
       use elfe_glbl, only : rkind,errmsg
       use elfe_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: nmax1,nmax2,nc,k1,k2,k3
-      real(rkind), intent(in) :: zt,za(nmax1),sint(nmax1,nmax2)
-      real(rkind), dimension(:), intent(out) :: sout(nmax2)
+      real(rkind), intent(in) :: zt,za(nmax2),sint(nmax1,nmax2)
+      real(rkind), dimension(:), intent(out) :: sout(nmax1)
       integer, intent(out) :: ibelow
 
       !Local
@@ -1648,13 +1748,13 @@
 
       if(zt<za(k1)) then
         ibelow=1
-        sout(1:nc)=sint(k1,1:nc)
+        sout(1:nc)=sint(1:nc,k1)
       else !normal
         ibelow=0
         if(zt==za(k1)) then
-          sout(1:nc)=sint(k1,1:nc)
+          sout(1:nc)=sint(1:nc,k1)
         else if(zt>=za(k2)) then
-          sout(1:nc)=sint(k2,1:nc)
+          sout(1:nc)=sint(1:nc,k2)
         else
           kout=0 !flag
           if(k3<k1.or.k3>k2) then
@@ -1677,7 +1777,7 @@
             call parallel_abort(errmsg)
           endif
           zrat=(zt-za(kout))/(za(kout+1)-za(kout))
-          sout(1:nc)=sint(kout,1:nc)*(1-zrat)+sint(kout+1,1:nc)*zrat
+          sout(1:nc)=sint(1:nc,kout)*(1-zrat)+sint(1:nc,kout+1)*zrat
         endif
       endif
 
@@ -1808,7 +1908,7 @@
         drho_dz=(prho(j+1,i)-prho(j-1,i))/(znl(j+1,i)-znl(j-1,i))
       endif
       bvf=grav/rho0*drho_dz
-      Gh=xl(i,j)**2/2/q2(i,j)*bvf
+      Gh=xl(j,i)**2/2/q2(j,i)*bvf
       Gh=min(max(Gh,-0.28_rkind),0.0233_rkind)
 
       if(stab.eq.'GA') then
@@ -1833,10 +1933,10 @@
         call parallel_abort(errmsg)
       endif
 
-      vd=cmiu*xl(i,j)*sqrt(q2(i,j))
-      td=cmiup*xl(i,j)*sqrt(q2(i,j))
-      qd1=cmiu1*xl(i,j)*sqrt(q2(i,j))
-      qd2=cmiu2*xl(i,j)*sqrt(q2(i,j))
+      vd=cmiu*xl(j,i)*sqrt(q2(j,i))
+      td=cmiup*xl(j,i)*sqrt(q2(j,i))
+      qd1=cmiu1*xl(j,i)*sqrt(q2(j,i))
+      qd2=cmiu2*xl(j,i)*sqrt(q2(j,i))
 
       end subroutine asm
 
@@ -1992,7 +2092,7 @@
 
 !     Compute local index of a side (0 if inside aug. domain)
       function lindex_s(i,ie)
-      use elfe_glbl, only : rkind,js
+      use elfe_glbl, only : rkind,elside
       implicit none
 
       integer :: lindex_s
@@ -2002,7 +2102,7 @@
 
       l0=0 !local index
       do l=1,3
-        if(js(ie,l)==i) then
+        if(elside(l,ie)==i) then
           l0=l
           exit
         endif
@@ -2068,6 +2168,7 @@
 !            yyout(npts2): output y values; if xmin>xmax, yyout=yy(1).
 !===============================================================================
       subroutine eval_cubic_spline(npts,xcor,yy,ypp,npts2,xout,ixmin,xmin,xmax,yyout)
+      ! todo: when runtime warnings are enabled, the argument yy usually results in a temporary. Do we want this?
       use elfe_glbl, only : rkind,errmsg
       use elfe_msgp, only : parallel_abort
       implicit none
@@ -2108,7 +2209,7 @@
             exit
           endif
         enddo !j
-        if(ifl==0) then
+        if(ifl==0) then    !todo: assert
           write(errmsg,*)'EVAL_CUBIC: Falied to find:',i,xtmp,xmin,xmax
           call parallel_abort(errmsg)
         endif
@@ -2137,7 +2238,7 @@
   
       !Local
       integer :: k
-      real(rkind) :: alow(npts),bdia(npts),cupp(npts),rrhs(npts,1),gam(npts)
+      real(rkind) :: alow(npts),bdia(npts),cupp(npts),rrhs(npts),gam(npts)
 
       do k=1,npts
         if(k==1) then
@@ -2147,7 +2248,7 @@
             call parallel_abort(errmsg)
           endif
           cupp(k)=bdia(k)/2
-          rrhs(k,1)=(yy(k+1)-yy(k))/(xcor(k+1)-xcor(k))-yp1
+          rrhs(k)=(yy(k+1)-yy(k))/(xcor(k+1)-xcor(k))-yp1
         else if(k==npts) then
           bdia(k)=(xcor(k)-xcor(k-1))/3
           if(bdia(k)==0) then
@@ -2155,7 +2256,7 @@
             call parallel_abort(errmsg)
           endif
           alow(k)=bdia(k)/2
-          rrhs(k,1)=-(yy(k)-yy(k-1))/(xcor(k)-xcor(k-1))+yp2
+          rrhs(k)=-(yy(k)-yy(k-1))/(xcor(k)-xcor(k-1))+yp2
         else
           bdia(k)=(xcor(k+1)-xcor(k-1))/3
           alow(k)=(xcor(k)-xcor(k-1))/6
@@ -2164,7 +2265,7 @@
             write(errmsg,*)'CUBIC_SP: middle problem:',xcor(k),xcor(k-1),xcor(k+1)
             call parallel_abort(errmsg)
           endif
-          rrhs(k,1)=(yy(k+1)-yy(k))/(xcor(k+1)-xcor(k))-(yy(k)-yy(k-1))/(xcor(k)-xcor(k-1))
+          rrhs(k)=(yy(k+1)-yy(k))/(xcor(k+1)-xcor(k))-(yy(k)-yy(k-1))/(xcor(k)-xcor(k-1))
         endif
       enddo !k
 
@@ -2314,7 +2415,7 @@
 #endif /*USE_SED*/
 #ifdef USE_TIMOR
 !Error: need to use cubic spline also for mud density; also need to average for element
-     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),nm(i,1)),laddmud_d &
+     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif
 
 !LLP end
@@ -2384,8 +2485,8 @@
         if(idry_s(i)==1) cycle
 
 !       Wet side; pts 1&2
-        ie=is(i,1)
-        node1=isidenode(i,1); node2=isidenode(i,2)
+        ie=isdel(1,i)
+        node1=isidenode(1,i); node2=isidenode(2,i)
         if(ics==1) then
           xn1=xnd(node1)
           yn1=ynd(node1)
@@ -2415,7 +2516,7 @@
         swild2(kbs(i):nvrt,2)=swild(1:(nvrt-kbs(i)+1))
 
         !pts 3&4
-        if(is(i,2)==0.and.ihbnd==0) then !no flux b.c.
+        if(isdel(2,i)==0.and.ihbnd==0) then !no flux b.c.
           swild2(kbs(i):nvrt,3:4)=0
 !          if(ics==1) then
 !            xn1=xnd(node1)
@@ -2431,8 +2532,8 @@
 !          endif !ics
           x43=yn2-yn1 !ynd(node2)-ynd(node1)
           y43=xn1-xn2 !xnd(node1)-xnd(node2)
-        else if(is(i,2)==0.and.ihbnd/=0) then !use shape function
-          node3=sum(nm(ie,1:3))-node1-node2
+        else if(isdel(2,i)==0.and.ihbnd/=0) then !use shape function
+          node3=sum(elnode(1:3,ie))-node1-node2
           if(idry(node3)==1) then
             write(errmsg,*)'hgrad_nodes: node3 dry',iplg(node3),ielg(ie)
             call parallel_abort(errmsg)
@@ -2441,12 +2542,12 @@
           nwild=0
           do j=1,3
             if(j<=2) then
-              nd=isidenode(i,j)
+              nd=isidenode(j,i)
             else
               nd=node3
             endif
             do jj=1,3
-              if(nm(ie,jj)==nd) then
+              if(elnode(jj,ie)==nd) then
                 nwild(j)=jj; exit
               endif
             enddo !jj
@@ -2468,7 +2569,7 @@
           do k=kbs(i),nvrt
             do j=1,3
               !in eframe
-              dvar_dxy(1:2,k,i)=dvar_dxy(1:2,k,i)+swild2(k,j)*dl(ie,nwild(j),1:2)
+              dvar_dxy(1:2,k,i)=dvar_dxy(1:2,k,i)+swild2(k,j)*dldxy(nwild(j),1:2,ie)
             enddo !j
 !            if(ics==2) then !to sframe
 !              call project_hvec(dvar_dxy(1,k,i),dvar_dxy(2,k,i),eframe(:,:,ie),sframe(:,:,i),tmp1,tmp2)
@@ -2478,8 +2579,8 @@
           enddo !k          
 
         else !internal side
-          node3=sum(nm(is(i,1),1:3))-node1-node2
-          node4=sum(nm(is(i,2),1:3))-node1-node2
+          node3=sum(elnode(1:3,isdel(1,i)))-node1-node2
+          node4=sum(elnode(1:3,isdel(2,i)))-node1-node2
           if(ics==1) then
             xn3=xnd(node3)
             yn3=ynd(node3)
@@ -2555,7 +2656,7 @@
           endif
         endif !bnd side or not
 
-        if(ihbnd==0.or.is(i,2)/=0) then
+        if(ihbnd==0.or.isdel(2,i)/=0) then
           delta1=(xn2-xn1)*y43-x43*(yn2-yn1)
           if(delta1==0) then
             write(errmsg,*)'hgrad_nodes failure:',iplg(node1),iplg(node2)
@@ -2565,7 +2666,7 @@
             dvar_dxy(1,k,i)=(y43*(swild2(k,2)-swild2(k,1))-(yn2-yn1)*(swild2(k,4)-swild2(k,3)))/delta1
             dvar_dxy(2,k,i)=((xn2-xn1)*(swild2(k,4)-swild2(k,3))-x43*(swild2(k,2)-swild2(k,1)))/delta1
           enddo !k
-        endif !ihbnd==0.or.is(i,2)/=0
+        endif !ihbnd==0.or.isdel(2,i)/=0
       enddo !i=1,ns
 
       end subroutine hgrad_nodes
@@ -2709,7 +2810,7 @@
       u00_zonal=20 !case #5
 
       do i=1,nsa
-        n1=isidenode(i,1); n2=isidenode(i,2)
+        n1=isidenode(1,i); n2=isidenode(2,i)
         call compute_ll(xcj(i),ycj(i),zcj(i),xtmp,ytmp)
         !Full zonal flow
         uzonal=u00_zonal*(cos(ytmp)*cos(alpha_zonal)+cos(xtmp)*sin(ytmp)*sin(alpha_zonal)) !zonal vel.
@@ -2741,7 +2842,7 @@
 
       do i=1,nea
         do j=1,3
-          nd=nm(i,j)
+          nd=elnode(j,i)
           !Full zonal flow
           uzonal=u00_zonal*(cos(ylat(nd))*cos(alpha_zonal)+cos(xlon(nd))*sin(ylat(nd))*sin(alpha_zonal)) !zonal vel.
           !Compact zonal flow
@@ -2931,7 +3032,7 @@
       real(rkind) :: wild(3,2)
 
       do j=1,3 !nodes
-        nd=nm(nnel,j)
+        nd=elnode(j,nnel)
         if(ics==1) then
           wild(j,1)=xnd(nd)
           wild(j,2)=ynd(nd)

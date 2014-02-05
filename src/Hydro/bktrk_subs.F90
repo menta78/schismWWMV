@@ -721,7 +721,7 @@ end subroutine inter_btrack
 
       real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2),vxn(3),vyn(3),vzn(3)
       real(rkind) :: arco(3),t_xi(6),s_xi(6),sig(3),subrat(4),ztmp(nvrt), &
-     &swild(10),swild2(nvrt,10),swild3(nvrt) 
+     &swild(10),swild2(10,nvrt),swild3(nvrt) 
       real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,2) !,tsdata(mnei_kr,2)
       logical :: lrk
 
@@ -934,9 +934,9 @@ end subroutine inter_btrack
             write(errmsg,*)'Out of Kriging zone:',ielg(nnel)
             call parallel_abort(errmsg)   
           endif
-          npp=itier_nd(ie,0)
+          npp=itier_nd(0,ie)
           do i=1,npp
-            nd=itier_nd(ie,i)
+            nd=itier_nd(i,ie)
             if(idry(nd)==1) then !i.c.
               uvdata(i,1)=0
               uvdata(i,2)=0
@@ -944,9 +944,9 @@ end subroutine inter_btrack
 !              if(interpol(nnel)==1) then
 !                kbb=kbp(nd)
 !                swild3(kbb:nvrt)=znl(kbb:nvrt,nd)
-!                swild2(kbb:nvrt,1)=uu2(kbb:nvrt,nd)
-!                swild2(kbb:nvrt,2)=vv2(kbb:nvrt,nd)
-!                call vinter(nvrt,10,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
+!                swild2(1,kbb:nvrt)=uu2(kbb:nvrt,nd)
+!                swild2(2,kbb:nvrt)=vv2(kbb:nvrt,nd)
+!                call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
 !                uvdata(i,1:2)=swild(1:2)
 !              else !along S
               if(ics==1) then
@@ -966,7 +966,7 @@ end subroutine inter_btrack
           do i=1,npp+3
             al_beta(i,1:2)=0
             do j=1,npp
-              al_beta(i,1:2)=al_beta(i,1:2)+akrmat_nd(ie,i,j)*uvdata(j,1:2)
+              al_beta(i,1:2)=al_beta(i,1:2)+akrmat_nd(i,j,ie)*uvdata(j,1:2)
             enddo !j
           enddo !i
 
@@ -984,7 +984,7 @@ end subroutine inter_btrack
           !uuint=al_beta(npp+1,1)+al_beta(npp+2,1)*xt+al_beta(npp+3,1)*yt
           !vvint=al_beta(npp+1,2)+al_beta(npp+2,2)*xt+al_beta(npp+3,2)*yt
           do i=1,npp
-            nd=itier_nd(ie,i)
+            nd=itier_nd(i,ie)
             if(ics==1) then
               rr=sqrt((xnd(nd)-xt)**2+(ynd(nd)-yt)**2)
             else
@@ -1025,9 +1025,9 @@ end subroutine inter_btrack
       ifl=0 !flag
       do i=1,4
         if(i<=3) then !3 triangles with a node and 2 sides
-          n1=nm(nnel,i)
-          n2=js(nnel,nx(i,2))
-          n3=js(nnel,nx(i,1))
+          n1=elnode(i,nnel)
+          n2=elside(nx(i,2),nnel)
+          n3=elside(nx(i,1),nnel)
           if(ics==1) then
             xn1=xnd(n1); yn1=ynd(n1)
             xn2=xcj(n2); yn2=ycj(n2)
@@ -1082,35 +1082,22 @@ end subroutine inter_btrack
               if(jj==1) then
                 kbb=kbp(n1)
                 swild3(kbb:nvrt)=znl(kbb:nvrt,n1)
-                swild2(kbb:nvrt,1)=tnd(kbb:nvrt,n1)
-                swild2(kbb:nvrt,2)=snd(kbb:nvrt,n1)
+                swild2(1,kbb:nvrt)=tnd(kbb:nvrt,n1)
+                swild2(2,kbb:nvrt)=snd(kbb:nvrt,n1)
               else if(jj==2) then
                 kbb=kbs(n2)
                 swild3(kbb:nvrt)=zs(kbb:nvrt,n2)
-                swild2(kbb:nvrt,1)=tsd(kbb:nvrt,n2)
-                swild2(kbb:nvrt,2)=ssd(kbb:nvrt,n2)
+                swild2(1,kbb:nvrt)=tsd(kbb:nvrt,n2)
+                swild2(2,kbb:nvrt)=ssd(kbb:nvrt,n2)
               else !=3
                 kbb=kbs(n3)
                 swild3(kbb:nvrt)=zs(kbb:nvrt,n3)
-                swild2(kbb:nvrt,1)=tsd(kbb:nvrt,n3)
-                swild2(kbb:nvrt,2)=ssd(kbb:nvrt,n3)
+                swild2(1,kbb:nvrt)=tsd(kbb:nvrt,n3)
+                swild2(2,kbb:nvrt)=ssd(kbb:nvrt,n3)
               endif
 
-              call vinter(nvrt,10,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
+              call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
               t_xi(jj)=swild(1); s_xi(jj)=swild(2)
-
-!             Below bottom extrapolation
-!              call do_cubic_spline(nvrt-kbb+1,swild3(kbb:nvrt),swild2(kbb:nvrt,1), &
-!     &0._rkind,0._rkind,1,zt,1,zmin,zmax,tmp)
-!!             Impose bounds
-!              tmax=maxval(swild2(kbb:nvrt,1))
-!              tmin=minval(swild2(kbb:nvrt,1))
-!              t_xi(jj)=min(tmax,max(tmin,tmp))
-!              call do_cubic_spline(nvrt-kbb+1,swild3(kbb:nvrt),swild2(kbb:nvrt,2), &
-!     &0._rkind,0._rkind,1,zt,1,zmin,zmax,tmp)
-!              smax=maxval(swild2(kbb:nvrt,2))
-!              smin=minval(swild2(kbb:nvrt,2))
-!              s_xi(jj)=min(smax,max(smin,tmp))
             enddo !jj=1,3
 
             ttint=t_xi(1)*sig(1)+t_xi(2)*sig(2)+t_xi(3)*sig(3)
@@ -1118,9 +1105,9 @@ end subroutine inter_btrack
             exit
           endif !subrat(i)<small2
         else !i=4: center triangle
-          n1=js(nnel,1)
-          n2=js(nnel,2)
-          n3=js(nnel,3)
+          n1=elside(1,nnel)
+          n2=elside(2,nnel)
+          n3=elside(3,nnel)
           if(ics==1) then
             xn1=xcj(n1); yn1=ycj(n1)
             xn2=xcj(n2); yn2=ycj(n2)
@@ -1155,7 +1142,7 @@ end subroutine inter_btrack
 
 !            smax=-99; tmin=100; ibb=0 !flag
 !            do jj=1,3 !side
-!              isd=js(nnel,jj)
+!              isd=elside(jj,nnel)
 !              vxl(jj,1)=zs(kbs(isd),isd)
 !              vxl(jj,2)=zs(nvrt,isd)
 !            enddo !jj
@@ -1163,25 +1150,13 @@ end subroutine inter_btrack
 !            zmax=minval(vxl(1:3,2))
 
             do jj=1,3 !side
-              isd=js(nnel,jj)
+              isd=elside(jj,nnel)
               kbb=kbs(isd)
               swild3(kbb:nvrt)=zs(kbb:nvrt,isd)
-              swild2(kbb:nvrt,1)=tsd(kbb:nvrt,isd)
-              swild2(kbb:nvrt,2)=ssd(kbb:nvrt,isd)
-              call vinter(nvrt,10,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
+              swild2(1,kbb:nvrt)=tsd(kbb:nvrt,isd)
+              swild2(2,kbb:nvrt)=ssd(kbb:nvrt,isd)
+              call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
               t_xi(jj)=swild(1); s_xi(jj)=swild(2)
-
-!              call do_cubic_spline(nvrt-kbb+1,swild3(kbb:nvrt),swild2(kbb:nvrt,1), &
-!     &0._rkind,0._rkind,1,zt,1,zmin,zmax,tmp)
-!!             Impose bounds
-!              tmax=maxval(swild2(kbb:nvrt,1))
-!              tmin=minval(swild2(kbb:nvrt,1))
-!              t_xi(jj)=min(tmax,max(tmin,tmp))
-!              call do_cubic_spline(nvrt-kbb+1,swild3(kbb:nvrt),swild2(kbb:nvrt,2), &
-!     &0._rkind,0._rkind,1,zt,1,zmin,zmax,tmp)
-!              smax=maxval(swild2(kbb:nvrt,2))
-!              smin=minval(swild2(kbb:nvrt,2))
-!              s_xi(jj)=min(smax,max(smin,tmp))
             enddo !jj=1,3
 
 !            if(ibb==1) then
@@ -1210,8 +1185,8 @@ end subroutine inter_btrack
 !     Quadratic interplation
 
       do i=1,3 !nodes and sides
-        nd=nm(nnel,i)
-        isd=js(nnel,i)
+        nd=elnode(i,nnel)
+        isd=elside(i,nnel)
 !       check (range extended)
 !        if(tnd(jlev,nd)<-98.or.snd(jlev,nd)<-98.or.tsd(jlev,isd)<-98.or.ssd(jlev,isd)<-98) then
 !          write(errmsg,*)'BTRACK: Wrong S,T:',i,iplg(nd),islg(isd),tnd(jlev,nd),snd(jlev,nd),tsd(jlev,isd),ssd(jlev,isd)
@@ -1221,14 +1196,14 @@ end subroutine inter_btrack
         !Cubic spline in the vertical (use bottom value if zt is below bottom of node/side)
         !vxl(1:3,1|2): T|S @ 3 nodes; vyl(1:3,1|2): T|S @ 3 sides
         call eval_cubic_spline(nvrt-kbp(nd)+1,znl(kbp(nd):nvrt,nd),tnd(kbp(nd):nvrt,nd), &
-     &cspline_ypp_nd(1,kbp(nd):nvrt,nd),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,1))
+     &cspline_ypp_nd(kbp(nd):nvrt,nd,1),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,1))
         call eval_cubic_spline(nvrt-kbp(nd)+1,znl(kbp(nd):nvrt,nd),snd(kbp(nd):nvrt,nd), &
-     &cspline_ypp_nd(2,kbp(nd):nvrt,nd),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,2))
+     &cspline_ypp_nd(kbp(nd):nvrt,nd,2),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,2))
 
         call eval_cubic_spline(nvrt-kbs(isd)+1,zs(kbs(isd):nvrt,isd),tsd(kbs(isd):nvrt,isd), &
-     &cspline_ypp_sd(1,kbs(isd):nvrt,isd),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,1))
+     &cspline_ypp_sd(kbs(isd):nvrt,isd,1),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,1))
         call eval_cubic_spline(nvrt-kbs(isd)+1,zs(kbs(isd):nvrt,isd),ssd(kbs(isd):nvrt,isd), &
-     &cspline_ypp_sd(2,kbs(isd):nvrt,isd),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,2))
+     &cspline_ypp_sd(kbs(isd):nvrt,isd,2),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,2))
 
         !Impose bounds in vertical
         tnd_max=maxval(tnd(kbp(nd):nvrt,nd))
@@ -1250,8 +1225,8 @@ end subroutine inter_btrack
 
       ttint=0; ssint=0 
       do i=1,3 !nodes and sides
-        nd=nm(nnel,i)
-        isd=js(nnel,i)
+        nd=elnode(i,nnel)
+        isd=elside(i,nnel)
         in1=nx(i,1)
         in2=nx(i,2)
         ttint=ttint+vxl(i,1)*(2*arco(i)*arco(i)-arco(i))+vyl(i,1)*4*arco(in1)*arco(in2)
@@ -1271,9 +1246,9 @@ end subroutine inter_btrack
 
 !     Compute viscosity/diffusivity
       do i=1,3 !nodes
-        nd=nm(nnel,i)
-        vxl(i,1)=dfv(nd,jlev)*(1-zrat)+dfv(nd,jlev-1)*zrat
-        vxl(i,2)=dfh(nd,jlev)*(1-zrat)+dfh(nd,jlev-1)*zrat
+        nd=elnode(i,nnel)
+        vxl(i,1)=dfv(jlev,nd)*(1-zrat)+dfv(jlev-1,nd)*zrat
+        vxl(i,2)=dfh(jlev,nd)*(1-zrat)+dfh(jlev-1,nd)*zrat
       enddo !i
       dfvint=sum(vxl(1:3,1)*arco(1:3))
       dfhint=sum(vxl(1:3,2)*arco(1:3))
@@ -1346,8 +1321,9 @@ end subroutine inter_btrack
       real(rkind) :: signa
 
       !Local
+      integer :: jk(3)
       real(rkind) :: wild(10,2),wild2(10,2),wild3(3,2) !,xy_l(3,2)
-      real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2),vxn(3),vyn(3),vzn(3)
+      real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2),vxn(3),vyn(3),vzn(3),ztmp2(nvrt,3)
 
       integer :: nnel00,jlev00,nel,i,j,l,nel_j,jd1,jd2,iflag,it,md1,md2,lit, &
                  &isd,n1,n2,n3,kin,nd,lev,k
@@ -1396,7 +1372,7 @@ end subroutine inter_btrack
 !        write(12,*)'Sides:'
 !        do i=1,nsa
 !          do k=1,nvrt
-!            write(12,*)islg(i),iplg(isidenode(i,1:2)),k,su2(k,i),sv2(k,i)
+!            write(12,*)islg(i),iplg(isidenode(1:2,i)),k,su2(k,i),sv2(k,i)
 !          enddo !k
 !        enddo !i
         write(errmsg,*)'QUICKSEARCH: Zero path',idx,itr,l_ns,ipsgb,ielg(nel),jlev, &
@@ -1425,8 +1401,8 @@ end subroutine inter_btrack
         wild=0; wild2=0 !initialize for debugging output
         nel_j=0
         do j=1,3 !sides
-          jd1=nm(nel,nx(j,1))
-          jd2=nm(nel,nx(j,2))
+          jd1=elnode(nx(j,1),nel)
+          jd2=elnode(nx(j,2),nel)
           if(ics==1) then
             xn1=xnd(jd1); yn1=ynd(jd1)
             xn2=xnd(jd2); yn2=ynd(jd2)
@@ -1502,7 +1478,7 @@ end subroutine inter_btrack
 !     Check aug. exit
 !     nnel, jlev, and trm are unchanged; (xt,yt,zt) moved to (x0,y0,z0)
 !     to be ready for inter-subdomain tracking
-      if(ic3(nel,nel_j)<0) then
+      if(ic3(nel_j,nel)<0) then
         xt=x0; yt=y0; zt=z0; nnel=nel
         nfl=2; return
       endif
@@ -1527,8 +1503,8 @@ end subroutine inter_btrack
         trm=0 !min(trm,time)
         exit loop4
       endif
-      md1=nm(nel,nx(nel_j,1))
-      md2=nm(nel,nx(nel_j,2))
+      md1=elnode(nx(nel_j,1),nel)
+      md2=elnode(nx(nel_j,2),nel)
       
 !     Compute z position 
       dist=sqrt((xin-xt)**2+(yin-yt)**2)
@@ -1549,7 +1525,7 @@ end subroutine inter_btrack
       endif
 
 !     Check for aug. exit
-      if(ic3(nel,nel_j)<0) then
+      if(ic3(nel_j,nel)<0) then
 !       nnel is the last element inside aug. domain
 !       xt,yt,zt, jlev, and trm are updated.
 !       IMPORTANT: as new (xt,yt) is right on a side, make sure
@@ -1570,14 +1546,14 @@ end subroutine inter_btrack
 !     For horizontal exit and dry elements, compute tangential vel.,
 !     update target (xt,yt,zt) and continue.
 !     max() added for bound check
-      if(ic3(nel,nel_j)==0.or.idry_e(max(1,ic3(nel,nel_j)))==1) lit=1
+      if(ic3(nel_j,nel)==0.or.idry_e(max(1,ic3(nel_j,nel)))==1) lit=1
       if(ihydraulics/=0.and.nhtblocks>0) then
-        if(isblock_sd(1,js(nel,nel_j))>0) lit=1 !active block
+        if(isblock_sd(1,elside(nel_j,nel))>0) lit=1 !active block
       endif
    
       if(lit==1) then
-        isd=js(nel,nel_j)
-        if(isidenode(isd,1)+isidenode(isd,2)/=md1+md2) then
+        isd=elside(nel_j,nel)
+        if(isidenode(1,isd)+isidenode(2,isd)/=md1+md2) then
           write(errmsg,*)'QUICKSEARCH: Wrong side'
           call parallel_abort(errmsg)
         endif
@@ -1621,11 +1597,11 @@ end subroutine inter_btrack
       endif !abnormal cases
 
 !     Search for nel's neighbor with edge nel_j, or in abnormal cases, the same element
-      if(lit==0) nel=ic3(nel,nel_j) !next front element
+      if(lit==0) nel=ic3(nel_j,nel) !next front element
 
 !      do i=1,3
-!        k1=nm(nel,i)
-!        k2=nm(nel,nx(i,1))
+!        k1=elnode(i,nel)
+!        k2=elnode(nx(i,1),nel)
 !        if(ics==1) then
 !          xn1=xnd(k1); yn1=ynd(k1)
 !          xn2=xnd(k2); yn2=ynd(k2)
@@ -1658,8 +1634,8 @@ end subroutine inter_btrack
       wild=0; wild2=0 !initialize for output
       nel_j=0
       do j=1,3
-        jd1=nm(nel,nx(j,1))
-        jd2=nm(nel,nx(j,2))
+        jd1=elnode(nx(j,1),nel)
+        jd2=elnode(nx(j,2),nel)
 !       For abnormal case, same side (border side) cannot be hit again
         if(jd1==md1.and.jd2==md2.or.jd2==md1.and.jd1==md2) cycle
         if(ics==1) then
@@ -1716,9 +1692,10 @@ end subroutine inter_btrack
       endif
 
 !     Compute area & sigma coord.
-      call area_coord(0,nnel,gcor0,frame0,xt,yt,arco)
+      call area_coord(1,nnel,gcor0,frame0,xt,yt,arco)
+
 !      do j=1,3 !nodes
-!        nd=nm(nnel,j)
+!        nd=elnode(j,nnel)
 !        if(ics==1) then
 !          wild(j,1)=xnd(nd)
 !          wild(j,2)=ynd(nd)
@@ -1739,58 +1716,79 @@ end subroutine inter_btrack
 !      endif
 
 !     Local elev. and depth
-      n1=nm(nnel,1)
-      n2=nm(nnel,2)
-      n3=nm(nnel,3)
-      etal=eta2(n1)*arco(1)+eta2(n2)*arco(2)+eta2(n3)*arco(3)
-      dep=dp(n1)*arco(1)+dp(n2)*arco(2)+dp(n3)*arco(3)
-      if(etal+dep<=h0) then
-        write(errmsg,*)'QUICKSEARCH: Weird wet element in quicksearch:',ielg(nnel),eta2(n1),eta2(n2),eta2(n3)
-        call parallel_abort(errmsg)
-      endif
+      do j=1,3 !nodes
+        nd=elnode(j,nnel)
+        call zcoor(2,nd,jk(j),ztmp2(:,j))
+      enddo !j
+      kbpl=minval(jk(:)) !min. bottom index
 
-!     Compute z-coordinates
-      do k=kz,nvrt
-        kin=k-kz+1
-        hmod2=min(dep,h_s)
-        if(hmod2<=h_c) then
-          ztmp(k)=sigma(kin)*(hmod2+etal)+etal
-        else if(etal<=-h_c-(dep-h_c)*theta_f/s_con1) then
-          write(errmsg,*)'QUICKSEARCH: Pls choose a larger h_c (2):',etal,h_c
-          call parallel_abort(errmsg)
-        else
-          ztmp(k)=etal*(1+sigma(kin))+h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
-        endif
-
-!       Following to prevent underflow 
-        if(k==kz) ztmp(k)=-hmod2
-        if(k==nvrt) ztmp(k)=etal
+      do k=kbpl,nvrt
+        ztmp(k)=0
+        do j=1,3
+          ztmp(k)=ztmp(k)+ztmp2(max(k,jk(j)),j)*arco(j)
+        enddo !j
       enddo !k
 
-      if(dep<=h_s) then
-        kbpl=kz
-      else !z levels
-!       Find bottom index
-        kbpl=0
-        do k=1,kz-1
-          if(-dep>=ztot(k).and.-dep<ztot(k+1)) then
-            kbpl=k
-            exit
-          endif
-        enddo !k
-        if(kbpl==0) then
-          write(errmsg,*)'QUICKSEARCH: Cannot find a bottom level at foot:',dep
-          call parallel_abort(errmsg)
-        endif
-        ztmp(kbpl)=-dep
-        do k=kbpl+1,kz-1
-          ztmp(k)=ztot(k)
-        enddo !k
-      endif !dep<=h_s
+!      n1=elnode(1,nnel)
+!      n2=elnode(2,nnel)
+!      n3=elnode(3,nnel)
+!      etal=eta2(n1)*arco(1)+eta2(n2)*arco(2)+eta2(n3)*arco(3)
+!      dep=dp(n1)*arco(1)+dp(n2)*arco(2)+dp(n3)*arco(3)
+      !todo: assert
+      !if(etal+dep<=h0) then
+      !  write(errmsg,*)'QUICKSEARCH: Weird wet element in quicksearch:',ielg(nnel),eta2(n1),eta2(n2),eta2(n3)
+      !  call parallel_abort(errmsg)
+      !endif
+
+!     Compute z-coordinates
+!      do k=kz,nvrt
+!        kin=k-kz+1
+!        hmod2=min(dep,h_s)
+!        if(hmod2<=h_c) then
+!          ztmp(k)=sigma(kin)*(hmod2+etal)+etal
+!        !todo: assert
+!        !else if(etal<=-h_c-(dep-h_c)*theta_f/s_con1) then
+!        !  write(errmsg,*)'QUICKSEARCH: Pls choose a larger h_c (2):',etal,h_c
+!        !  call parallel_abort(errmsg)
+!        else
+!          ztmp(k)=etal*(1+sigma(kin))+h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
+!        endif
+!
+!!       Following to prevent underflow 
+!        if(k==kz) ztmp(k)=-hmod2
+!        if(k==nvrt) ztmp(k)=etal
+!      enddo !k
+!
+!      if(dep<=h_s) then
+!        kbpl=kz
+!      else !z levels
+!!       Find bottom index
+!        kbpl=0
+!        do k=1,kz-1
+!          if(-dep>=ztot(k).and.-dep<ztot(k+1)) then
+!            kbpl=k
+!            exit
+!          endif
+!        enddo !k
+!        !todo: assert
+!        !if(kbpl==0) then
+!        !  write(errmsg,*)'QUICKSEARCH: Cannot find a bottom level at foot:',dep
+!        !  call parallel_abort(errmsg)
+!        !endif
+!        ztmp(kbpl)=-dep
+!        do k=kbpl+1,kz-1
+!          ztmp(k)=ztot(k)
+!        enddo !k
+!      endif !dep<=h_s
 
       do k=kbpl+1,nvrt
-        if(ztmp(k)-ztmp(k-1)<=0) then
-          write(errmsg,*)'QUICKSEARCH: Inverted z-level in quicksearch:',ielg(nnel),etal,dep,ztmp(k)-ztmp(k-1)
+        !todo: assert
+        !Warning: can be 0 for degenerate case
+        if(ztmp(k)-ztmp(k-1)<0) then
+          write(errmsg,*)'QUICKSEARCH: Inverted z-level in quicksearch:', &
+     &ielg(nnel),k,ztmp(k),ztmp(k-1),kbpl,jk(:),ztmp(kbpl:nvrt),';', &
+     &arco(1:3),ztmp2(jk(1):nvrt,1),';',ztmp2(jk(2):nvrt,2),';',ztmp2(jk(3):nvrt,3),&
+     &eta2(elnode(:,nnel)),dp(elnode(:,nnel))
           call parallel_abort(errmsg)
         endif
       enddo !k
@@ -1811,17 +1809,19 @@ end subroutine inter_btrack
             exit
           endif
         enddo !k
-        if(jlev==0) then
-          write(errmsg,*)'QUICKSEARCH: Cannot find a vert. level:',zt,etal,dep,(ztmp(k),k=kbpl,nvrt)
-          call parallel_abort(errmsg)
-        endif
+        !todo: assert
+        !if(jlev==0) then
+        !  write(errmsg,*)'QUICKSEARCH: Cannot find a vert. level:',zt,etal,dep,(ztmp(k),k=kbpl,nvrt)
+        !  call parallel_abort(errmsg)
+        !endif
         zrat=(ztmp(jlev)-zt)/(ztmp(jlev)-ztmp(jlev-1))
       endif
 
-      if(zrat<0.or.zrat>1) then
-        write(errmsg,*)'QUICKSEARCH: Sigma coord. wrong (4):',jlev,zrat
-        call parallel_abort(errmsg)
-      endif
+      !todo: assert
+      !if(zrat<0.or.zrat>1) then
+      !  write(errmsg,*)'QUICKSEARCH: Sigma coord. wrong (4):',jlev,zrat
+      !  call parallel_abort(errmsg)
+      !endif
 
 !      if(kbpl==kz) then !in pure S region
 !        ss=(1-zrat)*sigma(jlev-kz+1)+zrat*sigma(jlev-kz)
@@ -1837,8 +1837,8 @@ end subroutine inter_btrack
       if(indvel==-1) then !interpolated hvel using P_1^NC
 !       Interpolate in vertical 
         do j=1,3 !sides and nodes
-          nd=nm(nnel,j)
-          isd=js(nnel,j)
+          nd=elnode(j,nnel)
+          isd=elside(j,nnel)
           if(ics==1) then
             vxn(j)=su2(jlev,isd)*(1-zrat)+su2(jlev-1,isd)*zrat
             vyn(j)=sv2(jlev,isd)*(1-zrat)+sv2(jlev-1,isd)*zrat !side
@@ -1859,7 +1859,7 @@ end subroutine inter_btrack
       else !indvel>=0; interpolated hvel using P_1
 !       No interpolate in time
         do j=1,3 !nodes
-          nd=nm(nnel,j)
+          nd=elnode(j,nnel)
           do l=1,2 !levels
             lev=jlev+l-2
             if(ics==1) then
