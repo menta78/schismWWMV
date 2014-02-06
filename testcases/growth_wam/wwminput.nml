@@ -133,7 +133,7 @@
  /
  &ENGS
  MESNL   =           3,
- MESIN   =           1, 
+ MESIN   =           2, 
  IFRIC   =           1,
  MESBF   =           0,
  FRICC   =        0.019,
@@ -142,7 +142,7 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
- MESDS   =           1, 
+ MESDS   =           2, 
  MESTR   =           0,
  TRICO   =          1.,
  TRIRA   =         2.5,
@@ -153,8 +153,8 @@
  AMETHOD =           0,
  SMETHOD =           2, 
  DMETHOD =           0,
- LSOURCESWWIII   = F
- LSOURCESWAM     = T
+ LSOURCESWWIII   = F,
+ LSOURCESWAM     = T, 
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,

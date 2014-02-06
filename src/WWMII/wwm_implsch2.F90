@@ -281,28 +281,28 @@
       DO M=1,NFRE
         DO IJ=IJS,IJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
-!          WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
+          WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
         ENDDO
       ENDDO
 
-      IF(ISHALLO.EQ.1) THEN
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
-            TEMP2(IJ,M) = FRM5(M)
-          ENDDO
-        ENDDO
-      ELSE
-        DO M=1,NFRE
-          DO IJ=IJS,IJL
+!      IF(ISHALLO.EQ.1) THEN
+!        DO M=1,NFRE
+!          DO IJ=IJS,IJL
+!            TEMP2(IJ,M) = FRM5(M)
+!          ENDDO
+!        ENDDO
+!      ELSE
+!        DO M=1,NFRE
+!          DO IJ=IJS,IJL
 !AR: WAM TABLE REPLACES BY WWM WK            AKM1 = 1./TFAK(INDEP(IJ),M)
-            AKM1 = 1./WK(IJ,M)
+!            AKM1 = 1./WK(IJ,M)
 !AR: WAM TABLE REPLACES BY WWM CG            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
-            AK2VGM1 = AKM1**2/CG(IJ,M)
-            TEMP2(IJ,M) = AKM1*AK2VGM1
+!            AK2VGM1 = AKM1**2/CG(IJ,M)
+!            TEMP2(IJ,M) = AKM1*AK2VGM1
 !            WRITE(111113,'(4F20.10)') AKM1, AK2VGM1, TEMP2(IJ,M) 
-          ENDDO
-        ENDDO
-      ENDIF
+!          ENDDO
+!        ENDDO
+!      ENDIF
 !      WRITE(111113,*) 'MORE TEST'
       DO K=1,NANG
         DO M=1,NFRE
