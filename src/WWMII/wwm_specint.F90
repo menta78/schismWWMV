@@ -117,7 +117,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SOURCE_INT_IMP()
+      SUBROUTINE SOURCE_INT_IMP_WWM()
 
          USE DATAPOOL
 #ifdef ST41
@@ -165,6 +165,237 @@
          LFIRSTSOURCE = .FALSE.
 #endif
          RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SOURCE_INT_IMP_WAM_PRE()
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER        :: IP, IS, ID, ISELECT
+         REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
+         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+
+!$OMP WORKSHARE
+         IMATDAA = 0.
+         IMATRAA = 0.
+!$OMP END WORKSHARE
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
+         DO IP = 1, MNP
+           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+               THWOLD(:,1) = THWNEW
+               U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                   FL(IP,ID,IS)  = FL3(IP,ID,IS)
+                   SL(IP,ID,IS)  = FL(IP,ID,IS)
+                 ENDDO
+               END DO
+               Z0NEW(IP) = Z0OLD(IP,1)
+               THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+               IF (LOUTWAM) THEN
+                 WRITE(111112,'(A10,I10)') 'BEFORE', IP
+                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+               ENDIF
+               CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                         THWOLD(IP,1), USOLD(IP,1), &
+     &                         TAUW(IP), Z0OLD(IP,1), &
+     &                         ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                         U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                         Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                         SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+               IF (LOUTWAM) THEN
+                 WRITE(111112,'(A10,I10)') 'AFTER', IP
+                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+               ENDIF
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   IMATDAA(IP,IS,ID) = 0.!-FL(IP,ID,IS)
+                   IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
+                 ENDDO
+               ENDDO
+             END IF !
+           ELSE
+             IF (LSOUBOUND) THEN ! Source terms on boundary ...
+               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+                 THWOLD(:,1) = THWNEW
+                 U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL(IP,ID,IS)  =  FL3(IP,ID,IS)
+                     SL(IP,ID,IS)  =  FL(IP,ID,IS)
+                   END DO
+                 END DO
+                 Z0NEW(IP) = Z0OLD(IP,1)
+                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+                 IF (LOUTWAM) THEN
+                   WRITE(111112,'(A10,I10)') 'BEFORE', IP
+                   WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+                 ENDIF
+                 CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                           THWOLD(IP,1), USOLD(IP,1), &
+     &                           TAUW(IP), Z0OLD(IP,1), &
+     &                           ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                           U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                           Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                           SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+                 IF (LOUTWAM) THEN
+                 WRITE(111112,'(A10,I10)') 'AFTER', IP
+                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+               ENDIF
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     IMATDAA(IP,IS,ID) = 0.!-FL(IP,ID,IS)
+                     IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
+                   ENDDO
+                 ENDDO
+               ENDIF
+             ENDIF
+           ENDIF
+         ENDDO
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SOURCE_INT_IMP_WAM_POST
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER        :: IP, IS, ID, ISELECT
+         REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
+         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+
+!$OMP WORKSHARE
+         IMATDAA = 0.
+         IMATRAA = 0.
+!$OMP END WORKSHARE
+
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
+         DO IP = 1, MNP
+           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+               THWOLD(:,1) = THWNEW
+               U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                   !FL(IP,ID,IS)  = -IMATDAA(IP,IS,ID)
+                   SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
+                 END DO
+                 Z0NEW(IP) = Z0OLD(IP,1)
+               END DO
+               THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+               CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                          THWOLD(IP,1), USOLD(IP,1), &
+     &                          TAUW(IP), Z0OLD(IP,1), &
+     &                          ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   !IMATDAA(IP,IS,ID) = -FL(IP,ID,IS)
+                   IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
+                 ENDDO
+               ENDDO
+             END IF !
+           ELSE
+             IF (LSOUBOUND) THEN ! Source terms on boundary ...
+               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+                 FL = FL3
+                 THWOLD(:,1) = THWNEW
+                 U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     FL3(IP,ID,IS) =   AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL(IP,ID,IS)  = - IMATDAA(IP,IS,ID)
+                     SL(IP,ID,IS)  =   IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
+                   END DO
+                   Z0NEW(IP) = Z0OLD(IP,1)
+                 END DO
+                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+                 CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                            THWOLD(IP,1), USOLD(IP,1), &
+     &                            TAUW(IP), Z0OLD(IP,1), &
+     &                            ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                            U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                            Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                            SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     !IMATDAA(IP,IS,ID) = -FL(IP,ID,IS)
+                     IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
+                   ENDDO
+                 ENDDO
+               ENDIF
+             ENDIF
+           ENDIF
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+             END DO
+           END DO
+         END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

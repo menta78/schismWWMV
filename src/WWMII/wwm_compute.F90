@@ -91,7 +91,7 @@
            
            DO IP = 1, MNP
 
-             IF (ABS(IOBP(IP)) .GT. 0) CYCLE
+!             IF (ABS(IOBP(IP)) .GT. 0) CYCLE
 
              DO IS = 1, MSC
                DO ID = 1, MDC
@@ -155,8 +155,14 @@
      &                   SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
          ENDIF
 
+             DO IS = 1, MSC
+               DO ID = 1, MDC
+                 AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               END DO
+             END DO
+
          IF (LOUTWAM) THEN
-         WRITE(111112,'(A10,I10)') 'AFTER', IP 
+         WRITE(111112,'(A10,I10)') 'AFTER', IP
          WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
@@ -172,18 +178,12 @@
          WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
          WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
          WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
-         ENDIF 
+         ENDIF
 
-         !  STOP 'END OF TEST IN COMPUTE'
-
-
-             DO IS = 1, MSC
-               DO ID = 1, MDC
-                 AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
-               END DO
-             END DO
 
            END DO
+
+          !STOP 'COMPUTE'
 
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
@@ -341,6 +341,9 @@
         CALL MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
+        IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
+ 
+        !STOP 'COMPUTE'
 #ifdef TIMINGS
        CALL MY_WTIME(TIME6)
 #endif
@@ -550,17 +553,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SOURCES_IMP()
+      SUBROUTINE COMPUTE_SOURCES_IMP
         USE DATAPOOL
         IMPLICIT NONE
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_IMP'
         FLUSH(STAT%FHNDL)
 
-        IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCEWAM .AND. .NOT. LSOURCEWW3) THEN
-          CALL SOURCE_INT_IMP()
-        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. LSOURCEWAM .AND. .NOT. LSOURCEWW3) THEN
-        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCEWAM .AND. LSOURCEWW3) THEN
+        IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
+          CALL SOURCE_INT_IMP_WWM
+        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
+          CALL SOURCE_INT_IMP_WAM_PRE
+        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCESWAM .AND. LSOURCESWWIII) THEN
+          !CALL SOURCE_INT_IMP_WW3
         END IF
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_IMP'

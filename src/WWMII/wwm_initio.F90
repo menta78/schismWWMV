@@ -1,6 +1,6 @@
 #include "wwm_functions.h"
 #define LTESTWAMSOURCES
-#undef LTESTWAMSOURCES
+!#undef LTESTWAMSOURCES
 #undef DEBUG
 !**********************************************************************
 !*                                                                    *
@@ -219,11 +219,19 @@
        HMAX = zero
        ISHALLOW = 0
 
-       ALLOCATE( FL(1,MDC,MSC), FL3(1,MDC,MSC), SL(1,MDC,MSC), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
-       FL = ZERO
-       FL3 = ZERO
-       SL = ZERO
+       IF (ICOMP .LE. 1) THEN
+         ALLOCATE( FL(1,MDC,MSC), FL3(1,MDC,MSC), SL(1,MDC,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+         FL = ZERO
+         FL3 = ZERO
+         SL = ZERO
+       ELSE
+         ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+         FL = ZERO
+         FL3 = ZERO
+         SL = ZERO
+       ENDIF
 
        ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
@@ -251,7 +259,12 @@
        U10NEW = ZERO
        USNEW = ZERO
 
-       ALLOCATE( FCONST(1,MSC), stat=istat) 
+       IF (ICOMP .LE. 1) THEN
+         ALLOCATE( FCONST(1,MSC), stat=istat) 
+       ELSE
+         ALLOCATE( FCONST(MNP,MSC), stat=istat)
+       ENDIF
+       FCONST = 1
 !
 !      init source term parameter 
 !      
@@ -989,7 +1002,7 @@
               WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
             END IF
             DO IP = 1, MNP
-               IF (ABS(IOBP(IP)) .GT. 0) CYCLE
+               IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) CYCLE
                ACLOC = 0.
                WINDX  = WINDXY(IP,1)
                WINDY  = WINDXY(IP,2)

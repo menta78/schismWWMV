@@ -95,7 +95,7 @@
       !USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       !USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, RKIND, &
-     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, &
+     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, ICOMP, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, &
      &                ROWATER => RHOW, &
@@ -278,7 +278,7 @@
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ------------------------------------------------
-
+        IF (ICOMP .LT. 2) THEN
         DO K=1,NANG
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
@@ -286,6 +286,15 @@
 !      WRITE(111114, '(5F30.20)') CNSN(IJ), UFAC2(IJ,K)
           ENDDO
         ENDDO
+        ELSE
+        DO K=1,NANG
+          DO IJ=IJS,IJL
+            FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
+            SL(IJ,K,M) = F(IJ,K,M)*0.5*CNSN(IJ)*UFAC2(IJ,K)
+!      WRITE(111114, '(5F30.20)') CNSN(IJ), UFAC2(IJ,K)
+          ENDDO
+        ENDDO
+        ENDIF ! ICOMP
 
       ENDDO
 

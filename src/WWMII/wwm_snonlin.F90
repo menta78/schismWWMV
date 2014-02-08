@@ -70,7 +70,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
      &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
-     &                      DELTH => DDIR, LOUTWAM, &
+     &                      DELTH => DDIR, LOUTWAM, ICOMP, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -464,13 +464,13 @@
 
 !*    BRANCH BACK TO 2. FOR NEXT FREQUENCY.
         DO IJ=IJS,IJL
-        IF (MC.LE.NFRE) THEN
-                        FLSUM = FLSUM + SUM(FL(IJ,:,MC))
-                        SLSUM = SLSUM + SUM(SL(IJ,:,MC))
+          IF (MC.LE.NFRE) THEN
+                     FLSUM = FLSUM + SUM(FL(IJ,:,MC))
+                     SLSUM = SLSUM + SUM(SL(IJ,:,MC))
 !            WRITE(111117,'(I10,4F30.25)') MC, &
 !     &                  SUM(FL(IJ,:,MC)),SUM(SL(IJ,:,MC))
 !     &                  FLSUM, SLSUM
-        ENDIF
+          ENDIF
         ENDDO
   
       ENDDO
@@ -485,7 +485,6 @@
 !     &         K, M, FL(IJ,K,M), SL(IJ,K,M)
 !          ENDDO
 !        ENDDO
-
         ENDDO      
 
 !      IF (LHOOK) CALL DR_HOOK('SNONLIN',1,ZHOOK_HANDLE)

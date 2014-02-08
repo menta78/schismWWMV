@@ -1172,7 +1172,7 @@
                POS   =  POS_CELL(J)
                K1    =  KP(POS,IE) ! Flux Jacobian
                TRIA03 = ONETHIRD * TRIA(IE)
-               DTK   =  K1 * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
+               DTK   =  K1 * DT4A !* IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
                TMP3  =  DTK * NM(IE)
                I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                I2    =  POSI(2,J)
@@ -1213,8 +1213,8 @@
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-             ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
-             B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+!               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
@@ -1252,7 +1252,7 @@
           CALL RUNRC (MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, FLJAU, FLJU, BCGSTAB)
 
           DO IP = 1, MNP
-            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) !* MyREAL(IOBPD(ID,IP))
           END DO
 
 #ifdef TIMINGS

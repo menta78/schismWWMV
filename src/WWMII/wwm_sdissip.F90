@@ -70,7 +70,7 @@
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, EMEAN, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, LCFLX, &
-     &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, &
+     &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, ICOMP, &
      &                      DELUST, DELALP, LBIWBK, DEP, LBIWBK, ITEST, FRATIO, &
      &                      DELTH => DDIR, LOUTWAM, &
      &                      G => G9, &
@@ -170,22 +170,36 @@
             !CM(IJ)    = TFAK(INDEP(IJ),M)/FAC(M)
             CM(IJ)    = WK(IJ,M)/FAC(M)
           ENDDO
-          DO K=1,NANG
-            DO IJ=IJS,IJL
-              SDISS = TEMP1(IJ)*F(IJ,K,M)
-              SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
-              FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
-              IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
-                PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
-                TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
-              ENDIF
+          IF (ICOMP .LT. 2) THEN
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                SDISS = TEMP1(IJ)*F(IJ,K,M)
+                SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
+                FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+                IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
+                  PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
+                  TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
+                ENDIF
+              ENDDO
             ENDDO
-          ENDDO
+          ELSE
+            DO K=1,NANG
+              DO IJ=IJS,IJL
+                SDISS = TEMP1(IJ)*F(IJ,K,M)
+                SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
+                FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+                IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
+                  PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
+                  TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
+                ENDIF
+              ENDDO
+            ENDDO
+          ENDIF
         ENDDO
     
         DO IJ=IJS,IJL 
           IF (LOUTWAM) WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
-     &                   CM(IJ),TAUWD(IJ),PHIEPS(IJ)
+     &                   CM(IJ)
         ENDDO
 !
 !*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
@@ -208,7 +222,7 @@
                SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
              ENDIF
           ENDDO 
-      
+   
           DO M=1,NFRE
              DO K=1,NANG
                 DO IJ=IJS,IJL
