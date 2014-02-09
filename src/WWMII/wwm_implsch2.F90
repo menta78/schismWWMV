@@ -152,8 +152,8 @@
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 1'
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,15F15.7)') IJS, IJL, SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
-     &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
+     &              ROAIRN, TAUW, &
+     &              SUM(SL), &
      &              MIJ(IJS)
 
       CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
@@ -358,7 +358,7 @@
 
       DO IJ=IJS,IJL
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'INIT OF POST SOURCE TERMS '
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(5F20.10)') SUM(FL3) 
+        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(F20.10,3I10)') SUM(FL3), SIZE(FL3), IJS, IJL
       ENDDO
 
       IF(ISHALLO.EQ.1) THEN
@@ -482,8 +482,8 @@
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 2'
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
-     &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
+     &              ROAIRN, TAUW, &
+     &              SUM(SL), &
      &              MIJ(IJS:IJL)
 
 
