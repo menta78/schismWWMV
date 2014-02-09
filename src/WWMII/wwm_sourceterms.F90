@@ -684,6 +684,7 @@
 !                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
 !               END IF
                AC2(IP,IS,ID) = MAX( zero, OLDAC + NEWDAC )
+               FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
              END DO
            END DO
          END DO

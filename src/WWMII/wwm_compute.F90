@@ -275,8 +275,8 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11
-        INTEGER          :: IP, IT
+        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, GTEMP1, GTEMP2
+        INTEGER          :: IP, IT, IS, ID
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_IMPLICIT'
@@ -316,18 +316,30 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME4)
 #endif
-        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_IMP
+        IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_PRE 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-        !IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
- 
+
+      DO ID=1,MDC
+        DO IS=1,MSC
+          DO IP=1,MNP
+            GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+            GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
+            FL3(IP,ID,IS) = FL3(IS,ID,IS) + GTEMP2
+            !write(*,*) GTEMP1, GTEMP2, FL3(IP,ID,IS), FL(IP,ID,IS), SL(IP,ID,IS)
+            AC2(IP,IS,ID) =  FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+          ENDDO
+        ENDDO
+      ENDDO
+
         !STOP 'COMPUTE'
 #ifdef TIMINGS
        CALL MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
         CALL MY_WTIME(TIME7)
 #endif
