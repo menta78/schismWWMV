@@ -644,17 +644,23 @@
          IMPLICIT NONE
 
          INTEGER                 :: IP, IS, ID
-         REAL(rkind)             :: NEWDAC, OLDAC, NEWAC
-         REAL(rkind)             :: MAXDAC, CONST, SND, UFR_LIM
+         REAL(rkind)             :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
+         REAL(rkind)             :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
          REAL(rkind)             :: ACLOC(MSC,MDC), ACOLD(MSC,MDC)
 
 
          CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
          SND   = PI2*5.6*1.0E-3
 
+         DELT = DT4S
+         XIMP = 1.0
+         DELT5 = XIMP*DELT
+         DELFL= COFRM4*DELT
+
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACOLD,ACLOC, MAXDAC, UFR_LIM, NEWAC, OLDAC, NEWDAC)
          DO IP = 1, MNP
            IF (DEP(IP) .LT. DMIN .OR. IOBP(IP) .EQ. 2) CYCLE
+           IF (MELIM .EQ. 3) USFM = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
            ACOLD = AC1(IP,:,:)
            ACLOC = AC2(IP,:,:)
            DO IS = 1, MSC
@@ -663,6 +669,8 @@
              ELSE IF (MELIM .EQ. 2) THEN
                UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
+             ELSE IF (MELIM .EQ. 3) THEN
+               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
              END IF
 ! Thomas: MAXDAC may uninitialized
 ! else MAXDAC = 0 ?

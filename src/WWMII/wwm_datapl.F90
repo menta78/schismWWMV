@@ -987,6 +987,7 @@
          REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
          REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
+!         REAL(rkind), ALLOCATABLE     :: DELFL(:)
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
          REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
