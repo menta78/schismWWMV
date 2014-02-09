@@ -1210,12 +1210,18 @@
            ENDIF
          END IF
 
-         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-!               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+             ENDIF
+           END DO
+         ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+           DO IP = 1, MNP
+             IF (IOBWB(IP) .EQ. 1) THEN
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
                B(IP)             = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
