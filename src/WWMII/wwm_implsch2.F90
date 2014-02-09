@@ -8,7 +8,37 @@
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
      &                    SL, FCONST, FMEANWS, MIJ)
-
+!
+!       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
+!    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
+!    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
+!    3                    SL,FCONST)
+!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
+!          *IJS*    - INDEX OF FIRST GRIDPOINT
+!          *IJL*    - INDEX OF LAST GRIDPOINT
+!          *IG*     - BLOCK NUMBER
+!      *U10NEW*    NEW WIND SPEED IN M/S.
+!      *THWNEW*    WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
+!                  NOTATION (POINTING ANGLE OF WIND VECTOR,
+!                  CLOCKWISE FROM NORTH).
+!      *THWOLD*    INTERMEDIATE STORAGE OF ANGLE (RADIANS) OF
+!                  WIND VELOCITY.
+!      *USNEW*     NEW FRICTION VELOCITY IN M/S.
+!      *USOLD*     INTERMEDIATE STORAGE OF MODULUS OF FRICTION
+!                  VELOCITY.
+!      *Z0NEW*     ROUGHNESS LENGTH IN M.
+!      *Z0OLD*     INTERMEDIATE STORAGE OF ROUGHNESS LENGTH IN
+!                  M.
+!      *TAUW*      WAVE STRESS IN (M/S)**2
+!      *ROAIRN*    AIR DENSITY IN KG/M3.
+!      *ROAIRO*    INTERMEDIATE STORAGE OF AIR DENSITY.
+!      *ZIDLNEW*   Zi/L (Zi: INVERSION HEIGHT, L: MONIN-OBUKHOV LENGTH).
+!      *ZIDLOLD*   INTERMEDIATE STORAGE OF Zi/L.
+!      *SL*        REAL      TOTAL SOURCE FUNCTION ARRAY.
+!      *FCONST*    REAL      = 1 FOR PROGNOSTIC FREQUENCY BANDS.
+!                            = 0 FOR DIAGNOSTIC FREQUENCY BANDS.
+!
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
      &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, ITEST, LCFLX, &
@@ -73,6 +103,7 @@
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '--------- COMPUTING SOURCE TERMS ---------'
 
       CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
      &            F1MEAN, AKMEAN, XKMEAN)
@@ -81,7 +112,7 @@
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IJS)), FMEAN(IJS), SUM(FL3)
       !WRITE(55555,*) 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
+!      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
       DO K=1,NANG
         DO IJ=IJS,IJL
           SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
@@ -201,6 +232,8 @@
         ZIDLOLD(IJ) = ZIDLNEW(IJ)
       ENDDO
 
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '-------- FINISHED SOURCE TERM COMPUTATION ----------'
+
       RETURN
       END SUBROUTINE PREINTRHS 
 ! ----------------------------------------------------------------------
@@ -271,6 +304,7 @@
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
+
       DO IJ=IJS,IJL
         USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
         !IF (LOUTWAM) WRITE(111113,'(4F20.10)') USNEW(IJ), FMEANWS(IJ), FMEAN(IJ)
@@ -288,8 +322,8 @@
           DO IJ=IJS,IJL
             GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB = ABS(GTEMP2)
-            FLHAB = MIN(FLHAB,TEMP(IJ,M))
+            FLHAB  = ABS(GTEMP2)
+            FLHAB  = MIN(FLHAB,TEMP(IJ,M))
             FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
           ENDDO
         ENDDO
@@ -357,7 +391,7 @@
       ILEV=1
 
       DO IJ=IJS,IJL
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'INIT OF POST SOURCE TERMS '
+        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '------------ INIT OF POST SOURCE TERMS --------------'
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(F20.10,3I10)') SUM(FL3), SIZE(FL3), IJS, IJL
       ENDDO
 
@@ -367,7 +401,7 @@
             TEMP2(IJ,M) = FRM5(M)
           ENDDO
         ENDDO
-      ELSE
+      ELSE IF(ISHALLO.EQ.0) THEN ! SHALLOW
         DO M=1,NFRE
           DO IJ=IJS,IJL
 !AR: WAM TABLE REPLACES BY WWM WK            AKM1 = 1./TFAK(INDEP(IJ),M)
@@ -557,8 +591,8 @@
       !IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
       DO IJ=IJS,IJL
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'END OF POST SOURCE TERMS '
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(5F20.10)') SUM(FL3), UFRIC(IJ), Z0(IJ), CD(IJ)
+        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '------------ END OF POST SOURCE TERMS --------------'
       ENDDO
 
       RETURN

@@ -98,7 +98,7 @@
      &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, ICOMP, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, &
-     &                ROWATER => RHOW, &
+     &                ROWATER => RHOW, TESTNODE, LOUTWAM, &
      &                DELTH => DDIR, &
      &                G => G9, &
      &                ZPI => PI2, &
@@ -146,17 +146,9 @@
 
       CONST3 = IDAMPING*CONST3
 
-!      WRITE(111114,'(10F15.7)')CONST3,XKAPPAD,CONST3,SUM(F),SUM(FL)
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,*) '------- STARTING SINPUT --------'
 
-      DO M = 1, NFRE
-        DO K = 1, NANG
-          DO IJ=IJS,IJL 
-!            WRITE(111114,'(2F30.20)') F(IJ,K,M), FL(IJ,K,M)
-          END DO 
-        END DO
-      END DO
-
-
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(10F15.7)') CONST3,XKAPPAD,CONST3,SUM(F)
 
 !*    1. PRECALCULATED ANGULAR DEPENDENCE.
 !        ---------------------------------
@@ -171,7 +163,7 @@
             LZ(IJ,K) = .FALSE.
             TEMPD(IJ,K) = 1.D0
           ENDIF
-!          WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
+          !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
         ENDDO
       ENDDO
 
@@ -186,7 +178,7 @@
       ENDDO
 
       DO IJ=IJS,IJL
-          EPSIL(IJ) = ROAIRN(IJ)*RWINV
+        EPSIL(IJ) = ROAIRN(IJ)*RWINV
       ENDDO
 ! ----------------------------------------------------------------------
 
@@ -235,8 +227,8 @@
           XV1D(IJ) = 1.D0/XV1
           XV2D(IJ) = 1.D0/XV2
 
-          !WRITE(111114,'(5F30.20)') UCN1(IJ),UCN2(IJ),ZCN(IJ)
-          !WRITE(111114,'(5F30.20)') CNSN(IJ),XV1D(IJ),XV2D(IJ)
+           !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(5F30.20)') UCN1(IJ),UCN2(IJ),ZCN(IJ)
+           !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(5F30.20)') CNSN(IJ),XV1D(IJ),XV2D(IJ)
 
         ENDDO
 
@@ -272,32 +264,29 @@
               UFAC2(IJ,K) = ZBETA1+ZBETA2
               XLLWS(IJ,K,M)= 0.
             ENDIF
-!        WRITE(111114,'(2I10,10F15.7)') M, K, TEMPD(IJ,K) 
+            !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,10F15.7)') M, K, TEMPD(IJ,K) 
           ENDDO
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.
 !         ------------------------------------------------
-        IF (ICOMP .LT. 2) THEN
         DO K=1,NANG
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-!      WRITE(111114, '(5F30.20)') CNSN(IJ), UFAC2(IJ,K)
           ENDDO
         ENDDO
-        ELSE
-        DO K=1,NANG
-          DO IJ=IJS,IJL
-            FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
-            SL(IJ,K,M) = F(IJ,K,M)*0.5*CNSN(IJ)*UFAC2(IJ,K)
-!      WRITE(111114, '(5F30.20)') CNSN(IJ), UFAC2(IJ,K)
-          ENDDO
-        ENDDO
-        ENDIF ! ICOMP
+      ENDDO ! FREQUENCY LOOP 
 
-      ENDDO
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(A30)') '--------- NOW THE SPECTRA ---------'
 
+      DO M = 1, NFRE
+        DO IJ=IJS,IJL
+          IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(3F30.20)') SUM(F(IJ,:,M)), SUM(FL(IJ,:,M)), SUM(SL(IJ,:,M))
+        END DO
+      END DO
+
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,*) '------- FINISHED SINPUT ---------'
 
       !IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 

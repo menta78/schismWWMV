@@ -72,7 +72,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, LCFLX, &
      &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, ICOMP, &
      &                      DELUST, DELALP, LBIWBK, DEP, LBIWBK, ITEST, FRATIO, &
-     &                      DELTH => DDIR, LOUTWAM, &
+     &                      DELTH => DDIR, LOUTWAM, TESTNODE, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -99,6 +99,9 @@
       REAL(rkind), PARAMETER :: COEF_B_J=2*ALPH_B_J
       REAL(rkind), PARAMETER :: DEPTHTRS = 50.d0
 
+
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,*) '------- STARTING DISSIPATION -------'
+
       !REAL ZHOOK_HANDLE
 
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',0,ZHOOK_HANDLE)
@@ -107,7 +110,7 @@
 !*    1. ADDING DISSIPATION AND ITS FUNCTIONAL DERIVATIVE TO NET SOURCE
 !*       FUNCTION AND NET SOURCE FUNCTION DERIVATIVE.
 !        --------------------------------------------------------------
-      IF (LOUTWAM) WRITE(111119,'(5F20.10)')SUM(F), SUM(FL), SUM(SL), &
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,'(5F20.10)') SUM(F), SUM(FL), SUM(SL), &
      &                F1MEAN, XKMEAN
                        
 
@@ -170,35 +173,21 @@
             !CM(IJ)    = TFAK(INDEP(IJ),M)/FAC(M)
             CM(IJ)    = WK(IJ,M)/FAC(M)
           ENDDO
-          IF (ICOMP .LT. 2) THEN
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-                SDISS = TEMP1(IJ)*F(IJ,K,M)
-                SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
-                FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
-                IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
-                  PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
-                  TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
-                ENDIF
-              ENDDO
+          DO K=1,NANG
+            DO IJ=IJS,IJL
+              SDISS = TEMP1(IJ)*F(IJ,K,M)
+              SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
+              FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+              IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
+                PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
+                TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
+              ENDIF
             ENDDO
-          ELSE
-            DO K=1,NANG
-              DO IJ=IJS,IJL
-                SDISS = TEMP1(IJ)*F(IJ,K,M)
-                SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
-                FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
-                IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
-                  PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
-                  TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
-                ENDIF
-              ENDDO
-            ENDDO
-          ENDIF
+          ENDDO
         ENDDO
     
         DO IJ=IJS,IJL 
-          IF (LOUTWAM) WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
+          IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
      &                   CM(IJ)
         ENDDO
 !
@@ -238,7 +227,8 @@
 !SHALLOW
       ENDIF
 
-      IF (LOUTWAM) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,*) '------- FINISHED DISSIPATION -------' 
 
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 

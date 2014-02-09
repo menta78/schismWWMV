@@ -196,7 +196,7 @@
                END DO
                Z0NEW(IP) = Z0OLD(IP,1)
                THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-               IF (LOUTWAM) THEN
+               IF (LOUTWAM .AND. IP == TESTNODE) THEN
                  WRITE(111112,'(A10,I10)') 'BEFORE', IP
                  WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
                  WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
@@ -221,7 +221,7 @@
      &                         U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                         Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                         SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-               IF (LOUTWAM) THEN
+               IF (LOUTWAM .AND. IP == TESTNODE) THEN
                  WRITE(111112,'(A10,I10)') 'AFTER', IP
                  WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
                  WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
@@ -241,7 +241,7 @@
                ENDIF
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   IMATDAA(IP,IS,ID) = 0.!-FL(IP,ID,IS)
+                   IMATDAA(IP,IS,ID) =  FL(IP,ID,IS)
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO
@@ -260,7 +260,7 @@
                  END DO
                  Z0NEW(IP) = Z0OLD(IP,1)
                  THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-                 IF (LOUTWAM) THEN
+                 IF (LOUTWAM .AND. IP == TESTNODE) THEN
                    WRITE(111112,'(A10,I10)') 'BEFORE', IP
                    WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
                    WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
@@ -285,7 +285,7 @@
      &                           U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                           Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                           SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-                 IF (LOUTWAM) THEN
+                 IF (LOUTWAM .AND. IP == TESTNODE) THEN
                  WRITE(111112,'(A10,I10)') 'AFTER', IP
                  WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
                  WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
@@ -305,7 +305,7 @@
                ENDIF
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     IMATDAA(IP,IS,ID) = 0.!-FL(IP,ID,IS)
+                     IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
                      IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                    ENDDO
                  ENDDO
@@ -339,7 +339,7 @@
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
-                   !FL(IP,ID,IS)  = -IMATDAA(IP,IS,ID)
+                   FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
                    SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                  END DO
                  Z0NEW(IP) = Z0OLD(IP,1)
@@ -354,7 +354,7 @@
      &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   !IMATDAA(IP,IS,ID) = -FL(IP,ID,IS)
+                   IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
                    IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO
@@ -367,9 +367,9 @@
                  U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     FL3(IP,ID,IS) =   AC2(IP,IS,ID) * PI2 * SPSIG(IS)
-                     FL(IP,ID,IS)  = - IMATDAA(IP,IS,ID)
-                     SL(IP,ID,IS)  =   IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
+                     SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                    END DO
                    Z0NEW(IP) = Z0OLD(IP,1)
                  END DO
@@ -383,7 +383,7 @@
      &                            SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     !IMATDAA(IP,IS,ID) = -FL(IP,ID,IS)
+                     IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
                      IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                    ENDDO
                  ENDDO
@@ -392,7 +392,7 @@
            ENDIF
            DO IS = 1, MSC
              DO ID = 1, MDC
-               AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               AC2(IP,IS,ID) = FL3(1,ID,IS) / PI2 / SPSIG(IS)
              END DO
            END DO
          END DO
