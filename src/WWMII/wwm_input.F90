@@ -1540,7 +1540,12 @@
          IF (AMETHOD .GE. 4 .AND. LVECTOR .EQV. .TRUE.) THEN
            call wwm_abort('LVECTOR must be FALSE to use PETSc')
          END IF
-         RETURN
+
+         IF (LSOURCESWAM .AND. MELIM .NE. 3) THEN
+           call wwm_abort('FOR WAM U NEED MELIM == 3')
+         ELSE IF (.NOT. LSOURCESWAM .AND. MELIM .EQ. 3) THEN
+           call wwm_abort('FOR WWM SOURCES U NEED MELIM .LT. 3') 
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
