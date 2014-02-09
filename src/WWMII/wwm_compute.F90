@@ -316,30 +316,22 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME4)
 #endif
-        IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_PRE 
+        IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN 
+          CALL SOURCE_INT_IMP_WAM_PRE 
+        ELSE IF (SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+          CALL SOURCE_INT_IMP_WWM
+        ENDIF 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-
-!      DO ID=1,MDC
-!        DO IS=1,MSC
-!          DO IP=1,MNP
-!            GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
-!            GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
-!            FL3(IP,ID,IS) = FL3(IS,ID,IS) + GTEMP2
-!            !write(*,*) GTEMP1, GTEMP2, FL3(IP,ID,IS), FL(IP,ID,IS), SL(IP,ID,IS)
-!            AC2(IP,IS,ID) =  FL3(IP,ID,IS) / PI2 / SPSIG(IS)
-!          ENDDO
-!        ENDDO
-!      ENDDO
 
         !STOP 'COMPUTE'
 #ifdef TIMINGS
        CALL MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-        IF (SMETHOD .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
+        IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
         CALL MY_WTIME(TIME7)
 #endif

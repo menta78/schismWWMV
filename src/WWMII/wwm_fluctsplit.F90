@@ -1222,7 +1222,7 @@
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+               B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
