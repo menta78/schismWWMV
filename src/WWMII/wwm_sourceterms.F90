@@ -653,9 +653,10 @@
          SND   = PI2*5.6*1.0E-3
 
          DELT = DT4S
-         XIMP = 1.0
+         XIMP = 1._rkind
          DELT5 = XIMP*DELT
          DELFL= COFRM4*DELT
+         MAXDAC = ZERO
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACOLD,ACLOC, MAXDAC, UFR_LIM, NEWAC, OLDAC, NEWDAC)
          DO IP = 1, MNP
@@ -665,15 +666,13 @@
            ACLOC = AC2(IP,:,:)
            DO IS = 1, MSC
              IF (MELIM .EQ. 1) THEN
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3* CG(IP,IS))
+               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
              ELSE IF (MELIM .EQ. 2) THEN
                UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
              ELSE IF (MELIM .EQ. 3) THEN
                MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
              END IF
-! Thomas: MAXDAC may uninitialized
-! else MAXDAC = 0 ?
              DO ID = 1, MDC
                NEWAC  = ACLOC(IS,ID)
                OLDAC  = ACOLD(IS,ID)
@@ -684,7 +683,7 @@
 !                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
 !               END IF
                AC2(IP,IS,ID) = MAX( zero, OLDAC + NEWDAC )
-               FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+               IF (MELIM .EQ. 3) FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
              END DO
            END DO
          END DO
