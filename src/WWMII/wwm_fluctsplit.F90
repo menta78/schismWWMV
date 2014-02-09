@@ -1080,7 +1080,7 @@
 
          REAL(rkind) :: DTK, TMP3
 
-         REAL(rkind) :: LAMBDA(2)
+         REAL(rkind) :: LAMBDA(2), GTEMP1, GTEMP2
          REAL(rkind) :: FL11, FL12, FL21, FL22, FL31, FL32
          REAL(rkind):: CRFS(3), K1, KM(3), K(3), TRIA03
 
@@ -1213,8 +1213,10 @@
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
+               GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+               GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
 !               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
-!               B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+               B(IP)             = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
@@ -1254,6 +1256,15 @@
           DO IP = 1, MNP
             AC2(IP,IS,ID) = MAX(ZERO,X(IP)) !* MyREAL(IOBPD(ID,IP))
           END DO
+
+          DO IP=1,MNP
+            GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+            GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
+            FL3(IP,ID,IS) = FL3(IS,ID,IS) + GTEMP2
+            !write(*,*) GTEMP1, GTEMP2, FL3(IP,ID,IS), FL(IP,ID,IS), SL(IP,ID,IS)
+            AC2(IP,IS,ID) =  FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+          ENDDO
+
 
 #ifdef TIMINGS
 !          CALL MY_WTIME(TIME4)

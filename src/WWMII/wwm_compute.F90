@@ -322,17 +322,17 @@
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 
-      DO ID=1,MDC
-        DO IS=1,MSC
-          DO IP=1,MNP
-            GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
-            GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
-            FL3(IP,ID,IS) = FL3(IS,ID,IS) + GTEMP2
-            !write(*,*) GTEMP1, GTEMP2, FL3(IP,ID,IS), FL(IP,ID,IS), SL(IP,ID,IS)
-            AC2(IP,IS,ID) =  FL3(IP,ID,IS) / PI2 / SPSIG(IS)
-          ENDDO
-        ENDDO
-      ENDDO
+!      DO ID=1,MDC
+!        DO IS=1,MSC
+!          DO IP=1,MNP
+!            GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+!            GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
+!            FL3(IP,ID,IS) = FL3(IS,ID,IS) + GTEMP2
+!            !write(*,*) GTEMP1, GTEMP2, FL3(IP,ID,IS), FL(IP,ID,IS), SL(IP,ID,IS)
+!            AC2(IP,IS,ID) =  FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+!          ENDDO
+!        ENDDO
+!      ENDDO
 
         !STOP 'COMPUTE'
 #ifdef TIMINGS
