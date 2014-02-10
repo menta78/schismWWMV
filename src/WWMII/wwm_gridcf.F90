@@ -397,6 +397,8 @@
          DFIMOFR = ZERO
          FR5 = ZERO
          FRM5 = ZERO 
+         COFRM4 = ZERO
+         TH = ZERO
 
          DELTH = PI2/REAL(MDC)
          DELTR = DELTH*REARTH

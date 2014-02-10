@@ -1,7 +1,13 @@
 #include "wwm_functions.h"
 !/ ------------------------------------------------------------------- /
-      MODULE W3SRC4MD_NEW
-#ifdef ST42
+      MODULE W3SRC4MD
+!/
+!/                  +-----------------------------------+
+!/                  | WAVEWATCH III                SHOM |
+!/                  !            F. Ardhuin             !
+!/                  |                        FORTRAN 90 |
+!/                  | Last update :         13-Nov-2013 |
+!/                  +-----------------------------------+
 !/
 !/    30-Aug-2010 : Origination.                        ( version 3.14-Ifremer )
 !/    02-Nov-2010 : Addding fudge factor for low freq.  ( version 4.03 )
@@ -513,7 +519,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: SPSIG, INVPI2, PI2, RKIND, NSPEC
-      USE DATAPOOL, ONLY: ZERO, ONE
+      USE DATAPOOL, ONLY: ZERO, ONE, WNMEANPTAIL 
 !/T      USE W3ODATMD, ONLY: NDST
 !
       IMPLICIT NONE
@@ -534,9 +540,9 @@
       INTEGER  :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
 
-      REAL(rkind) :: TAUW, EBAND, EMEANWS
-      REAL(rkind) :: UNZ
-      REAL(rkind) :: EB(NK),EB2(NK),ALFA(NK)
+      REAL(rkind)                    :: TAUW, EBAND, EMEANWS, RDCH, FXPMC,    &
+                                 WNP, UNZ, FP,                         &
+                                 R1, CP, EB(NK),EB2(NK),ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -548,7 +554,8 @@
       EMEAN  = ZERO
       EMEANWS= ZERO
       FMEANWS= ZERO
-      FMEAN  = ZERO
+      FMEAN  = ZERO      
+      FMEAN1 = ZERO
       WNMEAN = ZERO
       AMAX   = ZERO
 !
@@ -571,7 +578,7 @@
       DO IK=1, NK
         ALFA(IK) = 2. * DTH * SIG(IK) * EB(IK) * WN(IK)**3
         EB(IK)   = EB(IK) * DDEN(IK) / CG(IK)
-        EB2(IK)  = EB2(IK) * DDEN(IK) / CG(IK)
+        EB2(IK)   = EB2(IK) * DDEN(IK) / CG(IK)
         EMEAN    = EMEAN  + EB(IK)
         FMEAN    = FMEAN  + EB(IK) /SIG(IK)
         FMEAN1   = FMEAN1 + EB(IK) *(SIG(IK)**(2.*WNMEANPTAIL))
@@ -635,7 +642,7 @@
 !/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE W3SIN4_NEW (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, ICE, S, D, LLWS)
+      SUBROUTINE W3SIN4_NEW (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, ICE, S, D, LLWS, BRLAMBDA)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -715,7 +722,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, MSC, MDC,  &
-     &  MSC, MDC, TAUHF, TAUTOT, TAUW, RKIND, NSPEC, ZERO, ONE, DBG, THR8
+     &  MSC, MDC, TAUTOT, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -726,54 +733,56 @@
 !/ ------------------------------------------------------------------- /
 !/ Parameter list
 !/
-      INTEGER, INTENT(IN)     :: IP
-      REAL(rkind), INTENT(IN)        :: A(NSPEC)
+      REAL(rkind), INTENT(IN)        :: A(NSPEC), BRLAMBDA(NSPEC)
       REAL(rkind), INTENT(IN)        :: CG(NK), K(NSPEC),Z0,U, CD
-      REAL(rkind), INTENT(IN)        :: USTAR, USDIR, AS, DRAT, ICE
-      REAL(rkind), INTENT(OUT)       :: S(NSPEC), D(NSPEC)
-      REAL(rkind), INTENT(OUT)       :: TAUWX, TAUWY, TAUWNX, TAUWNY
+      REAL(rkind), INTENT(IN)        :: USTAR, USDIR, AS, DRAT
+      REAL(rkind), INTENT(OUT)       :: S(NSPEC), D(NSPEC), TAUWX, TAUWY, TAUWNX, TAUWNY
       LOGICAL, INTENT(OUT)    :: LLWS(NSPEC)
-!      INTEGER, INTENT(IN)     :: IX, IY
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER               :: IS,IK,ITH
-!/S      INTEGER, SAVE      :: IENT = 0
-      REAL(rkind) :: FACLN1, FACLN2
-      REAL(rkind) :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
-      REAL(rkind) :: TAUPX, TAUPY, UST2, TAUWW, TAUWB
-      REAL(rkind), PARAMETER :: EPS1 = 0.00001, EPS2 = 0.000001
-      REAL(rkind) :: CM, UCN,ZCN
-      REAL(rkind) :: Z0VISC, Z0NOZ, EB
-      REAL(rkind) :: EBX, EBY, AORB, AORB1, FW, UORB
-      REAL(rkind) :: RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind) XI,DELI1,DELI2
-      REAL(rkind) XJ,DELJ1,DELJ2
-      REAL(rkind) XK,DELK1,DELK2
+      INTEGER                 :: IS,IK,ITH, IOMA, ICL
+!/S      INTEGER, SAVE           :: IENT = 0
+      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, CLAM, OMA, &
+                                 RD1, RD2, LAMBDA, COSFAC 
+      REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
+      REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
+      REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
+      REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
+      REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
+      REAL(rkind)                    :: BETA, mu_janssen, omega_janssen,     &
+                                 CM,ZCO,UCO,UCN,ZCN, &
+                                 Z0VISC, Z0NOZ, EB,  &
+                                 EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2, &
+                                 RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
+      REAL(rkind)                   :: HSBLOW, ABJSEA, FACTOR
+      REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
+      REAL(rkind) :: XI,DELI1,DELI2
+      REAL(rkind) :: XJ,DELJ1,DELJ2
+      REAL(rkind) :: XK,DELK1,DELK2
       REAL(rkind)                    :: CONST, CONST0, CONST2, TAU1
-      REAL(rkind) X,ZARG,ZLOG,UST
-      REAL(rkind) COSWIND,XSTRESS,YSTRESS,TAUHFL
-      REAL(rkind) TEMP, TEMP2
+      REAL(rkind) :: X,ZARG,ZLOG,UST
+      REAL(rkind)                    :: COSWIND, XSTRESS, YSTRESS, TAUHF
+      REAL(rkind) :: TEMP, TEMP2
       INTEGER IND,J,I,ISTAB
-      REAL(rkind) DSTAB(3,NSPEC), DVISC, DTURB
-      REAL(rkind) STRESSSTAB(3,2),STRESSSTABN(3,2)
-!/T0      REAL(rkind)                    :: DOUT(NK,NTH)
+      REAL(rkind) :: DSTAB(3,NSPEC), DVISC, DTURB
+      REAL(rkind) :: STRESSSTAB(3,2),STRESSSTABN(3,2)
+!/T0      REAL                    :: DOUT(NK,NTH)
 !/
 !/ ------------------------------------------------------------------- /
 !/
 !/S      CALL STRACE (IENT, 'W3SIN3')
 !
-!/T      WRITE (NDST,9000) BBETA, USTAR, USDIR*RADDEG
+!/T      WRITE (NDST,9000) BBETA, USTAR, USDIR*RADE
 !
 ! 1.  Preparations
 !
 !
 ! 1.a  estimation of surface roughness parameters
 !
-      Z0VISC = 0.1_rkind*nu_air/MAX(USTAR,0.0001_rkind)
+      Z0VISC = 0.1*nu_air/MAX(USTAR,0.0001)
       Z0NOZ = MAX(Z0VISC,ZZ0RAT*Z0)
-      !WRITE(DBG%FHNDL,*) Z0VISC,ZZ0RAT,Z0
       FACLN1 = U / LOG(ZZWND/Z0NOZ)
       FACLN2 = LOG(Z0NOZ)
 !
@@ -797,9 +806,32 @@
         AORB = AORB + EB             * DDEN(IK) / CG(IK)  !deep water only
         END DO
 
-      UORB = 2*SQRT(UORB)             ! this is now the significant orbital amplitude
-      AORB1 = 2*AORB**(1-0.5*SSWELLF(6))   ! this is now half the significant wave height ... if SWELLF(6)=1
-      RE = 4*UORB*AORB1 / NU_AIR ! this is the Reynolds number 
+      UORB = 2*SQRT(UORB)                  ! significant orbital amplitude
+      AORB1 = 2*AORB**(1-0.5*SSWELLF(6))   ! half the significant wave height ... if SWELLF(6)=1
+      RE = 4*UORB*AORB1 / NU_AIR           ! Reynolds number 
+!
+! Defines the swell dissipation based on the "Reynolds number"
+!
+      IF (SSWELLF(4).GT.0) THEN           
+        IF (SSWELLF(7).GT.0.) THEN
+          SMOOTH = 0.5*TANH((RE-SSWELLF(4))/SSWELLF(7))
+          PTURB=(0.5+SMOOTH)
+          PVISC=(0.5-SMOOTH)
+        ELSE 
+          IF (RE.LE.SSWELLF(4)) THEN
+            PTURB =  0.
+            PVISC =  1.
+          ELSE
+            PTURB =  1.
+            PVISC =  0.
+            END IF
+          END IF
+      ELSE
+        PTURB=1.
+        PVISC=1.
+        END IF
+        
+!
       IF (SSWELLF(2).EQ.0) THEN 
         FW=MAX(ABS(SSWELLF(3)),ZERO)
         FU=ZERO
@@ -849,7 +881,8 @@
 ! Coupling coefficient times densit ration and fraction of free surface (1-ICE)
 !
       IF (FLICES) THEN 
-        CONST0=MIN(ZERO,MAX(ONE,ONE-ICE))*BBETA*DRAT/(kappa**2)
+        STOP 'NO ICE HERE'
+        !CONST0=MIN(ZERO,MAX(ONE,ONE-ICE))*BBETA*DRAT/(kappa**2)
       ELSE
         CONST0=BBETA*DRAT/(kappa**2)
       END IF
@@ -909,7 +942,8 @@
               ! The source term Sp is beta * omega * X**2
               ! as given by Janssen 1991 eq. 19
               ! for a faster performance EXP(X)*X**4 should be tabulated   
-              DSTAB(ISTAB,IS) = CONST*EXP(ZLOG)*ZLOG**4*UCN*UCN*COSWIND**SSINTHP 
+              DSTAB(ISTAB,IS) = CONST*EXP(ZLOG)*ZLOG**4  &
+                                *UCN*UCN*COSWIND**SSINTHP *(1+BRLAMBDA(IS)*20*SINBR) 
               LLWS(IS)=.TRUE.
             ELSE
               DSTAB(ISTAB,IS) = 0.
@@ -932,23 +966,7 @@
 !
               DVISC=SWELLCOEFV                                        ! + SSWELLF(7)/SIG2(IS)   ! fudge for low frequency
               DTURB=SWELLCOEFT*(FW*UORB+(FU+FUD*COSWIND)*USTP)
-!
-            IF (SSWELLF(4).GT.0) THEN 
-              IF (SSWELLF(7).GT.0.) THEN 
-                DSTAB(ISTAB,IS) =  DSTAB(ISTAB,IS) + DVISC  
-                IF (RE.GT.SSWELLF(4)) THEN   
-                    DSTAB(ISTAB,IS) =  DSTAB(ISTAB,IS) + DTURB
-                  END IF
-              ELSE   
-                IF (RE.LE.SSWELLF(4)) THEN 
-                  DSTAB(ISTAB,IS) =  DSTAB(ISTAB,IS)+DVISC          
-                ELSE 
-                  DSTAB(ISTAB,IS) =  DSTAB(ISTAB,IS)+DTURB          
-                  END IF
-                END IF 
-            ELSE
-              DSTAB(ISTAB,IS) = DSTAB(ISTAB,IS) + MIN (DVISC,DTURB)
-              END IF 
+              DSTAB(ISTAB,IS) = DSTAB(ISTAB,IS) + PTURB*DTURB +  PVISC*DVISC
             END IF
 !
 ! Sums up the wave-supported stress
@@ -972,36 +990,13 @@
         YSTRESS=STRESSSTAB (3,2)
         TAUWNX =STRESSSTABN(3,1)
         TAUWNY =STRESSSTABN(3,2)
-   
-       !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(3,:)
-       !WRITE(DBG%FHNDL,*) 'STRESSTAB', STRESSSTAB (3,1), STRESSSTAB (3,2), STRESSSTABN(3,1), STRESSSTABN(3,2)
-       !WRITE(DBG%FHNDL,*) FW, UORB
-       !WRITE(995,'(A,11G14.5)') 'NEGSTRESS:    ',TAUWNX,TAUWNY,FW*UORB**3
-# ifdef STAB3
-      END DO 
-      D(:)=0.5*(DSTAB(1,:)+DSTAB(2,:))
-      XSTRESS=0.5*(STRESSSTAB(1,1)+STRESSSTAB(2,1))
-      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
-      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
-      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
-# endif
-
-      IF (ICOMP .LE. 1) THEN
-        S = D * A
-      ELSE
-        DO IK = 1, NSPEC ! Patankar Rules 
-          IF (S(IK) .GT. -THR8) THEN
-            S(IK) = D(IK) * A(IK)
-            D(IK)  = ZERO
-          ELSE
-            S(IK) = ZERO
-            D(IK) = -D(IK)
-          ENDIF
-        END DO
-      END IF
-
-
-      !WRITE(DBG%FHNDL,*) 'SUMS WINDINPUT', SUM(S), SUM(A)
+!/STAB3        END DO 
+!/STAB3      D(:)=0.5*(DSTAB(1,:)+DSTAB(2,:))
+!/STAB3      XSTRESS=0.5*(STRESSSTAB(1,1)+STRESSSTAB(2,1))
+!/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
+!/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
+!/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
+      S = D * A
 !
 ! ... Test output of arrays
 !
@@ -1041,45 +1036,38 @@
       ! finds the values in the tabulated stress TAUHFT
       XI=UST/DELUST
       IND  = MAX(1,MIN (IUSTAR-1, INT(XI)))
-      DELI1= MAX(MIN (ONE ,XI-MyREAL(IND)),ZERO)
-      DELI2= ONE - DELI1
-      XJ=MAX(ZERO,(G9*Z0/MAX(UST,0.00001_rkind)**2-AALPHA) / DELALP)
+      DELI1= MAX(MIN (1. ,XI-FLOAT(IND)),0.)
+      DELI2= 1. - DELI1
+      XJ=MAX(0.,(G9*Z0/MAX(UST,0.00001)**2-AALPHA) / DELALP)
       J    = MAX(1 ,MIN (IALPHA-1, INT(XJ)))
-      DELJ1= MAX(ZERO,MIN (ONE      , XJ-MyREAL(J)))
-      DELJ2=ONE - DELJ1
+      DELJ1= MAX(0.,MIN (1.      , XJ-FLOAT(J)))
+      DELJ2=1. - DELJ1
       IF (TTAUWSHELTER.GT.0) THEN 
-         XK = CONST0*TEMP/DELTAIL
-         I  = MIN(ILEVTAIL-1, INT(XK))
-         !WRITE(DBG%FHNDL,*) XK, I, ILEVTAIL, CONST0, TEMP, DELTAIL
-         DELK1= MIN (ONE ,XK-MyREAL(I))
-         DELK2=ONE - DELK1
-         !WRITE(DBG%FHNDL,*) DELK1, DELK2, XK, I, J
-         TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1)*DELJ2 &
-     &  +(TAUHFT2(IND,J+1,I)*DELI2+TAUHFT2(IND+1,J+1,I)*DELI1)*DELJ1)*  &
-     &   DELK2 +((TAUHFT2(IND,J,I+1)*DELI2+TAUHFT2(IND+1,J,I+1)*DELI1)* &
-     &   DELJ2 +(TAUHFT2(IND,J+1,I+1)*DELI2+TAUHFT2(IND+1,J+1,I+1)*     &
-     &   DELI1)*DELJ1)*DELK1 
+        XK = CONST0*TEMP / DELTAIL
+         I = MIN (ILEVTAIL-1, INT(XK))
+         DELK1= MIN (1. ,XK-FLOAT(I))
+         DELK2=1. - DELK1
+         TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1 )*DELJ2 &
+               +(TAUHFT2(IND,J+1,I)*DELI2+TAUHFT2(IND+1,J+1,I)*DELI1)*DELJ1)*DELK2 &
+              +((TAUHFT2(IND,J,I+1)*DELI2+TAUHFT2(IND+1,J,I+1)*DELI1 )*DELJ2 &
+               +(TAUHFT2(IND,J+1,I+1)*DELI2+TAUHFT2(IND+1,J+1,I+1)*DELI1)*DELJ1)*DELK1 
       ELSE
-        TAU1 =(TAUHFT(IND,J)*DELI2+TAUHFT(IND+1,J)*DELI1 )*DELJ2        &
-     &       +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
+        TAU1 =(TAUHFT(IND,J)*DELI2+TAUHFT(IND+1,J)*DELI1 )*DELJ2 &
+         +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
         END IF
-      TAUHFL = CONST0*TEMP*UST**2*TAU1
-      TAUHF(IP) = TAUHFL
-      TAUWX = XSTRESS+TAUHFL*MyCOS(USDIRP)
-      TAUWY = YSTRESS+TAUHFL*MySIN(USDIRP)
-      TAUW(IP) = SQRT(XSTRESS**2+YSTRESS**2)
-      !WRITE(DBG%FHNDL,*) 'STRESSES', TAUHF, TAUWX, TAUWY
+      TAUHF = CONST0*TEMP*UST**2*TAU1
+      TAUWX = XSTRESS+TAUHF*COS(USDIRP)
+      TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
 !      
 ! Reduces tail effect to make sure that wave-supported stress 
 ! is less than total stress, this is borrowed from ECWAM Stresso.F      
 !
-      TAUWW = SQRT(TAUWX**2+TAUWY**2)
-      TAUTOT(IP) = TAUWW
+      TAUW = SQRT(TAUWX**2+TAUWY**2)
       UST2   = MAX(USTAR,EPS2)**2  
-      TAUWB = MIN(TAUWW,MAX(UST2-EPS1,EPS2**2))
-      IF (TAUWB.LT.TAUWW) THEN 
-        TAUWX=TAUWX*TAUWB/TAUWW
-        TAUWY=TAUWY*TAUWB/TAUWW
+      TAUWB = MIN(TAUW,MAX(UST2-EPS1,EPS2**2))
+      IF (TAUWB.LT.TAUW) THEN 
+        TAUWX=TAUWX*TAUWB/TAUW
+        TAUWY=TAUWY*TAUWB/TAUW
         END IF
 ! 
       RETURN
@@ -1159,16 +1147,14 @@
 !/
 !/ ------------------------------------------------------------------- /
 !/
-    INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 
-    INTEGER  IKL, IS, IS2, ID, IKD, IKHS, IKH, TOTO
-    integer istat
-    REAL(rkind)     C, C2
-    REAL(rkind)     DIFF1, DIFF2, BINF, BSUP, CGG
-    REAL(rkind)     PROF, W, EPS
-    REAL(rkind)     KIK, DHS, KD, KDD, KHS, KH, XT, GAM, DKH, PR
-    REAL(rkind)     DKD, CN ,CC
-    REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
-    REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
+      INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 , IS, IS2
+      INTEGER  IKL, ID, ICON, IKD, IKHS, IKH, TOTO
+      REAL(rkind)     C, C2
+      REAL(rkind)     DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG, PROF
+      REAL(rkind)     KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
+      REAL(rkind)     DKD, DELTAFIT, NHI, H, IH, DH
+      REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
+      REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
@@ -1186,17 +1172,16 @@
 !
 !      WRITE(6,*) 'INSIN4:',FLTABS, SSDSDTH, SSDSC3, SSDSBCK
       IF (FLTABS) THEN   
-        CALL TABU_STRESS_NEW
-        CALL TABU_TAUHF_NEW(SIG(NK) * INVPI2)   !tabulate high-frequency stress
+        CALL TABU_STRESS
+        CALL TABU_TAUHF(SIG(NK) * TPIINV)   !tabulate high-frequency stress
         IF (TTAUWSHELTER.GT.0) THEN
-          CALL TABU_TAUHF2_NEW(SIG(NK) * INVPI2)   !tabulate high-frequency stress
+          WRITE(NDSE,*) 'Computing 3D lookup table... please wait ...'
+          CALL TABU_TAUHF2(SIG(NK) * TPIINV)   !tabulate high-frequency stress
           END IF
         END IF
-!/ ------------------------------------------------------------------- /
-!                        SPONTANEOUS BREAKING
-!/ ------------------------------------------------------------------- /
 !
-! Precomputes the indices for integrating the spectrum to get saturation (TEST 441)
+! 2.  SPONTANEOUS BREAKING
+! 2.a Precomputes the indices for integrating the spectrum to get saturation (TEST 4xx )
 !
       IF (SSDSDTH.LT.180) THEN
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
@@ -1898,12 +1883,7 @@
 !
 ! Determines roughness length
 !
-!AR: Check for zero stress for zero wind !!!
-      IF (USTAR .GT. 0.001_rkind) THEN 
-        SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0_rkind)
-      ELSE
-        SQRTCDM1  = ZERO
-      ENDIF
+      SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0)
       Z0  = ZZWND*EXP(-KAPPA*SQRTCDM1)
 !AR: Here we need to start debugging ...       
       IF (USTAR.GT.0.001_rkind) THEN 
@@ -2019,7 +1999,7 @@
       REAL(rkind)                    :: QB(NK), S2(NK)
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
       REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC)
-      REAL(rkind)                    :: LAMBDA(NSPEC)
+      REAL(rkind)                    :: BRLAMBDA(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -2049,19 +2029,33 @@
 !
 ! 2.a.1 Computes saturation
 !
-        SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
-        DO  IK=1, NK
-          FACSAT=SIG(IK)*K(IK)**3*DTH
+        SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADE)),NTH/2-1)
+        MSSLONG(:) = 0.
+!       SSDSDIK is the integer difference in frequency bands
+!       between the "large breakers" and short "wiped-out waves"
+!
+        DO  IK=IK1, NK
+          FACSTRAIN=1+SSDSC(8)*MSSLONG(MAX(1,IK-DIKCUMUL))
+          FACSAT=SIG(IK)*K(IK)**3*DTH*FACSTRAIN
           IS0=(IK-1)*NTH
-          BTH(IS0+1)=ZERO
-          BTH0(IK)=SUM(A(IS0+1:IS0+NTH))*FACSAT
+          BTH(IS0+1)=0.
+!          BTH0(IK)=SUM(A(IS0+1:IS0+NTH))*FACSAT
+! Testing straining effect of long waves on short waves
+! From Longuet-Higgins and Stewart (1963) the amplitude modulation 
+! in deep water is equal to the long wave slope k*a 
+! Here we assume that the saturation is likewise modulated by a factor (ka)^2
+          ASUM = SUM(A(IS0+1:IS0+NTH))
+          MSSLONG(IK:NK) = MSSLONG(IK:NK) + K(IK)**2 *  &
+                                    ASUM * DDEN(IK) / CG(IK)
+          BTH0(IK)=ASUM*FACSAT
+!WRITE(6,*) 'SDS IK:',IK,ASUM,MSSLONG(IK),BTH0(IK),FACSTRAIN
           IF (SSDSDTH.GE.180) THEN  ! integrates around full circle
             BTH(IS0+1:IS0+NTH)=BTH0(IK)
           ELSE
             DO ITH=1,NTH            ! partial integration
               IS=ITH+(IK-1)*NTH
-              BTH(IS)=DOT_PRODUCT(SATWEIGHTS(:,ITH),                    &
-     &                 A(IS0+SATINDICES(:,ITH)) )*FACSAT
+             BTH(IS)=DOT_PRODUCT(SATWEIGHTS(:,ITH),         &
+                     A(IS0+SATINDICES(:,ITH)) )*FACSAT
 !              BTH(IS)=SUM(  SATWEIGHTS(:,ITH)*         &
 !                     A(IS0+SATINDICES(:,ITH)) )*FACSAT
               END DO
@@ -2094,8 +2088,7 @@
               BTHS(ITH+SSDSBRFDF*NTH)=BTHS(ITH+SSDSBRFDF*NTH)+BTH(IS)
               END DO
             END DO
-
-          DO IK=2+SSDSBRFDF,1+2*SSDSBRFDF
+          DO IK=IK1+1+SSDSBRFDF,1+2*SSDSBRFDF
             BTH0S(1+SSDSBRFDF)=BTH0S(1+SSDSBRFDF)+BTH0(IK)
             NSMOOTH(1+SSDSBRFDF)=NSMOOTH(1+SSDSBRFDF)+1
             DO ITH=1,NTH       
@@ -2103,8 +2096,7 @@
               BTHS(ITH+SSDSBRFDF*NTH)=BTHS(ITH+SSDSBRFDF*NTH)+BTH(IS)
               END DO
             END DO
-
-          DO IK=SSDSBRFDF,1,-1
+          DO IK=SSDSBRFDF,IK1,-1
             BTH0S(IK)=BTH0S(IK+1)-BTH0(IK+SSDSBRFDF+1)
             NSMOOTH(IK)=NSMOOTH(IK+1)-1
             DO ITH=1,NTH       
@@ -2113,14 +2105,12 @@
               END DO
             END DO
 ! 
-          DO IK=2+SSDSBRFDF,NK-SSDSBRFDF
-            BTH0S(IK)=BTH0S(IK-1)-BTH0(IK-SSDSBRFDF-1)                  &
-     &               +BTH0(IK+SSDSBRFDF)
+          DO IK=IK1+1+SSDSBRFDF,NK-SSDSBRFDF
+            BTH0S(IK)=BTH0S(IK-1)-BTH0(IK-SSDSBRFDF-1)+BTH0(IK+SSDSBRFDF)
             NSMOOTH(IK)=NSMOOTH(IK-1)
             DO ITH=1,NTH       
               IS=ITH+(IK-1)*NTH
-              BTHS(IS)=BTHS(IS-NTH)-BTH(IS-(SSDSBRFDF+1)*NTH)+          &
-     &                 BTH(IS+(SSDSBRFDF)*NTH)
+              BTHS(IS)=BTHS(IS-NTH)-BTH(IS-(SSDSBRFDF+1)*NTH)+BTH(IS+(SSDSBRFDF)*NTH)
               END DO
             END DO
 ! 
@@ -2135,25 +2125,24 @@
 ! 
 !    final division by NSMOOTH
 ! 
-         BTH0(:)=MAX(ZERO,BTH0S(:)/NSMOOTH(:))
-          DO IK=1,NK
+         BTH0(:)=MAX(0.,BTH0S(:)/NSMOOTH(:))
+          DO IK=IK1,NK
             IS0=(IK-1)*NTH
-            BTH(IS0+1:IS0+NTH)=MAX(ZERO,BTHS(IS0+1:IS0+NTH)/NSMOOTH(IK))
+            BTH(IS0+1:IS0+NTH)=MAX(0.,BTHS(IS0+1:IS0+NTH)/NSMOOTH(IK))
             END DO 
           END IF ! SMOOTH
 ! 
 !  2.a.2  Computes spontaneous breaking dissipation rate
 ! 
-        DO  IK=1, NK
+        DO  IK=IK1, NK
 !
 !  Correction of saturation level for shallow-water kinematics
 !
           IF (SSDSBM(0).EQ.1) THEN
             MICHE=ONE
           ELSE
-            X=MyTANH(MIN(K(IK)*DEPTH,10._rkind))
-            MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+                           &
-     &             X*(SSDSBM(3)+X*SSDSBM(4)))))**2 ! Correction of saturation level for shallow-water kinematics
+            X=TANH(MIN(K(IK)*DEPTH,10.))
+            MICHE=(X*(SSDSBM(1)+X*(SSDSBM(2)+X*(SSDSBM(3)+X*SSDSBM(4)))))**2 ! Correction of saturation level for shallow-water kinematics
             END IF
           COEF1=(SSDSBR*MICHE)
 !
@@ -2166,16 +2155,13 @@
 !
           COEF2=SSDSC(2) * SIG(IK)*(1-SSDSC(6))/(COEF1*COEF1)
           COEF3=-2.*SIG(IK)*K(IK)*FACTURB
-          D((IK-1)*NTH+1:IK*NTH) = SDIAGISO +                           &
-     &      COEF2*((MAX(ZERO,BTH((IK-1)*NTH+1:IK*NTH)-COEF1))**SSDSP) 
-          !WRITE(DBG%FHNDL,*) 'A', COEF1, COEF2
-          !WRITE(DBG%FHNDL,*) 'B', BTH((IK-1)*NTH+1:IK*NTH) 
-          !WRITE(DBG%FHNDL,*) 'D', D((IK-1)*NTH+1:IK*NTH)
+          D((IK-1)*NTH+1:IK*NTH) = SDIAGISO + &
+                                   COEF2*((MAX(0.,BTH((IK-1)*NTH+1:IK*NTH)-COEF1))**SSDSP) 
           END DO
 !
 ! Computes Breaking probability
 !
-        PB = (MAX(SQRT(BTH)-EPSR,ZERO))**2     
+        PB = (MAX(SQRT(BTH)-EPSR,0.))**2     
 ! 
 ! Multiplies by 28.16 = 22.0 * 1.6² * 1/2 with  
 !  22.0 (Banner & al. 2000, figure 6) 
@@ -2184,21 +2170,21 @@
 ! 
         PB = PB * 28.16
 !/
-        END IF ! End of test for (Ardhuin et al. 2010)'s spontaneous dissipation source term ! (SSDSBCK-SSDSC(1)).LE.0
+        END IF ! End of test for (Ardhuin et al. 2010)'s spontaneous dissipation source term
 !
 ! 2.b             Computes spontaneous breaking for T500 //////////////
 !
       IF (SSDSBCK.GT.0) THEN ! test for (Filipot et al. 2010)'s disspation source term
-        E1 = ZERO
-        HS = ZERO
-        S  = ZERO
-        D  = ZERO
-        PB2= ZERO
+        E1 =0.
+        HS =0.  
+        S  =0.
+        D  =0.
+        PB2=0.
 !
 ! Computes Wavenumber spectrum E1 integrated over direction and computes dk
 !
-        DO IK=1, NK
-          E1(IK)=ZERO
+        DO IK=IK1, NK
+          E1(IK)=0.
           DO ITH=1,NTH
             IS=ITH+(IK-1)*NTH
             E1(IK)=E1(IK)+(A(IS)*SIG(IK))*DTH
@@ -2225,14 +2211,12 @@
         DO IKL=1,NK 
           IKSUP(IKL)=IKTAB(IKL,ID)
           IF (IKSUP(IKL) .LE. NK) THEN
-            EFDF(IKL) = DOT_PRODUCT(E1(IKL:IKSUP(IKL)-1),               &
-     &                              DK(IKL:IKSUP(IKL)-1))
+            EFDF(IKL) = DOT_PRODUCT(E1(IKL:IKSUP(IKL)-1),DK(IKL:IKSUP(IKL)-1))
             IF (EFDF(IKL) .NE. 0) THEN
-              KBAR(IKL) = DOT_PRODUCT(K(IKL:IKSUP(IKL)-1)*              &
-     &                                E1(IKL:IKSUP(IKL)-1),             &
-     &                                DK(IKL:IKSUP(IKL)-1)) / EFDF(IKL)
+              KBAR(IKL) = DOT_PRODUCT(K(IKL:IKSUP(IKL)-1)*E1(IKL:IKSUP(IKL)-1), &
+                                      DK(IKL:IKSUP(IKL)-1)) / EFDF(IKL) 
             ELSE 
-              KBAR(IKL)=ZERO
+              KBAR(IKL)=0. 
               END IF
 ! estimation of Significant wave height of a given scale
             HS(IKL) = 4*SQRT(EFDF(IKL)) 
@@ -2242,16 +2226,16 @@
 !   
 ! Computes Dissipation and breaking probability in each scale  
 !
-        DCK=ZERO
-        QB =ZERO
+        DCK=0.
+        QB =0.
         DKHS = KHSMAX/NKHS 
         DO IKL=1, NKL
-          IF (HS(IKL) .NE. ZERO .AND. KBAR(IKL) .NE. ZERO)  THEN 
+          IF (HS(IKL) .NE. 0. .AND. KBAR(IKL) .NE. 0.)  THEN 
 !
 ! gets indices for tabulated dissipation DCKI and breaking probability QBI
 !
-            IKD = INT(FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1)))
-            IKHS= INT(1+ANINT(KBAR(IKL)*HS(IKL)/DKHS))
+            IKD = FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1))
+            IKHS= 1+ANINT(KBAR(IKL)*HS(IKL)/DKHS)
             IF (IKD > NKD) THEN    ! Deep water
               IKD = NKD
             ELSE IF (IKD < 1) THEN ! Shallow water
@@ -2279,34 +2263,34 @@
 !
             QB(IKL) = QBI(IKHS,IKD) ! QBI is tabulated in INSIN4
           ELSE   
-            DCK(IKL)=ZERO
-            QB(IKL) =ZERO
+            DCK(IKL)=0.
+            QB(IKL) =0.
             END IF  
           END DO
 !
-! Distribuates scale dissipation over the spectrum
+! Distributes scale dissipation over the frequency spectrum
 !
-        S1 = ZERO
-        S2 = ZERO
-        NTIMES = ZERO
+        S1 = 0.
+        S2 = 0.
+        NTIMES = 0.
         DO IKL=1, NKL
-          IF (EFDF(IKL) .GT. ZERO) THEN 
-            S1(IKL:IKSUP(IKL))    = S1(IKL:IKSUP(IKL)) +                &
-     &                      DCK(IKL)*E1(IKL:IKSUP(IKL)) / EFDF(IKL)
-            S2(IKL:IKSUP(IKL))    = S2(IKL:IKSUP(IKL)) +                &
-     &                      QB(IKL) *E1(IKL:IKSUP(IKL)) / EFDF(IKL)
+          IF (EFDF(IKL) .GT. 0.) THEN 
+            S1(IKL:IKSUP(IKL))    = S1(IKL:IKSUP(IKL)) + &
+                                     DCK(IKL)*E1(IKL:IKSUP(IKL)) / EFDF(IKL)
+            S2(IKL:IKSUP(IKL))    = S2(IKL:IKSUP(IKL)) + &
+                                     QB(IKL) *E1(IKL:IKSUP(IKL)) / EFDF(IKL)
             NTIMES(IKL:IKSUP(IKL)) = NTIMES(IKL:IKSUP(IKL)) + 1
             END IF
           END DO
 !
 ! Finish the average
 ! 
-        WHERE (NTIMES .NE. ZERO)
+        WHERE (NTIMES .NE. 0.)
           S1 = S1 / NTIMES
           S2 = S2 / NTIMES
         ELSEWHERE
-          S1 = ZERO
-          S2 = ZERO
+          S1 = 0.
+          S2 = 0.
           END WHERE
         S1 = S1 / SIG ! goes back to action for dissipation source term 
 !
@@ -2331,7 +2315,7 @@
 !
         PB = (1-SSDSC(1))*PB2*A + SSDSC(1)*PB
 !
-        END IF   ! END OF TEST ON SSDSBCK IF (SSDSBCK.GT.0) THEN
+        END IF   ! END OF TEST ON SSDSBCK
 !
 !
 !
@@ -2340,7 +2324,7 @@
 ! Compute Lambda = PB* l(k,th) 
 ! with l(k,th)=1/(2*pi²)= the breaking crest density
 !
-      LAMBDA = PB / (PI2**2)
+      BRLAMBDA = PB / (2.*PI**2.)
 !
 !/ ------------------------------------------------------------------- /
 !             WAVE-TURBULENCE INTERACTION AND CUMULATIVE EFFECT
@@ -2349,33 +2333,25 @@
 !
 ! loop over spectrum
 !
-!AR: reorder this because if ssdsc3 = 0. it will ... 
-      DO  IK=1, NK
+      DO  IK=IK1, NK
         DO ITH=1,NTH       
           IS=ITH+(IK-1)*NTH
 !
 ! Computes cumulative effect from Breaking probability
 !
-          RENEWALFREQ = ZERO
+          RENEWALFREQ = 0.
           IF (SSDSC(3).NE.0 .AND. IK.GT.DIKCUMUL) THEN
-            DO IK2=1,IK-DIKCUMUL
+            DO IK2=IK1,IK-DIKCUMUL
               IF (BTH0(IK2).GT.SSDSBR) THEN
                 IS2=(IK2-1)*NTH
-                RENEWALFREQ=RENEWALFREQ+                                &
-     &   DOT_PRODUCT(CUMULW(IS2+1:IS2+NTH,IS),LAMBDA(IS2+1:IS2+NTH))
+                RENEWALFREQ=RENEWALFREQ+DOT_PRODUCT(CUMULW(IS2+1:IS2+NTH,IS),BRLAMBDA(IS2+1:IS2+NTH))
                 !DO ITH2=1,NTH
                 !  IS2=ITH2+(IK2-1)*NTH
-                !  RENEWALFREQ=RENEWALFREQ+CUMULW(IS2,IS)*LAMBDA(IS2)
+                !  RENEWALFREQ=RENEWALFREQ+CUMULW(IS2,IS)*BRLAMBDA(IS2)
                 !  END DO
                 END IF
               END DO
             END IF
-!            IS2MAX = (IK-DIKCUMUL)*NTH
-!            RENEWALFREQ = DOT_PRODUCT(CUMULW(1:IS2MAX,IS),LAMBDA(1:IS2MAX))
-!          ELSE
-!            RENEWALFREQ = ZERO
-!            END IF
-
 !
 ! Computes wave turbulence interaction
 !
@@ -2412,49 +2388,49 @@
 !                     COMPUTES WHITECAP PARAMETERS
 !/ ------------------------------------------------------------------- /
 !
-!      IF ( .NOT. (FLOGRD(34).OR.FLOGRD(35) ) ) THEN
-!AR: new option just set to exit now ...  
-       IF (.TRUE.) THEN
+      IF ( .NOT. (FLOGRD(5,7).OR.FLOGRD(5,8) ) ) THEN
         RETURN
         END IF
 !/
-      WHITECAP(1:2) = ZERO
+      WHITECAP(1:2) = 0.
 !
 ! precomputes integration of Lambda over direction 
 ! times wavelength times a (a=5 in Reul&Chapron JGR 2003) times dk
 !
       DO IK=1,NK
-        COEF4(IK) = SUM(LAMBDA((IK-1)*NTH+1:IK*NTH) * DTH) *            &
-     &     (PI2/K(IK)) * SSDSC(7) * DDEN(IK)/(DTH*SIG(IK)*CG(IK))
+        COEF4(IK) = SUM(BRLAMBDA((IK-1)*NTH+1:IK*NTH) * DTH) *(2*PI/K(IK)) *  &
+                    SSDSC(7) * DDEN(IK)/(DTH*SIG(IK)*CG(IK))
 !                   NB: SSDSC(7) is WHITECAPWIDTH
         END DO
 !/
-!      IF ( FLOGRD(34) ) THEN
-       IF ( .FALSE.) THEN
+      IF ( FLOGRD(5,7) ) THEN
 !/
 !/ Computes the Total WhiteCap Coverage (a=5. ; Reul and Chapron, 2003)
 !/
-        DO IK=1,NK
+        DO IK=IK1,NK
           WHITECAP(1) = WHITECAP(1) + COEF4(IK) * (1-WHITECAP(1))
           END DO
         END IF
 !/
-!      IF ( FLOGRD(35) ) THEN
-       IF (.FALSE.) THEN  
+      IF ( FLOGRD(5,8) ) THEN
 !/
 !/ Calculates the Mean Foam Thickness for component K(IK) => Fig.3, Reul and Chapron, 2003 
 !/
-        DO IK=1,NK
-          TSTR = 0.8_rkind * 2*PI/SIG(IK)                                ! Duration of active breaking (TAU*)
-          TMAX = 5._rkind  * 2*PI/SIG(IK)                                ! Time persistence of foam (a=5.)
+        DO IK=IK1,NK
+! Duration of active breaking (TAU*)
+          TSTR = 0.8 * 2*PI/SIG(IK)                                
+! Time persistence of foam (a=5.)
+          TMAX = 5.  * 2*PI/SIG(IK)                                
           DT   = TMAX / 50
-          MFT  = ZERO
-          DO IT = 1, 50                                            ! integration over time of foam persistance
-            T = IT * DT
-            IF ( T .lt. TSTR ) THEN
-              MFT = MFT + 0.4_rkind / (K(IK)*TSTR) * T * DT              !
-            ELSE                                                   ! Eq. 5 and 6 of Reul and Chapron, 2003
-              MFT = MFT + 0.4_rkind / K(IK) * exp(-1*(T-TSTR)/3.8) * DT  !
+          MFT  = 0. 
+          DO IT = 1, 50                                            
+! integration over time of foam persistance
+            T = FLOAT(IT) * DT
+! Eq. 5 and 6 of Reul and Chapron, 2003
+            IF ( T .LT. TSTR ) THEN
+              MFT = MFT + 0.4 / (K(IK)*TSTR) * T * DT              
+            ELSE                                                   
+              MFT = MFT + 0.4 / K(IK) * EXP(-1*(T-TSTR)/3.8) * DT  
               END IF
             END DO
           MFT = MFT / TMAX
@@ -2476,6 +2452,4 @@
 !/
       END SUBROUTINE W3SDS4_NEW
 
-
-#endif
-      END MODULE W3SRC4MD_NEW
+      END MODULE W3SRC4MD
