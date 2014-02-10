@@ -74,8 +74,7 @@
       INTEGER, PARAMETER      :: IAB=200  
       REAL(rkind)             :: TAUT(0:ITAUMAX,0:JUMAX), DELTAUW, DELU
       ! Table for H.F. stress as a function of 2 variables
-      REAL(rkind)             :: TAUHFT(0:IUSTAR,0:IALPHA), DELUST,     &
-     &     DELALP
+      REAL(rkind)             :: TAUHFT(0:IUSTAR,0:IALPHA), DELUST, DELALP
       ! Table for H.F. stress as a function of 3 variables
       REAL(rkind)             :: TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL)
       ! Table for swell damping 
@@ -120,7 +119,7 @@
       INTEGER, ALLOCATABLE    :: IKTAB(:,:)
       INTEGER, ALLOCATABLE    :: SATINDICES(:,:)
       LOGICAL, ALLOCATABLE    :: LLWS(:)
-      REAL(rkind)                    :: SSDSC(1:7)
+      REAL(rkind)                    :: SSDSC(1:9)
       REAL(rkind), ALLOCATABLE       :: SIG(:), SIG2(:), DDEN(:)
       REAL(rkind), ALLOCATABLE       :: DDEN2(:), DSII(:)
       REAL(rkind), ALLOCATABLE       :: DSIP(:), TH(:), ESIN(:)
@@ -642,7 +641,7 @@
 !/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE W3SIN4_NEW (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, ICE, S, D, LLWS, BRLAMBDA)
+      SUBROUTINE W3SIN4 (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, S, D, LLWS, BRLAMBDA)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -733,6 +732,7 @@
 !/ ------------------------------------------------------------------- /
 !/ Parameter list
 !/
+      INTEGER, INTENT(IN)            :: IP
       REAL(rkind), INTENT(IN)        :: A(NSPEC), BRLAMBDA(NSPEC)
       REAL(rkind), INTENT(IN)        :: CG(NK), K(NSPEC),Z0,U, CD
       REAL(rkind), INTENT(IN)        :: USTAR, USDIR, AS, DRAT
@@ -1080,7 +1080,7 @@
 !/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE INSIN4_NEW(FLTABS)
+      SUBROUTINE INSIN4(FLTABS)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1136,7 +1136,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
-      USE DATAPOOL, ONLY: ZERO, ONE, TWO
+      USE DATAPOOL, ONLY: ZERO, ONE, TWO, STAT
       USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
 !/
@@ -1148,11 +1148,11 @@
 !/ ------------------------------------------------------------------- /
 !/
       INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 , IS, IS2
-      INTEGER  IKL, ID, ICON, IKD, IKHS, IKH, TOTO
-      REAL(rkind)     C, C2
-      REAL(rkind)     DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG, PROF
-      REAL(rkind)     KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
-      REAL(rkind)     DKD, DELTAFIT, NHI, H, IH, DH
+      INTEGER  IKL, ID, ICON, IKD, IKHS, IKH, TOTO, ISTAT
+      REAL(rkind) ::  C, C2
+      REAL(rkind) ::  DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG, PROF
+      REAL(rkind) ::  KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
+      REAL(rkind) ::  DKD, DELTAFIT, NHI, H, IH, DH, KDD, CN, CC
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
@@ -1173,10 +1173,10 @@
 !      WRITE(6,*) 'INSIN4:',FLTABS, SSDSDTH, SSDSC3, SSDSBCK
       IF (FLTABS) THEN   
         CALL TABU_STRESS
-        CALL TABU_TAUHF(SIG(NK) * TPIINV)   !tabulate high-frequency stress
+        CALL TABU_TAUHF(SIG(NK) * INVPI2)   !tabulate high-frequency stress
         IF (TTAUWSHELTER.GT.0) THEN
-          WRITE(NDSE,*) 'Computing 3D lookup table... please wait ...'
-          CALL TABU_TAUHF2(SIG(NK) * TPIINV)   !tabulate high-frequency stress
+          WRITE(STAT%FHNDL,*) 'Computing 3D lookup table... please wait ...'
+          CALL TABU_TAUHF2(SIG(NK) * INVPI2)   !tabulate high-frequency stress
           END IF
         END IF
 !
@@ -1364,9 +1364,9 @@
 !/
 !/ End of INSIN4 ----------------------------------------------------- /
 !/
-      END SUBROUTINE INSIN4_NEW
+      END SUBROUTINE INSIN4
 ! ----------------------------------------------------------------------
-      SUBROUTINE TABU_STRESS_NEW
+      SUBROUTINE TABU_STRESS
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1493,9 +1493,9 @@
 !
 
       RETURN
-      END SUBROUTINE TABU_STRESS_NEW
+      END SUBROUTINE TABU_STRESS
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE TABU_TAUHF_NEW(FRMAX)
+      SUBROUTINE TABU_TAUHF(FRMAX)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1633,10 +1633,10 @@
       END DO
       DEALLOCATE(W)
 !/T 9000 FORMAT ('TABU_HF, L, K, ALPHA, UST, TAUHFT(K,L) :',(2I4,3F8.3))    
-      END SUBROUTINE TABU_TAUHF_NEW
+      END SUBROUTINE TABU_TAUHF
 
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE TABU_TAUHF2_NEW(FRMAX)
+      SUBROUTINE TABU_TAUHF2(FRMAX)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1792,10 +1792,10 @@
         END DO
       DEALLOCATE(W)
 !/T 9000 FORMAT (' TEST TABU_HFT2, K, L, I, UST, ALPHA, LEVTAIL, TAUHFT2(K,L,I) :',(3I4,4F10.5))    
-      END SUBROUTINE TABU_TAUHF2_NEW
+      END SUBROUTINE TABU_TAUHF2
 
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE CALC_USTAR_NEW(WINDSPEED,TAUW,USTAR,Z0,CHARN)
+      SUBROUTINE CALC_USTAR(WINDSPEED,TAUW,USTAR,Z0,CHARN)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1894,15 +1894,15 @@
 !      write(DBG%FHNDL,*) z0, ustar, windspeed
 !
       RETURN
-      END SUBROUTINE CALC_USTAR_NEW
+      END SUBROUTINE CALC_USTAR
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE W3SDS4_NEW(A,K,CG, USTAR, USDIR, DEPTH, S, D, WHITECAP)
+      SUBROUTINE W3SDS4(A, K, CG, USTAR, USDIR, DEPTH, S, D, BRLAMBDA, WHITECAP)
 
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
 !/                  !            F. Ardhuin             !
 !/                  |                        FORTRAN 90 |
-!/                  | Last update :         30-Aug-2010 |
+!/                  | Last update :         13-Nov-2013 |
 !/                  +-----------------------------------+
 !/
 !/    30-Aug-2010 : Clean up from common ST3-ST4 routine( version 3.14-Ifremer )
@@ -1919,13 +1919,14 @@
 !
 !     Parameter list
 !     ----------------------------------------------------------------
-!       A       R.A.  I   Action density spectrum (1-D).
-!       K       R.A.  I   Wavenumber for entire spectrum.          *)
-!       USTAR   Real  I   Friction velocity.
-!       USDIR   Real  I   wind stress direction.
-!       DEPTH   Real  I   Water depth.
-!       S       R.A.  O   Source term (1-D version).
-!       D       R.A.  O   Diagonal term of derivative.             *)
+!       A         R.A.  I   Action density spectrum (1-D).
+!       K         R.A.  I   Wavenumber for entire spectrum.          *)
+!       USTAR     Real  I   Friction velocity.
+!       USDIR     Real  I   wind stress direction.
+!       DEPTH     Real  I   Water depth.
+!       S         R.A.  O   Source term (1-D version).
+!       D         R.A.  O   Diagonal term of derivative.             *)
+!       BRLAMBDA  R.A.  O   Phillips' Lambdas
 !     ----------------------------------------------------------------
 !                         *) Stored in 1-D array with dimension NTH*NK
 !
@@ -1967,39 +1968,41 @@
 !/ ------------------------------------------------------------------- /
 !/ Parameter list
 !/
-      REAL(rkind), INTENT(IN)        :: A(NSPEC), K(NK), CG(NK), DEPTH, USTAR, USDIR
+      REAL(rkind), INTENT(IN)        :: A(NSPEC), K(NK), CG(NK)
+      REAL(rkind), INTENT(IN)        :: DEPTH, USTAR, USDIR 
+      REAL(rkind), INTENT(OUT)       :: S(NSPEC), D(NSPEC), BRLAMBDA(NSPEC)
       REAL(rkind), INTENT(OUT)       :: WHITECAP(1:4)
-      REAL(rkind), INTENT(OUT)       :: S(NSPEC), D(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IS2, IS0, IKL, ID, NKL
+      INTEGER                 :: IS, IS2, IS0, IS20, IA, J, IKL, ITOT, NTOT, ID, NKL, IO
 !/S      INTEGER, SAVE           :: IENT = 0
-      INTEGER                 :: IK, IT, ITH, IK2, IKHS, IKD, SDSNTH
+      INTEGER                 :: IK, IK1, ITH, I_INT, IK2, ITH2, IKIND, L,       & 
+                                 IKHS, IKD, SDSNTH, IT 
       INTEGER                 :: NSMOOTH(NK)
-      REAL(rkind)             :: COSWIND, ASUM, SDIAGISO
-      REAL(rkind)             :: COEF1, COEF2, COEF3, COEF4(NK)
-      REAL(rkind)             :: FACTURB, DTURB
-      REAL(rkind)             :: BREAKFRACTION
-      REAL(rkind)             :: RENEWALFREQ, EPSR
-      REAL(rkind)             :: NTIMES(NK), S1(NK), E1(NK)
-      REAL(rkind)             :: GAM, XT
-      REAL(rkind)             :: DK(NK), HS(NK), KBAR(NK)
-      REAL(rkind)             :: DCK(NK)
-      REAL(rkind)             :: EFDF(NK)     ! Energy integrated over a spectral band
+      REAL(rkind)                    :: FACTOR, COSWIND, ASUM, SDIAGISO
+      REAL(rkind)                    :: COEF1, COEF2, COEF3, COEF4(NK)
+      REAL(rkind)                    :: ALFAMEAN, KB, MSSLONG(NK)
+      REAL(rkind)                    :: FACTURB, DTURB, DCUMULATIVE, BREAKFRACTION
+      REAL(rkind)                    :: RENEWALFREQ, EPSR
+      REAL(rkind)                    :: NTIMES(NK), S1(NK), E1(NK)
+      REAL(rkind)                    :: GAM, XT, M1
+      REAL(rkind)                    :: DK(NK), HS(NK), KBAR(NK), DCK(NK)
+      REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                 :: IKSUP(NK)
-      REAL(rkind)                    :: FACSAT, DKHS
+      REAL(rkind)                    :: Q1(NK) 
+      REAL(rkind)                    :: FACSAT, DKHS, FACSTRAIN 
       REAL(rkind)                    :: BTH0(NK)     !saturation spectrum 
       REAL(rkind)                    :: BTH(NSPEC)   !saturation spectrum 
       REAL(rkind)                    :: BTH0S(NK)    !smoothed saturation spectrum 
       REAL(rkind)                    :: BTHS(NSPEC)  !smoothed saturation spectrum  
-      REAL(rkind)                    :: MICHE, X
-!/T0      REAL(rkind)                :: DOUT(NK,NTH)
-      REAL(rkind)                    :: QB(NK), S2(NK)
+      REAL(rkind)                    :: W, MICHE, X
+!/T0      REAL                    :: DOUT(NK,NTH)
+      REAL(rkind)                    :: QB(NK), S2(NK), KD, DC(NK)
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
-      REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC)
-      REAL(rkind)                    :: BRLAMBDA(NSPEC)
+      REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC), LAMBDA(NSPEC)
+      LOGICAL                 :: MASK(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -2029,7 +2032,7 @@
 !
 ! 2.a.1 Computes saturation
 !
-        SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADE)),NTH/2-1)
+        SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         MSSLONG(:) = 0.
 !       SSDSDIK is the integer difference in frequency bands
 !       between the "large breakers" and short "wiped-out waves"
@@ -2388,9 +2391,9 @@
 !                     COMPUTES WHITECAP PARAMETERS
 !/ ------------------------------------------------------------------- /
 !
-      IF ( .NOT. (FLOGRD(5,7).OR.FLOGRD(5,8) ) ) THEN
-        RETURN
-        END IF
+!      IF ( .NOT. (FLOGRD(5,7).OR.FLOGRD(5,8) ) ) THEN
+!        RETURN
+!        END IF
 !/
       WHITECAP(1:2) = 0.
 !
@@ -2403,7 +2406,7 @@
 !                   NB: SSDSC(7) is WHITECAPWIDTH
         END DO
 !/
-      IF ( FLOGRD(5,7) ) THEN
+      IF ( .FALSE. ) THEN
 !/
 !/ Computes the Total WhiteCap Coverage (a=5. ; Reul and Chapron, 2003)
 !/
@@ -2412,7 +2415,7 @@
           END DO
         END IF
 !/
-      IF ( FLOGRD(5,8) ) THEN
+      IF ( .FALSE. ) THEN
 !/
 !/ Calculates the Mean Foam Thickness for component K(IK) => Fig.3, Reul and Chapron, 2003 
 !/
@@ -2450,6 +2453,6 @@
 !/
 !/ End of W3SDS4 ----------------------------------------------------- /
 !/
-      END SUBROUTINE W3SDS4_NEW
+      END SUBROUTINE W3SDS4
 
       END MODULE W3SRC4MD

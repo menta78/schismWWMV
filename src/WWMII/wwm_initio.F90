@@ -411,7 +411,7 @@
          USE W3SRC4MD_OLD
 #endif
 #ifdef ST42
-         USE W3SRC4MD_NEW
+         USE W3SRC4MD
 #endif
          IMPLICIT NONE
          integer istat
@@ -659,7 +659,7 @@
          USE WAVE_SETUP
 #endif
 #ifdef ST42
-         USE W3SRC4MD_NEW
+         USE W3SRC4MD
 #endif
 
 #ifdef PETSC
