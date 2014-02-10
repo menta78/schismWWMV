@@ -148,7 +148,7 @@
       CONTAINS
 
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE PREPARE_ARDHUIN_NEW()
+      SUBROUTINE PREPARE_ARDHUIN()
 
         USE DATAPOOL
 
@@ -403,16 +403,16 @@
         INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
 
         IF (.NOT. LPRECOMP_EXIST) THEN
-          CALL INSIN4_NEW(.TRUE.)
+          CALL INSIN4(.TRUE.)
         ELSE
-          CALL READ_INSIN4_NEW
+          CALL READ_INSIN4
         END IF
 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_INSIN4_NEW()
+      SUBROUTINE READ_INSIN4()
         USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
         IMPLICIT NONE
         INTEGER :: MSC_TEST, MDC_TEST, ISTAT
@@ -445,7 +445,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE W3SPR4_NEW (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS)
+      SUBROUTINE W3SPR4 (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III                SHOM |
@@ -621,7 +621,7 @@
       TAUW = SQRT(TAUWX**2+TAUWY**2)
      
       Z0=ZERO
-      CALL CALC_USTAR_NEW(U,TAUW,USTAR,Z0,CHARN) 
+      CALL CALC_USTAR(U,TAUW,USTAR,Z0,CHARN) 
       UNZ    = MAX ( 0.01_rkind , U )
       CD     = (USTAR/UNZ)**2
       USDIR = UDIR

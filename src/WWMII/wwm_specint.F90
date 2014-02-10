@@ -11,7 +11,7 @@
          USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
 #endif
 #ifdef ST42
-         USE W3SRC4MD_NEW, ONLY : LFIRSTSOURCE
+         USE W3SRC4MD, ONLY : LFIRSTSOURCE
 #endif
          IMPLICIT NONE
 
@@ -124,7 +124,7 @@
          USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
 #endif
 #ifdef ST42
-         USE W3SRC4MD_NEW, ONLY : LFIRSTSOURCE
+         USE W3SRC4MD, ONLY : LFIRSTSOURCE
 #endif
          IMPLICIT NONE
 
@@ -590,7 +590,7 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #elif ST42
-         USE W3SRC4MD_NEW
+         USE W3SRC4MD
 #endif
          IMPLICIT NONE
 
