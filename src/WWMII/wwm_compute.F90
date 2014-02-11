@@ -602,45 +602,58 @@
 !**********************************************************************
 #ifdef PETSC
       SUBROUTINE COMPUTE_FULLY_IMPLICIT
-      USE DATAPOOL
-      USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
-      IMPLICIT NONE
+        USE DATAPOOL
+        USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
+        IMPLICIT NONE
 
-      IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
-        DT4A = MAIN%DELT
-        DT4S = DT4A
-        DT4D = DT4A
-        DT4F = DT4A 
-      ELSE IF (LQSTEA) THEN
-        DT4A = DT_ITER
-        DT4S = DT4A
-        DT4D = DT4A
-        DT4F = DT4A
-      END IF
-      AC1  = AC2
-      CALL COMPUTE_DIFFRACTION
-      !
-      ! Below is for debugging purpose only. 
-      ! Only used if the refraction/freq_shift/source implicit
-      ! are not selected
-      !
-      CALL SOURCE_INT_IMP()
-      IF (SOURCE_IMPL .eqv. .FALSE.) THEN
-        ! Do something clearly
-      END IF
-      IF (REFRACTION_IMPL .eqv. .FALSE.) THEN
-        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-      END IF
-      IF (FREQ_SHIFT_IMPL .eqv. .FALSE.) THEN
-        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY()
-      END IF
-      !
-      ! the Mother of all implicit computations.
-      !
-      CALL EIMPS_PETSC_BLOCK
-      !
-      IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-      IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+          DT4A = MAIN%DELT
+          DT4S = DT4A
+          DT4D = DT4A
+          DT4F = DT4A 
+        ELSE IF (LQSTEA) THEN
+          DT4A = DT_ITER
+          DT4S = DT4A
+          DT4D = DT4A
+          DT4F = DT4A
+        END IF
+
+        AC1  = AC2
+
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME1)
+#endif
+        CALL COMPUTE_DIFFRACTION
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME2)
+#endif
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME3)
+#endif
+        IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+          CALL SOURCE_INT_IMP_WAM_PRE
+        ELSE IF (SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+          CALL SOURCE_INT_IMP_WWM
+        ENDIF
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME4)
+#endif
+        CALL EIMPS_PETSC_BLOCK
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME5)
+#endif
+        IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME6)
+#endif
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+        IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
+#ifdef TIMINGS
+        CALL MY_WTIME(TIME7)
+#endif
       END SUBROUTINE
 #endif
 !**********************************************************************
