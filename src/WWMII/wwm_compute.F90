@@ -546,7 +546,6 @@
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_IMP'
         FLUSH(STAT%FHNDL)
-
       END SUBROUTINE COMPUTE_SOURCES_IMP
 !**********************************************************************
 !*                                                                    *

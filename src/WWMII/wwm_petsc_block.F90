@@ -895,6 +895,8 @@
           endif ! LINHOM
         end if
 
+
+!AR: This is not nice to many useless if ... endif must be cleaned and tested 
         if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then ! ! nur wenn wind und so, schleife auch ausfuehren...
           do IP = 1, MNP
             if(ALOold2ALO(IP) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter

@@ -135,7 +135,6 @@
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
- !                 CALL EIMPS( IS, ID)
                CALL EIMPS_V1( IS, ID)
              END DO
            END DO
@@ -543,7 +542,6 @@
 !        Calculate phase speeds for the certain spectral component ...
 !
          CALL CADVXY(IS,ID,C)
-
 !
 !        Calculate K-Values and contour based quantities ...
 !
@@ -737,7 +735,6 @@
 !
 ! local parameter
 !
-
          BL = ZERO
 !
 !        Calculate phase speeds for the certain spectral component ...
@@ -775,13 +772,11 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-
            KKSUM = ZERO
            DO IE = 1, MNE
              NI = INE(:,IE)
              KKSUM(NI) = KKSUM(NI) + MAX(ZERO,KELEM(:,IE))
            END DO
-
 #ifdef MPI_PARALL_GRID
            DTMAX_GLOBAL_EXP = VERYLARGE
            DTMAX_GLOBAL_EXP_LOC = VERYLARGE
@@ -808,14 +803,8 @@
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
 #endif
-!
-! ITER_EXP(IS,ID) is the number of sub time step in order to fullfill
-! the CFL number .LT. 1 for the certain wave component ...
-!
            CFLXY = DT4A/DTMAX_GLOBAL_EXP
-
            REST  = ABS(MOD(CFLXY,1._rkind))
-
            IF (REST .LT. THR) THEN
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
            ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
@@ -823,7 +812,6 @@
            ELSE
              ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
            END IF
-
          END IF ! LCALC
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
@@ -875,8 +863,6 @@
               PP(NI) =  PP(NI) + MAX(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
               PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
             END DO
-!
-!            UL = MAX(ZERO,U-DTSI*ST)*IOBPD(ID,:)
             DO IP = 1, MNP
               UL(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
             ENDDO
@@ -911,12 +897,8 @@
             DO IP = 1, MNP
               WII(1,IP) = MIN(ONE,(UIPIP(IP)-UL(IP))/MAX( THR,PP(IP)))
               WII(2,IP) = MIN(ONE,(UIMIP(IP)-UL(IP))/MIN(-THR,PM(IP)))
-              IF (ABS(PP(IP)) .LT. THR) THEN
-                WII(1,IP) = ZERO
-              ENDIF
-              IF (ABS(PM(IP)) .LT. THR) THEN
-                WII(2,IP) = ZERO
-              ENDIF
+              IF (ABS(PP(IP)) .LT. THR) WII(1,IP) = ZERO
+              IF (ABS(PM(IP)) .LT. THR) WII(2,IP) = ZERO
             END DO
 
             ST = ZERO
@@ -1073,33 +1055,22 @@
 ! ... assembling the linear equation system ....
 !
          DO IP = 1, MNP
-!           IF (IOBPD(ID,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    =  IE_CELL(J)
-               POS   =  POS_CELL(J)
-               K1    =  KP(POS,IE) ! Flux Jacobian
-               TRIA03 = ONETHIRD * TRIA(IE)
-               DTK   =  K1 * DT4A !* IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
-               TMP3  =  DTK * NM(IE)
-               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-               I2    =  POSI(2,J)
-               I3    =  POSI(3,J)
-               ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
-               ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
-               ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
-               B(IP)     =  B(IP) + TRIA03 * U(IP)
-             END DO !I: loop over connected elements ...
-!           ELSE
-!             DO I = 1, CCON(IP)
-!               J = J + 1
-!               IE    =  IE_CELL(J)
-!               TRIA03 = ONETHIRD * TRIA(IE)
-!               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-!               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
-!               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
-!             END DO !I: loop over connected elements ...
-!           END IF
+           DO I = 1, CCON(IP)
+             J = J + 1
+             IE    =  IE_CELL(J)
+             POS   =  POS_CELL(J)
+             K1    =  KP(POS,IE) ! Flux Jacobian
+             TRIA03 = ONETHIRD * TRIA(IE)
+             DTK   =  K1 * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) 
+             TMP3  =  DTK * NM(IE)
+             I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+             I2    =  POSI(2,J)
+             I3    =  POSI(3,J)
+             ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
+             ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
+             ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
+             B(IP)     =  B(IP) + TRIA03 * U(IP)
+           END DO !I: loop over connected elements ...
          END DO !IP
 
          IF (LBCWA .OR. LBCSP) THEN
@@ -1125,6 +1096,9 @@
                GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
                B(IP)  = B(IP) + 0.5 * GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
                ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - 1.5 * GTEMP2 * DT4A * SI(IP)
+!This is then for the shallow water physics take care about ISELECT 
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
