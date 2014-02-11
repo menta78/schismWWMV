@@ -713,6 +713,7 @@
          INTEGER                :: MESCU = 0
          INTEGER                :: ICRIT = 1
          INTEGER                :: IFRIC = 1
+         INTEGER                :: ISELECT = 10
 
          REAL(rkind)             :: FRICC = -0.067
          REAL(rkind)             :: TRICO = 0.05
@@ -1003,7 +1004,7 @@
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
-         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL, PARAMETER    :: LBIWBK = .TRUE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
          INTEGER, PARAMETER    :: TESTNODE = 120 

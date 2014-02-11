@@ -325,8 +325,6 @@
         CALL MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-
-        !STOP 'COMPUTE'
 #ifdef TIMINGS
         CALL MY_WTIME(TIME6)
 #endif
@@ -609,20 +607,21 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef PETSC
-      SUBROUTINE COMPUTE_FULL_IMPLICIT_PATANKAR
+      SUBROUTINE COMPUTE_FULLY_IMPLICIT
       USE DATAPOOL
       USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
       IMPLICIT NONE
+
       IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
         DT4A = MAIN%DELT
         DT4S = DT4A
-        DT4D = 0.5_rkind*DT4A
-        DT4F = 0.5_rkind*DT4A 
+        DT4D = DT4A
+        DT4F = DT4A 
       ELSE IF (LQSTEA) THEN
         DT4A = DT_ITER
         DT4S = DT4A
-        DT4D = 0.5_rkind*DT4A
-        DT4F = 0.5_rkind*DT4A
+        DT4D = DT4A
+        DT4F = DT4A
       END IF
       AC1  = AC2
       CALL COMPUTE_DIFFRACTION
@@ -645,8 +644,11 @@
       ! the Mother of all implicit computations.
       !
       CALL EIMPS_PETSC_BLOCK
-
+      !
       IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
       IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
       END SUBROUTINE
 #endif
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************

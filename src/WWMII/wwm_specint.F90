@@ -128,7 +128,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER :: IP, ISELECT
+         INTEGER :: IP
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
@@ -145,7 +145,7 @@
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC = AC2(IP,:,:)
-               CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.) 
+               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) 
                IMATDAA(IP,:,:) = IMATDA
                IMATRAA(IP,:,:) = IMATRA
              END IF !
@@ -153,7 +153,7 @@
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                  ACLOC = AC2(IP,:,:)
-                 CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.)
+                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)
                  IMATDAA(IP,:,:) = IMATDA
                  IMATRAA(IP,:,:) = IMATRA
                ENDIF
@@ -172,7 +172,7 @@
       SUBROUTINE SOURCE_INT_IMP_WAM_PRE()
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER        :: IP, IS, ID, ISELECT
+         INTEGER        :: IP, IS, ID
          REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
@@ -321,7 +321,7 @@
       SUBROUTINE SOURCE_INT_IMP_WAM_POST
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER        :: IP, IS, ID, ISELECT
+         INTEGER        :: IP, IS, ID
          REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
@@ -400,12 +400,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_STAT(IP,DT,ISELECT,LIMITER,ACLOC)
+      SUBROUTINE INT_IP_STAT(IP,DT,LIMITER,ACLOC)
 
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: IP, ISELECT
+         INTEGER, INTENT(IN) :: IP
          LOGICAL, INTENT(IN) :: LIMITER
          REAL(rkind), INTENT(IN) :: DT
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
@@ -418,7 +418,7 @@
          REAL(rkind)    :: NEWDAC
          REAL(rkind)    :: MAXDAC, CONST, SND, USTAR
 
-         CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
+         CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
 
          CONST = PI2**2*3.0*1.0E-7*DT*SPSIG(MSC_HF(IP))
          SND   = PI2*5.6*1.0E-3
@@ -453,68 +453,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_ECMWF(IP,ISELECT,LIMITER,ACLOC)
+      SUBROUTINE RKS_SP3(IP,DTSII,LIMITER,ACLOC)
 
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: IP, ISELECT
-         LOGICAL, INTENT(IN) :: LIMITER
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-!         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-
-
-!         DELT = DT4S
-!         XIMP = 1.0
-!         DELT5 = XIMP*DELT
-
-!         DO IS=1,MSC
-!           DELFL(IS) = COFRM4(IS)*DELT
-!         ENDDO
-
-!         USFM = USNEW*MAX(FMEANWS,FMEAN)
-
-!         DO IS=1,MSC
-!           TEMP(IS) = USFM*DELFL(IS)
-!         ENDDO
-
-!         IF(ISHALLO.EQ.1) THEN
-!           DO IS=1,MSC
-!             TEMP2(IS) = FRM5(IS)
-!           ENDDO
-!         ELSE
-!           DO IS=1,MSC
-!             AKM1      = ONE/WK(IP,IS)
-!             AK2VGM1   = AKM1**2/CG(IP,IS)
-!             TEMP2(IS) = AKM1*AK2VGM1
-!           ENDDO
-!         ENDIF
-
-!         DO ID=1,MDC
-!           DO IS=1,MSC 
-!             IMATRA_WAM(IS,ID) = IMATRA(IS,ID) * PI2 * SPSIG(IS)
-!             IMATDA_WAM(IS,ID) = IMATDA(IS,ID) * PI2 * SPSIG(IS)
-!             GTEMP1 = MAX((1.-DELT5*IMATDA_WAM(IS,ID)),1.)
-!             GTEMP2 = DELT*IMATRA_WAM(IS,ID)/GTEMP1
-!             FLHAB = ABS(GTEMP2)
-!             FLHAB = MIN(FLHAB,TEMP(IS))
-!             ACLOC(IP,IS,ID) = ACLOC(IS,ID) + SIGN(FLHAB,GTEMP2)
-!             FLLOWEST = VERYSMALL 
-!             ACLOC(IS,ID) = MAX(ACLOC(IS,ID),FLLOWEST)
-!           ENDDO
-!         ENDDO
-
-         RETURN
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE RKS_SP3(IP,ISELECT,DTSII,LIMITER,ACLOC)
-
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN) :: IP, ISELECT
+         INTEGER, INTENT(IN) :: IP
          LOGICAL, INTENT(IN) :: LIMITER
          REAL(rkind), INTENT(IN)    :: DTSII
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
@@ -539,7 +483,7 @@
            END IF
          END IF
 
-         CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
+         CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
 
          ACOLD = ACLOC
 
@@ -554,7 +498,7 @@
 
          !WRITE(*,*) '1 RK-TVD', SUM(ACOLD), SUM(ACLOC)
 
-         CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.) ! 2. CALL
+         CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) ! 2. CALL
 
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
@@ -567,7 +511,7 @@
 
          !WRITE(*,*) '2 RK-TVD', SUM(ACOLD), SUM(ACLOC)
 
-         CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.) ! 3. CALL
+         CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) ! 3. CALL
 
          DO IS = 1, MSC
            MAXDAC = NPF(IS)
@@ -584,7 +528,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_DYN(IP, ISELECT, DT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
+      SUBROUTINE INT_IP_DYN(IP, DT, LIMIT, DTMIN, ITRMX, ACLOC, ITER)
 
          USE DATAPOOL
 #ifdef ST41
@@ -594,7 +538,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)        :: IP, ISELECT, ITRMX
+         INTEGER, INTENT(IN)        :: IP, ITRMX
          INTEGER, INTENT(OUT)       :: ITER
          LOGICAL,INTENT(IN)         :: LIMIT
          REAL(rkind), INTENT(IN)    :: DTMIN, DT
@@ -653,7 +597,7 @@
            ITER  = ITER + 1
            DTMAX =  DT
 
-           CALL SOURCETERMS(IP, ISELECT,ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
+           CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
         
            DO ID = 1, MDC
              DO IS = 1, MSC_HF(IP)
@@ -691,14 +635,14 @@
                  ACLOC(IS,ID) = MAX( ZERO, ACLOC(IS,ID) + NEWDAC )
                END DO
              END DO
-             CALL SOURCETERMS(IP,ISELECT,ACLOC,IMATRA,IMATDA,.FALSE.) ! 2. CALL
+             CALL SOURCETERMS(IP,ACLOC,IMATRA,IMATDA,.FALSE.) ! 2. CALL
              DO IS = 1, MSC_HF(IP)
                DO ID = 1, MDC
                  NEWDAC = IMATRA(IS,ID) * DT4SI / ( 1.0 - DT4SI * MIN(ZERO,IMATDA(IS,ID)) )
                  ACLOC(IS,ID) = MAX( ZERO, 3._rkind/4._rkind * ACOLD(IS,ID) + 1._rkind/4._rkind * ACLOC(IS,ID) + 1._rkind/4._rkind * NEWDAC)
                END DO
              END DO
-             CALL SOURCETERMS(IP,ISELECT,ACLOC,IMATRA,IMATDA, .FALSE.) ! 3. CALL
+             CALL SOURCETERMS(IP,ACLOC,IMATRA,IMATDA, .FALSE.) ! 3. CALL
              DO IS = 1, MSC_HF(IP)
                MAXDAC = NPF(IS)
                DO ID = 1, MDC
@@ -715,7 +659,7 @@
                  ACLOC(IS,ID) = MAX( ZERO, ACLOC(IS,ID) + NEWDAC )
                END DO
              END DO
-             CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.) ! 2. CALL
+             CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) ! 2. CALL
              DO IS = 1, MSC_HF(IP)
                MAXDAC = NPF(IS)
                DO ID = 1, MDC
@@ -724,7 +668,7 @@
                  ACLOC(IS,ID) = MAX( ZERO, 3./4. * ACOLD(IS,ID) +  1./4. * ACLOC(IS,ID) + 1./4. * NEWDAC)
                END DO
              END DO
-             CALL SOURCETERMS(IP, ISELECT, ACLOC, IMATRA, IMATDA, .FALSE.) ! 3. CALL
+             CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) ! 3. CALL
              DO IS = 1, MSC_HF(IP)
                MAXDAC = NPF(IS)
                DO ID = 1, MDC

@@ -542,13 +542,12 @@
            CALL INIT_WATLEV_INPUT
          END IF
 #endif
+
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
          FLUSH(STAT%FHNDL)
          CALL INITIATE_WAVE_PARAMETER
          CALL SETSHALLOW
          CALL SET_HMAX
-
-         !CALL NLWEIGT(MSC,MDC)
 
          IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
@@ -558,16 +557,7 @@
 #elif ST42
            CALL PREPARE_ARDHUIN
 #endif
-         ELSE IF (MESIN .EQ. 2 .AND. .NOT. LPRECOMP_EXIST) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
-           FLUSH(STAT%FHNDL)
-           CALL PREPARE_SOURCE
-           FLUSH(STAT%FHNDL)
-         ELSE IF (MESIN .EQ. 6 .AND. .NOT. LPRECOMP_EXIST) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT CYCLE4 WIND INPUT'
-           CALL PREPARE_SOURCE_ECMWF 
-           FLUSH(STAT%FHNDL)
-         END IF
+         ENDIF
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
          FLUSH(STAT%FHNDL)
@@ -578,11 +568,9 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
          FLUSH(STAT%FHNDL)
          CALL SET_WAVE_BOUNDARY
-
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
          FLUSH(STAT%FHNDL)
          CALL INIT_STATION_OUTPUT
-
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
          FLUSH(STAT%FHNDL)
 #ifdef NCDF
@@ -591,13 +579,11 @@
          END IF
 #endif
          CALL WWM_OUTPUT(ZERO,.TRUE.)
-
          IF (LWXFN) THEN
            CALL WRINPGRD_XFN
          ELSE IF(LWSHP) THEN
            CALL WRINPGRD_SHP
          END IF
-
 #if !defined SELFE && !defined PGMCL_COUPLING
          IF (LCPL) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
@@ -616,14 +602,7 @@
 #ifdef PGMCL_COUPLING
          CALL ROMS_COUPL_INITIALIZE
 #endif
-!#ifdef MPI_PARALL_GRID 
-!         IF (size(OUTT_INTPAR(1,:)) .NE. OUTVARS) THEN
-!           call parallel_abort('OUTPUTSIZE IS NOT RIGHT CHECK OUTVARS')
-!         END IF
-!         IF (size(WIND_INTPAR(1,:)) .NE. WINDVARS) THEN
-!           call parallel_abort('OUTPUTSIZE IS NOT RIGHT CHECK VARS')
-!         END IF
-!#endif
+
 #ifdef TIMINGS
          CALL MY_WTIME(TIME2)
 #endif
@@ -668,6 +647,7 @@
 
          CALL CLOSE_FILE_HANDLES
          CALL DEALLOC_ARRAYS
+
 #ifdef MPI_PARALL_GRID
          CALL DEALLOC_WILD_ARRAY
 #endif
@@ -688,21 +668,8 @@
 #endif
          CALL DEALLOC_SPECTRAL_GRID
          CALL CLOSE_IOBP
-
-         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0) THEN
-#ifdef ST41
-!           CALL PREPARE_ARDHUIN_OLD
-#elif ST42
-!           CALL PREPARE_ARDHUIN_NEW
-#endif
-         ELSE IF (MESIN .EQ. 2) THEN
-!           CALL PREPARE_SOURCE
-         ELSE IF (MESIN .EQ. 6) THEN
-!           CALL PREPARE_SOURCE_ECMWF 
-         END IF
-!         CALL SET_WAVE_BOUNDARY
-
          CALL TERMINATE_STATION_OUTPUT
+
 #if !defined SELFE && !defined PGMCL_COUPLING
          IF (LCPL) THEN
            IF (LTIMOR) THEN
@@ -719,7 +686,6 @@
 #ifdef PGMCL_COUPLING
          CALL ROMS_COUPL_DEALLOCATE
 #endif
-
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

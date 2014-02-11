@@ -3,11 +3,11 @@
 !*                                                                    *
 !**********************************************************************
 !2do add mean quantities for 
-      SUBROUTINE SOURCETERMS (IP, ISELECT, ACLOC, IMATRA, IMATDA, LRECALC)
+      SUBROUTINE SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC)
          USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC, CD, TAUTOT, TAUWX, TAUWY, AC1, AC2, DEP, PI2, CG, G9, &
      &                        ZERO, ALPHA_CH, QBLOCAL, USTDIR, Z0, SMALL, VERYSMALL, MSC_HF, DDIR, SPSIG, SPDIR, FRINTF, & 
      &                        ONE, RHOA, RHOAW, TAUHF, TAUW, FR, MESNL, MESIN, MESDS, MESBF, MESBR, MESTR, ISHALLOW, DS_INCR, &
-     &                        IOBP, IOBPD, LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION, AIRMOMENTUM, ONEHALF, NSPEC, RKIND
+     &                        IOBP, IOBPD, LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION, AIRMOMENTUM, ONEHALF, NSPEC, RKIND, ISELECT
          USE SdsBabanin
 #ifdef SNL4_TSA
          USE W3SNLXMD
@@ -29,7 +29,7 @@
 
          LOGICAL, INTENT(IN) :: LRECALC
 
-         INTEGER        :: IS, ID, ISELECT, IS0, IK, ITH, IDISP, JU, NZZ
+         INTEGER        :: IS, ID, IS0, IK, ITH, IDISP, JU, NZZ
          REAL(rkind)    :: WIND10, WINDTH
          REAL(rkind)    :: FPM
          REAL(rkind)    :: SME01, SME10, KME01, KMWAM, KMWAM2
@@ -97,6 +97,7 @@
          IMATDAWW3   = zero 
          QBLOCAL(IP) = zero 
 
+#ifdef ST_DEF
          IF (MESDS == 1 .OR. MESIN .EQ. 1) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
@@ -104,8 +105,6 @@
              END DO
            END DO
          END IF
-
-#ifdef ST_DEF
          XPP     = 0.15
          XRR     = 0.10
          XFILT  = 0.05

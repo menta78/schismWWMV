@@ -67,7 +67,6 @@
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
- !                 CALL EIMPS( IS, ID)
                CALL EIMPS_V1( IS, ID)
              END DO
            END DO
@@ -1215,7 +1214,8 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-               B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+               B(IP)  = B(IP) + 0.5 * GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - 1.5 * GTEMP2 * DT4A * SI(IP)
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
