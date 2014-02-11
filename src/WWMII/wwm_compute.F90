@@ -446,19 +446,13 @@
         IF (DIMMODE == 1) THEN
           CALL COMPUTE_ADVECTION1D_QUICKEST_A
         ELSE IF (DIMMODE == 2) THEN
-          IF (LVECTOR) THEN
-            CALL FLUCT_3
-          ELSE
-            CALL FLUCT_1
-! don't forget to uncomment FLUCT* in wwm_fluctsplit
-!             IF(ICOMP == 0) THEN
-!               CALL FLUCT_EXPLICIT()
-!             ELSE IF(ICOMP == 1) THEN
-!               CALL FLUCT_SEMIIMPLICIT()
-!             ELSE IF(ICOMP == 2) THEN
-!               CALL FLUCT_IMPLICIT()
-!             ENDIF
-          END IF
+          IF(ICOMP == 0) THEN
+            CALL FLUCT_EXPLICIT
+          ELSE IF(ICOMP == 1) THEN
+            CALL FLUCT_SEMIIMPLICIT
+          ELSE IF(ICOMP == 2) THEN
+            CALL FLUCT_IMPLICIT
+          ENDIF
           IF ( ICOMP .GE. 1 .AND. (AMETHOD .EQ. 2 .OR. AMETHOD .EQ. 3 )) CALL RESCALE_SPECTRUM
         END IF
 
@@ -499,7 +493,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_FREQUENCY()
+      SUBROUTINE COMPUTE_FREQUENCY
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -517,7 +511,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SOURCES_EXP()
+      SUBROUTINE COMPUTE_SOURCES_EXP
         USE DATAPOOL
         IMPLICIT NONE
 
