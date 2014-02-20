@@ -132,26 +132,26 @@
  IWATLVFORMAT    =           1
  /
  &ENGS
- MESNL   =           3,
- MESIN   =           2, 
+ MESNL   =           1,
+ MESIN   =           1, 
  IFRIC   =           1,
- MESBF   =           0,
+ MESBF   =           1,
  FRICC   =        0.019,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
  MESDS   =           2, 
- MESTR   =           0,
+ MESTR   =           1,
  TRICO   =          1.,
  TRIRA   =         2.5,
  TRIURS  =         0.1,
 /
  &NUMS
  ICOMP   =           0,
- AMETHOD =           0,
- SMETHOD =           2, 
+ AMETHOD =           1,
+ SMETHOD =           1, 
  DMETHOD =           0,
  LSOURCESWWIII   = F,
  LSOURCESWAM     = T, 

@@ -232,7 +232,7 @@
          IF (LQSTEA) THEN
             CALL QUASI_STEADY(KKK)
          ELSE
-            CALL UN_STEADY(KKK,CALLFROM)
+            CALL NON_STEADY(KKK,CALLFROM)
          END IF
 
          IF (LNANINFCHK) THEN
@@ -378,7 +378,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE UN_STEADY(K,CALLFROM)
+      SUBROUTINE NON_STEADY(K,CALLFROM)
       USE DATAPOOL
 #ifdef WWM_SETUP
       USE WAVE_SETUP
@@ -400,24 +400,20 @@
       CALL MY_WTIME(TIME2)
 #endif
       IF (ICOMP .EQ. 0) THEN
-        IF (LITERSPLIT) THEN
-          CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-        ELSE
-          CALL COMPUTE_SIMPLE_EXPLICIT
-        END IF
+        CALL COMPUTE_SIMPLE_EXPLICIT
       ELSE IF (ICOMP .EQ. 1) THEN 
-        IF (LITERSPLIT) THEN
-          CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-        ELSE
-          CALL COMPUTE_SIMPLE_EXPLICIT
-        END IF
+        CALL COMPUTE_SEMI_IMPLICIT
       ELSE IF (ICOMP .EQ. 2) THEN 
-        CALL COMPUTE_IMPLICIT
+        CALL COMPUTE_SEMI_IMPLICIT
 #ifdef PETSC
       ELSE IF (ICOMP .EQ. 3) THEN 
         CALL COMPUTE_FULLY_IMPLICIT
 #endif
       END IF
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME3)
+#endif
 
 #ifdef WWM_SETUP
       IF (LZETA_SETUP) THEN
@@ -505,22 +501,14 @@
         DT_ITER = MAIN%DELT/MyREAL(NQSITER)
 
         IF (ICOMP .EQ. 0) THEN
-          IF (LITERSPLIT) THEN
-            CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-          ELSE
-            CALL COMPUTE_SIMPLE_EXPLICIT
-          END IF
+          CALL COMPUTE_SIMPLE_EXPLICIT
         ELSE IF (ICOMP .EQ. 1) THEN
-          IF (LITERSPLIT) THEN
-            CALL COMPUTE_DOUBLE_STRANG_EXPLICIT
-          ELSE
-            CALL COMPUTE_SIMPLE_EXPLICIT
-          END IF
+          CALL COMPUTE_SEMI_IMPLICIT
         ELSE IF (ICOMP .EQ. 2) THEN
-          CALL COMPUTE_IMPLICIT
+          CALL COMPUTE_SEMI_IMPLICIT
         ELSE IF (ICOMP .EQ. 3) THEN
 #ifdef PETSC
-          CALL COMPUTE_FULLY_IMPLICIT
+          CALL COMPUTE_IMPLICIT
 #else
           CALL WWM_ABORT('U MUST USE PETSC')
 #endif
@@ -854,15 +842,13 @@
       call msgp_init
       call parallel_barrier
 #endif
-      
       CALL INITIALIZE_WWM
       CALLFROM='WWM_MPI'
-
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
-          CALL UN_STEADY(K,CALLFROM)
+          CALL NON_STEADY(K,CALLFROM)
         END IF
       END DO
 # else ! MPI_PARALL_GRID
@@ -872,7 +858,7 @@
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
-          CALL UN_STEADY(K,CALLFROM)
+          CALL NON_STEADY(K,CALLFROM)
         END IF
       END DO
 # endif

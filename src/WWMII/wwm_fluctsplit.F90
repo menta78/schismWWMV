@@ -970,9 +970,9 @@
 
          REAL(rkind) :: DTK, TMP3
 
-         REAL(rkind) :: LAMBDA(2), GTEMP1, GTEMP2
+         REAL(rkind) :: LAMBDA(2), GTEMP1, GTEMP2, FLHAB
          REAL(rkind) :: FL11, FL12, FL21, FL22, FL31, FL32
-         REAL(rkind):: CRFS(3), K1, KM(3), K(3), TRIA03
+         REAL(rkind):: CRFS(3), K1, KM(3), K(3), TRIA03, DELFL, USFM
 
          REAL(rkind) :: DELTAL(3,MNE)
          REAL(rkind) :: KP(3,MNE), NM(MNE)
@@ -994,6 +994,7 @@
          REAL(rkind) ::  ASPAR(NNZ)
 
          REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
+         REAL(rkind)  :: TEMP, DELT, XIMP, DELT5
 
          INTEGER :: POS_TRICK(3,2)
 
@@ -1094,11 +1095,21 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-               B(IP)  = B(IP) + 0.5 * GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - 1.5 * GTEMP2 * DT4A * SI(IP)
+               DELT = DT4S 
+               XIMP = 1.0
+               DELT5 = XIMP*DELT
+               DELFL = COFRM4(IS)*DELT
+               USFM  = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               TEMP  = USFM*DELFL/PI2/SPSIG(IS)
+               FLHAB  = ABS(GTEMP2*DT4S)
+               FLHAB  = MIN(FLHAB,TEMP)/DT4S
+               B(IP)  = B(IP) + SIGN(FLHAB,GTEMP2) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - SIGN(FLHAB,GTEMP2) * SI(IP)
+!               B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+!               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - GTEMP2 * SI(IP)
 !This is then for the shallow water physics take care about ISELECT 
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               !B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN

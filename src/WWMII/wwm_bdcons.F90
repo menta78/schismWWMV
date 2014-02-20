@@ -1781,8 +1781,8 @@
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
       WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
-      FLUSH(DBG%FHNDL)
-      FLUSH(STAT%FHNDL)
+      !FLUSH(DBG%FHNDL)
+      !FLUSH(STAT%FHNDL)
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
@@ -1841,8 +1841,6 @@
          REAL(rkind)      :: DTMP
          integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
          CHARACTER(len=29) :: CHR
-
-!BUG: LBINTER = .FALSE. has some bug
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)

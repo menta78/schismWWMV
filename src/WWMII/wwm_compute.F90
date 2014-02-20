@@ -118,7 +118,6 @@
                WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
                WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
              ENDIF
-
              IF (.FALSE.) THEN
                CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                       THWOLD(IP,1), USOLD(IP,1), &
@@ -174,6 +173,8 @@
                END DO
              END DO
            END DO
+           ISELECT = 30 ! ONLY SHALLOW WATER STUFF
+           CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF
@@ -210,68 +211,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DOUBLE_STRANG_EXPLICIT()
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind) :: TIME6, TIME7, TIME8, TIME9, TIME10
-        REAL(rkind) :: TIME11, TIME12, TIME13, TIME14, TIME15, TIME16, TIME17
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE'
-
-        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
-          DT4A = 0.5*MAIN%DELT
-          DT4S = 0.5*DT4A
-          DT4D = ONETHIRD*MAIN%DELT
-          DT4F = DT4D 
-        ELSE IF (LQSTEA) THEN
-          DT4A = 0.5*DT_ITER
-          DT4S = DT4A * 0.25
-          DT4D = ONETHIRD*DT_ITER
-          DT4F = DT4D 
-        END IF
-
-#ifdef TIMINGS
-        CALL MY_WTIME(TIME1)
-#endif
-
-        CALL COMPUTE_DIFFRACTION
-
-        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-! ---- 1st spectra 
-        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP
-        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-! ---- 2nd spectra 
-        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-        IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-        IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
-! ---- 3rd spectra 
-        IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL()
-        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES_EXP()
-
-#ifdef TIMINGS
-        CALL MY_WTIME(TIME17)
-#endif
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------DOUBLE STRANG SPLITTING----'
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1 + TIME5-TIME4 + TIME8-TIME7 + TIME14+TIME13
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME7-TIME6 + TIME13-TIME12
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5 + TIME12-TIME11
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS THETA SPACE          ', TIME4-TIME3 + TIME9-TIME8 + TIME16-TIME15
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2 + TIME10-TIME9 + TIME15-TIME14 
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME17-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-
-        IF (.NOT. LDIFR) LCALC = .FALSE.
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_IMPLICIT
+      SUBROUTINE COMPUTE_SEMI_IMPLICIT
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -328,7 +268,7 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME6)
 #endif
-        IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        IF (LLIMT .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) CALL ACTION_LIMITER
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
         CALL MY_WTIME(TIME7)
@@ -352,7 +292,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_ITERATIVE_SPLITTING()
+      SUBROUTINE COMPUTE_ITERATIVE_SPLITTING
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -371,8 +311,6 @@
          DT4D = DT4A
          DT4F = DT4A
 
-! Set DAC's to Zero ... 
-
 #ifdef TIMINGS
          CALL MY_WTIME(TIME1)
 #endif
@@ -382,8 +320,6 @@
          DAC_ADV = 0.
 
          AC1 = AC2
-
-! 1st step ...
 
          IITERSPLIT = 0
 
@@ -398,8 +334,6 @@
 
          IITERSPLIT = 1
 
-! iteration ...
-
          CALL COMPUTE_SPATIAL()
          CALL COMPUTE_FREQUENCY
          CALL COMPUTE_DIRECTION()
@@ -409,12 +343,10 @@
 
          AC2 = AC1
 
-! final step ... 
-
-         CALL COMPUTE_SPATIAL()
+         CALL COMPUTE_SPATIAL
          CALL COMPUTE_FREQUENCY
-         CALL COMPUTE_DIRECTION()
-         CALL COMPUTE_SOURCES_EXP()
+         CALL COMPUTE_DIRECTION
+         CALL COMPUTE_SOURCES_EXP
 
 #ifdef TIMINGS
          CALL MY_WTIME(TIME2)
@@ -436,7 +368,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SPATIAL()
+      SUBROUTINE COMPUTE_SPATIAL
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -463,7 +395,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION()
+      SUBROUTINE COMPUTE_DIRECTION
         USE DATAPOOL
         IMPLICIT NONE
 
@@ -529,27 +461,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_SOURCES_IMP
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_IMP'
-        FLUSH(STAT%FHNDL)
-
-        IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
-          CALL SOURCE_INT_IMP_WWM
-        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
-          CALL SOURCE_INT_IMP_WAM_PRE
-        ELSE IF (ICOMP >= 2  .AND. SMETHOD > 0 .AND. .NOT. LSOURCESWAM .AND. LSOURCESWWIII) THEN
-          !CALL SOURCE_INT_IMP_WW3
-        END IF
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_IMP'
-        FLUSH(STAT%FHNDL)
-      END SUBROUTINE COMPUTE_SOURCES_IMP
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE CFLSPEC()
          USE DATAPOOL
          IMPLICIT NONE
@@ -600,7 +511,7 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef PETSC
-      SUBROUTINE COMPUTE_FULLY_IMPLICIT
+      SUBROUTINE COMPUTE_IMPLICIT
         USE DATAPOOL
         USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
         IMPLICIT NONE
