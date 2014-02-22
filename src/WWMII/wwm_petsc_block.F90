@@ -1000,7 +1000,6 @@
         integer :: petscAsparPosi4, idx
         ! number of connected nodes for IPpetsc
         integer :: nConnNode
-        
 
         POS_TRICK(1,1) = 2
         POS_TRICK(1,2) = 3
@@ -1008,8 +1007,6 @@
         POS_TRICK(2,2) = 1
         POS_TRICK(3,1) = 1
         POS_TRICK(3,2) = 2
-
-
 
         I      = 0
         IPGL1   = 0
@@ -1735,7 +1732,7 @@
 #  ifdef TIMINGS
         call MY_WTIME(startTime)
 #  endif
-        call calcASPAR()
+        call calcASPAR
 #  ifdef TIMINGS
         call MY_WTIME(endTime)
 #endif
@@ -2105,7 +2102,6 @@
             if(IP_old /= IP) then
               IP_old = IP
               zeroElementsCounter = zeroElementsCounter + 1
-
               ! detail for the first maxCount entries
               if(counter < maxCount) then
                 counter = counter + 1
@@ -2153,6 +2149,227 @@
           write(DBG%FHNDL,*) "check matrix diagonal Accuracy Ende. Time: ", endTime - startTime," sec"
 #  endif
         endif
+      end SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      !> calc only rhs and fill direct into petsc myB
+      !> use newer code from fluct
+      SUBROUTINE calcALL()
+        use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD
+        use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL
+        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP
+        use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
+        use datapool, only : IMATRAA, IMATDAA, DT4A, MAXMNECON, AC2, RKIND
+        use datapool, only : TWO, RKIND, iplg, exchange_p2d
+        use petscpool
+        use petscsys
+        use petscvec
+        use petscmat
+
+        implicit none
+        integer :: IP, IDD, ISS, IPpetsc
+        INTEGER :: I
+        INTEGER :: IPGL1, IE
+        integer idx
+        ! to temp store the element areas
+        real(rkind) :: TRIA03arr(MAXMNECON)
+        real(rkind) :: AC22(MDC, MSC, MNP)
+
+        PetscScalar :: value, value1
+
+
+        ASPAR_petsc  = 0
+        oASPAR_petsc = 0
+! !$OMP DO PRIVATE(IP)
+        DO IP = 1, MNP
+          call calcASPARomp(IP)
+        end do !IP 
+
+        if (LBCWA .OR. LBCSP) then
+          if (LINHOM) then
+            do IP = 1, IWBMNP
+              IPGL1 = IWBNDLC(IP)
+              ! ghost or interface node, ignore it
+              if(ALO2PLO(IPGL1-1) .lt. 0) then
+                cycle
+              endif
+              IPpetsc = ALO2PLO(IPGL1-1)+1
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+#  ifndef DIRECT_METHOD
+                  idx=aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))
+#  else
+                  idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+#  endif
+                  ASPAR_petsc(idx) = SI(IPGL1)
+                end do ! IDD
+              end do ! ISS
+            end do ! IP
+          else
+            do IP = 1, IWBMNP
+              IPGL1 = IWBNDLC(IP)
+              ! ghost or interface node, ignore it
+              if(ALO2PLO(IPGL1-1) .lt. 0) then
+                cycle
+              endif
+              IPpetsc = ALO2PLO(IPGL1-1)+1
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+#  ifndef DIRECT_METHOD
+                  idx=aspar2petscAspar(IPGL1, ISS, IDD, I_DIAG(IPGL1))
+#  else
+                  idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+#  endif
+                  ASPAR_petsc(idx) = SI(IPGL1)
+                end do ! IDD
+              end do ! ISS
+            end do ! IP
+          endif
+        end if
+
+        ! source terms
+        if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then
+          DO IP = 1, MNP
+            ! ghost or interface node, ignore it
+            if(ALO2PLO(IP-1) .lt. 0) then
+              cycle
+            endif
+            IPpetsc = ALO2PLO(IP-1)+1
+            if (IOBWB(IP) .EQ. 1) then
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+                  if (IOBPD(IDD,IP) .EQ. 1) then
+                    IF (SOURCE_IMPL) THEN
+                      value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
+#  ifndef DIRECT_METHOD
+                      idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
+#  else
+                      idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+#  endif
+                      ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+                    END IF
+                  endif
+                end do ! IDD
+              end do ! ISS
+            end if
+          end do ! IP
+        endif
+
+        call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, petscErr)
+        CHKERRQ(petscErr)
+        call MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY, petscErr)
+        CHKERRQ(petscErr)
+
+        value = 0;
+        call VecSet(myB, value, petscErr);CHKERRQ(petscErr)
+
+        call VecGetArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
+
+        ! copy old soluton for all nodes into a new array, so that the fast
+        ! running index is the first index. To avoid CPU cache flushing
+        do ISS = 1, MSC
+          do IDD = 1, MDC
+            AC22(IDD, ISS, :) = AC2(:, ISS, IDD)
+          end do
+        end do
+
+        do IP = 1, MNP
+          ! this is a interface node (row). ignore it.
+          if(ALOold2ALO(IP) .eq. -999) then
+            cycle
+          end if
+
+          IPpetsc = ALO2PLO(IP-1) +1
+
+          ! temp store all element areas connected to IP
+          do I = 1, CCON(IP)
+            IE = IE_CELL(Jcum(IP) + I)
+            TRIA03arr(I) = ONETHIRD * TRIA(IE)
+          end do
+
+          ! wenn der knoten tief genug liegt und was mitm rand ist, dann alle richtungen/frequenezn auf ihn loslassen
+          if(IOBWB(IP) .EQ. 1) then
+            do ISS = 1, MSC
+              do IDD = 1, MDC
+                ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
+                idx=toRowIndex(IPpetsc, ISS, IDD) + 1
+                if(IOBPD(IDD,IP) .EQ. 1) then
+!                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(IP, ISS, IDD))
+                  value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
+                  ! IP in Petsc local order
+                  myBtemp(idx) = value + myBtemp(idx)
+
+                ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
+                else
+                  myBtemp(idx) = 0
+                endif
+
+              end do ! IDD
+            end do ! ISS
+
+          ! set node to 0 for all frequency/directions
+          else
+            value = 0.
+            do ISS = 1, MSC
+              do IDD = 1, MDC
+                myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+              end do
+            end do
+          endif
+        end do ! IP
+
+        if (LBCWA .OR. LBCSP) then
+          if (LINHOM) then
+            do IP = 1, IWBMNP
+              IPGL1 = IWBNDLC(IP)
+              if(ALOold2ALO(IPGL1) .eq. -999) cycle  ! this is a interface node (row). ignore it
+              IPpetsc = ALO2PLO(IPGL1-1) + 1
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL1) * WBAC(ISS,IDD,IP)
+                end do ! MDC
+              end do ! MSC
+            end do ! IP
+          else ! LINHOM
+            do IP = 1, IWBMNP
+              IPGL1 = IWBNDLC(IP)
+              if(ALOold2ALO(IPGL1) .eq. -999) cycle  ! this is a interface node (row). ignore it. just increase counter
+              IPpetsc = ALO2PLO(IPGL1-1) + 1
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+                  myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = SI(IPGL1) * WBAC(ISS,IDD,1)
+                end do ! MDC
+              end do ! MSC
+            end do ! IP
+          endif ! LINHOM
+        end if
+
+
+!AR: This is not nice to many useless if ... endif must be cleaned and tested 
+        if(ICOMP .GE. 2 .AND. SMETHOD .GT. 0) then ! ! nur wenn wind und so, schleife auch ausfuehren...
+          do IP = 1, MNP
+            if(ALOold2ALO(IP) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter
+            if (IOBWB(IP) .EQ. 1) then
+              IPpetsc = ALO2PLO(IP-1) + 1
+              do ISS = 1, MSC ! over all frequency
+                do IDD = 1, MDC ! over all directions
+                  if(IOBPD(IDD,IP) .EQ. 1) then
+                    IF (SOURCE_IMPL) THEN
+                      value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                      idx=toRowIndex(IPpetsc, ISS, IDD) + 1
+                      myBtemp(idx) = value + myBtemp(idx)
+                    END IF
+                  endif 
+                end do
+              end do
+            end if
+          end do
+        endif
+        call VecRestoreArrayF90(myB, myBtemp, petscErr)
+        CHKERRQ(petscErr)
+        call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
+        call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr)
       end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
