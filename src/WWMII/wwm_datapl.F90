@@ -27,7 +27,6 @@
      &                         np,               &
      &                         npg,              & ! nuber of ghost nodes
      &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
-     &                         INETMP => elnode, &! Element connection table of the augmented domain?
      &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
      &                         YLAT=>ylat,       &
@@ -35,6 +34,7 @@
      &                         YPTMP => ynd,     &
      &                         NE_GLOBAL => ne_global, &! Global number of elements
      &                         NP_GLOBAL => np_global, &! Global number of nodes
+     &                         INETMP => elnode, &! Element connection table of the augmented domain?
      &                         iplg,             & ! node local to global mapping
      &                         ipgl,             & ! node global to local mapping
      &                         ielg,             & ! element local to global maping

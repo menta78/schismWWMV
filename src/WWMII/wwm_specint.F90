@@ -41,9 +41,7 @@
                  CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                END IF
                !CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
-               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
-                 CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
-               ENDIF
+               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                AC2(IP,:,:) = ACLOC
              ENDIF
            ELSE !Boundary node ... 
@@ -88,7 +86,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SOURCE_INT_IMP_WWM()
+      SUBROUTINE SOURCE_INT_IMP_WWM
 
          USE DATAPOOL
 #ifdef ST41
@@ -215,7 +213,7 @@
                    IMATDAA(IP,IS,ID) =  FL(IP,ID,IS)
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
-               ENDDO
+               ENDDO 
              END IF !
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...

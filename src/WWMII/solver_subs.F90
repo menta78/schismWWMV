@@ -16,7 +16,7 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,inp,errmsg
+  use elfe_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,indnd,errmsg
   use elfe_msgp
   implicit none
 !#ifndef USE_MPIMODULE
@@ -25,7 +25,7 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
   integer,intent(in) :: itime !for outputting only
   integer,intent(in) :: moitn,mxitn    !output interval and max iterations
   real(rkind),intent(in) :: rtol       !relative tolerance
-  real(rkind),intent(in) :: s(np,0:(mnei+1))  !sparse matrix
+  real(rkind),intent(in) :: s(0:(mnei+1),np)  !sparse matrix
   real(rkind),intent(inout) :: x(npa)  !eta2 -- with initial guess
   real(rkind),intent(in) :: b(np)      !qel
   real(rkind),intent(in) :: bc(npa)    !b.c. (elbc)
@@ -49,17 +49,17 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
       x(ip)=bc(ip)
       bb(ip)=bc(ip) !modified rrhs (qel)
     else !not essential b.c.
-      snz(0,ip)=s(ip,0)
+      snz(0,ip)=s(0,ip)
       bb(ip)=b(ip)
       do j=1,nnp(ip)
-        jp=inp(ip,j)
+        jp=indnd(j,ip)
         if(lbc(jp)) then
           if(bc(jp)<-9998) call parallel_abort('JCG: wrong b.c. (2)')
-          bb(ip)=bb(ip)-s(ip,j)*bc(jp)
+          bb(ip)=bb(ip)-s(j,ip)*bc(jp)
         else
           nnz(ip)=nnz(ip)+1
           inz(nnz(ip),ip)=jp !local node #; can be ghost
-          snz(nnz(ip),ip)=s(ip,j)
+          snz(nnz(ip),ip)=s(j,ip)
         endif
       enddo
     endif
@@ -224,7 +224,7 @@ subroutine solve_jcg_qnon(itime,moitn,mxitn,rtol,nvrt1,mnei1,np1,npa1,ihydro2,qm
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl !, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,inp,errmsg
+  use elfe_glbl !, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,indnd,errmsg
   use elfe_msgp
   implicit none
 !#ifndef USE_MPIMODULE
@@ -263,7 +263,7 @@ subroutine solve_jcg_qnon(itime,moitn,mxitn,rtol,nvrt1,mnei1,np1,npa1,ihydro2,qm
     !Compute horizontal-vertical ratio
     dx_min2=1.e25
     do j=1,nnp(ip)
-      nd=inp(ip,j)
+      nd=indnd(j,ip)
       dist2=(xnd(ip)-xnd(nd))**2+(ynd(ip)-ynd(nd))**2 
       dx_min2=min(dx_min2,dist2)
     enddo !j
@@ -294,7 +294,7 @@ subroutine solve_jcg_qnon(itime,moitn,mxitn,rtol,nvrt1,mnei1,np1,npa1,ihydro2,qm
 
     call tridag(nvrt,nvrt,ndim,ndim,alow,bdia,cupp,rrhs,soln,gam)
     !indice order of blockj: (row #, column #, node)
-    blockj(kbp_e(ip):(nvrt-1),kbp_e(ip):(nvrt-1),ip)=soln(1:ndim,1:ndim)
+    blockj(kbp_e(ip):(nvrt-1),kbp_e(ip):(nvrt-1),ip)=transpose(soln(1:ndim,1:ndim))
     
     do k=kbp_e(ip),nvrt-1
       !Check symmetry
@@ -432,7 +432,7 @@ subroutine solve_jcg_qnon(itime,moitn,mxitn,rtol,nvrt1,mnei1,np1,npa1,ihydro2,qm
             if(j==0) then
               nd=ip
             else
-              nd=inp(ip,j)
+              nd=indnd(j,ip)
             endif
             if(lhbc(nd).or.k+l==nvrt) cycle !essential b.c.
             sp(k,ip)=sp(k,ip)+qmatr(k,l,j,ip)*pp(k+l,nd)
@@ -493,10 +493,11 @@ subroutine tridag(nmax,nvec,n,nc,a,b,c,r,u,gam)
 ! a,b,c,r: input vectors and are not modified by this program.
 ! b is the main diagonal, a below and c above. a(1) and c(n) are not used.
 ! r is the r.h.s.
-! (nmax,nvec) is the dimension of r() _and_ u() in the driving routine.
+! (nvec,nmax) is the dimension of r() _and_ u() in the driving routine.
 ! n: actual rank of the system.
-! nc: input; actual # of columns of rhs (<= nvec).
-! u: output with nc columns (depending on input nc).
+! nc: input; actual # of columns of rhs (<= nvec). For efficiency, this is # of
+! rows in u() and r();
+! u: output with nc columns (transposed to rows)
 ! gam: a working array.
 !-------------------------------------------------------------------------------
   use elfe_glbl, only : rkind,errmsg
@@ -505,36 +506,33 @@ subroutine tridag(nmax,nvec,n,nc,a,b,c,r,u,gam)
 
   integer, intent(in) :: nmax,nvec,n,nc
   real(rkind), dimension(nmax), intent(in) :: a,b,c
-  real(rkind), dimension(nmax,nvec), intent(in) :: r
+  real(rkind), dimension(nvec,nmax), intent(in) :: r
   real(rkind), dimension(nmax), intent(out) :: gam
-  real(rkind), dimension(nmax,nvec), intent(out) :: u
+  real(rkind), dimension(nvec,nmax), intent(out) :: u
 
-  integer :: i,j
+  integer :: i,j,ifl
   real(rkind) :: bet
 
   if(n<1) call parallel_abort('TRIDAG: n must be >= 1')
   if(nc>nvec) call parallel_abort('TRIDAG: Increase # of columns')
-  if(b(1)==0d0) call parallel_abort('TRIDAG:  b(1)=0')
+  if(b(1)==0.d0) call parallel_abort('TRIDAG:  b(1)=0')
 
   bet=b(1)
-  do i=1,nc
-    u(1,i)=r(1,i)/bet
-  enddo
+  u(1:nc,1)=r(1:nc,1)/bet
 
+  ifl=0 !flag for abort (for better vectorization)
   do j=2,n
     gam(j)=c(j-1)/bet
     bet=b(j)-a(j)*gam(j)
-    if(bet.eq.0d0) call parallel_abort('TRIDAG: failed')
-    do i=1,nc
-      u(j,i)=(r(j,i)-a(j)*u(j-1,i))/bet
-    enddo !i
+    if(bet==0.d0) ifl=1
+    u(1:nc,j)=(r(1:nc,j)-a(j)*u(1:nc,j-1))/bet
   enddo !j
+
+  if(ifl==1) call parallel_abort('TRIDAG: failed')
 
 ! Backsubstitution
   do j=n-1,1,-1
-    do i=1,nc
-      u(j,i)=u(j,i)-gam(j+1)*u(j+1,i)
-    enddo
+    u(1:nc,j)=u(1:nc,j)-gam(j+1)*u(1:nc,j+1)
   enddo
   
 end subroutine tridag
