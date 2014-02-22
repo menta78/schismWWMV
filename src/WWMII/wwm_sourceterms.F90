@@ -24,7 +24,7 @@
 
          INTEGER, INTENT(IN) :: IP
 
-         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
 
          LOGICAL, INTENT(IN) :: LRECALC
@@ -91,8 +91,8 @@
          IMATRA_WAM  = zero
          IMATDA_WAM  = zero
          TMPAC       = zero
-         IMATRA      = zero 
-         IMATDA      = zero 
+         !IMATRA      = zero 
+         !IMATDA      = zero 
          IMATRAWW3   = zero 
          IMATDAWW3   = zero 
          QBLOCAL(IP) = zero 

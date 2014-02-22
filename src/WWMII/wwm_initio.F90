@@ -38,9 +38,7 @@
 # ifdef PDLIB
        INE(:,:) = INETMP(:,:)
 # else
-       DO IE = 1, MNE
-         INE(:,IE) = INETMP(IE,:)
-       END DO  
+       INE = INETMP
 # endif
 #endif
 !

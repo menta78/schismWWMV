@@ -214,7 +214,9 @@
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO 
-             END IF !
+               ISELECT = 30
+               CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
+             END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -255,34 +257,35 @@
      &                           Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                           SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                  IF (LOUTWAM .AND. IP == TESTNODE) THEN
-                 WRITE(111112,'(A10,I10)') 'AFTER', IP
-                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
-               ENDIF
+                   WRITE(111112,'(A10,I10)') 'AFTER', IP
+                   WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
+                 ENDIF
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
                      IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                    ENDDO
                  ENDDO
+                 ISELECT = 30
+                 CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
                ENDIF
              ENDIF
            ENDIF
          ENDDO
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
