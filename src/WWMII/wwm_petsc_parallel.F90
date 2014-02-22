@@ -277,8 +277,8 @@
          integer :: POS_TRICK(3,2)
 
          real(kind=8)  :: DTK, TMP3
-         real(kind=8)  :: LAMBDA(2)
-         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
+         real(kind=8)  :: LAMBDA(2), GTEMP1, GTEMP2, DELT, XIMP, DELFL, DELT5
+         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32, USFM, TEMP, FLHAB
          real(kind=8)  :: CRFS(3), K1, KM(3), K(3), TRIA03
          real(kind=8)  :: DELTAL(3,MNE)
          real(kind=8)  :: KP(3,MNE), NM(MNE)
@@ -365,73 +365,78 @@
          U = AC2(:,ISS,IDD)
 
          J     = 0    ! Counter ...
-         ASPAR = 0.0_rkind ! Mass matrix ...
-         B     = 0.0_rkind ! Right hand side ...
+         ASPAR = ZERO ! Mass matrix ...
+         B     = ZERO ! Right hand side ...
 !
 ! ... assembling the linear equation system ....
 !
-         DO IP = 1, NP_RES
-           IF (IOBPD(IDD,IP) .EQ. 1 .AND. IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    =  IE_CELL(J)
-               POS   =  POS_CELL(J)
-               K1    =  KP(POS,IE) ! Flux Jacobian
-               TRIA03 = ONETHIRD * TRIA(IE)
-               DTK   =  K1 * DT4A * IOBPD(IDD,IP)
-               TMP3  =  DTK * NM(IE)
-               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-               I2    =  POSI(2,J)
-               I3    =  POSI(3,J)
-               ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
-               ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
-               ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
-               B(IP)     =  B(IP) + TRIA03 * U(IP)
-             END DO !I: loop over connected elements ...
-           ELSE
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    =  IE_CELL(J)
-               TRIA03 = ONETHIRD * TRIA(IE)
-               I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-               ASPAR(I1) =  TRIA03 + ASPAR(I1)  ! Diagonal entry
-               B(IP)     =  0.!B(IP)  + TRIA03 * 0.
-             END DO !I: loop over connected elements ...
-           END IF
+         DO IP = 1, MNP
+           DO I = 1, CCON(IP)
+             J = J + 1
+             IE    =  IE_CELL(J)
+             POS   =  POS_CELL(J)
+             K1    =  KP(POS,IE) ! Flux Jacobian
+             TRIA03 = ONETHIRD * TRIA(IE)
+             DTK   =  K1 * DT4A * IOBPD(IDD,IP) * IOBWB(IP) * IOBDP(IP)
+             TMP3  =  DTK * NM(IE)
+             I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+             I2    =  POSI(2,J)
+             I3    =  POSI(3,J)
+             ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
+             ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
+             ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
+             B(IP)     =  B(IP) + TRIA03 * U(IP)
+           END DO !I: loop over connected elements ...
          END DO !IP
-
-         DO IP = 1, NP_RES
-           IF (IOBPD(IDD,IP) .EQ. 0) THEN
-             ASPAR(I_DIAG(IP)) = SI(IP)
-             B(IP)             = 0.0_rkind
-           END IF
-         END DO
 
          IF (LBCWA .OR. LBCSP) THEN
            IF (LINHOM) THEN
              DO IP = 1, IWBMNP
                IPGL1 = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Add source term to the diagonal
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
                B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,IP)
-             END DO
+            END DO
            ELSE
              DO IP = 1, IWBMNP
                IPGL1 = IWBNDLC(IP)
-               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1)
+               ASPAR(I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
                B(IPGL1)             = SI(IPGL1) * WBAC(ISS,IDD,1)
              END DO
            ENDIF
          END IF
 
-         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
            DO IP = 1, MNP
-             IF (IOBP(IP) .EQ. 0) THEN
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) * IOBPD(IDD,IP)  ! Add source term to the diagonal
-               B(IP)             = B(IP)             + IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) * IOBPD(IDD,IP)
-             END IF
+             IF (IOBWB(IP) .EQ. 1) THEN
+               !GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+               !GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
+               GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
+               GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1!/PI2/SPSIG(IS)
+               DELT = DT4S
+               XIMP = 1.0
+               DELT5 = XIMP*DELT
+               DELFL = COFRM4(ISS)*DELT
+               USFM  = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               TEMP  = USFM*DELFL!/PI2/SPSIG(IS)
+               FLHAB  = ABS(GTEMP2*DT4S)
+               FLHAB  = MIN(FLHAB,TEMP)/DT4S
+               B(IP)  = B(IP) + SIGN(FLHAB,GTEMP2) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - SIGN(FLHAB,GTEMP2) * SI(IP)
+               !!B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - GTEMP2 * SI(IP)
+!This is then for the shallow water physics take care about ISELECT 
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               !B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+             ENDIF
            END DO
-         END IF
-
+         ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+           DO IP = 1, MNP
+             IF (IOBWB(IP) .EQ. 1) THEN
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+             ENDIF
+           END DO
+         ENDIF
 !         call checkAsparDiagonalAccuracy(ASPAR, IA, JA, ISS, IDD)
 
 ! fill the new matrix
