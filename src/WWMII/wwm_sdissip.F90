@@ -209,7 +209,7 @@
                  Q_OLD = Q
                ENDDO
                SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN(IJ)
-               IF (IJ == 339) write(*,'(I10,8F20.10)') IJ, DEP(IJ), SDS(IJ), Q, COEF_B_J, ALPH, F1MEAN(IJ), 4*SQRT(EMAX), 4*SQRT(EMEAN(IJ))
+               !IF (IJ == 339) write(*,'(I10,8F20.10)') IJ, DEP(IJ), SDS(IJ), Q, COEF_B_J, ALPH, F1MEAN(IJ), 4*SQRT(EMAX), 4*SQRT(EMEAN(IJ))
              ENDIF
           ENDDO 
    

@@ -1004,7 +1004,7 @@
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
          REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
-         LOGICAL, PARAMETER    :: LBIWBK = .TRUE. !! Shallow Water Wave Breaking ECMWF
+         LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
          INTEGER, PARAMETER    :: TESTNODE = 120 

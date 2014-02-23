@@ -451,6 +451,7 @@ subroutine partition_hgrid
 
   ! Assign vertex coordinates & weights
   ! Weights based on estimated number of active levels
+
   do ie=1,nea
     xtmp=0d0 !xctr
     ytmp=0d0
@@ -464,7 +465,9 @@ subroutine partition_hgrid
     xyz(2*(ie-1)+1)=xtmp
     xyz(2*(ie-1)+2)=ytmp
     if(wgtflag==2.or.wgtflag==3) then
-      if(ivcor==1) then
+      if (ivcor==0) then
+        kbetmp=0.d0 
+      else if(ivcor==1) then
         kbetmp=minval(kbp(elnode(1:3,ie)))
       else if(ivcor==2) then !SZ (including 2D)
         if(dtmp<=0) then

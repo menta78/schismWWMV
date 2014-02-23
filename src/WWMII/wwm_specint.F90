@@ -21,11 +21,7 @@
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
-         IF (LSOURCESWAM) THEN 
-           ISELECT = 30
-         ELSE
-           ISELECT = 10
-         ENDIF
+         ISELECT = 10
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC)
          DO IP = 1, MNP
@@ -390,6 +386,7 @@
          REAL(rkind)    :: NEWDAC
          REAL(rkind)    :: MAXDAC, CONST, SND, USTAR
 
+         ISELECT = 10
          CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)  ! 1. CALL
 
          CONST = PI2**2*3.0*1.0E-7*DT*SPSIG(MSC_HF(IP))
