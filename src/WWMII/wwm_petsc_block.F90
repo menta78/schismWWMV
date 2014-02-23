@@ -2155,13 +2155,13 @@
 !**********************************************************************
       !> calc only rhs and fill direct into petsc myB
       !> use newer code from fluct
-      SUBROUTINE calcALL()
+      SUBROUTINE calcALL
         use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD
-        use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL
-        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP
-        use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
+        use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL, I_DIAG, DT4S
+        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, COFRM4, USNEW
+        use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD, FMEAN, FMEANWS
         use datapool, only : IMATRAA, IMATDAA, DT4A, MAXMNECON, AC2, RKIND
-        use datapool, only : TWO, RKIND, iplg, exchange_p2d
+        use datapool, only : TWO, RKIND, iplg, exchange_p2d, lsourceswam
         use petscpool
         use petscsys
         use petscvec
@@ -2173,7 +2173,8 @@
         INTEGER :: IPGL1, IE
         integer idx
         ! to temp store the element areas
-        real(rkind) :: TRIA03arr(MAXMNECON)
+        real(rkind) :: TRIA03arr(MAXMNECON), GTEMP1, GTEMP2, FLHAB
+        real(rkind) :: DELFL, USFM
         real(rkind) :: AC22(MDC, MSC, MNP)
 
         PetscScalar :: value, value1
@@ -2254,7 +2255,31 @@
               end do ! ISS
             end if
           end do ! IP
-        endif
+        ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+          DO IP = 1, MNP
+            IF(ALOold2ALO(IP) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter
+            IF (IOBWB(IP) .EQ. 1) THEN
+              IPpetsc = ALO2PLO(IP-1) + 1
+              do iss = 1, msc
+                do idd = 1, mdc
+                  GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
+                  GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
+                  DELFL  = COFRM4(ISS)*DT4S
+                  USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                  FLHAB  = ABS(GTEMP2*DT4S)
+                  FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
+                  value  = -SIGN(FLHAB,GTEMP2)*SI(IP) ! Add source term to the right hand side
+#  ifndef DIRECT_METHOD
+                  idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
+#  else
+                  idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+#  endif
+                  ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
+                enddo
+              enddo
+            ENDIF
+          END DO
+        ENDIF
 
         call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, petscErr)
         CHKERRQ(petscErr)
@@ -2299,12 +2324,10 @@
                   value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)
-
                 ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
                 else
                   myBtemp(idx) = 0
                 endif
-
               end do ! IDD
             end do ! ISS
 
@@ -2365,7 +2388,28 @@
               end do
             end if
           end do
-        endif
+        ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+          DO IP = 1, MNP
+            IF(ALOold2ALO(IP) .eq. -999) cycle ! this is a interface node (row). ignore it. just increase counter
+            IF (IOBWB(IP) .EQ. 1) THEN
+              IPpetsc = ALO2PLO(IP-1) + 1
+              do iss = 1, msc
+                do idd = 1, mdc 
+                  GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
+                  GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
+                  DELFL  = COFRM4(ISS)*DT4S
+                  USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                  FLHAB  = ABS(GTEMP2*DT4S)
+                  FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
+                  value  = SIGN(FLHAB,GTEMP2)*DT4A*SI(IP) ! Add source term to the right hand side
+                  idx=toRowIndex(IPpetsc, ISS, IDD) + 1
+                  myBtemp(idx) = value + myBtemp(idx)
+                enddo
+              enddo
+            ENDIF
+          END DO
+        ENDIF 
+
         call VecRestoreArrayF90(myB, myBtemp, petscErr)
         CHKERRQ(petscErr)
         call VecAssemblyBegin(myB, petscErr);CHKERRQ(petscErr)
