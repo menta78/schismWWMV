@@ -1118,7 +1118,7 @@
               do I = 1, CCON(IP)
                 I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                 value1 =  TRIA03arr(i)   ! Diagonal entry
-                idx=aspar2petscAspar(IP, ISS, IDD, I1)
+                idx = aspar2petscAspar(IP, ISS, IDD, I1)
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
               end do !I: loop over connected elements ...
             end if
@@ -1183,12 +1183,14 @@
         integer :: NECON
         integer :: petscAsparPosi1, petscAsparPosi2, petscAsparPosi3
         integer :: petscAsparPosi4, idx
+
         POS_TRICK(1,1) = 2
         POS_TRICK(1,2) = 3
         POS_TRICK(2,1) = 3
         POS_TRICK(2,2) = 1
         POS_TRICK(3,1) = 1
         POS_TRICK(3,2) = 2
+
         I      = 0
         IPGL1  = 0
         IE     = 0
