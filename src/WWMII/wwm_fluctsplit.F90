@@ -2714,7 +2714,7 @@
          END DO
 
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(U)
+         CALL EXCHANGE_P4D_WWM(U)
 #endif
 
 #ifdef TIMINGS
@@ -2722,7 +2722,6 @@
 #endif
          ITER_MAX = MAXVAL(ITER_EXP)
          DT4AI = DT4A/ITER_MAX
-
 
          DO IT = 1, ITER_MAX
            DO ID = 1, MDC
@@ -2732,21 +2731,17 @@
                DO IP = 1, MNP
                  ST = ZERO
                  DO I = 1, CCON(IP)
-
 ! get element and the position of IP in the element index
                    IE     =  IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
-
 ! get node indices from the element table ...
                    NI = INE(:,IE)
                    I1 = NI(1)
                    I2 = NI(2)
                    I3 = NI(3)
-
 ! estimate speed in WAE
-                   CX =  (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))  * INVSPHTRANS(IP,1)
-                   CY =  (CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))  * INVSPHTRANS(IP,2)
-
+                   CX = (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
+                   CY = (CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
 ! flux integration using simpson rule ...
                    FL11  = CX(2) * IEN(1,IE) + CY(2) * IEN(2,IE)
                    FL12  = CX(3) * IEN(1,IE) + CY(3) * IEN(2,IE)
@@ -2761,37 +2756,28 @@
                    FL212 = TWO*FL22+FL21
                    FL311 = TWO*FL31+FL32
                    FL312 = TWO*FL32+FL31
-
 ! upwind indicators
                    LAMBDA(1) = ONESIXTH * SUM(CX)
                    LAMBDA(2) = ONESIXTH * SUM(CY)
-
 ! flux jacobians
                    KELEM(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) ! K
                    KELEM(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
                    KELEM(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
-
 ! inverse of the positive sum ...
                    N         = -ONE/MIN(-THR,SUM(MIN(ZERO,KELEM))) ! N
-
 ! positive flux jacobians
                    KELEM(1)  = MAX(ZERO,KELEM(1)) ! K+
                    KELEM(2)  = MAX(ZERO,KELEM(2))
                    KELEM(3)  = MAX(ZERO,KELEM(3))
-
 ! simposon integration last step ...
                    FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1)
                    FLALL(2) = (FL111 + FL312) * ONESIXTH + KELEM(2)
                    FLALL(3) = (FL211 + FL112) * ONESIXTH + KELEM(3)
-
 ! flux conserving upwind contribution
                    U3 = UIP(NI)
-
                    UTILDE3  = N * ( FLALL(1) * U3(1) + FLALL(2) * U3(2) + FLALL(3) * U3(3) )
-
 ! coefficient for the integration in time
                    ST = ST + KELEM(IPOS) * (UIP(IP) - UTILDE3)
-
                  END DO
 ! time stepping ...
                  UIP(IP) = MAX(ZERO,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
