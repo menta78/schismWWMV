@@ -148,7 +148,7 @@
       CONTAINS
 
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE PREPARE_ARDHUIN()
+      SUBROUTINE PREPARE_ARDHUIN
 
         USE DATAPOOL
 
@@ -1136,7 +1136,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
-      USE DATAPOOL, ONLY: ZERO, ONE, TWO, STAT
+      USE DATAPOOL, ONLY: ZERO, ONE, TWO, STAT, TH
       USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
 !/
@@ -2018,6 +2018,8 @@
       FACTURB=SSDSC(5)*USTAR**2/G9*RHOA/RHOW
       BREAKFRACTION=ZERO
       RENEWALFREQ=ZERO
+
+      IK1 = 1
 !
 ! 2.   Estimation of spontaneous breaking 
 !

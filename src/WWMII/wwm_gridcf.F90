@@ -389,7 +389,7 @@
 
          DELTH = PI2/MyREAL(MDC)
 
-         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), TH(MDC), stat=istat)
+         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
          DFIM = ZERO
          DFFR = ZERO
@@ -398,18 +398,22 @@
          FR5 = ZERO
          FRM5 = ZERO 
          COFRM4 = ZERO
-         TH = ZERO
 
-         DELTH = PI2/REAL(MDC)
-         DELTR = DELTH*REARTH
-         DO ID=1,MDC
-!CCC        TH(K) = REAL(K-1)*DELTH
-!CCC the previous line should be used if spectra should not be rotated.
-!CCC the next line should be used if rotated spectra are used
-           TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
-           COSTH(ID) = COS(TH(ID))
-           SINTH(ID) = SIN(TH(ID))
-         ENDDO
+         if (lsourceswam) then
+           ALLOCATE(TH(MDC), stat=istat)
+           th = zero
+           DELTH = PI2/REAL(MDC)
+           DELTR = DELTH*REARTH
+           DO ID=1,MDC
+             IF (LSTAG) THEN
+               TH(ID) = REAL(ID-1)*DELTH
+             ELSE
+               TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
+             ENDIF
+             COSTH(ID) = COS(TH(ID))
+             SINTH(ID) = SIN(TH(ID))
+           ENDDO
+         endif
 
          CO1 = 0.5*(FRATIO-1.)*DELTH
          DFIM(1)= CO1*FR(1)

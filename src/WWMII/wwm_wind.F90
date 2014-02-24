@@ -8,16 +8,10 @@
 #endif
       USE DATAPOOL
       IMPLICIT NONE
-
-#ifdef NCDF
-      INTEGER :: IT, IFILE
-#endif
-      INTEGER :: IP, FORECASTHOURS
-      REAL(rkind)    :: WDIRT
-#ifdef NCDF
-      REAL(rkind)    :: cf_w1, cf_w2
-      INTEGER :: istat
-#endif
+      INTEGER     :: IT, IFILE
+      INTEGER     :: IP, FORECASTHOURS, ISTAT
+      REAL(rkind) :: WDIRT
+      REAL(rkind) :: cf_w1, cf_w2
 
       FORECASTHOURS = 0
       WINDXY(:,:) = 0.0

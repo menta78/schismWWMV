@@ -1255,6 +1255,7 @@
             B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           END DO
         END IF
+
         IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
           CALL PROPTHETA(IP,CAD)
           DO ISS = 1, MSC
@@ -1281,23 +1282,22 @@
           do IDD = 1, MDC ! over all directions
             if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
               LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
-              K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
-              K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
-              K(3,1:NECON)=LAMBDA(1,1:NECON) * IEN(5,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(6,IEarr(1:NECON))
+              K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
+              K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
+              K(3,1:NECON)=LAMBDA(1,1:NECON) * IEN(5,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(6,IEarr(1:NECON))
               KP(:,1:NECON) = MAX(ZERO,K(:, 1:NECON))
               KM(:,1:NECON) = MIN(ZERO,K(:, 1:NECON))
-              FL11(1:NECON)=C2(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
-              FL12(1:NECON)=C3(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
-              FL21(1:NECON)=C3(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
-              FL22(1:NECON)=C1(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
-              FL31(1:NECON)=C1(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
-              FL32(1:NECON)=C2(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
-              CRFS(1,1:NECON)=- ONESIXTH * (TWO * FL31(1:NECON)       + FL32(1:NECON) + FL21(1:NECON)  + TWO * FL22(1:NECON) )
-              CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)       + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
-              CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)       + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
+              FL11(1:NECON)=C2(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON)) + C2(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL12(1:NECON)=C3(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON)) + C3(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL21(1:NECON)=C3(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON)) + C3(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL22(1:NECON)=C1(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON)) + C1(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL31(1:NECON)=C1(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON)) + C1(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              FL32(1:NECON)=C2(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON)) + C2(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              CRFS(1,1:NECON)=- ONESIXTH * (TWO * FL31(1:NECON)      + FL32(1:NECON) + FL21(1:NECON)  + TWO * FL22(1:NECON) )
+              CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)      + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
+              CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)      + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
               DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
               NM(1:NECON) = ONE/MIN(-THR,SUM(KM(:, 1:NECON),DIM=1))
-
               do I = 1, CCON(IP)
                 DTK = KP(POSarr(i), i) * DT4A
                 J=IA_P(IP) + I
@@ -1306,8 +1306,8 @@
                 value(3)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
                 idx1=Jcum(IP) + I
                 DO L=1,3
-                  idx=POSI(L,idx1) - IA_P(IP)
-                  ASPAR_block(ISS,IDD,idx)=ASPAR_block(ISS,IDD,idx) + value(L)
+                  idx=POSI(L,idx1)-IA_P(IP)
+                  ASPAR_block(ISS,IDD,idx)=ASPAR_block(ISS,IDD,idx)+value(L)
                 END DO
               END DO
             ELSE
@@ -1399,7 +1399,8 @@
         !
         ASPAR_petsc  = 0
         oASPAR_petsc = 0
-! !$OMP DO PRIVATE(IP)
+
+!$OMP DO PRIVATE(IP)
         DO IP = 1, MNP
           call calcASPARomp(IP)
         end do !IP 
