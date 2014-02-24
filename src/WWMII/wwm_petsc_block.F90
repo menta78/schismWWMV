@@ -208,7 +208,6 @@
         use petscmat
 !        use omp_lib
 
-
         IMPLICIT NONE
         integer :: ierr, istat
         integer :: IP, ISS, IDD
@@ -951,20 +950,16 @@
 
         real(rkind)  :: DTK, TMP3
         real(rkind)  :: LAMBDA(2, MAXMNECON)
-!         real(kind=8)  :: LAMBDA(2)
         real(rkind)  :: FL11(MAXMNECON), FL12(MAXMNECON)
-        real(rkind)       :: FL21(MAXMNECON), FL22(MAXMNECON)
-        real(rkind)       :: FL31(MAXMNECON), FL32(MAXMNECON)
-!         real(kind=8)  :: FL11, FL12, FL21, FL22, FL31, FL32
+        real(rkind)  :: FL21(MAXMNECON), FL22(MAXMNECON)
+        real(rkind)  :: FL31(MAXMNECON), FL32(MAXMNECON)
         real(rkind)  :: CRFS(3, MAXMNECON), K(3, MAXMNECON)
         real(rkind)  :: KP(3,MAXMNECON)
-!         real(kind=8)  :: CRFS(3), K(3)
         real(rkind)  :: KM(3, MAXMNECON)
-!         real(kind=8)  :: KM(3)
         real(rkind)  :: K1
         real(rkind)  :: DELTAL(3,MAXMNECON)
         real(rkind)  :: NM(MAXMNECON)
-                ! uncomment this for CADVXY2
+        ! uncomment this for CADVXY2
         ! store all node numbers for CADVXY2
         !> \todo MAXMNECON*3 is too much. we only need maxNumConnNode
 !         integer :: nodeList(MAXMNECON*3)
@@ -990,6 +985,7 @@
          ! to temporays save some values.
         integer :: IEarr(MAXMNECON), POSarr(MAXMNECON)
         integer :: I1arr(MAXMNECON), I2arr(MAXMNECON), I3arr(MAXMNECON)
+
         real(kind=rkind)  :: TRIA03arr(MAXMNECON)
 
          ! number of elements connected to a node
@@ -1009,7 +1005,7 @@
         POS_TRICK(3,2) = 2
 
         I      = 0
-        IPGL1   = 0
+        IPGL1  = 0
         IE     = 0
         POS    = 0
         I1     = 0
@@ -1026,7 +1022,7 @@
         CRFS   = 0
         K1     = 0
         
-      ! this is an ghost or interface node. ignore it
+        ! this is an ghost or interface node. ignore it
         if(ALO2PLO(IP-1) .lt. 0) then
           return
         endif
@@ -1036,11 +1032,10 @@
         petscAsparPosi1 =  MSC*MDC * IA_petsc_small(IPpetsc)
 
         nConnNode = IA_petsc_small(IPpetsc+1) - IA_petsc_small(IPpetsc)
-!
-        ! uncomment this for CADVXY2
-!           nodeList = 0
-!           nodeListSize = CCON(IP) * 3
 
+        ! uncomment this for CADVXY2
+        ! nodeList = 0
+        ! nodeListSize = CCON(IP) * 3
         ! uncomment this for CADVXY3
         elementListSize = CCON(IP)
 
@@ -1057,14 +1052,11 @@
           I1arr(i)     =  POSI(1,Jcum(IP)+i) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
           I2arr(i)     =  POSI(2,Jcum(IP)+i)
           I3arr(i)     =  POSI(3,Jcum(IP)+i)
-
-
-          ! uncomment this for CADVXY2
-!             ! nodenumbers connected to IE.Store them sequential in a 1D array
-!             nodeList((i-1)*3 +1) = INE(1,IE)
-!             nodeList((i-1)*3 +2) = INE(2,IE)
-!             nodeList((i-1)*3 +3) = INE(3,IE)
-
+          !uncomment this for CADVXY2
+          !nodenumbers connected to IE.Store them sequential in a 1D array
+          !nodeList((i-1)*3 +1) = INE(1,IE)
+          !nodeList((i-1)*3 +2) = INE(2,IE)
+          !nodeList((i-1)*3 +3) = INE(3,IE)
           ! uncomment this for CADVXY3
           elementList(i) = IE
         enddo
@@ -1078,27 +1070,25 @@
           do IDD = 1, MDC ! over all directions
             petscAsparPosi3 = petscAsparPosi2 + (IDD-1)*nConnNode
             if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
-              !
               LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
-              K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
-              K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
-              K(3,1:NECON)=LAMBDA(1,1:NECON) * IEN(5,IEarr(1:NECON))  + LAMBDA(2,1:NECON) * IEN(6,IEarr(1:NECON))
+              K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
+              K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
+              K(3,1:NECON)=LAMBDA(1,1:NECON) * IEN(5,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(6,IEarr(1:NECON))
               KP(:,1:NECON) = MAX(ZERO,K(:, 1:NECON))
               KM(:,1:NECON) = MIN(ZERO,K(:, 1:NECON))
-              FL11(1:NECON)=C2(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
-              FL12(1:NECON)=C3(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
-              FL21(1:NECON)=C3(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C3(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
-              FL22(1:NECON)=C1(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
-              FL31(1:NECON)=C1(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C1(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
-              FL32(1:NECON)=C2(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON))  + C2(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
-              CRFS(1,1:NECON)=- ONESIXTH * (TWO * FL31(1:NECON)       + FL32(1:NECON) + FL21(1:NECON)  + TWO * FL22(1:NECON) )
-              CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)       + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
-              CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)       + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
+              FL11(1:NECON)=C2(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON)) + C2(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL12(1:NECON)=C3(1,1:NECON, IDD)*IEN(1,IEarr(1:NECON)) + C3(2,1:NECON, IDD)*IEN(2,IEarr(1:NECON))
+              FL21(1:NECON)=C3(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON)) + C3(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL22(1:NECON)=C1(1,1:NECON, IDD)*IEN(3,IEarr(1:NECON)) + C1(2,1:NECON, IDD)*IEN(4,IEarr(1:NECON))
+              FL31(1:NECON)=C1(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON)) + C1(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              FL32(1:NECON)=C2(1,1:NECON, IDD)*IEN(5,IEarr(1:NECON)) + C2(2,1:NECON, IDD)*IEN(6,IEarr(1:NECON))
+              CRFS(1,1:NECON)=- ONESIXTH * (TWO * FL31(1:NECON)      + FL32(1:NECON) + FL21(1:NECON)  + TWO * FL22(1:NECON) )
+              CRFS(2,1:NECON)=- ONESIXTH * (TWO * FL32(1:NECON)      + TWO * FL11(1:NECON) + FL12(1:NECON) + FL31(1:NECON) )
+              CRFS(3,1:NECON)=- ONESIXTH * (TWO * FL12(1:NECON)      + TWO * FL21(1:NECON) + FL22(1:NECON) + FL11(1:NECON) )
               DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
               NM(1:NECON) = ONE/MIN(-THR,SUM(KM(:, 1:NECON),DIM=1))
-
-              do I = 1, CCON(IP)
-                DTK = KP(POSarr(i), i) * DT4A
+              do i = 1, CCON(IP)
+                DTK = KP(POSarr(i),i) * DT4A
                 I1 = I1arr(i)
                 I2 = I2arr(i)
                 I3 = I3arr(i)
@@ -1106,11 +1096,8 @@
                 value2 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
                 value3 =               - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
                 ! I1
-
-
                 idx = petscAsparPosi3 +  (AsparApp2Petsc_small(I1) - IA_petsc_small(IPpetsc)) + 1
                 ASPAR_petsc(idx) = value1 + ASPAR_petsc(idx)
-
                 ! I2
                 if(AsparApp2Petsc_small(I2) .eq. -999) then
                   idx=oAspar2petscAspar(IP, ISS, IDD, I2)
@@ -1119,7 +1106,6 @@
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I2) - IA_petsc_small(IPpetsc)) + 1
                   ASPAR_petsc(idx) = value2 + ASPAR_petsc(idx)
                 endif
-
                 ! I3
                 if(AsparApp2Petsc_small(I3) .eq. -999) then
                   idx=oAspar2petscAspar(IP, ISS, IDD, I3)
@@ -1128,9 +1114,7 @@
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
                 endif
               end do !I: loop over connected elements ...
-
             else ! add only triangle area
-
               do I = 1, CCON(IP)
                 I1 = I1arr(i)! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
                 value1 =  TRIA03arr(i)   ! Diagonal entry
@@ -1171,8 +1155,8 @@
         real(rkind)  :: DTK, TMP3
         real(rkind)  :: LAMBDA(2, MAXMNECON)
         real(rkind)  :: FL11(MAXMNECON), FL12(MAXMNECON)
-        real(rkind)       :: FL21(MAXMNECON), FL22(MAXMNECON)
-        real(rkind)       :: FL31(MAXMNECON), FL32(MAXMNECON)
+        real(rkind)  :: FL21(MAXMNECON), FL22(MAXMNECON)
+        real(rkind)  :: FL31(MAXMNECON), FL32(MAXMNECON)
         real(rkind)  :: CRFS(3, MAXMNECON), K(3, MAXMNECON)
         real(rkind)  :: KP(3,MAXMNECON)
         real(rkind)  :: KM(3, MAXMNECON)
@@ -1185,6 +1169,7 @@
         REAL(rkind)  :: CP_THE(MDC), CM_THE(MDC)
         REAL(rkind)  :: CAD(MSC,MDC), CAS(MSC,MDC)
         REAL(rkind)  :: ASPAR_block(MSC,MDC,maxNumConnNode)
+
         integer :: elementList(MAXMNECON)
         integer :: elementListSize
         real(kind=rkind)  :: C1(2, MAXMNECON, MDC)
@@ -1222,20 +1207,17 @@
         CRFS   = 0
         K1     = 0
         
-      ! this is an ghost or interface node. ignore it
+        ! this is an ghost or interface node. ignore it
         if(ALO2PLO(IP-1) .lt. 0) then
           return
         endif
-
         IPpetsc = ALO2PLO(IP-1)+1
         ! update position in petsc aspar array
         ! uncomment this for CADVXY2
-!           nodeList = 0
-!           nodeListSize = CCON(IP) * 3
-
+        ! nodeList = 0
+        ! nodeListSize = CCON(IP) * 3
         ! uncomment this for CADVXY3
         elementListSize = CCON(IP)
-
         ! loop over all connectec elements and nodes from IP
         ! and temporays save some values
         ! To fill the matrix we loop over MNP MSC MDC. The following values
@@ -1248,6 +1230,7 @@
           TRIA03arr(i) = ONETHIRD * TRIA(IE)
           elementList(i) = IE
         enddo
+
         IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
           CALL PROPSIGMA(IP,CAS)
           DO IDD = 1, MDC
@@ -1260,7 +1243,6 @@
             DO ISS=1,MSC
               B_SIG(ISS,IDD)= DT4F*(CP_SIG(ISS)/DS_INCR(ISS-1) - CM_SIG(ISS) /DS_INCR(ISS))
             END DO
-            !
             DO ISS=2,MSC
               A_SIG(ISS,IDD) = - DT4F*CP_SIG(ISS-1)/DS_INCR(ISS-1)
             END DO
@@ -1381,10 +1363,8 @@
               idxpos=idxpos+1
               idx=AsparApp2Petsc(idxpos)
               ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
-              !
               idx=I_DIAGtotal(ISS,IDD,IPpetsc)
               ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
-              !
               idxpos=idxpos+1
               idx=AsparApp2Petsc(idxpos)
               ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)

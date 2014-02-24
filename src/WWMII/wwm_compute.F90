@@ -80,15 +80,11 @@
          IF (SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
            CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-
+           stop
            FL = FL3 
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-           
            DO IP = 1, MNP
-
-!             IF (ABS(IOBP(IP)) .GT. 0) CYCLE
-
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(1,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
@@ -97,9 +93,7 @@
                END DO
                Z0NEW(IP) = Z0OLD(IP,1) 
              END DO
- 
              THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-
              IF (LOUTWAM .AND. IP == TESTNODE) THEN
                WRITE(111112,'(A10,I10)') 'AFTER', IP
                WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
@@ -152,20 +146,20 @@
                WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
                WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
              ENDIF
-               CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
-     &                          THWOLD(IP,1), USOLD(IP,1), &
-     &                          TAUW(IP), Z0OLD(IP,1), &
-     &                          ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                          SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
-               CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
-     &                          THWOLD(IP,1), USOLD(IP,1), &
-     &                          TAUW(IP), Z0OLD(IP,1), &
-     &                          ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                          SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+             CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                        THWOLD(IP,1), USOLD(IP,1), &
+     &                        TAUW(IP), Z0OLD(IP,1), &
+     &                        ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                        U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                        Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                        SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+             CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                        THWOLD(IP,1), USOLD(IP,1), &
+     &                        TAUW(IP), Z0OLD(IP,1), &
+     &                        ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                        U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                        Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                        SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
              ENDIF
              DO IS = 1, MSC
                DO ID = 1, MDC
@@ -173,8 +167,6 @@
                END DO
              END DO
            END DO
-           ISELECT = 30 ! ONLY SHALLOW WATER STUFF
-           CALL COMPUTE_SOURCES_EXP
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF

@@ -91,8 +91,8 @@
          IMATRA_WAM  = zero
          IMATDA_WAM  = zero
          TMPAC       = zero
-         !IMATRA      = zero 
-         !IMATDA      = zero 
+         IMATRA      = zero 
+         IMATDA      = zero 
          IMATRAWW3   = zero 
          IMATDAWW3   = zero 
          QBLOCAL(IP) = zero 
