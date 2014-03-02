@@ -210,8 +210,8 @@
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO 
-               ISELECT = 30
-               CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
+               !ISELECT = 30
+               !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
              END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
@@ -276,8 +276,8 @@
                      IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                    ENDDO
                  ENDDO
-                 ISELECT = 30
-                 CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
+                 !ISELECT = 30
+                 !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
                ENDIF
              ENDIF
            ENDIF
@@ -313,6 +313,7 @@
                  Z0NEW(IP) = Z0OLD(IP,1)
                END DO
                THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+               IF (IP == TESTNODE) WRITE(*,'(A20,3F15.8)') 'POST BEFORE', SUM(SL(IP,:,:)), SUM(FL3(IP,:,:)),  SUM(FL(IP,:,:))
                CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                          THWOLD(IP,1), USOLD(IP,1), &
      &                          TAUW(IP), Z0OLD(IP,1), &
@@ -320,6 +321,7 @@
      &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+               IF (IP == TESTNODE) WRITE(*,'(A20,3F15.8)') 'POST AFTER', SUM(SL(IP,:,:)), SUM(FL3(IP,:,:)),  SUM(FL(IP,:,:))
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
@@ -342,13 +344,13 @@
                    Z0NEW(IP) = Z0OLD(IP,1)
                  END DO
                  THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-                 CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+                 CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                            THWOLD(IP,1), USOLD(IP,1), &
      &                            TAUW(IP), Z0OLD(IP,1), &
      &                            ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                            U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                            Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                            SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+     &                            SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
@@ -360,7 +362,7 @@
            ENDIF
            DO IS = 1, MSC
              DO ID = 1, MDC
-               AC2(IP,IS,ID) = FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
              END DO
            END DO
          END DO

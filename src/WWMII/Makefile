@@ -9,7 +9,7 @@ MPI =
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = 
+NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP = 
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -44,8 +44,8 @@ F90 = ifort
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-check all -warn all
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-#F90OPTI = -g -traceback -O1 -axSSE4.2 -assume byterecl #-guide -vec-report 
+#F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
+F90OPTI = -g -traceback -O1 -axSSE4.2 -assume byterecl #-guide -vec-report 
 #aggressive opti
 #F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp
@@ -97,7 +97,7 @@ OBJWWM = wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_m_filei
 
 ifdef NETCDF
   all: $(NETC) $(PROG)
-  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf 
   FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)

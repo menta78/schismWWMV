@@ -991,7 +991,7 @@
          REAL(rkind)  :: WKSP( 20*MNP )
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
-         REAL(rkind) ::  ASPAR(NNZ)
+         REAL(rkind) ::  ASPAR(NNZ), LIMFAC
 
          REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
          REAL(rkind)  :: TEMP, DELT, XIMP, DELT5
@@ -1100,7 +1100,8 @@
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4A*SI(IP) 
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-SIGN(FLHAB,GTEMP2) * SI(IP)
+               LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
