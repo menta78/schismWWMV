@@ -228,3 +228,21 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE COMPUTE_FREQUENCY
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_FREQUENCY'
+        FLUSH(STAT%FHNDL)
+
+        IF (FMETHOD == 1) CALL COMPUTE_FREQUENCY_QUICKEST_A
+        IF (FMETHOD == 2) CALL COMPUTE_FREQUENCY_UPWIND_EXPLICIT
+        IF (FMETHOD == 3) CALL COMPUTE_FREQUENCY_UPWIND_IMPLICIT
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_FREQUENCY'
+        FLUSH(STAT%FHNDL)
+
+      END SUBROUTINE COMPUTE_FREQUENCY
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************

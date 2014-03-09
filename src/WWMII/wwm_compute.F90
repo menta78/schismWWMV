@@ -45,8 +45,8 @@
          CALL MY_WTIME(TIME2)
 #endif
 
-         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY()
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION()
+         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -1- ',  SUM(AC2)
@@ -337,7 +337,7 @@
 
          CALL COMPUTE_SPATIAL()
          CALL COMPUTE_FREQUENCY
-         CALL COMPUTE_DIRECTION()
+         CALL COMPUTE_DIRECTION
          CALL COMPUTE_SOURCES_EXP()
 
          WRITE(DBG%FHNDL,*) SUM(DAC_ADV), SUM(DAC_SOU), SUM(DAC_THE)
@@ -393,54 +393,6 @@
         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SPATIAL
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_DIRECTION
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_DIRECTION'
-        FLUSH(STAT%FHNDL)
- 
-        IF (DMETHOD > 0) THEN
-          IF (DMETHOD == 1) THEN
-            CALL COMPUTE_DIRECTION_CNTG_A
-          ELSE IF (DMETHOD == 2) THEN
-            CALL COMPUTE_DIRECTION_QUICKEST_A
-          ELSE IF (DMETHOD == 3) THEN
-            CALL COMPUTE_DIRECTION_WENO_A
-          ELSE IF (DMETHOD == 4) THEN
-            CALL COMPUTE_DIRECTION_UPWIND_A
-          ELSE IF (DMETHOD == 5) THEN
-            CALL COMPUTE_DIRECTION_UPWIND_IMPLICIT
-          END IF
-        END IF
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_DIRECTION'
-        FLUSH(STAT%FHNDL)
-
-        IF ( DMETHOD == 1) CALL RESCALE_SPECTRUM
-
-      END SUBROUTINE COMPUTE_DIRECTION
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_FREQUENCY
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_FREQUENCY'
-        FLUSH(STAT%FHNDL)
-
-        IF (FMETHOD == 1) CALL COMPUTE_FREQUENCY_QUICKEST_A
-        IF (FMETHOD == 2) CALL COMPUTE_FREQUENCY_UPWIND_EXPLICIT
-        IF (FMETHOD == 3) CALL COMPUTE_FREQUENCY_UPWIND_IMPLICIT
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_FREQUENCY'
-        FLUSH(STAT%FHNDL)
-
-      END SUBROUTINE COMPUTE_FREQUENCY
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

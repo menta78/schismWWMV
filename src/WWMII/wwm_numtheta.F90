@@ -664,3 +664,33 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE COMPUTE_DIRECTION
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_DIRECTION'
+        FLUSH(STAT%FHNDL)
+ 
+        IF (DMETHOD > 0) THEN
+          IF (DMETHOD == 1) THEN
+            CALL COMPUTE_DIRECTION_CNTG_A
+          ELSE IF (DMETHOD == 2) THEN
+            CALL COMPUTE_DIRECTION_QUICKEST_A
+          ELSE IF (DMETHOD == 3) THEN
+            CALL COMPUTE_DIRECTION_WENO_A
+          ELSE IF (DMETHOD == 4) THEN
+            CALL COMPUTE_DIRECTION_UPWIND_A
+          ELSE IF (DMETHOD == 5) THEN
+            CALL COMPUTE_DIRECTION_UPWIND_IMPLICIT
+          END IF
+        END IF
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_DIRECTION'
+        FLUSH(STAT%FHNDL)
+
+        IF ( DMETHOD == 1) CALL RESCALE_SPECTRUM
+
+      END SUBROUTINE COMPUTE_DIRECTION
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
