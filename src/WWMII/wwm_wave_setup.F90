@@ -686,11 +686,16 @@
 #endif
       SUM_SI_Var=ZERO
       SUM_SI=ZERO
+#ifndef MPI_PARALL_GRID
+      DO IP=1,NP_RES
+        SUM_SI_Var = SUM_SI_Var + SI(IP)*TheVar(IP)
+        SUM_SI     = SUM_SI     + SI(IP)
+      END DO
+#else
       DO IP=1,NP_RES
         SUM_SI_Var = SUM_SI_Var + nwild_loc_res(IP)*SI(IP)*TheVar(IP)
         SUM_SI     = SUM_SI     + nwild_loc_res(IP)*SI(IP)
       END DO
-#ifdef MPI_PARALL_GRID
       eVect(1)=SUM_SI_Var
       eVect(2)=SUM_SI
       IF (myrank == 0) THEN
