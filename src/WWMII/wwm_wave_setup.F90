@@ -196,9 +196,6 @@
           IP1=INE(I1,IE)
           IP2=INE(I2,IE)
           IP3=INE(I3,IE)
-          IDX1=JA_IE(I1,1,IE)
-          IDX2=JA_IE(I1,2,IE)
-          IDX3=JA_IE(I1,3,IE)
           CALL COMPUTE_DIFF(IE, I1, UGRAD1, VGRAD1)
           eScal=UGRAD1*eFX + VGRAD1*eFY
           B(IP1) = B(IP1) + eScal*eArea
