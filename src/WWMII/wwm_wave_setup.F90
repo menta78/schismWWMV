@@ -85,7 +85,7 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
-      REAL(rkind) :: h
+      REAL(rkind) :: h, eYP
 #ifdef DEBUG
       REAL(rkind) :: F1, F2, F3
 #endif
