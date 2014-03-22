@@ -85,7 +85,7 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
-      REAL(rkind) :: h
+      REAL(rkind) :: h, eYP
 #ifdef DEBUG
       REAL(rkind) :: F1, F2, F3
 #endif
@@ -695,8 +695,7 @@
       eVect(2)=SUM_SI
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(rVect,2,rtype, iProc-1, 367, comm, istatus\
-, ierr)   
+          CALL MPI_RECV(rVect,2,rtype, iProc-1, 367, comm, istatus, ierr)
           eVect=eVect + rVect
         END DO
         DO iProc=2,nproc
