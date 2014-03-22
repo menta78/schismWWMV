@@ -242,7 +242,7 @@
  ENDTC   = 20000101.010000     ,
  DEFINETC        =   86400.0000000000     ,
  OUTSTYLE        = NC                 ,
- FILEOUT = history.dat                             ,
+ FILEOUT = history_ll.dat                             ,
  LOUTITER        = F,
  IOBPD   = F,
  LENERGY = F,
