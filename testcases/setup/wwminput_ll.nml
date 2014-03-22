@@ -237,11 +237,11 @@
 
  &HISTORY
  BEGTC   = 20000101.000000     ,
- DELTC   =  5.000000000000000E-002,
+ DELTC   =  5.000000000000000,
  UNITC   = SEC                 ,
  ENDTC   = 20000101.010000     ,
  DEFINETC        =   86400.0000000000     ,
- OUTSTYLE        = XFN                 ,
+ OUTSTYLE        = NC                 ,
  FILEOUT = history.dat                             ,
  LOUTITER        = F,
  IOBPD   = F,
@@ -253,8 +253,8 @@
  USE_SINGLE_OUT  = T,
  PRINTMMA        = F,
  HS      = T,
- TM01    = F,
- TM02    = F,
+ TM01    = T,
+ TM02    = T,
  TM10    = F,
  KLM     = F,
  WLM     = F,
@@ -291,7 +291,7 @@
  WATLEV  = F,
  WATLEVOLD       = F,
  DEPDT   = F,
- DEP     = F,
+ DEP     = T,
  WINDMAG = F,
  TAUW    = F,
  TAUWX   = F,
@@ -304,13 +304,13 @@
  STOKESSURFY     = F,
  STOKESBAROX     = F,
  STOKESBAROY     = F,
- RSXX    = F,
- RSXY    = F,
- RSYY    = F,
+ RSXX    = T,
+ RSXY    = T,
+ RSYY    = T,
  CFL1    = F,
  CFL2    = F,
  CFL3    = F,
- ZETA_SETUP      = F
+ ZETA_SETUP      = T
  /
 
 
