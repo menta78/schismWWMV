@@ -1067,6 +1067,7 @@
              I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
              I2    =  POSI(2,J)
              I3    =  POSI(3,J)
+             WRITE(*,*) I1, I2, I3, POS, POS_TRICK(POS,1), POS_TRICK(POS,2)
              ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
              ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
              ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)
@@ -1093,14 +1094,14 @@
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-               GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
-               GTEMP2 = IMATRAA(IP,IS,ID)/GTEMP1
+!               GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+               GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
                DELFL  = COFRM4(IS)*DT4S
                USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
-               B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4A*SI(IP) 
-               LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+               B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP) 
+               LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
                ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
              ENDIF
            END DO
