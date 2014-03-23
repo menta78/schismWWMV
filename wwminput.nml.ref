@@ -20,6 +20,8 @@
  DMIN           = 0.001              ! Minimum water depth. This is not used in selfe; with selfe this is set automatically to h0 in param.in
 /
 
+
+
 &COUPL
  LCPL           = T                  ! Couple with current model ... main switch - keep it on
  LROMS          = F                  ! ROMS (set as F)
@@ -41,6 +43,8 @@
  NLVT           = 10                 ! Number of vertical Layers in SHYFEM
  DTCOUP         = 600.               ! Couple time step - not used when coupled to SELFE
 /
+
+
 
 &GRID
  LCIRD          = T                  ! Full circle in directional space
