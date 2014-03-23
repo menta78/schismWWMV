@@ -5,7 +5,7 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DWWM_SOLVER -DWWM_SETUP#-DUSE_SINGLE#-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on 
+MPI = 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC = 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.

@@ -112,7 +112,7 @@
                       IEWRONGSUM = IEWRONGSUM + 1
                       WRITE(DBG%FHNDL,*) 'WRONG ELEMENT', IE, 'WRONG NODENUMBERS', INE(:,IE)
                       WRITE(DBG%FHNDL,'(A40,6F15.8)') 'EDGELENGTHS OF THE WRONG ELEMENT', IEN(:,IE)
-                   ELSE IF (TRIA(IE) .LT. 1.E-10_rkind) THEN 
+                   ELSE IF (TRIA(IE) .LT. THR) THEN 
                      write(DBG%FHNDL,*) 'IE=', IE, ' TRIA=', TRIA(IE)
                      write(DBG%FHNDL,*) 'DXP1=', DXP1, ' DXP3=', DXP3
                      write(DBG%FHNDL,*) 'DYP1=', DYP1, ' DYP3=', DYP3
