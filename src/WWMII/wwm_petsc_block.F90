@@ -377,8 +377,6 @@
             maxNumConnNode = IA_P(IP+1) - IA_P(IP)
           end if
         end do
-
-
         ! simpley calc NNZ and  o_NNZ for one MSD and MDC; for one small matrix
         ! then multiply with MSC MDC and you have the numbers for the big matrix
         ! calc NNZ and offdiagonal NNZ
