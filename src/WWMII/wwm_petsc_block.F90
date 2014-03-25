@@ -1110,6 +1110,7 @@
                   oASPAR_petsc(idx) = value3 + oASPAR_petsc(idx)
                 else
                   idx = petscAsparPosi3 + (AsparApp2Petsc_small(I3) - IA_petsc_small(IPpetsc)) + 1
+                  ASPAR_petsc(idx) = value3 + ASPAR_petsc(idx)
                 endif
               end do !I: loop over connected elements ...
             else ! add only triangle area
