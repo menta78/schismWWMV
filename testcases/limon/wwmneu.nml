@@ -1,0 +1,117 @@
+&PROC
+ PROCNAME = 'bar'
+ DIMMODE = 2
+ LSTEA = .FALSE. 
+ LSPHE = .FALSE. 
+ BEGTC = '20000101.000000' 
+ DELTC =  60. 
+ UNITC = 'SEC' 
+ ENDTC = '20000101.200000' 
+&END
+
+&GRID
+ MNP = 1602 ,
+ MNE = 2998 ,
+ LCIRD = .TRUE. ,
+ MINDIR = 0.0 ,
+ MAXDIR = 360.0 ,
+ MDC = 36,
+ FRLOW = 0.04 ,
+ FRHIG = 1.0 ,
+ MSC = 20,
+ FNFL1 = 'wwm.dat' ,
+&END
+
+&INIT
+ LHOTR = .FALSE. ,
+ FNFL1 = ' ' ,
+&END
+
+&BOUC
+ LBCLA = .FALSE. ,
+ FNFL1 = ' ' ,
+ LBCWA = .TRUE. ,
+ FNFL2 = 'wave.bcd' ,
+ PGIVE =  4.0, 10.0, 0.0, 275.0, 2.0, 
+ LBCSP = .F. , 
+ FNFL3 = 'p01.dat' ,
+&END
+
+&WIND
+ LSEWD = .FALSE. ,
+ BEGTC = '20000101.000000' ,
+ DELTC = 1 ,
+ UNITC = 'HR' ,
+ ENDTC = '20000105.000000' ,
+ LSTWD = .TRUE. ,
+ LCWIN = .TRUE. ,
+ CWINDX = 0.0 ,
+ CWINDY = 0.0 ,
+ FNFL1 = '  ' ,
+&END
+
+&CURR
+ LSECU = .F. ,
+ BEGTC = ' ' ,
+ DELTC = 1 ,
+ UNITC = 'HR' ,
+ ENDTC = ' ' ,
+ LSTCU = .F. ,
+ LCCUR = .F. ,
+ CCURTX = 0.0 ,
+ CCURTY = 0.0 ,
+ FNFL1 = ' ' ,
+&END
+
+&ENGS
+ LGENS = .T. ,
+ LQUAD = .T. ,
+ MESNL =  1  ,
+ LLIMT = .T. ,
+ LSWIN = .T. ,
+ MESIN =  4  ,
+ IFRIC =  4  ,
+ LSBTF = .T. ,
+ MESBF =  1  ,
+ LSWBR = .T. ,
+ MESBR =  3  ,
+ ICRIT =  1  ,
+ LSWDS = .T. ,
+ MESDS =  3  ,
+ LSTRI = .T. ,
+ MESTR =  3  ,
+ LWIDV = .T. ,
+ LCUDV = .F. ,
+&END
+
+&CONS
+ LWCAP = .F. ,
+ FNFL1 = 'wcap.dat' ,
+&END
+
+&NUMS
+ DMETHOD = 3,
+ LCORR   = .F. ,
+ LDIFR   = .F. ,
+ LADDA   = .F.,
+&END
+
+&OUTP
+ BEGTC = '20000101.000000' ,
+ DELTC = 1 ,
+ UNITC = 'sec' ,
+ ENDTC = '20000105.000000' ,
+ FNFL1 = 'bar.log' ,
+ FNFL2 = 'bar.dat' ,
+ LHOTF = .FALSE. ,
+ FNFL3 = ' ' ,
+&END
+
+&ASMI
+ LASSI = .FALSE. ,
+ BEGTC = '20000101.000000' ,
+ DELTC = 1.0 ,
+ UNITC = 'HR' ,
+ ENDTC = '20000101.000000' ,
+ FNFL1 = ' ' ,
+&END

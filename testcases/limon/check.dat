@@ -1,0 +1,17 @@
+ &PROC
+ PROCNAME        = wwm3test,
+ DIMMODE =           2,
+ LSTEA   = F,
+ LQSTEA  = F,
+ LSPHE   = F,
+ LOMP    = F,
+ LNAUTIN = T,
+ LCPL    = F,
+ BEGTC   = 20000101.000000     ,
+ DELTC   =   100.0000    ,
+ DTCOUP  =  0.0000000E+00,
+ UNITC   = SEC                 ,
+ ENDTC   = 20000102.000000     ,
+ DMIN    =  9.9999998E-03,
+ DMINTRIAD       =  9.9999998E-03
+ /
