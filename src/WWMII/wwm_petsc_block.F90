@@ -1000,8 +1000,6 @@
         POS_TRICK(3,1) = 1
         POS_TRICK(3,2) = 2
 
-        stop 'direct'
-
         I      = 0
         IPGL1  = 0
         IE     = 0
@@ -1189,8 +1187,6 @@
         POS_TRICK(2,2) = 1
         POS_TRICK(3,1) = 1
         POS_TRICK(3,2) = 2
-
-        stop 'nondirect'
 
         I      = 0
         IPGL1  = 0
