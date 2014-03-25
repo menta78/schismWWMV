@@ -6,12 +6,12 @@
  LSPHE   = F,
  LNAUTIN = T,
  LNAUTOUT        = T,
- LMONO_OUT       = T,
- LMONO_IN        = T,
+ LMONO_OUT       = F,
+ LMONO_IN        = F,
  BEGTC   = 20000101.000000     ,
  DELTC   =  5.000000000000000E-002,
  UNITC   = SEC                 ,
- ENDTC   = 20000101.000500     ,
+ ENDTC   = 20000101.000100     ,
  DMIN    =  1.000000000000000E-004
  /
 
@@ -159,9 +159,8 @@
  MESBR   =           1,
  ICRIT   =           1,
  ALPBJ   =  0.500000000000000     ,
- BRHD    =  0.830000000000000     ,
+ BRHD    =  0.810000000000000     ,
  LMAXETOT        = T,
- BRHD = 1.1455
  MESDS   =           2,
  MESTR   =           1,
  TRICO   =  0.100000000000000     ,
