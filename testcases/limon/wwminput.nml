@@ -152,8 +152,8 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           5,
+ ICOMP   =           1,
+ AMETHOD =           1,
  SMETHOD =           0,
  DMETHOD =           0,
  LITERSPLIT      = F,

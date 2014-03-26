@@ -1067,7 +1067,6 @@
              I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
              I2    =  POSI(2,J)
              I3    =  POSI(3,J)
-             WRITE(*,*) I1, I2, I3, POS, POS_TRICK(POS,1), POS_TRICK(POS,2)
              ASPAR(I1) =  TRIA03 + DTK - TMP3 * DELTAL(POS             ,IE) + ASPAR(I1)  ! Diagonal entry
              ASPAR(I2) =               - TMP3 * DELTAL(POS_TRICK(POS,1),IE) + ASPAR(I2)  ! off diagonal entries ...
              ASPAR(I3) =               - TMP3 * DELTAL(POS_TRICK(POS,2),IE) + ASPAR(I3)

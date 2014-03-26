@@ -157,11 +157,11 @@
       integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
-      logical :: FREQ_SHIFT_IMPL = .TRUE.
+      logical :: FREQ_SHIFT_IMPL = .FALSE.
 !      logical :: FREQ_SHIFT_IMPL = .FALSE.
       logical :: REFRACTION_IMPL = .TRUE.
 !      logical :: REFRACTION_IMPL = .FALSE.
-      logical :: SOURCE_IMPL = .TRUE.
+      logical :: SOURCE_IMPL = .FALSE.
 !      logical :: SOURCE_IMPL = .FALSE.
 #  ifdef DIRECT_METHOD
       integer, allocatable :: AsparApp2Petsc(:)
