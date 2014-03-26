@@ -785,10 +785,10 @@
 !**********************************************************************
       !> calc only rhs and fill direct into petsc myB
       !> use newer code from fluct
-      SUBROUTINE calcB()
+      SUBROUTINE calcB
         use datapool, only: MSC, MDC, MNP, INE, ONESIXTH, ONETHIRD
         use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL
-        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP
+        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, IOBDP
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
         use datapool, only : IMATRAA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d
@@ -834,34 +834,34 @@
           end do
 
           ! wenn der knoten tief genug liegt und was mitm rand ist, dann alle richtungen/frequenezn auf ihn loslassen
-          if(IOBWB(IP) .EQ. 1) then
+          !if(IOBWB(IP) .EQ. 1) then
             do ISS = 1, MSC
               do IDD = 1, MDC
                 ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
                 idx=toRowIndex(IPpetsc, ISS, IDD) + 1
-                if(IOBPD(IDD,IP) .EQ. 1) then
+                !if(IOBPD(IDD,IP) .EQ. 1) then
 !                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(IP, ISS, IDD))
-                  value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
+                  value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))*IOBPD(IDD,IP)*IOBDP(IP)*IOBWB(IP)
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)
 
                 ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
-                else
-                  myBtemp(idx) = 0
-                endif
+                !else
+                !  myBtemp(idx) = 0
+                !endif
 
               end do ! IDD
             end do ! ISS
 
           ! set node to 0 for all frequency/directions
-          else
-            value = 0.
-            do ISS = 1, MSC
-              do IDD = 1, MDC
-                myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
-              end do
-            end do
-          endif
+          !else
+          !  value = 0.
+          !  do ISS = 1, MSC
+          !    do IDD = 1, MDC
+          !      myBtemp(toRowIndex(IPpetsc, ISS, IDD) + 1) = 0
+          !    end do
+          !  end do
+          !endif
         end do ! IP
 
         if (LBCWA .OR. LBCSP) then
@@ -1131,7 +1131,7 @@
         use datapool, only: MSC, MDC, MNP, INE, myrank, IA
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
-        use datapool, only: DT4A, POSI, ZERO, ONE, TWO
+        use datapool, only: DT4A, POSI, ZERO, ONE, TWO, IOBDP
         use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
         use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
@@ -1277,7 +1277,7 @@
         do ISS = 1, MSC
           call CADVXY3(ISS, elementList, elementListSize, C1, C2, C3)
           do IDD = 1, MDC ! over all directions
-            if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
+            !if (IOBPD(IDD,IP) .EQ. 1 .and. IOBWB(IP) .EQ. 1 .and. dep(ip) .gt. dmin) then
               LAMBDA(:,1:NECON) = ONESIXTH * (C1(:, 1:NECON, IDD) + C2(:, 1:NECON, IDD) + C3(:, 1:NECON, IDD))
               K(1,1:NECON)=LAMBDA(1,1:NECON) * IEN(1,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(2,IEarr(1:NECON))
               K(2,1:NECON)=LAMBDA(1,1:NECON) * IEN(3,IEarr(1:NECON)) + LAMBDA(2,1:NECON) * IEN(4,IEarr(1:NECON))
@@ -1296,7 +1296,7 @@
               DELTAL(:,1:NECON) = CRFS(:, 1:NECON)- KP(:, 1:NECON)
               NM(1:NECON) = ONE/MIN(-THR,SUM(KM(:, 1:NECON),DIM=1))
               do I = 1, CCON(IP)
-                DTK = KP(POSarr(i), i) * DT4A
+                DTK = KP(POSarr(i), i) * DT4A *IOBPD(IDD,IP)*IOBDP(IP)*IOBWB(IP)
                 J=IA_P(IP) + I
                 value(1)=TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
                 value(2)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
@@ -1307,13 +1307,13 @@
                   ASPAR_block(ISS,IDD,idx)=ASPAR_block(ISS,IDD,idx)+value(L)
                 END DO
               END DO
-            ELSE
-              DO I = 1, CCON(IP)
-                idx=POSI(1, Jcum(IP) + I) - IA_P(IP)
-                value1 =  TRIA03arr(i)
-                ASPAR_block(ISS,IDD,idx) = value1 + ASPAR_block(ISS,IDD,idx)
-              END DO
-            END IF
+            !ELSE
+            !  DO I = 1, CCON(IP)
+            !    idx=POSI(1, Jcum(IP) + I) - IA_P(IP)
+            !    value1 =  TRIA03arr(i)
+            !    ASPAR_block(ISS,IDD,idx) = value1 + ASPAR_block(ISS,IDD,idx)
+            !  END DO
+            !END IF
           end do
         end do
         !
@@ -1725,7 +1725,7 @@
 #  ifdef TIMINGS
 !         call MY_WTIME(startTime)
 #  endif
-        call calcB()
+        call calcB
 #  ifdef TIMINGS
 !         call MY_WTIME(endTime)
 #  endif
@@ -1794,7 +1794,7 @@
           DO ISS = 1, MSC
             DO IDD = 1, MDC
               value = myXtemp(toRowIndex(IP, ISS, IDD) + 1)
-              AC2(rowLocal, ISS, IDD) = MAX(ZERO, value) !* IOBPD(IDD,IP)
+              AC2(rowLocal, ISS, IDD) = MAX(ZERO, value) 
             end do
           end do
         end do
@@ -2158,6 +2158,7 @@
         real(rkind) :: AC22(MDC, MSC, MNP)
 
         PetscScalar :: value, value1
+
 
 
         ASPAR_petsc  = 0
