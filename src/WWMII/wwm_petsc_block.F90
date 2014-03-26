@@ -525,45 +525,49 @@
                 end if
               end do ! cols
 #  ifdef DIRECT_METHOD
-              IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
-                IF (ISS .gt. 1) THEN
-                  nToSort = nToSort + 1
-                  idxpos=idxpos+1
-                  ThePos=toRowIndex(IPpetsc, ISS-1, IDD)
-                  toSort(nToSort)%userData = idxpos
-                  toSort(nToSort)%id = ThePos
-                END IF
-                IF (ISS .lt. MSC) THEN
-                  nToSort = nToSort + 1
-                  idxpos=idxpos+1
-                  ThePos=toRowIndex(IPpetsc, ISS+1, IDD)
-                  toSort(nToSort)%userData = idxpos
-                  toSort(nToSort)%id = ThePos
+              IF (FREQ_SHIFT_IMPL) THEN
+                IF (DoFrequencyImpl(IPpetsc)) THEN
+                  IF (ISS .gt. 1) THEN
+                    nToSort = nToSort + 1
+                    idxpos=idxpos+1
+                    ThePos=toRowIndex(IPpetsc, ISS-1, IDD)
+                    toSort(nToSort)%userData = idxpos
+                    toSort(nToSort)%id = ThePos
+                  END IF
+                  IF (ISS .lt. MSC) THEN
+                    nToSort = nToSort + 1
+                    idxpos=idxpos+1
+                    ThePos=toRowIndex(IPpetsc, ISS+1, IDD)
+                    toSort(nToSort)%userData = idxpos
+                    toSort(nToSort)%id = ThePos
+                  END IF
                 END IF
               END IF
-              IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
-                IF (IDD == 1) THEN
-                  IDprev=MDC
-                ELSE
-                  IDprev=IDD-1
+              IF (REFRACTION_IMPL) THEN
+                IF (DoDirectionImpl(IPpetsc)) THEN
+                  IF (IDD == 1) THEN
+                    IDprev=MDC
+                  ELSE
+                    IDprev=IDD-1
+                  END IF
+                  IF (IDD == MDC) THEN
+                    IDnext=1
+                  ELSE
+                    IDnext=IDD+1
+                  END IF
+                  !
+                  nToSort = nToSort + 1
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex(IPpetsc, ISS, IDprev)
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
+                  !
+                  nToSort = nToSort + 1
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex(IPpetsc, ISS, IDnext)
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
                 END IF
-                IF (IDD == MDC) THEN
-                  IDnext=1
-                ELSE
-                  IDnext=IDD+1
-                END IF
-                !
-                nToSort = nToSort + 1
-                idxpos=idxpos+1
-                ThePos=toRowIndex(IPpetsc, ISS, IDprev)
-                toSort(nToSort)%userData = idxpos
-                toSort(nToSort)%id = ThePos
-                !
-                nToSort = nToSort + 1
-                idxpos=idxpos+1
-                ThePos=toRowIndex(IPpetsc, ISS, IDnext)
-                toSort(nToSort)%userData = idxpos
-                toSort(nToSort)%id = ThePos
               END IF
 #  endif
               call bubbleSort(toSort, nToSort)
@@ -1230,44 +1234,47 @@
           elementList(i) = IE
         enddo
 
-        IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
-          CALL PROPSIGMA(IP,CAS)
-          DO IDD = 1, MDC
-            CASS(1:MSC) = CAS(:,IDD)
-            CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
-            CP_SIG = MAX(ZERO,CASS)
-            CM_SIG = MIN(ZERO,CASS)
-            ! Now forming the tridiagonal system
-            DO ISS=1,MSC
-              B_SIG(ISS,IDD)= DT4F*(CP_SIG(ISS)/DS_INCR(ISS-1) - CM_SIG(ISS) /DS_INCR(ISS))
+        IF (FREQ_SHIFT_IMPL) THEN
+          IF (DoFrequencyImpl(IPpetsc)) THEN
+            CALL PROPSIGMA(IP,CAS)
+            DO IDD = 1, MDC
+              CASS(1:MSC) = CAS(:,IDD)
+              CASS(0)     = 0.
+              CASS(MSC+1) = CASS(MSC)
+              CP_SIG = MAX(ZERO,CASS)
+              CM_SIG = MIN(ZERO,CASS)
+              ! Now forming the tridiagonal system
+              DO ISS=1,MSC
+                B_SIG(ISS,IDD)= DT4F*(CP_SIG(ISS)/DS_INCR(ISS-1) - CM_SIG(ISS) /DS_INCR(ISS))
+              END DO
+              DO ISS=2,MSC
+                A_SIG(ISS,IDD) = - DT4F*CP_SIG(ISS-1)/DS_INCR(ISS-1)
+              END DO
+              !
+              DO ISS=1,MSC-1
+                C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
+              END DO
+              B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
             END DO
-            DO ISS=2,MSC
-              A_SIG(ISS,IDD) = - DT4F*CP_SIG(ISS-1)/DS_INCR(ISS-1)
-            END DO
-            !
-            DO ISS=1,MSC-1
-              C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
-            END DO
-            B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-          END DO
+          END IF
         END IF
-
-        IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
-          CALL PROPTHETA(IP,CAD)
-          DO ISS = 1, MSC
-            CP_THE = MAX(ZERO,CAD(ISS,:))
-            CM_THE = MIN(ZERO,CAD(ISS,:))
-            DO IDD=1,MDC
-              IDD1 = IDD - 1
-              IDD2 = IDD + 1
-              IF (IDD .EQ. 1) IDD1 = MDC
-              IF (IDD .EQ. MDC) IDD2 = 1
-              A_THE(ISS,IDD) = - (DT4D/DDIR) *  CP_THE(IDD1)
-              B_THE(ISS,IDD) =   (DT4D/DDIR) * (CP_THE(IDD) - CM_THE(IDD))
-              C_THE(ISS,IDD) =   (DT4D/DDIR) *  CM_THE(IDD2)
+        IF (REFRACTION_IMPL) THEN
+          IF (DoDirectionImpl(IPpetsc)) THEN
+            CALL PROPTHETA(IP,CAD)
+            DO ISS = 1, MSC
+              CP_THE = MAX(ZERO,CAD(ISS,:))
+              CM_THE = MIN(ZERO,CAD(ISS,:))
+              DO IDD=1,MDC
+                IDD1 = IDD - 1
+                IDD2 = IDD + 1
+                IF (IDD .EQ. 1) IDD1 = MDC
+                IF (IDD .EQ. MDC) IDD2 = 1
+                A_THE(ISS,IDD) = - (DT4D/DDIR) *  CP_THE(IDD1)
+                B_THE(ISS,IDD) =   (DT4D/DDIR) * (CP_THE(IDD) - CM_THE(IDD))
+                C_THE(ISS,IDD) =   (DT4D/DDIR) *  CM_THE(IDD2)
+              END DO
             END DO
-          END DO
+          END IF
         END IF
         !
         ! Computing the ASPAR_block terms
@@ -1334,39 +1341,43 @@
                 ASPAR_petsc (idx)= ASPAR_petsc(idx) + eValue
               END IF
             END DO
-            IF (FREQ_SHIFT_IMPL .and. DoFrequencyImpl(IPpetsc)) THEN
-              IF (ISS .gt. 1) THEN
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_SIG(ISS,IDD)*SI(IP)
-              END IF
-              idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-              ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_SIG(ISS,IDD)*SI(IP)
-              IF (ISS .lt. MSC) THEN
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_SIG(ISS,IDD)*SI(IP)
+            IF (FREQ_SHIFT_IMPL) THEN
+              IF (DoFrequencyImpl(IPpetsc)) THEN
+                IF (ISS .gt. 1) THEN
+                  idxpos=idxpos+1
+                  idx=AsparApp2Petsc(idxpos)
+                  ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_SIG(ISS,IDD)*SI(IP)
+                END IF
+                idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_SIG(ISS,IDD)*SI(IP)
+                IF (ISS .lt. MSC) THEN
+                  idxpos=idxpos+1
+                  idx=AsparApp2Petsc(idxpos)
+                  ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_SIG(ISS,IDD)*SI(IP)
+                END IF
               END IF
             END IF
-            IF (REFRACTION_IMPL .and. DoDirectionImpl(IPpetsc)) THEN
-              IF (IDD == 1) THEN
-                IDD1=MDC
-              ELSE
-                IDD1=IDD-1
+            IF (REFRACTION_IMPL) THEN
+              IF (DoDirectionImpl(IPpetsc)) THEN
+                IF (IDD == 1) THEN
+                  IDD1=MDC
+                ELSE
+                  IDD1=IDD-1
+                END IF
+                IF (IDD == MDC) THEN
+                  IDD2=1
+                ELSE
+                  IDD2=IDD+1
+                END IF
+                idxpos=idxpos+1
+                idx=AsparApp2Petsc(idxpos)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
+                idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
+                idxpos=idxpos+1
+                idx=AsparApp2Petsc(idxpos)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
               END IF
-              IF (IDD == MDC) THEN
-                IDD2=1
-              ELSE
-                IDD2=IDD+1
-              END IF
-              idxpos=idxpos+1
-              idx=AsparApp2Petsc(idxpos)
-              ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
-              idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-              ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
-              idxpos=idxpos+1
-              idx=AsparApp2Petsc(idxpos)
-              ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
             END IF
           end do
         end do
