@@ -286,9 +286,9 @@
  RSXX    = F,
  RSXY    = F,
  RSYY    = F,
- CFL1    = F,
- CFL2    = F,
- CFL3    = F,
+ CFL1    = T,
+ CFL2    = T,
+ CFL3    = T,
  ZETA_SETUP      = F
  /
  &STATION
