@@ -942,7 +942,7 @@
 
         integer :: I
         integer :: IPGL1, IE, POS
-        integer :: I1, I2, I3, IDD1, IDD2, idxpos
+        integer :: I1, I2, I3, idxpos
         integer :: POS_TRICK(3,2)
 
         real(rkind)  :: DTK, TMP3
@@ -1356,21 +1356,13 @@
             END IF
             IF (REFRACTION_IMPL) THEN
               IF (DoDirectionImpl(IPpetsc)) THEN
-                IF (IDD == 1) THEN
-                  IDD1=MDC
-                ELSE
-                  IDD1=IDD-1
-                END IF
-                IF (IDD == MDC) THEN
-                  IDD2=1
-                ELSE
-                  IDD2=IDD+1
-                END IF
                 idxpos=idxpos+1
                 idx=AsparApp2Petsc(idxpos)
                 ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
+                !
                 idx=I_DIAGtotal(ISS,IDD,IPpetsc)
                 ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
+                !
                 idxpos=idxpos+1
                 idx=AsparApp2Petsc(idxpos)
                 ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
