@@ -690,6 +690,9 @@
 #ifdef NCDF
          USE NETCDF
 #endif
+#ifdef PETSC
+         USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL
+#endif
          USE DATAPOOL
 #ifdef SELFE
          use elfe_glbl, only : ics
@@ -997,6 +1000,23 @@
          wwm_print_namelist(NUMS)
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
+#if defined PETSC && defined MPI_PARALL_GRID
+         IF (DMETHOD .eq. 0) THEN
+           REFRACTION_IMPL=.FALSE.
+         ELSE
+           REFRACTION_IMPL=.TRUE.
+         END IF
+         IF (FMETHOD .eq. 0) THEN
+           FREQ_SHIFT_IMPL=.FALSE.
+         ELSE
+           FREQ_SHIFT_IMPL=.TRUE.
+         END IF
+         IF (SMETHOD .eq. 0) THEN
+           SOURCE_IMPL=.FALSE.
+         ELSE
+           SOURCE_IMPL=.TRUE.
+         END IF
+#endif
 !
 !     **** HOTFILE section
 

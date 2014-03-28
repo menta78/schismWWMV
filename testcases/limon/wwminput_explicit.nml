@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 120.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980902.010000     ,
  DMIN    =  1.000000000000000E-004
@@ -152,10 +152,10 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           5,
+ ICOMP   =           0,
+ AMETHOD =           1,
  SMETHOD =           0,
- DMETHOD =           0,
+ DMETHOD =           5,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -174,7 +174,7 @@
  LADVTEST        = F,
  LSOUBOUND       = F,
  LCONV   = F,
- LCFL    = F,
+ LCFL    = T,
  LCHKCONV        = T,
  NQSITER =          10,
  QSCONV1 =  0.980000000000000     ,
@@ -220,7 +220,7 @@
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DEFINETC        =  0.000000000000000E+000,
- OUTSTYLE        = XFN                 ,
+ OUTSTYLE        = NC                 ,
  FILEOUT = field.dat                               ,
  LOUTITER        = F,
  IOBPD   = F,
