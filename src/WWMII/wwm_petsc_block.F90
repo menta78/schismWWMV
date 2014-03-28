@@ -165,7 +165,6 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-      logical, allocatable :: DoDirectionImpl(:)
       logical, allocatable :: DoFrequencyImpl(:)
 #  endif
 
@@ -413,23 +412,7 @@
           maxNumConnNode = maxNumConnNode +2
         END IF
         IF (REFRACTION_IMPL) THEN
-          ALLOCATE(DoDirectionImpl(nNodesWithoutInterfaceGhosts), stat=istat)
-          if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
-          NbRefr=0
-          DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
-            IP = PLO2ALO(IPpetsc-1)+1
-            TheVal = 1
-            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. IOBP(IP) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal = 0
-            IF (DEP(IP) .LT. DMIN) TheVal = 0 ! skip dry nodes ...
-            IF (IOBP(IP) .EQ. 2) TheVal = 0 ! skip active boundary points ...
-            TheVal = 0 
-            IF (TheVal .eq. 1) THEN
-              DoDirectionImpl(IPpetsc)=.TRUE.
-            ELSE
-              DoDirectionImpl(IPpetsc)=.FALSE.
-            END IF
-            NbRefr=NbRefr + TheVal
-          END DO
+          NbRefr=nNodesWithoutInterfaceGhosts
           nnz_new=nnz_new + MSC*(2*MDC)*NbRefr
           maxNumConnNode = maxNumConnNode + 2
         END IF
@@ -544,30 +527,28 @@
                 END IF
               END IF
               IF (REFRACTION_IMPL) THEN
-                IF (DoDirectionImpl(IPpetsc)) THEN
-                  IF (IDD == 1) THEN
-                    IDprev=MDC
-                  ELSE
-                    IDprev=IDD-1
-                  END IF
-                  IF (IDD == MDC) THEN
-                    IDnext=1
-                  ELSE
-                    IDnext=IDD+1
-                  END IF
-                  !
-                  nToSort = nToSort + 1
-                  idxpos=idxpos+1
-                  ThePos=toRowIndex(IPpetsc, ISS, IDprev)
-                  toSort(nToSort)%userData = idxpos
-                  toSort(nToSort)%id = ThePos
-                  !
-                  nToSort = nToSort + 1
-                  idxpos=idxpos+1
-                  ThePos=toRowIndex(IPpetsc, ISS, IDnext)
-                  toSort(nToSort)%userData = idxpos
-                  toSort(nToSort)%id = ThePos
+                IF (IDD == 1) THEN
+                  IDprev=MDC
+                ELSE
+                  IDprev=IDD-1
                 END IF
+                IF (IDD == MDC) THEN
+                  IDnext=1
+                ELSE
+                  IDnext=IDD+1
+                END IF
+                !
+                nToSort = nToSort + 1
+                idxpos=idxpos+1
+                ThePos=toRowIndex(IPpetsc, ISS, IDprev)
+                toSort(nToSort)%userData = idxpos
+                toSort(nToSort)%id = ThePos
+                !
+                nToSort = nToSort + 1
+                idxpos=idxpos+1
+                ThePos=toRowIndex(IPpetsc, ISS, IDnext)
+                toSort(nToSort)%userData = idxpos
+                toSort(nToSort)%id = ThePos
               END IF
 #  endif
               call bubbleSort(toSort, nToSort)
@@ -1133,7 +1114,7 @@
 !* Now the second scheme DIRECT_METHOD.                                *
 !**********************************************************************
       SUBROUTINE calcASPARomp(IP)
-        use datapool, only: MSC, MDC, MNP, INE, myrank, IA
+        use datapool, only: MSC, MDC, MNP, INE, myrank, IA, LTHBOUND
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO, IOBDP
@@ -1174,6 +1155,7 @@
 
         integer :: elementList(MAXMNECON)
         integer :: elementListSize
+        INTEGER :: TheVal
         real(kind=rkind)  :: C1(2, MAXMNECON, MDC)
         real(kind=rkind)  :: C2(2, MAXMNECON, MDC)
         real(kind=rkind)  :: C3(2, MAXMNECON, MDC)
@@ -1260,22 +1242,28 @@
           END IF
         END IF
         IF (REFRACTION_IMPL) THEN
-          IF (DoDirectionImpl(IPpetsc)) THEN
+          TheVal=1
+          IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+          IF (DEP(IP) .LT. DMIN) TheVal=0
+          IF (IOBP(IP) .EQ. 2) TheVal=0
+          IF (TheVal .eq. 1) THEN
             CALL PROPTHETA(IP,CAD)
-            DO ISS = 1, MSC
-              CP_THE = MAX(ZERO,CAD(ISS,:))
-              CM_THE = MIN(ZERO,CAD(ISS,:))
-              DO IDD=1,MDC
-                IDD1 = IDD - 1
-                IDD2 = IDD + 1
-                IF (IDD .EQ. 1) IDD1 = MDC
-                IF (IDD .EQ. MDC) IDD2 = 1
-                A_THE(ISS,IDD) = - (DT4D/DDIR) *  CP_THE(IDD1)
-                B_THE(ISS,IDD) =   (DT4D/DDIR) * (CP_THE(IDD) - CM_THE(IDD))
-                C_THE(ISS,IDD) =   (DT4D/DDIR) *  CM_THE(IDD2)
-              END DO
-            END DO
+          ELSE
+            CAD=ZERO
           END IF
+          DO ISS = 1, MSC
+            CP_THE = MAX(ZERO,CAD(ISS,:))
+            CM_THE = MIN(ZERO,CAD(ISS,:))
+            DO IDD=1,MDC
+              IDD1 = IDD - 1
+              IDD2 = IDD + 1
+              IF (IDD .EQ. 1) IDD1 = MDC
+              IF (IDD .EQ. MDC) IDD2 = 1
+              A_THE(ISS,IDD) = - (DT4D/DDIR) *  CP_THE(IDD1)
+              B_THE(ISS,IDD) =   (DT4D/DDIR) * (CP_THE(IDD) - CM_THE(IDD))
+              C_THE(ISS,IDD) =   (DT4D/DDIR) *  CM_THE(IDD2)
+            END DO
+          END DO
         END IF
         !
         ! Computing the ASPAR_block terms
@@ -1359,18 +1347,16 @@
               END IF
             END IF
             IF (REFRACTION_IMPL) THEN
-              IF (DoDirectionImpl(IPpetsc)) THEN
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
-                !
-                idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
-                !
-                idxpos=idxpos+1
-                idx=AsparApp2Petsc(idxpos)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
-              END IF
+              idxpos=idxpos+1
+              idx=AsparApp2Petsc(idxpos)
+              ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_THE(ISS,IDD)*SI(IP)
+              !
+              idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+              ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_THE(ISS,IDD)*SI(IP)
+              !
+              idxpos=idxpos+1
+              idx=AsparApp2Petsc(idxpos)
+              ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_THE(ISS,IDD)*SI(IP)
             END IF
           end do
         end do
