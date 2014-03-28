@@ -13,7 +13,7 @@
       contains
 
       !> calls the specific PETSC_INIT_* subroutine
-      subroutine PETSC_INIT()
+      subroutine PETSC_INIT
         use datapool, only: AMETHOD, DBG
         use petscpool, only: petscpoolInit, stageInit, stageSolve, petscErr
 #ifdef MPI_PARALL_GRID

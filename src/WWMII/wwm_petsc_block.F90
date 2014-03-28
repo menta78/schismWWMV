@@ -299,7 +299,7 @@
 !*                                                                    *
 !**********************************************************************
       !> create PETSC matrix which uses fortran arrays
-      SUBROUTINE createMatrix()
+      SUBROUTINE createMatrix
         use datapool, only: MSC, MDC, comm, np_global
         use petscpool
         use petscsys
@@ -330,9 +330,11 @@
         call MatSetOption(matrix, MAT_NO_OFF_PROC_ZERO_ROWS, PETSC_TRUE, petscErr);CHKERRQ(petscErr)
 
       end SUBROUTINE
-
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       !> create IA JA ASPAR petsc array for big sparse matrix
-      SUBROUTINE createCSR_petsc()
+      SUBROUTINE createCSR_petsc
         use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, LSIGBOUND, DEP, DMIN
         use petscpool
         use algorithm, only: bubbleSort, genericData
@@ -419,10 +421,11 @@
           NbRefr=0
           DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
             IP = PLO2ALO(IPpetsc-1)+1
-            TheVal=1
-            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
-            IF (DEP(IP) .LT. DMIN) TheVal=0
-            IF (IOBP(IP) .EQ. 2) TheVal=0
+            TheVal = 1
+            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. IOBP(IP) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal = 0
+            IF (DEP(IP) .LT. DMIN) TheVal = 0 ! skip dry nodes ...
+            IF (IOBP(IP) .EQ. 2) TheVal = 0 ! skip active boundary points ...
+            TheVal = 0 
             IF (TheVal .eq. 1) THEN
               DoDirectionImpl(IPpetsc)=.TRUE.
             ELSE
@@ -602,6 +605,7 @@
 
         deallocate(toSort, o_toSort, stat=istat)
         if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 5')
+
       end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1209,7 +1213,7 @@
         FL32   = 0
         CRFS   = 0
         K1     = 0
-        
+
         ! this is an ghost or interface node. ignore it
         if(ALO2PLO(IP-1) .lt. 0) then
           return
@@ -2413,3 +2417,5 @@
     END MODULE
 # endif
 #endif
+#include "wwm_functions.h"
+!**********************************************************************
