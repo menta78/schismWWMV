@@ -318,7 +318,7 @@
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
            IF (CFL1.or.CFL2.or.CFL3) THEN
-             CALL WWM_ABORT('You need to select LCFL=T if asking for LCFLx')
+             CALL WWM_ABORT('You need to select LCFL=T if asking for CFLx')
            ENDIF
          ENDIF
 !
@@ -554,7 +554,7 @@
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN
            IF (CFL1.or.CFL2.or.CFL3) THEN
-             CALL WWM_ABORT('You need to select LCFL=T if asking for LCFLx')
+             CALL WWM_ABORT('You need to select LCFL=T if asking for CFLx')
            ENDIF
          ENDIF
          IF (LOUTS) THEN
