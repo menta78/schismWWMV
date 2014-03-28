@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 120.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980902.010000     ,
  DMIN    =  1.000000000000000E-004
@@ -155,7 +155,7 @@
  ICOMP   =           3,
  AMETHOD =           5,
  SMETHOD =           0,
- DMETHOD =           0,
+ DMETHOD =           1,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -286,9 +286,9 @@
  RSXX    = F,
  RSXY    = F,
  RSYY    = F,
- CFL1    = T,
- CFL2    = T,
- CFL3    = T,
+ CFL1    = F,
+ CFL2    = F,
+ CFL3    = F,
  ZETA_SETUP      = F
  /
  &STATION
