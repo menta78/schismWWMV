@@ -165,7 +165,6 @@
       integer, allocatable :: oAsparApp2Petsc(:)
       integer, allocatable :: IA_Ptotal(:,:,:)
       integer, allocatable :: I_DIAGtotal(:,:,:)
-      logical, allocatable :: DoFrequencyImpl(:)
 #  endif
 
       ! crazy fortran. it runs faster if one get this array every time from the stack instead from heap at init.
@@ -392,22 +391,7 @@
         end do
 #  ifdef DIRECT_METHOD
         IF (FREQ_SHIFT_IMPL) THEN
-          ALLOCATE(DoFrequencyImpl(nNodesWithoutInterfaceGhosts), stat=istat)
-          if(istat /= 0) CALL WWM_ABORT('allocation error in wwm_petsc_block 4')
-          NbFreq=0
-          DO IPpetsc = 1, nNodesWithoutInterfaceGhosts
-            IP = PLO2ALO(IPpetsc-1)+1
-            TheVal=1
-            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
-            IF (DEP(IP) .LT. DMIN) TheVal=0
-            IF (IOBP(IP) .EQ. 2) TheVal=0
-            IF (TheVal .eq. 1) THEN
-              DoFrequencyImpl(IPpetsc)=.TRUE.
-            ELSE
-              DoFrequencyImpl(IPpetsc)=.FALSE.
-            END IF
-            NbFreq=NbFreq + TheVal
-          END DO
+          NbFreq=nNodesWithoutInterfaceGhosts
           nnz_new=nnz_new + MDC*(2*(MSC-1))*NbFreq
           maxNumConnNode = maxNumConnNode +2
         END IF
@@ -509,21 +493,19 @@
               end do ! cols
 #  ifdef DIRECT_METHOD
               IF (FREQ_SHIFT_IMPL) THEN
-                IF (DoFrequencyImpl(IPpetsc)) THEN
-                  IF (ISS .gt. 1) THEN
-                    nToSort = nToSort + 1
-                    idxpos=idxpos+1
-                    ThePos=toRowIndex(IPpetsc, ISS-1, IDD)
-                    toSort(nToSort)%userData = idxpos
-                    toSort(nToSort)%id = ThePos
-                  END IF
-                  IF (ISS .lt. MSC) THEN
-                    nToSort = nToSort + 1
-                    idxpos=idxpos+1
-                    ThePos=toRowIndex(IPpetsc, ISS+1, IDD)
-                    toSort(nToSort)%userData = idxpos
-                    toSort(nToSort)%id = ThePos
-                  END IF
+                IF (ISS .gt. 1) THEN
+                  nToSort = nToSort + 1
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex(IPpetsc, ISS-1, IDD)
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
+                END IF
+                IF (ISS .lt. MSC) THEN
+                  nToSort = nToSort + 1
+                  idxpos=idxpos+1
+                  ThePos=toRowIndex(IPpetsc, ISS+1, IDD)
+                  toSort(nToSort)%userData = idxpos
+                  toSort(nToSort)%id = ThePos
                 END IF
               END IF
               IF (REFRACTION_IMPL) THEN
@@ -1114,7 +1096,7 @@
 !* Now the second scheme DIRECT_METHOD.                                *
 !**********************************************************************
       SUBROUTINE calcASPARomp(IP)
-        use datapool, only: MSC, MDC, MNP, INE, myrank, IA, LTHBOUND
+        use datapool, only: MSC, MDC, MNP, INE, myrank, IA, LTHBOUND, LSIGBOUND
         use datapool, only: ONESIXTH, ONETHIRD, ZERO, ONE
         use datapool, only: THR, IEN, CCON, IE_CELL, POS_CELL, TRIA
         use datapool, only: DT4A, POSI, ZERO, ONE, TWO, IOBDP
@@ -1218,28 +1200,34 @@
         enddo
 
         IF (FREQ_SHIFT_IMPL) THEN
-          IF (DoFrequencyImpl(IPpetsc)) THEN
+          TheVal=1
+          IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+          IF (DEP(IP) .LT. DMIN) TheVal=0
+          IF (IOBP(IP) .EQ. 2) TheVal=0
+          IF (TheVal .eq. 1) THEN
             CALL PROPSIGMA(IP,CAS)
-            DO IDD = 1, MDC
-              CASS(1:MSC) = CAS(:,IDD)
-              CASS(0)     = 0.
-              CASS(MSC+1) = CASS(MSC)
-              CP_SIG = MAX(ZERO,CASS)
-              CM_SIG = MIN(ZERO,CASS)
-              ! Now forming the tridiagonal system
-              DO ISS=1,MSC
-                B_SIG(ISS,IDD)= DT4F*(CP_SIG(ISS)/DS_INCR(ISS-1) - CM_SIG(ISS) /DS_INCR(ISS))
-              END DO
-              DO ISS=2,MSC
-                A_SIG(ISS,IDD) = - DT4F*CP_SIG(ISS-1)/DS_INCR(ISS-1)
-              END DO
-              !
-              DO ISS=1,MSC-1
-                C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
-              END DO
-              B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-            END DO
+          ELSE
+            CAS=ZERO
           END IF
+          DO IDD = 1, MDC
+            CASS(1:MSC) = CAS(:,IDD)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            ! Now forming the tridiagonal system
+            DO ISS=1,MSC
+              B_SIG(ISS,IDD)= DT4F*(CP_SIG(ISS)/DS_INCR(ISS-1) - CM_SIG(ISS) /DS_INCR(ISS))
+            END DO
+            DO ISS=2,MSC
+              A_SIG(ISS,IDD) = - DT4F*CP_SIG(ISS-1)/DS_INCR(ISS-1)
+            END DO
+            !
+            DO ISS=1,MSC-1
+              C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
+            END DO
+            B_SIG(MSC,IDD) = B_SIG(MSC,IDD) + DT4F*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+          END DO
         END IF
         IF (REFRACTION_IMPL) THEN
           TheVal=1
@@ -1331,19 +1319,17 @@
               END IF
             END DO
             IF (FREQ_SHIFT_IMPL) THEN
-              IF (DoFrequencyImpl(IPpetsc)) THEN
-                IF (ISS .gt. 1) THEN
-                  idxpos=idxpos+1
-                  idx=AsparApp2Petsc(idxpos)
-                  ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_SIG(ISS,IDD)*SI(IP)
-                END IF
-                idx=I_DIAGtotal(ISS,IDD,IPpetsc)
-                ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_SIG(ISS,IDD)*SI(IP)
-                IF (ISS .lt. MSC) THEN
-                  idxpos=idxpos+1
-                  idx=AsparApp2Petsc(idxpos)
-                  ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_SIG(ISS,IDD)*SI(IP)
-                END IF
+              IF (ISS .gt. 1) THEN
+                idxpos=idxpos+1
+                idx=AsparApp2Petsc(idxpos)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + A_SIG(ISS,IDD)*SI(IP)
+              END IF
+              idx=I_DIAGtotal(ISS,IDD,IPpetsc)
+              ASPAR_petsc(idx)=ASPAR_petsc(idx) + B_SIG(ISS,IDD)*SI(IP)
+              IF (ISS .lt. MSC) THEN
+                idxpos=idxpos+1
+                idx=AsparApp2Petsc(idxpos)
+                ASPAR_petsc(idx)=ASPAR_petsc(idx) + C_SIG(ISS,IDD)*SI(IP)
               END IF
             END IF
             IF (REFRACTION_IMPL) THEN
