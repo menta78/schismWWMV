@@ -1001,20 +1001,25 @@
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
 #if defined PETSC && defined MPI_PARALL_GRID
-         IF (DMETHOD .eq. 0) THEN
+         IF (ICOMP .eq. 3) THEN
+           IF (DMETHOD .eq. 0) THEN
+             REFRACTION_IMPL=.FALSE.
+           ELSE
+             REFRACTION_IMPL=.TRUE.
+           END IF
+           IF (FMETHOD .eq. 0) THEN
+             FREQ_SHIFT_IMPL=.FALSE.
+           ELSE
+             FREQ_SHIFT_IMPL=.TRUE.
+           END IF
+           IF (SMETHOD .eq. 0) THEN
+             SOURCE_IMPL=.FALSE.
+           ELSE
+             SOURCE_IMPL=.TRUE.
+           END IF
+         ELSE
            REFRACTION_IMPL=.FALSE.
-         ELSE
-           REFRACTION_IMPL=.TRUE.
-         END IF
-         IF (FMETHOD .eq. 0) THEN
            FREQ_SHIFT_IMPL=.FALSE.
-         ELSE
-           FREQ_SHIFT_IMPL=.TRUE.
-         END IF
-         IF (SMETHOD .eq. 0) THEN
-           SOURCE_IMPL=.FALSE.
-         ELSE
-           SOURCE_IMPL=.TRUE.
          END IF
 #endif
 !
