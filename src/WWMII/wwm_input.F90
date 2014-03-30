@@ -1002,17 +1002,17 @@
          CALL READ_HISTORY_STATION_NAMELIST()
 #if defined PETSC && defined MPI_PARALL_GRID
          IF (ICOMP .eq. 3) THEN
-           IF (DMETHOD .eq. 0) THEN
-             REFRACTION_IMPL=.FALSE.
-           ELSE
+           IF (DMETHOD .eq. 6) THEN
              REFRACTION_IMPL=.TRUE.
+           ELSE
+             REFRACTION_IMPL=.FALSE.
            END IF
-           IF (FMETHOD .eq. 0) THEN
+           IF (FMETHOD .eq. 2) THEN
              FREQ_SHIFT_IMPL=.FALSE.
            ELSE
              FREQ_SHIFT_IMPL=.TRUE.
            END IF
-           IF (SMETHOD .eq. 0) THEN
+           IF (SMETHOD .eq. 1) THEN
              SOURCE_IMPL=.FALSE.
            ELSE
              SOURCE_IMPL=.TRUE.

@@ -9,9 +9,9 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 1.000000000000     ,
+ DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 19980901.001000     ,
+ ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
  /
  &COUPL
@@ -155,7 +155,7 @@
  ICOMP   =           3,
  AMETHOD =           5,
  SMETHOD =           0,
- DMETHOD =           0,
+ DMETHOD =           6,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -455,7 +455,7 @@
  /
 &PETScOptions
                                      ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
- KSPTYPE       = 'BCGS'
+ KSPTYPE       = 'BCGSL'
                                      ! This parameter controls which solver is used. This is the same as petsc command line parameter -ksp_type.
                                      ! KSPTYPE = 'GMRES'
                                      ! Implements the Generalized Minimal Residual method. (Saad and Schultz, 1986) with restart
@@ -468,8 +468,8 @@
                                      ! KSPTYPE = 'KSPBCGSL'
                                      ! Implements a slight variant of the Enhanced BiCGStab(L) algorithm
 
- RTOL          = 1.E-8              ! the relative convergence tolerance (relative decrease in the residual norm)
- ABSTOL        = 1.E-8              ! the absolute convergence tolerance (absolute size of the residual norm)
+ RTOL          = 1.E-20               ! the relative convergence tolerance (relative decrease in the residual norm)
+ ABSTOL        = 1.E-20               ! the absolute convergence tolerance (absolute size of the residual norm)
  DTOL          = 10000.              ! the divergence tolerance
  MAXITS        = 1000                ! maximum number of iterations to use
 

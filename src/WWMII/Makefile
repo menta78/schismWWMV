@@ -2,12 +2,12 @@ include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 
 #FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
-FFLAGS = -DST42 -DTIMINGS -DSWAN_QB #-DDIRECT_METHOD #-DUSE_SINGLE#-DSHYFEM_COUPLING
+FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DDIRECT_METHOD #-DUSE_SINGLE#-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI = on 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on 
+PETSC =  on
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
