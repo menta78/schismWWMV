@@ -9,9 +9,9 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 10.000000000000     ,
+ DELTC   = 1.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 19980902.010000     ,
+ ENDTC   = 19980901.001000     ,
  DMIN    =  1.000000000000000E-004
  /
  &COUPL
@@ -30,10 +30,10 @@
  LSTAG   = T,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          18,
+ MDC     =          24,
  FRLOW   =  4.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          18,
+ MSC     =          24,
  FILEGRID        = hgrid.gr3                                                                                                         
                            ,
  IGRIDTYPE       =           3,
@@ -155,7 +155,7 @@
  ICOMP   =           3,
  AMETHOD =           5,
  SMETHOD =           0,
- DMETHOD =           1,
+ DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -166,7 +166,7 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- LLIMT   = T,
+ LLIMT   = F,
  LIMFAK  =  0.100000000000000     ,
  MELIM   =           1,
  LDIFR   = F,
@@ -207,7 +207,7 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.000000000000000E-010,
+ SOLVERTHR       =  1.000000000000000E-04,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       = 0,
@@ -216,9 +216,9 @@
  /
  &HISTORY
  BEGTC   = 19980901.000000     ,
- DELTC   =   5.00000000000000     ,
+ DELTC   = 1.00000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ ENDTC   = 19990901.010000     ,
  DEFINETC        =  0.000000000000000E+000,
  OUTSTYLE        = XFN                 ,
  FILEOUT = field.dat                               ,
@@ -455,7 +455,7 @@
  /
 &PETScOptions
                                      ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
- KSPTYPE       = 'bcgsl'
+ KSPTYPE       = 'BCGS'
                                      ! This parameter controls which solver is used. This is the same as petsc command line parameter -ksp_type.
                                      ! KSPTYPE = 'GMRES'
                                      ! Implements the Generalized Minimal Residual method. (Saad and Schultz, 1986) with restart
@@ -468,8 +468,8 @@
                                      ! KSPTYPE = 'KSPBCGSL'
                                      ! Implements a slight variant of the Enhanced BiCGStab(L) algorithm
 
- RTOL          = 1.E-10              ! the relative convergence tolerance (relative decrease in the residual norm)
- ABSTOL        = 1.E-10              ! the absolute convergence tolerance (absolute size of the residual norm)
+ RTOL          = 1.E-8              ! the relative convergence tolerance (relative decrease in the residual norm)
+ ABSTOL        = 1.E-8              ! the absolute convergence tolerance (absolute size of the residual norm)
  DTOL          = 10000.              ! the divergence tolerance
  MAXITS        = 1000                ! maximum number of iterations to use
 
@@ -477,7 +477,7 @@
  GMRESPREALLOCATE    = T             ! Causes GMRES and FGMRES to preallocate all its needed work vectors at initial setup rather than the default, which is to allocate them in chunks when needed.
 
 
- PCTYPE        = 'sor'
+ PCTYPE        = 'NONE'
                                      ! This parameter controls which  preconditioner is used. This is the same as petsc command line parameter -pc_type
                                      ! PCTYPE = 'SOR'
                                      ! (S)SOR (successive over relaxation, Gauss-Seidel) preconditioning

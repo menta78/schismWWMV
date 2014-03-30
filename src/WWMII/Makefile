@@ -2,12 +2,12 @@ include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 
 #FFLAGS = -DST42 -DTIMINGS -DSWAN_QB
-FFLAGS = -DST42 -DTIMINGS -DSWAN_QB -DWWM_SOLVER -DWWM_SETUP -DDIRECT_METHOD #-DUSE_SINGLE#-DSHYFEM_COUPLING
+FFLAGS = -DST42 -DTIMINGS -DSWAN_QB #-DDIRECT_METHOD #-DUSE_SINGLE#-DSHYFEM_COUPLING
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
-PETSC = on
+PETSC = on 
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
 NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -19,7 +19,7 @@ SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
-PDLIB = 
+PDLIB =  
 
 #F90 = ifort 
 F90 = mpif90
@@ -45,9 +45,9 @@ F90 = mpif90
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
 #F90OPTI = -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
-F90OPTI = -g -traceback -O1 -axSSE4.2 -assume byterecl #-guide -vec-report 
+#F90OPTI = -g -traceback -O1 -axSSE4.2 -assume byterecl #-guide -vec-report 
 #aggressive opti
-#F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
+F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 
 #debug 1
@@ -113,7 +113,7 @@ else
 endif
   MPI_INCLUDE = -I/home/aron/opt/mpich2_1.4_intel/include/
   LIBS += $(METIS_PATH)/libparmetis.a $(METIS_PATH)/libmetis.a
-  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM -DWWM_SOLVER
+  MPIFLAG  = -DWWM_MPI -D'MPIVERSION=2' -DUSE_WWM 
 else
   MPIFLAG = 
   OBJS= $(OBJWWM)
