@@ -1404,8 +1404,8 @@
 #if !defined PETSC || !defined MPI_PARALL_GRID
            CALL WWM_ABORT('For ICOMP=3 we need PETSC and in parallel')
 #endif
-           IF (AMETHOD .ne. 5) THEN
-             CALL WWM_ABORT('We need AMETHOD=5 for ICOMP=3')
+           IF ((AMETHOD .ne. 5).and.(AMETHOD .ne. 7)) THEN
+             CALL WWM_ABORT('We need AMETHOD=5 or 7 for ICOMP=3')
            END IF
          END IF
 

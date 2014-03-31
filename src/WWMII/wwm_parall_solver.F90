@@ -4509,14 +4509,12 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EIMPS_TOTAL_GAUSS_SEIDEL
+      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm
-      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)

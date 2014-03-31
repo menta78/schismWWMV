@@ -171,7 +171,7 @@
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
-               CALL EIMPS_GAUSS_SEIDEL( IS, ID)
+               CALL EIMPS_JACOBI_ITERATION( IS, ID)
              END DO
            END DO
        END IF
@@ -1474,7 +1474,7 @@
 !**********************************************************************
 !*
 !**********************************************************************
-      SUBROUTINE EIMPS_GAUSS_SEIDEL( IS, ID)
+      SUBROUTINE EIMPS_JACOBI_ITERATION( IS, ID)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)    :: IS,ID

@@ -1224,5 +1224,10 @@
       LOGICAL DO_SYNC_LOW_2_UPP
       LOGICAL DO_SYNC_UPP_2_LOW
       LOGICAL DO_SYNC_FINAL
+      !
+      ! For the JACOBI_ITERATION
+      !
+      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
+      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
 #endif
       END MODULE
