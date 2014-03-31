@@ -1824,7 +1824,7 @@
 
       !Local 
       integer :: ised
-      real(rkind) :: tem,sal,SedDen,cff1,rho_w
+      real(rkind) :: tem,sal,SedDen,rho_w
 
       tem=tem2; sal=sal2
       if(tem<-98.or.sal<-98) then
@@ -1860,8 +1860,8 @@
       do ised=1,ntracers
 !        write(12,*)Srho(ised),sconc(ised),eqstate
 !        if (sconc(ised) <= 0.d0)cycle
-        cff1=1.d0/Srho(ised)
-        SedDen=SedDen+sconc(ised)*(Srho(ised)-eqstate)*cff1
+!        cff1=1.d0/Srho(ised)
+        SedDen=SedDen+sconc(ised)*(1-eqstate/Srho(ised))
 !        write(12,*)SedDen,eqstate
       enddo
       eqstate=eqstate+SedDen

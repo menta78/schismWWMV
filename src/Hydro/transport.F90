@@ -94,12 +94,12 @@
 !    Sanity check for flimiter
 #ifndef CHOOSE_TVD
      if (up_tvd.and..not. (flimiter == 'SB' .and. tvd_mid=='AA'))then
-         call parallel_abort("Non-default tvd limiter or algorithm choice &
-     &not allowed. Either use flimiter=Superbee and tvd_mid=AA or recompile and define CHOOSE_TVD.")
+         call parallel_abort('Non-default tvd limiter or algorithm choice &
+     &not allowed. Either use flimiter=Superbee and tvd_mid=AA or recompile and define CHOOSE_TVD.')
      endif
 #endif /* CHOOSE_TVD */
 
-!     Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
+!'    Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
 !     Use we_fv for vertical vel.
 !     Warning: manipulated horizontal fluxes below for some open bnd elements
 
@@ -132,12 +132,12 @@
           endif !is_land
         enddo !k=kbs(i)+1,nvrt
 
-!       Check near bottom vel. and flux
-        khh2=0 !larger of the 2 element bottom indices
-        do l=1,2 !element
-          ie=isdel(l,j)
-          if(ie/=0.and.idry_e(max(1,ie))==0.and.kbe(max(1,ie))>khh2) khh2=kbe(ie)
-        enddo !l
+!       Check near bottom vel. and flux - not used anymore
+!        khh2=0 !larger of the 2 element bottom indices
+!        do l=1,2 !element
+!          ie=isdel(l,j)
+!          if(ie/=0.and.idry_e(max(1,ie))==0.and.kbe(max(1,ie))>khh2) khh2=kbe(ie)
+!        enddo !l
      !@   if(khh2==0) then
      !@     write(errmsg,*)'Transport: cannot find the higher bottom:',j,ielg(isdel(1:2,j)),isdel(1:2,j)
      !@     call parallel_abort(errmsg)
@@ -196,8 +196,8 @@
         enddo !l
 
         do k=kbe(i),nvrt
-          if(k==kbe(i)) then !bottom normal vel. is we_fv(kbe(i),i)
-            dot1=we_fv(kbe(i),i)
+          if(k==kbe(i)) then !bottom normal vel. is assumed to be 0 (bed deformation not working)
+            dot1=0 !we_fv(kbe(i),i)
           else
             if(ics==1) then
               dot1=(su2(k,isd1)+su2(k,isd2)+su2(k,isd3))/3.d0*sne(1,k)+ & !upward normal vel.
@@ -803,7 +803,7 @@
             if(imod==1) then
               !Sink vel.
               !Error: need to differentiate tracer index
-              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !2nd number <0
+              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
 
             endif
 #endif /*USE_TIMOR*/
@@ -825,7 +825,7 @@
               !Sink vel.
               !Error: need to differentiate tracer index
 
-              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !2nd number >0
+              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
 
             endif
 #endif /*USE_TIMOR*/
