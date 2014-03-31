@@ -65,19 +65,19 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
-# USE_PREC_EVAP = yes
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
+ USE_PREC_EVAP = yes
+ PPFLAGS := $(PPFLAGS) -WF,-DPREC_EVAP 
+ EXEC := $(EXEC)_EVAP
 
 # MM5 in heat exchange model
 # USE_MM5 = yes
-# PPFLAGS := $(PPFLAGS) -DMM5
+# PPFLAGS := $(PPFLAGS) -WF,-DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
@@ -145,18 +145,18 @@ endif
 # EXEC := $(EXEC)_TIMER
 
 # Debug mode (more time consuming)
-# USE_DEBUG = yes
-# EXEC := $(EXEC)_DEBUG
+ USE_DEBUG = yes
+ EXEC := $(EXEC)_DEBUG
 
 
 ######### Specialty compiler flags and workarounds
 
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
-# PPFLAGS := $(PPFLAGS) -DNO_TR_15581
+# PPFLAGS := $(PPFLAGS) -WF,-DNO_TR_15581
 
 # For openMPI compiler, search for "USE_OPEN64" below for compiler flags
 USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
-# PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
+# PPFLAGS := $(PPFLAGS) -WF,-DUSE_WRAP 
 

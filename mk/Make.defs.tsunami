@@ -42,7 +42,7 @@ FLD = $(FCP)
 # MPI vserion (1 or 2) 
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 
-#-CB is much slower to compile
+#-CB is much slower to compile and run
 #FCPFLAGS = $(PPFLAGS) -O2 -CB -Bstatic -assume byterecl #MPI code; check bound
 FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
 FLDFLAGS = -O2 #for final linking of object files
@@ -65,10 +65,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -79,9 +75,13 @@ EXEC   := pelfe_$(ENV)
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
 
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
+
 # GOTM turbulence closure model
- USE_GOTM = yes
- EXEC := $(EXEC)_GOTM
+# USE_GOTM = yes
+# EXEC := $(EXEC)_GOTM
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
@@ -95,7 +95,7 @@ endif
 # Wind wave model WWM
 # USE_WWM = yes
 # EXEC := $(EXEC)_WWM
-# Implicit schemes in WWM needs PetSc
+## Implicit schemes in WWM needs PetSc
 # USE_PETSC = yes
 # EXEC := $(EXEC)_PETSC
 
@@ -120,8 +120,8 @@ endif
 
 # Or:
 # CE-QUAL-ICM
- USE_ICM = yes
- EXEC := $(EXEC)_ICM
+# USE_ICM = yes
+# EXEC := $(EXEC)_ICM
 
 # Or:
 # Sediment model 

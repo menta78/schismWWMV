@@ -502,6 +502,7 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME4)
 #endif
+        Print *, 'AMETHOD=', AMETHOD
         IF (AMETHOD .eq.5) THEN
 #ifdef PETSC
           CALL EIMPS_PETSC_BLOCK

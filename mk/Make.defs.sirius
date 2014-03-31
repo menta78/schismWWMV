@@ -56,9 +56,6 @@ CDFMOD = -I/share/apps/netcdf/include/ # modules for netcdf
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-  USE_ADC = yes
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -66,6 +63,10 @@ CDFMOD = -I/share/apps/netcdf/include/ # modules for netcdf
 # MM5 in heat exchange model
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
+
+# TVD flag (turn off for performance)
+#  CHOOSE_TVD = yes
+#   EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes

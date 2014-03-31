@@ -63,7 +63,7 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
+MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit/lib -lparmetis -lmetis 
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
@@ -73,7 +73,7 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := pelfe_$(ENV)
+EXEC   := ~/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -81,10 +81,6 @@ EXEC   := pelfe_$(ENV)
 ################################################################################
 
 # -DSELFE is always on and is defined elsewhere
-
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
 
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
@@ -95,6 +91,10 @@ EXEC   := pelfe_$(ENV)
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes

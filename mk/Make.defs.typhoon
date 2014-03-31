@@ -38,6 +38,9 @@ ENV = TYPHOON
 
 ################################################################################
 # Environment 
+# Note: need to load the following modules in .cshrc.sles-opteron
+# module load pgi/11.10 mvapich2-ib/1.9/pgi netcdf/3.6.2/pgi
+# module unload gdal/1.9.0 gcc
 ################################################################################
 
 FCP = mpif90
@@ -49,7 +52,7 @@ FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #MPI code
 FLDFLAGS = -O2 #for final linking of object files
 
   #####Libraries
-MTSLIBS = -L/sciclone/home04/yinglong/ParMetis-3.1-Sep2010 -lparmetis -lmetis
+MTSLIBS = -L/sciclone/home04/yinglong/ParMetis-3.1-Sep2010_PGI11 -lparmetis -lmetis
 CDFLIBS = -L/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/lib -lnetcdf
 CDFMOD = -I/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/include # modules for netcdf
 
@@ -65,10 +68,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -78,6 +77,10 @@ EXEC   := pelfe_$(ENV)
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes

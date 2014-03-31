@@ -84,7 +84,8 @@ endif
 
 #Search path
 VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMII/ \
-        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ 
+        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
+        TIMOR/
 
 ifdef USE_PETSC
   include ${PETSC_DIR}/conf/variables
@@ -106,6 +107,7 @@ endif
 
 ifdef USE_TIMOR
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
+  OBJS := $(OBJS) flmud_input.o flmud_main.o flmud_pool.o
 endif
 
 ifdef USE_GOTM
@@ -171,10 +173,6 @@ ifdef USE_SED2D
   OBJS := $(OBJS) sed2d_mod.o sed2d_read.o sed2d_filter.o sed2d_transport.o \
                   sed2d_friction.o sed2d_morpho.o sed2d_check.o sed2d_init.o \
                   sed2d_main.o sed2d_main_mcml.o
-endif
-
-ifdef USE_TIMOR
-#Add TIMOR routines here
 endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
