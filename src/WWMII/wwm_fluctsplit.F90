@@ -1519,6 +1519,7 @@
           EXIT
         END IF
       END DO
+      Print *, 'nbIter=', nbIter
       DO IP = 1, MNP
         AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
       END DO

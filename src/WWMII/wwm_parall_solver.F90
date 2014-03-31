@@ -4681,6 +4681,7 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_L2_LINF(MSC, U, B, Norm_L2, Norm_LINF)
         nbIter=nbIter+1
         MaxNorm=maxval(Norm_L2)
+        Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
         IF (MaxNorm .lt. SOLVERTHR) THEN
           EXIT
         END IF
