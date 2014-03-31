@@ -138,21 +138,21 @@
                CALL EIMPS_V1( IS, ID)
              END DO
            END DO
-         ELSE IF (AMETHOD == 2) THEN
+       ELSE IF (AMETHOD == 2) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL CNIMPS( IS, ID)
              END DO
            END DO
-         ELSE IF (AMETHOD == 3) THEN
+       ELSE IF (AMETHOD == 3) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL CNEIMPS( IS, ID, DTMAX)
              END DO
            END DO
-         ELSE IF (AMETHOD == 4) THEN
+       ELSE IF (AMETHOD == 4) THEN
 #ifdef PETSC
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
@@ -161,13 +161,20 @@
              END DO
            END DO
 #endif
-         ELSE IF (AMETHOD == 6) THEN
+       ELSE IF (AMETHOD == 6) THEN
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
            CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
 # endif
 #endif
-         END IF
+       ELSE IF (AMETHOD == 7) THEN
+!$OMP DO PRIVATE (ID,IS)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               CALL EIMPS_JACOBI_ITERATION( IS, ID)
+             END DO
+           END DO
+       END IF
 !$OMP END PARALLEL
        END SUBROUTINE
 !**********************************************************************
@@ -1423,6 +1430,99 @@
          END IF
 
          RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*
+!**********************************************************************
+      SUBROUTINE SQUARE_NORM(eV1, eV2, eScal)
+      USE DATAPOOL, only : rkind, MNP, MDC, NP_RES
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : nwild_loc_res
+      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
+#endif
+      implicit none
+      real(rkind), intent(in) :: eV1(MNP), eV2(MNP)
+      real(rkind), intent(out) :: eScal
+      real(rkind) :: LScal(1), RScal(1)
+      integer IP, iProc
+#ifndef MPI_PARALL_GRID
+      eScal=0
+      DO IP=1,MNP
+        eScal=eScal + (eV1(IP) - eV2(IP) )**2
+      END DO
+#else
+      eScal=0
+      DO IP=1,NP_RES
+        eScal=eScal + nwild_loc_res(IP)*(eV1(IP) - eV2(IP) )**2
+      END DO
+      LScal(1)=eScal
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(RScal,1,rtype, iProc-1, 19, comm, istatus, ierr)
+          LScal = LScal + RScal
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(LScal,1,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(LScal,1,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,1,rtype, 0, 23, comm, istatus, ierr)
+      END IF
+      eScal=LScal(1)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*
+!**********************************************************************
+      SUBROUTINE EIMPS_JACOBI_ITERATION( IS, ID)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)    :: IS,ID
+      REAL(rkind) :: ASPAR(NNZ)
+      REAL(rkind) :: X(MNP), B(MNP), U(MNP)
+      REAL(rkind) :: eSum, eSqrNorm
+      INTEGER :: IP, idx, J, nbIter
+      X = AC2(:,IS,ID)
+      CALL EIMPS_ASPAR_B( IS, ID, ASPAR, B, X)
+      SOLVERTHR=10E-10
+      nbIter=0
+      DO
+        DO IP=1,NP_RES
+          eSum=B(IP)
+          DO J=IA(IP),IA(IP+1)-1
+            IF (J .ne. I_DIAG(IP)) THEN
+              idx=JA(J)
+              eSum=eSum - ASPAR(J)*X(idx)
+            END IF
+          END DO
+          eSum=eSum/ASPAR(I_DIAG(IP))
+          U(IP)=eSum
+        END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P2D(U)
+#endif
+        X=U
+        DO IP=1,NP_RES
+          eSum=0
+          DO J=IA(IP),IA(IP+1)-1
+            idx=JA(J)
+            eSum=eSum + ASPAR(J)*X(idx)
+          END DO
+          U(IP)=eSum
+        END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P2D(U)
+#endif
+        CALL SQUARE_NORM(U, B, eSqrNorm)
+        nbIter=nbIter+1
+        IF (eSqrNorm .lt. SOLVERTHR) THEN
+          EXIT
+        END IF
+      END DO
+      Print *, 'nbIter=', nbIter
+      DO IP = 1, MNP
+        AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !* ZYL: Crank-Nicolson implicit

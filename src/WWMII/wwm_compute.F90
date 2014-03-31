@@ -210,7 +210,7 @@
         INTEGER          :: IP, IT, IS, ID
 
 
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_IMPLICIT'
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SEMI_IMPLICIT'
         FLUSH(STAT%FHNDL)
 
         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
@@ -278,7 +278,7 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME8-TIME7+TIME4-TIME3
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME8-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SEMI_IMPLICIT'
         FLUSH(STAT%FHNDL)
 #endif
       END SUBROUTINE
@@ -455,10 +455,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef PETSC
       SUBROUTINE COMPUTE_IMPLICIT
         USE DATAPOOL
-        USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL, EIMPS_PETSC_BLOCK
+#ifdef PETSC
+        USE PETSC_BLOCK, ONLY : EIMPS_PETSC_BLOCK
+#endif
+#ifdef WWM_SOLVER
+        USE WWM_PARALL_SOLVER, ONLY : EIMPS_TOTAL_JACOBI_ITERATION
+#endif
         IMPLICIT NONE
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -498,7 +502,15 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME4)
 #endif
-        CALL EIMPS_PETSC_BLOCK
+        IF (AMETHOD .eq.5) THEN
+#ifdef PETSC
+          CALL EIMPS_PETSC_BLOCK
+#endif
+        ELSE IF (AMETHOD .eq. 7) THEN
+#ifdef WWM_SOLVER
+          CALL EIMPS_TOTAL_JACOBI_ITERATION
+#endif
+        END IF
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
@@ -514,7 +526,6 @@
         CALL MY_WTIME(TIME7)
 #endif
       END SUBROUTINE
-#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

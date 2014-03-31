@@ -4506,5 +4506,193 @@ MODULE WWM_PARALL_SOLVER
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED I4_EIMPS'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
+      REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
+      REAL(rkind) :: MaxNorm
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
+      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+      REAL(rkind) :: B_SIG(MSC), eFact
+      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
+      Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
+      DO IS=1,MSC
+        DO ID=1,MDC
+          X(IS,ID,:)=AC2(:,IS,ID)
+        END DO
+      END DO
+      !
+      ! The advection part of the equation
+      !
+      CALL EIMPS_ASPAR_B_BLOCK(ASPAR, B, X)
+      !
+      ! Now the Gauss Seidel iterations
+      !
+      IF (REFRACTION_IMPL) THEN
+        DO IP=1,NP_RES
+          TheVal=1
+          IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+          IF (DEP(IP) .LT. DMIN) TheVal=0
+          IF (IOBP(IP) .EQ. 2) TheVal=0
+          IF (TheVal .eq. 1) THEN
+            CALL PROPTHETA(IP,CAD)
+          ELSE
+            CAD=ZERO
+          END IF
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=SI(IP)*(DT4D/DDIR)
+          DO ID=1,MDC
+            ID1 = ID - 1
+            ID2 = ID + 1
+            IF (ID .EQ. 1) ID1 = MDC
+            IF (ID .EQ. MDC) ID2 = 1
+            A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
+            ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
+            C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
+          END DO
+        END DO
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        DO IP=1,NP_RES
+          TheVal=1
+          IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+          IF (DEP(IP) .LT. DMIN) TheVal=0
+          IF (IOBP(IP) .EQ. 2) TheVal=0
+          IF (TheVal .eq. 1) THEN
+            CALL PROPSIGMA(IP,CAS)
+          ELSE
+            CAS=ZERO
+          END IF
+          eFact=SI(IP)*DT4F
+          DO ID = 1, MDC
+            CASS(1:MSC) = CAS(:,ID)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            ! Now forming the tridiagonal system
+            DO IS=1,MSC
+              B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            END DO
+            DO IS=2,MSC
+              A_SIG(IS,ID,IP) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
+            END DO
+            !
+            DO IS=1,MSC-1
+              C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
+            END DO
+            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
+          END DO
+        END DO
+      END IF
+      IF (SOURCE_IMPL) THEN
+        DO IP=1,NP_RES
+          IF (IOBWB(IP) .EQ. 1) THEN
+            eFact=SI(IP)*DT4A
+            DO ID=1,MDC
+              IF (IOBPD(ID,IP) .EQ. 1) THEN
+                B(:,ID,IP)=B(:,ID,IP) + IMATRAA(IP,:,ID) * eFact
+                ASPAR(:,ID,I_DIAG(IP)) = ASPAR(:,ID,I_DIAG(IP)) + IMATDAA(IP,:,ID) * eFact
+              END IF
+            END DO
+          END IF
+        END DO
+      END IF
+      !
+      ! Now the Gauss Seidel iterations
+      !
+      SOLVERTHR=10E-10
+      nbIter=0
+      DO
+        DO IP=1,NP_RES
+          eSum=B(:,:,IP)
+          DO J=IA(IP),IA(IP+1)-1
+            IF (J .ne. I_DIAG(IP)) THEN
+              idx=JA(J)
+              eSum=eSum - ASPAR(:,:,J)*X(:,:,idx)
+            END IF
+          END DO
+          IF (REFRACTION_IMPL) THEN
+            DO ID=1,MDC
+              ID1 = ID - 1
+              ID2 = ID + 1
+              IF (ID .EQ. 1) ID1 = MDC
+              IF (ID .EQ. MDC) ID2 = 1
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*X(:,ID1,IP)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*X(:,ID2,IP)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
+              END DO
+            END DO
+          END IF
+          eSum=eSum/ASPAR(:,:,I_DIAG(IP))
+          U(:,:,IP)=eSum
+        END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P4D_WWM(U)
+#endif
+        X=U
+        DO IP=1,NP_RES
+          eSum=0
+          DO J=IA(IP),IA(IP+1)-1
+            idx=JA(J)
+            eSum=eSum + ASPAR(:,:,J)*X(:,:,idx)
+          END DO
+          IF (REFRACTION_IMPL) THEN
+            DO ID=1,MDC
+              ID1 = ID - 1
+              ID2 = ID + 1
+              IF (ID .EQ. 1) ID1 = MDC
+              IF (ID .EQ. MDC) ID2 = 1
+              eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*X(:,ID1,IP)
+              eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*X(:,ID2,IP)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
+              END DO
+            END DO
+          END IF
+          U(:,:,IP)=eSum
+        END DO
+#ifdef MPI_PARALL_GRID
+        CALL EXCHANGE_P4D_WWM(U)
+#endif
+        CALL I5B_L2_LINF(MSC, U, B, Norm_L2, Norm_LINF)
+        nbIter=nbIter+1
+        MaxNorm=maxval(Norm_L2)
+        Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
+        IF (MaxNorm .lt. SOLVERTHR) THEN
+          EXIT
+        END IF
+      END DO
+      DO IP = 1, MNP
+        DO IS=1,MSC
+          DO ID=1,MDC
+            AC2(IP,IS,ID) = MAX(ZERO,X(IS,ID,IP)) * MyREAL(IOBPD(ID,IP))
+          END DO
+        END DO
+      END DO
+      END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

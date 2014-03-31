@@ -690,9 +690,6 @@
 #ifdef NCDF
          USE NETCDF
 #endif
-#ifdef PETSC
-         USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL
-#endif
          USE DATAPOOL
 #ifdef SELFE
          use elfe_glbl, only : ics
@@ -1000,7 +997,6 @@
          wwm_print_namelist(NUMS)
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
-#if defined PETSC && defined MPI_PARALL_GRID
          IF (ICOMP .eq. 3) THEN
            IF (DMETHOD .eq. 6) THEN
              REFRACTION_IMPL=.TRUE.
@@ -1008,9 +1004,9 @@
              REFRACTION_IMPL=.FALSE.
            END IF
            IF (FMETHOD .eq. 2) THEN
-             FREQ_SHIFT_IMPL=.FALSE.
-           ELSE
              FREQ_SHIFT_IMPL=.TRUE.
+           ELSE
+             FREQ_SHIFT_IMPL=.FALSE.
            END IF
            IF (SMETHOD .eq. 1) THEN
              SOURCE_IMPL=.FALSE.
@@ -1021,7 +1017,6 @@
            REFRACTION_IMPL=.FALSE.
            FREQ_SHIFT_IMPL=.FALSE.
          END IF
-#endif
 !
 !     **** HOTFILE section
 
@@ -1409,8 +1404,8 @@
 #if !defined PETSC || !defined MPI_PARALL_GRID
            CALL WWM_ABORT('For ICOMP=3 we need PETSC and in parallel')
 #endif
-           IF (AMETHOD .ne. 5) THEN
-             CALL WWM_ABORT('We need AMETHOD=5 for ICOMP=3')
+           IF ((AMETHOD .ne. 5).and.(AMETHOD .ne. 7)) THEN
+             CALL WWM_ABORT('We need AMETHOD=5 or 7 for ICOMP=3')
            END IF
          END IF
 !
