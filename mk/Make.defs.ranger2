@@ -69,10 +69,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-  USE_ADC = yes
-  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 

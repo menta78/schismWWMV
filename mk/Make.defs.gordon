@@ -42,7 +42,7 @@ ENV = GORDON
 # Alternate executable name if you do not want the default. 
 ################################################################################
 
-EXEC   := pelfe_$(ENV)_ADC
+EXEC   := pelfe_$(ENV)
 
 ################################################################################
 # Environment 
@@ -52,10 +52,11 @@ FCP = mpif90
 FLD = $(FCP)
 # MPI vserion (1 or 2)
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
-FLDFLAGS = -O2
+#FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
+FCPFLAGS = $(PPFLAGS) -fast -assume byterecl #MPI code
+FLDFLAGS = -ipo
 #####Libraries
-MTSLIBS = -L/home/yinglong/src/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+MTSLIBS = -L/home/yinglong/SELFE/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
 CDFLIBS = -L/opt/netcdf/3.6.2/intel/lib -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
 CDFMOD = -I/opt/netcdf/3.6.2/intel/include  # modules for netcdf
 
@@ -66,14 +67,15 @@ CDFMOD = -I/opt/netcdf/3.6.2/intel/include  # modules for netcdf
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-  USE_ADC = yes
-
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
 
 # MM5 in heat exchange model
 # PPFLAGS := $(PPFLAGS) -DMM5
+
+# TVD flag (turn off for performance)
+#  CHOOSE_TVD = yes
+#   EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes

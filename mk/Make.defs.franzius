@@ -66,9 +66,6 @@ CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
 

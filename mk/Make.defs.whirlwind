@@ -45,8 +45,11 @@ FLD = $(FCP)
 # MPI vserion (1 or 2) 
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 
+#Check bound
+#FCPFLAGS = $(PPFLAGS) -fast -tp nehalem -m64 -Mbounds -Bstatic  # full optimization w/ vectorization
+#FLDFLAGS= -O2 -Mcache_align -tp nehalem -m64 # basic optimization
+
 FCPFLAGS = $(PPFLAGS) -fast -tp nehalem -m64 -Bstatic  # full optimization w/ vectorization
-#FCPFLAGS = $(PPFLAGS) -O2 -Mcache_align -tp nehalem -m64 -Bstatic   # basic optimization
 FLDFLAGS = -O2  -Mcache_align -tp nehalem -m64 #for final linking of object files
 
   #####Libraries
@@ -66,10 +69,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -79,6 +78,10 @@ EXEC   := pelfe_$(ENV)
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
@@ -94,11 +97,11 @@ else
 endif
 
 # Wind wave model WWM
- USE_WWM = yes
- EXEC := $(EXEC)_WWM
+# USE_WWM = yes
+# EXEC := $(EXEC)_WWM
 #Implicit schemes in WWM needs PetSc
- USE_PETSC = yes
- EXEC := $(EXEC)_PETSC
+# USE_PETSC = yes
+# EXEC := $(EXEC)_PETSC
 
 # TIMOR 
 # USE_TIMOR = yes
@@ -126,8 +129,8 @@ endif
 
 # Or:
 # Sediment model 
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
+ USE_SED = yes
+ EXEC := $(EXEC)_SED
 
 #Or:
 # Sediment model (2D)

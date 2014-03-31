@@ -91,6 +91,10 @@ endif
 # MM5 in heat exchange model
 # PPFLAGS := $(PPFLAGS) -DMM5
 
+# TVD flag (turn off for performance)
+#  CHOOSE_TVD = yes
+#   EXEC := $(EXEC)_CHOOSE_TVD
+
 # GOTM turbulence closure model
 # USE_GOTM = yes
 

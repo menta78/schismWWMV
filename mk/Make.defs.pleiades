@@ -62,10 +62,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -75,6 +71,10 @@ EXEC   := pelfe_$(ENV)
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes

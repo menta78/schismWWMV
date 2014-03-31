@@ -49,7 +49,7 @@ FCPFLAGS = $(PPFLAGS) -O1 -unroll-aggressive -g -traceback -mcmodel=medium  -Bst
 FLDFLAGS = -O1 -mcmodel=medium -shared-intel #for final linking of object files
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home1/01621/zhangy/selfe/trunk/src/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+MTSLIBS = -L/home1/01621/zhangy/SELFE/trunk/src/ParMetis-3.1-Sep2010/ -lparmetis -lmetis
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
@@ -68,10 +68,6 @@ EXEC   := pelfe_$(ENV)
 
 # -DSELFE is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -81,6 +77,10 @@ EXEC   := pelfe_$(ENV)
 # USE_MM5 = yes
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
+
+# TVD flag (turn off for performance)
+#  CHOOSE_TVD = yes
+#   EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
