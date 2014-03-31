@@ -4521,6 +4521,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
+      Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
           X(IS,ID,:)=AC2(:,IS,ID)
@@ -4691,12 +4692,6 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
-      IF (REFRACTION_IMPL) THEN
-        deallocate(A_THE, C_THE)
-      END IF
-      IF (FREQ_SHIFT_IMPL) THEN
-        deallocate(A_SIG, C_SIG)
-      END IF
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

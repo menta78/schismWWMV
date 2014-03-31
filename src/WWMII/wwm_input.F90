@@ -1004,9 +1004,9 @@
              REFRACTION_IMPL=.FALSE.
            END IF
            IF (FMETHOD .eq. 2) THEN
-             FREQ_SHIFT_IMPL=.FALSE.
-           ELSE
              FREQ_SHIFT_IMPL=.TRUE.
+           ELSE
+             FREQ_SHIFT_IMPL=.FALSE.
            END IF
            IF (SMETHOD .eq. 1) THEN
              SOURCE_IMPL=.FALSE.
