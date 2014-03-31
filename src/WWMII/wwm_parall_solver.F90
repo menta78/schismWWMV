@@ -4534,7 +4534,6 @@ MODULE WWM_PARALL_SOLVER
       ! Now the Gauss Seidel iterations
       !
       IF (REFRACTION_IMPL) THEN
-        allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES))
         DO IP=1,NP_RES
           TheVal=1
           IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
@@ -4560,8 +4559,6 @@ MODULE WWM_PARALL_SOLVER
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
-        allocate(A_SIG(MSC,MDC,NP_RES), C_SIG(MSC,MDC,NP_RES))
-        
         DO IP=1,NP_RES
           TheVal=1
           IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
