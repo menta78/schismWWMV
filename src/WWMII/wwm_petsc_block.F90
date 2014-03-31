@@ -157,9 +157,6 @@
       integer, allocatable :: AsparApp2Petsc_small(:)
       integer, allocatable :: oAsparApp2Petsc_small(:)
 
-      logical :: FREQ_SHIFT_IMPL
-      logical :: REFRACTION_IMPL
-      logical :: SOURCE_IMPL
 #  ifdef DIRECT_METHOD
       integer, allocatable :: AsparApp2Petsc(:)
       integer, allocatable :: oAsparApp2Petsc(:)
@@ -184,6 +181,7 @@
 !**********************************************************************
       SUBROUTINE PETSC_INIT_BLOCK
         USE DATAPOOL, only: MNP, CCON, NNZ, RKIND, DBG, np_global, np, npg, ne_global, iplg, ipgl, inp
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         ! MSC      - # frequency
         ! MDC      - # directions
         use datapool, only: MSC, MDC, comm, ICOMP
@@ -331,6 +329,7 @@
       !> create IA JA ASPAR petsc array for big sparse matrix
       SUBROUTINE createCSR_petsc
         use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, LSIGBOUND, DEP, DMIN
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -760,6 +759,7 @@
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
         use datapool, only : IMATRAA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         use petscpool
         use petscsys
         use petscvec
@@ -1106,6 +1106,7 @@
         use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
         use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         use petscpool
         implicit none
         integer, intent(in) :: IP
@@ -1358,6 +1359,7 @@
         use datapool, only : LBCWA, LBCSP, LINHOM, IWBMNP, I_DIAG, SI, IMATDAA
         use datapool, only : IWBNDLC, IOBWB, IOBPD, DT4A
         use datapool, only : ICOMP, SMETHOD
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         use petscpool
         use petscsys
         use petscmat
@@ -2118,6 +2120,7 @@
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD, FMEAN, FMEANWS
         use datapool, only : IMATRAA, IMATDAA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d, lsourceswam
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
         use petscpool
         use petscsys
         use petscvec

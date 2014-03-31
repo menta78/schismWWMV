@@ -202,6 +202,10 @@
          LOGICAL           :: LSOUBOUND  = .FALSE.
          LOGICAL           :: IOBPD_HISTORY = .FALSE.
 
+         LOGICAL :: FREQ_SHIFT_IMPL
+         LOGICAL :: REFRACTION_IMPL
+         LOGICAL :: SOURCE_IMPL
+
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
          LOGICAL    :: LPOLY       = .FALSE.

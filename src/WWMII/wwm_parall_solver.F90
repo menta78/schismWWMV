@@ -4511,7 +4511,6 @@ MODULE WWM_PARALL_SOLVER
 !**********************************************************************
       SUBROUTINE EIMPS_TOTAL_GAUSS_SEIDEL
       USE DATAPOOL
-      USE PETSC_BLOCK, ONLY : FREQ_SHIFT_IMPL, REFRACTION_IMPL, SOURCE_IMPL
       IMPLICIT NONE
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
