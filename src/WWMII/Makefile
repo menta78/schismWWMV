@@ -19,7 +19,7 @@ SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
-PDLIB =  
+PDLIB = on
 
 #F90 = ifort 
 F90 = mpif90
