@@ -53,13 +53,13 @@ module elfe_glbl
   !Parameters from param.in
   integer,save :: ipre,ntracers,nonhydro,indvel,imm,ihot,ics,iwbl,iharind,nws, &
                   &ibc,nrampbc,nrampwind,nramp,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
-                  &iwind_form,inu_st,irec_nu,itur,iupwind_t,iupwind_s,ihhat,inu_elev, &
+                  &iwind_form,inu_st,irec_nu,irec_nu_tr,itur,iupwind_t,iupwind_s,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,icst,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ishapiro,ishapiro_violation
+                  &inv_atm_bnd,ishapiro,ishapiro_violation,ibottom_bc
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,wtiminc,npstime,npstiminc, &
-                      &surf_time1,surf_time2,time_nu,step_nu,dzb_min,vdmax_pp1, &
+                      &surf_time1,surf_time2,time_nu,step_nu,time_nu_tr,step_nu_tr,dzb_min,vdmax_pp1, &
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
                       &shapiro,vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
@@ -96,7 +96,7 @@ module elfe_glbl
   integer,save,dimension(mnout) :: ichan,iof !,mrec,irec
   integer,save,allocatable :: ichan_ns(:),iof_ns(:)
   real(rkind) :: time_stamp
-  character(len=48),save,allocatable :: outfile_ns(:),varnm_ns(:)
+  character(len=48),save,allocatable :: outfile_ns(:) !,varnm_ns(:)
   character(len=48),save :: a_48
   character(len=16),save :: a_16
   character(len= 8),save :: a_8
@@ -272,7 +272,7 @@ module elfe_glbl
   integer,save,allocatable :: nond_global(:)   ! Number of nodes in each open global bndry segment
   integer,save,allocatable :: iond_global(:,:) ! Node list for each open bndry segment (global)
   real(rkind),save,allocatable :: cwidth(:)    ! length of each global open bnd segment for imposing discharge
-  real(rkind),save,allocatable :: th_dt(:,:) !time step for .th (ascii)
+  real(rkind),save,allocatable :: th_dt(:,:) !time step for .th (ascii; each tracer has its own dt)
   real(rkind),save,allocatable :: th_time(:,:,:) !2 time stamps for reading .th (ascii)
   real(rkind),save :: th_dt2(nthfiles2) !time step for .th (binary)
   real(rkind),save :: th_time2(2,nthfiles2) !2 time stamps for reading .th (binary)
@@ -375,6 +375,7 @@ module elfe_glbl
                                   &dav(:,:),elevmax(:),dav_max(:,:),dav_maxmag(:), & 
                                   &etaic(:),diffmax(:),diffmin(:),dfq1(:,:),dfq2(:,:),xlsc0(:) 
   real(4),save,dimension(:,:),allocatable :: tnd_nu1,snd_nu1,tnd_nu2,snd_nu2,tnd_nu,snd_nu
+  real(4),save,dimension(:,:,:),allocatable :: trnd_nu1,trnd_nu2,trnd_nu
   integer,save,allocatable :: iadv(:),iwater_type(:) 
 
   ! Non-hydrostatic arrays

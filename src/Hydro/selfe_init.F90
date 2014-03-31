@@ -25,13 +25,13 @@
 #endif
 
 #ifdef USE_ICM
-      USE icm_param, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
+      USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
                           &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
                           &WWPRPOP,WWPLPOP,WWPDOP,WWPPO4t,WWPSU,WWPSAt, &
                           &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO     !added by YC
-      USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+      USE icm_sed_mod, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
                               &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
                               &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
                               &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S  !added YC 
@@ -42,7 +42,7 @@
 #endif
 
 #ifdef USE_SED
-       USE sed_mod, only : Srho
+       USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_mass
 #endif
 
 
@@ -84,15 +84,14 @@
       real(rkind), allocatable :: swild(:),swild2(:,:)
       real(rkind), allocatable :: swild3(:),rwild(:,:)
       real(rkind), allocatable :: swild4(:,:),swild10(:,:) !double precision for hotstart.in
-      real(rkind), allocatable :: swild99(:,:) !used for exchange (deallocate immediately afterwards)
+      real(rkind), allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange etc (deallocate immediately afterwards)
 !      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
-      real(4), allocatable :: swild8(:,:) !used in ST nudging
+      real(4), allocatable :: swild8(:,:),swild9(:,:) !used in ST & tracer nudging
 
 !     Local variables
       type(llist_type),pointer :: llp
       logical :: ltmp,ltmp1,ltmp2,lexist
       character(len=48) :: inputfile
-!      integer :: flag_model,flag_ic
 
       integer :: i,j,k,l,m,mm,im2d,itmp,itmp1,itmp2,izonal5,nadv,ncor, &
                  &iwindoff,istat,icount,indx2,lq,inter_mom,ic_elev, &
@@ -473,6 +472,43 @@
         call parallel_abort(errmsg)
       endif
 
+!     Tracers 
+      call get_param('param.in','flag_model',1,flag_model,tmp,stringvalue)
+      call get_param('param.in','flag_ic',1,flag_ic,tmp,stringvalue)
+      call get_param('param.in','sim_year',2,itmp,sim_year,stringvalue)
+      call get_param('param.in','sim_month',2,itmp,sim_month,stringvalue)
+      call get_param('param.in','sim_day',2,itmp,sim_day,stringvalue)
+      call get_param('param.in','sim_hour',2,itmp,sim_hour,stringvalue)
+      call get_param('param.in','sim_minute',1,itmp,sim_minute,stringvalue)
+      call get_param('param.in','sim_second',2,itmp,sim_second,stringvalue)
+!     Pass time info to EcoSim and ICM
+#ifdef USE_ECO
+      year=sim_year
+      month=sim_month
+      day=sim_day
+      hour=sim_hour
+      minutes=sim_minute
+      seconds=sim_second
+#endif
+     
+      call get_param('param.in','itr_met',1,itr_met,tmp,stringvalue)
+      if(itr_met/=1.and.itr_met/=2) then
+        write(errmsg,*)'Unknown tracer method',itr_met
+        call parallel_abort(errmsg)
+      endif
+      if(itr_met==2) then !TVD
+        call get_param('param.in','tvd_mid2',0,itmp,tmp,tvd_mid2)
+        call get_param('param.in','flimiter2',0,itmp,tmp,flimiter2)
+        call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
+      endif
+
+      call get_param('param.in','inu_tr',1,inu_tr,tmp,stringvalue)
+      call get_param('param.in','step_nu_tr',2,itmp,step_nu_tr,stringvalue)
+      if(inu_tr<0.or.inu_tr>2.or.step_nu_tr<dt) then
+        write(errmsg,*)'Wrong inu_tr:',inu_tr,step_nu_tr
+        call parallel_abort(errmsg)
+      endif
+
 !     Global output parameters (@nodes)
 !     Make sure the order of optional modules is same during actual output
 !     Array for storing local indices for optional modules
@@ -488,8 +524,8 @@
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_SED2D
-      noutput=noutput+8
-      indx_out(1,1)=noutput-7
+      noutput=noutput+9
+      indx_out(1,1)=noutput-8
       indx_out(1,2)=noutput
 #endif
 #ifdef USE_NAPZD
@@ -514,6 +550,12 @@
         endif
       enddo !i
 #endif
+
+      if(flag_model==0) then !age
+        noutput=noutput+ntracers/2
+        indx_out(4,1)=noutput-ntracers/2+1
+        indx_out(4,2)=noutput
+      endif !flag_model
 
       if(noutput>mnout) then
         write(errmsg,*)'Increase mnout in elfe_glbl to',noutput
@@ -634,27 +676,31 @@
       variable_nm(indx2+3)='Courant number in sed2d'
       variable_dim(indx2+3)='2D scalar'
 
-      outfile(indx2+4)='qtot.62'
-      variable_nm(indx2+4)='total transport in m2.s-1'
-      variable_dim(indx2+4)='2D vector'
-         
-      outfile(indx2+5)='qsus.62'
-      variable_nm(indx2+5)='suspended transport in m2.s-1'
+      outfile(indx2+4)='d50moy.61'
+      variable_nm(indx2+4)='surface layer mean d50'
+      variable_dim(indx2+4)='2D scalar'
+
+      outfile(indx2+5)='qtot.62'
+      variable_nm(indx2+5)='total transport in m2.s-1'
       variable_dim(indx2+5)='2D vector'
          
-      outfile(indx2+6)='qbdl.62'
-      variable_nm(indx2+6)='bed load transport in m2.s-1'
+      outfile(indx2+6)='qsus.62'
+      variable_nm(indx2+6)='suspended transport in m2.s-1'
       variable_dim(indx2+6)='2D vector'
          
-      outfile(indx2+7)='dpdxy.62'
-      variable_nm(indx2+7)='Bottom slope in m.m-1'
+      outfile(indx2+7)='qbdl.62'
+      variable_nm(indx2+7)='bed load transport in m2.s-1'
       variable_dim(indx2+7)='2D vector'
-
-      outfile(indx2+8)='qav.62'
-      variable_nm(indx2+8)='averaged total transport in m2.s-1'
+         
+      outfile(indx2+8)='dpdxy.62'
+      variable_nm(indx2+8)='Bottom slope in m.m-1'
       variable_dim(indx2+8)='2D vector'
 
-      indx2=indx2+8
+      outfile(indx2+9)='qav.62'
+      variable_nm(indx2+9)='averaged total transport in m2.s-1'
+      variable_dim(indx2+9)='2D vector'
+
+      indx2=indx2+9
 #endif 
 
 #ifdef USE_NAPZD
@@ -683,6 +729,19 @@
       enddo !i
       indx2=indx2+26
 #endif /*USE_WWM*/
+
+      if(flag_model==0) then !age
+        do i=1,ntracers/2
+           write(ifile_char,'(i03)')i
+           ifile_char=adjustl(ifile_char)
+           ifile_len=len_trim(ifile_char)
+
+           outfile(indx2+i)='age_'//ifile_char(1:ifile_len)//'.63'
+           variable_nm(indx2+i)='Age #'//trim(ifile_char)
+           variable_dim(indx2+i)='3D scalar'
+        enddo !i
+        indx2=indx2+ntracers/2
+      endif !flag_model
 
 !     Check
       if(indx2/=noutput) then
@@ -714,7 +773,7 @@
         iof(16:25)=0
       endif !lm2d
 
-!...  Non-standard outputs at sides and centroids and whole and half levels
+!...  Non-standard outputs at sides, nodes and centroids and whole and half levels
 !...  These outputs share same spool and stack size as standard ones
 !...  Suffix convention:
 !       65: 2D side 
@@ -724,10 +783,9 @@
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
 
-      noutput_ns=11 !hvel.67,vert.69,temp.70,salt.70 etc
-      allocate(outfile_ns(noutput_ns),varnm_ns(noutput_ns),iof_ns(noutput_ns), &
-     &stat=istat)
-      outfile_ns(1)='hvel.67'
+      noutput_ns=18 !hvel.67,vert.69,temp.70,salt.70 etc
+      allocate(outfile_ns(noutput_ns),iof_ns(noutput_ns),stat=istat)
+      outfile_ns(1)='hvel.67' !must be consistent when calling the output routine later
       outfile_ns(2)='vert.69'
       outfile_ns(3)='temp.70'
       outfile_ns(4)='salt.70'
@@ -738,18 +796,33 @@
       outfile_ns(9)='z0wr.66'
       outfile_ns(10)='bpgr.65'
       outfile_ns(11)='wafo.67'
+      outfile_ns(12)='bdoc.66'
+      outfile_ns(13)='bnh4.66'
+      outfile_ns(14)='bno3.66'
+      outfile_ns(15)='bpo4.66'
+      outfile_ns(16)='bcod.66'
+      outfile_ns(17)='sbdo.66'
+      outfile_ns(18)='sbsa.66'
 
-      varnm_ns(1)='3D horizontal vel. at sides and whole levels'
-      varnm_ns(2)='Vertical vel. at centroids and whol levels'
-      varnm_ns(3)='temperature at prism centers'
-      varnm_ns(4)='salinity at prism centers'
-      varnm_ns(5)='Sediment transport z0 at prism center (m)'
-      varnm_ns(6)='Roughness length z0 at prism center(m)'
-      varnm_ns(7)='Current-ripples z0 at prism center(m)'
-      varnm_ns(8)='Sand-waves z0 at prism center (m)'
-      varnm_ns(9)='Wave-ripples z0 at prism center (m)'
-      varnm_ns(10)='barotropic pressure gradient force at side centers'
-      varnm_ns(11)='wave force at side centers and whole levels'
+      !varnm_ns is not used at the moment except for noting purpose
+      !varnm_ns(1)='3D horizontal vel. at sides and whole levels'
+      !varnm_ns(2)='Vertical vel. at centroids and whol levels'
+      !varnm_ns(3)='temperature at prism centers'
+      !varnm_ns(4)='salinity at prism centers'
+      !varnm_ns(5)='Sediment transport z0 at prism center (m)'
+      !varnm_ns(6)='Roughness length z0 at prism center(m)'
+      !varnm_ns(7)='Current-ripples z0 at prism center(m)'
+      !varnm_ns(8)='Sand-waves z0 at prism center (m)'
+      !varnm_ns(9)='Wave-ripples z0 at prism center (m)'
+      !varnm_ns(10)='barotropic pressure gradient force at side centers'
+      !varnm_ns(11)='wave force at side centers and whole levels'
+      !varnm_ns(12)='ICM: BENDOC'
+      !varnm_ns(13)='ICM: SED_BENNH4'
+      !varnm_ns(14)='ICM: SED_BENNO3'
+      !varnm_ns(15)='ICM: BENPO4'
+      !varnm_ns(16)='ICM: SED_BENCOD'
+      !varnm_ns(17)='ICM: sed_BENDO'
+      !varnm_ns(18)='ICM: BENSA'
 
       do i=1,noutput_ns
         call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
@@ -924,8 +997,9 @@
       endif
 
       if(irouse_test==1) then
-#ifndef USE_TIMOR
-        call parallel_abort('Rouse test needs USE_TIMOR')
+#if defined USE_TIMOR || defined USE_SED
+#else
+        call parallel_abort('Rouse test needs USE_TIMOR or USE_SED')
 #endif
         if(ntracers/=1) call parallel_abort('Rouse test requires ntracers=1')
       endif
@@ -1040,45 +1114,10 @@
 !     available
       call get_param('param.in','if_source',1,if_source,tmp,stringvalue)
       if(if_source/=0.and.if_source/=1) call parallel_abort('Wrong if_source')
-      !If mass_source=0, the mass from sink/sources is not used in transport
-      !call get_param('param.in','mass_source',1,mass_source,tmp,stringvalue)
-      !if(mass_source/=0.and.mass_source/=1) call parallel_abort('Wrong mass_source')
 
-!     Tracers 
-      call get_param('param.in','flag_model',1,flag_model,tmp,stringvalue)
-      call get_param('param.in','flag_ic',1,flag_ic,tmp,stringvalue)
-      call get_param('param.in','sim_year',2,itmp,sim_year,stringvalue)
-      call get_param('param.in','sim_month',2,itmp,sim_month,stringvalue)
-      call get_param('param.in','sim_day',2,itmp,sim_day,stringvalue)
-      call get_param('param.in','sim_hour',2,itmp,sim_hour,stringvalue)
-      call get_param('param.in','sim_minute',1,itmp,sim_minute,stringvalue)
-      call get_param('param.in','sim_second',2,itmp,sim_second,stringvalue)
-!     Pass time info to EcoSim and ICM
-#ifdef USE_ECO
-      year=sim_year
-      month=sim_month
-      day=sim_day
-      hour=sim_hour
-      minutes=sim_minute
-      seconds=sim_second
-#endif
-     
-      call get_param('param.in','itr_met',1,itr_met,tmp,stringvalue)
-      if(itr_met/=1.and.itr_met/=2) then
-        write(errmsg,*)'Unknown tracer method',itr_met
-        call parallel_abort(errmsg)
-      endif
-      if(itr_met==2) then !TVD
-        call get_param('param.in','tvd_mid2',0,itmp,tmp,tvd_mid2)
-        call get_param('param.in','flimiter2',0,itmp,tmp,flimiter2)
-        call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
-      endif
-
-      call get_param('param.in','inu_tr',1,inu_tr,tmp,stringvalue)
-      if(inu_tr/=0.and.inu_tr/=1) then
-        write(errmsg,*)'Wrong inu_tr:',inu_tr
-        call parallel_abort(errmsg)
-      endif
+!     Bottom b.c. option for momentum eq. (1: old; 2: new) 
+      call get_param('param.in','ibottom_bc',1,ibottom_bc,tmp,stringvalue)
+      if(ibottom_bc/=1.and.ibottom_bc/=2) call parallel_abort('Wrong ibottom_bc')
 
 !...  Check parameter read in from param.in
       if(myrank==0) write(16,*)'done reading param.in; s2_mxnbt in param.in =',s2_mxnbt
@@ -1196,7 +1235,7 @@
       if(istat/=0) call parallel_abort('MAIN: grid geometry arrays allocation failure')
 !'
 
-!     Allocate the remaining arrays held in elfe_glbl, except for Kriging related arrays
+!     Allocate the remaining arrays held in elfe_glbl, except for Kriging related arrays 
 !     ntracers,ntracers2 and mntr already read in from grid_subs.F90
       allocate(tsel(2,nvrt,nea),tem0(nvrt,npa),sal0(nvrt,npa),eta1(npa),eta2(npa), &
           & we(nvrt,nea),we_fv(nvrt,nea),su2(nvrt,nsa),sv2(nvrt,nsa),ufg(nvrt,nea,3),vfg(nvrt,nea,3), &
@@ -1217,7 +1256,6 @@
           & eth(mnond_global,nope_global),tth(nvrt,mnond_global,nope_global),sth(nvrt,mnond_global,nope_global), &
           & qthcon(nope_global),carea(nope_global), &
           & th_dt(max(1,ntracers),nthfiles),th_time(max(1,ntracers),2,nthfiles), &
-!          & th_dt2(max(1,ntracers),nthfiles2),th_time2((max(1,ntracers),2,nthfiles2), &
           & uth(nvrt,nsa),vth(nvrt,nsa),ath(nope_global,max(1,ntracers),2,nthfiles), &
           & ath2(max(2,ntracers),nvrt,neta_global,2,nthfiles2), &
           & uthnd(nvrt,mnond_global,nope_global),vthnd(nvrt,mnond_global,nope_global), &
@@ -1252,6 +1290,12 @@
       else
         allocate(trel0(ntracers,nvrt,nea),trel(ntracers,nvrt,nea), &
                  tr_nd(ntracers,nvrt,npa),stat=istat)
+
+        if(inu_tr==2) then
+          allocate(swild9(ntracers,nvrt),trnd_nu1(ntracers,nvrt,npa),trnd_nu2(ntracers,nvrt,npa), &
+     &trnd_nu(ntracers,nvrt,npa),stat=itmp)
+          if(itmp/=0) call parallel_abort('INIT: alloc failed (56)')
+        endif
       endif
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
 
@@ -1473,8 +1517,8 @@
 !...  For ics=2, this is done inside element frame
       do i=1,nea
         do j=1,3
-          dldxy(j,1,i)=(yel(nx(j,1),i)-yel(nx(j,2),i))/2/area(i) !dL_1/dx
-          dldxy(j,2,i)=(xel(nx(j,2),i)-xel(nx(j,1),i))/2/area(i) !dL_1/dy
+          dldxy(j,1,i)=(yel(nx(j,1),i)-yel(nx(j,2),i))/2/area(i) !dL_j/dx
+          dldxy(j,2,i)=(xel(nx(j,2),i)-xel(nx(j,1),i))/2/area(i) !dL_j/dy
         enddo !j
       enddo !i=1,nea
 
@@ -1798,7 +1842,7 @@
             do m=1,ntracers
               write(ifile_char,'(i03)')m
               ifile_char=adjustl(ifile_char); ifile_len=len_trim(ifile_char)
-              inputfile='htr_'//ifile_char(1:ifile_len)//'.th'
+              inputfile='tr_'//ifile_char(1:ifile_len)//'.th'
               open(300+m,file=inputfile,status='old')
             enddo 
           else if(itrtype(k)==3) then !nudge to i.c.
@@ -1934,7 +1978,6 @@
       irec_th(1:5)=2
 
 !...  Read in hydraulics.in
-!      call get_param('param.in','ihydraulics',1,ihydraulics,realvalue,stringvalue)
       if(ihydraulics/=0) then
         !Non-hydro model not working yet
         if(nonhydro/=0) call parallel_abort('MAIN: Non-hydro model cannot be used with hydraulics option')
@@ -2202,8 +2245,6 @@
 
 !...  Option for specifying hydrostatic region for non-hydrostatic model
       if(nonhydro==1) then
-!        if(ics==2) call parallel_abort('ics=2 and nonhydro==1')
-!        call get_param('param.in','ihydro_region',1,ihydro_region,tmp,stringvalue)
         if(ihydro_region==1) then
           open(32,file='hydro_region.gr3',status='old')
           read(32,*)
@@ -2405,19 +2446,11 @@
 !     2: 3D bed deformation model (needs user coding)
 !     For imm=2, user needs to manually update bottom vel. etc in update_bdef()
 !     (not working yet for ics=2)
-!      call get_param('param.in','imm',1,imm,tmp,stringvalue)
-!     For moving bed, the output is from original bottom to nvrt
-!      if(imm<0.or.imm>2) then
-!        write(errmsg,*)'Unknown imm',imm
-!        call parallel_abort(errmsg)
-!      endif
-!      if(imm==2.and.ics==2) call parallel_abort('imm=ics=2')
 
 !     Initialize variables used in tsunami model (but bdef[1,2] and ibdef are available for all models)
       bdef=0 !total deformation
       ibdef=1 !# of time steps for deformation (deformation rate=0 when it>ibdef)
       if(imm==1) then !read in deformation at all nodes
-!        call get_param('param.in','ibdef',1,ibdef,tmp,stringvalue)
         open(32,file='bdef.gr3',status='old') !connectivity part not used
         read(32,*)
         read(32,*) itmp1,itmp2
@@ -2431,14 +2464,11 @@
       endif
 
 !...  Center of projection in degrees (used for beta-plane approx.)
-!      call get_param('param.in','cpp_lon',2,itmp,slam0,stringvalue)
-!      call get_param('param.in','cpp_lat',2,itmp,sfea0,stringvalue)
       slam0=slam0*pi/180
       sfea0=sfea0*pi/180
 
 !...  Horizontal viscosity option
 !     ihorcon =0 means all hvis=0 and no hvis.gr3 is needed
-!      call get_param('param.in','ihorcon',1,ihorcon,tmp,stringvalue)
       if(ihorcon/=0) then
 !        if(ics==2) call parallel_abort('ics=2 and ihorcon/=0')
         open(32,file='hvis.gr3',status='old')
@@ -2460,7 +2490,6 @@
       
 !...  Horizontal diffusivity option; only works for upwind/TVD
 !     ihdif=0 means all hdif=0 and no hdif.gr3 is needed
-!      call get_param('param.in','ihdif',1,ihdif,tmp,stringvalue)
       if(ihdif==0) then
         hdif=0
       else
@@ -2501,7 +2530,6 @@
       endif
 
 !...  Bottom friction
-!      call get_param('param.in','bfric',1,nchi,tmp,stringvalue)
       if(nchi==-1) then !read in Manning's n for 2D model
         open(32,file='manning.gr3',status='old')
         read(32,*)
@@ -2556,17 +2584,9 @@
       endif !nchi
 
 !     Coriolis options (must be 1 if ics=2)
-!      call get_param('param.in','ncor',1,ncor,tmp,stringvalue)
-!      if(iabs(ncor)>1.or.ics==2.and.ncor/=1) then
-!        write(errmsg,*)'Unknown ncor',ncor,ics
-!        call parallel_abort(errmsg)
-!      endif
       if(ncor==-1) then !latitude
-!        call get_param('param.in','latitude',2,itmp,tmp,stringvalue)
-!        coricoef=2*omega_e*sin(tmp/180*pi)
         cori=coricoef
       else if(ncor==0) then
-!        call get_param('param.in','coriolis',2,itmp,coricoef,stringvalue)
         cori=coricoef
       else !ncor=1
         if(ics==1.and.myrank==0) write(16,*)'Check slam0 and sfea0 as variable Coriolis is used'
@@ -2624,9 +2644,6 @@
 
       windfactor=1 !intialize for default
       if(nws>0) then
-!        call get_param('param.in','nrampwind',1,nrampwind,tmp,stringvalue)
-!        call get_param('param.in','iwindoff',1,iwindoff,tmp,stringvalue)
-!        call get_param('param.in','drampwind',2,itmp,drampwind,stringvalue)
         if(iwindoff/=0) then
           open(32,file='windfactor.gr3',status='old')
           read(32,*)
@@ -2700,18 +2717,10 @@
       endif
    
 !...  Turbulence closure options
-!      call get_param('param.in','itur',1,itur,tmp,stringvalue)
-!      if(itur<-2.or.itur>4) then
-!        write(errmsg,*)'Unknown turbulence closure model',itur
-!        call parallel_abort(errmsg)
-!      endif
-
       if(itur==0) then
-!        call get_param('param.in','dfv0',2,itmp,dfv0,stringvalue)
-!        call get_param('param.in','dfh0',2,itmp,dfh0,stringvalue)
         dfv=dfv0; dfh=dfh0
       else if(itur==-1) then !VVD
-        open(10,file='vvd.dat',status='old')
+        open(10,file='vvd.in',status='old')
         read(10,*) !nvrt
         do j=1,nvrt
           read(10,*)k,dfv0,dfh0
@@ -2737,22 +2746,6 @@
         close(10)
         close(32)
       else if(itur==2) then !read in P&P coefficients
-!        call get_param('param.in','h1_pp',2,itmp,h1_pp,stringvalue)
-!        call get_param('param.in','h2_pp',2,itmp,h2_pp,stringvalue)
-!        call get_param('param.in','vdmax_pp1',2,itmp,vdmax_pp1,stringvalue)
-!        call get_param('param.in','vdmax_pp2',2,itmp,vdmax_pp2,stringvalue)
-!        call get_param('param.in','vdmin_pp1',2,itmp,vdmin_pp1,stringvalue)
-!        call get_param('param.in','vdmin_pp2',2,itmp,vdmin_pp2,stringvalue)
-!        call get_param('param.in','tdmin_pp1',2,itmp,tdmin_pp1,stringvalue)
-!        call get_param('param.in','tdmin_pp2',2,itmp,tdmin_pp2,stringvalue)
-!        if(h1_pp>=h2_pp) then
-!          write(errmsg,*)'h1_pp >= h2_pp in P&P'
-!          call parallel_abort(errmsg)
-!        endif
-!        if(vdmax_pp1<vdmin_pp1.or.vdmax_pp2<vdmin_pp2) then
-!          write(errmsg,*)'Wrong limits in P&P:',vdmax_pp1,vdmin_pp1,vdmax_pp2,vdmin_pp2
-!          call parallel_abort(errmsg)
-!        endif
       else if(itur==3.or.itur==4) then !read in const. (cf. Umlauf and Burchard 2003)
 !       Common variables for both models
         cmiu0=sqrt(0.3d0)
@@ -2783,10 +2776,6 @@
         close(32)
 
         if(itur==3) then
-!         Closure name and stability function
-!          call get_param('param.in','turb_met',0,itmp,tmp,mid)
-!          call get_param('param.in','turb_stab',0,itmp,tmp,stab)
-
 !	  Constants used in GLS; cpsi3 later
           a2_cm03=2/cmiu0**3
           eps_min=1.e-12
@@ -2942,13 +2931,6 @@
 !      if(islip==1) read(15,*) hdrag0
 
 !...  Sponge layer for elev. & vel. (relax. factor applied to 0 elev. or uv -similar to T,S)
-!      call get_param('param.in','inu_elev',1,inu_elev,tmp,stringvalue)
-!      call get_param('param.in','inu_uv',1,inu_uv,tmp,stringvalue)
-!      if(inu_elev<0.or.inu_elev>1.or.inu_uv<0.or.inu_uv>1) then
-!        write(errmsg,*)'Check sponge inputs:',inu_elev,inu_uv
-!        call parallel_abort(errmsg)
-!      endif
-
       if(inu_elev==1) then
         open(10,file='elev_nudge.gr3',status='old')
         read(10,*)
@@ -2984,16 +2966,6 @@
       endif !inu_uv
 
 !...  Nudging options for T,S
-!      call get_param('param.in','inu_st',1,inu_st,tmp,stringvalue)
-!      call get_param('param.in','step_nu',2,itmp,step_nu,stringvalue)
-!      call get_param('param.in','vnh1',2,itmp,vnh1,stringvalue)
-!      call get_param('param.in','vnh2',2,itmp,vnh2,stringvalue)
-!      call get_param('param.in','vnf1',2,itmp,vnf1,stringvalue)
-!      call get_param('param.in','vnf2',2,itmp,vnf2,stringvalue)
-!      if(inu_st<0.or.inu_st>2.or.step_nu<dt) then
-!        write(errmsg,*)'Check nudging inputs:',inu_st,step_nu
-!        call parallel_abort(errmsg)
-!      endif
       if(inu_st/=0) then
         if(vnh1>=vnh2.or.vnf1<0.or.vnf1>1.or.vnf2<0.or.vnf2>1) then
           write(errmsg,*)'Check vertical nudging limits:',vnh1,vnf1,vnh2,vnf2
@@ -3049,6 +3021,8 @@
           if(ipgl(i)%rank==myrank) tr_nudge(ipgl(i)%id)=tmp1
         enddo !i
         close(10)
+
+        if(inu_tr==2) open(45,file='tr_nu.in',form='unformatted',status='old') !single precision
       endif !inu_tr/=0
 
 !...  Surface min. mixing length for f.s. and max. for all; inactive 
@@ -3073,14 +3047,7 @@
 
 !     Station output option (/=0: need station.in)
 !     If ics=2, the coord. in station.in must be in lat/lon (degrees)
-!      call get_param('param.in','iout_sta',1,iout_sta,tmp,stringvalue)
-
       if(iout_sta/=0) then
-!        call get_param('param.in','nspool_sta',1,nspool_sta,tmp,stringvalue) !output skip
-!        if(nspool_sta<=0) call parallel_abort('Wrong nspool_sta')
-!        if(mod(nhot_write,nspool_sta)/=0) call parallel_abort('mod(nhot_write,nspool_sta)/=0')
-!'
-
         nvar_sta=9 !# of output variables
         allocate(iof_sta(nvar_sta),stat=istat)
         if(istat/=0) call parallel_abort('Sta. allocation failure (1)')
@@ -3188,7 +3155,6 @@
 
 #ifdef USE_HA
 !...  Read harmonic analysis information (Adapted from ADCIRC)
-!      call get_param('param.in','iharind',1,iharind,tmp,stringvalue)
       if(iharind/=0) then
         open(31,file='harm.in',status='old')
 !...
@@ -3523,6 +3489,17 @@
       else
         call levels1(0,0)
       endif
+
+!...  Bottom roughness length (m) for nchi==0
+      if(nchi==0) then
+        do j=1,npa
+          if(idry(j)==1.or.Cdp(j)==0) then
+            rough_p(j)=0
+          else
+            rough_p(j)=(znl(kbp(j)+1,j)-znl(kbp(j),j))*exp(-0.4/sqrt(Cdp(j)))
+          endif
+        enddo !j
+      endif !nchi
 
 !...  kbp00 will be used for output only
       kbp00=kbp
@@ -3913,6 +3890,26 @@
         time_nu=step_nu
       endif !inu_st
 
+!...  Read initial nudging for tracers
+      if(ntracers>0.and.inu_tr==2) then
+        read(45)floatout
+        do i=1,np_global
+          read(45)swild9
+          if(ipgl(i)%rank==myrank) then
+            trnd_nu1(:,:,ipgl(i)%id)=swild9
+          endif
+        enddo !i
+        read(45)floatout
+        do i=1,np_global
+          read(45)swild9
+          if(ipgl(i)%rank==myrank) then
+            trnd_nu2(:,:,ipgl(i)%id)=swild9
+          endif
+        enddo !i
+        irec_nu_tr=2
+        time_nu_tr=step_nu_tr
+      endif !inu_tr
+
 #ifdef USE_HA
 !...
 !....INITIALIZE HARMONIC ANALYSIS MATRICES, MEAN AND SQUARE VECTORS
@@ -3953,17 +3950,13 @@
 !        trel0(2,:,:)=0 
 !        trel=trel0
 
-        !open(32,file='tracer_param.in',status='old')
-        !read(32,*)
-        !read(32,*) flag_model
-!        call get_param('param.in','flag_model',1,flag_model,tmp,stringvalue)
-!        call get_param('param.in','flag_ic',1,flag_ic,tmp,stringvalue)
-
         select case(flag_model)
           case(-1) ! for generic use by users
             if(myrank==0) write(16,*)'Generic tracer transport model'
-          case(0) ! for test
-            if(myrank==0) write(16,*)'testing tracer transport model'
+          case(0) ! Tracer age
+            !Method: all i.c. =0; conc=1 at relevant bnd(s), and itrtype=0 at ocean bnd 
+            if(myrank==0) write(16,*)'tracer age calculation'
+            if(mod(ntracers,2)/=0) call parallel_abort('STEP: ntracers must be even')
           case(1) ! Sediment model
 
 !LLP
@@ -4320,7 +4313,12 @@
 #ifdef INCLUDE_TIMING
       timer_ns(2)=timer_ns(2)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 
-#endif
+#endif /*USE_SED2D*/
+
+#ifdef USE_SED
+!...    Sediment model initialization
+        call sed_init
+#endif /*USE_SED*/
 
       if(myrank==0) write(16,*)'done initializing cold start'
       
@@ -4345,7 +4343,7 @@
             tsel(1,:,ie)=swild4(:,2)
             tsel(2,:,ie)=swild4(:,3)
             do l=1,ntracers
-              if(flag_model==0) cycle !use i.c. for testing model
+!              if(flag_model==0) cycle !use i.c. for testing model
 #ifndef USE_NAPZD
               trel0(l,:,ie)=swild4(:,3+2*l-1)
               trel(l,:,ie)=swild4(:,3+2*l)
@@ -4439,15 +4437,38 @@
         enddo !i
 #endif
 
-#ifdef USE_SED2D
-      do i=1,np_global
-        read(36) ipgb,double1
-        if(ipgl(ipgb)%rank==myrank) then
-          ip=ipgl(ipgb)%id
-          dp(ip)=double1
-        endif
-      enddo !i
+#ifdef USE_SED2D 
+        do i=1,np_global
+          read(36) ipgb,double1
+          if(ipgl(ipgb)%rank==myrank) then
+            ip=ipgl(ipgb)%id
+            dp(ip)=double1
+          endif
+        enddo !i
 #endif
+
+#ifdef USE_SED
+        do i=1,np_global
+          read(36) ipgb,double1
+          if(ipgl(ipgb)%rank==myrank) then
+            ip=ipgl(ipgb)%id
+            dp(ip)=double1
+          endif
+        enddo !i
+
+        allocate(swild99(Nbed,MBEDP),swild98(Nbed,2,ntracers),stat=istat)
+        if(istat/=0) call parallel_abort('MAIN: alloc failure (55)')
+        do i=1,ne_global
+          read(36) iegb,swild99,swild98
+          if(iegl(iegb)%rank==myrank) then
+            ie=iegl(iegb)%id
+            bed(:,ie,:)=swild99
+            bed_mass(:,ie,:,:)=swild98
+          endif
+        enddo !i
+        deallocate(swild99,swild98)
+
+#endif /*USE_SED*/
 
 #ifdef USE_HA
 !...
@@ -4758,6 +4779,25 @@
           irec_nu=irec_nu+1
         endif !inu_st
 
+        if(ntracers>0.and.inu_tr==2) then
+          irec_nu_tr=time/step_nu_tr+1
+          time_nu_tr=irec_nu_tr*step_nu_tr
+       
+          do it=1,irec_nu_tr+1
+            read(45)floatout
+            do i=1,np_global
+              read(45)swild9
+              if(it==irec_nu_tr.and.ipgl(i)%rank==myrank) then
+                trnd_nu1(:,:,ipgl(i)%id)=swild9
+              endif
+              if(it==irec_nu_tr+1.and.ipgl(i)%rank==myrank) then
+                trnd_nu2(:,:,ipgl(i)%id)=swild9
+              endif
+            enddo !i
+          enddo !it
+          irec_nu_tr=irec_nu_tr+1
+        endif !inu_tr
+
 !...    Find positions in t.h. files 
         if(nettype>0) then
           rewind(50)
@@ -4810,9 +4850,9 @@
             do it=0,ninv
               read(300+m,*) ttt,ath(1:ntrtype,m,1,5)
             enddo
-            th_time(1,1,5)=ttt
+            th_time(m,1,5)=ttt
             read(300+m,*) ttt,ath(1:ntrtype,m,2,5)
-            th_time(1,2,5)=ttt
+            th_time(m,2,5)=ttt
           enddo
         endif 
 
@@ -5106,7 +5146,6 @@
             erho(k,i)=eqstate(2,tsel(1,k,i),tsel(2,k,i)      &
 !LLP
 #ifdef USE_SED
-!Error: Srho not defined at elements
      &                        ,trel(:,k,i),Srho(:)         &
 #endif /*USE_SED*/
 #ifdef USE_TIMOR
@@ -5169,23 +5208,6 @@
 #endif
       endif !itur==4 etc
 
-#ifdef USE_SED
-!...    Bottom roughness length (m)
-        if(nchi==0) then
-          do j=1,npa
-            if(idry(j)==1.or.Cdp(j)==0) then
-              rough_p(j)=0
-            else
-              rough_p(j)=(znl(kbp(j)+1,j)-znl(kbp(j),j))*exp(-0.4/sqrt(Cdp(j)))
-            endif
-          enddo !j
-        endif !nchi
-!...    Sediment model initialization
-        call sed_init
-!..     End of sediment model initialization
-
-#endif /*USE_SED*/
-
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 ! Begin time stepping
@@ -5223,5 +5245,6 @@
 !     Deallocate temp. arrays to release memory
       deallocate(nwild,nwild2,swild,swild2,swild3,swild4,swild8,swild10)
       if(nws==4) deallocate(rwild)
+      if(ntracers>0.and.inu_tr==2) deallocate(swild9)
 
       end subroutine selfe_init

@@ -21,16 +21,17 @@
 #endif
 
 #ifdef USE_ICM
-      USE icm_param, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
+      USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
                           &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
                           &WWPRPOP,WWPLPOP,WWPDOP,WWPPO4t,WWPSU,WWPSAt, &
                           &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
                           &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
                           &PSAt,PCOD,PDO,WMS,irea    !added by YC
-      USE icm_sed_param, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
-                              &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
-                              &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
-                              &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S  !added by wangzg
+      USE icm_sed_mod, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+                            &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
+                            &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
+                            &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S, &  !added by wangzg
+                            &BENDOC,SED_BENNH4,SED_BENNO3,BENPO4,SED_BENCOD,BENSA
 #endif
 
 #ifdef USE_NAPZD
@@ -38,13 +39,15 @@
 #endif
 
 #ifdef USE_SED
-       USE sed_mod, only : Wsed,Srho,Nbed,bedldu,bedldv,bed,bottom,    &
-                           bed_frac,mcoefd,bed_fracn,bed_d50n,bed_taun,&
-                           bedforms_rough,bed_rough,izcr,izsw,izwr,izbld
+       USE sed_mod, only : Wsed,Srho,Nbed,MBEDP,bedldu,bedldv,bed,bottom,    &
+                          &bed_frac,mcoefd,bed_fracn,bed_d50n,bed_taun,&
+                          &bedforms_rough,bed_rough,izcr,izsw,izwr,izbld, &
+                          &bed,bed_mass        
 #endif
 
 #ifdef USE_SED2D
-      use sed2d_mod, only : Cdsed,cflsed,dpdxy,qav,qb,qs,qtot,z0cr_e,z0_e,z0sw_e,z0wr_e
+      use sed2d_mod, only : Cdsed,cflsed,d50moy,dpdxy,nb_class,qav,  &
+                           &qb,qs,qtot,z0cr_e,z0_e,z0sw_e,z0wr_e
 #endif
 
 #ifdef USE_OIL
@@ -77,7 +80,7 @@
                  &id2,id3,ip,ndelt,ibot_fl,ibelow,indx,nj,ind,ind2,lim,in1, &
                  &in2,irank_s,itmp,itmp1,itmp2,node1,node2,ndim,mk,nd_lam, &
                  &iee,idel,irow,icol,ieq,ij,kbb,lwrite,lit,ihot_len,IHOTSTP, &
-                 &itmpf,ibt,mmk,ndo,n
+                 &itmpf,ibt,mmk,ndo,n,ibtm
       real(rkind) :: cwtmp,cwtmp2,wtmp1,wtmp2,time,ramp,rampbc,rampwind,dzdx,dzdy, &
                      &dudz,dvdz,dudx,dudx2,dvdx,dvdx2,dudy,dudy2,dvdy,dvdy2, &
                      &dzz1,ta,wx2,wy2,wtratio,sum1,sum2,sum3,sum4,dragcmin, &
@@ -152,6 +155,7 @@
       real(4) :: swild8(nvrt,2) !used in ST nudging
       logical :: lelbc(npa)
       
+      real(4),allocatable :: swild9(:,:) !used in tracer nudging
       real(rkind),allocatable :: rwild(:,:) 
       real(rkind),allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
       real(rkind),allocatable :: hp_int(:,:,:),buf1(:,:),buf2(:,:),buf3(:),msource(:,:)
@@ -167,13 +171,7 @@
 !      integer :: flag_model,flag_ic
       real(rkind),allocatable :: Bio_bdefp(:,:),tr_tc(:,:),tr_tl(:,:)
 
-     
-
 !     End of declarations
-!     Allocate arrays for 1st call
-!      if(first_call) then
-!        allocate(btlist(mxnbt),stat=istat)
-!        if(istat/=0) call parallel_abort('STEP: btlist allocation failure')
       if(nonhydro==1) then
         allocate(qhat(nvrt,npa),dqnon_dxy(2,nvrt,nsa),qmatr(nvrt,-1:1,0:(mnei+1),np), &
      &qir(nvrt,np),stat=istat)
@@ -181,14 +179,13 @@
 !'
       endif
 
-!      endif !first_call
-!     Allocate arrays
-!      allocate(nwild(nea+12),nwild2(ne_global),swild(nsa+nvrt+12+ntracers), &
-!     &swild2(nvrt,12),swild10(max(3,nvrt),12), &
-!     &swild3(20+ntracers),swild4(nvrt,3+2*ntracers),swild8(nvrt,2),stat=istat)
-!      if(istat/=0) call parallel_abort('STEP: other allocation failure')
       allocate(hp_int(nvrt,nea,2),stat=istat)
       if(istat/=0) call parallel_abort('STEP: other allocation failure')
+
+      if(ntracers>0.and.inu_tr==2) then
+        allocate(swild9(ntracers,nvrt),stat=istat)
+        if(istat/=0) call parallel_abort('STEP: alloc failure (3)')
+      endif
 
 #ifdef DEBUG
       allocate(bpgr(nsa,2),wafo(nvrt,nsa,2))
@@ -762,6 +759,34 @@
         endif
         tnd_nu=tnd_nu1+(1-rat)*(tnd_nu2-tnd_nu1)
         snd_nu=snd_nu1+(1-rat)*(snd_nu2-snd_nu1)
+      endif !nudging
+
+!...  Read in tracer nudging
+      if(ntracers>0.and.inu_tr==2) then
+        if(time>time_nu_tr) then
+          irec_nu_tr=irec_nu_tr+1
+          time_nu_tr=time_nu_tr+step_nu_tr
+          trnd_nu1=trnd_nu2
+          read(45)floatout
+          if(abs(floatout-time_nu_tr)>0.01) then
+            write(errmsg,*)'Wrong nudging time (2):',floatout,time_nu
+            call parallel_abort(errmsg)
+          endif
+          do i=1,np_global
+            read(45)swild9
+            if(ipgl(i)%rank==myrank) then
+              trnd_nu2(:,:,ipgl(i)%id)=swild9
+            endif
+          enddo !i
+        endif !time>time_nu
+
+!       Compute S,T
+        rat=(time_nu_tr-time)/step_nu_tr
+        if(rat<0.or.rat>1) then
+          write(errmsg,*)'Impossible 82:',rat
+          call parallel_abort(errmsg)
+        endif
+        trnd_nu=trnd_nu1+(1-rat)*(trnd_nu2-trnd_nu1)
       endif !nudging
 
 !...  Compute hydraulic transfer blocks together with reading in flux values
@@ -1361,7 +1386,8 @@
 
               htot=dps(isd0)+(eta2(n1)+eta2(n2))/2
               if(htot<=h0) then
-                write(errmsg,*)'Dry bnd side: h_tot',htot,'open boundary',kk,'node',i,'node index',iplg(n1)
+                write(errmsg,*)'Dry bnd side: h_tot',htot, &
+     &'open boundary',kk,'node',i,'node index',iplg(n1)
                 call parallel_abort(errmsg)
               endif
               buf1(kk,1)=buf1(kk,1)+htot*distj(isd0)
@@ -1505,13 +1531,18 @@
       if(nchi==1) then !idrag=2; 3D
 #ifdef USE_SED
         !Roughness predictor
-        if (bedforms_rough.GE.1)THEN
+        if(bedforms_rough.GE.1) THEN
+          IF(myrank==0) WRITE(16,*)'start sed_roughness'
           CALL sed_roughness
+          IF(myrank==0) WRITE(16,*)'done sed_roughness'
+          !Check
+          tmp=sum(rough_p)
+          if(tmp/=tmp) call parallel_abort('SED3D gave NaN from sed_roughness')
         endif
 #endif
         Cdp=0; Cd=0 !for dry pts
         Cdmax=-1 !max. Cd at node for this process (info only)
-!       Drag at nodes
+!'      Drag at nodes
         ltmp1(1)=.false. !for WBL iteration
         do i=1,npa
           if(idry(i)==1) cycle
@@ -3892,6 +3923,8 @@
       enddo !j=1,ns
 
 !     Compute bottom index for sides for zeroing out fluxes for Z layers
+!     This is no longer done in the newer version and kbs_e is not
+!     used now
       kbs_e=0 !larger of the 2 element bottom indices
       do j=1,ns
         if(idry_s(j)==1) cycle
@@ -4015,10 +4048,18 @@
           dfz(k)=(ptbt(3,k,node1)+ptbt(3,k,node2)+ptbt(3,k-1,node1)+ptbt(3,k-1,node2))/4
         enddo !k
 
+!       Define bottom level
+        if(ibottom_bc==1) then !old @kbs(j)+1
+          ibtm=kbs(j)+1
+        else !new @ kbs
+          ibtm=kbs(j)
+        endif !ibottom_bc
+
 !	Coefficient matrix 
-        ndim=nvrt-kbs(j)
-        do k=kbs(j)+1,nvrt
-          kin=k-kbs(j) !eq. #
+        !ndim=nvrt-kbs(j)
+        ndim=nvrt-ibtm+1
+        do k=ibtm,nvrt !kbs(j)+1,nvrt
+          kin=k-ibtm+1   !k-kbs(j) !eq. #
           alow(kin)=0 
           cupp(kin)=0
           bdia(kin)=0
@@ -4028,7 +4069,8 @@
             bdia(kin)=bdia(kin)+dzz(k+1)/3+tmp
           endif
 
-          if(k>kbs(j)+1) then
+          !if(k>kbs(j)+1) then
+          if(k>ibtm) then
             tmp=dt*dfz(k)/dzz(k)
             alow(kin)=alow(kin)+dzz(k)/6-tmp
             bdia(kin)=bdia(kin)+dzz(k)/3+tmp
@@ -4039,8 +4081,8 @@
 
 !	RHS 
 !	b.c. to be imposed at the end
-        do k=kbs(j)+1,nvrt
-          kin=k-kbs(j)
+        do k=ibtm,nvrt !kbs(j)+1,nvrt
+          kin=k-ibtm+1  !k-kbs(j)
           rrhs(1,kin)=0
           rrhs(2,kin)=0
 !	  Elevation gradient, atmo. pressure and tidal potential
@@ -4050,7 +4092,8 @@
             rrhs(2,kin)=rrhs(2,kin)-dzz(k+1)/2*dt*(grav*thetai*deta2_dy(j)+ &
                         grav*(1-thetai)*deta1_dy(j)+dpr_dy(j)/rho0-0.69*grav*detp_dy(j))
           endif
-          if(k>kbs(j)+1) then 
+          !if(k>kbs(j)+1) then 
+          if(k>ibtm) then 
             rrhs(1,kin)=rrhs(1,kin)-dzz(k)/2*dt*(grav*thetai*deta2_dx(j)+ &
                         grav*(1-thetai)*deta1_dx(j)+dpr_dx(j)/rho0-0.69*grav*detp_dx(j))
             rrhs(2,kin)=rrhs(2,kin)-dzz(k)/2*dt*(grav*thetai*deta2_dy(j)+ &
@@ -4075,7 +4118,8 @@
             rrhs(2,kin)=rrhs(2,kin)+dt*tauy2
           endif
 
-          if(k>kbs(j)+1) then
+          !if(k>kbs(j)+1) then
+          if(k>ibtm) then
             rrhs(1,kin)=rrhs(1,kin)+dzz(k)/6*(2*sdbt(1,k,j)+sdbt(1,k-1,j)+ &
      &dt*cori(j)*(2*sv2(k,j)+sv2(k-1,j))+dt*(2*d2uv(1,k,j)+d2uv(1,k-1,j)))
             rrhs(2,kin)=rrhs(2,kin)+dzz(k)/6*(2*sdbt(2,k,j)+sdbt(2,k-1,j)- &
@@ -4088,7 +4132,8 @@
                rrhs(1,kin)=rrhs(1,kin)+dzz(k+1)/6*dt*(2*bcc(1,k,j)+bcc(1,k+1,j))
                rrhs(2,kin)=rrhs(2,kin)+dzz(k+1)/6*dt*(2*bcc(2,k,j)+bcc(2,k+1,j))
             endif
-            if(k>kbs(j)+1) then
+            !if(k>kbs(j)+1) then
+            if(k>ibtm) then
                rrhs(1,kin)=rrhs(1,kin)+dzz(k)/6*dt*(2*bcc(1,k,j)+bcc(1,k-1,j))
                rrhs(2,kin)=rrhs(2,kin)+dzz(k)/6*dt*(2*bcc(2,k,j)+bcc(2,k-1,j))
             endif
@@ -4099,7 +4144,8 @@
             if(k<nvrt) then
               rrhs(1:2,kin)=rrhs(1:2,kin)-dzz(k+1)/6*dt*(2*dqnon_dxy(1:2,k,j)+dqnon_dxy(1:2,k+1,j))
             endif
-            if(k>kbs(j)+1) then
+            !if(k>kbs(j)+1) then
+            if(k>ibtm) then
               rrhs(1:2,kin)=rrhs(1:2,kin)-dzz(k)/6*dt*(2*dqnon_dxy(1:2,k,j)+dqnon_dxy(1:2,k-1,j))
             endif
           endif !nonhydro==1
@@ -4109,7 +4155,8 @@
             if(ics==1) then
               if(k<nvrt) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k+1)/6*dt* &
      &(2*wwave_force(k,j,1:2)+wwave_force(k+1,j,1:2))
-              if(k>kbs(j)+1) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt* &
+              !if(k>kbs(j)+1) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt* &
+              if(k>ibtm) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt* &
      &(2*wwave_force(k,j,1:2)+wwave_force(k-1,j,1:2))
             else !use swild10 as approx. to eframe
               call project_hvec(wwave_force(k,j,1),wwave_force(k,j,2), &
@@ -4120,18 +4167,21 @@
                 rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k+1)/6*dt*(2*swild(1:2)+swild(3:4))
               endif !if(k<nvrt)
              
-              if(k>kbs(j)+1) then
+              !if(k>kbs(j)+1) then
+              if(k>ibtm) then
                 call project_hvec(wwave_force(k-1,j,1),wwave_force(k-1,j,2), &
      &swild10(1:3,1:3),sframe(:,:,j),swild(3),swild(4))
                 rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt*(2*swild(1:2)+swild(3:4))
               endif !if(k>kbs(j)+1)
             endif !ics
 #endif /*USE_WWM*/
-        enddo !k=kbs(j)+1,nvrt
+        enddo !k=ibtm,nvrt
 
         call tridag(nvrt,100,ndim,2,alow,bdia,cupp,rrhs,soln,gam)
-        do k=kbs(j)+1,nvrt
-          kin=k-kbs(j)
+        !do k=kbs(j)+1,nvrt
+        do k=ibtm,nvrt
+          !kin=k-kbs(j)
+          kin=k-ibtm+1
 !         Impose limits
           su2(k,j)=max(-rmaxvel,min(rmaxvel,soln(1,kin)))
           sv2(k,j)=max(-rmaxvel,min(rmaxvel,soln(2,kin)))
@@ -4143,12 +4193,14 @@
           call update_bdef(time,xcj(j),ycj(j),dep,swild)
           su2(kbs(j),j)=swild(1)
           sv2(kbs(j),j)=swild(2)
-        else if(.not.lm2d.and.Cd(j)==0) then
-          su2(kbs(j),j)=su2(kbs(j)+1,j)
-          sv2(kbs(j),j)=sv2(kbs(j)+1,j)
-        else if(.not.lm2d) then !no slip bottom
-          su2(kbs(j),j)=0
-          sv2(kbs(j),j)=0
+        else if(ibottom_bc==1) then
+          if(.not.lm2d.and.Cd(j)==0) then
+            su2(kbs(j),j)=su2(kbs(j)+1,j)
+            sv2(kbs(j),j)=sv2(kbs(j)+1,j)
+          else if(.not.lm2d) then !no slip bottom
+            su2(kbs(j),j)=0
+            sv2(kbs(j),j)=0
+          endif
         endif
 
 !       Extend
@@ -4279,8 +4331,16 @@
             if(isblock_sd(1,i)/=0) cycle
           endif
 
+!         Define bottom level
+          if(ibottom_bc==1) then !old @kbs+1
+            ibtm=kbs(i)+1
+          else !new @ kbs
+            ibtm=kbs(i)
+          endif !ibottom_bc
+
 !         Internal wet sides
-          do k=kbs(i)+1,nvrt
+          !do k=kbs(i)+1,nvrt
+          do k=ibtm,nvrt
             suru=0
             surv=0
             do j=1,4
@@ -4310,7 +4370,15 @@
             if(isblock_sd(1,j)/=0) cycle
           endif
 
-          do k=kbs(j)+1,nvrt
+!         Define bottom level
+          if(ibottom_bc==1) then !old @kbs(j)+1
+            ibtm=kbs(j)+1
+          else !new @ kbs
+            ibtm=kbs(j)
+          endif !ibottom_bc
+
+          !do k=kbs(j)+1,nvrt
+          do k=ibtm,nvrt
             su2(k,j)=bcc(1,k,j)
             sv2(k,j)=bcc(2,k,j)
           enddo !k
@@ -4354,7 +4422,7 @@
       if(nonhydro==1) then
         if(ivcor/=2) call parallel_abort('MAIN: nonhydro cannot use other z-coor.')
         if(myrank==0) write(16,*)'start non-hydrostatic calculation...'
-!...    Solve for intermediate we
+!'...    Solve for intermediate we
         hp_int(:,:,2)=we(:,:) !previous step temporarily saved as hp_int(:,:,2)
         we=0
         do i=1,nea
@@ -4911,7 +4979,7 @@
            
 !...  solve for vertical velocities using F.V.
 !...  For hydrostatic model, this is the vertical vel; for non-hydrostatic
-!...  model, this is only used in upwind transport
+!...  model, this is only used in transport
 !     swild98 for storing rotated hvel at 3 sides
       allocate(swild98(2,3,nvrt),stat=istat)
       we_fv=0 !for dry and below bottom levels; in eframe if ics=2
@@ -5029,11 +5097,11 @@
           we_fv(l+1,i)=(-sum1-(ubar1*sne(1,l+1)+vbar1*sne(2,l+1))*area_e(l+1) + &
      &bflux*area_e(l))/sne(3,l+1)/area_e(l+1)
 
-#ifdef USE_ICM
-          if(iWQPS==2) then
-            if(l==PSK(i)-1) we_fv(l+1,i)=we_fv(l+1,i)-(PSQ(i)*dt)/area(i)    !added by YC, need check
-          endif
-#endif /*USE_ICM*/
+!#ifdef USE_ICM
+!          if(iWQPS==2) then
+!            if(l==PSK(i)-1) we_fv(l+1,i)=we_fv(l+1,i)-(PSQ(i)*dt)/area(i)    !added by YC, need check
+!          endif
+!#endif /*USE_ICM*/
 
 !         Debug
 !          tmp1=sum1
@@ -5675,6 +5743,7 @@
 
 !       Point sources/sinks using operator splitting (that guarentees max.
 !       principle); at bottom layer
+!       Do nothing for net sinks
 !Error: need to reconcile with ICM
         if(if_source==1) then
           do i=1,nea
@@ -5700,12 +5769,13 @@
             bigv=area(i)*(ze(PSK(i),i)-ze(PSK(i)-1,i)) !volume
 !YC            bdy_frc(2,PSK(i),i)=area(i)*(tsel(2,PSK(i),i)*(PSQ(i))/area(i))/bigv
 !!YC            tsel(2,PSK(i),i)=0.
-!            tsel(2,PSK(i),i)=(tsel(2,PSK(i),i)*(bigv+PSQ(i)*dt)+(10.01*(-PSQ(i))*dt))/bigv   !zhujz
              tsel(2,PSK(i),i)=(tsel(2,PSK(i),i)*bigv)/(bigv-PSQ(i)*dt) !ZG
        
+!YJZ: Error: the following should be commented out
             do k=PSK(i)-1,PSK(i)-1
               tsel(2,k,i)=tsel(2,PSK(i),i)
             enddo
+
             if(tsel(2,PSK(i),i).lt.0.) tsel(2,PSK(i),i)=0.
           endif
         enddo !i
@@ -5902,12 +5972,26 @@
             enddo !i
 !           end user-defined tracer part
 
-          case(0) !for testing 
-            bdy_frc = 0
-            flx_bt = 0
-            flx_sf = 0
+          case(0) !tracer age
+            flx_bt=0
+            flx_sf=0
 
-            !Pt source (imposed at bottom layer): use operator splitting as in
+            do i=1,nea
+              if(idry_e(i)==1) cycle
+
+              !Element wet
+              do j=1,ntracers
+                do k=kbe(i)+1,nvrt !all prisms along vertical
+                  if(j<=ntracers/2) then
+                    bdy_frc(j,k,i)=0
+                  else
+                    bdy_frc(j,k,i)=tr_el(j-ntracers/2,k,i)
+                  endif
+                enddo !k
+              enddo !j
+            enddo !i
+
+            !Test pt source (imposed at bottom layer): use operator splitting as in
             !T,S
 !            if(if_source==1.and.mass_source==1) then
 !              do i=1,nea
@@ -5927,11 +6011,28 @@
             if(myrank==0) write(16,*) 'Entering sediment model...'
 
 !LLP
-!#if defined BEDLOAD_VR
 !----------------------------------------------------------------------
 ! Compute element depth averaged hvel for VRIJN bedload
 !----------------------------------------------------------------------
-!Error: dav() not defined yet?
+
+            dav=0
+            do i=1,npa
+              if(idry(i)==1) cycle
+              do k=kbp(i),nvrt-1
+                dav(1,i)=dav(1,i)+(uu2(k+1,i)+uu2(k,i))/2*(znl(k+1,i)-znl(k,i))
+                dav(2,i)=dav(2,i)+(vv2(k+1,i)+vv2(k,i))/2*(znl(k+1,i)-znl(k,i))
+              enddo !k
+              htot=eta2(i)+dp(i)
+              if(htot<=h0) then
+!                write(errmsg,*)'Impossible 24:',it,i,eta2(i),dp(i),htot,h0,iplg(i)
+!                call parallel_abort(errmsg)
+                !This is possible because level indices have not been updated
+                dav(1:2,i)=0
+              else
+                dav(1:2,i)=dav(1:2,i)/htot
+              endif
+            enddo !i=1,npa
+
             dave=0.d0
             do i=1,nea
               if (idry_e(i)==1) cycle
@@ -5944,22 +6045,13 @@
               cff2=(dav(2,n1)+dav(2,n2)+dav(2,n3))/3
               dave(i)=sqrt(cff1*cff1+cff2*cff2)
             enddo !i
-!#endif
 
             bdy_frc = 0.d0
             flx_bt = 0.d0
             flx_sf = 0.d0
 
             call sediment(it,moitn0,mxitn0,rtol0,dave)
-
-!             call sediment(it   &
-!#if defined BEDLOAD_MPM || defined BEDLOAD_VR && defined SED_MORPH
-!     &                      ,moitn,mxitn,rtol &
-!#endif
-!#if defined BEDLOAD_VR
-!     &                     ,dave             &
-!#endif
-!     &                      )
+            !bdy_frc updated by the routine above; flx_* are not
 
 #endif /*USE_SED*/
 ! LLP end
@@ -6026,12 +6118,11 @@
         call do_transport_tvd(it,1,up_tvd,tvd_mid2,flimiter2,ntracers,difnum_max_l,nvrt,npa,ptbt(4,:,:))
         if(myrank==0) write(16,*)'done tracer transport...'
 
-#ifdef USE_TIMOR
-!Do any further processing for TIMOR if any
+!#ifdef USE_TIMOR
         if(irouse_test==1) then
           tr_el(:,1:2,:)=1 
         endif
-#endif /*USE_TIMOR*/
+!#endif /*USE_TIMOR*/
 
 
         !Debug
@@ -6150,10 +6241,14 @@
 
               if(inu_tr==1) then !to i.c.
                 trel(1:ntracers,k,i)=trel(1:ntracers,k,i)*(1-trnu)+trel0(1:ntracers,k,i)*trnu
-              !else if(inu_st==2) then
-              endif
+              else if(inu_tr==2) then
+                do j=1,ntracers
+                  tmp=(trnd_nu(j,k,n1)+trnd_nu(j,k,n2)+trnd_nu(j,k,n3))/3
+                  trel(j,k,i)=trel(j,k,i)*(1-trnu)+tmp*trnu
+                enddo !j
+              endif !inu_tr
             enddo !k
-          endif !inu_st/=0
+          endif !inu_tr/=0
 
 !         Extend
           do k=1,kbe(i)
@@ -6314,7 +6409,11 @@
       cwtmp2=mpi_wtime() !start of timer
 #endif
 
-      call sed2d_main(it)
+      if (nb_class==1) then
+        call sed2d_main(it)
+      elseif (nb_class>1) then
+        call sed2d_main_mcml(it)
+      endif
 
 #ifdef INCLUDE_TIMING
       timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
@@ -6488,11 +6587,10 @@
         enddo !k
         htot=eta2(i)+dp(i)
         if(htot<=h0) then
-          write(errmsg,*)'Impossible 24:',it,i,eta2(i),dp(i),htot,h0,iplg(i)
+          write(errmsg,*)'Impossible 24b:',it,i,eta2(i),dp(i),htot,h0,iplg(i)
           call parallel_abort(errmsg)
         endif
         dav(1:2,i)=dav(1:2,i)/htot
-!        dav(i,2)=dav(i,2)/htot
 
 !       Max. dav (based on magnitude)
         dav_mag=sqrt(dav(1,i)**2+dav(2,i)**2)
@@ -6596,6 +6694,7 @@
         if((iflux_e(ie0) .eq. -1) .or. (iflux_e(ie) .eq. -1)) cycle
 
         if(ie0<=0.or.ie<=0) call parallel_abort('STEP: isdel() out of bound') 
+!'
         if(iflux_e(ie0) .ne. iflux_e(ie) .and. iabs(iflux_e(ie0) - iflux_e(ie)) .eq. 1) then
           if(associated(isgl(islg(i))%next)) then !interface side
             if(isgl(islg(i))%next%rank<myrank) cycle !already in the sum so skip
@@ -6865,28 +6964,30 @@
 
 #ifdef USE_SED2D
               if((j>=indx_out(1,1)).and.(j<=indx_out(1,2))) then          
-                if(j>=indx_out(1,1).and.(j<=indx_out(1,1)+2)) then !scalar
+                if(j>=indx_out(1,1).and.(j<=indx_out(1,1)+3)) then !scalar
                   if(j==indx_out(1,1)) then
                     floatout=dp(i)
                   else if(j==indx_out(1,1)+1) then
                     floatout=Cdsed(i)
                   else if(j==indx_out(1,1)+2) then
                     floatout=cflsed(i)
+                  else if(j==indx_out(1,1)+3) then
+                    floatout=d50moy(i,1)
                   endif
-                else if(j>indx_out(1,1)+2) then !vector
-                  if(j==indx_out(1,1)+3) then
+                else if(j>indx_out(1,1)+3) then !vector
+                  if(j==indx_out(1,1)+4) then
                     floatout=qtot(i,1)
                     floatout2=qtot(i,2)
-                  else if(j==indx_out(1,1)+4) then
+                  else if(j==indx_out(1,1)+5) then
                     floatout=qs(i,1)
                     floatout2=qs(i,2)
-                  else if(j==indx_out(1,1)+5) then
+                  else if(j==indx_out(1,1)+6) then
                     floatout=qb(i,1)
                     floatout2=qb(i,2)
-                  else if(j==indx_out(1,1)+6) then 
+                  else if(j==indx_out(1,1)+7) then 
                     floatout=dpdxy(i,1)
                     floatout2=dpdxy(i,2)
-                  else if(j==indx_out(1,1)+7) then
+                  else if(j==indx_out(1,1)+8) then
                     floatout=qav(i,1)
                     floatout2=qav(i,2)
                   endif
@@ -6897,7 +6998,7 @@
 #else
                 write(ichan(j),"(a4)",advance="no") a_4
 #endif
-                if(j>indx_out(1,1)+2) then !vector
+                if(j>indx_out(1,1)+3) then !vector
                   a_4 = transfer(source=floatout2,mold=a_4)
 #ifdef AVOID_ADV_WRITE
                   write(ichan(j)) a_4
@@ -6956,6 +7057,20 @@
                 endif !vectors
               endif !scope of WWM; j<=indx_out(3,2)
 #endif /*USE_WWM*/
+
+              if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then !age
+                do k=max0(1,kbp00(i)),nvrt
+                  tmp1=max(1.d-5,tr_nd(j-indx_out(4,1)+1,k,i))
+                  floatout=tr_nd(j-indx_out(4,1)+1+ntracers/2,k,i)/tmp1/86400
+                  a_4 = transfer(source=floatout,mold=a_4)
+#ifdef AVOID_ADV_WRITE
+                  write(ichan(j)) a_4
+#else
+                  write(ichan(j),"(a4)",advance="no") a_4
+#endif
+                enddo !k
+              endif !scope of age
+
             endif !j
           enddo !i=1,np
 
@@ -6964,7 +7079,7 @@
       enddo !j=1,noutput
 
 !...  Non-standard outputs
-      if(iof_ns(1)==1) then !.and.mod(it,nspool)==0) then
+      if(iof_ns(1)==1) then 
         call elfe_output_custom(lwrite,6,2,201,'hvel',nvrt,nsa,su2,sv2)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting hvel.67'
       endif !iof_ns
@@ -7028,6 +7143,37 @@
       endif !iof_ns
 #endif /*USE_WWM*/
 #endif /*DEBUG*/
+
+#ifdef USE_ICM
+      if(iof_ns(12)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'bdoc',1,nea,BENDOC)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bdoc.66'
+      endif 
+      if(iof_ns(13)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'bnh4',1,nea,SED_BENNH4)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bnh4.66'
+      endif 
+      if(iof_ns(14)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'bno3',1,nea,SED_BENNO3)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bno3.66'
+      endif 
+      if(iof_ns(15)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'bpo4',1,nea,BENPO4)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpo4.66'
+      endif 
+      if(iof_ns(16)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'bcod',1,nea,SED_BENCOD)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bcod.66'
+      endif 
+      if(iof_ns(17)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'sbdo',1,nea,sed_BENDO)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbdo.66'
+      endif 
+      if(iof_ns(18)==1) then
+        call elfe_output_custom(lwrite,5,1,212,'sbsa',1,nea,BENSA)
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbsa.66'
+      endif 
+#endif /*USE_ICM*/
 
 !     Test 
 !      call elfe_output_custom(lwrite,10,1,205,'elev',1,npa,eta2)
@@ -7248,11 +7394,14 @@
 #ifdef USE_ICM
         nwild(1)=1
 #endif
-#ifdef USE_SED2D
+#ifdef USE_SED2D 
         nwild(2)=1
 #endif
-#ifdef USE_HA
+#ifdef USE_SED
         nwild(3)=1
+#endif
+#ifdef USE_HA
+        nwild(4)=1
 #endif
 
         write(it_char,'(i72)')it
@@ -7261,11 +7410,11 @@
         it_char=it_char(1:lit)//'_0000'; lit=len_trim(it_char)
         write(it_char(lit-3:lit),'(i4.4)') myrank
         !Reserve 8 bytes for all integers as well
-        ihot_len=8*(6+((3+2*ntracers)*nvrt+1)*ne+(4*nvrt+1)*ns+(2+11*nvrt)*np)
+        ihot_len=8*(7+((3+2*ntracers)*nvrt+1)*ne+(4*nvrt+1)*ns+(2+11*nvrt)*np)
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
              access='direct',recl=ihot_len,status='replace') 
 
-        write(36,rec=1)nwild(1:3),dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
+        write(36,rec=1)nwild(1:4),dble(time),it,ifile,(idry_e(i),(dble(we(j,i)),dble(tsel(1:2,j,i)), &
      &(dble(trel0(l,j,i)),dble(trel(l,j,i)),l=1,ntracers),j=1,nvrt),i=1,ne), &
      &(idry_s(i),(dble(su2(j,i)),dble(sv2(j,i)),dble(tsd(j,i)),dble(ssd(j,i)),j=1,nvrt),i=1,ns), &
      &(dble(eta2(i)),idry(i),(dble(tnd(j,i)),dble(snd(j,i)),dble(tem0(j,i)),dble(sal0(j,i)), &
@@ -7326,7 +7475,7 @@
 
         !write(12,*)'After hot trcr:',it,real(trel),real(trel0)
 
-#ifdef USE_SED2D
+#ifdef USE_SED2D 
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
              &access='direct',recl=8,status='old')
         do i=1,np
@@ -7335,6 +7484,39 @@
         enddo !i=1,np
         close(36)
 #endif /*USE_SED2D*/
+
+#ifdef USE_SED
+        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+             &access='direct',recl=8,status='old')
+        write(36,rec=IHOTSTP+1)MBEDP
+        write(36,rec=IHOTSTP+2)Nbed
+        IHOTSTP=IHOTSTP+2
+        do i=1,np
+          write(36,rec=IHOTSTP+1)dp(i)
+          IHOTSTP=IHOTSTP+1
+        enddo !i=1,np
+
+        do i=1,MBEDP
+          do j=1,ne
+            do k=1,Nbed
+              write(36,rec=IHOTSTP+1)bed(k,j,i)
+              IHOTSTP=IHOTSTP+1
+            enddo !k
+          enddo !j
+        enddo !i
+
+        do i=1,ntracers
+          do j=1,2
+            do k=1,ne
+              do m=1,Nbed
+                write(36,rec=IHOTSTP+1)bed_mass(m,k,j,i)
+                IHOTSTP=IHOTSTP+1
+              enddo !m
+            enddo !k
+          enddo !j
+        enddo !i
+        close(36)
+#endif /*USE_SED*/
 
 #ifdef USE_HA
 !...  not working properly yet
@@ -7416,6 +7598,8 @@
       if(if_source==1) deallocate(msource)
       if(nonhydro==1) deallocate(qhat,dqnon_dxy,qmatr,qir)
       deallocate(hp_int)
+
+      if(ntracers>0.and.inu_tr==2) deallocate(swild9)
 
 #ifdef DEBUG
       deallocate(bpgr,wafo)

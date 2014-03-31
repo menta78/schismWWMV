@@ -1,13 +1,13 @@
 
 
 default:
-	(cd METISLib ; make ) 
-	(cd ParMETISLib ; make ) 
-#	(cd Programs ; make ) 
+	(cd METISLib ; $(MAKE) ) 
+	(cd ParMETISLib ; $(MAKE) ) 
+#	(cd Programs ; $(MAKE) ) 
 
 clean:
-	(cd METISLib ; make realclean )
-	(cd ParMETISLib ; make realclean )
-#	(cd Programs ; make realclean )
+	(cd METISLib ; $(MAKE) realclean )
+	(cd ParMETISLib ; $(MAKE) realclean )
+#	(cd Programs ; $(MAKE) realclean )
 
 
