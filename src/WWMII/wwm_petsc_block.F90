@@ -329,7 +329,7 @@
       !> create IA JA ASPAR petsc array for big sparse matrix
       SUBROUTINE createCSR_petsc
         use datapool, only: NNZ, MNE, INE, MNP, MSC, MDC, RKIND, DBG, iplg, JA, myrank, IOBP, LTHBOUND, LSIGBOUND, DEP, DMIN
-        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL
         use petscpool
         use algorithm, only: bubbleSort, genericData
         implicit none
@@ -759,7 +759,7 @@
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
         use datapool, only : IMATRAA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d
-        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
+        USE DATAPOOL, ONLY : SOURCE_IMPL
         use petscpool
         use petscsys
         use petscvec
@@ -1106,7 +1106,7 @@
         use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
         use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
-        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
+        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL
         use petscpool
         implicit none
         integer, intent(in) :: IP
@@ -1199,7 +1199,6 @@
           TRIA03arr(i) = ONETHIRD * TRIA(IE)
           elementList(i) = IE
         enddo
-
         IF (FREQ_SHIFT_IMPL) THEN
           TheVal=1
           IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
@@ -1359,7 +1358,7 @@
         use datapool, only : LBCWA, LBCSP, LINHOM, IWBMNP, I_DIAG, SI, IMATDAA
         use datapool, only : IWBNDLC, IOBWB, IOBPD, DT4A
         use datapool, only : ICOMP, SMETHOD
-        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
+        USE DATAPOOL, ONLY : SOURCE_IMPL
         use petscpool
         use petscsys
         use petscmat
@@ -2120,7 +2119,7 @@
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD, FMEAN, FMEANWS
         use datapool, only : IMATRAA, IMATDAA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d, lsourceswam
-        USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL, SOURCE_IMPL
+        USE DATAPOOL, ONLY : SOURCE_IMPL
         use petscpool
         use petscsys
         use petscvec
