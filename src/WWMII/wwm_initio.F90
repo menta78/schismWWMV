@@ -75,6 +75,7 @@
          DAC_SOU = zero
        END IF
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7)) THEN
+#ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
            allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.1')
@@ -83,6 +84,9 @@
            allocate(A_SIG(MSC,MDC,NP_RES), C_SIG(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.2')
          END IF
+#else
+         CALL WWM_ABORT('Needs WWM_SOLVER for JACOBI_ITERATION (AMETHOD 7)')
+#endif
        END IF
 #ifdef SHYFEM_COUPLING
        IF (LSHYFEM) THEN
