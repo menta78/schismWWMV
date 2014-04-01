@@ -116,6 +116,10 @@
                      write(DBG%FHNDL,*) 'IE=', IE, ' TRIA=', TRIA(IE)
                      write(DBG%FHNDL,*) 'DXP1=', DXP1, ' DXP3=', DXP3
                      write(DBG%FHNDL,*) 'DYP1=', DYP1, ' DYP3=', DYP3
+                     write(DBG%FHNDL,*) 'I123=', I1, I2, I3
+                     write(DBG%FHNDL,*) 'XP,YP(I1)=', XP(I1), YP(I1)
+                     write(DBG%FHNDL,*) 'XP,YP(I2)=', XP(I2), YP(I2)
+                     write(DBG%FHNDL,*) 'XP,YP(I3)=', XP(I3), YP(I3)
                      CALL WWM_ABORT('too small triangles')
                    END IF 
 

@@ -470,6 +470,17 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
          FLUSH(STAT%FHNDL)
 #endif
+         Print *, 'XP(min/max)=', minval(XP), maxval(XP)
+         Print *, 'YP(min/max)=', minval(YP), maxval(YP)
+         IF (CART2LATLON) THEN
+           XP = XP / 111111.
+           YP = YP / 111111.
+         ELSE IF (LATLON2CART) THEN
+           XP = XP * 111111.
+           YP = YP * 111111. 
+         ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+           CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+         ENDIF 
          CALL SPATIAL_GRID
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
          FLUSH(STAT%FHNDL)
