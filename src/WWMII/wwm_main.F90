@@ -733,7 +733,15 @@
       ELSE
         ics=1
       ENDIF
-      
+      IF (CART2LATLON) THEN
+        ics=1
+      END IF
+      IF (LATLON2CART) THEN
+        ics=2
+      END IF
+      IF (CART2LATLON .and. LATLON2CART) THEN
+        CALL WWM_ABORT('You cannot have both CART2LATLON and CART2LONLAT')
+      END IF
       msc2=MSC
       mdc2=MDC
 #endif      
