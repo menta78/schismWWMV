@@ -296,6 +296,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBP, NEIGHBOR)
+      USE DATAPOOL, ONLY : DBG
       IMPLICIT NONE
       INTEGER, INTENT(IN)             :: np_glob, ne_glob
       INTEGER, INTENT(IN)             :: INEglob(3, ne_glob)
