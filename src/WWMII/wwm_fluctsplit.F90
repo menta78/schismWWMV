@@ -94,6 +94,7 @@
            END DO
 #endif
          ELSE IF (AMETHOD == 6) THEN
+           Print *, 'Before WWM_SOLVER_EIMPS'
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
            CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)

@@ -348,19 +348,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_DIFFRACTION
-        USE DATAPOOL
-        IF (LDIFR) THEN
-          IF (IDIFFR == 1 ) THEN
-            CALL DIFFRA_SIMPLE
-          ELSE IF (IDIFFR == 2) THEN
-            CALL DIFFRA_EXTENDED
-          END IF
-        END IF
-      END SUBROUTINE COMPUTE_DIFFRACTION
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE COMPUTE_SPATIAL
         USE DATAPOOL
         IMPLICIT NONE

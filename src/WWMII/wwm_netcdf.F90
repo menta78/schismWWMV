@@ -394,26 +394,26 @@
       HaveError=.FALSE.
       DO IP=1,np_glob
         IF (NBneighbor(IP).gt.1) THEN
-          Print *, 'Inconsistency in the output'
-          Print *, '  Vertex ', IP, ' is ', NBneighbor(IP), ' times neighbor'
+          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
+          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' is ', NBneighbor(IP), ' times neighbor'
           HaveError=.TRUE.
         END IF
         IF ((NBneighbor(IP).eq.1).and.(NEIGHBOR(IP).eq.0)) THEN
-          Print *, 'Inconsistency in the output'
-          Print *, '  Vertex ', IP, ' is a neighbor'
-          Print *, '  but has no neighbor!'
+          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
+          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' is a neighbor'
+          WRITE(DBG%FHNDL,*) '  but has no neighbor!'
           HaveError=.TRUE.
         END IF
         IF ((NBneighbor(IP).eq.0).and.(NEIGHBOR(IP).gt.0)) THEN
-          Print *, 'Inconsistency in the output'
-          Print *, '  Vertex ', IP, ' has a neighbor'
-          Print *, '  but is not a neighbor!'
+          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
+          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' has a neighbor'
+          WRITE(DBG%FHNDL,*) '  but is not a neighbor!'
           HaveError=.TRUE.
         END IF
       END DO
       IF (HaveError) THEN
-        Print *, 'Find some errors in the output'
-        Print *, 'Please check for node contained in several boundaries'
+        WRITE(DBG%FHNDL,*) 'Find some errors in the output'
+        WRITE(DBG%FHNDL,*) 'Please check for node contained in several boundaries'
         CALL WWM_ABORT('Please debug the boundary code')
       END IF
       END SUBROUTINE

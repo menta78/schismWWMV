@@ -899,8 +899,6 @@
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
          FLUSH(CHK%FHNDL)
-!         Print *, 'BEGTC', BEGTC
-!         Print *, 'ENDTC', ENDTC
 
 
          WIN%FNAME = TRIM(FILEWIND)
@@ -921,8 +919,6 @@
 
          IF (SEWI%BEGT .LT. MAIN%BEGT) SEWI%BEGT = MAIN%BEGT
          IF (SEWI%ENDT .GT. MAIN%ENDT) SEWI%ENDT = MAIN%ENDT
-!         Print *, 'SEWI%BEGT=', SEWI%BEGT
-!         Print *, 'SEWI%ENDT=', SEWI%ENDT
 
          CALL CT2MJD(SEWI%BEGT, SEWI%BMJD)
          CALL CT2MJD(SEWI%ENDT, SEWI%EMJD)
