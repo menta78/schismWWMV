@@ -864,7 +864,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIATE_WAVE_PARAMETER()
+      SUBROUTINE INITIATE_WAVE_PARAMETER
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
          USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
@@ -1040,6 +1040,9 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
+
+         WRITE(*,*) SUM(AC2)
+         STOP
 
       END SUBROUTINE
 !**********************************************************************
