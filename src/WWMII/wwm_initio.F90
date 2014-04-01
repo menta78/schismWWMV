@@ -1041,9 +1041,6 @@
            CALL INPUT_HOTFILE
          END IF
 
-         WRITE(*,*) SUM(AC2)
-         STOP
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
