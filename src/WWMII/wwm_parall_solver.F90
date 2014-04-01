@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#undef DEBUG
-!#define DEBUG
+!#undef DEBUG
+#define DEBUG
 !
 #define PLAN_I4
 #undef PLAN_I4
@@ -1626,6 +1626,9 @@ MODULE WWM_PARALL_SOLVER
       integer :: ListColor(nproc)
       integer :: ListColorWork(nproc)
       integer istat
+# ifdef DEBUG
+      integer TheRes
+# endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
       FLUSH(STAT%FHNDL)
@@ -1727,6 +1730,9 @@ MODULE WWM_PARALL_SOLVER
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
+# ifdef DEBUG
+      integer IP
+# endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_LOW_2_UPP_ARRAYS'
       FLUSH(STAT%FHNDL)
@@ -3086,6 +3092,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC)
 #ifdef DEBUG
+      REAL(rkind) :: Lerror
       REAL(rkind) :: ACtest1(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: ACtest2(LocalColor%MSCeffect, MDC, MNP)
 #endif
@@ -4521,6 +4528,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
+      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
       Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4645,12 +4653,22 @@ MODULE WWM_PARALL_SOLVER
             END DO
           END IF
           eSum=eSum/ASPAR(:,:,I_DIAG(IP))
-          U(:,:,IP)=eSum
+          IF (BLOCK_GAUSS_SEIDEL) THEN
+            X(:,:,IP)=eSum
+          ELSE
+            U(:,:,IP)=eSum
+          END IF
         END DO
 #ifdef MPI_PARALL_GRID
-        CALL EXCHANGE_P4D_WWM(U)
+        IF (BLOCK_GAUSS_SEIDEL) THEN
+          CALL EXCHANGE_P4D_WWM(X)
+        ELSE
+          CALL EXCHANGE_P4D_WWM(U)
+        END IF
 #endif
-        X=U
+        IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) THEN
+          X=U
+        END IF
         DO IP=1,NP_RES
           eSum=0
           DO J=IA(IP),IA(IP+1)-1
