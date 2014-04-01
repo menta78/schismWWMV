@@ -664,6 +664,7 @@
 !
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -732,6 +733,7 @@
 ! read all time steps in the proper format and transform in wwm time line
 !
       DO IFILE = 1, NUM_NETCDF_FILES
+        CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
@@ -816,6 +818,7 @@
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
       IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1004,6 +1007,7 @@
 !
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1090,6 +1094,7 @@
       NDT_WIND_ALL_FILES=0
       ePresTime=-100000000
       DO IFILE = 1, NUM_NETCDF_FILES
+        CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
@@ -1112,6 +1117,7 @@
       idx=0
       ePresTime=-100000000
       DO IFILE = 1, NUM_NETCDF_FILES
+        CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
@@ -1223,6 +1229,7 @@
 !
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
       ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(1)), NF90_NOWRITE, WINDX_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1237,6 +1244,7 @@
 
       WRITE(WINDBG%FHNDL,*) NDT_WIND_FILE, 'NDT_WIND_FILE'
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2)))
       ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2)), NF90_NOWRITE, WINDY_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
@@ -1303,6 +1311,7 @@
 ! read all time steps in the proper format and transform in wwm time line
 !
       DO IFILE = 1, NUM_NETCDF_FILES, 2
+        CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WINDX_NCID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
@@ -1615,6 +1624,7 @@
 
       WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS IFILE=', IFILE, ' IT=', IT
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1779,6 +1789,7 @@
         CALL WWM_ABORT('NARR ERROR: Not enough files')
       END IF
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2*IFILE-1)))
       ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2*IFILE-1)), NF90_NOWRITE, WINDX_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -1806,6 +1817,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 41')
       END IF
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2*IFILE)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(2*IFILE), NF90_NOWRITE, WINDY_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
@@ -1981,6 +1993,7 @@
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID, ISTAT
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2173,6 +2186,7 @@
       integer IP_glob, IP
 #endif
 
+      CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
