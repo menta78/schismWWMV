@@ -809,9 +809,9 @@
          READ (INP%FHNDL,   NML = GRID)
          wwm_print_namelist(GRID)
          FLUSH(CHK%FHNDL)
-#ifdef MPI_PARALL_GRID
+#if defined MPI_PARALL_GRID && !defined PDLIB
          IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
-           CALL WWM_ABORT('In parallel mode you need FILEGRID=hgrid.gr3')
+           CALL WWM_ABORT('With SELFE parallelization you need FILEGRID=hgrid.gr3 in wwminput.nml')
          END IF
 #endif
          GRD%FNAME = FILEGRID
