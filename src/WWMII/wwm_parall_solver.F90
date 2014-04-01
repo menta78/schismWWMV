@@ -4528,6 +4528,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
+      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
       Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4650,12 +4651,22 @@ MODULE WWM_PARALL_SOLVER
             END DO
           END IF
           eSum=eSum/ASPAR(:,:,I_DIAG(IP))
-          U(:,:,IP)=eSum
+          IF (BLOCK_GAUSS_SEIDEL) THEN
+            X(:,:,IP)=eSum
+          ELSE
+            U(:,:,IP)=eSum
+          END IF
         END DO
 #ifdef MPI_PARALL_GRID
-        CALL EXCHANGE_P4D_WWM(U)
+        IF (BLOCK_GAUSS_SEIDEL) THEN
+          CALL EXCHANGE_P4D_WWM(X)
+        ELSE
+          CALL EXCHANGE_P4D_WWM(U)
+        END IF
 #endif
-        X=U
+        IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) THEN
+          X=U
+        END IF
         DO IP=1,NP_RES
           eSum=0
           DO J=IA(IP),IA(IP+1)-1
