@@ -4534,6 +4534,8 @@ MODULE WWM_PARALL_SOLVER
       !
       ! Now the Gauss Seidel iterations
       !
+      Print *, 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
+      Print *, 'REFRACTION_IMPL=', REFRACTION_IMPL
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -4554,9 +4556,9 @@ MODULE WWM_PARALL_SOLVER
             IF (ID .EQ. 1) ID1 = MDC
             IF (ID .EQ. MDC) ID2 = 1
             A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
-            ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
             C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
           END DO
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
