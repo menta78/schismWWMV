@@ -47,7 +47,7 @@ F90 = mpif90
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -assume byterecl #-guide -vec-report 
 #aggressive opti
-F90OPTI = -O1 -fp-model fast -opt-multi-version-aggressive -axSSE4.2 -stack_temps -unroll-aggressive -vec-guard-write -traceback -g
+F90OPTI = -O1 -axSSE4.2 -unroll-aggressive -traceback -g
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 
 #debug 1
