@@ -1,0 +1,9 @@
+ Input Filename   =wwminput.nml
+ Check Filename   =wwmcheck.nml
+ Qstea Filename   =qstea.out
+ Iobp Filename    =iobp.out
+ Iobpd Filename   =iobpd.out
+ WindDbg Filename =winddbg.out
++TRACE...BOUNDARY F    1
++TRACE...DONE READING NAMELIST
++TRACE...ARRAY INITIALIZATION

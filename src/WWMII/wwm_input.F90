@@ -1368,7 +1368,9 @@
          ELSE IF (LATLON2CART) THEN
            XP = XP * 111111.
            YP = YP * 111111. 
-         ENDIF
+         ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+           CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+         ENDIF 
            
       END SUBROUTINE
 !**********************************************************************

@@ -1,0 +1,6 @@
+
+Global Grid Size (ne,np,ns,nvrt):       3328      1778      5106         0
+
+**********Augmented Subdomain Sizes**********
+ rank     nea      ne     neg     npa      np     npg     nsa      ns     nsg
+    0    3328    3328       0    1778    1778       0    5106    5106       0

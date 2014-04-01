@@ -1,0 +1,8 @@
+ THR=  1.175494350822288E-038
+ THR8=  2.225073858507201E-308
+ STATION X and Y Coordinates
+   1950.00000000000     
+   304.000000000000     
+ STATION Names
+ P-1                 
+ For ICOMP=3 we need PETSC and in parallel
