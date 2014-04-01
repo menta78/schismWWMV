@@ -269,6 +269,9 @@
          LOGICAL    :: LZYLINDER   = .TRUE.
          LOGICAL    :: LSOURCESWAM = .FALSE. 
          LOGICAL    :: LSOURCESWWIII = .FALSE. 
+         LOGICAL    :: CART2LATLON = .FALSE. 
+         LOGICAL    :: LATLON2CART = .FALSE.  
+
 
          integer :: idxWind
 

@@ -1361,6 +1361,15 @@
            CASE DEFAULT
                CALL WWM_ABORT('WRONG GRID DIMENSION')
          END SELECT
+
+         IF (CART2LATLON) THEN
+           XP = XP / 111111.
+           YP = YP / 111111.
+         ELSE IF (LATLON2CART) THEN
+           XP = XP * 111111.
+           YP = YP * 111111. 
+         ENDIF
+           
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

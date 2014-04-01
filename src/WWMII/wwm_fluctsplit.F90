@@ -1052,7 +1052,7 @@
            CRFS(1) =  - ONESIXTH *  (TWO *FL31 + FL32 + FL21 + TWO * FL22 )
            CRFS(2) =  - ONESIXTH *  (TWO *FL32 + TWO * FL11 + FL12 + FL31 )
            CRFS(3) =  - ONESIXTH *  (TWO *FL12 + TWO * FL21 + FL22 + FL11 )
-           DELTAL(:,IE) = CRFS(:)- KP(:,IE)
+           DELTAL(:,IE) = CRFS(:)-KP(:,IE)
            NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
 

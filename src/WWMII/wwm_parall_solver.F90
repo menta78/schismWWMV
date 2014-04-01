@@ -4612,6 +4612,8 @@ MODULE WWM_PARALL_SOLVER
       ! Now the Gauss Seidel iterations
       !
       SOLVERTHR=10E-10*AVETL
+        write(*,*) SOLVERTHR
+      !
       nbIter=0
       DO
         DO IP=1,NP_RES
