@@ -1126,27 +1126,23 @@
       Tper=SPPAR(2)
       CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
       CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
-!      Print *, 'Tper=', Tper, ' TM=', TM
       DeltaPer=Tper - TM
       IF (TM < Tper) THEN
         eSign=1
       ELSE
         eSign=-1
       END IF
-!      Print *, 'eSign=', eSign
       SPPARwork=SPPAR
       SPPARwork(2)=SPPAR(2) + DeltaPer
       DO
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
         TheErr=(TM - Tper)*eSign
-!        Print *, 'Loop SPPARwork(2)=', SPPARwork(2), ' TM=', TM
         IF (TheErr > 0) THEN
           EXIT
         END IF
         SPPARwork(2)=SPPARwork(2) + DeltaPer
       END DO
-!      Print *, 'Tper=', Tper, ' TM=', TM
       IF (eSign .eq. 1) THEN
         SPPARwork1=SPPAR
         SPPARwork2=SPPARwork
@@ -1160,7 +1156,6 @@
         SPPARwork=0.5_rkind*SPPARwork1 + 0.5_rkind*SPPARwork2
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
-!        Print *, 'iIter=', iIter, ' TM=', TM
         IF (TM > Tper) THEN
           SPPARwork2=SPPARwork
         ELSE
