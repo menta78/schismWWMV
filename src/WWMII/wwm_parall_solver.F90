@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-#undef DEBUG
-!#define DEBUG
+!#undef DEBUG
+#define DEBUG
 !
 #define PLAN_I4
 #undef PLAN_I4
@@ -1626,6 +1626,9 @@ MODULE WWM_PARALL_SOLVER
       integer :: ListColor(nproc)
       integer :: ListColorWork(nproc)
       integer istat
+# ifdef DEBUG
+      integer TheRes
+# endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING SYMM_INIT_COLORING'
       FLUSH(STAT%FHNDL)
@@ -1727,6 +1730,9 @@ MODULE WWM_PARALL_SOLVER
       integer ListFirstCommon_send(wwm_nnbr_send)
       integer ListFirstCommon_recv(wwm_nnbr_recv)
       integer istat
+# ifdef DEBUG
+      integer IP
+# endif
 
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_LOW_2_UPP_ARRAYS'
       FLUSH(STAT%FHNDL)
@@ -3086,6 +3092,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind), intent(inout) :: ACret(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: eSum(LocalColor%MSCeffect,MDC)
 #ifdef DEBUG
+      REAL(rkind) :: Lerror
       REAL(rkind) :: ACtest1(LocalColor%MSCeffect, MDC, MNP)
       REAL(rkind) :: ACtest2(LocalColor%MSCeffect, MDC, MNP)
 #endif
