@@ -4528,7 +4528,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
-      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
+      LOGICAL :: BLOCK_GAUSS_SEIDEL = .TRUE.
       Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
