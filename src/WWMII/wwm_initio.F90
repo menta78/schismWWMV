@@ -407,6 +407,9 @@
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
          USE DATAPOOL
+#ifndef PDLIB
+         USE ELFE_GLBL, only : ics
+#endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
          USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
@@ -449,10 +452,10 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
          FLUSH(STAT%FHNDL)
 
-#ifdef MPI_PARALL_GRID 
+#ifdef MPI_PARALL_GRID
          DEP  = DEP8
          WLDEP  = DEP
-         IF (LSPHE) THEN
+         IF (ics .eq. 2) THEN
            XP = XLON*RADDEG
            YP = YLAT*RADDEG
          ELSE
