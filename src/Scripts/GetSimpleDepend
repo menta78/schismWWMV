@@ -1,0 +1,51 @@
+#!/usr/bin/perl
+
+$uu=scalar(@ARGV);
+
+if ($uu<=1)
+{
+    print "Program is used as\n";
+    print "GetSimpleDepend [TheDir] [ThePre] file1 file2 .... fileN\n\n";
+    die;
+}
+
+$TheDir=$ARGV[0];
+$ThePre=$ARGV[1];
+
+@ULB=split("slk", $ThePre);
+$nbB=scalar(@ULB);
+$comm=$ULB[0];
+for ($iB=2; $iB<=$nbB; $iB++)
+{
+    $eChar=$ULB[$iB-1];
+    $comm=$comm."\$".$eChar;
+}
+
+$nbFile=scalar(@ARGV)-2;
+for ($iFile=1; $iFile<=$nbFile; $iFile++)
+{
+    $eFile=$ARGV[$iFile+1];
+    @U=split("/", $eFile);
+    $eFileNaked=$U[scalar(@U)-1];
+    @UU=split(".", $eFileNaked);
+    $eFileB="";
+    @ULC=split("", $eFileNaked);
+    $nbC=scalar(@ULC);
+    $IsOK=1;
+    for ($iC=1; $iC<=$nbC; $iC++)
+    {
+	$eChar=$ULC[$iC-1];
+	if ($eChar eq ".")
+	{
+	    $IsOK=0;
+	}
+	if ($IsOK eq 1)
+	{
+	    $eFileB=$eFileB.$eChar;
+	}
+    }
+#    $eFileB=$UU[0];
+    #
+    print $TheDir.$eFileB.".o: ".$eFile."\n";
+    print "\t".$comm.$eFile."\n";
+}
