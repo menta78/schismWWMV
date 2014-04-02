@@ -25,9 +25,6 @@
 
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       implicit none
       real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
       real(rkind) :: INPUT(MNP)
@@ -79,9 +76,6 @@
 !**********************************************************************
       SUBROUTINE COMPUTE_DIFF(IE, I1, UGRAD, VGRAD)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: IE, I1
       REAL(rkind), intent(inout) :: UGRAD, VGRAD
@@ -116,9 +110,6 @@
 !**********************************************************************
       SUBROUTINE REV_IDX_IA_JA(J, IP, JP)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       IMPLICIT NONE
       INTEGER, intent(in) :: J
       INTEGER, intent(out) :: IP, JP
@@ -134,9 +125,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTE_SYSTEM(ASPAR, B, FX, FY)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       IMPLICIT NONE
       real(rkind), intent(in)  :: FX(MNP), FY(MNP)
       real(rkind), intent(out) :: ASPAR(NNZ)
@@ -227,9 +215,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_APPLY_PRECOND(ASPAR, TheIn, TheOut)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind), intent(in) :: TheIn(MNP)
@@ -279,9 +264,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SYMMETRY_DEFECT(ASPAR)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind) :: eVal, fVal, eSum
@@ -313,9 +295,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_APPLY_FCT(ASPAR, TheIn, TheOut)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp
-#endif
       IMPLICIT NONE
       REAL(rkind), intent(in) :: ASPAR(NNZ)
       REAL(rkind), intent(in) :: TheIn(MNP)
@@ -342,12 +321,9 @@
 #ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
 #endif
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       USE DATAPOOL, only : NP_RES
 #ifdef MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE DATAPOOL, only : myrank, comm, ierr, nproc, istatus, rtype
 #endif
       implicit none
       real(rkind), intent(in) :: V1(MNP), V2(MNP)
@@ -385,9 +361,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, TheOut)
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       IMPLICIT NONE
       real(rkind), intent(in) :: ASPAR(NNZ)
       real(rkind), intent(in) :: B(MNP)
@@ -468,200 +441,16 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef PETSC
-      SUBROUTINE PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, X)
-      USE DATAPOOL, only : rkind, NNZ, MNP, NP_RES
-      USE PETSC_PARALLEL
-      USE ELFE_GLBL, ONLY : iplg, np_global
-      USE elfe_msgp, only : myrank, nproc, comm
-      use elfe_glbl, only: ipgl1=> ipgl
-      ! iplg1 points to elfe_glbl::ipgl because ipgl exist allreay as integer in this function
-      use petscpool
-      use petscsys
-      use petscmat
-      implicit none
-#include "finclude/petscsysdef.h"
-#include "finclude/petscaodef.h"
-#include "finclude/petscisdef.h"
-#include "finclude/petscvecdef.h"
-#include "finclude/petscmatdef.h"
-#include "finclude/petsckspdef.h"
-      real(rkind), intent(in) :: ASPAR(NNZ)
-      real(rkind), intent(in) :: B(MNP)
-      real(rkind), intent(out) :: X(MNP)
-      integer :: I, J
-      integer :: IP, IPGL, IE, POS
-      integer :: I1, I2, I3
-      integer :: POS_TRICK(3,2)
-
-
-      ! solver timings
-      real, save :: solverTimeSum = 0
-!
-! Petsc stuff
-!
-      PetscInt :: ncols
-      PetscInt :: eCol
-      PetscScalar :: eEntry
-
-      integer :: counter
-
-      KSPConvergedReason reason;
-      ! solver iteration
-      PetscInt iteration
-      integer, save  :: iterationSum = 0        
-
-      call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
-         
-      iteration = 0
-      ASPAR_petsc = 0
-      oASPAR_petsc = 0
-      counter = 1
-      ncols = 0
-      do i = 1, NP_RES
-        ncols = IA_P(i+1) - IA_P(i)
-        ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i) .eq. -999) then
-          counter = counter + ncols
-          cycle
-        end if
-        ! insert col by col into matrix
-        do j = 1, ncols
-          if(CSR_App2PetscLUT(counter) == -999) then
-            oASPAR_petsc(o_CSR_App2PetscLUT(counter)) =  ASPAR(counter)
-          else
-            ASPAR_petsc(CSR_App2PetscLUT(counter)) = ASPAR(counter)
-          endif
-          counter = counter + 1
-        end do
-      end do
-      call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, petscErr)
-      CHKERRQ(petscErr)
-      call MatAssemblyEnd(matrix, MAT_FINAL_ASSEMBLY, petscErr)
-      CHKERRQ(petscErr)
-
-!fill RHS vector
-!iterate over all resident (and interface) nodes
-!map it to petsc global ordering
-!and insert the value from B into RHS vector
-      eEntry = 0;
-      call VecSet(myB_setup, eEntry, petscErr);CHKERRQ(petscErr)
-      do i= 1, NP_RES
-        ! this is a interface node (row). ignore it. just increase counter
-        if(ALOold2ALO(i) .eq. -999) then
-          cycle
-        end if
-        ! map to petsc global order
-        eCol = AGO2PGO(iplg(i) - 1 )
-        eEntry = B(i)
-        call VecSetValue(myB_setup, eCol, eEntry, ADD_VALUES, petscErr)
-        CHKERRQ(petscErr)
-      end do
-
-      call VecAssemblyBegin(myB_setup, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myB_setup, petscErr);CHKERRQ(petscErr);
-
-      ! Copy the old solution from AC2 to myX to make the solver faster
-      do i = 1, NP_RES
-        eCol = AGO2PGO(iplg(i)-1)
-        eEntry = B(i)
-        call VecSetValue(myX_setup,eCol,eEntry,INSERT_VALUES,petscErr)
-        CHKERRQ(petscErr)
-      end do
-      call VecAssemblyBegin(myX_setup, petscErr);CHKERRQ(petscErr);
-      call VecAssemblyEnd(myX_setup, petscErr);CHKERRQ(petscErr);
-
-      ! Solve
-      ! To solve successive linear systems that have different preconditioner matrices (i.e., the matrix elements
-      ! and/or the matrix data structure change), the user must call KSPSetOperators() and KSPSolve() for each
-      ! solve.
-      if(samePreconditioner .eqv. .true.) call KSPSetOperators(solver_setup, matrix, matrix, SAME_PRECONDITIONER, petscErr);CHKERRQ(petscErr)
-      call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
-      call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
-      ! Solve!
-      call KSPSolve(solver_setup, myB_setup, myX_setup, petscErr);CHKERRQ(petscErr);
-      call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
-         
-      call KSPGetConvergedReason(solver_setup, reason, petscErr);CHKERRQ(petscErr);
-      if (reason .LT. 0) then
-        !CALL WWM_ABORT('Failure to converge')
-        !write(stat%fhndl,*) 'Failure to converge'
-      endif
-
-      X = 0.0_rkind
-      !get the solution back to fortran.
-      !iterate over all resident nodes (without interface and ghost nodes)
-      !map the solution from petsc local ordering back to app old local ordering
-      !(the app old ordering contains interface nodes)
-      call VecGetArrayF90(myX_setup, myX_setuptemp, petscErr); CHKERRQ(petscErr)
-      do i = 1, nNodesWithoutInterfaceGhosts
-        X(ipgl1((PGO2AGO(PLO2PGO(i-1)))+1)%id) = myX_setuptemp(i)
-      end do
-      call VecRestoreArrayF90(myX_setup, myX_setuptemp, petscErr)
-      CHKERRQ(petscErr);
-      !IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
-      ! we have to fill the ghost and interface nodes with the solution from the other threads
-      ! at least subroutine SOURCETERMS() make calculations on interface/ghost nodes which are
-      ! normally set to 0, because they do net exist in petsc
-      END SUBROUTINE
-#endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
-#ifdef PETSC
-      use petscpool
-      use petscsys
-      use petsc_parallel, only: createMatrix
-      USE ELFE_GLBL, ONLY : np_global
-#endif
       IMPLICIT NONE
       integer istat
-#ifdef PETSC
-      logical :: initialguess = .false.
-      real(kind=8)       :: rtol_setup      = 1.D-20   ! relative convergence tolerance
-      real(kind=8)       :: abstol_setup    = 1.D-20   ! absolute convergence tolerance
-      real(kind=8)       :: dtol_setup      = 10000    ! divergence tolerance
-      integer            :: maxits_setup    = 0        ! maximum number of iterations to use
-      logical :: SAME_NONZERO_PATTERN =.true.
-#endif
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
       ZETA_SETUP = ZERO
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
-# ifdef PETSC
-        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
-          CALL petscpoolInit
-          call PetscLogStagePush(stageInit, petscErr);CHKERRQ(petscErr)
-        END IF
-!   From PETSC_INIT_PARALLEL
-        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
-          call createMappings()
-        END IF
-        If ((AMETHOD .ne. 4).and.(AMETHOD .ne. 5)) THEN
-          call createMatrix
-        END IF
-        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myX_setup, petscErr);CHKERRQ(petscErr)
-        call VecCreateGhost(PETSC_COMM_WORLD, nNodesWithoutInterfaceGhosts, np_global, nghost, onlyGhosts, myB_setup, petscErr);CHKERRQ(petscErr)
-!    From createSolver
-        call KSPCreate(PETSC_COMM_WORLD,solver_setup, petscErr);CHKERRQ(petscErr)
-        call KSPSetType(solver_setup, KSPCG, petscErr);CHKERRQ(petscErr)
-        call KSPSetInitialGuessNonzero(solver_setup, initialguess, petscErr);CHKERRQ(petscErr)
-
-        call KSPSetTolerances(solver, rtol_setup, abstol_setup, dtol_setup, maxits_setup, petscErr);CHKERRQ(petscErr)
-        call KSPGetPC(solver_setup, prec_setup, petscErr);CHKERRQ(petscErr);
-        call PCSetType(prec_setup, PCCHOLESKY, petscErr);CHKERRQ(petscErr);
-
-        call KSPSetOperators(solver_setup, matrix, matrix, SAME_NONZERO_PATTERN, petscErr);CHKERRQ(petscErr)
-        call KSPSetFromOptions(solver_setup, petscErr);CHKERRQ(petscErr)
-# else
-        CALL WWM_ABORT('Missing PETSC module');
-# endif
+! old PETSC code removed.
       END IF
       IF ((ZETA_METH .ne. 0) .and. (ZETA_METH .ne. 1)) THEN
         CALL WWM_ABORT('Wrong choice of ZETA_METH')
@@ -673,9 +462,6 @@
 !**********************************************************************
       SUBROUTINE SET_MEANVALUE_TO_ZERO(TheVar)
       USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank, comm, ierr, nproc, istatus, rtype
-#endif
       IMPLICIT NONE
       real(rkind), intent(inout) :: TheVar(MNP)
       real(rkind) :: SUM_SI_Var, SUM_SI, TheMean
@@ -723,9 +509,6 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
 #ifdef PETSC
       use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
 #endif
@@ -748,9 +531,6 @@
 !**********************************************************************
       SUBROUTINE WAVE_SETUP_COMPUTATION
       USE DATAPOOL
-#if defined DEBUG && defined MPI_PARALL_GRID
-      USE elfe_msgp, only : myrank
-#endif
       implicit none
       REAL(rkind) :: F_X(MNP), F_Y(MNP)
       REAL(rkind) :: ASPAR(NNZ), B(MNP)
