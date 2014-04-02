@@ -407,7 +407,7 @@
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
          USE DATAPOOL
-#ifndef PDLIB
+#if !defined PDLIB && defined WWM_MPI
          USE ELFE_GLBL, only : ics
 #endif
 #ifdef WWM_SOLVER

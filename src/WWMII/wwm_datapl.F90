@@ -9,6 +9,11 @@
 #error "The combination of define SELFE and define MPI is illegal"
 #endif
 
+#if defined PETSC && !defined PDLIB && !defined WWM_MPI && !defined SELFE
+#error "For PETSC, you need one parallelization scheme"
+#endif
+
+
 
 #ifdef PDLIB
       use wwm_pdlib

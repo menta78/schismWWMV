@@ -509,20 +509,11 @@
 !**********************************************************************
       SUBROUTINE FINALIZE_WAVE_SETUP
       USE DATAPOOL
-#ifdef PETSC
-      use petsc_parallel, only: PETSC_FINALIZE_PARALLEL
-#endif
       IMPLICIT NONE
       deallocate(ZETA_SETUP)
 #ifdef MPI_PARALL_GRID
       IF (ZETA_METH .eq. 1) THEN
-        IF (AMETHOD .ne. 4) THEN
-# ifdef PETSC
-          CALL PETSC_FINALIZE_PARALLEL
-# else
-          CALL WWM_ABORT('Missing PETSC module');
-# endif
-        END IF
+! eliminated PETSC code
       END IF
 #endif
       END SUBROUTINE
