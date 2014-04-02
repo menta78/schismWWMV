@@ -453,6 +453,7 @@
          FLUSH(STAT%FHNDL)
 
 #ifdef MPI_PARALL_GRID
+# ifndef PDLIB
          DEP  = DEP8
          WLDEP  = DEP
          IF (ics .eq. 2) THEN
@@ -462,6 +463,7 @@
            XP = XPTMP
            YP = YPTMP
          END IF
+# endif
 #endif
          CALL CHECK_LOGICS
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '

@@ -566,19 +566,7 @@
         CALL WAVE_SETUP_SOLVE_POISSON_NEUMANN_DIR(ASPAR, B, ZETA_SETUP)
       ENDIF
       IF (ZETA_METH .eq. 1) THEN
-#ifdef PETSC
-# ifdef DEBUG
-        WRITE(200 + myrank,*) 'Before PETSC_SOLVE_POISSON_NEUMANN'
-        FLUSH(200 + myrank)
-# endif
-        CALL PETSC_SOLVE_POISSON_NEUMANN(ASPAR, B, ZETA_SETUP)
-# ifdef DEBUG
-        WRITE(200 + myrank,*) 'After PETSC_SOLVE_POISSON_NEUMANN'
-        FLUSH(200 + myrank)
-# endif
-#else
-        CALL WWM_ABORT('If you use ZETA_METH=1 then you need PETSC')
-#endif
+        CALL WWM_ABORT('The PETSC code for ZETA_METH=1 is missing')
       END IF
       CALL SET_MEANVALUE_TO_ZERO(ZETA_SETUP)
       WRITE(200 + myrank,*) 'Before DEBUG statement'
