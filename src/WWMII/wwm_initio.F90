@@ -475,8 +475,6 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
          FLUSH(STAT%FHNDL)
 #endif
-         Print *, 'XP(min/max)=', minval(XP), maxval(XP)
-         Print *, 'YP(min/max)=', minval(YP), maxval(YP)
          IF (CART2LATLON) THEN
            XP = XP / 111111.
            YP = YP / 111111.

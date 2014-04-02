@@ -4273,26 +4273,33 @@ MODULE WWM_PARALL_SOLVER
         TRIA03 = ONETHIRD * TRIA(IE)
         DO I=1,3
           IP=INE(I,IE)
-          IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+          !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
             I1=JA_IE(I,1,IE)
             I2=JA_IE(I,2,IE)
             I3=JA_IE(I,3,IE)
             K1(:,:) =  KP(:,:,I)
             DO ID=1,MDC
-              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
             END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:)/TRIA03
+            ASPAR(:,:,I1) =  1+DTK(:,:)/TRIA03- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
             DO ID=1,MDC
-              B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
+              B(:,ID,IP)     =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
             END DO
-          ELSE
-            I1 = JA_IE(I,1,IE)
-            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
-            B(:,:,IP)     =  ZERO
-          END IF
+            !TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+            !ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            !ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+            !ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+            !DO ID=1,MDC
+            !  B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03
+            !END DO
+          !ELSE
+          !  I1 = JA_IE(I,1,IE)
+          !  ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+          !  B(:,:,IP)     =  ZERO
+          !END IF
         END DO
 # endif
       END DO
@@ -4340,18 +4347,18 @@ MODULE WWM_PARALL_SOLVER
             IPrel=1
           ENDIF
           IPGL1 = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
-          B(:,:,IPGL1)             = SI(IPGL1) * WBAC(:,:,IPrel)
+          ASPAR(:,:,I_DIAG(IPGL1)) = 1.!SI(IPGL1) ! Set boundary on the diagonal
+          B(:,:,IPGL1)             = WBAC(:,:,IPrel) ! * SI(IPGL1)
         END DO
       END IF
+
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
-          IF (IOBWB(IP) .EQ. 1) THEN
-            ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * SI(IP) ! Add source term to the diagonal
-            B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * SI(IP) ! Add source term to the right hand side
-          ENDIF
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP)!* SI(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP)!* SI(IP) ! Add source term to the right hand side
         END DO
       ENDIF
+
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
@@ -4557,7 +4564,7 @@ MODULE WWM_PARALL_SOLVER
           END IF
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
-          eFact=SI(IP)*(DT4D/DDIR)
+          eFact=(DT4D/DDIR)!*SI(IP)
           DO ID=1,MDC
             ID1 = ID - 1
             ID2 = ID + 1
@@ -4580,7 +4587,7 @@ MODULE WWM_PARALL_SOLVER
           ELSE
             CAS=ZERO
           END IF
-          eFact=SI(IP)*DT4F
+          eFact=DT4F!*SI(IP)
           DO ID = 1, MDC
             CASS(1:MSC) = CAS(:,ID)
             CASS(0)     = 0.
@@ -4603,24 +4610,11 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END IF
-      IF (SOURCE_IMPL) THEN
-        DO IP=1,NP_RES
-          IF (IOBWB(IP) .EQ. 1) THEN
-            eFact=SI(IP)*DT4A
-            DO ID=1,MDC
-              IF (IOBPD(ID,IP) .EQ. 1) THEN
-                B(:,ID,IP)=B(:,ID,IP) + IMATRAA(IP,:,ID) * eFact
-                ASPAR(:,ID,I_DIAG(IP)) = ASPAR(:,ID,I_DIAG(IP)) + IMATDAA(IP,:,ID) * eFact
-              END IF
-            END DO
-          END IF
-        END DO
-      END IF
       !
       ! Now the Gauss Seidel iterations
       !
-      SOLVERTHR=10E-10*AVETL
-        write(*,*) SOLVERTHR
+      SOLVERTHR=10E-8*TLMIN**2
+       write(*,*) SOLVERTHR, TLMIN
       !
       nbIter=0
       DO
@@ -4666,9 +4660,8 @@ MODULE WWM_PARALL_SOLVER
           CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
-        IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) THEN
-          X=U
-        END IF
+        IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) X = U 
+
         DO IP=1,NP_RES
           eSum=0
           DO J=IA(IP),IA(IP+1)-1
@@ -4711,7 +4704,7 @@ MODULE WWM_PARALL_SOLVER
       DO IP = 1, MNP
         DO IS=1,MSC
           DO ID=1,MDC
-            AC2(IP,IS,ID) = MAX(ZERO,X(IS,ID,IP)) * MyREAL(IOBPD(ID,IP))
+            AC2(IP,IS,ID) = MAX(ZERO,X(IS,ID,IP)) !* MyREAL(IOBPD(ID,IP))
           END DO
         END DO
       END DO

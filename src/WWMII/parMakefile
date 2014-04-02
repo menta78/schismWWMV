@@ -78,9 +78,9 @@ F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #LIBS = #libgoto_penrynp-r1.26.a #sparskit_pgi.a libgoto.a #sparskit.a
 
-   BINDIR       = Binaries
-   GRIBAPI_INC  = $(GRIBPREFIX)/include
-   GRIBAPI_LIB  = $(GRIBPREFIX)/lib
+BINDIR       = Binaries
+GRIBAPI_INC  = $(GRIBPREFIX)/include
+GRIBAPI_LIB  = $(GRIBPREFIX)/lib
 
 CP_OPT      = -DRS6K
 
