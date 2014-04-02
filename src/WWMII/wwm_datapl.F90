@@ -11,16 +11,10 @@
 
 
 #ifdef PDLIB
-
-#ifdef WWM_SOLVER
-#error "Sorry PDLIB and WWM_SOLVER are not supported at the moment"
-#endif
-
-         use wwm_pdlib
+      use wwm_pdlib
 #else
-
-#  if defined(SELFE) || defined(WWM_MPI)
-        use elfe_msgp ! , only: comm,             & ! MPI communicator
+# if defined(SELFE) || defined(WWM_MPI)
+      use elfe_msgp ! , only: comm,             & ! MPI communicator
          use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
@@ -42,9 +36,8 @@
 
       use MPI
      
-#  endif
-
-#  ifdef SELFE
+# endif
+# ifdef SELFE
          use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
      &                         DMIN_SELFE => h0,             & ! Dmin
      &                         NNE => nne,                   & !
@@ -71,8 +64,7 @@
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
      &                         RKIND
-#  endif
-
+# endif
 #endif
       IMPLICIT NONE
       SAVE
