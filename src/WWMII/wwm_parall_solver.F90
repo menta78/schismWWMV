@@ -4536,7 +4536,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
       LOGICAL :: BLOCK_GAUSS_SEIDEL = .TRUE.
-      Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
+      !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
           X(IS,ID,:)=AC2(:,IS,ID)
@@ -4549,8 +4549,8 @@ MODULE WWM_PARALL_SOLVER
       !
       ! Now the Gauss Seidel iterations
       !
-      Print *, 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
-      Print *, 'REFRACTION_IMPL=', REFRACTION_IMPL
+      !Print *, 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
+      !Print *, 'REFRACTION_IMPL=', REFRACTION_IMPL
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -4613,7 +4613,7 @@ MODULE WWM_PARALL_SOLVER
       !
       ! Now the Gauss Seidel iterations
       !
-      SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
       DO
@@ -4695,7 +4695,7 @@ MODULE WWM_PARALL_SOLVER
         CALL I5B_L2_LINF(MSC, U, B, Norm_L2, Norm_LINF)
         nbIter=nbIter+1
         MaxNorm=maxval(Norm_L2)
-        Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
+        !Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
         IF (MaxNorm .lt. SOLVERTHR) THEN
           EXIT
         END IF
@@ -4707,7 +4707,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
-      Print *, 'END EIMPS_TOTAL_JACOBI_ITERATION'
+      !Print *, 'END EIMPS_TOTAL_JACOBI_ITERATION'
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

@@ -153,8 +153,8 @@
  /
  &NUMS
  ICOMP   =           3,
- AMETHOD =           5,
- SMETHOD =           0,
+ AMETHOD =           7,
+ SMETHOD =           1,
  DMETHOD =           6,
  LITERSPLIT      = F,
  LFILTERTH       = F,

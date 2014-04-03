@@ -10,8 +10,8 @@
  rel. freq. res. should be 1.1 is now   1.13995112282036      ERROR IS:
    28.5464814609043     
  SEARCHING FOR STATION ACROSS RANKS           0
-    MYRANK         0           STATION =         1   IN ELEMENT =      2905         1
-SUM OF THE FOUND STATIONS MYRA         0         1         1
-        STATION FOUND             1P-1         1950.00000000   304.00000000
+    MYRANK         0           STATION =         1   IN ELEMENT =         0         0
+SUM OF THE FOUND STATIONS MYRA         0         1         0
+   STATION NOT FOUND         1P-1         1950.00000000   304.00000000
  CUT-OFF FREQ. OF STATION =           1  0.440000000000000      RAD - IS =
           18
