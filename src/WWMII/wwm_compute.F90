@@ -501,17 +501,25 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
-        IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
         CALL MY_WTIME(TIME6)
 #endif
-        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
-        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
 #ifdef TIMINGS
         CALL MY_WTIME(TIME7)
 #endif
+#ifdef TIMINGS
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS IMPLICIT             ', TIME5-TIME4
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3+TIME6-TIME5
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ACTION LIMITER                   ', TIME7-TIME6
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME3-TIME2
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME7-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SEMI_IMPLICIT'
+    
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
