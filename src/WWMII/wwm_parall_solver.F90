@@ -4613,8 +4613,7 @@ MODULE WWM_PARALL_SOLVER
       !
       ! Now the Gauss Seidel iterations
       !
-      SOLVERTHR=10E-8*TLMIN**2
-       write(*,*) SOLVERTHR, TLMIN
+      SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
       DO
@@ -4708,6 +4707,7 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
+      Print *, 'END EIMPS_TOTAL_JACOBI_ITERATION'
       END SUBROUTINE
 #endif
 END MODULE WWM_PARALL_SOLVER

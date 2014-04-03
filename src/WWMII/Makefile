@@ -34,26 +34,22 @@ F90 = mpif90
 
 #INTEL
 #save opti
-#F90OPTI = -fpp -traceback -g
-#F90OPTI = -traceback -g -check all #-warn all,nouncalled,nounused -gen-interface
-#F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers
-#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #extreme aggressive opti ...
-F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
+#F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #aggressive opti
-#F90OPTI = -O1 -axSSE4.2 -unroll-aggressive -traceback -g
+F90OPTI = -O1 -axSSE4.2 -traceback -g
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 
 #debug 1
 #F90OPTI = -O1 -mp1 -fpp -traceback -g -traceback -check pointers -check bound -check uninit 
 #debug 2
-#F90OPTI =  -fpp -g -traceback -check all
+#F90OPTI = -O1 -g -traceback -check all -warn interfaces,nouncalled -gen-interfaces
 #aggresive debug openmp
 #F90OPTI = -fpp -g -traceback -check all -openmp
 #debug no openmp
 #F90OPTI = -fpp -g -traceback -fp-model precise -check all 
+#
 #PGI
 #F90OPTI = -g -O1 -Mprof=dwarf -Mprof=time -Minfo=ccff -mp
 #F90OPTI = -fastsse -Munroll -Minline=reshape -Minline=levels:10 -Mvect -Mipa=fast Mipa=levels:10 -Mlarge_arrays -mp
