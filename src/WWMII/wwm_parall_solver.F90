@@ -4533,9 +4533,12 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+#ifdef MPI_PARALL_GRID
+      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
+#endif
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
-      LOGICAL :: BLOCK_GAUSS_SEIDEL = .TRUE.
+      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4660,9 +4663,9 @@ MODULE WWM_PARALL_SOLVER
         END IF
 #endif
         IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) X = U 
-
+        Norm_L2=0
         DO IP=1,NP_RES
-          eSum=0
+          eSum=-B(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
             idx=JA(J)
             eSum=eSum + ASPAR(:,:,J)*X(:,:,idx)
@@ -4687,15 +4690,18 @@ MODULE WWM_PARALL_SOLVER
               END DO
             END DO
           END IF
-          U(:,:,IP)=eSum
+          Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
+          Norm_LINF = max(Norm_LINF, abs(eSum))
         END DO
 #ifdef MPI_PARALL_GRID
-        CALL EXCHANGE_P4D_WWM(U)
-#endif
-        CALL I5B_L2_LINF(MSC, U, B, Norm_L2, Norm_LINF)
-        nbIter=nbIter+1
+!        CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,com,ierr)
+        CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+        MaxNorm=maxval(Norm_L2_gl)
+#else
         MaxNorm=maxval(Norm_L2)
-        !Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
+#endif
+        nbIter=nbIter+1
+        Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
         IF (MaxNorm .lt. SOLVERTHR) THEN
           EXIT
         END IF
