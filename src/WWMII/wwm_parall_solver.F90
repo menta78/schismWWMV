@@ -4690,7 +4690,7 @@ MODULE WWM_PARALL_SOLVER
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
-          write(*,*) nbiter, is_converged, np_global, p_is_converged 
+          if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged 
         ENDIF 
         
 !
