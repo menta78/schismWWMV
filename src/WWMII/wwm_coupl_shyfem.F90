@@ -84,10 +84,6 @@
 !**********************************************************************
       SUBROUTINE PIPE_SHYFEM_IN(K)
       USE DATAPOOL
-# ifdef WWM_MPI
-      USE ELFE_GLBL, ONLY : iplg, np_global
-      USE elfe_msgp, only : myrank, nproc, comm, istatus, rtype, ierr
-# endif  
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
       INTEGER              :: IP, IL, istat
@@ -247,10 +243,6 @@
 !**********************************************************************
       SUBROUTINE PIPE_SHYFEM_OUT(K)
       USE DATAPOOL
-# ifdef MPI_PARALL_GRID
-      USE ELFE_GLBL, ONLY : iplg, np_global
-      USE elfe_msgp, only : myrank, comm, ierr, rtype
-# endif  
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
       INTEGER         :: IL, IP, istat
