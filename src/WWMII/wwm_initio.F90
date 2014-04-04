@@ -458,25 +458,22 @@
 # endif
 #endif
 
-#ifdef PDLIB
+#ifdef MPI_PARALL_GRID
+# ifdef PDLIB
       call initPD("system.dat", MDC, MSC, comm)
-#else
+# else
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
+# endif
 #endif
       CALL INIT_FILE_HANDLES
       CALL READ_WWMINPUT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
       FLUSH(STAT%FHNDL)
 
-#ifdef VDISLIN
-      CALL INIT_DISLIN()
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
-      FLUSH(STAT%FHNDL)
-#endif
       CALL INIT_ARRAYS
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
       FLUSH(STAT%FHNDL)
@@ -493,9 +490,6 @@
       END IF
 # endif
 #endif
-      CALL CHECK_LOGICS
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
-      FLUSH(STAT%FHNDL)
 #ifndef MPI_PARALL_GRID
       CALL READ_SPATIAL_GRID
       WLDEP = DEP
@@ -521,6 +515,20 @@
       CALL SPATIAL_GRID
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
       FLUSH(STAT%FHNDL)
+      !
+      ! Main inits done, now the secondary ones.
+      !
+#ifdef VDISLIN
+      CALL INIT_DISLIN()
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
+      FLUSH(STAT%FHNDL)
+#endif
+
+
+      CALL CHECK_LOGICS
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
+      FLUSH(STAT%FHNDL)
+      !
       IF (LADVTEST) THEN
         ALLOCATE(UTEST(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 33')
@@ -898,8 +906,6 @@
          OUTT_VARNAMES(33) = 'CURR-Y'
          OUTT_VARNAMES(34) = 'DEPTH'
          OUTT_VARNAMES(35) = 'ELEVATION'
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1091,9 +1097,6 @@
 #ifdef MPI_PARALL_GRID
          CHARACTER (LEN = 30) :: FDB
          INTEGER              :: LFDB
-#endif
-#ifdef SELFE
-            INP%FNAME  = 'wwminput.nml'
 #endif
             CHK%FNAME  = 'wwmcheck.nml'
            QSTEA%FNAME = 'qstea.out'

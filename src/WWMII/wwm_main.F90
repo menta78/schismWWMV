@@ -680,12 +680,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#if !defined SELFE
       SUBROUTINE SET_WWMINPULNML
         USE DATAPOOL, only : INP
-# ifndef PGMCL_COUPLING
         IMPLICIT NONE
         INTEGER nbArg
+#ifdef SELFE
+        INP%FNAME  = 'wwminput.nml'
+#else
+# ifndef PGMCL_COUPLING
         nbArg=command_argument_count()
         IF (nbArg > 1) THEN
           CALL WWM_ABORT('Number of argument is 0 or 1')
@@ -700,8 +702,8 @@
         IMPLICIT NONE
         INP%FNAME=INPname(Iwaves)
 # endif
-      END SUBROUTINE
 #endif
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -770,17 +772,10 @@
      &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
-     &      NUM_NETCDF_FILES_BND, LSECU, RKIND
+     &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC
 
 #ifdef MPI_PARALL_GRID
-    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize, mdc, msc
-# ifndef PDLIB
-    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
-# endif
-#endif
-
-#ifdef PDLIB
-    use datapool, only: initPD
+    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize
 #endif
 
       implicit none
@@ -794,12 +789,8 @@
 #ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 #endif
-
       integer :: i,j,k
       character(len=15) CALLFROM
-      character(len=60) :: errmsg
-
-      
 # if !defined PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
@@ -826,20 +817,12 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
-      CALL SIMPLE_PRE_READ
-      
-      CALL INITIALIZE_WWM
+      CALL SIMPLE_PRE_READ      
       CALLFROM='WWM_MPI'
-      DO K = 1, MAIN%ISTP
-        IF (LQSTEA) THEN
-          CALL QUASI_STEADY(K)
-        ELSE
-          CALL NON_STEADY(K,CALLFROM)
-        END IF
-      END DO
-# else ! MPI_PARALL_GRID
-      CALL INITIALIZE_WWM
+# else
       CALLFROM='WWM'
+# endif
+      CALL INITIALIZE_WWM
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
@@ -847,7 +830,6 @@
           CALL NON_STEADY(K,CALLFROM)
         END IF
       END DO
-# endif
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
