@@ -13,14 +13,12 @@
 #error "For PETSC, you need one parallelization scheme"
 #endif
 
-
-
 #ifdef PDLIB
       use wwm_pdlib
 #else
 # if defined(SELFE) || defined(WWM_MPI)
       use elfe_msgp ! , only: comm,             & ! MPI communicator
-         use elfe_glbl, only : MNE => nea,       & ! Elements of the augmented domain
+      use elfe_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
      &                         np,               &
@@ -902,7 +900,9 @@
          INTEGER, ALLOCATABLE   :: IE_IS_STEADY(:)
          REAL(rkind), ALLOCATABLE :: STAT2D(:,:)
          INTEGER                :: NQSITER = 1
+         INTEGER                :: MAXITER = 20
          INTEGER                :: ICOMP   = 2
+         REAL(rkind)            :: PMIN = 1.
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
