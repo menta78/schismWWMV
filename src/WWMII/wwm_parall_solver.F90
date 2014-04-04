@@ -4528,7 +4528,7 @@ MODULE WWM_PARALL_SOLVER
       IMPLICIT NONE
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
-      REAL(rkind) :: MaxNorm, p_is_converged
+      REAL(rkind) :: MaxNorm, p_is_converged, X_LOC(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
@@ -4539,7 +4539,7 @@ MODULE WWM_PARALL_SOLVER
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact
+      REAL(rkind) :: B_SIG(MSC), eFact, sumu
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
 
@@ -4634,34 +4634,32 @@ MODULE WWM_PARALL_SOLVER
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
+      !OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
       DO
         is_converged = 0
         DO IP=1,NP_RES
-          eSum=B(:,:,IP)
+          eSum = B(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
-            IF (J .ne. I_DIAG(IP)) THEN
-              idx=JA(J)
-              eSum=eSum - ASPAR(:,:,J)*X(:,:,idx)
-            END IF
+            IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
+          IF (REFRACTION_IMPL .OR. FREQ_SHIFT_IMPL) x_loc = x(:,:,ip)
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
               ID2 = ID + 1
               IF (ID .EQ. 1) ID1 = MDC
               IF (ID .EQ. MDC) ID2 = 1
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*X(:,ID1,IP)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*X(:,ID2,IP)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*X_LOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*X_LOC(:,ID2)
             END DO
           END IF
           IF (FREQ_SHIFT_IMPL) THEN
             DO ID=1,MDC
               DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*X_LOC(IS-1,ID)
               END DO
               DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*X_LOC(IS+1,ID)
               END DO
             END DO
           END IF
@@ -4671,52 +4669,40 @@ MODULE WWM_PARALL_SOLVER
           ELSE
             U(:,:,IP)=eSum
           END IF
-
           IF (LCHKCONV) THEN
+            sumu           = sum(u(:,:,ip))
+            p_is_converged = abs((sum(x(:,:,ip))-sumu)/sumu)
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
                 IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
-                  IF (abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.) .gt. 1.) then
-                    !WRITE(850+myrank,*) iplg(ip),abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.)
-                  ELSE
-                    is_converged = is_converged + 1 
-                  ENDIF
+                  IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
                 ELSE
                   is_converged = is_converged + 1
                 ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
               ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
             ELSE
               IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
-                IF (abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.) .gt. 1.) then
-                  !WRITE(850+myrank,*) iplg(ip),abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.)
-                ELSE
-                  is_converged = is_converged + 1 
-                ENDIF
+                IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
               ELSE
                 is_converged = is_converged + 1
               ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
             ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
           ENDIF
-
         END DO ! IP 
         !CLOSE(850+myrank)
-
         IF (LCHKCONV) THEN
-          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
+          !CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
-          if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged 
+          !if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged 
         ENDIF 
-        
-!
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
-          CALL EXCHANGE_P4D_WWM(X)
+          !CALL EXCHANGE_P4D_WWM(X)
         ELSE
-          CALL EXCHANGE_P4D_WWM(U)
+          !CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
-
         !write(*,*) nbiter,myrank,(sum(x)-sum(u))/sum(u)*100.
         IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
           X = U
@@ -4771,8 +4757,6 @@ MODULE WWM_PARALL_SOLVER
       CALL MY_WTIME(TIME4)
 #endif
 !
-!
-!
       DO IP = 1, MNP
         DO IS=1,MSC
           DO ID=1,MDC
@@ -4789,7 +4773,6 @@ MODULE WWM_PARALL_SOLVER
 # ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
 # endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOLVER TIMES-----        '
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING SOURCES AND ADVECTION  ', TIME2-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING REFRACTION             ', TIME3-TIME2
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ITERATION                            ', TIME4-TIME3
