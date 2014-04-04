@@ -4538,7 +4538,7 @@ MODULE WWM_PARALL_SOLVER
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal
-      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
+      LOGICAL :: BLOCK_GAUSS_SEIDEL = .TRUE.
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4702,10 +4702,11 @@ MODULE WWM_PARALL_SOLVER
 #endif
         nbIter=nbIter+1
         Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
-        IF (MaxNorm .lt. SOLVERTHR) THEN
-          EXIT
-        END IF
+        IF (MaxNorm .lt. SOLVERTHR) EXIT
       END DO
+!
+!
+!
       DO IP = 1, MNP
         DO IS=1,MSC
           DO ID=1,MDC

@@ -19,7 +19,7 @@ SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on 
 # Put LDLIB = on for compiling with paralleldata library instead of selfe, nothing if PDLIB is not wished
-PDLIB = 
+PDLIB = on
 
 #F90 = ifort 
 F90 = mpif90
@@ -39,6 +39,7 @@ F90 = mpif90
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #aggressive opti
 F90OPTI = -O1 -axSSE4.2 -traceback -g
+#F90OPTI = -axSSE4.2 -ipo -O3 -no-prec-div -opt-prefetch 
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 
 #debug 1
