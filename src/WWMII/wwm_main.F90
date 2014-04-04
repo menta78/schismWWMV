@@ -828,32 +828,6 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
       CALL SIMPLE_PRE_READ
       
-#ifdef MPI_PARALL_GRID
-! variable nx1 should be initialized in selfe code, not here!
-# ifndef PDLIB
-      do i=1,3
-        do j=1,2
-          nx1(i,j)=i+j
-          if(nx1(i,j)>3) nx1(i,j)=nx1(i,j)-3
-          if(nx1(i,j)<1.or.nx1(i,j)>3) then
-            write(errmsg,*)'MAIN: nx1 wrong',i,j,nx1(i,j)
-            call wwm_abort(errmsg)
-          endif
-        enddo
-      enddo
-# endif
-#endif
-
-#ifdef PDLIB
-      call initPD("system.dat", MDC, MSC, comm)
-     ! call parallel_barrier 
-#else
-      call partition_hgrid
-      call aquire_hgrid(.true.)
-      call msgp_tables
-      call msgp_init
-      call parallel_barrier
-#endif
       CALL INITIALIZE_WWM
       CALLFROM='WWM_MPI'
       DO K = 1, MAIN%ISTP

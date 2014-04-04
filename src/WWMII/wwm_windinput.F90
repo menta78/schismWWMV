@@ -43,7 +43,7 @@
          REAL(rkind)                 :: UFRIC1, UFRIC2
          REAL(rkind)                 :: TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W
 
-         INTEGER, PARAMETER   :: MAXITER = 100
+         INTEGER, PARAMETER   :: MAXITER_WIND = 100
 
          REAL(rkind), PARAMETER      :: KAPPA = 0.4_rkind
          REAL(rkind), PARAMETER      :: GAMMA = 0.8_rkind
@@ -110,7 +110,7 @@
                 UFRIC2 = ZERO 
                 UFRIC1 = UFRIC(IP)
 !
-                DO I = 1, MAXITER
+                DO I = 1, MAXITER_WIND
 
                   IF (I .GT. 1) UFRIC1 = UFRIC2
 

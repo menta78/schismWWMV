@@ -835,8 +835,10 @@
          END IF
 
 #ifdef MPI_PARALL_GRID
+# ifndef PDLIB
 !AR: I think we can allow that with SELFE we can use different GRIDTYPES even if selfe reads in .gr3 ... let's see ...
          IF (IGRIDTYPE /= 3) CALL WWM_ABORT('In MPI, you need IGRIDTYPE=3')
+# endif
 #endif
 #ifndef MPI_PARALL_GRID
          CALL READ_MNP_MNE

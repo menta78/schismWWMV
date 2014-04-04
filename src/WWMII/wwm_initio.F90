@@ -406,252 +406,278 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
-         USE DATAPOOL
+      USE DATAPOOL
+!#ifdef MPI_PARALL_GRID
+!# ifndef PDLIB
+!    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
+!# endif
+!#endif
 #if !defined PDLIB && defined WWM_MPI
-         USE ELFE_GLBL, only : ics
+      USE ELFE_GLBL, only : ics
 #endif
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
-         USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
+      USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
 # endif
 #endif
 #ifdef WWM_SETUP
-         USE WAVE_SETUP
+      USE WAVE_SETUP
 #endif
 #ifdef PETSC
-         USE PETSC_CONTROLLER, ONLY : PETSC_INIT
+      USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
 #ifdef ST41
-         USE W3SRC4MD_OLD
+      USE W3SRC4MD_OLD
 #endif
 #ifdef ST42
-         USE W3SRC4MD
+      USE W3SRC4MD
 #endif
-         IMPLICIT NONE
-         integer istat
+      IMPLICIT NONE
+      integer istat
 #ifdef TIMINGS
-         REAL(rkind)    :: TIME1, TIME2
+      REAL(rkind)    :: TIME1, TIME2
 #endif
-         INTEGER        :: IT, IFILE
+      INTEGER        :: IT, IFILE, i, j
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+      CALL MY_WTIME(TIME1)
 #endif
-
-         CALL INIT_FILE_HANDLES
-         CALL READ_WWMINPUT
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
-         FLUSH(STAT%FHNDL)
-
-#ifdef VDISLIN
-         CALL INIT_DISLIN()
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
-         FLUSH(STAT%FHNDL)
-#endif
-
-         CALL INIT_ARRAYS
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
-         FLUSH(STAT%FHNDL)
 
 #ifdef MPI_PARALL_GRID
+! variable nx1 should be initialized in selfe code, not here!
 # ifndef PDLIB
-         DEP  = DEP8
-         WLDEP  = DEP
-         IF (ics .eq. 2) THEN
-           XP = XLON*RADDEG
-           YP = YLAT*RADDEG
-         ELSE
-           XP = XPTMP
-           YP = YPTMP
-         END IF
+      do i=1,3
+        do j=1,2
+          nx1(i,j)=i+j
+          if(nx1(i,j)>3) nx1(i,j)=nx1(i,j)-3
+          if(nx1(i,j)<1.or.nx1(i,j)>3) then
+            write(wwmerr,*)'MAIN: nx1 wrong',i,j,nx1(i,j)
+            call wwm_abort(wwmerr)
+          endif
+        enddo
+      enddo
 # endif
 #endif
-         CALL CHECK_LOGICS
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
-         FLUSH(STAT%FHNDL)
 
+#ifdef PDLIB
+      call initPD("system.dat", MDC, MSC, comm)
+#else
+      call partition_hgrid
+      call aquire_hgrid(.true.)
+      call msgp_tables
+      call msgp_init
+      call parallel_barrier
+#endif
+      CALL INIT_FILE_HANDLES
+      CALL READ_WWMINPUT
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
+      FLUSH(STAT%FHNDL)
+
+#ifdef VDISLIN
+      CALL INIT_DISLIN()
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
+      FLUSH(STAT%FHNDL)
+#endif
+      CALL INIT_ARRAYS
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
+      FLUSH(STAT%FHNDL)
+#ifdef MPI_PARALL_GRID
+# ifndef PDLIB
+      DEP  = DEP8
+      WLDEP  = DEP
+      IF (ics .eq. 2) THEN
+        XP = XLON*RADDEG
+        YP = YLAT*RADDEG
+      ELSE
+        XP = XPTMP
+        YP = YPTMP
+      END IF
+# endif
+#endif
+      CALL CHECK_LOGICS
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
+      FLUSH(STAT%FHNDL)
 #ifndef MPI_PARALL_GRID
-         CALL READ_SPATIAL_GRID
-         WLDEP = DEP
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
-         FLUSH(STAT%FHNDL)
+      CALL READ_SPATIAL_GRID
+      WLDEP = DEP
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
+      FLUSH(STAT%FHNDL)
 #endif
-         IF (CART2LATLON) THEN
-           XP = XP / 111111.
-           YP = YP / 111111.
-         ELSE IF (LATLON2CART) THEN
-           XP = XP * 111111.
-           YP = YP * 111111. 
-         ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
-           CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
-         ENDIF 
-         CALL SPATIAL_GRID
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
-         FLUSH(STAT%FHNDL)
-
-         IF (LADVTEST) THEN
-           ALLOCATE(UTEST(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 33')
-           UTEST = 0.
-           CALL ADVTEST(UTEST)
-           AC2(:,1,1) = UTEST
-           CALL CHECKCONS(UTEST,SUMACt0)
+#ifdef MPI_PARALL_GRID
+      NP_TOTAL=np_global
+      NE_TOTAL=ne_global
+#else
+      NP_TOTAL=MNP
+      NE_TOTAL=MNE
+#endif
+      IF (CART2LATLON) THEN
+        XP = XP / 111111.
+        YP = YP / 111111.
+      ELSE IF (LATLON2CART) THEN
+        XP = XP * 111111.
+        YP = YP * 111111. 
+      ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+        CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+      ENDIF 
+      CALL SPATIAL_GRID
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
+      FLUSH(STAT%FHNDL)
+      IF (LADVTEST) THEN
+        ALLOCATE(UTEST(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 33')
+        UTEST = 0.
+        CALL ADVTEST(UTEST)
+        AC2(:,1,1) = UTEST
+        CALL CHECKCONS(UTEST,SUMACt0)
 !AR: check the advections test if it still works ...
-           DEALLOCATE(UTEST)
-         END IF
+        DEALLOCATE(UTEST)
+      END IF
 #ifdef MPI_PARALL_GRID
-         CALL BUILD_WILD_ARRAY
+      CALL BUILD_WILD_ARRAY
 #endif
-#ifdef MPI_PARALL_GRID
-         NP_TOTAL=np_global
-         NE_TOTAL=ne_global
-#else
-         NP_TOTAL=MNP
-         NE_TOTAL=MNE
-#endif
-         CALL SET_IOBPD_BY_DEP
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET DEPTH POINTER'
-         FLUSH(STAT%FHNDL)
+      CALL SET_IOBPD_BY_DEP
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET DEPTH POINTER'
+      FLUSH(STAT%FHNDL)
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
-         FLUSH(STAT%FHNDL)
-         CALL INIT_SPECTRAL_GRID
- 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
-         FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE SPECTRAL GRID'
+      FLUSH(STAT%FHNDL)
+      CALL INIT_SPECTRAL_GRID
+
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
+      FLUSH(STAT%FHNDL)
 #if defined SELFE 
-         DMIN = DMIN_SELFE
-         CALL SET_IOBP_SELFE
+      DMIN = DMIN_SELFE
+      CALL SET_IOBP_SELFE
 #else
-         CALL SET_IOBP_NEXTGENERATION
+      CALL SET_IOBP_NEXTGENERATION
 #endif
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
-         FLUSH(STAT%FHNDL)
-         CALL SET_IOBPD
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
+      FLUSH(STAT%FHNDL)
+      CALL SET_IOBPD
 
-         IF (DIMMODE .EQ. 2) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS STARTED'
-           FLUSH(STAT%FHNDL)
-           CALL INIT_FLUCT_ARRAYS
-           CALL INIT_FLUCT
+      IF (DIMMODE .EQ. 2) THEN
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS STARTED'
+        FLUSH(STAT%FHNDL)
+        CALL INIT_FLUCT_ARRAYS
+        CALL INIT_FLUCT
 
-           IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
+        IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
 #ifdef PETSC
-             CALL PETSC_INIT
+          CALL PETSC_INIT
 #endif
-           END IF
-           IF (AMETHOD .EQ. 6) THEN
+        END IF
+        IF (AMETHOD .EQ. 6) THEN
 #if defined WWM_SOLVER && defined MPI_PARALL_GRID
-             CALL WWM_SOLVER_INIT
+          CALL WWM_SOLVER_INIT
 #endif
-           END IF
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
-           FLUSH(STAT%FHNDL)
-         END IF
+        END IF
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE FLUCTUATION SPLITTING PREPROCESSOR HAS ENDED'
+        FLUSH(STAT%FHNDL)
+      END IF
 
-         IF (LZETA_SETUP) THEN
+      IF (LZETA_SETUP) THEN
 #ifdef WWM_SETUP
-           CALL INIT_WAVE_SETUP
+        CALL INIT_WAVE_SETUP
 #else
-           CALL WWM_ABORT('Need WWM_SEZUP if LZETA is selected')
+        CALL WWM_ABORT('Need WWM_SEZUP if LZETA is selected')
 #endif
-         END IF
+      END IF
 
 
 #ifndef PGMCL_COUPLING
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
-         FLUSH(STAT%FHNDL)
-         IF (LWINDFROMWWM) THEN
-           CALL INIT_WIND_INPUT
-         ENd IF
-         IF (.NOT. LCPL) THEN
-           CALL INIT_CURRENT_INPUT
-           CALL INIT_WATLEV_INPUT
-         END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
+      FLUSH(STAT%FHNDL)
+      IF (LWINDFROMWWM) THEN
+        CALL INIT_WIND_INPUT
+      END IF
+      IF (.NOT. LCPL) THEN
+        CALL INIT_CURRENT_INPUT
+        CALL INIT_WATLEV_INPUT
+      END IF
 #endif
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
-         FLUSH(STAT%FHNDL)
-         CALL INITIATE_WAVE_PARAMETER
-         CALL SETSHALLOW
-         CALL SET_HMAX
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
+      FLUSH(STAT%FHNDL)
+      CALL INITIATE_WAVE_PARAMETER
+      CALL SETSHALLOW
+      CALL SET_HMAX
 
-         IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
-           FLUSH(STAT%FHNDL)
+      IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
+        FLUSH(STAT%FHNDL)
 #ifdef ST41
-           CALL PREPARE_ARDHUIN_OLD
+        CALL PREPARE_ARDHUIN_OLD
 #elif ST42
-           CALL PREPARE_ARDHUIN
+        CALL PREPARE_ARDHUIN
 #endif
-         ENDIF
+      ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
-         FLUSH(STAT%FHNDL)
-         CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
-         FLUSH(STAT%FHNDL)
-         CALL INITIAL_CONDITION(IFILE,IT)
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
-         FLUSH(STAT%FHNDL)
-         CALL SET_WAVE_BOUNDARY
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
-         FLUSH(STAT%FHNDL)
-         CALL INIT_STATION_OUTPUT
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
-         FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
+      FLUSH(STAT%FHNDL)
+      CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
+      FLUSH(STAT%FHNDL)
+      CALL INITIAL_CONDITION(IFILE,IT)
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
+      FLUSH(STAT%FHNDL)
+      CALL SET_WAVE_BOUNDARY
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
+      FLUSH(STAT%FHNDL)
+      CALL INIT_STATION_OUTPUT
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
+      FLUSH(STAT%FHNDL)
 #ifdef NCDF
-         IF (GRIDWRITE) THEN
-           CALL GET_XYID_INE_TOTAL
-         END IF
+      IF (GRIDWRITE) THEN
+        CALL GET_XYID_INE_TOTAL
+      END IF
 #endif
-         CALL WWM_OUTPUT(ZERO,.TRUE.)
-         IF (LWXFN) THEN
-           CALL WRINPGRD_XFN
-         ELSE IF(LWSHP) THEN
-           CALL WRINPGRD_SHP
-         END IF
+      CALL WWM_OUTPUT(ZERO,.TRUE.)
+      IF (LWXFN) THEN
+        CALL WRINPGRD_XFN
+      ELSE IF(LWSHP) THEN
+        CALL WRINPGRD_SHP
+      END IF
 #if !defined SELFE && !defined PGMCL_COUPLING
-         IF (LCPL) THEN
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
-           FLUSH(STAT%FHNDL)
-           IF (LTIMOR) THEN
-             CALL INIT_PIPES_TIMOR()
+      IF (LCPL) THEN
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
+        FLUSH(STAT%FHNDL)
+        IF (LTIMOR) THEN
+          CALL INIT_PIPES_TIMOR()
 #ifdef SHYFEM_COUPLING
-           ELSE IF (LSHYFEM) THEN
-             CALL INIT_PIPES_SHYFEM()
+        ELSE IF (LSHYFEM) THEN
+          CALL INIT_PIPES_SHYFEM()
 #endif
-           ELSE IF (LROMS) THEN
-             CALL INIT_PIPES_ROMS()
-           END IF
-         END IF
+        ELSE IF (LROMS) THEN
+          CALL INIT_PIPES_ROMS()
+        END IF
+      END IF
 #endif
 #ifdef PGMCL_COUPLING
-         CALL ROMS_COUPL_INITIALIZE
+      CALL ROMS_COUPL_INITIALIZE
 #endif
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME2)
+      CALL MY_WTIME(TIME2)
 #endif
 
 #if defined SELFE
-         IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
-           WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
-           WRITE(DBG%FHNDL,*) 'MSC', MSC
-           WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
-           WRITE(DBG%FHNDL,*) 'MDC', MDC
-           FLUSH(DBG%FHNDL)
-           CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
-         END IF
+      IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
+        WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
+        WRITE(DBG%FHNDL,*) 'MSC', MSC
+        WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
+        WRITE(DBG%FHNDL,*) 'MDC', MDC
+        FLUSH(DBG%FHNDL)
+        CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
+      END IF
 #endif
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
 #ifdef TIMINGS
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
+      WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
 #endif
-         FLUSH(STAT%FHNDL)
+      FLUSH(STAT%FHNDL)
 
-         AC1 = AC2
-       END SUBROUTINE
+      AC1 = AC2
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

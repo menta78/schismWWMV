@@ -21,7 +21,7 @@ GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
-PDLIB = on
+PDLIB =
 
 
 #F90 = gfortran
