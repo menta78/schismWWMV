@@ -21,7 +21,7 @@ GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
-PDLIB =
+PDLIB = on
 
 
 #F90 = gfortran
@@ -118,12 +118,11 @@ endif
 
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DWWM_SOLVER -DSHYFEM_COUPLING
   ifdef PDLIB
     OBJS= wwm_pdlib.o $(OBJWWM)
   else
     OBJS= $(OBJSELFE) $(OBJWWM)
-    MPIFLAG += -DWWM_SOLVER -DSHYFEM_COUPLING
   endif
 else
   MPIFLAG = 
