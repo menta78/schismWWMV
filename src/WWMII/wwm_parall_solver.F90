@@ -4526,7 +4526,7 @@ MODULE WWM_PARALL_SOLVER
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: ASPAR(MSC,MDC,NNZ),ASPAR_LOC(MSC,MDC)
+      REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged, X_LOC(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -4539,7 +4539,7 @@ MODULE WWM_PARALL_SOLVER
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact
+      REAL(rkind) :: B_SIG(MSC), eFact, sumu
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
 
@@ -4638,7 +4638,7 @@ MODULE WWM_PARALL_SOLVER
       DO
         is_converged = 0
         DO IP=1,NP_RES
-          eSum=B(:,:,IP)
+          eSum = B(:,:,IP)
           DO J=IA(IP),IA(IP+1)-1
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
@@ -4663,52 +4663,39 @@ MODULE WWM_PARALL_SOLVER
               END DO
             END DO
           END IF
-
           eSum=eSum/ASPAR(:,:,I_DIAG(IP))
-
           IF (BLOCK_GAUSS_SEIDEL) THEN
             X(:,:,IP)=eSum
           ELSE
             U(:,:,IP)=eSum
           END IF
-
           IF (LCHKCONV) THEN
-            p_is_converged = abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.)
+            sumu           = sum(u(:,:,ip))
+            p_is_converged = abs((sum(x(:,:,ip))-sumu)/sumu)
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
                 IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
-                  IF (p_is_converged .gt. 1.) then
-                    !WRITE(850+myrank,*) iplg(ip),abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.)
-                  ELSE
-                    is_converged = is_converged + 1 
-                  ENDIF
+                  IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
                 ELSE
                   is_converged = is_converged + 1
                 ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
               ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
             ELSE
               IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
-                IF (p_is_converged .gt. 1.) then
-                  !WRITE(850+myrank,*) iplg(ip),abs((sum(x(:,:,ip))-sum(u(:,:,IP)))/sum(u(:,:,IP))*100.)
-                ELSE
-                  is_converged = is_converged + 1 
-                ENDIF
+                IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
               ELSE
                 is_converged = is_converged + 1
               ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
             ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
           ENDIF
-
         END DO ! IP 
         !CLOSE(850+myrank)
-
         IF (LCHKCONV) THEN
           !CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
           !if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged 
         ENDIF 
-!
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
           !CALL EXCHANGE_P4D_WWM(X)
