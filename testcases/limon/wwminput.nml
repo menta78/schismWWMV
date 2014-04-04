@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   =   600.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
@@ -30,10 +30,10 @@
  LSTAG   = T,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          24,
+ MDC     =          12,
  FRLOW   =  4.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          24,
+ MSC     =          12,
  FILEGRID        = hgrid.gr3                                                                                                         
                            ,
  IGRIDTYPE       =           3,
@@ -138,29 +138,29 @@
  MESNL   =           0,
  MESIN   =           0,
  IFRIC   =           1,
- MESBF   =           0,
+ MESBF   =           1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
- LMAXETOT        = T,
- MESDS   =           0,
- MESTR   =           0,
+ LMAXETOT        = F,
+ MESDS   =          0,
+ MESTR   =          0,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
+ ICOMP   =           0,
+ AMETHOD =           1,
  SMETHOD =           1,
- DMETHOD =           6,
+ DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
  LTHBOUND        = F,
- FMETHOD =           0,
+ FMETHOD =           1,
  LFILTERCXY      = F,
  MAXCFLCXY       =   1.00000000000000     ,
  LFILTERSIG      = F,
@@ -208,12 +208,12 @@
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
  SOLVERTHR       =  0.001,
- MAXITER =        1000,
+ MAXITER =  100,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       =           0,
  LSOURCESWAM     = F,
- PMIN    =   0.1,
+ PMIN    =   0.,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T, 
  /
@@ -456,3 +456,43 @@
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
  /
+
+&PETScOptions
+                                     ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
+ KSPTYPE       = 'BCGSL'
+                                     ! This parameter controls which solver is used. This is the same as petsc command line parameter -ksp_type.
+                                     ! KSPTYPE = 'GMRES'
+                                     ! Implements the Generalized Minimal Residual method. (Saad and Schultz, 1986) with restart
+                                     ! KSPTYPE = 'LGMRES'
+                                     ! Augments the standard GMRES approximation space with approximations to the error from previous restart cycles.
+                                     ! KSPTYPE = 'DGMRES'
+                                     ! In this implementation, the adaptive strategy allows to switch to the deflated GMRES when the stagnation occurs.
+                                     ! KSPTYPE = 'PGMRES'
+                                     ! Implements the Pipelined Generalized Minimal Residual method. Only PETSc 3.3
+                                     ! KSPTYPE = 'KSPBCGSL'
+                                     ! Implements a slight variant of the Enhanced BiCGStab(L) algorithm
+
+ RTOL          = 1.E-4               ! the relative convergence tolerance (relative decrease in the residual norm)
+ ABSTOL        = 1.E-4               ! the absolute convergence tolerance (absolute size of the residual norm)
+ DTOL          = 10000.              ! the divergence tolerance
+ MAXITS        = 1000                ! maximum number of iterations to use
+
+ INITIALGUESSNONZERO = T             ! Tells the iterative solver that the initial guess is nonzero; otherwise KSP assumes the initial guess is to be zero
+ GMRESPREALLOCATE    = T             ! Causes GMRES and FGMRES to preallocate all its needed work vectors at initial setup rather than the default, which is to allocate them in chunks when needed.
+
+
+ PCTYPE        = 'SOR'
+                                     ! This parameter controls which  preconditioner is used. This is the same as petsc command line parameter -pc_type
+                                     ! PCTYPE = 'SOR'
+                                     ! (S)SOR (successive over relaxation, Gauss-Seidel) preconditioning
+                                     ! PCTYPE = 'ASM'
+                                     ! Use the (restricted) additive Schwarz method, each block is (approximately) solved with its own KSP object.
+                                     ! PCTYPE = 'HYPRE'
+                                     ! Allows you to use the matrix element based preconditioners in the LLNL package hypre
+                                     ! PCTYPE = 'SPAI'
+                                     ! Use the Sparse Approximate Inverse method of Grote and Barnard as a preconditioner
+                                     ! PCTYPE = 'NONE'
+                                     ! This is used when you wish to employ a nonpreconditioned Krylov method.
+
+/
+

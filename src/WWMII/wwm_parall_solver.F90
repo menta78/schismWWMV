@@ -4694,7 +4694,7 @@ MODULE WWM_PARALL_SOLVER
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
-          if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged, solverthr
+          !if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged, solverthr
         ENDIF 
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
@@ -4749,7 +4749,7 @@ MODULE WWM_PARALL_SOLVER
 #endif
         nbIter=nbIter+1
         !Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
-        IF (p_is_converged .lt. pmin) EXIT
+        IF (p_is_converged .le. pmin) EXIT
         IF (nbiter .gt. maxiter) EXIT
       END DO ! end open do loop
 

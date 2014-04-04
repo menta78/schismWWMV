@@ -362,10 +362,10 @@
         ELSE       ! not linearized ... 
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
             IF ( BETA2 .LT. ONE - 10.E-10) THEN
-              SURFA0  = - ALPBJ * QB * SME / PI / BETA2
+              SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
               !write(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
             ELSE
-              SURFA0  = - ALPBJ * SME / PI !/ ETOT
+              SURFA0  = -(ALPBJ/PI)*SME 
             END IF
           ELSE
             SURFA0 = 0.
@@ -378,11 +378,12 @@
               IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
               SSBR(IS,ID)  = SURFA0 * ACLOC(IS,ID)
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
+              !if (abs(surfa0) .gt. 0) write(*,*) surfa0, surfa1
             ELSE IF (ICOMP .LT. 2 ) THEN
               IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
               SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-!              if (surfa0 .lt. zero) write(*,*) is, id, SURFA0
+              !if (surfa0 .lt. zero) write(*,*) is, id, SURFA0
             END IF
           END DO
         END DO 

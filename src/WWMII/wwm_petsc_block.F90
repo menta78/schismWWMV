@@ -1285,7 +1285,7 @@
                 value(1)=TRIA03arr(i) + DTK - DTK * NM(i) * DELTAL(POSarr(i),i)  ! Diagonal entry
                 value(2)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),1),i)  ! off diagonal entries ...
                 value(3)=             - DTK * NM(i) * DELTAL(POS_TRICK(POSarr(i),2),i)
-                if (value(1)/max(thr,value(2)) .lt. 100. .or. value(1)/max(thr,value(3)) .lt. 100.) write(*,*) value(1), value(1)/max(thr,value(2)), value(1)/max(thr,value(3))
+                !if (value(1)/max(thr,value(2)) .lt. 100. .or. value(1)/max(thr,value(3)) .lt. 100.) write(*,*) value(1), value(1)/max(thr,value(2)), value(1)/max(thr,value(3))
                 idx1=Jcum(IP) + I
                 DO L=1,3
                   idx=POSI(L,idx1)-IA_P(IP)
