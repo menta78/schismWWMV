@@ -1389,7 +1389,7 @@
 #ifdef MPI_PARALL_GRID
          IF (ICOMP .GT. 0) THEN
            IF ((AMETHOD .eq. 1).or.(AMETHOD .eq. 2).or.(AMETHOD .eq. 3)) THEN
-             CALL WWM_ABORT('The AMETHOD = 1, 2, 3 are not parallelized')
+             IF (myrank .gt. 0) CALL WWM_ABORT('The AMETHOD = 1, 2, 3 are not parallelized')
            END IF
          END IF
 #endif
