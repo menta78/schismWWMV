@@ -4281,12 +4281,12 @@ MODULE WWM_PARALL_SOLVER
             DO ID=1,MDC
               DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
             END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)/TRIA03
-            ASPAR(:,:,I1) =  1+DTK(:,:)/TRIA03- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
             DO ID=1,MDC
-              B(:,ID,IP)     =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+              B(:,ID,IP)     =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
             END DO
             !TMP3(:,:)  =  DTK(:,:) * NM(:,:)
             !ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
@@ -4347,15 +4347,15 @@ MODULE WWM_PARALL_SOLVER
             IPrel=1
           ENDIF
           IPGL1 = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL1)) = 1.!SI(IPGL1) ! Set boundary on the diagonal
-          B(:,:,IPGL1)             = WBAC(:,:,IPrel) ! * SI(IPGL1)
+          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+          B(:,:,IPGL1)             = WBAC(:,:,IPrel)  * SI(IPGL1)
         END DO
       END IF
 
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP)!* SI(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP)!* SI(IP) ! Add source term to the right hand side
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP)* SI(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP)* SI(IP) ! Add source term to the right hand side
         END DO
       ENDIF
 

@@ -152,15 +152,15 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           2,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
- DMETHOD =           2,
+ DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
  LTHBOUND        = F,
- FMETHOD =           1,
+ FMETHOD =           0,
  LFILTERCXY      = F,
  MAXCFLCXY       =   1.00000000000000     ,
  LFILTERSIG      = F,
