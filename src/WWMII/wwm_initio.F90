@@ -433,11 +433,10 @@
       USE W3SRC4MD
 #endif
       IMPLICIT NONE
-      integer istat
-#ifdef TIMINGS
+!
+      INTEGER        :: IT, IFILE, i, j, istat
       REAL(rkind)    :: TIME1, TIME2
-#endif
-      INTEGER        :: IT, IFILE, i, j
+      
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif

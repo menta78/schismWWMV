@@ -4691,16 +4691,16 @@ MODULE WWM_PARALL_SOLVER
         END DO ! IP 
         !CLOSE(850+myrank)
         IF (LCHKCONV) THEN
-          !CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
+          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
-          !if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged 
+          if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged, solverthr
         ENDIF 
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
-          !CALL EXCHANGE_P4D_WWM(X)
+          CALL EXCHANGE_P4D_WWM(X)
         ELSE
-          !CALL EXCHANGE_P4D_WWM(U)
+          CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
         !write(*,*) nbiter,myrank,(sum(x)-sum(u))/sum(u)*100.

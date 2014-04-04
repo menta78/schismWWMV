@@ -5,11 +5,11 @@
  LQSTEA  = F,
  LSPHE   = F,
  LNAUTIN = T,
- LNAUTOUT   = T,
+ LNAUTOUT        = T,
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 600.000000000000     ,
+ DELTC   =   600.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
@@ -40,7 +40,9 @@
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
- LOPTSIG = F 
+ LOPTSIG = F,
+ CART2LATLON     = F,
+ LATLON2CART     = F
  /
  &INIT
  LHOTR   = F,
@@ -86,19 +88,19 @@
  LCWIN   = T,
  LWDIR   = T,
  BEGTC   = 19980901.000000     ,
- DELTC   = 5.00000000000000     ,
+ DELTC   =   5.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
- LINTERWD    = T,
- WDIR    =   0.000000000000     ,
- WVEL    =   0.0000000000000     ,
+ LINTERWD        = T,
+ WDIR    =  0.000000000000000E+000,
+ WVEL    =  0.000000000000000E+000,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = wind.dat                                                                                                          
                            ,
  WINDFAC =   1.00000000000000     ,
  IWINDFORMAT     =           1,
- LWINDFROMWWM    =  T,
+ LWINDFROMWWM    = T,
  SHIFT_WIND_TIME =  0.000000000000000E+000
  /
  &CURR
@@ -120,33 +122,31 @@
  /
  &WALV
  LSEWL   = F,
- BEGTC   =                     ,
+ BEGTC   = 19980901.000000     ,
  DELTC   =   1.00000000000000     ,
  UNITC   = HR                  ,
- ENDTC   =                     ,
+ ENDTC   = 19980901.010000     ,
  LINTERWL        = F,
  LSTWL   = F,
  LCWLV   = F,
  CWATLV  =  0.000000000000000E+000,
- FILEWATL        =                                                                                                                   
-                           ,
  LERGINP = F,
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1
  /
  &ENGS
- MESNL   =          0,
- MESIN   =          0,
- IFRIC   =          1,
- MESBF   =          0,
+ MESNL   =           0,
+ MESIN   =           0,
+ IFRIC   =           1,
+ MESBF   =           0,
  FRICC   =  6.700000000000000E-002,
- MESBR   =          0,
- ICRIT   =          1,
+ MESBR   =           0,
+ ICRIT   =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
- LMAXETOT        =  T,
- MESDS   =          0, 
- MESTR   =          0,
+ LMAXETOT        = T,
+ MESDS   =           0,
+ MESTR   =           0,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
@@ -207,16 +207,19 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.000000000000000E-04,
+ SOLVERTHR       =  0.001,
+ MAXITER =        1000,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
- ZETA_METH       = 0,
+ ZETA_METH       =           0,
  LSOURCESWAM     = F,
+ PMIN    =   0.1,
  LSOURCESWWIII   = F,
+ BLOCK_GAUSS_SEIDEL      = T, 
  /
  &HISTORY
  BEGTC   = 19980901.000000     ,
- DELTC   = 1.00000000000000     ,
+ DELTC   =   1.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19990901.010000     ,
  DEFINETC        =  0.000000000000000E+000,
@@ -453,42 +456,3 @@
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
  /
-&PETScOptions
-                                     ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
- KSPTYPE       = 'BCGSL'
-                                     ! This parameter controls which solver is used. This is the same as petsc command line parameter -ksp_type.
-                                     ! KSPTYPE = 'GMRES'
-                                     ! Implements the Generalized Minimal Residual method. (Saad and Schultz, 1986) with restart
-                                     ! KSPTYPE = 'LGMRES'
-                                     ! Augments the standard GMRES approximation space with approximations to the error from previous restart cycles.
-                                     ! KSPTYPE = 'DGMRES'
-                                     ! In this implementation, the adaptive strategy allows to switch to the deflated GMRES when the stagnation occurs.
-                                     ! KSPTYPE = 'PGMRES'
-                                     ! Implements the Pipelined Generalized Minimal Residual method. Only PETSc 3.3
-                                     ! KSPTYPE = 'KSPBCGSL'
-                                     ! Implements a slight variant of the Enhanced BiCGStab(L) algorithm
-
- RTOL          = 1.E-4               ! the relative convergence tolerance (relative decrease in the residual norm)
- ABSTOL        = 1.E-4               ! the absolute convergence tolerance (absolute size of the residual norm)
- DTOL          = 10000.              ! the divergence tolerance
- MAXITS        = 1000                ! maximum number of iterations to use
-
- INITIALGUESSNONZERO = T             ! Tells the iterative solver that the initial guess is nonzero; otherwise KSP assumes the initial guess is to be zero
- GMRESPREALLOCATE    = T             ! Causes GMRES and FGMRES to preallocate all its needed work vectors at initial setup rather than the default, which is to allocate them in chunks when needed.
-
-
- PCTYPE        = 'SOR'
-                                     ! This parameter controls which  preconditioner is used. This is the same as petsc command line parameter -pc_type
-                                     ! PCTYPE = 'SOR'
-                                     ! (S)SOR (successive over relaxation, Gauss-Seidel) preconditioning
-                                     ! PCTYPE = 'ASM'
-                                     ! Use the (restricted) additive Schwarz method, each block is (approximately) solved with its own KSP object.
-                                     ! PCTYPE = 'HYPRE'
-                                     ! Allows you to use the matrix element based preconditioners in the LLNL package hypre
-                                     ! PCTYPE = 'SPAI'
-                                     ! Use the Sparse Approximate Inverse method of Grote and Barnard as a preconditioner
-                                     ! PCTYPE = 'NONE'
-                                     ! This is used when you wish to employ a nonpreconditioned Krylov method.
-
-/
-

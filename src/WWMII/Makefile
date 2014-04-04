@@ -38,7 +38,7 @@ F90 = mpif90
 #extreme aggressive opti ...
 #F90OPTI = -O1 -g -traceback -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces
 #aggressive opti
-F90OPTI = -O1 -axSSE4.2 -traceback -g
+F90OPTI = -O1 -axSSE4.2 -traceback -g -auto-scalar
 #F90OPTI = -axSSE4.2 -ipo -O3 -no-prec-div -opt-prefetch 
 #aggressive opti no openmp
 #F90OPTI = -O1 -axSSE4.2 
