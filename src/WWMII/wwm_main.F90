@@ -707,13 +707,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#if !defined SELFE
-# if defined MPI_PARALL_GRID
+#if !defined SELFE && !defined PDLIB && defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
-#ifndef PDLIB
       USE ELFE_GLBL, only : msc2, mdc2, ics
-#endif
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
@@ -731,9 +728,6 @@
       READ(FHNDL, NML = PROC)
       READ(FHNDL, NML = GRID)
       CLOSE(FHNDL)
-
-!> \todo This is confusing. When not using SELFE why we must set this variables?
-#ifndef PDLIB      
       IF (LSPHE) THEN
         ics=2
       ELSE
@@ -750,12 +744,12 @@
       END IF
       msc2=MSC
       mdc2=MDC
-#endif      
       END SUBROUTINE
-# endif
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#if !defined SELFE
 # ifdef PGMCL_COUPLING
       SUBROUTINE WWMIII_MPI(MyCOMM)
 # else
@@ -774,9 +768,9 @@
      &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC
 
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
     use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize
-#endif
+# endif
 
       implicit none
 
@@ -786,9 +780,9 @@
 # ifdef PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
-#ifdef TIMINGS 
+# ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
-#endif
+# endif
       integer :: i,j,k
       character(len=15) CALLFROM
 # if !defined PGMCL_COUPLING && defined WWM_MPI
@@ -800,7 +794,6 @@
       CALL MY_WTIME(TIME1)
 #endif
 
-      CALL SET_WWMINPULNML
       
 # ifdef PGMCL_COUPLING
       comm=MyCOMM
@@ -811,13 +804,16 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
+      CALL SET_WWMINPULNML
 
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
-      CALL SIMPLE_PRE_READ      
+#  ifndef PDLIB
+      CALL SIMPLE_PRE_READ
+#  endif
       CALLFROM='WWM_MPI'
 # else
       CALLFROM='WWM'
@@ -832,9 +828,9 @@
       END DO
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
+       CALL MY_WTIME(TIME2)
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
-#endif
+# endif
 
 # if defined MPI_PARALL_GRID && !defined PGMCL_COUPLING
       call parallel_finalize

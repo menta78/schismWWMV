@@ -840,11 +840,6 @@
          IF (IGRIDTYPE /= 3) CALL WWM_ABORT('In MPI, you need IGRIDTYPE=3')
 # endif
 #endif
-#ifndef MPI_PARALL_GRID
-         CALL READ_MNP_MNE
-         NP_RES=MNP
-#endif
-
          IF (FRLOW > FRHIGH) THEN
            CALL WWM_ABORT('error, the FRHIG must be greater than FRLOW')
          END IF
@@ -1084,8 +1079,6 @@
          HOTF%TOTL = (HOTF%EMJD - HOTF%BMJD) * DAY2SEC
          HOTF%ISTP = NINT( HOTF%TOTL / HOTF%DELT ) + 1
          HOTF%TMJD = HOTF%BMJD
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

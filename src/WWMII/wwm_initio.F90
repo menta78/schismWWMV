@@ -471,8 +471,15 @@
 #endif
       CALL INIT_FILE_HANDLES
       CALL READ_WWMINPUT
+#ifndef MPI_PARALL_GRID
+      CALL READ_MNP_MNE
+      NP_RES=MNP
+#endif
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
       FLUSH(STAT%FHNDL)
+
+
+
 
       CALL INIT_ARRAYS
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
@@ -1350,37 +1357,35 @@
       SUBROUTINE TERMINATE_STATION_OUTPUT
       USE DATAPOOL
       IMPLICIT NONE
-         IF (LOUTS) THEN
-           DEALLOCATE (ACLOC_STATIONS)
-           DEALLOCATE (CDLOC_STATIONS)
-           DEALLOCATE (Z0LOC_STATIONS)
-           DEALLOCATE (ALPHALOC_STATIONS)
-           DEALLOCATE (WINDXLOC_STATIONS)
-           DEALLOCATE (WINDYLOC_STATIONS)
-           DEALLOCATE (USTARLOC_STATIONS)
-           DEALLOCATE (DEPLOC_STATIONS)
-           DEALLOCATE (WKLOC_STATIONS)
-           DEALLOCATE (CURTXYLOC_STATIONS)
-           DEALLOCATE (WATLEVLOC_STATIONS)
+      IF (LOUTS) THEN
+        DEALLOCATE (ACLOC_STATIONS)
+        DEALLOCATE (CDLOC_STATIONS)
+        DEALLOCATE (Z0LOC_STATIONS)
+        DEALLOCATE (ALPHALOC_STATIONS)
+        DEALLOCATE (WINDXLOC_STATIONS)
+        DEALLOCATE (WINDYLOC_STATIONS)
+        DEALLOCATE (USTARLOC_STATIONS)
+        DEALLOCATE (DEPLOC_STATIONS)
+        DEALLOCATE (WKLOC_STATIONS)
+        DEALLOCATE (CURTXYLOC_STATIONS)
+        DEALLOCATE (WATLEVLOC_STATIONS)
 #ifdef MPI_PARALL_GRID
-           DEALLOCATE (DEPLOC_SUM)
-           DEALLOCATE (WKLOC_SUM)
-           DEALLOCATE (CURTXYLOC_SUM)
-           DEALLOCATE (ACLOC_SUM)
-           DEALLOCATE (USTAR_SUM, ALPHA_SUM)
-           DEALLOCATE (WINDY_SUM, WINDX_SUM)
-           DEALLOCATE (Z0_SUM, CD_SUM, WATLEVLOC_SUM)
+        DEALLOCATE (DEPLOC_SUM)
+        DEALLOCATE (WKLOC_SUM)
+        DEALLOCATE (CURTXYLOC_SUM)
+        DEALLOCATE (ACLOC_SUM)
+        DEALLOCATE (USTAR_SUM, ALPHA_SUM)
+        DEALLOCATE (WINDY_SUM, WINDX_SUM)
+        DEALLOCATE (Z0_SUM, CD_SUM, WATLEVLOC_SUM)
 #endif
-         END IF
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWWM()
       USE DATAPOOL
-
       IMPLICIT NONE
-
       INTEGER         :: IP
 #ifdef MPI_PARALL_GRID
       INTEGER         :: IPP
@@ -1432,7 +1437,6 @@
         READ (WAV%FHNDL, *) SPPARM(:,1)
       END IF
 #endif
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
