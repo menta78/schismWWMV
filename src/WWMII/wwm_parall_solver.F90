@@ -4536,10 +4536,17 @@ MODULE WWM_PARALL_SOLVER
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
+#ifdef TIMINGS
+      REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
+#endif
       REAL(rkind) :: B_SIG(MSC), eFact
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      LOGICAL :: BLOCK_GAUSS_SEIDEL = .FALSE.
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME1)
+#endif
+
       DO IS=1,MSC
         DO ID=1,MDC
           X(IS,ID,:)=AC2(:,IS,ID)
@@ -4549,6 +4556,11 @@ MODULE WWM_PARALL_SOLVER
       ! The advection part of the equation
       !
       CALL EIMPS_ASPAR_B_BLOCK(ASPAR, B, X)
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME2)
+#endif
+
       !
       ! Now the Gauss Seidel iterations
       !
@@ -4613,6 +4625,9 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END IF
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME3)
+#endif
       !
       ! Now the Gauss Seidel iterations
       !
@@ -4698,13 +4713,16 @@ MODULE WWM_PARALL_SOLVER
         IF (BLOCK_GAUSS_SEIDEL) THEN
           CALL EXCHANGE_P4D_WWM(X)
         ELSE
-          CALL EXCHANGE_P4D_WWM(X)
           CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
 
         !write(*,*) nbiter,myrank,(sum(x)-sum(u))/sum(u)*100.
-        IF (BLOCK_GAUSS_SEIDEL .eqv. .FALSE.) X = U 
+        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
+          X = U
+        ELSE
+          U = X
+        ENDIF 
 
 !      Norm_L2=0
 !       DO IP=1,NP_RES
@@ -4748,6 +4766,10 @@ MODULE WWM_PARALL_SOLVER
         IF (p_is_converged .lt. pmin) EXIT
         IF (nbiter .gt. maxiter) EXIT
       END DO ! end open do loop
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME4)
+#endif
 !
 !
 !
@@ -4758,6 +4780,25 @@ MODULE WWM_PARALL_SOLVER
           END DO
         END DO
       END DO
+
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME5)
+#endif
+
+#ifdef TIMINGS
+# ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+# endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOLVER TIMES-----        '
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING SOURCES AND ADVECTION  ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING REFRACTION             ', TIME3-TIME2
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ITERATION                            ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'STORE RESULT                         ', TIME5-TIME4
+        FLUSH(STAT%FHNDL)
+# ifdef MPI_PARALL_GRID
+      ENDIF
+# endif
+#endif
       !Print *, 'END EIMPS_TOTAL_JACOBI_ITERATION'
       END SUBROUTINE
 #endif

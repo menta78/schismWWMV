@@ -903,6 +903,7 @@
          INTEGER                :: MAXITER = 20
          INTEGER                :: ICOMP   = 2
          REAL(rkind)            :: PMIN = 1.
+         LOGICAL                :: BLOCK_GAUSS_SEIDEL = .FALSE.
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97

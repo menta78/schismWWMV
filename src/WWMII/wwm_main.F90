@@ -392,6 +392,8 @@
 
       CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING NON_STEADY' 
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
@@ -427,14 +429,13 @@
 
       MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
       RTIME = MAIN%TMJD - MAIN%BMJD
+
 #ifndef SELFE
 # if defined WWM_MPI
-      IF (myrank.eq.0) THEN
-# endif
+      IF (myrank.eq.0) WRITE(*,101)  K, MAIN%ISTP, RTIME
+# elif
       WRITE(*,101)  K, MAIN%ISTP, RTIME
-# if defined WWM_MPI
-      ENDIF
-# endif
+# endif 
 #endif
       CALL IO_2(K)
 
@@ -461,16 +462,19 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6,A20)') '-----SIMULATION TIME-----        ', MAIN%TMJD, CTIME
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL RUN TIMES-----        '
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING                    ', TIME2-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CHECK CFL                        ', TIME3-TIME2
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION                      ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION                      ', TIME3-TIME2
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'WAVE SETUP                       ', TIME4-TIME3
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'POSTPROCESSING                   ', TIME5-TIME4
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CHECK STEADY                     ', TIME6-TIME5
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME                       ', TIME6-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         FLUSH(STAT%FHNDL)
 # ifdef MPI_PARALL_GRID
       ENDIF
 # endif
 #endif
+
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'LEAVING NON_STEADY'
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
       END SUBROUTINE

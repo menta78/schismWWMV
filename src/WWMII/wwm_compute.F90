@@ -285,69 +285,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_ITERATIVE_SPLITTING
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        INTEGER          :: ITER, IS, ID, IP
-
-#ifdef TIMINGS
-        REAL(rkind), SAVE       :: TIME1, TIME2
-#endif
-
-#ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
-#endif
-
-         DT4A = MAIN%DELT 
-         DT4S = DT4A
-         DT4D = DT4A
-         DT4F = DT4A
-
-#ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
-#endif
-         DAC_THE = 0.
-         DAC_SIG = 0.
-         DAC_SOU = 0.
-         DAC_ADV = 0.
-
-         AC1 = AC2
-
-         IITERSPLIT = 0
-
-         CALL COMPUTE_SPATIAL()
-         CALL COMPUTE_FREQUENCY
-         CALL COMPUTE_DIRECTION()
-         CALL COMPUTE_SOURCES_EXP()
-
-         WRITE(DBG%FHNDL,*) SUM(DAC_ADV), SUM(DAC_SOU), SUM(DAC_THE)
-
-         AC2 = AC1
-
-         IITERSPLIT = 1
-
-         CALL COMPUTE_SPATIAL()
-         CALL COMPUTE_FREQUENCY
-         CALL COMPUTE_DIRECTION
-         CALL COMPUTE_SOURCES_EXP()
-
-         WRITE(DBG%FHNDL,*) SUM(DAC_ADV), SUM(DAC_SOU), SUM(DAC_THE)
-
-         AC2 = AC1
-
-         CALL COMPUTE_SPATIAL
-         CALL COMPUTE_FREQUENCY
-         CALL COMPUTE_DIRECTION
-         CALL COMPUTE_SOURCES_EXP
-
-#ifdef TIMINGS
-         CALL MY_WTIME(TIME2)
-#endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE COMPUTE_SPATIAL
         USE DATAPOOL
         IMPLICIT NONE
