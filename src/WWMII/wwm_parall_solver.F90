@@ -4261,7 +4261,7 @@ MODULE WWM_PARALL_SOLVER
         CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
         CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
         CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
-        KM = MIN(0.0_rkind,K)
+        KM = MIN(ZERO,K)
 # ifndef SINGLE_LOOP_AMATRIX
         KP(:,:,:,IE) = MAX(ZERO,K)
         DELTAL(:,:,:,IE) = CRFS(:,:,:) - KP(:,:,:,IE)
@@ -4279,14 +4279,14 @@ MODULE WWM_PARALL_SOLVER
             I3=JA_IE(I,3,IE)
             K1(:,:) =  KP(:,:,I)
             DO ID=1,MDC
-              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+              DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
             END DO
             TMP3(:,:)  =  DTK(:,:) * NM(:,:)
             ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
             DO ID=1,MDC
-              B(:,ID,IP)     =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
+              B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
             END DO
             !TMP3(:,:)  =  DTK(:,:) * NM(:,:)
             !ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
@@ -4354,10 +4354,13 @@ MODULE WWM_PARALL_SOLVER
 
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP)* SI(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP)* SI(IP) ! Add source term to the right hand side
+          IF (.NOT. LSOURCEBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
         END DO
       ENDIF
+
+
 
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
@@ -4529,7 +4532,7 @@ MODULE WWM_PARALL_SOLVER
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged, X_LOC(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
@@ -4541,6 +4544,7 @@ MODULE WWM_PARALL_SOLVER
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, sumu
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
+      LOGICAL :: LCALCASPAR = .TRUE. 
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
 
 #ifdef TIMINGS
@@ -4673,7 +4677,7 @@ MODULE WWM_PARALL_SOLVER
           END IF
 
           IF (LCHKCONV) THEN
-            sumu           = sum(u(:,:,ip))
+            sumu           = sum(esum(:,:))
             p_is_converged = abs((sum(x(:,:,ip))-sumu)/sumu)
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
@@ -4683,7 +4687,7 @@ MODULE WWM_PARALL_SOLVER
                   is_converged = is_converged + 1
                 ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
               ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
-            ELSE
+            ELSE ! not an interface node ...
               IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
                 IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
               ELSE
@@ -4691,8 +4695,10 @@ MODULE WWM_PARALL_SOLVER
               ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
             ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
           ENDIF
+          IF (p_is_converged .ge. solverthr .and. nbiter .eq. maxiter) WRITE(STAT%FHNDL,*) IP, IPLG(IP), p_is_converged, solverthr
         END DO ! IP 
         !CLOSE(850+myrank)
+
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
@@ -4707,7 +4713,6 @@ MODULE WWM_PARALL_SOLVER
           CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
-        !write(*,*) nbiter,myrank,(sum(x)-sum(u))/sum(u)*100.
         IF (BLOCK_GAUSS_SEIDEL) THEN
           U = X
         ELSE
@@ -4752,7 +4757,7 @@ MODULE WWM_PARALL_SOLVER
 !        MaxNorm=maxval(Norm_L2)
 #endif
         nbIter=nbIter+1
-        WRITE(STAT%FHNDL,*) 'solver', nbiter, p_is_converged 
+        WRITE(STAT%FHNDL,*) 'solver', nbiter, p_is_converged, is_converged, np_global-is_converged
         IF (p_is_converged .le. pmin) EXIT
         IF (nbiter .gt. maxiter) EXIT
       END DO ! end open do loop
