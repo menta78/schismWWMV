@@ -1957,7 +1957,6 @@
       DELI2   = ONE - DELI1
       XJ      = WINDSPEED/DELU
       J       = MIN ( JUMAX-1, INT(XJ) )
-      write(*,*) J, JUMAX, XJ, WINDSPEED, DELU
       DELJ1   = MIN ( ONE,XJ - MyREAL(J))
       DELJ2   = ONE - DELJ1
       USTAR=(TAUT(IND,J)*DELI2+TAUT(IND+1,J  )*DELI1)*DELJ2 &

@@ -267,7 +267,6 @@
 #endif
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
 #ifdef TIMINGS
-        WRITE(*,*) '7', SUM(IMATRAA), SUM(IMATDAA), SUM(AC2)
         CALL MY_WTIME(TIME8)
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
