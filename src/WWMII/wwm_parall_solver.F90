@@ -7,8 +7,8 @@
 !    so reordering at the beginning but less operations later on.
 ! I4 is like I5 but we split the 1,MSC into Nblocks
 !    so, there are actually Nblocks times more exchanges.
-!#undef DEBUG
-#define DEBUG
+#undef DEBUG
+!#define DEBUG
 !
 #define PLAN_I4
 #undef PLAN_I4
@@ -4663,12 +4663,15 @@ MODULE WWM_PARALL_SOLVER
               END DO
             END DO
           END IF
+
           eSum=eSum/ASPAR(:,:,I_DIAG(IP))
+
           IF (BLOCK_GAUSS_SEIDEL) THEN
             X(:,:,IP)=eSum
           ELSE
             U(:,:,IP)=eSum
           END IF
+
           IF (LCHKCONV) THEN
             sumu           = sum(u(:,:,ip))
             p_is_converged = abs((sum(x(:,:,ip))-sumu)/sumu)
@@ -4696,6 +4699,7 @@ MODULE WWM_PARALL_SOLVER
           p_is_converged = (real(np_global) - real(is_converged))/real(np_global) * 100.
           !if (myrank == 0) write(*,*) nbiter, is_converged, np_global, p_is_converged, solverthr
         ENDIF 
+
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
           CALL EXCHANGE_P4D_WWM(X)
@@ -4704,10 +4708,10 @@ MODULE WWM_PARALL_SOLVER
         END IF
 #endif
         !write(*,*) nbiter,myrank,(sum(x)-sum(u))/sum(u)*100.
-        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
-          X = U
-        ELSE
+        IF (BLOCK_GAUSS_SEIDEL) THEN
           U = X
+        ELSE
+          X = U
         ENDIF 
 
 !      Norm_L2=0
@@ -4748,7 +4752,7 @@ MODULE WWM_PARALL_SOLVER
 !        MaxNorm=maxval(Norm_L2)
 #endif
         nbIter=nbIter+1
-        !Print *, 'nbIter=', nbIter, ' MaxNorm=', MaxNorm
+        WRITE(STAT%FHNDL,*) 'solver', nbiter, p_is_converged 
         IF (p_is_converged .le. pmin) EXIT
         IF (nbiter .gt. maxiter) EXIT
       END DO ! end open do loop
