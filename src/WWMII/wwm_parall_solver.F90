@@ -4354,13 +4354,11 @@ MODULE WWM_PARALL_SOLVER
 
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
-          IF (.NOT. LSOURCEBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
+          IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
           B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
         END DO
       ENDIF
-
-
 
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
@@ -4695,7 +4693,10 @@ MODULE WWM_PARALL_SOLVER
               ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
             ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
           ENDIF
-          IF (p_is_converged .ge. solverthr .and. nbiter .eq. maxiter) WRITE(STAT%FHNDL,*) IP, IPLG(IP), p_is_converged, solverthr
+          IF (p_is_converged .ge. solverthr .and. nbiter .eq. maxiter) THEN
+             !WRITE(STAT%FHNDL,*) 'NONCONVERGED', IP, IPLG(IP), p_is_converged, solverthr 
+             WRITE(*,*) 'NONCONVERGED', IP, IPLG(IP), p_is_converged, solverthr
+          ENDIF
         END DO ! IP 
         !CLOSE(850+myrank)
 
