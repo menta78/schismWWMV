@@ -4679,14 +4679,14 @@ MODULE WWM_PARALL_SOLVER
             p_is_converged = abs((sum(x(:,:,ip))-sumu)/sumu)
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
-                IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
+                IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1 .and. sum(iobp) .ne. 1) then
                   IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
                 ELSE
                   is_converged = is_converged + 1
                 ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
               ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
             ELSE ! not an interface node ...
-              IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1) then
+              IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1 .and. sum(iobp) .ne. 1) then
                 IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
               ELSE
                 is_converged = is_converged + 1
