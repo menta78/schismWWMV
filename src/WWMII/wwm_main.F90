@@ -91,6 +91,7 @@
          FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
+
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -196,6 +197,7 @@
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
          END IF
+
          LCALC       = .TRUE.
 
          IF (LNANINFCHK) THEN
@@ -204,6 +206,7 @@
 
          IFILE = 1
          IT    = 1
+
          CALL SET_WAVE_BOUNDARY_CONDITION
 
          IF (LNANINFCHK) THEN
@@ -212,7 +215,7 @@
          ENDIF
 
          IF (LFIRSTSTEP) THEN
-           IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SELFE
+           IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT) ! need to be checked ...
            LFIRSTSTEP = .FALSE.
          END IF
 
