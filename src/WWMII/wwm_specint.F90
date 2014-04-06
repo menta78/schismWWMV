@@ -107,25 +107,11 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
-           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               ACLOC = AC2(IP,:,:)
-               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) 
-               IMATDAA(IP,:,:) = IMATDA
-               IMATRAA(IP,:,:) = IMATRA
-             END IF !
-           ELSE
-             IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                 ACLOC = AC2(IP,:,:)
-                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)
-                 IMATDAA(IP,:,:) = IMATDA
-                 IMATRAA(IP,:,:) = IMATRA
-               ENDIF
-             ENDIF
-           ENDIF  
+           ACLOC = AC2(IP,:,:)
+           CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) 
+           IMATDAA(IP,:,:) = IMATDA
+           IMATRAA(IP,:,:) = IMATRA
          END DO
-
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif

@@ -414,7 +414,6 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME2)
 #endif
-        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
 #ifdef TIMINGS
         CALL MY_WTIME(TIME3)
 #endif
@@ -443,6 +442,7 @@
         CALL MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
+        IF (LMAXETOT .OR. RTIME .LT. THR) CALL BREAK_LIMIT_ALL ! Enforce Miche
 #ifdef TIMINGS
         CALL MY_WTIME(TIME7)
 #endif

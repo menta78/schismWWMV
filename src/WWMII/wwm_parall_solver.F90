@@ -4579,7 +4579,7 @@ MODULE WWM_PARALL_SOLVER
           END IF
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
-          eFact=(DT4D/DDIR)!*SI(IP)
+          eFact=(DT4D/DDIR)*SI(IP)
           DO ID=1,MDC
             ID1 = ID - 1
             ID2 = ID + 1
@@ -4602,7 +4602,7 @@ MODULE WWM_PARALL_SOLVER
           ELSE
             CAS=ZERO
           END IF
-          eFact=DT4F!*SI(IP)
+          eFact=DT4F*SI(IP)
           DO ID = 1, MDC
             CASS(1:MSC) = CAS(:,ID)
             CASS(0)     = 0.
@@ -4642,24 +4642,24 @@ MODULE WWM_PARALL_SOLVER
           DO J=IA(IP),IA(IP+1)-1
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
-          IF (REFRACTION_IMPL .OR. FREQ_SHIFT_IMPL) x_loc = x(:,:,ip)
+          !IF (REFRACTION_IMPL .OR. FREQ_SHIFT_IMPL) x_loc = x(:,:,ip)
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
               ID2 = ID + 1
               IF (ID .EQ. 1) ID1 = MDC
               IF (ID .EQ. MDC) ID2 = 1
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*X_LOC(:,ID1)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*X_LOC(:,ID2)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*X(:,ID1,IP)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*X(:,ID2,IP)
             END DO
           END IF
           IF (FREQ_SHIFT_IMPL) THEN
             DO ID=1,MDC
               DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*X_LOC(IS-1,ID)
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
               END DO
               DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*X_LOC(IS+1,ID)
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
               END DO
             END DO
           END IF

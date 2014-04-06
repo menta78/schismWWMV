@@ -294,8 +294,9 @@
               HMAX(IP) = BRHD * DEP(IP)
             END IF
           CASE DEFAULT
+            CALL WWM_ABORT('ICRIT HAS A WRONG VALUE')
         END SELECT
-
+ 
         IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
           BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )
           BETA2 = BETA**2
@@ -340,7 +341,7 @@
 #endif
         QBLOCAL(IP) = QB
 
-        !IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
+        IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
 
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
           SURFA0 = 0.
@@ -371,14 +372,14 @@
             SURFA0 = 0.
           END IF
         END IF
-  
+
         DO IS = 1, MSC
           DO ID = 1, MDC
             IF (ICOMP .GE. 2 ) THEN
               IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
               SSBR(IS,ID)  = SURFA0 * ACLOC(IS,ID)
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-              !if (abs(surfa0) .gt. 0) write(*,*) surfa0, surfa1
+              !if (abs(surfa0) .gt. zero) write(*,*) surfa0, surfa1
             ELSE IF (ICOMP .LT. 2 ) THEN
               IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
               SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
