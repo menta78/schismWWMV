@@ -4639,21 +4639,14 @@ MODULE WWM_PARALL_SOLVER
       !
       nbIter=0
       OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
-
       DO
-
         is_converged = 0
-
-        DO IP=1,NP_RES 
-
+        DO IP=1,NP_RES
           eSum = B(:,:,IP)
-
-          DO J=IA(IP),IA(IP+1)-1 
+          DO J=IA(IP),IA(IP+1)-1
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
-
           xloc = x(:,:,ip)
-
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
@@ -4681,21 +4674,13 @@ MODULE WWM_PARALL_SOLVER
             X(:,:,IP)=eSum ! update ...
             sumu = sum(u(:,:,ip))
             sumx = sum(esum)
-            if (sumx .gt. thr) then 
-              p_is_converged = abs(sumu-sumx)/sumx
-            else
-              p_is_converged = zero
-            endif 
+            p_is_converged = abs(sumx-sumu)/sumu
           ELSE
             U(:,:,IP)=eSum ! update 
             sumu = sum(esum)
             sumx = sum(x(:,:,ip))
-            if (sumu .gt. thr) then
-              p_is_converged = abs(sumx-sumu)/sumu
-            else
-              p_is_converged = zero
-            endif
-            !write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
+            p_is_converged = abs(sumx-sumu)/sumu
+            write(*,'(I10,3F15.10,L10)') ip, p_is_converged, sumu, sumx, p_is_converged .lt. solverthr
           END IF
 
           IF (LCHKCONV) THEN
@@ -4708,13 +4693,44 @@ MODULE WWM_PARALL_SOLVER
             ENDIF
           ENDIF
 
+          IF (LCHKCONV .AND. .FALSE.) THEN
+            sumu = sum(esum)
+            IF (BLOCK_GAUSS_SEIDEL) THEN
+              p_is_converged = abs((sum(u(:,:,ip))-sumu)/sumu)
+            ELSE
+              p_is_converged = abs((sum(u(:,:,ip))-sumu)/sumu)
+            ENDIF
+            IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
+              IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
+                IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1 .and. sum(iobp) .gt. 0) then
+                  IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
+                ELSE
+                  p_is_converged = zero
+                  is_converged = is_converged + 1
+                ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
+              ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
+            ELSE ! not an interface node ...
+              IF (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1 .and. sum(iobp) .gt. 0) then
+                IF (p_is_converged .lt. solverthr) is_converged = is_converged + 1
+              ELSE
+                p_is_converged = zero 
+                is_converged = is_converged + 1
+              ENDIF ! (iobwb(ip) .eq. 1 .and. iobdp(ip) .eq. 1)
+            ENDIF ! (IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK)
+          ENDIF
+          !write(*,*) p_is_converged, solverthr, nbiter, maxiter-1
+!          if (sumu .lt. thr8) then
+!            is_converged = is_converged + 1
+!            cycle
+!          endif
           IF (nbiter .eq. maxiter-1) THEN
              WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
              CALL FLUSH(850+myrank)
           ENDIF
-
         END DO ! IP 
         CLOSE(850+myrank)
+
+        PAUSE
 
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
@@ -4736,12 +4752,48 @@ MODULE WWM_PARALL_SOLVER
           X = U
         ENDIF 
 
+!      Norm_L2=0
+!       DO IP=1,NP_RES
+!          eSum=-B(:,:,IP)
+!          DO J=IA(IP),IA(IP+1)-1
+!            idx=JA(J)
+!            eSum=eSum + ASPAR(:,:,J)*X(:,:,idx)
+!          END DO
+!          IF (REFRACTION_IMPL) THEN
+!            DO ID=1,MDC
+!              ID1 = ID - 1
+!              ID2 = ID + 1
+!              IF (ID .EQ. 1) ID1 = MDC
+!              IF (ID .EQ. MDC) ID2 = 1
+!              eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*X(:,ID1,IP)
+!              eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*X(:,ID2,IP)
+!            END DO
+!          END IF
+!          IF (FREQ_SHIFT_IMPL) THEN
+!            DO ID=1,MDC
+!              DO IS=2,MSC
+!                eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
+!              END DO
+!              DO IS=1,MSC-1
+!                eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
+!              END DO
+!            END DO
+!          END IF
+!          Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
+!          Norm_LINF = max(Norm_LINF, abs(eSum))
+!        END DO
+#ifdef MPI_PARALL_GRID
+!        CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,com,ierr)
+!        CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+!        MaxNorm=maxval(Norm_L2_gl)
+#else
+!        MaxNorm=maxval(Norm_L2)
+#endif
         nbIter=nbIter+1
         WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin
-        !WRITE(*,'(A10,4I10,2F20.10)') 'solver', nbiter, maxiter, is_converged, np_global-is_converged, p_is_converged, pmin
-        IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) THEN
-        !IF (nbiter .eq. maxiter) THEN
-          !PAUSE
+        WRITE(*,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin
+        IF (p_is_converged .gt. pmin .or. nbiter .eq. maxiter) THEN
+          PAUSE
           EXIT
         ENDIF
       END DO ! end open do loop
