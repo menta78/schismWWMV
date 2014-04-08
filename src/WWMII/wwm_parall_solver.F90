@@ -4550,7 +4550,7 @@ MODULE WWM_PARALL_SOLVER
       CALL MY_WTIME(TIME1)
 #endif
 
-      lambda = two
+      !lambda = 1.05
 
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4680,8 +4680,8 @@ MODULE WWM_PARALL_SOLVER
           eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ... 
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
-            X(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
-            X(:,:,IP)=eSum ! update ...
+            !x(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
+            x(:,:,IP)=eSum ! update ...
             sumu = sum(u(:,:,ip))
             sumx = sum(esum)
             if (sumx .gt. thr8) then 
