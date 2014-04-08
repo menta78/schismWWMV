@@ -104,13 +104,14 @@
 !$OMP END WORKSHARE
 
          ISELECT = 10
-
+ 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
+           IF (DEP(IP) .LT. DMIN) CYCLE
            ACLOC = AC2(IP,:,:)
            CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) 
-           IMATDAA(IP,:,:) = IMATDA
-           IMATRAA(IP,:,:) = IMATRA
+           IMATDAA(IP,:,:) = IMATDA * IOBDP(IP) * IOBWB(IP)
+           IMATRAA(IP,:,:) = IMATRA * IOBDP(IP) * IOBWB(IP)
          END DO
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
