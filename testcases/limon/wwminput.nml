@@ -11,7 +11,7 @@
  BEGTC   = 19980901.000000     ,
  DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 19980902.040000     ,
+ ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
  /
  &COUPL
@@ -172,7 +172,7 @@
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
- LSOUBOUND       = F,
+ LSOUBOUND       = T,
  LCONV   = F,
  LCFL    = F,
  LCHKCONV        = T,
@@ -207,13 +207,13 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.E-2,
+ SOLVERTHR       =  1.E-5,
  MAXITER =  100000000,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       =           0,
  LSOURCESWAM     = F,
- PMIN    =   1.,
+ PMIN    =   0.,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T, 
  /

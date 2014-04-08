@@ -4640,7 +4640,7 @@ MODULE WWM_PARALL_SOLVER
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-      !OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
+!      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
 
       DO
 
@@ -4717,7 +4717,7 @@ MODULE WWM_PARALL_SOLVER
           !ENDIF
 
         END DO ! IP 
-        !CLOSE(850+myrank)
+!        CLOSE(850+myrank)
 
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
