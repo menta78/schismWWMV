@@ -4541,7 +4541,7 @@ MODULE WWM_PARALL_SOLVER
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact, sumu, sumx
+      REAL(rkind) :: B_SIG(MSC), eFact, sumu, sumx, lambda
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       LOGICAL :: LCALCASPAR = .TRUE. 
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
@@ -4549,6 +4549,8 @@ MODULE WWM_PARALL_SOLVER
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
+
+      lambda = two
 
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4638,7 +4640,7 @@ MODULE WWM_PARALL_SOLVER
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
+      !OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
 
       DO
 
@@ -4678,10 +4680,11 @@ MODULE WWM_PARALL_SOLVER
           eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ... 
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
+            X(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
             X(:,:,IP)=eSum ! update ...
             sumu = sum(u(:,:,ip))
             sumx = sum(esum)
-            if (sumx .gt. thr) then 
+            if (sumx .gt. thr8) then 
               p_is_converged = abs(sumu-sumx)/sumx
             else
               p_is_converged = zero
@@ -4690,7 +4693,7 @@ MODULE WWM_PARALL_SOLVER
             U(:,:,IP)=eSum ! update 
             sumu = sum(esum)
             sumx = sum(x(:,:,ip))
-            if (sumu .gt. thr) then
+            if (sumu .gt. thr8) then
               p_is_converged = abs(sumx-sumu)/sumu
             else
               p_is_converged = zero
@@ -4708,13 +4711,13 @@ MODULE WWM_PARALL_SOLVER
             ENDIF
           ENDIF
 
-          IF (nbiter .eq. maxiter-1) THEN
-             WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-             CALL FLUSH(850+myrank)
-          ENDIF
+          !IF (nbiter .eq. maxiter-1) THEN
+          !   WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
+          !   CALL FLUSH(850+myrank)
+          !ENDIF
 
         END DO ! IP 
-        CLOSE(850+myrank)
+        !CLOSE(850+myrank)
 
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
