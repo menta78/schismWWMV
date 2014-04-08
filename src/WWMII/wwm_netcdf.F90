@@ -883,28 +883,9 @@
       integer IP, iProc, Status(np_total), rStatus(np_total), rIOBP(np_total)
 # endif
       integer istat
-      ALLOCATE(INEtotal(3, ne_total), XPtotal(np_total), IOBPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
+      ALLOCATE(IOBPtotal(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
 # ifdef MPI_PARALL_GRID
-      NewId=78557
-      open(NewId,file='hgrid.gr3',status='old',iostat=statfile)
-      read(NewId,*)
-      read(NewId,*) nb1, nb2
-      IF ((nb1.ne.ne_total).or.(nb2.ne.np_total)) THEN
-        WRITE(DBG%FHNDL,*) 'nb1=', nb1, ' ne_total=', ne_total
-        WRITE(DBG%FHNDL,*) 'nb2=', nb2, ' np_total=', np_total
-        CALL WWM_ABORT('Inconsistency')
-      END IF
-      do i=1,np_total
-        read(NewId,*) idx, XPtotal(i), YPtotal(i), DEPtotal(i)
-        IF (i /= idx) THEN
-          CALL WWM_ABORT('Inconsistency 2')
-        ENDIF
-      enddo
-      do i=1,ne_total
-        read(NewId,*) iegb,j,(INEtotal(k,i),k=1,3)
-      enddo
-      close(NewId)
       !
       IOBPtotal=0
       Status=0
@@ -931,11 +912,7 @@
         CALL MPI_RECV(IOBPtotal, np_total, itype, 0, 43, comm, istatus, ierr)
       ENDIF
 # else
-      XPtotal=XP
-      YPtotal=YP
       IOBPtotal=IOBP
-      DEPtotal=DEP
-      INEtotal=INE
 # endif
       END SUBROUTINE
 !**********************************************************************
