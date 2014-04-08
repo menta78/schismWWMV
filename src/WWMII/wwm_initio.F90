@@ -1126,7 +1126,7 @@
              GRD%FHNDL  = STARTHNDL + 10
           GRDCOR%FHNDL  = STARTHNDL + 11
 
-           QSTEA%FHNDL  = STARTHNDL + 12
+           IF (LQSTEA) QSTEA%FHNDL  = STARTHNDL + 12
 
          IOBPOUT%FHNDL  = STARTHNDL + 13
          IOBPDOUT%FHNDL = STARTHNDL + 14
@@ -1190,7 +1190,7 @@
          CALL TEST_FILE_EXIST_DIE("Missing input file : ", INP%FNAME)
          OPEN( INP%FHNDL,      FILE = TRIM(INP%FNAME))
          OPEN( CHK%FHNDL,      FILE = TRIM(CHK%FNAME))
-         OPEN( QSTEA%FHNDL,    FILE = TRIM(QSTEA%FNAME))
+         IF (LQSTEA) OPEN( QSTEA%FHNDL,    FILE = TRIM(QSTEA%FNAME))
          OPEN( IOBPOUT%FHNDL,  FILE = TRIM(IOBPOUT%FNAME))
          OPEN( IOBPDOUT%FHNDL, FILE = TRIM(IOBPDOUT%FNAME))
 
@@ -1211,7 +1211,7 @@
          IMPLICIT NONE
          close(DBG%FHNDL)
          close(STAT%FHNDL)
-         close( QSTEA%FHNDL)
+         IF (LQSTEA) close( QSTEA%FHNDL)
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)
          close( WINDBG%FHNDL)

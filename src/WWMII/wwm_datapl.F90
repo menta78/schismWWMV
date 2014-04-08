@@ -136,7 +136,7 @@
          REAL(rkind), PARAMETER             :: RADDEG    = 180._rkind/PI
 
          REAL(rkind), PARAMETER             :: RHOA      = 1.225_rkind
-         REAL(rkind), PARAMETER             :: RHOW      = 1000.d0!1025._rkind ! average salinity of sea water!
+         REAL(rkind), PARAMETER             :: RHOW      = 1025._rkind ! average salinity of sea water!
          REAL(rkind), PARAMETER             :: RHOAW     = RHOA/RHOW
          REAL(rkind), PARAMETER             :: SPM_NOND  = PI2 * 5.6_rkind * 1.0E-3
 #ifdef USE_SINGLE

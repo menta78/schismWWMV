@@ -137,7 +137,7 @@
          CHARACTER(LEN=15)  :: CTIME
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
-         DoAirSea=.TRUE.
+         DoAirSea=.FALSE.
 #ifdef MPI_PARALL_GRID
          OUTT_GLOBAL  = zero 
          OUTT         = zero
