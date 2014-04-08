@@ -788,12 +788,13 @@
 #ifdef NCDF
          INTEGER        :: MULTIPLEOUT_HIS
          INTEGER        :: MULTIPLEOUT_STAT
+#endif
          REAL(rkind), allocatable :: XPtotal(:)
          REAL(rkind), allocatable :: YPtotal(:)
          integer,     allocatable :: IOBPtotal(:)
          REAL(rkind), allocatable :: DEPtotal(:)
          integer, allocatable :: INEtotal(:,:)
-#endif
+         !
          INTEGER        :: MULTIPLEOUT_HOT
          INTEGER        :: MULTIPLEIN_HOT
          LOGICAL        :: WriteOutputProcess_his

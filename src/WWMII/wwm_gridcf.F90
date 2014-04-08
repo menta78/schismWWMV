@@ -3,7 +3,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPATIAL_GRID()
+      SUBROUTINE INIT_SPATIAL_GRID()
          USE DATAPOOL
          IMPLICIT NONE
          REAL(rkind)            :: TL1, TL2, TL3

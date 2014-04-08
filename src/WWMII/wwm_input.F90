@@ -632,8 +632,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_MNP_MNE
-      USE DATAPOOL, only : MNP, MNE, IGRIDTYPE, FILEGRID, rkind, GRD, STAT, DBG
+      SUBROUTINE READ_NP_NE_TOTAL
+      USE DATAPOOL, only : NP_TOTAL, NE_TOTAL, IGRIDTYPE, FILEGRID, rkind, GRD, STAT, DBG
       implicit none
       integer ISTAT, I, ITMP, JTMP
       REAL(rkind) ATMP, BTMP, CTMP
@@ -649,38 +649,37 @@
         READ(GRD%FHNDL, '(A)') RHEADER
         READ(GRD%FHNDL, *, IOSTAT = ISTAT) JTMP 
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
-        MNP = ITMP + JTMP
+        NP_TOTAL = ITMP + JTMP
         DO I = 1, 7
           READ(GRD%FHNDL, '(A)') RHEADER
         END DO
-        DO I = 1,MNP
+        DO I = 1,NP_TOTAL
           READ(GRD%FHNDL, *, IOSTAT = ISTAT) ITMP, ATMP, BTMP, CTMP
           IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
         END DO
         DO I = 1, 2
           READ(GRD%FHNDL, '(A)') RHEADER
         END DO
-        READ(GRD%FHNDL, *, IOSTAT = ISTAT) MNE
+        READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL
       ELSE IF (IGRIDTYPE == 2) THEN ! symbolic Mathieu format
-        READ(GRD%FHNDL, *, IOSTAT = ISTAT) MNE, MNP
+        READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=2 error in read mnp/mne')
       ELSE IF (IGRIDTYPE == 3) THEN ! selfe gr3
         READ(GRD%FHNDL,*)
-        READ(GRD%FHNDL,*, IOSTAT = ISTAT) MNE, MNP
+        READ(GRD%FHNDL,*, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in read mnp/mne')
       ELSE IF (IGRIDTYPE == 4) THEN ! old WWM format
-        READ(GRD%FHNDL, *, IOSTAT = ISTAT) MNE 
-        READ(GRD%FHNDL, *, IOSTAT = ISTAT) MNP 
+        READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL 
+        READ(GRD%FHNDL, *, IOSTAT = ISTAT) NP_TOTAL 
         IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=4 error in read mnp/mne')
       ELSE
         CALL WWM_ABORT('IGRIDTYPE WRONG')
       END IF
-!      WRITE(STAT%FHNDL,*) 'THE GRIDSIZE IS MNP, MNE:', MNP, MNE
-
-      IF (MNP == 0 .OR. MNE == 0) THEN
+      WRITE(STAT%FHNDL,*) 'THE GRIDSIZE IS NP_TOTAL = ', NP_TOTAL
+      WRITE(STAT%FHNDL,*) 'THE GRIDSIZE IS NE_TOTAL = ', NE_TOTAL
+      IF (NP_TOTAL == 0 .OR. NE_TOTAL == 0) THEN
         CALL WWM_ABORT('No Nodes and No Elements have been read in')
       ENDIF
-
       CLOSE(GRD%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -1356,8 +1355,106 @@
            CASE DEFAULT
                CALL WWM_ABORT('WRONG GRID DIMENSION')
          END SELECT
-
-           
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_SPATIAL_GRID_TOTAL
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: I, IP, IE, ISTAT, ITMP, JTMP
+      REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
+      REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
+      INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
+      CHARACTER(LEN=100)              :: RHEADER
+      CALL TEST_FILE_EXIST_DIE('Missing grid file : ', GRD%FNAME)
+      SELECT CASE (DIMMODE)
+        CASE (1)
+          OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
+          allocate(XPtotal(np_total), DEPtotal(np_total), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('error in XPtotal, DEPtotal allocate')
+          DO IP = 1, NP_TOTAL
+            READ(GRD%FHNDL, *, IOSTAT = ISTAT) XPtotal(IP), DEPtotal(IP)
+            IF ( ISTAT /= 0 ) CALL WWM_ABORT('error in the grid configuration file')
+          END DO
+          CLOSE(GRD%FHNDL)
+        CASE (2)
+          OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
+          IF ((NP_TOTAL.eq.0).or.(NE_TOTAL.eq.0)) THEN
+            CALL WWM_ABORT('We have NP_TOTAL=0 or NE_TOTAL=0 before reading grid')
+          END IF
+          IF (IGRIDTYPE == 1) THEN ! system.dat format ... XFN
+            allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 1')
+            DO I = 1, 2
+              READ(GRD%FHNDL, '(A)') RHEADER
+            END DO
+            READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP
+            IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 1')
+            READ(GRD%FHNDL, '(A)') RHEADER
+            READ(GRD%FHNDL, *, IOSTAT = ISTAT) JTMP
+            IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 2')
+            DO I = 1, 7
+              READ(GRD%FHNDL, '(A)') RHEADER
+            END DO
+            DO IP=1,NP_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XPtotal(IP), YPtotal(IP), DEPtotal(IP)
+              IF (KTMP+1.ne.IP) THEN
+                CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 3')
+              ENDIF
+              IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 4')
+            END DO
+            DO I = 1, 2
+              READ(GRD%FHNDL, '(A)') RHEADER
+            END DO
+            READ(GRD%FHNDL, *, IOSTAT = ISTAT) ITMP
+            DO I = 1, 3
+              READ(GRD%FHNDL, '(A)') RHEADER
+            END DO
+            DO IE=1,NE_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, LTMP, MTMP, NTMP, OTMP
+              IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 5')
+              INEtotal(1,IE)=KTMP+1
+              INEtotal(2,IE)=LTMP+1
+              INEtotal(3,IE)=MTMP+1
+            END DO
+          ELSE IF (IGRIDTYPE == 2) THEN ! periodic grid written by mathieu dutour
+             ! missing case
+          ELSE IF (IGRIDTYPE == 3) THEN ! selfe gr3
+            allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 2')
+            READ(GRD%FHNDL,*)
+            READ(GRD%FHNDL,*) ITMP, JTMP
+            DO IP=1,NP_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XPDTMP, YPDTMP, ZPDTMP
+              XPtotal(IP)  = XPDTMP
+              YPtotal(IP)  = YPDTMP
+              DEPtotal(IP) = ZPDTMP
+              IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in grid reading 1')
+            END DO
+            DO IE = 1, NE_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, LTMP, INEtotal(:,IE)
+              IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=3 error in grid reading 2')
+            END DO
+          ELSE IF (IGRIDTYPE == 4) THEN ! Old WWM format
+            allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 3')
+            READ(GRD%FHNDL,*) ITMP, JTMP 
+            DO IP=1,NP_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) XPtotal(IP), YPtotal(IP), DEPtotal(IP)
+              IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 1')
+            END DO
+            DO IE=1,NE_TOTAL
+              READ(GRD%FHNDL, *, IOSTAT = ISTAT) INEtotal(:,IE)
+              IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=1 error in grid read 2')
+            END DO
+          ELSE
+            CALL WWM_ABORT('IGRIDTYPE WRONG')
+          END IF
+          CLOSE(GRD%FHNDL)
+        CASE DEFAULT
+          CALL WWM_ABORT('WRONG GRID DIMENSION')
+      END SELECT
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

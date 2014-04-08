@@ -312,90 +312,87 @@
        ELSE
          CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
       ENDIF
-
-
-       END SUBROUTINE
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE DEALLOC_ARRAYS
-         USE DATAPOOL
-         IMPLICIT NONE
-         DEALLOCATE( DX1, DX2, XP, YP, INVSPHTRANS, DEP, INE, IEN, TRIA)
+      SUBROUTINE DEALLOC_ARRAYS
+      USE DATAPOOL
+      IMPLICIT NONE
+      DEALLOCATE( DX1, DX2, XP, YP, INVSPHTRANS, DEP, INE, IEN, TRIA)
 !
 ! spectral grid - shared
 !
-         DEALLOCATE( SPSIG, SPDIR, FR, COSTH, SINTH, COS2TH, SIN2TH)
-         DEALLOCATE( SINCOSTH, SIGPOW, DS_BAND, DS_INCR)
+      DEALLOCATE( SPSIG, SPDIR, FR, COSTH, SINTH, COS2TH, SIN2TH)
+      DEALLOCATE( SINCOSTH, SIGPOW, DS_BAND, DS_INCR)
 !
 ! action densities and source terms - shared
 !
-         DEALLOCATE (AC2)
+      DEALLOCATE (AC2)
+      DEALLOCATE (AC1)
+      IF (ICOMP .GE. 2) THEN
+        DEALLOCATE (IMATRAA, IMATDAA)
+      END IF
 
-         DEALLOCATE (AC1)
-         IF (ICOMP .GE. 2) THEN
-           DEALLOCATE (IMATRAA, IMATDAA)
-         END IF
-
-         IF (LITERSPLIT) THEN
-           DEALLOCATE (DAC_ADV, DAC_THE, DAC_SIG, DAC_SOU)
-         END IF
+      IF (LITERSPLIT) THEN
+        DEALLOCATE (DAC_ADV, DAC_THE, DAC_SIG, DAC_SOU)
+      END IF
 
 #ifdef SHYFEM_COUPLING
-         IF (LSHYFEM) THEN
-           DEALLOCATE(SHYFZETA, NLEV)
-         END IF
+      IF (LSHYFEM) THEN
+        DEALLOCATE(SHYFZETA, NLEV)
+      END IF
 #endif
 !
 ! WAM Cycle 4.5 - shared
 !
-         IF (MESIN .EQ. 2) THEN
-           DEALLOCATE ( TAUHFT, TAUT)
-         ENDIF
+      IF (MESIN .EQ. 2) THEN
+        DEALLOCATE ( TAUHFT, TAUT)
+      ENDIF
 !
 ! Boundary conditions - shared
 !
-         DEALLOCATE( IOBPD, IOBP, IOBWB)
+      DEALLOCATE( IOBPD, IOBP, IOBWB)
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-         DEALLOCATE( WK, CG, TABK, TABCG)
+      DEALLOCATE( WK, CG, TABK, TABCG)
 !
 ! diffraction parameter - shared
 !
-         IF (LDIFR) THEN
-           DEALLOCATE ( DIFRM, DIFRX, DIFRY )
-         END IF
+      IF (LDIFR) THEN
+        DEALLOCATE ( DIFRM, DIFRX, DIFRY )
+      END IF
 !
 ! water level, currents and depths ...
 !
-         DEALLOCATE( WINDXY, PRESSURE, DVWIND, CURTXY, DVCURT)
-         DEALLOCATE( DDEP, DCUX, DCUY, WATLEV, WATLEVOLD)
-         DEALLOCATE( DVWALV, WLDEP, DEPDT)
+      DEALLOCATE( WINDXY, PRESSURE, DVWIND, CURTXY, DVCURT)
+      DEALLOCATE( DDEP, DCUX, DCUY, WATLEV, WATLEVOLD)
+      DEALLOCATE( DVWALV, WLDEP, DEPDT)
 !
 !  convergence analysis - shared
 !
-         IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-           DEALLOCATE ( SUMACOLD, HSOLD, KHSOLD, TM02OLD)
-         END IF
+      IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
+        DEALLOCATE ( SUMACOLD, HSOLD, KHSOLD, TM02OLD)
+      END IF
 !
 !  output - shared
 !
-         DEALLOCATE( QBLOCAL, DISSIPATION, AIRMOMENTUM, UFRIC, ALPHA_CH)
-         DEALLOCATE( TAUW, TAUTOT, TAUWX, TAUWY, TAUHF)
-         DEALLOCATE( Z0, CD, USTDIR)
-         DEALLOCATE( RSXX, RSXY, RSYY)
+      DEALLOCATE( QBLOCAL, DISSIPATION, AIRMOMENTUM, UFRIC, ALPHA_CH)
+      DEALLOCATE( TAUW, TAUTOT, TAUWX, TAUWY, TAUHF)
+      DEALLOCATE( Z0, CD, USTDIR)
+      DEALLOCATE( RSXX, RSXY, RSYY)
 #ifdef SELFE
-         DEALLOCATE( SXX3D, SXY3D, SYY3D)
+      DEALLOCATE( SXX3D, SXY3D, SYY3D)
 #endif
 #ifndef SELFE
-         IF (LCPL) THEN
-           IF (LTIMOR.or.LSHYFEM) THEN
-             DEALLOCATE( SXX3D, SXY3D, SYY3D)
-           END IF
-         END IF
+      IF (LCPL) THEN
+        IF (LTIMOR.or.LSHYFEM) THEN
+          DEALLOCATE( SXX3D, SXY3D, SYY3D)
+        END IF
+      END IF
 #endif
-         DEALLOCATE(HMAX, ISHALLOW)
+      DEALLOCATE(HMAX, ISHALLOW)
 #ifdef NCDF
       IF (GRIDWRITE) THEN
         DEALLOCATE(XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal)
@@ -412,6 +409,9 @@
 !    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
 !# endif
 !#endif
+#ifdef PDLIB
+      USE yowpd, only : initFromGridDim
+#endif
 #if !defined PDLIB && defined WWM_MPI
       USE ELFE_GLBL, only : ics
 #endif
@@ -456,10 +456,30 @@
       enddo
 # endif
 #endif
+      CALL INIT_FILE_HANDLES
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE SETTING FHNDL'
+      FLUSH(STAT%FHNDL)
 
-#ifdef MPI_PARALL_GRID
+      CALL READ_WWMINPUT
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
+      FLUSH(STAT%FHNDL)
+      CALL READ_NP_NE_TOTAL
+      CALL READ_SPATIAL_GRID_TOTAL
+#ifndef MPI_PARALL_GRID
+      MNP=NP_TOTAL
+      MNE=NE_TOTAL
+      NP_RES=MNP
+      CALL READ_SPATIAL_GRID
+      WLDEP = DEP
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
+      FLUSH(STAT%FHNDL)
+#else
 # ifdef PDLIB
-      call initPD("system.dat", MDC, MSC, comm)
+      IF (IGRIDTYPE .eq. 2) THEN
+        CALL WWM_ABORT('Not yet support for PDLIB and IGRIDTYPE=2')
+      END IF
+      CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
+      call fillPublicVars()
 # else
       call partition_hgrid
       call aquire_hgrid(.true.)
@@ -468,23 +488,17 @@
       call parallel_barrier
 # endif
 #endif
-      CALL INIT_FILE_HANDLES
-      CALL READ_WWMINPUT
-#ifndef MPI_PARALL_GRID
-      CALL READ_MNP_MNE
-      NP_RES=MNP
-#endif
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
-      FLUSH(STAT%FHNDL)
-
-
-
 
       CALL INIT_ARRAYS
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
       FLUSH(STAT%FHNDL)
 #ifdef MPI_PARALL_GRID
-# ifndef PDLIB
+# ifdef PDLIB
+      XP = XPTMP
+      YP = YPTMP
+      DEP=DEP8
+      INETMP=INE
+# else
       DEP  = DEP8
       WLDEP  = DEP
       IF (ics .eq. 2) THEN
@@ -496,19 +510,6 @@
       END IF
 # endif
 #endif
-#ifndef MPI_PARALL_GRID
-      CALL READ_SPATIAL_GRID
-      WLDEP = DEP
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
-      FLUSH(STAT%FHNDL)
-#endif
-#ifdef MPI_PARALL_GRID
-      NP_TOTAL=np_global
-      NE_TOTAL=ne_global
-#else
-      NP_TOTAL=MNP
-      NE_TOTAL=MNE
-#endif
       IF (CART2LATLON) THEN
         XP = XP / 111111.
         YP = YP / 111111.
@@ -518,7 +519,7 @@
       ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
         CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
       ENDIF 
-      CALL SPATIAL_GRID
+      CALL INIT_SPATIAL_GRID
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
       FLUSH(STAT%FHNDL)
       !
