@@ -4638,7 +4638,7 @@ MODULE WWM_PARALL_SOLVER
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
+!      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
 
       DO
 
@@ -4708,13 +4708,13 @@ MODULE WWM_PARALL_SOLVER
             ENDIF
           ENDIF
 
-          IF (nbiter .eq. maxiter-1) THEN
-             WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-             CALL FLUSH(850+myrank)
-          ENDIF
+!          IF (nbiter .eq. maxiter-1) THEN
+!             WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
+!             CALL FLUSH(850+myrank)
+!          ENDIF
 
         END DO ! IP 
-        CLOSE(850+myrank)
+!        CLOSE(850+myrank)
 
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
