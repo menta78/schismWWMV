@@ -7,7 +7,6 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IS
-         integer istat
          REAL(rkind)    :: XISLN
          REAL(rkind)    :: AUX1, FREQ
          REAL(rkind)    :: LAMBDA, LAMM2, LAMP2

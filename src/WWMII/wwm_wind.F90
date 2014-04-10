@@ -9,7 +9,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER     :: IT, IFILE
-      INTEGER     :: IP, FORECASTHOURS, ISTAT
+      INTEGER     :: IP, FORECASTHOURS
       REAL(rkind) :: WDIRT
       REAL(rkind) :: cf_w1, cf_w2
 
@@ -184,8 +184,6 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-          ELSE
-            CALL WWM_ABORT('Wrong choice of IWINDFORMAT or you need to use NETCDF or GRIB')
           ENDIF
         ENDIF
       ENDIF
@@ -401,7 +399,7 @@
       LOGICAL :: METHOD1 = .FALSE.
       integer I, IX, IY, IXs, IYs, IXmin, IYmin, IXmax, IYmax
       REAL(rkind) :: WI(3), X(3), Y(3), eX, eY, a, b
-      integer aShift, WeFind, istat
+      integer aShift, WeFind
       real(rkind) eDist, MinDist
       real(rkind), allocatable :: dist(:,:)
       real(rkind) closest_r(2)
@@ -630,8 +628,7 @@
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-
-      INTEGER :: ISTAT, IT, IFILE
+      INTEGER :: IT, IFILE
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
       REAL(rkind)  :: DTMP
       REAL(rkind), ALLOCATABLE :: WIND_TIME(:)
@@ -799,7 +796,7 @@
       USE DATAPOOL, ONLY : WIND_NCID, WIND_X, WIND_Y, ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, LWRITE_ORIG_WIND, RKIND
       USE DATAPOOL, only : NUM_NETCDF_FILES, NETCDF_FILE_NAMES
       USE DATAPOOL, only : MNP, OFFSET_X_WIND, OFFSET_Y_WIND
-      USE DATAPOOL, only : DX_WIND, DY_WIND
+      USE DATAPOOL, only : DX_WIND, DY_WIND, ISTAT
       USE DATAPOOL, only : wwmerr
       USE NETCDF
       IMPLICIT NONE
@@ -809,7 +806,7 @@
       INTEGER, INTENT(IN) :: IFILE, IT
       REAL(rkind), intent(inout) :: eField(MNP,2)
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID
       INTEGER             :: numLons, numLats, numTime, iy, counter, ip, i, j
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
@@ -960,7 +957,7 @@
 
 !for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
 
-      INTEGER :: ISTAT, IT, IFILE
+      INTEGER :: IT, IFILE
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
       REAL(rkind)   :: START_TIME
       REAL(rkind) , ALLOCATABLE :: WIND_TIME(:), WIND_TIME_NETCDF(:)
@@ -1185,7 +1182,7 @@
 !2do update ...
 !for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
 !
-      INTEGER :: ISTAT, IT, IFILE, II, IP
+      INTEGER :: IT, IFILE, II, IP
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
       REAL(rkind)  :: START_TIME, OFFSET_TIME
       REAL(rkind), ALLOCATABLE :: WIND_TIME_NETCDF(:)
@@ -1429,7 +1426,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CreateAngleMatrix(eta_rho, xi_rho, ANG_rho, LON_rho, LAT_rho)
-            implicit none
+      implicit none
       integer, intent(in) :: eta_rho, xi_rho
       REAL*8, DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
       REAL*8, DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
@@ -1497,7 +1494,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CreateAngleMatrix_v(eta_rho,xi_rho,ANG_rho,LON_rho,LAT_rho)
-      USE DATAPOOL, only : rkind
+      USE DATAPOOL, only : rkind, istat
       implicit none
       integer, intent(in) :: eta_rho, xi_rho
       REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
@@ -1511,7 +1508,6 @@
       real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
       real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
       real(rkind) :: TPSI2, cta12
-      integer istat
       eta_v=eta_rho-1
       xi_v=xi_rho
       allocate(LONrad_v(eta_v,xi_v), LATrad_v(eta_v,xi_v), azim(eta_v-1,xi_v), stat=istat)
@@ -1600,7 +1596,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_NETCDF_CRFS(IFILE, IT, eField)
-      USE DATAPOOL, ONLY : WIND_NCID, WIND_X, WIND_Y, ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, LWRITE_ORIG_WIND, RKIND
+      USE DATAPOOL, ONLY : WIND_NCID, WIND_X, WIND_Y, ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, LWRITE_ORIG_WIND, RKIND, ISTAT
       USE DATAPOOL, only : STAT, NUM_NETCDF_FILES, NETCDF_FILE_NAMES, WINDBG 
       USE DATAPOOL, only : MNP, OFFSET_X_WIND, OFFSET_Y_WIND
       USE DATAPOOL, only : DX_WIND, DY_WIND
@@ -1614,7 +1610,7 @@
       REAL(rkind), intent(inout) :: eField(MNP,2)
       character (len = *), parameter :: CallFct="READ_NETCDF_CRFS"
 
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID
       INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind), ALLOCATABLE   :: U(:), V(:)
@@ -1760,7 +1756,7 @@
       USE DATAPOOL, ONLY : WINDX_NCID, WINDY_NCID, WIND_X, WIND_Y,      &
      &                        ATMO_PRESS, LINVERTY, NDX_WIND, NDY_WIND, &
      &                        LWRITE_ORIG_WIND, UWND_NARR, VWND_NARR,   &
-     &                        NETCDF_FILE_NAMES, RKIND, wwmerr
+     &                        NETCDF_FILE_NAMES, RKIND, wwmerr, ISTAT
       USE DATAPOOL, only : NUM_NETCDF_FILES, XYPWIND, INE_WIND, MNP
       USE DATAPOOL, only : XP, YP, WIND_ELE, ZERO, WI_NARR, WINDBG
       USE NETCDF
@@ -1771,7 +1767,7 @@
       INTEGER, INTENT(IN) :: IFILE, IT
       REAL(rkind), intent(out) :: eField(MNP,2)
 
-      INTEGER             :: DWIND_X_ID, DWIND_Y_ID, ISTAT
+      INTEGER             :: DWIND_X_ID, DWIND_Y_ID
       INTEGER             :: numLons, numLats, counter, ip, i, j, ix
       character (len = *), parameter :: CallFct="READ_NETCDF_NARR"
 
@@ -1987,12 +1983,12 @@
       USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
       USE DATAPOOL, only : CF_IX, CF_IY, SHIFTXY, CF_coeff
-      USE DATAPOOL, only : cf_add_offset, cf_scale_factor
+      USE DATAPOOL, only : cf_add_offset, cf_scale_factor, ISTAT
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
-      INTEGER                            :: FID, ID, ISTAT
+      INTEGER                            :: FID, ID
       CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
       ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -2029,9 +2025,9 @@
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor
       USE DATAPOOL, only : UWIND_FD, VWIND_FD, SHIFT_WIND_TIME
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD
-      USE DATAPOOL, only : THR, ONE
+      USE DATAPOOL, only : THR, ONE, ISTAT
       IMPLICIT NONE
-      INTEGER           :: ISTAT, fid, varid, dimids(2), dimidsB(3)
+      INTEGER           :: fid, varid, dimids(2), dimidsB(3)
       integer nbChar
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
@@ -2169,7 +2165,7 @@
       USE NETCDF
       USE DATAPOOL, ONLY : XP,YP,WIN, MNP, cf_c11, cf_c21, rkind
       USE DATAPOOL, only : cf_c22, cf_c12, cf_a, cf_b, cf_c, cf_d, cf_J
-      USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD
+      USE DATAPOOL, only : ZERO, UWIND_FD, VWIND_FD, ISTAT
       USE DATAPOOL, only : NDX_WIND_FD, NDY_WIND_FD, WINDBG
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor, np_total
 #ifdef MPI_PARALL_GRID
@@ -2180,7 +2176,7 @@
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: varout(MNP,2)
       character (len = *), parameter :: CallFct="READ_DIRECT_NETCDF_CF"
-      INTEGER                            :: FID, ID, ISTAT
+      INTEGER                            :: FID, ID
       real(rkind) :: UWIND_tot(np_total), VWIND_tot(np_total)
 #ifdef MPI_PARALL_GRID
       integer IP_glob, IP
@@ -2232,9 +2228,9 @@
       USE DATAPOOL, only : wind_time_mjd, nbtime_mjd
       USE DATAPOOL, only : wwmerr, WINDBG, rkind, DBG, ZERO, LARGE
       USE DATAPOOL, only : cf_add_offset, cf_scale_factor
-      USE DATAPOOL, only : THR, ONE
+      USE DATAPOOL, only : THR, ONE, ISTAT
       IMPLICIT NONE
-      INTEGER           :: ISTAT, fid, varid
+      INTEGER           :: fid, varid
       INTEGER           :: dimidsB(2), dimids(2)
       integer nbChar
       character (len=20) :: WindTimeStr
@@ -2320,7 +2316,7 @@
       USE DATAPOOL
       USE GRIB_API
       IMPLICIT NONE
-      INTEGER istat, IT
+      INTEGER IT
       INTEGER ifile, i, n
       integer, allocatable :: igrib(:)
       integer dataDate, stepRange

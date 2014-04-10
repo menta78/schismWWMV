@@ -438,7 +438,6 @@
       integer, allocatable :: LengthCycle(:)
       integer iret, lenbound_dims, nbbound_dims, var_id
       integer idx
-      integer istat
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
       STATUS = 0
@@ -983,7 +982,6 @@
       integer iret, var_id
       integer ntime_dims
       integer p_dims, e_dims
-      integer istat
       integer Oper
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_1"
       IF ((np_write.eq.0).or.(ne_write.eq.0)) THEN
@@ -1140,7 +1138,6 @@
       logical, intent(in) :: WriteOutputProcess
       integer, intent(in) :: np_write, ne_write
       integer var_id, iret
-      integer istat
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
       integer Oper
 #ifdef MPI_PARALL_GRID

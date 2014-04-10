@@ -666,6 +666,7 @@
          LOGICAL              :: LCURFILE = .TRUE.
 
          character(len=1000)  :: wwmerr
+         integer istat
 
          CHARACTER(LEN=128),ALLOCATABLE   :: SCFILE(:)
 !

@@ -115,7 +115,6 @@
         IMPLICIT NONE
 
          INTEGER     :: IP, IE, ID
-         integer istat
          INTEGER     :: I, IWILD(MNP)
          REAL(rkind) :: DIR, DIRMIN, DIRMAX, TMP
 
@@ -449,12 +448,12 @@
       USE DATAPOOL, only : IWBMNP, IWBMNPGL, IWBNDLC, IWBNDGL
       USE DATAPOOL, only : MSC, MDC, INE, MNE, DSPEC, NP_TOTAL, IGRIDTYPE
       USE DATAPOOL, only : LBCSE, SPPARM, LBCWA, LINHOM, LBCSP, IOBPOUT
-      USE DATAPOOL, only : STAT
+      USE DATAPOOL, only : STAT, istat
 #ifdef MPI_PARALL_GRID
       use datapool, only : exchange_p2di, myrank, ipgl, iplg
 #endif
       IMPLICIT NONE
-      INTEGER     :: IP, IFSTAT, istat, SPsize
+      INTEGER     :: IP, IFSTAT, SPsize
       REAL(rkind) :: BNDTMP
       INTEGER :: STATUS(MNP)
       CHARACTER(LEN=200) :: wwmerr
@@ -729,7 +728,7 @@
       SUBROUTINE SET_IOBP
         USE DATAPOOL
         IMPLICIT NONE
-        INTEGER           :: IP, IFSTAT, istat
+        INTEGER           :: IP, IFSTAT
         REAL(rkind)       :: dbndtmp
         REAL(rkind)       :: BNDTMP
         character(len=60) :: errmsg
@@ -906,7 +905,7 @@
          INTEGER, INTENT(IN)        :: IT, IFILE
          CHARACTER(len=25)          :: CALLFROM
          REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
-         INTEGER                    :: IP, istat
+         INTEGER                    :: IP
 #ifdef NCDF
          CHARACTER(len=25)          :: CHR
 #endif
@@ -1521,7 +1520,7 @@
          REAL(rkind)                :: INSPRD(WBMSC)
          REAL(rkind)                :: INMS(WBMSC)
          REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
-         INTEGER                    :: IS, IS2, ID, istat
+         INTEGER                    :: IS, IS2, ID
          REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
          REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
          REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2

@@ -956,7 +956,6 @@
          REAL(rkind), PARAMETER :: FRFAK = 0.9
          REAL(rkind)    :: VEC2RAD, ANG, VEL, WAVEL, DEPTH
          REAL(rkind), ALLOCATABLE  :: HP(:), QU(:), QV(:), UP(:), VP(:)
-         integer istat
 
          HEADSP = 0.0
 

@@ -444,7 +444,6 @@
       SUBROUTINE INIT_WAVE_SETUP
       USE DATAPOOL
       IMPLICIT NONE
-      integer istat
       ALLOCATE(ZETA_SETUP(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32.1')
       ZETA_SETUP = ZERO

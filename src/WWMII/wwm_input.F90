@@ -19,7 +19,7 @@
          USE NETCDF
          USE DATAPOOL, only : USE_SINGLE_OUT_STAT, USE_SINGLE_OUT_HIS,  &
      &        MULTIPLEOUT_HIS, MULTIPLEOUT_STAT,                        &
-     &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS
+     &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS, istat
 #endif
          USE DATAPOOL, only : STATION_P => STATION
          USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
@@ -39,7 +39,6 @@
          LOGICAL     :: USE_SINGLE_OUT
          REAL(rkind) :: DELTC
          INTEGER     :: I
-         integer istat
          LOGICAL     :: PARAMWRITE
          LOGICAL     :: AC, WK, ACOUT_1D, ACOUT_2D
          LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,               &
@@ -1032,7 +1031,7 @@
       SUBROUTINE INIT_CURRENT_INPUT
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER :: IP, ISTAT
+      INTEGER :: IP
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind) :: tmp_arr(np_global)
@@ -1105,7 +1104,6 @@
       USE DATAPOOL
       IMPLICIT NONE
 
-      INTEGER :: ISTAT
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind)    :: tmp_arr(np_global)
@@ -1166,7 +1164,7 @@
       SUBROUTINE SINGLE_READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER :: I, IP, IE, ISTAT, ITMP, JTMP
+      INTEGER :: I, IP, IE, ITMP, JTMP
       REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
       REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
       INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
@@ -1309,7 +1307,7 @@
       LOGICAL :: MULTIPLE_GRID_IN = .FALSE.
       integer :: rbuf_int(2)
       real(rkind), allocatable :: rbuf_real(:)
-      integer iProc, IP, IE, nb_real, istat, idx
+      integer iProc, IP, IE, nb_real, idx
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_GRID_IN) THEN
         CALL SINGLE_READ_SPATIAL_GRID_TOTAL
@@ -1620,28 +1618,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_TEST_OUTPUT()
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         IF (LTEST) THEN
-
-         END IF
-!
-!     *** output format
-!
-
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
 #ifdef NCDF
       SUBROUTINE INIT_NETCDF_WW3_WAVEPARAMETER
          USE DATAPOOL
          USE NETCDF
          IMPLICIT NONE
 
-        INTEGER :: ISTAT, IT, IFILE, IVAR, BND_NCID
+        INTEGER :: IT, IFILE, IVAR, BND_NCID
         INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
 !        REAL(rkind)  :: DTMP, DTMP1, DTMP2
 !        character ( len = 15 ) chrdate
@@ -1842,7 +1825,6 @@
 
          INTEGER              :: HS_WW3_ID, T02_WW3_ID, DIR_WW3_ID, FP_WW3_ID, DSPR_WW3_ID
          INTEGER              :: HS_BND_NCID, T02_BND_NCID, DIR_BND_NCID, FP_BND_NCID, DSPR_BND_NCID
-         INTEGER              :: ISTAT
          INTEGER              :: counter, ip, i, j
          INTEGER, ALLOCATABLE :: ITMP(:,:)
          REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)

@@ -2003,7 +2003,6 @@
       SUBROUTINE INIT_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         integer istat
          ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
          CCON = 0
@@ -2043,7 +2042,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: I, J, K, istat
+         INTEGER :: I, J, K
          INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
          INTEGER :: I1, I2, I3
          INTEGER :: CHILF(MNP), COUNT_MAX

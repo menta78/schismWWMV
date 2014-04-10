@@ -340,7 +340,6 @@
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx, sumMNP
-      integer istat
       sumMNP=sum(ListMNP)
       allocate(LocalColor % ListCovLower(sumMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 18')
@@ -445,7 +444,6 @@
       integer nbCommon_send_sl, nbCommon_recv_sl
       integer sumNbCommon_send, sumNbCommon_recv
       integer idxDspl_send, idxDspl_recv
-      integer istat
       ListFirst=0
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
@@ -745,7 +743,6 @@
       integer iNeigh, nbCommon
       integer sumNbCommon_send, sumNbCommon_recv
       integer idxDspl_send, idxDspl_recv
-      integer istat
       ListFirstNNZ=0
       ListFirstMNP=0
       DO iProc=2,nproc
@@ -1503,7 +1500,6 @@
       integer maxBlockLength
       integer nbMap0, nbMap1
       integer DoOper
-      integer istat
       integer, allocatable :: ListNeedSend(:), ListNeedRecv(:), IdxRev(:)
       integer nbNeedSend_u2l, nbNeedRecv_u2l
       integer lenMNP
@@ -3329,7 +3325,7 @@
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       integer, intent(in) :: NbMSCblock
-      integer Hlen, Delta, MSCeffect, istat, iMSCblock, len
+      integer Hlen, Delta, MSCeffect, iMSCblock, len
       integer ISbegin, IS1, IS2
       Hlen=INT(MSC/NbMSCblock)
       Delta=MSC - Hlen*NbMSCblock

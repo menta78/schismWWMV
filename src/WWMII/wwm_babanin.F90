@@ -41,7 +41,6 @@ CONTAINS
     REAL(rkind) ::  BNT    ! is an empirical coefficient related to the spectral density in the saturation range (Banner et al 2007)
     real(rkind) ::  ST1_INT,ST2_INT,Sds_int ! integrated values (for test output only)
     INTEGER :: II,IS,ID ! counters
-    integer istat
 !   real ::  ELIM ! needed for 42D (can comment but don't delete)
 
     Bnt=(0.035**2)    !  Use the Bnt given by Banner et al 2007

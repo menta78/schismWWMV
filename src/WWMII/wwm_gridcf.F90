@@ -237,7 +237,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IS, ID, istat
+         INTEGER :: IS, ID
          INTEGER :: MSC1, MSC2
          REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
          REAL(rkind)    :: TMP, CO1

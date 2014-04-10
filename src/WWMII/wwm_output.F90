@@ -693,7 +693,6 @@
       REAL(rkind) :: ACOUT_1D(MSC,3)
       REAL(rkind) :: ACOUT_2D(MSC,MDC)
       INTEGER     :: LPOS
-      integer istat
       character(len =256) :: FILE_NAME, PRE_FILE_NAME
       integer :: iret, ncid
       integer :: var_id
@@ -1855,7 +1854,7 @@
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-      INTEGER            :: IP, istat
+      INTEGER            :: IP
 # ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable  :: OUTT_LOC(:,:)
       REAL(rkind), allocatable  :: OUTT(:,:)

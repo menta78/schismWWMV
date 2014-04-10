@@ -45,7 +45,6 @@
       INTEGER, INTENT(IN)  :: K,IFILE,IT
       INTEGER              :: IP
 # ifdef WWM_MPI
-      INTEGER istat
       REAL(rkind), allocatable :: WINDXY_TOT(:,:), CURTXY_TOT(:,:), WATLEV_TOT(:)
       real(rkind), allocatable :: rbuf_real(:)
       integer idx, iProc
@@ -122,9 +121,6 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
       INTEGER              :: IP
-# ifdef WWM_MPI
-      INTEGER              :: istat
-# endif
       REAL(rkind)          :: ACLOC(MSC,MDC)
       REAL(rkind)          :: HS,WLM,LPP,FPP,CPP,BOTEXPER
       REAL(rkind)          :: UBOT,TM01,TM10
@@ -235,7 +231,7 @@
         integer, allocatable :: NumberNode(:), NumberTrig(:)
         integer, allocatable :: All_LocalToGlobal(:,:)
         integer i, eIdx, iProc, MNPloc, MNEloc, idx
-        integer IPc, IP, istat
+        integer IPc, IP
 #  ifdef DEBUG_WWM
         integer MinValIndex, MinValIndexInv, eVal
 #  endif

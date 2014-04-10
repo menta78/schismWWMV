@@ -86,7 +86,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
-      INTEGER              :: IP, IL, istat
+      INTEGER              :: IP, IL
 #ifdef MPI_PARALL_GRID
       integer siz, iProc
       real(rkind),  allocatable :: VAR_REAL_TOT(:,:)
@@ -245,7 +245,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: K
-      INTEGER         :: IL, IP, istat
+      INTEGER         :: IL, IP
       REAL(rkind)     :: ACLOC(MSC,MDC)
       REAL(rkind)     :: HS,LPP
       REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2, UBOT

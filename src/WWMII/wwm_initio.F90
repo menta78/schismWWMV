@@ -12,8 +12,6 @@
 #ifdef MPI_PARALL_GRID
        INTEGER :: IE
 #endif
-       integer istat
-
        ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
        DX1 = zero
@@ -431,7 +429,7 @@
 #endif
       IMPLICIT NONE
 !
-      INTEGER        :: IT, IFILE, i, j, istat
+      INTEGER        :: IT, IFILE, i, j
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
@@ -1218,7 +1216,6 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER           :: I, NI(3), IP, IS
-      integer istat
       REAL(rkind)              :: XYTMP(2,MNP)
 #ifdef MPI_PARALL_GRID
       integer :: iProc
@@ -1602,7 +1599,6 @@
 
         REAL :: TMP1(MSC_WW3),TMP2(MDC_WW3) !GD: in ww3 binary file, reals 
         REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
-        integer istat
 
         WRITE(STAT%FHNDL,*)'START READSPEC2D_WW3_INIT_TIME'
    
@@ -2117,7 +2113,6 @@
       SUBROUTINE  ALLOC_SPEC_BND()
       USE DATAPOOL
       IMPLICIT NONE
-      integer istat
       IF (LINHOM) THEN
         ALLOCATE (SFRQ(WBMSC,IWBMNP), SPEG(WBMSC,WBMDC,IWBMNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 48')

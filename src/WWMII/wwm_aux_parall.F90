@@ -4,14 +4,14 @@
 !* Some MPI_BARRIER are just not reliable. This construction makes    *
 !* that every process receive and send to every other process         *
 !**********************************************************************
-      SUBROUTINE MYOWN_MPI_BARRIER(istat)
+      SUBROUTINE MYOWN_MPI_BARRIER(iresult)
       USE DATAPOOL
       IMPLICIT NONE
-      integer, intent(in) :: istat
+      integer, intent(in) :: iresult
       integer eInt(1)
       integer iRank, jRank, eTag
       eInt(1)=4
-      WRITE(STAT%FHNDL,*) 'Before the loop of send/recv stat=', istat
+      WRITE(STAT%FHNDL,*) 'Before the loop of send/recv stat=', iresult
       FLUSH(STAT%FHNDL)
       DO iRank=0,nproc-1
         eTag=137 + iRank
@@ -25,7 +25,7 @@
           CALL MPI_RECV(eInt, 1, itype,iRank,eTag,comm,istatus,ierr)
         END IF
       END DO
-      WRITE(STAT%FHNDL,*) 'After the loop of send/recv stat=', istat
+      WRITE(STAT%FHNDL,*) 'After the loop of send/recv stat=', iresult
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -36,7 +36,6 @@
       implicit none
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx, sumMNP
-      integer istat
       allocate(ListMNP(nproc), ListNP_RES(nproc), rbuf_int(2), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 15')
       IF (myrank == 0) THEN
@@ -98,7 +97,6 @@
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx
       integer sumIAsiz, sumNNZ
-      integer istat
       allocate(ListNNZ(nproc), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 20')
       !
@@ -220,7 +218,6 @@
       integer, allocatable :: rbuf_int(:)
       integer I, iProc
       integer idx, eDeg, nbEdge, iEdge
-      integer istat
       AdjGraph % nbVert=nproc
       IF (myrank.eq.0) THEN
         allocate(AdjGraph % ListDegree(nproc), stat=istat)
@@ -386,7 +383,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer :: ListFirst(nproc)
-      integer MNPloc, iProc, IP, IP_glob, istat
+      integer MNPloc, iProc, IP, IP_glob
       integer, allocatable :: dspl_send(:)
       ListFirst=0
       DO iProc=2,nproc

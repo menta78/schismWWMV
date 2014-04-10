@@ -154,7 +154,7 @@
 
         IMPLICIT  NONE
 
-        INTEGER :: IK, ISP, ITH, ITH0, istat
+        INTEGER :: IK, ISP, ITH, ITH0
         REAL(rkind)    :: SIGMA, FR1, RTH0
 
         NK    = MSC
