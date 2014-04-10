@@ -1075,22 +1075,12 @@
          REAL(rkind)            :: ALPHA
          REAL(rkind)            :: TAUWSHELTER
 !
-! Data types for the forcing
+! Data types for the forcing exchanges
 !
-         ! For 2D variables: wind, currents, etc.
-         integer, dimension(:), pointer :: twoD_send_rqst
-         integer, dimension(:), pointer :: twoD_recv_rqst
-         integer, dimension(:,:), pointer :: twoD_send_stat
-         integer, dimension(:,:), pointer :: twoD_recv_stat
-         integer, dimension(:), pointer :: twoD_send_type
-         integer, dimension(:), pointer :: twoD_recv_type
          ! For 1D variables: surface level
-         integer, dimension(:), pointer :: oneD_send_rqst
-         integer, dimension(:), pointer :: oneD_recv_rqst
-         integer, dimension(:,:), pointer :: oneD_send_stat
-         integer, dimension(:,:), pointer :: oneD_recv_stat
-         integer, dimension(:), pointer :: oneD_send_type
-         integer, dimension(:), pointer :: oneD_recv_type
+         integer, dimension(:), pointer :: oned_send_rqst
+         integer, dimension(:,:), pointer :: oned_send_stat
+         integer, dimension(:), pointer :: oned_send_type
 !
 ! Data types of our linear equation solver.
 !

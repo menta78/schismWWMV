@@ -379,4 +379,55 @@
       END IF
       result=0
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SETUP_ONED_SCATTER_ARRAY
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer :: ListFirst(nproc)
+      integer MNPloc, iProc, IP, IP_glob, istat
+      integer, allocatable :: dspl_send(:)
+      ListFirst=0
+      DO iProc=2,nproc
+        ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
+      END DO
+      IF (myrank .eq. 0) THEN
+        allocate(oned_send_rqst(nproc-1), oned_send_stat(MPI_STATUS_SIZE,nproc-1), oned_send_type(nproc-1), stat=istat)
+        DO iProc=2,nproc
+          MNPloc=ListMNP(iProc)
+          allocate(dspl_send(MNPloc))
+          DO IP=1,MNPloc
+            IP_glob=ListIPLG(IP+ListFirst(iProc))
+            dspl_send(IP)=IP_glob
+          END DO
+          call mpi_type_create_indexed_block(MNPloc,1,dspl_send,rtype,oned_send_type(iProc-1), ierr)
+          call mpi_type_commit(oned_send_type(iProc-1), ierr)
+          deallocate(dspl_send)
+        END DO
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SCATTER_ONED_ARRAY(Vtotal, Vlocal)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind) :: Vtotal(np_total)
+      real(rkind) :: Vlocal(MNP)
+      integer iProc, IP
+      IF (myrank .eq. 0) THEN
+        DO iProc=2,nproc
+          CALL mpi_isend(Vtotal, 1, oned_send_type(iProc-1), iProc-1, 2030, comm, oned_send_rqst(iProc-1), ierr)
+        END DO
+        DO IP=1,MNP
+          Vlocal(IP)=Vtotal(iplg(IP))
+        END DO
+        IF (nproc > 1) THEN
+          CALL MPI_WAITALL(nproc-1, oned_send_rqst, oned_send_stat, ierr)
+        END IF
+      ELSE
+        CALL MPI_RECV(Vlocal, MNP, rtype, 0, 2030, comm, istatus, ierr)
+      END IF
+      END SUBROUTINE
 #endif
