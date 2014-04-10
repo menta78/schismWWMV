@@ -197,6 +197,7 @@
          LOGICAL           :: LSOUBOUND  = .FALSE.
          LOGICAL           :: IOBPD_HISTORY = .FALSE.
 
+
          LOGICAL :: FREQ_SHIFT_IMPL
          LOGICAL :: REFRACTION_IMPL
          LOGICAL :: SOURCE_IMPL
@@ -305,6 +306,14 @@
             INTEGER                  :: ISTP
             INTEGER                  :: IDEF
          END TYPE
+
+         TYPE Graph
+            integer nbVert
+            integer MaxDeg
+            integer nbEdge
+            integer, dimension(:), pointer :: ListDegree
+            integer, dimension(:,:), pointer :: ListEdge
+         END TYPE Graph
 
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
@@ -791,8 +800,11 @@
 #endif
          REAL(rkind), allocatable :: XPtotal(:)
          REAL(rkind), allocatable :: YPtotal(:)
-         integer,     allocatable :: IOBPtotal(:)
          REAL(rkind), allocatable :: DEPtotal(:)
+         REAL(rkind), allocatable :: IENtotal(:,:)
+         REAL(rkind), allocatable :: TRIAtotal(:)
+         REAL(rkind), allocatable :: DX1total(:), DX2total(:)
+         integer,     allocatable :: IOBPtotal(:)
          integer, allocatable :: INEtotal(:,:)
          !
          INTEGER        :: MULTIPLEOUT_HOT
@@ -1062,6 +1074,23 @@
          REAL(rkind)            :: BETAMAX
          REAL(rkind)            :: ALPHA
          REAL(rkind)            :: TAUWSHELTER
+!
+! Data types for the forcing
+!
+         ! For 2D variables: wind, currents, etc.
+         integer, dimension(:), pointer :: twoD_send_rqst
+         integer, dimension(:), pointer :: twoD_recv_rqst
+         integer, dimension(:,:), pointer :: twoD_send_stat
+         integer, dimension(:,:), pointer :: twoD_recv_stat
+         integer, dimension(:), pointer :: twoD_send_type
+         integer, dimension(:), pointer :: twoD_recv_type
+         ! For 1D variables: surface level
+         integer, dimension(:), pointer :: oneD_send_rqst
+         integer, dimension(:), pointer :: oneD_recv_rqst
+         integer, dimension(:,:), pointer :: oneD_send_stat
+         integer, dimension(:,:), pointer :: oneD_recv_stat
+         integer, dimension(:), pointer :: oneD_send_type
+         integer, dimension(:), pointer :: oneD_recv_type
 !
 ! Data types of our linear equation solver.
 !

@@ -312,6 +312,8 @@
        ELSE
          CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
       ENDIF
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -415,11 +417,6 @@
 #if !defined PDLIB && defined WWM_MPI
       USE ELFE_GLBL, only : ics
 #endif
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-      USE WWM_PARALL_SOLVER, only : WWM_SOLVER_INIT
-# endif
-#endif
 #ifdef WWM_SETUP
       USE WAVE_SETUP
 #endif
@@ -463,16 +460,17 @@
       CALL READ_WWMINPUT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
       FLUSH(STAT%FHNDL)
-      CALL READ_NP_NE_TOTAL
       CALL READ_SPATIAL_GRID_TOTAL
 #ifndef MPI_PARALL_GRID
       MNP=NP_TOTAL
       MNE=NE_TOTAL
       NP_RES=MNP
-      CALL READ_SPATIAL_GRID
-      WLDEP = DEP
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
-      FLUSH(STAT%FHNDL)
+      CALL INIT_ARRAYS
+      XP=XPtotal
+      YP=YPtotal
+      DEP=DEPtotal
+      INE=INEtotal
+      WLDEP=DEP
 #else
 # ifdef PDLIB
       IF (IGRIDTYPE .eq. 2) THEN
@@ -487,11 +485,8 @@
       call msgp_init
       call parallel_barrier
 # endif
-#endif
-
       CALL INIT_ARRAYS
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ARRAY INITIALIZATION'
-      FLUSH(STAT%FHNDL)
+#endif
 #ifdef MPI_PARALL_GRID
 # ifdef PDLIB
       XP = XPTMP

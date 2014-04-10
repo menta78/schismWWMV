@@ -45,11 +45,6 @@
        use PETSC_CONTROLLER, only : EIMPS_PETSC
        use petsc_block,    only: EIMPS_PETSC_BLOCK
 #endif
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-       USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
-# endif
-#endif
        IMPLICIT NONE
  
        INTEGER             :: IS, ID, IP
@@ -112,11 +107,6 @@
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
        use petsc_block,    only: EIMPS_PETSC_BLOCK
-#endif
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-        USE WWM_PARALL_SOLVER, only : WWM_SOLVER_EIMPS
-# endif
 #endif
        IMPLICIT NONE
  
