@@ -180,6 +180,8 @@
 
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
 
+         INTEGER    :: MNP_WIND
+         REAL(rkind), allocatable :: XP_WIND(:), YP_WIND(:)
          REAL(rkind)       :: WINDFAC    = 1.0
          REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
@@ -611,7 +613,7 @@
          REAL(rkind),   ALLOCATABLE             :: DR_WW3(:)
          REAL(rkind),   ALLOCATABLE             :: XP_WW3(:), YP_WW3(:)
 
-         INTEGER                         :: MNE_WIND, MNP_WIND
+         INTEGER                         :: NE_WIND, NP_WIND
          INTEGER                         :: WIND_NCID, WINDX_NCID, WINDY_NCID
          INTEGER                         :: NDX_WIND, NDY_WIND
          INTEGER                         :: NDT_WIND_FILE, NDT_WIND_ALL_FILES

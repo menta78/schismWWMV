@@ -1151,16 +1151,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CSEVAL ( NFU, FILEN, LSE, DIMS, SEVAL)
-!THOMAS PLEASE CHECK THIS FOR MPLIB
-#ifdef MPI_PARALL_GRID
-         USE DATAPOOL, ONLY : STAT, RKIND, MNP, np_global, iplg
-#else
-         USE DATAPOOL, ONLY : STAT, RKIND, MNP
-#endif
+      SUBROUTINE CSEVAL ( NFU, FILEN, LSE, DIMS, SEVAL, MULTIPLE_IN)
+      USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)          :: NFU   
+         INTEGER, INTENT(IN)          :: NFU
+         LOGICAL, INTENT(IN)          :: MULTIPLE_IN
          CHARACTER(LEN=*), INTENT(IN) :: FILEN
 
          LOGICAL, INTENT(IN)          :: LSE
@@ -1168,36 +1164,50 @@
          INTEGER, INTENT(IN)          :: DIMS
 
          REAL(rkind), INTENT(INOUT)   :: SEVAL(MNP, DIMS)
+         REAL(rkind)                  :: SEVAL2(NP_TOTAL, DIMS)
 #ifdef MPI_PARALL_GRID
-         REAL(rkind)                  :: SEVAL2(NP_GLOBAL, DIMS)
          INTEGER                      :: IP
-#else
-         REAL(rkind)                  :: SEVAL2(MNP, DIMS)
+         REAL(rkind)                  :: Vtotal(np_total), Vlocal(MNP)
 #endif
-         INTEGER                      :: IC, IFSTAT
+         INTEGER                      :: IC, IFSTAT, IDIM
          CHARACTER(LEN=128)           :: HEADLN
-         IF (LSE) THEN
-            READ(NFU,*) HEADLN
-            WRITE(STAT%FHNDL,'("+TRACE...",2A)') 'Reading the header of the serial file ... HEADER ', TRIM(HEADLN)
-            DO IC = 1, DIMS
+#ifdef MPI_PARALL_GRID
+         IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
+#endif
+           IF (LSE) THEN
+             READ(NFU,*) HEADLN
+             WRITE(STAT%FHNDL,'("+TRACE...",2A)') 'Reading the header of the serial file ... HEADER ', TRIM(HEADLN)
+             DO IC = 1, DIMS
                READ( NFU, *, IOSTAT = IFSTAT ) SEVAL2(:, IC)
                IF ( IFSTAT /= 0 ) CALL WWM_ABORT('unexpected error reading the serial file in CSEVAL 1')
-            END DO
-         ELSE
-            OPEN( NFU, FILE = TRIM(FILEN), STATUS = 'OLD')
-            WRITE(STAT%FHNDL,'("+TRACE...",2A)') 'Reading the file of the request ... ', TRIM(FILEN)
-            READ(NFU,*) HEADLN
-            DO IC = 1, DIMS
+             END DO
+           ELSE
+             OPEN( NFU, FILE = TRIM(FILEN), STATUS = 'OLD')
+             WRITE(STAT%FHNDL,'("+TRACE...",2A)') 'Reading the file of the request ... ', TRIM(FILEN)
+             READ(NFU,*) HEADLN
+             DO IC = 1, DIMS
                READ( NFU, *, IOSTAT = IFSTAT ) SEVAL2(:, IC)
                IF ( IFSTAT /= 0 ) CALL WWM_ABORT(' unexpected error reading the serial file in CSEVAL 2')
-            END DO
-            CLOSE( NFU )
-         END IF
-
+             END DO
+             CLOSE( NFU )
+           END IF
 #ifdef MPI_PARALL_GRID
-         DO IP=1,MNP
-           SEVAL(IP,:) = SEVAL2(IPLG(IP),:)
-         END DO
+         END IF
+#endif
+#ifdef MPI_PARALL_GRID
+         IF (MULTIPLE_IN) THEN
+           DO IP=1,MNP
+             SEVAL(IP,:) = SEVAL2(IPLG(IP),:)
+           END DO
+         ELSE
+           DO IDIM=1,DIMS
+             IF (myrank .eq. 0) THEN
+               Vtotal=SEVAL2(:,IDIM)
+             END IF
+             CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
+             SEVAL(:,IDIM)=Vlocal
+           END DO
+         END IF
 #else
          SEVAL(:,:) = SEVAL2(:,:)
 #endif

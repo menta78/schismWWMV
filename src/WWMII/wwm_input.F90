@@ -646,6 +646,7 @@
 
          REAL(rkind)              :: DEG
          INTEGER :: MULTIPLEIN, MULTIPLEOUT
+         LOGICAL :: MULTIPLE_IN
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN
@@ -669,15 +670,15 @@
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
-     &      SHIFT_WIND_TIME, MULIPLE_IN
+     &      SHIFT_WIND_TIME, MULTIPLE_IN
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
-     &      LERGINP, CURFAC, ICURRFORMAT, MULIPLE_IN
+     &      LERGINP, CURFAC, ICURRFORMAT, MULTIPLE_IN
 
          NAMELIST /WALV/ LSEWL, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERWL, LSTWL, LCWLV, CWATLV, FILEWATL, LERGINP,          &
-     &      WALVFAC, IWATLVFORMAT, MULIPLE_IN
+     &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN
 
          NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
      &      MESBR, ICRIT, ALPBJ, BRHD,                                  &
@@ -1551,7 +1552,7 @@
         CALL TEST_FILE_EXIST_DIE("3: Missing current file : ", CUR%FNAME)
         LSECN = .TRUE.
         OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY)
+        CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY, MULTIPLE_IN_CURR)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1612,7 +1613,7 @@
         CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
         LSELN = .TRUE.
         OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV)
+        CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV, MULTIPLE_IN_WATLEV)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1988,15 +1989,15 @@
           INTEGER, INTENT(IN) :: NDX, NDY
           REAL(rkind), INTENT(IN)    :: MAT(NDX,NDY)
           REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
-          REAL(rkind), INTENT(OUT)   :: VAL(MNP)
+          REAL(rkind), INTENT(OUT)   :: VAL(MNP_WIND)
 
           INTEGER             :: IP, J_INT, I_INT
           REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
           REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
 
-          DO IP = 1, MNP
-            LEN_X = XP(IP)-OFFSET_X
-            LEN_Y = YP(IP)-OFFSET_Y
+          DO IP = 1, MNP_WIND
+            LEN_X = XP_WIND(IP)-OFFSET_X
+            LEN_Y = YP_WIND(IP)-OFFSET_Y
             I_INT = INT( LEN_X/DX ) + 1
             J_INT = INT( LEN_Y/DY ) + 1
             DELTA_X = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
