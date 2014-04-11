@@ -669,15 +669,15 @@
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
-     &      SHIFT_WIND_TIME
+     &      SHIFT_WIND_TIME, MULIPLE_IN
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
-     &      LERGINP, CURFAC, ICURRFORMAT
+     &      LERGINP, CURFAC, ICURRFORMAT, MULIPLE_IN
 
          NAMELIST /WALV/ LSEWL, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERWL, LSTWL, LCWLV, CWATLV, FILEWATL, LERGINP,          &
-     &      WALVFAC, IWATLVFORMAT
+     &      WALVFAC, IWATLVFORMAT, MULIPLE_IN
 
          NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
      &      MESBR, ICRIT, ALPBJ, BRHD,                                  &
@@ -841,7 +841,7 @@
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
          FLUSH(CHK%FHNDL)
-
+         MULTIPLE_IN_WIND=MULTIPLE_IN
 
          WIN%FNAME = TRIM(FILEWIND)
          IF (LWINDFROMWWM .and. (LCWIN .eqv. .FALSE.)) THEN
@@ -874,7 +874,7 @@
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
          FLUSH(CHK%FHNDL)
-
+         MULTIPLE_IN_CURR=MULTIPLE_IN
          CUR%FNAME = TRIM(FILECUR)
 
          IF (LSECU .AND. LSTCU) THEN
@@ -901,7 +901,7 @@
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
          FLUSH(CHK%FHNDL)
-
+         MULTIPLE_IN_WATLEV=MULTIPLE_IN
          WAT%FNAME = FILEWATL
 
          IF (LSEWL .AND. LSTWL) THEN
@@ -1024,139 +1024,6 @@
          HOTF%TOTL = (HOTF%EMJD - HOTF%BMJD) * DAY2SEC
          HOTF%ISTP = NINT( HOTF%TOTL / HOTF%DELT ) + 1
          HOTF%TMJD = HOTF%BMJD
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_CURRENT_INPUT
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER :: IP
-#ifdef MPI_PARALL_GRID
-      INTEGER :: I
-      REAL(rkind) :: tmp_arr(np_global)
-#endif
-      CURTXY(:,:) = 0.0
-      IF (LSTCU) THEN
-        IF (DIMMODE .EQ. 1) THEN
-          IF (LCCUR) THEN
-            DO IP = 1, MNP
-              CURTXY(IP,1) = CCURTX
-            END DO
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("1: Missing current file : ", CUR%FNAME)
-            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
-            CLOSE(CUR%FHNDL)
-          END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCCUR) THEN
-            DO IP = 1, MNP
-              CURTXY(IP,1) = CCURTX
-              CURTXY(IP,2) = CCURTY
-            END DO
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing current file : ", CUR%FNAME)
-            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-#ifdef MPI_PARALL_GRID
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,1)=tmp_arr(I)
-              END IF
-            END DO
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,2)=tmp_arr(I)
-              END IF
-            END DO
-#else
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,2)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
-#endif
-            CLOSE(CUR%FHNDL)
-          END IF
-        END IF
-      ELSE IF (LSECU) THEN
-        SECU%TOTL = (SECU%EMJD - SECU%BMJD) * DAY2SEC
-        SECU%ISTP = NINT( SECU%TOTL / SECU%DELT ) + 1
-        SECU%TMJD = SECU%BMJD
-        LSECN = .FALSE.
-        WRITE(STAT%FHNDL,*) 'Serial current Condition -----------'
-        WRITE(STAT%FHNDL,*) SECU%BEGT, SECU%ENDT, SECU%ISTP, SECU%TOTL/3600.0, SECU%DELT
-        IF (LERGINP) CALL ERG2WWM(SECU%ISTP)
-        CALL TEST_FILE_EXIST_DIE("3: Missing current file : ", CUR%FNAME)
-        LSECN = .TRUE.
-        OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_WATLEV_INPUT
-      USE DATAPOOL
-      IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-      INTEGER :: I
-      REAL(rkind)    :: tmp_arr(np_global)
-#endif
-      WATLEV    = 0.
-      WATLEVOLD = 0.
-      IF (LSTWL) THEN
-        IF (DIMMODE .EQ. 1) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("1: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-#ifdef MPI_PARALL_GRID
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                WATLEV(ipgl(I)%id)=tmp_arr(I)
-              END IF
-            END DO
-#else
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-#endif
-            CLOSE(WAT%FHNDL)
-          END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-            CLOSE(WAT%FHNDL)
-          END IF
-        END IF
-      ELSE IF (LSEWL) THEN
-        SEWL%TOTL = (SEWL%EMJD - SEWL%BMJD) * DAY2SEC
-        SEWL%ISTP = NINT( SEWL%TOTL / SEWL%DELT ) + 1
-        SEWL%TMJD = SEWL%BMJD
-        IF (LERGINP .AND. .NOT. LSECU) CALL ERG2WWM(SEWL%ISTP)
-        LSELN = .FALSE.
-        WRITE(STAT%FHNDL,*) 'Serial water level Condition -----------'
-        WRITE(STAT%FHNDL,*) SEWL%BEGT, SEWL%ENDT, SEWL%ISTP, SEWL%TOTL/3600.0, SEWL%DELT
-        CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
-        LSELN = .TRUE.
-        OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV)
-      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1614,6 +1481,139 @@
            call wwm_abort('FOR WWM SOURCES U NEED MELIM .LT. 3') 
          ENDIF
 
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_CURRENT_INPUT
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: IP
+#ifdef MPI_PARALL_GRID
+      INTEGER :: I
+      REAL(rkind) :: tmp_arr(np_global)
+#endif
+      CURTXY(:,:) = 0.0
+      IF (LSTCU) THEN
+        IF (DIMMODE .EQ. 1) THEN
+          IF (LCCUR) THEN
+            DO IP = 1, MNP
+              CURTXY(IP,1) = CCURTX
+            END DO
+          ELSE
+            CALL TEST_FILE_EXIST_DIE("1: Missing current file : ", CUR%FNAME)
+            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
+            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+            CLOSE(CUR%FHNDL)
+          END IF
+        ELSE IF (DIMMODE .EQ. 2) THEN
+          IF (LCCUR) THEN
+            DO IP = 1, MNP
+              CURTXY(IP,1) = CCURTX
+              CURTXY(IP,2) = CCURTY
+            END DO
+          ELSE
+            CALL TEST_FILE_EXIST_DIE("2: Missing current file : ", CUR%FNAME)
+            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+#ifdef MPI_PARALL_GRID
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+            DO I=1,NP_GLOBAL
+              IF (ipgl(I)%rank==myrank) THEN
+                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                CURTXY(ipgl(I)%id,1)=tmp_arr(I)
+              END IF
+            END DO
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+            DO I=1,NP_GLOBAL
+              IF (ipgl(I)%rank==myrank) THEN
+                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                CURTXY(ipgl(I)%id,2)=tmp_arr(I)
+              END IF
+            END DO
+#else
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
+            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,2)
+            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+#endif
+            CLOSE(CUR%FHNDL)
+          END IF
+        END IF
+      ELSE IF (LSECU) THEN
+        SECU%TOTL = (SECU%EMJD - SECU%BMJD) * DAY2SEC
+        SECU%ISTP = NINT( SECU%TOTL / SECU%DELT ) + 1
+        SECU%TMJD = SECU%BMJD
+        LSECN = .FALSE.
+        WRITE(STAT%FHNDL,*) 'Serial current Condition -----------'
+        WRITE(STAT%FHNDL,*) SECU%BEGT, SECU%ENDT, SECU%ISTP, SECU%TOTL/3600.0, SECU%DELT
+        IF (LERGINP) CALL ERG2WWM(SECU%ISTP)
+        CALL TEST_FILE_EXIST_DIE("3: Missing current file : ", CUR%FNAME)
+        LSECN = .TRUE.
+        OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+        CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_WATLEV_INPUT
+      USE DATAPOOL
+      IMPLICIT NONE
+
+#ifdef MPI_PARALL_GRID
+      INTEGER :: I
+      REAL(rkind)    :: tmp_arr(np_global)
+#endif
+      WATLEV    = 0.
+      WATLEVOLD = 0.
+      IF (LSTWL) THEN
+        IF (DIMMODE .EQ. 1) THEN
+          IF (LCWLV) THEN
+            WATLEV = CWATLV
+            DEP    = WLDEP + WATLEV
+          ELSE
+            CALL TEST_FILE_EXIST_DIE("1: Missing watlev file : ", WAT%FNAME)
+            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+#ifdef MPI_PARALL_GRID
+            READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+            DO I=1,NP_GLOBAL
+              IF (ipgl(I)%rank==myrank) THEN
+                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                WATLEV(ipgl(I)%id)=tmp_arr(I)
+              END IF
+            END DO
+#else
+            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+#endif
+            CLOSE(WAT%FHNDL)
+          END IF
+        ELSE IF (DIMMODE .EQ. 2) THEN
+          IF (LCWLV) THEN
+            WATLEV = CWATLV
+            DEP    = WLDEP + WATLEV
+          ELSE
+            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
+            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+            CLOSE(WAT%FHNDL)
+          END IF
+        END IF
+      ELSE IF (LSEWL) THEN
+        SEWL%TOTL = (SEWL%EMJD - SEWL%BMJD) * DAY2SEC
+        SEWL%ISTP = NINT( SEWL%TOTL / SEWL%DELT ) + 1
+        SEWL%TMJD = SEWL%BMJD
+        IF (LERGINP .AND. .NOT. LSECU) CALL ERG2WWM(SEWL%ISTP)
+        LSELN = .FALSE.
+        WRITE(STAT%FHNDL,*) 'Serial water level Condition -----------'
+        WRITE(STAT%FHNDL,*) SEWL%BEGT, SEWL%ENDT, SEWL%ISTP, SEWL%TOTL/3600.0, SEWL%DELT
+        CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
+        LSELN = .TRUE.
+        OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+        CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -277,6 +277,9 @@
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
+         LOGICAL    :: MULTIPLE_IN_WIND = .FALSE.
+         LOGICAL    :: MULTIPLE_IN_WATLEV = .FALSE.
+         LOGICAL    :: MULTIPLE_IN_CURR = .FALSE.
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
@@ -557,6 +560,7 @@
 !
          REAL(rkind), ALLOCATABLE    :: PRESSURE(:)
          REAL(rkind), ALLOCATABLE    :: WINDXY(:,:)
+         REAL(rkind), ALLOCATABLE    :: WINDXYtotal(:,:)
          REAL(rkind), ALLOCATABLE    :: DVWIND(:,:)
 
          CHARACTER(LEN=40)               :: NCDF_HS_NAME   = 'hs'
