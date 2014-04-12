@@ -112,9 +112,9 @@
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
-            CALL GRIB_READ(REC1_new,tmp_wind1)
+            CALL READ_GRIB_ECMWF(REC1_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL GRIB_READ(REC2_new,tmp_wind2)
+              CALL READ_GRIB_ECMWF(REC2_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -195,13 +195,13 @@
 #endif
 #ifdef GRB
           ELSE IF (IWINDFORMAT == 7) THEN
-            CALL GRIB_INIT !load wind_time_mjd and compute interp coefs
+            CALL INIT_GRIB_ECMWF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
-            CALL GRIB_READ(REC1_new,tmp_wind1)
+            CALL READ_GRIB_ECMWF(REC1_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL GRIB_READ(REC2_new,tmp_wind2)
+              CALL READ_GRIB_ECMWF(REC2_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -299,10 +299,10 @@
           END IF
           CALL GET_CF_TIME_INDEX(REC1_new,REC2_new,cf_w1,cf_w2)
           IF (REC1_new.NE.REC1_old) THEN
-            CALL GRIB_READ(REC1_new,tmp_wind1)
+            CALL READ_GRIB_ECMWF(REC1_new,tmp_wind1)
           END IF
           IF (REC2_new.NE.REC2_old) THEN
-            CALL GRIB_READ(REC2_new,tmp_wind2)
+            CALL READ_GRIB_ECMWF(REC2_new,tmp_wind2)
           END IF
           IF (cf_w1.NE.1) THEN
             WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
@@ -668,12 +668,6 @@
 
       integer, dimension(nf90_max_var_dims) :: dimIDs
       character (len = *), parameter :: CallFct="INIT_NETCDF_DWD"
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
-
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD')
 !
 ! count number of netcdf files in list ...
@@ -2131,11 +2125,6 @@
       real(rkind) :: eTimeStart
       character(len=100) :: CHRERR
       integer posBlank, alen
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
       ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2245,6 +2234,11 @@
 
       WIND_TIME_MJD(:) = wind_time_mjd(:)*ConvertToDay + SHIFT_WIND_TIME + eTimeStart
       CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
+# ifdef MPI_PARALL_GRID
+      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
+        RETURN
+      END IF
+# endif
 
       ! compute nodes and coefs
 
@@ -2340,11 +2334,6 @@
       character (len=100) :: eStrUnitTime
       real(rkind) :: ConvertToDay
       real(rkind) :: eTimeStart
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
       ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2417,7 +2406,7 @@
 !* This is functionality for reading GRIB file from ECMWF                   *
 !* We use 
 !****************************************************************************
-      SUBROUTINE GRIB_INIT
+      SUBROUTINE INIT_GRIB_ECMWF
       USE DATAPOOL
       USE GRIB_API
       IMPLICIT NONE
@@ -2435,11 +2424,6 @@
       REAL(rkind) :: deltaLAT, deltaLON
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer iX, iY
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
       DO
@@ -2491,6 +2475,11 @@
       FLUSH(WINDBG%FHNDL)
       cf_scale_factor=ONE
       cf_add_offset=ZERO
+# ifdef MPI_PARALL_GRID
+      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
+        RETURN
+      END IF
+# endif
       !
       ! Now the longitude/latitude to read.
       !
@@ -2545,12 +2534,12 @@
       END DO
       deallocate(igrib)
       CALL GRIB_CLOSE_FILE(ifile)
-      END SUBROUTINE GRIB_INIT
+      END SUBROUTINE INIT_GRIB_ECMWF
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
 !* We use 
 !****************************************************************************
-      SUBROUTINE GRIB_READ(IT, outwind)
+      SUBROUTINE READ_GRIB_ECMWF(IT, outwind)
       USE DATAPOOL
       USE GRIB_API
       IMPLICIT NONE
