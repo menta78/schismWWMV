@@ -1996,12 +1996,13 @@
             END DO
             Vtotal1(IP)=eF1
             Vtotal2(IP)=eF2
-            ErrorCoord=ErrorCoord + abs(XPinterp - XP(IP)) + abs(YPinterp - YP(IP)) + abs(sumWi - 1)
+            ErrorCoord=ErrorCoord + abs(XPinterp - XP_WIND(IP)) + abs(YPinterp - YP_WIND(IP)) + abs(sumWi - 1)
           ELSE
             Vtotal1(IP)=ZERO
             Vtotal2(IP)=ZERO
           ENDIF
         END DO
+        WRITE(WINDBG%FHNDL,*) 'ErrorCoord=', ErrorCoord
 #ifdef MPI_PARALL_GRID
       END IF
 #endif
@@ -2019,7 +2020,6 @@
       eField(:,1)=Vtotal1
       eField(:,2)=Vtotal2
 #endif
-      WRITE(WINDBG%FHNDL,*) 'ErrorCoord=', ErrorCoord
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
