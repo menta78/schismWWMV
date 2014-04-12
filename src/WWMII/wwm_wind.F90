@@ -1005,11 +1005,6 @@
       logical PREF_ANALYZED
       integer idx
       REAL(rkind) :: ePresTime, eNewTime
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
 !
 ! count number of netcdf files in list ...
