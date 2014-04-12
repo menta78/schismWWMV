@@ -345,11 +345,11 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE FIND_WIND_NEAREST_LOWER_IDX(eTime, idx)
-      USE DATAPOOL, only : NDT_WIND_ALL_FILES, WIND_TIME_ALL_FILES
-      USE DATAPOOL, only : WIND_TIME_IFILE, WIND_TIME_IT, rkind, THR8
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: eTime
       integer, intent(out) :: idx
+      CHARACTER(LEN=15) :: eTimeStr
       integer eIdxF, eIdx
       eIdxF=-1
       DO eIdx=1,NDT_WIND_ALL_FILES
@@ -358,6 +358,14 @@
         ENDIF
       END DO
       IF (eIdxF .eq. -1) THEN
+        WRITE(WINDBG%FHNDL,*) 'NDT_WIND_ALL_FILES=', NDT_WIND_ALL_FILES
+        DO eIdx=1,NDT_WIND_ALL_FILES
+          CALL MJD2CT(WIND_TIME_ALL_FILES(eIdx),eTimeStr)
+          WRITE(WINDBG%FHNDL,*) ' eIdx=', eIdx
+          WRITE(WINDBG%FHNDL,*) ' eTime=', WIND_TIME_ALL_FILES(eIdx)
+          WRITE(WINDBG%FHNDL,*) ' eTimeStr=', eTimeStr
+        END DO
+        CALL FLUSH(WINDBG%FHNDL)
         CALL WWM_ABORT('We failed to find the wind index')
       END IF
       idx=eIdxF
@@ -1228,11 +1236,8 @@
       integer :: NbPoint, nbFail
       real(rkind) :: Wi(3), XPW(3), YPW(3)
       INTEGER NI(3)
-# ifdef MPI_PARALL_GRID
-      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
-        RETURN
-      END IF
-# endif
+      WRITE(WINDBG%FHNDL,*) 'Begin INIT_NETCDF_NARR'
+      WRITE(WINDBG%FHNDL,*) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 !
 ! I make the assumption that the year when the dataset beginns at the year indicated in the bouc section
 !
@@ -1256,9 +1261,11 @@
       REWIND (WIN%FHNDL)
       ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 22')
+      WRITE(WINDBG%FHNDL,*) 'NUM_NETCDF_FILES=', NUM_NETCDF_FILES
 
       DO IT = 1, NUM_NETCDF_FILES
         READ( WIN%FHNDL, *) NETCDF_FILE_NAMES(IT)
+        WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file=', NETCDF_FILE_NAMES(IT)
       END DO
       CLOSE (WIN%FHNDL)
 !
@@ -1277,7 +1284,7 @@
       ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = NDT_WIND_FILE)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-      WRITE(WINDBG%FHNDL,*) NDT_WIND_FILE, 'NDT_WIND_FILE'
+      WRITE(WINDBG%FHNDL,*) 'NDT_WIND_FILE=', NDT_WIND_FILE
 
       CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2)))
       ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2)), NF90_NOWRITE, WINDY_NCID)
@@ -1313,7 +1320,7 @@
       ALLOCATE (DCOORD_WIND_X2(NDX_WIND,NDY_WIND), DCOORD_WIND_Y2(NDX_WIND,NDY_WIND), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 23')
 !
-! read cooridantes from files ....
+! read coordinates from files ....
 !
       ISTAT = NF90_GET_VAR(WINDX_NCID, ILON_ID, DCOORD_WIND_X2)
       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
@@ -1325,7 +1332,8 @@
 !
       OFFSET_X_WIND = MINVAL(DCOORD_WIND_X2)
       OFFSET_Y_WIND = MINVAL(DCOORD_WIND_Y2)
-
+      WRITE(WINDBG%FHNDL,*) 'OFFSET_X_WIND=', OFFSET_X_WIND
+      WRITE(WINDBG%FHNDL,*) 'OFFSET_Y_WIND=', OFFSET_Y_WIND
 !
 ! close netcdf file ...
 !
@@ -1339,6 +1347,7 @@
 ! total number of time steps ... in all files
 !
       NDT_WIND_ALL_FILES = NDT_WIND_FILE * NUM_NETCDF_FILES/2
+      WRITE(WINDBG%FHNDL,*) 'NDT_WIND_ALL_FILES=', NDT_WIND_ALL_FILES
 
       ALLOCATE (WIND_TIME_NETCDF(NDT_WIND_FILE), WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 24')
@@ -1379,9 +1388,15 @@
         !WRITE(WINDBG%FHNDL,*) CHRDATE, START_TIME
       END DO ! IFILE
       SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
-
-      !WRITE(WINDBG%FHNDL,*) WIND_TIME_ALL_FILES(2), WIND_TIME_ALL_FILES(1), DAY2SEC, SEWI%DELT
-
+# ifdef MPI_PARALL_GRID
+      IF ((MULTIPLE_IN_WIND .eqv. .FALSE.).and.(myrank.gt.0)) THEN
+        WRITE(WINDBG%FHNDL,*) 'Just leaving'
+        RETURN
+      END IF
+# endif
+      !
+      ! Now the geographic interpolation
+      !
       NE_WIND = (NDX_WIND-1)*(NDY_WIND-1)*2
       NP_WIND =  NDX_WIND*NDY_WIND
 
@@ -1449,7 +1464,7 @@
           NI=INE_WIND(:,WIND_ELE(IP))
           XPW=XYPWIND(1,NI)
           YPW=XYPWIND(2,NI)
-          CALL INTELEMENT_COEF(XPW, YPW,XP(IP),YP(IP),Wi)
+          CALL INTELEMENT_COEF(XPW, YPW,XP_WIND(IP),YP_WIND(IP),Wi)
           WI_NARR(IP,:)=Wi
 !         WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' sumWi=', sum(Wi)
 !         WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' minW=', minval(Wi), ' maxW=', maxval(Wi)
