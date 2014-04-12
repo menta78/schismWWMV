@@ -1271,10 +1271,6 @@
       CALL COMPUTE_TOTAL_INDEX_SHIFT(TheRes)
       WRITE(740+myrank,*) 'Total residual shift=', TheRes
 # endif
-      CALL COLLECT_ALL_IPLG
-# ifdef DEBUG
-      WRITE(740+myrank,*) 'After COLLECT_ALL_IPLG'
-# endif
       CALL COLLECT_ALL_IA_JA
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After COLLECT_ALL_IA_JA'

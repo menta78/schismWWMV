@@ -476,22 +476,18 @@
       END IF
       CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
       call fillPublicVars()
+      CALL INIT_ARRAYS
+      XP = XPTMP
+      YP = YPTMP
+      DEP=DEP8
+      INETMP=INE
 # else
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
-# endif
       CALL INIT_ARRAYS
-#endif
-#ifdef MPI_PARALL_GRID
-# ifdef PDLIB
-      XP = XPTMP
-      YP = YPTMP
-      DEP=DEP8
-      INETMP=INE
-# else
       DEP  = DEP8
       WLDEP  = DEP
       IF (ics .eq. 2) THEN
@@ -502,6 +498,8 @@
         YP = YPTMP
       END IF
 # endif
+      CALL COLLECT_ALL_IPLG
+      CALL SETUP_ONED_SCATTER_ARRAY
 #endif
       IF (CART2LATLON) THEN
         XP = XP / 111111.
