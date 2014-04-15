@@ -14,12 +14,13 @@
      &        LSP2D, INP, CHK, LOUTS, IOUTS, LSIGMAX, LLOUTS,           &
      &        ILOUTS, OUT, DAY2SEC, FRHIGH, DBG, LINES, VAROUT_HISTORY, &
      &        VAROUT_STATION, GRIDWRITE, RKIND, LVAR_READ,              &
-     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL, myrank
+     &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL, myrank,    &
+     &        istat
 #ifdef NCDF
          USE NETCDF
          USE DATAPOOL, only : USE_SINGLE_OUT_STAT, USE_SINGLE_OUT_HIS,  &
      &        MULTIPLEOUT_HIS, MULTIPLEOUT_STAT,                        &
-     &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS, istat
+     &        NF90_OUTTYPE_STAT, NF90_OUTTYPE_HIS
 #endif
          USE DATAPOOL, only : STATION_P => STATION
          USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
