@@ -2557,7 +2557,7 @@
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
       !
 #ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND .or (myrank .eq. 0)) THEN
+      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 #endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
@@ -2593,7 +2593,7 @@
 #endif
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
-        outinwd=outTotal
+        outwind=outTotal
       ELSE
         Vtotal=outTotal(:,1)
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)

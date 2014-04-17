@@ -412,7 +412,7 @@
 #ifdef PDLIB
       USE yowpd, only : initFromGridDim
 #endif
-#if !defined PDLIB && defined WWM_MPI
+#if !defined PDLIB && defined MPI_PARALL_GRID
       USE ELFE_GLBL, only : ics
 #endif
 #ifdef WWM_SETUP
