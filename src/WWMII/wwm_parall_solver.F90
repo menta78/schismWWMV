@@ -4368,6 +4368,45 @@
         ELSE
           X = U
         ENDIF 
+#ifdef SOLVER_NORM
+        Norm_L2=0
+        DO IP=1,NP_RES
+          eSum=-B(:,:,IP)
+          DO J=IA(IP),IA(IP+1)-1
+            idx=JA(J)
+            eSum=eSum + ASPAR(:,:,J)*X(:,:,idx)
+          END DO
+          IF (REFRACTION_IMPL) THEN
+            DO ID=1,MDC
+              ID1 = ID - 1
+              ID2 = ID + 1
+              IF (ID .EQ. 1) ID1 = MDC
+              IF (ID .EQ. MDC) ID2 = 1
+              eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*X(:,ID1,IP)
+              eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*X(:,ID2,IP)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
+              END DO
+            END DO
+          END IF
+          Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
+          Norm_LINF = max(Norm_LINF, abs(eSum))
+        END DO
+#endif
+#ifdef MPI_PARALL_GRID
+        CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
+        CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+        MaxNorm=maxval(Norm_L2_gl)
+#else
+        MaxNorm=maxval(Norm_L2)
+#endif
 
         nbIter=nbIter+1
         WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin

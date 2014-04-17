@@ -1,3 +1,4 @@
+#include "wwm_functions.h"
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -15,18 +16,11 @@
            CALL SET_WIND( IP, WIND10, WINDTH )
            CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
            IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH, FPM, SSINL)
-           CALL SIN_EXP_KOMEN( IP, WINDTH, ACLOC, SSINE )
+           CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE )
          ENDIF
 
          IF (MESDS .GT. 0) CALL SDSCYCLE3 ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS )
-
-         IF (MESNL .GT. 0) THEN
-           IF (MESNL .EQ. 1) CALL SNL41 (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
-           IF (MESNL .EQ. 2) CALL SNL4  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
-           IF (MESNL .EQ. 3) CALL SNL42 (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
-           IF (MESNL .EQ. 4) CALL SNL43 (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
-         ENDIF
-
+         IF (MESNL .GT. 0) CALL SNL4_NEW  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
          IF (MESTR .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3)
          IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR)
          IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_BOTF(IP,ACLOC,SSBF)
@@ -57,7 +51,7 @@
 
          INTEGER       :: IS, ID
 
-         REAL(rkind)    :: CDS, ALPHA_PM, FAK
+         REAL(rkind)    :: CDS, ALPHA_PM, FAC
          REAL(rkind)    :: STP_OV, STP_PM, N2
 !
          ALPHA_PM  =  3.02E-3
@@ -79,7 +73,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_LIN_CAV( IP, WINDTH, FPM, SSINL )
+      SUBROUTINE SIN_LIN( IP, WINDTH, FPM, SSINL )
 !
 !     Linear growth term according to Cavaleri & Melanotte Rizolli ...
 !
@@ -113,7 +107,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_EXP_KOMEN( IP, WINDTH, ACLOC, SSINE, DSSINE )
+      SUBROUTINE SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          USE DATAPOOL
          IMPLICIT NONE
 !
