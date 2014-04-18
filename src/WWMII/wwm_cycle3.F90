@@ -19,12 +19,12 @@
            CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          ENDIF
 
-         IF (MESDS .GT. 0) CALL SDSCYCLE3 ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
+         IF (MESDS .GT. 0) CALL SDS_CYCLE3 ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL4_NEW  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
-         IF (MESTR .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3)
-         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
-         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_BOTF(IP,ACLOC,SSBF,DSSBF)
+         IF (MESTR .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
+         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
+         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
 
          IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 +  SSBR +  SSBF
          IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 + DSSBR + DSSBF
@@ -36,7 +36,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDSCYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, SSDS, DSSDS )
+      SUBROUTINE SDS_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, SSDS, DSSDS )
 !
 !     Cycle 3 dissipation 
 !
