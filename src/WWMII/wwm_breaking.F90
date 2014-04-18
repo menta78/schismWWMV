@@ -148,3 +148,122 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SDS_SWB_NEW(IP, SME, KME, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR)
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)   :: IP
+
+         REAL(rkind), INTENT(IN)   :: ACLOC(MSC,MDC), SME, KME, ETOT, HS
+
+         REAL(rkind), INTENT(OUT)     :: SSBR(MSC,MDC)
+         REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
+
+         REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
+         REAL(rkind) :: S0, AUX
+         REAL(rkind) :: GAMMA_WB
+         REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
+
+         REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
+
+         INTEGER :: IS, ID
+!
+!     *** depth-induced wave breaking term by Battjes and Janssen (1978)
+!
+         SELECT CASE(ICRIT)
+          CASE(1)
+            HMAX(IP) = BRHD * DEP(IP)
+          CASE(2) ! Vorschlag Dingemans
+            IF (KME .GT. VERYSMALL) THEN
+              S0    = HS / (PI2/KME)
+              GAMMA_WB  = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
+              HMAX(IP)  = GAMMA_WB * DEP(IP)
+            ELSE
+              HMAX(IP)  = BRHD * DEP(IP)
+            END IF
+          CASE(3) ! D. based on peak steepness 
+            CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+            IF (LPP .GT. VERYSMALL) THEN
+              S0    = HS/LPP
+              GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
+              HMAX(IP) = GAMMA_WB * DEP(IP)
+            ELSE
+              HMAX(IP) = BRHD * DEP(IP)
+            END IF
+          CASE DEFAULT
+            CALL WWM_ABORT('ICRIT HAS A WRONG VALUE')
+        END SELECT
+
+        IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+          BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )
+          BETA2 = BETA**2
+        ELSE
+          BETA = ZERO
+          BETA2 = ZERO
+        END IF
+
+        IF (BETA <= 0.5_RKIND) THEN
+           QQ = ZERO
+        ELSE IF (BETA <= ONE) THEN
+           QQ = (TWO*BETA-ONE)**2
+        END IF
+!
+! 2.b. Iterate to obtain actual breaking fraction
+!
+
+#ifdef WW3_QB
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
+        ELSE IF ( BETA .LT. ONE ) THEN
+          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+          DO IS = 1, 3
+            QB     = EXP((QB-1.)/BETA2)
+          END DO
+        ELSE
+          QB = ONE - 10.E-10
+        END IF
+#elif SWAN_QB
+        IF (BETA .LT. 0.2D0) THEN
+           QB = 0.0D0
+        ELSE IF (BETA .LT. 1.0D0) THEN
+           BETA2 = BETA*BETA
+           AUX   = EXP((QQ-1.0d0)/BETA2)
+           QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
+        ELSE
+           QB = 1.0D0
+        END IF
+#else
+        QB = ZERO
+#endif
+        QBLOCAL(IP) = QB
+
+        !IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
+
+        SURFA0 = 0.
+        SURFA1 = 0.
+
+        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+          IF ( BETA2 .LT. ONE - 10.E-10) THEN
+            WS  = ( ALPBJ / PI) *  QB * SME / BETA2
+            SbrD = WS * (ONE - QB) / (BETA2 - QB)
+          ELSE
+            WS  =  (ALPBJ/PI)*SME !( PSURF(1) / PI) * SMEBRK
+            SbrD = ZERO
+          END IF
+          SURFA0 = SbrD
+          SURFA1 = WS + SbrD
+        ELSE
+          SURFA0 = ZERO
+          SURFA1 = ZERO
+        END IF
+
+         IMATRA = SURFA0 * ACLOC
+         IMATDA = -SURFA1
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+

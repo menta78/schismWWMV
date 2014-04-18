@@ -10,6 +10,8 @@
          REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
 
+         REAL(rkind)                :: NEWAC(MSC,MDC), SSBRL(MSC,MDC), DSSBRL(MSC,MDC)
+
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
          IF (MESIN .GT. 0) THEN
@@ -19,24 +21,49 @@
            CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          ENDIF
 
-         IF (MESDS .GT. 0) CALL SDS_CYCLE3 ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
+         IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL4_NEW  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
          IF (MESTR .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
          IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
          IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
 
-         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 +  SSBR +  SSBF
-         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 + DSSBR + DSSBF
+         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
+         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
 
-         IMATRA = MIN(ZERO, SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 +  SSBR +  SSBF) ! Patankar Rules ...
-         IMATDA = MAX(ZERO, DSSINE + DSSDS + DSSNL4 + DSSNL3 + DSSBR + DSSBF)
+         DO IS = 1, MSC
+           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+           DO ID = 1, MDC
+             NEWDAC  = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
+             IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
+             LIMFAC = MIN(ONE,ABS(SIGN(LIMAC/DT4A,GTEMP2))/MAX(THR,ABS(IMATRA(IS,ID))))
+             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
+           ENDDO
+         ENDDO
+
+         IMATRA = MIN(ZERO, IMATRA +   SSBR +  SSBF) 
+         IMATDA = MAX(ZERO, IMATDA +  DSSBR + DSSBF)
+
+         NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
+         ETOT   = ZERO 
+         EFTAIL = ONE / (PTAIL(1)-ONE)
+         ETOT = DINTSPEC(IP,NEWAC)
+         HS = 4._rkind*SQRT(ETOT)
+         EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
+         IF (ETOT .GT. EMAX) THEN
+           RATIO  = EMAX/ETOT
+           SSBRL  = ACLOC*(RATIO-ONE)/DT4A
+           DSSBRL = (RATIO-ONE)/DT4A 
+         END IF
+
+         IMATRA = MIN(ZERO, IMATRA +  SSBRL) 
+         IMATDA = MAX(ZERO, IMATDA + DSSBRL)
 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, SSDS, DSSDS )
+      SUBROUTINE SDS_CYCLE3_NEW( IP, KMESPC, SMESPC, ETOT, ACLOC, SSDS, DSSDS )
 !
 !     Cycle 3 dissipation 
 !

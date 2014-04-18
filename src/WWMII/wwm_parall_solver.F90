@@ -3777,7 +3777,72 @@
 !**********************************************************************
 !*
 !**********************************************************************
-      SUBROUTINE EIMPS_ASPAR_B_BLOCK(ASPAR, B, U)
+      SUBROUTINE EIMPS_B_BLOCK(B, U)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(out) :: B(MSC, MDC, MNP)
+      REAL(rkind), intent(in)  :: U(MSC, MDC, MNP)
+
+      INTEGER :: POS_TRICK(3,2)
+
+      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+
+# ifndef NO_MEMORY_CX_CY
+      REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+# else
+      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind)      :: DIFRU, USOC, WVC
+# endif
+# ifndef SINGLE_LOOP_AMATRIX
+      REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
+      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+      INTEGER     :: POS
+# else
+      REAL(rkind) :: DELTAL(MSC,MDC,3)
+      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+# endif
+      INTEGER :: I1, I2, I3
+      INTEGER :: IP, ID, IS, IE
+      INTEGER :: I, IPGL1, IPrel
+      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
+      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
+# endif
+
+      TRIA03 = ONETHIRD * TRIA(IE)
+      DO I=1,3
+        IP=INE(I,IE)
+        DO ID=1,MDC
+          B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
+        END DO
+      END DO
+
+      IF (LBCWA .OR. LBCSP) THEN
+        DO IP = 1, IWBMNP
+          IF (LINHOM) THEN
+            IPrel=IP
+          ELSE
+            IPrel=1
+          ENDIF
+          IPGL1 = IWBNDLC(IP)
+          B(:,:,IPGL1) = WBAC(:,:,IPrel)  * SI(IPGL1)
+        END DO
+      END IF
+
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      DO IS=1,MSC
+        WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
+      END DO
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCE(ASPAR, B, U)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
@@ -4001,6 +4066,203 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+     SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      REAL(rkind), intent(out) :: ASPAR(MSC, MDC, NNZ)
+
+      INTEGER :: POS_TRICK(3,2)
+
+      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+# ifndef NO_MEMORY_CX_CY
+      REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+# else
+      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: DIFRU, USOC, WVC
+# endif
+# ifndef SINGLE_LOOP_AMATRIX
+      REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
+      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+      INTEGER     :: POS
+# else
+      REAL(rkind) :: DELTAL(MSC,MDC,3)
+      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+# endif
+      INTEGER     :: I1, I2, I3
+      INTEGER     :: IP, ID, IS, IE
+      INTEGER     :: I, IPGL1, IPrel
+
+      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
+      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+# ifdef DEBUG
+      WRITE(740+myrank,*) 'Begin of EIMPS_ASPAR_B_BLOCK'
+# endif
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+# ifndef NO_MEMORY_CX_CY
+      CALL CADVXY_VECTOR(CX, CY)
+# endif
+!
+!     Calculate countour integral quantities ...
+!
+# ifdef DEBUG
+      WRITE(740+myrank,*) ' Before MNE loop'
+# endif
+      ASPAR = 0.0_rkind ! Mass matrix ...
+
+      DO IE = 1, MNE
+# ifndef NO_MEMORY_CX_CY
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        LAMBDA(1,:,:) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
+        LAMBDA(2,:,:) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
+        FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
+        FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
+        FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
+        FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
+        FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
+        FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
+# else
+        DO I=1,3
+          IP = INE(I,IE)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              IF (LSECU .OR. LSTCU) THEN
+                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+              ELSE
+                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
+              END IF
+              IF (LSPHE) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*INVSPHTRANS(IP,2)
+              END IF
+              IF (LDIFR) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*DIFRM(IP)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IP)
+                IF (LSECU .OR. LSTCU) THEN
+                  IF (IDIFFR .GT. 1) THEN
+                    WVC = SPSIG(IS)/WK(IP,IS)
+                    USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
+                    DIFRU = ONE + USOC * (ONE - DIFRM(IP))
+                  ELSE
+                    DIFRU = DIFRM(IP)
+                  END IF
+                  CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IP,1)
+                  CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IP,2)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+
+        LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
+        FL11(:,:) = CXY(1,:,:,2)*IEN(1,IE)+CXY(2,:,:,2)*IEN(2,IE)
+        FL12(:,:) = CXY(1,:,:,3)*IEN(1,IE)+CXY(2,:,:,3)*IEN(2,IE)
+        FL21(:,:) = CXY(1,:,:,3)*IEN(3,IE)+CXY(2,:,:,3)*IEN(4,IE)
+        FL22(:,:) = CXY(1,:,:,1)*IEN(3,IE)+CXY(2,:,:,1)*IEN(4,IE)
+        FL31(:,:) = CXY(1,:,:,1)*IEN(5,IE)+CXY(2,:,:,1)*IEN(6,IE)
+        FL32(:,:) = CXY(1,:,:,2)*IEN(5,IE)+CXY(2,:,:,2)*IEN(6,IE)
+# endif
+        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
+        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
+        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        KM = MIN(ZERO,K)
+# ifndef SINGLE_LOOP_AMATRIX
+        KP(:,:,:,IE) = MAX(ZERO,K)
+        DELTAL(:,:,:,IE) = CRFS(:,:,:) - KP(:,:,:,IE)
+        NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+# else
+        KP(:,:,:) = MAX(ZERO,K)
+        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:)
+        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        TRIA03 = ONETHIRD * TRIA(IE)
+        DO I=1,3
+          IP=INE(I,IE)
+          !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+            I1=JA_IE(I,1,IE)
+            I2=JA_IE(I,2,IE)
+            I3=JA_IE(I,3,IE)
+            K1(:,:) =  KP(:,:,I)
+            DO ID=1,MDC
+              DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+        END DO
+# endif
+      END DO
+# ifndef SINGLE_LOOP_AMATRIX
+      J     = 0    ! Counter ...
+      DO IP = 1, NP_RES
+        IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            POS   =  POS_CELL(J)
+            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
+            TRIA03 = ONETHIRD * TRIA(IE)
+            DO ID=1,MDC
+              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
+            END DO
+            TMP3(:,:)  =  DTK(:,:) * NM(:,:,IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            I2    =  POSI(2,J)
+            I3    =  POSI(3,J)
+            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
+            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
+            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
+          END DO
+        ELSE
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    =  IE_CELL(J)
+            TRIA03 = ONETHIRD * TRIA(IE)
+            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
+            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
+          END DO
+        END IF
+      END DO
+# endif
+      IF (LBCWA .OR. LBCSP) THEN
+        DO IP = 1, IWBMNP
+          IF (LINHOM) THEN
+            IPrel=IP
+          ELSE
+            IPrel=1
+          ENDIF
+          IPGL1 = IWBNDLC(IP)
+          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
+        END DO
+      END IF
+# if defined DEBUG
+      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
+      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
+      DO IS=1,MSC
+        WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
+      END DO
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5B_EIMPS(LocalColor, SolDat)
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
       USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
@@ -4027,7 +4289,7 @@
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
 # if defined ASPAR_B_COMPUTE_BLOCK
-      CALL EIMPS_ASPAR_B_BLOCK(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+      CALL EIMPS_ASPAR_B_BLOCK_SOURCE(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
 # else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4191,12 +4453,11 @@
       !
       ! The advection part of the equation
       !
-      CALL EIMPS_ASPAR_B_BLOCK(ASPAR, B, X)
+      CALL EIMPS_ASPAR_BLOCK(ASPAR)
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
-
       !
       ! Now the Gauss Seidel iterations
       !
@@ -4261,6 +4522,16 @@
           END DO
         END DO
       END IF
+
+      IF (SOURCE_IMPL) THEN
+        DO IP = 1, NP_RES
+          IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+        END DO
+      ENDIF
+
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME3)
 #endif
