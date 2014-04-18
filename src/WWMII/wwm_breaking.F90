@@ -148,7 +148,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_SWB_NEW(IP, SME, KME, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR)
+      SUBROUTINE SDS_SWB_NEW(IP, SME, KME, ETOT, HS, ACLOC, IMATRA, IMATDA)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -156,12 +156,12 @@
 
          REAL(rkind), INTENT(IN)   :: ACLOC(MSC,MDC), SME, KME, ETOT, HS
 
-         REAL(rkind), INTENT(OUT)     :: SSBR(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   , INTENT(OUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+
          REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
          REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
-         REAL(rkind) :: S0, AUX
+         REAL(rkind) :: S0, AUX, SSBR(MSC,MDC)
          REAL(rkind) :: GAMMA_WB
          REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
 
@@ -266,4 +266,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-

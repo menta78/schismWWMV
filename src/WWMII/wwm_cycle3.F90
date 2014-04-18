@@ -4,29 +4,44 @@
 !**********************************************************************
       SUBROUTINE CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
          USE DATAPOOL
+         IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
 
-         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
 
-         REAL(rkind)                :: NEWAC(MSC,MDC), SSBRL(MSC,MDC), DSSBRL(MSC,MDC)
+         INTEGER                    :: IS, ID
+
+         REAL(rkind)                :: NEWAC(MSC,MDC), SSINL(MSC,MDC)
+         REAL(rkind)                :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
+         REAL(rkind)                :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
+         REAL(rkind)                :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
+         REAL(rkind)                :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
+         REAL(rkind)                :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
+         REAL(rkind)                :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+         REAL(rkind)                :: SSBRL(MSC,MDC),DSSBRL(MSC,MDC)
+         REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
+         REAL(rkind)                :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,MAXDAC,FPM,WINDTH
+         REAL(rkind)                :: RATIO,LIMFAC
 
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
          IF (MESIN .GT. 0) THEN
            CALL SET_WIND( IP, WIND10, WINDTH )
            CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-           IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH, FPM, SSINL)
+           IF (.NOT. LINID) CALL SIN_LIN( IP, WINDTH, FPM, SSINL)
            CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          ENDIF
 
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL4_NEW  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
-         IF (MESTR .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
-         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
-         IF (MESBF .GT. 0 .AND. ISHALLOW(IP) .EQ. 1) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
+         IF (ISHALLOW(IP) .EQ. 1) THEN
+           IF (MESTR .GT. 0) CALL TRIADSWAN_NEW (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
+           IF (MESBF .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
+           IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
+         ENDIF
 
          IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
          IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
@@ -34,9 +49,9 @@
          DO IS = 1, MSC
            MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
            DO ID = 1, MDC
-             NEWDAC  = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
+             NEWDAC        = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
              IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
-             LIMFAC = MIN(ONE,ABS(SIGN(LIMAC/DT4A,GTEMP2))/MAX(THR,ABS(IMATRA(IS,ID))))
+             LIMFAC        = MIN(ONE,ABS(SIGN(LIMAC/DT4A,NEWDAC/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
              IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
            ENDDO
          ENDDO
@@ -47,7 +62,6 @@
          NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
          ETOT   = ZERO 
          EFTAIL = ONE / (PTAIL(1)-ONE)
-         ETOT = DINTSPEC(IP,NEWAC)
          HS = 4._rkind*SQRT(ETOT)
          EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
          IF (ETOT .GT. EMAX) THEN
