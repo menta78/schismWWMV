@@ -3783,7 +3783,7 @@
       REAL(rkind), intent(out) :: B(MSC, MDC, MNP)
       REAL(rkind), intent(in)  :: U(MSC, MDC, MNP)
 
-      INTEGER :: IP, ID, IS, IE
+      INTEGER :: IP, ID, IS
       INTEGER :: IPGL1, IPREL
  
       REAL(rkind) :: TRIA03
@@ -3792,7 +3792,6 @@
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
 
-      TRIA03 = ONETHIRD * TRIA(IE)
       DO ID=1,MDC
         DO IS=1,MSC 
           B(IS,ID,:)  =  B(IS,ID,:) + U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
@@ -4432,10 +4431,10 @@
       !
       ! The advection part of the equation
       !
-      IF (LNONLSOURCES) THEN
+      IF (LNONL) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPARL)
       ELSE
-        CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPAR,B)
+        CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPARL,B)
       ENDIF
 
 #ifdef TIMINGS
@@ -4464,7 +4463,7 @@
             A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
             C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
           END DO
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
+          ASPARL(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
@@ -4497,7 +4496,7 @@
               C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
             END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-            ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
+            ASPARL(:,ID,I_DIAG(IP))=ASPARL(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
       END IF
@@ -4516,11 +4515,13 @@
       DO
 
         is_converged = 0
-        CALL EIMPS_B_BLOCK(U,B)
+
+        ASPAR = ASPARL
+        IF (LNONL) CALL EIMPS_B_BLOCK(U,B)
 
         DO IP=1,NP_RES 
 
-          IF (SOURCE_IMPL) THEN
+          IF (.FALSE. .AND. SOURCE_IMPL .AND. LNONL) THEN
             CALL CYCLE3 (IP, X(:,:,IP), IMATRA, IMATDA)
             IF (LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) THEN 
               ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal

@@ -11,7 +11,7 @@
  BEGTC   = 19980901.000000     ,
  DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ ENDTC   = 19980901.060000     ,
  DMIN    =  1.000000000000000E-004
  /
  &COUPL
@@ -51,7 +51,7 @@
  /
  &BOUC
  LBCSE   = F,
- LBCWA   = F,
+ LBCWA   = T,
  LBCSP   = F,
  LINHOM  = F,
  LBSP1D  = F,
@@ -216,7 +216,7 @@
  PMIN    =   0.,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T, 
- LNONLSOURCES = T,
+ LNONL = F,
  /
  &HISTORY
  BEGTC   = 19980901.000000     ,

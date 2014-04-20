@@ -322,7 +322,7 @@
 
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
-         LOGICAL                :: LNONLSOURCES = .FALSE.
+         LOGICAL                :: LNONL = .FALSE.
 
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
 
