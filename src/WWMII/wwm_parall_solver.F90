@@ -3777,46 +3777,26 @@
 !**********************************************************************
 !*
 !**********************************************************************
-      SUBROUTINE EIMPS_B_BLOCK(B, U)
+      SUBROUTINE EIMPS_B_BLOCK(U,B)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(out) :: B(MSC, MDC, MNP)
       REAL(rkind), intent(in)  :: U(MSC, MDC, MNP)
 
-      INTEGER :: POS_TRICK(3,2)
-
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-
-# ifndef NO_MEMORY_CX_CY
-      REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
-# else
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
-      REAL(rkind)      :: DIFRU, USOC, WVC
-# endif
-# ifndef SINGLE_LOOP_AMATRIX
-      REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
-      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
-      INTEGER     :: POS
-# else
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
-# endif
-      INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE
-      INTEGER :: I, IPGL1, IPrel
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      INTEGER :: IPGL1, IPREL
+ 
+      REAL(rkind) :: TRIA03
+!
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
 
       TRIA03 = ONETHIRD * TRIA(IE)
-      DO I=1,3
-        IP=INE(I,IE)
-        DO ID=1,MDC
-          B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
-        END DO
+      DO ID=1,MDC
+        DO IS=1,MSC 
+          B(IS,ID,:)  =  B(IS,ID,:) + U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
+        ENDDO
       END DO
 
       IF (LBCWA .OR. LBCSP) THEN
@@ -3827,7 +3807,7 @@
             IPrel=1
           ENDIF
           IPGL1 = IWBNDLC(IP)
-          B(:,:,IPGL1) = WBAC(:,:,IPrel)  * SI(IPGL1)
+          B(:,:,IPGL1) = WBAC(:,:,IPrel)  * SI(IPGL1) ! Overwrite ... 
         END DO
       END IF
 
@@ -3842,7 +3822,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCE(ASPAR, B, U)
+      SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCES(U, ASPAR, B)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
@@ -4289,7 +4269,7 @@
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
 # if defined ASPAR_B_COMPUTE_BLOCK
-      CALL EIMPS_ASPAR_B_BLOCK_SOURCE(SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2)
+      CALL EIMPS_ASPAR_B_BLOCK_SOURCES(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
 # else
       DO IS=1,MSC
         DO ID=1,MDC
@@ -4419,12 +4399,13 @@
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
+      REAL(rkind) :: ASPAR(MSC,MDC,NNZ), ASPARL(MSC,MDC,NNZ)
       REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged, X_LOC(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
+      REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: uloc(msc,mdc),xloc(msc,mdc)
 #ifdef MPI_PARALL_GRID
@@ -4442,8 +4423,6 @@
       CALL MY_WTIME(TIME1)
 #endif
 
-      !lambda = 1.05
-
       DO IS=1,MSC
         DO ID=1,MDC
           X(IS,ID,:)=AC2(:,IS,ID)
@@ -4453,16 +4432,16 @@
       !
       ! The advection part of the equation
       !
-      CALL EIMPS_ASPAR_BLOCK(ASPAR)
+      IF (LNONLSOURCES) THEN
+        CALL EIMPS_ASPAR_BLOCK(ASPARL)
+      ELSE
+        CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPAR,B)
+      ENDIF
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
       !
-      ! Now the Gauss Seidel iterations
-      !
-      !Print *, 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
-      !Print *, 'REFRACTION_IMPL=', REFRACTION_IMPL
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -4523,15 +4502,6 @@
         END DO
       END IF
 
-      IF (SOURCE_IMPL) THEN
-        DO IP = 1, NP_RES
-          IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
-        END DO
-      ENDIF
-
-
 #ifdef TIMINGS
       CALL MY_WTIME(TIME3)
 #endif
@@ -4546,17 +4516,31 @@
       DO
 
         is_converged = 0
+        CALL EIMPS_B_BLOCK(U,B)
 
         DO IP=1,NP_RES 
 
+          IF (SOURCE_IMPL) THEN
+            CALL CYCLE3 (IP, X(:,:,IP), IMATRA, IMATDA)
+            IF (LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) THEN 
+              ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+              B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+            ENDIF
+            IF (ABS(IOBP(IP)) .GT. 0) THEN
+              ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+              B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+            ENDIF
+          ENDIF
+
           eSum = B(:,:,IP)
 
+! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
 
           xloc = x(:,:,ip)
-
+!
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
@@ -4567,6 +4551,7 @@
               eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*XLOC(:,ID2)
             END DO
           END IF
+!
           IF (FREQ_SHIFT_IMPL) THEN
             DO ID=1,MDC
               DO IS=2,MSC
@@ -4577,7 +4562,7 @@
               END DO
             END DO
           END IF
-
+!
           eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ... 
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
