@@ -218,7 +218,7 @@
         ELSE IF ( BETA .LT. ONE ) THEN
           ARG    = EXP  (( QQ - 1. ) / BETA2 )
           QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-          DO IS = 1, 3
+          DO IS = 1, 10 
             QB     = EXP((QB-1.)/BETA2)
           END DO
         ELSE
@@ -226,13 +226,13 @@
         END IF
 #elif SWAN_QB
         IF (BETA .LT. 0.2D0) THEN
-           QB = 0.0D0
-        ELSE IF (BETA .LT. 1.0D0) THEN
+           QB = ZERO 
+        ELSE IF (BETA .LT. ONE) THEN
            BETA2 = BETA*BETA
-           AUX   = EXP((QQ-1.0d0)/BETA2)
+           AUX   = EXP((QQ-ONE)/BETA2)
            QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
         ELSE
-           QB = 1.0D0
+           QB = ONE 
         END IF
 #else
         STOP 'NO QB DEFINED' 
@@ -243,7 +243,7 @@
 
         SURFA0 = 0.
         SURFA1 = 0.
-
+ 
         IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
           IF ( BETA2 .LT. ONE - VERYSMALL) THEN
             WS  = ( ALPBJ / PI) *  QB * SME / BETA2
@@ -262,7 +262,6 @@
         IMATRA = SURFA0 * ACLOC
         IMATDA = SURFA1
         !IF (QB .GT. 0.001) WRITE(*,*) QB, SURFA0, SURFA1 
- 
 
       END SUBROUTINE
 !**********************************************************************

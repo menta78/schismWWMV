@@ -1194,7 +1194,7 @@
       real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell,facres,facscl,siglow
       
       real(rkind) :: E(MSC)
-      real(rkind), allocatable :: sa(:,:)
+      real(rkind), allocatable :: sa(:,:), da(:,:)
 
       PTRIAD(1)  = 0.1
       PTRIAD(2)  = 2.2
@@ -1244,8 +1244,10 @@
       WISM1  = 1. - WISM
 
       ALLOCATE (SA(1:MSC+ISP1,1:MDC))
+      ALLOCATE (DA(1:MSC+ISP1,1:MDC))
       E  = 0.
       SA = 0.
+      DA = 0.
 
       ISMAX = 1
       DO IS = 1, MSC
@@ -1292,9 +1294,9 @@
           SIGPI = SPSIG(IS) * PI2
           DO ID = 1, MDC
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            IF (ABS(STRI) .LT. THR .OR. ACLOC(IS,ID) .LT. THR) CYCLE
+            IF (ABS(STRI) .LT. SMALL .OR. ACLOC(IS,ID) .LT. SMALL) CYCLE
             IMATRA(IS,ID) = STRI / SIGPI
-            IMATDA(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI)
+            !IMATDA(IS,ID) = -STRI / (ACLOC(IS,ID)*SIGPI)
           END DO
         END DO
 

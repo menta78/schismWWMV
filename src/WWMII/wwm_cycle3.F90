@@ -53,18 +53,18 @@
            IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
          ENDIF
 
-!         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
-!         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
+         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
+         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
 
-!         DO IS = 1, MSC
-!           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-!           DO ID = 1, MDC
-!             NEWDAC        = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
-!             IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
-!             LIMFAC        = MIN(ONE,ABS(SIGN(MAXDAC/DT4A,NEWDAC/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
-!             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
-!           ENDDO
-!         ENDDO
+         DO IS = 1, MSC
+           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+           DO ID = 1, MDC
+             NEWDAC        = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
+             IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
+             LIMFAC        = MIN(ONE,ABS(SIGN(MAXDAC/DT4A,NEWDAC/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
+             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
+           ENDDO
+         ENDDO
 
          IMATRA = IMATRA +  SSBR +  SSBF 
          IMATDA = IMATDA + DSSBR + DSSBF
@@ -83,14 +83,18 @@
            IMATDA = IMATDA + DSSBRL
          ENDIF
 
-         !WRITE(*,*) 'LINEAR INPUT', SUM(SSINL)
-         !WRITE(*,*) 'EXP INPUT', SUM(SSINE), SUM(DSSINE)
-         !WRITE(*,*) 'WHITECAP', SUM(SSDS), SUM(DSSDS)
-         !WRITE(*,*) 'SNL4', SUM(SSNL4), SUM(DSSNL4)
-         !WRITE(*,*) 'SNL3', SUM(SSNL3), SUM(DSSNL3)
-         !WRITE(*,*) 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF)
-         !WRITE(*,*) 'BREAKING', SUM(SSBR), SUM(DSSBR)
-         !WRITE(*,*) 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL)
+         IF (.FALSE.) THEN
+         WRITE(*,*) 'LINEAR INPUT', SUM(SSINL)
+         WRITE(*,*) 'EXP INPUT', SUM(SSINE), SUM(DSSINE)
+         WRITE(*,*) 'WHITECAP', SUM(SSDS), SUM(DSSDS)
+         WRITE(*,*) 'SNL4', SUM(SSNL4), SUM(DSSNL4)
+         WRITE(*,*) 'SNL3', SUM(SSNL3), SUM(DSSNL3)
+         WRITE(*,*) 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF)
+         WRITE(*,*) 'BREAKING', SUM(SSBR), SUM(DSSBR)
+         WRITE(*,*) 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL)
+         WRITE(*,*) 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA)
+         WRITE(*,*) 'LIMITER STUFF', MAXDAC, LIMFAC 
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
