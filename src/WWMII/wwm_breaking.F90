@@ -222,7 +222,7 @@
             QB     = EXP((QB-1.)/BETA2)
           END DO
         ELSE
-          QB = ONE - 10.E-10
+          QB = ONE - VERYSMALL 
         END IF
 #elif SWAN_QB
         IF (BETA .LT. 0.2D0) THEN
@@ -244,8 +244,8 @@
         SURFA0 = 0.
         SURFA1 = 0.
 
-        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-          IF ( BETA2 .LT. ONE - 10.E-10) THEN
+        IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
+          IF ( BETA2 .LT. ONE - VERYSMALL) THEN
             WS  = ( ALPBJ / PI) *  QB * SME / BETA2
             SbrD = WS * (ONE - QB) / (BETA2 - QB)
           ELSE
@@ -260,7 +260,7 @@
         END IF
 
          IMATRA = SURFA0 * ACLOC
-         IMATDA = -SURFA1
+         IMATDA = SURFA1
 
       END SUBROUTINE
 !**********************************************************************

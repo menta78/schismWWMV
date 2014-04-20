@@ -1185,7 +1185,7 @@
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
       real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: imatra(msc,mdc), imatda(msc,mdc)
 !
       integer i1, i2, id, is, ism, ism1, ismax, isp, isp1,  ij1, ij2, ires
 
@@ -1293,8 +1293,8 @@
           DO ID = 1, MDC
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
             IF (ABS(STRI) .LT. THR .OR. ACLOC(IS,ID) .LT. THR) CYCLE
-            IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-            IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+            IMATRA(IS,ID) = STRI / SIGPI
+            IMATDA(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI)
           END DO
         END DO
 

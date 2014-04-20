@@ -25,6 +25,16 @@
          REAL(rkind)                :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,MAXDAC,FPM,WINDTH
          REAL(rkind)                :: RATIO,LIMFAC
 
+         NEWAC = ZERO
+         SSINL = ZERO
+         SSINE = ZERO; DSSINE = ZERO
+         SSNL4 = ZERO; DSSNL4 = ZERO
+         SSNL3 = ZERO; DSSNL3 = ZERO
+         SSBR  = ZERO; DSSBR  = ZERO
+         SSBF  = ZERO; DSSBF  = ZERO
+         SSBRL = ZERO; DSSBRL = ZERO
+         IMATRA = ZERO; IMATDA = ZERO
+
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
          IF (MESIN .GT. 0) THEN
@@ -38,42 +48,49 @@
          IF (MESNL .GT. 0) CALL SNL4_NEW  (IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
          IF (ISHALLOW(IP) .EQ. 1) THEN
-           !IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2 (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
-           !IF (MESBF .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
-           !IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
+           IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2 (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
+           IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
+           IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
          ENDIF
 
-         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
-         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
+!         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 +  SSNL3 
+!         IMATDA =        DSSINE + DSSDS + DSSNL4 + DSSNL3 
 
-         RETURN
+!         DO IS = 1, MSC
+!           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+!           DO ID = 1, MDC
+!             NEWDAC        = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
+!             IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
+!             LIMFAC        = MIN(ONE,ABS(SIGN(MAXDAC/DT4A,NEWDAC/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
+!             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
+!           ENDDO
+!         ENDDO
 
-         DO IS = 1, MSC
-           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-           DO ID = 1, MDC
-             NEWDAC        = IMATRA(IS,ID)*DT4A/MAX((ONE-DT4A*IMATDA(IS,ID)),ONE) 
-             IMATRA(IS,ID) = MIN(ABS(NEWDAC),MAXDAC)/DT4A ! This is now the source term ... right hand side
-             LIMFAC        = MIN(ONE,ABS(SIGN(MAXDAC/DT4A,NEWDAC/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
-             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) ! This is the new source term ... diagonal part 
-           ENDDO
-         ENDDO
+         IMATRA = IMATRA +  SSBR +  SSBF 
+         IMATDA = IMATDA + DSSBR + DSSBF
 
-         IMATRA = MAX(ZERO, IMATRA +  SSBR +  SSBF) 
-         IMATDA = MIN(ZERO, IMATDA + DSSBR + DSSBF)
+         IF (LMAXETOT) THEN
+           NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
+           EFTAIL = ONE / (PTAIL(1)-ONE)
+           HS = 4._rkind*SQRT(ETOT)
+           EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
+           IF (ETOT .GT. EMAX) THEN
+             RATIO  = EMAX/ETOT
+             SSBRL  = ACLOC*(RATIO-ONE)/DT4A
+             DSSBRL = (RATIO-ONE)/DT4A 
+           END IF
+           IMATRA = IMATRA +  SSBRL 
+           IMATDA = IMATDA + DSSBRL
+         ENDIF
 
-         NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
-         ETOT   = ZERO 
-         EFTAIL = ONE / (PTAIL(1)-ONE)
-         HS = 4._rkind*SQRT(ETOT)
-         EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
-         IF (ETOT .GT. EMAX) THEN
-           RATIO  = EMAX/ETOT
-           SSBRL  = ACLOC*(RATIO-ONE)/DT4A
-           DSSBRL = (RATIO-ONE)/DT4A 
-         END IF
-
-         IMATRA = MAX(ZERO, IMATRA +  SSBRL) 
-         IMATDA = MIN(ZERO, IMATDA + DSSBRL)
+         !WRITE(*,*) 'LINEAR INPUT', SUM(SSINL)
+         !WRITE(*,*) 'EXP INPUT', SUM(SSINE), SUM(DSSINE)
+         !WRITE(*,*) 'WHITECAP', SUM(SSDS), SUM(DSSDS)
+         !WRITE(*,*) 'SNL4', SUM(SSNL4), SUM(DSSNL4)
+         !WRITE(*,*) 'SNL3', SUM(SSNL3), SUM(DSSNL3)
+         !WRITE(*,*) 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF)
+         !WRITE(*,*) 'BREAKING', SUM(SSBR), SUM(DSSBR)
+         !WRITE(*,*) 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL)
 
       END SUBROUTINE
 !**********************************************************************

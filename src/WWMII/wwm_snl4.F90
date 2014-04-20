@@ -555,8 +555,8 @@
            SIGPI2 = SPSIG(IS)*PI2
            DO ID = 1, MDC
              IF (ACLOC(IS,ID) .LT. THR) CYCLE 
-             IMATRA(IS,ID) = IMATRA(IS,ID) + SFNL(IS,ID) / SIGPI2
-             IMATDA(IS,ID) = IMATDA(IS,ID) - SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
+             IMATRA(IS,ID) = SFNL(IS,ID) / SIGPI2
+             IMATDA(IS,ID) = SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
            END DO
          END DO
 

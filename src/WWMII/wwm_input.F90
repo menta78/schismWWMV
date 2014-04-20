@@ -938,17 +938,17 @@
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
          IF (ICOMP .eq. 3) THEN
-           IF (DMETHOD .ge. 1) THEN
+           IF (DMETHOD .GT. 0) THEN
              REFRACTION_IMPL=.TRUE.
            ELSE
              REFRACTION_IMPL=.FALSE.
            END IF
-           IF (FMETHOD .ge. 1) THEN
+           IF (FMETHOD .GT. 0) THEN
              FREQ_SHIFT_IMPL=.TRUE.
            ELSE
              FREQ_SHIFT_IMPL=.FALSE.
            END IF
-           IF (SMETHOD .ge. 1) THEN
+           IF (SMETHOD .GT. 0) THEN
              SOURCE_IMPL=.TRUE.
            ELSE
              SOURCE_IMPL=.FALSE.
