@@ -438,7 +438,7 @@
 !
 ! if etot too small skip ...
 !
-         if (etot .gt. verysmall) then
+         if (etot .gt. thr) then
 !
 ! integrals ... inlined ... for speed ...
 !
@@ -523,7 +523,7 @@
 ! integral parameters ...
 !
            HS          = MAX(ZERO,4.*SQRT(ETOT))
-	   IF (LMONO_OUT) HS = HS / SQRT(2.)
+           IF (LMONO_OUT) HS = HS / SQRT(2.)
            SME01       = ETOT_SPSIG / ETOT
            KME01       = ETOT_WK / ETOT
            SME10       = ETOT / ACTOT
@@ -534,6 +534,7 @@
 !
 ! no or too less energy ...
 !
+           ETOT        = ZERO
            HS          = ZERO 
            SME01       = ZERO 
            KME01       = 10.0_rkind

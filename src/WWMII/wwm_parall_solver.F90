@@ -4525,7 +4525,7 @@
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                CALL CYCLE3 (IP, U(:,:,IP), IMATRA, IMATDA)
+                CALL CYCLE3 (IP, max(zero,U(:,:,IP)), IMATRA, IMATDA)
                 ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                 B(:,:,IP)             = BL(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
               ENDIF
@@ -4571,7 +4571,8 @@
             END DO
           END IF
 !
-          eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ... 
+          !eSum=max(zero,eSum/ASPAR(:,:,I_DIAG(IP))) ! solve ... 
+          eSum=eSum/ASPAR(:,:,I_DIAG(IP))
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
             !x(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
@@ -4632,7 +4633,9 @@
         ELSE
           X = U
         ENDIF 
+!
 #ifdef SOLVER_NORM
+!
         Norm_L2=0
         DO IP=1,NP_RES
           eSum=-B(:,:,IP)

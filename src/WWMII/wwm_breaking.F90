@@ -235,7 +235,7 @@
            QB = 1.0D0
         END IF
 #else
-        QB = ZERO
+        STOP 'NO QB DEFINED' 
 #endif
         QBLOCAL(IP) = QB
 
@@ -249,7 +249,7 @@
             WS  = ( ALPBJ / PI) *  QB * SME / BETA2
             SbrD = WS * (ONE - QB) / (BETA2 - QB)
           ELSE
-            WS  =  (ALPBJ/PI)*SME !( PSURF(1) / PI) * SMEBRK
+            WS  =  (ALPBJ/PI)*SME 
             SbrD = ZERO
           END IF
           SURFA0 = SbrD
@@ -259,8 +259,10 @@
           SURFA1 = ZERO
         END IF
 
-         IMATRA = SURFA0 * ACLOC
-         IMATDA = SURFA1
+        IMATRA = SURFA0 * ACLOC
+        IMATDA = SURFA1
+        !IF (QB .GT. 0.001) WRITE(*,*) QB, SURFA0, SURFA1 
+ 
 
       END SUBROUTINE
 !**********************************************************************
