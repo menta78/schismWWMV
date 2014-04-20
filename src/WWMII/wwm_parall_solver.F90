@@ -4606,13 +4606,13 @@
             ENDIF
           ENDIF
 
-          !IF (nbiter .eq. maxiter-1) THEN
-          !   WRITE(850+myrank,'(3I10,2F13.10,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-          !   CALL FLUSH(850+myrank)
-          !ENDIF
+          IF (nbiter .eq. maxiter-1 .and. p_is_converged .ge. solverthr) THEN
+             WRITE(850+myrank,'(3I10,2F20.17,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
+             CALL FLUSH(850+myrank)
+          ENDIF
 
         END DO ! IP 
-!        CLOSE(850+myrank)
+        !CLOSE(850+myrank)
 
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
