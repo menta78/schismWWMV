@@ -111,6 +111,7 @@
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC = AC2(IP,:,:)
                CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.) 
+               !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
                IMATDAA(IP,:,:) = IMATDA 
                IMATRAA(IP,:,:) = IMATRA 
              ENDIF
@@ -119,6 +120,7 @@
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                  ACLOC = AC2(IP,:,:)
                  CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.)
+                 !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
                  IMATDAA(IP,:,:) = IMATDA
                  IMATRAA(IP,:,:) = IMATRA 
                ENDIF

@@ -3794,7 +3794,7 @@
 
       DO ID=1,MDC
         DO IS=1,MSC 
-          B(IS,ID,:)  =  U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
+          B(IS,ID,:) = U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
         ENDDO
       END DO
 
@@ -3811,11 +3811,7 @@
       END IF
 
 # if defined DEBUG
-      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
-      DO IS=1,MSC
-        WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
-      END DO
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -4514,10 +4510,9 @@
 !      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
 
       DO
-
         is_converged = 0
-
         ASPAR = ASPARL
+        !CALL EIMPS_B_BLOCK(X,BL)
             B = BL
 
         DO IP=1,NP_RES 
@@ -4525,7 +4520,7 @@
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                CALL CYCLE3 (IP, max(zero,U(:,:,IP)), IMATRA, IMATDA)
+                CALL CYCLE3 (IP, max(zero,X(:,:,IP)), IMATRA, IMATDA)
                 ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                 B(:,:,IP)             = BL(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
               ENDIF
@@ -4539,9 +4534,7 @@
               ENDIF
             ENDIF
           ENDIF
-
           eSum = B(:,:,IP)
-
 ! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
@@ -4572,7 +4565,9 @@
           END IF
 !
           !eSum=max(zero,eSum/ASPAR(:,:,I_DIAG(IP))) ! solve ... 
-          eSum=eSum/ASPAR(:,:,I_DIAG(IP))
+          eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ...
+
+          !if (melim .gt. 0) call limiter(ip,xloc,esum)
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
             !x(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
