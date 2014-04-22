@@ -1285,8 +1285,9 @@
               AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
               RINT = AUX1 / AUX2
               FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              SA(IS,ID) = MAX(ZERO, FT * ( E0 * E0 - 2. * EM * E0))
-              DA(IS,ID) = MAX(ZERO, FT * ( 2 * E0 - EM) )
+              !SA(IS,ID) = MAX(ZERO, FT * ( E0 * E0 - 2. * EM * E0))
+              SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
+              !DA(IS,ID) = MAX(ZERO, FT * ( 2 * E0 - EM) )
               !IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
            END DO
         END DO
@@ -1295,14 +1296,16 @@
           SIGPI = SPSIG(IS) * PI2
           DO ID = 1, MDC
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            DSTRI = DA(IS,ID) - 2.*(WISP  * DA(IS+ISP1,ID) + WISP1 * DA(IS+ISP,ID))
             IF (ABS(STRI) .LT. SMALL .OR. ACLOC(IS,ID) .LT. SMALL) CYCLE
-            IMATRA(IS,ID) = STRI / SIGPI
-            IMATDA(IS,ID) = - DSTRI  
+            IF (STRI .GT. 0.) THEN
+              IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+            ELSE
+              IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
+            END IF
           END DO
         END DO
 
-      END IF
+      endif
 
       deallocate(sa)
       end subroutine 

@@ -38,6 +38,8 @@
          SSLIM = ZERO; DSSLIM = ZERO
          IMATRA = ZERO; IMATDA = ZERO
 
+         TESTNODE = 339
+
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
          IF (MESIN .GT. 0) THEN
@@ -57,19 +59,23 @@
          ENDIF
 
          IMATRA = SSINL + SSDS + SSINE + SSNL4 + SSNL3
+         IMATDA = DSSDS + DSSNL3
 
          DO IS = 1, MSC
            MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
            DO ID = 1, MDC
              NEWDAC = IMATRA(IS,ID)*DT4A
              LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!             IMATRA(IS,ID) = LIMDAC/DT4A
+             IMATRA(IS,ID) = LIMDAC/DT4A
              LIMFAC        = MIN(ONE,ABS(LIMDAC)/MAX(THR,ABS(IMATRA(IS,ID)*DT4A)))
 !             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) 
              SSLIM(IS,ID) = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
              DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID) - ABS(LIMFAC * IMATDA(IS,ID))),NEWDAC)
            ENDDO
          ENDDO
+
+         IMATRA = IMATRA + SSBR 
+         IMATDA = IMATDA + DSSBR + DSSBF
 
          IF (LMAXETOT) THEN
            NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
@@ -81,8 +87,8 @@
              SSBRL  = ACLOC*(RATIO-ONE)/DT4A
              DSSBRL = (RATIO-ONE)/DT4A 
            END IF
-!           IMATRA = IMATRA +  SSBRL 
-!           IMATDA = IMATDA + DSSBRL
+           IMATRA = IMATRA +  SSBRL 
+           IMATDA = IMATDA + DSSBRL
          ENDIF
 
          IF (IP == TESTNODE) THEN
