@@ -135,12 +135,22 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SOURCE_INT_IMP_WAM_PRE()
+      SUBROUTINE SOURCE_INT_IMP_WAM_PRE
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER        :: IP, IS, ID
-         REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
-         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         INTEGER      :: IP, IS, ID
+         REAL(rkind)  :: ACLOC(MSC,MDC), VEC2RAD
+         REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)  :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
+         REAL(rkind)  :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
+         REAL(rkind)  :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+         REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
+         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,MAXDAC,FPM,WINDTH
+         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC
+
+         SSNL3 = ZERO; DSSNL3 = ZERO
+         SSBR  = ZERO; DSSBR  = ZERO
+         SSBF  = ZERO; DSSBF  = ZERO
 
 !$OMP WORKSHARE
          IMATDAA = 0.
@@ -205,12 +215,20 @@
                  WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
                  WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
                ENDIF
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
+               DO ID = 1, MDC
+                 DO IS = 1, MSC 
                    IMATDAA(IP,IS,ID) =  FL(IP,ID,IS)
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO 
+               IF (ISHALLOW(IP) .EQ. 1) THEN
+                 CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+                 IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2 (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
+                 IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
+                 IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
+                 IMATDAA(IP,:,:) =  IMATDAA(IP,IS,ID) + DSSNL3 + DSSBR + DSSBF 
+                 IMATRAA(IP,:,:) =  IMATRAA(IP,IS,ID) + SSNL3 + SSBR
+               ENDIF
                !ISELECT = 30
                !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
              END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)

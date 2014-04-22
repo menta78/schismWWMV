@@ -33,9 +33,9 @@
  FRLOW   =   0.05,
  FRHIGH  =   1.,
  MSC     =          36,
- FILEGRID        = system.dat                                                                                                        
+ FILEGRID        =  hgrid.gr3                                                                                                        
                            ,
- IGRIDTYPE       =           1,
+ IGRIDTYPE       =           3,
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
@@ -133,7 +133,7 @@
  /
  &ENGS
  MESNL   =           1,
- MESIN   =           1, 
+ MESIN   =           5, 
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =        0.019,
@@ -142,19 +142,19 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
- MESDS   =           2, 
+ MESDS   =           5, 
  MESTR   =           1,
  TRICO   =          1.,
  TRIRA   =         2.5,
  TRIURS  =         0.1,
 /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1, 
  DMETHOD =           0,
  LSOURCESWWIII   = F,
- LSOURCESWAM     = T, 
+ LSOURCESWAM     = F, 
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -167,7 +167,7 @@
  LSIGBOUND       = F,
  LLIMT   = T,
  LIMFAK  = 0.1,
- MELIM   = 3,
+ MELIM   = 1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
