@@ -2604,7 +2604,7 @@
         outwind(:,2)=Vlocal
       END IF
 #else
-      outinwd=outTotal
+      outwind=outTotal
 #endif
       END SUBROUTINE
 #endif

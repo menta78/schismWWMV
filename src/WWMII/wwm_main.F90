@@ -434,11 +434,11 @@
       RTIME = MAIN%TMJD - MAIN%BMJD
 
 #ifndef SELFE
-# if defined WWM_MPI
+#if defined WWM_MPI
       IF (myrank.eq.0) WRITE(*,101)  K, MAIN%ISTP, RTIME
-# elif
+#else
       WRITE(*,101)  K, MAIN%ISTP, RTIME
-# endif 
+#endif 
 #endif
       CALL IO_2(K)
 
