@@ -46,12 +46,12 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = F,
+ LINID   = T,
  INITSTYLE  = 1,
  /
  &BOUC
  LBCSE   = F,
- LBCWA   = T,
+ LBCWA   = F,
  LBCSP   = F,
  LINHOM  = F,
  LBSP1D  = F,
@@ -166,9 +166,9 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- LLIMT   = T,
+ LLIMT   = F,
  LIMFAK  = 0.100000000000000     ,
- MELIM   =           1,
+ MELIM   =           3,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
@@ -212,11 +212,11 @@
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       =           0,
- LSOURCESWAM     = F,
+ LSOURCESWAM     = T,
  PMIN    =   0.0,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T, 
- LNONL = T,
+ LNONL = F,
  /
  &HISTORY
  BEGTC   = 19980901.000000     ,

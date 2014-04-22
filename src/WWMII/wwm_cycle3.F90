@@ -66,7 +66,7 @@
            DO ID = 1, MDC
              NEWDAC = IMATRA(IS,ID)*DT4A
              LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-             IMATRA(IS,ID) = LIMDAC/DT4A
+!             IMATRA(IS,ID) = LIMDAC/DT4A
              LIMFAC        = MIN(ONE,ABS(LIMDAC)/MAX(THR,ABS(IMATRA(IS,ID)*DT4A)))
 !             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) 
              SSLIM(IS,ID) = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)

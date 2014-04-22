@@ -3826,6 +3826,7 @@
       INTEGER :: POS_TRICK(3,2)
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+      REAL(rkind):: GTEMP2, DELFL, USFM, FLHAB, LIMFAC
 # ifndef NO_MEMORY_CX_CY
       REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
 # else
@@ -4022,7 +4023,22 @@
         END DO
       END IF
 
-      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+        DO IP = 1, NP_RES
+          DO IS = 1, MSC
+            DO ID = 1, MDC 
+              GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+              DELFL  = COFRM4(IS)*DT4S
+              USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              FLHAB  = ABS(GTEMP2*DT4S)
+              FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
+              B(IS,ID,IP)  = B(IS,ID, IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
+              LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+              ASPAR(IS,ID,I_DIAG(IP)) = ASPAR(IS,ID,I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID)
+            END DO
+          END DO 
+        END DO
+      ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
           IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
@@ -4534,6 +4550,7 @@
               ENDIF
             ENDIF
           ENDIF
+
           eSum = B(:,:,IP)
 ! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
