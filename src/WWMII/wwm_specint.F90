@@ -145,12 +145,9 @@
          REAL(rkind)  :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
          REAL(rkind)  :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
          REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
-         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,MAXDAC,FPM,WINDTH
-         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC
-
-         SSNL3 = ZERO; DSSNL3 = ZERO
-         SSBR  = ZERO; DSSBR  = ZERO
-         SSBF  = ZERO; DSSBF  = ZERO
+         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH
+         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
+         REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA
 
 !$OMP WORKSHARE
          IMATDAA = 0.
@@ -221,13 +218,35 @@
                    IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
                  ENDDO
                ENDDO 
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+                   NEWDAC = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+                   NEWDACDT = NEWDAC/DT4A
+                   DNEWDACDTDA = NEWDAC/AC2(IP,IS,ID)/DT4A
+                   DELFL  = COFRM4(IS)*DT4S
+                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                   MAXDAC = USFM*DELFL
+                   MAXDACDT = USFM*DELFL/DT4A
+                   MAXDACDTDA = MAXDACDT/AC2(IP,IS,ID) 
+                   FLHAB  = MIN(ABS(GTEMP2*DT4A),USFM*DELFL)/DT4S
+                   SC     = SIGN(MIN(ABS(NEWDACDT),MAXDACDT),NEWDAC)
+                   SP     = SIGN(MIN(ABS(DNEWDACDTDA),MAXDACDTDA),NEWDAC)
+                   !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
+                   LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+                   !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
+                 END DO
+               END DO
                IF (ISHALLOW(IP) .EQ. 1) THEN
-                 CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-                 IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2 (IP,HS,SME01,ACLOC,SSNL3, DSSNL3)
+                 CALL MEAN_WAVE_PARAMETER(IP,AC2(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+                 SSNL3 = ZERO; DSSNL3 = ZERO
+                 SSBR  = ZERO; DSSBR  = ZERO
+                 SSBF  = ZERO; DSSBF  = ZERO
+                 IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2(IP,HS,SME01,ACLOC,SSNL3,DSSNL3)
                  IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
-                 IMATDAA(IP,:,:) =  IMATDAA(IP,IS,ID) + DSSNL3 + DSSBR + DSSBF 
-                 IMATRAA(IP,:,:) =  IMATRAA(IP,IS,ID) + SSNL3 + SSBR
+                 !IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR
+                 !IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
                ENDIF
                !ISELECT = 30
                !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
