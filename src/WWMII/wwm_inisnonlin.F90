@@ -86,7 +86,7 @@
 
       IF(.NOT.ALLOCATED(FTRF)) &
      &   ALLOCATE(FTRF(MFRSTLW:1))
-      ALPH=1./EPMMA(1.)
+      ALPH=1./EPMMA(1._rkind)
       FRR=1.
       DO MC=1,MFRSTLW,-1
          FTRF(MC)=ALPH*EPMMA(FRR)
