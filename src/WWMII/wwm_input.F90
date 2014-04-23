@@ -1262,9 +1262,9 @@
             CALL MPI_RECV(rbuf_real,nb_real,rtype, 0, 34, comm, istatus, ierr)
             idx=0
             DO IP=1,NP_TOTAL
-              rbuf_real(idx+1)=XPtotal(IP)
-              rbuf_real(idx+2)=YPtotal(IP)
-              rbuf_real(idx+3)=DEPtotal(IP)
+              XPtotal(IP) = rbuf_real(idx+1)
+              YPtotal(IP) = rbuf_real(idx+2)
+              DEPtotal(IP)= rbuf_real(idx+3)
               idx=idx+3
             END DO
           END IF
