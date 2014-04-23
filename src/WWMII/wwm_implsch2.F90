@@ -146,7 +146,7 @@
 
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA 1'
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
-      &                              USNEW(IJS), Z0NEW(IJS), ILEV
+      &                              USNEW(IJS), Z0NEW(IJS)
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
@@ -181,7 +181,7 @@
       ENDIF
 
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 1'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,15F15.7)') IJS, IJL, SUM(FL3), &
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,7F15.7,I10)') IJS, IJL, SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, &
      &              SUM(SL), &
