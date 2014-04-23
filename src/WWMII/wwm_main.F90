@@ -410,10 +410,8 @@
         CALL COMPUTE_SEMI_IMPLICIT
       ELSE IF (ICOMP .EQ. 2) THEN 
         CALL COMPUTE_SEMI_IMPLICIT
-#ifdef PETSC
       ELSE IF (ICOMP .EQ. 3) THEN 
         CALL COMPUTE_IMPLICIT
-#endif
       END IF
 
 #ifdef TIMINGS
@@ -514,11 +512,7 @@
         ELSE IF (ICOMP .EQ. 2) THEN
           CALL COMPUTE_SEMI_IMPLICIT
         ELSE IF (ICOMP .EQ. 3) THEN
-#ifdef PETSC
           CALL COMPUTE_IMPLICIT
-#else
-          CALL WWM_ABORT('U MUST USE PETSC')
-#endif
         END IF
 
         ITERTIME = RTIME*DAY2SEC+IT*DT_ITER
