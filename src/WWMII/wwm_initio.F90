@@ -436,9 +436,8 @@
       CALL MY_WTIME(TIME1)
 #endif
 
-#ifdef MPI_PARALL_GRID
 ! variable nx1 should be initialized in selfe code, not here!
-# ifndef PDLIB
+#if defined MPI_PARALL_GRID && !defined PDLIB
       do i=1,3
         do j=1,2
           nx1(i,j)=i+j
@@ -449,7 +448,6 @@
           endif
         enddo
       enddo
-# endif
 #endif
       CALL INIT_FILE_HANDLES
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE SETTING FHNDL'
@@ -474,6 +472,8 @@
       IF (IGRIDTYPE .eq. 2) THEN
         CALL WWM_ABORT('Not yet support for PDLIB and IGRIDTYPE=2')
       END IF
+      write(DBG%FHNDL,*) 'sum(XPtotal)=', sum(XPtotal)
+      write(DBG%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
       CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
       call fillPublicVars()
       CALL INIT_ARRAYS
