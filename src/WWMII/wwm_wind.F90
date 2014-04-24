@@ -2404,7 +2404,6 @@
 #ifdef GRB
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
-!* We use 
 !****************************************************************************
       SUBROUTINE INIT_GRIB_ECMWF
       USE DATAPOOL
@@ -2413,9 +2412,10 @@
       INTEGER IT
       INTEGER ifile, i, n
       integer, allocatable :: igrib(:)
-      integer dataDate, stepRange
+      integer dataDate, stepRange, dataTime
       character(len=100) eShortName
       integer eYear, eMonth, eDay, resYear, resMonth
+      integer eHour, eMin, eSec, resHour, resMin
       integer WeFound
       REAL(rkind), ALLOCATABLE :: GRIB_LON(:,:), GRIB_LAT(:,:)
       character (len=15) :: eStrTime
@@ -2424,6 +2424,7 @@
       REAL(rkind) :: deltaLAT, deltaLON
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer iX, iY
+      LOGICAL :: USE_STEPRANGE = .FALSE.
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
       DO
@@ -2454,19 +2455,36 @@
         i=1
         call grib_new_from_file(ifile, igrib(i))
         call grib_get(igrib(i), 'dataDate', dataDate)
-        call grib_get(igrib(i), 'stepRange', stepRange)
+        WRITE(WINDBG%FHNDL, *) 'dataDate=', dataDate
         eYear=(dataDate - mod(dataDate,10000))/10000
         resYear=dataDate - 10000*eYear
         eMonth=(resYear - mod(resYear,100))/100
         resMonth=resYear - 100*eMonth;
         eDay=resMonth
-        WRITE(WINDBG%FHNDL, *) 'dataDate=', dataDate
-        WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
-        WRITE(eStrTime,10) eYear, eMonth, eDay
- 10     FORMAT(i4.4,i2.2,i2.2,'.000000')
-        CALL CT2MJD(eStrTime, eTimeBase)
-        eTimeMjd=eTimeBase + SHIFT_WIND_TIME + DBLE(stepRange)/24.0_rkind
+        IF (USE_STEPRANGE) THEN
+          call grib_get(igrib(i), 'stepRange', stepRange)
+          WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
+          eHour=0
+          eMin=0
+          eSec=0
+          WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
+ 10       FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+          CALL CT2MJD(eStrTime, eTimeBase)
+          eTimeMjd=eTimeBase + SHIFT_WIND_TIME + DBLE(stepRange)/24.0_rkind
+        ELSE
+          call grib_get(igrib(i), 'dataTime', dataTime)
+          WRITE(WINDBG%FHNDL, *) 'dataTime=', dataTime
+          eHour=(dataTime - mod(dataTime,10000))/10000
+          resHour=dataTime - 10000*eHour
+          eMin=(resHour - mod(resHour,100))/100
+          resMin=resHour - 100*eHour;
+          eDay=resMin
+          WRITE(eStrTime,20) eYear, eMonth, eDay, eHour, eMin, eSec
+ 20       FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+          CALL CT2MJD(eStrTime, eTimeBase)
+          eTimeMjd=eTimeBase + SHIFT_WIND_TIME
+        END IF
         WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
         wind_time_mjd(IT)=eTimeMjd
         CALL GRIB_CLOSE_FILE(ifile)
