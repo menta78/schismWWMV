@@ -33,9 +33,9 @@
  FRLOW   =   0.05,
  FRHIGH  =   1.,
  MSC     =          36,
- FILEGRID        =  hgrid.gr3                                                                                                        
+ FILEGRID        =  system.dat                                                                                         
                            ,
- IGRIDTYPE       =           3,
+ IGRIDTYPE       =           1,
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
@@ -149,8 +149,8 @@
  TRIURS  =         0.1,
 /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
+ ICOMP   =           0,
+ AMETHOD =           0,
  SMETHOD =           1, 
  DMETHOD =           0,
  LSOURCESWWIII   = F,
