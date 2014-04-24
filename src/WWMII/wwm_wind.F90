@@ -2435,7 +2435,6 @@
       END DO
       WRITE(WINDBG%FHNDL,*) 'NUM_GRIB_FILES=', NUM_GRIB_FILES
       REWIND (WIN%FHNDL)
-
       ALLOCATE(GRIB_FILE_NAMES(NUM_GRIB_FILES), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 18')
       DO IT = 1, NUM_GRIB_FILES
@@ -2472,11 +2471,9 @@
         IF (USE_DATATIME) THEN
           call grib_get(igrib(i), 'dataTime', dataTime)
           WRITE(WINDBG%FHNDL, *) 'dataTime=', dataTime
-          eHour=(dataTime - mod(dataTime,10000))/10000
-          resHour=dataTime - 10000*eHour
-          eMin=(resHour - mod(resHour,100))/100
-          resMin=resHour - 100*eHour;
-          eDay=resMin
+          eHour=(dataTime - mod(dataTime,100))/100
+          eMin=dataTime - 100*eHour
+          eSec=0
         ELSE
           eHour=0
           eMin=0
