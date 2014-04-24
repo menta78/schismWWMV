@@ -232,7 +232,7 @@
  OUTSTYLE       = 'XFN',             
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
- IOBPD_HISTORY          = .F.,               
+ IOBPD          = .F.,               
  LENERGY        = .F.,               
  LWXFN          = .F.,               
  GRIDWRITE      = .T.,               
