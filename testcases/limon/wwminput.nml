@@ -9,7 +9,7 @@
  LMONO_OUT      = .F.,               
  LMONO_IN       = .F.,               
  BEGTC          = '19980901.000000', 
- DELTC          = 60.000000000000,   
+ DELTC          = 10.000000000000,   
  UNITC          = 'SEC',             
  ENDTC          = '19980901.010000', 
  DMIN           = 1.000000000000000E-004, 
@@ -156,8 +156,8 @@
 /
 
 &NUMS          
- ICOMP          = 3,                 
- AMETHOD        = 7,                 
+ ICOMP          = 0,                 
+ AMETHOD        = 1,                 
  SMETHOD        = 1,                 
  DMETHOD        = 1,                 
  LITERSPLIT     = .F.,               

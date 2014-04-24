@@ -220,23 +220,31 @@
                ENDDO 
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
-                   NEWDAC = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+                   NEWDAC   = IMATRAA(IP,IS,ID)*DT4A/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
                    NEWDACDT = NEWDAC/DT4A
-                   DNEWDACDTDA = NEWDAC/AC2(IP,IS,ID)/DT4A
-                   DELFL  = COFRM4(IS)*DT4S
-                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-                   MAXDAC = USFM*DELFL
-                   MAXDACDT = USFM*DELFL/DT4A
-                   MAXDACDTDA = MAXDACDT/AC2(IP,IS,ID) 
-                   FLHAB  = MIN(ABS(GTEMP2*DT4A),USFM*DELFL)/DT4S
-                   SC     = SIGN(MIN(ABS(NEWDACDT),MAXDACDT),NEWDAC)
-                   SP     = SIGN(MIN(ABS(DNEWDACDTDA),MAXDACDTDA),NEWDAC)
+                   MAXDAC   = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                   MAXDACDT = MAXDAC/DT4A
+                   LIMFAC   = ONE/MAX(ONE,NEWDAC/MAXDAC) 
+                   SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                   !IMATRAA(IP,IS,ID) = SC
+                   IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
+                   IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
+                   !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
                    !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
-                   LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+                   !LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
                  END DO
                END DO
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   IF (IMATRAA(IP,IS,ID) .GT. ZERO) THEN
+                     !IMATDAA(IP,IS,ID) = ZERO
+                   ELSE
+                     !IMATRAA(IP,IS,ID) = ZERO
+                     !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID) 
+                   ENDIF
+                 ENDDO
+               ENDDO
                IF (ISHALLOW(IP) .EQ. 1) THEN
                  CALL MEAN_WAVE_PARAMETER(IP,AC2(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                  SSNL3 = ZERO; DSSNL3 = ZERO
@@ -320,6 +328,9 @@
              ENDIF
            ENDIF
          ENDDO
+
+         WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

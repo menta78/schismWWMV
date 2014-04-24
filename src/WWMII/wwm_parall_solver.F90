@@ -4023,28 +4023,30 @@
         END DO
       END IF
 
-      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-        DO IP = 1, NP_RES
-          DO IS = 1, MSC
-            DO ID = 1, MDC 
-              GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
-              DELFL  = COFRM4(IS)*DT4S
-              USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              FLHAB  = ABS(GTEMP2*DT4S)
-              FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
-              B(IS,ID,IP)  = B(IS,ID, IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)*IOBWB(IP) * IOBDP(IP)
-              LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-              ASPAR(IS,ID,I_DIAG(IP)) = ASPAR(IS,ID,I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID)* IOBWB(IP) * IOBDP(IP)
-            END DO
-          END DO 
-        END DO
-      ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
+      !IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+      !  DO IP = 1, NP_RES
+      !    DO IS = 1, MSC
+      !      DO ID = 1, MDC 
+      !        GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+      !        DELFL  = COFRM4(IS)*DT4A
+      !        USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+      !        FLHAB  = MIN(ABS(GTEMP2*DT4S),USFM*DELFL)/DT4A
+      !        B(IS,ID,IP)  = B(IS,ID,IP)+SIGN(FLHAB,GTEMP2)*DT4A*SI(IP)*IOBWB(IP) * IOBDP(IP)
+      !        IMATRAA(IP,IS,ID) = FLHAB 
+      !        !ASPAR(IS,ID,I_DIAG(IP)) = ASPAR(IS,ID,I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID)* IOBWB(IP) * IOBDP(IP)
+      !        !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
+      !      END DO
+      !    END DO 
+      !  END DO
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
           IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
           B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
         END DO
       ENDIF
+
+      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
@@ -4449,6 +4451,8 @@
       ELSE
         CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPARL,BL)
       ENDIF
+
+      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)

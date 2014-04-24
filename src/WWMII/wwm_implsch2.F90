@@ -514,12 +514,7 @@
      &              LCFLX)
 
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 2'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
-     &              THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, &
-     &              SUM(SL), &
-     &              MIJ(IJS:IJL)
-
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,7F15.8,I10)') IJS, IJL,SUM(FL3),THWNEW, USNEW, Z0NEW,ROAIRN, TAUW,SUM(SL),MIJ(IJS:IJL)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
@@ -534,9 +529,10 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA 3'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
-      &                              USNEW(IJS), Z0NEW(IJS), ILEV
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA3'
+      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,4F15.7,I10)') &
+     &                              IJS, U10NEW(IJS), TAUW(IJS), &
+     &                              USNEW(IJS), Z0NEW(IJS), ILEV
 
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &

@@ -153,8 +153,7 @@
             ENDDO
           ENDDO     
         ENDDO
-      ELSE
-!SHALLOW
+      ELSE !SHALLOW
         IF (ITEST.GE.2) THEN
           WRITE(IU06,*) '   SUB. SDISSIP: START DO-LOOP (ISHALLO=0)'
           CALL FLUSH (IU06)
