@@ -107,7 +107,7 @@ else
   all: $(PROG)
 endif
 
-ifdef NETCDF
+ifdef TIME
   FFLAGS +=  -DTIMINGS
 endif
 
@@ -138,6 +138,7 @@ ifdef GRIB
   FFLAGS += -DGRB -I$(GRIB_PATH)/include
 endif
 
+
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} -DDIRECT_METHOD
   LIBS  += ${PETSC_LIB}  
@@ -151,11 +152,6 @@ ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-
-MPI_INCLUDE = -I/home/aron/opt/mpich2_1.3_intel/include/  
-F90FLAGS += ${MPI_INCLUDE}
-
-
 F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
@@ -165,7 +161,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS) $(TCFLAG) $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS)  $(OBJS) $(LIBS) 
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)
@@ -176,7 +172,7 @@ cleanall:
 .SUFFIXES: $(SUFFIXES) .F90 .f .ftn
 
 .F90.o:
-	$(F90) $(F90FLAGS) $(TCFLAG)   -c $<
+	$(F90) $(F90FLAGS)   -c $<
 
 .ftn.o:
 	$(F90) $(F90FLAGS) -c $<
