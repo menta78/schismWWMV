@@ -227,7 +227,7 @@
                    LIMFAC   = ONE/MAX(ONE,NEWDAC/MAXDAC) 
                    SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                    !IMATRAA(IP,IS,ID) = SC
-                   IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
+                   !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
                    IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
                    !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
@@ -238,10 +238,10 @@
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    IF (IMATRAA(IP,IS,ID) .GT. ZERO) THEN
-                     !IMATDAA(IP,IS,ID) = ZERO
+                     IMATDAA(IP,IS,ID) = ZERO
                    ELSE
-                     !IMATRAA(IP,IS,ID) = ZERO
-                     !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID) 
+                     IMATRAA(IP,IS,ID) = ZERO
+                     IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID) 
                    ENDIF
                  ENDDO
                ENDDO

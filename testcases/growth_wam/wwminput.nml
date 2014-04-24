@@ -9,9 +9,9 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030910.000000     ,
- DELTC   = 300.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030920.000000     ,
+ ENDTC   = 20030915.000000     ,
  DMIN    =  0.100000000000000     
  /
  &COUPL
@@ -149,12 +149,12 @@
  TRIURS  =         0.1,
 /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           0,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1, 
  DMETHOD =           0,
  LSOURCESWWIII   = F,
- LSOURCESWAM     = F, 
+ LSOURCESWAM     = T, 
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -167,7 +167,7 @@
  LSIGBOUND       = F,
  LLIMT   = T,
  LIMFAK  = 0.1,
- MELIM   = 1,
+ MELIM   = 3,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
