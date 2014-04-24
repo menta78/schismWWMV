@@ -2424,7 +2424,8 @@
       REAL(rkind) :: deltaLAT, deltaLON
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer iX, iY
-      LOGICAL :: USE_STEPRANGE = .FALSE.
+      LOGICAL :: USE_STEPRANGE = .TRUE.
+      LOGICAL :: USE_DATATIME = .TRUE.
       OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
       NUM_NETCDF_FILES = 0
       DO
@@ -2464,15 +2465,11 @@
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
         IF (USE_STEPRANGE) THEN
           call grib_get(igrib(i), 'stepRange', stepRange)
-          WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
-          eHour=0
-          eMin=0
-          eSec=0
-          WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
- 10       FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
-          CALL CT2MJD(eStrTime, eTimeBase)
-          eTimeMjd=eTimeBase + SHIFT_WIND_TIME + DBLE(stepRange)/24.0_rkind
         ELSE
+          stepRange=0
+        END IF
+        WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
+        IF (USE_DATATIME) THEN
           call grib_get(igrib(i), 'dataTime', dataTime)
           WRITE(WINDBG%FHNDL, *) 'dataTime=', dataTime
           eHour=(dataTime - mod(dataTime,10000))/10000
@@ -2480,11 +2477,16 @@
           eMin=(resHour - mod(resHour,100))/100
           resMin=resHour - 100*eHour;
           eDay=resMin
-          WRITE(eStrTime,20) eYear, eMonth, eDay, eHour, eMin, eSec
- 20       FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
-          CALL CT2MJD(eStrTime, eTimeBase)
-          eTimeMjd=eTimeBase + SHIFT_WIND_TIME
+        ELSE
+          eHour=0
+          eMin=0
+          eSec=0
         END IF
+        WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Hour/m/s=', eHour, eMin, eSec
+        WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
+ 10     FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+        CALL CT2MJD(eStrTime, eTimeBase)
+        eTimeMjd=eTimeBase + SHIFT_WIND_TIME + DBLE(stepRange)/24.0_rkind
         WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
         wind_time_mjd(IT)=eTimeMjd
         CALL GRIB_CLOSE_FILE(ifile)
