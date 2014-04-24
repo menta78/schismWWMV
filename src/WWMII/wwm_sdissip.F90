@@ -1,5 +1,5 @@
       SUBROUTINE SDISSIP (F, FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
-     &                    PHIEPS, TAUWD, MIJ)
+     &                    PHIEPS, TAUWD, MIJ, SSDS, DSSDS)
 
 ! ----------------------------------------------------------------------
 
@@ -87,6 +87,7 @@
       INTEGER :: IJ, IJS, IJL, M, K, MIJ(IJS:IJL), IC, IG
       REAL(rkind) :: SCDFM, ROG, ALPH, ARG, CONSD, CONSS, X, SDISS, EMAX, Q_OLD, Q, REL_ERR
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
+      REAL(rkind),DIMENSION(NANG,NFRE) :: SSDS,DSSDS 
       REAL(rkind),DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
       REAL(rkind),DIMENSION(IJS:IJL) :: TEMP1, SDS
       REAL(rkind),DIMENSION(NFRE) :: FAC
@@ -218,6 +219,8 @@
                   IF(DEP(IJ).LT.DEPTHTRS) THEN
                     SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
                     FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
+                    SSDS(K,M) = -SDS(IJ)*F(IJ,K,M)
+                    DSSDS(K,M) = -SDS(IJ)
                   ENDIF
                 ENDDO
              ENDDO
