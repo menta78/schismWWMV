@@ -154,6 +154,7 @@
      &                           ROAIRO,ZIDLOLD
       REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
+      REAL(rkind),DIMENSION(NANG,NFRE)  :: SSDS,DSSDS,SSBF,DSSBF,SSNL4,DSSNL4,SSIN,DSSIN
 
 ! ----------------------------------------------------------------------
  
@@ -245,7 +246,7 @@
 
       IF(IPHYS.EQ.0) THEN
         CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ELSE
         CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS)
@@ -291,7 +292,7 @@
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS))
+      CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS), SSNL4, DSSNL4)
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SNON'
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
@@ -300,10 +301,10 @@
       ENDIF
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,&
-     &                PHIOC, TAUWD, MIJ)
+     &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
         CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,&
-     &                PHIOC, TAUWD, MIJ)
+     &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER DISSIP' 
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
@@ -312,7 +313,7 @@
         CALL FLUSH (IU06)
       ENDIF
 !SHALLOW
-      IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL)
+      IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL, SSBF, DSSBF)
 !SHALLOW
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SBOTTOM' 
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
@@ -457,10 +458,10 @@
 
       IF(IPHYS.EQ.0) THEN
         CALL SINPUT (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS) 
+     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN) 
       ELSE
         CALL SINPUT_ARD (FL3, FL, IJS, IJL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS)
+     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSDS)
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SINPUT 2'
@@ -502,10 +503,10 @@
 
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ)
+     &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
         CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
-     &                PHIOC, TAUWD, MIJ)
+     &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER DISSIP' 
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(FL3), SUM(SL) 
