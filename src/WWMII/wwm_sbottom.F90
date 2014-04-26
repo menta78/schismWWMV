@@ -1,4 +1,4 @@
-      SUBROUTINE SBOTTOM (F, FL, IJS, IJL, IG, SL)
+      SUBROUTINE SBOTTOM (F, FL, IJS, IJL, IG, SL, SSBF, DSSBF)
 
 !SHALLOW
 ! ----------------------------------------------------------------------
@@ -58,6 +58,7 @@
 
       PARAMETER (CONST = -2.0*0.076/G)
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
+      REAL(rkind),DIMENSION(NANG,NFRE) :: SSBF, DSSBF
       DIMENSION SBO(IJS:IJL)
 
 !      REAL ZHOOK_HANDLE
@@ -80,6 +81,8 @@
             IF(DEP(IJ).LT.999) THEN
               SL(IJ,K,M) = SL(IJ,K,M)+SBO(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+SBO(IJ)
+              SSBF(K,M) = SBO(IJ)*F(IJ,K,M)
+              DSSBF(K,M) = SBO(IJ) 
             ENDIF
           ENDDO
         ENDDO

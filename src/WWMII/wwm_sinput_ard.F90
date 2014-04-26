@@ -1,5 +1,5 @@
       SUBROUTINE SINPUT_ARD (F,FL,IJS,IJL,THWNEW,USNEW,Z0NEW,&
-     &                  ROAIRN,WSTAR,SL,XLLWS)
+     &                  ROAIRN,WSTAR,SL,XLLWS,SSIN,DSSIN)
 ! ----------------------------------------------------------------------
 
 !**** *SINPUT* - COMPUTATION OF INPUT SOURCE FUNCTION.
@@ -146,6 +146,7 @@
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: DSTAB
       REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL(rkind), DIMENSION(NANG,NFRE) :: SSIN, DSSIN 
 
       !IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
 
@@ -370,6 +371,8 @@
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)+DSTAB(IJ,K,M)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
+            SSIN(K,M) = FL(IJ,K,M)*F(IJ,K,M)
+            DSSIN(K,M) = FL(IJ,K,M)
             XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K,M)*CONST11/MAX(ROAIRN(IJ),1.)
             YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K,M)*CONST22/MAX(ROAIRN(IJ),1.)
           ENDDO

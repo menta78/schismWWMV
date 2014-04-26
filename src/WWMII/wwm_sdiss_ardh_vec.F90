@@ -1,5 +1,5 @@
       SUBROUTINE SDISS_ARDH_VEC (F, FL, IJS, IJL, SL, F1MEAN, XKMEAN,&
-     &                    PHIEPS, TAUWD, MIJ)
+     &                    PHIEPS, TAUWD, MIJ, SSDS, DSSDS)
 ! ----------------------------------------------------------------------
 
 !**** *SDISSIP_ARDH_VEC* - COMPUTATION OF DISSIPATION SOURCE FUNCTION.
@@ -125,6 +125,7 @@
       REAL(rkind) :: BTH(IJS:IJL,NANG,NFRE)  !saturation spectrum 
       REAL(rkind) :: BTHS(IJS:IJL,NANG,NFRE)  !smoothed saturation spectrum 
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL,A, D
+      REAL(rkind),DIMENSION(NANG,NFRE) :: SSDS, DSSDS
       REAL(rkind), ALLOCATABLE, DIMENSION(:) :: C_,C_C,C2_,C2_C2,DSIP_05_C2
       REAL(rkind)   , ALLOCATABLE :: SATWEIGHTS(:,:)
       REAL(rkind)   , ALLOCATABLE :: CUMULW(:,:,:,:)
@@ -490,6 +491,8 @@
           DO IJ=IJS,IJL
             SL(IJ,K,M) = SL(IJ,K,M)+D(IJ,K,M)*F(IJ,K,M)
             FL(IJ,K,M) = FL(IJ,K,M)+D(IJ,K,M)
+            SSDS(K,M) = D(IJ,K,M)*F(IJ,K,M)
+            DSSDS(K,M) = D(IJ,K,M)
             IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
               SDISS = D(IJ,K,M)*F(IJ,K,M)
               PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)

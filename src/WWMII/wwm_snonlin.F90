@@ -70,7 +70,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
      &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
-     &                      DELTH => DDIR, LOUTWAM, ICOMP, &
+     &                      DELTH => DDIR, LOUTWAM, ICOMP, ZERO, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -505,7 +505,7 @@
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
-                DSNL4(K1,MP1)  = DSSNL4(K1,MP1) + DELAP(IJ)*FKLAPA2
+                DSSNL4(K1,MP1)  = DSSNL4(K1,MP1) + DELAP(IJ)*FKLAPA2
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K11,MP1) = SL(IJ,K11,MP1) + AD(IJ)*FKLAMPB
@@ -534,8 +534,8 @@
       ENDDO
 
       IF (ICOMP .GE. 2) THEN
-        DO K = 1, NANG
-          DO M = 1, NFRE
+        DO M = 1, NFRE
+          DO K = 1, NANG 
             IF (SSNL4(K,M) .LT. ZERO) THEN
               SSNL4(K,M) = ZERO
               DSSNL4(K,M) = - DSSNL4(K,M)
