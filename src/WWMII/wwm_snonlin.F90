@@ -336,70 +336,92 @@
 
               DO IJ=IJS,IJL
                 SL(IJ,K2 ,MM ) = SL(IJ,K2 ,MM ) + AD(IJ)*FKLAMM1
+                SSNL4(K2,MM) = SSNL4(K2,MM) + AD(IJ)*FKLAMM1
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K2 ,MM ) = FL(IJ,K2 ,MM ) + DELAM(IJ)*FKLAM12
+                DSSNL4(K2,MM) = DSSNL4(K2,MM) +  DELAM(IJ)*FKLAM12
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K21,MM ) = SL(IJ,K21,MM ) + AD(IJ)*FKLAMM2
+                SSNL4(K21,MM) = SSNL4(K21,MM) +  AD(IJ)*FKLAMM1
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K21,MM ) = FL(IJ,K21,MM ) + DELAM(IJ)*FKLAM22
+                DSSNL4(K21,MM) = DSSNL4(K21,MM) + DELAM(IJ)*FKLAM22
               ENDDO
-
               IF (MM1.LE.NFRE) THEN
                 DO IJ=IJS,IJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
+                  SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
                 DO IJ=IJS,IJL
                   FL(IJ,K2 ,MM1) = FL(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
+                  DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM(IJ)*FKLAMA2
                 ENDDO
                 DO IJ=IJS,IJL
                   SL(IJ,K21,MM1) = SL(IJ,K21,MM1) + AD(IJ)*FKLAMMB
+                  SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD(IJ)*FKLAMMB
                 ENDDO
                 DO IJ=IJS,IJL
                   FL(IJ,K21,MM1) = FL(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
+                  DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM(IJ)*FKLAMB2
                 ENDDO
 
                 IF (MC .LE.NFRE) THEN
                   DO IJ=IJS,IJL
                     SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.*AD(IJ)
+                    SSNL4(K,MC) = SSNL4(K,MC) - 2.*AD(IJ)
                   ENDDO
                   DO IJ=IJS,IJL
                     FL(IJ,K  ,MC ) = FL(IJ,K  ,MC ) - 2.*DELAD(IJ)
+                    DSSNL4(K,MC) = DSSNL4(K,MC) - 2.*DELAD(IJ)
                   ENDDO
 
                   IF (MP .LE.NFRE) THEN
                     DO IJ=IJS,IJL
                       SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
+                      SSNL4(K1,MP) = SSNL4(K1,MP) +  AD(IJ)*FKLAMP1
                     ENDDO
                     DO IJ=IJS,IJL
                       FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP ) &
      &                               + DELAP(IJ)*FKLAP12
+                      DSSNL4(K1,MP) = DSSNL4(K1,MP) + &
+     &                               + DELAP(IJ)*FKLAP12
                     ENDDO
                     DO IJ=IJS,IJL
                       SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
+                      SSNL4(K11,MP) = SSNL4(K11,MP) + AD(IJ)*FKLAMP2
                     ENDDO
                     DO IJ=IJS,IJL
                       FL(IJ,K11,MP ) = FL(IJ,K11,MP ) &
      &                               + DELAP(IJ)*FKLAP22
+                      DSSNL4(K11,MP) = DSSNL4(K11,MP) &
+     &                               + DELAP(IJ)*FKLAP22
                     ENDDO
-
                     IF (MP1.LE.NFRE) THEN
                       DO IJ=IJS,IJL
                         SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1) &
      &                                 + AD(IJ)*FKLAMPA
+                        SSNL4(K1 ,MP1) = SSNL4(K1 ,MP1) &
+                                       + AD(IJ)*FKLAMPA
                       ENDDO
                       DO IJ=IJS,IJL
                         FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1) &
      &                                 + DELAP(IJ)*FKLAPA2
+                        DSSNL4(K1 ,MP1) = DSSNL4(K1 ,MP1) &
+                                       + AD(IJ)*FKLAMPA
                       ENDDO
                       DO IJ=IJS,IJL
                         SL(IJ,K11,MP1) = SL(IJ,K11,MP1) &
      &                                 + AD(IJ)*FKLAMPB
+                        SSNL4(K1 ,MP1) = SSNL4(K1 ,MP1) &
+     &                                 + AD(IJ)*FKLAMPB
                       ENDDO
                       DO IJ=IJS,IJL
                         FL(IJ,K11,MP1) = FL(IJ,K11,MP1) &
+     &                                 + DELAP(IJ)*FKLAPB2
+                        DSSNL4(K11 ,MP1) = DSSNL4(K11 ,MP1) &
      &                                 + DELAP(IJ)*FKLAPB2
                       ENDDO
                     ENDIF
@@ -437,47 +459,61 @@
               IF (MM1.GE.1) THEN
                 DO IJ=IJS,IJL
                   SL(IJ,K2 ,MM1) = SL(IJ,K2 ,MM1) + AD(IJ)*FKLAMMA
+                  SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD(IJ)*FKLAMMA
                 ENDDO
                 DO IJ=IJS,IJL
                   FL(IJ,K2 ,MM1) = FL(IJ,K2 ,MM1) + DELAM(IJ)*FKLAMA2
+                  DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM(IJ)*FKLAMA2
                 ENDDO
                 DO IJ=IJS,IJL
                   SL(IJ,K21,MM1) = SL(IJ,K21,MM1) + AD(IJ)*FKLAMMB
+                  SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD(IJ)*FKLAMMB
                 ENDDO
                 DO IJ=IJS,IJL
                   FL(IJ,K21,MM1) = FL(IJ,K21,MM1) + DELAM(IJ)*FKLAMB2
+                  DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM(IJ)*FKLAMB2
                 ENDDO
               ENDIF
 
               DO IJ=IJS,IJL
                 SL(IJ,K  ,MC ) = SL(IJ,K  ,MC ) - 2.*AD(IJ)
+                SSNL4(K,MC) = SSNL4(K,MC) - 2.*AD(IJ)
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K  ,MC ) = FL(IJ,K  ,MC ) - 2.*DELAD(IJ)
+                DSSNL4(K,MC) = DSSNL4(K,MC) - 2.*DELAD(IJ)
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K1 ,MP ) = SL(IJ,K1 ,MP ) + AD(IJ)*FKLAMP1
+                SSNL4(K1,MP) = SSNL4(K1,MP) + AD(IJ)*FKLAMP1
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP ) + DELAP(IJ)*FKLAP12
+                DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP(IJ)*FKLAP12
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K11,MP ) = SL(IJ,K11,MP ) + AD(IJ)*FKLAMP2
+                SSNL4(K11,MP) = SSNL4(K11,MP) + AD(IJ)*FKLAMP2
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K11,MP ) = FL(IJ,K11,MP ) + DELAP(IJ)*FKLAP22
+                DSSNL4(K11,MP) = DSSNL4(K11,MP) + DELAP(IJ)*FKLAP22
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K1 ,MP1) = SL(IJ,K1 ,MP1) + AD(IJ)*FKLAMPA
+                SSNL4(K1,MP1)  = SSNL4(K1,MP1) + AD(IJ)*FKLAMPA
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K1 ,MP1) = FL(IJ,K1 ,MP1) + DELAP(IJ)*FKLAPA2
+                DSNL4(K1,MP1)  = DSSNL4(K1,MP1) + DELAP(IJ)*FKLAPA2
               ENDDO
               DO IJ=IJS,IJL
                 SL(IJ,K11,MP1) = SL(IJ,K11,MP1) + AD(IJ)*FKLAMPB
+                SSNL4(K11,MP1)  = SSNL4(K11,MP1) + AD(IJ)*FKLAMPB
               ENDDO
               DO IJ=IJS,IJL
                 FL(IJ,K11,MP1) = FL(IJ,K11,MP1) + DELAP(IJ)*FKLAPB2
+                DSSNL4(K11,MP1)  = DSSNL4(K11,MP1) + DELAP(IJ)*FKLAPB2
               ENDDO
             ENDDO
           ENDDO
@@ -496,6 +532,19 @@
         ENDDO
   
       ENDDO
+
+      IF (ICOMP .GE. 2) THEN
+        DO K = 1, NANG
+          DO M = 1, NFRE
+            IF (SSNL4(K,M) .LT. ZERO) THEN
+              SSNL4(K,M) = ZERO
+              DSSNL4(K,M) = - DSSNL4(K,M)
+            ELSE
+              DSSNL4(K,M) = ZERO
+            ENDIF
+          END DO
+        ENDDO
+      ENDIF
 
         DO IJ=IJS,IJL
 !        WRITE(111117,'(2F30.25)') & 
