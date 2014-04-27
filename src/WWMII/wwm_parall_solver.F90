@@ -4045,7 +4045,7 @@
         END DO
       ENDIF
 
-      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
+!      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
@@ -4451,7 +4451,7 @@
         CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPARL,BL)
       ENDIF
 
-      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
+!      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)

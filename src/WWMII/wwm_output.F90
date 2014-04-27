@@ -1216,16 +1216,19 @@
          OUTPAR(19)  = PEAKDSPR ! Peak directional spreading
          OUTPAR(20)  = DPEAK    ! Discrete peak direction
 
-         CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+         CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'INTPAR')
 
          OUTPAR(21)  = UBOT     ! near bottom vel. 
          OUTPAR(22)  = ORBITAL  ! Orbital vel.
          OUTPAR(23)  = BOTEXPER ! Bottom excursion period.
          OUTPAR(24)  = TMBOT    ! near bottom period. 
 
-         CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
-
-         OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+         IF (TPP .GT. THR) THEN
+           CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
+           OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+         ELSE
+           OUTPAR(25) = ZERO    ! Uresell number based on peak period ...
+         ENDIF
 
          OUTPAR(26) = UFRIC(IP) ! Friction velocity 
          OUTPAR(27) = Z0(IP)    ! Rougness length
@@ -1319,7 +1322,7 @@
       END IF
 
       IF (VAROUT_HISTORY%ComputeCurr) THEN
-        CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+        CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PAR_COMPLETE')
         OUTPAR(24)  = UBOT     !
         OUTPAR(25)  = ORBITAL  ! Orbital vel.
         OUTPAR(26)  = BOTEXPER ! Bottom excursion period.

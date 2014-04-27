@@ -246,15 +246,16 @@
                  ENDDO
                ENDDO
                IF (ISHALLOW(IP) .EQ. 1) THEN
-                 CALL MEAN_WAVE_PARAMETER(IP,AC2(IP,:,:),HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+                 ACLOC = AC2(IP,:,:)
+                 CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                  SSNL3 = ZERO; DSSNL3 = ZERO
                  SSBR  = ZERO; DSSBR  = ZERO
                  SSBF  = ZERO; DSSBF  = ZERO
                  IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2(IP,HS,SME01,ACLOC,SSNL3,DSSNL3)
                  IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
-                 !IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR
-                 !IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
+                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR + DSSNL3 + DSSBF
+                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
                ENDIF
                !ISELECT = 30
                !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
@@ -329,7 +330,7 @@
            ENDIF
          ENDDO
 
-         WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
+         !WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
       END SUBROUTINE
 !**********************************************************************
