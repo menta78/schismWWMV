@@ -994,7 +994,7 @@
          REAL(rkind)                  :: WNMEANP = 0.5
          REAL(rkind)                  :: SINBR   = 0.
 
-         INTEGER, PARAMETER           :: ISHALLO = 0 
+         INTEGER, PARAMETER           :: ISHALLO = 0  ! ISHALLO = 1 is not working yet ...
          INTEGER, ALLOCATABLE         :: MSC_HF(:)
 
          REAL(rkind), ALLOCATABLE     :: TAUTOT(:)   ! Total Stress from the Waves
