@@ -4040,7 +4040,6 @@
       !  END DO
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
-          IF (.NOT. LSOUBOUND .AND. ABS(IOBP(IP)) .GT. 0) CYCLE
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
           B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
         END DO
