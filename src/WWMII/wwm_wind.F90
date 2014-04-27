@@ -378,7 +378,7 @@
       IMPLICIT NONE
       LOGICAL :: METHOD1 = .FALSE.
       INTEGER I, J
-      REAL(rkind), INTENT(out)           :: outwind(MNP,2)
+      REAL(rkind), INTENT(out)           :: outwind(MNP_WIND,2)
       REAL(rkind) :: Uw, Vw
       INTEGER IX, IY
       IF (METHOD1 .eqv. .FALSE.) THEN
@@ -2448,7 +2448,9 @@
       allocate(wind_time_mjd(nbtime_mjd), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
       DO IT=1, nbTime_mjd
+        WRITE(WINDBG%FHNDL, *) '---------------------------------------'
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+        WRITE(WINDBG%FHNDL, *) 'SHIFT_WIND_TIME=', SHIFT_WIND_TIME
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
         call grib_count_in_file(ifile,n)
         allocate(igrib(n))
@@ -2461,7 +2463,6 @@
         eMonth=(resYear - mod(resYear,100))/100
         resMonth=resYear - 100*eMonth;
         eDay=resMonth
-        WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
         IF (USE_STEPRANGE) THEN
           call grib_get(igrib(i), 'stepRange', stepRange)
         ELSE
@@ -2479,6 +2480,7 @@
           eMin=0
           eSec=0
         END IF
+        WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
         WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Hour/m/s=', eHour, eMin, eSec
         WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
  10     FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
