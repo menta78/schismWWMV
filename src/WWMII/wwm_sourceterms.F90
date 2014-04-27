@@ -457,7 +457,7 @@
          INTEGER                 :: IP, IS, ID
          REAL(rkind)             :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
          REAL(rkind)             :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
-         REAL(rkind)             :: ACLOC(MSC,MDC), ACOLD(MSC,MDC)
+         REAL(rkind)             :: ACLOC(MSC,MDC), ACOLD(MSC,MDC), MAXDACOLD
 
 
          CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
@@ -482,7 +482,10 @@
                UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
              ELSE IF (MELIM .EQ. 3) THEN
-               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
+               !MAXDACOLD = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+               !MAXDAC = MIN(MAXDACOLD,USFM*DELFL(IS)/PI2/SPSIG(IS))
+               MAXDAC = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               !MAXDAC = MAXDACOLD!USFM*DELFL(IS)/PI2/SPSIG(IS)
              END IF
              DO ID = 1, MDC
                NEWAC  = ACLOC(IS,ID)

@@ -1015,17 +1015,8 @@
            ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)*ddir
            do is = 2, msc -1 
              ETOT_SKD = ETOT_SKD + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
-           IF (ETOT_SKD .NE. ETOT_SKD) THEN
-              WRITE(*,*) ETOT_SKD, tmp(is), tmp(is-1), ACLOC(IS,ID), WK(IP,IS)*DEP(IP), CALLFROM
-              STOP 'TEST 1'
-           ENDIF
-
            end do
            ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
-           IF (ETOT_SKD .NE. ETOT_SKD) THEN
-              WRITE(*,*) ETOT_SKD, tmp(msc),CALLFROM
-              STOP 'TEST'
-           ENDIF
          end do
  
          y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WK(IP,:)*DEP(IP)))**2

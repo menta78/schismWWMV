@@ -156,62 +156,26 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+               FL(IP,ID,IS)  = FL3(IP,ID,IS)
+               SL(IP,ID,IS)  = FL(IP,ID,IS)
+             ENDDO
+           END DO
+           THWOLD(:,1) = THWNEW
+           U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+           Z0NEW(IP) = Z0OLD(IP,1)
+           THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+           CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                     THWOLD(IP,1), USOLD(IP,1), &
+     &                     TAUW(IP), Z0OLD(IP,1), &
+     &                     ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                     SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               THWOLD(:,1) = THWNEW
-               U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
-                   FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
-                   FL(IP,ID,IS)  = FL3(IP,ID,IS)
-                   SL(IP,ID,IS)  = FL(IP,ID,IS)
-                 ENDDO
-               END DO
-               Z0NEW(IP) = Z0OLD(IP,1)
-               THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-               IF (LOUTWAM .AND. IP == TESTNODE) THEN
-                 WRITE(111112,'(A10,I10)') 'BEFORE', IP
-                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
-               ENDIF
-               CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
-     &                         THWOLD(IP,1), USOLD(IP,1), &
-     &                         TAUW(IP), Z0OLD(IP,1), &
-     &                         ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                         U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                         Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                         SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-               IF (LOUTWAM .AND. IP == TESTNODE) THEN
-                 WRITE(111112,'(A10,I10)') 'AFTER', IP
-                 WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-                 WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-                 WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-                 WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-                 WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
-               ENDIF
                DO ID = 1, MDC
                  DO IS = 1, MSC 
                    IMATDAA(IP,IS,ID) =  FL(IP,ID,IS)
@@ -228,7 +192,7 @@
                    SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                    !IMATRAA(IP,IS,ID) = SC
                    !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
-                   IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
+                   !IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
                    !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
                    !LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
@@ -254,77 +218,35 @@
                  IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2(IP,HS,SME01,ACLOC,SSNL3,DSSNL3)
                  IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
-                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR + DSSNL3 + DSSBF
-                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
+                 !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
+                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR ! + DSSNL3 + DSSBF
+                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR 
+                 !IMATDAA(IP,:,:) = DSSBR ! + DSSNL3 + DSSBF
+                 !IMATRAA(IP,:,:) = SSBR
                ENDIF
-               !ISELECT = 30
-               !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
              END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                 THWOLD(:,1) = THWNEW
-                 U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-                     FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
-                     FL(IP,ID,IS)  =  FL3(IP,ID,IS)
-                     SL(IP,ID,IS)  =  FL(IP,ID,IS)
-                   END DO
-                 END DO
-                 Z0NEW(IP) = Z0OLD(IP,1)
-                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-                 IF (LOUTWAM .AND. IP == TESTNODE) THEN
-                   WRITE(111112,'(A10,I10)') 'BEFORE', IP
-                   WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
-                 ENDIF
-                 CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
-     &                           THWOLD(IP,1), USOLD(IP,1), &
-     &                           TAUW(IP), Z0OLD(IP,1), &
-     &                           ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                           U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                           Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                           SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-                 IF (LOUTWAM .AND. IP == TESTNODE) THEN
-                   WRITE(111112,'(A10,I10)') 'AFTER', IP
-                   WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-                   WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-                   WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-                   WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(IP,:,:))
-                   WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(IP,:))
-                 ENDIF
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
                      IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
                    ENDDO
                  ENDDO
-                 !ISELECT = 30
-                 !CALL SOURCETERMS(IP, AC2(IP,:,:), IMATRAA(IP,:,:), IMATDAA(IP,:,:), .FALSE.)
+                 IF (ISHALLOW(IP) .EQ. 1) THEN
+                   ACLOC = AC2(IP,:,:)
+                   CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+                   SSNL3 = ZERO; DSSNL3 = ZERO
+                   SSBR  = ZERO; DSSBR  = ZERO
+                   SSBF  = ZERO; DSSBF  = ZERO
+                   IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2(IP,HS,SME01,ACLOC,SSNL3,DSSNL3)
+                   IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
+                   IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
+                   !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
+                   IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR ! + DSSNL3 + DSSBF
+                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
+                 ENDIF
                ENDIF
              ENDIF
            ENDIF

@@ -136,9 +136,9 @@
 
       END IF
 
-      IF (IP == 1786) THEN
-        WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
+!      IF (IP == 1786) THEN
+!        WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+!      ENDIF
 
       deallocate(sa)
 

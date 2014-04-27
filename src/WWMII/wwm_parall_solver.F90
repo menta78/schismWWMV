@@ -3950,14 +3950,14 @@
             I3=JA_IE(I,3,IE)
             K1(:,:) =  KP(:,:,I)
             DO ID=1,MDC
-              DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+              DTK(:,ID) =  K1(:,ID) * DT4A * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP)
             END DO
             TMP3(:,:)  =  DTK(:,:) * NM(:,:)
             ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
             DO ID=1,MDC
-              B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03 
+              B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * TRIA03 * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP) 
             END DO
             !TMP3(:,:)  =  DTK(:,:) * NM(:,:)
             !ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
@@ -4040,8 +4040,8 @@
       !  END DO
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * SI(IP) !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
         END DO
       ENDIF
 
@@ -4385,7 +4385,7 @@
         DO IP=1,MNP
           DO IS=IS1,IS2
             DO ID=1,MDC
-              AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))*MyREAL(IOBPD(ID,IP))
+              AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))!*MyREAL(IOBPD(ID,IP))
             END DO
           END DO
         END DO

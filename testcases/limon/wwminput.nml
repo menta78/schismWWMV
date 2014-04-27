@@ -54,7 +54,7 @@
 
 &BOUC          
  LBCSE          = .F.,               
- LBCWA          = .F.,               
+ LBCWA          = .T.,               
  LBCSP          = .F.,               
  LINHOM         = .F.,               
  LBSP1D         = .F.,               
@@ -138,8 +138,8 @@
 /
 
 &ENGS          
- MESNL          = 1,                 
- MESIN          = 5,                 
+ MESNL          = 0,                 
+ MESIN          = 0,                 
  IFRIC          = 1,                 
  MESBF          = 1,                 
  FRICC          = 6.700000000000000E-002, 
@@ -147,9 +147,9 @@
  ICRIT          = 1,                 
  ALPBJ          = 1.00000000000000,  
  BRHD           = 0.780000000000000, 
- LMAXETOT       = .T.,               
- MESDS          = 1,                 
- MESTR          = 1,                 
+ LMAXETOT       = .F.,               
+ MESDS          = 0,                 
+ MESTR          = 0,                 
  TRICO          = 1.00000000000000,  
  TRIRA          = 2.50000000000000,  
  TRIURS         = 0.100000000000000, 
