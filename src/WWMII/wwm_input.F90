@@ -1483,6 +1483,10 @@
            call wwm_abort('FOR WWM SOURCES U NEED MELIM .LT. 3') 
          ENDIF
 
+#ifndef GRB
+         IF (IWINDFORMAT == 7) CALL wwm_abort('you need to compile with grib')
+#endif
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
