@@ -143,7 +143,7 @@
          REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind)  :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
          REAL(rkind)  :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
-         REAL(rkind)  :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+         REAL(rkind)  :: SSBF(MSC,MDC),DSSBF(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
          REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH
          REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
@@ -209,8 +209,8 @@
                    ENDIF
                  ENDDO
                ENDDO
+               ACLOC = AC2(IP,:,:)
                IF (ISHALLOW(IP) .EQ. 1) THEN
-                 ACLOC = AC2(IP,:,:)
                  CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                  SSNL3 = ZERO; DSSNL3 = ZERO
                  SSBR  = ZERO; DSSBR  = ZERO
@@ -223,6 +223,11 @@
                  IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
                  !IMATDAA(IP,:,:) = DSSBR ! + DSSNL3 + DSSBF
                  !IMATRAA(IP,:,:) = SSBR
+               ENDIF
+               IF (.NOT. LINIT) THEN
+                 CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+                 CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
                ENDIF
              END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)
            ELSE
