@@ -4608,7 +4608,7 @@
             else
               p_is_converged = zero
             endif
-            !write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
+            write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
           END IF
 
           IF (LCHKCONV) THEN
@@ -4693,10 +4693,10 @@
         nbIter=nbIter+1
         WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin
         !WRITE(*,'(A10,4I10,2F20.10)') 'solver', nbiter, maxiter, is_converged, np_global-is_converged, p_is_converged, pmin
-        IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) THEN
-        !IF (nbiter .eq. maxiter) THEN
-          !PAUSE
-          EXIT
+        IF (LCHKCONV) THEN
+          IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) EXIT
+        ELSE
+          IF (nbiter .eq. maxiter) EXIT
         ENDIF
       END DO ! end open do loop
 
