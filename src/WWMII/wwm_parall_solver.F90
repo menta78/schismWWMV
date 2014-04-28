@@ -4608,7 +4608,7 @@
             else
               p_is_converged = zero
             endif
-            write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
+            !write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
           END IF
 
           IF (LCHKCONV) THEN
