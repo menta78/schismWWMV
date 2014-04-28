@@ -163,8 +163,8 @@
                SL(IP,ID,IS)  = FL(IP,ID,IS)
              ENDDO
            END DO
-           THWOLD(:,1) = THWNEW
-           U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+           THWOLD(IP,1) = THWNEW(IP)
+           U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
            Z0NEW(IP) = Z0OLD(IP,1)
            THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
            CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
