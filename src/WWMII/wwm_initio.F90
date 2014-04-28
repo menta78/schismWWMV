@@ -1,6 +1,6 @@
 #include "wwm_functions.h"
-#define LTESTWAMSOURCES
-!#undef LTESTWAMSOURCES
+!#define LTESTWAMSOURCES
+#undef LTESTWAMSOURCES
 #undef DEBUG
 !**********************************************************************
 !*                                                                    *

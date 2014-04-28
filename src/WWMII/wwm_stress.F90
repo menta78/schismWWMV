@@ -115,8 +115,6 @@
       IF (LOUTWAM) WRITE(111111,'(A30,I10)') 'TOTAL NUMBER OF ENTRIES -- STRESS --', &
      &                 MIN(JPLEVT,JPLEVC)*ITAUMAX*JUMAX
 
-      WRITE(5011) DELU, DELTAUW
-
 
 !*    1.2 DETERMINE STRESS.
 !         -----------------
@@ -168,6 +166,7 @@
         ENDDO
       ENDDO
 
+      WRITE(5011) DELU, DELTAUW
       WRITE(5011) TAUT
       IF (LOUTWAM) WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
 

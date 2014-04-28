@@ -211,7 +211,7 @@
  NDYNITER_SNL3  = 10,                
  NDYNITER_SBF   = 10,                
  NB_BLOCK       = 3,                 
- SOLVERTHR      = 1.E-5,             
+ SOLVERTHR      = 1.E-20,             
  MAXITER        = 300,               
  LNANINFCHK     = .F.,               
  LZETA_SETUP    = .F.,               

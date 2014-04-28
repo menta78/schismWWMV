@@ -15,14 +15,15 @@
 ! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SELFE (Roland et al. 2012). 
 ! 
 ! Developers:                                                   
-! Lead: Aron Roland (IT & E, Frankfurt), Mathieu-Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z & P, Hannover) 
-! Contributors: Christian Ferrarin, Fabrice Ardhuin, Yaron Toledo, Thomas Huxhorn, Ivica Janekovic, Will Perrie, Bash Toulany, Harry Wang 
+! Lead: Aron Roland (IT & E, Frankfurt), Mathieu-Dutour Sikiric (IRB, Zagreb), Yinglong Joseph Zhang, Ulrich Zanke (Z & P, Hannover) 
+! Contributors: Christian Ferrarin, Fabrice Ardhuin, Yaron Toledo, Thomas Huxhorn, Ivica Janekovic, Will Perrie, Bash Toulany, Harry Wang
+!               Kai Li, Xavier Berting, Guillaume Dodet, Andrea Fortunato. 
 !                                                                                     
-! Copyright: 2008- IT & E 
+! Copyright: 2014-BGS IT&E GmbH, Pfungstädterstr.20, Darmstadt
 ! All Rights Reserved                                      
 ! Redistribution of any files contained in this package is strictly prohibited
 ! Commercial use only allowed with permission!
-! For question please contact: aaronroland@gmx.de
+! For question please contact: a.roland@bgsite.de
 ! 
 !**********************************************************************
 !*                                                                    *
