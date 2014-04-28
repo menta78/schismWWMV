@@ -272,6 +272,7 @@
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
          DO IP = 1, MNP
+
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                THWOLD(:,1) = THWNEW
@@ -285,7 +286,6 @@
                  Z0NEW(IP) = Z0OLD(IP,1)
                END DO
                THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-               IF (IP == TESTNODE) WRITE(*,'(A20,3F15.8)') 'POST BEFORE', SUM(SL(IP,:,:)), SUM(FL3(IP,:,:)),  SUM(FL(IP,:,:))
                CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                          THWOLD(IP,1), USOLD(IP,1), &
      &                          TAUW(IP), Z0OLD(IP,1), &
@@ -293,7 +293,6 @@
      &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-               IF (IP == TESTNODE) WRITE(*,'(A20,3F15.8)') 'POST AFTER', SUM(SL(IP,:,:)), SUM(FL3(IP,:,:)),  SUM(FL(IP,:,:))
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
