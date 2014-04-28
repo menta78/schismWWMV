@@ -219,8 +219,8 @@
                  IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
                  !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
-                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR ! + DSSNL3 + DSSBF
-                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR 
+                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
+                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
                  !IMATDAA(IP,:,:) = DSSBR ! + DSSNL3 + DSSBF
                  !IMATRAA(IP,:,:) = SSBR
                ENDIF
