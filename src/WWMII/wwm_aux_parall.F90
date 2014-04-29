@@ -393,15 +393,17 @@
         allocate(oned_send_rqst(nproc-1), oned_send_stat(MPI_STATUS_SIZE,nproc-1), oned_send_type(nproc-1), stat=istat)
         DO iProc=2,nproc
           MNPloc=ListMNP(iProc)
+          WRITE(STAT%FHNDL,*) 'iProc, MNPloc=', iProc, MNPloc
           allocate(dspl_send(MNPloc))
           DO IP=1,MNPloc
             IP_glob=ListIPLG(IP+ListFirst(iProc))
-            dspl_send(IP)=IP_glob
+            dspl_send(IP)=IP_glob-1
           END DO
           call mpi_type_create_indexed_block(MNPloc,1,dspl_send,rtype,oned_send_type(iProc-1), ierr)
           call mpi_type_commit(oned_send_type(iProc-1), ierr)
           deallocate(dspl_send)
         END DO
+        FLUSH(STAT%FHNDL)
       END IF
       END SUBROUTINE
 !**********************************************************************

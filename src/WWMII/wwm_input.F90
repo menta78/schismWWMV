@@ -840,6 +840,7 @@
 !
 !     *** WIND section
 !
+         MULTIPLE_IN=MULTIPLE_IN_WIND
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
          FLUSH(CHK%FHNDL)
@@ -873,6 +874,7 @@
 !
 !     *** CURR section
 !
+         MULTIPLE_IN=MULTIPLE_IN_CURR
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
          FLUSH(CHK%FHNDL)
@@ -900,6 +902,7 @@
 !
 !     *** water level section
 !
+         MULTIPLE_IN_WATLEV=MULTIPLE_IN
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
          FLUSH(CHK%FHNDL)
