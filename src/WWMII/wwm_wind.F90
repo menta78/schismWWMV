@@ -23,8 +23,8 @@
         XP_WIND=XP
         YP_WIND=YP
       ELSE
+        MNP_WIND=np_total
         IF (myrank .eq. 0) THEN
-          MNP_WIND=np_total
           allocate(XP_WIND(MNP_WIND), YP_WIND(MNP_WIND), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
           XP_WIND=XPtotal
@@ -2565,7 +2565,7 @@
       integer, intent(in) :: IT
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
       REAL(rkind)                        :: outTotal(MNP_WIND,2)
-      REAL(rkind)                        :: Vtotal(MNP_WIND)
+      REAL(rkind)                        :: Vtotal(np_total)
       REAL(rkind)                        :: Vlocal(MNP)
       INTEGER ifile, irec, n, iret
       integer, allocatable :: igrib(:)
@@ -2614,6 +2614,7 @@
       IF (MULTIPLE_IN_WIND) THEN
         outwind=outTotal
       ELSE
+        Print *, ' np_total=', np_total
         Vtotal=outTotal(:,1)
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
         outwind(:,1)=Vlocal
