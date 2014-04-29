@@ -398,6 +398,7 @@
           DO IP=1,MNPloc
             IP_glob=ListIPLG(IP+ListFirst(iProc))
             dspl_send(IP)=IP_glob
+            WRITE(STAT%FHNDL,*) 'IP,IP_glob=', IP, IP_glob
           END DO
           call mpi_type_create_indexed_block(MNPloc,1,dspl_send,rtype,oned_send_type(iProc-1), ierr)
           call mpi_type_commit(oned_send_type(iProc-1), ierr)
