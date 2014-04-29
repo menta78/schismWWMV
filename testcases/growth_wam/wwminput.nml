@@ -44,7 +44,7 @@
  &INIT
  LHOTR   = F,
  LINID   = T,
- INITSTYLE       =    1 
+ INITSTYLE       =    3 
  /
  &BOUC
  LBCSE   = F,

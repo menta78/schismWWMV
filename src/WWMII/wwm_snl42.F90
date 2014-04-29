@@ -175,7 +175,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL41(IP,KMESPC, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE SNL41(IP,KMESPC, ACLOC, IMATRA, IMATDA, SFNL, DSNL)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -183,6 +183,7 @@
          REAL(rkind),    INTENT(IN) :: KMESPC
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SFNL(MSC,MDC), DSNL(MSC,MDC)
          INTEGER             :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          INTEGER             :: IDP, IDP1, IDM, IDM1
          INTEGER             :: ISP, ISP1, ISM, ISM1
@@ -195,7 +196,7 @@
          REAL(rkind)                :: FACHFR, PWTAIL
          REAL(rkind)                :: LAMBDA
          REAL(rkind)                :: E00, EP1, EM1, EP2, EM2
-         REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B, SFNL(MSC,MDC), DSNL(MSC,MDC)
+         REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B
 
          REAL(rkind)                :: UE(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
          REAL(rkind)                :: SA1(MSC4MI:MSC4MA, MDC4MI:MDC4MA)

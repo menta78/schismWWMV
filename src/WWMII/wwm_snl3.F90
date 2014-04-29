@@ -2,14 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine triadswan_new (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine triadswan_new (ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
 !
       use datapool
       implicit none
 
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(msc,mdc), dssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 !
@@ -117,23 +117,26 @@
         DO IS = 1, MSC
            SIGPI = SPSIG(IS) * PI2
            DO ID = 1, MDC
+              IF (ACLOC(IS,ID) .LT. THR) CYCLE
               STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
               IF (ABS(STRI) .LT. THR) CYCLE
               !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
               IF (ICOMP .GE. 2) THEN
                 IF (STRI .GT. 0.) THEN
                   IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+                  SSNL3(IS,ID)  = STRI / SIGPI 
                 ELSE
                   IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
+                  DSSNL3(IS,ID) = -STRI/(ACLOC(IS,ID)*SIGPI)
                 END IF
               ELSE
                 IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
                 IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+                SSNL3(IS,ID)  = STRI / SIGPI
+                DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI) 
               END IF
           END DO
         END DO
-        ssnl3 = imatra
-
       END IF
 
 !      IF (IP == 1786) THEN
@@ -1174,141 +1177,6 @@
       END IF
 
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      subroutine triadswan_new2 (ip, hs, smespc, acloc, imatra, imatda)
-!
-      use datapool
-      implicit none
-
-      integer, intent(in)        :: ip
-      real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(out)   :: imatra(msc,mdc), imatda(msc,mdc)
-!
-      integer i1, i2, id, is, ism, ism1, ismax, isp, isp1,  ij1, ij2, ires
-
-      real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0, bb
-      real(rkind)    em,ft, rint, sigpi, sinbph, stri, wism, wism1 , fac1, dstri
-      real(rkind)    wisp, wisp1,w0, wm, wn0, wnm,  xisln, ursell,facres,facscl,siglow
-      
-      real(rkind) :: E(MSC)
-      real(rkind), allocatable :: sa(:,:), da(:,:)
-
-      PTRIAD(1)  = 0.1
-      PTRIAD(2)  = 2.2
-      PTRIAD(3)  = 10.
-      PTRIAD(4)  = 0.2
-      PTRIAD(5)  = 0.01
-
-      IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
-      IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
-      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
-
-      BB = 1./15.
-
-      IF (HS .LT. SMALL) RETURN
-
-      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
-
-      !if (ip == 1786) write(stat%fhndl,'(A20,I10,8F15.10)') 'URSELL',IP,DEP(IP),HS,SMESPC,URSELL,(G9 * HS),(TWO*SQRT(TWO)*SMESPC**2*DEP(IP)**2)
-
-!      write(*,*) '---- calling snl3 -----', ip, iobp(ip)
-
-      IJ2    = INT (FLOAT(MSC) / 2.)
-      IJ1    = IJ2 - 1
-      FAC1   = SPSIG(IJ2) / SPSIG(IJ1)
-      IRES   = NINT ( LOG10( 2.) / LOG10( FAC1 ) )
-      FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
-
-      IF (ABS(FACSCL-2.).GT.0.05) THEN
-         FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
-         SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-         WRITE(DBG%FHNDL,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
-      END IF
-
-      DEP_2 = DEP(IP)**2
-      DEP_3 = DEP(IP)**3
-      I2     = INT (FLOAT(MSC) / 2.)
-      I1     = I2 - 1
-      XIS    = SPSIG(I2) / SPSIG(I1)
-      XISLN  = LOG( XIS )
-      ISP    = INT( LOG(2.) / XISLN )
-      ISP1   = ISP + 1
-      WISP   = (2. - XIS**ISP) / (XIS**ISP1 - XIS**ISP)
-      WISP1  = 1. - WISP
-      ISM    = INT( LOG(0.5) / XISLN )
-      ISM1   = ISM - 1
-      WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
-      WISM1  = 1. - WISM
-
-      ALLOCATE (SA(1:MSC+ISP1,1:MDC))
-      ALLOCATE (DA(1:MSC+ISP1,1:MDC))
-      E  = 0.
-      SA = 0.
-      DA = 0.
-
-      ISMAX = 1
-      DO IS = 1, MSC
-       IF ( SPSIG(IS) .LT. ( PTRIAD(2) * SMESPC) ) THEN
-          ISMAX = IS
-        ENDIF
-      ENDDO
-!      ISMAX = MIN( MSC, MAX ( ISMAX , ISP1 ) ) ! added fix the bug described below ...
-      ISMAX = MAX ( ISMAX , ISP1 )
-
-      IF ( URSELL .GT. PTRIAD(5) ) THEN
-
-        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
-        SINBPH = ABS( SIN(BIPH) )
-
-        DO ID = 1, MDC
-           E = ACLOC(:,ID) * PI2 * SPSIG
-           DO IS = 1, ISMAX 
-              E0  = E(IS)
-              W0  = SPSIG(IS)
-              WN0 = WK(IP,IS)
-              C0  = W0 / WN0
-              IF ( IS.GT.-ISM1 ) THEN
-                 EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
-                 WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
-                 WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
-                 CM  = WM / WNM
-              ELSE
-                 EM  = 0.
-                 WM  = 0.
-                 WNM = 0.
-                 CM  = 0.
-              END IF
-              AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
-              AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
-              RINT = AUX1 / AUX2
-              FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              !SA(IS,ID) = MAX(ZERO, FT * ( E0 * E0 - 2. * EM * E0))
-              SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
-              !DA(IS,ID) = MAX(ZERO, FT * ( 2 * E0 - EM) )
-              !IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
-           END DO
-        END DO
-
-        DO IS = 1, MSC
-          SIGPI = SPSIG(IS) * PI2
-          DO ID = 1, MDC
-            STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            IF (ABS(STRI) .LT. SMALL .OR. ACLOC(IS,ID) .LT. SMALL) CYCLE
-            IF (STRI .GT. 0.) THEN
-              IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-            ELSE
-              IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
-            END IF
-          END DO
-        END DO
-
-      endif
-
-      deallocate(sa)
-      end subroutine 
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

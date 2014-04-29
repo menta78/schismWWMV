@@ -1320,7 +1320,7 @@
              CALL WWM_ABORT('For ICOMP=3 and AMETHOD=7 we need WWM_SOLVER')
            END IF
 #endif
-           IF ((AMETHOD .ne. 5).and.(AMETHOD .ne. 7)) THEN
+           IF ((AMETHOD .ne. 5).and.(AMETHOD .ne. 7).and.(AMETHOD .ne. 0)) THEN
              CALL WWM_ABORT('We need AMETHOD=5 or 7 for ICOMP=3')
            END IF
          END IF

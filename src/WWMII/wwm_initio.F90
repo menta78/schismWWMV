@@ -1061,6 +1061,15 @@
                    TMPPAR(8,IP) = 3.3
                    CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
                    AC2(IP,:,:) = ACLOC
+                 ELSE IF (INITSTYLE == 3) THEN
+                   OPEN(1113,FILE='fort.10003',STATUS='OLD')
+                   DO ID=1,MDC
+                     DO IS=1,MSC
+                       READ(1113,*) K, M, AC2(IP,IS,ID)
+                       AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
+                     ENDDO
+                   ENDDO
+                   REWIND(1113)
                  END IF ! INITSTYLE
                  IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche for initial cond.
                ELSE
@@ -1070,16 +1079,6 @@
                  WINDTH      = 0.
                  AC2(IP,:,:) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
-#ifdef LTESTWAMSOURCES 
-               OPEN(1113,FILE='fort.10003',STATUS='OLD')
-               DO ID=1,MDC
-                 DO IS=1,MSC
-                   READ(1113,*) K, M, AC2(IP,IS,ID)
-                   AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
-                 ENDDO
-               ENDDO
-               REWIND(1113)
-#endif
             END DO ! IP
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
