@@ -2614,7 +2614,6 @@
       IF (MULTIPLE_IN_WIND) THEN
         outwind=outTotal
       ELSE
-        Print *, ' np_total=', np_total
         Vtotal=outTotal(:,1)
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
         outwind(:,1)=Vlocal

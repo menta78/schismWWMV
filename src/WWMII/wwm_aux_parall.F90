@@ -397,8 +397,7 @@
           allocate(dspl_send(MNPloc))
           DO IP=1,MNPloc
             IP_glob=ListIPLG(IP+ListFirst(iProc))
-            dspl_send(IP)=IP_glob
-            WRITE(STAT%FHNDL,*) 'IP,IP_glob=', IP, IP_glob
+            dspl_send(IP)=IP_glob-1
           END DO
           call mpi_type_create_indexed_block(MNPloc,1,dspl_send,rtype,oned_send_type(iProc-1), ierr)
           call mpi_type_commit(oned_send_type(iProc-1), ierr)
@@ -416,11 +415,6 @@
       real(rkind) :: Vtotal(np_total)
       real(rkind) :: Vlocal(MNP)
       integer iProc, IP
-      Print *, 'Bonjour'
-      DO IP=1,np_total
-        Vtotal(IP)=DBLE(IP)
-      END DO
-      Print *, 'After Vtotal assignation'
       IF (myrank .eq. 0) THEN
         DO iProc=2,nproc
           CALL mpi_isend(Vtotal, 1, oned_send_type(iProc-1), iProc-1, 2030, comm, oned_send_rqst(iProc-1), ierr)
@@ -434,16 +428,5 @@
       ELSE
         CALL MPI_RECV(Vlocal, MNP, rtype, 0, 2030, comm, istatus, ierr)
       END IF
-      WRITE(STAT%FHNDL,*) 'MNP=', MNP
-      DO IP=1,MNP
-        IF (ABS(Vlocal(IP) - iplg(IP)) > 1) THEN
-          Print *, 'BUG IP,Vloc,iplg=', IP, Vlocal(IP), iplg(IP)
-          WRITE(STAT%FHNDL,*) 'BUG IP,Vloc,iplg=', IP, Vlocal(IP), iplg(IP)
-        END IF
-        WRITE(STAT%FHNDL,*) 'IP,Vloc,iplg=', IP, Vlocal(IP), iplg(IP)
-      END DO
-      FLUSH(STAT%FHNDL)
-      Vlocal = 0
-      Print *, 'Au revoir'
       END SUBROUTINE
 #endif
