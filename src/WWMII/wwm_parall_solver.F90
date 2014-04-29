@@ -4441,6 +4441,9 @@
           U(IS,ID,:)=AC2(:,IS,ID)
         END DO
       END DO
+
+!      WRITE(*,*) SUM(AC2), SUM(U), SUM(X)
+!      PAUSE 'BEFORE CRAP'
       !
       ! The advection part of the equation
       !
@@ -4450,6 +4453,11 @@
       ELSE
         CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPARL,BL)
       ENDIF
+
+!      WRITE(*,*) SUM(AC2), SUM(U), SUM(X), SUM(IMATRAA), SUM(IMATDAA)
+!      PAUSE 'AFTER EIMPS'
+!      STOP
+
 
 !      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 

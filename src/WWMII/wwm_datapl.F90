@@ -249,7 +249,6 @@
          LOGICAL    :: LENERGY     = .FALSE.
          LOGICAL    :: LKPFILTER   = .TRUE.
          LOGICAL    :: LCALC       = .TRUE.
-         LOGICAL    :: LINIT       = .TRUE.
          LOGICAL    :: LIMP        = .TRUE.
          LOGICAL    :: LRESCALE    = .FALSE.
          LOGICAL    :: LITERSPLIT  = .FALSE.
@@ -259,7 +258,7 @@
          LOGICAL    :: LPRECOMP_EXIST = .FALSE.
          LOGICAL    :: LETOT       = .TRUE.
          LOGICAL    :: LADVTEST    = .FALSE.
-         LOGICAL    :: LNANINFCHK  = .FALSE.
+         LOGICAL    :: LNANINFCHK  = .TRUE.
          LOGICAL    :: LWINDFROMWWM= .FALSE.
          LOGICAL    :: LVECTOR     = .FALSE.
          LOGICAL    :: LOPTSIG     = .FALSE.
@@ -1033,7 +1032,7 @@
          LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
-         INTEGER                :: TESTNODE = 530 
+         INTEGER                :: TESTNODE = 101 
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
          REAL(rkind), PARAMETER :: COEF4   = 5.0E-07

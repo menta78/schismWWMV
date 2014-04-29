@@ -533,18 +533,18 @@
   
       ENDDO
 
-      IF (ICOMP .GE. 2) THEN
-        DO M = 1, NFRE
-          DO K = 1, NANG 
-            IF (SSNL4(K,M) .LT. ZERO) THEN
-              SSNL4(K,M) = ZERO
-              DSSNL4(K,M) = - DSSNL4(K,M)
-            ELSE
-              DSSNL4(K,M) = ZERO
-            ENDIF
-          END DO
-        ENDDO
-      ENDIF
+!      IF (ICOMP .GE. 2) THEN
+!        DO M = 1, NFRE
+!          DO K = 1, NANG 
+!            IF (SSNL4(K,M) .LT. ZERO) THEN
+!              SSNL4(K,M) = ZERO
+!              DSSNL4(K,M) = - DSSNL4(K,M)
+!            ELSE
+!              DSSNL4(K,M) = ZERO
+!            ENDIF
+!          END DO
+!        ENDDO
+!      ENDIF
 
         DO IJ=IJS,IJL
 !        WRITE(111117,'(2F30.25)') & 

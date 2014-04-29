@@ -1548,9 +1548,10 @@
          OUTPAR(23)  = BOTEXPER ! Bottom excursion period.
          OUTPAR(24)  = TMBOT    ! near bottom period. 
 
-         CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
-
-         OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+         IF (TPP .GT. THR) THEN
+           CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
+           OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
+         ENDIF
 
          OUTPAR(26:35) = ZERO 
       END SUBROUTINE

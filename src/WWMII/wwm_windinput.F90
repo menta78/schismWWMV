@@ -194,10 +194,11 @@
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX, AUX1, AUX2, AUXH
-         REAL(rkind)                  :: SWINA, SFIL(MSC,MDC)
+         REAL(rkind)                  :: SWINA
 
          AUX = 0.0015_rkind / ( G9*G9*PI2 )
 
+         SSINL = ZERO 
          DO IS = 1, MSC
            AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
            AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
@@ -207,11 +208,13 @@
                SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
                SSINL(IS,ID) = SWINA / SPSIG(IS)
                IMATRA(IS,ID) = SSINL(IS,ID)
-             END IF
+             ELSE
+               IMATRA(IS,ID) = ZERO
+             ENDIF 
+             !IF (IP == TESTNODE) WRITE(*,'(10F20.10)') IMATRA(IS,ID), SSINL(IS,ID)
            END DO
          END DO
-
-         RETURN
+         !IF (IP == TESTNODE)  WRITE(*,'(10F20.10)') SUM(IMATRA), SUM(SSINL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

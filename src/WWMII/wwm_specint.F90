@@ -150,12 +150,21 @@
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA
 
 !$OMP WORKSHARE
-         IMATDAA = 0.
-         IMATRAA = 0.
+         IMATDAA = ZERO
+         IMATRAA = ZERO
 !$OMP END WORKSHARE
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
-         DO IP = 1, MNP
+         DO IP = 1, NP_RES 
+           SSNL3 = ZERO; DSSNL3 = ZERO
+           SSBR  = ZERO; DSSBR  = ZERO
+           SSBF  = ZERO; DSSBF  = ZERO
+           SSINL = ZERO
+           IF (DEP(IP) .LT. DMIN) THEN
+             IMATRAA(IP,:,:) = ZERO
+             IMATDAA(IP,:,:) = ZERO
+             CYCLE
+           ENDIF
            DO IS = 1, MSC
              DO ID = 1, MDC
                FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
@@ -174,6 +183,9 @@
      &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                     SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+           IF (LNANINFCHK) THEN
+             IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
+           ENDIF
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                DO ID = 1, MDC
@@ -201,33 +213,36 @@
                END DO
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   IF (IMATRAA(IP,IS,ID) .GT. ZERO) THEN
-                     IMATDAA(IP,IS,ID) = ZERO
-                   ELSE
-                     IMATRAA(IP,IS,ID) = ZERO
+                   !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
+                   IF (IMATDAA(IP,IS,ID) .LT. ZERO) THEN
                      IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID) 
+                     IMATRAA(IP,IS,ID) = ZERO
+                   ELSE
+                     IMATDAA(IP,IS,ID) = ZERO 
                    ENDIF
+                   !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
                  ENDDO
                ENDDO
                ACLOC = AC2(IP,:,:)
                IF (ISHALLOW(IP) .EQ. 1) THEN
                  CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-                 SSNL3 = ZERO; DSSNL3 = ZERO
-                 SSBR  = ZERO; DSSBR  = ZERO
-                 SSBF  = ZERO; DSSBF  = ZERO
                  IF (MESTR .GT. 0) CALL TRIADSWAN_NEW2(IP,HS,SME01,ACLOC,SSNL3,DSSNL3)
                  IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
                  !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
-                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
-                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
+                 !IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
+                 !IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
                  !IMATDAA(IP,:,:) = DSSBR ! + DSSNL3 + DSSBF
                  !IMATRAA(IP,:,:) = SSBR
                ENDIF
-               IF (.NOT. LINIT) THEN
+               IF (.NOT. LINID) THEN
+                 CALL SET_WIND( IP, WIND10, WINDTH )
                  CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
                  CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
-                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+                 !IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+               ENDIF
+               IF (LNANINFCHK) THEN
+                 IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
                ENDIF
              END IF ! ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2)
            ELSE
@@ -255,9 +270,14 @@
                ENDIF
              ENDIF
            ENDIF
+           !IF (IP==TESTNODE) WRITE(*,*) IP, SUM(IMATRAA(IP,:,:)), DEP(IP), IOBP(IP), SUM(SSBR), SUM(SSBF), SUM(SSINL), SUM(SSNL3)
          ENDDO
 
-         !WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
+         IF (LNANINFCHK) THEN
+           IF (SUM(IMATRAA) .NE. SUM(IMATRAA)) CALL WWM_ABORT('NAN IN IMATRAA')
+         ENDIF
+
+         !WRITE(*,'(A20,3F15.10)') 'FROM SPECINT', SUM(IMATRAA), SUM(IMATDAA), SUM(AC2)
 
       END SUBROUTINE
 !**********************************************************************

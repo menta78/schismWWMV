@@ -178,6 +178,8 @@
               SDISS = TEMP1(IJ)*F(IJ,K,M)
               SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
+              SSDS(K,M)  = TEMP1(IJ)*F(IJ,K,M)
+              DSSDS(K,M) = TEMP1(IJ)
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
                 PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
                 TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
@@ -195,7 +197,7 @@
 !        ----------- -- -------------- -----------------------
 !
 !       (FOLLOWING BATTJES-JANSSEN AND BEJI)
-        IF(LBIWBK) THEN
+        IF(LBIWBK .and. .false.) THEN
           DO IJ=IJS,IJL
              IF(DEP(IJ).LT.DEPTHTRS) THEN
                EMAX = (GAM_B_J*DEP(IJ))**2/16.
@@ -217,10 +219,10 @@
              DO K=1,NANG
                 DO IJ=IJS,IJL
                   IF(DEP(IJ).LT.DEPTHTRS) THEN
-                    SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
-                    FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
-                    SSDS(K,M) = -SDS(IJ)*F(IJ,K,M)
-                    DSSDS(K,M) = -SDS(IJ)
+                    !SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
+                    !FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
+                    !SSDS(K,M)  = -SDS(IJ)*F(IJ,K,M)
+                    !DSSDS(K,M) = -SDS(IJ)
                   ENDIF
                 ENDDO
              ENDDO

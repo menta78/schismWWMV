@@ -485,7 +485,7 @@
               MAXDACOLD = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
                !MAXDAC = MIN(MAXDACOLD,USFM*DELFL(IS)/PI2/SPSIG(IS))
               MAXDAC = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              write(*,*) MAXDACOLD, MAXDAC 
+              !write(*,*) MAXDACOLD, MAXDAC, MAXDAC/MAXDACOLD
                !MAXDAC = MAXDACOLD!USFM*DELFL(IS)/PI2/SPSIG(IS)
              END IF
              DO ID = 1, MDC
