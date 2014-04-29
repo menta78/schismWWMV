@@ -146,6 +146,9 @@
 				     ! 5 - netCDF CF compilant wind (Uwind/Vwind)
                                      ! 6 - Same as 1 but in netcdf
                                      ! 7 - GRIB files
+ MULTIPLE_IN   = T                   ! If T then all process are reading data
+                                     ! If F then only process 0 does it and
+                                     ! then spread to other nodes.
 /
 
 &CURR !NOT USED WITH SELFE
@@ -163,6 +166,9 @@
  LERGINP        = F                  ! read timor file for input ... ergzus.bin
  CURFAC         = 1.000000
  ICURRFORMAT    = 1
+ MULTIPLE_IN   = T                   ! If T then all process are reading data
+                                     ! If F then only process 0 does it and
+                                     ! then spread to other nodes.
 /
 
 &WALV !NOT USED WITH SELFE
@@ -176,6 +182,9 @@
  LCWLV          = T                  ! Constant water level
  CWATLV         = 0.0                ! elevation of the water level [m]
  FILEWATL       = ' '                ! water level file name; input file format: write(*,*) eta
+ MULTIPLE_IN   = T                   ! If T then all process are reading data
+                                     ! If F then only process 0 does it and
+                                     ! then spread to other nodes.
 /
 
 &ENGS !SOURCE TERMS
