@@ -483,8 +483,9 @@
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
              ELSE IF (MELIM .EQ. 3) THEN
               MAXDACOLD = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-               !MAXDAC = MIN(MAXDACOLD,USFM*DELFL(IS)/PI2/SPSIG(IS))
               MAXDAC = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              MAXDAC = MAXDACOLD!ISHALLOW(IP) * MAXDACOLD + (1 - ISHALLOW(IP)) * MAXDAC
+              !MAXDAC = MAXDACOLD
               !write(*,*) MAXDACOLD, MAXDAC, MAXDAC/MAXDACOLD
                !MAXDAC = MAXDACOLD!USFM*DELFL(IS)/PI2/SPSIG(IS)
              END IF
@@ -498,7 +499,7 @@
 !                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
 !               END IF
                AC2(IP,IS,ID) = MAX( zero, OLDAC + NEWDAC )
-               IF (MELIM .EQ. 3) FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+               !IF (MELIM .EQ. 3) FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
              END DO
            END DO
          END DO

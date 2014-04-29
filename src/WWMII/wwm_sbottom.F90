@@ -70,7 +70,6 @@
         DO IJ=IJS,IJL
           IF(DEP(IJ).LT.999) THEN
             ARG = 2.* DEP(IJ)*WK(IJ,M)!TFAK(INDEP(IJ),M)
-            write(*,*) ARG, MIN(ARG,50.), DEP(IJ)
             ARG = MIN(ARG,50.)
             SBO(IJ) = CONST*WK(IJ,M)/SINH(ARG)
 !            SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)

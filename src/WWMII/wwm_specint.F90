@@ -264,8 +264,8 @@
                    IF (MESBR .GT. 0) CALL SDS_SWB_NEW(IP,SME01,KMWAM,ETOT,HS,ACLOC,SSBR,DSSBR)
                    IF (MESBF .GT. 0) CALL SDS_BOTF_NEW(IP,ACLOC,SSBF,DSSBF)
                    !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
-                   IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR ! + DSSNL3 + DSSBF
-                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
+                   !IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR ! + DSSNL3 + DSSBF
+                   !IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR
                  ENDIF
                ENDIF
              ENDIF
@@ -296,21 +296,20 @@
 !$OMP END WORKSHARE
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
-         DO IP = 1, MNP
-
+         DO IP = 1, NP_RES 
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               THWOLD(:,1) = THWNEW
-               U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+               THWOLD(IP,1) = THWNEW(IP)
+               THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+               U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
+               Z0NEW(IP) = Z0OLD(IP,1)
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
                    FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
                    SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                  END DO
-                 Z0NEW(IP) = Z0OLD(IP,1)
                END DO
-               THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
                CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                          THWOLD(IP,1), USOLD(IP,1), &
      &                          TAUW(IP), Z0OLD(IP,1), &
@@ -320,10 +319,9 @@
      &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
-                   IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
-                 ENDDO
-               ENDDO
+                   AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+                 END DO
+               END DO
              END IF !
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
@@ -331,15 +329,15 @@
                  FL = FL3
                  THWOLD(:,1) = THWNEW
                  U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
+                 Z0NEW(IP) = Z0OLD(IP,1)
+                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
                      FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
                      SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                    END DO
-                   Z0NEW(IP) = Z0OLD(IP,1)
                  END DO
-                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
                  CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                            THWOLD(IP,1), USOLD(IP,1), &
      &                            TAUW(IP), Z0OLD(IP,1), &
@@ -349,18 +347,12 @@
      &                            SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
-                     IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
-                   ENDDO
-                 ENDDO
+                     AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+                   END DO
+                 END DO
                ENDIF
              ENDIF
            ENDIF
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
-             END DO
-           END DO
          END DO
       END SUBROUTINE
 !**********************************************************************
