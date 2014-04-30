@@ -482,12 +482,11 @@
                UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
              ELSE IF (MELIM .EQ. 3) THEN
-              MAXDACOLD = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-              MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              !MAXDAC = MAXDACOLD!ISHALLOW(IP) * MAXDACOLD + (1 - ISHALLOW(IP)) * MAXDAC
-              !MAXDAC = MAXDACOLD
-              !write(*,*) MAXDACOLD, MAXDAC, MAXDAC/MAXDACOLD
-               !MAXDAC = MAXDACOLD!USFM*DELFL(IS)/PI2/SPSIG(IS)
+               IF (USNEW(IP) .GT. SMALL) THEN
+                 MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
+               ELSE
+                 MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+               ENDIF
              END IF
              DO ID = 1, MDC
                NEWAC  = ACLOC(IS,ID)

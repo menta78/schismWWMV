@@ -329,7 +329,6 @@
       DELT = IDELT
       XIMP = 1.0
       DELT5 = XIMP*DELT
-
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
@@ -337,7 +336,6 @@
         USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
         IF (LOUTWAM) WRITE(111113,'(4F20.10)') USNEW(IJ), FMEANWS(IJ), FMEAN(IJ)
       ENDDO
-
       DO M=1,NFRE
         DO IJ=IJS,IJL
           TEMP(IJ,M) = USFM(IJ)*DELFL(M)
