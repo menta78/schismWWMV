@@ -199,8 +199,6 @@
                    !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
                    FF = FL3(IP,ID,IS)
                    WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
-                   !IF (SSIN(IS,ID) .GT. ZERO) THEN
-
                    IF (IMETHOD == 1) THEN 
                      IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
                    ELSE IF (IMETHOD == 2) THEN
@@ -215,21 +213,14 @@
                      IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - TWO*DSSDS(ID,IS)
                      IF (SSNL4(ID,IS) .GT. ZERO) THEN
                        IMATRAA(IP,IS,ID) = IMATRAA(IP,IS,ID) + SSNL4(ID,IS)*JAC
+                     !ENDIF
+                     ELSE
+                     !IF (DSSNL4(ID,IS) .LT. ZERO) THEN 
+                       IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - SSNL4(ID,IS)/FF
                      ENDIF
-                     IF (IMATDAA(IP,IS,ID) .LT. ZERO) THEN 
-                       IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - TWO*DSSNL4(ID,IS)*100
-                     ENDIF
+                     !IMATRAA(IP,IS,ID) = IMATRAA(IP,IS,ID) + SSNL4(ID,IS)*JAC
+                     !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) + DSSNL4(ID,IS)
                    ENDIF
-                     
-                   !ELSE
-                   !  IMATDAA(IP,IS,ID) = -SSIN(ID,IS)*JAC/AC2(IP,IS,ID) 
-                   !ENDIF
-                   !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - DSSDS(ID,IS)
-                   !IF (SSNL4(IS,ID) .GT. ZERO) THEN
-                     !IMATRAA(IP,IS,ID) = IMATRAA(IP,IS,ID) + (SSDS(ID,IS)+SSNL4(ID,IS))*JAC
-                   !ELSE
-                  !   IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - SSNL4(ID,IS)*JAC/AC2(IP,IS,ID)
-                   !ENDIF
                  ENDDO
                ENDDO 
                IF (.FALSE.) THEN
