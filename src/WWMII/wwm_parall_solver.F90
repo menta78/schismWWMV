@@ -4041,7 +4041,7 @@
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * DT4A * SI(IP) !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
         END DO
       ENDIF
 

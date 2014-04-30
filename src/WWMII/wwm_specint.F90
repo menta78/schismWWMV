@@ -138,7 +138,7 @@
       SUBROUTINE SOURCE_INT_IMP_WAM_PRE
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER      :: IP, IS, ID
+         INTEGER      :: IP, IS, ID, IMETHOD
          REAL(rkind)  :: ACLOC(MSC,MDC), VEC2RAD
          REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind)  :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
@@ -150,6 +150,8 @@
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC, FF
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
+
+         IMETHOD = 3
 
 !$OMP WORKSHARE
          IMATDAA = ZERO
@@ -196,9 +198,29 @@
                    !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
                    !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
                    FF = FL3(IP,ID,IS)
-                   WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSIN(IS,ID), SSNL4(IS,ID)/FF, DSSNL4(IS,ID) 
+                   WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
                    !IF (SSIN(IS,ID) .GT. ZERO) THEN
+
+                   IF (IMETHOD == 1) THEN 
                      IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
+                   ELSE IF (IMETHOD == 2) THEN
+                     IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
+                     IMATDAA(IP,IS,ID) = -TWO*DSSDS(ID,IS)
+                   ELSE IF (IMETHOD == 3) THEN
+                     IF (SSIN(ID,IS) .GT. ZERO) THEN
+                       IMATRAA(IP,IS,ID) = SSIN(ID,IS)*JAC
+                     ELSE
+                       IMATDAA(IP,IS,ID) = -TWO*DSSIN(ID,IS)
+                     ENDIF
+                     IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - TWO*DSSDS(ID,IS)
+                     IF (SSNL4(ID,IS) .GT. ZERO) THEN
+                       IMATRAA(IP,IS,ID) = IMATRAA(IP,IS,ID) + SSNL4(ID,IS)*JAC
+                     ENDIF
+                     IF (IMATDAA(IP,IS,ID) .LT. ZERO) THEN 
+                       IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) - TWO*DSSNL4(ID,IS)*100
+                     ENDIF
+                   ENDIF
+                     
                    !ELSE
                    !  IMATDAA(IP,IS,ID) = -SSIN(ID,IS)*JAC/AC2(IP,IS,ID) 
                    !ENDIF
