@@ -111,9 +111,9 @@ endif
 
 # Wind wave model WWM
  USE_WWM = yes
-# EXEC := $(EXEC)_WWM
+ EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
- USE_PETSC = yes
+# USE_PETSC = yes
 # EXEC := $(EXEC)_PETSC
 
 # TIMOR 

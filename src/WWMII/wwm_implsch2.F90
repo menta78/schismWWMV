@@ -7,7 +7,9 @@
      &                    ROAIRO, ZIDLOLD, &
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST, FMEANWS, MIJ)
+     &                    SL, FCONST, FMEANWS, MIJ, &
+     &                    SSDS, DSSDS, SSIN, DSSIN, &
+     &                    SSNL4, DSSNL4)
 !
 !       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
@@ -221,7 +223,7 @@
         CALL FLUSH (IU06)
       ENDIF
 !SHALLOW
-      IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL, SSDS, DSSDS)
+      !IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL, SSDS, DSSDS)
 !SHALLOW
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER SBOTTOM' 
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 

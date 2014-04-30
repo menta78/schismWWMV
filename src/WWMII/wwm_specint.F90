@@ -149,6 +149,8 @@
          REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA
 
+         REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
+
 !$OMP WORKSHARE
          IMATDAA = ZERO
          IMATRAA = ZERO
@@ -182,64 +184,68 @@
      &                     ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                     SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-           IF (LNANINFCHK) THEN
-             IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
-           ENDIF
+     &                     SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP), &
+     &                     SSDS, DSSDS, SSIN, DSSIN, &
+     &                     SSNL4, DSSNL4)
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                DO ID = 1, MDC
                  DO IS = 1, MSC 
-                   IMATDAA(IP,IS,ID) =  FL(IP,ID,IS)
-                   IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
+                   IMATDAA(IP,IS,ID) =  ZERO!FL(IP,ID,IS) ... this is not working right, reason is unknown, there signchanges that should not be
+                   IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
+                   !WRITE(11140,'(2I10,6E20.10)') IS, ID, SSDS(ID,IS), DSSDS(ID,IS), SSIN(ID,IS), DSSIN(IS,ID), SSNL4(IS,ID), DSSNL4(IS,ID) 
                  ENDDO
                ENDDO 
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
-                   NEWDAC   = IMATRAA(IP,IS,ID)*DT4A/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
-                   NEWDACDT = NEWDAC/DT4A
-                   MAXDAC   = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-                   MAXDACDT = MAXDAC/DT4A
-                   LIMFAC   = ONE/MAX(ONE,NEWDAC/MAXDAC) 
-                   SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
-                   !IMATRAA(IP,IS,ID) = SC
-                   !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
-                   !IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
-                   !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
-                   !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
-                   !LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-                   !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
+               IF (.FALSE.) THEN
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     NEWDAC   = IMATRAA(IP,IS,ID)*DT4A/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
+                     NEWDACDT = NEWDAC/DT4A
+                     MAXDAC   = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                     MAXDACDT = MAXDAC/DT4A
+                     LIMFAC   = ONE/MAX(ONE,NEWDAC/MAXDAC) 
+                     SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                    !IMATRAA(IP,IS,ID) = SC
+                    !IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)!*LIMFAC
+                    !IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
+                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
+                    !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
+                    !LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
+                   END DO
                  END DO
-               END DO
-!               DO IS = 1, MSC
-!                 DO ID = 1, MDC
-!                   !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
-!                   IF (IMATDAA(IP,IS,ID) .LT. ZERO) THEN
-!                     IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID) 
-!!                     IMATRAA(IP,IS,ID) = ZERO
-!                   ELSE
-!                     IMATDAA(IP,IS,ID) = ZERO 
-!                   ENDIF
-!                   !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
-!                 ENDDO
-!               ENDDO
-               ACLOC = AC2(IP,:,:)
-               IF (ISHALLOW(IP) .EQ. 1) THEN
-                 CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-                 IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
-                 IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
-                 IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-                 !IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
-                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
-                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
-                 IMATDAA(IP,:,:) = DSSBR + DSSNL3 + DSSBF! + DSSNL3 + DSSBF
-                 IMATRAA(IP,:,:) = SSBR
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+!                  WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
+                     IF (AC2(IP,IS,ID) .GT. THR .AND. IMATRAA(IP,IS,ID) .LT. ZERO .AND.  IMATDAA(IP,IS,ID) .GT. ZERO) THEN
+                       WRITE(*,*) IMATRAA(IP,IS,ID) , IMATDAA(IP,IS,ID), AC2(IP,IS,ID)
+                     !STOP 'SIGN ERROR'
+                     ENDIF
+                     IF (-IMATDAA(IP,IS,ID) .GT. ZERO) THEN
+                       IMATDAA(IP,IS,ID) = ZERO
+                     ELSE
+                       IMATRAA(IP,IS,ID) = ZERO
+                     ENDIF
+                     IMATDAA(IP,IS,ID) = -IMATDAA(IP,IS,ID)
+                    !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
+                   ENDDO
+                 ENDDO
                ENDIF
+               ACLOC = AC2(IP,:,:)
                IF (.NOT. LINID) THEN
                  CALL SET_WIND( IP, WIND10, WINDTH )
                  CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
                  CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
                  IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+               ENDIF
+               IF (ISHALLOW(IP) .EQ. 1) THEN
+                 CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+                 IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                 IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
+                 IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
+                 IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
+                 IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
+                 IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
                ENDIF
                IF (LNANINFCHK) THEN
                  IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
@@ -276,8 +282,6 @@
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRAA) .NE. SUM(IMATRAA)) CALL WWM_ABORT('NAN IN IMATRAA')
          ENDIF
-
-         IMATDAA = ZERO
 
          !WRITE(*,'(A20,3F15.10)') 'FROM SPECINT', SUM(IMATRAA), SUM(IMATDAA), SUM(AC2)
 

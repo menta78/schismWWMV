@@ -51,7 +51,7 @@
          REAL(rkind)    :: ACLOC1(MSC,MDC)
 
 
-         REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC)
+         REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC), DSSNL4(MSC,MDC)
          REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC)
          REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1, DAM(MSC*MDC)
 
@@ -93,6 +93,7 @@
          SSINL       = zero
          SSNL3       = zero
          SSNL4       = zero
+         DSSNL4      = zero
          SSBR        = zero
          SSBF        = zero
          IMATRA_WAM  = zero
@@ -222,7 +223,7 @@
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
-               CALL SNL41 (IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL41 (IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
              ELSE IF (MESNL .EQ. 2) THEN
                CALL SNL4(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 3) THEN
@@ -472,7 +473,6 @@
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACOLD,ACLOC, MAXDAC, UFR_LIM, NEWAC, OLDAC, NEWDAC)
          DO IP = 1, MNP
            IF (DEP(IP) .LT. DMIN .OR. IOBP(IP) .EQ. 2) CYCLE
-           IF (MELIM .EQ. 3) USFM = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
            ACOLD = AC1(IP,:,:)
            ACLOC = AC2(IP,:,:)
            DO IS = 1, MSC
@@ -483,8 +483,8 @@
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
              ELSE IF (MELIM .EQ. 3) THEN
               MAXDACOLD = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-              MAXDAC = COFRM4(IS)*DT4A*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              MAXDAC = MAXDACOLD!ISHALLOW(IP) * MAXDACOLD + (1 - ISHALLOW(IP)) * MAXDAC
+              MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              !MAXDAC = MAXDACOLD!ISHALLOW(IP) * MAXDACOLD + (1 - ISHALLOW(IP)) * MAXDAC
               !MAXDAC = MAXDACOLD
               !write(*,*) MAXDACOLD, MAXDAC, MAXDAC/MAXDACOLD
                !MAXDAC = MAXDACOLD!USFM*DELFL(IS)/PI2/SPSIG(IS)

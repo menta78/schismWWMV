@@ -9,9 +9,9 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030910.000000     ,
- DELTC   = 10.000000000000     ,
+ DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030915.000000     ,
+ ENDTC   = 20030920.000000     ,
  DMIN    =  0.100000000000000     
  /
  &COUPL
@@ -137,7 +137,7 @@
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =        0.019,
- MESBR   =           1,
+ MESBR   =           0,
  ICRIT   =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
