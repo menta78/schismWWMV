@@ -8,6 +8,7 @@
 
         INTEGER           :: IS, ID, IP
         REAL(rkind)       :: VEC2RAD, DEG
+        REAL(rkind)       :: SSIN(MDC,MSC), DSSIN(MDC,MSC), SSNL4(MDC,MSC), DSSNL4(MDC,MSC), SSDS(MDC,MSC), DSSDS(MDC,MSC)
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -126,7 +127,9 @@
      &                         ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                         U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                         Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                         SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+     &                         SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP), &
+     &                         SSDS, DSSDS, SSIN, DSSIN, &
+     &                         SSNL4, DSSNL4)
              IF (LOUTWAM .AND. IP == TESTNODE) THEN
                WRITE(111112,'(A10,I10)') 'AFTER', IP
                WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
