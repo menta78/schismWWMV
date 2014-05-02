@@ -42,9 +42,16 @@
                                      ! LETOT = .T., is only for testing and developers!
  NLVT           = 10                 ! Number of vertical Layers in SHYFEM
  DTCOUP         = 600.               ! Couple time step - not used when coupled to SELFE
+ IMET_DRY       = 1                  ! ! imet_dry=1 : only the values at the 2 nodes of the side are used to
+                                     ! compute the derivative (this older method showed to provide inconsistent
+                                     ! wave force at the wet/dry interface).
+                                     !
+                                     ! imet_dry=2 : a 4-point stencil (the 3 wet nodes and an artificial
+                                     ! node at the center of the side) is used to compute the derivative.
+                                     ! This method is similar to using shape functions to compute the
+                                     ! derivative at the center of the element and assigning this value to the
+                                     ! the side center.
 /
-
-
 
 &GRID
  LCIRD          = T                  ! Full circle in directional space
@@ -346,6 +353,16 @@
  ZETA_METH      = 0,                 ! 0: use a simple conjugate gradient
                                      !    preconditioner
                                      ! 1: use PETSC
+ SOLVERTHR       =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
+ MAXITER =         100,                   ! Max. number of iterations 
+ LNANINFCHK      = T,                     ! Check for NaN and INF
+ LZETA_SETUP     = F,                     ! Compute wave setup 
+ ZETA_METH       =           0,           ! Method for wave setup, Mathieu please explain!
+ LSOURCESWAM     = T,                     ! Use ECMWF WAM formualtion for deep water physics 
+ PMIN    =  0.000000000000000E+000,       ! Max. percentage of non-converged grid points 
+ LSOURCESWWIII   = F,                     ! WW3 Ardhuin et al. sources, not working yet in this code use MESIN = 1 
+ BLOCK_GAUSS_SEIDEL      = T,             ! Solve the nonlinear system using simpler algorithm (Patankar) 
+ LNONL   = F
 /
 
 
