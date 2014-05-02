@@ -115,12 +115,13 @@
         END DO
 
         DO IS = 1, MSC
-           SIGPI = SPSIG(IS) * PI2
-           DO ID = 1, MDC
-              IF (ACLOC(IS,ID) .LT. THR) CYCLE
-              STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-              IF (ABS(STRI) .LT. THR) CYCLE
-              !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
+          SIGPI = SPSIG(IS) * PI2
+          DO ID = 1, MDC
+            IF (ACLOC(IS,ID) .LT. THR) CYCLE
+            STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
+            IF (ABS(STRI) .LT. THR) CYCLE
+            !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
+            IF (.NOT. LSOURCESWAM) THEN
               IF (ICOMP .GE. 2) THEN
                 IF (STRI .GT. 0.) THEN
                   IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
@@ -135,6 +136,12 @@
                 SSNL3(IS,ID)  = STRI / SIGPI
                 DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI) 
               END IF
+            ELSE
+              IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+              IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+              SSNL3(IS,ID)  = STRI / SIGPI
+              DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI)
+            ENDIF
           END DO
         END DO
       END IF

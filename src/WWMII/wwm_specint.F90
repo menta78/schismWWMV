@@ -264,7 +264,28 @@
                ENDIF
                IF (ISHALLOW(IP) .EQ. 1) THEN
                  CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-                 IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                 IF (MESTR .GT. 0) THEN
+                   CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                   DO IS = 1, MSC
+                     DO ID = 1, MDC
+                       IF (AC2(IP,IS,ID) .LT. THR) CYCLE
+                       NEWDAC   = ssnl3(IS,ID)*DT4A/MAX((1.-DT4A*dssnl3(IS,ID)),1.)
+                       NEWDACDT = NEWDAC/DT4A
+                       MAXDAC   = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+                       MAXDACDT = MAXDAC/DT4A
+                       LIMFAC   = ONE/MAX(ONE,NEWDAC/MAXDAC)
+                       dssnl3(IS,ID)= zero
+                       !SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                       !ssnl3(IS,ID) = SC
+                       !dssnl3(IS,ID)= zero!dssnl3(IS,ID)*LIMFAC
+                    !IF (NEWDAC/MAXDAC .gt. one) WRITE(*,*) ONE/MAX(ONE,NEWDAC/MAXDAC), NEWDAC/MAXDAC
+                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) !* ONE/MAX(ONE,NEWDAC/MAXDAC)
+                    !IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)*DT4S*SI(IP)
+                    !LIMFAC = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+                    !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
+                     END DO
+                   END DO
+                 ENDIF
                  IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
                  IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF

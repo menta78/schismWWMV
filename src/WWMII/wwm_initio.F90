@@ -1921,7 +1921,6 @@
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
         USE DATAPOOL, ONLY: rkind
         IMPLICIT NONE
-!AR: Kai Li, please carefully describe the method and comment on the input parameters ...
 
         INTEGER, INTENT(IN) :: NP,P,D1,D2
         REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
