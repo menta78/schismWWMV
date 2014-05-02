@@ -232,8 +232,7 @@
                      FLHAB  = MIN(FLHAB,TEMP)
                      IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
                      LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-                     IMATDAA(IP,IS,ID) = ZERO!-MIN(ZERO,FL(IP,ID,IS)/AC2(IP,IS,ID)*LIMFAC)
-                      
+                     IMATDAA(IP,IS,ID) = ZERO
                    ENDIF 
                  ENDDO
                ENDDO 
@@ -255,24 +254,6 @@
                     !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
                    END DO
                  END DO
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-!                  WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
-                     !IF (AC2(IP,IS,ID) .GT. THR .AND. IMATRAA(IP,IS,ID) .LT. ZERO .AND.  IMATDAA(IP,IS,ID) .GT. ZERO) THEN
-                     !  WRITE(*,*) IMATRAA(IP,IS,ID) , IMATDAA(IP,IS,ID), AC2(IP,IS,ID)
-                     !STOP 'SIGN ERROR'
-                     !ENDIF
-                     !IF (IMATDAA(IP,IS,ID) .GT. ZERO) THEN
-                     !  IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID) 
-                     !ELSE 
-                     !  IMATDAA(IP,IS,ID) = ZERO
-                     !ENDIF
-                     !IF (IMATRAA(IP,IS,ID) .LT. ZERO) THEN
-                     !  IMATRAA(IP,IS,ID) = ZERO
-                     !ENDIF
-                    !WRITE(*,*) IS, ID, IMATRAA(IP,IS,ID), IMATDAA(IP,IS,ID)
-                   ENDDO
-                 ENDDO
                ENDIF
                ACLOC = AC2(IP,:,:)
                IF (.NOT. LINID) THEN
@@ -286,7 +267,6 @@
                  IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
                  IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
                  IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-                 IF (ABS(SUM(SSBR)) .GT. THR) WRITE (*,*) SUM(SSBR), SUM(DSSBR)
                  IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
                  IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
                ENDIF
