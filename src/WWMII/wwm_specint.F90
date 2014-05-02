@@ -232,7 +232,7 @@
                      FLHAB  = MIN(FLHAB,TEMP)
                      IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
                      LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-                     IMATDAA(IP,IS,ID) = ZERO
+                     IMATDAA(IP,IS,ID) = ZERO ! -FL(IP,ID,IS))*JAC
                    ENDIF 
                  ENDDO
                ENDDO 
