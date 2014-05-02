@@ -278,6 +278,7 @@
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
+         LOGICAL    :: MULTIPLE_IN_BOUND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
@@ -1091,13 +1092,18 @@
 !
 ! Data types of our linear equation solver.
 !
+         integer, allocatable :: ListMNP(:)
+         integer, allocatable :: ListNNZ(:)
+         integer, allocatable :: ListIA(:)
+         integer, allocatable :: ListJA(:)
+         integer, allocatable :: ListNP_RES(:)
+         integer, allocatable :: ListIPLG(:)
+         integer wwm_nnbr
+         integer wwm_nnbr_m_send, wwm_nnbr_m_recv
+         integer wwm_nnbr_send, wwm_nnbr_recv
+         integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
+         integer, allocatable :: wwm_ListNeigh(:)
 #ifdef WWM_SOLVER
-      integer, allocatable :: ListMNP(:)
-      integer, allocatable :: ListNNZ(:)
-      integer, allocatable :: ListIA(:)
-      integer, allocatable :: ListJA(:)
-      integer, allocatable :: ListNP_RES(:)
-      integer, allocatable :: ListIPLG(:)
       TYPE LocalColorInfo
          integer, dimension(:), pointer :: ListColor
          ! variables for solving LU systems
@@ -1205,10 +1211,6 @@
       type(I5_SolutionData) :: SolDat
       integer :: NblockFreqDir = 10
       integer :: PCmethod =1
-      integer wwm_nnbr
-      integer wwm_nnbr_m_send, wwm_nnbr_m_recv
-      integer wwm_nnbr_send, wwm_nnbr_recv
-      integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
       integer, allocatable :: wwm_ListNbCommon_send(:)
       integer, allocatable :: wwm_ListNbCommon_recv(:)
       integer, allocatable :: wwm_ListNbCommon_send_sl(:)
@@ -1243,7 +1245,6 @@
       integer, allocatable :: wwmsl_recv_rqst(:)
       integer, allocatable :: wwmsl_send_stat(:,:)
       integer, allocatable :: wwmsl_recv_stat(:,:)
-      integer, allocatable :: wwm_ListNeigh(:)
       integer, allocatable :: wwm_ListNeigh_send(:)
       integer, allocatable :: wwm_ListNeigh_recv(:)
       integer, allocatable :: wwm_ListNeigh_send_sl(:)

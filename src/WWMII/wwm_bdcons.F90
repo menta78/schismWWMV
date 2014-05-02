@@ -352,11 +352,9 @@
             WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
           END DO
         END IF
-        
         FLUSH(STAT%FHNDL)
         FLUSH(IOBPOUT%FHNDL)
 #endif DEBUG
-        
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -567,10 +565,8 @@
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)
       END IF
-
       IWBMNPGL = 0 !global #
       IWBMNP   = 0 !local #
-
       DO IP = 1, NP_TOTAL
         IF (IGRIDTYPE.eq.1) THEN
           READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
@@ -653,14 +649,8 @@
 !
 !AR: Hi Mathieu, I do not see why you are opening here files ? 
         IF (LINHOM) THEN
-!          IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary 
-!            OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-!          END IF
           SPsize=IWBMNP
         ELSE
-!          IF (LBCWA .OR. LBCSP) THEN
-!            IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-!          ENDIF
           SPsize=1
         ENDIF
 
@@ -695,7 +685,6 @@
         ENDIF 
 #endif
 #endif
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -875,8 +864,6 @@
 #endif
 #endif
         FLUSH(DBG%FHNDL)
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -893,7 +880,6 @@
             IOBDP(IP) = 1
           ENDIF
         END DO
-
      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1046,8 +1032,6 @@
              END IF ! LBSP1D .OR. LBSP2D
            END IF ! LINHOM
          ENDIF ! LBCWA .OR. LBCSP
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1119,7 +1103,6 @@
         CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
         RETURN
       END IF
-
       SPPARwork1=SPPAR
       SPPARwork2=SPPAR
       Tper=SPPAR(2)
@@ -1500,10 +1483,8 @@
         WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
         WRITE (STAT%FHNDL,*) SPPAR
         FLUSH(STAT%FHNDL)
-
       END IF
-
-      END
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1802,8 +1783,6 @@
  1944 FORMAT ('''',A,'''',1X,3I6,1X,'''',A,'''')
  1945 FORMAT (8E10.3)
  1946 FORMAT (7E11.3)
-
-        RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
