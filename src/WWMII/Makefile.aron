@@ -17,9 +17,9 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = on
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB =
+GRIB = on
 # Put TIMINGS = on for timings with
-TIME = on
+TIME = 
 # Put PDLIB = on for using the pdlib library.
 PDLIB = on
 
@@ -37,6 +37,7 @@ F90 = mpif90
 #INTEL
 #F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface
 F90OPTI = -O1 -axSSE4.2 -traceback
+F90OPTI = -O3 -axSSE4.2 -traceback -g -unroll-aggressive -fp-model fast 
 
 #GFORTRAN
 #F90OPTI = -Waliasing -Wampersand -Wconversion -Wsurprising -Wintrinsics-std -Wno-tabs -Wintrinsic-shadow -Wline-truncation -Wreal-q-constant -g -ggdb -fcheck=all -fbacktrace -pedantic-errors -ffree-line-length-none
