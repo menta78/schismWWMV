@@ -253,6 +253,15 @@
                                      ! Please let me know all the information you have in order to improve and accelarate the developement of implicit parallel WWM-III.
                                      ! Have fun ... Aron and Thomas.
 
+                                     ! AMETHOD = 6 
+                                     ! Like AMETHOD = 1 but using our own solver and assembling the full matrix and the source terms at once (MNP * MDC * MSC)**2. number of equations
+                                     ! this is for HPC's with larger number of CPU's 
+
+                                     ! AMETHOD = 7 
+                                     ! Like AMETHOD = 1 but using our own solver and assembling the full matrix and the source terms at once (MNP * MDC * MSC)**2. number of equations
+                                     ! this is for HPC's with larger number of CPU's
+
+
  SMETHOD        = 1
                                      ! This switch controls the way the source terms are integrated. 0: no source terms;
                                      ! 1: splitting using RK-3 and SI for fast and slow modes 2: semi-implicit;
