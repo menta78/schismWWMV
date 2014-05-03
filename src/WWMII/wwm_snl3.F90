@@ -677,8 +677,8 @@
               IMATDA(IS2,ID) = IMATDA(IS2,ID) - DNL3IS2 
             ELSE
               IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
-              !IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
-              !IMATDA(IS1,ID) = IMATDA(IS1,ID) - DNL3IS1 
+              IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
+              IMATDA(IS1,ID) = IMATDA(IS1,ID) - DNL3IS1 
               IMATDA(IS2,ID) = IMATDA(IS2,ID) + DNL3IS2 
             ENDIF
             SF3P(IS1,ID) = SF3P(IS1,ID) + NL3IS1
@@ -727,7 +727,7 @@
       DEP_3 = DEP(IP)**3
       BB     = 1. / 15.
       
-      TRIEXP = .FALSE.
+      TRIEXP = .TRUE.
 
       I2     = INT (FLOAT(MSC) / 2.)
       I1     = I2 - 1

@@ -772,6 +772,7 @@
         END IF
         DO I=1,IOUTS
           TheIsumR=MyREAL(STATION(I)%ISUM)
+!bug: if the stations are out of the domain we have division by zero
           OUTPAR_STATIONS(I,:)=OUTPAR_STATIONS_SUM(I,:)/TheIsumR
           WK_STATIONS(I,:) =WK_STATIONS_SUM(I,:)/TheIsumR
           AC_STATIONS(I,:,:) =AC_STATIONS_SUM(I,:,:)/TheIsumR

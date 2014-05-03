@@ -118,7 +118,7 @@
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
             IF ( BETA2 .LT. ONE - 10.E-10) THEN
               SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
-              !write(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
+              !rite(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
             ELSE
               SURFA0  = -(ALPBJ/PI)*SME 
             END IF
@@ -140,9 +140,9 @@
               SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
               DSSBR(IS,ID)  = SURFA0
               IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-              !if (surfa0 .lt. zero) write(*,*) is, id, SURFA0
             END IF
           END DO
+          !if (surfa0 .lt. zero) write(*,*) ip, SURFA0
         END DO 
 
 110     RETURN

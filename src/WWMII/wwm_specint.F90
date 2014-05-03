@@ -21,23 +21,47 @@
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
-         ISELECT = 10
-
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC)
+!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
          DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-                 CALL INT_IP_STAT(IP, DT4S, LLIMT, ACLOC)
-               ELSE IF (SMETHOD == 2) THEN
-                 CALL RKS_SP3(IP, DT4S, LLIMT,ACLOC)
-               ELSE IF (SMETHOD == 3) THEN
+                 ISELECT = 30
+                 CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC)
+                 ISELECT = 20
+                 CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                 ISELECT = 4
                  CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
+               ELSE IF (SMETHOD == 2) THEN
+                 ISELECT = 10
+                 CALL INT_IP_STAT(IP,DT4S, LLIMT,ACLOC)
+               ELSE IF (SMETHOD == 3) THEN
+                 ISELECT = 10
+                 CALL RKS_SP3(IP,DT4S,LLIMT,ACLOC)
+               ELSE IF (SMETHOD == 4) THEN
+                 ISELECT = 10
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
+               ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
+                 ISELECT = 1
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SIN,  NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                 ISELECT = 2 
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SNL4,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                 ISELECT = 3 
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SDS,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                 ISELECT = 4 
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SNL3,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                 ISELECT = 5 
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBR,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                 ISELECT = 6 
+                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
-               !CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
-               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+               ISELECT = 1
+               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
+               IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                 CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
+               ENDIF
                AC2(IP,:,:) = ACLOC
              ENDIF
            ELSE !Boundary node ... 
@@ -45,19 +69,41 @@
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                  ACLOC  = AC2(IP,:,:)
                  IF (SMETHOD == 1) THEN
-                   CALL INT_IP_STAT(IP, DT4S, LLIMT, ACLOC)
-                 ELSE IF (SMETHOD == 2) THEN
-                   CALL RKS_SP3(IP, DT4S,LLIMT,ACLOC)
-                 ELSE IF (SMETHOD == 3) THEN
+                   ISELECT = 30
+                   CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC)
+                   ISELECT = 20
+                   CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                   ISELECT = 4
                    CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
+                 ELSE IF (SMETHOD == 2) THEN
+                   ISELECT = 10
+                   CALL INT_IP_STAT(IP,DT4S, LLIMT,ACLOC)
+                 ELSE IF (SMETHOD == 3) THEN
+                   ISELECT = 10
+                   CALL RKS_SP3(IP,DT4S,LLIMT,ACLOC)
+                 ELSE IF (SMETHOD == 4) THEN
+                   ISELECT = 10
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
+                 ELSE IF (SMETHOD == 5) THEN ! Full splitting of all source embedded within a dynamic RK-3 Integration ... 
+                   ISELECT = 1
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SIN,  NDYNITER_SIN  , ACLOC, NIT_SIN) ! Sin
+                   ISELECT = 2
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SNL4,  NDYNITER_SNL4 , ACLOC, NIT_SNL4)! Snl4b
+                   ISELECT = 3
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SDS,  NDYNITER_SDS  , ACLOC, NIT_SDS) ! Sds
+                   ISELECT = 4
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SNL3,  NDYNITER_SNL3 , ACLOC, NIT_SNL3)! Snl3
+                   ISELECT = 5
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBR,  NDYNITER_SBR  , ACLOC, NIT_SBR) ! Sbr
+                   ISELECT = 6
+                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
+                 END IF
+                 ISELECT = 1
+                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
+                 IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
+                   CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                  ENDIF
-                 IF (SMETHOD .GT. 0) THEN
-                   !CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ... recalc
-                   IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
-                     CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
-                   ENDIF
-                   AC2(IP,:,:) = ACLOC
-                 ENDIF
+                 AC2(IP,:,:) = ACLOC
                ENDIF
              ELSE
                ACLOC = AC2(IP,:,:)
@@ -65,10 +111,10 @@
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                  AC2(IP,:,:) = ACLOC
                ENDIF
-             ENDIF 
+             ENDIF
            ENDIF
-           IF (LNANINFCHK) THEN 
-             IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN 
+           IF (LNANINFCHK) THEN
+             IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN
                WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
                CALL WWM_ABORT('wwm_specint.F90 l.88')
              END IF
