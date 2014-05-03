@@ -4,7 +4,7 @@
 !**********************************************************************
 #define ACTIVATE_SMETHOD_5
 #undef ACTIVATE_SMETHOD_5
-      SUBROUTINE SOURCE_INT_EXP()
+      SUBROUTINE SOURCE_INT_EXP
 
          USE DATAPOOL
 #ifdef ST41
@@ -576,6 +576,8 @@
              ACLOC(IS,ID) = MAX( ZERO, ONE/THREE * ACOLD(IS,ID) + TWO/THREE * ACLOC(IS,ID) + TWO/THREE * NEWDAC)
            END DO
          END DO
+
+         !IF (IP == 1701) WRITE(*,*) SUM(IMATRA), SUM(IMATDA), SUM(ACLOC)
 
          !WRITE(*,*) '3 RK-TVD', SUM(ACOLD), SUM(ACLOC)
 
