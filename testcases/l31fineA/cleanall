@@ -1,0 +1,9 @@
+rm -rf outputs
+mkdir outputs 
+rm -rf selfe*
+rm -rf fort*
+rm -rf mirror.out
+rm -rf *.sp1d
+rm -rf *.sp2d
+rm -rf *.site
+rm -rf core*

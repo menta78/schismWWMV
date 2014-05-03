@@ -1,0 +1,118 @@
+#!/bin/ksh 
+#  
+# pi-mpi              USER SUPPORT  MARCH 2010 - ECMWF  
+# 
+# 
+# 
+#       On the IBM HPCF this shell-script: 
+# 
+#               - compiles a MPI version of a program computing  
+#                 PI using a Monte Carlo simulation 
+#               - executes the program computing PI on 2 nodes using  
+#                 64 processes/tasks per node 
+# 
+# 
+#       This shell script produces the standard output file  
+# 
+#         pi-mpi.$schedd_host.$jobid.out 
+# 
+#       in the initial (submitting) directory. 
+# 
+# 
+#------------------------------- 
+# setting options for LoadLeveler  
+#------------------------------- 
+# Options that are specified within the script file must precede the 
+# first executable shell command in the file.  
+# Each line of LoadLeveler keywords requires a leading #@. 
+# There can be any number of blanks between the # and the @.   
+# LoadLeveler keywords are not case sensitive. 
+# These lines become active only when the script is submitted 
+# using the "llsubmit" command.  
+# All output is written to the submitting directory, by default.  
+
+
+#@ shell           = /usr/bin/ksh 
+
+        # Specifies the shell that parses the script. If not  
+        # specified, your login shell will be used. 
+
+#@ class           = np 
+
+        # Specifies that your job should be run in the class (queue) 
+        # np, which is used to run parallel jobs. 
+
+#@ job_type        = parallel 
+
+        # Specifies that your job is parallel 
+       
+#@ job_name        = selfewwm_sargasso
+
+        # Assigns the specified name to the request 
+    
+#@ output  = $(job_name).$(schedd_host).$(jobid).out 
+
+        # Specifies the name and location of STDOUT. If not given, the 
+        # default is /dev/null.  The file will be written in the 
+        # submitting directory, by default.  
+
+#@ error = $(job_name).$(schedd_host).$(jobid).out 
+
+        # Specifies the name and location of STDERR. If not given, the 
+        # default is /dev/null.  The file will be written in the 
+        # submitting directory, by default. 
+
+#@ notification    = error  
+
+        # Specifies that email should be sent only if the job fails.  
+        # Other options include: always, complete, start, and 
+        # never. The default is notification = complete. 
+
+#@ resources        = ConsumableCpus(1) ConsumableMemory(700mb) 
+#@ node             = 1 
+
+        # Specifies that your job requires 2 nodes 
+    
+#@ tasks_per_node   = 32 
+
+        # Specifies the number of (MPI) processes/tasks of a parallel job  
+        # you want to run per node. In this example your job requires  
+        # 32 processes/tasks per node.   
+
+#@ cpu_limit        = 01:00:00 
+
+        # Specifies the maximum CPU time in HH:MM:SS used by any single process.  
+        # In this job 1 MPI process/task can use up to a total of 1 min CPU time. 
+        # Note: All limits are capped by those specified in the class. 
+
+#@ wall_clock_limit = 01:00:00 
+
+        # Specifies that your job requires HH:MM:SS of wall clock 
+        # time. This job requires 3 min of wall clock time. 
+        # Note: All limits are capped by those specified in the class. 
+
+#@ queue 
+
+        # The queue statement marks the end of your LoadLeveler 
+        # keyword definitions and places your job in the queue. There  
+        # must be at least one queue statement. It must be the last keyword 
+        # specified. Any LoadLeveler keywords placed in the script after 
+        # this are ignored by the current job step. 
+export XLFRTEOPTS=ufmt_littleendian=1100-3000     
+$HOME/bin/selfewwm  # execute pi-mpi 
+
+#------------------------------- 
+# tidy up and terminate 
+#------------------------------- 
+
+
+exit 0          # terminate the program, returning 0 (default) as return code  
+                # to the system  
+
+# There is one output file produced by this job:  
+# 
+#         pi-mpi.$schedd_host.$jobid.out 
+# 
+# in the submitting directory. 
+# 
+# End of example job 'pi-mpi' 
