@@ -34,7 +34,7 @@
 
       BB = 1./15.
 
-      IF (HS .LT. SMALL) RETURN
+      IF (HS .LT. 0.001) RETURN
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
@@ -88,60 +88,55 @@
         SINBPH = ABS( SIN(BIPH) )
 
         DO ID = 1, MDC
-           E = ACLOC(:,ID) * PI2 * SPSIG
-           DO IS = 1, ISMAX ! this is the latest swan version and has bug in this loop since IS runs out of allocation range in E because it is greater the MSC
-              E0  = E(IS)
-              W0  = SPSIG(IS)
-              WN0 = WK(IP,IS)
-              C0  = W0 / WN0
-              IF ( IS.GT.-ISM1 ) THEN
-                 EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
-                 WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
-                 WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
-                 CM  = WM / WNM
-              ELSE
-                 EM  = 0.
-                 WM  = 0.
-                 WNM = 0.
-                 CM  = 0.
-              END IF
-              AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
-              AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
-              RINT = AUX1 / AUX2
-              FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
-              SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
-              IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
-           END DO
+          E = ACLOC(:,ID) * PI2 * SPSIG
+          DO IS = 1, ISMAX 
+            E0  = E(IS)
+            W0  = SPSIG(IS)
+            WN0 = WK(IP,IS)
+            C0  = W0 / WN0
+            IF ( IS.GT.-ISM1 ) THEN
+              EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
+              WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
+              WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
+              CM  = WM / WNM
+            ELSE
+               EM  = ZERO
+               WM  = ZERO 
+               WNM = ZERO 
+               CM  = ZERO 
+            END IF
+            AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
+            AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
+            RINT = AUX1 / AUX2
+            FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
+            SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
+            !IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
+          END DO
         END DO
 
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2
           DO ID = 1, MDC
-            IF (ACLOC(IS,ID) .LT. THR) CYCLE
+            !IF (ACLOC(IS,ID) .LT. SMALL) CYCLE
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            IF (ABS(STRI) .LT. THR) CYCLE
+            IF (ABS(STRI) .LT. SMALL) CYCLE
             !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
-            IF (.NOT. LSOURCESWAM) THEN
-              IF (ICOMP .GE. 2) THEN
-                IF (STRI .GT. 0.) THEN
-                  IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-                  SSNL3(IS,ID)  = STRI / SIGPI 
-                ELSE
-                  IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
-                  DSSNL3(IS,ID) = -STRI/(ACLOC(IS,ID)*SIGPI)
-                END IF
-              ELSE
+            IF (ICOMP .GE. 2) THEN
+              SSNL3(IS,ID)  = STRI / SIGPI
+              IF (STRI .GT. 0.) THEN
                 IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-                IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
-                SSNL3(IS,ID)  = STRI / SIGPI
-                DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI) 
+                !SSNL3(IS,ID)  = STRI / SIGPI 
+              ELSE
+                IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
+                !DSSNL3(IS,ID) = -STRI/(ACLOC(IS,ID)*SIGPI)
               END IF
+              !write(*,*) SSNL3(IS,ID), DSSNL3(IS,ID)
             ELSE
               IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
               IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
               SSNL3(IS,ID)  = STRI / SIGPI
-              DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI)
-            ENDIF
+              DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI) 
+            END IF
           END DO
         END DO
       END IF

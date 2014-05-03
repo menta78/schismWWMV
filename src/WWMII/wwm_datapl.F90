@@ -152,7 +152,7 @@
          REAL(rkind), PARAMETER             :: INVTHR8   = ONE/TINY(1.0d0)
          REAL(rkind), PARAMETER             :: KDMAX     = 300.0_rkind
 #endif
-         REAL(rkind), PARAMETER             :: SMALL     = 10E-8
+         REAL(rkind), PARAMETER             :: SMALL     = 10E-7
          REAL(rkind), PARAMETER             :: LARGE     = 1./SMALL
          REAL(rkind), PARAMETER             :: VERYSMALL = 10E-14
          REAL(rkind), PARAMETER             :: VERYLARGE = 1./SMALL

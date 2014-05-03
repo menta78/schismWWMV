@@ -7,8 +7,10 @@
         IMPLICIT NONE
 
         INTEGER           :: IS, ID, IP
-        REAL(rkind)       :: VEC2RAD, DEG
+        REAL(rkind)       :: VEC2RAD, DEG, ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC)
         REAL(rkind)       :: SSIN(MDC,MSC), DSSIN(MDC,MSC), SSNL4(MDC,MSC), DSSNL4(MDC,MSC), SSDS(MDC,MSC), DSSDS(MDC,MSC)
+        REAL(rkind)       :: SC, LIMFAC, MAXDAC, NEWDAC, ETOT, SME01, SME10, KMWAM, KMWAM2, HS, KME01
+        REAL(rkind)       :: DSSNL3(MSC,MDC), SSNL3(MSC,MDC), SSBR(MSC,MDC), DSSBR(MSC,MDC), SSBF(MSC,MDC), DSSBF(MSC,MDC) 
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -84,7 +86,7 @@
            FL = FL3 
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-           DO IP = 1, MNP
+           DO IP = 1, NP_RES
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(1,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
@@ -112,63 +114,88 @@
                WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
                WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
              ENDIF
-             IF (.TRUE.) THEN
-               CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
-     &                       THWOLD(IP,1), USOLD(IP,1), &
-     &                       TAUW(IP), Z0OLD(IP,1), &
-     &                       ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                       U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                       Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                       SL(1,:,:), FCONST(1,:))
-             ELSE
-               CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+             IF (MESIN .GT. 0 .and. MESDS .GT. 0 .and. MESNL .GT. 0) THEN
+               IF (.TRUE.) THEN
+                 CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                         THWOLD(IP,1), USOLD(IP,1), &
      &                         TAUW(IP), Z0OLD(IP,1), &
      &                         ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                         U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                         Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                         SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP), &
-     &                         SSDS, DSSDS, SSIN, DSSIN, &
-     &                         SSNL4, DSSNL4)
-             IF (LOUTWAM .AND. IP == TESTNODE) THEN
-               WRITE(111112,'(A10,I10)') 'AFTER', IP
-               WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
-               WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
-               WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
-               WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
-               WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
-               WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
-               WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
-               WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
-               WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
-               WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
-               WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
-               WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
-               WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
-               WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
-               WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
-             ENDIF
-             CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
-     &                        THWOLD(IP,1), USOLD(IP,1), &
-     &                        TAUW(IP), Z0OLD(IP,1), &
-     &                        ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                        U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                        Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                        SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
-             CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
-     &                        THWOLD(IP,1), USOLD(IP,1), &
-     &                        TAUW(IP), Z0OLD(IP,1), &
-     &                        ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                        U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                        Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                        SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
-             ENDIF
-             DO IS = 1, MSC
-               DO ID = 1, MDC
-                 AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+     &                         SL(1,:,:), FCONST(1,:))
+               ELSE
+                 CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                           THWOLD(IP,1), USOLD(IP,1), &
+     &                           TAUW(IP), Z0OLD(IP,1), &
+     &                           ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                           U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                           Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                           SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP), &
+     &                           SSDS, DSSDS, SSIN, DSSIN, &
+     &                           SSNL4, DSSNL4)
+                 IF (LOUTWAM .AND. IP == TESTNODE) THEN
+                   WRITE(111112,'(A10,I10)') 'AFTER', IP
+                   WRITE(111112,'(A10,F20.10)') 'FL3', SUM(FL3(1,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FL', SUM(FL(1,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'THWOLD', THWOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'USOLD', USOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'U10NEW', U10NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'THWNEW', THWNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'Z0OLD', Z0OLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'TAUW', TAUW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRO', ROAIRO(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLOLD', ZIDLOLD(IP,1)
+                   WRITE(111112,'(A10,F20.10)') 'Z0NEW', Z0NEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ROAIRN', ROAIRN(IP)
+                   WRITE(111112,'(A10,F20.10)') 'ZIDLNEW', ZIDLNEW(IP)
+                   WRITE(111112,'(A10,F20.10)') 'SL', SUM(SL(1,:,:))
+                   WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
+                 ENDIF
+                 CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                          THWOLD(IP,1), USOLD(IP,1), &
+     &                          TAUW(IP), Z0OLD(IP,1), &
+     &                          ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                          SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+                 CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                          THWOLD(IP,1), USOLD(IP,1), &
+     &                          TAUW(IP), Z0OLD(IP,1), &
+     &                          ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                          U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                          SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+               ENDIF ! true false ...
+               DO IS = 1, MSC
+                 DO ID = 1, MDC
+                   AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+                 END DO
                END DO
-             END DO
-           END DO
+             ENDIF 
+             IF (ISHALLOW(IP) .EQ. 1) THEN
+               ACLOC = AC2(IP,:,:)
+               CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+               IF (MESTR .GT. 0) THEN
+                 STOP 'TRIADS ARE NOT WORKING IN THIS COMBINATION YET'
+                 CALL TRIADSWAN_NEW (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                 DO IS = 1, MSC
+                   DO ID = 1, MDC
+                     NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
+                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+                     LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
+                     SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                     SSNL3(IS,ID)  = SC
+                     DSSNL3(IS,ID) = ZERO!DSSNL3(IS,ID)*LIMFAC
+                     !IF (ABS(SC) .GT. THR) WRITE(*,'(2I10,5F20.8)') IS, ID, NEWDAC, MAXDAC, DSSNL3(IS,ID), LIMFAC
+                   END DO
+                 END DO
+               ENDIF ! MESTR
+               IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
+               IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
+               IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
+               IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3
+             ENDIF ! ISHALLOW(IP) .EQ. 1
+           ENDDO ! MESIN .GT. 0 .and. MESDS .GT. 0 .and. MESNL .GT. 0
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
          ENDIF
@@ -406,10 +433,10 @@
 
         AC1  = AC2
 
-         IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
-         ENDIF
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
+        ENDIF
 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME1)
@@ -432,10 +459,10 @@
           CALL SOURCE_INT_IMP_WWM
         ENDIF
 
-         IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER SOURCES',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
-         ENDIF
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER SOURCES',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
+        ENDIF
 #ifdef TIMINGS
         CALL MY_WTIME(TIME4)
 #endif
@@ -449,15 +476,15 @@
 #endif
         END IF
 
-         IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER ADVECTION',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
-         ENDIF
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER ADVECTION',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
+        ENDIF
 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
-        !IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
+        IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
         CALL MY_WTIME(TIME6)
 #endif
