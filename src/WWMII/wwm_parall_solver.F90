@@ -4540,7 +4540,7 @@
         is_converged = 0
         ASPAR = ASPARL
         !CALL EIMPS_B_BLOCK(X,BL)
-            B = BL
+        B = BL
 
         DO IP=1,NP_RES 
 

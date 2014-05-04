@@ -2,6 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!2do add init function
       subroutine triadswan_new (ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
 !
       use datapool
@@ -27,6 +28,9 @@
       PTRIAD(3)  = 10.
       PTRIAD(4)  = 0.2
       PTRIAD(5)  = 0.01
+
+      ssnl3 = zero 
+      dssnl3 = zero
 
       IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
       IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
@@ -70,6 +74,7 @@
       WISM1  = 1. - WISM
 
       ALLOCATE (SA(1:MSC+ISP1,1:MDC))
+
       E  = 0.
       SA = 0.
 
@@ -117,12 +122,12 @@
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2
           DO ID = 1, MDC
-            !IF (ACLOC(IS,ID) .LT. SMALL) CYCLE
+            IF (ACLOC(IS,ID) .LT. SMALL) CYCLE
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
             IF (ABS(STRI) .LT. SMALL) CYCLE
             !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
             IF (ICOMP .GE. 2) THEN
-              SSNL3(IS,ID)  = STRI / SIGPI 
+              !SSNL3(IS,ID)  = STRI / SIGPI 
               IF (STRI .GT. 0.) THEN
                 IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
                 SSNL3(IS,ID)  =  STRI / SIGPI 
@@ -130,7 +135,7 @@
                 IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
                 DSSNL3(IS,ID) =  -STRI/(ACLOC(IS,ID)*SIGPI)
               END IF
-              !write(*,*) SSNL3(IS,ID), DSSNL3(IS,ID)
+              !IF (IP == TESTNODE) write(*,'(3I10,2F20.10)') IP, IS, ID, SSNL3(IS,ID), DSSNL3(IS,ID)
             ELSE
               IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
               IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)

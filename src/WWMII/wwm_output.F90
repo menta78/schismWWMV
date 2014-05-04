@@ -848,6 +848,7 @@
         recs_stat=recs_stat+1
         IF (recs_stat.ne.recs_stat2) THEN
            CALL WWM_ABORT('There are more bugs to be solved (stat)');
+!bug: must be the same bug like indicated above. If the stations are not in the domain this fails ...
         ENDIF
 #ifdef MPI_PARALL_GRID
         iret=nf90_inq_varid(ncid,'nproc',var_id)

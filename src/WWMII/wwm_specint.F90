@@ -237,7 +237,7 @@
      &                       SSDS, DSSDS, SSIN, DSSIN, &
      &                       SSNL4, DSSNL4)
            ENDIF ! MESIN .EQ. 0 .AND. MESDS .AND. 0 .AND. MESNL = 0
-           IF (IOBP(IP) .NE. 0) THEN
+           IF (IOBP(IP) .EQ. 0) THEN
              DO ID = 1, MDC
                DO IS = 1, MSC 
                  IF (AC2(IP,IS,ID) .LT. THR) CYCLE
@@ -284,7 +284,7 @@
              IF (ISHALLOW(IP) .EQ. 1) THEN
                CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                IF (MESTR .GT. 0) THEN
-                 CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                 CALL TRIADSWAN_NEW (IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
@@ -292,7 +292,7 @@
                      LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
                      SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                      !SSNL3(IS,ID)  = SC
-                     !DSSNL3(IS,ID) = ZERO!DSSNL3(IS,ID)*LIMFAC
+                     !DSSNL3(IS,ID) = DSSNL3(IS,ID)*LIMFAC
                      !IF (ABS(SC) .GT. THR) WRITE(*,'(2I10,5F20.8)') IS, ID, NEWDAC, MAXDAC, DSSNL3(IS,ID), LIMFAC
                    END DO
                  END DO
@@ -308,21 +308,72 @@
            ELSE ! IOBP(IP) .NE. 0
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF (IOBP(IP) .NE. 2) THEN
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-                     IMATDAA(IP,IS,ID) = FL(IP,ID,IS)
-                     IMATRAA(IP,IS,ID) = SL(IP,ID,IS)/PI2/SPSIG(IS)
-                   ENDDO
-                 ENDDO
+                 DO ID = 1, MDC
+                   DO IS = 1, MSC
+                     IF (AC2(IP,IS,ID) .LT. THR) CYCLE
+                     JAC = ONE/PI2/SPSIG(IS)
+                     !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
+                     !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
+                     FF = FL3(IP,ID,IS)
+                     !WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
+                     IF (IMETHOD == 0) THEN
+                       IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
+                       IMATDAA(IP,IS,ID) = ZERO
+                     ELSE IF (IMETHOD == 1) THEN
+                       IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
+                     ELSE IF (IMETHOD == 2) THEN
+                       IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
+                       IMATDAA(IP,IS,ID) = -TWO*DSSDS(ID,IS)
+                     ELSE IF (IMETHOD == 3) THEN
+                       IF (SSIN(ID,IS) .GT. ZERO) THEN
+                         IMATRAA(IP,IS,ID) = SSIN(ID,IS)*JAC
+                       ELSE
+                         IMATDAA(IP,IS,ID) = -TWO*DSSIN(ID,IS)
+                       ENDIF
+                     ELSE IF (IMETHOD == 4) THEN
+                       GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+                       GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
+                       FLHAB  = ABS(GTEMP2)
+                       DELFL  = COFRM4(IS)*DT4A
+                       USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                       TEMP   = USFM*DELFL
+                       FLHAB  = MIN(FLHAB,TEMP)
+                       IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
+                       LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+                       IMATDAA(IP,IS,ID) = ZERO ! -FL(IP,ID,IS)
+                     ENDIF
+                   ENDDO ! ID
+                 ENDDO ! IS
+                 ACLOC = AC2(IP,:,:)
+                 IF (.NOT. LINID) THEN
+                   CALL SET_WIND( IP, WIND10, WINDTH )
+                   CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+                   CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+                 ENDIF
                  IF (ISHALLOW(IP) .EQ. 1) THEN
-                   ACLOC = AC2(IP,:,:)
                    CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-                   SSNL3 = ZERO; DSSNL3 = ZERO
-                   SSBR  = ZERO; DSSBR  = ZERO
-                   SSBF  = ZERO; DSSBF  = ZERO
-                   IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+                   IF (MESTR .GT. 0) THEN
+                     CALL TRIADSWAN_NEW (IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
+                     DO IS = 1, MSC
+                       DO ID = 1, MDC
+                         NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
+                         MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))*100
+                         LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
+                         SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                         !SSNL3(IS,ID)  = SC
+                         !DSSNL3(IS,ID) = DSSNL3(IS,ID)*LIMFAC
+                         !IF (ABS(SC) .GT. THR) WRITE(*,'(2I10,5F20.8)') IS, ID, NEWDAC, MAXDAC, DSSNL3(IS,ID), LIMFAC
+                       END DO
+                     END DO
+                   ENDIF ! MESTR
                    IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
                    IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
+                   IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
+                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3
+                 ENDIF ! ISHALLOW(IP) .EQ. 1
+                 IF (LNANINFCHK) THEN
+                   IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
                  ENDIF
                ENDIF
              ENDIF
