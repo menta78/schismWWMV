@@ -288,9 +288,9 @@
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
-                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))*100
                      LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
-                     !SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
+                     SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                      !SSNL3(IS,ID)  = SC
                      !DSSNL3(IS,ID) = ZERO!DSSNL3(IS,ID)*LIMFAC
                      !IF (ABS(SC) .GT. THR) WRITE(*,'(2I10,5F20.8)') IS, ID, NEWDAC, MAXDAC, DSSNL3(IS,ID), LIMFAC

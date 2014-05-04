@@ -9,9 +9,9 @@
  LMONO_OUT      = .F.,               
  LMONO_IN       = .F.,               
  BEGTC          = '19980901.000000', 
- DELTC          = 10.0000000000,   
+ DELTC          = 100.,   
  UNITC          = 'SEC',             
- ENDTC          = '19980901.001000', 
+ ENDTC          = '19980902.001000', 
  DMIN           = 0.01, 
 /
 

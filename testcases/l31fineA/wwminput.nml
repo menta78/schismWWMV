@@ -168,7 +168,7 @@
  LFILTERSIG     = .F.,               
  MAXCFLSIG      = 1.00000000000000,  
  LSIGBOUND      = .F.,               
- LLIMT          = .F.,               
+ LLIMT          = .T.,               
  LIMFAK         = 0.100000000000000, 
  MELIM          = 1,                 
  LDIFR          = .F.,               
