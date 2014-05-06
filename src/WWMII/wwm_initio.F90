@@ -1078,7 +1078,6 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
