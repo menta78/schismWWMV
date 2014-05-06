@@ -1504,155 +1504,148 @@
 !**********************************************************************
 #ifdef NCDF
       SUBROUTINE INIT_NETCDF_WW3_WAVEPARAMETER
-         USE DATAPOOL
-         USE NETCDF
-         IMPLICIT NONE
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
 
-        INTEGER :: IT, IFILE, IVAR, BND_NCID
-        INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-!        REAL(rkind)  :: DTMP, DTMP1, DTMP2
-!        character ( len = 15 ) chrdate
-        REAL(rkind), ALLOCATABLE :: BND_TIME(:)
-        character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
+      INTEGER :: IT, IFILE, IVAR, BND_NCID
+      INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
+      REAL(rkind), ALLOCATABLE :: BND_TIME(:)
+      character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
+      integer, dimension(nf90_max_var_dims) :: dimIDs
+      CALL TEST_FILE_EXIST_DIE("Missing WW3 boundary file : ", TRIM(WAV%FNAME))
+      OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
+      WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
 
-        integer, dimension(nf90_max_var_dims) :: dimIDs
+      NUM_NETCDF_FILES_BND = 0
+      DO
+        READ( WAV%FHNDL, *, IOSTAT = ISTAT )
+        IF ( ISTAT /= 0 ) EXIT
+        NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND + 1
+      END DO
+      REWIND (WAV%FHNDL)
+      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
 
-        OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
-!
-! count number of netcdf files in list ...
-!
-        WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
-
-        NUM_NETCDF_FILES_BND = 0
-        DO
-          READ( WAV%FHNDL, *, IOSTAT = ISTAT )
-          IF ( ISTAT /= 0 ) EXIT
-          NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND + 1
+      NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND / NUM_NETCDF_VAR_TYPES
+      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
+      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_VAR_TYPES=', NUM_NETCDF_VAR_TYPES
+      ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
+      DO IT = 1, NUM_NETCDF_FILES_BND
+        DO IVAR = 1, NUM_NETCDF_VAR_TYPES
+          READ( WAV%FHNDL, *) NETCDF_FILE_NAMES_BND(IT,IVAR)
         END DO
-        REWIND (WAV%FHNDL)
-        WRITE(STAT%FHNDL,*) NUM_NETCDF_FILES_BND
-        NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND / NUM_NETCDF_VAR_TYPES
-        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND', NUM_NETCDF_FILES_BND
-        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
-
-        DO IT = 1, NUM_NETCDF_FILES_BND
-          DO IVAR = 1, NUM_NETCDF_VAR_TYPES
-            READ( WAV%FHNDL, *) NETCDF_FILE_NAMES_BND(IT,IVAR)
-          END DO
-        END DO
-        CLOSE (WAV%FHNDL)
+      END DO
+      CLOSE (WAV%FHNDL)
 !
 ! four files are read to set up the wave spectra Hs, Tm01, Dir, Sprd
 !
-        ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
-        NDT_BND_FILE = 0
-
-        DO IFILE = 1, NUM_NETCDF_FILES_BND
-          WRITE(STAT%FHNDL,'(I10,10X,5A30)') IFILE, NETCDF_FILE_NAMES_BND(IFILE,:)
-        END DO
+      ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
+      NDT_BND_FILE = 0
+      DO IFILE = 1, NUM_NETCDF_FILES_BND
+        WRITE(STAT%FHNDL,'(I10,10X,5A30)') IFILE, NETCDF_FILE_NAMES_BND(IFILE,:)
+      END DO
 !
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
-        DO IFILE = 1, NUM_NETCDF_FILES_BND
-          write(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
-          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-          ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      DO IFILE = 1, NUM_NETCDF_FILES_BND
+        WRITE(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+        CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
+        ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
-          ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-          ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-          ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
-          CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-          write(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
-        END DO
+        WRITE(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
+      END DO
 !
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
-        ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+      ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
-        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+      ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+      ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-        ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+      ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
-        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+      ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+      ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
-        WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
+      WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
-        ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
+      ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
 !
-! read cooridantes from files ....
+! read coordinates from files ....
 !
-        ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+      ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-        ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+      ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
-        OFFSET_X_BND = MINVAL(COORD_BND_X)
-        OFFSET_Y_BND = MINVAL(COORD_BND_Y)
+      OFFSET_X_BND = MINVAL(COORD_BND_X)
+      OFFSET_Y_BND = MINVAL(COORD_BND_Y)
 !
 ! resolution ...
 !
-        DX_BND  = ABS(MAXVAL(COORD_BND_X)-MINVAL(COORD_BND_X))/(NDX_BND-1)
-        DY_BND  = ABS(MAXVAL(COORD_BND_Y)-MINVAL(COORD_BND_Y))/(NDY_BND-1)
+      DX_BND  = ABS(MAXVAL(COORD_BND_X)-MINVAL(COORD_BND_X))/(NDX_BND-1)
+      DY_BND  = ABS(MAXVAL(COORD_BND_Y)-MINVAL(COORD_BND_Y))/(NDY_BND-1)
 !
 ! close netcdf file ...
 !
-        ISTAT = NF90_CLOSE(BND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+      ISTAT = NF90_CLOSE(BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
-        NDT_BND_ALL_FILES = 0
-        write(STAT%FHNDL,*) NUM_NETCDF_FILES_BND
-        DO IT = 1, NUM_NETCDF_FILES_BND
-          NDT_BND_ALL_FILES = NDT_BND_ALL_FILES + NDT_BND_FILE(IT)
-          write(STAT%FHNDL,*) it, NDT_BND_FILE(it)
-        END DO
+      NDT_BND_ALL_FILES = 0
+      write(STAT%FHNDL,*) NUM_NETCDF_FILES_BND
+      DO IT = 1, NUM_NETCDF_FILES_BND
+        NDT_BND_ALL_FILES = NDT_BND_ALL_FILES + NDT_BND_FILE(IT)
+        write(STAT%FHNDL,*) it, NDT_BND_FILE(it)
+      END DO
+      WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
 
-        WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
-
-        ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAXVAL(NDT_BND_FILE)), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
-        BND_TIME_ALL_FILES = ZERO
+      ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAXVAL(NDT_BND_FILE)), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
+      BND_TIME_ALL_FILES = ZERO
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
-        BND_TIME_ALL_FILES = 0.
-        DO IFILE = 1, NUM_NETCDF_FILES_BND
-          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+      BND_TIME_ALL_FILES = 0.
+      DO IFILE = 1, NUM_NETCDF_FILES_BND
+        CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
+        ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
-          ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
-          BND_TIME = ZERO
+        ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
+        BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
-          ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+        ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
-          DO IT = 1, NDT_BND_FILE(IFILE)
-             BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
+        DO IT = 1, NDT_BND_FILE(IFILE)
+           BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
 !             CALL CT2MJD('19000101.000000',DTMP1)
 !             CALL CT2MJD('19900101.000000',DTMP2)
 !             CALL MJD2CT(DTMP1,chrdate)
@@ -1664,14 +1657,13 @@
 !             WRITE(*,*) BND_TIME_ALL_FILES(1,1), DT_DIFF_19901900
 !             IF (IT == 1 .AND. IFILE ==1) WRITE(*,*) DTMP1, DTMP2, DTMP1+DT_DIFF_19901900
 !             IF (IT == 1 .AND. IFILE ==1) WRITE(*,*) IFILE, IT, BND_TIME(IT), chrdate
-          END DO
-          DEALLOCATE(BND_TIME)
-        END DO ! IFILE
+        END DO
+        DEALLOCATE(BND_TIME)
+      END DO
+      SEBO%DELT = (BND_TIME_ALL_FILES(1,2) - BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+      write(STAT%FHNDL,*) SEBO%DELT, BND_TIME_ALL_FILES(1,2), BND_TIME_ALL_FILES(1,1)
 
-        SEBO%DELT = (BND_TIME_ALL_FILES(1,2) - BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-        write(STAT%FHNDL,*) SEBO%DELT, BND_TIME_ALL_FILES(1,2), BND_TIME_ALL_FILES(1,1)
-
-        BND_TIME_ALL_FILES = BND_TIME_ALL_FILES + DT_DIFF_19901900
+      BND_TIME_ALL_FILES = BND_TIME_ALL_FILES + DT_DIFF_19901900
 
         IF (LWRITE_ALL_WW3_RESULTS) THEN
           OPEN(3010, FILE  = 'sysglobalboundary.dat', STATUS = 'UNKNOWN')
@@ -1699,167 +1691,162 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_NETCDF_WW3(IFILE,IT,CALLEDFROM)
-         USE DATAPOOL
-         USE NETCDF
-         IMPLICIT NONE
-!
-!        READS WIND_Y, WIND_X and PRESSURE from a given NCID within one DWD file
-!
-         INTEGER, INTENT(IN) :: IFILE, IT
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IFILE, IT
+      INTEGER              :: HS_WW3_ID, T02_WW3_ID, DIR_WW3_ID, FP_WW3_ID, DSPR_WW3_ID
+      INTEGER              :: HS_BND_NCID, T02_BND_NCID, DIR_BND_NCID, FP_BND_NCID, DSPR_BND_NCID
+      INTEGER              :: counter, ip, i, j
+      INTEGER, ALLOCATABLE :: ITMP(:,:)
+      REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
+      REAL(rkind), SAVE           :: TIME, scale_factor
+      character (len = *), parameter :: CallFct = "READ_NETCDF_WW3"
+      INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
+      CHARACTER(LEN=25)    :: CALLEDFROM
 
-         INTEGER              :: HS_WW3_ID, T02_WW3_ID, DIR_WW3_ID, FP_WW3_ID, DSPR_WW3_ID
-         INTEGER              :: HS_BND_NCID, T02_BND_NCID, DIR_BND_NCID, FP_BND_NCID, DSPR_BND_NCID
-         INTEGER              :: counter, ip, i, j
-         INTEGER, ALLOCATABLE :: ITMP(:,:)
-         REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
-         REAL(rkind), SAVE           :: TIME, scale_factor
-         character (len = *), parameter :: CallFct = "READ_NETCDF_WW3"
-         INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
-         CHARACTER(LEN=25)    :: CALLEDFROM
+      ALLOCATE (ITMP(NDX_BND,NDY_BND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
 
-         ALLOCATE (ITMP(NDX_BND,NDY_BND), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
+      WRITE(DBG%FHNDL,*) IT, IFILE, 'READING GLOBAL DATA'
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,3)))
+      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,3),NF90_NOWRITE,HS_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
-         WRITE(DBG%FHNDL,*) IT, IFILE, 'READING GLOBAL DATA'
-         CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,3)))
-         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,3),NF90_NOWRITE,HS_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      ISTAT = nf90_inq_varid(HS_BND_NCID, TRIM(NCDF_HS_NAME), HS_WW3_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-         ISTAT = nf90_inq_varid(HS_BND_NCID, TRIM(NCDF_HS_NAME), HS_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      ISTAT = nf90_get_att(HS_BND_NCID, HS_WW3_ID, 'scale_factor', scale_factor)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-         ISTAT = nf90_get_att(HS_BND_NCID, HS_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      IF (.NOT. ALLOCATED(HS_WW3)) THEN
+        ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
+        HS_WW3 = 0.
+      END IF
+      ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-         IF (.NOT. ALLOCATED(HS_WW3)) THEN
-           ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
-           HS_WW3 = 0.
-         END IF
-         ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      HS_WW3 = MyREAL(ITMP) * scale_factor
+      ISTAT = nf90_close(HS_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
-         HS_WW3 = MyREAL(ITMP) * scale_factor
-         ISTAT = nf90_close(HS_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,2)))
+      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,2),NF90_NOWRITE,FP_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-         CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,2)))
-         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,2),NF90_NOWRITE,FP_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+      ISTAT = nf90_inq_varid(FP_BND_NCID, TRIM(NCDF_FP_NAME), FP_WW3_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-         ISTAT = nf90_inq_varid(FP_BND_NCID, TRIM(NCDF_FP_NAME), FP_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+      ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
-         ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+      IF (.NOT. ALLOCATED(FP_WW3)) THEN
+        ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
+        FP_WW3 = 0.
+      END IF
+      ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
-         IF (.NOT. ALLOCATED(FP_WW3)) THEN
-           ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
-           FP_WW3 = 0.
-         END IF
-         ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+      FP_WW3 = MyREAL(ITMP) * scale_factor
+      ISTAT = nf90_close(FP_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
-         FP_WW3 = MyREAL(ITMP) * scale_factor
-         ISTAT = nf90_close(FP_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,5)))
+      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,5),NF90_NOWRITE,T02_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-         CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,5)))
-         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,5),NF90_NOWRITE,T02_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+      ISTAT = nf90_inq_varid(T02_BND_NCID, TRIM(NCDF_F02_NAME), T02_WW3_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 
-         ISTAT = nf90_inq_varid(T02_BND_NCID, TRIM(NCDF_F02_NAME), T02_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+      ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
-         ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+      IF (.NOT. ALLOCATED(T02_WW3)) THEN
+        ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
+        T02_WW3 = 0.
+      END IF
+      ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
-         IF (.NOT. ALLOCATED(T02_WW3)) THEN
-           ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
-           T02_WW3 = 0.
-         END IF
-         ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+      T02_WW3 = MyREAL(ITMP) * scale_factor
+      ISTAT = nf90_close(T02_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
-         T02_WW3 = MyREAL(ITMP) * scale_factor
-         ISTAT = nf90_close(T02_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,4)))
+      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,4),NF90_NOWRITE,DSPR_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
-         CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,4)))
-         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,4),NF90_NOWRITE,DSPR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+      ISTAT = nf90_inq_varid(DSPR_BND_NCID, TRIM(NCDF_SPR_NAME), DSPR_WW3_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
-         ISTAT = nf90_inq_varid(DSPR_BND_NCID, TRIM(NCDF_SPR_NAME), DSPR_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+      ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
-         ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
+      IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
+        ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
+        DSPR_WW3 = 0.
+      END IF
+      ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
 
-         IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
-           ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
-           DSPR_WW3 = 0.
-         END IF
-         ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
+      DSPR_WW3 = MyREAL(ITMP) * scale_factor
+      ISTAT = nf90_close(DSPR_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
 
-         DSPR_WW3 = MyREAL(ITMP) * scale_factor
-         ISTAT = nf90_close(DSPR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
+      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,DIR_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 21, ISTAT)
 
-         CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,DIR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 21, ISTAT)
+      ISTAT = nf90_inq_varid(DIR_BND_NCID, TRIM(NCDF_DIR_NAME), DIR_WW3_ID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 22, ISTAT)
 
-         ISTAT = nf90_inq_varid(DIR_BND_NCID, TRIM(NCDF_DIR_NAME), DIR_WW3_ID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 22, ISTAT)
+      ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
 
-         ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
+      IF (.NOT. ALLOCATED(DIR_WW3)) THEN
+        ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
+        DIR_WW3 = 0.
+      END IF
+      ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
+      CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
 
-         IF (.NOT. ALLOCATED(DIR_WW3)) THEN
-           ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
-           DIR_WW3 = 0.
-         END IF
-         ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-         CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
+      DIR_WW3 = MyREAL(ITMP) * scale_factor
+      ISTAT = nf90_close(DIR_BND_NCID)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 25, ISTAT)
 
-         DIR_WW3 = MyREAL(ITMP) * scale_factor
-         ISTAT = nf90_close(DIR_BND_NCID)
-         CALL GENERIC_NETCDF_ERROR(CallFct, 25, ISTAT)
-
-         IF (LWRITE_WW3_RESULTS) THEN
-           OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
-           IF (.NOT. ALLOCATED(U)) THEN
-             ALLOCATE(U(NDX_BND*NDY_BND), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
-           END IF
-           IF (.NOT. ALLOCATED(V)) THEN
-             ALLOCATE(V(NDX_BND*NDY_BND), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 15')
-           END IF
-           IF (.NOT. ALLOCATED(H)) THEN
-             ALLOCATE(H(NDX_BND*NDY_BND), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
-           END IF
-           COUNTER = 1
-           DO J = 1, NDY_BND
-             DO I = 1, NDX_BND
-               U(COUNTER) = HS_WW3(I,J)
-               V(COUNTER) = DIR_WW3(I,J)
-               H(COUNTER) = DSPR_WW3(I,J)
-               COUNTER = COUNTER + 1
-             END DO
-           END DO
-           TIME = TIME + 1.
-           WRITE(3012) TIME
-           WRITE(3012) (U(IP), V(IP), H(IP), IP = 1, NDX_BND*NDY_BND)
-           DEALLOCATE(U,V,H)
-         END IF
-
+      IF (LWRITE_WW3_RESULTS) THEN
+        OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
+        IF (.NOT. ALLOCATED(U)) THEN
+          ALLOCATE(U(NDX_BND*NDY_BND), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
+        END IF
+        IF (.NOT. ALLOCATED(V)) THEN
+          ALLOCATE(V(NDX_BND*NDY_BND), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 15')
+        END IF
+        IF (.NOT. ALLOCATED(H)) THEN
+          ALLOCATE(H(NDX_BND*NDY_BND), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+        END IF
+        COUNTER = 1
+        DO J = 1, NDY_BND
+          DO I = 1, NDX_BND
+            U(COUNTER) = HS_WW3(I,J)
+            V(COUNTER) = DIR_WW3(I,J)
+            H(COUNTER) = DSPR_WW3(I,J)
+            COUNTER = COUNTER + 1
+          END DO
+        END DO
+        TIME = TIME + 1.
+        WRITE(3012) TIME
+        WRITE(3012) (U(IP), V(IP), H(IP), IP = 1, NDX_BND*NDY_BND)
+        DEALLOCATE(U,V,H)
+      END IF
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -2037,19 +2024,11 @@
             HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
             HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-!2do: check with fabrice ... peak period looks very strange ...
-
             IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
               VAL(2,IP) = 0.
             ELSE
               VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
             ENDIF
-
-!            IF (VAL(2,IP) .GT. TINY(1.)) THEN
-!              VAL(2,IP) = 1. / VAL(2,IP)
-!            ELSE
-!              VAL(2,IP) = 0.
-!            END IF
 
             WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
             WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
