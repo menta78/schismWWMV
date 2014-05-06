@@ -1665,6 +1665,14 @@
 
       BND_TIME_ALL_FILES = BND_TIME_ALL_FILES + DT_DIFF_19901900
 
+      ALLOCATE (HS_WW3(NDX_BND,NDY_BND), FP_WW3(NDX_BND,NDY_BND), T02_WW3(NDX_BND,NDY_BND), DSPR_WW3(NDX_BND,NDY_BND), DIR_WW3(NDX_BND,NDY_BND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
+      HS_WW3 = 0.
+      FP_WW3 = 0.
+      T02_WW3 = 0.
+      DSPR_WW3 = 0.
+      DIR_WW3 = 0.
+
         IF (LWRITE_ALL_WW3_RESULTS) THEN
           OPEN(3010, FILE  = 'sysglobalboundary.dat', STATUS = 'UNKNOWN')
           WRITE (3010, '(I10)') 0
@@ -1719,11 +1727,6 @@
       ISTAT = nf90_get_att(HS_BND_NCID, HS_WW3_ID, 'scale_factor', scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-      IF (.NOT. ALLOCATED(HS_WW3)) THEN
-        ALLOCATE (HS_WW3(NDX_BND,NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
-        HS_WW3 = 0.
-      END IF
       ISTAT = NF90_GET_VAR(HS_BND_NCID, HS_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
@@ -1741,11 +1744,6 @@
       ISTAT = nf90_get_att(FP_BND_NCID, FP_WW3_ID, 'scale_factor', scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
-      IF (.NOT. ALLOCATED(FP_WW3)) THEN
-        ALLOCATE (FP_WW3(NDX_BND,NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
-        FP_WW3 = 0.
-      END IF
       ISTAT = NF90_GET_VAR(FP_BND_NCID, FP_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
@@ -1763,11 +1761,6 @@
       ISTAT = nf90_get_att(T02_BND_NCID, T02_WW3_ID, 'scale_factor', scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
-      IF (.NOT. ALLOCATED(T02_WW3)) THEN
-        ALLOCATE (T02_WW3(NDX_BND,NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
-        T02_WW3 = 0.
-      END IF
       ISTAT = NF90_GET_VAR(T02_BND_NCID, T02_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
@@ -1785,11 +1778,6 @@
       ISTAT = nf90_get_att(DSPR_BND_NCID, DSPR_WW3_ID, 'scale_factor', scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 
-      IF (.NOT. ALLOCATED(DSPR_WW3)) THEN
-        ALLOCATE (DSPR_WW3(NDX_BND,NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
-        DSPR_WW3 = 0.
-      END IF
       ISTAT = NF90_GET_VAR(DSPR_BND_NCID, DSPR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
 
@@ -1807,11 +1795,6 @@
       ISTAT = nf90_get_att(DIR_BND_NCID, DIR_WW3_ID, 'scale_factor', scale_factor)
       CALL GENERIC_NETCDF_ERROR(CallFct, 23, ISTAT)
 
-      IF (.NOT. ALLOCATED(DIR_WW3)) THEN
-        ALLOCATE (DIR_WW3(NDX_BND,NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
-        DIR_WW3 = 0.
-      END IF
       ISTAT = NF90_GET_VAR(DIR_BND_NCID, DIR_WW3_ID, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 24, ISTAT)
 

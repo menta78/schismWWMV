@@ -614,6 +614,9 @@
          REAL(rkind),   ALLOCATABLE             :: FP_WW3(:,:)
          REAL(rkind),   ALLOCATABLE             :: DSPR_WW3(:,:)
 
+         REAL(rkind),   ALLOCATABLE             :: ALL_VAR_WW3(:,:,:)
+
+
          INTEGER                                :: NP_WW3, MSC_WW3, MDC_WW3, MAXSTEP_WW3, TSTART_WW3(2)
 
          REAL(rkind)                            :: DTBOUND_WW3, DDIR_WW3
