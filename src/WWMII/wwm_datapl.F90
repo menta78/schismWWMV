@@ -1041,7 +1041,7 @@
          LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 
 
-         INTEGER                :: TESTNODE = 339 
+         INTEGER                :: TESTNODE = 1095 
 
          REAL(rkind), PARAMETER :: WP2TAIL = 0.5d0
          REAL(rkind), PARAMETER :: COEF4   = 5.0E-07

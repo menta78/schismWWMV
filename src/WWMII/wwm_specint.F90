@@ -22,10 +22,10 @@
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
-         DO IP = 1, MNP
+         DO IP = 1, NP_RES 
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
-           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+           IF (DEP(IP) .LT. DMIN) CYCLE
+           IF (IOBP(IP) .EQ. 0) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
                  ISELECT = 30
@@ -57,16 +57,15 @@
                  ISELECT = 6 
                  CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                END IF
-               ISELECT = 1
-               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
+               !ISELECT = 1
+               !CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                ENDIF
                AC2(IP,:,:) = ACLOC
-             ENDIF
            ELSE !Boundary node ... 
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+               IF (IOBP(IP) .NE. 2) THEN
                  ACLOC  = AC2(IP,:,:)
                  IF (SMETHOD == 1) THEN
                    ISELECT = 30
@@ -98,8 +97,8 @@
                    ISELECT = 6
                    CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_SBF,  NDYNITER_SBF  , ACLOC, NIT_SBF) ! Sbf
                  END IF
-                 ISELECT = 1
-                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
+                 !ISELECT = 1
+                 !CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .TRUE.) ! Update everything based on the new spectrum ...
                  IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                    CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                  ENDIF

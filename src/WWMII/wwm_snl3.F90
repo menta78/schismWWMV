@@ -38,7 +38,7 @@
 
       BB = 1./15.
 
-      IF (HS .LT. 0.001) RETURN
+      IF (HS .LT. SMALL) RETURN
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
 
@@ -86,7 +86,7 @@
       ENDDO
 !      ISMAX = MIN( MSC, MAX ( ISMAX , ISP1 ) ) ! added fix the bug described below ...
       ISMAX = MAX ( ISMAX , ISP1 )
-
+       
       IF ( URSELL .GT. PTRIAD(5) ) THEN
 
         BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
@@ -122,9 +122,9 @@
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2
           DO ID = 1, MDC
-            IF (ACLOC(IS,ID) .LT. SMALL) CYCLE
+            IF (ACLOC(IS,ID) .LT. THR) CYCLE
             STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            IF (ABS(STRI) .LT. SMALL) CYCLE
+            IF (ABS(STRI) .LT. THR) CYCLE
             !IF (IP == 1786)  WRITE(*,'(2I10,4F15.10,I10)') IS, ID, STRI, SA(IS,ID), SA(IS+ISP1,ID) , SA(IS+ISP,ID), ISP+IS
             IF (ICOMP .GE. 2) THEN
               !SSNL3(IS,ID)  = STRI / SIGPI 
@@ -138,17 +138,17 @@
               !IF (IP == TESTNODE) write(*,'(3I10,2F20.10)') IP, IS, ID, SSNL3(IS,ID), DSSNL3(IS,ID)
             ELSE
               IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-              IMATDA(IS,ID) = IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+              IMATDA(IS,ID) = ZERO!IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
               SSNL3(IS,ID)  = STRI / SIGPI
-              DSSNL3(IS,ID)  = STRI / (ACLOC(IS,ID)*SIGPI) 
+              DSSNL3(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI) 
             END IF
           END DO
         END DO
       END IF
-
-!      IF (IP == 1786) THEN
-!        WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-!      ENDIF
+ 
+      IF (IP == TESTNODE) THEN
+        WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
+      ENDIF
 
       deallocate(sa)
 
@@ -592,9 +592,9 @@
       integer, intent(in)        :: i,j
       integer                    :: res ! return 
 
-        res = int((float(i+j)-abs(i-j)))/(float((i+j)+abs(i-j))) 
+      res = int((float(i+j)-abs(i-j)))/(float((i+j)+abs(i-j))) 
 
-        write(stat%fhndl,*) 'kron-delta', i, j, res
+      write(stat%fhndl,*) 'kron-delta', i, j, res
 
       end function kron_delta 
 !**********************************************************************
@@ -721,13 +721,17 @@
       PTTRIAD(4)  = 0.2
       PTTRIAD(5)  = 0.01
 
+      IF (TRICO .GT. 0.)  PTTRIAD(1) = TRICO
+      IF (TRIRA .GT. 0.)  PTTRIAD(2) = TRIRA
+      IF (TRIURS .GT. 0.) PTTRIAD(5) = TRIURS
+
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
 
       DEP_2 = DEP(IP)**2
       DEP_3 = DEP(IP)**3
       BB     = 1. / 15.
       
-      TRIEXP = .TRUE.
+      TRIEXP = .FALSE.
 
       I2     = INT (FLOAT(MSC) / 2.)
       I1     = I2 - 1
@@ -793,8 +797,8 @@
                 DIA_j = 0.
                 DIA_i = 0.
               ENDIF
-              IMATRA(i,ID) = IMATRA(i,ID) + 0.5 * RHV_j / JACj
-              IMATDA(j,ID) = IMATDA(j,ID) + DIA_i
+              IMATRA(i,ID) = IMATRA(i,ID) - 0.5 * RHV_j / JACj
+              IMATDA(j,ID) = IMATDA(j,ID) - DIA_i
               ssnl3(i,ID) = 0.5 * RHV_j / JACj
             ENDIF
           ENDDO
@@ -837,6 +841,10 @@
       DEP_3 = DEP(IP)
 
       TRIEXP = .FALSE.
+
+      IF (TRICO .GT. 0.)  PTTRIAD(1) = TRICO
+      IF (TRIRA .GT. 0.)  PTTRIAD(2) = TRIRA
+      IF (TRIURS .GT. 0.) PTTRIAD(5) = TRIURS
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
 
@@ -903,13 +911,13 @@
                 DIA_i = 0.
               ENDIF
               IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
-              IMATDA(i,ID) = IMATDA(i,ID) + 2. * DIA_i
+              IMATDA(i,ID) = IMATDA(i,ID) - 2. * DIA_i
               ssnl3(j,id) = RHV_j / JACj
             ENDIF
           ENDDO
         ENDDO
       ENDIF
-      RETURN
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -995,7 +1003,9 @@
           ISMAX = IS
         ENDIF
       ENDDO
+
       ISMAX = MAX ( ISMAX , ISP1 )
+      ISMAX = MIN( MSC, MAX ( ISMAX , ISP1 ) ) ! added fix the bug described below ...
 
       IF ( URSELL .GT. PTRIAD(5) ) THEN
         BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
