@@ -2488,3 +2488,39 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+       SUBROUTINE INTER_STRUCT_DATA(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,MAT,VAL)
+       USE DATAPOOL
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: NDX, NDY
+       REAL(rkind), INTENT(IN)    :: MAT(NDX,NDY)
+       REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+       REAL(rkind), INTENT(OUT)   :: VAL(MNP_WIND)
+       INTEGER             :: IP, J_INT, I_INT
+       REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
+       REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+       DO IP = 1, MNP_WIND
+         LEN_X = XP_WIND(IP)-OFFSET_X
+         LEN_Y = YP_WIND(IP)-OFFSET_Y
+         I_INT = INT( LEN_X/DX ) + 1
+         J_INT = INT( LEN_Y/DY ) + 1
+         DELTA_X = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
+         DELTA_Y = LEN_Y - (J_INT - 1) * DY !
+         WX1     = MAT(  I_INT   , J_INT  ) ! Unten Links
+         WX2     = MAT(  I_INT   , J_INT+1) ! Oben  Links
+         WX3     = MAT(  I_INT+1,  J_INT+1) ! Oben  Rechts
+         WX4     = MAT(  I_INT+1,  J_INT  ) ! Unten Rechts
+         IF (IWINDFORMAT == 2) THEN
+           HX1 = WX1 + (WX2-WX1)/DX * DELTA_X
+           HX2 = WX4 + (WX3-WX4)/DX * DELTA_X
+         ELSE IF (IWINDFORMAT == 3) THEN
+           HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
+           HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
+         ELSE
+           CALL WWM_ABORT('Write your HX1/HX2 code here')
+         END IF
+         VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+       END DO
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
