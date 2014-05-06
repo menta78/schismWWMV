@@ -1792,227 +1792,210 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE INTER_STRUCT_BOUNDARY(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
-          USE DATAPOOL
-          IMPLICIT NONE
+      SUBROUTINE INTER_STRUCT_BOUNDARY(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NDX, NDY
+      REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+      REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
+      INTEGER             :: IP, J_INT, I_INT
+      REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
+      REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+      DO IP = 1, IWBMNP
 
-          INTEGER, INTENT(IN) :: NDX, NDY
-          REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
-          REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
+        LEN_X = XP(IWBNDLC(IP)) - OFFSET_X
+        LEN_Y = YP(IWBNDLC(IP)) - OFFSET_Y
 
-          INTEGER             :: IP, J_INT, I_INT
-          REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
-          REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+        I_INT = INT( LEN_X/DX ) + 1
+        J_INT = INT( LEN_Y/DY ) + 1
 
-         DO IP = 1, IWBMNP
+        DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
+        DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
 
-            LEN_X = XP(IWBNDLC(IP)) - OFFSET_X
-            LEN_Y = YP(IWBNDLC(IP)) - OFFSET_Y
+        !WRITE(*,*) 'XP YP', XP(IWBNDLC(IP)), YP(IWBNDLC(IP)), IWBNDLC(IP)
+        !WRITE(*,*) LEN_X, LEN_Y, OFFSET_X, OFFSET_Y, XP(IWBNDLC(IP)), YP(IWBNDLC(IP))
 
-            I_INT = INT( LEN_X/DX ) + 1
-            J_INT = INT( LEN_Y/DY ) + 1
+        WX1       = HS_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = HS_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = HS_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = HS_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
-            DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            !WRITE(*,*) 'XP YP', XP(IWBNDLC(IP)), YP(IWBNDLC(IP)), IWBNDLC(IP)
-            !WRITE(*,*) LEN_X, LEN_Y, OFFSET_X, OFFSET_Y, XP(IWBNDLC(IP)), YP(IWBNDLC(IP))
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(1,IP) = 0.
+        ELSE
+          VAL(1,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            WX1       = HS_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = HS_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = HS_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = HS_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        WX1       = DIR_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = DIR_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = DIR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = DIR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            !WRITE(*,*) WX1, WX2, WX3, WX4
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(3,IP) = 0.
+        ELSE
+          VAL(3,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(1,IP) = 0.
-            ELSE
-              VAL(1,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        WX1       = FP_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = FP_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = FP_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = FP_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            WX1       = DIR_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = DIR_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = DIR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = DIR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(2,IP) = 0.
+        ELSE
+          VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(3,IP) = 0.
-            ELSE
-              VAL(3,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        IF (VAL(2,IP) .GT. TINY(1.)) THEN
+          VAL(2,IP) = 1. / VAL(2,IP)
+        ELSE
+          VAL(2,IP) = 0.
+        END IF
 
-            WX1       = FP_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = FP_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = FP_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = FP_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = T02_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = T02_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(2,IP) = 0.
-            ELSE
-              VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(2,IP) = 0.
+        ELSE
+          VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (VAL(2,IP) .GT. TINY(1.)) THEN
-              VAL(2,IP) = 1. / VAL(2,IP)
-            ELSE
-              VAL(2,IP) = 0.
-            END IF
+        WX1       = DSPR_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = DSPR_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = DSPR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = DSPR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = T02_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = T02_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(4,IP) = 0.
+        ELSE
+          VAL(4,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(2,IP) = 0.
-            ELSE
-              VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        VAL(5,:)  = -2.
+        VAL(6,:)  = 1.
+        VAL(7,:)  = 0.1
+        VAL(8,:)  = 3.3
 
-            WX1       = DSPR_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = DSPR_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = DSPR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = DSPR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
-
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(4,IP) = 0.
-            ELSE
-              VAL(4,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
-
-            VAL(5,:)  = -2.
-            VAL(6,:)  = 1.
-            VAL(7,:)  = 0.1
-            VAL(8,:)  = 3.3
-
-         END DO
-       END SUBROUTINE
+      END DO
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE INTER_STRUCT_DOMAIN(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
-       USE DATAPOOL
-       IMPLICIT NONE
-          INTEGER, INTENT(IN) :: NDX, NDY
-          REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
-          REAL(rkind), INTENT(OUT)   :: VAL(8,MNP)
+      SUBROUTINE INTER_STRUCT_DOMAIN(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NDX, NDY
+      REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+      REAL(rkind), INTENT(OUT)   :: VAL(8,MNP)
+      INTEGER       :: IP, J_INT, I_INT
+      REAL(rkind)   :: WX1, WX2, WX3, WX4, HX1, HX2
+      REAL(rkind)   :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+      DO IP = 1, MNP
+        LEN_X = XP(IP) - OFFSET_X
+        LEN_Y = YP(IP) - OFFSET_Y
+        I_INT = INT( LEN_X/DX ) + 1
+        J_INT = INT( LEN_Y/DY ) + 1
+        DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
+        DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
 
-          INTEGER             :: IP, J_INT, I_INT
-          REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
-          REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+        WX1       = HS_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = HS_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = HS_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = HS_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-          DO IP = 1, MNP
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            LEN_X = XP(IP) - OFFSET_X
-            LEN_Y = YP(IP) - OFFSET_Y
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(1,IP) = 0.
+        ELSE
+          VAL(1,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            I_INT = INT( LEN_X/DX ) + 1
-            J_INT = INT( LEN_Y/DY ) + 1
+        WX1       = DIR_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = DIR_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = DIR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = DIR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
-            DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            WX1       = HS_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = HS_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = HS_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = HS_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(3,IP) = 0.
+        ELSE
+          VAL(3,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        WX1       = FP_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = FP_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = FP_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = FP_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(2,IP) = 0.
+        ELSE
+          VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(1,IP) = 0.
-            ELSE
-              VAL(1,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = T02_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = T02_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            WX1       = DIR_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = DIR_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = DIR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = DIR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(2,IP) = 0.
+        ELSE
+          VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(3,IP) = 0.
-            ELSE
-              VAL(3,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
+        WX1       = DSPR_WW3(  I_INT   , J_INT  ) ! Unten Links
+        WX2       = DSPR_WW3(  I_INT   , J_INT+1) ! Oben  Links
+        WX3       = DSPR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
+        WX4       = DSPR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
 
-            WX1       = FP_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = FP_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = FP_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = FP_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
+        HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+        HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+        IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+          VAL(4,IP) = 0.
+        ELSE
+          VAL(4,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+        ENDIF
 
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(2,IP) = 0.
-            ELSE
-              VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
-
-            WX1       = T02_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = T02_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = T02_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
-
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(2,IP) = 0.
-            ELSE
-              VAL(2,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
-
-            WX1       = DSPR_WW3(  I_INT   , J_INT  ) ! Unten Links
-            WX2       = DSPR_WW3(  I_INT   , J_INT+1) ! Oben  Links
-            WX3       = DSPR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
-            WX4       = DSPR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
-            HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
-            HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
-
-            IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
-              VAL(4,IP) = 0.
-            ELSE
-              VAL(4,IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
-            ENDIF
-
-            VAL(5,IP)  = 2. ! From mean period ...
-            VAL(6,IP)  = 1.
-            VAL(7,IP)  = 0.1
-            VAL(8,IP)  = 3.3
-
-            !WRITE(*,'(I10,8F15.4)') IP, VAL(:,IP)
-            !PAUSE
-
-         END DO
-
-         IF (LWRITE_INTERPOLATED_WW3_RESULTS) THEN
-           OPEN(4013, FILE  = 'erginterwiii.bin', FORM = 'UNFORMATTED')
-           WRITE(4013) RTIME
-           WRITE(4013) (VAL(3,IP), VAL(2,IP), VAL(4,IP), IP = 1, MNP)
-         END IF
+        VAL(5,IP)  = 2. ! From mean period ...
+        VAL(6,IP)  = 1.
+        VAL(7,IP)  = 0.1
+        VAL(8,IP)  = 3.3
+      END DO
+      IF (LWRITE_INTERPOLATED_WW3_RESULTS) THEN
+        OPEN(4013, FILE  = 'erginterwiii.bin', FORM = 'UNFORMATTED')
+        WRITE(4013) RTIME
+        WRITE(4013) (VAL(3,IP), VAL(2,IP), VAL(4,IP), IP = 1, MNP)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
