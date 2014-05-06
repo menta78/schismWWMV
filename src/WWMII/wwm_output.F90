@@ -1889,6 +1889,7 @@
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
       integer, allocatable :: IOBPDoutput(:,:)
+      integer nbTime
 !
       eTimeDay=MAIN%TMJD
 # ifdef MPI_PARALL_GRID
@@ -1931,6 +1932,7 @@
 ! create nc file, vars, and do all time independant job
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+          nbTime=-1
           CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)

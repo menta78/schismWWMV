@@ -278,10 +278,17 @@
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
+         LOGICAL    :: MULTIPLE_IN_GRID = .TRUE.
          LOGICAL    :: MULTIPLE_IN_BOUND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
+
+! Entries needed for output of spectra
+         LOGICAL    :: NETCDF_OUT_SPECTRA = .TRUE.
+         LOGICAL    :: NETCDF_OUT_PARAM = .TRUE.
+         CHARACTER(LEN=140) :: NETCDF_OUT_FILE = "boundary_out_spec.nc"
+         LOGICAL    :: USE_SINGLE_OUT_BOUC
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
@@ -324,7 +331,7 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
 
-         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
+         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
@@ -795,6 +802,7 @@
          LOGICAL LVAR_READ(OUTVARS_COMPLETE)
 
 #ifdef NCDF
+         INTEGER        :: NF90_OUTTYPE_BOUC
          INTEGER        :: NF90_OUTTYPE_STAT
          INTEGER        :: NF90_OUTTYPE_HIS
          INTEGER        :: NF90_RUNTYPE

@@ -833,6 +833,44 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      integer, intent(in) :: ncid, nbTime
+      character (len = *), parameter :: UNITS = "units"
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
+      integer iret, fifteen_dims, var_id
+      integer ntime_dims
+      iret=nf90_inq_dimid(ncid, 'fifteen', fifteen_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+      IF (nbTime.gt.0) THEN
+        iret = nf90_def_dim(ncid, 'ocean_time', nbTime, ntime_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+      ELSE
+        iret = nf90_def_dim(ncid, 'ocean_time', NF90_UNLIMITED, ntime_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      END IF
+      iret=nf90_def_var(ncid,'ocean_time',NF90_RUNTYPE,(/ ntime_dims/), var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'seconds since 1858-11-17 00:00:00')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+      !
+      iret=nf90_def_var(ncid,'ocean_time_day',NF90_RUNTYPE,(/ ntime_dims/), var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'days since 1858-11-17 00:00:00')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+      !
+      iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WRITE_NETCDF_TIME(ncid, idx, eTimeDay)
       USE DATAPOOL, only : DAY2SEC,RKIND, wwmerr
       USE NETCDF
@@ -865,54 +903,6 @@
         iret=nf90_put_var(ncid,oceantimestr_id,eChar,start=(/i, idx/) )
         CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
       END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE GET_XYID_INE_TOTAL
-      USE DATAPOOL, only : XPtotal, YPtotal, IOBPtotal, DEPtotal, INEtotal
-      USE DATAPOOL, only : np_total, ne_total, rkind, DBG
-      USE DATAPOOL, only : XP, YP, DEP, INE, MNP, IOBP
-# ifdef MPI_PARALL_GRID
-      USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
-# endif
-      implicit none
-# ifdef MPI_PARALL_GRID
-      integer NewId, nb1, nb2, i, j, k, iegb, statfile, idx
-      integer IP, iProc, Status(np_total), rStatus(np_total), rIOBP(np_total)
-# endif
-      integer istat
-      ALLOCATE(IOBPtotal(np_total), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
-# ifdef MPI_PARALL_GRID
-      !
-      IOBPtotal=0
-      Status=0
-      DO IP=1,MNP
-        IOBPtotal(iplg(IP))=IOBP(IP)
-        Status(iplg(IP)) = 1
-      END DO
-      IF (myrank .eq. 0) THEN
-        DO iProc=2,nproc
-          CALL MPI_RECV(rIOBP, np_total, itype, iProc-1, 37, comm, istatus, ierr)
-          CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 41, comm, istatus, ierr)
-          DO I=1,np_total
-            IF (rStatus(I) .eq. 1) THEN
-              IOBPtotal(I)=rIOBP(I)
-            END IF
-          END DO
-        END DO
-        DO iProc=2,nproc
-          CALL MPI_SEND(IOBPtotal, np_total, itype, iProc-1, 43, comm, ierr)
-        END DO
-      ELSE
-        CALL MPI_SEND(IOBPtotal, np_total, itype, 0, 37, comm, ierr)
-        CALL MPI_SEND(Status, np_total, itype, 0, 41, comm, ierr)
-        CALL MPI_RECV(IOBPtotal, np_total, itype, 0, 43, comm, istatus, ierr)
-      ENDIF
-# else
-      IOBPtotal=IOBP
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1033,29 +1023,8 @@
         CALL WRITE_PARAM_1(ncid, one_dims)
       ENDIF
       !
-      IF (nbTime.gt.0) THEN
-        iret = nf90_def_dim(ncid, 'ocean_time', nbTime, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
-      ELSE
-        iret = nf90_def_dim(ncid, 'ocean_time', NF90_UNLIMITED, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
-      END IF
-      iret=nf90_def_var(ncid,'ocean_time',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'seconds since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
-      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
       !
-      iret=nf90_def_var(ncid,'ocean_time_day',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'days since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
-      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
-      !
-      iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
       IF (GRIDWRITE.and.WriteOutputProcess) THEN
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT.eq.1) THEN
@@ -1494,29 +1463,7 @@
         CALL WRITE_PARAM_1(ncid, one_dims)
       ENDIF
       !
-      IF (nbTime.gt.0) THEN
-        iret = nf90_def_dim(ncid, 'ocean_time', nbTime, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-      ELSE
-        iret = nf90_def_dim(ncid, 'ocean_time', NF90_UNLIMITED, ntime_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
-      END IF
-      iret=nf90_def_var(ncid,'ocean_time',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'seconds since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
-      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
-      !
-      iret=nf90_def_var(ncid,'ocean_time_day',NF90_RUNTYPE,(/ ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'days since 1858-11-17 00:00:00')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
-      iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
-      !
-      iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
       IF (LSPHE) THEN
         iret=nf90_def_var(ncid,"lon",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
       ELSE
@@ -1587,9 +1534,9 @@
       real(rkind) :: eWriteReal(1)
       integer var_id, iret
       integer I
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       integer eInt(1)
-#endif
+# endif
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_2"
       !
 # ifdef MPI_PARALL_GRID

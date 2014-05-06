@@ -648,6 +648,8 @@
          REAL(rkind)              :: DEG
          INTEGER :: MULTIPLEIN, MULTIPLEOUT
          LOGICAL :: MULTIPLE_IN
+         REAL(rkind) :: DEFINETC
+         LOGICAL     :: USE_SINGLE_OUT
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN
@@ -666,7 +668,8 @@
      &      FILEBOUND, IBOUNDFORMAT, FILEWAVE, LINDSPRDEG, LPARMDIR,    &
      &      WBHS, WBTP, WBDM, WBDS, WBSS, WBDSMS, WBGAUSS, WBPKEN,      &
      &      NCDF_HS_NAME, NCDF_DIR_NAME, NCDF_SPR_NAME, NCDF_FP_NAME,   &
-     &      NCDF_F02_NAME, MULTIPLE_IN
+     &      NCDF_F02_NAME, MULTIPLE_IN, NETCDF_OUT_PARAM,               &
+     &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
@@ -803,12 +806,35 @@
 !
 !     *** BOUNDARY CONDITIONS section
 !
+#ifdef NCDF
+         USE_SINGLE_OUT=USE_SINGLE_OUT_BOUC
+         DEFINETC=-1
+#endif
          MULTIPLE_IN=MULTIPLE_IN_BOUND
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
          FLUSH(CHK%FHNDL)
          MULTIPLE_IN_BOUND=MULTIPLE_IN
+#ifdef NCDF
+         USE_SINGLE_OUT_BOUC=USE_SINGLE_OUT
+         IF (rkind.eq.4) THEN
+           NF90_OUTTYPE_BOUC=NF90_REAL
+         ELSE
+           IF (USE_SINGLE_OUT_BOUC) THEN
+             NF90_OUTTYPE_BOUC=NF90_REAL
+           ELSE
+             NF90_OUTTYPE_BOUC=NF90_DOUBLE
+           ENDIF
+         ENDIF
+         OUT_BOUC % DEFINETC=DEFINETC
+         OUT_BOUC % FNAME = NETCDF_OUT_FILE
 
+         IF (DEFINETC .lt. 0) THEN
+           OUT_BOUC % IDEF = -1
+         ELSE
+           OUT_BOUC % IDEF = NINT(DEFINETC/DELTC)
+         ENDIF
+#endif
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE
          IF (LBCWA .and. (.not. LINHOM) .and. (.not. LBCSE)) THEN
@@ -1178,12 +1204,11 @@
       SUBROUTINE READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
-      LOGICAL :: MULTIPLE_GRID_IN = .FALSE.
       integer :: rbuf_int(2)
       real(rkind), allocatable :: rbuf_real(:)
       integer iProc, IP, IE, nb_real, idx
 #ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_GRID_IN) THEN
+      IF (MULTIPLE_IN_GRID) THEN
         CALL SINGLE_READ_SPATIAL_GRID_TOTAL
       ELSE
         IF (DIMMODE .ne. 2) THEN

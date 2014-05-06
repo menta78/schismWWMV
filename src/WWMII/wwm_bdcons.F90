@@ -109,254 +109,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef SELFE
-      SUBROUTINE SET_IOBP_SELFE
+      SUBROUTINE SET_IOBPD_BY_DEP
         USE DATAPOOL
         IMPLICIT NONE
+        INTEGER              :: IP
 
-         INTEGER     :: IP, IE, ID
-         INTEGER     :: I, IWILD(MNP)
-         REAL(rkind) :: DIR, DIRMIN, DIRMAX, TMP
-
-         INTEGER           :: IFSTAT, ITMP
-         REAL(rkind)       :: RBNDTMP, BNDTMP
-         REAL(rkind)       :: ATMP, BTMP
-         REAL(rkind)       :: XTMP,YTMP
-         CHARACTER(LEN=20) :: CHARTMP
-
-         CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
-
-         OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-
-         WRITE(STAT%FHNDL,*) 'BOUNDARY FILE NAME'
-         WRITE(STAT%FHNDL,*) 'IGRIDTYPE=', IGRIDTYPE
-         WRITE(STAT%FHNDL,*) BND%FHNDL, BND%FNAME
-
-         IF (IGRIDTYPE.eq.1) THEN ! XFN 
-           DO I = 1, 2
-             READ(BND%FHNDL,*) 
-           END DO
-           READ(BND%FHNDL,*) 
-           READ(BND%FHNDL,*) 
-           READ(BND%FHNDL,*) 
-           DO I = 1, 7
-             READ(BND%FHNDL,*) 
-           END DO
-         ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         END IF
-
-         IF (myrank == 0) WRITE(STAT%FHNDL,*) 'reading in the boundary flags'
-
-         DO IP = 1, NP_GLOBAL ! Loop over global nodes
-           IF (IGRIDTYPE.eq.1) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.2) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.3) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.4) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP 
-           END IF
-           if(ipgl(ip)%rank == myrank .AND. BNDTMP .GT. 0.) IOBP(ipgl(ip)%id) = INT(BNDTMP)
-           IF ( IFSTAT /= 0 ) CALL WWM_ABORT('error in the bnd file wwm_bdcons.F90 l.159')
-         END DO
-
-         WRITE(STAT%FHNDL,*) 'FINISHED READING BOUNDARY FILE NAME'
-
-         REWIND(BND%FHNDL)
-!
-! add island and boundary flags ...
-!
-        DO IP = 1, NP_RES
-          IF (IOBP(IP) .GT. 4) THEN
-            WRITE(wwmerr, *) 'IOBP(IP) must not be .gt. 4', IP, ' iobp=', iobp(IP)
-            CALL WWM_ABORT(wwmerr)
+        DO IP = 1, MNP
+          IF (DEP(IP) .LT. DMIN) THEN 
+            IOBDP(IP) = 0 
+          ELSE 
+            IOBDP(IP) = 1
           ENDIF
-        ENDDO
-
-        DO IP = 1, NP_RES ! reset boundary flag in the case that wave boundary are not used but defined in the boundary file
-          IF (.NOT. LBCWA .AND. .NOT. LBCSP) THEN
-            IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
-          ENDIF
-        ENDDO
-
-        DO IP = 1, NP_RES
-          IF (IOBP(IP) .ne. 2 .and. IOBP(IP) .ne. 3 .and. IOBP(IP) .ne. 4) THEN
-            IF (abs(ibnd_ext_int(IP)) == 1) THEN
-              IOBP(IP) = ibnd_ext_int(IP)
-            ENDIF 
-          END IF
         END DO
-
-        IWILD = IOBP
-        CALL EXCHANGE_P2DI(IWILD)
-        IOBP = IWILD
-
-        WRITE(STAT%FHNDL,*) 'FINISHED WITH EXCHANGE OF BOUNDARY MAPPINGS' 
-!
-! set wave boundary mappings ...
-!
-         IF (IGRIDTYPE.eq.1) THEN ! XFN 
-           DO I = 1, 2
-             READ(BND%FHNDL,*)
-           END DO
-           READ(BND%FHNDL,*)                  
-           READ(BND%FHNDL,*) 
-           READ(BND%FHNDL,*)                  
-           DO I = 1, 7
-             READ(BND%FHNDL,*) 
-           END DO
-         ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         END IF
-
-         IWBMNPGL = 0 !global #
-         IWBMNP   = 0 !local #
-
-         DO IP = 1, NP_GLOBAL
-
-           IF (IGRIDTYPE.eq.1) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.2) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.3) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.4) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
-           END IF
-           ITMP=INT(BNDTMP)
-           IF(ITMP==2 .OR. ITMP==4)THEN
-             IWBMNPGL = IWBMNPGL + 1
-             IF(ipgl(IP)%rank==myrank) IWBMNP=IWBMNP+1
-           ENDIF
-
-         ENDDO !IP
-
-         ALLOCATE( IWBNDGL(IWBMNPGL), IWBNDLC(IWBMNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
-
-         REWIND(BND%FHNDL)
-
-         IF (IGRIDTYPE.eq.1) THEN ! XFN 
-           DO I = 1, 2
-             READ(BND%FHNDL,*)
-           END DO
-           READ(BND%FHNDL,*)                  
-           READ(BND%FHNDL,*) 
-           READ(BND%FHNDL,*)                  
-           DO I = 1, 7
-             READ(BND%FHNDL,*) 
-           END DO
-         ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-           READ(BND%FHNDL,*)
-           READ(BND%FHNDL,*)
-         END IF
-
-         IWBMNPGL = 0
-         IWBMNP   = 0
-
-         DO IP = 1, NP_GLOBAL
-           IF (IGRIDTYPE.eq.1) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.2) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.3) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-           ELSE IF (IGRIDTYPE.eq.4) THEN
-             READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
-           END IF
-           ITMP=INT(BNDTMP)
-           IF (ITMP==2 .OR. ITMP ==4) THEN
-             IWBMNPGL = IWBMNPGL + 1
-             IWBNDGL(IWBMNPGL) = IP !global node #
-             IF (ipgl(IP)%rank==myrank) THEN
-               IWBMNP = IWBMNP + 1
-               IWBNDLC(IWBMNP)=ipgl(IP)%id !local node
-             ENDIF
-           ENDIF
-         ENDDO !IP
-
-         CLOSE(BND%FHNDL)
-         WRITE(STAT%FHNDL,*)'FINISHED SETTING THE FLAGS'
-         WRITE(STAT%FHNDL,*)'Gloabl bnd list from init.:', IWBMNPGL,IWBNDGL(:)
-         WRITE(STAT%FHNDL,*)'Local bnd list from init.:', IWBMNP,IWBNDLC(:)
-!
-! allocate memory for boundary forcing ....
-!
-
-         IF (LINHOM) THEN
-           IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary
-             ALLOCATE( WBAC(MSC,MDC,IWBMNP), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
-             WBAC = 0.
-             IF (LBINTER) THEN ! For time interpolation
-               ALLOCATE( WBACOLD(MSC,MDC,IWBMNP), WBACNEW(MSC,MDC,IWBMNP), DSPEC(MSC,MDC,IWBMNP), stat=istat)
-               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 3')
-               WBACOLD = 0.
-               WBACNEW = 0.
-               DSPEC   = 0.
-             END IF
-             IF (LBCWA) THEN
-               ALLOCATE( SPPARM(8,IWBMNP), stat=istat)
-               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 4')
-               SPPARM = 0.
-             END IF
-           END IF
-         ELSE
-           IF (LBCWA .OR. LBCSP) THEN
-             ALLOCATE( WBAC(MSC,MDC,1), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
-             WBAC = 0.
-             IF (LBINTER) THEN
-               ALLOCATE( WBACOLD(MSC,MDC,1), WBACNEW(MSC,MDC,1), DSPEC(MSC,MDC,1), stat=istat)
-               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 6')
-               WBACOLD = 0.
-               WBACNEW = 0.
-               DSPEC   = 0.
-             END IF
-             IF (LBCWA) THEN
-               ALLOCATE( SPPARM(8,1), stat=istat)
-               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 7')
-               SPPARM = 0.
-             END IF
-           ENDIF
-         ENDIF ! LINHOM
-         WRITE(STAT%FHNDL,'("+TRACE...",A,I10)') 'Number of Active Wave Boundary Nodes', IWBMNP
-!
-! write test output ...
-!
-#ifdef DEBUG
-        IF (myrank == 0) THEN
-          DO IP = 1, MNP
-            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-          END DO
-        END IF
-        FLUSH(STAT%FHNDL)
-        FLUSH(IOBPOUT%FHNDL)
-#endif DEBUG
       END SUBROUTINE
-#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -440,29 +205,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_IOBP_NEXTGENERATION
-      USE DATAPOOL, only : MNP, IOBP, BND, LBINTER
-      USE DATAPOOL, only : WBAC, WBACNEW, WBACOLD, WAV, rkind, IOBPD
-      USE DATAPOOL, only : IWBMNP, IWBMNPGL, IWBNDLC, IWBNDGL
-      USE DATAPOOL, only : MSC, MDC, INE, MNE, DSPEC, NP_TOTAL, IGRIDTYPE
-      USE DATAPOOL, only : LBCSE, SPPARM, LBCWA, LINHOM, LBCSP, IOBPOUT
-      USE DATAPOOL, only : STAT, istat
-#ifdef MPI_PARALL_GRID
-      use datapool, only : exchange_p2di, myrank, ipgl, iplg
-#endif
+      SUBROUTINE SINGLE_READ_IOBP_TOTAL
+      USE DATAPOOL
       IMPLICIT NONE
-      INTEGER     :: IP, IFSTAT, SPsize
-      REAL(rkind) :: BNDTMP
-      INTEGER :: STATUS(MNP)
-      CHARACTER(LEN=200) :: wwmerr
-
-      INTEGER          :: I, ITMP
-      REAL(rkind)      :: ATMP, BTMP
+      INTEGER I, IP, IFSTAT
+      REAL(rkind)       :: ATMP, BTMP, BNDTMP
+      INTEGER ITMP
       CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
-
       OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-      IOBP    = 0
-      IOBPD   = 0
+      IOBPtotal = 0
 !
 ! Reading of raw boundary file
 !
@@ -489,8 +240,7 @@
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)
       END IF
-
-      DO IP = 1, NP_TOTAL ! AR: Why do you introduce a new variable here?
+      DO IP = 1, NP_TOTAL
         IF (IGRIDTYPE.eq.1) THEN
           READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
         ELSE IF (IGRIDTYPE.eq.2) THEN
@@ -504,187 +254,166 @@
           CALL WWM_ABORT('error in the bnd file 2')
         END IF
         ITMP=INT(BNDTMP)
-#ifdef MPI_PARALL_GRID
-# ifndef PDLIB
-        IF (ipgl(ip)%rank == myrank) THEN
-          IOBP(ipgl(ip)%id) = ITMP
-        END IF
-# else
-        IF (ipgl(ip)%id .gt. 0) THEN
-          IOBP(ipgl(ip)%id) = ITMP
-        END IF
-# endif
-#else
-        IOBP(IP) = ITMP
-#endif
+        IOBPtotal(IP) = ITMP
       END DO
-
-      DO IP = 1, MNP
-        IF (IOBP(IP) .GT. 4) THEN
-          WRITE(wwmerr, *) 'NextGen: We need iobp<=2 but ip=', IP, ' iobp=', iobp(IP)
+      CLOSE(BND%FHNDL)
+      DO IP = 1, NP_TOTAL
+        IF (IOBPtotal(IP) .GT. 4) THEN
+          WRITE(wwmerr, *) 'NextGen: We need iobp<=2 but ip=', IP, ' iobp=', IOBPtotal(IP)
           CALL WWM_ABORT(wwmerr)
         ENDIF
       ENDDO
+#ifdef DEBUG
+# ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+# endif
+        DO IP = 1, NP_TOTAL
+          WRITE(IOBPOUT%FHNDL,*) IP, IOBPtotal(IP)
+        END DO
+        FLUSH(IOBPOUT%FHNDL)
+# ifdef MPI_PARALL_GRID
+      ENDIF 
+# endif
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_IOBP_TOTAL
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer iProc
+      allocate(IOBPtotal(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+#ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_BOUND) THEN
+        CALL SINGLE_READ_IOBP_TOTAL
+      ELSE
+        IF (myrank .eq. 0) THEN
+          CALL SINGLE_READ_IOBP_TOTAL
+          DO iProc=2,nproc
+            CALL MPI_SEND(IOBPtotal,np_total,itype, iProc-1, 30, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_RECV(IOBPtotal,np_total,itype, 0, 30, comm, istatus, ierr)
+        END IF
+      END IF
+#else
+      CALL SINGLE_READ_IOBP_TOTAL
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SET_IOBP_NEXTGENERATION
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER     :: IP, IFSTAT, SPsize
+      REAL(rkind) :: BNDTMP
+      INTEGER :: STATUS(MNP)
+      INTEGER          :: idx
+      IOBPD   = 0
+      CALL READ_IOBP_TOTAL
+      IOBP    = 0
+      DO IP = 1, NP_TOTAL
+#ifdef MPI_PARALL_GRID
+# ifndef PDLIB
+        IF (ipgl(ip)%rank == myrank) THEN
+          IOBP(ipgl(ip)%id) = IOBPtotal(IP)
+        END IF
+# else
+        IF (ipgl(ip)%id .gt. 0) THEN
+          IOBP(ipgl(ip)%id) = IOBPtotal(IP)
+        END IF
+# endif
+#else
+        IOBP(IP) = IOBPtotal(IP)
+#endif
+      END DO
+#ifdef SELFE
+      DO IP = 1, NP_RES ! reset boundary flag in the case that wave boundary are not used but defined in the boundary file
+        IF (.NOT. LBCWA .AND. .NOT. LBCSP) THEN
+          IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
+        ENDIF
+      ENDDO
 
-      REWIND(BND%FHNDL)
+      DO IP = 1, NP_RES
+        IF (IOBP(IP) .ne. 2 .and. IOBP(IP) .ne. 3 .and. IOBP(IP) .ne. 4) THEN
+          IF (abs(ibnd_ext_int(IP)) == 1) THEN
+            IOBP(IP) = ibnd_ext_int(IP)
+          ENDIF 
+        END IF
+      END DO
+      CALL EXCHANGE_P2DI(IOBP)
+#endif
 !
 ! indexing boundary nodes ...
 !
-#ifndef MPI_PARALL_GRID
+      ! Local  boundary nodes ...
       IWBMNP = 0
       DO IP = 1, MNP
-        IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
+        IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1
       END DO
       ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
-      IWBMNP = 0
+      idx = 0
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
-          IWBMNP = IWBMNP + 1
-          IWBNDLC(IWBMNP) = IP ! Stores local wave boundary index 
+          idx = idx + 1
+          IWBNDLC(idx) = IP ! Stores local wave boundary index 
         END IF
       END DO
-#else
-      IF (IGRIDTYPE.eq.1) THEN ! XFN 
-        DO I = 1, 2
-          READ(BND%FHNDL,*)
-        END DO
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-        DO I = 1, 7
-          READ(BND%FHNDL,*)
-        END DO
-      ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      END IF
-      IWBMNPGL = 0 !global #
-      IWBMNP   = 0 !local #
+      ! Global boundary nodes
+      IWBMNPGL = 0
       DO IP = 1, NP_TOTAL
-        IF (IGRIDTYPE.eq.1) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.2) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.3) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.4) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
+        IF (IOBPtotal(IP) == 2 .OR. IOBPtotal(IP) == 4) IWBMNPGL = IWBMNPGL + 1
+      END DO
+      ALLOCATE( IWBNDGL(IWBMNPGL), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+      idx=0
+      DO IP = 1, NP_TOTAL
+        IF (IOBPtotal(IP) == 2 .OR. IOBPtotal(IP) == 4) THEN
+          idx = idx + 1
+          IWBNDGL(idx) = IP
         END IF
-        ITMP=INT(BNDTMP)
-        IF(ITMP==2 .OR. ITMP ==4)THEN
-          IWBMNPGL = IWBMNPGL + 1
-          IF(ipgl(IP)%rank==myrank) IWBMNP=IWBMNP+1
-        ENDIF
-      ENDDO
-      ALLOCATE( IWBNDGL(IWBMNPGL), IWBNDLC(IWBMNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 10')
-      REWIND(BND%FHNDL)
-
-      IF (IGRIDTYPE.eq.1) THEN ! XFN 
-        DO I = 1, 2
-          READ(BND%FHNDL,*)
-        END DO
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-        DO I = 1, 7
-          READ(BND%FHNDL,*)
-        END DO
-      ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-      END IF
-
-        IWBMNPGL = 0
-        IWBMNP   = 0
-        DO IP = 1, NP_TOTAL
-          IF (IGRIDTYPE.eq.1) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.2) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.3) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.4) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
-          END IF
-          ITMP=INT(BNDTMP)
-          IF (ITMP==2 .OR. ITMP==4) THEN 
-            IWBMNPGL = IWBMNPGL + 1
-            IWBNDGL(IWBMNPGL) = IP !global node #
-            IF (ipgl(IP)%rank==myrank) THEN
-              IWBMNP = IWBMNP + 1
-              IWBNDLC(IWBMNP)=ipgl(IP)%id !local node
-            ENDIF
-          ENDIF
-        ENDDO
-#endif
-        CLOSE(BND%FHNDL)
+      END DO
 !
 ! find islands and domain boundary ....
 !
-        CALL GET_BOUNDARY_STATUS(STATUS)
-        DO IP=1,MNP
-          IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
-            IOBP(IP)=1
-          END IF
-        END DO
+      CALL GET_BOUNDARY_STATUS(STATUS)
+      DO IP=1,MNP
+        IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
+          IOBP(IP)=1
+        END IF
+      END DO
 #ifdef MPI_PARALL_GRID
-        CALL EXCHANGE_P2DI(IOBP)
+      CALL EXCHANGE_P2DI(IOBP)
 #endif
 !
 ! allocate wave boundary arrays ... 
 !
-!AR: Hi Mathieu, I do not see why you are opening here files ? 
-        IF (LINHOM) THEN
-          SPsize=IWBMNP
-        ELSE
-          SPsize=1
+      IF (LINHOM) THEN
+        SPsize=IWBMNP
+      ELSE
+        SPsize=1
+      ENDIF
+      IF (LBCWA) THEN
+        ALLOCATE( SPPARM(8,SPsize), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
+        SPPARM = 0.
+      ENDIF
+      IF (LBCWA .OR. LBCSP) THEN
+        ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
+        WBAC = 0.
+        IF (LBINTER) THEN
+          ALLOCATE( WBACOLD(MSC,MDC,SPsize), WBACNEW(MSC,MDC,SPsize), DSPEC(MSC,MDC,SPsize), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 14')
+          WBACOLD = 0.
+          WBACNEW = 0.
+          DSPEC   = 0.
         ENDIF
-
-        IF (LBCWA) THEN
-          ALLOCATE( SPPARM(8,SPsize), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
-          SPPARM = 0.
-        ENDIF
-
-        IF (LBCWA .OR. LBCSP) THEN
-          ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
-          WBAC = 0.
-          IF (LBINTER) THEN
-            ALLOCATE( WBACOLD(MSC,MDC,SPsize), WBACNEW(MSC,MDC,SPsize), DSPEC(MSC,MDC,SPsize), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 14')
-            WBACOLD = 0.
-            WBACNEW = 0.
-            DSPEC   = 0.
-          ENDIF
-        END IF
-
-#ifdef DEBUG
-#ifdef MPI_PARALL_GRID
-        IF (myrank == 0) THEN
-#endif
-          DO IP = 1, MNP
-            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-          END DO
-          FLUSH(IOBPOUT%FHNDL)
-#ifdef MPI_PARALL_GRID
-        ENDIF 
-#endif
-#endif
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -711,176 +440,6 @@
           ENDIF
         END IF
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SET_IOBP
-        USE DATAPOOL
-        IMPLICIT NONE
-        INTEGER           :: IP, IFSTAT
-        REAL(rkind)       :: dbndtmp
-        REAL(rkind)       :: BNDTMP
-        character(len=60) :: errmsg
-        INTEGER           :: STATUS(MNP)
-        INTEGER           :: ITMP, I
-        REAL(rkind)       :: ATMP, BTMP
-!
-! SET IOBP ...
-!
-! open and read boundary nodes file ...
-!
-        CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
-        OPEN(BND%FHNDL, FILE = TRIM(BND%FNAME), STATUS = 'OLD')
-
-        DBNDTMP = ZERO
-        IOBP    = 0
-        IOBPD   = 0
-
-        IF (IGRIDTYPE.eq.1) THEN ! XFN 
-          DO I = 1, 2
-            READ(BND%FHNDL,*)
-          END DO
-          READ(BND%FHNDL,*)
-          READ(BND%FHNDL,*)
-          READ(BND%FHNDL,*)
-          DO I = 1, 7
-            READ(BND%FHNDL,*)
-          END DO
-        ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-          READ(BND%FHNDL,*)
-          READ(BND%FHNDL,*)
-        ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
-          READ(BND%FHNDL,*)
-          READ(BND%FHNDL,*)
-        ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-          READ(BND%FHNDL,*)
-          READ(BND%FHNDL,*)
-        END IF
-
-        DO IP = 1, MNP
-          IF (IGRIDTYPE.eq.1) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.2) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.3) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-          ELSE IF (IGRIDTYPE.eq.4) THEN
-            READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
-          END IF
-          IF ( IFSTAT /= 0 ) THEN
-            WRITE(DBG%FHNDL,*) 'BND%FNAME=', BND%FNAME
-            Write(errmsg,*) 'Error in bnd file', BND%FNAME
-            CALL WWM_ABORT(errmsg)
-          END IF
-          IF (BNDTMP .GT. ZERO) IOBP(IP) = INT(BNDTMP)
-          IF (.NOT.  LBCWA  .AND. .NOT. LBCSP) THEN ! Reset boundary flag ...
-            IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
-          END IF
-        END DO
-
-        IWBMNP = 0
-        DO IP = 1, MNP
-          IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1 ! Local number of boundary nodes ...
-        END DO
-!
-! map boundary nodes ...
-!
-        ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 15')
-        IWBMNP = 0
-        DO IP = 1, MNP
-          IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
-            IWBMNP = IWBMNP + 1
-            IWBNDLC(IWBMNP) = IP ! Stores local wave boundary index
-          END IF
-        END DO
-
-!
-! find islands and domain boundary ....
-!
-
-        CALL GET_BOUNDARY_STATUS(STATUS)
-        DO IP=1,MNP
-          IF (STATUS(IP).eq.-1 .AND. IOBP(IP) .EQ. 0) THEN
-            IOBP(IP)=1
-          END IF
-        END DO
-!
-! allocate wave boundary arrays ...
-!
-        IF (LINHOM) THEN
-          IF (LBCWA .OR. LBCSP) THEN ! Inhomgenous wave boundary
-            OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-            ALLOCATE( WBAC(MSC,MDC,IWBMNP), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
-            WBAC = 0.
-            IF (LBINTER) THEN ! For time interpolation
-              ALLOCATE( WBACOLD(MSC,MDC,IWBMNP), WBACNEW(MSC,MDC,IWBMNP), DSPEC(MSC,MDC,IWBMNP), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 17')
-              WBACOLD = 0.
-              WBACNEW = 0.
-              DSPEC   = 0.
-            END IF
-            IF (LBCWA) THEN
-              ALLOCATE( SPPARM(8,IWBMNP), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 18')
-              SPPARM = 0.
-            ENDIF
-          END IF
-        ELSE
-          IF (LBCWA .OR. LBCSP) THEN
-            IF (LBCSE .OR. LBCSP) OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
-            ALLOCATE( WBAC(MSC,MDC,1), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
-              WBAC = 0.
-            IF (LBINTER) THEN
-              ALLOCATE( WBACOLD(MSC,MDC,1), WBACNEW(MSC,MDC,1), DSPEC(MSC,MDC,1), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
-              WBACOLD = 0.
-              WBACNEW = 0.
-              DSPEC   = 0.
-            END IF
-            IF (LBCWA) THEN
-              ALLOCATE( SPPARM(8,1), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 21')
-              SPPARM = 0.
-            ENDIF
-          ENDIF
-        ENDIF ! LINHOM
-        WRITE(STAT%FHNDL,'("+TRACE...",A,I10)') 'Number of Active Wave Boundary Nodes', IWBMNP
-!
-! write test output ... this is done only for rank = 0 and it is only valid on the decomposition of rank = 0
-!
-#ifdef DEBUG
-#ifdef MPI_PARALL_GRID
-        IF (myrank == 0) THEN
-#endif
-          DO IP = 1, MNP
-            WRITE(IOBPOUT%FHNDL,*) IP, IOBP(IP)
-          END DO
-          FLUSH(IOBPOUT%FHNDL)
-#ifdef MPI_PARALL_GRID
-        END IF
-#endif
-#endif
-        FLUSH(DBG%FHNDL)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SET_IOBPD_BY_DEP
-        USE DATAPOOL
-        IMPLICIT NONE
-        INTEGER              :: IP
-
-        DO IP = 1, MNP
-          IF (DEP(IP) .LT. DMIN) THEN 
-            IOBDP(IP) = 0 
-          ELSE 
-            IOBDP(IP) = 1
-          ENDIF
-        END DO
-     END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1943,3 +1502,191 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF
+# ifdef MPI_PARALL_GRID
+      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
+      USE DATAPOOL
+      USE NETCDF
+      implicit none
+      integer, intent(in) :: ncid, nbTime
+      character (len = *), parameter :: UNITS = "units"
+      integer one_dims, two_dims, three_dims, fifteen_dims
+      integer mnp_dims, mne_dims, msc_dims, mdc_dims
+      integer iret, var_id
+      integer ntime_dims, iwbmnpgl_dims
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
+      iret = nf90_def_dim(ncid, 'one', 1, one_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+      iret = nf90_def_dim(ncid, 'two', 2, two_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+      iret = nf90_def_dim(ncid, 'three', 3, three_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      iret = nf90_def_dim(ncid, 'np_global', np_global, mnp_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+      iret = nf90_def_dim(ncid, 'ne_global', ne_global, mne_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+      iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      iret = nf90_def_dim(ncid, 'IWBMNPGL', IWBMNPGL, iwbmnpgl_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      !
+      CALL WRITE_PARAM_1(ncid, one_dims)
+      !
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      !
+      iret=nf90_def_var(ncid,'IOBP',NF90_INT,(/ mnp_dims /), var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
+      iret=nf90_put_att(ncid,var_id,'description','boundary status of nodes')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      iret=nf90_put_att(ncid,var_id,'case 0','interior point')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      iret=nf90_put_att(ncid,var_id,'case 1','island')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      iret=nf90_put_att(ncid,var_id,'case 2','dirichlet condition')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      iret=nf90_put_att(ncid,var_id,'case 3','neumann condition')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      iret=nf90_put_att(ncid,var_id,'case 4','unknown')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      !
+      iret=nf90_def_var(ncid,'IWBNDGL',NF90_INT,(/ iwbmnpgl_dims /), var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
+      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      !
+      IF (NETCDF_OUT_PARAM) THEN
+        iret=nf90_def_var(ncid,'HS',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'meter (m)')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','significant wave height')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        !
+        iret=nf90_def_var(ncid,'DIR',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'degree (deg)')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','wave direction')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        !
+        iret=nf90_def_var(ncid,'FP',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'Hertz (Hz)')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','wave peak frequency')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        !
+        iret=nf90_def_var(ncid,'SPR',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'degree (deg)')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','directional spread')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        !
+        iret=nf90_def_var(ncid,'T02',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'second (s)')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','mean period Tm02')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      END IF
+      !
+      IF (NETCDF_OUT_SPECTRA) THEN
+        iret=nf90_def_var(ncid,'ACbound',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims /), var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+        iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_2(ncid)
+      USE DATAPOOL
+      USE NETCDF
+      implicit none
+      integer, intent(in) :: ncid
+      integer one_dims, two_dims, three_dims, fifteen_dims
+      integer mnp_dims, mne_dims, msc_dims, mdc_dims
+      integer iret, var_id
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_2"
+      !
+      CALL WRITE_PARAM_2(ncid)
+      !
+      iret=nf90_inq_varid(ncid, "IOBP", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      iret=nf90_put_var(ncid,var_id,IOBPtotal, start=(/1/), count =(/NP_GLOBAL/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      !
+      iret=nf90_inq_varid(ncid, "IWBNDGL", var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      !
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE WRITE_NETCDF_BOUNDARY
+      USE DATAPOOL
+      USE NETCDF
+      implicit none
+      logical, save :: IsInitDone = .FALSE.
+      character(len =256) :: FILE_NAME, PRE_FILE_NAME
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUNDARY"
+      integer iret, ncid
+      integer, save ::  ifile = 1
+      integer LPOS
+      integer POSITION_BEFORE_POINT, nbTime
+      LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
+      IF (OUT_STATION%IDEF.gt.0) THEN
+         WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
+  10     FORMAT (a,'_',i4.4)
+      ELSE
+         WRITE (PRE_FILE_NAME,20) OUT_BOUC % FNAME(1:LPOS)
+  20     FORMAT (a)
+      ENDIF
+      WRITE (FILE_NAME,30) TRIM(PRE_FILE_NAME)
+  30  FORMAT (a,'.nc')
+      IF (IsInitDone .eqv. .FALSE.) THEN
+        IsInitDone=.TRUE.
+        nbTime=-1
+        IF (myrank == 0) THEN
+          iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+          !
+          CALL WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
+          iret=nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+          !
+          iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+          !
+          CALL WRITE_NETCDF_BOUND_HEADERS_2(ncid)
+          iret=nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        END IF
+      END IF
+      !
+      ! Now writing the boundary data
+      !
+      iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      IF (NETCDF_OUT_PARAM) THEN
+      END IF
+      IF (NETCDF_OUT_SPECTRA) THEN
+      END IF
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+
+
+
+      END SUBROUTINE
+# endif
+#endif
