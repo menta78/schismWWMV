@@ -31,6 +31,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE AC_COHERENCY(AC, string)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(*), intent(in) :: string
+      REAL(rkind), intent(in) :: AC(MNP,MSC,MDC)
+      REAL(rkind) :: ACwork(MSC,MDC,MNP)
+      REAL(rkind) :: Lerror
+      INTEGER IP
+      DO IP=1,MNP
+        ACwork(:,:,IP)=AC(IP,:,:)
+      END DO
+      CALL I5B_TOTAL_COHERENCY_ERROR(MSC, ACwork, Lerror)
+      WRITE(STAT%FHNDL,*) 'coherency error between domains'
+      WRITE(STAT%FHNDL,*) 'Lerror=', Lerror, ' mesg=', TRIM(string)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
       USE DATAPOOL, only : MNP, MDC, rkind
       USE DATAPOOL, only : ListIPLG, ListMNP
