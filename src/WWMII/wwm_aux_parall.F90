@@ -31,6 +31,142 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
+      USE DATAPOOL, only : MNP, MDC, rkind
+      USE DATAPOOL, only : ListIPLG, ListMNP
+      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      implicit none
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      real(rkind), intent(out) :: Lerror
+      real(rkind), allocatable :: ACtotal(:,:,:)
+      real(rkind), allocatable :: ACloc(:,:,:)
+      real(rkind) :: rbuf_real(1)
+      integer, allocatable :: ListFirstMNP(:)
+      integer, allocatable :: eStatus(:)
+      integer IP, iProc, IPglob, IS, ID
+      integer MNPloc
+      integer istat
+      IF (myrank == 0) THEN
+        Lerror=0
+        allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 69')
+        ListFirstMNP=0
+        eStatus=0
+        DO iProc=2,nproc
+          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+        END DO
+        allocate(ACtotal(MSCeffect, MDC, np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 70')
+        DO IP=1,MNP
+          IPglob=iplg(IP)
+          ACtotal(:,:,IPglob)=ACw(:,:,IP)
+          eStatus(IPglob)=1
+        END DO
+        DO iProc=2,nproc
+          MNPloc=ListMNP(iProc)
+          allocate(ACloc(MSCeffect, MDC, MNPloc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 71')
+          CALL MPI_RECV(ACloc,MNPloc*MSCeffect*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          DO IP=1,MNPloc
+            IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+            IF (eStatus(IPglob) == 1) THEN
+              DO IS=1,MSCeffect
+                DO ID=1,MDC
+                  Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
+                END DO
+              END DO
+            ELSE
+              eStatus(IPglob)=1
+              ACtotal(:,:,IPglob)=ACloc(:,:,IP)
+            END IF
+          END DO
+          deallocate(ACloc)
+        END DO
+        deallocate(ListFirstMNP, ACtotal, eStatus)
+        rbuf_real(1)=Lerror
+        DO iProc=2,nproc
+          CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(ACw,MNP*MSCeffect*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
+        Lerror=rbuf_real(1)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR_NPRES(MSCeffect, ACw, Lerror)
+      USE DATAPOOL, only : MNP, MDC, NP_RES, rkind
+      USE DATAPOOL, only : ListIPLG, ListMNP, ListNP_RES
+      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      implicit none
+      integer, intent(in) :: MSCeffect
+      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      real(rkind), intent(out) :: Lerror
+      real(rkind), allocatable :: ACtotal(:,:,:)
+      real(rkind), allocatable :: ACloc(:,:,:)
+      real(rkind) :: rbuf_real(1)
+      integer, allocatable :: ListFirstMNP(:)
+      integer, allocatable :: eStatus(:)
+      integer IP, iProc, IPglob, IS, ID
+      integer NP_RESloc
+      integer istat
+      IF (myrank == 0) THEN
+        Lerror=0
+        allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 72')
+        ListFirstMNP=0
+        eStatus=0
+        DO iProc=2,nproc
+          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+        END DO
+        DO IP=1,NP_RES
+          IPglob=iplg(IP)
+          ACtotal(:,:,IPglob)=ACw(:,:,IP)
+          eStatus(IPglob)=1
+        END DO
+        DO iProc=2,nproc
+          NP_RESloc=ListNP_RES(iProc)
+          allocate(ACloc(MSCeffect, MDC, NP_RESloc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 73')
+          CALL MPI_RECV(ACloc,MSCeffect*MDC*NP_RESloc,rtype, iProc-1, 53, comm, istatus, ierr)
+          DO IP=1,NP_RESloc
+            IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+            IF (eStatus(IPglob) == 1) THEN
+              DO IS=1,MSCeffect
+                DO ID=1,MDC
+                  Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
+                END DO
+              END DO
+            ELSE
+              eStatus(IPglob)=1
+              ACtotal(:,:,IPglob)=ACloc(:,:,IP)
+            END IF
+          END DO
+          deallocate(ACloc)
+        END DO
+        deallocate(ListFirstMNP, ACtotal, eStatus)
+        rbuf_real(1)=Lerror
+        DO iProc=2,nproc
+          CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
+        END DO
+      ELSE
+        allocate(ACloc(MSCeffect, MDC, NP_RES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 74')
+        DO IP=1,NP_RES
+          ACloc(:,:,IP)=ACw(:,:,IP)
+        END DO
+        CALL MPI_SEND(ACloc,NP_RES*MSCeffect*MDC,rtype, 0, 53, comm, ierr)
+        deallocate(ACloc)
+        CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
+        Lerror=rbuf_real(1)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE COLLECT_ALL_IPLG
       USE DATAPOOL
       implicit none
