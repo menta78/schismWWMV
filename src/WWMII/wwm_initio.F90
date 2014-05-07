@@ -1532,6 +1532,14 @@
 
       END SUBROUTINE
 !**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READSPEC2D
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      END SUBROUTINE
+!**********************************************************************
 !* READSPEC2D_WW3INIT1
 !* Read the header of a WAVEWATCHIII binary spectral file to get 
 !* dimensions of the spectral grid and number of output locations 
