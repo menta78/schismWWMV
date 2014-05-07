@@ -1097,10 +1097,19 @@
 !
 ! Data types for the forcing exchanges
 !
-         ! For 1D variables: surface level
+         ! For 1D variables: surface level, wind_x, etc.
          integer, dimension(:), pointer :: oned_send_rqst
          integer, dimension(:,:), pointer :: oned_send_stat
          integer, dimension(:), pointer :: oned_send_type
+
+         ! For boundary exchanges of SPPARM of parametric condition
+         integer :: rank_boundary=0 ! could be set to another rank.
+         integer :: spparm_nbproc
+         integer, dimension(:), pointer :: Indexes_boundary
+         integer, dimension(:), pointer :: spparm_listproc
+         integer, dimension(:), pointer :: spparm_send_rqst
+         integer, dimension(:,:), pointer :: spparm_send_stat
+         integer, dimension(:), pointer :: spparm_send_type
 !
 ! Data types of our linear equation solver.
 !
