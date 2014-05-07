@@ -474,6 +474,7 @@
          REAL(rkind), ALLOCATABLE :: VWND_NARR(:)
          REAL(rkind), ALLOCATABLE :: WI_NARR(:,:)
          REAL(rkind), ALLOCATABLE :: UWIND_FD(:,:), VWIND_FD(:,:)
+         INTEGER(kind=2), ALLOCATABLE  :: WIND_X4(:,:), WIND_Y4(:,:)
          integer NDX_WIND_FD, NDY_WIND_FD
 
 

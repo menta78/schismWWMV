@@ -1802,24 +1802,17 @@
       REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
       REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
       DO IP = 1, IWBMNP
-
         LEN_X = XP(IWBNDLC(IP)) - OFFSET_X
         LEN_Y = YP(IWBNDLC(IP)) - OFFSET_Y
-
         I_INT = INT( LEN_X/DX ) + 1
         J_INT = INT( LEN_Y/DY ) + 1
-
         DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
         DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
-
-        !WRITE(*,*) 'XP YP', XP(IWBNDLC(IP)), YP(IWBNDLC(IP)), IWBNDLC(IP)
-        !WRITE(*,*) LEN_X, LEN_Y, OFFSET_X, OFFSET_Y, XP(IWBNDLC(IP)), YP(IWBNDLC(IP))
 
         WX1       = HS_WW3(  I_INT   , J_INT  ) ! Unten Links
         WX2       = HS_WW3(  I_INT   , J_INT+1) ! Oben  Links
         WX3       = HS_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
         WX4       = HS_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
         HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
         HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
@@ -1833,7 +1826,6 @@
         WX2       = DIR_WW3(  I_INT   , J_INT+1) ! Oben  Links
         WX3       = DIR_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
         WX4       = DIR_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
         HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
         HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
@@ -1847,7 +1839,6 @@
         WX2       = FP_WW3(  I_INT   , J_INT+1) ! Oben  Links
         WX3       = FP_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
         WX4       = FP_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
         HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
         HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
@@ -1867,7 +1858,6 @@
         WX2       = T02_WW3(  I_INT   , J_INT+1) ! Oben  Links
         WX3       = T02_WW3(  I_INT+1,  J_INT+1) ! Oben  Rechts
         WX4       = T02_WW3(  I_INT+1,  J_INT  ) ! Unten Rechts
-
         HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
         HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
 
