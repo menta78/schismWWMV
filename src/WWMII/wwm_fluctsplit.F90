@@ -1378,7 +1378,7 @@
          IWKSP = 0
          WKSP  = ZERO
          U = AC2(:,IS,ID)
-         CALL EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
+         CALL EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, U)
 !
          IPAR(1) = 0       ! always 0 to start an iterative solver
          IPAR(2) = 1       ! right preconditioning

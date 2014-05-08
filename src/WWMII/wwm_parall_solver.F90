@@ -4112,7 +4112,7 @@
       DO IP=1,MNP
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
-      CALL EIMPS_ASPAR_B_BLOCK_SOURCES(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
+      CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After ASPAR init'
 # endif
@@ -4269,7 +4269,7 @@
         CALL EIMPS_ASPAR_BLOCK(ASPARL)
         CALL EIMPS_B_BLOCK(U,BL)
       ELSE
-        CALL EIMPS_ASPAR_B_BLOCK_SOURCES(U,ASPARL,BL)
+        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(U,ASPARL,BL)
       ENDIF
 
 !      WRITE(*,*) SUM(AC2), SUM(U), SUM(X), SUM(IMATRAA), SUM(IMATDAA)
