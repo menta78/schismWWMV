@@ -4112,18 +4112,7 @@
       DO IP=1,MNP
         SolDat % AC2(:,:,IP)=AC2(IP,:,:)
       END DO
-# if defined ASPAR_B_COMPUTE_BLOCK
       CALL EIMPS_ASPAR_B_BLOCK_SOURCES(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
-# else
-      DO IS=1,MSC
-        DO ID=1,MDC
-          U=AC2(:,IS,ID)
-          CALL EIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
-          SolDat % ASPAR_block(IS,ID,:)=ASPAR
-          SolDat % B_block(IS,ID,:)=B
-        END DO
-      END DO
-# endif
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After ASPAR init'
 # endif
@@ -4141,9 +4130,6 @@
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After I5B_EXCHANGE_ASPAR'
 # endif
-!      IF (myrank .eq. 0) THEN
-!        Print *, 'Before CREATE_PRECOND'
-!      END IF
       CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After I5B_CREATE_PRECOND'
