@@ -127,7 +127,7 @@
          CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
          RETURN  
        ELSE IF (AMETHOD == 7) THEN
-         CALL EIMPS_JACOBI_ITERATION
+         CALL EIMPS_TOTAL_JACOBI_ITERATION
          RETURN
        ENDIF
 # endif
@@ -973,8 +973,6 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -1195,8 +1193,6 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -1443,8 +1439,6 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -1710,8 +1704,6 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1914,8 +1906,6 @@
          CALL RUNRC(MNP, NNZ, B2, X, IPAR, FPAR, WKSP, INIU, ASPAR2, JA, IA, AU, JAU, JU, BCGSTAB)
 
          AC2(:,IS,ID) = MAX(ZERO,X) * IOBPD(ID,:)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2740,8 +2730,6 @@
              END DO
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2939,8 +2927,6 @@
              END DO
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3113,8 +3099,6 @@
              AC2(:,IS,ID) = U(IS,ID,:)
            END DO
          END DO
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
