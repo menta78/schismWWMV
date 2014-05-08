@@ -1492,7 +1492,7 @@
       REAL(rkind) :: eSum, eSqrNorm
       INTEGER :: IP, idx, J, nbIter
       X = AC2(:,IS,ID)
-      CALL EIMPS_ASPAR_B( IS, ID, ASPAR, B, X)
+      CALL EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, X)
       SOLVERTHR=10E-10
       nbIter=0
       DO
