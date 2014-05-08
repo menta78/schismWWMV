@@ -3804,33 +3804,20 @@
         TRIA03 = ONETHIRD * TRIA(IE)
         DO I=1,3
           IP=INE(I,IE)
-          !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-            I1=JA_IE(I,1,IE)
-            I2=JA_IE(I,2,IE)
-            I3=JA_IE(I,3,IE)
-            K1(:,:) =  KP(:,:,I)
-            DO ID=1,MDC
-              DTK(:,ID) =  K1(:,ID) * DT4A * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP)
-            END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
-            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
-            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
-            DO ID=1,MDC
-              B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * TRIA03 * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP) 
-            END DO
-            !TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            !ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
-            !ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
-            !ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
-            !DO ID=1,MDC
-            !  B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP) * TRIA03
-            !END DO
-          !ELSE
-          !  I1 = JA_IE(I,1,IE)
-          !  ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
-          !  B(:,:,IP)     =  ZERO
-          !END IF
+          I1=JA_IE(I,1,IE)
+          I2=JA_IE(I,2,IE)
+          I3=JA_IE(I,3,IE)
+          K1(:,:) =  KP(:,:,I)
+          DO ID=1,MDC
+            DTK(:,ID) =  K1(:,ID) * DT4A * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP)
+          END DO
+          TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+          ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+          ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+          ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+          DO ID=1,MDC
+            B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * TRIA03 * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP) 
+          END DO
         END DO
 # endif
       END DO
@@ -3883,21 +3870,6 @@
         END DO
       END IF
 
-      !IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
-      !  DO IP = 1, NP_RES
-      !    DO IS = 1, MSC
-      !      DO ID = 1, MDC 
-      !        GTEMP2 = IMATRAA(IP,IS,ID)/MAX((1.-DT4A*IMATDAA(IP,IS,ID)),1.)
-      !        DELFL  = COFRM4(IS)*DT4A
-      !        USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-      !        FLHAB  = MIN(ABS(GTEMP2*DT4S),USFM*DELFL)/DT4A
-      !        B(IS,ID,IP)  = B(IS,ID,IP)+SIGN(FLHAB,GTEMP2)*DT4A*SI(IP)*IOBWB(IP) * IOBDP(IP)
-      !        IMATRAA(IP,IS,ID) = FLHAB 
-      !        !ASPAR(IS,ID,I_DIAG(IP)) = ASPAR(IS,ID,I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID)* IOBWB(IP) * IOBDP(IP)
-      !        !IMATDAA(IP,IS,ID) = IMATDAA(IP,IS,ID)*LIMFAC
-      !      END DO
-      !    END DO 
-      !  END DO
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
