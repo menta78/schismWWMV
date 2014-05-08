@@ -30,8 +30,12 @@
                IF (SMETHOD == 1) THEN
                  ISELECT = 30
                  CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC)
-                 ISELECT = 20
-                 CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                 IF (LSOURCESWAM) THEN
+                   CALL SOURCE_INT_EXP_WAM(IP, ACLOC)  
+                 ELSE
+                   ISELECT = 20
+                   CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                 ENDIF
                  ISELECT = 4
                  CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                ELSE IF (SMETHOD == 2) THEN
@@ -70,8 +74,12 @@
                  IF (SMETHOD == 1) THEN
                    ISELECT = 30
                    CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC)
-                   ISELECT = 20
-                   CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                   IF (LSOURCESWAM) THEN
+                     CALL SOURCE_INT_EXP_WAM(IP, ACLOC)
+                   ELSE
+                     ISELECT = 20
+                     CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC)
+                   ENDIF
                    ISELECT = 4
                    CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL)
                  ELSE IF (SMETHOD == 2) THEN
@@ -176,6 +184,79 @@
          LFIRSTSOURCE = .FALSE.
 #endif
          RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************      
+      SUBROUTINE SOURCE_INT_EXP_WAM(IP, ACLOC)
+         USE DATAPOOL
+         IMPLICIT NONE
+         
+         INTEGER, INTENT(IN) :: IP
+         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+         
+         INTEGER      :: IS, ID, IMETHOD
+         REAL(rkind)  :: VEC2RAD
+         REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
+         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH,TEMP,GTEMP1
+         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
+         REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC, FF
+
+         REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
+          
+         IF (MESIN .EQ. 0 .AND. MESDS .AND. 0 .AND. MESNL .EQ. 0) THEN
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               FL3(IP,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+               FL(IP,ID,IS)  = FL3(IP,ID,IS)
+               SL(IP,ID,IS)  = FL(IP,ID,IS)
+             END DO
+           END DO
+           THWOLD(IP,1) = THWNEW(IP)
+           U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
+           Z0NEW(IP) = Z0OLD(IP,1)
+           THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+           IF (.FALSE.) THEN
+             CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                     THWOLD(IP,1), USOLD(IP,1), &
+     &                     TAUW(IP), Z0OLD(IP,1), &
+     &                     ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                     SL(1,:,:), FCONST(1,:))
+           ELSE
+             CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                       THWOLD(IP,1), USOLD(IP,1), &
+     &                       TAUW(IP), Z0OLD(IP,1), &
+     &                       ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                       U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                       Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                       SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP), &
+     &                       SSDS, DSSDS, SSIN, DSSIN, &
+     &                       SSNL4, DSSNL4)
+             CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                      THWOLD(IP,1), USOLD(IP,1), &
+     &                      TAUW(IP), Z0OLD(IP,1), &
+     &                      ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                      U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                      Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                      SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+             CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                      THWOLD(IP,1), USOLD(IP,1), &
+     &                      TAUW(IP), Z0OLD(IP,1), &
+     &                      ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                      U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                      Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                      SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+           ENDIF ! true false ...
+           DO IS = 1, MSC
+             DO ID = 1, MDC
+               ACLOC(IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+             END DO
+           END DO
+         ENDIF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

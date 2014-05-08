@@ -80,9 +80,10 @@
 #ifdef TIMINGS
          CALL MY_WTIME(TIME5)
 #endif
-         IF (SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
+         IF (SMETHOD .GT. 0) THEN! .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN 
            CALL COMPUTE_SOURCES_EXP
-         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+         ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM .AND. .FALSE.) THEN
+           STOP 'I SHOULD NOT BE HERE EVER'
            FL = FL3 
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
@@ -115,7 +116,7 @@
                WRITE(111112,'(A10,F20.10)') 'FCONST', SUM(FCONST(1,:))
              ENDIF
              IF (MESIN .GT. 0 .and. MESDS .GT. 0 .and. MESNL .GT. 0) THEN
-               IF (.TRUE.) THEN
+               IF (.FALSE.) THEN
                  CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                         THWOLD(IP,1), USOLD(IP,1), &
      &                         TAUW(IP), Z0OLD(IP,1), &
@@ -172,29 +173,6 @@
                  END DO
                END DO
              ENDIF 
-             IF (ISHALLOW(IP) .EQ. 1) THEN
-               ACLOC = AC2(IP,:,:)
-               CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-               IF (MESTR .GT. 0) THEN
-                 STOP 'TRIADS ARE NOT WORKING IN THIS COMBINATION YET'
-                 CALL TRIADSWAN_NEW (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-                     NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
-                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
-                     LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
-                     SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
-                     SSNL3(IS,ID)  = SC
-                     DSSNL3(IS,ID) = ZERO!DSSNL3(IS,ID)*LIMFAC
-                     !IF (ABS(SC) .GT. THR) WRITE(*,'(2I10,5F20.8)') IS, ID, NEWDAC, MAXDAC, DSSNL3(IS,ID), LIMFAC
-                   END DO
-                 END DO
-               ENDIF ! MESTR
-               IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
-               IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-               IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
-               IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3
-             ENDIF ! ISHALLOW(IP) .EQ. 1
            ENDDO ! MESIN .GT. 0 .and. MESDS .GT. 0 .and. MESNL .GT. 0
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            !!!!
@@ -327,9 +305,11 @@
           IF(ICOMP == 0) THEN
             CALL FLUCT_EXPLICIT
           ELSE IF(ICOMP == 1) THEN
-            CALL FLUCT_SEMIIMPLICIT
+            CALL FLUCT_IMP_EXP_SOURCES
           ELSE IF(ICOMP == 2) THEN
-            CALL FLUCT_IMPLICIT
+            CALL FLUCT_IMP_SOURCES
+          ELSE IF(ICOMP == 3) THEN 
+            CALL FLUCT_IMP_ALL
           ENDIF
           IF ( ICOMP .GE. 1 .AND. (AMETHOD .EQ. 2 .OR. AMETHOD .EQ. 3 )) CALL RESCALE_SPECTRUM
         END IF
@@ -484,7 +464,9 @@
 #ifdef TIMINGS
         CALL MY_WTIME(TIME5)
 #endif
+!
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM .AND. MESIN .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
+!
 #ifdef TIMINGS
         CALL MY_WTIME(TIME6)
 #endif

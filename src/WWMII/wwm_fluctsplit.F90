@@ -39,7 +39,7 @@
 !*                                                                    *
 !**********************************************************************
 ! for ICOMP == 1
-       SUBROUTINE FLUCT_SEMIIMPLICIT
+       SUBROUTINE FLUCT_IMP_EXP_SOURCES
        USE DATAPOOL
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
@@ -102,7 +102,7 @@
 !*                                                                    *
 !**********************************************************************
 ! for ICOMP == 2
-       SUBROUTINE FLUCT_IMPLICIT
+       SUBROUTINE FLUCT_IMP_SOURCES
        USE DATAPOOL
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
@@ -112,13 +112,25 @@
  
        INTEGER             :: IS, ID, IP
        REAL(rkind)         :: DTMAX
- 
+
+!2DO MATHIEU: Please clean this ... and please check this  
 #ifdef PETSC
        ! petsc block has its own loop over MSC MDC
        IF(AMETHOD == 5) THEN
          call EIMPS_PETSC_BLOCK
          RETURN
-       END IF
+       ENDIF
+#endif
+#ifdef WWM_SOLVER
+# ifdef MPI_PARALL_GRID
+       IF (AMETHOD == 6) THEN
+         CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
+         RETURN  
+       ELSE IF (AMETHOD == 7) THEN
+         CALL EIMPS_JACOBI_ITERATION
+         RETURN
+       ENDIF
+# endif
 #endif
 ! 
 !$OMP PARALLEL
@@ -152,22 +164,34 @@
              END DO
            END DO
 #endif
-       ELSE IF (AMETHOD == 6) THEN
-         Print *, 'Before WWM_SOLVER_EIMPS'
-#ifdef WWM_SOLVER
-# ifdef MPI_PARALL_GRID
-           CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
-# endif
-#endif
-       ELSE IF (AMETHOD == 7) THEN
-!$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               CALL EIMPS_JACOBI_ITERATION( IS, ID)
-             END DO
-           END DO
-       END IF
+       ENDIF
 !$OMP END PARALLEL
+
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+! for ICOMP == 3 
+       SUBROUTINE FLUCT_IMP_ALL
+       USE DATAPOOL
+#ifdef PETSC
+       use PETSC_CONTROLLER, only : EIMPS_PETSC
+       use petsc_block,    only: EIMPS_PETSC_BLOCK
+#endif
+       IMPLICIT NONE
+
+       INTEGER             :: IS, ID, IP
+       REAL(rkind)         :: DTMAX
+
+        IF (AMETHOD .eq.5) THEN
+#ifdef PETSC
+          CALL EIMPS_PETSC_BLOCK
+#endif
+        ELSE IF (AMETHOD .eq. 7) THEN
+#ifdef WWM_SOLVER
+          CALL EIMPS_TOTAL_JACOBI_ITERATION
+#endif
+        END IF
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1099,8 +1123,8 @@
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP) 
-               LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
+               !LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
