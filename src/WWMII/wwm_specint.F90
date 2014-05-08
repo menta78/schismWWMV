@@ -493,7 +493,14 @@
          IMATRAA = 0.
 !$OMP END WORKSHARE
 
-!$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACLOC,IMATDA,IMATRA)
+!$OMP PARALLEL DEFAULT(NONE)  &
+!$OMP&         SHARED(MNP,MSC,MDC,LSOUBOUND,SPSIG,WINDFAC,IOBP,&
+!$OMP&         DEP,DMIN) &
+!$OMP&         PRIVATE(IP,IS,ID,ACLOC,THWNEW,THWOLD,U10NEW,Z0NEW,&
+!$OMP&         FMEANWS,MIJ,USNEW,ROAIRO,ROAIRN,ZIDLNEW,ZIDLOLD,&
+!$OMP&         FCONST,USOLD,TAUW,SL,IMATRAA,IMATDAA,AC2,FL,FL3,&
+!$OMP&         WINDXY,Z0OLD)
+!$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, MNP
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -552,6 +559,7 @@
              ENDIF
            ENDIF
          END DO
+!$OMP END PARALLEL
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
