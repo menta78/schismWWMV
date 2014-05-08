@@ -1201,7 +1201,7 @@
 !**********************************************************************
 !*
 !**********************************************************************
-      SUBROUTINE  EIMPS_ASPAR_B( IS, ID, ASPAR, B, U)
+      SUBROUTINE  EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, U)
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
@@ -1311,7 +1311,6 @@
              B(IPGL1)             = SI(IPGL1) * WBAC(IS,ID,IPrel)
            END DO
          END IF
-
 
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
            DO IP = 1, MNP
