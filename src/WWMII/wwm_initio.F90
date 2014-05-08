@@ -552,10 +552,8 @@
       FLUSH(STAT%FHNDL)
 #if defined SELFE 
       DMIN = DMIN_SELFE
-      CALL SET_IOBP_SELFE
-#else
-      CALL SET_IOBP_NEXTGENERATION
 #endif
+      CALL SET_IOBP_NEXTGENERATION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
       FLUSH(STAT%FHNDL)
       CALL SET_IOBPD
@@ -631,11 +629,6 @@
       CALL INIT_STATION_OUTPUT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
       FLUSH(STAT%FHNDL)
-#ifdef NCDF
-      IF (GRIDWRITE) THEN
-        CALL GET_XYID_INE_TOTAL
-      END IF
-#endif
       CALL WWM_OUTPUT(ZERO,.TRUE.)
       IF (LWXFN) THEN
         CALL WRINPGRD_XFN
@@ -1085,7 +1078,6 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1514,6 +1506,7 @@
 !     Third  Line ... number of directions
 !
       IF (LFIRST) THEN
+        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
         OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
         READ (WAV%FHNDL,*) WBMSC
         READ (WAV%FHNDL,*) WBMDC
@@ -1563,15 +1556,16 @@
       IMPLICIT NONE
       CHARACTER(LEN=30) :: GNAME
       CHARACTER(LEN=21) :: LABEL
-        OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-        READ(WAV%FHNDL)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
-        WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
-        WRITE(STAT%FHNDL,*) 'LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME'
-        WRITE(STAT%FHNDL,*) LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
-        CLOSE(WAV%FHNDL)
-        WRITE(STAT%FHNDL,*)'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
-        WRITE(STAT%FHNDL,*)'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
-        WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
+      CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+      OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+      READ(WAV%FHNDL)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
+      WRITE(STAT%FHNDL,*) 'LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME'
+      WRITE(STAT%FHNDL,*) LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      CLOSE(WAV%FHNDL)
+      WRITE(STAT%FHNDL,*)'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
+      WRITE(STAT%FHNDL,*)'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
+      WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
       END SUBROUTINE
 !**********************************************************************
 !* READSPEC2D_WW3INIT2
@@ -1608,6 +1602,7 @@
         XP_WW3=ZERO
         YP_WW3=ZERO
  
+        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
         OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
         READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
         READ(WAV%FHNDL)TMP1
@@ -1700,8 +1695,8 @@
 ! AR: some fortran magic with leading zero's ...
       INTEGER, INTENT(IN) :: INTIN
       CHARACTER(LEN=6), INTENT(OUT) :: STRING
-        write( string, '(I6)' ) INTIN 
-        string = repeat('0',6-len_trim(adjustl(string)))//adjustl(string)
+      write( string, '(I6)' ) INTIN 
+      string = repeat('0',6-len_trim(adjustl(string)))//adjustl(string)
       END SUBROUTINE
 !**********************************************************************
 !* READSPEC2D_WW3
@@ -1743,6 +1738,7 @@
       CHARACTER(LEN=21) :: LABEL
       CHARACTER(LEN=10) :: PID(NP_WW3)
 
+      CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
       READ(WAV%FHNDL) LABEL,TMP,TMP,TMP,GNAME
       READ(WAV%FHNDL) FQ_WW3_SNGL
@@ -1795,7 +1791,6 @@
 !*          Guillaume Dodet (18/12/2012)
 !**********************************************************************
         SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
-
         USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
         USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
         USE DATAPOOL, ONLY: MDC_WW3
@@ -1817,11 +1812,6 @@
 ! Read spectra in file
 !
         CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
-
-        !DO IBWW3=1,NP_WW3
-        !  WRITE(STAT%FHNDL,*) 'ORIG WW3 SUM SPEC', IBWW3, SUM(SPEC_WW3_UNSORT(:,:,IBWW3))
-        !END DO
-
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)
@@ -1872,16 +1862,10 @@
 #endif
             IF (NP_WW3 .GT. 1) THEN
               DO IBWW3=1,NP_WW3
-                !WRITE(STAT%FHNDL,*)'XP_WWM =',XP_WWM,'XP_WW3 =',XP_WW3(IBWW3)
-                !WRITE(STAT%FHNDL,*)'YP_WWM =',YP_WWM,'YP_WW3 =',YP_WW3(IBWW3)
                 DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
                 INDBWW3(IBWW3)=IBWW3
-                !WRITE(STAT%FHNDL,*) 'orig', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
               ENDDO
               CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
-              !DO IBWW3=1,NP_WW3
-              !  WRITE(STAT%FHNDL,*) 'sorted', IBWW3, INDBWW3(IBWW3), DIST(IBWW3)
-              !END DO
               CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
               !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
             ELSE
@@ -1893,10 +1877,6 @@
             WBACOUT(:,:,IB) = SPEC_WWM(:,:,1) 
           ENDDO
         ENDIF
-
-        !DO IB = 1, IWBMNP
-        !  WRITE(STAT%FHNDL,*) 'SUM OF WBAC', IB, SUM(WBACOUT(:,:,IB)) 
-        !ENDDO 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
         END SUBROUTINE
@@ -1937,7 +1917,6 @@
           ZINT(:,:)=ZINT(:,:)+Z(:,:,IP)*(WEIGHT(IP)**P)
         ENDDO
         ZINT=ZINT/SW
-
         END SUBROUTINE
 !**********************************************************************
 !* SPECTRALINT
@@ -2054,7 +2033,6 @@
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
         ENDIF
-
         END SUBROUTINE
 !**********************************************************************
 !* INTERLIND
@@ -2103,7 +2081,6 @@
           END IF
         END DO
       END DO
-
       END SUBROUTINE INTERLIND
 !**********************************************************************
 !*                                                                    *
@@ -2122,16 +2099,13 @@
         ALLOCATE (SDIR(WBMSC,1), SPRD(WBMSC,1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 51')
       END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READWAVEPARWW3()
       USE DATAPOOL
-
       IMPLICIT NONE
-
       INTEGER         :: IP
 #ifdef MPI_PARALL_GRID
       INTEGER         :: IPP
@@ -2222,7 +2196,9 @@
               WRITE(STAT%FHNDL,*) 'SUM OF WAVE ACTION', SUM(WBACOLD), SUM(WBAC) 
             ELSE IF (LBCWA) THEN 
 #ifdef NCDF
-              CALL INIT_NETCDF_WW3_WAVEPARAMETER
+              IF (MULTIPLE_IN_BOUND .or. (myrank .eq.0)) THEN
+                CALL INIT_NETCDF_WW3_WAVEPARAMETER
+              END IF
 #else
               CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
 #endif

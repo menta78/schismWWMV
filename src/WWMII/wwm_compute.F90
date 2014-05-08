@@ -87,7 +87,7 @@
            FL = FL3 
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-           DO IP = 1, NP_RES
+           DO IP = 1, MNP
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(1,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)

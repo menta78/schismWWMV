@@ -727,7 +727,7 @@
       ALLOCATE (COORD_WIND_X(NDX_WIND), COORD_WIND_Y(NDY_WIND), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 4')
 !
-! read cooridantes from files ....
+! read coordinates from files ....
 !
       ISTAT = NF90_GET_VAR(WIND_NCID, ILON_ID, COORD_WIND_X)
       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
@@ -818,6 +818,8 @@
         END DO
         OPEN(3011, FILE  = 'ergwindorig.bin', FORM = 'UNFORMATTED')
       END IF
+      ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 9')
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -864,11 +866,6 @@
       ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-      IF (.NOT. ALLOCATED(WIND_X)) THEN
-        ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 9')
-      END IF
-
       ISTAT = nf90_inq_varid(WIND_NCID, 'U_GDS0_HTGL_13', DWIND_Y_ID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
@@ -884,10 +881,6 @@
       ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
       CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-      IF (.NOT. ALLOCATED(WIND_Y)) THEN
-        ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 10')
-      END IF
 
       ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X,    start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
       CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
@@ -914,46 +907,9 @@
         DEALLOCATE(TMP)
       END IF
 
-      IF (.NOT. ALLOCATED(U)) THEN
-        ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 12')
-      END IF
-      IF (.NOT. ALLOCATED(V)) THEN
-        ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 13')
-      END IF
-      IF (.NOT. ALLOCATED(H)) THEN
-        ALLOCATE(H(NDX_WIND*NDY_WIND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 14')
-      END IF
-
-      COUNTER = 1
-      DO J = 1, NDY_WIND
-        DO I = 1, NDX_WIND
-          U(COUNTER) = WIND_X(I,J)
-          V(COUNTER) = WIND_Y(I,J)
-          IF (ABS(U(COUNTER)) .GT. 1000.) U(COUNTER) = 0.
-          IF (ABS(V(COUNTER)) .GT. 1000.) V(COUNTER) = 0.
-          H(COUNTER) = SQRT((U(COUNTER)**2.+V(COUNTER)**2.))
-          COUNTER = COUNTER + 1
-        END DO
-      END DO
-
       IF (LWRITE_ORIG_WIND) THEN
-
-        IF (.NOT. ALLOCATED(U)) THEN
-          ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 15')
-        END IF
-        IF (.NOT. ALLOCATED(V)) THEN
-          ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 16')
-        END IF
-        IF (.NOT. ALLOCATED(H)) THEN
-          ALLOCATE(H(NDX_WIND*NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 17')
-        END IF
-
+        ALLOCATE(U(NDX_WIND*NDY_WIND), V(NDX_WIND*NDY_WIND), H(NDX_WIND*NDY_WIND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 15')
         COUNTER = 1
         DO J = 1, NDY_WIND
           DO I = 1, NDX_WIND
@@ -969,7 +925,7 @@
         TIME = TIME + 1.
         WRITE(3011) TIME
         WRITE(3011) (U(IP), V(IP), H(IP), IP = 1, numLons*numLats)
-
+        DEALLOCATE(U,V,H)
       END IF
       ISTAT = NF90_CLOSE(WIND_NCID)
       CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
@@ -1111,6 +1067,9 @@
 !
 ! total number of time steps ... in all files
 !
+      ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 35')
+
       ALLOCATE (WIND_TIME(NDT_WIND_FILE),WIND_TIME_NETCDF(NDT_WIND_FILE), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 20')
       WRITE(WINDBG%FHNDL,*) 'NDT_WIND_FILE=', NDT_WIND_FILE
@@ -1395,10 +1354,8 @@
       END IF
       COUNTER = 0
       NbPoint=NDX_WIND*NDY_WIND
-      ALLOCATE(XYPWIND(2,NbPoint), IMAT(NbPoint), JMAT(NbPoint), stat=istat)
+      ALLOCATE(XYPWIND(2,NbPoint), IMAT(NbPoint), JMAT(NbPoint), COUNTERMAT(NDX_WIND,NDY_WIND), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 28')
-      ALLOCATE(COUNTERMAT(NDX_WIND,NDY_WIND), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 29')
       DO I = 1, NDX_WIND
         DO J = 1, NDY_WIND
           IF (DCOORD_WIND_X2(I,J) .GT. 0.) THEN
@@ -1460,180 +1417,12 @@
         ENDIF 
       END DO
       WRITE(WINDBG%FHNDL,*) 'MNP_WIND=', MNP_WIND, ' nbFail=', nbFail
-      DEALLOCATE(IMAT)
-      DEALLOCATE(JMAT)
-      DEALLOCATE(COUNTERMAT)
+      WRITE(WINDBG%FHNDL,*) 'NDX_WIND=', NDX_WIND
+      WRITE(WINDBG%FHNDL,*) 'NDY_WIND=', NDY_WIND
+      DEALLOCATE(IMAT, JMAT, COUNTERMAT)
+      ALLOCATE (WIND_X4(NDX_WIND,NDY_WIND), WIND_Y4(NDX_WIND,NDY_WIND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 41')
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE CreateAngleMatrix(eta_rho, xi_rho, ANG_rho, LON_rho, LAT_rho)
-      implicit none
-      integer, intent(in) :: eta_rho, xi_rho
-      REAL*8, DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
-      REAL*8, DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
-      !
-      integer eta_u, xi_u, iEta, iXi
-      real*8, allocatable :: LONrad_u(:,:)
-      real*8, allocatable :: LATrad_u(:,:)
-      real*8, allocatable :: azim(:,:)
-      real*8 :: eAzim, fAzim, dlam, eFact1, eFact2
-      real*8 :: signAzim, signDlam, ThePi, DegTwoRad
-      real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
-      real*8 :: TPSI2, cta12
-      integer istat
-      eta_u=eta_rho
-      xi_u=xi_rho-1
-      allocate(LONrad_u(eta_u,xi_u), LATrad_u(eta_u,xi_u), azim(eta_u,xi_u-1), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 33')
-      ThePi=3.141592653589792
-      DegTwoRad=ThePi/180
-      DO iEta=1,eta_u
-        DO iXi=1,xi_u
-          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta,iXi+1))*0.5
-          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta,iXi+1))*0.5
-          LONrad_u(iEta,iXi)=eLon*DegTwoRad
-          LATrad_u(iEta,iXi)=eLat*DegTwoRad
-        END DO
-      END DO
-      DO iEta=1,eta_u
-        DO iXi=1,xi_u-1
-          phi1=LATrad_u(iEta,iXi)
-          xlam1=LONrad_u(iEta,iXi)
-          phi2=LATrad_u(iEta,iXi+1)
-          xlam2=LONrad_u(iEta,iXi+1)
-          TPSI2=TAN(phi2)
-          dlam=xlam2-xlam1
-          CALL TwoPiNormalization(dlam)
-          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
-          eAzim=ATAN(1./cta12)
-          CALL MySign(eAzim, signAzim)
-          CALL MySign(dlam, signDlam)
-          IF (signDlam.ne.signAzim) THEN
-            eFact2=1
-          ELSE
-            eFact2=0
-          END IF
-          eFact1=-signAzim
-          fAzim=eAzim+ThePi*eFact1*eFact2
-          azim(iEta,iXi)=fAzim
-        END DO
-      END DO
-      DO iEta=1,eta_u
-        DO iXi=2,xi_u
-          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta,iXi-1)
-        END DO
-      END DO
-      DO iEta=1,eta_u
-        ANG_rho(iEta,1)=ANG_rho(iEta,2)
-        ANG_rho(iEta,xi_rho)=ANG_rho(iEta,xi_u)
-      END DO
-      deallocate(LONrad_u)
-      deallocate(LATrad_u)
-      deallocate(azim)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE CreateAngleMatrix_v(eta_rho,xi_rho,ANG_rho,LON_rho,LAT_rho)
-      USE DATAPOOL, only : rkind, istat
-      implicit none
-      integer, intent(in) :: eta_rho, xi_rho
-      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
-      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
-      !
-      integer eta_v, xi_v, iEta, iXi
-      real(rkind), allocatable :: LONrad_v(:,:)
-      real(rkind), allocatable :: LATrad_v(:,:)
-      real(rkind), allocatable :: azim(:,:)
-      real(rkind) :: eAzim, fAzim, dlam, eFact1, eFact2
-      real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
-      real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
-      real(rkind) :: TPSI2, cta12
-      eta_v=eta_rho-1
-      xi_v=xi_rho
-      allocate(LONrad_v(eta_v,xi_v), LATrad_v(eta_v,xi_v), azim(eta_v-1,xi_v), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 34')
-
-      ThePi=3.141592653589792
-      DegTwoRad=ThePi/180
-      DO iEta=1,eta_v
-        DO iXi=1,xi_v
-          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta+1,iXi))*0.5
-          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta+1,iXi))*0.5
-          LONrad_v(iEta,iXi)=eLon*DegTwoRad
-          LATrad_v(iEta,iXi)=eLat*DegTwoRad
-        END DO
-      END DO
-      DO iEta=1,eta_v-1
-        DO iXi=1,xi_v
-          phi1=LATrad_v(iEta,iXi)
-          xlam1=LONrad_v(iEta,iXi)
-          phi2=LATrad_v(iEta+1,iXi)
-          xlam2=LONrad_v(iEta+1,iXi)
-          TPSI2=TAN(phi2)
-          dlam=xlam2-xlam1
-          CALL TwoPiNormalization(dlam)
-          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
-          eAzim=ATAN(1./cta12)
-          CALL MySign(eAzim, signAzim)
-          CALL MySign(dlam, signDlam)
-          IF (signDlam.ne.signAzim) THEN
-            eFact2=1
-          ELSE
-            eFact2=0
-          END IF
-          eFact1=-signAzim
-          fAzim=eAzim+ThePi*eFact1*eFact2
-          azim(iEta,iXi)=fAzim
-        END DO
-      END DO
-      DO iEta=2,eta_v
-        DO iXi=1,xi_v
-          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta-1,iXi)
-        END DO
-      END DO
-      DO iXi=1,xi_v
-        ANG_rho(1,iXi)=ANG_rho(2,iXi)
-        ANG_rho(eta_rho,iXi)=ANG_rho(eta_v,iXi)
-      END DO
-      deallocate(LONrad_v)
-      deallocate(LATrad_v)
-      deallocate(azim)
-      END SUBROUTINE CreateAngleMatrix_v
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE TwoPiNormalization(TheAng)
-      USE DATAPOOL, only : rkind
-      implicit none
-      REAL(rkind), intent(inout) :: TheAng
-      !
-      REAL(rkind) :: ThePi
-      ThePi=3.141592653589792
-      IF (TheAng < -ThePi) THEN
-        TheAng=TheAng + 2*ThePi
-      ENDIF
-      IF (TheAng > ThePi) THEN
-        TheAng=TheAng - 2*ThePi
-      ENDIF
-      END SUBROUTINE TwoPiNormalization
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE MySign(TheVal, TheSign)
-      USE DATAPOOL, only : rkind
-      implicit none
-      REAL(rkind), intent(in) :: TheVal
-      REAL(rkind), intent(out) :: TheSign
-      IF (TheVal > 0) THEN
-        TheSign=1
-      ELSEIF (TheVal < 0) THEN
-        TheSign=-1
-      ELSE
-        TheSign=0
-      END IF
-      END SUBROUTINE MySign
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1642,7 +1431,7 @@
       USE NETCDF
       IMPLICIT NONE
 !
-!     READS WIND_Y, WIND_X and PRESSURE from a given NCID within one NARR file
+!     READS WIND_Y, WIND_X and PRESSURE from a given NCID within one CRFS file
 !
       INTEGER, INTENT(IN) :: IFILE, IT
       REAL(rkind), intent(inout) :: eField(MNP,2)
@@ -1686,11 +1475,6 @@
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-        IF (.NOT. ALLOCATED(WIND_X)) THEN
-          ALLOCATE (WIND_X(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 35')
-        END IF
-
         ISTAT = nf90_inq_varid(WIND_NCID, '10v', DWIND_Y_ID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
@@ -1709,10 +1493,6 @@
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 
-        IF (.NOT. ALLOCATED(WIND_Y)) THEN
-          ALLOCATE (WIND_Y(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 36')
-        END IF
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
@@ -1762,15 +1542,8 @@
         END IF
 
         IF (LWRITE_ORIG_WIND) THEN
-          IF (.NOT. ALLOCATED(U)) THEN
-            ALLOCATE(U(NDX_WIND*NDY_WIND), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 39')
-          END IF
-          IF (.NOT. ALLOCATED(V)) THEN
-            ALLOCATE(V(NDX_WIND*NDY_WIND), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 40')
-          END IF
-!         IF (.NOT. ALLOCATED(H)) ALLOCATE(H(NDX_WIND*NDY_WIND))
+          ALLOCATE(U(NDX_WIND*NDY_WIND), V(NDX_WIND*NDY_WIND), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 39')
           COUNTER = 1
           DO J = 1, NDY_WIND
             DO I = 1, NDX_WIND
@@ -1791,7 +1564,6 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
-
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,Vtotal2)
 #ifdef MPI_PARALL_GRID
@@ -1829,7 +1601,6 @@
       INTEGER             :: numLons, numLats, counter, ip, i, j, ix
       character (len = *), parameter :: CallFct="READ_NETCDF_NARR"
 
-      INTEGER(kind=2), ALLOCATABLE  :: WIND_X4(:,:), WIND_Y4(:,:)
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind),SAVE           :: TIME
       REAL(rkind)                :: scale_factor
@@ -1865,15 +1636,6 @@
         ISTAT = nf90_get_att(WINDX_NCID, DWIND_X_ID, 'scale_factor', scale_factor)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-        !WRITE(WINDBG%FHNDL,*) scale_factor
-        !WRITE(WINDBG%FHNDL,*) numLons, numLats, numTime
-        !WRITE(WINDBG%FHNDL,*) NDX_WIND, NDY_WIND
-
-        IF (.NOT. ALLOCATED(WIND_X4)) THEN
-          ALLOCATE (WIND_X4(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 41')
-        END IF
-
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2*IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(2*IFILE), NF90_NOWRITE, WINDY_NCID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
@@ -1889,11 +1651,6 @@
 
         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(2), len = numLats)
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
-
-        IF (.NOT. ALLOCATED(WIND_Y4)) THEN
-          ALLOCATE (WIND_Y4(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 42')
-        END IF
 
         ISTAT = NF90_GET_VAR(WINDX_NCID, DWIND_X_ID, WIND_X4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)

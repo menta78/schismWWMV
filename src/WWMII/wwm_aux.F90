@@ -1815,7 +1815,7 @@
         END DO
       END DO
 
-      END SUBROUTINE INTERLIN
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1839,7 +1839,7 @@
       Print *, TRIM(string)
       STOP 'WWM_ABORT'
 #endif
-      END SUBROUTINE WWM_ABORT
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -2435,7 +2435,7 @@
       END DO
       WRITE(eStr,40) TRIM(eStrZero),TRIM(eStrNb)
   40  FORMAT (a,a)
-      END SUBROUTINE GETSTRING
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -2485,6 +2485,210 @@
 !         CALL DISPLAY_GRAPH(SPSIG,SUM1D,MSC,MINVAL(SPSIG),MAXVAL(SPSIG),MINVAL(SUM1D),MAXVAL(SUM1D),'','','')
 
        END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+       SUBROUTINE INTER_STRUCT_DATA(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,MAT,VAL)
+       USE DATAPOOL
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: NDX, NDY
+       REAL(rkind), INTENT(IN)    :: MAT(NDX,NDY)
+       REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+       REAL(rkind), INTENT(OUT)   :: VAL(MNP_WIND)
+       INTEGER             :: IP, J_INT, I_INT
+       REAL(rkind)                :: WX1, WX2, WX3, WX4, HX1, HX2
+       REAL(rkind)                :: DELTA_X, DELTA_Y, LEN_X, LEN_Y
+       DO IP = 1, MNP_WIND
+         LEN_X = XP_WIND(IP)-OFFSET_X
+         LEN_Y = YP_WIND(IP)-OFFSET_Y
+         I_INT = INT( LEN_X/DX ) + 1
+         J_INT = INT( LEN_Y/DY ) + 1
+         DELTA_X = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
+         DELTA_Y = LEN_Y - (J_INT - 1) * DY !
+         WX1     = MAT(  I_INT   , J_INT  ) ! Unten Links
+         WX2     = MAT(  I_INT   , J_INT+1) ! Oben  Links
+         WX3     = MAT(  I_INT+1,  J_INT+1) ! Oben  Rechts
+         WX4     = MAT(  I_INT+1,  J_INT  ) ! Unten Rechts
+         IF (IWINDFORMAT == 2) THEN
+           HX1 = WX1 + (WX2-WX1)/DX * DELTA_X
+           HX2 = WX4 + (WX3-WX4)/DX * DELTA_X
+         ELSE IF (IWINDFORMAT == 3) THEN
+           HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
+           HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
+         ELSE
+           CALL WWM_ABORT('Write your HX1/HX2 code here')
+         END IF
+         VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
+       END DO
+       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CreateAngleMatrix(eta_rho, xi_rho, ANG_rho, LON_rho, LAT_rho)
+      implicit none
+      integer, intent(in) :: eta_rho, xi_rho
+      REAL*8, DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
+      REAL*8, DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
+      !
+      integer eta_u, xi_u, iEta, iXi
+      real*8, allocatable :: LONrad_u(:,:)
+      real*8, allocatable :: LATrad_u(:,:)
+      real*8, allocatable :: azim(:,:)
+      real*8 :: eAzim, fAzim, dlam, eFact1, eFact2
+      real*8 :: signAzim, signDlam, ThePi, DegTwoRad
+      real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
+      real*8 :: TPSI2, cta12
+      integer istat
+      eta_u=eta_rho
+      xi_u=xi_rho-1
+      allocate(LONrad_u(eta_u,xi_u), LATrad_u(eta_u,xi_u), azim(eta_u,xi_u-1), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 33')
+      ThePi=3.141592653589792
+      DegTwoRad=ThePi/180
+      DO iEta=1,eta_u
+        DO iXi=1,xi_u
+          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta,iXi+1))*0.5
+          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta,iXi+1))*0.5
+          LONrad_u(iEta,iXi)=eLon*DegTwoRad
+          LATrad_u(iEta,iXi)=eLat*DegTwoRad
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        DO iXi=1,xi_u-1
+          phi1=LATrad_u(iEta,iXi)
+          xlam1=LONrad_u(iEta,iXi)
+          phi2=LATrad_u(iEta,iXi+1)
+          xlam2=LONrad_u(iEta,iXi+1)
+          TPSI2=TAN(phi2)
+          dlam=xlam2-xlam1
+          CALL TwoPiNormalization(dlam)
+          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
+          eAzim=ATAN(1./cta12)
+          CALL MySign(eAzim, signAzim)
+          CALL MySign(dlam, signDlam)
+          IF (signDlam.ne.signAzim) THEN
+            eFact2=1
+          ELSE
+            eFact2=0
+          END IF
+          eFact1=-signAzim
+          fAzim=eAzim+ThePi*eFact1*eFact2
+          azim(iEta,iXi)=fAzim
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        DO iXi=2,xi_u
+          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta,iXi-1)
+        END DO
+      END DO
+      DO iEta=1,eta_u
+        ANG_rho(iEta,1)=ANG_rho(iEta,2)
+        ANG_rho(iEta,xi_rho)=ANG_rho(iEta,xi_u)
+      END DO
+      deallocate(LONrad_u, LATrad_u, azim)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CreateAngleMatrix_v(eta_rho,xi_rho,ANG_rho,LON_rho,LAT_rho)
+      USE DATAPOOL, only : rkind, istat
+      implicit none
+      integer, intent(in) :: eta_rho, xi_rho
+      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho
+      REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
+      !
+      integer eta_v, xi_v, iEta, iXi
+      real(rkind), allocatable :: LONrad_v(:,:)
+      real(rkind), allocatable :: LATrad_v(:,:)
+      real(rkind), allocatable :: azim(:,:)
+      real(rkind) :: eAzim, fAzim, dlam, eFact1, eFact2
+      real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
+      real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
+      real(rkind) :: TPSI2, cta12
+      eta_v=eta_rho-1
+      xi_v=xi_rho
+      allocate(LONrad_v(eta_v,xi_v), LATrad_v(eta_v,xi_v), azim(eta_v-1,xi_v), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 34')
+
+      ThePi=3.141592653589792
+      DegTwoRad=ThePi/180
+      DO iEta=1,eta_v
+        DO iXi=1,xi_v
+          eLon=(LON_rho(iEta,iXi)+LON_rho(iEta+1,iXi))*0.5
+          eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta+1,iXi))*0.5
+          LONrad_v(iEta,iXi)=eLon*DegTwoRad
+          LATrad_v(iEta,iXi)=eLat*DegTwoRad
+        END DO
+      END DO
+      DO iEta=1,eta_v-1
+        DO iXi=1,xi_v
+          phi1=LATrad_v(iEta,iXi)
+          xlam1=LONrad_v(iEta,iXi)
+          phi2=LATrad_v(iEta+1,iXi)
+          xlam2=LONrad_v(iEta+1,iXi)
+          TPSI2=TAN(phi2)
+          dlam=xlam2-xlam1
+          CALL TwoPiNormalization(dlam)
+          cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam)
+          eAzim=ATAN(1./cta12)
+          CALL MySign(eAzim, signAzim)
+          CALL MySign(dlam, signDlam)
+          IF (signDlam.ne.signAzim) THEN
+            eFact2=1
+          ELSE
+            eFact2=0
+          END IF
+          eFact1=-signAzim
+          fAzim=eAzim+ThePi*eFact1*eFact2
+          azim(iEta,iXi)=fAzim
+        END DO
+      END DO
+      DO iEta=2,eta_v
+        DO iXi=1,xi_v
+          ANG_rho(iEta,iXi)=ThePi*0.5 - azim(iEta-1,iXi)
+        END DO
+      END DO
+      DO iXi=1,xi_v
+        ANG_rho(1,iXi)=ANG_rho(2,iXi)
+        ANG_rho(eta_rho,iXi)=ANG_rho(eta_v,iXi)
+      END DO
+      deallocate(LONrad_v)
+      deallocate(LATrad_v)
+      deallocate(azim)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TwoPiNormalization(TheAng)
+      USE DATAPOOL, only : rkind
+      implicit none
+      REAL(rkind), intent(inout) :: TheAng
+      !
+      REAL(rkind) :: ThePi
+      ThePi=3.141592653589792
+      IF (TheAng < -ThePi) THEN
+        TheAng=TheAng + 2*ThePi
+      ENDIF
+      IF (TheAng > ThePi) THEN
+        TheAng=TheAng - 2*ThePi
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE MySign(TheVal, TheSign)
+      USE DATAPOOL, only : rkind
+      implicit none
+      REAL(rkind), intent(in) :: TheVal
+      REAL(rkind), intent(out) :: TheSign
+      IF (TheVal > 0) THEN
+        TheSign=1
+      ELSEIF (TheVal < 0) THEN
+        TheSign=-1
+      ELSE
+        TheSign=0
+      END IF
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

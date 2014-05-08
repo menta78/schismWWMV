@@ -278,10 +278,17 @@
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
+         LOGICAL    :: MULTIPLE_IN_GRID = .TRUE.
          LOGICAL    :: MULTIPLE_IN_BOUND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
+
+! Entries needed for output of spectra
+         LOGICAL    :: NETCDF_OUT_SPECTRA = .TRUE.
+         LOGICAL    :: NETCDF_OUT_PARAM = .TRUE.
+         CHARACTER(LEN=140) :: NETCDF_OUT_FILE = "boundary_out_spec.nc"
+         LOGICAL    :: USE_SINGLE_OUT_BOUC
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
@@ -324,7 +331,7 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
 
-         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF
+         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
@@ -467,6 +474,7 @@
          REAL(rkind), ALLOCATABLE :: VWND_NARR(:)
          REAL(rkind), ALLOCATABLE :: WI_NARR(:,:)
          REAL(rkind), ALLOCATABLE :: UWIND_FD(:,:), VWIND_FD(:,:)
+         INTEGER(kind=2), ALLOCATABLE  :: WIND_X4(:,:), WIND_Y4(:,:)
          integer NDX_WIND_FD, NDY_WIND_FD
 
 
@@ -606,6 +614,9 @@
          REAL(rkind),   ALLOCATABLE             :: DIR_WW3(:,:)
          REAL(rkind),   ALLOCATABLE             :: FP_WW3(:,:)
          REAL(rkind),   ALLOCATABLE             :: DSPR_WW3(:,:)
+
+         REAL(rkind),   ALLOCATABLE             :: ALL_VAR_WW3(:,:,:)
+
 
          INTEGER                                :: NP_WW3, MSC_WW3, MDC_WW3, MAXSTEP_WW3, TSTART_WW3(2)
 
@@ -795,6 +806,7 @@
          LOGICAL LVAR_READ(OUTVARS_COMPLETE)
 
 #ifdef NCDF
+         INTEGER        :: NF90_OUTTYPE_BOUC
          INTEGER        :: NF90_OUTTYPE_STAT
          INTEGER        :: NF90_OUTTYPE_HIS
          INTEGER        :: NF90_RUNTYPE
@@ -1085,10 +1097,19 @@
 !
 ! Data types for the forcing exchanges
 !
-         ! For 1D variables: surface level
+         ! For 1D variables: surface level, wind_x, etc.
          integer, dimension(:), pointer :: oned_send_rqst
          integer, dimension(:,:), pointer :: oned_send_stat
          integer, dimension(:), pointer :: oned_send_type
+
+         ! For boundary exchanges of SPPARM of parametric condition
+         integer :: rank_boundary=0 ! could be set to another rank.
+         integer :: spparm_nbproc
+         integer, dimension(:), pointer :: Indexes_boundary
+         integer, dimension(:), pointer :: spparm_listproc
+         integer, dimension(:), pointer :: spparm_send_rqst
+         integer, dimension(:,:), pointer :: spparm_send_stat
+         integer, dimension(:), pointer :: spparm_send_type
 !
 ! Data types of our linear equation solver.
 !

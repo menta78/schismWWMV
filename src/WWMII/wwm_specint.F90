@@ -22,7 +22,7 @@
          REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
 
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,IS,ID,ACLOC) 
-         DO IP = 1, NP_RES 
+         DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 0) THEN
