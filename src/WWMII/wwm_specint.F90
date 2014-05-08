@@ -120,12 +120,6 @@
                ENDIF
              ENDIF
            ENDIF
-           IF (LNANINFCHK) THEN
-             IF (SUM(ACLOC) .NE. SUM(ACLOC) ) THEN
-               WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   IN SOURCE TERM INTEGRATION'
-               CALL WWM_ABORT('wwm_specint.F90 l.88')
-             END IF
-           ENDIF
            AC1(IP,:,:) = AC2(IP,:,:)
          ENDDO
 #if defined ST41 || defined ST42
@@ -382,9 +376,6 @@
                IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
                IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
              ENDIF ! ISHALLOW(IP) .EQ. 1
-             IF (LNANINFCHK) THEN
-               IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
-             ENDIF
            ELSE ! IOBP(IP) .NE. 0
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF (IOBP(IP) .NE. 2) THEN
@@ -452,21 +443,12 @@
                    IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
                    IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3
                  ENDIF ! ISHALLOW(IP) .EQ. 1
-                 IF (LNANINFCHK) THEN
-                   IF (SUM(IMATRAA(IP,:,:)) .NE. SUM(IMATRAA(IP,:,:))) CALL WWM_ABORT('NAN IN IMATRAA')
-                 ENDIF
                ENDIF
              ENDIF
            ENDIF
            !IF (IP==TESTNODE) WRITE(*,*) IP, SUM(IMATRAA(IP,:,:)), DEP(IP), IOBP(IP), SUM(SSBR), SUM(SSBF), SUM(SSINL), SUM(SSNL3)
          ENDDO
-
-         IF (LNANINFCHK) THEN
-           IF (SUM(IMATRAA) .NE. SUM(IMATRAA)) CALL WWM_ABORT('NAN IN IMATRAA')
-         ENDIF
-
          !WRITE(*,'(A20,3F15.10)') 'FROM SPECINT', SUM(IMATRAA), SUM(IMATDAA), SUM(AC2)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

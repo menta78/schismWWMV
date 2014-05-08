@@ -127,7 +127,7 @@
          CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
          RETURN  
        ELSE IF (AMETHOD == 7) THEN
-         CALL EIMPS_JACOBI_ITERATION
+         CALL EIMPS_TOTAL_JACOBI_ITERATION
          RETURN
        ENDIF
 # endif
