@@ -4274,8 +4274,6 @@
 
 !      WRITE(*,*) SUM(AC2), SUM(U), SUM(X), SUM(IMATRAA), SUM(IMATDAA)
 !      PAUSE 'AFTER EIMPS'
-!      STOP
-
 
 !      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 

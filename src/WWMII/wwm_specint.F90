@@ -79,6 +79,7 @@
                AC2(IP,:,:) = ACLOC
            ELSE !Boundary node ... 
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
+                     stop 'test'
                IF (IOBP(IP) .NE. 2) THEN
                  ACLOC  = AC2(IP,:,:)
                  IF (SMETHOD == 1) THEN
