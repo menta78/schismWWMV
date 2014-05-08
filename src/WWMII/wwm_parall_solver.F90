@@ -3677,7 +3677,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCES(U, ASPAR, B)
+      SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(U, ASPAR, B)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
