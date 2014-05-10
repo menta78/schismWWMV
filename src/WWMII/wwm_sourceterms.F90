@@ -3,7 +3,7 @@
 !*                                                                    *
 !**********************************************************************
 !2do add mean quantities for 
-      SUBROUTINE SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, CALLFROM)
+      SUBROUTINE SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
       
       USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC
       USE DATAPOOL, ONLY : CD, TAUTOT, TAUWX, TAUWY, AC1, AC2, DEP
@@ -15,7 +15,7 @@
       USE DATAPOOL, ONLY : TAUW, FR, MESNL, MESIN, MESDS, MESBF, MESBR
       USE DATAPOOL, ONLY : MESTR, ISHALLOW, DS_INCR, IOBP, IOBPD
       USE DATAPOOL, ONLY : LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION
-      USE DATAPOOL, ONLY : AIRMOMENTUM, ONEHALF, NSPEC, RKIND, ISELECT
+      USE DATAPOOL, ONLY : AIRMOMENTUM, ONEHALF, NSPEC, RKIND
 #ifdef WWM_MPI
       USE DATAPOOL, ONLY : myrank
 #endif
@@ -23,6 +23,7 @@
 #ifdef SNL4_TSA
          USE W3SNLXMD
 #endif
+
 #ifdef ST41
          USE W3SRC4MD_OLD
 #elif ST42
@@ -30,7 +31,7 @@
 #endif
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: IP
+         INTEGER, INTENT(IN) :: IP, ISELECT
 
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
@@ -137,11 +138,10 @@
              WN2(ITH+IS0) = WN2(1+IS0)
            END DO
          END DO
+#endif
 
 #ifdef DEBUG
          WRITE(*,*) '0', SUM(IMATRA), SUM(IMATDA), ISELECT, MESIN, CALLFROM
-#endif
-
 #endif
 
 #ifdef TIMINGS

@@ -61,7 +61,7 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP, &
-     &                      ZERO, ONE
+     &                      ZERO, ONE, THR
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -106,13 +106,16 @@
 
 !*    3. DETERMINE ROUGHNESS LENGTH.
 !        ---------------------------
-
       DO IJ=IJS,IJL
 !!!        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
 !!!        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
-        UST2 = US(IJ)**2
-        ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
-        Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
+        IF (US(IJ) .GT. THR) THEN
+          UST2 = US(IJ)**2
+          ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
+          Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
+        ELSE
+          Z0(IJ) = ZERO
+        ENDIF
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111115,'(5F15.8)') UST2, ARG, TAUW(IJ), EPS1,  Z0(IJ)
       ENDDO
 

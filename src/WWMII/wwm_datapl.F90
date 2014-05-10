@@ -927,7 +927,6 @@
          INTEGER                :: DMETHOD = 2
          INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2
-         INTEGER                :: ISELECT = 0
          REAL(rkind)            :: QSCFL   = 1.
          LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER, ALLOCATABLE   :: IP_IS_STEADY(:)
