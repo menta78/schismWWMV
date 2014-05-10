@@ -24,9 +24,9 @@
 !$OMP&         LSOUBOUND,ISHALLOW,LADVTEST,LMAXETOT, &
 !$OMP&         NDYNITER_SIN,NDYNITER_SNL4, NDYNITER_SDS, &
 !$OMP&         NDYNITER_SBR, NDYNITER_SNL3, NDYNITER_SBF, &
-!$OMP&         NDYNITER,LSOURCESWAM,LLIMT) &
+!$OMP&         NDYNITER,LSOURCESWAM,LLIMT,ISELECT) &
 !$OMP&         PRIVATE(IP,IS,ID,ACLOC,AC2,AC1, NIT_SIN,NIT_SDS,&
-!$OMP&         NIT_SNL4,NIT_SNL3,NIT_SBR,NIT_SBF,NIT_ALL,ISELECT,SSBRL2)
+!$OMP&         NIT_SNL4,NIT_SNL3,NIT_SBR,NIT_SBF,NIT_ALL,SSBRL2)
 !$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
@@ -35,9 +35,7 @@
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
                  ISELECT = 30
-                 WRITE(*,*) 'ISELECT BEFORE', ISELECT
                  CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC)
-                 WRITE(*,*) 'ISELECT AFTER', ISELECT
                  IF (LSOURCESWAM) THEN
                    CALL SOURCE_INT_EXP_WAM(IP, ACLOC)  
                  ELSE
@@ -629,9 +627,6 @@
          REAL(rkind)    :: NEWDAC, MAXDAC, CONST, SND, USTAR
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         WRITE(*,*) 'ISELECT' , ISELECT
-         STOP 'RKS_SP3'
-
          CONST = PI2**2*3.0*1.0E-7*DTSII*SPSIG(MSC_HF(IP))
          SND   = PI2*5.6*1.0E-3
 
@@ -646,7 +641,6 @@
            END IF
          END IF
        
-         WRITE(*,*) 'ISELECT IN RKS_SP3', ISELECT
          CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 'RKS_SP3 1')  ! 1. CALL
 
          ACOLD = ACLOC
