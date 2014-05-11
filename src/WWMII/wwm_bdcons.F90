@@ -834,7 +834,11 @@
             COEFF = 0.09_rkind
           ENDIF
 
-          APSHAP =  0.5_rkind * ((SF-FPK) / (COEFF*FPK))**2
+          IF (COEFF*FPK .GT. SMALL) THEN
+             APSHAP =  0.5_rkind * ((SF-FPK) / (COEFF*FPK))**2
+          ELSE
+             APSHAP =  ZERO
+          ENDIF
 
           IF (APSHAP .GT. 10._rkind) THEN
             SYF = 1.
@@ -893,16 +897,18 @@
         IF ( AM1.GT.THR) THEN
           MPER = PI2 * AM0 / AM1
         ELSE
-          MPER = THR
+          MPER = ZERO 
         ENDIF
 !        write(*,'(I10,4F15.8)') ITPER, MPER, &
 !     &            ABS(MPER-SPPAR(2)) .GT. 0.01*SPPAR(2), &
 !     &            (SPPAR(2) / MPER) * PKPER
-        IF (ABS(MPER-SPPAR(2)) .GT. 0.01*SPPAR(2)) THEN
+        IF (ABS(MPER-SPPAR(2)) .GT. 0.01*SPPAR(2) .AND. MPER .GT. THR) THEN
 !         modification suggested by Mauro Sclavo
           PKPER = (SPPAR(2)/MPER) * PKPER
           GOTO 100
-        ENDIF
+        ELSE
+          PKPER = ZERO 
+        ENDIF 
       ELSE IF (ITPER.GE.100) THEN
         WRITE (STAT%FHNDL,*) 'No convergence calculating the spectrum'
         FLUSH(STAT%FHNDL)

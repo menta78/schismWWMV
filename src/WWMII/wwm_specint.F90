@@ -35,13 +35,13 @@
            IF (IOBP(IP) .EQ. 0) THEN
                ACLOC  = AC2(IP,:,:)
                IF (SMETHOD == 1) THEN
-                 CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
+                 IF (MESBR .GT. 0 .OR. MESBF .GT. 0) CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
                  IF (LSOURCESWAM) THEN
                    CALL SOURCE_INT_EXP_WAM(IP, ACLOC)  
                  ELSE
                    CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC,20)
                  ENDIF
-                 CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL, 4)
+                 IF (MESTR .GT. 0) CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL, 4)
                ELSE IF (SMETHOD == 2) THEN
                  CALL INT_IP_STAT(IP,DT4S, LLIMT,ACLOC, 10)
                ELSE IF (SMETHOD == 3) THEN

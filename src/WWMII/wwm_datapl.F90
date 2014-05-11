@@ -258,7 +258,7 @@
          LOGICAL    :: LPRECOMP_EXIST = .FALSE.
          LOGICAL    :: LETOT       = .TRUE.
          LOGICAL    :: LADVTEST    = .FALSE.
-         LOGICAL    :: LNANINFCHK  = .FALSE.
+         LOGICAL    :: LNANINFCHK  = .TRUE.
          LOGICAL    :: LWINDFROMWWM= .FALSE.
          LOGICAL    :: LVECTOR     = .FALSE.
          LOGICAL    :: LOPTSIG     = .FALSE.
