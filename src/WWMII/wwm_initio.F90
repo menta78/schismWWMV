@@ -228,19 +228,11 @@
        HMAX = zero
        ISHALLOW = 0
 
-       IF (ICOMP .LE. 1) THEN
-         ALLOCATE( FL(1,MDC,MSC), FL3(1,MDC,MSC), SL(1,MDC,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
-         FL = ZERO
-         FL3 = ZERO
-         SL = ZERO
-       ELSE
-         ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
-         FL = ZERO
-         FL3 = ZERO
-         SL = ZERO
-       ENDIF
+       ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+       FL = ZERO
+       FL3 = ZERO
+       SL = ZERO
 
        ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
@@ -268,11 +260,7 @@
        U10NEW = ZERO
        USNEW = ZERO
 
-       IF (ICOMP .LE. 1) THEN
-         ALLOCATE( FCONST(1,MSC), stat=istat) 
-       ELSE
-         ALLOCATE( FCONST(MNP,MSC), stat=istat)
-       ENDIF
+       ALLOCATE( FCONST(MNP,MSC), stat=istat)
        FCONST = 1
 !
 !      init source term parameter 

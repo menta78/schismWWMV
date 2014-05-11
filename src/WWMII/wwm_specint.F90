@@ -15,19 +15,20 @@
          INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
          INTEGER, SAVE  :: IFIRST, ISELECT
          REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
-         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS
+         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS, VEC2RAD
 
 !$OMP PARALLEL DEFAULT(NONE)  &
 !$OMP&         SHARED(MNP,MSC,MDC,DEP,DMIN,IOBP,SMETHOD, &
 !$OMP&         DT4S,DTMIN_SDS,DTMIN_SIN,DTMIN_SBR,DTMIN_DYN, &
-!$OMP&         DTMIN_SNL3, DTMIN_SNL4, DTMIN_SBF, &
+!$OMP&         DTMIN_SNL3, DTMIN_SNL4, DTMIN_SBF, WINDXY, WINDFAC,&
 !$OMP&         LSOUBOUND,ISHALLOW,LADVTEST,LMAXETOT, &
 !$OMP&         NDYNITER_SIN,NDYNITER_SNL4, NDYNITER_SDS, &
 !$OMP&         NDYNITER_SBR, NDYNITER_SNL3, NDYNITER_SBF, &
-!$OMP&         NDYNITER,LSOURCESWAM,LLIMT,MESTR,MESBR,MESBF,AC2,AC1) &
+!$OMP&         NDYNITER,LSOURCESWAM,LLIMT,MESTR,MESBR,MESBF,AC2,AC1,&
+!$OMP&         FL,SL,FL3,THWNEW,THWOLD,U10NEW,U10OLD,Z0NEW,Z0OLD) &
 !$OMP&         PRIVATE(IP,IS,ID,ACLOC,NIT_SIN,NIT_SDS,&
 !$OMP&         NIT_SNL4,NIT_SNL3,NIT_SBR,NIT_SBF,NIT_ALL,SSBRL2,&
-!$OMP&         IMATRA,IMATDA)
+!$OMP&         IMATRA,IMATDA,VEC2RAD)
 !$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
@@ -187,51 +188,51 @@
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
-               FL3(1,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
-               FL(1,ID,IS)  = FL3(1,ID,IS)
-               SL(1,ID,IS)  = FL(1,ID,IS)
+               FL3(IP,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+               FL(IP,ID,IS)  = FL3(IP,ID,IS)
+               SL(IP,ID,IS)  = FL(IP,ID,IS)
              END DO
            END DO
            THWOLD(IP,1) = THWNEW(IP)
            U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
            Z0NEW(IP) = Z0OLD(IP,1)
            THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-           IF (.FALSE.) THEN
-             CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+           IF (.TRUE.) THEN
+             CALL IMPLSCH (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                     THWOLD(IP,1), USOLD(IP,1), &
      &                     TAUW(IP), Z0OLD(IP,1), &
      &                     ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                     SL(1,:,:), FCONST(1,:))
+     &                     SL(IP,:,:), FCONST(IP,:))
            ELSE
-             CALL PREINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+             CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                       THWOLD(IP,1), USOLD(IP,1), &
      &                       TAUW(IP), Z0OLD(IP,1), &
      &                       ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                       U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                       Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                       SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP), &
+     &                       SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP), &
      &                       SSDS, DSSDS, SSIN, DSSIN, &
      &                       SSNL4, DSSNL4)
-             CALL INTSPECWAM (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+             CALL INTSPECWAM (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                      THWOLD(IP,1), USOLD(IP,1), &
      &                      TAUW(IP), Z0OLD(IP,1), &
      &                      ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                      U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                      Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                      SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
-             CALL POSTINTRHS (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
+     &                      SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+             CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                      THWOLD(IP,1), USOLD(IP,1), &
      &                      TAUW(IP), Z0OLD(IP,1), &
      &                      ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                      U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                      Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                      SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
+     &                      SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
            ENDIF ! true false ...
            DO IS = 1, MSC
              DO ID = 1, MDC
-               ACLOC(IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               ACLOC(IS,ID) =  MAX(ZERO, FL3(IP,ID,IS) / PI2 / SPSIG(IS))
              END DO
            END DO
          ENDIF
@@ -458,19 +459,9 @@
          REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-!$OMP WORKSHARE
          IMATDAA = 0.
          IMATRAA = 0.
-!$OMP END WORKSHARE
 
-!$OMP PARALLEL DEFAULT(NONE)  &
-!$OMP&         SHARED(MNP,MSC,MDC,LSOUBOUND,SPSIG,WINDFAC,IOBP,&
-!$OMP&         DEP,DMIN) &
-!$OMP&         PRIVATE(IP,IS,ID,ACLOC,THWNEW,THWOLD,U10NEW,Z0NEW,&
-!$OMP&         FMEANWS,MIJ,USNEW,ROAIRO,ROAIRN,ZIDLNEW,ZIDLOLD,&
-!$OMP&         FCONST,USOLD,TAUW,SL,IMATRAA,IMATDAA,AC2,FL,FL3,&
-!$OMP&         WINDXY,Z0OLD)
-!$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, MNP
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -529,7 +520,6 @@
              ENDIF
            ENDIF
          END DO
-!$OMP END PARALLEL
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
