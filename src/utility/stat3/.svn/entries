@@ -1,16 +1,16 @@
 10
 
 dir
-211
-http://svn.stccmop.org/selfe/trunk/src/utility/stat3
-http://svn.stccmop.org/selfe
+1756
+http://www.ccrm.vims.edu/selfe/trunk/src/Utility/Stat3
+http://www.ccrm.vims.edu/selfe
 
 
 
-2011-11-25T17:13:05.435656Z
-130
-aron
-
+2013-11-22T13:31:27.849869Z
+1580
+yjzhang
+has-props
 
 
 
@@ -32,10 +32,10 @@ file
 
 
 
-2011-12-14T19:58:51.853067Z
-0aba63ffa6436defd184fbb9623da1cb
-2011-11-25T17:13:05.435656Z
-130
+2013-12-25T23:22:28.504676Z
+992a2f05678553340c9db49f71f63d48
+2013-06-30T13:06:20.594762Z
+1329
 aron
 has-props
 
@@ -58,7 +58,7 @@ has-props
 
 
 
-5789
+6714
 
 stat3.f90
 file
@@ -66,10 +66,10 @@ file
 
 
 
-2011-12-14T19:58:51.853067Z
-e04fb640e1f8ce2388a08dfc7eafa7f3
-2011-11-25T17:13:05.435656Z
-130
+2013-12-25T23:22:28.504676Z
+93b95e35b0be4172252707dda303d2af
+2013-06-30T13:06:20.594762Z
+1329
 aron
 has-props
 
@@ -92,7 +92,7 @@ has-props
 
 
 
-55838
+74127
 
 Makefile
 file
@@ -100,10 +100,10 @@ file
 
 
 
-2011-12-14T19:58:51.853067Z
-79f9b6c18ded5e50a2e8c5cec2771082
-2011-11-22T23:50:58.031449Z
-115
+2013-12-25T23:22:28.504676Z
+eb17fcc39ac9e86f21fd1825cbb6a6d1
+2013-06-30T13:06:20.594762Z
+1329
 aron
 
 
@@ -126,5 +126,5 @@ aron
 
 
 
-2450
+1324
 

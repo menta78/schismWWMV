@@ -20,10 +20,6 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
 
-         LNANINFCHK = .TRUE.
-         WRITE(*,*) LNANINFCHK
-          stop
-
          AC1 = AC2 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
@@ -184,10 +180,6 @@
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWWIII) THEN 
            CALL WWM_ABORT('LSOURCESWWIII not done yet') 
          ENDIF ! SMETHOD 
-
-
-         WRITE(*,*) LNANINFCHK
-         stop
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)

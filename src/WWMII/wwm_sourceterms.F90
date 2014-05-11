@@ -468,7 +468,7 @@
          call MY_WTIME(TIME9)
 #ifdef WWM_MPI 
          IF (IP == MNP .AND. myrank == 0 ) THEN
-#else if 
+#else 
          IF (IP == MNP) THEN
 #endif
 !           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SOURCE TIMINGS-----'

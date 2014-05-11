@@ -286,7 +286,7 @@
              IMATDAA(IP,:,:) = ZERO
              CYCLE
            ENDIF
-           IF (MESIN .EQ. 0 .AND. MESDS .AND. 0 .AND. MESNL .EQ. 0) THEN
+           IF (MESIN .GT. 0 .AND. MESDS .GT. 0 .AND. MESNL .GT. 0) THEN
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
