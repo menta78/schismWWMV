@@ -676,6 +676,7 @@
       FLUSH(STAT%FHNDL)
 
       AC1 = AC2
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1019,7 +1020,11 @@
               WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
             END IF
             DO IP = 1, MNP
-               IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) CYCLE
+               !WRITE(*,*) 'wwm_initio.F90 l.1022', IP, SUM(AC2(IP,:,:))
+               IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) THEN
+                 AC2(IP,:,:) = ZERO
+                 CYCLE
+               ENDIF
                ACLOC = 0.
                WINDX  = WINDXY(IP,1)
                WINDY  = WINDXY(IP,2)

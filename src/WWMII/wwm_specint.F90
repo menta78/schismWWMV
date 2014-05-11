@@ -24,8 +24,8 @@
 !$OMP&         LSOUBOUND,ISHALLOW,LADVTEST,LMAXETOT, &
 !$OMP&         NDYNITER_SIN,NDYNITER_SNL4, NDYNITER_SDS, &
 !$OMP&         NDYNITER_SBR, NDYNITER_SNL3, NDYNITER_SBF, &
-!$OMP&         NDYNITER,LSOURCESWAM,LLIMT) &
-!$OMP&         PRIVATE(IP,IS,ID,ACLOC,AC2,AC1, NIT_SIN,NIT_SDS,&
+!$OMP&         NDYNITER,LSOURCESWAM,LLIMT,MESTR,MESBR,MESBF,AC2,AC1) &
+!$OMP&         PRIVATE(IP,IS,ID,ACLOC,NIT_SIN,NIT_SDS,&
 !$OMP&         NIT_SNL4,NIT_SNL3,NIT_SBR,NIT_SBF,NIT_ALL,SSBRL2,&
 !$OMP&         IMATRA,IMATDA)
 !$OMP DO SCHEDULE(DYNAMIC,1)
@@ -184,7 +184,7 @@
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
          
-         IF (MESIN .GT. 0 .AND. MESDS .GT. 0 .AND. MESNL .GT. 0) THEN
+         IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
                FL3(1,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
@@ -286,7 +286,7 @@
              IMATDAA(IP,:,:) = ZERO
              CYCLE
            ENDIF
-           IF (MESIN .GT. 0 .AND. MESDS .GT. 0 .AND. MESNL .GT. 0) THEN
+           IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
              DO IS = 1, MSC
                DO ID = 1, MDC
                  FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
@@ -902,7 +902,7 @@
 
          EMAX = 1./16. * (HMAX(IP))**2
 
-         IF (ETOT .GT. EMAX) THEN
+         IF (ETOT .GT. EMAX .AND. ETOT .GT. THR) THEN
            RATIO = EMAX/ETOT
            SSBRL = ACLOC - RATIO * ACLOC
            ACLOC = RATIO * ACLOC

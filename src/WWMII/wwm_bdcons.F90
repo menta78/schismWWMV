@@ -914,7 +914,6 @@
         FLUSH(STAT%FHNDL)
       ENDIF
 
-
       CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
 
       ADIR = DEG * DEGRAD
