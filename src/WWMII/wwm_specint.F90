@@ -197,7 +197,7 @@
            U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
            Z0NEW(IP) = Z0OLD(IP,1)
            THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-           IF (.TRUE.) THEN
+           IF (.FALSE.) THEN
              CALL IMPLSCH (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                     THWOLD(IP,1), USOLD(IP,1), &
      &                     TAUW(IP), Z0OLD(IP,1), &
