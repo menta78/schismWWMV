@@ -1058,7 +1058,7 @@
          REAL(rkind), PARAMETER :: UMAX = 50.d0
          REAL(rkind), PARAMETER :: XKAPPA = 0.4d0
 
-         LOGICAL, PARAMETER     :: LOUTWAM = .TRUE. 
+         LOGICAL, PARAMETER     :: LOUTWAM = .FALSE. 
 
          INTEGER                :: IPHYS = 0 
          INTEGER                :: IDAMPING = 1 ! AR: Put in namelist ...
