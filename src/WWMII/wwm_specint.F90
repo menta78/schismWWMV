@@ -183,20 +183,20 @@
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC, FF
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
-          
-         IF (MESIN .EQ. 0 .AND. MESDS .AND. 0 .AND. MESNL .EQ. 0) THEN
+         
+         IF (MESIN .GT. 0 .AND. MESDS .GT. 0 .AND. MESNL .GT. 0) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
-               FL3(IP,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
-               FL(IP,ID,IS)  = FL3(IP,ID,IS)
-               SL(IP,ID,IS)  = FL(IP,ID,IS)
+               FL3(1,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+               FL(1,ID,IS)  = FL3(1,ID,IS)
+               SL(1,ID,IS)  = FL(1,ID,IS)
              END DO
            END DO
            THWOLD(IP,1) = THWNEW(IP)
            U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
            Z0NEW(IP) = Z0OLD(IP,1)
            THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-           IF (.TRUE.) THEN
+           IF (.FALSE.) THEN
              CALL IMPLSCH (FL3(1,:,:), FL(1,:,:), IP, IP, 1, &
      &                     THWOLD(IP,1), USOLD(IP,1), &
      &                     TAUW(IP), Z0OLD(IP,1), &

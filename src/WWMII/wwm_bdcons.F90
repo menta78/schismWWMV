@@ -80,6 +80,11 @@
           END IF
         END DO
 
+        IF (LBCWA .OR. LBCSP) THEN
+          IF (ANY(IOBP .NE. 2)) THEN
+            CALL WWM_ABORT('YOU IMPOSED BOUNDARY CONDITIONS BUT IN THE BOUNDARY FILE ARE NO NODES WITH FLAG = 2')
+          ENDIF
+        ENDIF
 #ifdef MPI_PARALL_GRID
         CALL exchange_p2di(IOBWB)
         DO ID = 1, MDC

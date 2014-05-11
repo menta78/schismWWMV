@@ -77,8 +77,6 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
          ENDIF
 
-         WRITE(*,*) 'SUM WBAC', SUM(WBAC)
-
 #ifdef TIMINGS
          CALL MY_WTIME(TIME5)
 #endif
