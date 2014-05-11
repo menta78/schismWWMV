@@ -20,6 +20,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
 
+         LNANINFCHK = .TRUE.
          WRITE(*,*) LNANINFCHK
           stop
 
