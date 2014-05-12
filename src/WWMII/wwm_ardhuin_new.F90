@@ -414,7 +414,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_INSIN4()
+      SUBROUTINE READ_INSIN4
         USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
         IMPLICIT NONE
         INTEGER :: MSC_TEST, MDC_TEST, ISTAT
@@ -1000,19 +1000,13 @@
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
-      IF (ICOMP < 2) THEN
+      IF (ICOMP .LE. 1) THEN
         S = D * A
       ELSE
-        DO IK = 1, NSPEC ! Patankar Rules 
-          IF (S(IK) .GT. ZERO) THEN
-            S(IK) = D(IK) * A(IK)
-            D(IK)  = ZERO
-          ELSE
-            S(IK) = ZERO
-            D(IK) = -D(IK)
-          ENDIF
-        END DO
-      END IF
+        S = D * A
+        D = ZERO
+      ENDIF
+
 !
 ! ... Test output of arrays
 !
@@ -2392,16 +2386,19 @@
       IF (ICOMP .LE. 1) THEN
         S = D * A
       ELSE
-        DO IK = 1, NSPEC ! Patankar Rules 
-          IF (S(IK) .GT. ZERO) THEN
-            S(IK) = D(IK) * A(IK)
-            D(IK)  = ZERO
-          ELSE
-            S(IK) = ZERO
-            D(IK) = -D(IK)
-          ENDIF
-        END DO
-      END IF
+        S = D * A
+        D = ZERO
+      ENDIF
+        !DO IK = 1, NSPEC ! Patankar Rules 
+        !  IF (S(IK) .GT. ZERO) THEN
+        !!    S(IK) = D(IK) * A(IK)
+        !    D(IK)  = ZERO
+        !  ELSE
+        !    S(IK) = ZERO
+        !    D(IK) = -D(IK)
+        !  ENDIF
+        !END DO
+      !END IF
 
 !
 !/ ------------------------------------------------------------------- /
