@@ -1802,6 +1802,105 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SPPARM_INTER_STRUCT(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y, MNPT, XPT, YPT, VAL, DOPEAK)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NDX, NDY
+      REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+      INTEGER, INTENT(IN)        :: MNPT
+      REAL(rkind), INTENT(IN)    :: XPT(MNPT), YPT(MNPT)
+      REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
+      LOGICAL, INTENT(IN)        :: DOPEAK
+      REAL(rkind) :: eVect(5)
+      REAL(rkind) :: WX, WX1, WX2, WX3, WX4
+      REAL(rkind) :: eVAL, HX1, HX2, LEN_X, LEN_Y
+      REAL(rkind) :: DELTA_X, DELTA_Y
+      INTEGER :: IVAR, I, J, IDX1, IDX2
+      INTEGER :: IP, J_INT, I_INT
+      DO IP = 1, MNPT
+        LEN_X = XPT(IP) - OFFSET_X
+        LEN_Y = YPT(IP) - OFFSET_Y
+        I_INT = INT( LEN_X/DX ) + 1
+        J_INT = INT( LEN_Y/DY ) + 1
+        DELTA_X   = LEN_X - (I_INT - 1) * DX ! Abstand X u. Y
+        DELTA_Y   = LEN_Y - (J_INT - 1) * DY !
+
+        DO IVAR=1,5
+          DO I=0,1
+            DO J=0,1
+              IDX1=I_INT + I
+              IDX2=J_INT + J
+              IF (IVAR .eq. 1) THEN
+                WX=HS_WW3(IDX1,IDX2)
+              ELSE IF (IVAR .eq. 2) THEN
+                WX=DIR_WW3(IDX1,IDX2)
+              ELSE IF (IVAR .eq. 3) THEN
+                WX=FP_WW3(IDX1,IDX2)
+              ELSE IF (IVAR .eq. 4) THEN
+                WX=T02_WW3(IDX1,IDX2)
+              ELSE IF (IVAR .eq. 5) THEN
+                WX=DSPR_WW3(IDX1,IDX2)
+              ELSE
+                CALL WWM_ABORT('Wrong IVAR')
+              END IF
+              IF ((I .eq. 0).and.(J .eq. 0)) THEN
+                WX1=WX
+              END IF
+              IF ((I .eq. 0).and.(J .eq. 1)) THEN
+                WX2=WX
+              END IF
+              IF ((I .eq. 1).and.(J .eq. 1)) THEN
+                WX3=WX
+              END IF
+              IF ((I .eq. 1).and.(J .eq. 0)) THEN
+                WX4=WX
+              END IF
+            END DO
+          END DO
+          HX1       = WX1 + (WX4-WX1)/DX * DELTA_X
+          HX2       = WX2 + (WX3-WX2)/DX * DELTA_X
+          IF (WX1 .LT. 0. .OR. WX2 .LT. 0. .OR. WX3 .LT. 0. .OR. WX4 .LT. 0. ) THEN
+            eVAL = 0.
+          ELSE
+            eVAL = HX1 + (HX2-HX1)/DY * DELTA_Y
+          ENDIF
+          eVect(IVAR)=eVAL
+        END DO
+        VAL(1,IP)=eVect(1)
+        IF (DOPEAK) THEN
+          IF (eVect(3) .gt. TINY(1.)) THEN
+            VAL(2,IP)=eVect(3)
+            VAL(5,IP)  = 2.
+          END IF
+        ELSE
+          VAL(2,IP)=eVect(4)
+          VAL(5,IP)  = 2.
+        END IF
+        VAL(3,IP)=eVect(2)
+        VAL(4,IP)=eVect(5)
+        VAL(6,IP)  = 1.
+        VAL(7,IP)  = 0.1
+        VAL(8,IP)  = 3.3
+
+!     SPPARM(1): Hs, sign. wave height
+!     SPPARM(2): Wave period given by user (either peak or mean)
+!     SPPARM(3): average direction
+!     SPPARM(4): directional spread
+!     SPPARM(5): spectral shape (1-4),
+!         1 - Pierson-Moskowitz
+!         2 - JONSWAP
+!         3 - BIN
+!         4 - Gauss
+!         positive peak (+) or mean frequency (-)
+
+!     SPPARM(6): directional spreading in degree (1) or exponent (2)
+!     SPPARM(7): gaussian width for the gauss spectrum 0.1
+!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE INTER_STRUCT_BOUNDARY(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
       USE DATAPOOL
       IMPLICIT NONE
