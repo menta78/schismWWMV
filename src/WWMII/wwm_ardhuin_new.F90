@@ -576,6 +576,7 @@
         END DO
 !
 ! 2.  Integrate over directions -------------------------------------- *
+
 !
       DO IK=1, NK
         ALFA(IK) = 2. * DTH * SIG(IK) * EB(IK) * WN(IK)**3

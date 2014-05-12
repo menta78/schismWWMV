@@ -386,7 +386,7 @@
                     DO IJ=IJS,IJL
                       FL(IJ,K1 ,MP ) = FL(IJ,K1 ,MP ) &
      &                               + DELAP(IJ)*FKLAP12
-                      DSSNL4(K1,MP) = DSSNL4(K1,MP) + &
+                      DSSNL4(K1,MP) = DSSNL4(K1,MP) &
      &                               + DELAP(IJ)*FKLAP12
                     ENDDO
                     DO IJ=IJS,IJL
