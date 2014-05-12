@@ -108,7 +108,7 @@
       REAL(rkind), PRIVATE           :: DSIGA, DDRAG,                   &
      &            BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
 !/
-      LOGICAL, SAVE , PRIVATE :: FIRST = .TRUE.
+      LOGICAL, PRIVATE :: FIRST = .TRUE.
 !
 !     WWM FIELD INSERT ...
 !
@@ -1000,7 +1000,19 @@
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
-      S = D * A
+      IF (ICOMP < 2) THEN
+        S = D * A
+      ELSE
+        DO IK = 1, NSPEC ! Patankar Rules 
+          IF (S(IK) .GT. ZERO) THEN
+            S(IK) = D(IK) * A(IK)
+            D(IK)  = ZERO
+          ELSE
+            S(IK) = ZERO
+            D(IK) = -D(IK)
+          ENDIF
+        END DO
+      END IF
 !
 ! ... Test output of arrays
 !
@@ -2381,7 +2393,7 @@
         S = D * A
       ELSE
         DO IK = 1, NSPEC ! Patankar Rules 
-          IF (S(IK) .GT. -THR8) THEN
+          IF (S(IK) .GT. ZERO) THEN
             S(IK) = D(IK) * A(IK)
             D(IK)  = ZERO
           ELSE
