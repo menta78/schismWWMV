@@ -58,6 +58,7 @@
 !/ ------------------------------------------------------------------- /
 !/
       USE DATAPOOL, ONLY : rkind
+      SAVE
       PUBLIC
 !/
 !/ Public variables
@@ -399,9 +400,10 @@
         QBI = 0._rkind
 
         TAUWX = ZERO; TAUWY = ZERO; CD = ZERO; Z0 = ZERO; USTDIR = ZERO
+  
+        WRITE(*,*) WNMEANP
 
         INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
-
         IF (.NOT. LPRECOMP_EXIST) THEN
           CALL INSIN4(.TRUE.)
         ELSE
@@ -416,6 +418,7 @@
         USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
         IMPLICIT NONE
         INTEGER :: MSC_TEST, MDC_TEST, ISTAT
+
         IF (LPRECOMP_EXIST) THEN
           READ (5002, IOSTAT=ISTAT)                        &
         & MSC_TEST, MDC_TEST, & 
@@ -605,10 +608,10 @@
         FMEAN1=INVPI2 * SIG(NK)
       ELSE
         FMEAN1  = INVPI2 *( MAX ( 1.E-7_rkind , FMEAN1 )                &
-     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1/(2.*WNMEANPTAIL))
+     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANPTAIL))
         ENDIF
       WNMEAN = ( MAX ( 1.E-7_rkind , WNMEAN )                           &
-     &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1/WNMEANP)
+     &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1.d0/WNMEANP)
       IF (FMEANWS.LT.1.E-7.OR.EMEANWS.LT.1.E-7) THEN 
         FMEANWS=INVPI2 * SIG(NK)
       ELSE
@@ -1167,6 +1170,7 @@
 !
 ! 1.  .... ----------------------------------------------------------- *
 !
+      WRITE(*,*) WNMEANP, WNMEANPTAIL
 !
 ! These precomputed tables are written in mod_def.ww3 
 !
