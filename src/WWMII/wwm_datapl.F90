@@ -998,12 +998,10 @@
          REAL(rkind), PARAMETER       :: XEPS = RHOA/RHOW
          REAL(rkind), PARAMETER       :: XINVEPS = 1./XEPS
 
-         REAL(rkind)                  :: WNMEANPTAIL = -0.5
          REAL(rkind), PARAMETER       :: WETAIL = 0.25
          REAL(rkind), PARAMETER       :: FRTAIL = 0.2
          REAL(rkind), PARAMETER       :: WP1TAIL = 1./3.
          REAL(rkind), PARAMETER       :: USTARM = 5.
-         REAL(rkind)                  :: WNMEANP = 0.5
          REAL(rkind)                  :: SINBR   = 0.
 
          INTEGER, PARAMETER           :: ISHALLO = 0  ! ISHALLO = 1 is not working yet ...

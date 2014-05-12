@@ -267,7 +267,9 @@
         END DO
         DSII(NK) = 0.5_rkind * SIG(NK) * (XFR-1.) / XFR
 
-        DDEN = DTH * DSII(:) * SIG(:)
+        DO IK=1, NK
+          DDEN(IK) = DTH * DSII(IK) * SIG(IK)
+        END DO
 
         DO ISP=1, NSPEC
           IK         = 1 + (ISP-1)/NTH
@@ -401,8 +403,6 @@
 
         TAUWX = ZERO; TAUWY = ZERO; CD = ZERO; Z0 = ZERO; USTDIR = ZERO
   
-        WRITE(*,*) WNMEANP
-
         INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
         IF (.NOT. LPRECOMP_EXIST) THEN
           CALL INSIN4(.TRUE.)
@@ -426,7 +426,7 @@
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
         & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,  &
         & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP, &
-        & SSDSCOS, SSDSDTH, WNMEANP, WNMEANPTAIL, SSTXFTF, &
+        & SSDSCOS, SSDSDTH, SSTXFTF, &
         & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,        &
         & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,  &
         & SSDSPBK, SSDSBINT, &
@@ -521,7 +521,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: SPSIG, INVPI2, PI2, RKIND, NSPEC
-      USE DATAPOOL, ONLY: ZERO, ONE, WNMEANPTAIL 
+      USE DATAPOOL, ONLY: ZERO, ONE
 !/T      USE W3ODATMD, ONLY: NDST
 !
       IMPLICIT NONE
@@ -1170,8 +1170,6 @@
 !
 ! 1.  .... ----------------------------------------------------------- *
 !
-      WRITE(*,*) WNMEANP, WNMEANPTAIL
-!
 ! These precomputed tables are written in mod_def.ww3 
 !
 !      WRITE(6,*) 'INSIN4:',FLTABS, SSDSDTH, SSDSC3, SSDSBCK
@@ -1351,7 +1349,7 @@
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &
      & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,                  &
      & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,                 &
-     & SSDSCOS, SSDSDTH, WNMEANP, WNMEANPTAIL, SSTXFTF,                 &
+     & SSDSCOS, SSDSDTH, SSTXFTF,                                       &
      & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,                        &
      & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,                  &
      & SSDSPBK, SSDSBINT,                                               &
