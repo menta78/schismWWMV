@@ -1221,8 +1221,6 @@
          real(rkind), dimension(:,:,:), pointer :: AC5
          real(rkind), dimension(:,:,:), pointer :: AC6
          real(rkind), dimension(:,:,:), pointer :: AC7
-         real(rkind), dimension(:,:,:), pointer :: AC8
-         real(rkind), dimension(:,:,:), pointer :: AC9
          real(rkind), dimension(:,:,:), pointer :: ASPAR_block
          real(rkind), dimension(:,:,:), pointer :: ASPAR_pc
          real(rkind), dimension(:,:,:), pointer :: B_block

@@ -22,10 +22,6 @@
 ! Repeated CX/CY computations but less memory used.
 #undef NO_MEMORY_CX_CY
 #define NO_MEMORY_CX_CY
-! New less memory intensive method obtained by rewriting the BCGS
-! Needs 7 times MSC*MDC*MNP versus 9 times. Still maybe more computations.
-#undef BCGS_REORG
-#define BCGS_REORG
 ! For the SOR preconditioner, we can actually compute directly
 ! from the matrix since it is so simple.
 #undef SOR_DIRECT
@@ -2836,125 +2832,6 @@
 ! In this algorithm, the use of v_{i-1}, v_i can be replace to just "v"
 ! The same for x, r
 ! 
-      SUBROUTINE I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-      USE DATAPOOL, only : MDC, MSC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod, STAT, myrank
-      implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      type(I5_SolutionData), intent(inout) :: SolDat
-      integer, intent(inout) :: nbIter
-      REAL(rkind), intent(inout) :: Norm_L2(MSC,MDC)
-      REAL(rkind), intent(inout) :: Norm_LINF(MSC,MDC)
-      REAL(rkind) :: Rho(MSC,MDC)
-      REAL(rkind) :: Prov(MSC,MDC)
-      REAL(rkind) :: Alpha(MSC,MDC)
-      REAL(rkind) :: Beta(MSC,MDC)
-      REAL(rkind) :: Omega(MSC,MDC)
-      REAL(rkind) :: MaxError, CritVal
-# ifdef DEBUG
-!      REAL(rkind) :: Lerror
-# endif
-      integer :: MaxIter = 30
-      integer IP
-      MaxError=SOLVERTHR
-      CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat % AC2, SolDat % AC3)
-      SolDat % AC1=0                               ! y
-      SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
-      SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
-      SolDat % AC5=0                               ! v
-      SolDat % AC6=0                               ! p
-      SolDat % AC7=0                               ! s
-      SolDat % AC8=0                               ! z
-      SolDat % AC9=0                               ! t
-      Rho=1
-      Alpha=1
-      Omega=1
-      nbIter=0
-      DO
-        nbIter=nbIter+1
-
-        ! L1: Rhoi =(\hat{r}_0, r_{i-1}
-        CALL I5B_SCALAR(SolDat % AC4, SolDat % AC3, Prov)
-
-        ! L2: Beta=(RhoI/Rho(I-1))  *  (Alpha/Omega(i-1))
-        Beta=(Prov/Rho)*(Alpha/Omega)
-        CALL REPLACE_NAN_ZERO(LocalColor, Beta)
-        Rho=Prov
-
-        ! L3: Pi = r(i-1) + Beta*(p(i-1) -omega(i-1)*v(i-1))
-        DO IP=1,MNP
-          SolDat%AC6(:,:,IP)=SolDat%AC3(:,:,IP)                        &
-     &      + Beta(:,:)*SolDat%AC6(:,:,IP)                            &
-     &      - Beta(:,:)*Omega(:,:)*SolDat%AC5(:,:,IP)
-        END DO
-
-        ! L4 y=K^(-1) Pi
-        SolDat%AC1=SolDat%AC6
-        IF (PCmethod .gt. 0) THEN
-          CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC1)
-        ENDIF
-
-        ! L5 vi=Ay
-        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC1, SolDat%AC5)
-
-        ! L6 Alpha=Rho/(hat(r)_0, v_i)
-        CALL I5B_SCALAR(SolDat % AC4, SolDat % AC5, Prov)
-        Alpha(:,:)=Rho(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(LocalColor, Alpha)
-
-        ! L7 s=r(i-1) - alpha v(i)
-        DO IP=1,MNP
-          SolDat%AC7(:,:,IP)=SolDat%AC3(:,:,IP)                        &
-     &      - Alpha(:,:)*SolDat%AC5(:,:,IP)
-        END DO
-
-        ! L8 z=K^(-1) s
-        SolDat%AC8=SolDat%AC7
-        IF (PCmethod .gt. 0) THEN
-          CALL I5B_APPLY_PRECOND(LocalColor, SolDat, SolDat%AC8)
-        END IF
-
-        ! L9 t=Az
-        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC8, SolDat%AC9)
-
-        ! L10 omega=(t,s)/(t,t)
-        CALL I5B_SCALAR(SolDat % AC9, SolDat % AC7, Omega)
-        CALL I5B_SCALAR(SolDat % AC9, SolDat % AC9, Prov)
-        Omega(:,:)=Omega(:,:)/Prov(:,:)
-        CALL REPLACE_NAN_ZERO(LocalColor, Omega)
-
-        ! L11 x(i)=x(i-1) + Alpha y + Omega z
-        DO IP=1,MNP
-          SolDat%AC2(:,:,IP)=SolDat%AC2(:,:,IP)                        &
-     &      + Alpha(:,:)*SolDat%AC1(:,:,IP)                            &
-     &      + Omega(:,:)*SolDat%AC8(:,:,IP)
-        END DO
-
-        ! L12 If x is accurate enough finish
-        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
-        CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
-        CritVal=maxval(Norm_L2)
-        IF (CritVal .lt. MaxError) THEN
-          EXIT
-        ENDIF
-        IF (nbIter .gt. MaxIter) THEN
-          EXIT
-        ENDIF
-
-        ! L13 r=s-omega t
-        DO IP=1,MNP
-          SolDat%AC3(:,:,IP)=SolDat%AC7(:,:,IP)                        &
-     &      - Omega(:,:)*SolDat%AC9(:,:,IP)
-        END DO
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-!
-! With another node ordering, maybe better performance
-!
       SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
       USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
@@ -3073,8 +2950,6 @@
      &      - Omega(:,:)*SolDat%AC7(:,:,IP)
         END DO
       END DO
-!      WRITE(740+myrank,*) 'End BCGS_REORG'
-!      FLUSH(740+myrank)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3086,10 +2961,6 @@
       integer istat
       allocate(SolDat % AC1(MSC,MDC,MNP), SolDat % AC2(MSC,MDC,MNP), SolDat % AC3(MSC,MDC,MNP), SolDat % AC4(MSC,MDC,MNP), SolDat % AC5(MSC,MDC,MNP), SolDat % AC6(MSC,MDC,MNP), SolDat % AC7(MSC,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 75')
-# ifndef BCGS_REORG
-      allocate(SolDat % AC8(MSC,MDC,MNP), SolDat % AC9(MSC,MDC,MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 76')
-# endif
       allocate(SolDat % ASPAR_block(MSC,MDC,NNZ), SolDat % B_block(MSC,MDC, MNP), stat=istat)
 # ifndef SOR_DIRECT
       allocate(SolDat % ASPAR_pc(MSC,MDC,NNZ), stat=istat)
@@ -3134,9 +3005,6 @@
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDat
       deallocate(SolDat % AC1, SolDat % AC2, SolDat % AC3, SolDat % AC4, SolDat % AC5, SolDat % AC6, SolDat % AC7)
-# ifndef BCGS_REORG
-      deallocate(SolDat % AC8, SolDat % AC9)
-# endif
       deallocate(SolDat % ASPAR_block, SolDat % B_block, SolDat % ASPAR_pc)
       END SUBROUTINE
 !**********************************************************************
@@ -3671,11 +3539,7 @@
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After I5B_CREATE_PRECOND'
 # endif
-# ifdef BCGS_REORG
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-# else
-      CALL I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-# endif
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
