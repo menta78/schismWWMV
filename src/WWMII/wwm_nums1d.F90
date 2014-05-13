@@ -17,10 +17,10 @@
          ISTEP = 0
 
          DX = XP(4)-XP(3)
-
+!todo IS ID ordering
          DO IS = 1, MSC
            DO ID = 1, MDC
-              ACQ(1:MNP)  = AC2(:,IS,ID)
+              ACQ(1:MNP)  = AC2(IS,ID,:)
               CAXQ(1:MNP) = CG(:,IS)*COSTH(ID)+CURTXY(:,1)
               IF (LVAR1D) THEN
                 CFL =  MAXVAL ( ABS(CAXQ) * DT4A / MINVAL(DX2) )
@@ -72,7 +72,7 @@
                   CALL QUICKEST_ADV(MNP,INC,ACQ,CAXQ,DT41A,DX)
                 END IF
               END DO
-              AC2(:,IS,ID) = ACQ(1:MNP)
+              AC2(IS,ID,:) = ACQ(1:MNP)
             END DO
           END DO 
       END SUBROUTINE

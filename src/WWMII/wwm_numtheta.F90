@@ -29,7 +29,7 @@
             DO IS = 1, MSC
                GF(:)     = 0.0
                AMAT(:,:) = 0.0
-               TMPAC(:)  = AC2(IP,IS,:)
+               TMPAC(:)  = AC2(IS,:,IP)
                CFLCAD = MAXVAL(ABS(CAD(IS,:))/DDIR * DT4D)
                IF (ISEQ0(CFLCAD)) CYCLE
                REST  = ABS(MOD(CFLCAD,1.0_rkind))
@@ -65,7 +65,7 @@
                   CALL GAUS1D (MDC, AMAT, GF, AM1, A1M)
                   TMPAC(:) = GF(:) 
                END DO  ! End Iteration
-               AC2(IP,IS,:) = TMPAC(:)
+               AC2(IS,:,IP) = TMPAC(:)
             END DO
          END DO
       END SUBROUTINE
@@ -97,7 +97,7 @@
            IF (IOBP(IP) .EQ. 2) CYCLE ! skip active boundary points ...
            CALL PROPTHETA(IP,CAD)
            DO IS = 1, MSC
-             ACQ( 1:MDC) = AC2(IP,IS,:)
+             ACQ( 1:MDC) = AC2(IS,:,IP)
              CADS(1:MDC) = CAD(IS,:)
              CFLCAD = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR 
              IF (CFLCAD .LT. THR) CYCLE
@@ -113,7 +113,7 @@
              DO IT = 1, ITER ! Iteration
                CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
              END DO          ! end Interation
-             AC2(IP,IS,:) = MAX(ZERO,ACQ(1:MDC))
+             AC2(IS,:,IP) = MAX(ZERO,ACQ(1:MDC))
            END DO
          END DO
 !$OMP END DO NOWAIT
@@ -137,7 +137,7 @@
            IF (IOBP(IP) .EQ. 2) CYCLE
            CALL PROPTHETA(IP,CAD)
            DO IS = 1, MSC
-             U0(:) = AC2(IP,IS,:)
+             U0(:) = AC2(IS,:,IP)
              CP(:) = MAX(ZERO,CAD(IS,:))
              CM(:) = MIN(ZERO,CAD(IS,:))
              CFLCAD = MAXVAL ( ABS(CAD(IS,:))*DT4D/DDIR )
@@ -164,7 +164,7 @@
                                 ! and useless.
                U0(:) = TMP(:)
              END DO
-             AC2(IP,IS,:) = MAX(0._rkind,U0(:))
+             AC2(IS,:,IP) = MAX(0._rkind,U0(:))
            END DO
          END DO
       END SUBROUTINE
@@ -187,7 +187,7 @@
         IF (IOBP(IP) .EQ. 2) CYCLE
         CALL PROPTHETA(IP,CAD)
         DO IS = 1, MSC
-          U0 = AC2(IP,IS,:)
+          U0 = AC2(IS,:,IP)
           CP = MAX(ZERO,CAD(IS,:))
           CM = MIN(ZERO,CAD(IS,:))
           EMAT=ZERO
@@ -201,7 +201,7 @@
             EMAT(ID,ID2) =     (DT4D/DDIR) *  CM(ID2)
           END DO
           CALL GAUSS_SOLVER(MDC, EMAT, TMP, U0)
-          AC2(IP,IS,:) = MAX(0._rkind,TMP)
+          AC2(IS,:,IP) = MAX(0._rkind,TMP)
         END DO
       END DO
       END SUBROUTINE
@@ -263,7 +263,7 @@
 
            DO IS = 1, MSC
 
-             U0(:) = AC2(IP,IS,:)
+             U0(:) = AC2(IS,:,IP)
              CP(:) = MAX(ZERO,CAD(IS,:))
              CM(:) = MIN(ZERO,CAD(IS,:))
 
@@ -558,7 +558,7 @@
               END DO
               U0(:) = U3(:)
             END DO
-            AC2(IP,IS,:) = MAX(ZERO,MyREAL(U3(:)))
+            AC2(IS,:,IP) = MAX(ZERO,MyREAL(U3(:)))
            END DO
          END DO
       END SUBROUTINE

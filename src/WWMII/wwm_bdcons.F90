@@ -1364,12 +1364,12 @@
           IF (LINHOM) THEN
             DO IP = 1, IWBMNP
               IPGL = IWBNDLC(IP)
-              AC2(IPGL,:,:) = WBAC(:,:,IP)
+              AC2(:,:,IPGL) = WBAC(:,:,IP)
             END DO
           ELSE
             DO IP = 1, IWBMNP
               IPGL = IWBNDLC(IP)
-              AC2(IPGL,:,:) = WBAC(:,:,1)
+              AC2(:,:,IPGL) = WBAC(:,:,1)
             END DO
           ENDIF
         END IF
@@ -1499,7 +1499,7 @@
                bIdx=1
              ENDIF
              eIdx = IWBNDLC(IP)
-             AC2(eIdx,:,:) = WBAC(:,:,bIdx)
+             AC2(:,:,eIdx) = WBAC(:,:,bIdx)
            END DO
 
            IF (LNANINFCHK) THEN

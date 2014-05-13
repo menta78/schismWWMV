@@ -426,7 +426,7 @@
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
 
-         U = AC2(:,IS,ID) 
+         U(:) = AC2(IS,ID,:)
 
          IF (LADVTEST) THEN
            CALL CHECKCONS(U,SUMAC1)
@@ -501,11 +501,11 @@
            END DO  ! ----> End Iteration
          END IF ! IMETHOD
 
-         AC2(:,IS,ID) = U
+         AC2(IS,ID,:) = U
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),      &
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -564,7 +564,7 @@
 !
          REAL(rkind) :: TMP
 
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -661,7 +661,7 @@
 !  Loop over all sub time steps, all quantities in this loop depend
 !  on the solution U itself !!!
 !
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
 
          DO IT = 1, ITER_EXP(IS,ID)
            ST = ZERO
@@ -699,11 +699,11 @@
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(:,IS,ID) = U
+         AC2(IS,ID,:) = U(:)
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),      &
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -844,7 +844,7 @@
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
 
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
          UL = U
 
 #ifdef MPI_PARALL_GRID
@@ -963,11 +963,11 @@
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(:,IS,ID) = UL
+         AC2(IS,ID,:) = UL(:)
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),      &
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -1072,7 +1072,7 @@
            NM(IE)       = ONE/MIN(-THR,SUM(KM(:)))
          END DO
 
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
 
          J     = 0    ! Counter ...
          ASPAR = ZERO ! Mass matrix ...
@@ -1166,12 +1166,12 @@
 !         WRITE(DBG%FHNDL,*) SUM(ASPAR), SUM(IA), SUM(JA)
 !         WRITE(DBG%FHNDL,*) SUM(AU), SUM(FLJAU), SUM(FLJU)
 
-          INIU = AC2(:,IS,ID) * IOBPD(ID,:)
+          INIU = AC2(IS,ID,:) * IOBPD(ID,:)
           X    = ZERO
           CALL RUNRC (MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, FLJAU, FLJU, BCGSTAB)
 
           DO IP = 1, MNP
-            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) !* MyREAL(IOBPD(ID,IP))
+            AC2(IS,ID,IP) = MAX(ZERO,X(IP)) !* MyREAL(IOBPD(ID,IP))
           END DO
 
 #ifdef TIMINGS
@@ -1187,7 +1187,7 @@
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),      &
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
      &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -1381,7 +1381,7 @@
 
          IWKSP = 0
          WKSP  = ZERO
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
          CALL EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, U)
 !
          IPAR(1) = 0       ! always 0 to start an iterative solver
@@ -1413,11 +1413,11 @@
 !         WRITE(DBG%FHNDL,*) SUM(ASPAR), SUM(IA), SUM(JA)
 !         WRITE(DBG%FHNDL,*) SUM(AU), SUM(FLJAU), SUM(FLJU)
 
-          INIU = AC2(:,IS,ID) * IOBPD(ID,:)
+          INIU = AC2(IS,ID,:) * IOBPD(ID,:)
           X    = ZERO
           CALL RUNRC (MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, FLJAU, FLJU, BCGSTAB)
           DO IP = 1, MNP
-            AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
+            AC2(IS,ID,IP) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
           END DO
 
 #ifdef TIMINGS
@@ -1433,7 +1433,7 @@
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-!           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),      &
+!           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
 !     &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -1495,7 +1495,8 @@
       REAL(rkind) :: X(MNP), B(MNP), U(MNP)
       REAL(rkind) :: eSum, eSqrNorm
       INTEGER :: IP, idx, J, nbIter
-      X = AC2(:,IS,ID)
+      
+      X(:) = AC2(IS,ID,:)
       CALL EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, X)
       SOLVERTHR=10E-10
       nbIter=0
@@ -1534,7 +1535,7 @@
       END DO
       Print *, 'nbIter=', nbIter
       DO IP = 1, MNP
-        AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
+        AC2(IS,ID,IP) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -1664,7 +1665,7 @@
          external bcgstab
          external gmres
 
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
          CALL CNIMPS_ASPAR_B(IS, ID, ASPAR, B, U)
 
          IPAR(1)  = 0        ! always 0 to start an iterative solver
@@ -1685,7 +1686,7 @@
          IWKSP = 0
          WKSP = ZERO
 
-         INIU(:) = AC2(:,IS,ID)
+         INIU(:) = AC2(IS,ID,:)
 !        CALL MILU0 (MNP, ASPAR, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL ILU0 (MNP, ASPAR, JA, IA, AU, JAU, JU, IWKSP, IERROR)
 !        CALL ILUT  (MNP, ASPAR, JA, IA, LFIL, DROPTOL, AU, JAU, JU, IWK, WKSP, IWKSP, IERROR) !... O.K
@@ -1693,12 +1694,12 @@
          CALL RUNRC(MNP, NNZ, B, X, IPAR, FPAR, WKSP, INIU, ASPAR, JA, IA, AU, JAU, JU, BCGSTAB)
 
          DO IP = 1, MNP
-           AC2(IP,IS,ID) = MAX(ZERO,X(IP)) * IOBPD(ID,IP)
+           AC2(IS,ID,IP) = MAX(ZERO,X(IP)) * IOBPD(ID,IP)
          END DO
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-!           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(IP,1,1)),&
+!           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),&
 !     &                  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
@@ -1764,7 +1765,7 @@
          WKSP  = ZERO
          INIU  = ZERO
 
-         U = AC2(:,IS,ID)
+         U(:) = AC2(IS,ID,:)
 
          CALL CADVXY(IS,ID,C)
 
@@ -1909,7 +1910,7 @@
          CALL ILU0 (MNP, ASPAR2, JA, IA, AU, JAU, JU, IWKSP, IERROR)
          CALL RUNRC(MNP, NNZ, B2, X, IPAR, FPAR, WKSP, INIU, ASPAR2, JA, IA, AU, JAU, JU, BCGSTAB)
 
-         AC2(:,IS,ID) = MAX(ZERO,X) * IOBPD(ID,:)
+         AC2(IS,ID,:) = MAX(ZERO,X) * IOBPD(ID,:)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2594,9 +2595,9 @@
          END IF !LCALC
 
          DO IP = 1, MNP
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               U(IS,ID,IP) = AC2(IP,IS,ID)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               U(IS,ID,IP) = AC2(IS,ID,IP)
              END DO
            END DO
          END DO
@@ -2728,9 +2729,9 @@
          END IF
 
          DO IP = 1, MNP
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               AC2(IP,IS,ID) = U(IS,ID,IP)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               AC2(IS,ID,IP) = U(IS,ID,IP)
              END DO
            END DO
          END DO
@@ -2840,9 +2841,9 @@
          END IF ! LCALC
 
          DO IP = 1, MNP
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               U(IS,ID,IP) = AC2(IP,IS,ID)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               U(IS,ID,IP) = AC2(IS,ID,IP)
              END DO
            END DO
          END DO
@@ -2925,9 +2926,9 @@
          END DO !IT
 
          DO IP = 1, MNP
-           DO IS = 1, MSC
-             DO ID = 1, MDC
-               AC2(IP,IS,ID) = U(IS,ID,IP)
+           DO ID = 1, MDC
+             DO IS = 1, MSC
+               AC2(IS,ID,IP) = U(IS,ID,IP)
              END DO
            END DO
          END DO
@@ -3022,9 +3023,9 @@
 
          END IF !LCALC
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             U(IS,ID,:) = AC2(:,IS,ID)
+         DO ID = 1, MDC
+           DO IS = 1, MSC
+             U(IS,ID,:) = AC2(IS,ID,:)
            END DO
          END DO
 
@@ -3098,9 +3099,9 @@
 #endif
          END DO !IT
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             AC2(:,IS,ID) = U(IS,ID,:)
+         DO ID = 1, MDC
+           DO IS = 1, MSC
+             AC2(IS,ID,:) = U(IS,ID,:)
            END DO
          END DO
       END SUBROUTINE

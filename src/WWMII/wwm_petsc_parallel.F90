@@ -362,7 +362,7 @@
            NM(IE)       = 1.0_rkind/MIN(-THR,SUM(KM(:)))
          END DO
 
-         U = AC2(:,ISS,IDD)
+         U(:) = AC2(ISS,IDD,:)
 
          J     = 0    ! Counter ...
          ASPAR = ZERO ! Mass matrix ...
@@ -491,7 +491,7 @@
          ! Copy the old solution from AC2 to myX to make the solver faster
          do i = 1, np
            eCol = AGO2PGO(iplg(i)-1)
-           eEntry = AC2(i, ISS, IDD)
+           eEntry = AC2(ISS, IDD, i)
            call VecSetValue(myX,eCol,eEntry,INSERT_VALUES,petscErr)
            CHKERRQ(petscErr)
          end do
@@ -555,7 +555,7 @@
          ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
          ! normally set to 0, because they do net exist in petsc
          call exchange_p2d(X)
-         AC2(:, ISS, IDD) = MAX(0.0_rkind,X)
+         AC2(ISS, IDD,:) = MAX(0.0_rkind,X)
       END SUBROUTINE
 
       !> cleanup memory. You never need to call this function by hand. It will automaticly called by PETSC_FINALIZE()

@@ -465,7 +465,7 @@
             IF(IPGL(IPLG(ip))%NEXT%RANK < MYRANK) CYCLE !already in the sum so skip
           ENDIF 
 #endif
-          ACLOC = AC2(IP,:,:)
+          ACLOC(:,:) = AC2(:,:,IP)
           SUMAC = SUM(ACLOC)
 
           ETOT = 0.0
@@ -1111,7 +1111,7 @@
         DEPLOC       = DEPLOC       + WI(J) * DEP(IP)
         CURTXYLOC(:) = CURTXYLOC(:) + WI(J) * CURTXY(IP,:)
         WATLEVLOC    = WATLEVLOC    + WI(J) * WATLEV(IP)
-        ACLOC(:,:)   = ACLOC(:,:)   + WI(J) * AC2(IP,:,:)
+        ACLOC(:,:)   = ACLOC(:,:)   + WI(J) * AC2(:,:,IP)
         !write(*,'(3I10,5F15.8)') j, ie, ip, wi(j), DEP(IP), WATLEV(IP), CURTXY(IP,:) 
       END DO
 
@@ -1719,10 +1719,10 @@
       real(rkind)         :: dintspec_y, tmp(msc)
 
       dintspec_y = ZERO
-!     maxvalue   = maxval(ac2(ip,:,:))
+!     maxvalue   = maxval(ac2(:,:,ip))
 !      if (maxvalue .lt. small) return 
 
-      !acloc(:,:) = ac2(ip,:,:) !/ maxvalue
+      !acloc(:,:) = ac2(:,:,ip) !/ maxvalue
 
       do id = 1, mdc
         tmp(:) = acloc(:,id) * spsig * y
@@ -1749,10 +1749,10 @@
       real(rkind)         :: dintspec, tmp(msc)
 
       dintspec = ZERO
-      !maxvalue   = maxval(ac2(ip,:,:))
+      !maxvalue   = maxval(ac2(:,:,ip))
       !if (maxvalue .lt. small) return 
 
-      !acloc(:,:) = ac2(ip,:,:) / maxvalue
+      !acloc(:,:) = ac2(:,:,ip) / maxvalue
 
       do id = 1, mdc
         tmp(:) = acloc(:,id) * spsig
@@ -2453,13 +2453,13 @@
 
         STAT2D = 0.
         DO IP = 1, MNP
-           ETOT = SUM(AC2(IP,:,:))
+           ETOT = SUM(AC2(:,:,IP))
            DO IS = 1, MSC
              DO ID = 1, MDC
                IF (ETOT .GT. THR) THEN
-                 IF (AC2(IP,IS,ID)/ETOT .LT. 1.E-5) THEN
+                 IF (AC2(IS,ID,IP)/ETOT .LT. 1.E-5) THEN
                    STAT2D(IS,ID) = STAT2D(IS,ID) + 1./REAL(MNP)*100.
-!                   WRITE(*,'(3I10,4E15.4)') IP, IS, ID, STAT2D(IS,ID), AC2(IP,IS,ID)/ETOT, AC2(IP,IS,ID), ETOT
+!                   WRITE(*,'(3I10,4E15.4)') IP, IS, ID, STAT2D(IS,ID), AC2(IS,ID,IP)/ETOT, AC2(IS,ID,IP), ETOT
                  END IF
                ELSE 
                  STAT2D(IS,ID) = STAT2D(IS,ID) + 1./REAL(MNP)*100.

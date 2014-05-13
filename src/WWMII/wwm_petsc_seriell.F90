@@ -153,7 +153,7 @@
          CALL MY_WTIME(TIME2)
 #endif
 
-         U = AC2(:,ISS,IDD)
+         U(:) = AC2(ISS,IDD,:)
 
          J     = 0    ! Counter ...
          ASPAR = ZERO ! Mass matrix ...
@@ -280,9 +280,9 @@
          call VecRestoreArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
 
          IF (SUM(X) .NE. SUM(X)) CALL WWM_ABORT('NaN in X')
-!          AC2(:, ISS, IDD) = MAX(ZERO,X)
+!          AC2(ISS, IDD,:) = MAX(ZERO,X)
 
-         AC2(:,ISS,IDD) = X
+         AC2(ISS,IDD,:) = X(:)
 
 #ifdef TIMINGS
 !          CALL MY_WTIME(TIME4)

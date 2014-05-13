@@ -735,10 +735,10 @@
 
           IPglobal = AGO2PGO( iplg(IP)-1 ) + 1 ! map to petsc global order
 
-          do ISS = 1, MSC
-            do IDD = 1, MDC
+          do IDD = 1, MDC
+            do ISS = 1, MSC
               rowGlobal = toRowIndex(IPglobal, ISS, IDD)
-              eEntry = AC2(IP, ISS, IDD)
+              eEntry = AC2(ISS, IDD,IP)
               call VecSetValue(myX, rowGlobal, eEntry, ADD_VALUES, petscErr);CHKERRQ(petscErr)
             end do
           end do
@@ -781,9 +781,9 @@
 
         ! copy old soluton for all nodes into a new array, so that the fast
         ! running index is the first index. To avoid CPU cache flushing
-        do ISS = 1, MSC
-          do IDD = 1, MDC
-            AC22(IDD, ISS, :) = AC2(:, ISS, IDD)
+        do IDD = 1, MDC
+          do ISS = 1, MSC
+            AC22(IDD, ISS, :) = AC2(ISS, IDD,:)
           end do
         end do
 
@@ -808,7 +808,7 @@
                 ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
                 idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                 !if(IOBPD(IDD,IP) .EQ. 1) then
-!                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(IP, ISS, IDD))
+!                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD,IP))
                   value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))*IOBPD(IDD,IP)*IOBDP(IP)*IOBWB(IP)
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)
@@ -898,7 +898,7 @@
         use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
         use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
-        use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
+        use datapool, only: NP_RES, NNZ, MNE, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
         use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
         use petscpool
@@ -1103,7 +1103,7 @@
         use datapool, only: IWBMNP, IWBNDLC, IOBPD, ICOMP, SMETHOD
         use datapool, only: IOBWB, DEP, DMIN, MAXMNECON, TWO
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
-        use datapool, only: NP_RES, NNZ, MNE, AC2, WBAC
+        use datapool, only: NP_RES, NNZ, MNE, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
         use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
         USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL
@@ -1761,7 +1761,7 @@
         ! iterate over all resident nodes (without interface and ghost nodes) in petsc local order
         ! map the node index from petsc local ordering back to app old local ordering
         ! get the soluton from X(IP, IS, ID)
-        ! write the solutin to AC2(IP, IS, ID)
+        ! write the solutin to AC2(IS, ID, IP)
         AC2 = 0
         call VecGetArrayF90(myX, myXtemp, petscErr);CHKERRQ(petscErr)
         ! loop over all local nodes (in petsc local order)
@@ -1769,10 +1769,10 @@
           ! map from petsc local to app local
           ! row represent the local app order
           rowLocal = ipgl( (PGO2AGO( PLO2PGO( IP-1 ) ))+1 )%id
-          DO ISS = 1, MSC
-            DO IDD = 1, MDC
+          DO IDD = 1, MDC
+            DO ISS = 1, MSC
               value = myXtemp(toRowIndex(IP, ISS, IDD) + 1)
-              AC2(rowLocal, ISS, IDD) = MAX(ZERO, value) 
+              AC2(ISS, IDD, rowLocal) = MAX(ZERO, value)
             end do
           end do
         end do
@@ -1785,17 +1785,17 @@
 
         ! we have to fill the ghost and interface nodes with the solution from the other threads.
         ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
-        ! normally set to 0, because they do net exist in petsc
-!AR: Replace 
-        do ISS = 1, MSC
-          do IDD = 1, MDC
-            U(ISS,IDD,:) = AC2(:,ISS,IDD)
+        ! normally set to 0, because they do not exist in petsc
+!AR: delete U; call exchange_p4d_wwm direct with AC2 ?
+        do IDD = 1, MDC
+          do ISS = 1, MSC
+            U(ISS,IDD,:) = AC2(ISS,IDD,:)
           end do
         end do
-        call exchange_p4d_wwm(U)
-        do ISS = 1, MSC
-          do IDD = 1, MDC
-            AC2(:,ISS,IDD) = U(ISS,IDD,:) 
+        call exchange_p4d_wwm(U)     
+        do IDD = 1, MDC
+          do ISS = 1, MSC
+            AC2(ISS,IDD,:) = U(ISS,IDD,:)
           end do
         end do
       end SUBROUTINE
@@ -2255,7 +2255,7 @@
         ! running index is the first index. To avoid CPU cache flushing
         do ISS = 1, MSC
           do IDD = 1, MDC
-            AC22(IDD, ISS, :) = AC2(:, ISS, IDD)
+            AC22(IDD, ISS, :) = AC2(ISS, IDD,:)
           end do
         end do
 
@@ -2280,7 +2280,7 @@
                 ! wenn der Knoten irgend ne randbedingung erfuellt,dann alte loesung mit dreieckflaeche verrechnen
                 idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                 if(IOBPD(IDD,IP) .EQ. 1) then
-!                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(IP, ISS, IDD))
+!                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD,IP))
                   value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)

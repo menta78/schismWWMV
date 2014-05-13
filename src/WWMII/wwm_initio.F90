@@ -48,7 +48,7 @@
 !
 ! action densities and source terms - shared
 !
-       ALLOCATE (AC2(MNP,MSC,MDC), stat=istat)
+       ALLOCATE (AC2(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
        AC2 = zero
 
@@ -417,7 +417,7 @@
 #endif
       IMPLICIT NONE
 !
-      INTEGER        :: IT, IFILE, i, j
+      INTEGER        :: IT, IFILE, i, j, IP
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
@@ -520,7 +520,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 33')
         UTEST = 0.
         CALL ADVTEST(UTEST)
-        AC2(:,1,1) = UTEST
+        AC2(1,1,:) = UTEST
         CALL CHECKCONS(UTEST,SUMACt0)
 !AR: check the advections test if it still works ...
         DEALLOCATE(UTEST)
@@ -667,7 +667,9 @@
 #endif
       FLUSH(STAT%FHNDL)
 
-      AC1 = AC2
+      DO IP=1, MNP
+        AC1(IP,:,:) = AC2(:,:,IP)
+      END DO
 
       END SUBROUTINE
 !**********************************************************************
@@ -941,7 +943,7 @@
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
            CALL INISNONLIN
            INQUIRE(FILE='fort.5011',EXIST=LPRECOMP_EXIST)
-           CALL MPI_BARRIER(COMM)
+           CALL MPI_BARRIER(COMM, ierr)
            IF (LPRECOMP_EXIST) THEN
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
              OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
@@ -1015,9 +1017,9 @@
               WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
             END IF
             DO IP = 1, MNP
-               !WRITE(*,*) 'wwm_initio.F90 l.1022', IP, SUM(AC2(IP,:,:))
+               !WRITE(*,*) 'wwm_initio.F90 l.1022', IP, SUM(AC2(:,:,IP))
                IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) THEN
-                 AC2(IP,:,:) = ZERO
+                 AC2(:,:,IP) = ZERO
                  CYCLE
                ENDIF
                ACLOC = 0.
@@ -1045,7 +1047,7 @@
                      SPPAR(7) = 0.1
                      SPPAR(8) = 3.3
                      CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
-                     AC2(IP,:,:) = ACLOC
+                     AC2(:,:,IP) = ACLOC
                    ELSE
                      ACLOC = 1.E-8
                    END IF
@@ -1055,13 +1057,13 @@
                    TMPPAR(7,IP) = 0.1
                    TMPPAR(8,IP) = 3.3
                    CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
-                   AC2(IP,:,:) = ACLOC
+                   AC2(:,:,IP) = ACLOC
                  ELSE IF (INITSTYLE == 3) THEN
                    OPEN(1113,FILE='fort.10003',STATUS='OLD')
                    DO ID=1,MDC
                      DO IS=1,MSC
-                       READ(1113,*) K, M, AC2(IP,IS,ID)
-                       AC2(IP,IS,ID) =  AC2(IP,IS,ID) / PI2 / SPSIG(IS)
+                       READ(1113,*) K, M, AC2(IS,ID,IP)
+                       AC2(IS,ID,IP) =  AC2(IS,ID,IP) / PI2 / SPSIG(IS)
                      ENDDO
                    ENDDO
                    REWIND(1113)
@@ -1072,7 +1074,7 @@
                  HS          = 0.
                  TP          = 0.
                  WINDTH      = 0.
-                 AC2(IP,:,:) = 0.
+                 AC2(:,:,IP) = 0.
                END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
             END DO ! IP
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN

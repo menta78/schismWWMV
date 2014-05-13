@@ -134,7 +134,7 @@
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
 # ifndef WWM_MPI
         DO IP = 1, MNP
-          ACLOC = AC2(IP,:,:)
+          ACLOC = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_ROMS_OUT 1')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
@@ -171,7 +171,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate err')
         OUTT=0
         DO IP = 1, MNP
-          ACLOC = AC2(IP,:,:)
+          ACLOC = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_ROMS_OUT 2')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
@@ -959,6 +959,7 @@
           eJpress_loc=0
           eZetaCorr_loc=0
 # ifdef FIRST_ORDER_ARDHUIN
+!todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IP,IS)
@@ -973,7 +974,7 @@
             eVint=0
 #  endif
             DO ID=1,MDC
-              eLoc=AC2(IP,IS,ID)*eMult
+              eLoc=AC2(IS,ID,IP)*eMult
               eScal=COSTH(ID)*PartialU1(1)+SINTH(ID)*PartialV1(1)
               eZeta=eWk/eSinhkd + (eWk/eSigma)*eScal
               eZetaCorr_loc=eZetaCorr_loc + eLoc*eZeta
@@ -998,6 +999,7 @@
 #  endif
           END DO
 # else
+!todo ID IS ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IP,IS)
@@ -1008,7 +1010,7 @@
             eSinhkd2=eSinhkd**2
             eSigma=SPSIG(IS)
             DO ID=1,MDC
-              eLoc=AC2(IP,IS,ID)*eMult
+              eLoc=AC2(IS,ID,IP)*eMult
               TheInt=0
               DO k=1,Nlevel
                 eHeight=z_w_loc(k)-z_w_loc(k-1)
@@ -1380,7 +1382,7 @@
 # endif
         DO IP = 1, MNP
           idx=ReindexPermInv_wav(IP)
-          ACLOC = AC2(IP,:,:)
+          ACLOC = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PGMCL_ROMS_OUT')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)

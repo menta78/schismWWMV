@@ -198,6 +198,7 @@
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
+!todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IP,IS)
@@ -210,7 +211,7 @@
             eUint=0
             eVint=0
             DO ID=1,MDC
-              eLoc=AC2(IP,IS,ID)*eMult
+              eLoc=AC2(IS,ID,IP)*eMult
               eJPress=G9*(kD/eSinh2kd)*(1/eDep) * eLoc
               eJPress_loc=eJPress_loc + eJPress
               eUint=eUint + eLoc*COSTH(ID)
@@ -284,7 +285,7 @@
           FLUSH(11101)
           FLUSH(11102)
           FLUSH(11142)                        !ccf
-          ACLOC = AC2(IP,:,:)
+          ACLOC(:,:) = AC2(:,:,IP)
           CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT 1')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
@@ -335,7 +336,7 @@
             OUTT(iplg(IP), IL+3*NLVT) = STOKES_X(IL,IP)
             OUTT(iplg(IP), IL+4*NLVT) = STOKES_Y(IL,IP)
           END DO
-          ACLOC = AC2(IP,:,:)
+          ACLOC(:,:) = AC2(:,:,IP)
           CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
@@ -439,7 +440,7 @@
 !            IF (ABS(IOBP(IP)) .GT. 0) CYCLE
             IF (DEP(IP) .LT. DMIN) CYCLE
             DEPLOC = DEP(IP)
-            ACLOC = AC2(IP,:,:)
+            ACLOC(:,:) = AC2(:,:,IP)
             m0    = ZERO
             EWSIG  = ZERO
             ETOTS  = ZERO
@@ -510,7 +511,7 @@
 !            IF (ABS(IOBP(IP)) .GT. 0) CYCLE
             IF (DEP(IP) .LT. DMIN) CYCLE
             IF (.NOT. LETOT) THEN
-              ACLOC = AC2(IP,:,:)
+              ACLOC(:,:) = AC2(:,:,IP)
               DO ID = 1, MDC
                 DO IS = 2, MSC
                   ELOC  = DS_INCR(IS)*DDIR*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))
@@ -573,10 +574,11 @@
             DO IP = 1, MNP
 !              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
               IF (DEP(IP) .LT. DMIN) CYCLE
-              ACLOC = AC2(IP,:,:)
+              ACLOC(:,:) = AC2(:,:,IP)
               DO IL = 1, NLVT
                 ZZETA = SHYFZETA(IL,IP) + DEP(IP)
                 IF (ZZETA .LT. 0) CYCLE
+!todo IS ID ordering
                 DO IS = 1, MSC
                   KW           = WK(IP,IS) * ZZETA
                   KD           = WK(IP,IS) * DEP(IP)
@@ -587,7 +589,7 @@
                   COSHKW       = MyCOSH(MIN(KDMAX,KW))
                   DO ID = 1, MDC
                     !Dimension of ELOC = m^2
-                    ELOC = AC2(IP,IS,ID) * SIGPOW(IS,2) * DDIR * FRINTF * TWO ! Here is the factor TWO same as mono
+                    ELOC = AC2(IS,ID,IP) * SIGPOW(IS,2) * DDIR * FRINTF * TWO ! Here is the factor TWO same as mono
                     IF (ELOC .LT. 10E-8) CYCLE
                       tmp          =-ELOC * WK(IP,IS) / SINH2KD * (COSH2KW - ONE) - &
      &                               ELOC * SHYFZETA(IL,IP) / DEP(IP)**TWO        + &
