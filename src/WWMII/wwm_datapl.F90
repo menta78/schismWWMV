@@ -332,6 +332,7 @@
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
+         LOGICAL                :: L_SOLVER_NORM = .FALSE.
 
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
@@ -1215,7 +1216,6 @@
       END TYPE LocalColorInfo
       TYPE I5_SolutionData
          real(rkind), dimension(:,:,:), pointer :: AC1
-         real(rkind), dimension(:,:,:), pointer :: AC2
          real(rkind), dimension(:,:,:), pointer :: AC3
          real(rkind), dimension(:,:,:), pointer :: AC4
          real(rkind), dimension(:,:,:), pointer :: AC5

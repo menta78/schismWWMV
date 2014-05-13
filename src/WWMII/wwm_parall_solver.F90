@@ -2851,7 +2851,7 @@
       integer :: MaxIter = 30
       integer IP
       MaxError=SOLVERTHR
-      CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat % AC2, SolDat % AC3)
+      CALL I5B_APPLY_FCT(LocalColor, SolDat,  AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual
       SolDat % AC4=SolDat % AC3                    ! hat{r_0} term
@@ -2900,7 +2900,7 @@
 
         ! L6.1 x(i)=x(i-1) + Alpha y
         DO IP=1,MNP
-          SolDat%AC2(:,:,IP)=SolDat%AC2(:,:,IP)                        &
+          AC2(:,:,IP)=AC2(:,:,IP)                        &
      &      + Alpha(:,:)*SolDat%AC1(:,:,IP)
         END DO
 
@@ -2927,12 +2927,12 @@
 
         ! L11 x(i)=x(i-1) + Omega z
         DO IP=1,MNP
-          SolDat%AC2(:,:,IP)=SolDat%AC2(:,:,IP)                        &
+          AC2(:,:,IP)=AC2(:,:,IP)                        &
      &      + Omega(:,:)*SolDat%AC1(:,:,IP)
         END DO
 
         ! L12 If x is accurate enough finish
-        CALL I5B_APPLY_FCT(LocalColor, SolDat,  SolDat%AC2, SolDat%AC1)
+        CALL I5B_APPLY_FCT(LocalColor, SolDat,  AC2, SolDat%AC1)
         CALL I5B_L2_LINF(SolDat%AC1, SolDat%B_block, Norm_L2, Norm_LINF)
         CritVal=maxval(Norm_L2)
 !        WRITE(740+myrank,*) 'CritVal=', CritVal
@@ -2959,7 +2959,7 @@
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDat
       integer istat
-      allocate(SolDat % AC1(MSC,MDC,MNP), SolDat % AC2(MSC,MDC,MNP), SolDat % AC3(MSC,MDC,MNP), SolDat % AC4(MSC,MDC,MNP), SolDat % AC5(MSC,MDC,MNP), SolDat % AC6(MSC,MDC,MNP), SolDat % AC7(MSC,MDC,MNP), stat=istat)
+      allocate(SolDat % AC1(MSC,MDC,MNP), SolDat % AC3(MSC,MDC,MNP), SolDat % AC4(MSC,MDC,MNP), SolDat % AC5(MSC,MDC,MNP), SolDat % AC6(MSC,MDC,MNP), SolDat % AC7(MSC,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 75')
       allocate(SolDat % ASPAR_block(MSC,MDC,NNZ), SolDat % B_block(MSC,MDC, MNP), stat=istat)
 # ifndef SOR_DIRECT
@@ -3004,7 +3004,7 @@
       USE DATAPOOL, only : I5_SolutionData
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDat
-      deallocate(SolDat % AC1, SolDat % AC2, SolDat % AC3, SolDat % AC4, SolDat % AC5, SolDat % AC6, SolDat % AC7)
+      deallocate(SolDat % AC1, SolDat % AC3, SolDat % AC4, SolDat % AC5, SolDat % AC6, SolDat % AC7)
       deallocate(SolDat % ASPAR_block, SolDat % B_block, SolDat % ASPAR_pc)
       END SUBROUTINE
 !**********************************************************************
@@ -3514,10 +3514,7 @@
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin I5B_EIMPS'
 # endif
-      DO IP=1,MNP
-        SolDat % AC2(:,:,IP)=AC2(:,:,IP)
-      END DO
-      CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
+      CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2, SolDat%ASPAR_block, SolDat%B_block)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'After ASPAR init'
 # endif
@@ -3541,10 +3538,8 @@
 # endif
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
       DO IP=1,MNP
-        DO IS=1,MSC
-          DO ID=1,MDC
-            AC2(IS,ID,IP)=MAX(ZERO, SolDat%AC2(IS,ID,IP))*MyREAL(IOBPD(ID,IP))
-          END DO
+        DO ID=1,MDC
+          AC2(:,ID,IP)=MAX(ZERO, AC2(:,ID,IP))*MyREAL(IOBPD(ID,IP))
         END DO
       END DO
       WRITE(STAT%FHNDL,*) 'nbIter=', nbIter, 'L2/LINF=', maxval(Norm_L2), maxval(Norm_LINF)
@@ -3565,14 +3560,14 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ), ASPARL(MSC,MDC,NNZ), BL(MSC,MDC,MNP)
-      REAL(rkind) :: X(MSC,MDC,MNP), B(MSC,MDC,MNP), U(MSC,MDC,MNP)
-      REAL(rkind) :: MaxNorm, p_is_converged, X_LOC(MSC,MDC)
+      REAL(rkind) :: B(MSC,MDC,MNP), U(MSC,MDC,MNP)
+      REAL(rkind) :: MaxNorm, p_is_converged
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
       REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: uloc(msc,mdc),xloc(msc,mdc)
+      REAL(rkind) :: uloc(msc,mdc),ACLOC(msc,mdc)
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -3590,7 +3585,6 @@
 
       DO IS=1,MSC
         DO ID=1,MDC
-          X(IS,ID,:)=AC2(IS,ID,:)
           U(IS,ID,:)=AC2(IS,ID,:)
         END DO
       END DO
@@ -3677,12 +3671,10 @@
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-!      OPEN(850+myrank,STATUS = 'UNKNOWN', FORM = 'FORMATTED')
 
       DO
         is_converged = 0
         ASPAR = ASPARL
-        !CALL EIMPS_B_BLOCK(X,BL)
         B = BL
 
         DO IP=1,NP_RES 
@@ -3690,7 +3682,7 @@
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                CALL CYCLE3 (IP, max(zero,X(:,:,IP)), IMATRA, IMATDA)
+                CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
                 ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                 B(:,:,IP)             = BL(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
               ENDIF
@@ -3708,29 +3700,27 @@
           eSum = B(:,:,IP)
 ! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
-            IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * X(:,:,JA(J)) ! this takes more time than anything else factor 10
+            IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * AC2(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
-
-          xloc = x(:,:,ip)
-!
+          ACLOC = AC2(:,:,ip)
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
               ID2 = ID + 1
               IF (ID .EQ. 1) ID1 = MDC
               IF (ID .EQ. MDC) ID2 = 1
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*XLOC(:,ID1)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*XLOC(:,ID2)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*ACLOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*ACLOC(:,ID2)
             END DO
           END IF
 !
           IF (FREQ_SHIFT_IMPL) THEN
             DO ID=1,MDC
               DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*XLOC(IS-1,ID)
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*ACLOC(IS-1,ID)
               END DO
               DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*XLOC(IS+1,ID)
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*ACLOC(IS+1,ID)
               END DO
             END DO
           END IF
@@ -3738,11 +3728,11 @@
           !eSum=max(zero,eSum/ASPAR(:,:,I_DIAG(IP))) ! solve ... 
           eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ...
 
-          !if (melim .gt. 0) call limiter(ip,xloc,esum)
+          !if (melim .gt. 0) call limiter(ip,ACLOC,esum)
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
-            !x(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
-            x(:,:,IP)=eSum ! update ...
+            !AC2(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
+            AC2(:,:,IP)=eSum ! update ...
             sumu = sum(u(:,:,ip))
             sumx = sum(esum)
             if (sumx .gt. thr8) then 
@@ -3753,7 +3743,7 @@
           ELSE
             U(:,:,IP)=eSum ! update 
             sumu = sum(esum)
-            sumx = sum(x(:,:,ip))
+            sumx = sum(AC2(:,:,ip))
             if (sumu .gt. thr8) then
               p_is_converged = abs(sumx-sumu)/sumu
             else
@@ -3774,12 +3764,10 @@
 
           IF (nbiter .eq. maxiter-1 .and. p_is_converged .ge. solverthr) THEN
              WRITE(850+myrank,'(3I10,2F20.17,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-             CALL FLUSH(850+myrank)
+             FLUSH(850+myrank)
           ENDIF
 
-        END DO ! IP 
-        !CLOSE(850+myrank)
-
+        END DO
         IF (LCHKCONV) THEN
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
@@ -3789,77 +3777,84 @@
 
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
-          CALL EXCHANGE_P4D_WWM(X)
+          CALL EXCHANGE_P4D_WWM(AC2)
         ELSE
           CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
         IF (BLOCK_GAUSS_SEIDEL) THEN
-          U = X
+          U = AC2
         ELSE
-          X = U
-        ENDIF 
+          AC2 = U
+        ENDIF
 !
-#ifdef SOLVER_NORM
+! The termination criterion
 !
-        Norm_L2=0
-        DO IP=1,NP_RES
-          eSum=-B(:,:,IP)
-          DO J=IA(IP),IA(IP+1)-1
-            idx=JA(J)
-            eSum=eSum + ASPAR(:,:,J)*X(:,:,idx)
-          END DO
-          IF (REFRACTION_IMPL) THEN
-            DO ID=1,MDC
-              ID1 = ID - 1
-              ID2 = ID + 1
-              IF (ID .EQ. 1) ID1 = MDC
-              IF (ID .EQ. MDC) ID2 = 1
-              eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*X(:,ID1,IP)
-              eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*X(:,ID2,IP)
-            END DO
-          END IF
-          IF (FREQ_SHIFT_IMPL) THEN
-            DO ID=1,MDC
-              DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*X(IS-1,ID,IP)
-              END DO
-              DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*X(IS+1,ID,IP)
-              END DO
-            END DO
-          END IF
-          Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
-          Norm_LINF = max(Norm_LINF, abs(eSum))
-        END DO
-#endif
-#ifdef MPI_PARALL_GRID
-        CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
-        CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
-        MaxNorm=maxval(Norm_L2_gl)
-#else
-        MaxNorm=maxval(Norm_L2)
-#endif
-
-        nbIter=nbIter+1
         WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin
-        !WRITE(*,'(A10,4I10,2F20.10)') 'solver', nbiter, maxiter, is_converged, np_global-is_converged, p_is_converged, pmin
+        !
+        ! Number of iterations
+        !
+        nbIter=nbIter+1
+        IF (nbiter .eq. maxiter) THEN
+          EXIT
+        ENDIF
+        !
+        ! Check via number of converged points
+        !
         IF (LCHKCONV) THEN
           IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) EXIT
-        ELSE
-          IF (nbiter .eq. maxiter) EXIT
         ENDIF
-      END DO ! end open do loop
+        !
+        ! Check via the norm
+        !
+        IF (L_SOLVER_NORM) THEN
+          Norm_L2=0
+          DO IP=1,NP_RES
+            eSum=-B(:,:,IP)
+            DO J=IA(IP),IA(IP+1)-1
+              idx=JA(J)
+              eSum=eSum + ASPAR(:,:,J)*AC2(:,:,idx)
+            END DO
+            IF (REFRACTION_IMPL) THEN
+              DO ID=1,MDC
+                ID1 = ID - 1
+                ID2 = ID + 1
+                IF (ID .EQ. 1) ID1 = MDC
+                IF (ID .EQ. MDC) ID2 = 1
+                eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*AC2(:,ID1,IP)
+                eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*AC2(:,ID2,IP)
+              END DO
+            END IF
+            IF (FREQ_SHIFT_IMPL) THEN
+              DO ID=1,MDC
+                DO IS=2,MSC
+                  eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*AC2(IS-1,ID,IP)
+                END DO
+                DO IS=1,MSC-1
+                  eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*AC2(IS+1,ID,IP)
+                END DO
+              END DO
+            END IF
+            Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
+            Norm_LINF = max(Norm_LINF, abs(eSum))
+          END DO
+#ifdef MPI_PARALL_GRID
+          CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
+          CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+          MaxNorm=maxval(Norm_L2_gl)
+#else
+          MaxNorm=maxval(Norm_L2)
+#endif
+        END IF
+      END DO
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME4)
 #endif
 !
       DO IP = 1, MNP
-        DO IS=1,MSC
-          DO ID=1,MDC
-            AC2(IS,ID,IP) = MAX(ZERO,X(IS,ID,IP)) !* MyREAL(IOBPD(ID,IP))
-          END DO
+        DO ID=1,MDC
+          AC2(:,ID,IP) = MAX(ZERO,AC2(:,ID,IP)) !* MyREAL(IOBPD(ID,IP))
         END DO
       END DO
 
