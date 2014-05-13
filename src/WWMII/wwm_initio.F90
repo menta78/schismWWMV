@@ -668,7 +668,7 @@
       FLUSH(STAT%FHNDL)
 
       DO IP=1, MNP
-        AC1(IP,:,:) = AC2(:,:,IP)
+        AC1(:,:,IP) = AC2(:,:,IP)
       END DO
 
       END SUBROUTINE

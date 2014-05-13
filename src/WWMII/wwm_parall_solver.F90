@@ -4111,7 +4111,7 @@
       WRITE(740+myrank,*) 'Begin I5B_EIMPS'
 # endif
       DO IP=1,MNP
-        SolDat % AC2(:,:,IP)=AC2(IP,:,:)
+        SolDat % AC2(:,:,IP)=AC2(:,:,IP)
       END DO
       CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(SolDat%AC2, SolDat%ASPAR_block, SolDat%B_block)
 # ifdef DEBUG
@@ -4143,7 +4143,7 @@
       DO IP=1,MNP
         DO IS=1,MSC
           DO ID=1,MDC
-            AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS,ID,IP))*MyREAL(IOBPD(ID,IP))
+            AC2(IS,ID,IP)=MAX(ZERO, SolDat%AC2(IS,ID,IP))*MyREAL(IOBPD(ID,IP))
           END DO
         END DO
       END DO
@@ -4190,7 +4190,7 @@
         IS1=LocalColor%ISbegin(iMSCblock)
         IS2=LocalColor%ISbegin(iMSCblock)
         DO IP=1,MNP
-          SolDat % AC2(1:LocalColor%ISlen(iMSCblock),:,IP)=AC2(IP,IS1:IS2,:)
+          SolDat % AC2(1:LocalColor%ISlen(iMSCblock),:,IP)=AC2(IS1:IS2,:,IP)
         END DO
         CALL I4_EIMPS_ASPAR_B_BLOCK(LocalColor, SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2, iMSCblock)
         CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%B_block)
@@ -4204,7 +4204,7 @@
         DO IP=1,MNP
           DO IS=IS1,IS2
             DO ID=1,MDC
-              AC2(IP,IS,ID)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))!*MyREAL(IOBPD(ID,IP))
+              AC2(IS,ID,IP)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))!*MyREAL(IOBPD(ID,IP))
             END DO
           END DO
         END DO
@@ -4256,8 +4256,8 @@
 
       DO IS=1,MSC
         DO ID=1,MDC
-          X(IS,ID,:)=AC2(:,IS,ID)
-          U(IS,ID,:)=AC2(:,IS,ID)
+          X(IS,ID,:)=AC2(IS,ID,:)
+          U(IS,ID,:)=AC2(IS,ID,:)
         END DO
       END DO
 
@@ -4532,7 +4532,7 @@
       DO IP = 1, MNP
         DO IS=1,MSC
           DO ID=1,MDC
-            AC2(IP,IS,ID) = MAX(ZERO,X(IS,ID,IP)) !* MyREAL(IOBPD(ID,IP))
+            AC2(IS,ID,IP) = MAX(ZERO,X(IS,ID,IP)) !* MyREAL(IOBPD(ID,IP))
           END DO
         END DO
       END DO
