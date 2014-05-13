@@ -252,7 +252,7 @@
          FLUSH(STAT%FHNDL)
 
          DO IP = 1, MNP
-           ACLOC = AC2(IP,:,:)
+           ACLOC = AC2(:,:,IP)
            IF (DEP(IP) .GT. DMIN) THEN
              CALL INTPAR(IP, MSC, ACLOC, OUTPAR)
              OUTT_INTPAR(IP,:) = OUTPAR
@@ -521,7 +521,7 @@
         IF (LCHKCONV) THEN
           CALL CHECK_STEADY(ITERTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
 !             DO IP = 1, MNP
-!               IF (IP_IS_STEADY(IP) .GE. 1) AC2(IP,:,:) = AC1(IP,:,:)
+!               IF (IP_IS_STEADY(IP) .GE. 1) AC2(:,:,IP) = AC1(IP,:,:)
 !             ENDDO
           IF ( (CONV1 .GT. 100._rkind*QSCONV1 .AND.                       &
      &             CONV2 .GT. 100._rkind*QSCONV2 .AND.                    &
@@ -761,7 +761,7 @@
       USE DATAPOOL, only: MAIN, SEBO,                                  &
      &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
      &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
-     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, AC2, WBAC,   &
+     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, WBAC,        &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC

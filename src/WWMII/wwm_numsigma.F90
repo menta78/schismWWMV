@@ -31,7 +31,7 @@
            IF (IOBP(IP) .EQ. 2) CYCLE
            CALL PROPSIGMA(IP,CAS)
            DO ID = 1, MDC
-             ACQ(1:MSC)  = AC2(IP,:,ID)
+             ACQ(1:MSC)  = AC2(:,ID,IP)
              CASS(1:MSC) = CAS(:,ID)
              CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND)
              REST    = ABS(MOD(CFLCAS,ONE))
@@ -54,14 +54,14 @@
              END DO ! end Interation
 !             IF (LITERSPLIT) THEN
 !               IF (IITERSPLIT == 0) THEN
-!                 DAC_SIG(IP,:,ID) = (MAX(0.,REAL(rkind)(ACQ(1:MSC))) - AC2(IP,:,ID))
-!                 AC2(IP,:,ID) = MAX(0.,REAL(rkind)(ACQ(1:MSC)))
+!                 DAC_SIG(IP,:,ID) = (MAX(0.,REAL(rkind)(ACQ(1:MSC))) - AC2(:,ID,IP))
+!                 AC2(:,ID,IP) = MAX(0.,REAL(rkind)(ACQ(1:MSC)))
 !               ELSE
-!                 DAC_SIG(IP,:,ID) = (MAX(0.,REAL(rkind)(ACQ(1:MSC))) - AC2(IP,:,ID))
-!                 AC2(IP,:,ID) = MAX(0.,REAL(rkind)(ACQ(1:MSC))) - DAC_ADV(IP,:,ID) - DAC_THE(IP,:,ID) - DAC_SOU(IP,:,ID)
+!                 DAC_SIG(IP,:,ID) = (MAX(0.,REAL(rkind)(ACQ(1:MSC))) - AC2(:,ID,IP))
+!                 AC2(:,ID,IP) = MAX(0.,REAL(rkind)(ACQ(1:MSC))) - DAC_ADV(IP,:,ID) - DAC_THE(IP,:,ID) - DAC_SOU(IP,:,ID)
 !               END IF
 !             ELSE
-               AC2(IP,:,ID) = MAX(ZERO,ACQ(1:MSC))
+               AC2(:,ID,IP) = MAX(ZERO,ACQ(1:MSC))
 !             END IF
            END DO
          END DO
@@ -88,7 +88,7 @@
         IF (IOBP(IP) .EQ. 2) CYCLE
         CALL PROPSIGMA(IP,CAS)
         DO ID = 1, MDC
-          ACQ(1:MSC)  = AC2(IP,:,ID)
+          ACQ(1:MSC)  = AC2(:,ID,IP)
           CASS(1:MSC) = CAS(:,ID)
           CASS(0)     = 0.
           CASS(MSC+1) = CASS(MSC)
@@ -117,7 +117,7 @@
             END DO
             ACQ(1:MSC)=TMP
           END DO
-          AC2(IP,:,ID) = MAX(ZERO,ACQ(1:MSC))
+          AC2(:,ID,IP) = MAX(ZERO,ACQ(1:MSC))
         END DO
       END DO
       END SUBROUTINE
@@ -140,7 +140,7 @@
         IF (IOBP(IP) .EQ. 2) CYCLE
         CALL PROPSIGMA(IP,CAS)
         DO ID = 1, MDC
-          ACQ  = AC2(IP,:,ID)
+          ACQ  = AC2(:,ID,IP)
           CASS(1:MSC) = CAS(:,ID)
           CASS(0)     = 0.
           CASS(MSC+1) = CASS(MSC)
@@ -161,7 +161,7 @@
           B(MSC) = B(MSC) + DT4F*CM(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           !
           CALL SOLVE_TRIDIAG(A,B,C,ACQ,TMP,MSC)
-          AC2(IP,:,ID) = MAX(ZERO,TMP)
+          AC2(:,ID,IP) = MAX(ZERO,TMP)
         END DO
       END DO
       END SUBROUTINE

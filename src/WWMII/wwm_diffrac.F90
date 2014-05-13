@@ -24,7 +24,7 @@
              EWKTOT = ZERO
              ECGTOT = ZERO
              DO IS = 1, MSC
-               EAD = SUM(AC2(IP,IS,:))*DDIR*SIGPOW(IS,2)
+               EAD = SUM(AC2(IS,:,IP))*DDIR*SIGPOW(IS,2)
                ETOT = ETOT + EAD
                EWKTOT = EWKTOT + WK(IP,IS) * EAD
                ECGTOT = ECGTOT + CG(IP,IS) * EAD
@@ -432,7 +432,7 @@
             IF (DEP(IP) .GT. DMIN) THEN
               DO IS = 1, MSC
                 CALL ALL_FROM_TABLE(SPSIG(IS),DEP(IP),WVK,WVCG,WVKDEP,WVN,WVC)
-                EAD = SUM(AC2(IP,IS,:))*DDIR*SIGPOW(IS,2)
+                EAD = SUM(AC2(IS,:,IP))*DDIR*SIGPOW(IS,2)
                 ETOT = ETOT + EAD
                 EWKTOT = EWKTOT + WVK *EAD
                 EWCTOT = EWCTOT + WVC *EAD
@@ -488,7 +488,7 @@
                  ETOTC = ZERO
                  ETOTS = ZERO
                  DO ID = 1, MDC
-                   EAD = SUM(AC2(IP,:,ID)*SIGPOW(:,2))*FRINTF*DDIR
+                   EAD = SUM(AC2(:,ID,IP)*SIGPOW(:,2))*FRINTF*DDIR
                    ETOTC = ETOTC + EAD*COS(SPDIR(ID))
                    ETOTS = ETOTS + EAD*SIN(SPDIR(ID))
                  END DO

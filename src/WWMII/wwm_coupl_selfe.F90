@@ -26,6 +26,7 @@
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
+!todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IP,IS)
@@ -38,7 +39,7 @@
             eUint=0
             eVint=0
             DO ID=1,MDC
-              eLoc=AC2(IP,IS,ID)*eMult
+              eLoc=AC2(IS,ID,IP)*eMult
               eJPress=G9*(kD/eSinh2kd)*(1/eDep) * eLoc
               eJPress_loc=eJPress_loc + eJPress
               eUint=eUint + eLoc*COSTH(ID)
@@ -117,7 +118,7 @@
 !            IF (ABS(IOBP(IP)) .GT. 0) CYCLE
             IF (DEP(IP) .LT. DMIN) CYCLE
             DEPLOC = DEP(IP)
-            ACLOC = AC2(IP,:,:)
+            ACLOC = AC2(:,:,IP)
             m0    = ZERO
             EWSIG  = ZERO
             ETOTS  = ZERO
@@ -183,7 +184,7 @@
 !            IF (ABS(IOBP(IP)) .GT. 0) CYCLE
             IF (DEP(IP) .LT. DMIN) CYCLE
             IF (.NOT. LETOT) THEN
-              ACLOC = AC2(IP,:,:)
+              ACLOC = AC2(:,:,IP)
               DO ID = 1, MDC
                 DO IS = 2, MSC
                   ELOC  = 0.5_rkind * (SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS_INCR(IS)*DDIR
@@ -250,7 +251,7 @@
             DO IP = 1, MNP
 !              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
               IF (DEP(IP) .LT. DMIN) CYCLE
-              ACLOC = AC2(IP,:,:)
+              ACLOC = AC2(:,:,IP)
               DO IL = KBP(IP), NVRT
                 ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom
                 DO IS = 1, MSC !freq
@@ -296,6 +297,7 @@
           !WILD1: \sum_{dir}{E} at nodes; WILD2: K*D at nodes
           WILD1=0; WILD2=0; WILD4=0 !for exceptions
           FSS=0; FCS=0; FSC=0; FCC=0
+!todo IS IP ordering
           DO IS = 1, MSC !freq
             DO IP = 1, MNP
 !              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
@@ -316,7 +318,7 @@
                 FCC(IL,IP)   = COSHKW/COSHKD
                 DO ID = 1, MDC !direction
                   !Dimension of ELOC = m^2
-                  ELOC = AC2(IP,IS,ID) * SIGPOW(IS,2) * DDIR * FRINTF * 1.
+                  ELOC = AC2(IS,ID,IP) * SIGPOW(IS,2) * DDIR * FRINTF * 1.
                   IF (ELOC .LT. 10E-8) CYCLE
                   WILD1(IL,IP)=WILD1(IL,IP)+ELOC
                   SXX3D(IL,IP) = SXX3D(IL,IP)+G9*ELOC*WK(IP,IS)*(FCS(IL,IP)*FCC(IL,IP)*(COS(SPDIR(ID))**2+1.)-FSS(IL,IP)*FCS(IL,IP)) 
@@ -481,7 +483,7 @@
       RSYY(:) = zero
 
       DO IP = 1, MNP
-
+!todo IS ID ordering
         DO IS = 1, MSC
 
         CK = CG(IP,IS) * WK(IP,IS) ! CG ~ Group Velocity ; K ~ Wave Number
@@ -492,7 +494,7 @@
 
           DO ID = 1, MDC
 
-          ELOC = AC2(IP,IS,ID)  * DDIR * FRINTF
+          ELOC = AC2(IS,ID,IP)  * DDIR * FRINTF
 
 !         AC2 ~ Local Action Density
 !         Directional Property of the Action Spectrum

@@ -20,7 +20,9 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
 
-         AC1 = AC2 
+         DO IP=1, MNP
+          AC1(IP,:,:) = AC2(:,:,IP)
+         END DO
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
@@ -93,9 +95,10 @@
            THWOLD(:,1) = THWNEW
            U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
            DO IP = 1, MNP
+!todo IS ID ordering
              DO IS = 1, MSC
                DO ID = 1, MDC
-                 FL3(1,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                 FL3(1,ID,IS) = AC2(IS,ID,IP) * PI2 * SPSIG(IS)
                  FL(1,ID,IS)  = FL3(1,ID,IS)
                  SL(1,ID,IS)  = FL(1,ID,IS)
                END DO
@@ -172,9 +175,9 @@
      &                          Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                          SL(1,:,:), FCONST(1,:), FMEANWS(IP), MIJ(IP))
                ENDIF ! true false ...
-               DO IS = 1, MSC
-                 DO ID = 1, MDC
-                   AC2(IP,IS,ID) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
+               DO ID = 1, MDC
+                 DO IS = 1, MSC
+                   AC2(IS,ID,IP) =  FL3(1,ID,IS) / PI2 / SPSIG(IS)
                  END DO
                END DO
              ENDIF 
@@ -241,7 +244,9 @@
           DT4F = 0.5_rkind*DT4A
         END IF
 
-        AC1  = AC2
+        DO IP=1, MNP
+          AC1(IP,:,:)  = AC2(:,:,IP)
+        ENDDO
 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME1)
@@ -406,6 +411,7 @@
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
 #endif
+        INTEGER :: IP
 
         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
           DT4A = MAIN%DELT
@@ -419,7 +425,9 @@
           DT4F = DT4A
         END IF
 
-        AC1  = AC2
+        DO IP=1, MNP
+          AC1(IP,:,:)  = AC2(:,:,IP)
+        END DO
 
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)

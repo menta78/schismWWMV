@@ -166,7 +166,7 @@
 #ifdef MPI_PARALL_GRID
          DO IP = 1, MNP
             IF (DEP(IP) .GT. DMIN) THEN
-              ACLOC(:,:) = AC2(IP,:,:)
+              ACLOC(:,:) = AC2(:,:,IP)
               CALL INTPAR(IP, MSC, ACLOC, OUTPARS)
               CALL CURRPAR(IP, CURRPARS)
               CALL WINDPAR(IP, WINDPARS)
@@ -258,7 +258,7 @@
          DO IP = 1, MNP
             OUTT(IP,:) = 0.
             IF (DEP(IP) .GT. DMIN) THEN
-              ACLOC(:,:) = AC2(IP,:,:)
+              ACLOC(:,:) = AC2(:,:,IP)
               CALL INTPAR(IP, MSC, ACLOC, OUTPARS)
               CALL CURRPAR(IP, CURRPARS)
               CALL WINDPAR(IP, WINDPARS)
@@ -363,7 +363,7 @@
       sumAC=0
       DO I=1,3
         IP=INE(I,IEfind)
-        ACLOC(:,:) = AC2(IP,:,:)
+        ACLOC(:,:) = AC2(:,:,IP)
         CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
         WRITE(DBG%FHNDL,*) 'IP=', IP, 'HS=', HS, 'wi=', WI(I)
         HSinterp=HSinterp+WI(I)*HS
@@ -1257,7 +1257,7 @@
       SumHS=ZERO
       ISMAX=MSC
       DO IP=1,MNP
-        ACLOC(:,:) = AC2(IP,:,:)
+        ACLOC(:,:) = AC2(:,:,IP)
         CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
         IF (HS.gt.MaxHS) THEN
           MaxHS=HS
@@ -1608,7 +1608,7 @@
 
          DO IP = 1, MNP
             IF (DEP(IP) .GT. DMIN) THEN
-              ACLOC(:,:) = AC2(IP,:,:)
+              ACLOC(:,:) = AC2(:,:,IP)
               CALL INTPAR( IP, MSC, ACLOC, OUTPAR )
               OUTT(IP,:) = OUTPAR(:)
             ELSE
@@ -1650,7 +1650,7 @@
 
          CALL MJD2CT(MAIN%TMJD, CTIME)
          DO IP = 1, MNP
-            ACLOC(:,:) = AC2(IP,:,:)
+            ACLOC(:,:) = AC2(:,:,IP)
             CALL INTPAR( IP, MSC, ACLOC, OUTPAR )
             OUTT(IP,:) = OUTPAR(:)
          END DO
@@ -1974,7 +1974,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 4')
         OUTT_LOC=0
         DO IP = 1, MNP
-          ACLOC(:,:) = AC2(IP,:,:)
+          ACLOC(:,:) = AC2(:,:,IP)
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
           OUTT_LOC(iplg(IP),:) = OUTPAR(:)
         END DO
@@ -1989,7 +1989,7 @@
         ALLOCATE(OUTT(NP_RES,OUTVARS_COMPLETE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
         DO IP = 1, NP_RES
-          ACLOC(:,:) = AC2(IP,:,:)
+          ACLOC(:,:) = AC2(:,:,IP)
           CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
           OUTT(IP,:) = OUTPAR(:)
         END DO
@@ -1998,7 +1998,7 @@
 !$OMP PARALLEL DEFAULT(NONE) SHARED(AC2,OUTT,FRHIGH,MNP,MSC) PRIVATE(ACLOC,OUTPAR,IP)
 !$OMP DO
       DO IP = 1, MNP
-        ACLOC(:,:) = AC2(IP,:,:)
+        ACLOC(:,:) = AC2(:,:,IP)
         CALL PAR_COMPLETE(IP, MSC, ACLOC, OUTPAR)
         OUTT(IP,:) = OUTPAR(:)
       END DO

@@ -433,7 +433,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     end do
 
     if(isol==0)then
-       write(DBG%FHNDL,*)'no solution found at gridpoint', IP, SUM(AC2(IP,:,:))
+       write(DBG%FHNDL,*)'no solution found at gridpoint', IP, SUM(AC2(:,:,IP))
        write(DBG%FHNDL,'(A20,F15.8,A20,F15.8,A10,F15.8,A20,F15.8)')'tau_normal = ',tau_normal,' TAUWLIM =', TAUWLIM,'err =',err,'(abs(err)/TAUWLIM)  = ',abs(err)/TAUWLIM
        write(DBG%FHNDL,*) wind10, ufric(ip)
 !       if((abs(err)/TAUWLIM).ge.1.0_rkind) then
@@ -614,8 +614,8 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     DO  IS = 1, MSC
        SIGDENS(IS) = 0.
        DO  ID = 1, MDC
-          SIGDENS(IS) = SIGDENS(IS) + SPSIG(IS) * AC2(IP,IS,ID)
-          KTHETA(IS,ID) = AC2(IP,IS,ID)
+          SIGDENS(IS) = SIGDENS(IS) + SPSIG(IS) * AC2(IS,ID,IP)
+          KTHETA(IS,ID) = AC2(IS,ID,IP)
        END DO
        SIGDENS(IS)=SIGDENS(IS)*DDIR 
     END DO
@@ -673,7 +673,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
              GDONEL=2.8_rkind-TEMP6
              GAMMAD=GDONEL*SQRTBN(IS)*TEMP42
              SWINEB =  GAMMAD * SIGMA * RHOAW ! NEW SWINEB
-             S_IN(IS,ID)=SWINEB*AC2(IP,IS,ID)*SPSIG(IS)
+             S_IN(IS,ID)=SWINEB*AC2(IS,ID,IP)*SPSIG(IS)
           END IF
        ENDDO
     ENDDO
@@ -687,7 +687,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
           IF ( WIND10 .GT. VERYSMALL ) THEN
              S_IN(IS,ID)= S_IN(IS,ID) * Lfactor(IS)
              IMATRA(IS,ID) = IMATRA(IS,ID) + S_IN(IS,ID)/SPSIG(IS) 
-             SWINEB=S_IN(IS,ID)/(AC2(IP,IS,ID)*SPSIG(IS))
+             SWINEB=S_IN(IS,ID)/(AC2(IS,ID,IP)*SPSIG(IS))
           END IF
        ENDDO
     ENDDO
