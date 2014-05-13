@@ -145,8 +145,8 @@
                ACLOC = AC2(:,:,IP)
                CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
                !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-               IMATDAA(IP,:,:) = IMATDA 
-               IMATRAA(IP,:,:) = IMATRA 
+               IMATDAA(:,:,IP) = IMATDA 
+               IMATRAA(:,:,IP) = IMATRA 
              ENDIF
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
@@ -154,8 +154,8 @@
                  ACLOC = AC2(:,:,IP)
                  CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.,10, 'SOURCE_INT_IMP_WWM BOUNDARY')
                  !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-                 IMATDAA(IP,:,:) = IMATDA
-                 IMATRAA(IP,:,:) = IMATRA 
+                 IMATDAA(:,:,IP) = IMATDA
+                 IMATRAA(:,:,IP) = IMATRA 
                ENDIF
              ENDIF
            ENDIF
@@ -283,8 +283,8 @@
            SSBF  = ZERO; DSSBF  = ZERO
            SSINL = ZERO
            IF (DEP(IP) .LT. DMIN) THEN
-             IMATRAA(IP,:,:) = ZERO
-             IMATDAA(IP,:,:) = ZERO
+             IMATRAA(:,:,IP) = ZERO
+             IMATDAA(:,:,IP) = ZERO
              CYCLE
            ENDIF
            IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
@@ -319,18 +319,18 @@
                  FF = FL3(IP,ID,IS)
                  !WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
                  IF (IMETHOD == 0) THEN
-                   IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
-                   IMATDAA(IP,IS,ID) = ZERO 
+                   IMATRAA(IS,ID,IP) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
+                   IMATDAA(IS,ID,IP) = ZERO 
                  ELSE IF (IMETHOD == 1) THEN 
-                   IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
+                   IMATRAA(IS,ID,IP) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
                  ELSE IF (IMETHOD == 2) THEN
-                   IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
-                   IMATDAA(IP,IS,ID) = -TWO*DSSDS(ID,IS)
+                   IMATRAA(IS,ID,IP) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
+                   IMATDAA(IS,ID,IP) = -TWO*DSSDS(ID,IS)
                  ELSE IF (IMETHOD == 3) THEN
                    IF (SSIN(ID,IS) .GT. ZERO) THEN
-                     IMATRAA(IP,IS,ID) = SSIN(ID,IS)*JAC
+                     IMATRAA(IS,ID,IP) = SSIN(ID,IS)*JAC
                    ELSE
-                     IMATDAA(IP,IS,ID) = -TWO*DSSIN(ID,IS)
+                     IMATDAA(IS,ID,IP) = -TWO*DSSIN(ID,IS)
                    ENDIF
                  ELSE IF (IMETHOD == 4) THEN
                    GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
@@ -340,9 +340,9 @@
                    USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                    TEMP   = USFM*DELFL
                    FLHAB  = MIN(FLHAB,TEMP)
-                   IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-                   IMATDAA(IP,IS,ID) = ZERO ! -FL(IP,ID,IS)
+                   IMATRAA(IS,ID,IP) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
+                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IS,ID,IP))))
+                   IMATDAA(IS,ID,IP) = ZERO ! -FL(IP,ID,IS)
                  ENDIF 
                ENDDO ! ID
              ENDDO ! IS
@@ -371,8 +371,8 @@
                ENDIF ! MESTR
                IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
                IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-               IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
-               IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3 
+               IMATDAA(:,:,IP) = IMATDAA(:,:,IP) + DSSBR  + DSSNL3 + DSSBF
+               IMATRAA(:,:,IP) = IMATRAA(:,:,IP) + SSBR + SSNL3 
              ENDIF ! ISHALLOW(IP) .EQ. 1
            ELSE ! IOBP(IP) .NE. 0
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
@@ -386,18 +386,18 @@
                      FF = FL3(IP,ID,IS)
                      !WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
                      IF (IMETHOD == 0) THEN
-                       IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
-                       IMATDAA(IP,IS,ID) = ZERO
+                       IMATRAA(IS,ID,IP) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
+                       IMATDAA(IS,ID,IP) = ZERO
                      ELSE IF (IMETHOD == 1) THEN
-                       IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
+                       IMATRAA(IS,ID,IP) = (SSIN(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
                      ELSE IF (IMETHOD == 2) THEN
-                       IMATRAA(IP,IS,ID) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
-                       IMATDAA(IP,IS,ID) = -TWO*DSSDS(ID,IS)
+                       IMATRAA(IS,ID,IP) = (SSIN(ID,IS)+SSNL4(ID,IS))*JAC
+                       IMATDAA(IS,ID,IP) = -TWO*DSSDS(ID,IS)
                      ELSE IF (IMETHOD == 3) THEN
                        IF (SSIN(ID,IS) .GT. ZERO) THEN
-                         IMATRAA(IP,IS,ID) = SSIN(ID,IS)*JAC
+                         IMATRAA(IS,ID,IP) = SSIN(ID,IS)*JAC
                        ELSE
-                         IMATDAA(IP,IS,ID) = -TWO*DSSIN(ID,IS)
+                         IMATDAA(IS,ID,IP) = -TWO*DSSIN(ID,IS)
                        ENDIF
                      ELSE IF (IMETHOD == 4) THEN
                        GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
@@ -407,9 +407,9 @@
                        USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                        TEMP   = USFM*DELFL
                        FLHAB  = MIN(FLHAB,TEMP)
-                       IMATRAA(IP,IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                       LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-                       IMATDAA(IP,IS,ID) = ZERO ! -FL(IP,ID,IS)
+                       IMATRAA(IS,ID,IP) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
+                       LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IS,ID,IP))))
+                       IMATDAA(IS,ID,IP) = ZERO ! -FL(IP,ID,IS)
                      ENDIF
                    ENDDO ! ID
                  ENDDO ! IS
@@ -418,7 +418,7 @@
                    CALL SET_WIND( IP, WIND10, WINDTH )
                    CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
                    CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
-                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+                   IMATRAA(:,:,IP) = IMATRAA(:,:,IP) + SSINL
                  ENDIF
                  IF (ISHALLOW(IP) .EQ. 1) THEN
                    CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
@@ -438,8 +438,8 @@
                    ENDIF ! MESTR
                    IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
                    IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-                   IMATDAA(IP,:,:) = IMATDAA(IP,:,:) + DSSBR  + DSSNL3 + DSSBF
-                   IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSBR + SSNL3
+                   IMATDAA(:,:,IP) = IMATDAA(:,:,IP) + DSSBR  + DSSNL3 + DSSBF
+                   IMATRAA(:,:,IP) = IMATRAA(:,:,IP) + SSBR + SSNL3
                  ENDIF ! ISHALLOW(IP) .EQ. 1
                ENDIF
              ENDIF
@@ -472,8 +472,8 @@
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
-                   FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
-                   SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
+                   FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
+                   SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
                  END DO
                END DO
                CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
@@ -500,8 +500,8 @@
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
-                     FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
-                     SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
+                     SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
                    END DO
                  END DO
                  CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
