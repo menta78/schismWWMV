@@ -156,8 +156,8 @@
 /
 
 &NUMS          
- ICOMP          = 3,                 
- AMETHOD        = 7,                 
+ ICOMP          = 0,                 
+ AMETHOD        = 1,                 
  SMETHOD        = 1,                 
  DMETHOD        = 0,                 
  LITERSPLIT     = .F.,               
