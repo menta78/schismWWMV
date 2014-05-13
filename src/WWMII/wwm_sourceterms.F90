@@ -34,7 +34,7 @@
          INTEGER, INTENT(IN) :: IP, ISELECT
 
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
 
          LOGICAL, INTENT(IN) :: LRECALC
          CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
