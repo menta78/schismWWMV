@@ -55,6 +55,10 @@
      &                      INDEP => DEP, &
      &                      ZERO, ONE, &
      &                      SRCDBG
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, ONLY : COMM, MYRANK
+#endif
+
 
       IMPLICIT NONE
 
@@ -204,12 +208,22 @@
 
       IF (LOUTWAM) WRITE(111111,'(A10,I10)') 'IPHYS=', IPHYS
       IF (IPHYS == 0) THEN
-        WRITE(5011) DELALP, DELUST, DELTAIL
-        WRITE(5011) TAUHFT
+#ifdef MPI_PARALL_GRID
+        if (myrank ==0 ) then
+          WRITE(5011) DELALP, DELUST, DELTAIL
+          WRITE(5011) TAUHFT
+        endif
+        call wwm_barrier(comm)
+#endif
         IF (LOUTWAM) WRITE(111111,'(F20.10)') SUM(TAUHFT)
       ELSE
-        WRITE(5011) DELALP, DELUST, DELTAIL
-        WRITE(5011) TAUHFT, TAUHFT2, TAUW
+#ifdef MPI_PARALL_GRID
+        if (myrank ==0 ) then
+          WRITE(5011) DELALP, DELUST, DELTAIL
+          WRITE(5011) TAUHFT, TAUHFT2, TAUW
+        endif
+        call wwm_barrier(comm)
+#endif
         IF (LOUTWAM) WRITE(111111,'(3F20.10)') DELTAIL, SUM(TAUHFT), SUM(TAUHFT2) 
       ENDIF
 

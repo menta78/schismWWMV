@@ -4462,9 +4462,9 @@
 
 #ifdef MPI_PARALL_GRID
         IF (BLOCK_GAUSS_SEIDEL) THEN
-          CALL EXCHANGE_P4D_WWM(X)
+!          CALL EXCHANGE_P4D_WWM(X)
         ELSE
-          CALL EXCHANGE_P4D_WWM(U)
+!          CALL EXCHANGE_P4D_WWM(U)
         END IF
 #endif
         IF (BLOCK_GAUSS_SEIDEL) THEN
