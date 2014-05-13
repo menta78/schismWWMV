@@ -1000,11 +1000,23 @@
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
-      IF (ICOMP .LE. 1) THEN
+
+      IF (ICOMP < 2) THEN
         S = D * A
       ELSE
-        S = D * A
-        D = ZERO
+        DO IK=1, NK
+          DO ITH=1, NTH
+            IS = ITH+(IK-1)*NTH
+              !write(*,*) IK, ITH, IS, D(IS)
+            IF (D(IS) .GT. ZERO) THEN
+!              S(IS) = D(IS) * A(IS) 
+!              D(IS) = ZERO
+            ELSE
+!              S(IS) = ZERO
+!              D(IS) = - D(IS) 
+            ENDIF
+          END DO
+        END DO
       ENDIF
 
 !
@@ -2001,6 +2013,7 @@
       REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                 :: IKSUP(NK)
       REAL(rkind)                    :: Q1(NK) 
+      REAL(rkind)                    :: SSDS(NSPEC)
       REAL(rkind)                    :: FACSAT, DKHS, FACSTRAIN 
       REAL(rkind)                    :: BTH0(NK)     !saturation spectrum 
       REAL(rkind)                    :: BTH(NSPEC)   !saturation spectrum 
@@ -2374,7 +2387,7 @@
 !
 ! Add effects
 !
-          D(IS) = D(IS) + (SSDSC(3)*RENEWALFREQ+DTURB) 
+          SSDS(IS) = (SSDSC(3)*RENEWALFREQ+DTURB) 
           !WRITE(DBG%FHNDL,*) 'TURBULENCE', IS, D(IS), (SSDSC(3)*RENEWALFREQ+DTURB)
           END DO
         END DO
@@ -2382,25 +2395,13 @@
 !/ ------------------------------------------------------------------- /
 !                        COMPUTES SOURCES TERM
 !/ ------------------------------------------------------------------- /
+       IF (ICOMP .LT. 2) THEN
+         S = (SSDS + D) * A
+         D = D + SSDS
+       ELSE 
+         D = D - SSDS
+       ENDIF
 !            
-      IF (ICOMP .LE. 1) THEN
-        S = D * A
-      ELSE
-        S = D * A
-        D = ZERO
-      ENDIF
-        !DO IK = 1, NSPEC ! Patankar Rules 
-        !  IF (S(IK) .GT. ZERO) THEN
-        !!    S(IK) = D(IK) * A(IK)
-        !    D(IK)  = ZERO
-        !  ELSE
-        !    S(IK) = ZERO
-        !    D(IK) = -D(IK)
-        !  ENDIF
-        !END DO
-      !END IF
-
-!
 !/ ------------------------------------------------------------------- /
 !                     COMPUTES WHITECAP PARAMETERS
 !/ ------------------------------------------------------------------- /

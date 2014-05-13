@@ -173,7 +173,7 @@
                  CALL W3SIN4 ( IP, AWW3, CG(IP,:), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA) 
 #else
                  WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
-                 CALL WWM_ABORT('stop wwm_sourceterms l.169')
+                 CALL WWM_ABORT('stop wwm_sourceterms l.176')
 #endif
                  CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
                  SSINE = IMATRAWW3
@@ -190,7 +190,7 @@
                  END IF
                ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
-               CALL WWM_ABORT('PLEASE USE LSOURCEWAM FOR ECWAM SOURCE TERM FORMULATION') 
+               CALL WWM_ABORT('PLEASE USE LSOURCEWAM = T FOR ECWAM SOURCE TERM FORMULATION') 
              ELSE IF (MESIN == 3) THEN ! Makin & Stam
                CALL SET_WIND( IP, WIND10, WINDTH )
                IFRIC = 4
