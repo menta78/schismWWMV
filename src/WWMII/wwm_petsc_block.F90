@@ -1435,7 +1435,7 @@
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then 
                     IF (SOURCE_IMPL) THEN
-                      value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
+                      value1 =  IMATDAA(ISS,IDD,IP) * DT4A * SI(IP)
 #  ifndef DIRECT_METHOD
                       idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
 #  else
@@ -2202,7 +2202,7 @@
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then
                     IF (SOURCE_IMPL) THEN
-                      value1 =  IMATDAA(IP,ISS,IDD) * DT4A * SI(IP)
+                      value1 =  IMATDAA(ISS,IDD,IP) * DT4A * SI(IP)
 #  ifndef DIRECT_METHOD
                       idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
 #  else
@@ -2222,7 +2222,7 @@
               IPpetsc = ALO2PLO(IP-1) + 1
               do iss = 1, msc
                 do idd = 1, mdc
-                  GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
+                  GTEMP1 = MAX((1.-DT4A*IMATDAA(ISS,IDD,IP)),1.)
                   GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
@@ -2355,7 +2355,7 @@
               IPpetsc = ALO2PLO(IP-1) + 1
               do iss = 1, msc
                 do idd = 1, mdc 
-                  GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
+                  GTEMP1 = MAX((1.-DT4A*IMATDAA(ISS,IDD,IP)),1.)
                   GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))

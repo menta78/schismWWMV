@@ -3618,8 +3618,9 @@
           IF (IOBWB(IP) .EQ. 1) THEN
             DO IS=IS1,IS2
               ISr=IS+1-IS1
-              ASPAR(ISr,:,I_DIAG(IP)) = ASPAR(ISr,:,I_DIAG(IP)) + IMATDAA(IP,IS,:) * DT4A * SI(IP) ! Add source term to the diagonal
-              B(ISr,:,IP)             = B(ISr,:,IP) + IMATRAA(IP,IS,:) * DT4A * SI(IP) ! Add source term to the right hand side
+!2do mathieu please check 
+              ASPAR(ISr,:,I_DIAG(IP)) = ASPAR(ISr,:,I_DIAG(IP)) + IMATDAA(IS,:,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+              B(ISr,:,IP)             = B(ISr,:,IP) + IMATRAA(IS,:,IP) * DT4A * SI(IP) ! Add source term to the right hand side
             END DO
           ENDIF
         END DO
@@ -3872,8 +3873,8 @@
 
       IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
         DO IP = 1, NP_RES
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
-          B(:,:,IP)             = B(:,:,IP) + IMATRAA(IP,:,:) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
+          B(:,:,IP)             = B(:,:,IP) + IMATRAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
         END DO
       ENDIF
 
