@@ -314,8 +314,8 @@
                DO IS = 1, MSC 
                  IF (AC2(IS,ID,IP) .LT. THR) CYCLE
                  JAC = ONE/PI2/SPSIG(IS)
-                 !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
-                 !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
+                 !IMATDAA(IS,ID,IP) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
+                 !IMATRAA(IS,ID,IP) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
                  FF = FL3(IP,ID,IS)
                  !WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
                  IF (IMETHOD == 0) THEN
@@ -351,7 +351,7 @@
                CALL SET_WIND( IP, WIND10, WINDTH )
                CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
                CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
-               IMATRAA(IP,:,:) = IMATRAA(IP,:,:) + SSINL
+               IMATRAA(:,:,IP) = IMATRAA(:,:,IP) + SSINL
              ENDIF
              IF (ISHALLOW(IP) .EQ. 1) THEN
                CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
@@ -381,8 +381,8 @@
                    DO IS = 1, MSC
                      IF (AC2(IS,ID,IP) .LT. THR) CYCLE
                      JAC = ONE/PI2/SPSIG(IS)
-                     !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
-                     !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
+                     !IMATDAA(IS,ID,IP) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
+                     !IMATRAA(IS,ID,IP) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
                      FF = FL3(IP,ID,IS)
                      !WRITE(11140,'(2I10,7E20.10)') IS, ID, FF, SSDS(ID,IS)/FF, DSSDS(ID,IS), SSIN(ID,IS)/FF, DSSNL4(ID,IS), SSNL4(ID,IS)/FF, DSSNL4(ID,IS) 
                      IF (IMETHOD == 0) THEN
@@ -444,7 +444,7 @@
                ENDIF
              ENDIF
            ENDIF
-           !IF (IP==TESTNODE) WRITE(*,*) IP, SUM(IMATRAA(IP,:,:)), DEP(IP), IOBP(IP), SUM(SSBR), SUM(SSBF), SUM(SSINL), SUM(SSNL3)
+           !IF (IP==TESTNODE) WRITE(*,*) IP, SUM(IMATRAA(:,:,IP)), DEP(IP), IOBP(IP), SUM(SSBR), SUM(SSBF), SUM(SSINL), SUM(SSNL3)
          ENDDO
 !$OMP END PARALLEL
          !WRITE(*,'(A20,3F15.10)') 'FROM SPECINT', SUM(IMATRAA), SUM(IMATDAA), SUM(AC2)
