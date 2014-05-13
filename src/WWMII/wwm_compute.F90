@@ -20,9 +20,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
 
-         DO IP=1, MNP
-          AC1(IP,:,:) = AC2(:,:,IP)
-         END DO
+         AC1 = AC2
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
@@ -244,9 +242,7 @@
           DT4F = 0.5_rkind*DT4A
         END IF
 
-        DO IP=1, MNP
-          AC1(IP,:,:)  = AC2(:,:,IP)
-        ENDDO
+        AC1 = AC2
 
 #ifdef TIMINGS
         CALL MY_WTIME(TIME1)
@@ -425,9 +421,7 @@
           DT4F = DT4A
         END IF
 
-        DO IP=1, MNP
-          AC1(IP,:,:)  = AC2(:,:,IP)
-        END DO
+        AC1 = AC2
 
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)

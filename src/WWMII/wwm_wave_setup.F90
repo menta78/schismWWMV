@@ -39,7 +39,7 @@
 !        WRITE(700,*) 'ISS=', ISS, 'INCR=', DS_INCR(ISS), 'diff=', SPSIG(ISS) - SPSIG(ISS-1)
 !      END DO
       DO IP = 1, MNP
-        ACLOC = AC2(IP,:,:)
+        ACLOC = AC2(:,:,IP)
         ETOT=ZERO
         eRXX=ZERO
         eRXY=ZERO

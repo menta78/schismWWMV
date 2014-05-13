@@ -52,12 +52,12 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
        AC2 = zero
 
-       ALLOCATE (AC1(MNP,MSC,MDC), stat=istat)
+       ALLOCATE (AC1(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
        AC1 = zero
 
        IF (ICOMP .GE. 2) THEN
-         ALLOCATE (IMATRAA(MNP,MSC,MDC), IMATDAA(MNP,MSC,MDC), stat=istat)
+         ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
          IMATRAA = zero
          IMATDAA = zero

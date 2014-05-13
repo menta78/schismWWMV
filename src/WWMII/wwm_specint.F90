@@ -102,7 +102,7 @@
                ENDIF
              ENDIF
            ENDIF
-           AC1(IP,:,:) = AC2(:,:,IP)
+           AC1(:,:,IP) = AC2(:,:,IP)
          ENDDO
 !$OMP END PARALLEL 
 
