@@ -383,12 +383,12 @@ MODULE wwm_hotfile_mod
 #endif
         IF (MULTIPLEIN_HOT.eq.0) THEN
 #ifdef MPI_PARALL_GRID
-          ALLOCATE(ACinB(NP_GLOBAL,MSC,MDC), stat=istat)
+          ALLOCATE(ACinB(MSC,MDC,NP_GLOBAL), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 11')
 !todo ordering of ACinB to (IS,ID,IP) ?
           CALL READ_AC_SIMPLE(HOTIN%FNAME, NP_GLOBAL, ACinB)
           DO IP=1,MNP
-            AC2(:,:,IP)=ACinB(iplg(IP),:,:)
+            AC2(:,:,IP)=ACinB(:,:,iplg(IP))
           ENDDO
           DEALLOCATE(ACinB)
 #else
@@ -405,13 +405,13 @@ MODULE wwm_hotfile_mod
               nbF=eRecons % ListSubset(iProc) % nbNeedEntries
               NPLOC=eRecons % ListSubset(iProc) % NPLOC
               CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
-              allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
+              allocate(ACinB(MSC, MDC,NPLOC), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 12')
               CALL READ_AC_SIMPLE(FILERET, NPLOC, ACinB)
               DO I=1,nbF
                 idxFil=eRecons % ListSubset(iProc) % ListNeedIndexFile(I)
                 idxMem=eRecons % ListSubset(iProc) % ListNeedIndexMemory(I)
-                AC2(:,:,idxMem)=ACinB(idxFil,:,:)
+                AC2(:,:,idxMem)=ACinB(:,:,idxFil)
               END DO
               deallocate(ACinB)
             END DO
@@ -448,7 +448,7 @@ MODULE wwm_hotfile_mod
 #else
         IF (MULTIPLEOUT_HOT.eq.0) THEN
           IF (myrank.eq.0) THEN
-            allocate(ACreturn(np_global, MSC, MDC), stat=istat)
+            allocate(ACreturn(MSC, MDC,np_global), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 13')
           END IF
           allocate(VALB(np_global), VALB_SUM(np_global), stat=istat)
@@ -461,14 +461,14 @@ MODULE wwm_hotfile_mod
               END DO
               call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype, MPI_SUM,0,comm,ierr)
               IF (myrank.eq.0) THEN
-                ACreturn(:,IS,ID)=VALB_SUM
+                ACreturn(IS,ID,:)=VALB_SUM
               END IF
             END DO
           END DO
           deallocate(VALB, VALB_SUM)
           IF (myrank.eq.0) THEN
             DO IP=1,MNP
-              ACreturn(IP,:,:)=ACreturn(IP,:,:)*nwild_gb(IP)
+              ACreturn(:,:,IP)=ACreturn(:,:,IP)*nwild_gb(IP)
             END DO
             WRITE(HOTOUT%FHNDL) ACreturn
             deallocate(ACreturn)
@@ -496,9 +496,10 @@ MODULE wwm_hotfile_mod
         IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
         INTEGER :: IP, ID
-        REAL(rkind), ALLOCATABLE :: ACin(:,:)
+        REAL(rkind) :: ACLOC(MSC,MDC)
 # endif
         INTEGER :: NPLOC, eRank, I
+        character (len = *), parameter :: CallFct="INPUT_HOTFILE_NETCDF"
         REAL(rkind), ALLOCATABLE :: ACinB(:,:,:)
         type(ReconstructInfo) :: eRecons
         character(len=140) :: FILERET
@@ -508,34 +509,39 @@ MODULE wwm_hotfile_mod
         IF (MULTIPLEIN_HOT.eq.0) THEN
 # ifdef MPI_PARALL_GRID
           iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
           iret=nf90_inq_varid(ncid, "ac", ac_id)
-          allocate(ACin(np_global,MSC), stat=istat)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
           IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 14')
-          DO ID=1,MDC
-!todo ACin ordering
-            iret=nf90_get_var(ncid,ac_id,ACin, start=(/1,1,ID,IHOTPOS_IN/), count = (/MNP, MSC, MDC, 1 /))
-            DO IP=1,MNP
-              AC2(:,ID,IP)=ACin(iplg(IP),:)
-            END DO
+          DO IP=1,MNP
+            iret=nf90_get_var(ncid,ac_id,ACLOC, start=(/1,1,iplg(IP),IHOTPOS_IN/), count = (/MSC, MDC, 1, 1 /))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+            AC2(:,:,IP)=ACLOC
           END DO
-          deallocate(ACin)
           iret=nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
 # else
           iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
           iret=nf90_inq_varid(ncid, "ac", ac_id)
-!todo AC2 ordering
-          iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/), count=(/MNP,MSC,MDC,1/))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+          iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/), count=(/MSC,MDC,MNP,1/))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
           iret=nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
 # endif
         ELSE
           CALL DETERMINE_NEEDED_HOTFILES(HOTSTYLE_IN, TRIM(HOTIN%FNAME), eRecons)
           IF (eRecons % IsEasy) THEN
             CALL CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN)
             iret=nf90_open(FILERET, nf90_nowrite, ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
             iret=nf90_inq_varid(ncid, "ac", ac_id)
-!todo AC2 ordering
-            iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/),  count = (/MNP, MSC, MDC, 1 /))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+            iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/),  count = (/MSC, MDC, MNP, 1 /))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
             iret=nf90_close(ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
           ELSE
             DO iProc=1,eRecons % nbNeedProc
               eRank=eRecons % ListSubset(iProc) % eRankProc
@@ -543,15 +549,19 @@ MODULE wwm_hotfile_mod
               NPLOC=eRecons % ListSubset(iProc) % NPLOC
               CALL PRE_CREATE_LOCAL_HOTNAME(HOTIN%FNAME, FILERET, MULTIPLEIN_HOT, HOTSTYLE_IN, eRank)
               iret=nf90_open(TRIM(FILERET), nf90_nowrite, ncid)
-              allocate(ACinB(NPLOC, MSC, MDC), stat=istat)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+              allocate(ACinB(MSC,MDC,NPLOC), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 15')
               iret=nf90_inq_varid(ncid, "ac", ac_id)
-              iret=nf90_get_var(ncid,ac_id,ACinB, start=(/1,1,1,IHOTPOS_IN/), count=(/NPLOC, MSC, MDC, 1 /))
+              CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+              iret=nf90_get_var(ncid,ac_id,ACinB, start=(/1,1,1,IHOTPOS_IN/), count=(/MSC, MDC, NPLOC, 1 /))
+              CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
               iret=nf90_close(ncid)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
               DO I=1,nbF
                 idxFil=eRecons % ListSubset(iProc) % ListNeedIndexFile(I)
                 idxMem=eRecons % ListSubset(iProc) % ListNeedIndexMemory(I)
-                AC2(:,:,idxMem)=ACinB(idxFil,:,:)
+                AC2(:,:,idxMem)=ACinB(:,:,idxFil)
               END DO
               deallocate(ACinB)
             END DO
@@ -646,7 +656,7 @@ MODULE wwm_hotfile_mod
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         IF (myrank.eq.0) THEN
-          allocate(ACreturn(np_global, MSC, MDC), stat=istat)
+          allocate(ACreturn(MSC,MDC,np_global), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         END IF
         allocate(VALB(np_global), VALB_SUM(np_global), stat=istat)
@@ -659,13 +669,13 @@ MODULE wwm_hotfile_mod
             END DO
             call mpi_reduce(VALB,VALB_SUM,NP_GLOBAL,rtype, MPI_SUM,0,comm,ierr)
             IF (myrank.eq.0) THEN
-              ACreturn(:,IS,ID)=VALB_SUM
+              ACreturn(IS,ID,:)=VALB_SUM
             END IF
           END DO
         END DO
         IF (myrank.eq.0) THEN
           DO IP=1,np_global
-            ACreturn(IP,:,:)=ACreturn(IP,:,:)*nwild_gb(IP)
+            ACreturn(:,:,IP)=ACreturn(:,:,IP)*nwild_gb(IP)
           END DO
         END IF
         deallocate(VALB, VALB_SUM)
@@ -686,17 +696,15 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT_HOT.eq.0) THEN
-          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ np_global, MSC, MDC, 1 /))
+          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, np_global, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
           deallocate(ACreturn);
         ELSE
-!todo AC2 ordering        
-          iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MNP, MSC, MDC, 1 /))
+          iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, MNP, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         ENDIF
 # else
-!todo AC2 ordering
-        iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MNP, MSC, MDC, 1 /))
+        iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, MNP, 1 /))
         CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
 # endif
         iret=nf90_close(ncid)
