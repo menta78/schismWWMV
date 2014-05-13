@@ -74,6 +74,10 @@
      &                 NFRE => MSC, &
      &                 INDEP => DEP, &
      &                 SRCDBG
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, ONLY : COMM, MYRANK
+#endif
+
       IMPLICIT NONE
 
 ! ----------------------------------------------------------------------
@@ -171,8 +175,15 @@
 
 !100   CONTINUE
 
-      WRITE(5011) DELU, DELTAUW
-      WRITE(5011) TAUT
+#ifdef MPI_PARALL_GRID
+      if (myrank == 0) then
+#endif
+        WRITE(5011) DELU, DELTAUW
+        WRITE(5011) TAUT
+#ifdef MPI_PARALL_GRID
+      endif
+      !call mpi_barrier(comm)
+#endif
       IF (LOUTWAM) WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
 
       RETURN
