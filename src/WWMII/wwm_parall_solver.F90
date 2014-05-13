@@ -3559,7 +3559,7 @@
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: ASPAR(MSC,MDC,NNZ), ASPARL(MSC,MDC,NNZ), BL(MSC,MDC,MNP)
+      REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
       REAL(rkind) :: B(MSC,MDC,MNP), U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
@@ -3576,7 +3576,7 @@
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, sumu, sumx, lambda
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      LOGICAL :: LCALCASPAR = .TRUE. 
+      LOGICAL :: LCALCASPAR = .TRUE.
       !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
 
 #ifdef TIMINGS
@@ -3592,10 +3592,10 @@
       ! The advection part of the equation
       !
       IF (LNONL) THEN
-        CALL EIMPS_ASPAR_BLOCK(ASPARL)
-        CALL EIMPS_B_BLOCK(U,BL)
+        CALL EIMPS_ASPAR_BLOCK(ASPAR)
+        CALL EIMPS_B_BLOCK(AC2,B)
       ELSE
-        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(U,ASPARL,BL)
+        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPAR,B)
       ENDIF
 
 #ifdef TIMINGS
@@ -3624,7 +3624,7 @@
             A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
             C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
           END DO
-          ASPARL(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
@@ -3657,7 +3657,7 @@
               C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
             END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-            ASPARL(:,ID,I_DIAG(IP))=ASPARL(:,ID,I_DIAG(IP)) + B_SIG
+            ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
       END IF
@@ -3674,24 +3674,21 @@
 
       DO
         is_converged = 0
-        ASPAR = ASPARL
-        B = BL
-
         DO IP=1,NP_RES 
 
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                 CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
-                ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-                B(:,:,IP)             = BL(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+                ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+                B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
               ENDIF
             ELSE
               IF (LSOUBOUND) THEN ! Source terms on boundary ...
                 IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                   CALL CYCLE3 (IP, U(:,:,IP), IMATRA, IMATDA)
-                  ASPAR(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-                  B(:,:,IP)             = BL(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+                  ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+                  B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
                 ENDIF
               ENDIF
             ENDIF
