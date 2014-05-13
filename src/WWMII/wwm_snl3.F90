@@ -658,7 +658,7 @@
         BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
         ASINB = ABS(SIN(BIPH))
         DO ID = 1, MDC
-          ED = AC2(IP,:,ID)*SPSIG
+          ED = ACLOC(:,ID)*SPSIG
           DO IS = 1, ISMAX-IRES
             IS1     = IS+IRES
             IS2     = IS
@@ -869,7 +869,7 @@
         SINBPH = ABS( SIN(BIPH) )
         DO ID = 1, MDC
           DO IS = 1, MSC
-            E(IS)  = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+            E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
           ENDDO
           DO I = 1, ISMAX-IRES
             J   = I + IRES
