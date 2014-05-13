@@ -1164,7 +1164,6 @@
          integer, dimension(:,:), pointer :: IDindex
          ! variables for partitioning MSC
          integer, dimension(:), pointer :: ISbegin, ISend, ISlen
-         integer MSCeffect, MDCeffect
          integer NbMSCblock
          !
          integer, dimension(:), pointer :: Jstatus_L
