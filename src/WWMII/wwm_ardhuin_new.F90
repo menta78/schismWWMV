@@ -1001,23 +1001,26 @@
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
 
-      IF (ICOMP < 2) THEN
+
+!           IMATRAIMATDA
+
+!      IF (ICOMP < 2) THEN
         S = D * A
-      ELSE
-        DO IK=1, NK
-          DO ITH=1, NTH
-            IS = ITH+(IK-1)*NTH
+!      ELSE
+!        DO IK=1, NK
+!          DO ITH=1, NTH
+!            IS = ITH+(IK-1)*NTH
               !write(*,*) IK, ITH, IS, D(IS)
-            IF (D(IS) .GT. ZERO) THEN
+!            IF (D(IS) .GT. ZERO) THEN
 !              S(IS) = D(IS) * A(IS) 
 !              D(IS) = ZERO
-            ELSE
+!            ELSE
 !              S(IS) = ZERO
 !              D(IS) = - D(IS) 
-            ENDIF
-          END DO
-        END DO
-      ENDIF
+!            ENDIF
+!          END DO
+!        END DO
+!      ENDIF
 
 !
 ! ... Test output of arrays
@@ -2394,13 +2397,14 @@
 !
 !/ ------------------------------------------------------------------- /
 !                        COMPUTES SOURCES TERM
+!                        IMATRAIMATDA
 !/ ------------------------------------------------------------------- /
-       IF (ICOMP .LT. 2) THEN
+!       IF (ICOMP .LT. 2) THEN
          S = (SSDS + D) * A
          D = D + SSDS
-       ELSE 
-         D = D - SSDS
-       ENDIF
+!       ELSE 
+!         D = D - SSDS
+!       ENDIF
 !            
 !/ ------------------------------------------------------------------- /
 !                     COMPUTES WHITECAP PARAMETERS

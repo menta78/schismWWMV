@@ -108,6 +108,8 @@
 
       IF (LOUTWAM) WRITE(111111,'(A20)') 'STRESS'
 
+!      GOTO 100
+
       TAUWMAX = USTARM 
       DELU    = UMAX/REAL(JUMAX)
       DELTAUW = TAUWMAX/REAL(ITAUMAX)
@@ -165,6 +167,8 @@
           TAUT(I,0,JL)=0.0
         ENDDO
       ENDDO
+
+!100   CONTINUE
 
       WRITE(5011) DELU, DELTAUW
       WRITE(5011) TAUT

@@ -180,7 +180,7 @@
                  CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
                  DO ID = 1, MDC
                    IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(IP,:) + IMATRA(:,ID)
-                   IMATDA(:,ID) = IMATDAWW3(:,ID) !/ CG(IP,:) 
+                   IMATDA(:,ID) = ZERO!IMATDAWW3(:,ID) !/ CG(IP,:) 
                  END DO
                END IF
                IF (LNANINFCHK) THEN
@@ -313,7 +313,7 @@
                DO ID = 1, MDC
                  SSDS(:,ID)   = IMATRAWW3(:,ID) / CG(IP,:)
                  IMATRA(:,ID) = IMATRA(:,ID)+IMATRAWW3(:,ID) / CG(IP,:)
-                 IMATDA(:,ID) = IMATDA(:,ID)+IMATDAWW3(:,ID) !/ CG(IP,:)
+                 !IMATDA(:,ID) = IMATDA(:,ID)+IMATDAWW3(:,ID) !/ CG(IP,:)
                END DO
              ELSE IF (MESDS == 2) THEN
                CALL WWM_ABORT('PLEASE USE LSOURCEWAM FOR ECWAM SOURCE TERM FORMULATION')

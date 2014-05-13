@@ -82,7 +82,7 @@
 
       CONST1 = BETAMAX/XKAPPA**2
 
-
+!      GOTO 100
 !      ALLOCATE(W(JTOT))
       W=1.
       W(1)=0.5
@@ -199,6 +199,8 @@
         ENDDO
       ENDDO
 !!$OMP END PARALLEL
+
+!100   CONTINUE
 
       IF (LOUTWAM) WRITE(111111,'(A10,I10)') 'IPHYS=', IPHYS
       IF (IPHYS == 0) THEN

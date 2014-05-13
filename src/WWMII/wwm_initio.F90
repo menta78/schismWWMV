@@ -948,6 +948,7 @@
                READ(5011) DELU, DELTAUW
                READ(5011) TAUT
                READ(5011) DELALP, DELUST, DELTAIL
+               !WRITE(*,*) SIZE(TAUHFT)
                READ(5011) TAUHFT
              ELSE
                READ(5011) DELU, DELTAUW
@@ -956,6 +957,8 @@
                READ(5011) TAUHFT, TAUHFT2
              ENDIF
            ELSE
+             !WRITE(*,*) SIZE(TAUT)
+             !WRITE(*,*) SIZE(TAUHFT)
              IF (MESIN .GT. 0) THEN 
                WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
                CALL STRESS
