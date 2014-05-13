@@ -34,7 +34,7 @@
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 0) THEN
-               ACLOC  = AC2(IP,:,:)
+               ACLOC  = AC2(:,:,IP)
                IF (SMETHOD == 1) THEN
                  IF (MESBR .GT. 0 .OR. MESBF .GT. 0) CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
                  IF (LSOURCESWAM) THEN
@@ -61,11 +61,11 @@
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                ENDIF
-               AC2(IP,:,:) = ACLOC
+               AC2(:,:,IP) = ACLOC
            ELSE !Boundary node ... 
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF (IOBP(IP) .NE. 2) THEN
-                 ACLOC  = AC2(IP,:,:)
+                 ACLOC  = AC2(:,:,IP)
                  IF (SMETHOD == 1) THEN
                    CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
                    IF (LSOURCESWAM) THEN
@@ -92,17 +92,17 @@
                  IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN
                    CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
                  ENDIF
-                 AC2(IP,:,:) = ACLOC
+                 AC2(:,:,IP) = ACLOC
                ENDIF
              ELSE
-               ACLOC = AC2(IP,:,:)
+               ACLOC = AC2(:,:,IP)
                IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1) THEN ! limit wave height on the boundary ...
                  CALL BREAK_LIMIT(IP,ACLOC,SSBRL2)
-                 AC2(IP,:,:) = ACLOC
+                 AC2(:,:,IP) = ACLOC
                ENDIF
              ENDIF
            ENDIF
-           AC1(IP,:,:) = AC2(IP,:,:)
+           AC1(IP,:,:) = AC2(:,:,IP)
          ENDDO
 !$OMP END PARALLEL 
 
@@ -142,7 +142,7 @@
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               ACLOC = AC2(IP,:,:)
+               ACLOC = AC2(:,:,IP)
                CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
                !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
                IMATDAA(IP,:,:) = IMATDA 
@@ -151,7 +151,7 @@
            ELSE
              IF (LSOUBOUND) THEN ! Source terms on boundary ...
                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                 ACLOC = AC2(IP,:,:)
+                 ACLOC = AC2(:,:,IP)
                  CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.,10, 'SOURCE_INT_IMP_WWM BOUNDARY')
                  !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
                  IMATDAA(IP,:,:) = IMATDA
@@ -290,7 +290,7 @@
            IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
              DO IS = 1, MSC
                DO ID = 1, MDC
-                 FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                 FL3(IP,ID,IS) = AC2(IS,ID,IP) * PI2 * SPSIG(IS)
                  FL(IP,ID,IS)  = FL3(IP,ID,IS)
                  SL(IP,ID,IS)  = FL(IP,ID,IS)
                END DO
@@ -312,7 +312,7 @@
            IF (IOBP(IP) .EQ. 0) THEN
              DO ID = 1, MDC
                DO IS = 1, MSC 
-                 IF (AC2(IP,IS,ID) .LT. THR) CYCLE
+                 IF (AC2(IS,ID,IP) .LT. THR) CYCLE
                  JAC = ONE/PI2/SPSIG(IS)
                  !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
                  !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
@@ -346,7 +346,7 @@
                  ENDIF 
                ENDDO ! ID
              ENDDO ! IS
-             ACLOC = AC2(IP,:,:)
+             ACLOC = AC2(:,:,IP)
              IF (.NOT. LINID) THEN
                CALL SET_WIND( IP, WIND10, WINDTH )
                CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
@@ -379,7 +379,7 @@
                IF (IOBP(IP) .NE. 2) THEN
                  DO ID = 1, MDC
                    DO IS = 1, MSC
-                     IF (AC2(IP,IS,ID) .LT. THR) CYCLE
+                     IF (AC2(IS,ID,IP) .LT. THR) CYCLE
                      JAC = ONE/PI2/SPSIG(IS)
                      !IMATDAA(IP,IS,ID) =  FL(IP,ID,IS) !... this is not working right, reason is unknown, there signchanges that should not be
                      !IMATRAA(IP,IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS) 
@@ -413,7 +413,7 @@
                      ENDIF
                    ENDDO ! ID
                  ENDDO ! IS
-                 ACLOC = AC2(IP,:,:)
+                 ACLOC = AC2(:,:,IP)
                  IF (.NOT. LINID) THEN
                    CALL SET_WIND( IP, WIND10, WINDTH )
                    CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
@@ -471,7 +471,7 @@
                Z0NEW(IP) = Z0OLD(IP,1)
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                   FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
                    FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
                    SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                  END DO
@@ -485,7 +485,7 @@
      &                          SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+                   AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
                  END DO
                END DO
              END IF !
@@ -499,7 +499,7 @@
                  THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     FL3(IP,ID,IS) =  AC2(IP,IS,ID) * PI2 * SPSIG(IS)
+                     FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
                      FL(IP,ID,IS)  =  IMATDAA(IP,IS,ID)
                      SL(IP,ID,IS)  =  IMATRAA(IP,IS,ID) * PI2 * SPSIG(IS)
                    END DO
@@ -513,7 +513,7 @@
      &                            SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
                  DO IS = 1, MSC
                    DO ID = 1, MDC
-                     AC2(IP,IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+                     AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
                    END DO
                  END DO
                ENDIF
@@ -834,8 +834,8 @@
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(IP,ACOLD,ACLOC, MAXDAC, UFR_LIM, NEWAC, OLDAC, NEWDAC)
          DO IP = 1, MNP
            IF (DEP(IP) .LT. DMIN .OR. IOBP(IP) .EQ. 2) CYCLE
-           ACOLD = AC1(IP,:,:)
-           ACLOC = AC2(IP,:,:)
+           ACOLD = AC1(:,:,IP)
+           ACLOC = AC2(:,:,IP)
            DO IS = 1, MSC
              IF (MELIM .EQ. 1) THEN
                MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
@@ -858,7 +858,7 @@
 !               ELSE
 !                 IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
 !               END IF
-               AC2(IP,IS,ID) = MAX( zero, OLDAC + NEWDAC )
+               AC2(IS,ID,IP) = MAX( zero, OLDAC + NEWDAC )
                !IF (MELIM .EQ. 3) FL3(IP,ID,IS) = AC2(IP,IS,ID) * PI2 * SPSIG(IS)
              END DO
            END DO
@@ -913,7 +913,7 @@
 !      Print *, 'Passing BREAK_LIMIT_ALL'
 
       DO IP = 1, MNP
-        ACLOC = AC2(IP,:,:)
+        ACLOC = AC2(:,:,IP)
         IF (ISHALLOW(IP) .EQ. 0) CYCLE
 
         ETOT = DINTSPEC(IP,ACLOC)
@@ -928,8 +928,8 @@
         IF (ETOT .GT. EMAX) THEN
           WRITE(300,*) '   break XP=', XP(IP)
           RATIO = EMAX/ETOT
-          AC2(IP,:,:) = RATIO * ACLOC(:,:)
-          AC1(IP,:,:) = RATIO * ACLOC(:,:)
+          AC2(:,:,IP) = RATIO * ACLOC(:,:)
+          AC1(:,:,IP) = RATIO * ACLOC(:,:)
         END IF
       END DO
       END SUBROUTINE
@@ -946,13 +946,13 @@
 
          DO IP = 1, MNP
             DO IS = 1, MSC
-               ETOTAL = 0.0
-               EPOSIT = 0.0
+               ETOTAL = ZERO 
+               EPOSIT = ZERO 
                ENEG   = .FALSE.
                DO ID = 1, MDC
-                  ETOTAL = ETOTAL + AC2(IP,IS,ID)
-                  IF (AC2(IP,IS,ID) > 0.0) THEN
-                     EPOSIT = EPOSIT + AC2(IP,IS,ID)
+                  ETOTAL = ETOTAL + AC2(IS,ID,IP)
+                  IF (AC2(IS,ID,IP) > ZERO) THEN
+                     EPOSIT = EPOSIT + AC2(IS,ID,IP)
                   ELSE
                      ENEG = .TRUE.
                   END IF
@@ -964,8 +964,8 @@
                     FACTOR = 0.
                   END IF
                   DO ID = 1, MDC
-                     IF (AC2(IP,IS,ID) < 0.0) AC2(IP,IS,ID) = 0.0
-                     IF (FACTOR >= 0.0)  AC2(IP,IS,ID) = AC2(IP,IS,ID)*FACTOR
+                     IF (AC2(IS,ID,IP) < ZERO) AC2(IS,ID,IP) = ZERO 
+                     IF (FACTOR >= ZERO)  AC2(IP,IS,ID) = AC2(IP,IS,ID)*FACTOR
                      AC2(IP,IS,ID) = MAX(zero,AC2(IP,IS,ID))
                   END DO
                END IF
