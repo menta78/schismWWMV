@@ -688,4 +688,60 @@
         CALL MPI_RECV(Vlocal, IWBMNP, rtype, 0, 2030, comm, istatus, ierr)
       END IF
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+# if defined NETCDF && defined DEBUG
+      SUBROUTINE NETCDF_WRITE_MATRIX(LocalColor, ASPAR)
+      USE DATAPOOL
+      USE NETCDF
+      implicit none
+      type(LocalColorInfo), intent(in) :: LocalColor
+      integer, SAVE :: iSystem = 1
+      integer MSCeffect
+      integer ired, ncid, var_id
+      MSCeffect=LocalColor%MSCeffect
+      WRITE (FILE_NAME,10) TRIM(PRE_FILE_NAME),nproc, iSystem, myrank
+  10  FORMAT (a,'_np',i2.2,'_syst',i3.3,'_iproc',i4.4, '.nc')
+      iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
+      iret = nf90_def_dim(ncid, 'iter', NF90_UNLIMITED, iter_dims)
+      iret = nf90_def_dim(ncid, 'three', 3, three_dims)
+      iret = nf90_def_dim(ncid, 'msc', MSCeffect, msc_dims)
+      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
+      iret = nf90_def_dim(ncid, 'bbz', MNP, mnp_dims)
+      iret = nf90_def_dim(ncid, 'mnpp', MNP+1, mnpp_dims)
+      iret = nf90_def_dim(ncid, 'np_global', np_global, npgl_dims)
+      iret = nf90_def_dim(ncid, 'np_res', NP_RES, np_res_dims)
+      iret = nf90_def_dim(ncid, 'mne', MNE, mne_dims)
+      iret = nf90_def_dim(ncid, 'nnz', NNZ, nnz_dims)
+      iret = nf90_def_var(ncid,'ASPAR',NF90_DOUBLE,(/msc_dims, mdc_dims,nnz_dims/),var_id)
+      iret = nf90_def_var(ncid,'IA',NF90_INT,(/mnpp_dims/),var_id)
+      iret = nf90_def_var(ncid,'JA',NF90_INT,(/nnz_dims/),var_id)
+      iret = nf90_def_var(ncid,'iplg',NF90_INT,(/ mnp_dims/),var_id)
+      iret = nf90_close(ncid)
+      !
+      iret = nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+      iret=nf90_inq_varid(ncid, 'iplg', var_id)
+      iret=nf90_put_var(ncid,var_id,iplg,start=(/1/), count = (/ MNP /))
+      iret=nf90_inq_varid(ncid, 'IA', var_id)
+      iret=nf90_put_var(ncid,var_id,IA,start=(/1/), count = (/ MNP+1 /))
+      !
+      iret=nf90_inq_varid(ncid, 'JA', var_id)
+      iret=nf90_put_var(ncid,var_id,JA,start=(/1/), count = (/ NNZ /))
+      !
+      iret=nf90_inq_varid(ncid, 'ine', var_id)
+      iret=nf90_put_var(ncid,var_id,INE,start=(/1,1/), count = (/ 3, MNE /))
+      !
+      iret=nf90_inq_varid(ncid, 'ASPAR', var_id)
+      iret=nf90_put_var(ncid,var_id,ASPAR,start=(/1,1,1/), count = (/ MSC, MDC, NNZ/))
+      iret=nf90_inq_varid(ncid, 'IA', var_id)
+      iret=nf90_put_var(ncid,var_id,IA,start=(/1/), count = (/ MNP+1/))
+      iret=nf90_inq_varid(ncid, 'JA', var_id)
+      iret=nf90_put_var(ncid,var_id,JA,start=(/1/), count = (/ NNZ/))
+      iret=nf90_inq_varid(ncid, 'ListPos', var_id)
+      iret=nf90_put_var(ncid,var_id,ListPos,start=(/1/), count = (/ np_global/))
+      iret = nf90_close(ncid)
+      !
+      END SUBROUTINE
+# endif
 #endif

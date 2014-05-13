@@ -5,13 +5,8 @@
 !    We use memory ordered as AC(MNP,MSC,MDC)
 ! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
 !    so reordering at the beginning but less operations later on.
-! I4 is like I5 but we split the 1,MSC into Nblocks
-!    so, there are actually Nblocks times more exchanges.
 #undef DEBUG
 !#define DEBUG
-!
-#define PLAN_I4
-#undef PLAN_I4
 ! This is for the reordering of ASPAR_pc and hopefully higher speed
 ! in the application of the preconditioner.
 #undef REORDER_ASPAR_PC
@@ -43,13 +38,6 @@
 !
 #if defined REORDER_ASPAR_PC && defined SOR_DIRECT
 # undef REORDER_ASPAR_PC
-#endif
-! In PLAN_I4 the size becomes (MSCeffect,MDC,MNP)
-! and so we cannot use the SELFE_EXCH
-#ifdef PLAN_I4
-# ifndef NO_SELFE_EXCH
-     Sorry PLAN_I4 requires NO_SELFE_EXCH
-# endif
 #endif
 !**********************************************************************
 !* We have to think on how the system is solved. Many questions are   *
@@ -368,62 +356,6 @@
         CALL MPI_RECV(LocalColor % ListCovLower,sumMNP,itype, 0, 811, comm, istatus, ierr)
       END IF
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-# if defined NETCDF && defined DEBUG
-      SUBROUTINE NETCDF_WRITE_MATRIX(LocalColor, ASPAR)
-      USE DATAPOOL
-      USE NETCDF
-      implicit none
-      type(LocalColorInfo), intent(in) :: LocalColor
-      integer, SAVE :: iSystem = 1
-      integer MSCeffect
-      integer ired, ncid, var_id
-      MSCeffect=LocalColor%MSCeffect
-      WRITE (FILE_NAME,10) TRIM(PRE_FILE_NAME),nproc, iSystem, myrank
-  10  FORMAT (a,'_np',i2.2,'_syst',i3.3,'_iproc',i4.4, '.nc')
-      iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
-      iret = nf90_def_dim(ncid, 'iter', NF90_UNLIMITED, iter_dims)
-      iret = nf90_def_dim(ncid, 'three', 3, three_dims)
-      iret = nf90_def_dim(ncid, 'msc', MSCeffect, msc_dims)
-      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
-      iret = nf90_def_dim(ncid, 'bbz', MNP, mnp_dims)
-      iret = nf90_def_dim(ncid, 'mnpp', MNP+1, mnpp_dims)
-      iret = nf90_def_dim(ncid, 'np_global', np_global, npgl_dims)
-      iret = nf90_def_dim(ncid, 'np_res', NP_RES, np_res_dims)
-      iret = nf90_def_dim(ncid, 'mne', MNE, mne_dims)
-      iret = nf90_def_dim(ncid, 'nnz', NNZ, nnz_dims)
-      iret = nf90_def_var(ncid,'ASPAR',NF90_DOUBLE,(/msc_dims, mdc_dims,nnz_dims/),var_id)
-      iret = nf90_def_var(ncid,'IA',NF90_INT,(/mnpp_dims/),var_id)
-      iret = nf90_def_var(ncid,'JA',NF90_INT,(/nnz_dims/),var_id)
-      iret = nf90_def_var(ncid,'iplg',NF90_INT,(/ mnp_dims/),var_id)
-      iret = nf90_close(ncid)
-      !
-      iret = nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-      iret=nf90_inq_varid(ncid, 'iplg', var_id)
-      iret=nf90_put_var(ncid,var_id,iplg,start=(/1/), count = (/ MNP /))
-      iret=nf90_inq_varid(ncid, 'IA', var_id)
-      iret=nf90_put_var(ncid,var_id,IA,start=(/1/), count = (/ MNP+1 /))
-      !
-      iret=nf90_inq_varid(ncid, 'JA', var_id)
-      iret=nf90_put_var(ncid,var_id,JA,start=(/1/), count = (/ NNZ /))
-      !
-      iret=nf90_inq_varid(ncid, 'ine', var_id)
-      iret=nf90_put_var(ncid,var_id,INE,start=(/1,1/), count = (/ 3, MNE /))
-      !
-      iret=nf90_inq_varid(ncid, 'ASPAR', var_id)
-      iret=nf90_put_var(ncid,var_id,ASPAR,start=(/1,1,1/), count = (/ MSC, MDC, NNZ/))
-      iret=nf90_inq_varid(ncid, 'IA', var_id)
-      iret=nf90_put_var(ncid,var_id,IA,start=(/1/), count = (/ MNP+1/))
-      iret=nf90_inq_varid(ncid, 'JA', var_id)
-      iret=nf90_put_var(ncid,var_id,JA,start=(/1/), count = (/ NNZ/))
-      iret=nf90_inq_varid(ncid, 'ListPos', var_id)
-      iret=nf90_put_var(ncid,var_id,ListPos,start=(/1/), count = (/ np_global/))
-      iret = nf90_close(ncid)
-      !
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -3176,43 +3108,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I4_SPLIT_MSC(LocalColor, NbMSCblock)
-      USE DATAPOOL
-      implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      integer, intent(in) :: NbMSCblock
-      integer Hlen, Delta, MSCeffect, iMSCblock, len
-      integer ISbegin, IS1, IS2
-      Hlen=INT(MSC/NbMSCblock)
-      Delta=MSC - Hlen*NbMSCblock
-      IF (Delta == 0) THEN
-        MSCeffect=Hlen
-      ELSE
-        MSCeffect=Hlen+1
-      ENDIF
-      LocalColor % NbMSCblock=NbMSCblock
-      LocalColor % MSCeffect=MSCeffect
-      LocalColor % MDCeffect=MDC
-      allocate(LocalColor % ISbegin(NbMSCblock), LocalColor % ISend(NbMSCblock), LocalColor % ISlen(NbMSCblock), stat=istat)
-      IF (istat /=0) CALL WWM_ABORT('allocation error')
-      ISbegin=0
-      DO iMSCblock=1,NbMSCblock
-        IF (iMSCblock <= Delta) THEN
-          len=Hlen+1
-        ELSE
-          len=Hlen
-        END IF
-        IS1=ISbegin+1
-        IS2=ISbegin+len
-        LocalColor % ISbegin(iMSCblock)=IS1
-        LocalColor % ISend  (iMSCblock)=IS2
-        LocalColor % ISlen  (iMSCblock)=len
-        ISbegin=ISbegin+len
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE I5B_ALLOCATE(SolDat, MSCeffect)
       USE DATAPOOL, only : I5_SolutionData, MNP, MSC, MDC, NNZ
       implicit none
@@ -3238,11 +3133,7 @@
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_INIT
       implicit none
-# ifdef PLAN_I4
-      CALL I4_SOLVER_INIT
-# else
       CALL I5B_SOLVER_INIT
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3263,22 +3154,6 @@
       WRITE(myrank+740,*) 'After I5B_ALLOCATE'
       FLUSH(myrank+740)
 # endif
-      IF (PCmethod .eq. 2) THEN
-!        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE I4_SOLVER_INIT
-      USE DATAPOOL
-      implicit none
-      integer NbMSCblock
-      NblockFreqDir = NB_BLOCK
-      NbMSCblock = 7
-      CALL I4_SPLIT_MSC(MainLocalColor, NbMSCblock)
-      CALL SYMM_INIT_COLORING(MainLocalColor, NblockFreqDir, MainLocalColor % MSCeffect)
-      CALL I5B_ALLOCATE(SolDat, MainLocalColor % MSCeffect)
       IF (PCmethod .eq. 2) THEN
 !        CALL CREATE_ASPAR_EXCHANGE_ARRAY(LocalColor)
       END IF
@@ -3322,318 +3197,11 @@
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
-
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING WWM_SOLVER_EIMPS'
       FLUSH(STAT%FHNDL)
-
-# if defined PLAN_I4
-      CALL I4_EIMPS(LocalColor, SolDat)
-# else
       CALL I5B_EIMPS(LocalColor, SolDat)
-# endif
-
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING WWM_SOLVER_EIMPS'
       FLUSH(STAT%FHNDL)
-
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
-      USE DATAPOOL
-      IMPLICIT NONE
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      REAL(rkind), INTENT(OUT)  :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
-      integer, intent(in) :: iMSCblock
-      INTEGER     :: IP, IS, ID, IS1, IS2, ISr
-      REAL(rkind)      :: DIFRU, USOC, WVC
-!
-! Loop over the resident nodes only ... exchange is done in the calling routine
-!
-      IS1=LocalColor%ISbegin(iMSCblock)
-      IS2=LocalColor%ISend  (iMSCblock)
-      DO IP = 1, MNP
-        DO IS = IS1, IS2
-          ISr=IS+1-IS1
-          DO ID = 1, MDC
-            IF (LSECU .OR. LSTCU) THEN
-              CX(ISr,ID,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-              CY(ISr,ID,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
-            ELSE
-              CX(ISr,ID,IP) = CG(IP,IS)*COSTH(ID)
-              CY(ISr,ID,IP) = CG(IP,IS)*SINTH(ID)
-            END IF
-            IF (LSPHE) THEN
-              CX(ISr,ID,IP) = CX(ISr,ID,IP)*INVSPHTRANS(IP,1)
-              CY(ISr,ID,IP) = CY(ISr,ID,IP)*INVSPHTRANS(IP,2)
-            END IF
-            IF (LDIFR) THEN
-              CX(ISr,ID,IP) = CX(ISr,ID,IP)*DIFRM(IP)
-              CY(ISr,ID,IP) = CY(ISr,ID,IP)*DIFRM(IP)
-              IF (LSECU .OR. LSTCU) THEN
-                IF (IDIFFR .GT. 1) THEN
-                  WVC = SPSIG(IS)/WK(IP,IS)
-                  USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
-                  DIFRU = ONE + USOC * (ONE - DIFRM(IP))
-                ELSE
-                  DIFRU = DIFRM(IP)
-                END IF
-                CX(ISr,ID,IP) = CX(ISr,ID,IP) + DIFRU*CURTXY(IP,1)
-                CY(ISr,ID,IP) = CY(ISr,ID,IP) + DIFRU*CURTXY(IP,2)
-              END IF
-            END IF
-          END DO
-        END DO
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*
-!**********************************************************************
-      SUBROUTINE I4_EIMPS_ASPAR_B_BLOCK(LocalColor, ASPAR, B, U, iMSCblock)
-      USE DATAPOOL
-      IMPLICIT NONE
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      REAL(rkind), intent(inout) :: ASPAR(LocalColor%MSCeffect, MDC, NNZ)
-      REAL(rkind), intent(inout) :: B(LocalColor%MSCeffect, MDC, MNP)
-      REAL(rkind), intent(in) :: U(LocalColor%MSCeffect, MDC, MNP)
-      integer, intent(in) :: iMSCblock
-      INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(LocalColor%MSCeffect,MDC), FL12(LocalColor%MSCeffect,MDC), FL21(LocalColor%MSCeffect,MDC), FL22(LocalColor%MSCeffect,MDC), FL31(LocalColor%MSCeffect,MDC), FL32(LocalColor%MSCeffect,MDC)
-      REAL(rkind):: CRFS(LocalColor%MSCeffect,MDC,3), K1(LocalColor%MSCeffect,MDC), KM(LocalColor%MSCeffect,MDC,3), K(LocalColor%MSCeffect,MDC,3), TRIA03
-      INTEGER :: I1, I2, I3
-      INTEGER :: IP, ID, IS, IE
-# ifndef SINGLE_LOOP_AMATRIX
-      INTEGER :: POS
-# endif
-      INTEGER :: I, IPGL1, IPrel, ISr, IS1, IS2
-
-# ifdef SINGLE_LOOP_AMATRIX
-      REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3), NM(LocalColor%MSCeffect,MDC)
-      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3)
-# else
-      REAL(rkind) :: KP(LocalColor%MSCeffect,MDC,3,MNE), NM(LocalColor%MSCeffect,MDC,MNE)
-      REAL(rkind) :: DELTAL(LocalColor%MSCeffect,MDC,3,MNE)
-# endif
-      REAL(rkind) :: DTK(LocalColor%MSCeffect,MDC), TMP3(LocalColor%MSCeffect,MDC)
-      REAL(rkind) :: LAMBDA(LocalColor%MSCeffect,MDC,2)
-# ifdef NO_MEMORY_CX_CY
-      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,3), CY(LocalColor%MSCeffect,MDC,3)
-      REAL(rkind) :: USOC, WVC, DIFRU
-# else
-      REAL(rkind) :: CX(LocalColor%MSCeffect,MDC,MNP), CY(LocalColor%MSCeffect,MDC,MNP)
-# endif
-      IS1=LocalColor%ISbegin(iMSCblock)
-      IS2=LocalColor%ISend  (iMSCblock)
-
-      POS_TRICK(1,1) = 2
-      POS_TRICK(1,2) = 3
-      POS_TRICK(2,1) = 3
-      POS_TRICK(2,2) = 1
-      POS_TRICK(3,1) = 1
-      POS_TRICK(3,2) = 2
-
-# ifndef NO_MEMORY_CX_CY
-      CALL I4_CADVXY_VECTOR(LocalColor, CX,CY, iMSCblock)
-# endif
-!
-!        Calculate countour integral quantities ...
-!
-      ASPAR = 0.0_rkind ! Mass matrix ...
-      B     = 0.0_rkind ! Right hand side ...
-      DO IE = 1, MNE
-# ifndef NO_MEMORY_CX_CY
-        I1 = INE(1,IE)
-        I2 = INE(2,IE)
-        I3 = INE(3,IE)
-        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,I1) + CX(:,:,I2) + CX(:,:,I3))
-        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,I1) + CY(:,:,I2) + CY(:,:,I3))
-        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
-        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
-        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        KP(:,:,:,IE) = MAX(ZERO,K)
-        KM = MIN(0.0_rkind,K)
-        FL11(:,:) = CX(:,:,I2)*IEN(1,IE)+CY(:,:,I2)*IEN(2,IE)
-        FL12(:,:) = CX(:,:,I3)*IEN(1,IE)+CY(:,:,I3)*IEN(2,IE)
-        FL21(:,:) = CX(:,:,I3)*IEN(3,IE)+CY(:,:,I3)*IEN(4,IE)
-        FL22(:,:) = CX(:,:,I1)*IEN(3,IE)+CY(:,:,I1)*IEN(4,IE)
-        FL31(:,:) = CX(:,:,I1)*IEN(5,IE)+CY(:,:,I1)*IEN(6,IE)
-        FL32(:,:) = CX(:,:,I2)*IEN(5,IE)+CY(:,:,I2)*IEN(6,IE)
-# else
-        DO I=1,3
-          IP=INE(I,IE)
-          DO IS = IS1, IS2
-            ISr=IS+1-IS1
-            DO ID = 1, MDC
-              IF (LSECU .OR. LSTCU) THEN
-                CX(ISr,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CY(ISr,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
-              ELSE
-                CX(ISr,ID,I) = CG(IP,IS)*COSTH(ID)
-                CY(ISr,ID,I) = CG(IP,IS)*SINTH(ID)
-              END IF
-              IF (LSPHE) THEN
-                CX(ISr,ID,I) = CX(ISr,ID,I)*INVSPHTRANS(IP,1)
-                CY(ISr,ID,I) = CY(ISr,ID,I)*INVSPHTRANS(IP,2)
-              END IF
-              IF (LDIFR) THEN
-                CX(ISr,ID,I) = CX(ISr,ID,I)*DIFRM(IP)
-                CY(ISr,ID,I) = CY(ISr,ID,I)*DIFRM(IP)
-                IF (LSECU .OR. LSTCU) THEN
-                  IF (IDIFFR .GT. 1) THEN
-                    WVC = SPSIG(IS)/WK(IP,IS)
-                    USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
-                    DIFRU = ONE + USOC * (ONE - DIFRM(IP))
-                  ELSE
-                    DIFRU = DIFRM(IP)
-                  END IF
-                  CX(ISr,ID,I) = CX(ISr,ID,I) + DIFRU*CURTXY(IP,1)
-                  CY(ISr,ID,I) = CY(ISr,ID,I) + DIFRU*CURTXY(IP,2)
-                END IF
-              END IF
-            END DO
-          END DO
-        END DO
-        LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
-        LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
-        K(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE)
-        K(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
-        K(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
-        KM = MIN(0.0_rkind,K)
-        FL11(:,:) = CX(:,:,2)*IEN(1,IE)+CY(:,:,2)*IEN(2,IE)
-        FL12(:,:) = CX(:,:,3)*IEN(1,IE)+CY(:,:,3)*IEN(2,IE)
-        FL21(:,:) = CX(:,:,3)*IEN(3,IE)+CY(:,:,3)*IEN(4,IE)
-        FL22(:,:) = CX(:,:,1)*IEN(3,IE)+CY(:,:,1)*IEN(4,IE)
-        FL31(:,:) = CX(:,:,1)*IEN(5,IE)+CY(:,:,1)*IEN(6,IE)
-        FL32(:,:) = CX(:,:,2)*IEN(5,IE)+CY(:,:,2)*IEN(6,IE)
-# endif
-        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
-        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
-        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
-# ifndef SINGLE_LOOP_AMATRIX
-        KP(:,:,:,IE) = MAX(ZERO,K)
-        DELTAL(:,:,:,IE) = CRFS(:,:,:)- KP(:,:,:,IE)
-        NM(:,:,IE)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
-# else
-        KP(:,:,:) = MAX(ZERO,K)
-        DELTAL(:,:,:) = CRFS(:,:,:)- KP(:,:,:)
-        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
-        TRIA03 = ONETHIRD * TRIA(IE)
-        DO I=1,3
-          IP=INE(I,IE)
-          IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-            I1=JA_IE(I,1,IE)
-            I2=JA_IE(I,2,IE)
-            I3=JA_IE(I,3,IE)
-            K1(:,:) =  KP(:,:,I)
-            DO ID=1,MDC
-              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
-            END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
-            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
-            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
-            DO ID=1,MDC
-              B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
-            END DO
-          ELSE
-            I1 = JA_IE(I,1,IE)
-            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
-            B(:,:,IP)     =  ZERO
-          END IF
-        END DO
-# endif
-      END DO
-!
-! ... assembling the linear equation system ....
-!
-# ifndef SINGLE_LOOP_AMATRIX
-      J     = 0    ! Counter ...
-      DO IP = 1, NP_RES
-        IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-          DO I = 1, CCON(IP)
-            J = J + 1
-            IE    =  IE_CELL(J)
-            POS   =  POS_CELL(J)
-            K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
-            TRIA03 = ONETHIRD * TRIA(IE)
-            DO ID=1,MDC
-              DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
-            END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:,IE)
-            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-            I2    =  POSI(2,J)
-            I3    =  POSI(3,J)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
-            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
-            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
-            DO ID=1,MDC
-              IF (IOBPD(ID,IP) .eq. 1) THEN
-                B(:,ID,IP)     =  B(:,ID,IP) + TRIA03 * U(:,ID,IP)
-              END IF
-            END DO
-          END DO !I: loop over connected elements ...
-        ELSE
-          DO I = 1, CCON(IP)
-            J = J + 1
-            IE    =  IE_CELL(J)
-            TRIA03 = ONETHIRD * TRIA(IE)
-            I1    =  POSI(1,J) ! Position of the recent entry in the ASPAR matrix ... ASPAR is shown in fig. 42, p.122
-            ASPAR(:,:,I1) =  TRIA03 + ASPAR(:,:,I1)  ! Diagonal entry
-            B(:,:,IP)     =  ZERO
-          END DO
-        END IF
-      END DO
-# endif
-# if defined DEBUG
-      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
-      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
-      DO IS=1,LocalColor%MSCeffect
-        WRITE(3000+myrank,*) 'A: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
-      END DO
-# endif
-      IF (LBCWA .OR. LBCSP) THEN
-        DO IP = 1, IWBMNP
-          IF (LINHOM) THEN
-            IPrel=IP
-          ELSE
-            IPrel=1
-          ENDIF
-          IPGL1 = IWBNDLC(IP)
-          ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
-          DO IS=IS1,IS2
-            ISr=IS+1-IS1
-            B(ISr,:,IPGL1)         = SI(IPGL1) * WBAC(IS,:,IPrel)
-          END DO
-        END DO
-      END IF
-# if defined DEBUG
-      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
-      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
-      DO IS=1,LocalColor%MSCeffect
-        WRITE(3000+myrank,*) 'B: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
-      END DO
-# endif
-      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
-        DO IP = 1, NP_RES
-          IF (IOBWB(IP) .EQ. 1) THEN
-            DO IS=IS1,IS2
-              ISr=IS+1-IS1
-!2do mathieu please check 
-              ASPAR(ISr,:,I_DIAG(IP)) = ASPAR(ISr,:,I_DIAG(IP)) + IMATDAA(IS,:,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-              B(ISr,:,IP)             = B(ISr,:,IP) + IMATRAA(IS,:,IP) * DT4A * SI(IP) ! Add source term to the right hand side
-            END DO
-          ENDIF
-        END DO
-      ENDIF
-# if defined DEBUG
-      WRITE(3000+myrank,*) 'sum(ASPAR )=', sum(ASPAR)
-      WRITE(3000+myrank,*) 'sum(B     )=', sum(B)
-      WRITE(3000+myrank,*) 'iMSCblock=', iMSCblock
-      WRITE(3000+myrank,*) 'IS12=', IS1, IS2
-      DO IS=1,LocalColor%MSCeffect
-        WRITE(3000+myrank,*) 'C: IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
-      END DO
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*
@@ -4161,72 +3729,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I4_EIMPS(LocalColor, SolDat)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
-      USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
-      USE datapool, only : myrank, exchange_p4d_wwm
-      implicit none
-      type(LocalColorInfo), intent(inout) :: LocalColor
-      type(I5_SolutionData), intent(inout) :: SolDat
-      integer IS, ID, IP
-      integer iMSCblock, IS1, IS2
-      integer nbIter
-      real(rkind) :: Norm_L2(LocalColor%MSCeffect,MDC)
-      real(rkind) :: Norm_LINF(LocalColor%MSCeffect,MDC)
-      integer nbIterMax
-      real(rkind) :: Max_L2, Max_LINF, eMax
-      nbIterMax=0
-      Max_L2=ZERO
-      Max_LINF=ZERO
-
-      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING I4_EIMPS'
-      FLUSH(STAT%FHNDL)
-
-      DO iMSCblock=1,LocalColor % NbMSCblock
-# ifdef DEBUG
-        WRITE(240+myrank,*) 'iMSCblock=', iMSCblock
-# endif
-        IS1=LocalColor%ISbegin(iMSCblock)
-        IS2=LocalColor%ISbegin(iMSCblock)
-        DO IP=1,MNP
-          SolDat % AC2(1:LocalColor%ISlen(iMSCblock),:,IP)=AC2(IS1:IS2,:,IP)
-        END DO
-        CALL I4_EIMPS_ASPAR_B_BLOCK(LocalColor, SolDat%ASPAR_block, SolDat%B_block, SolDat%AC2, iMSCblock)
-        CALL I5B_EXCHANGE_P4D_WWM(LocalColor, SolDat%B_block)
-        CALL I5B_EXCHANGE_ASPAR(LocalColor, SolDat%ASPAR_block)
-        CALL I5B_CREATE_PRECOND(LocalColor, SolDat, PCmethod)
-# ifdef BCGS_REORG
-        CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-# else
-        CALL I5B_BCGS_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-# endif
-        DO IP=1,MNP
-          DO IS=IS1,IS2
-            DO ID=1,MDC
-              AC2(IS,ID,IP)=MAX(ZERO, SolDat%AC2(IS+1-IS1,ID,IP))!*MyREAL(IOBPD(ID,IP))
-            END DO
-          END DO
-        END DO
-        IF (nbIter > nbIterMax) THEN
-          nbIterMax=nbIter
-        END IF
-        eMax=maxval(Norm_L2)
-        IF (eMax > Max_L2) THEN
-          Max_L2=eMax
-        END IF
-        eMax=maxval(Norm_LINF)
-        IF (eMax > Max_LINF) THEN
-          Max_LINF=eMax
-        END IF
-      END DO
-      WRITE(STAT%FHNDL,*) 'nbIter=', nbIterMax, 'L2/LINF=', Max_L2, Max_LINF
-      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHED I4_EIMPS'
-      FLUSH(STAT%FHNDL)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -4260,9 +3762,6 @@
           U(IS,ID,:)=AC2(IS,ID,:)
         END DO
       END DO
-
-!      WRITE(*,*) SUM(AC2), SUM(U), SUM(X)
-!      PAUSE 'BEFORE CRAP'
       !
       ! The advection part of the equation
       !
@@ -4272,11 +3771,6 @@
       ELSE
         CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(U,ASPARL,BL)
       ENDIF
-
-!      WRITE(*,*) SUM(AC2), SUM(U), SUM(X), SUM(IMATRAA), SUM(IMATDAA)
-!      PAUSE 'AFTER EIMPS'
-
-!      WRITE(*,*) SUM(IMATRAA), SUM(IMATDAA)
 
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
@@ -4554,6 +4048,5 @@
       ENDIF
 # endif
 #endif
-      !Print *, 'END EIMPS_TOTAL_JACOBI_ITERATION'
       END SUBROUTINE
 #endif
