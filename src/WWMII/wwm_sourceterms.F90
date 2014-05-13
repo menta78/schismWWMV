@@ -34,7 +34,7 @@
          INTEGER, INTENT(IN) :: IP, ISELECT
 
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
          LOGICAL, INTENT(IN) :: LRECALC
          CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
@@ -81,9 +81,9 @@
          WIND10 = ZERO 
          SUMACLOC = SUM(ACLOC)
 
-         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
-           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
-         END IF
+!         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
+!           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
+!         END IF
 
          IDISP = 999
 
