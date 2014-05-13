@@ -770,7 +770,6 @@
         integer idx
         ! to temp store the element areas
         real(rkind) :: TRIA03arr(MAXMNECON)
-        real(rkind) :: AC22(MDC, MSC, MNP)
 
         PetscScalar :: value
 
@@ -778,14 +777,6 @@
         call VecSet(myB, value, petscErr);CHKERRQ(petscErr)
 
         call VecGetArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
-
-        ! copy old soluton for all nodes into a new array, so that the fast
-        ! running index is the first index. To avoid CPU cache flushing
-        do IDD = 1, MDC
-          do ISS = 1, MSC
-            AC22(IDD, ISS, :) = AC2(ISS, IDD,:)
-          end do
-        end do
 
         do IP = 1, MNP
           ! this is a interface node (row). ignore it.
@@ -809,7 +800,7 @@
                 idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                 !if(IOBPD(IDD,IP) .EQ. 1) then
 !                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD,IP))
-                  value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))*IOBPD(IDD,IP)*IOBDP(IP)*IOBWB(IP)
+                  value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD, IP))*IOBPD(IDD,IP)*IOBDP(IP)*IOBWB(IP)
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)
 
@@ -1679,8 +1670,6 @@
 #  endif
         integer :: IP, rowLocal, IDD, ISS
         PetscScalar :: value
-        ! for the exchange
-        real(kind=rkind)  :: U(MSC,MDC,MNP)
 
         KSPConvergedReason reason;
         PetscInt iteration;
@@ -1786,18 +1775,7 @@
         ! we have to fill the ghost and interface nodes with the solution from the other threads.
         ! at least SUBROUTINE SOURCETERMS() make calculations on interface/ghost nodes which are
         ! normally set to 0, because they do not exist in petsc
-!AR: delete U; call exchange_p4d_wwm direct with AC2 ?
-        do IDD = 1, MDC
-          do ISS = 1, MSC
-            U(ISS,IDD,:) = AC2(ISS,IDD,:)
-          end do
-        end do
-        call exchange_p4d_wwm(U)     
-        do IDD = 1, MDC
-          do ISS = 1, MSC
-            AC2(ISS,IDD,:) = U(ISS,IDD,:)
-          end do
-        end do
+        call exchange_p4d_wwm(AC2)
       end SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2134,7 +2112,6 @@
         ! to temp store the element areas
         real(rkind) :: TRIA03arr(MAXMNECON), GTEMP1, GTEMP2, FLHAB
         real(rkind) :: DELFL, USFM
-        real(rkind) :: AC22(MDC, MSC, MNP)
 
         PetscScalar :: value, value1
 
@@ -2251,14 +2228,6 @@
 
         call VecGetArrayF90(myB, myBtemp, petscErr);CHKERRQ(petscErr)
 
-        ! copy old soluton for all nodes into a new array, so that the fast
-        ! running index is the first index. To avoid CPU cache flushing
-        do ISS = 1, MSC
-          do IDD = 1, MDC
-            AC22(IDD, ISS, :) = AC2(ISS, IDD,:)
-          end do
-        end do
-
         do IP = 1, MNP
           ! this is a interface node (row). ignore it.
           if(ALOold2ALO(IP) .eq. -999) then
@@ -2281,7 +2250,7 @@
                 idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                 if(IOBPD(IDD,IP) .EQ. 1) then
 !                   value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD,IP))
-                  value = SUM(TRIA03arr(1:CCON(IP)) * AC22(IDD, ISS, IP))
+                  value = SUM(TRIA03arr(1:CCON(IP)) * AC2(ISS, IDD, IP))
                   ! IP in Petsc local order
                   myBtemp(idx) = value + myBtemp(idx)
                 ! wenn der Knoten die Randbedingun nicht erfuellt, dann setze ihn fuer diese richtung null
