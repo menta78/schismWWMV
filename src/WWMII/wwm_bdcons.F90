@@ -1869,12 +1869,12 @@
         VAL(1,IP)=eVect(1)
         IF (DOPEAK) THEN
           IF (eVect(3) .gt. TINY(1.)) THEN
-            VAL(2,IP)=eVect(3)
+            VAL(2,IP)=ONE/eVect(3)
             VAL(5,IP)  = 2.
           END IF
         ELSE
           VAL(2,IP)=eVect(4)
-          VAL(5,IP)  = 2.
+          VAL(5,IP)  = -2.
         END IF
         VAL(3,IP)=eVect(2)
         VAL(4,IP)=eVect(5)
@@ -1897,6 +1897,34 @@
 !     SPPARM(7): gaussian width for the gauss spectrum 0.1
 !     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.
       END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INTER_STRUCT_BOUNDARY_V2(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NDX, NDY
+      REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+      REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
+      REAL(rkind)  :: XPT(IWBMNP), YPT(IWBMNP)
+      INTEGER :: IP
+      DO IP=1,IWBMNP
+        XPT(IP)=XP(IWBNDLC(IP))
+        YPT(IP)=YP(IWBNDLC(IP))
+      END DO
+      CALL SPPARM_INTER_STRUCT(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y, IWBMNP, XPT, YPT, VAL, DOPEAK_BOUNDARY)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INTER_STRUCT_DOMAIN_V2(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y,VAL)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NDX, NDY
+      REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
+      REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
+      CALL SPPARM_INTER_STRUCT(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y, MNP, XP, YP, VAL, DOPEAK_BOUNDARY)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
