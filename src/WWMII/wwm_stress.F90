@@ -182,7 +182,7 @@
         WRITE(5011) TAUT
 #ifdef MPI_PARALL_GRID
       endif
-      call mpi_barrier(comm)
+      !call mpi_barrier(comm)
 #endif
       IF (LOUTWAM) WRITE(111111,'(3F15.6)') DELU,DELTAUW,SUM(TAUT)
 
