@@ -239,7 +239,7 @@
          AUX2 = 28._rkind * UFRIC(IP)
 
          DO IS = 1, MSC
-            CINV = WK(IP,IS)/SPSIG(IS)
+            CINV = WK(IS,IP)/SPSIG(IS)
             AUX3 = AUX2 * CINV
             DO ID = 1, MDC
               COSDIF = MyCOS(SPDIR(ID)-WINDTH)
@@ -288,7 +288,7 @@
          MBETA =  32.0_rkind   ! See orignial Paper A GU OCEANS VOL. 104, No.: C4, April 1999 and see Makin & Stam 2003 (KNMI)
 
          DO IS = 1, MSC
-           CINV =  WK(IP,IS) / SPSIG(IS) 
+           CINV =  WK(IS,IP) / SPSIG(IS) 
            SIGMA = SPSIG(IS)
            IF (WIND10 .LE. THR) THEN
              AUX1 = 0.0_rkind
@@ -322,7 +322,7 @@
                  IF (IS .EQ. 1) ELOCAL = ONEHALF * ACLOC(IS,ID) * SPSIG(IS) * SPSIG(IS) ! Simpson
                  IF (IS .GT. 1) ELOCAL = ONEHALF * ( ACLOC(IS,ID) * SPSIG(IS) + ACLOC(IS-1,ID) * SPSIG(IS-1) ) * DS 
                  ALOCAL      = SQRT(8.0_rkind*ELOCAL)
-                 STEEPLOCAL  = ALOCAL  * WK(IP,IS)
+                 STEEPLOCAL  = ALOCAL  * WK(IS,IP)
                  SWINB       = CYS * RHOAW * STEEPLOCAL * STEEPLOCAL * (ONE - ((WIND10 * COSWW)/CPHASE) ) **2 * SIGMA
                ELSE
                  SWINB = ZERO

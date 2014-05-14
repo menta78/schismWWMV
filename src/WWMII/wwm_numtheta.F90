@@ -584,7 +584,7 @@
                IF (DEP(IP) .GT. DMIN) THEN ! ar: obsolete check since done in calling routine ...
 
                  DO IS = 1, MSC
-                   WKDEP = WK(IP,IS) * DEP(IP)
+                   WKDEP = WK(IS,IP) * DEP(IP)
                    IF (WKDEP .LT. 13.) THEN
                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
                      DO ID = 1, MDC
@@ -607,7 +607,7 @@
 
                IF (DEP(IP) .GT. DMIN) THEN
                   DO IS = 1, MSC
-                    WKDEP = WK(IP,IS) * DEP(IP)
+                    WKDEP = WK(IS,IP) * DEP(IP)
                     IF (WKDEP .LT. 13.) THEN
                       DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
 !AR: Joseph: There is a small very tiny different in terms of CPU

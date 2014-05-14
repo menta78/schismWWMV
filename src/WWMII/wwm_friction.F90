@@ -56,7 +56,7 @@
          END IF
 
          DO IS = 1, MSC
-           KDEP = WK(IP,IS)*DEP(IP)
+           KDEP = WK(IS,IP)*DEP(IP)
            DSSBF(IS,:) = CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
            !WRITE(*,'(2I10,10F20.10)') IP, IS, KDEP, DEP(IP), CFBOT, SUM(SSBF(IS,:)), (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2 
            DO ID = 1, MDC

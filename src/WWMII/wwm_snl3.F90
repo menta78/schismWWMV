@@ -97,12 +97,12 @@
           DO IS = 1, ISMAX 
             E0  = E(IS)
             W0  = SPSIG(IS)
-            WN0 = WK(IP,IS)
+            WN0 = WK(IS,IP)
             C0  = W0 / WN0
             IF ( IS.GT.-ISM1 ) THEN
               EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
               WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
-              WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
+              WNM = WISM * WK(IS+ISM1,IP)  + WISM1 * WK(IS+ISM,IP)
               CM  = WM / WNM
             ELSE
                EM  = ZERO
@@ -765,8 +765,8 @@
             J     = I + IRES
             WiT   = SPSIG(I)
             WjT   = SPSIG(J)
-            WNi   = WK(IP,I)
-            WNj   = WK(IP,J)
+            WNi   = WK(I,IP)
+            WNj   = WK(J,IP)
             CGi   = CG(1,IP)
             CGj   = CG(J,IP)
             JACi  = PI2 * WiT
@@ -875,8 +875,8 @@
             J   = I + IRES
             WiT  = SPSIG(I)
             WjT  = SPSIG(J)
-            WNi = WK(IP,i)
-            WNj = WK(IP,j)
+            WNi = WK(I,IP)
+            WNj = WK(J,IP)
             Ci  = WiT / WNi
             Cj  = WjT / WNj
             CGi = CG(i,IP)
@@ -1017,12 +1017,12 @@
            DO IS = 1, ISMAX
               E0  = E(IS)
               W0  = SPSIG(IS)
-              WN0 = WK(IP,IS)
+              WN0 = WK(IS,IP)
               C0  = W0 / WN0
               IF ( IS.GT.-ISM1 ) THEN
                  EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
                  WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
-                 WNM = WISM * WK(IP,IS+ISM1)  + WISM1 * WK(IP,IS+ISM)
+                 WNM = WISM * WK(IS+ISM1,IP)  + WISM1 * WK(IS+ISM,IP)
                  CM  = WM / WNM
               ELSE
                  EM  = 0.
@@ -1094,7 +1094,7 @@
 
       DELTAK(1) = WK(IP,1)
       DO IS = 2, MSC
-        DELTAK(IS) = WK(IP,IS) - WK(IP,IS-1)
+        DELTAK(IS) = WK(IS,IP) - WK(IS-1,IP)
       END DO
 
       H  = DEP(IP)
@@ -1105,7 +1105,7 @@
           DO IS = 1, MSC
 
             BETA_0(IS) = 0.1 * SPSIG(IS)/PI2
-            KI = WK(IP,IS)
+            KI = WK(IS,IP)
             DK = DELTAK(IS)
             PROPFAK = 9. * KI * SQRT(G9) * DK / (32. * PI * SQRT(H))
 
@@ -1117,7 +1117,7 @@
 
               DO J = 1, IS - 1
                 SUMAC   = DBLE(( ACLOC(J,ID) * CG(J,IP) - ACLOC(IS-J,ID) * CG(IS-J,IP) ))
-                KJ = WK(IP, J)
+                KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
                 DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
@@ -1127,7 +1127,7 @@
               END DO
               DO J = IS+1, MSC
                 SUMAC   = DBLE(( ACLOC(J-IS,ID) * CG(J-IS,IP) - ACLOC(J,ID) * CG(J,IP) ))
-                KJ = WK(IP, J)
+                KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
                 DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
@@ -1151,7 +1151,7 @@
             PART2(IS)  = 0.
             DO J = 1, IS - 1
               IF (BETA_0(IS) .LT. THR) CYCLE
-              KJ = WK(IP, J)
+              KJ = WK(J,IP)
               KJKIKJ = KJ*(KI-KJ)
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
@@ -1164,7 +1164,7 @@
             END DO
             DO J = IS+1, MSC
               IF (BETA_0(IS) .LT. THR) CYCLE
-              KJ = WK(IP, J)
+              KJ = WK(J,IP)
               KJKIKJ = KJ*(KI-KJ)
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)

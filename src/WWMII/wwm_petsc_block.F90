@@ -1505,7 +1505,7 @@
               C(2,i,:) = C(2,i,:)*DIFRM(IP)
               IF (LSECU .OR. LSTCU) THEN
                 IF (IDIFFR .GT. 1) THEN
-                  WVC = SPSIG(ISS)/WK(IP,ISS)
+                  WVC = SPSIG(ISS)/WK(ISS,IP)
                   USOC(:) = (COSTH(:)*CURTXY(IP,1) +  SINTH(:)*CURTXY(IP,2))/WVC
                   DIFRU(:) = 1.0_rkind + USOC(:) * (1.0_rkind - DIFRM(IP))
                 ELSE
@@ -1624,9 +1624,9 @@
 
               IF (LSECU .OR. LSTCU) THEN
                 IF (IDIFFR .GT. 1) THEN
-                  WVC1 = SPSIG(ISS)/WK(IP1,ISS)
-                  WVC2 = SPSIG(ISS)/WK(IP2,ISS)
-                  WVC3 = SPSIG(ISS)/WK(IP3,ISS)
+                  WVC1 = SPSIG(ISS)/WK(ISS,IP1)
+                  WVC2 = SPSIG(ISS)/WK(ISS,IP2)
+                  WVC3 = SPSIG(ISS)/WK(ISS,IP3)
                   USOC1(:) = (COSTH(:)*CURTXY(IP1,1) + SINTH(:)*CURTXY(IP1,2))/WVC1 
                   USOC2(:) = (COSTH(:)*CURTXY(IP2,1) + SINTH(:)*CURTXY(IP2,2))/WVC2
                   USOC3(:) = (COSTH(:)*CURTXY(IP3,1) + SINTH(:)*CURTXY(IP3,2))/WVC3

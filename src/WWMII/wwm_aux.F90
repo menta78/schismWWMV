@@ -423,7 +423,7 @@
              SPSIGLOC = SPSIG(IS)
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
 !             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
-             WK(IP,IS) = WVK
+             WK(IS,IP) = WVK
              CG(IS,IP) = WVCG
              WC(IP,IS) = WVC
            END DO
@@ -506,7 +506,7 @@
             DO IS=1,MSC
               EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
-                OMEG  = SPSIG(IS) + WK(IP,IS) * UXD
+                OMEG  = SPSIG(IS) + WK(IS,IP) * UXD
                 OMEG2 = OMEG**2
               ELSE
                 OMEG2 = SIGPOW(IS,2)

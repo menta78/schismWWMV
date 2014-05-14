@@ -193,7 +193,7 @@
       IF (ISHALLO.EQ.0) THEN
         DO M=1, NFRE
           DO IJ=IJS,IJL
-            XK(IJ,M) = WK(IJ,M)!TFAK(INDEP(IJ),M)
+            XK(IJ,M) = WK(M,IJ)!TFAK(INDEP(IJ),M)
             CG(M,IJ) = CG(M,IJ)!TCGOND(INDEP(IJ),M)
           END DO
         END DO
@@ -426,7 +426,7 @@
 
         DO IJ=IJS,IJL
           IF (XKMEAN(IJ).NE.0) THEN
-            X           = WK(IJ,M)/XKMEAN(IJ)!TFAK(INDEP(IJ),M)/XKMEAN(IJ)
+            X           = WK(M,IJ)/XKMEAN(IJ)!TFAK(INDEP(IJ),M)/XKMEAN(IJ)
             BSIGBAJ(IJ) = FACTOR(IJ)*( (1.-DELTA2)*X + DELTA2*X**2)
           ELSE
             BSIGBAJ(IJ) = 0
@@ -435,7 +435,7 @@
 
         IF (ISHALLO.EQ.0) THEN
           DO IJ=IJS,IJL
-            CM(IJ)=WK(IJ,M)/SIG(M)!TFAK(INDEP(IJ),M)/SIG(M)
+            CM(IJ)=WK(M,IJ)/SIG(M)!TFAK(INDEP(IJ),M)/SIG(M)
           ENDDO
         ELSE
           DO IJ=IJS,IJL

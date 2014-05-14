@@ -409,7 +409,7 @@
         DO M=1,NFRE
           DO IJ=IJS,IJL
 !AR: WAM TABLE REPLACES BY WWM WK            AKM1 = 1./TFAK(INDEP(IJ),M)
-            AKM1 = 1./WK(IJ,M)
+            AKM1 = 1./WK(M,IJ)
 !AR: WAM TABLE REPLACES BY WWM CG            AK2VGM1 = AKM1**2/TCGOND(INDEP(IJ),M)
             AK2VGM1 = AKM1**2/CG(M,IJ)
             TEMP2(IJ,M) = AKM1*AK2VGM1

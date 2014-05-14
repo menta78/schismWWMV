@@ -962,7 +962,7 @@
 !todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-            eWk=WK(IP,IS)
+            eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
             eSinh2kd=MySINH(2*kD)
@@ -1002,7 +1002,7 @@
 !todo ID IS ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-            eWk=WK(IP,IS)
+            eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
             eSinh2kd=MySINH(2*kD)

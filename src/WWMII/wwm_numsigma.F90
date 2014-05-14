@@ -181,21 +181,21 @@
         CASE (1)
           IF (DEP(IP) .GT. DMIN) THEN ! obsolete call ... numtheta ..
             DO IS = 1, MSC
-              WKDEP = WK(IP,IS) * DEP(IP)
+              WKDEP = WK(IS,IP) * DEP(IP)
               IF (WKDEP .LT. 13.) THEN
                 DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
               ELSE 
                 DWDH = 0.
               END IF         
               DO ID = 1, MDC
-                CAS(IS,ID) = DWDH *( DEPDT(IP)+CURTXY(IP,1)*DDEP(IP,1) ) - CG(IS,IP)*WK(IP,IS)*(COS2TH(ID)*DCUX(IP,1)+ SINCOSTH(ID)*DCUY(IP,1))
+                CAS(IS,ID) = DWDH *( DEPDT(IP)+CURTXY(IP,1)*DDEP(IP,1) ) - CG(IS,IP)*WK(IS,IP)*(COS2TH(ID)*DCUX(IP,1)+ SINCOSTH(ID)*DCUY(IP,1))
               END DO
             END DO
           END IF
         CASE (2)
           IF (DEP(IP) .GT. DMIN) THEN
             DO IS = 1, MSC
-              WKDEP = WK(IP,IS) * DEP(IP)
+              WKDEP = WK(IS,IP) * DEP(IP)
               IF (WKDEP .LT. 13.) THEN
                 DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
               ELSE
@@ -203,9 +203,9 @@
               END IF
               DO ID = 1, MDC
                 IF (.NOT. LDIFR) THEN
-                  CAS(IS,ID) = DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1)*DDEP(IP,1) + CURTXY(IP,2)*DDEP(IP,2) ) - CG(IS,IP) * WK(IP,IS) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+                  CAS(IS,ID) = DWDH * WK(IS,IP) * ( DEPDT(IP) + CURTXY(IP,1)*DDEP(IP,1) + CURTXY(IP,2)*DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
                 ELSE
-                  CAS(IS,ID) = DWDH * WK(IP,IS) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1) + CURTXY(IP,2) * DDEP(IP,2) ) - CG(IS,IP) * WK(IP,IS) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+                  CAS(IS,ID) = DWDH * WK(IS,IP) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1) + CURTXY(IP,2) * DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
                 END IF
               END DO
             END DO

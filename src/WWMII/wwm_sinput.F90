@@ -204,7 +204,7 @@
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            XK(IJ) = WK(IJ,M)
+            XK(IJ) = WK(M,IJ)
             CM(IJ) = XK(IJ)/FAC(M)
             SH(IJ) = FAC(M)**2/(G*XK(IJ)) 
           ENDDO

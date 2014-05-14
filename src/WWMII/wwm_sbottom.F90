@@ -69,9 +69,9 @@
       DO M=1,NFRE
         DO IJ=IJS,IJL
           IF(DEP(IJ).LT.999) THEN
-            ARG = 2.* DEP(IJ)*WK(IJ,M)!TFAK(INDEP(IJ),M)
+            ARG = 2.* DEP(IJ)*WK(M,IJ)!TFAK(INDEP(IJ),M)
             ARG = MIN(ARG,50.)
-            SBO(IJ) = CONST*WK(IJ,M)/SINH(ARG)
+            SBO(IJ) = CONST*WK(M,IJ)/SINH(ARG)
 !            SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
           ENDIF
         ENDDO

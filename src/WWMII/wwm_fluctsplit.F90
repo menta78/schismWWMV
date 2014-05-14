@@ -1951,7 +1951,7 @@
              C(2,IP) = C(2,IP)*DIFRM(IP)
              IF (LSECU .OR. LSTCU) THEN
                IF (IDIFFR .GT. 1) THEN
-                 WVC = SPSIG(IS)/WK(IP,IS)
+                 WVC = SPSIG(IS)/WK(IS,IP)
                  USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
                  DIFRU = ONE + USOC * (ONE - DIFRM(IP))
                ELSE
@@ -2000,7 +2000,7 @@
                CY(IS,ID,IP) = CY(IS,ID,IP)*DIFRM(IP)
                IF (LSECU .OR. LSTCU) THEN
                  IF (IDIFFR .GT. 1) THEN
-                   WVC = SPSIG(IS)/WK(IP,IS)
+                   WVC = SPSIG(IS)/WK(IS,IP)
                    USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
                    DIFRU = ONE + USOC * (ONE - DIFRM(IP))
                  ELSE
@@ -2400,7 +2400,7 @@
                  CY(IS,ID,IP) = CY(IS,ID,IP)*DIFRM(IP)
                  IF (LSECU .OR. LSTCU) THEN
                    IF (IDIFFR .GT. 1) THEN
-                     WVC = SPSIG(IS)/WK(IP,IS)
+                     WVC = SPSIG(IS)/WK(IS,IP)
                      USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
                      DIFRU = ONE + USOC * (ONE - DIFRM(IP))
                    ELSE

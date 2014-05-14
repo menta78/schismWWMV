@@ -97,7 +97,7 @@
 
         DO M=1,NFRE
           K=1
-          TEMP1 = DFIM(M)/SQRT(WK(IP,M))
+          TEMP1 = DFIM(M)/SQRT(WK(M,IP))
           TEMP2 = F(K,M)
           DO K=2,NANG
             TEMP2 = TEMP2+F(K,M)
