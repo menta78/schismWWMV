@@ -2361,7 +2361,6 @@
          REAL(rkind)  :: U3(3)
          REAL(rkind)  :: KKSUM(MNP,MSC,MDC), ST(MNP,MSC,MDC), N(MNE,MSC,MDC)
          REAL(rkind)  :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
-         REAL(rkind)  :: U(MSC,MDC,MNP)
          REAL(rkind)  :: FLALL(3,MNE,MSC,MDC)
          REAL(rkind)  :: KELEM(3,MNE,MSC,MDC)
          REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
@@ -2594,14 +2593,6 @@
            FLUSH(STAT%FHNDL)
          END IF !LCALC
 
-         DO IP = 1, MNP
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               U(IS,ID,IP) = AC2(IS,ID,IP)
-             END DO
-           END DO
-         END DO
-
 #ifdef TIMINGS
          CALL MY_WTIME(TIME1)
 #endif
@@ -2613,17 +2604,17 @@
                ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
-                 U3(:) = U(IS,ID,NI)
+                 U3(:) = AC2(IS,ID,NI)
                  UTILDE = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                  ST(NI(1),IS,ID)  = ST(NI(1),IS,ID) + KELEM(1,IE,IS,ID) * (U3(1) - UTILDE)
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               AC2(IS,ID,:) = MAX(ZERO,AC2(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
 #ifdef MPI_PARALL_GRID
-               WILD = U(IS,ID,:)
+               WILD = AC2(IS,ID,:)
                CALL EXCHANGE_P2D(WILD)
-               U(IS,ID,:) = WILD
+               AC2(IS,ID,:) = WILD
 #endif
              END DO  ! IT----> End Iteration
            END DO !IS
@@ -2636,17 +2627,17 @@
                ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
-                 U3(:) = U(IS,ID,NI)
+                 U3(:) = AC2(IS,ID,NI)
                  UTILDE = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                  ST(NI(1),IS,ID)  = ST(NI(1),IS,ID) + KELEM(1,IE,IS,ID) * (U3(1) - UTILDE)
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               AC2(IS,ID,:) = MAX(ZERO,AC2(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
              END DO  !IS
            END DO !ID
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(U)
+           CALL EXCHANGE_P4D_WWM(AC2)
 #endif
          END DO !IT
          ELSE IF (IVECTOR == 3) THEN
@@ -2658,18 +2649,18 @@
                ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
-                 U3(:) = U(IS,ID,NI)
+                 U3(:) = AC2(IS,ID,NI)
                  UTILDE = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                  ST(NI(1),IS,ID)  = ST(NI(1),IS,ID) + KELEM(1,IE,IS,ID) * (U3(1) - UTILDE)
                  ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
                  ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
                END DO !IE
-               U(IS,ID,:) = MAX(ZERO,U(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
+               AC2(IS,ID,:) = MAX(ZERO,AC2(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
              END DO! ID
 #ifdef MPI_PARALL_GRID
-             WILD2D = U(IS,:,:)
+             WILD2D = AC2(IS,:,:)
              CALL EXCHANGE_P3D_WWM(WILD2D)
-             U(IS,:,:) = WILD2D
+             AC2(IS,:,:) = WILD2D
 #endif
            END DO !IT
          END DO !IS
@@ -2681,7 +2672,7 @@
              DO ID = 1, MDC
                DO IE = 1, MNE
                  NI = INE(:,IE)
-                 U3(:)  = U(IS,ID,NI)
+                 U3(:)  = AC2(IS,ID,NI)
                  UTILDE3(IE) = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                END DO
                ST(:,IS,ID) = ZERO
@@ -2689,15 +2680,15 @@
                  DO I = 1, CCON(IP)
                    IE     = IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
-                   ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (U(IS,ID,IP) - UTILDE3(IE))
+                   ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (AC2(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
+                 AC2(IS,ID,IP) = MAX(ZERO,AC2(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
                END DO
              END DO
 #ifdef MPI_PARALL_GRID
-             WILD2D = U(IS,:,:)
+             WILD2D = AC2(IS,:,:)
              CALL EXCHANGE_P3D_WWM(WILD2D)
-             U(IS,:,:) = WILD2D
+             AC2(IS,:,:) = WILD2D
 #endif
            END DO !IT
          END DO !IS
@@ -2708,7 +2699,7 @@
              DO ID = 1, MDC
                DO IE = 1, MNE
                  NI = INE(:,IE)
-                 U3(:)  = U(IS,ID,NI)
+                 U3(:)  = AC2(IS,ID,NI)
                  UTILDE3(IE) = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
                END DO !IE
                ST(:,IS,ID) = ZERO
@@ -2716,25 +2707,17 @@
                  DO I = 1, CCON(IP)
                    IE     = IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
-                   ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (U(IS,ID,IP) - UTILDE3(IE))
+                   ST(IP,IS,ID) = ST(IP,IS,ID) + KELEM(IPOS,IE,IS,ID) * (AC2(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
+                 AC2(IS,ID,IP) = MAX(ZERO,AC2(IS,ID,IP)-DT4AI/SI(IP)*ST(IP,IS,ID)*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
              END DO !ID
            END DO !IS
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(U)
+           CALL EXCHANGE_P4D_WWM(AC2)
 #endif
          END DO !IT
          END IF
-
-         DO IP = 1, MNP
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               AC2(IS,ID,IP) = U(IS,ID,IP)
-             END DO
-           END DO
-         END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2763,7 +2746,6 @@
          REAL(rkind)  :: U3(3), UIP(MNP)
          REAL(rkind)  :: KKSUM, ST, N
          REAL(rkind)  :: CX(3), CY(3)
-         REAL(rkind)  :: U(MSC,MDC,MNP)
          REAL(rkind)  :: FLALL(3)
          REAL(rkind)  :: KELEM(3)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
@@ -2838,19 +2820,7 @@
            END DO ! ID
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
            FLUSH(STAT%FHNDL)
-         END IF ! LCALC
-
-         DO IP = 1, MNP
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               U(IS,ID,IP) = AC2(IS,ID,IP)
-             END DO
-           END DO
-         END DO
-
-#ifdef MPI_PARALL_GRID
-         CALL EXCHANGE_P4D_WWM(U)
-#endif
+         END IF
 
 #ifdef TIMINGS
          CALL MY_WTIME(TIME1)
@@ -2861,7 +2831,7 @@
          DO IT = 1, ITER_MAX
            DO ID = 1, MDC
              DO IS = 1, MSC
-               UIP = U(IS,ID,:)
+               UIP = AC2(IS,ID,:)
 !!$OMP DO PRIVATE(IP,I,IE,IPOS)
                DO IP = 1, MNP
                  ST = ZERO
@@ -2917,21 +2887,13 @@
 ! time stepping ...
                  UIP(IP) = MAX(ZERO,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
-               U(IS,ID,:) = UIP
+               AC2(IS,ID,:) = UIP
              END DO !ID
            END DO !IS
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(U)
+           CALL EXCHANGE_P4D_WWM(AC2)
 #endif
          END DO !IT
-
-         DO IP = 1, MNP
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               AC2(IS,ID,IP) = U(IS,ID,IP)
-             END DO
-           END DO
-         END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2956,7 +2918,6 @@
          REAL(rkind)   :: KTMP(3)
          REAL(rkind)   :: ST, N, KSUM, KMAX
          REAL(rkind)   :: CX(MNP), CY(MNP)! 20000 * 8 /  1024**2
-         REAL(rkind)   :: U(MSC,MDC,MNP)! 10000 * 1200 / 1024**2
          REAL(rkind)   :: FLALL(3), TMP
          REAL(rkind)   :: KELEM(3,MNE), KKELEM(3) ! 3 * 20000 / 1024**2
          REAL(rkind)   :: FL111, FL112, FL211, FL212, FL311, FL312
@@ -3021,13 +2982,7 @@
            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX
            FLUSH(STAT%FHNDL)
 
-         END IF !LCALC
-
-         DO ID = 1, MDC
-           DO IS = 1, MSC
-             U(IS,ID,:) = AC2(IS,ID,:)
-           END DO
-         END DO
+         END IF
 
 #ifdef TIMINGS
          CALL MY_WTIME(TIME1)
@@ -3075,34 +3030,24 @@
                  FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1,IE)
                  FLALL(2) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
                  FLALL(3) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
-                 UTILDE3(IE) = N * (DOT_PRODUCT(FLALL,U(IS,ID,NI(:))))
-                 !UTILDE3(IE) = N * ( FLALL(1) * U(IS,ID,NI(1)) + FLALL(2) * U(IS,ID,NI(2) + FLALL(3) * U(IS,ID,NI(3)))
+                 UTILDE3(IE) = N * (DOT_PRODUCT(FLALL,AC2(IS,ID,NI(:))))
+                 !UTILDE3(IE) = N * ( FLALL(1) * AC2(IS,ID,NI(1)) + FLALL(2) * AC2(IS,ID,NI(2) + FLALL(3) * AC2(IS,ID,NI(3)))
                END DO !IE
 !!$OMP DO PRIVATE(IP,ST,IE,IPOS)
-#ifdef MPI_PARALL_GRID
-               DO IP = 1, NP_RES ! runs just over the resident nodes ...
-#else
-               DO IP = 1, MNP ! runs just over the resident nodes ...
-#endif
+               DO IP = 1, NP_RES
                  ST = 0
                  DO I = 1, CCON(IP)
                    IE     = IE_CELL2(IP,I)
                    IPOS   = POS_CELL2(IP,I)
-                   ST = ST + KELEM(IPOS,IE) * (U(IS,ID,IP) - UTILDE3(IE))
+                   ST = ST + KELEM(IPOS,IE) * (AC2(IS,ID,IP) - UTILDE3(IE))
                  END DO
-                 U(IS,ID,IP) = MAX(ZERO,U(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
+                 AC2(IS,ID,IP) = MAX(ZERO,AC2(IS,ID,IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
                END DO !IP
              END DO !IS
            END DO !ID
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(U)
+           CALL EXCHANGE_P4D_WWM(AC2)
 #endif
-         END DO !IT
-
-         DO ID = 1, MDC
-           DO IS = 1, MSC
-             AC2(IS,ID,:) = U(IS,ID,:)
-           END DO
          END DO
       END SUBROUTINE
 !**********************************************************************
