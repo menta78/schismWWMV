@@ -27,7 +27,7 @@
                EAD = SUM(AC2(IS,:,IP))*DDIR*SIGPOW(IS,2)
                ETOT = ETOT + EAD
                EWKTOT = EWKTOT + WK(IP,IS) * EAD
-               ECGTOT = ECGTOT + CG(IP,IS) * EAD
+               ECGTOT = ECGTOT + CG(IS,IP) * EAD
              END DO
              ETOT   = FRINTF * ETOT
              EWKTOT = FRINTF * EWKTOT

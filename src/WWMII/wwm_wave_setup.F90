@@ -51,7 +51,7 @@
             COSE2 = COS(SPDIR(ID))**TWO
             SINE2 = SIN(SPDIR(ID))**TWO
             COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-            WN    = CG(IP,ISS) / ( SPSIG(ISS)/WK(IP,ISS) )
+            WN    = CG(ISS,IP) / ( SPSIG(ISS)/WK(IP,ISS) )
             eRXX=eRXX + ( WN * COSE2 + WN - ONEHALF)*ELOC
             eRXY=eRXY + ( WN * COSI2               )*ELOC
             eRYY=eRYY + ( WN * SINE2 + WN - ONEHALF)*ELOC

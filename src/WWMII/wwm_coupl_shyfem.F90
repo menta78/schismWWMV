@@ -518,7 +518,7 @@
                   COSE2 = COS(SPDIR(ID))**TWO
                   SINE2 = SIN(SPDIR(ID))**TWO
                   COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-                  WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+                  WN    = CG(IS,IP) / ( SPSIG(IS)/WK(IP,IS) )
                   RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC   ! Units = [ 1/s + 1/s - 1/s ] * m²s = m²
                   RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
                   RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC

@@ -113,7 +113,7 @@
             AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
             AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
             RINT = AUX1 / AUX2
-            FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
+            FT = PTRIAD(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
             SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
             !IF (IP == 1786 .AND. SA(IS,ID) .GT. THR) WRITE(*,'(2I10,10F25.10)') IS, ID, DEP(IP), URSELL, PTRIAD(5), RINT**2, SINBPH, SA(IS,ID), FT, ( EM * (EM - 2*E0 ))
           END DO
@@ -767,8 +767,8 @@
             WjT   = SPSIG(J)
             WNi   = WK(IP,I)
             WNj   = WK(IP,J)
-            CGi   = CG(IP,1)
-            CGj   = CG(IP,J)
+            CGi   = CG(1,IP)
+            CGj   = CG(J,IP)
             JACi  = PI2 * WiT
             JACj  = PI2 * WjT
             ALPH = 4. * WNi**2 * ( 0.5 + ( WiT**2 / ( WNi**2 * G9 * DEP(IP) ) ) )
@@ -879,8 +879,8 @@
             WNj = WK(IP,j)
             Ci  = WiT / WNi
             Cj  = WjT / WNj
-            CGi = CG(IP,i)
-            CGj = CG(IP,j)
+            CGi = CG(i,IP)
+            CGj = CG(j,IP)
             JACi = PI2 * WiT
             JACj = PI2 * WjT
             AUX1 = WNi**2 * ( G9 * DEP(IP) + 2. * Ci**2 )
@@ -1033,7 +1033,7 @@
               AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
               AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 -(2./ 5.) * W0**2 * DEP_2 )
               RINT = AUX1 / AUX2
-              FT = PTRIAD(1) * C0 * CG(IP,IS) * RINT**2 * SINBPH
+              FT = PTRIAD(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
               SA(ID,IS) = MAX(ZERO, FT * ( EM * EM - 2. * EM * E0 ))
            END DO
         END DO
@@ -1116,7 +1116,7 @@
               PART2(IS)  = 0.
 
               DO J = 1, IS - 1
-                SUMAC   = DBLE(( ACLOC(J,ID) * CG(IP,J) - ACLOC(IS-J,ID) * CG(IP,IS-J) ))
+                SUMAC   = DBLE(( ACLOC(J,ID) * CG(J,IP) - ACLOC(IS-J,ID) * CG(IS-J,IP) ))
                 KJ = WK(IP, J)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -1126,7 +1126,7 @@
                 IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
               END DO
               DO J = IS+1, MSC
-                SUMAC   = DBLE(( ACLOC(J-IS,ID) * CG(IP,J-IS) - ACLOC(J,ID) * CG(IP,J) ))
+                SUMAC   = DBLE(( ACLOC(J-IS,ID) * CG(J-IS,IP) - ACLOC(J,ID) * CG(J,IP) ))
                 KJ = WK(IP, J)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -1156,9 +1156,9 @@
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = DBLE(ACLOC(J,ID)*CG(IP,J)*ACLOC(IS-J,ID)*CG(IP,IS-J))
-              TMP2    = DBLE(ACLOC(J,ID)*CG(IP,J)+ACLOC(IS-J,ID)*CG(IP,IS-J))
-              TMP3    = (TMP1 - ACLOC(IS,ID)*CG(IP,IS)*TMP2)
+              TMP1    = DBLE(ACLOC(J,ID)*CG(J,IP)*ACLOC(IS-J,ID)*CG(IS-J,IP))
+              TMP2    = DBLE(ACLOC(J,ID)*CG(J,IP)+ACLOC(IS-J,ID)*CG(IS-J,IP))
+              TMP3    = (TMP1 - ACLOC(IS,ID)*CG(IS,IP)*TMP2)
               PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
             END DO
@@ -1169,9 +1169,9 @@
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = DBLE(ACLOC(IS,ID)*CG(IP,IS)*ACLOC(J-IS,ID)*CG(IP,J-IS))
-              TMP2    = DBLE(ACLOC(IS,ID)*CG(IP,IS)+ACLOC(J-IS,ID)*CG(IP,J-IS))
-              TMP3    = (TMP1 - ACLOC(J,ID)*CG(IP,J)*TMP2)
+              TMP1    = DBLE(ACLOC(IS,ID)*CG(IS,IP)*ACLOC(J-IS,ID)*CG(J-IS,IP))
+              TMP2    = DBLE(ACLOC(IS,ID)*CG(IS,IP)+ACLOC(J-IS,ID)*CG(J-IS,IP))
+              TMP3    = (TMP1 - ACLOC(J,ID)*CG(J,IP)*TMP2)
               PART2(IS) = PART2(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART2(IS) .NE. PART2(IS)) WRITE (*,*)'PART2', PART2(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
             END DO

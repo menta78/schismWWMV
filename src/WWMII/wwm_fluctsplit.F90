@@ -435,7 +435,7 @@
 !  Loop over all sub time steps, all quantities in this loop depend on the solution U itself !!!
 !
 !         WRITE(STAT%FHNDL,'(3I10,4F15.4)') IS, ID, ITER_EXP(IS,ID), SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2), &
-!     &    SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2)*DT4A/MINVAL(EDGELENGTH), MAXVAL(CG(:,IS)), SQRT(G9*MAXVAL(DEP))
+!     &    SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2)*DT4A/MINVAL(EDGELENGTH), MAXVAL(CG(IS,:)), SQRT(G9*MAXVAL(DEP))
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
            DO IT = 1, ITER_EXP(IS,ID)
@@ -1936,11 +1936,11 @@
        ELSE
          DO IP = 1, MNP
            IF (LSECU .OR. LSTCU) THEN
-             C(1,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-             C(2,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+             C(1,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+             C(2,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
            ELSE
-             C(1,IP) = CG(IP,IS)*COSTH(ID)
-             C(2,IP) = CG(IP,IS)*SINTH(ID)
+             C(1,IP) = CG(IS,IP)*COSTH(ID)
+             C(2,IP) = CG(IS,IP)*SINTH(ID)
            END IF
            IF (LSPHE) THEN
               C(1,IP) = C(1,IP)*INVSPHTRANS(IP,1)
@@ -1985,11 +1985,11 @@
          DO ID = 1, MDC
            DO IP = 1, MNP
              IF (LSECU .OR. LSTCU) THEN
-               CX(IS,ID,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-               CY(IS,ID,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+               CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+               CY(IS,ID,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
              ELSE
-               CX(IS,ID,IP) = CG(IP,IS)*COSTH(ID)
-               CY(IS,ID,IP) = CG(IP,IS)*SINTH(ID)
+               CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)
+               CY(IS,ID,IP) = CG(IS,IP)*SINTH(ID)
              END IF
              IF (LSPHE) THEN
                 CX(IS,ID,IP) = CX(IS,ID,IP)*INVSPHTRANS(IP,1)
@@ -2385,11 +2385,11 @@
            DO ID = 1, MDC
              DO IP = 1, MNP
                IF (LSECU .OR. LSTCU) THEN
-                 CX(IS,ID,IP) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                 CY(IS,ID,IP) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                 CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+                 CY(IS,ID,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
                ELSE
-                 CX(IS,ID,IP) = CG(IP,IS)*COSTH(ID)
-                 CY(IS,ID,IP) = CG(IP,IS)*SINTH(ID)
+                 CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)
+                 CY(IS,ID,IP) = CG(IS,IP)*SINTH(ID)
                END IF
                IF (LSPHE) THEN
                  CX(IS,ID,IP) = CX(IS,ID,IP)*INVSPHTRANS(IP,1)
@@ -2775,8 +2775,8 @@
 ! get node indices from the element table ...
                    NI = INE(:,IE)
 ! estimate speed in WAE
-                   CX = (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
-                   CY =( CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
+                   CX = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
+                   CY =( CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
 ! upwind indicators
                    LAMBDA(1) = ONESIXTH * SUM(CX)
                    LAMBDA(2) = ONESIXTH * SUM(CY)
@@ -2845,8 +2845,8 @@
                    I2 = NI(2)
                    I3 = NI(3)
 ! estimate speed in WAE
-                   CX = (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
-                   CY = (CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
+                   CX = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
+                   CY = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
 ! flux integration using simpson rule ...
                    FL11  = CX(2) * IEN(1,IE) + CY(2) * IEN(2,IE)
                    FL12  = CX(3) * IEN(1,IE) + CY(3) * IEN(2,IE)
@@ -2930,8 +2930,8 @@
 
            DO ID = 1, MDC
              DO IS = 1, MSC
-               CX = (CG(:,IS)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
-               CY = (CG(:,IS)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
+               CX = (CG(IS,:)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
+               CY = (CG(IS,:)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
                DTMAX_GLOBAL_EXP = VERYLARGE
                DTMAX_GLOBAL_EXP_LOC = VERYLARGE
                DO IP = 1, MNP
@@ -2992,8 +2992,8 @@
            DO ID = 1, MSC
              DO IS = 1, MDC
 !!$OMP WORKSHARE
-               CX = (CG(:,IS)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
-               CY = (CG(:,IS)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
+               CX = (CG(IS,:)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
+               CY = (CG(IS,:)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
 !!$OMP END WORKSHARE
 !!$OMP DO PRIVATE(IE,NI,I1,I2,I3,LLAMBDA,FL11,FL12,FL21,FL22,FL31,FL32,FL111,FL112,FL211,FL212,FL311,FL312,FLALL)
                DO IE = 1, MNE ! must go over the augmented domain ...

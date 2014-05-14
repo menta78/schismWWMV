@@ -628,7 +628,7 @@
                   IF (LDIFR) THEN
                     DO IS = 1, MSC
                        DO ID = 1, MDC
-                         CAD(IS,ID) = DIFRM(IP)*CAD(IS,ID)-CG(IP,IS)*(DIFRX(IP)*SINTH(ID)-DIFRY(IP)*COSTH(ID))
+                         CAD(IS,ID) = DIFRM(IP)*CAD(IS,ID)-CG(IS,IP)*(DIFRX(IP)*SINTH(ID)-DIFRY(IP)*COSTH(ID))
                        END DO
                     END DO
                   END IF
@@ -645,7 +645,7 @@
          IF (LSPHE) THEN
             DO IS = 1, MSC
                DO ID = 1, MDC
-                 CAD(IS,ID) = CAD(IS,ID)-CG(IP,IS)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
+                 CAD(IS,ID) = CAD(IS,ID)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
                END DO
             END DO
          END IF

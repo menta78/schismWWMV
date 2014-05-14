@@ -3152,11 +3152,11 @@
           DO IS=1,MSC
             DO ID=1,MDC
               IF (LSECU .OR. LSTCU) THEN
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
                 CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)
@@ -3363,11 +3363,11 @@
           DO IS=1,MSC
             DO ID=1,MDC
               IF (LSECU .OR. LSTCU) THEN
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
                 CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)

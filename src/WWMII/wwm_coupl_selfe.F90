@@ -191,7 +191,7 @@
                   COSE2 = COS(SPDIR(ID))**TWO
                   SINE2 = SIN(SPDIR(ID))**TWO
                   COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-                  WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+                  WN    = CG(IS,IP) / ( SPSIG(IS)/WK(IP,IS) )
                   RSXX(IP) = RSXX(IP) + ( WN * COSE2 + WN - 0.5_rkind) * ELOC   ! Units = [ 1/s + 1/s - 1/s ] * m²s = m²
                   RSXY(IP) = RSXY(IP) + ( WN * COSI2          ) * ELOC
                   RSYY(IP) = RSYY(IP) + ( WN * SINE2 + WN - 0.5_rkind) * ELOC
@@ -486,7 +486,7 @@
 !todo IS ID ordering
         DO IS = 1, MSC
 
-        CK = CG(IP,IS) * WK(IP,IS) ! CG ~ Group Velocity ; K ~ Wave Number
+        CK = CG(IS,IP) * WK(IP,IS) ! CG ~ Group Velocity ; K ~ Wave Number
 
 !       WE HAVE TO TAKE CARE ABOUT THE GROUP VELOCITY IF CURRENTS ARE PRESENT !!!
 !       THE GROUP VELOCITY WILL BE DOPPLER SHIFTET IN PRESENCE OF CURRENTS

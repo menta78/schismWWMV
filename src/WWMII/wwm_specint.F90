@@ -360,7 +360,7 @@
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
-                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))*100
+                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))*100
                      LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
                      SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                      !SSNL3(IS,ID)  = SC
@@ -427,7 +427,7 @@
                      DO IS = 1, MSC
                        DO ID = 1, MDC
                          NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
-                         MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))*100
+                         MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))*100
                          LIMFAC = ONE/MAX(ONE,NEWDAC/MAXDAC)
                          SC = SIGN(MIN(ABS(NEWDAC),MAXDAC),NEWDAC)/DT4A
                          !SSNL3(IS,ID)  = SC
@@ -549,7 +549,7 @@
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(:,IP))
            ELSE IF (MELIM == 2) THEN
              DO IS = 1, MSC
                USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
@@ -598,7 +598,7 @@
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(:,IP))
            ELSE IF (MELIM == 2) THEN
              DO IS = 1, MSC
                USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
@@ -694,7 +694,7 @@
          XREL   = XRR
          XFLT   = MAX ( ZERO , XFILT ) 
          FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2  ! s4/m4
-         DAM    = FACP / ( SPSIG * WK(IP,:)**3 ) / CG(IP,:) ! s * m³ * s4/m4 = 
+         DAM    = FACP / ( SPSIG * WK(IP,:)**3 ) / CG(:,IP) ! s * m³ * s4/m4 = 
          AFILT  = MAX ( DAM(MSC) , XFLT*MAXVAL(ACLOC))!*PI2*SPSIG(MSC_HF(IP)) )
 #endif
 
@@ -705,7 +705,7 @@
 
          IF (LIMIT) THEN
            IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(IP,:))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(IP,:)**3*CG(:,IP))
            ELSE IF (MELIM == 2) THEN
              DO IS = 1, MSC
                USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
@@ -838,7 +838,7 @@
            ACLOC = AC2(:,:,IP)
            DO IS = 1, MSC
              IF (MELIM .EQ. 1) THEN
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))
              ELSE IF (MELIM .EQ. 2) THEN
                UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
                MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IP,IS)))
@@ -846,7 +846,7 @@
                IF (USNEW(IP) .GT. SMALL) THEN
                  MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
                ELSE
-                 MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+                 MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))
                ENDIF
              END IF
              DO ID = 1, MDC

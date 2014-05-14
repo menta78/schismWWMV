@@ -62,7 +62,7 @@
          IMATDA = DSSDS + DSSNL3
 
          DO IS = 1, MSC
-           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))
            DO ID = 1, MDC
              NEWDAC = IMATRA(IS,ID)*DT4A
              LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
@@ -237,7 +237,7 @@
          MAXDAC = ZERO
 
          DO IS = 1, MSC
-           MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IP,IS))
+           MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IP,IS)**3*CG(IS,IP))
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
