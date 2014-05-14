@@ -934,7 +934,7 @@
          INTEGER                :: ICOMP   = 2
          REAL(rkind)            :: PMIN = 1.
 !
-! logicals used by the solver.
+! logicals used by the Jacobi-Gauss-Seidel solver.
 !
          LOGICAL                :: BLOCK_GAUSS_SEIDEL = .FALSE.
          LOGICAL                :: LCHKCONV = .TRUE.
@@ -942,6 +942,7 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
+         REAL(rkind), allocatable :: U_JACOBI(:,:,:)
 
 
          REAL(rkind)          :: RTHETA  = 0.5

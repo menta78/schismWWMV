@@ -3553,7 +3553,6 @@
       IMPLICIT NONE
       REAL(rkind) :: ASPAR(MSC,MDC,NNZ), B(MSC,MDC,MNP)
       REAL(rkind) :: ASPARL(MSC,MDC,NNZ), BL(MSC,MDC,MNP)
-      REAL(rkind) :: U(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
@@ -3574,7 +3573,6 @@
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
-      U = AC2
       !
       ! The advection part of the equation
       !
@@ -3663,7 +3661,7 @@
         ASPAR=ASPARL
         B=BL
         is_converged = 0
-        DO IP=1,NP_RES 
+        DO IP=1,NP_RES
           Sum_prev = sum(AC2(:,:,IP))
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
@@ -3675,7 +3673,7 @@
             ELSE
               IF (LSOUBOUND) THEN ! Source terms on boundary ...
                 IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                  CALL CYCLE3 (IP, U(:,:,IP), IMATRA, IMATDA)
+                  CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
                   ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                   B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
                 ENDIF
@@ -3721,7 +3719,7 @@
             !AC2(:,:,IP)=eSum*lambda+(1-lambda)*U(:,:,ip) ! over under relax ...
             AC2(:,:,IP)=eSum ! update ...
           ELSE
-            U(:,:,IP)=eSum ! update 
+            U_JACOBI(:,:,IP)=eSum ! update 
             Sum_prev = sum(ACLOC)
           END IF
           if (Sum_new .gt. thr8) then
@@ -3757,13 +3755,11 @@
         IF (BLOCK_GAUSS_SEIDEL) THEN
           CALL EXCHANGE_P4D_WWM(AC2)
         ELSE
-          CALL EXCHANGE_P4D_WWM(U)
+          CALL EXCHANGE_P4D_WWM(U_JACOBI)
         END IF
 #endif
-        IF (BLOCK_GAUSS_SEIDEL) THEN
-          U = AC2
-        ELSE
-          AC2 = U
+        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
+          AC2 = U_JACOBI
         ENDIF
 !
 ! The termination criterion

@@ -56,6 +56,12 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
        AC1 = zero
 
+       IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
+         ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+         U_JACOBI = zero
+       END IF
+
        IF (ICOMP .GE. 2) THEN
          ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
