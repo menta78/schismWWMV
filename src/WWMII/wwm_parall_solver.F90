@@ -3057,12 +3057,11 @@
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
 
-      DO ID=1,MDC
-        DO IS=1,MSC 
-          B(IS,ID,:) = U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
+      DO IP=1,MNP
+        DO ID=1,MDC
+          B(:,ID,IP) = U(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
         ENDDO
       END DO
-
       IF (LBCWA .OR. LBCSP) THEN
         DO IP = 1, IWBMNP
           IF (LINHOM) THEN
@@ -3074,7 +3073,6 @@
           B(:,:,IPGL1) = WBAC(:,:,IPrel)  * SI(IPGL1) ! Overwrite ... 
         END DO
       END IF
-
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
 # endif
@@ -3295,14 +3293,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
+      SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
-
       REAL(rkind), intent(out) :: ASPAR(MSC, MDC, NNZ)
-
       INTEGER :: POS_TRICK(3,2)
-
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
 # ifndef NO_MEMORY_CX_CY
@@ -3423,18 +3418,17 @@
         TRIA03 = ONETHIRD * TRIA(IE)
         DO I=1,3
           IP=INE(I,IE)
-          !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-            I1=JA_IE(I,1,IE)
-            I2=JA_IE(I,2,IE)
-            I3=JA_IE(I,3,IE)
-            K1(:,:) =  KP(:,:,I)
-            DO ID=1,MDC
-              DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
-            END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
-            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
-            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+          I1=JA_IE(I,1,IE)
+          I2=JA_IE(I,2,IE)
+          I3=JA_IE(I,3,IE)
+          K1(:,:) =  KP(:,:,I)
+          DO ID=1,MDC
+            DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+          END DO
+          TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+          ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+          ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+          ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
         END DO
 # endif
       END DO
