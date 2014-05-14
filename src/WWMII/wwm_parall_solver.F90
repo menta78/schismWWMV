@@ -3728,9 +3728,9 @@
           !if (melim .gt. 0) call limiter(ip,ACLOC,esum)
 
           IF (BLOCK_GAUSS_SEIDEL) THEN
-            !AC2(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
+            !AC2(:,:,IP)=eSum*lambda+(1-lambda)*U(:,:,ip) ! over under relax ...
             AC2(:,:,IP)=eSum ! update ...
-            sumu = sum(u(:,:,ip))
+            sumu = sum(U(:,:,ip))
             sumx = sum(esum)
             if (sumx .gt. thr8) then 
               p_is_converged = abs(sumu-sumx)/sumx
