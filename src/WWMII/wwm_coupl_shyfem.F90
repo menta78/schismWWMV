@@ -325,9 +325,9 @@
         END DO
 # else
         IF (LWINDFROMWWM) THEN
-          siz=5*NLVT + 11
+          siz=5*NLVT + 12
         ELSE
-          siz=5*NLVT + 9
+          siz=5*NLVT + 10
         END IF
         allocate(OUTT(np_global,siz), OUTT_TOT(np_global,siz), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_shyfem, allocate error 2')
@@ -353,9 +353,10 @@
           OUTT(iplg(IP), 7 + 5*NLVT) = ORBITAL
           OUTT(iplg(IP), 8 + 5*NLVT) = CD(IP) 
           OUTT(iplg(IP), 9 + 5*NLVT) = JPRESS(IP)
+          OUTT(iplg(IP),10 + 5*NLVT) = DISSIPATION(IP)
           IF (LWINDFROMWWM) THEN
-            OUTT(iplg(IP), 10+ 5*NLVT) = WINDXY(IP,1)
-            OUTT(iplg(IP), 11+ 5*NLVT) = WINDXY(IP,2)
+            OUTT(iplg(IP), 11+ 5*NLVT) = WINDXY(IP,1)
+            OUTT(iplg(IP), 12+ 5*NLVT) = WINDXY(IP,2)
           END IF
         END DO
         call mpi_reduce(OUTT,OUTT_TOT,NP_GLOBAL*siz,rtype,MPI_SUM,0,comm,ierr)
@@ -393,15 +394,17 @@
             WRITE(11111) STOKES_Y_ret
             FLUSH(11111)
             IF (LWINDFROMWWM) THEN
-              WRITE(11112) OUTT(IP, 10 + 5*NLVT)
+              WRITE(11112) OUTT(IP, 11 + 5*NLVT)
               FLUSH(11112)
-              WRITE(11113) OUTT(IP, 11 + 5*NLVT)
+              WRITE(11113) OUTT(IP, 12 + 5*NLVT)
               FLUSH(11113)
             END IF
             WRITE(11114) OUTT(IP, 8 + 5*NLVT)
             FLUSH(11114)
             WRITE(11115) OUTT(IP, 9 + 5*NLVT)
             FLUSH(11115)
+            WRITE(11116) OUTT(IP, 10 + 5*NLVT)
+            FLUSH(11116)
           END DO
         END IF
         deallocate(OUTT)
