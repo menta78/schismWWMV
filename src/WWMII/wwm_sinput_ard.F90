@@ -269,8 +269,8 @@
           ENDDO
         ELSE
           DO IJ=IJS,IJL
-            CM(IJ) = WK(IJ,M)/FAC(M)
-            XK(IJ,M) = WK(IJ,M)
+            CM(IJ) = WK(M,IJ)/FAC(M)
+            XK(IJ,M) = WK(M,IJ)
           ENDDO
         ENDIF
 

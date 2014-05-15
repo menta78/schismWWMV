@@ -136,7 +136,7 @@
         DO M=1,NFRE
           DO IJ=IJS,IJL
 !            SQRTK=SQRT(TFAK(INDEP(IJ),M))
-            SQRTK=SQRT(WK(IJ,M))
+            SQRTK=SQRT(WK(M,IJ))
             TEMPA(IJ) = DFIM(M)/SQRTK
             TEMPX(IJ) = SQRTK*DFIM(M)
           ENDDO

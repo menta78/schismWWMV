@@ -29,7 +29,7 @@
 !todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-            eWk=WK(IP,IS)
+            eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
             eSinh2kd=MySINH(2*kD)
@@ -191,7 +191,7 @@
                   COSE2 = COS(SPDIR(ID))**TWO
                   SINE2 = SIN(SPDIR(ID))**TWO
                   COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-                  WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+                  WN    = CG(IS,IP) / ( SPSIG(IS)/WK(IS,IP) )
                   RSXX(IP) = RSXX(IP) + ( WN * COSE2 + WN - 0.5_rkind) * ELOC   ! Units = [ 1/s + 1/s - 1/s ] * m²s = m²
                   RSXY(IP) = RSXY(IP) + ( WN * COSI2          ) * ELOC
                   RSYY(IP) = RSYY(IP) + ( WN * SINE2 + WN - 0.5_rkind) * ELOC
@@ -255,8 +255,8 @@
               DO IL = KBP(IP), NVRT
                 ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom
                 DO IS = 1, MSC !freq
-                  KW           = WK(IP,IS) * ZZETA !k*(z+D)
-                  KD           = WK(IP,IS) * DEP(IP) !k*D
+                  KW           = WK(IS,IP) * ZZETA !k*(z+D)
+                  KD           = WK(IS,IP) * DEP(IP) !k*D
                   SINH2KD      = MySINH(MIN(KDMAX,TWO*KD))
                   COSHKD       = MyCOSH(MIN(KDMAX,KD))
                   SINHKW       = MySINH(MIN(KDMAX,KW))
@@ -267,17 +267,17 @@
                     !Dimension of ELOC = m^2
                     ELOC = ACLOC(IS,ID) * SIGPOW(IS,2) * DDIR * FRINTF
                     IF (ELOC .LT. 10E-8) CYCLE
-                      tmp          =-ELOC * WK(IP,IS) / SINH2KD * (COSH2KW - ONE)            - &
+                      tmp          =-ELOC * WK(IS,IP) / SINH2KD * (COSH2KW - ONE)            - &
      &                               ELOC * (ZETA(IL,IP)-ZETA(NVRT, IP)) / DEP(IP)**TWO        + &
      &                               ELOC * KW * SINHKW / ( DEP(IP) * COSHKD ) - &
      &                               ELOC / DEP(IP) *  (ONE - COSHKW / COSHKD)
                       tmp=tmp*G9
 
                       SXX3D(IL,IP) = SXX3D(IL,IP) + &
-     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
+     &                               G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
                       SYY3D(IL,IP) = SYY3D(IL,IP) + &
-     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
-                      SXY3D(IL,IP) = SXY3D(IL,IP)+G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
+     &                               G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
+                      SXY3D(IL,IP) = SXY3D(IL,IP)+G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
                   END DO
                 END DO
               END DO !IL
@@ -302,14 +302,14 @@
             DO IP = 1, MNP
 !              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
               IF (DEP(IP) .LT. DMIN) CYCLE
-              KD           = WK(IP,IS) * DEP(IP) !k*D
+              KD           = WK(IS,IP) * DEP(IP) !k*D
               WILD2(:,IP)  = KD
               SINHKD       = MySINH(MIN(KDMAX,KD))
               COSHKD       = MyCOSH(MIN(KDMAX,KD))
               IF(ABS(SINHKD) .LT. THR) call parallel_abort('R.S.: div by 0 (1)')
               DO IL = KBP(IP), NVRT
                 ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom
-                KW           = WK(IP,IS) * ZZETA !k*(z+D)
+                KW           = WK(IS,IP) * ZZETA !k*(z+D)
                 SINHKW       = MySINH(MIN(KDMAX,KW))
                 COSHKW       = MyCOSH(MIN(KDMAX,KW))
                 FSS(IL,IP)   = SINHKW/SINHKD
@@ -321,9 +321,9 @@
                   ELOC = AC2(IS,ID,IP) * SIGPOW(IS,2) * DDIR * FRINTF * 1.
                   IF (ELOC .LT. 10E-8) CYCLE
                   WILD1(IL,IP)=WILD1(IL,IP)+ELOC
-                  SXX3D(IL,IP) = SXX3D(IL,IP)+G9*ELOC*WK(IP,IS)*(FCS(IL,IP)*FCC(IL,IP)*(COS(SPDIR(ID))**2+1.)-FSS(IL,IP)*FCS(IL,IP)) 
-                  SYY3D(IL,IP) = SYY3D(IL,IP)+G9*ELOC*WK(IP,IS)*(FCS(IL,IP)*FCC(IL,IP)*(SIN(SPDIR(ID))**2+1.)-FSS(IL,IP)*FCS(IL,IP))
-                  SXY3D(IL,IP) = SXY3D(IL,IP)+G9*ELOC*WK(IP,IS)*FCS(IL,IP)*FCC(IL,IP)*SIN(SPDIR(ID))*COS(SPDIR(ID))
+                  SXX3D(IL,IP) = SXX3D(IL,IP)+G9*ELOC*WK(IS,IP)*(FCS(IL,IP)*FCC(IL,IP)*(COS(SPDIR(ID))**2+1.)-FSS(IL,IP)*FCS(IL,IP)) 
+                  SYY3D(IL,IP) = SYY3D(IL,IP)+G9*ELOC*WK(IS,IP)*(FCS(IL,IP)*FCC(IL,IP)*(SIN(SPDIR(ID))**2+1.)-FSS(IL,IP)*FCS(IL,IP))
+                  SXY3D(IL,IP) = SXY3D(IL,IP)+G9*ELOC*WK(IS,IP)*FCS(IL,IP)*FCC(IL,IP)*SIN(SPDIR(ID))*COS(SPDIR(ID))
                 END DO !ID
               END DO !IL
             END DO !IP
@@ -341,7 +341,7 @@
             DO IP = 1, MNP
 !              IF (ABS(IOBP(IP)) .GT. 0) CYCLE
               IF (DEP(IP) .LT. DMIN) CYCLE
-              KD= WK(IP,IS) * DEP(IP) !k*D
+              KD= WK(IS,IP) * DEP(IP) !k*D
               DO IL = KBP(IP), NVRT
                 WILD4(1,IL,IP)=FSC(IL,IP)*KD !d{FCC}/d{sigma}
                 WILD4(2,IL,IP)=FCS(IL,IP)*KD !d{FSS}/d{sigma}
@@ -486,7 +486,7 @@
 !todo IS ID ordering
         DO IS = 1, MSC
 
-        CK = CG(IP,IS) * WK(IP,IS) ! CG ~ Group Velocity ; K ~ Wave Number
+        CK = CG(IS,IP) * WK(IS,IP) ! CG ~ Group Velocity ; K ~ Wave Number
 
 !       WE HAVE TO TAKE CARE ABOUT THE GROUP VELOCITY IF CURRENTS ARE PRESENT !!!
 !       THE GROUP VELOCITY WILL BE DOPPLER SHIFTET IN PRESENCE OF CURRENTS

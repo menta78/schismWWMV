@@ -1490,11 +1490,11 @@
             C(2,i,:) = - XP(IP)
           ELSE
             IF (LSECU .OR. LSTCU) THEN
-              C(1,i,:) = CG(IP,ISS)*COSTH(:)+CURTXY(IP,1)
-              C(2,i,:) = CG(IP,ISS)*SINTH(:)+CURTXY(IP,2)
+              C(1,i,:) = CG(ISS,IP)*COSTH(:)+CURTXY(IP,1)
+              C(2,i,:) = CG(ISS,IP)*SINTH(:)+CURTXY(IP,2)
             ELSE
-              C(1,i,:) = CG(IP,ISS)*COSTH(:)
-              C(2,i,:) = CG(IP,ISS)*SINTH(:)
+              C(1,i,:) = CG(ISS,IP)*COSTH(:)
+              C(2,i,:) = CG(ISS,IP)*SINTH(:)
             END IF
             IF (LSPHE) THEN
                 C(1,i,:) = C(1,i,:)*INVSPHTRANS(IP,1)
@@ -1505,7 +1505,7 @@
               C(2,i,:) = C(2,i,:)*DIFRM(IP)
               IF (LSECU .OR. LSTCU) THEN
                 IF (IDIFFR .GT. 1) THEN
-                  WVC = SPSIG(ISS)/WK(IP,ISS)
+                  WVC = SPSIG(ISS)/WK(ISS,IP)
                   USOC(:) = (COSTH(:)*CURTXY(IP,1) +  SINTH(:)*CURTXY(IP,2))/WVC
                   DIFRU(:) = 1.0_rkind + USOC(:) * (1.0_rkind - DIFRM(IP))
                 ELSE
@@ -1584,23 +1584,23 @@
             C3(2,i,:) = - XP(IP3)
           ELSE
             IF (LSECU .OR. LSTCU) THEN
-              C1(1,i,:) = CG(IP1,ISS)*COSTH(:)+CURTXY(IP1,1)
-              C1(2,i,:) = CG(IP1,ISS)*SINTH(:)+CURTXY(IP1,2)
+              C1(1,i,:) = CG(ISS,IP1)*COSTH(:)+CURTXY(IP1,1)
+              C1(2,i,:) = CG(ISS,IP1)*SINTH(:)+CURTXY(IP1,2)
 
-              C2(1,i,:) = CG(IP2,ISS)*COSTH(:)+CURTXY(IP2,1)
-              C2(2,i,:) = CG(IP2,ISS)*SINTH(:)+CURTXY(IP2,2)
+              C2(1,i,:) = CG(ISS,IP2)*COSTH(:)+CURTXY(IP2,1)
+              C2(2,i,:) = CG(ISS,IP2)*SINTH(:)+CURTXY(IP2,2)
 
-              C3(1,i,:) = CG(IP3,ISS)*COSTH(:)+CURTXY(IP3,1)
-              C3(2,i,:) = CG(IP3,ISS)*SINTH(:)+CURTXY(IP3,2)
+              C3(1,i,:) = CG(ISS,IP3)*COSTH(:)+CURTXY(IP3,1)
+              C3(2,i,:) = CG(ISS,IP3)*SINTH(:)+CURTXY(IP3,2)
             ELSE
-              C1(1,i,:) = CG(IP1,ISS)*COSTH(:)
-              C1(2,i,:) = CG(IP1,ISS)*SINTH(:)
+              C1(1,i,:) = CG(ISS,IP1)*COSTH(:)
+              C1(2,i,:) = CG(ISS,IP1)*SINTH(:)
 
-              C2(1,i,:) = CG(IP2,ISS)*COSTH(:)
-              C2(2,i,:) = CG(IP2,ISS)*SINTH(:)
+              C2(1,i,:) = CG(ISS,IP2)*COSTH(:)
+              C2(2,i,:) = CG(ISS,IP2)*SINTH(:)
 
-              C3(1,i,:) = CG(IP3,ISS)*COSTH(:)
-              C3(2,i,:) = CG(IP3,ISS)*SINTH(:)
+              C3(1,i,:) = CG(ISS,IP3)*COSTH(:)
+              C3(2,i,:) = CG(ISS,IP3)*SINTH(:)
             END IF
             IF (LSPHE) THEN
                 C1(1,i,:) = C1(1,i,:)*INVSPHTRANS(IP1,1)
@@ -1624,9 +1624,9 @@
 
               IF (LSECU .OR. LSTCU) THEN
                 IF (IDIFFR .GT. 1) THEN
-                  WVC1 = SPSIG(ISS)/WK(IP1,ISS)
-                  WVC2 = SPSIG(ISS)/WK(IP2,ISS)
-                  WVC3 = SPSIG(ISS)/WK(IP3,ISS)
+                  WVC1 = SPSIG(ISS)/WK(ISS,IP1)
+                  WVC2 = SPSIG(ISS)/WK(ISS,IP2)
+                  WVC3 = SPSIG(ISS)/WK(ISS,IP3)
                   USOC1(:) = (COSTH(:)*CURTXY(IP1,1) + SINTH(:)*CURTXY(IP1,2))/WVC1 
                   USOC2(:) = (COSTH(:)*CURTXY(IP2,1) + SINTH(:)*CURTXY(IP2,2))/WVC2
                   USOC3(:) = (COSTH(:)*CURTXY(IP3,1) + SINTH(:)*CURTXY(IP3,2))/WVC3

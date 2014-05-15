@@ -3057,12 +3057,11 @@
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
 
-      DO ID=1,MDC
-        DO IS=1,MSC 
-          B(IS,ID,:) = U(IS,ID,:) * IOBPD(ID,:) * IOBWB * IOBDP * SI
+      DO IP=1,MNP
+        DO ID=1,MDC
+          B(:,ID,IP) = U(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
         ENDDO
       END DO
-
       IF (LBCWA .OR. LBCSP) THEN
         DO IP = 1, IWBMNP
           IF (LINHOM) THEN
@@ -3074,7 +3073,6 @@
           B(:,:,IPGL1) = WBAC(:,:,IPrel)  * SI(IPGL1) ! Overwrite ... 
         END DO
       END IF
-
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
 # endif
@@ -3154,11 +3152,11 @@
           DO IS=1,MSC
             DO ID=1,MDC
               IF (LSECU .OR. LSTCU) THEN
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
                 CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)
@@ -3169,7 +3167,7 @@
                 CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IP)
                 IF (LSECU .OR. LSTCU) THEN
                   IF (IDIFFR .GT. 1) THEN
-                    WVC = SPSIG(IS)/WK(IP,IS)
+                    WVC = SPSIG(IS)/WK(IS,IP)
                     USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
                     DIFRU = ONE + USOC * (ONE - DIFRM(IP))
                   ELSE
@@ -3295,14 +3293,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
+      SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
-
       REAL(rkind), intent(out) :: ASPAR(MSC, MDC, NNZ)
-
       INTEGER :: POS_TRICK(3,2)
-
       REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
       REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
 # ifndef NO_MEMORY_CX_CY
@@ -3368,11 +3363,11 @@
           DO IS=1,MSC
             DO ID=1,MDC
               IF (LSECU .OR. LSTCU) THEN
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)+CURTXY(IP,1)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)+CURTXY(IP,2)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
               ELSE
-                CXY(1,IS,ID,I) = CG(IP,IS)*COSTH(ID)
-                CXY(2,IS,ID,I) = CG(IP,IS)*SINTH(ID)
+                CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)
               END IF
               IF (LSPHE) THEN
                 CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IP,1)
@@ -3383,7 +3378,7 @@
                 CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IP)
                 IF (LSECU .OR. LSTCU) THEN
                   IF (IDIFFR .GT. 1) THEN
-                    WVC = SPSIG(IS)/WK(IP,IS)
+                    WVC = SPSIG(IS)/WK(IS,IP)
                     USOC = (COSTH(ID)*CURTXY(IP,1) + SINTH(ID)*CURTXY(IP,2))/WVC
                     DIFRU = ONE + USOC * (ONE - DIFRM(IP))
                   ELSE
@@ -3423,18 +3418,17 @@
         TRIA03 = ONETHIRD * TRIA(IE)
         DO I=1,3
           IP=INE(I,IE)
-          !IF (IOBWB(IP) .EQ. 1 .AND. DEP(IP) .GT. DMIN) THEN
-            I1=JA_IE(I,1,IE)
-            I2=JA_IE(I,2,IE)
-            I3=JA_IE(I,3,IE)
-            K1(:,:) =  KP(:,:,I)
-            DO ID=1,MDC
-              DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
-            END DO
-            TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-            ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
-            ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
-            ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
+          I1=JA_IE(I,1,IE)
+          I2=JA_IE(I,2,IE)
+          I3=JA_IE(I,3,IE)
+          K1(:,:) =  KP(:,:,I)
+          DO ID=1,MDC
+            DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+          END DO
+          TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+          ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
+          ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
+          ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
         END DO
 # endif
       END DO
@@ -3548,10 +3542,8 @@
         Write(myrank+591,*) 'Clearing ENDING'
       END IF
 # endif
-
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'FINISHING I5B_EIMPS'
       FLUSH(STAT%FHNDL)
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3559,8 +3551,8 @@
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: ASPAR(MSC,MDC,NNZ)
-      REAL(rkind) :: B(MSC,MDC,MNP), U(MSC,MDC,MNP)
+      REAL(rkind) :: ASPAR(MSC,MDC,NNZ), B(MSC,MDC,MNP)
+      REAL(rkind) :: ASPARL(MSC,MDC,NNZ), BL(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
@@ -3574,28 +3566,21 @@
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact, sumu, sumx, lambda
+      REAL(rkind) :: B_SIG(MSC), eFact, lambda
+      REAL(rkind) :: Sum_new, Sum_prev
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       LOGICAL :: LCALCASPAR = .TRUE.
-      !Print *, 'Begin EIMPS_TOTAL_JACOBI_ITERATION'
-
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
-
-      DO IS=1,MSC
-        DO ID=1,MDC
-          U(IS,ID,:)=AC2(IS,ID,:)
-        END DO
-      END DO
       !
       ! The advection part of the equation
       !
       IF (LNONL) THEN
-        CALL EIMPS_ASPAR_BLOCK(ASPAR)
-        CALL EIMPS_B_BLOCK(AC2,B)
+        CALL EIMPS_ASPAR_BLOCK(ASPARL)
+        CALL EIMPS_B_BLOCK(AC2,BL)
       ELSE
-        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPAR,B)
+        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPARL,BL)
       ENDIF
 
 #ifdef TIMINGS
@@ -3624,7 +3609,7 @@
             A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
             C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
           END DO
-          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
+          ASPARL(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
@@ -3657,7 +3642,7 @@
               C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
             END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-            ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
+            ASPARL(:,ID,I_DIAG(IP))=ASPARL(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
       END IF
@@ -3673,9 +3658,11 @@
       nbIter=0
 
       DO
+        ASPAR=ASPARL
+        B=BL
         is_converged = 0
-        DO IP=1,NP_RES 
-
+        DO IP=1,NP_RES
+          Sum_prev = sum(AC2(:,:,IP))
           IF (SOURCE_IMPL .AND. LNONL) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
@@ -3686,7 +3673,7 @@
             ELSE
               IF (LSOUBOUND) THEN ! Source terms on boundary ...
                 IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                  CALL CYCLE3 (IP, U(:,:,IP), IMATRA, IMATDA)
+                  CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
                   ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                   B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
                 ENDIF
@@ -3695,11 +3682,11 @@
           ENDIF
 
           eSum = B(:,:,IP)
+          ACLOC = AC2(:,:,ip)
 ! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * AC2(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
-          ACLOC = AC2(:,:,ip)
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
               ID1 = ID - 1
@@ -3727,27 +3714,19 @@
 
           !if (melim .gt. 0) call limiter(ip,ACLOC,esum)
 
+          Sum_new = sum(eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
-            !AC2(:,:,IP)=eSum*lambda+(1-lambda)*u(:,:,ip) ! over under relax ...
+            !AC2(:,:,IP)=eSum*lambda+(1-lambda)*U(:,:,ip) ! over under relax ...
             AC2(:,:,IP)=eSum ! update ...
-            sumu = sum(u(:,:,ip))
-            sumx = sum(esum)
-            if (sumx .gt. thr8) then 
-              p_is_converged = abs(sumu-sumx)/sumx
-            else
-              p_is_converged = zero
-            endif 
           ELSE
-            U(:,:,IP)=eSum ! update 
-            sumu = sum(esum)
-            sumx = sum(AC2(:,:,ip))
-            if (sumu .gt. thr8) then
-              p_is_converged = abs(sumx-sumu)/sumu
-            else
-              p_is_converged = zero
-            endif
-            !write(*,'(I10,4F25.20,L10)') ip, p_is_converged, solverthr, sumu, sumx, p_is_converged .lt. solverthr
+            U_JACOBI(:,:,IP)=eSum ! update 
+            Sum_prev = sum(ACLOC)
           END IF
+          if (Sum_new .gt. thr8) then
+            p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
+          else
+            p_is_converged = zero
+          endif
 
           IF (LCHKCONV) THEN
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
@@ -3759,10 +3738,10 @@
             ENDIF
           ENDIF
 
-          IF (nbiter .eq. maxiter-1 .and. p_is_converged .ge. solverthr) THEN
-             WRITE(850+myrank,'(3I10,2F20.17,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-             FLUSH(850+myrank)
-          ENDIF
+!          IF (nbiter .eq. maxiter-1 .and. p_is_converged .ge. solverthr) THEN
+!             WRITE(850+myrank,'(3I10,2F20.17,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
+!             FLUSH(850+myrank)
+!          ENDIF
 
         END DO
         IF (LCHKCONV) THEN
@@ -3776,13 +3755,11 @@
         IF (BLOCK_GAUSS_SEIDEL) THEN
           CALL EXCHANGE_P4D_WWM(AC2)
         ELSE
-          CALL EXCHANGE_P4D_WWM(U)
+          CALL EXCHANGE_P4D_WWM(U_JACOBI)
         END IF
 #endif
-        IF (BLOCK_GAUSS_SEIDEL) THEN
-          U = AC2
-        ELSE
-          AC2 = U
+        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
+          AC2 = U_JACOBI
         ENDIF
 !
 ! The termination criterion

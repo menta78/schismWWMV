@@ -146,13 +146,13 @@
          SELECT CASE (DIMMODE)
             CASE (1)
               DO IS = 1, MSC
-                CALL DIFFERENTIATE_XDIR(CG(:,IS),DCGDX(:,IS))
-                CALL DIFFERENTIATE_XDIR(WK(:,IS),DWKDX(:,IS))
+                CALL DIFFERENTIATE_XDIR(CG(IS,:),DCGDX(:,IS))
+                CALL DIFFERENTIATE_XDIR(WK(IS,:),DWKDX(:,IS))
               ENDDO
             CASE (2)
               DO IS = 1, MSC
-                CALL DIFFERENTIATE_XYDIR(CG(:,IS),DCGDX(:,IS),DCGDY(:,IS))
-                CALL DIFFERENTIATE_XYDIR(WK(:,IS),DWKDX(:,IS),DWKDY(:,IS))
+                CALL DIFFERENTIATE_XYDIR(CG(IS,:),DCGDX(:,IS),DCGDY(:,IS))
+                CALL DIFFERENTIATE_XYDIR(WK(IS,:),DWKDX(:,IS),DWKDY(:,IS))
               ENDDO
             CASE DEFAULT
          END SELECT
@@ -423,8 +423,8 @@
              SPSIGLOC = SPSIG(IS)
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
 !             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
-             WK(IP,IS) = WVK
-             CG(IP,IS) = WVCG
+             WK(IS,IP) = WVK
+             CG(IS,IP) = WVCG
              WC(IP,IS) = WVC
            END DO
          END DO
@@ -506,7 +506,7 @@
             DO IS=1,MSC
               EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
-                OMEG  = SPSIG(IS) + WK(IP,IS) * UXD
+                OMEG  = SPSIG(IS) + WK(IS,IP) * UXD
                 OMEG2 = OMEG**2
               ELSE
                 OMEG2 = SIGPOW(IS,2)

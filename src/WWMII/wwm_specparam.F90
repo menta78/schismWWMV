@@ -95,13 +95,13 @@
 
          IF (ETOT .GT. THR) THEN
 
-            SINHKD2(:) = SINH(MIN(KDMAX,WK(IP,:)*DEP(IP)))**2
+            SINHKD2(:) = SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
             ACTOTDS(:) = SUM(ACLOC(:,:),DIM=2) * SIGPOW(:,1) * FDIR
             ETOTD0S(:) = ACTOTDS(:) * SIGPOW(:,1)
             ETOTD1S(:) = ACTOTDS(:) * SIGPOW(:,2)
-            ETOTQKD(:) = ETOTD0S(:) / SQRT(WK(IP,:))
-            ETOTQKD2(:)= ETOTD0S(:) * SQRT(WK(IP,:))
-            ETOTKSS(:) = ETOTD0S(:) * WK(IP,:)
+            ETOTQKD(:) = ETOTD0S(:) / SQRT(WK(:,IP))
+            ETOTQKD2(:)= ETOTD0S(:) * SQRT(WK(:,IP))
+            ETOTKSS(:) = ETOTD0S(:) * WK(:,IP)
             ETOTSKD(:) = ETOTD0S(:) / SINHKD2(:)
             ETOTKDS(:) = ETOTSKD(:) * SIGPOW(:,2)
 
@@ -122,9 +122,9 @@
 
             ACTOT   = ACTOT  + PTAIL(5)  * ACTOTDS(MSC) / FRINTF
             ETOT1   = ETOT1  + PTAIL(7)  * ETOTD0S(MSC) * SIGPOW(MSC,1) / FRINTF
-            DKTOT   = DKTOT  + PTAIL(5)  * ETOTD0S(MSC) / (SQRT(WK(IP,MSC)) * FRINTF)
-            DKTOT2  = DKTOT2 + PTAIL(5)  * ETOTD0S(MSC) * (SQRT(WK(IP,MSC)) * FRINTF)
-            EKTOT   = EKTOT  + PTAIL(8)  * ETOTD0S(MSC) * WK(IP,MSC) / FRINTF
+            DKTOT   = DKTOT  + PTAIL(5)  * ETOTD0S(MSC) / (SQRT(WK(MSC,IP)) * FRINTF)
+            DKTOT2  = DKTOT2 + PTAIL(5)  * ETOTD0S(MSC) * (SQRT(WK(MSC,IP)) * FRINTF)
+            EKTOT   = EKTOT  + PTAIL(8)  * ETOTD0S(MSC) * WK(MSC,IP) / FRINTF
 
             IF (ETOT > VERYSMALL) SME01  = ETOT1 / ETOT
             IF (ETOT > VERySMALL) KME01  = EKTOT / ETOT
@@ -251,7 +251,7 @@
          EKTOT = ZERO
          DO IS=1, MSC
             SIG2 = SIGPOW(IS,2)
-            SKK  = SIG2 * (WK(IP,IS))**ONE!OUTPAR(3)
+            SKK  = SIG2 * (WK(IS,IP))**ONE!OUTPAR(3)
             DO ID=1,MDC
               ETOT1  = ETOT1 + SIG2 * ACLOC(IS,ID)
               EKTOT = EKTOT + SKK * ACLOC(IS,ID)
@@ -306,7 +306,7 @@
          eDep=DEP(IP)
          DO IS=1,MSC
            eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-           eWk=WK(IP,IS)
+           eWk=WK(IS,IP)
            kD=MIN(KDMAX, eWk*eDep)
            eWkReal=kD/eDep
            eSinh2kd=MySINH(2*kD)
@@ -467,7 +467,7 @@
            !tmp = SIGPOW(:,1)
            !ETOT_SPSIG  = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_WK = ZERO
-           y = WK(IP,:) 
+           y = WK(:,IP) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
@@ -476,10 +476,10 @@
              end do
              ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
            end do
-           !tmp = WK(IP,:)
+           !tmp = WK(:,IP)
            !ETOT_WK     = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_ISQ_WK = ZERO 
-           y = ONE/SQRT(WK(IP,:))
+           y = ONE/SQRT(WK(:,IP))
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
@@ -488,10 +488,10 @@
              end do
              ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
-           !tmp = ONE/SQRT(WK(IP,:))
+           !tmp = ONE/SQRT(WK(:,IP))
            !ETOT_ISQ_WK = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_SQ_WK = ZERO
-           y = SQRT(WK(IP,:)) 
+           y = SQRT(WK(:,IP)) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
@@ -500,7 +500,7 @@
              end do
              ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)*ddir
            end do
-           !tmp = SQRT(WK(IP,:))
+           !tmp = SQRT(WK(:,IP))
            !ETOT_SQ_WK  = DINTSPEC_Y(IP,ACLOC,tmp) 
 !
 ! tail factors ...
@@ -516,9 +516,9 @@
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
            ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(IP,MSC)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(IP,MSC)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(IP,MSC)
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(MSC,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(MSC,IP)))
+           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(MSC,IP)
 !
 ! integral parameters ...
 !
@@ -753,7 +753,7 @@
             DO IS = 1, ISMAX
               EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
-                OMEG  = SPSIG(IS) + WK(IP,IS) * UXD
+                OMEG  = SPSIG(IS) + WK(IS,IP) * UXD
                 OMEG2 = OMEG**2
               ELSE
                 OMEG2 = SIGPOW(IS,2)
@@ -785,7 +785,7 @@
 
          DO IS = 1, ISMAX
            SIG22 = SIGPOW(IS,2)
-           SKK  = SIG22 * WK(IP,IS)
+           SKK  = SIG22 * WK(IS,IP)
            DO ID = 1, MDC
              ETOT1 = ETOT1 + SIG22 * ACLOC(IS,ID)
              EKTOT = EKTOT + SKK * ACLOC(IS,ID)
@@ -1008,7 +1008,7 @@
          ETOT_SKD    = ZERO
          ETOT_SKDSIG = ZERO
 
-         y = ONE/SINH(MIN(KDMAX,WK(IP,:)*DEP(IP)))**2
+         y = ONE/SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
 
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
@@ -1019,7 +1019,7 @@
            ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
          end do
  
-         y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WK(IP,:)*DEP(IP)))**2
+         y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
 
          do id = 1, mdc
            tmp(:) = acloc(:,id) * spsig * y
@@ -1170,7 +1170,7 @@
 
          DO ID  = 1, MDC            ! Calculate wind sea energy ... weak criterion
            DO IS = 1, MSC
-             WVC = MyREAL(SPSIG(IS)/WK(IP,IS))
+             WVC = MyREAL(SPSIG(IS)/WK(IS,IP))
              IF (  1.2*UFRIC(IP)*COS(SPDIR(ID)-WINDTH)*(28./WVC) .LT. ONE) THEN
                ACWIND(IS,ID) = ZERO   ! Swell
              ELSE
@@ -1227,7 +1227,7 @@
          DO ID = 1, MDC
             UXD = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
             DO IS = 1, MSC
-              OMEG = SPSIG(IS) + WK(IP,IS) * UXD
+              OMEG = SPSIG(IS) + WK(IS,IP) * UXD
               EAD = FRINTF * SIGPOW(IS,2) * ACWIND(IS,ID)
               ETOT = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG
@@ -1963,34 +1963,34 @@
            !tmp = SIGPOW(:,1)
            !ETOT_SPSIG  = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_WK = ZERO
-           y = WK(IP,:) 
+           y = WK(:,IP) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              do is = 2, msc
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
-           !tmp = WK(IP,:)
+           !tmp = WK(:,IP)
            !ETOT_WK     = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_ISQ_WK = ZERO 
-           y = ONE/SQRT(WK(IP,:))
+           y = ONE/SQRT(WK(:,IP))
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              do is = 2, msc
                ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
-           !tmp = ONE/SQRT(WK(IP,:))
+           !tmp = ONE/SQRT(WK(:,IP))
            !ETOT_ISQ_WK = DINTSPEC_Y(IP,ACLOC,tmp)
            ETOT_SQ_WK = ZERO
-           y = SQRT(WK(IP,:)) 
+           y = SQRT(WK(:,IP)) 
            do id = 1, mdc
              tmp(:) = acloc(:,id) * spsig * y
              do is = 2, msc
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
-           !tmp = SQRT(WK(IP,:))
+           !tmp = SQRT(WK(:,IP))
            !ETOT_SQ_WK  = DINTSPEC_Y(IP,ACLOC,tmp) 
 !
 ! tail factors ...
@@ -2006,9 +2006,9 @@
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
            ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(IP,MSC)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(IP,MSC)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(IP,MSC)
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(MSC,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(MSC,IP)))
+           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(MSC,IP)
 !
 ! integral parameters ...
 !

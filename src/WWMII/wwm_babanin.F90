@@ -558,7 +558,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
        END DO
     else
        DO IS=1, MSC 
-          SWDIS(IS) = RHOAW * Cdsv * 2.0 * WK(IP,IS)  & ! note that "-1" omitted since LHS
+          SWDIS(IS) = RHOAW * Cdsv * 2.0 * WK(IS,IP)  & ! note that "-1" omitted since LHS
           &           * SQRT(2.0 * NU_AIR * SPSIG(IS)) ! units of radian^1.5/s (radians/sec is conventional)
 
 ! start error check block (may be omitted)
@@ -660,7 +660,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     S_IN=0.0_rkind
     DO IS = 1, MSC
        SIGMA = SPSIG(IS)                                  
-       CINV(IS)  = WK(IP,IS) / SIGMA
+       CINV(IS)  = WK(IS,IP) / SIGMA
        UoverC = TEMP2 * CINV(IS)
        DO ID=1,MDC
           IF ( WIND10 .GT. THR ) THEN

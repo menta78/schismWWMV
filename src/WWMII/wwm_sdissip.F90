@@ -168,10 +168,10 @@
           FAC(M) = ZPI*FR(M)
           DO IJ=IJS,IJL
             !X         = TFAK(INDEP(IJ),M)/XKMEAN(IJ)
-            X         = WK(IJ,M)/XKMEAN(IJ)
+            X         = WK(M,IJ)/XKMEAN(IJ)
             TEMP1(IJ) = SDS(IJ)*( (1.-DELTA)*X + DELTA*X**2)
             !CM(IJ)    = TFAK(INDEP(IJ),M)/FAC(M)
-            CM(IJ)    = WK(IJ,M)/FAC(M)
+            CM(IJ)    = WK(M,IJ)/FAC(M)
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL

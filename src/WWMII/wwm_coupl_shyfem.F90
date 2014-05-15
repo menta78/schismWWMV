@@ -202,7 +202,7 @@
 !todo IS ID ordering
           DO IS=1,MSC
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-            eWk=WK(IP,IS)
+            eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
             eWkReal=kD/eDep
             eSinh2kd=MySINH(2*kD)
@@ -520,7 +520,7 @@
                   COSE2 = COS(SPDIR(ID))**TWO
                   SINE2 = SIN(SPDIR(ID))**TWO
                   COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))
-                  WN    = CG(IP,IS) / ( SPSIG(IS)/WK(IP,IS) )
+                  WN    = CG(IS,IP) / ( SPSIG(IS)/WK(IS,IP) )
                   RSXX(IP) = RSXX(IP)+( WN * COSE2 + WN - ONEHALF)*ELOC   ! Units = [ 1/s + 1/s - 1/s ] * m²s = m²
                   RSXY(IP) = RSXY(IP)+( WN * COSI2               )*ELOC
                   RSYY(IP) = RSYY(IP)+( WN * SINE2 + WN - ONEHALF)*ELOC
@@ -582,8 +582,8 @@
                 IF (ZZETA .LT. 0) CYCLE
 !todo IS ID ordering
                 DO IS = 1, MSC
-                  KW           = WK(IP,IS) * ZZETA
-                  KD           = WK(IP,IS) * DEP(IP)
+                  KW           = WK(IS,IP) * ZZETA
+                  KD           = WK(IS,IP) * DEP(IP)
                   SINH2KD      = MySINH(MIN(KDMAX,TWO*KD))
                   COSHKD       = MyCOSH(MIN(KDMAX,KD))
                   SINHKW       = MySINH(MIN(KDMAX,KW))
@@ -593,18 +593,18 @@
                     !Dimension of ELOC = m^2
                     ELOC = AC2(IS,ID,IP) * SIGPOW(IS,2) * DDIR * FRINTF * TWO ! Here is the factor TWO same as mono
                     IF (ELOC .LT. 10E-8) CYCLE
-                      tmp          =-ELOC * WK(IP,IS) / SINH2KD * (COSH2KW - ONE) - &
+                      tmp          =-ELOC * WK(IS,IP) / SINH2KD * (COSH2KW - ONE) - &
      &                               ELOC * SHYFZETA(IL,IP) / DEP(IP)**TWO        + &
      &                               ELOC * KW * SINHKW / ( DEP(IP) * COSHKD )   - &
      &                               ELOC / DEP(IP) *  (ONE - COSHKW / COSHKD)
                       tmp=tmp*G9
 
                       SXX3D(IL,IP) = SXX3D(IL,IP) + &
-     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
+     &                               G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * COS(SPDIR(ID))**TWO+tmp
                       SYY3D(IL,IP) = SYY3D(IL,IP) + &
-     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
+     &                               G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))**TWO+tmp
                       SXY3D(IL,IP) = SXY3D(IL,IP) + &
-     &                               G9*ELOC * WK(IP,IS) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
+     &                               G9*ELOC * WK(IS,IP) / SINH2KD * (COSH2KW + ONE) * SIN(SPDIR(ID))*COS(SPDIR(ID))
                   END DO
                 END DO
               END DO

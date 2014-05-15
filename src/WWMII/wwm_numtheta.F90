@@ -584,7 +584,7 @@
                IF (DEP(IP) .GT. DMIN) THEN ! ar: obsolete check since done in calling routine ...
 
                  DO IS = 1, MSC
-                   WKDEP = WK(IP,IS) * DEP(IP)
+                   WKDEP = WK(IS,IP) * DEP(IP)
                    IF (WKDEP .LT. 13.) THEN
                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
                      DO ID = 1, MDC
@@ -607,7 +607,7 @@
 
                IF (DEP(IP) .GT. DMIN) THEN
                   DO IS = 1, MSC
-                    WKDEP = WK(IP,IS) * DEP(IP)
+                    WKDEP = WK(IS,IP) * DEP(IP)
                     IF (WKDEP .LT. 13.) THEN
                       DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
 !AR: Joseph: There is a small very tiny different in terms of CPU
@@ -628,7 +628,7 @@
                   IF (LDIFR) THEN
                     DO IS = 1, MSC
                        DO ID = 1, MDC
-                         CAD(IS,ID) = DIFRM(IP)*CAD(IS,ID)-CG(IP,IS)*(DIFRX(IP)*SINTH(ID)-DIFRY(IP)*COSTH(ID))
+                         CAD(IS,ID) = DIFRM(IP)*CAD(IS,ID)-CG(IS,IP)*(DIFRX(IP)*SINTH(ID)-DIFRY(IP)*COSTH(ID))
                        END DO
                     END DO
                   END IF
@@ -645,7 +645,7 @@
          IF (LSPHE) THEN
             DO IS = 1, MSC
                DO ID = 1, MDC
-                 CAD(IS,ID) = CAD(IS,ID)-CG(IP,IS)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
+                 CAD(IS,ID) = CAD(IS,ID)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
                END DO
             END DO
          END IF

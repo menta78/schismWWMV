@@ -329,11 +329,6 @@
             integer, dimension(:,:), pointer :: ListEdge
          END TYPE Graph
 
-         INTEGER                :: NB_BLOCK = 3 
-         REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
-         LOGICAL                :: LNONL = .FALSE.
-         LOGICAL                :: L_SOLVER_NORM = .FALSE.
-
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
@@ -931,7 +926,6 @@
          INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2
          REAL(rkind)            :: QSCFL   = 1.
-         LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER, ALLOCATABLE   :: IP_IS_STEADY(:)
          INTEGER, ALLOCATABLE   :: IE_IS_STEADY(:)
          REAL(rkind), ALLOCATABLE :: STAT2D(:,:)
@@ -939,7 +933,17 @@
          INTEGER                :: MAXITER = 20
          INTEGER                :: ICOMP   = 2
          REAL(rkind)            :: PMIN = 1.
+!
+! logicals used by the Jacobi-Gauss-Seidel solver.
+!
          LOGICAL                :: BLOCK_GAUSS_SEIDEL = .FALSE.
+         LOGICAL                :: LCHKCONV = .TRUE.
+         INTEGER                :: NB_BLOCK = 3 
+         REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
+         LOGICAL                :: LNONL = .FALSE.
+         LOGICAL                :: L_SOLVER_NORM = .FALSE.
+         REAL(rkind), allocatable :: U_JACOBI(:,:,:)
+
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
