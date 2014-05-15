@@ -942,7 +942,10 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
+         LOGICAL                :: L_LOCAL_ASPAR = .FALSE.
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
+         REAL(rkind), allocatable :: ASPAR_JAC(:,:,:)
+         REAL(rkind), allocatable :: ASPARL_JAC(:,:,:)
 
 
          REAL(rkind)          :: RTHETA  = 0.5
