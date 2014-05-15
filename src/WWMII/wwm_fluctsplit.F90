@@ -2723,177 +2723,171 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
-
-         USE DATAPOOL
-         IMPLICIT NONE
+      USE DATAPOOL
+      IMPLICIT NONE
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, IS, ID
-         INTEGER :: I1, I2, I3
-         INTEGER :: NI(3), I, IPOS
+      INTEGER :: IP, IE, IT, IS, ID
+      INTEGER :: I1, I2, I3
+      INTEGER :: NI(3), I, IPOS
 !
 ! local double
 !
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
+      REAL(rkind)  :: DTMAX_GLOBAL_EXP(MSC,MDC), DTMAX_EXP
+      REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC(MSC,MDC)
 
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
-#endif
-         REAL(rkind)  :: REST, CFLXY
-         REAL(rkind)  :: LAMBDA(2), DT4AI
-         REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
-         REAL(rkind)  :: U3(3), UIP(MNP)
-         REAL(rkind)  :: KKSUM, ST, N
-         REAL(rkind)  :: CX(3), CY(3)
-         REAL(rkind)  :: FLALL(3)
-         REAL(rkind)  :: KELEM(3)
-         REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
-         REAL(rkind)  :: UTILDE3
-         REAL(rkind)  :: KSUM(MNP), KMAX(MNP)
-         REAL(rkind)  :: TIME1, TIME2
+      REAL(rkind)  :: REST, CFLXY
+      REAL(rkind)  :: LAMBDA(MSC,MDC,2), DT4AI
+      REAL(rkind)  :: FL11(MSC,MDC), FL12(MSC,MDC)
+      REAL(rkind)  :: FL21(MSC,MDC), FL22(MSC,MDC)
+      REAL(rkind)  :: FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind)  :: ST(MSC,MDC), N(MSC,MDC)
+      REAL(rkind)  :: CX(MSC,MDC,3), CY(MSC,MDC,3)
+      REAL(rkind)  :: FLALL(MSC,MDC,3)
+      REAL(rkind)  :: KELEM(MSC,MDC,3)
+      REAL(rkind)  :: KM(MSC,MDC,3), KP(MSC,MDC,3)
+      REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC)
+      REAL(rkind)  :: FL211(MSC,MDC), FL212(MSC,MDC)
+      REAL(rkind)  :: FL311(MSC,MDC), FL312(MSC,MDC)
+      REAL(rkind)  :: UTILDE3(MSC,MDC)
+      REAL(rkind)  :: KSUM(MSC,MDC), KMAX(MSC,MDC)
+      REAL(rkind)  :: UIP(MSC,MDC,MNP)
+      REAL(rkind)  :: TIME1, TIME2
 !
 ! local parameter
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
-         FLALL = ZERO
-         KELEM = ZERO
-         KKSUM = ZERO
-         ST    = ZERO
-         N     = ZERO
-
-         IF (LCALC) THEN
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               KMAX = ZERO
-               KSUM = ZERO
-               DO IP = 1, MNP
-                 DO I = 1, CCON(IP)
-                   IE     =  IE_CELL2(IP,I)
-                   IPOS   = POS_CELL2(IP,I)
+      IF (LCALC) THEN
+        DTMAX_GLOBAL_EXP_LOC=VERYLARGE
+        DO IP = 1, MNP
+          KMAX = ZERO
+          KSUM = ZERO
+          DO I = 1, CCON(IP)
+            IE     =  IE_CELL2(IP,I)
+            IPOS   = POS_CELL2(IP,I)
 ! get node indices from the element table ...
-                   NI = INE(:,IE)
+            NI = INE(:,IE)
 ! estimate speed in WAE
-                   CX = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
-                   CY =( CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
+            DO ID = 1, MDC
+              DO IS = 1, MSC
+                CX(IS,ID,:) = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
+                CY(IS,ID,:) = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
+              END DO
+            END DO
 ! upwind indicators
-                   LAMBDA(1) = ONESIXTH * SUM(CX)
-                   LAMBDA(2) = ONESIXTH * SUM(CY)
+            LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,1) + CX(:,:,1))
+            LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,1) + CY(:,:,1))
 ! flux jacobians
-                   KELEM(1)  = MAX(ZERO, LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) )! K
-                   KELEM(2)  = MAX(ZERO, LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE) )
-                   KELEM(3)  = MAX(ZERO, LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE) )
+            KELEM(:,:,1)  = MAX(ZERO, LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE) )! K
+            KELEM(:,:,2)  = MAX(ZERO, LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE) )
+            KELEM(:,:,3)  = MAX(ZERO, LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE) )
 
-                   KSUM(IP)  = KSUM(IP) + KELEM(IPOS)
+            KSUM(:,:)  = KSUM(:,:) + KELEM(:,:,IPOS)
 !2do check if also stable when abs removed
-                   IF ( KELEM(IPOS) > KMAX(IP) ) KMAX(IP) = KELEM(IPOS)
-                 END DO
+            IF (IP .le. NP_RES) THEN
+              DO ID=1,MDC
+                DO IS=1,MSC
+                  IF ( KELEM(IS,ID,IPOS) > KMAX(IS,ID) ) KMAX(IS,ID) = KELEM(IS,ID,IPOS)
+                  DTMAX_EXP=SI(IP)/MAX(THR,KSUM(IS,ID))
+                 !DTMAX_EXP=SI(IP)/MAX(THR,KMAX(IS,ID))
+                  DTMAX_GLOBAL_EXP_LOC(IS,ID)=MIN(DTMAX_GLOBAL_EXP_LOC(IS,ID),DTMAX_EXP)
                 END DO
+              END DO
+            END IF
 #ifdef MPI_PARALL_GRID
-                DTMAX_GLOBAL_EXP = VERYLARGE
-                DTMAX_GLOBAL_EXP_LOC = VERYLARGE
-                DO IP = 1, NP_RES
-                  DTMAX_EXP = SI(IP)/MAX(THR,KSUM(IP))
-                  DTMAX_GLOBAL_EXP_LOC = MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
-                END DO
-                CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
+            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,MSC*MDC,rtype,MPI_MIN,COMM,IERR)
 #else
-!2do pack it in the loop above ...
-                DTMAX_GLOBAL_EXP = VERYLARGE
-                DO IP = 1, MNP
-                  DTMAX_EXP = SI(IP)/MAX(THR,KSUM(IP))
-                 !DTMAX_EXP = SI(IP)/MAX(THR,KMAX(IP))
-                  DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
-                END DO
+            DTMAX_GLOBAL_EXP=DTMAX_GLOBAL_EXP_LOC
 #endif
-                CFLXY = DT4A/DTMAX_GLOBAL_EXP
-                REST  = ABS(MOD(CFLXY,1._rkind))
+            DO ID=1,MDC
+              DO IS=1,MSC
+                CFLXY = DT4A/DTMAX_GLOBAL_EXP(IS,ID)
+                REST  = ABS(MOD(CFLXY,ONE))
                 IF (REST .LT. THR) THEN
                   ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
                 ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
                   ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
                 ELSE
                  ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-               END IF
-             END DO ! IS
-           END DO ! ID
-           WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-           FLUSH(STAT%FHNDL)
-         END IF
-
+                END IF
+              END DO ! IS
+            END DO ! ID
+            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
+            FLUSH(STAT%FHNDL)
+          END DO
+        END DO
+      END IF
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+      CALL MY_WTIME(TIME1)
 #endif
-         ITER_MAX = MAXVAL(ITER_EXP)
-         DT4AI = DT4A/ITER_MAX
-
-         DO IT = 1, ITER_MAX
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               UIP = AC2(IS,ID,:)
-!!$OMP DO PRIVATE(IP,I,IE,IPOS)
-               DO IP = 1, MNP
-                 ST = ZERO
-                 DO I = 1, CCON(IP)
+      ITER_MAX = MAXVAL(ITER_EXP)
+      DT4AI = DT4A/ITER_MAX
+      DO IT = 1, ITER_MAX
+        UIP = AC2
+        DO IP = 1, MNP
+          ST = ZERO
+          DO I = 1, CCON(IP)
 ! get element and the position of IP in the element index
-                   IE     =  IE_CELL2(IP,I)
-                   IPOS   = POS_CELL2(IP,I)
+            IE     =  IE_CELL2(IP,I)
+            IPOS   = POS_CELL2(IP,I)
 ! get node indices from the element table ...
-                   NI = INE(:,IE)
-                   I1 = NI(1)
-                   I2 = NI(2)
-                   I3 = NI(3)
+            NI = INE(:,IE)
+            I1 = NI(1)
+            I2 = NI(2)
+            I3 = NI(3)
 ! estimate speed in WAE
-                   CX = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
-                   CY = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
+            DO ID=1,MDC
+              DO IS=1,MSC
+                CX(IS,ID,:) = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
+                CY(IS,ID,:) = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
+              END DO
+            END DO
 ! flux integration using simpson rule ...
-                   FL11  = CX(2) * IEN(1,IE) + CY(2) * IEN(2,IE)
-                   FL12  = CX(3) * IEN(1,IE) + CY(3) * IEN(2,IE)
-                   FL21  = CX(3) * IEN(3,IE) + CY(3) * IEN(4,IE)
-                   FL22  = CX(1) * IEN(3,IE) + CY(1) * IEN(4,IE)
-                   FL31  = CX(1) * IEN(5,IE) + CY(1) * IEN(6,IE)
-                   FL32  = CX(2) * IEN(5,IE) + CY(2) * IEN(6,IE)
+            FL11(:,:) = CX(:,:,2) * IEN(1,IE) + CY(:,:,2) * IEN(2,IE)
+            FL12(:,:) = CX(:,:,3) * IEN(1,IE) + CY(:,:,3) * IEN(2,IE)
+            FL21(:,:) = CX(:,:,3) * IEN(3,IE) + CY(:,:,3) * IEN(4,IE)
+            FL22(:,:) = CX(:,:,1) * IEN(3,IE) + CY(:,:,1) * IEN(4,IE)
+            FL31(:,:) = CX(:,:,1) * IEN(5,IE) + CY(:,:,1) * IEN(6,IE)
+            FL32(:,:) = CX(:,:,2) * IEN(5,IE) + CY(:,:,2) * IEN(6,IE)
 
-                   FL111 = TWO*FL11+FL12
-                   FL112 = TWO*FL12+FL11
-                   FL211 = TWO*FL21+FL22
-                   FL212 = TWO*FL22+FL21
-                   FL311 = TWO*FL31+FL32
-                   FL312 = TWO*FL32+FL31
+            FL111(:,:) = TWO*FL11(:,:)+FL12(:,:)
+            FL112(:,:) = TWO*FL12(:,:)+FL11(:,:)
+            FL211(:,:) = TWO*FL21(:,:)+FL22(:,:)
+            FL212(:,:) = TWO*FL22(:,:)+FL21(:,:)
+            FL311(:,:) = TWO*FL31(:,:)+FL32(:,:)
+            FL312(:,:) = TWO*FL32(:,:)+FL31(:,:)
 ! upwind indicators
-                   LAMBDA(1) = ONESIXTH * SUM(CX)
-                   LAMBDA(2) = ONESIXTH * SUM(CY)
+            LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
+            LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
 ! flux jacobians
-                   KELEM(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) ! K
-                   KELEM(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
-                   KELEM(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+            KELEM(:,:,1)  = LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE) ! K
+            KELEM(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
+            KELEM(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
 ! inverse of the positive sum ...
-                   N         = -ONE/MIN(-THR,SUM(MIN(ZERO,KELEM))) ! N
-! positive flux jacobians
-                   KELEM(1)  = MAX(ZERO,KELEM(1)) ! K+
-                   KELEM(2)  = MAX(ZERO,KELEM(2))
-                   KELEM(3)  = MAX(ZERO,KELEM(3))
+            KM=MIN(ZERO,KELEM)
+            KP=MAX(ZERO,KELEM)
+            N(:,:) = -ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
 ! simposon integration last step ...
-                   FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1)
-                   FLALL(2) = (FL111 + FL312) * ONESIXTH + KELEM(2)
-                   FLALL(3) = (FL211 + FL112) * ONESIXTH + KELEM(3)
+            FLALL(:,:,1) = (FL311(:,:) + FL212(:,:)) * ONESIXTH + KP(:,:,1)
+            FLALL(:,:,2) = (FL111(:,:) + FL312(:,:)) * ONESIXTH + KP(:,:,2)
+            FLALL(:,:,3) = (FL211(:,:) + FL112(:,:)) * ONESIXTH + KP(:,:,3)
 ! flux conserving upwind contribution
-                   U3 = UIP(NI)
-                   UTILDE3  = N * ( FLALL(1) * U3(1) + FLALL(2) * U3(2) + FLALL(3) * U3(3) )
+            UTILDE3(:,:) = N(:,:) * ( FLALL(:,:,1) * AC2(:,:,I1) + FLALL(:,:,2) * AC2(:,:,I2) + FLALL(:,:,3) * AC2(:,:,3) )
 ! coefficient for the integration in time
-                   ST = ST + KELEM(IPOS) * (UIP(IP) - UTILDE3)
-                 END DO
+            ST(:,:) = ST(:,:) + KP(:,:,IPOS) * (AC2(:,:,IP) - UTILDE3(:,:))
 ! time stepping ...
-                 UIP(IP) = MAX(ZERO,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
-               END DO !IP
-               AC2(IS,ID,:) = UIP
-             END DO !ID
-           END DO !IS
+            DO ID=1,MDC
+              UIP(:,ID,IP) = MAX(ZERO,UIP(:,ID,IP)-DT4AI/SI(IP)*ST(:,ID)*IOBWB(IP))*IOBPD(ID,IP)
+            END DO
+          END DO
+        END DO
+        AC2 = UIP
 #ifdef MPI_PARALL_GRID
-           CALL EXCHANGE_P4D_WWM(AC2)
+        CALL EXCHANGE_P4D_WWM(AC2)
 #endif
-         END DO !IT
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
