@@ -514,8 +514,6 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -712,10 +710,7 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-
-
-         RETURN
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -980,7 +975,7 @@
 !**********************************************************************
 !*
 !**********************************************************************
-     SUBROUTINE  EIMPS_V1( IS, ID)
+      SUBROUTINE  EIMPS_V1( IS, ID)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -2331,6 +2326,12 @@
            ALLOCATE (ASPARL_JAC(MSC,MDC,NNZ), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
            ASPARL_JAC = zero
+         END IF
+         !
+         IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
+           ALLOCATE (B_JAC(MSC,MDC,NNZ), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+           B_JAC = zero
          END IF
        END IF
       END SUBROUTINE

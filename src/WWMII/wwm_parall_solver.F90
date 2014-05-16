@@ -3633,19 +3633,36 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GET_BLOCAL(IP, BLOC)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IP
+      REAL(rkind), INTENT(OUT) :: BLOC(MSC,MDC)
+      INTEGER ID, idx
+      idx=IWBNDLC_REV(IP)
+      IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
+        BLOC = WBAC(:,:,idx)  * SI(IP)
+      ELSE
+        DO ID=1,MDC
+          BLOC(:,ID) = AC1(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
+        ENDDO
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: B(MSC,MDC,MNP)
-      REAL(rkind) :: BL(MSC,MDC,MNP)
       REAL(rkind) :: MaxNorm, p_is_converged
       REAL(rkind) :: eSum(MSC,MDC)
       REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: uloc(msc,mdc),ACLOC(msc,mdc)
+      REAL(rkind) :: ACLOC(msc,mdc)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
+      REAL(rkind) :: BLOC(MSC,MDC)
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -3664,9 +3681,10 @@
       IF (.NOT. L_LOCAL_ASPAR) THEN
         IF (LNONL) THEN
           CALL EIMPS_ASPAR_BLOCK(ASPARL_JAC)
-          CALL EIMPS_B_BLOCK(AC2,BL)
+!          CALL EIMPS_B_BLOCK(AC2,BL)
         ELSE
-          CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPAR_JAC,BL)
+          CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
+!          CALL EIMPS_B_BLOCK(AC2,BL)
         ENDIF
       END IF
 #ifdef TIMINGS
@@ -3680,9 +3698,10 @@
           CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
           IF (SOURCE_IMPL) THEN
             DO IP=1,NP_RES
+              CALL GET_BLOCAL(IP, BLOC)
               CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
               ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
-              B(:,:,IP)             = B(:,:,IP) + IMATRA
+              B_JAC(:,:,IP)             = BLOC + IMATRA
             END DO
           END IF
         END IF
@@ -3704,17 +3723,22 @@
             ASPAR_JAC=ASPARL_JAC
           END IF
         END IF
-        B=BL
         is_converged = 0
         DO IP=1,NP_RES
           Sum_prev = sum(AC2(:,:,IP))
           IF (.NOT. L_LOCAL_ASPAR) THEN
-            IF (SOURCE_IMPL .AND. LNONL) THEN
-              CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-              ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
-              B(:,:,IP)             = B(:,:,IP) + IMATRA
-            ENDIF
-            eSum = B(:,:,IP)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_BLOCAL(IP, BLOC)
+                CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                eSum = BLOC + IMATRA
+              ELSE
+                eSum = B_JAC(:,:,IP)
+              END IF
+            ELSE
+              CALL GET_BLOCAL(IP, eSum)
+            END IF
             ACLOC = AC2(:,:,ip)
             DO J=IA(IP),IA(IP+1)-1 
               IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
@@ -3817,7 +3841,19 @@
         IF (L_SOLVER_NORM) THEN
           Norm_L2=0
           DO IP=1,NP_RES
-            eSum=-B(:,:,IP)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_BLOCAL(IP, BLOC)
+                CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                eSum = BLOC + IMATRA
+              ELSE
+                eSum = B_JAC(:,:,IP)
+              END IF
+            ELSE
+              CALL GET_BLOCAL(IP, eSum)
+            END IF
+            eSum=-eSum
             DO J=IA(IP),IA(IP+1)-1
               idx=JA(J)
               eSum=eSum + ASPAR_JAC(:,:,J)*AC2(:,:,idx)
