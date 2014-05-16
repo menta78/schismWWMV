@@ -2323,7 +2323,7 @@
          ASPAR_JAC = zero
          !
          IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
-           ALLOCATE (B_JAC(MSC,MDC,NNZ), stat=istat)
+           ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
            B_JAC = zero
          END IF
