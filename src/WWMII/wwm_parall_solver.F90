@@ -3651,7 +3651,21 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-
+      SUBROUTINE LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAXMNECON)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      ASPAR_LOC=ZERO
+      ASPAR_DIAG=ZERO
+      A_THE=ZERO
+      C_THE=ZERO
+      A_SIG=ZERO
+      C_SIG=ZERO
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -3668,6 +3682,9 @@
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAXMNECON)
+      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -3677,6 +3694,7 @@
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
       REAL(rkind) :: Sum_new, Sum_prev
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
+      INTEGER :: I, K
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
@@ -3763,11 +3781,12 @@
             !eSum=max(zero,eSum/DIAG)
             eSum=eSum/ASPAR_DIAG
           ELSE
+            CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
                 CALL GET_BLOCAL(IP, BLOC)
                 CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
                 eSum = BLOC + IMATRA
               ELSE
                 eSum = B_JAC(:,:,IP)
@@ -3775,10 +3794,30 @@
             ELSE
               CALL GET_BLOCAL(IP, eSum)
             END IF
-
-
-
-
+            DO I=1,CCON(IP)
+              K=-1 ! Not known yet
+              eSum=eSum - ASPAR_LOC(:,:,I)*AC2(:,:,K)
+            END DO
+            IF (REFRACTION_IMPL) THEN
+              DO ID=1,MDC
+                ID1 = ID_PREV(ID)
+                ID2 = ID_NEXT(ID)
+                eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
+                eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+              END DO
+            END IF
+            IF (FREQ_SHIFT_IMPL) THEN
+              DO ID=1,MDC
+                DO IS=2,MSC
+                  eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+                END DO
+                DO IS=1,MSC-1
+                  eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+                END DO
+              END DO
+            END IF
+            !eSum=max(zero,eSum/DIAG)
+            eSum=eSum/ASPAR_DIAG
           END IF
           Sum_new = sum(eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
@@ -3848,11 +3887,12 @@
         IF (L_SOLVER_NORM) THEN
           Norm_L2=0
           DO IP=1,NP_RES
+            ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
                 CALL GET_BLOCAL(IP, BLOC)
                 CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
                 eSum = BLOC + IMATRA
               ELSE
                 eSum = B_JAC(:,:,IP)
@@ -3860,10 +3900,13 @@
             ELSE
               CALL GET_BLOCAL(IP, eSum)
             END IF
-            eSum=-eSum
             DO J=IA(IP),IA(IP+1)-1
               idx=JA(J)
-              eSum=eSum + ASPAR_JAC(:,:,J)*AC2(:,:,idx)
+              IF (J .eq. I_DIAG(IP)) THEN
+                eSum=eSum - ASPAR_DIAG*AC2(:,:,idx)
+              ELSE
+                eSum=eSum - ASPAR_JAC(:,:,J)*AC2(:,:,idx)
+              END IF
             END DO
             IF (REFRACTION_IMPL) THEN
               CAD=CAD_THE(:,:,IP)
@@ -3873,8 +3916,8 @@
               DO ID=1,MDC
                 ID1 = ID_PREV(ID)
                 ID2 = ID_NEXT(ID)
-                eSum(:,ID) = eSum(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
-                eSum(:,ID) = eSum(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+                eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+                eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
               END DO
             END IF
             IF (FREQ_SHIFT_IMPL) THEN
@@ -3884,10 +3927,10 @@
               eFact=DT4F*SI(IP)
               DO ID=1,MDC
                 DO IS=2,MSC
-                  eSum(IS,ID)=eSum(IS,ID) - eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
+                  eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
                 END DO
                 DO IS=1,MSC-1
-                  eSum(IS,ID)=eSum(IS,ID) + eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
+                  eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
                 END DO
               END DO
             END IF
