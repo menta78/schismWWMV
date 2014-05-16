@@ -3651,6 +3651,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -3718,14 +3722,10 @@
       nbIter=0
 
       DO
-        IF (.NOT. L_LOCAL_ASPAR) THEN
-          IF (SOURCE_IMPL .AND. LNONL) THEN
-            ASPAR_JAC=ASPARL_JAC
-          END IF
-        END IF
         is_converged = 0
         DO IP=1,NP_RES
-          Sum_prev = sum(AC2(:,:,IP))
+          ACLOC = AC2(:,:,IP)
+          Sum_prev = sum(ACLOC)
           IF (.NOT. L_LOCAL_ASPAR) THEN
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
@@ -3739,7 +3739,6 @@
             ELSE
               CALL GET_BLOCAL(IP, eSum)
             END IF
-            ACLOC = AC2(:,:,ip)
             DO J=IA(IP),IA(IP+1)-1 
               IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
             END DO
@@ -3772,6 +3771,22 @@
             !eSum=max(zero,eSum/ASPAR_JAC(:,:,I_DIAG(IP))) ! solve ... 
             eSum=eSum/ASPAR_JAC(:,:,I_DIAG(IP)) ! solve ...
           ELSE
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_BLOCAL(IP, BLOC)
+                CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                eSum = BLOC + IMATRA
+              ELSE
+                eSum = B_JAC(:,:,IP)
+              END IF
+            ELSE
+              CALL GET_BLOCAL(IP, eSum)
+            END IF
+
+
+
+
           END IF
           Sum_new = sum(eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN

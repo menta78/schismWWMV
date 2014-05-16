@@ -1428,6 +1428,12 @@
 
          END IF
 
+         IF (AMETHOD .eq. 7) THEN
+           IF (LNONL .AND. (.NOT. SOURCE_IMPL)) THEN
+             CALL WWM_ABORT('SOURCE_IMPL=F and LNONL=T is absurd')
+           END IF
+         END IF
+
          IF (LBCWA .OR. LBCSP) THEN
            IF (PGIVE(7) .LT. THR) THEN
              PGIVE(7) = 0.1
