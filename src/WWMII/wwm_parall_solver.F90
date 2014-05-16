@@ -3627,6 +3627,7 @@
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
       REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
+      REAL(rkind) :: eVal
       IMATRA=0
       IMATDA=0
       IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
@@ -3640,6 +3641,9 @@
           ENDIF
         ENDIF
       ENDIF
+      eVal = DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP)
+      IMATRA = IMATRA * eVal
+      IMATDA = IMATDA * eVal
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3689,8 +3693,8 @@
           IF (SOURCE_IMPL) THEN
             DO IP=1,NP_RES
               CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-              ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-              B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+              ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+              B(:,:,IP)             = B(:,:,IP) + IMATRA
             END DO
           END IF
         END IF
@@ -3718,8 +3722,8 @@
           Sum_prev = sum(AC2(:,:,IP))
           IF (SOURCE_IMPL .AND. LNONL .AND. (.NOT. L_LOCAL_ASPAR)) THEN
             CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-            B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+            B(:,:,IP)             = B(:,:,IP) + IMATRA
           ENDIF
 
           eSum = B(:,:,IP)
@@ -3805,7 +3809,7 @@
 !
         WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_global-is_converged, p_is_converged, pmin
         !
-        ! Number of iterations
+        ! Number of iterations. If too large the exit.
         !
         nbIter=nbIter+1
         IF (nbiter .eq. maxiter) THEN
