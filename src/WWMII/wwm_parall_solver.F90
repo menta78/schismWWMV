@@ -3548,7 +3548,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPAR)
+      SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(inout) :: ASPAR(MSC,MDC,NNZ)
@@ -3572,14 +3572,15 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
-            ID1 = ID - 1
-            ID2 = ID + 1
-            IF (ID .EQ. 1) ID1 = MDC
-            IF (ID .EQ. MDC) ID2 = 1
-            A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
-            C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
-          END DO
+          CAD_THE(:,:,IP)=CAD
+!          DO ID=1,MDC
+!            ID1 = ID - 1
+!            ID2 = ID + 1
+!            IF (ID .EQ. 1) ID1 = MDC
+!            IF (ID .EQ. MDC) ID2 = 1
+!            A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
+!            C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
+!          END DO
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
@@ -3594,6 +3595,7 @@
           ELSE
             CAS=ZERO
           END IF
+          CAS_SIG(:,:,IP)=CAS
           eFact=DT4F*SI(IP)
           DO ID = 1, MDC
             CASS(1:MSC) = CAS(:,ID)
@@ -3605,13 +3607,13 @@
             DO IS=1,MSC
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
-              A_SIG(IS,ID,IP) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-            END DO
+!            DO IS=2,MSC
+!              A_SIG(IS,ID,IP) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
+!            END DO
             !
-            DO IS=1,MSC-1
-              C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-            END DO
+!            DO IS=1,MSC-1
+!              C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
+!            END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
             ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
@@ -3658,6 +3660,9 @@
       REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
       REAL(rkind) :: uloc(msc,mdc),ACLOC(msc,mdc)
+      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -3687,9 +3692,9 @@
       !
       IF (.NOT. L_LOCAL_ASPAR) THEN
         IF (LNONL) THEN
-          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPARL_JAC)
+          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPARL_JAC)
         ELSE
-          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPAR_JAC)
+          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
           IF (SOURCE_IMPL) THEN
             DO IP=1,NP_RES
               CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
@@ -3733,23 +3738,29 @@
             IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
           IF (REFRACTION_IMPL) THEN
+            CAD=CAD_THE(:,:,IP)
+            CP_THE = MAX(ZERO,CAD)
+            CM_THE = MIN(ZERO,CAD)
+            eFact=(DT4D/DDIR)*SI(IP)
             DO ID=1,MDC
-              ID1 = ID - 1
-              ID2 = ID + 1
-              IF (ID .EQ. 1) ID1 = MDC
-              IF (ID .EQ. MDC) ID2 = 1
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID,IP)*ACLOC(:,ID1)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID,IP)*ACLOC(:,ID2)
+              ID1 = ID_PREV(ID)
+              ID2 = ID_NEXT(ID)
+              eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*ACLOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*ACLOC(:,ID2)
             END DO
           END IF
 !
           IF (FREQ_SHIFT_IMPL) THEN
+            CAS=CAS_SIG(:,:,IP)
+            CP_SIG = MAX(ZERO,CAS)
+            CM_SIG = MIN(ZERO,CAS)
+            eFact=DT4F*SI(IP)
             DO ID=1,MDC
               DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID,IP)*ACLOC(IS-1,ID)
+                eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*ACLOC(IS-1,ID)
               END DO
               DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID,IP)*ACLOC(IS+1,ID)
+                eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*ACLOC(IS+1,ID)
               END DO
             END DO
           END IF
@@ -3833,22 +3844,28 @@
               eSum=eSum + ASPAR_JAC(:,:,J)*AC2(:,:,idx)
             END DO
             IF (REFRACTION_IMPL) THEN
+              CAD=CAD_THE(:,:,IP)
+              CP_THE = MAX(ZERO,CAD)
+              CM_THE = MIN(ZERO,CAD)
+              eFact=(DT4D/DDIR)*SI(IP)
               DO ID=1,MDC
-                ID1 = ID - 1
-                ID2 = ID + 1
-                IF (ID .EQ. 1) ID1 = MDC
-                IF (ID .EQ. MDC) ID2 = 1
-                eSum(:,ID) = eSum(:,ID) + A_THE(:,ID,IP)*AC2(:,ID1,IP)
-                eSum(:,ID) = eSum(:,ID) + C_THE(:,ID,IP)*AC2(:,ID2,IP)
+                ID1 = ID_PREV(ID)
+                ID2 = ID_NEXT(ID)
+                eSum(:,ID) = eSum(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+                eSum(:,ID) = eSum(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
               END DO
             END IF
             IF (FREQ_SHIFT_IMPL) THEN
+              CAS=CAS_SIG(:,:,IP)
+              CP_SIG = MAX(ZERO,CAS)
+              CM_SIG = MIN(ZERO,CAS)
+              eFact=DT4F*SI(IP)
               DO ID=1,MDC
                 DO IS=2,MSC
-                  eSum(IS,ID)=eSum(IS,ID) + A_SIG(IS,ID,IP)*AC2(IS-1,ID,IP)
+                  eSum(IS,ID)=eSum(IS,ID) - eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
                 END DO
                 DO IS=1,MSC-1
-                  eSum(IS,ID)=eSum(IS,ID) + C_SIG(IS,ID,IP)*AC2(IS+1,ID,IP)
+                  eSum(IS,ID)=eSum(IS,ID) + eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
                 END DO
               END DO
             END IF

@@ -1281,7 +1281,8 @@
       !
       ! For the JACOBI_ITERATION
       !
-      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
+!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+      REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
 #endif
       END MODULE
