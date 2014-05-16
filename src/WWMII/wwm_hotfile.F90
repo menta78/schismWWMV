@@ -621,9 +621,6 @@ MODULE wwm_hotfile_mod
         IF (WriteOutputProcess_hot) THEN
           iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
-          Print *, 'nbTime=', nbTime
-          Print *, 'np_write=', np_write
-          Print *, 'ne_write=', ne_write
           CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_HOT, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', mnp_dims)
           CALL REPORT_ERROR_INQ(iret, 'mnp')
@@ -637,7 +634,7 @@ MODULE wwm_hotfile_mod
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
           CALL REPORT_ERROR_INQ(iret, 'ocean_time')
 
-          iret=nf90_def_var(ncid,'ac',NF90_RUNTYPE,(/ mnp_dims, msc_dims, mdc_dims, ntime_dims/),ac_id)
+          iret=nf90_def_var(ncid,'ac',NF90_RUNTYPE,(/ msc_dims, mdc_dims, mnp_dims, ntime_dims/),ac_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
 
           iret=nf90_put_att(ncid,ac_id,UNITS,'unknown')
