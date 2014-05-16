@@ -3749,7 +3749,6 @@
               END DO
             END DO
           END IF
-!
           !eSum=max(zero,eSum/ASPAR_JAC(:,:,I_DIAG(IP))) ! solve ... 
           eSum=eSum/ASPAR_JAC(:,:,I_DIAG(IP)) ! solve ...
 
