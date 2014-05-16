@@ -3606,10 +3606,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+      SUBROUTINE GET_IMATRA_IMATDA(IP, ACin, IMATRA, IMATDA)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
+      REAL(rkind), intent(in)  :: ACin(MSC,MDC,MNP)
       REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
       REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
       REAL(rkind) :: eVal
@@ -3617,12 +3618,12 @@
       IMATDA=0
       IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
         IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-          CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
+          CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
         ENDIF
       ELSE
         IF (LSOUBOUND) THEN ! Source terms on boundary ...
           IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-            CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
+            CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
           ENDIF
         ENDIF
       ENDIF
@@ -3869,7 +3870,7 @@
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
           DO IP=1,NP_RES
             CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
             ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
             B_JAC(:,:,IP)             = BLOC + IMATRA
           END DO
@@ -3896,7 +3897,7 @@
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
                 CALL GET_BLOCAL(IP, BLOC)
-                CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
                 ASPAR_DIAG = ASPAR_DIAG + IMATDA
                 eSum = BLOC + IMATRA
               ELSE
@@ -3938,17 +3939,15 @@
             eSum=eSum/ASPAR_DIAG
           ELSE
             CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+            CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
-                CALL GET_BLOCAL(IP, BLOC)
-                CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
               ELSE
-                eSum = B_JAC(:,:,IP)
+                CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
               END IF
-            ELSE
-              CALL GET_BLOCAL(IP, eSum)
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = BLOC + IMATRA
             END IF
             DO IADJ=1,VERT_DEG(IP)
               IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
@@ -4048,7 +4047,7 @@
               IF (SOURCE_IMPL) THEN
                 IF (LNONL) THEN
                   CALL GET_BLOCAL(IP, BLOC)
-                  CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
                   ASPAR_DIAG = ASPAR_DIAG + IMATDA
                   eSum = BLOC + IMATRA
                 ELSE
@@ -4093,17 +4092,15 @@
               END IF
             ELSE
               CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+              CALL GET_BLOCAL(IP, eSum)
               IF (SOURCE_IMPL) THEN
                 IF (LNONL) THEN
-                  CALL GET_BLOCAL(IP, BLOC)
-                  CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-                  ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                  eSum = BLOC + IMATRA
+                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
                 ELSE
-                  eSum = B_JAC(:,:,IP)
+                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
                 END IF
-              ELSE
-                CALL GET_BLOCAL(IP, eSum)
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
+                eSum = BLOC + IMATRA
               END IF
               DO IADJ=1,VERT_DEG(IP)
                 IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
