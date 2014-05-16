@@ -2321,7 +2321,6 @@
             JA_IE(POS,3,IE) = I3
           END DO
         END DO
-        DEALLOCATE(PTABLE)
         !
         ! Arrays for Jacobi-Gauss-Seidel solver
         !
@@ -2329,6 +2328,8 @@
           IF (L_LOCAL_ASPAR) THEN
             ALLOCATE(LIST_ADJ_VERT(MAX_DEG,MNP), VERT_DEG(MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
+            J = 0
+            K = 0
             DO IP = 1, MNP
               ITMP=0
               DO I = 1, CCON(IP) ! Check how many entries there are ...
@@ -2386,14 +2387,15 @@
             ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             ASPAR_JAC = zero
-            !
-            IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
-              ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-              B_JAC = zero
-            END IF
+          END IF
+          !
+          IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
+            ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+            B_JAC = zero
           END IF
         END IF
+        DEALLOCATE(PTABLE)
       ENDIF
       END SUBROUTINE
 !**********************************************************************
