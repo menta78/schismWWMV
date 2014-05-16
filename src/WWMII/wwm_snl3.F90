@@ -767,7 +767,7 @@
             WjT   = SPSIG(J)
             WNi   = WK(I,IP)
             WNj   = WK(J,IP)
-            CGi   = CG(1,IP)
+            CGi   = CG(I,IP)
             CGj   = CG(J,IP)
             JACi  = PI2 * WiT
             JACj  = PI2 * WjT

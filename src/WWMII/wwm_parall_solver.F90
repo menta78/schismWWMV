@@ -3548,45 +3548,16 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
+      SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: ASPAR(MSC,MDC,NNZ), B(MSC,MDC,MNP)
-      REAL(rkind) :: ASPARL(MSC,MDC,NNZ), BL(MSC,MDC,MNP)
-      REAL(rkind) :: MaxNorm, p_is_converged
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC), rconv
+      REAL(rkind), intent(inout) :: ASPAR(MSC,MDC,NNZ)
+      REAL(rkind) :: TheVal, eFact
       REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
-      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC), eSum(MSC,MDC)
-      REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: uloc(msc,mdc),ACLOC(msc,mdc)
-#ifdef MPI_PARALL_GRID
-      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
-#endif
-#ifdef TIMINGS
-      REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
-#endif
-      REAL(rkind) :: B_SIG(MSC), eFact, lambda
-      REAL(rkind) :: Sum_new, Sum_prev
-      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      LOGICAL :: LCALCASPAR = .TRUE.
-#ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
-#endif
-      !
-      ! The advection part of the equation
-      !
-      IF (LNONL) THEN
-        CALL EIMPS_ASPAR_BLOCK(ASPARL)
-        CALL EIMPS_B_BLOCK(AC2,BL)
-      ELSE
-        CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPARL,BL)
-      ENDIF
-
-#ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
-#endif
-      !
+      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: B_SIG(MSC)
+      INTEGER     :: ID1, ID2, IS, ID, IP
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -3609,7 +3580,7 @@
             A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
             C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
           END DO
-          ASPARL(:,:,I_DIAG(IP)) = ASPARL(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
+          ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
       IF (FREQ_SHIFT_IMPL) THEN
@@ -3642,9 +3613,57 @@
               C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
             END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-            ASPARL(:,ID,I_DIAG(IP))=ASPARL(:,ID,I_DIAG(IP)) + B_SIG
+            ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) :: B(MSC,MDC,MNP)
+      REAL(rkind) :: BL(MSC,MDC,MNP)
+      REAL(rkind) :: MaxNorm, p_is_converged
+      REAL(rkind) :: eSum(MSC,MDC)
+      REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+      REAL(rkind) :: uloc(msc,mdc),ACLOC(msc,mdc)
+#ifdef MPI_PARALL_GRID
+      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
+#endif
+#ifdef TIMINGS
+      REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
+#endif
+      REAL(rkind) :: B_SIG(MSC), eFact, lambda
+      REAL(rkind) :: Sum_new, Sum_prev
+      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME1)
+#endif
+      !
+      ! The advection part of the equation
+      !
+      IF (.NOT. L_LOCAL_ASPAR) THEN
+        IF (LNONL) THEN
+          CALL EIMPS_ASPAR_BLOCK(ASPARL_JAC)
+          CALL EIMPS_B_BLOCK(AC2,BL)
+        ELSE
+          CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPARL_JAC,BL)
+        ENDIF
+      END IF
+#ifdef TIMINGS
+      CALL MY_WTIME(TIME2)
+#endif
+      !
+      IF (.NOT. L_LOCAL_ASPAR) THEN
+        IF (LNONL) THEN
+          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPARL_JAC)
+        ELSE
+          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPAR_JAC)
+        END IF
       END IF
 
 #ifdef TIMINGS
@@ -3658,23 +3677,27 @@
       nbIter=0
 
       DO
-        ASPAR=ASPARL
+        IF (.NOT. L_LOCAL_ASPAR) THEN
+          IF (SOURCE_IMPL .AND. LNONL) THEN
+            ASPAR_JAC=ASPARL_JAC
+          END IF
+        END IF
         B=BL
         is_converged = 0
         DO IP=1,NP_RES
           Sum_prev = sum(AC2(:,:,IP))
-          IF (SOURCE_IMPL .AND. LNONL) THEN
+          IF (SOURCE_IMPL .AND. LNONL .AND. (.NOT. L_LOCAL_ASPAR)) THEN
             IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                 CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
-                ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                 B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
               ENDIF
             ELSE
               IF (LSOUBOUND) THEN ! Source terms on boundary ...
                 IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
                   CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
-                  ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+                  ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
                   B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
                 ENDIF
               ENDIF
@@ -3685,7 +3708,7 @@
           ACLOC = AC2(:,:,ip)
 ! off diagonal ... here we need some well desgined function ...
           DO J=IA(IP),IA(IP+1)-1 
-            IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR(:,:,J) * AC2(:,:,JA(J)) ! this takes more time than anything else factor 10
+            IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J)) ! this takes more time than anything else factor 10
           END DO
           IF (REFRACTION_IMPL) THEN
             DO ID=1,MDC
@@ -3709,8 +3732,8 @@
             END DO
           END IF
 !
-          !eSum=max(zero,eSum/ASPAR(:,:,I_DIAG(IP))) ! solve ... 
-          eSum=eSum/ASPAR(:,:,I_DIAG(IP)) ! solve ...
+          !eSum=max(zero,eSum/ASPAR_JAC(:,:,I_DIAG(IP))) ! solve ... 
+          eSum=eSum/ASPAR_JAC(:,:,I_DIAG(IP)) ! solve ...
 
           !if (melim .gt. 0) call limiter(ip,ACLOC,esum)
 
@@ -3787,7 +3810,7 @@
             eSum=-B(:,:,IP)
             DO J=IA(IP),IA(IP+1)-1
               idx=JA(J)
-              eSum=eSum + ASPAR(:,:,J)*AC2(:,:,idx)
+              eSum=eSum + ASPAR_JAC(:,:,J)*AC2(:,:,idx)
             END DO
             IF (REFRACTION_IMPL) THEN
               DO ID=1,MDC

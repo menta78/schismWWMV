@@ -62,6 +62,18 @@
          U_JACOBI = zero
        END IF
 
+       IF ((.NOT. L_LOCAL_ASPAR).and.(AMETHOD .eq. 7)) THEN
+         ALLOCATE (ASPAR_JAC(MSC,MDC,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+         ASPAR_JAC = zero
+         !
+         IF (LNONL .AND. SOURCE_IMPL) THEN
+           ALLOCATE (ASPARL_JAC(MSC,MDC,MNP), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+           ASPARL_JAC = zero
+         END IF
+       END IF
+
        IF (ICOMP .GE. 2) THEN
          ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
