@@ -2767,7 +2767,6 @@
       REAL(rkind)  :: FL311(MSC,MDC), FL312(MSC,MDC)
       REAL(rkind)  :: UTILDE3(MSC,MDC)
       REAL(rkind)  :: KSUM(MSC,MDC), KMAX(MSC,MDC)
-      REAL(rkind)  :: UIP(MSC,MDC,MNP)
       REAL(rkind)  :: TIME1, TIME2
 !
 ! local parameter
@@ -2840,7 +2839,7 @@
       ITER_MAX = MAXVAL(ITER_EXP)
       DT4AI = DT4A/ITER_MAX
       DO IT = 1, ITER_MAX
-        UIP = AC2
+        AC1 = AC2
         DO IP = 1, MNP
           ST = ZERO
           DO I = 1, CCON(IP)
@@ -2894,11 +2893,11 @@
             ST(:,:) = ST(:,:) + KP(:,:,IPOS) * (AC2(:,:,IP) - UTILDE3(:,:))
 ! time stepping ...
             DO ID=1,MDC
-              UIP(:,ID,IP) = MAX(ZERO,UIP(:,ID,IP)-DT4AI/SI(IP)*ST(:,ID)*IOBWB(IP))*IOBPD(ID,IP)
+              AC1(:,ID,IP) = MAX(ZERO,AC1(:,ID,IP)-DT4AI/SI(IP)*ST(:,ID)*IOBWB(IP))*IOBPD(ID,IP)
             END DO
           END DO
         END DO
-        AC2 = UIP
+        AC2 = AC1
 #ifdef MPI_PARALL_GRID
         CALL EXCHANGE_P4D_WWM(AC2)
 #endif
