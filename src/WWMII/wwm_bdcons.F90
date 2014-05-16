@@ -315,8 +315,8 @@
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, SPsize
       REAL(rkind) :: BNDTMP
-      INTEGER :: STATUS(MNP)
-      INTEGER          :: idx
+      INTEGER     :: STATUS(MNP)
+      INTEGER     :: idx, PosWBAC
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
       IOBP    = 0
@@ -367,7 +367,12 @@
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
           idx = idx + 1
           IWBNDLC(idx) = IP ! Stores local wave boundary index
-          IWBNDLC_REV(IP) = idx
+          IF (LINHOM) THEN
+            PosWBAC=idx
+          ELSE
+            PosWBAC=1
+          END IF
+          IWBNDLC_REV(IP) = PosWBAC
         END IF
       END DO
       ! Global boundary nodes
