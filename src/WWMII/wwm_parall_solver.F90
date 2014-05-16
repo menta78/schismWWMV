@@ -3691,10 +3691,9 @@
       DO ICON = 1, CCON(IP)
         IE     =  IE_CELL2(IP,ICON)
         IPOS   = POS_CELL2(IP,ICON)
-        NI = INE(:,IE)
-        I1 = NI(1)
-        I2 = NI(2)
-        I3 = NI(3)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
         DO I=1,3
           IPie = INE(I,IE)
           DO ID=1,MDC
@@ -3746,20 +3745,22 @@
         DELTAL(:,:,:) = CRFS(:,:,:) - KP(:,:,:)
         NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
         TRIA03 = ONETHIRD * TRIA(IE)
-        DO I=1,3
-          IP_fall=INE(I,IE)
-          I1=JA_IE(I,1,IE)
-          I2=JA_IE(I,2,IE)
-          I3=JA_IE(I,3,IE)
-          K1(:,:) =  KP(:,:,I)
-          DO ID=1,MDC
-            DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
-          END DO
-          TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-          ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I)
-          ASPAR_LOC(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR_LOC(:,:,I2)
-          ASPAR_LOC(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR_LOC(:,:,I3)
+        !
+        IP_fall=INE(IPOS,IE)
+        IF (IP_fall .ne. IP) THEN
+          CALL WWM_ABORT('Bugs and many more bugs')
+        END IF
+        I1=JA_IE(IPOS,1,IE)
+        I2=JA_IE(IPOS,2,IE)
+        I3=JA_IE(IPOS,3,IE)
+        K1(:,:) =  KP(:,:,IPOS)
+        DO ID=1,MDC
+          DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
         END DO
+        TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+        ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,IPOS)
+        ASPAR_LOC(:,:,I2)=ASPAR_LOC(:,:,I2)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
+        ASPAR_LOC(:,:,I3)=ASPAR_LOC(:,:,I3)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
       END DO
       IF (REFRACTION_IMPL) THEN
         TheVal=1
