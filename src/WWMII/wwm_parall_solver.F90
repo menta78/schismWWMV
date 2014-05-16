@@ -3621,6 +3621,29 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
+      REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
+      IMATRA=0
+      IMATDA=0
+      IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+        IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+          CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
+        ENDIF
+      ELSE
+        IF (LSOUBOUND) THEN ! Source terms on boundary ...
+          IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+            CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
+          ENDIF
+        ENDIF
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -3651,7 +3674,7 @@
           CALL EIMPS_ASPAR_BLOCK(ASPARL_JAC)
           CALL EIMPS_B_BLOCK(AC2,BL)
         ELSE
-          CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPARL_JAC,BL)
+          CALL EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(AC2,ASPAR_JAC,BL)
         ENDIF
       END IF
 #ifdef TIMINGS
@@ -3663,6 +3686,13 @@
           CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPARL_JAC)
         ELSE
           CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CPM(ASPAR_JAC)
+          IF (SOURCE_IMPL) THEN
+            DO IP=1,NP_RES
+              CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+              ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+              B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
+            END DO
+          END IF
         END IF
       END IF
 
@@ -3687,21 +3717,9 @@
         DO IP=1,NP_RES
           Sum_prev = sum(AC2(:,:,IP))
           IF (SOURCE_IMPL .AND. LNONL .AND. (.NOT. L_LOCAL_ASPAR)) THEN
-            IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-              IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                CALL CYCLE3 (IP, max(zero,AC2(:,:,IP)), IMATRA, IMATDA)
-                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-                B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
-              ENDIF
-            ELSE
-              IF (LSOUBOUND) THEN ! Source terms on boundary ...
-                IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                  CALL CYCLE3 (IP, U_JACOBI(:,:,IP), IMATRA, IMATDA)
-                  ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
-                  B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
-                ENDIF
-              ENDIF
-            ENDIF
+            CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the diagonal
+            B(:,:,IP)             = B(:,:,IP) + IMATRA(:,:) * DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP) ! Add source term to the right hand side
           ENDIF
 
           eSum = B(:,:,IP)
@@ -3743,7 +3761,6 @@
             AC2(:,:,IP)=eSum ! update ...
           ELSE
             U_JACOBI(:,:,IP)=eSum ! update 
-            Sum_prev = sum(ACLOC)
           END IF
           if (Sum_new .gt. thr8) then
             p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
