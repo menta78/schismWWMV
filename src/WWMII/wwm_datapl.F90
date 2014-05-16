@@ -963,6 +963,7 @@
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
          INTEGER, ALLOCATABLE   :: JA_IE(:,:,:)
+         INTEGER, ALLOCATABLE   :: POS_IP_ADJ(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)

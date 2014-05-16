@@ -2050,30 +2050,32 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_FLUCT
-         USE DATAPOOL
-         IMPLICIT NONE
+      USE DATAPOOL
+      IMPLICIT NONE
 
-         INTEGER :: I, J, K
-         INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-         INTEGER :: I1, I2, I3
-         INTEGER :: CHILF(MNP), COUNT_MAX
-         INTEGER :: ITMP(MNP)
-         INTEGER :: POS_TRICK(3,2)
-         INTEGER :: IADJ, NB_ADJ
+      INTEGER :: I, J, K
+      INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
+      INTEGER :: I1, I2, I3
+      INTEGER :: CHILF(MNP), COUNT_MAX
+      INTEGER :: ITMP(MNP)
+      INTEGER :: POS_TRICK(3,2)
+      INTEGER :: IADJ, NB_ADJ
+      INTEGER :: POS1, POS2, J1, J2
+      INTEGER :: FPOS, EPOS, JP
+      INTEGER, ALLOCATABLE :: REV_BOOK(:)
+      REAL(rkind)   :: TRIA03
 
-         REAL(rkind)   :: TRIA03
+      INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
+      INTEGER, ALLOCATABLE :: PTABLE(:,:)
 
-         INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
-         INTEGER, ALLOCATABLE :: PTABLE(:,:)
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
 
-         POS_TRICK(1,1) = 2
-         POS_TRICK(1,2) = 3
-         POS_TRICK(2,1) = 3
-         POS_TRICK(2,2) = 1
-         POS_TRICK(3,1) = 1
-         POS_TRICK(3,2) = 2
-
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE CONNECTED AREA SI '
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE CONNECTED AREA SI '
 ! The situation is as follows with respect to MNP, NP_RES and friends.
 ! For sparse matrix, it makes sense to compute ASPAR (the sparse matrix
 ! elements) only for IP=1,NP_RES
@@ -2085,170 +2087,168 @@
 ! able to access such elements and so we need memory allocated for them
 ! (but computed from other nodes)
 
-         !OPEN(5555, FILE = 'fluctgeo.dat', STATUS = 'UNKNOWN')
+      !OPEN(5555, FILE = 'fluctgeo.dat', STATUS = 'UNKNOWN')
 !
 ! Calculate the max. number of connected elements count_max
 !
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'MEDIAN DUAL AREA and CCON' 
-         SI(:)   = 0.0d0 ! Median Dual Patch Area of each Node
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'MEDIAN DUAL AREA and CCON' 
+      SI(:)   = 0.0d0 ! Median Dual Patch Area of each Node
 
-         CCON(:) = 0     ! Number of connected Elements
-         DO IE = 1 , MNE
-           I1 = INE(1,IE)
-           I2 = INE(2,IE)
-           I3 = INE(3,IE)
-           CCON(I1) = CCON(I1) + 1
-           CCON(I2) = CCON(I2) + 1
-           CCON(I3) = CCON(I3) + 1
-           TRIA03 = ONETHIRD * TRIA(IE)
-           SI(I1) = SI(I1) + TRIA03
-           SI(I2) = SI(I2) + TRIA03
-           SI(I3) = SI(I3) + TRIA03
-           !WRITE(STAT%FHNDL,*) IE, TRIA(IE)
-         ENDDO
-         !DO IP = 1, MNP
-           !WRITE(STAT%FHNDL,*) IP, SI(IP)
-         !ENDDO
+      CCON(:) = 0     ! Number of connected Elements
+      DO IE = 1 , MNE
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        CCON(I1) = CCON(I1) + 1
+        CCON(I2) = CCON(I2) + 1
+        CCON(I3) = CCON(I3) + 1
+        TRIA03 = ONETHIRD * TRIA(IE)
+        SI(I1) = SI(I1) + TRIA03
+        SI(I2) = SI(I2) + TRIA03
+        SI(I3) = SI(I3) + TRIA03
+        !WRITE(STAT%FHNDL,*) IE, TRIA(IE)
+      ENDDO
+      !DO IP = 1, MNP
+        !WRITE(STAT%FHNDL,*) IP, SI(IP)
+      !ENDDO
 #ifdef MPI_PARALL_GRID
-         CALL EXCHANGE_P2D(SI)
+      CALL EXCHANGE_P2D(SI)
 #endif
 
 ! We don't need MAXMNECON from selfe/pdlib if we compute CCON itself
 ! #ifdef MPI_PARALL_GRID
-!          MAXMNECON  = MNEI
+!       MAXMNECON  = MNEI
 ! #else
-!          MAXMNECON  = MAXVAL(CCON)
+!       MAXMNECON  = MAXVAL(CCON)
 ! #endif
-         MAXMNECON  = MAXVAL(CCON)
+      MAXMNECON  = MAXVAL(CCON)
 
 ! check agains selfe to make sure that there is no problem
 #ifdef MPI_PARALL_GRID
-#ifndef PDLIB
-  if(MAXMNECON /= MNEI) then
-    write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
-    write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
-  endif
-#endif
+# ifndef PDLIB
+      IF (MAXMNECON /= MNEI) THEN
+        write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
+        write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
+      END IF
+# endif
 #endif
          
 
 !
-         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
-         ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 4')
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
+      ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 4')
 !
-         CELLVERTEX(:,:,:) = 0 ! Stores for each node the Elementnumbers of the connected Elements
-                               ! and the Position of the position of the Node in the Element Index
-         CHILF             = 0
+      CELLVERTEX(:,:,:) = 0 ! Stores for each node the Elementnumbers of the connected Elements
+                            ! and the Position of the position of the Node in the Element Index
+      CHILF             = 0
 
-         DO IE = 1, MNE
-           DO J=1,3
-             I = INE(J,IE)
-             CHILF(I) = CHILF(I)+1
-             CELLVERTEX(I,CHILF(I),1) = IE
-             CELLVERTEX(I,CHILF(I),2) = J
-           END DO
-         ENDDO
+      DO IE = 1, MNE
+        DO J=1,3
+          I = INE(J,IE)
+          CHILF(I) = CHILF(I)+1
+          CELLVERTEX(I,CHILF(I),1) = IE
+          CELLVERTEX(I,CHILF(I),2) = J
+        END DO
+      ENDDO
 !
-!        Emulates loop structure and counts max. entries in the different pointers that have to be designed
+!     Emulates loop structure and counts max. entries in the different pointers that have to be designed
 !
-         J = 0
-         DO IP = 1, MNP
-           DO I = 1, CCON(IP)
-             J = J + 1
-           END DO
-         END DO
+      J = 0
+      DO IP = 1, MNP
+        DO I = 1, CCON(IP)
+          J = J + 1
+        END DO
+      END DO
 
-         COUNT_MAX = J ! Max. Number of entries in the pointers used in the calculations
-         IF (COUNT_MAX.ne.3*MNE) THEN
-           WRITE(DBG%FHNDL,*) 'COUNT_MAX=', COUNT_MAX
-           WRITE(DBG%FHNDL,*) 'MNE=', MNE
-           CALL WWM_ABORT('Do Not Sleep Before solving the problem')
-         ENDIF
+      COUNT_MAX = J ! Max. Number of entries in the pointers used in the calculations
+      IF (COUNT_MAX.ne.3*MNE) THEN
+        WRITE(DBG%FHNDL,*) 'COUNT_MAX=', COUNT_MAX
+        WRITE(DBG%FHNDL,*) 'MNE=', MNE
+        CALL WWM_ABORT('Do Not Sleep Before solving the problem')
+      ENDIF
 
-         ALLOCATE (IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
+      ALLOCATE (IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
 ! order of the occurence in the loop during runtime
-         IE_CELL  = 0
+      IE_CELL  = 0
 ! Just a remapping from CELLVERTEX ... Position of the node
 ! in the Element index -"-
-         POS_CELL = 0
+      POS_CELL = 0
 !
-         J = 0
-         DO IP = 1, MNP
-           DO I = 1, CCON(IP)
-             J = J + 1
-             IE_CELL(J)      = CELLVERTEX(IP,I,1)
-             POS_CELL(J)     = CELLVERTEX(IP,I,2)
-             IE_CELL2(IP,I)  = CELLVERTEX(IP,I,1)
-             POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
-           END DO
-         END DO
-         deallocate(CELLVERTEX)
-         IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
+      J = 0
+      DO IP = 1, MNP
+        DO I = 1, CCON(IP)
+          J = J + 1
+          IE_CELL(J)      = CELLVERTEX(IP,I,1)
+          POS_CELL(J)     = CELLVERTEX(IP,I,2)
+          IE_CELL2(IP,I)  = CELLVERTEX(IP,I,1)
+          POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
+        END DO
+      END DO
+      deallocate(CELLVERTEX)
+      IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
-           ALLOCATE(PTABLE(COUNT_MAX,7), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
-           ALLOCATE(JA_IE(3,3,MNE), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6.1')
+        ALLOCATE(PTABLE(COUNT_MAX,7), JA_IE(3,3,MNE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 
-           J = 0
-           PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
+        J = 0
+        PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
 
-           DO IP = 1, MNP
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    = IE_CELL(J)
-               POS   = POS_CELL(J)
-               I1 = INE(1,IE)
-               I2 = INE(2,IE)
-               I3 = INE(3,IE)
-               IF (POS == 1) THEN
-                 POS_J = 2
-                 POS_K = 3
-               ELSE IF (POS == 2) THEN
-                 POS_J = 3
-                 POS_K = 1
-               ELSE
-                 POS_J = 1
-                 POS_K = 2
-               END IF
-               IP_I = IP
-               IP_J = INE(POS_J,IE)
-               IP_K = INE(POS_K,IE)
-               PTABLE(J,1) = IP_I ! Node numbers of the connected elements
-               PTABLE(J,2) = IP_J
-               PTABLE(J,3) = IP_K
-               PTABLE(J,4) = POS  ! Position of the nodes in the element index
-               PTABLE(J,5) = POS_J
-               PTABLE(J,6) = POS_K
-               PTABLE(J,7) = IE   ! Element numbers same as IE_CELL
-             END DO
-           END DO
+        DO IP = 1, MNP
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IE    = IE_CELL(J)
+            POS   = POS_CELL(J)
+            I1 = INE(1,IE)
+            I2 = INE(2,IE)
+            I3 = INE(3,IE)
+            IF (POS == 1) THEN
+              POS_J = 2
+              POS_K = 3
+            ELSE IF (POS == 2) THEN
+              POS_J = 3
+              POS_K = 1
+            ELSE
+              POS_J = 1
+              POS_K = 2
+            END IF
+            IP_I = IP
+            IP_J = INE(POS_J,IE)
+            IP_K = INE(POS_K,IE)
+            PTABLE(J,1) = IP_I ! Node numbers of the connected elements
+            PTABLE(J,2) = IP_J
+            PTABLE(J,3) = IP_K
+            PTABLE(J,4) = POS  ! Position of the nodes in the element index
+            PTABLE(J,5) = POS_J
+            PTABLE(J,6) = POS_K
+            PTABLE(J,7) = IE   ! Element numbers same as IE_CELL
+          END DO
+        END DO
 
-           WRITE(STAT%FHNDL,'("+TRACE......",A)') 'SET UP SPARSE MATRIX POINTER ... COUNT NONZERO ENTRY'
+        WRITE(STAT%FHNDL,'("+TRACE......",A)') 'SET UP SPARSE MATRIX POINTER ... COUNT NONZERO ENTRY'
 !
 ! Count number of nonzero entries in the matrix ...
 ! Basically, each connected element may have two off-diagonal
 ! contribution and one diagonal related to the connected vertex itself ...
 !
-           J = 0
-           NNZ = 0
-           DO IP = 1, MNP
-             ITMP(:) = 0
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IP_J  = PTABLE(J,2)
-               IP_K  = PTABLE(J,3)
-               ITMP(IP)   = 1
-               ITMP(IP_J) = 1
-               ITMP(IP_K) = 1
-             END DO
-             NNZ = NNZ + SUM(ITMP)
-           END DO
+        J = 0
+        NNZ = 0
+        DO IP = 1, MNP
+          ITMP(:) = 0
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IP_J  = PTABLE(J,2)
+            IP_K  = PTABLE(J,3)
+            ITMP(IP)   = 1
+            ITMP(IP_J) = 1
+            ITMP(IP_K) = 1
+          END DO
+          NNZ = NNZ + SUM(ITMP)
+        END DO
 
-           WRITE(STAT%FHNDL,'("+TRACE......",A)') 'SET UP SPARSE MATRIX POINTER ... SETUP POINTER'
+        WRITE(STAT%FHNDL,'("+TRACE......",A)') 'SET UP SPARSE MATRIX POINTER ... SETUP POINTER'
 !
 ! Allocate sparse matrix pointers using the Compressed Sparse Row Format CSR ... this is now done only of MNP nodes
 ! The next step is to do it for the whole Matrix MNP * MSC * MDC
@@ -2256,109 +2256,145 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), VERT_DEG(MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
-           JA = 0
-           IA = 0
-           POSI = 0
+        ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
+        JA = 0
+        IA = 0
+        POSI = 0
 ! Points to the position of the matrix entry in the mass matrix
 ! according to the CSR matrix format see p. 124
-           J = 0
-           K = 0
-           IA(1) = 1
-           DO IP = 1, MNP ! Run through all rows
-             ITMP=0
-             DO I = 1, CCON(IP) ! Check how many entries there are ...
-               J = J + 1
-               IP_J  = PTABLE(J,2)
-               IP_K  = PTABLE(J,3)
-               ITMP(IP)   = 1
-               ITMP(IP_J) = 1
-               ITMP(IP_K) = 1
-             END DO
-             NB_ADJ=0
-             DO I = 1, MNP ! Run through all columns
-               IF (ITMP(I) .GT. 0) THEN
-                 K = K + 1
-                 NB_ADJ=NB_ADJ + 1
-                 JA(K) = I
-               END IF
-             END DO
-             VERT_DEG(IP)=NB_ADJ
-             IA(IP + 1) = K + 1
-           END DO
-           MAX_DEG=MAXVAL(VERT_DEG)
-           ALLOCATE(LIST_ADJ_VERT(MAX_DEG,NP_RES), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
-           DO IP = 1, NP_RES
-             ITMP=0
-             DO I = 1, CCON(IP) ! Check how many entries there are ...
-               J = J + 1
-               IP_J  = PTABLE(J,2)
-               IP_K  = PTABLE(J,3)
-               ITMP(IP)   = 1
-               ITMP(IP_J) = 1
-               ITMP(IP_K) = 1
-             END DO
-             IADJ=0
-             DO I = 1, MNP ! Run through all columns
-               IF (ITMP(I) .GT. 0) THEN
-                 K = K + 1
-                 IADJ=IADJ + 1
-                 LIST_ADJ_VERT(IADJ,IP)=I
-                 JA(K) = I
-               END IF
-             END DO
-             VERT_DEG(IP)=K
-             IA(IP + 1) = K + 1
-           END DO
+        J = 0
+        K = 0
+        IA(1) = 1
+        MAX_DEG=0
+        DO IP = 1, MNP ! Run through all rows
+          ITMP=0
+          DO I = 1, CCON(IP) ! Check how many entries there are ...
+            J = J + 1
+            IP_J  = PTABLE(J,2)
+            IP_K  = PTABLE(J,3)
+            ITMP(IP)   = 1
+            ITMP(IP_J) = 1
+            ITMP(IP_K) = 1
+          END DO
+          IADJ=0
+          DO I = 1, MNP ! Run through all columns
+            IF (ITMP(I) .GT. 0) THEN
+              K = K + 1
+              IADJ=IADJ + 1
+              JA(K) = I
+            END IF
+          END DO
+          IF (IADJ .gt. MAX_DEG) THEN
+            MAX_DEG=IADJ
+          END IF
+          IA(IP + 1) = K + 1
+        END DO
 
 
-           J = 0
-           DO IP = 1, MNP
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IP_J  = PTABLE(J,2)
-               IP_K  = PTABLE(J,3)
-               DO K = IA(IP), IA(IP+1) - 1
-                 IF (IP   == JA(K)) POSI(1,J)  = K
-                 IF (IP   == JA(K)) I_DIAG(IP) = K
-                 IF (IP_J == JA(K)) POSI(2,J)  = K
-                 IF (IP_K == JA(K)) POSI(3,J)  = K
-               END DO
-             END DO
-           END DO
-
-           J=0
-           DO IP=1,MNP
-            DO I = 1, CCON(IP)
-              J=J+1
-              IE    =  IE_CELL(J)
-              POS   =  POS_CELL(J)
-              I1    =  POSI(1,J)
-              I2    =  POSI(2,J)
-              I3    =  POSI(3,J)
-              JA_IE(POS,1,IE) = I1
-              JA_IE(POS,2,IE) = I2
-              JA_IE(POS,3,IE) = I3
+        J = 0
+        DO IP = 1, MNP
+          DO I = 1, CCON(IP)
+            J = J + 1
+            IP_J  = PTABLE(J,2)
+            IP_K  = PTABLE(J,3)
+            DO K = IA(IP), IA(IP+1) - 1
+              IF (IP   == JA(K)) POSI(1,J)  = K
+              IF (IP   == JA(K)) I_DIAG(IP) = K
+              IF (IP_J == JA(K)) POSI(2,J)  = K
+              IF (IP_K == JA(K)) POSI(3,J)  = K
             END DO
           END DO
-          DEALLOCATE(PTABLE)
-         ENDIF
-       !
-       ! Arrays for Jacobi
-       !
-       IF ((.NOT. L_LOCAL_ASPAR).and.(AMETHOD .eq. 7)) THEN
-         ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-         ASPAR_JAC = zero
-         !
-         IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
-           ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-           B_JAC = zero
-         END IF
-       END IF
+        END DO
+
+        J=0
+        DO IP=1,MNP
+          DO I = 1, CCON(IP)
+            J=J+1
+            IE    =  IE_CELL(J)
+            POS   =  POS_CELL(J)
+            I1    =  POSI(1,J)
+            I2    =  POSI(2,J)
+            I3    =  POSI(3,J)
+            JA_IE(POS,1,IE) = I1
+            JA_IE(POS,2,IE) = I2
+            JA_IE(POS,3,IE) = I3
+          END DO
+        END DO
+        DEALLOCATE(PTABLE)
+        !
+        ! Arrays for Jacobi-Gauss-Seidel solver
+        !
+        IF (AMETHOD .eq. 7) THEN
+          IF (L_LOCAL_ASPAR) THEN
+            ALLOCATE(LIST_ADJ_VERT(MAX_DEG,MNP), VERT_DEG(MNP), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
+            DO IP = 1, MNP
+              ITMP=0
+              DO I = 1, CCON(IP) ! Check how many entries there are ...
+                J = J + 1
+                IP_J  = PTABLE(J,2)
+                IP_K  = PTABLE(J,3)
+                ITMP(IP)   = 1
+                ITMP(IP_J) = 1
+                ITMP(IP_K) = 1
+              END DO
+              IADJ=0
+              DO I = 1, MNP
+                IF (ITMP(I) .GT. 0) THEN
+                  K = K + 1
+                  IADJ=IADJ + 1
+                  LIST_ADJ_VERT(IADJ,IP)=I
+                  JA(K) = I
+                END IF
+              END DO
+              VERT_DEG(IP)=IADJ
+              IA(IP + 1) = K + 1
+            END DO
+            ALLOCATE(REV_BOOK(NNZ), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6b')
+            REV_BOOK=0
+            DO IP=1,MNP
+              DO J=IA(IP),IA(IP+1)-1
+                JP=JA(J)
+                FPOS=-1
+                DO EPOS=1,MAX_DEG
+                  IF (LIST_ADJ_VERT(EPOS,IP) .eq. JP) THEN
+                    FPOS=EPOS
+                  END IF
+                END DO
+                IF (FPOS .eq. -1) THEN
+                  CALL WWM_ABORT('INDEXING FAILURE')
+                END IF
+                REV_BOOK(J)=FPOS
+              END DO
+            END DO
+            ALLOCATE(POS_IP_ADJ(2,3,MNE), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6c')
+            DO IE=1,MNE
+              DO J=1,3
+                J1=JA_IE(J,2,IE)
+                J2=JA_IE(J,3,IE)
+                POS1=REV_BOOK(J1)
+                POS2=REV_BOOK(J2)
+                POS_IP_ADJ(1,J,IE)=POS1
+                POS_IP_ADJ(2,J,IE)=POS2
+              END DO
+            END DO
+            DEALLOCATE(REV_BOOK)
+          ELSE
+            ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+            ASPAR_JAC = zero
+            !
+            IF (.NOT. LNONL .AND. SOURCE_IMPL) THEN
+              ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+              B_JAC = zero
+            END IF
+          END IF
+        END IF
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

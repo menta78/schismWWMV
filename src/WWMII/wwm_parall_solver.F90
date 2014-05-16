@@ -3672,7 +3672,7 @@
       INTEGER     :: ID, IS, IE, IPOS
       INTEGER     :: I, IPGL1, IPrel, ICON
       INTEGER     :: IP_fall, IPie, TheVal
-      INTEGER     :: ID1, ID2
+      INTEGER     :: ID1, ID2, POS1, POS2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -3750,17 +3750,19 @@
         IF (IP_fall .ne. IP) THEN
           CALL WWM_ABORT('Bugs and many more bugs')
         END IF
-        I1=JA_IE(IPOS,1,IE)
-        I2=JA_IE(IPOS,2,IE)
-        I3=JA_IE(IPOS,3,IE)
+        POS1=POS_IP_ADJ(1,IPOS,IE)
+        POS2=POS_IP_ADJ(2,IPOS,IE)
+!        I1=JA_IE(IPOS,1,IE)
+!        I2=JA_IE(IPOS,2,IE)
+!        I3=JA_IE(IPOS,3,IE)
         K1(:,:) =  KP(:,:,IPOS)
         DO ID=1,MDC
           DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
         END DO
         TMP3(:,:)  =  DTK(:,:) * NM(:,:)
         ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,IPOS)
-        ASPAR_LOC(:,:,I2)=ASPAR_LOC(:,:,I2)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
-        ASPAR_LOC(:,:,I3)=ASPAR_LOC(:,:,I3)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
+        ASPAR_LOC(:,:,POS1)=ASPAR_LOC(:,:,POS1)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
+        ASPAR_LOC(:,:,POS2)=ASPAR_LOC(:,:,POS2)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
       END DO
       IF (REFRACTION_IMPL) THEN
         TheVal=1
