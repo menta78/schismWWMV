@@ -546,6 +546,7 @@
 !
          INTEGER, ALLOCATABLE     :: IWBNDGL(:)
          INTEGER, ALLOCATABLE     :: IWBNDLC(:)
+         INTEGER, ALLOCATABLE     :: IWBNDLC_REV(:)
 
          INTEGER                  :: IWBMNP
          INTEGER                  :: IWBMNPGL
