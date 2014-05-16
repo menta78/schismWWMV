@@ -89,7 +89,6 @@
            END DO
 #endif
          ELSE IF (AMETHOD == 6) THEN
-           Print *, 'Before WWM_SOLVER_EIMPS'
 #ifdef WWM_SOLVER
 # ifdef MPI_PARALL_GRID
            CALL WWM_SOLVER_EIMPS(MainLocalColor, SolDat)
@@ -1533,7 +1532,6 @@
           EXIT
         END IF
       END DO
-      Print *, 'nbIter=', nbIter
       DO IP = 1, MNP
         AC2(IS,ID,IP) = MAX(ZERO,X(IP)) * MyREAL(IOBPD(ID,IP))
       END DO
@@ -2325,7 +2323,6 @@
        ! Arrays for Jacobi
        !
        IF ((.NOT. L_LOCAL_ASPAR).and.(AMETHOD .eq. 7)) THEN
-         Print *, 'NNZ=', NNZ
          ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
          ASPAR_JAC = zero
