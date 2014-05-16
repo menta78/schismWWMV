@@ -359,13 +359,15 @@
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1
       END DO
-      ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
+      ALLOCATE( IWBNDLC(IWBMNP), IWBNDLC_REV(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+      IWBNDLC_REV=0
       idx = 0
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
           idx = idx + 1
-          IWBNDLC(idx) = IP ! Stores local wave boundary index 
+          IWBNDLC(idx) = IP ! Stores local wave boundary index
+          IWBNDLC_REV(IP) = idx
         END IF
       END DO
       ! Global boundary nodes
