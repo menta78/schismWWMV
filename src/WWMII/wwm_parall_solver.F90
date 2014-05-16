@@ -3655,7 +3655,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAXMNECON)
+      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
       REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
       REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
       REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
@@ -3836,7 +3836,7 @@
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAXMNECON)
+      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
       REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
       REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 #ifdef MPI_PARALL_GRID
@@ -3848,7 +3848,7 @@
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
       REAL(rkind) :: Sum_new, Sum_prev
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      INTEGER :: I, K
+      INTEGER :: I, K, IP_ADJ, IADJ
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
@@ -3948,9 +3948,9 @@
             ELSE
               CALL GET_BLOCAL(IP, eSum)
             END IF
-            DO I=1,CCON(IP)
-              K=-1 ! Not known yet
-              eSum=eSum - ASPAR_LOC(:,:,I)*AC2(:,:,K)
+            DO IADJ=1,VERT_DEG(IP)
+              IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+              eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
             END DO
             IF (REFRACTION_IMPL) THEN
               DO ID=1,MDC

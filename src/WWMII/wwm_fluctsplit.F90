@@ -2059,6 +2059,7 @@
          INTEGER :: CHILF(MNP), COUNT_MAX
          INTEGER :: ITMP(MNP)
          INTEGER :: POS_TRICK(3,2)
+         INTEGER :: IADJ, NB_ADJ
 
          REAL(rkind)   :: TRIA03
 
@@ -2255,7 +2256,7 @@
 !
 ! JA Pointer according to the convention in my thesis see p. 123
 ! IA Pointer according to the convention in my thesis see p. 123
-           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), stat=istat)
+           ALLOCATE (JA(NNZ), IA(MNP+1), POSI(3,COUNT_MAX), VERT_DEG(MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
            JA = 0
            IA = 0
@@ -2275,14 +2276,44 @@
                ITMP(IP_J) = 1
                ITMP(IP_K) = 1
              END DO
+             NB_ADJ=0
              DO I = 1, MNP ! Run through all columns
                IF (ITMP(I) .GT. 0) THEN
                  K = K + 1
+                 NB_ADJ=NB_ADJ + 1
                  JA(K) = I
                END IF
              END DO
+             VERT_DEG(IP)=NB_ADJ
              IA(IP + 1) = K + 1
            END DO
+           MAX_DEG=MAXVAL(VERT_DEG)
+           ALLOCATE(LIST_ADJ_VERT(MAX_DEG,NP_RES), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
+           DO IP = 1, NP_RES
+             ITMP=0
+             DO I = 1, CCON(IP) ! Check how many entries there are ...
+               J = J + 1
+               IP_J  = PTABLE(J,2)
+               IP_K  = PTABLE(J,3)
+               ITMP(IP)   = 1
+               ITMP(IP_J) = 1
+               ITMP(IP_K) = 1
+             END DO
+             IADJ=0
+             DO I = 1, MNP ! Run through all columns
+               IF (ITMP(I) .GT. 0) THEN
+                 K = K + 1
+                 IADJ=IADJ + 1
+                 LIST_ADJ_VERT(IADJ,IP)=I
+                 JA(K) = I
+               END IF
+             END DO
+             VERT_DEG(IP)=K
+             IA(IP + 1) = K + 1
+           END DO
+
+
            J = 0
            DO IP = 1, MNP
              DO I = 1, CCON(IP)

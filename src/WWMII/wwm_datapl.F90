@@ -958,7 +958,7 @@
 
          INTEGER                :: NNZ
          INTEGER                :: MAXMNECON
-
+         INTEGER                :: MAX_DEG
          INTEGER, ALLOCATABLE   :: IA(:)
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
@@ -969,10 +969,12 @@
          INTEGER, ALLOCATABLE   :: IE_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: POS_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: I_DIAG(:)
+         INTEGER, ALLOCATABLE   :: VERT_DEG(:)
+         INTEGER, ALLOCATABLE   :: LIST_ADJ_VERT(:,:)
+
          INTEGER, ALLOCATABLE   :: ITER_EXP(:,:)
          INTEGER, ALLOCATABLE   :: ITER_EXPD(:)
          INTEGER                :: ITER_MAX
-
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
