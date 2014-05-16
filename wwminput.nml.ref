@@ -370,8 +370,17 @@
  LSOURCESWAM     = T,                     ! Use ECMWF WAM formualtion for deep water physics 
  PMIN    =  0.000000000000000E+000,       ! Max. percentage of non-converged grid points 
  LSOURCESWWIII   = F,                     ! WW3 Ardhuin et al. sources, not working yet in this code use MESIN = 1 
- BLOCK_GAUSS_SEIDEL      = T,             ! Solve the nonlinear system using simpler algorithm (Patankar) 
- LNONL   = F
+ BLOCK_GAUSS_SEIDEL      = T,             ! Use the Gauss Seidel on each
+                                          ! computer block. The result seems
+                                          ! to be faster and use less memory
+                                          ! But the results depend on the
+                                          ! number of processors
+ LNONL   = F                              ! Solve the nonlinear system using simpler algorithm (Patankar) 
+ L_LOCAL_ASPAR = F                        ! Do not store ASPAR, more computation
+                                          ! but less memory expenses
+ L_SOLVER_NORM = F                        ! Compute solver norm as termination
+                                          ! check of jacobi-Gauss-Seidel
+                                          ! solver
 /
 
 
