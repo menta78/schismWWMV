@@ -947,7 +947,6 @@
          LOGICAL                :: L_LOCAL_ASPAR = .FALSE.
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
          REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
-         REAL(rkind), allocatable :: ASPARL_JAC(:,:,:)
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97

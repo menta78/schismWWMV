@@ -3667,6 +3667,7 @@
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
+      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -3683,31 +3684,21 @@
       ! The advection part of the equation
       !
       IF (.NOT. L_LOCAL_ASPAR) THEN
-        IF (LNONL) THEN
-          CALL EIMPS_ASPAR_BLOCK(ASPARL_JAC)
-!          CALL EIMPS_B_BLOCK(AC2,BL)
-        ELSE
-          CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
-!          CALL EIMPS_B_BLOCK(AC2,BL)
-        ENDIF
+        CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
       !
       IF (.NOT. L_LOCAL_ASPAR) THEN
-        IF (LNONL) THEN
-          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPARL_JAC)
-        ELSE
-          CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
-          IF (SOURCE_IMPL) THEN
-            DO IP=1,NP_RES
-              CALL GET_BLOCAL(IP, BLOC)
-              CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-              ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
-              B_JAC(:,:,IP)             = BLOC + IMATRA
-            END DO
-          END IF
+        CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
+        IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
+          DO IP=1,NP_RES
+            CALL GET_BLOCAL(IP, BLOC)
+            CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
+            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+            B_JAC(:,:,IP)             = BLOC + IMATRA
+          END DO
         END IF
       END IF
 
@@ -3727,11 +3718,12 @@
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
           IF (.NOT. L_LOCAL_ASPAR) THEN
+            ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
                 CALL GET_BLOCAL(IP, BLOC)
                 CALL GET_IMATRA_IMATDA(IP, IMATRA, IMATDA)
-                ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
                 eSum = BLOC + IMATRA
               ELSE
                 eSum = B_JAC(:,:,IP)
@@ -3768,8 +3760,8 @@
                 END DO
               END DO
             END IF
-            !eSum=max(zero,eSum/ASPAR_JAC(:,:,I_DIAG(IP))) ! solve ... 
-            eSum=eSum/ASPAR_JAC(:,:,I_DIAG(IP)) ! solve ...
+            !eSum=max(zero,eSum/DIAG)
+            eSum=eSum/ASPAR_DIAG
           ELSE
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
