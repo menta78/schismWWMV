@@ -458,6 +458,7 @@
          INTEGER   :: MDC
          INTEGER   :: MSC, MSCL
          INTEGER   :: NSPEC
+         INTEGER, allocatable :: ID_NEXT(:), ID_PREV(:)
 
          LOGICAL   :: LCYCLEHOT
          INTEGER   :: IHOTPOS_IN
