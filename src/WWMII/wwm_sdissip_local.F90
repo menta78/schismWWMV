@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP (F, FL, IG, SL, F1MEAN, XKMEAN, &
+      SUBROUTINE SDISSIP_LOCAL (IPP, F, FL, IG, SL, F1MEAN, XKMEAN, &
      &                    PHIEPS, TAUWD, MIJ, SSDS, DSSDS)
 
 ! ----------------------------------------------------------------------
@@ -84,6 +84,8 @@
 
 ! ----------------------------------------------------------------------
 
+      INTEGER, INTENT(IN) :: IPP
+
       INTEGER :: M, K, MIJ, IC, IG
       REAL(rkind) :: SCDFM, ROG, ALPH, ARG, CONSD, CONSS, X, SDISS, EMAX, Q_OLD, Q, REL_ERR
       REAL(rkind),DIMENSION(NANG,NFRE) :: F,FL,SL
@@ -128,51 +130,50 @@
         CONSTFM(MIJ) = ROG*SCDFM*FR(MIJ)
       ENDIF
 
-      IF (ISHALLO.EQ.1) THEN
-        CONSD = -CDIS*ZPI**9/G**4
-        SDS=CONSD*F1MEAN*EMEAN**2*F1MEAN**8
-        DO M=1,NFRE
-          FAC(M) = ZPI*FR(M)
-          CM  = FAC(M)/G
-          X         = (FR(M)/F1MEAN)**2
-          TEMP1(IJ) = SDS*( (1.-DELTA)*X + DELTA*X**2)
-          DO K=1,NANG
-            SDISS = TEMP1(IJ)*F(K,M)
-            SL(K,M) = SL(K,M)+TEMP1*F(K,M)
-            FL(K,M) = FL(K,M)+TEMP1
-            IF (LCFLX.AND.M.LE.MIJ) THEN
-              PHIEPS = PHIEPS+SDISS*CONSTFM(M)
-              TAUWD  = TAUWD+CM*SDISS*CONSTFM(M)
-            ENDIF
-          ENDDO     
-        ENDDO
-      ELSE !SHALLOW
-        IF (ITEST.GE.2) THEN
-          WRITE(IU06,*) '   SUB. SDISSIP: START DO-LOOP (ISHALLO=0)'
-          CALL FLUSH (IU06)
-        ENDIF
-        CONSS = -CDIS*ZPI
-        SDS=CONSS*F1MEAN*EMEAN**2*XKMEAN**4
+     IF (ISHALLO.EQ.1) THEN
+       CONSD = -CDIS*ZPI**9/G**4
+       SDS=CONSD*F1MEAN*EMEAN(IPP)**2*F1MEAN**8
+       DO M=1,NFRE
+         FAC(M) = ZPI*FR(M)
+         CM  = FAC(M)/G
+         X         = (FR(M)/F1MEAN)**2
+         TEMP1 = SDS*( (1.-DELTA)*X + DELTA*X**2)
+         DO K=1,NANG
+           SDISS = TEMP1*F(K,M)
+           SL(K,M) = SL(K,M)+TEMP1*F(K,M)
+           FL(K,M) = FL(K,M)+TEMP1
+           IF (LCFLX.AND.M.LE.MIJ) THEN
+             PHIEPS = PHIEPS+SDISS*CONSTFM(M)
+             TAUWD  = TAUWD+CM*SDISS*CONSTFM(M)
+           ENDIF
+         ENDDO     
+       ENDDO
+    ELSE !SHALLOW
+      IF (ITEST.GE.2) THEN
+        WRITE(IU06,*) '   SUB. SDISSIP: START DO-LOOP (ISHALLO=0)'
+        CALL FLUSH (IU06)
+       ENDIF
+      CONSS = -CDIS*ZPI
+      SDS=CONSS*F1MEAN*EMEAN(IPP)**2*XKMEAN**4
 
-        DO M=1,NFRE
-          FAC(M) = ZPI*FR(M)
-            !X         = TFAK(INDEP(M)/XKMEAN(IJ)
-            X         = WK(M)/XKMEAN
-            TEMP1 = SDS*( (1.-DELTA)*X + DELTA*X**2)
-            !CM(IJ)    = TFAK(INDEP,M)/FAC(M)
-            CM    = WK(M)/FAC(M)
-          ENDDO
-          DO K=1,NANG
-            SDISS = TEMP1*F(K,M)
-            SL(K,M) = SL(K,M)+TEMP1*F(K,M)
-            FL(K,M) = FL(K,M)+TEMP1
-            SSDS(K,M)  = TEMP1*F(K,M)
-            DSSDS(K,M) = TEMP1
-            IF (LCFLX.AND.M.LE.MIJ) THEN
-              PHIEPS(IJ) = PHIEPS+SDISS*CONSTFM(M)
-              TAUWD(IJ)  = TAUWD+CM*SDISS*CONSTFM(M)
-            ENDIF
-          ENDDO
+      DO M=1,NFRE
+        FAC(M) = ZPI*FR(M)
+          !X         = TFAK(INDEP(M)/XKMEAN(IJ)
+          X         = WK(M,IPP)/XKMEAN
+          TEMP1 = SDS*( (1.-DELTA)*X + DELTA*X**2)
+          !CM(IJ)    = TFAK(INDEP,M)/FAC(M)
+          CM    = WK(M,IPP)/FAC(M)
+        ENDDO
+        DO K=1,NANG
+          SDISS = TEMP1*F(K,M)
+          SL(K,M) = SL(K,M)+TEMP1*F(K,M)
+          FL(K,M) = FL(K,M)+TEMP1
+          SSDS(K,M)  = TEMP1*F(K,M)
+          DSSDS(K,M) = TEMP1
+          IF (LCFLX.AND.M.LE.MIJ) THEN
+            PHIEPS = PHIEPS+SDISS*CONSTFM(M)
+            TAUWD  = TAUWD+CM*SDISS*CONSTFM(M)
+          ENDIF
         ENDDO
     
           IF (LOUTWAM) WRITE(111119,'(5F20.10)')SDS,TEMP1,&
@@ -183,9 +184,9 @@
 !
 !       (FOLLOWING BATTJES-JANSSEN AND BEJI)
         IF(LBIWBK .and. .false.) THEN
-           IF(DEP.LT.DEPTHTRS) THEN
-             EMAX = (GAM_B_J*DEP)**2/16.
-             ALPH = 2.*EMAX/(EMEAN)
+           IF(DEP(IPP).LT.DEPTHTRS) THEN
+             EMAX = (GAM_B_J*DEP(IPP))**2/16.
+             ALPH = 2.*EMAX/(EMEAN(IPP))
              ARG  = MIN(ALPH,50.)
              Q_OLD = EXP(-ARG)
              DO IC=1,15
@@ -194,13 +195,13 @@
                IF(REL_ERR.LT.0.01) EXIT
                Q_OLD = Q
              ENDDO
-             SDS(IJ) = COEF_B_J*ALPH*Q*F1MEAN
+             SDS = COEF_B_J*ALPH*Q*F1MEAN
              !IF (IJ == 339) write(*,'(I10,8F20.10)') IJ, DEP(IJ), SDS(IJ), Q, COEF_B_J, ALPH, F1MEAN(IJ), 4*SQRT(EMAX), 4*SQRT(EMEAN(IJ))
            ENDIF
    
           DO M=1,NFRE
              DO K=1,NANG
-                IF(DEP(IJ).LT.DEPTHTRS) THEN
+                IF(DEP(IPP).LT.DEPTHTRS) THEN
                   !SL(IJ,K,M) = SL(IJ,K,M)-SDS(IJ)*F(IJ,K,M)
                   !FL(IJ,K,M) = FL(IJ,K,M)-SDS(IJ)
                   !SSDS(K,M)  = -SDS(IJ)*F(IJ,K,M)
@@ -219,4 +220,4 @@
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 
       RETURN
-      END SUBROUTINE SDISSIP
+      END SUBROUTINE SDISSIP_LOCAL
