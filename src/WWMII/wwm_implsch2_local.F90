@@ -1,7 +1,7 @@
 ! ----------------------------------------------------------------------
 !
 ! ----------------------------------------------------------------------
-    SUBROUTINE PREINTRHS (IPP, FL3, FL, IJS, IJL, IG, &
+    SUBROUTINE PREINTRHS (IPP, FL3, FL, IG, &
      &                    THWOLD, USOLD, &
      &                    TAUW, Z0OLD, &
      &                    ROAIRO, ZIDLOLD, &
@@ -11,13 +11,13 @@
      &                    SSDS, DSSDS, SSIN, DSSIN, &
      &                    SSNL4, DSSNL4)
 !
-!       *CALL* *IMPLSCH (FL3, FL, IJS, IJL, IG,
+!       *CALL* *IMPLSCH (FL3, FL, IPP, IJL, IG,
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
 !    3                    SL,FCONST)
 !          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
-!          *IJS*    - INDEX OF FIRST GRIDPOINT
+!          *IPP*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
 !          *IG*     - BLOCK NUMBER
 !      *U10NEW*    NEW WIND SPEED IN M/S.
@@ -61,7 +61,7 @@
 ! ----------------------------------------------------------------------
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL(rkind) :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(IJS:IJL,NANG,NFRE)
+      REAL(rkind) :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(NANG,NFRE)
       REAL(rkind),DIMENSION(NFRE) :: FCONST
       REAL(rkind) :: THWOLD,USOLD,Z0OLD,TAUW, &
      &                           ROAIRO,ZIDLOLD,FMEANWS 
@@ -108,16 +108,16 @@
 
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '--------- COMPUTING SOURCE TERMS ---------'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) '--------- COMPUTING SOURCE TERMS ---------'
 
-      CALL FKMEAN(FL3, IJS, IJL, EMEAN(IJS), FMEAN(IJS), &
-     &            F1MEAN, AKMEAN, XKMEAN)
+      CALL FKMEAN_LOCAL(FL3, IPP, EMEAN(IPP), FMEAN(IPP), &
+     &            F1MEAN(IPP), AKMEAN(IPP), XKMEAN(IPP))
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'HS and TM'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IJS)), FMEAN(IJS), SUM(FL3)
-      !WRITE(55555,*) 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'HS and TM'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IPP)), FMEAN(IPP), SUM(FL3)
+      !WRITE(55555,*) 4*SQRT(EMEAN(IPP)), FMEAN(IJS)
 
-!      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
+!      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
       DO K=1,NANG
         SPRD(K)=MAX(0.,COS(TH(K)-THWNEW))**2
 !        WRITE(111113,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
@@ -138,24 +138,24 @@
 
       
       ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, ILEV)
+      CALL AIRSEA_LOCAL (IPP, U10NEW, TAUW, USNEW, Z0NEW, ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
         CALL FLUSH (IU06)
       ENDIF
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA 1'
-      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, U10NEW, TAUW, &
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IPP, U10NEW, TAUW, &
       &                              USNEW, Z0NEW
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ELSE
-        CALL SINPUT_ARD (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ENDIF
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER SINPUT 1'
@@ -166,12 +166,12 @@
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(IPP,FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS(IPP,FL3,EMEANWS,FMEANWS,XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(IPP,IJS, IJL, FMEAN(IJS), FMEANWS, MIJ)
+      CALL FRCUTINDEX(IPP, FMEAN(IPP), FMEANWS, MIJ)
 
-      CALL STRESSO (IPP,FL3, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+      CALL STRESSO (IPP,FL3, THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, &
      &              MIJ, LCFLX)
@@ -180,16 +180,16 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 1'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,7F15.7,I10)') IJS, IJL, SUM(FL3), &
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 1'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(2I10,7F15.7,I10)') SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, &
      &              SUM(SL), &
-     &              MIJ(IJS)
+     &              MIJ(IPP)
 
       CALL AIRSEA (U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP), ILEV)
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA 2'
-      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IJS)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IJS)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -197,45 +197,45 @@
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (IPP, FL3, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER SNON'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
+      CALL SNONLIN_LOCAL (IPP, FL3, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER SNON'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
       ENDIF
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (IPP, FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN,&
+        CALL SDISSIP_LOCAL (IPP, FL3 ,FL, IG, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
-        CALL SDISS_ARDH_VEC (IPP, FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,&
+        CALL SDISS_ARDH_VEC_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER DISSIP' 
-      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL) 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED'
         CALL FLUSH (IU06)
       ENDIF
 !SHALLOW
-      !IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IJS, IJL, IG, SL, SSDS, DSSDS)
+      !IF(ISHALLO.NE.1) CALL SBOTTOM (FL3, FL, IPP, IJL, IG, SL, SSDS, DSSDS)
 !SHALLOW
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER SBOTTOM' 
-      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL) 
 
       USOLD(IPP) = USNEW(IPP)
       Z0OLD(IPP) = Z0NEW(IPP)
       ROAIRO(IPP) = ROAIRN(IPP)
       ZIDLOLD(IPP) = ZIDLNEW(IPP)
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '-------- FINISHED SOURCE TERM COMPUTATION ----------'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) '-------- FINISHED SOURCE TERM COMPUTATION ----------'
 
       RETURN
-      END SUBROUTINE PREINTRHS 
+      END SUBROUTINE PREINTRHS_LOCAL
 ! ----------------------------------------------------------------------
 !
 ! ----------------------------------------------------------------------
-    SUBROUTINE INTSPECWAM (IPP, FL3, FL, IJS, IJL, IG, &
+    SUBROUTINE INTSPECWAM_LOCAL (IPP, FL3, FL, IG, &
      &                    THWOLD, USOLD, &
      &                    TAUW, Z0OLD, &
      &                    ROAIRO, ZIDLOLD, &
@@ -261,18 +261,18 @@
 ! ----------------------------------------------------------------------
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL(rkind) :: FL(NANG,NFRE),FL3(IJS:IJL,NANG,NFRE),SL(IJS:IJL,NANG,NFRE)
+      REAL(rkind) :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(NANG,NFRE)
       REAL(rkind),DIMENSION(NFRE) :: FCONST
-      REAL(rkind),DIMENSION(IJS:IJL) :: THWOLD,USOLD,Z0OLD,TAUW, &
+      REAL(rkind),DIMENSION :: THWOLD,USOLD,Z0OLD,TAUW, &
      &                           ROAIRO,ZIDLOLD
-      REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
+      REAL(rkind),DIMENSION :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
 
 ! ----------------------------------------------------------------------
 
-      INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
-      INTEGER :: JU(IJS:IJL)
-      INTEGER :: MIJ(IJS:IJL)
+      INTEGER :: K,L,M,IG,ILEV,IDELT,IU06
+      INTEGER :: JU
+      INTEGER :: MIJ
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
       REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
       REAL(rkind), DIMENSION(NFRE) :: DELFL
@@ -301,39 +301,33 @@
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
 
-      DO IJ=IJS,IJL
-        USFM(IJ) = USNEW(IJ)*MAX(FMEANWS(IJ),FMEAN(IJ))
+      USFM = USNEW(IPP)*MAX(FMEANWS(IPP),FMEAN(IPP))
         !IF (LOUTWAM) WRITE(111113,'(4F20.10)') USNEW(IJ), FMEANWS(IJ), FMEAN(IJ)
-      ENDDO
 
       DO M=1,NFRE
-        DO IJ=IJS,IJL
-          TEMP(IJ,M) = USFM(IJ)*DELFL(M)
-          !WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
-        ENDDO
+        TEMP(M) = USFM*DELFL(M)
+        !WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
       ENDDO
 
       DO K=1,NANG
         DO M=1,NFRE
-          DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
-            GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
-            FLHAB  = ABS(GTEMP2)
-            FLHAB  = MIN(FLHAB,TEMP(IJ,M))
-            FL3(IJ,K,M) = FL3(IJ,K,M) + SIGN(FLHAB,GTEMP2) 
-          ENDDO
+          GTEMP1 = MAX((1.-DELT5*FL(K,M)),1.)
+          GTEMP2 = DELT*SL(K,M)/GTEMP1
+          FLHAB  = ABS(GTEMP2)
+          FLHAB  = MIN(FLHAB,TEMP(M))
+          FL3(K,M) = FL3(K,M) + SIGN(FLHAB,GTEMP2) 
         ENDDO
       ENDDO
 
       !IF (LOUTWAM) WRITE(111113,*) 'AFTER INTEGRATION' 
-      !IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL), SUM(FL3)
+      !IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IPP, SUM(FL), SUM(SL), SUM(FL3)
 
       RETURN
       END SUBROUTINE INTSPECWAM 
 ! ----------------------------------------------------------------------
 !
 ! ----------------------------------------------------------------------
-    SUBROUTINE POSTINTRHS (FL3, FL, IJS, IJL, IG, &
+    SUBROUTINE POSTINTRHS (FL3, FL, IPP, IJL, IG, &
      &                    THWOLD, USOLD, &
      &                    TAUW, Z0OLD, &
      &                    ROAIRO, ZIDLOLD, &
@@ -387,10 +381,8 @@
       IDELT = INT(DT4S)
       ILEV=1
 
-      DO IJ=IJS,IJL
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '------------ INIT OF POST SOURCE TERMS --------------'
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(F20.10,3I10)') SUM(FL3), SIZE(FL3), IJS, IJL
-      ENDDO
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) '------------ INIT OF POST SOURCE TERMS --------------'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(F20.10,3I10)') SUM(FL3), SIZE(FL3), IPP, IJL
 
       IF(ISHALLO.EQ.1) THEN
         DO M=1,NFRE
@@ -408,10 +400,10 @@
       ENDIF
 
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ELSE
-        CALL SINPUT_ARD (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ENDIF
 
@@ -422,11 +414,11 @@
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
 
-      CALL FKMEAN(IPP,FL3, EMEAN, FMEAN, &
+      CALL FKMEAN_LOCAL(IPP,FL3, EMEAN, FMEAN, &
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(IPP,FL3,IJS,IJL,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS_LOCAL(IPP,FL3,EMEANWS,FMEANWS,XLLWS)
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
@@ -435,8 +427,8 @@
       CALL FRCUTINDEX(IPP, FMEAN, FMEANWS, MIJ)
 
       GADIAG = 1./TEMP2(MIJ)
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER MEAN PARAMETER'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,5F20.10)') MIJ, AKMEAN, FMEANWS, TEMP2(MIJ), GADIAG
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER MEAN PARAMETER'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,5F20.10)') MIJ, AKMEAN, FMEANWS, TEMP2(MIJ), GADIAG
 
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
@@ -477,34 +469,34 @@
 !           -------------------------------------------------------
 
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN) 
       ELSE
-        CALL SINPUT_ARD (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW, USNEW, Z0NEW, &
      &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
       ENDIF
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER SINPUT 2'
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER SINPUT 2'
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-      CALL STRESSO (IPP, FL3, THWNEW, USNEW, Z0NEW, &
+      CALL STRESSO_LOCAL (IPP, FL3, THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, MIJ, &
      &              LCFLX)
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER STRESSO 2'
-      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(2I10,7F15.8,I10)') IJS, IJL,SUM(FL3),THWNEW, USNEW, Z0NEW,ROAIRN, TAUW,SUM(SL),MIJ(IJS:IJL)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(2I10,7F15.8,I10)') IPP, IJL,SUM(FL3),THWNEW, USNEW, Z0NEW,ROAIRN, TAUW,SUM(SL),MIJ
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: STRESSO CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (IPP, U10NEW, TAUW, USNEW, Z0NEW, &
+      CALL AIRSEA_LOCAL (IPP, U10NEW, TAUW, USNEW, Z0NEW, &
      & ILEV)
 
       IF (ITEST.GE.2) THEN
@@ -514,18 +506,18 @@
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER AIRSEA3'
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,4F15.7,I10)') &
-     &                              IJS, U10NEW, TAUW, &
+     &                              IPP, U10NEW, TAUW, &
      &                              USNEW, Z0NEW, ILEV
 
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+        CALL SDISSIP_LOCAL (IPP, FL3 ,FL, IG, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+        CALL SDISS_ARDH_VEC_LOCAL (FL3 ,FL, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER DISSIP' 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(FL3), SUM(SL) 
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) 'AFTER DISSIP' 
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(FL3), SUM(SL) 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -535,15 +527,13 @@
 !           -------------------------------------------------------
 
       IF(LCFLX) THEN
-        DO IJ=IJS,IJL
-          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
-          XN        = ROAIRN(IJ)*USNEW(IJ)**3
+        TAU       = ROAIRN*USNEW**2
+        XN        = ROAIRN*USNEW**3
 
-          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
-          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
-          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
-          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
-        ENDDO
+        PHIDIAG    = PHIAWDIAG+PHIAWUNR
+        PHIEPS(IJ) = (PHIOC-PHIDIAG)/XN 
+        PHIAW(IJ)  = (PHIWA+PHIAWUNR)/XN
+        TAUOC(IJ)  = (TAU-TAUWLF-TAUWD)/TAU
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -551,30 +541,23 @@
 !*    2.6 SAVE WINDS INTO INTERMEDIATE STORAGE.
 !         -------------------------------------
 
-      DO IJ=IJS,IJL
-        USOLD(IJ) = USNEW(IJ)
-        Z0OLD(IJ) = Z0NEW(IJ)
-        ROAIRO(IJ) = ROAIRN(IJ)
-        ZIDLOLD(IJ) = ZIDLNEW(IJ)
-      ENDDO
+      USOLD(IPP) = USNEW(IPP)
+      Z0OLD(IPP) = Z0NEW(IPP)
+      ROAIRO(IPP) = ROAIRN(IPP)
+      ZIDLOLD(IPP) = ZIDLNEW(IPP)
 
-      DO IJ=IJS,IJL
-        UFRIC(IJ) = USNEW(IJ)
-        Z0(IJ)    = Z0NEW(IJ)
-        CD(IJ)    = (USNEW(IJ)/U10NEW(IJ))**2
-        ALPHA_CH(IJ) = G*Z0NEW(IJ)/USNEW(IJ)**2
-      ENDDO
+      UFRIC(IPP) = USNEW(IPP)
+      Z0(IPP)    = Z0NEW(IPP)
+      CD(IPP)    = (USNEW(IPP)/U10NEW(IPP))**2
+      ALPHA_CH(IPP) = G*Z0NEW(IPP)/USNEW(IPP)**2
 
 ! ----------------------------------------------------------------------
 
       !IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
-      DO IJ=IJS,IJL
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(5F20.10)') SUM(FL3), UFRIC(IJ), Z0(IJ), CD(IJ)
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) '------------ END OF POST SOURCE TERMS --------------'
-      ENDDO
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(5F20.10)') SUM(FL3), UFRIC(IJ), Z0(IJ), CD(IJ)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,*) '------------ END OF POST SOURCE TERMS --------------'
 
-      RETURN
       END SUBROUTINE POSTINTRHS 
 ! ----------------------------------------------------------------------
 !
