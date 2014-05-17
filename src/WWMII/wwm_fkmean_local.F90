@@ -1,4 +1,4 @@
-      SUBROUTINE FKMEAN_LOCAL (F, EM, FM1, F1, AK, XK)
+      SUBROUTINE FKMEAN_LOCAL (IPP, F, EM, FM1, F1, AK, XK)
 
 ! ----------------------------------------------------------------------
 
@@ -71,11 +71,13 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
+      INTEGER, INTENT(IN) :: IPP
+
+      INTEGER :: M,K
       REAL(rkind) :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
-      REAL(rkind) :: F(IJS:IJL,NANG,NFRE)
-      REAL(rkind),DIMENSION(IJS:IJL) :: TEMPA, TEMPX,  TEMP2
-      REAL(rkind),DIMENSION(IJS:IJL) :: EM, FM1, F1, AK, XK
+      REAL(rkind) :: F(NANG,NFRE)
+      REAL(rkind) :: TEMPA, TEMPX,  TEMP2
+      REAL(rkind) :: EM, FM1, F1, AK, XK
 
 !      REAL ZHOOK_HANDLE
 
@@ -85,11 +87,11 @@
 !*    1. INITIALISE MEAN FREQUENCY ARRAY AND TAIL FACTOR.
 !        ------------------------------------------------
 
-      EM(IJ) = EPSMIN
-      FM1(IJ)= EPSMIN
-      F1(IJ) = EPSMIN
-      AK(IJ) = EPSMIN
-      XK(IJ) = EPSMIN
+      EM = EPSMIN
+      FM1= EPSMIN
+      F1 = EPSMIN
+      AK = EPSMIN
+      XK = EPSMIN
 
       DELT25 = WETAIL*FR(NFRE)*DELTH
       COEFM1 = FRTAIL*DELTH
@@ -127,11 +129,11 @@
 
         DO M=1,NFRE
 !          SQRTK=SQRT(TFAK(INDEP(IJ),M))
-          SQRTK=SQRT(WK(M))
+          SQRTK=SQRT(WK(M,IPP))
           TEMPA = DFIM(M)/SQRTK
           TEMPX = SQRTK*DFIM(M)
           K=1
-          TEMP2 = F(IJ,K,M) 
+          TEMP2 = F(K,M) 
           DO K=2,NANG
             TEMP2 = TEMP2+F(K,M)
           ENDDO

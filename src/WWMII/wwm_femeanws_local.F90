@@ -64,11 +64,11 @@
 
       IMPLICIT NONE
 
-      INTEGER :: IJ,M,K,IJS,IJL
+      INTEGER :: M,K,IJS,IJL
       REAL(rkind) :: DELT25, DELT2, CM, CHECKTA
-      REAL(rkind) :: F(IJS:IJL,NANG,NFRE)
-      REAL(rkind),DIMENSION(IJS:IJL) :: TEMP2, EM, FM, THRESHOLD
-      REAL(rkind), DIMENSION(IJS:IJL,NANG,NFRE) :: XLLWS
+      REAL(rkind) :: F(NANG,NFRE)
+      REAL(rkind) :: TEMP2, EM, FM, THRESHOLD
+      REAL(rkind), DIMENSION(NANG,NFRE) :: XLLWS
 
       !REAL ZHOOK_HANDLE
 

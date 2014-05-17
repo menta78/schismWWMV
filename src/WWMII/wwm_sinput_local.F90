@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT (F, FL, THWNEW, USNEW, Z0NEW, &
+      SUBROUTINE SINPUT (IPP, F, FL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, XLLWS, SSIN, DSSIN)
 ! ----------------------------------------------------------------------
 
@@ -108,6 +108,8 @@
      &                INDEP => DEP
       IMPLICIT NONE
 
+     INTEGER, INTENT(IN) :: IPP
+
 ! ----------------------------------------------------------------------
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
@@ -156,25 +158,23 @@
 !        ---------------------------------
 
       DO K=1,NANG
-          TEMP1(K) = COS(TH(K)-THWNEW)
-          IF(TEMP1(K) .GT. 0.01) THEN
-            LZ(K) = .TRUE.
-            TEMPD(K) = 1.D0/TEMP1(K)
-          ELSE
-            LZ(K) = .FALSE.
-            TEMPD(K) = 1.D0
-          ENDIF
-          !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
-        ENDDO
+        TEMP1(K) = COS(TH(K)-THWNEW)
+        IF(TEMP1(K) .GT. 0.01) THEN
+          LZ(K) = .TRUE.
+          TEMPD(K) = 1.D0/TEMP1(K)
+        ELSE
+          LZ(K) = .FALSE.
+          TEMPD(K) = 1.D0
+        ENDIF
+        !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
       ENDDO
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
       CALL WSIGSTAR (USNEW, Z0NEW, WSTAR, SIG_N)
 
-
-      USP = USNEW*(1.+SIG_N(IJ))
-      USM = USNEW*(1.-SIG_N(IJ))
+      USP = USNEW*(1.+SIG_N)
+      USM = USNEW*(1.-SIG_N)
 
       EPSIL = ROAIRN*RWINV
 ! ----------------------------------------------------------------------
@@ -196,7 +196,7 @@
           CM = FAC(M)/G
           SH = 1.0
         ELSE
-          XK = WK(M)
+          XK = WK(M,IPP)
           CM = XK/FAC(M)
           SH = FAC(M)**2/(G*XK) 
         ENDIF
@@ -213,8 +213,8 @@
           ZCN  = LOG(XK*Z0NEW)
           CNSN = CONST(M)*SH*EPSIL
 
-          XV1      = -USP(IJ)*XKAPPAD*ZCN*CM
-          XV2      = -USM(IJ)*XKAPPAD*ZCN*CM
+          XV1      = -USP*XKAPPAD*ZCN*CM
+          XV2      = -USM*XKAPPAD*ZCN*CM
 
           XV1D = 1.D0/XV1
           XV2D = 1.D0/XV2
@@ -228,9 +228,9 @@
         DO K=1,NANG
             ZBETA1 = CONST3*(TEMP1(K)-XV1D)*UCN1**2
             ZBETA2 = CONST3*(TEMP1(K)-XV2D)*UCN2**2
-            IF (LZ(IJ,K)) THEN
-              ZLOG1 = ZCN + XKAPPA*TEMPD(K)*UCN1D(IJ)
-              ZLOG2 = ZCN + XKAPPA*TEMPD(K)*UCN2D(IJ)
+            IF (LZ(K)) THEN
+              ZLOG1 = ZCN + XKAPPA*TEMPD(K)*UCN1D
+              ZLOG2 = ZCN + XKAPPA*TEMPD(K)*UCN2D
               IF (ZLOG1.LT.0.) THEN
                 X1=TEMP1(K)*UCN1
                 ZLOG2X=ZLOG1*ZLOG1*X1
