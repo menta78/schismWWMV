@@ -255,12 +255,20 @@
          COS2TH = zero
          SIN2TH = zero
 
-         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), stat=istat)
+         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), ID_NEXT(MDC), ID_PREV(MDC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
          SINCOSTH = zero
          SIGPOW = zero
          DS_BAND = zero
          DS_INCR = zero
+         DO ID=1,MDC-1
+           ID_NEXT(ID)=ID+1
+         END DO
+         ID_NEXT(MDC)=1
+         DO ID=2,MDC
+           ID_PREV(ID)=ID-1
+         END DO
+         ID_PREV(1)=MDC
 
          SGLOW  = PI2*FRLOW
          SGHIGH = PI2*FRHIGH

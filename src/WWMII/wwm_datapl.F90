@@ -458,6 +458,7 @@
          INTEGER   :: MDC
          INTEGER   :: MSC, MSCL
          INTEGER   :: NSPEC
+         INTEGER, allocatable :: ID_NEXT(:), ID_PREV(:)
 
          LOGICAL   :: LCYCLEHOT
          INTEGER   :: IHOTPOS_IN
@@ -545,6 +546,7 @@
 !
          INTEGER, ALLOCATABLE     :: IWBNDGL(:)
          INTEGER, ALLOCATABLE     :: IWBNDLC(:)
+         INTEGER, ALLOCATABLE     :: IWBNDLC_REV(:)
 
          INTEGER                  :: IWBMNP
          INTEGER                  :: IWBMNPGL
@@ -944,9 +946,7 @@
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          LOGICAL                :: L_LOCAL_ASPAR = .FALSE.
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
-         REAL(rkind), allocatable :: ASPAR_JAC(:,:,:)
-         REAL(rkind), allocatable :: ASPARL_JAC(:,:,:)
-
+         REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
@@ -958,21 +958,24 @@
 
          INTEGER                :: NNZ
          INTEGER                :: MAXMNECON
-
+         INTEGER                :: MAX_DEG
          INTEGER, ALLOCATABLE   :: IA(:)
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
          INTEGER, ALLOCATABLE   :: JA_IE(:,:,:)
+         INTEGER, ALLOCATABLE   :: POS_IP_ADJ(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)
          INTEGER, ALLOCATABLE   :: IE_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: POS_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: I_DIAG(:)
+         INTEGER, ALLOCATABLE   :: VERT_DEG(:)
+         INTEGER, ALLOCATABLE   :: LIST_ADJ_VERT(:,:)
+
          INTEGER, ALLOCATABLE   :: ITER_EXP(:,:)
          INTEGER, ALLOCATABLE   :: ITER_EXPD(:)
          INTEGER                :: ITER_MAX
-
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
@@ -1281,7 +1284,8 @@
       !
       ! For the JACOBI_ITERATION
       !
-      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
+!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+      REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
 #endif
       END MODULE

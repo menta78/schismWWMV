@@ -78,14 +78,16 @@
          DAC_SIG = zero
          DAC_SOU = zero
        END IF
-       IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7)) THEN
+       IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(.NOT.L_LOCAL_ASPAR)) THEN
 #ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
-           allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES), stat=istat)
+!           allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES), stat=istat)
+           allocate(CAD_THE(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.1')
          END IF
          IF (FREQ_SHIFT_IMPL) THEN
-           allocate(A_SIG(MSC,MDC,NP_RES), C_SIG(MSC,MDC,NP_RES), stat=istat)
+!           allocate(A_SIG(MSC,MDC,NP_RES), C_SIG(MSC,MDC,NP_RES), stat=istat)
+           allocate(CAS_SIG(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.2')
          END IF
 #else

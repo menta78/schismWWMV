@@ -315,8 +315,8 @@
       IMPLICIT NONE
       INTEGER     :: IP, IFSTAT, SPsize
       REAL(rkind) :: BNDTMP
-      INTEGER :: STATUS(MNP)
-      INTEGER          :: idx
+      INTEGER     :: STATUS(MNP)
+      INTEGER     :: idx, PosWBAC
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
       IOBP    = 0
@@ -359,13 +359,20 @@
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1
       END DO
-      ALLOCATE( IWBNDLC(IWBMNP), stat=istat)
+      ALLOCATE( IWBNDLC(IWBMNP), IWBNDLC_REV(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+      IWBNDLC_REV=0
       idx = 0
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
           idx = idx + 1
-          IWBNDLC(idx) = IP ! Stores local wave boundary index 
+          IWBNDLC(idx) = IP ! Stores local wave boundary index
+          IF (LINHOM) THEN
+            PosWBAC=idx
+          ELSE
+            PosWBAC=1
+          END IF
+          IWBNDLC_REV(IP) = PosWBAC
         END IF
       END DO
       ! Global boundary nodes
