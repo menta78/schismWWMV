@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN_LOCAL (F, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
+      SUBROUTINE SNONLIN_LOCAL (IPP, F, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
 
 ! ----------------------------------------------------------------------
 
@@ -80,11 +80,12 @@
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
+      INTEGER, INTENT(IN)                      :: IPP
 
       INTEGER                                  :: MFR1STFR, MFRLSTFR
       INTEGER                                  :: MP, MC1, MP1, MM, MM1, MC
-      INTEGER                                  :: IJ, IG, IP, IP1, IC, IM, IM1, M 
-      INTEGER                                  :: K, K1, K2, KH, K11, K21, IJS, IJL
+      INTEGER                                  :: IJ, IG, IP1, IC, IM, IM1, M , IP
+      INTEGER                                  :: K, K1, K2, KH, K11, K21
 
       REAL(rkind) :: FTEMP,AD,DELAD,DELAP,DELAM
       REAL(rkind) :: AKMEAN,ENHFR
@@ -116,13 +117,12 @@
       IF (ISHALLO.NE.1) THEN
         IF (ISNONLIN.EQ.0) THEN
 !AR: change dep to depth to dep in WWM 
-            ENHFR = 0.75*DEP*AKMEAN
+            ENHFR = 0.75*DEP(IPP)*AKMEAN(IPP)
             ENHFR = MAX(ENHFR,.5)
             ENHFR = 1.+(5.5/ENHFR)*(1.-.833*ENHFR) * &
      &            EXP(-1.25*ENHFR)
-          ENDDO
           DO MC=1,MLSTHG
-            ENH(MC,IG) = ENHFR
+            ENH(MC,IG,1) = ENHFR
           ENDDO
         ENDIF
       ENDIF
@@ -189,7 +189,7 @@
         IF (ISHALLO.EQ.1) THEN
           FTEMP = AF11(MC)
         ELSE
-          FTEMP = AF11(MC)*ENH(MC,IG)
+          FTEMP = AF11(MC)*ENH(MC,IG,1)
         ENDIF
 
 
@@ -231,14 +231,14 @@
               DSSNL4(K2,MM) = DSSNL4(K2,MM)  + DELAM*FKLAM12
               SL(K21,MM ) = SL(K21,MM ) + AD*FKLAMM2
               SSNL4(K21,MM) = SSNL4(K21,MM) + AD*FKLAMM2
-              FL(K21,MM ) = FL(IJ,K21,MM ) + DELAM*FKLAM22
+              FL(K21,MM ) = FL(K21,MM ) + DELAM*FKLAM22
               DSSNL4(K21,MM) = DSSNL4(K21,MM) + DELAM*FKLAM22
               SL(K2 ,MM1) = SL(K2 ,MM1) + AD*FKLAMMA
               SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD*FKLAMMA
               FL(K2 ,MM1) = FL(K2 ,MM1) + DELAM*FKLAMA2
               DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM*FKLAMA2
               SL(K21,MM1) = SL(K21,MM1) + AD*FKLAMMB
-              SNL4(K21,MM1) = SSNL4(K21,MM1) + AD*FKLAMMB
+              SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD*FKLAMMB
               FL(K21,MM1) = FL(K21,MM1) + DELAM*FKLAMB2
               DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM*FKLAMB2 
               SL(K1 ,MP ) = SL(K1 ,MP ) + AD*FKLAMP1
@@ -247,13 +247,13 @@
               DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
               SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
               SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-              FL(K11,MP ) = FL(K11,MP ) + DELAP(IJ)*FKLAP22
-              DSSNL4(K11,MP) = DSSNL4(K11,MP) + AD(IJ)*FKLAMP2
-              SL(K1 ,MP1) = SL(K1 ,MP1) + AD(IJ)*FKLAMPA
-              SSNL4(K1,MP1) = SSNL4(K1,MP1) + AD(IJ)*FKLAMPA 
-              FL(K1 ,MP1) = FL(K1 ,MP1) + DELAP(IJ)*FKLAPA2
+              FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
+              DSSNL4(K11,MP) = DSSNL4(K11,MP) + AD*FKLAMP2
+              SL(K1 ,MP1) = SL(K1 ,MP1) + AD*FKLAMPA
+              SSNL4(K1,MP1) = SSNL4(K1,MP1) + AD*FKLAMPA 
+              FL(K1 ,MP1) = FL(K1 ,MP1) + DELAP*FKLAPA2
               DSSNL4(K1,MP1) = DSSNL4(K1,MP1) + DELAP*FKLAPA2
-              SL(K11,MP1) = SL(K11,MP1) + AD(IJ)*FKLAMPB
+              SL(K11,MP1) = SL(K11,MP1) + AD*FKLAMPB
               SSNL4(K11,MP1) = SSNL4(K11,MP1) + AD*FKLAMPB
               FL(K11,MP1) = FL(K11,MP1) + DELAP*FKLAPB2
               DSSNL4(K11,MP1) = DSSNL4(K11,MP1) + DELAP*FKLAPB2
@@ -269,10 +269,10 @@
               K11 = K11W(K,KH)
               K21 = K21W(K,KH)
 
-              SAP = GW1*F(IJ,K1 ,IP ) + GW2*F(IJ,K11,IP ) &
-     &            + GW3*F(IJ,K1 ,IP1) + GW4*F(IJ,K11,IP1)
-              SAM = GW5*F(IJ,K2 ,IM ) + GW6*F(IJ,K21,IM ) &
-     &            + GW7*F(IJ,K2 ,IM1) + GW8*F(IJ,K21,IM1)
+              SAP = GW1*F(K1 ,IP ) + GW2*F(K11,IP ) &
+     &            + GW3*F(K1 ,IP1) + GW4*F(K11,IP1)
+              SAM = GW5*F(K2 ,IM ) + GW6*F(K21,IM ) &
+     &            + GW7*F(K2 ,IM1) + GW8*F(K21,IM1)
               FIJ = F(K  ,IC )*FTAIL
               FAD1 = FIJ*(SAP+SAM)
               FAD2 = FAD1-2.*SAP*SAM
@@ -286,8 +286,6 @@
 !              WRITE(111117,'(6F20.10)') FAD1,FAD2,FCEN,DELAD(IJ)
 !              WRITE(111117,'(5F20.15)') DELAM(IJ),FIJ
 !              WRITE(111117,'(5F30.20)') FCEN, FTEMP(IJ), FIJ, FTAIL
-              ENDDO
-
               SL(K2 ,MM ) = SL(K2 ,MM ) + AD*FKLAMM1
               SSNL4(K2,MM) = SSNL4(K2,MM) + AD*FKLAMM1
               FL(K2 ,MM ) = FL(K2 ,MM ) + DELAM*FKLAM12
@@ -318,13 +316,12 @@
      &                               + DELAP*FKLAP12
                       DSSNL4(K1,MP) = DSSNL4(K1,MP) &
      &                               + DELAP*FKLAP12
-                      SL(K11,MP ) = SL(IJ,K11,MP ) + AD*FKLAMP2
+                      SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
                       SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-                      FL(K11,MP ) = FL(IJ,K11,MP ) &
-     &                               + DELAP(IJ)*FKLAP22
+                      FL(K11,MP ) = FL(K11,MP ) &
+     &                               + DELAP*FKLAP22
                       DSSNL4(K11,MP) = DSSNL4(K11,MP) &
-     &                               + DELAP(IJ)*FKLAP22
-                    ENDDO
+     &                               + DELAP*FKLAP22
                     IF (MP1.LE.NFRE) THEN
                       SL(K1 ,MP1) = SL(K1 ,MP1) &
      &                               + AD*FKLAMPA
@@ -368,9 +365,9 @@
               FAD1 = FAD1+FAD2
               FCEN = FTEMP*FIJ
               AD= FAD2*FCEN
-              DELAD(IJ) = FAD1*FTEMP
-              DELAP(IJ) = (FIJ-2.*SAM)*DAL1*FCEN
-              DELAM(IJ) = (FIJ-2.*SAP)*DAL2*FCEN
+              DELAD = FAD1*FTEMP
+              DELAP = (FIJ-2.*SAM)*DAL1*FCEN
+              DELAM = (FIJ-2.*SAP)*DAL2*FCEN
 
               IF (MM1.GE.1) THEN
                 SL(K2 ,MM1) = SL(K2 ,MM1) + AD*FKLAMMA
@@ -391,7 +388,7 @@
               SSNL4(K1,MP) = SSNL4(K1,MP) + AD*FKLAMP1
               FL(K1 ,MP ) = FL(K1 ,MP ) + DELAP*FKLAP12
               DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
-              SL(K11,MP ) = SL(IJ,K11,MP ) + AD*FKLAMP2
+              SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
               SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
               FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
               DSSNL4(K11,MP) = DSSNL4(K11,MP) + DELAP*FKLAP22
