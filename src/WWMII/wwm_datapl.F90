@@ -944,7 +944,10 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
-         LOGICAL                :: L_LOCAL_ASPAR = .FALSE.
+         INTEGER                :: ASPAR_LOCAL_LEVEL = 2
+                             ! value 2 CAD_THE, CAS_THE and ASPAR_JAC used
+                             ! value 1 ASPAR_JAC used
+                             ! value 0 no allocation
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
          REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
 

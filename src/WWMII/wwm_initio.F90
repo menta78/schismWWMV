@@ -78,7 +78,7 @@
          DAC_SIG = zero
          DAC_SOU = zero
        END IF
-       IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(.NOT.L_LOCAL_ASPAR)) THEN
+       IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 2)) THEN
 #ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
 !           allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES), stat=istat)
