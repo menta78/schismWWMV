@@ -1,4 +1,4 @@
-    SUBROUTINE IMPLSCH (FL3, FL, IG, &
+    SUBROUTINE IMPLSCH_LOCAL (FL3, FL, IG, &
      &                    THWOLD, USOLD, &
      &                    TAUW, Z0OLD, &
      &                    ROAIRO, ZIDLOLD, &
@@ -290,7 +290,7 @@
 !           ---------------------------
       CALL SNONLIN (FL3, FL, IJS, IJL, IG, SL, AKMEAN(IJS), SSNL4, DSSNL4)
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SNON'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SNONLIN CALLED'
         CALL FLUSH (IU06)
@@ -409,24 +409,22 @@
         ENDDO
         DO M=MIJ+1,NFRE
           FCONST(M) = 0.
-          TEMP(M) = TEMP2(IJ,M)*GADIAG
+          TEMP(M) = TEMP2(M)*GADIAG
       !WRITE(111113,'(I10,3F15.10)')M,FCONST(IJ,M),TEMP(IJ,M),GADIAG(IJ)
         ENDDO
 
 
       DO K=1,NANG
         GADIAG = FL3(K,MIJ)
-      !    WRITE(111113,'(I10,10F20.10)') K, FL3(IJ,K,MIJ(IJ))
+      !    WRITE(111113,'(I10,10F20.10)') K, FL3(K,MIJ)
         DO M=1,NFRE
-          DO IJ=IJS,IJL
-!AR: ICE            FLLOWEST = FLMINFR(JU(IJ),M)*SPRD(IJ,K)
-!AR: ICE            FL3(IJ,K,M) = GADIAG(IJ)*TEMP(IJ,M) &
-!AR: ICE     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(IJ,M)
+!AR: ICE            FLLOWEST = FLMINFR(JU),M)*SPRD(K)
+!AR: ICE            FL3(IJ,K,M) = GADIAG*TEMP(M) &
+!AR: ICE     &       + MAX(FL3(IJ,K,M),FLLOWEST)*FCONST(M)
             FL3(K,M) = GADIAG*TEMP(M) &
      &       + FL3(K,M)*FCONST(M)
-!            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(IJ,K,M),&
-!     &                   TEMP(IJ,M),GADIAG(IJ),FCONST(IJ,M)
-          ENDDO
+!            WRITE(111113,'(2I10,10F20.10)')K,M,FL3(K,M),&
+!     &                   TEMP(M),GADIAG,FCONST(M)
         ENDDO
       ENDDO
 
@@ -447,19 +445,19 @@
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SINPUT 2'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL)
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-      CALL STRESSO (FL3, IJS, IJL, THWNEW, USNEW, Z0NEW, &
+      CALL STRESSO (FL3, THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, MIJ, &
      &              LCFLX)
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER STRESSO 2'
-      IF (LOUTWAM) WRITE(111113,'(I10,15F15.7)') IJS, IJL, SUM(FL3), &
+      IF (LOUTWAM) WRITE(111113,'(I10,15F15.7)') SUM(FL3), &
      &              THWNEW, USNEW, Z0NEW, &
      &              ROAIRN, TAUW, TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
@@ -471,8 +469,8 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW(IJS), TAUW(IJS), USNEW(IJS), Z0NEW(IJS), &
-     & IJS, IJL, ILEV)
+      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, &
+     & ILEV)
 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED AT THE END'
@@ -480,18 +478,18 @@
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER AIRSEA 3'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, U10NEW(IJS), TAUW(IJS), &
-      &                              USNEW(IJS), Z0NEW(IJS), ILEV
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW, TAUW, &
+      &                              USNEW, Z0NEW, ILEV
 
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IJS, IJL, IG, SL, F1MEAN, XKMEAN, &
+        CALL SDISSIP (FL3 ,FL, IG, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN, &
+        CALL SDISS_ARDH_VEC (FL3 ,FL, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER DISSIP' 
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(FL3), SUM(SL) 
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(FL3), SUM(SL) 
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: SDISSIP CALLED AT THE END'
         CALL FLUSH (IU06)
@@ -501,15 +499,13 @@
 !           -------------------------------------------------------
 
       IF(LCFLX) THEN
-        DO IJ=IJS,IJL
-          TAU       = ROAIRN(IJ)*USNEW(IJ)**2
-          XN        = ROAIRN(IJ)*USNEW(IJ)**3
+        TAU       = ROAIRN*USNEW**2
+        XN        = ROAIRN*USNEW**3
 
-          PHIDIAG    = PHIAWDIAG(IJ)+PHIAWUNR(IJ)
-          PHIEPS(IJ) = (PHIOC(IJ)-PHIDIAG)/XN 
-          PHIAW(IJ)  = (PHIWA(IJ)+PHIAWUNR(IJ))/XN
-          TAUOC(IJ)  = (TAU-TAUWLF(IJ)-TAUWD(IJ))/TAU
-        ENDDO
+        PHIDIAG    = PHIAWDIAG+PHIAWUNR
+        PHIEPS = (PHIOC-PHIDIAG)/XN 
+        PHIAW  = (PHIWA+PHIAWUNR)/XN
+        TAUOC  = (TAU-TAUWLF-TAUWD)/TAU
       ENDIF
 
 ! ----------------------------------------------------------------------
@@ -517,23 +513,17 @@
 !*    2.6 SAVE WINDS INTO INTERMEDIATE STORAGE.
 !         -------------------------------------
 
-      DO IJ=IJS,IJL
-        USOLD(IJ) = USNEW(IJ)
-        Z0OLD(IJ) = Z0NEW(IJ)
-        ROAIRO(IJ) = ROAIRN(IJ)
-        ZIDLOLD(IJ) = ZIDLNEW(IJ)
-      ENDDO
-
-      DO IJ=IJS,IJL
-        UFRIC(IJ) = USNEW(IJ)
-        Z0(IJ)    = Z0NEW(IJ)
-        CD(IJ)    = (USNEW(IJ)/U10NEW(IJ))**2
-        ALPHA_CH(IJ) = G*Z0NEW(IJ)/USNEW(IJ)**2
-      ENDDO
+        USOLD = USNEW
+        Z0OLD = Z0NEW
+        ROAIRO = ROAIRN
+        ZIDLOLD = ZIDLNEW
+        UFRIC = USNEW
+        Z0    = Z0NEW
+        CD   = (USNEW/U10NEW)**2
+        ALPHA_CH = G*Z0NEW/USNEW**2
 
 ! ----------------------------------------------------------------------
 
       !IF (LHOOK) CALL DR_HOOK('IMPLSCH',1,ZHOOK_HANDLE)
 
-      RETURN
-      END SUBROUTINE IMPLSCH
+      END SUBROUTINE IMPLSCH_LOCAL
