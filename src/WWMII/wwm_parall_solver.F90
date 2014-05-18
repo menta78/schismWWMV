@@ -3256,7 +3256,7 @@
         END DO
       END IF
 
-      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
           B(:,:,IP)             = B(:,:,IP) + IMATRAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
@@ -3688,18 +3688,23 @@
       REAL(rkind) :: eVal
       IMATRA=0
       IMATDA=0
-      IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-        IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-          CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
-        ENDIF
-      ELSE
-        IF (LSOUBOUND) THEN ! Source terms on boundary ...
+      IF (LNONL) THEN
+        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
           IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-            CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
+            CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
+          ENDIF
+        ELSE
+          IF (LSOUBOUND) THEN ! Source terms on boundary ...
+            IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+              CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
+            ENDIF
           ENDIF
         ENDIF
-      ENDIF
-      eVal = DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP)
+      ELSE
+        IMATDA = IMATDAA(:,:,IP)
+        IMATRA = IMATRAA(:,:,IP)
+      END IF
+      eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
       IMATRA = IMATRA * eVal
       IMATDA = IMATDA * eVal
       END SUBROUTINE
