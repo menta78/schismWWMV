@@ -1,7 +1,7 @@
       SUBROUTINE STRESSO_LOCAL (IPP, F, THWNEW, USNEW, Z0NEW, &
      &                    ROAIRN, TAUW, TAUWLF, PHIAW, &
      &                    PHIAWDIAG, PHIAWUNR, SL, & 
-     &                    MIJ, TAUHF, TAUHFT, TAUHFT2, LCFLX)
+     &                    MIJ, LCFLX)
 
 ! ----------------------------------------------------------------------
 
@@ -89,6 +89,7 @@
      &                      IUSTAR, IALPHA, USTARM, RKIND, IPHYS, ILEVTAIL, &
      &                      DELUST, DELALP, TAUT, DELTAUW, ITAUMAX, TAUWSHELTER, &
      &                      DELU, JUMAX, ALPHA, XNLEV, XKAPPA, FR5, DELTAIL, &
+     &                      TAUHF, TAUHFT, TAUHFT2, &
      &                      DELTH => DDIR, LOUTWAM, TESTNODE, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -111,12 +112,12 @@
       REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW, &
      &                           TAUX, TAUY, TAUPX, TAUPY, USDIRP, &
      &                           TAUWLF, PHIAW, PHIAWDIAG, &
-     &                           PHIAWUNR, TAUHF, TAUHFT, TAUHFT2
+     &                           PHIAWUNR
       REAL(rkind) :: CONST0
       LOGICAL :: LCFLX
 
 ! ----------------------------------------------------------------------
-      INTEGER :: IJ, IJS, IJL, M, K
+      INTEGER :: M, K
       INTEGER :: I, J, II
       REAL(rkind) :: CONST, ROG, DFIMLOC, CNST
       REAL(rkind) :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, TAU1
@@ -261,7 +262,7 @@
      &       + ( TAUHFT(I  ,J+1,MIJ)*DELI2 + &
      &           TAUHFT(I+1,J+1,MIJ)*DELI1 )*DELJ1 
 
-        TAUHF = CONST0*TEMP1*UST2*TAU1
+        TAUHF(IPP) = CONST0*TEMP1*UST2*TAU1
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,2F20.10,2I10)') 'T1', XI, XJ, I, J
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,4F20.10)') 'T2', DELI2, DELI1, DELJ2, DELJ1
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,4F20.10)') 'T3', CONST0, TEMP1, UST2, TAU1
@@ -297,16 +298,16 @@
      &           (TAUHFT2(I  ,J+1,II+1)*DELI2 + &
      &            TAUHFT2(I+1,J+1,II+1)*DELI1)*DELJ1 ) * DELK1
 
-        TAUHF = CONST0*TEMP1*UST2*TAU1
+        TAUHF(IPP) = CONST0*TEMP1*UST2*TAU1
       ENDIF
 
-      XSTRESS = XSTRESS+TAUHF*SIN(USDIRP)
-      YSTRESS = YSTRESS+TAUHF*COS(USDIRP)
+      XSTRESS = XSTRESS+TAUHF(IPP)*SIN(USDIRP)
+      YSTRESS = YSTRESS+TAUHF(IPP)*COS(USDIRP)
       TAUW = SQRT(XSTRESS**2+YSTRESS**2)
 
       TAUW = MIN(TAUW,UST2-EPS1)
       TAUW = MAX(TAUW,0.)
-       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(4F15.8)') XSTRESS, YSTRESS , TAUW, TAUHF
+       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(4F15.8)') XSTRESS, YSTRESS , TAUW, TAUHF(IPP)
 !
 !*    4. UNRESOLVED PART ENERGY FLUX.
 !        ----------------------------

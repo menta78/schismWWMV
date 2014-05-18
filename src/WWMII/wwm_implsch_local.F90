@@ -1,11 +1,4 @@
-    SUBROUTINE IMPLSCH_LOCAL (IPP, FL3, FL, IG, &
-     &                    THWOLD, USOLD, &
-     &                    TAUW, Z0OLD, &
-     &                    ROAIRO, ZIDLOLD, &
-     &                    U10NEW, THWNEW, USNEW, &
-     &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST)
-
+    SUBROUTINE IMPLSCH_LOCAL (IPP, FL3, FL, IG, SL)
 ! ----------------------------------------------------------------------
 
 !**** *IMPLSCH* - IMPLICIT SCHEME FOR TIME INTEGRATION OF SOURCE
@@ -132,6 +125,8 @@
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
      &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, ITEST, LCFLX,&
+     &                      THWOLD, THWNEW, Z0OLD, Z0NEW, ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW, U10NEW, USNEW, &
+     &                      U10OLD, RNLCOEF, FTRF, FMEANWS, USOLD, TAUW, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
@@ -145,17 +140,14 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IPP
+      
+      INTEGER :: FCONST(NFRE)
 
 ! ----------------------------------------------------------------------
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
       REAL(rkind) :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(NANG,NFRE)
-      REAL(rkind),DIMENSION(NFRE) :: FCONST 
-      REAL(rkind) :: THWOLD,USOLD,Z0OLD,TAUW, &
-     &                           ROAIRO,ZIDLOLD
-      REAL(rkind) :: U10NEW,THWNEW,USNEW,Z0NEW, &
-     &                           ROAIRN,ZIDLNEW
       REAL(rkind),DIMENSION(NANG,NFRE)  :: SSDS,DSSDS,SSBF,DSSBF,SSNL4,DSSNL4,SSIN,DSSIN
 
 ! ----------------------------------------------------------------------
@@ -166,9 +158,9 @@
       REAL(rkind) :: GTEMP1, GTEMP2, FLHAB, XJ, DELT, DELT5, XIMP, AKM1
       REAL(rkind) :: AK2VGM1, XN, PHIDIAG, TAU
       REAL(rkind), DIMENSION(NFRE) :: DELFL
-      REAL(rkind) :: EMEANWS, FMEANWS, USFM, GADIAG 
+      REAL(rkind) :: EMEANWS, USFM, GADIAG 
       REAL(rkind) :: F1MEAN, AKMEAN, XKMEAN
-      REAL(rkind) :: PHIEPS, TAUOC, PHIAW
+      REAL(rkind) :: PHIEPS, TAUOC, PHIAW, WSTAR
       REAL(rkind) :: TAUWLF,TAUWD,PHIAWDIAG,PHIAWUNR,PHIOC,PHIWA 
       REAL(rkind), DIMENSION(NANG) :: SPRD
       REAL(rkind), DIMENSION(NFRE) :: TEMP, TEMP2
@@ -198,20 +190,20 @@
 !*    2.2 COMPUTE MEAN PARAMETERS.
 !        ------------------------
 
-      CALL FKMEAN(FL3, EMEAN, FMEAN, &
+      CALL FKMEAN_LOCAL(IPP, FL3, EMEAN(IPP), FMEAN(IPP), &
      &            F1MEAN, AKMEAN, XKMEAN)
 
       IF (LOUTWAM) WRITE(111113,*) 'HS and TM'
-      IF (LOUTWAM) WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN), FMEAN
+      IF (LOUTWAM) WRITE(111113,'(10F15.7)') 4*SQRT(EMEAN(IPP)), FMEAN(IPP)
       !WRITE(55555,*) 4*SQRT(EMEAN(IJS)), FMEAN(IJS)
 
       IF (LOUTWAM) WRITE(111113,*) 'DIRECTIONAL PROPERTIES'
       DO K=1,NANG
-        SPRD(K)=MAX(0.,COS(TH(K)-THWNEW))**2
+        SPRD(K)=MAX(0.,COS(TH(K)-THWNEW(IPP)))**2
 !        WRITE(111113,'(I10,10F15.7)') K, SPRD(IJ,K), TH(K), THWNEW(IJ) 
       ENDDO
 
-      XJ=U10NEW/DELU
+      XJ=U10NEW(IPP)/DELU
       JU=MIN(JUMAX, MAX(NINT(XJ),1))
 
       IF (LOUTWAM) WRITE(111113,*) 'SOME THINKS THAT DO NOT NEED TO BE ALWAYS RECOMPUTED'
@@ -228,7 +220,7 @@
 
       
       ILEV=1
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, &
+      CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP), &
      &   ILEV)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
@@ -236,18 +228,18 @@
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER AIRSEA 1'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW, TAUW, &
-      &                              USNEW, Z0NEW, ILEV
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW(IPP), TAUW(IPP), &
+      &                              USNEW(IPP), Z0NEW(IPP), ILEV
 
 !*    2.3.2 ADD SOURCE FUNCTIONS AND WAVE STRESS.
 !           -------------------------------------
 
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &             ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSIN)
       ELSE
-        CALL SINPUT_ARD (FL3, FL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN)
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &             ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSIN)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SINPUT 1'
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL)
@@ -257,13 +249,13 @@
       ENDIF
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS_LOCAL(IPP,FL3,EMEANWS,FMEANWS(IPP),XLLWS)
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(FMEAN, FMEANWS, MIJ)
+      CALL FRCUTINDEX_LOCAL(IPP, FMEAN(IPP), FMEANWS(IPP), MIJ)
 
-      CALL STRESSO (FL3, THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+      CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &              ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, &
      &              MIJ, LCFLX)
       IF (ITEST.GE.2) THEN
@@ -273,16 +265,16 @@
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER STRESSO 1'
       IF (LOUTWAM) WRITE(111113,'(2I10,15F15.7)') SUM(FL3), &
-     &              THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &              ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
      &              MIJ
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, &
+      CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP), &
      &             ILEV)
       IF (LOUTWAM) WRITE(111113,*) 'AFTER AIRSEA 2'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW, TAUW, &
-     &             USNEW, Z0NEW
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW(IPP), TAUW(IPP), &
+     &             USNEW(IPP), Z0NEW(IPP)
       IF (ITEST.GE.2) THEN
         WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED'
         CALL FLUSH (IU06)
@@ -290,7 +282,7 @@
 
 !     2.3.3 ADD THE OTHER SOURCE TERMS.
 !           ---------------------------
-      CALL SNONLIN (FL3, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
+      CALL SNONLIN_LOCAL (IPP, FL3, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SNON'
       IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') SUM(FL), SUM(SL)
       IF (ITEST.GE.2) THEN
@@ -298,10 +290,10 @@
         CALL FLUSH (IU06)
       ENDIF
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IG, SL, F1MEAN, XKMEAN,&
+        CALL SDISSIP_LOCAL (IPP, FL3 ,FL, IG, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, SL, F1MEAN, XKMEAN,&
+        CALL SDISS_ARDH_VEC_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER DISSIP' 
@@ -330,8 +322,8 @@
       DO M=1,NFRE
         DELFL(M) = COFRM4(M)*DELT
       ENDDO
-      USFM = USNEW*MAX(FMEANWS,FMEAN(IPP))
-      IF (LOUTWAM) WRITE(111113,'(4F20.10)') USNEW, FMEANWS, FMEAN(IPP)
+      USFM = USNEW(IPP)*MAX(FMEANWS(IPP),FMEAN(IPP))
+      IF (LOUTWAM) WRITE(111113,'(4F20.10)') USNEW(IPP), FMEANWS(IPP), FMEAN(IPP)
       DO M=1,NFRE
         TEMP(M) = USFM*DELFL(M)
 !        WRITE(111113,'(4F20.10)') DELFL(M), COFRM4(M), DELT
@@ -367,17 +359,17 @@
 !*    2.5.1 COMPUTE MEAN PARAMETERS.
 !           ------------------------
 
-      CALL FKMEAN(FL3, EMEAN, FMEAN, &
+      CALL FKMEAN_LOCAL(IPP, FL3, EMEAN(IPP), FMEAN(IPP), &
      &            F1MEAN, AKMEAN, XKMEAN)
 
 !     MEAN FREQUENCY CHARACTERISTIC FOR WIND SEA
-      CALL FEMEANWS(FL3,EMEANWS,FMEANWS,XLLWS)
+      CALL FEMEANWS_LOCAL(IPP, FL3,EMEANWS,FMEANWS(IPP),XLLWS)
 
 !*    2.5.3 COMPUTE TAIL ENERGY RATIOS.
 !           ---------------------------
 
 !     COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
-      CALL FRCUTINDEX(FMEAN, FMEANWS, MIJ)
+      CALL FRCUTINDEX_LOCAL(IPP, FMEAN(IPP), FMEANWS(IPP), MIJ)
 
       IF(ISHALLO.EQ.1) THEN
         DO M=1,NFRE
@@ -396,7 +388,7 @@
 
       GADIAG = 1./TEMP2(MIJ)
       IF (LOUTWAM) WRITE(111113,*) 'AFTER MEAN PARAMETER'
-      IF (LOUTWAM) WRITE(111113,'(I10,5F20.10)') MIJ, AKMEAN, FMEANWS, TEMP2(MIJ), GADIAG
+      IF (LOUTWAM) WRITE(111113,'(I10,5F20.10)') MIJ, AKMEAN, FMEANWS(IPP), TEMP2(MIJ), GADIAG
 
 
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
@@ -437,11 +429,14 @@
 !           -------------------------------------------------------
 
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT (FL3, FL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSIN) 
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &             ROAIRN(IPP), WSTAR, SL, XLLWS, SSIN, DSSIN) 
+
+!BUG ALARM  ... in the orignial code u have ther ZIDLNEW which is not used in sinput instead wstar is passed ...
+
       ELSE
-        CALL SINPUT_ARD (FL3, FL, THWNEW, USNEW, Z0NEW, &
-     &             ROAIRN, ZIDLNEW, SL, XLLWS, SSIN, DSSDS)
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &             ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSDS)
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER SINPUT 2'
@@ -451,15 +446,15 @@
         WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
         CALL FLUSH (IU06)
       ENDIF
-      CALL STRESSO (FL3, THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+      CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &              ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SL, MIJ, &
      &              LCFLX)
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER STRESSO 2'
       IF (LOUTWAM) WRITE(111113,'(I10,15F15.7)') SUM(FL3), &
-     &              THWNEW, USNEW, Z0NEW, &
-     &              ROAIRN, TAUW, TAUWLF, PHIWA, &
+     &              THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), &
+     &              ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, &
      &              PHIAWDIAG, PHIAWUNR, SUM(SL), &
      &              MIJ
 
@@ -469,7 +464,7 @@
         CALL FLUSH (IU06)
       ENDIF
 
-      CALL AIRSEA (U10NEW, TAUW, USNEW, Z0NEW, &
+      CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP), &
      & ILEV)
 
       IF (ITEST.GE.2) THEN
@@ -478,14 +473,14 @@
       ENDIF
 
       IF (LOUTWAM) WRITE(111113,*) 'AFTER AIRSEA 3'
-      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW, TAUW, &
-      &                              USNEW, Z0NEW, ILEV
+      IF (LOUTWAM) WRITE(111113,'(I10,10F15.7)') U10NEW(IPP), TAUW(IPP), &
+      &                              USNEW(IPP), Z0NEW(IPP), ILEV
 
       IF(IPHYS.EQ.0) THEN
-        CALL SDISSIP (FL3 ,FL, IG, SL, F1MEAN, XKMEAN, &
+        CALL SDISSIP_LOCAL (IPP, FL3 ,FL, IG, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ELSE
-        CALL SDISS_ARDH_VEC (FL3 ,FL, SL, F1MEAN, XKMEAN, &
+        CALL SDISS_ARDH_VEC_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN, &
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
       IF (LOUTWAM) WRITE(111113,*) 'AFTER DISSIP' 
@@ -499,8 +494,8 @@
 !           -------------------------------------------------------
 
       IF(LCFLX) THEN
-        TAU       = ROAIRN*USNEW**2
-        XN        = ROAIRN*USNEW**3
+        TAU       = ROAIRN(IPP)*USNEW(IPP)**2
+        XN        = ROAIRN(IPP)*USNEW(IPP)**3
 
         PHIDIAG    = PHIAWDIAG+PHIAWUNR
         PHIEPS = (PHIOC-PHIDIAG)/XN 
@@ -513,14 +508,14 @@
 !*    2.6 SAVE WINDS INTO INTERMEDIATE STORAGE.
 !         -------------------------------------
 
-        USOLD = USNEW
-        Z0OLD = Z0NEW
-        ROAIRO = ROAIRN
-        ZIDLOLD = ZIDLNEW
-        UFRIC = USNEW
-        Z0    = Z0NEW
-        CD   = (USNEW/U10NEW)**2
-        ALPHA_CH = G*Z0NEW/USNEW**2
+        USOLD(IPP,1) = USNEW(IPP)
+        Z0OLD(IPP,1) = Z0NEW(IPP)
+        ROAIRO(IPP,1) = ROAIRN(IPP)
+        ZIDLOLD(IPP,1) = ZIDLNEW(IPP)
+        UFRIC(IPP) = USNEW(IPP)
+        Z0(IPP)    = Z0NEW(IPP)
+        CD(IPP)   = (USNEW(IPP)/U10NEW(IPP))**2
+        ALPHA_CH(IPP) = G*Z0NEW(IPP)/USNEW(IPP)**2
 
 ! ----------------------------------------------------------------------
 
