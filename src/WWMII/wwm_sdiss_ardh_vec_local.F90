@@ -1,4 +1,4 @@
-      SUBROUTINE SDISS_ARDH_VEC (IPP, F, FL, SL, F1MEAN, XKMEAN, &
+      SUBROUTINE SDISS_ARDH_VEC_LOCAL (IPP, F, FL, SL, F1MEAN, XKMEAN, &
      &                    PHIEPS, TAUWD, M, SSDS, DSSDS)
 ! ----------------------------------------------------------------------
 
@@ -457,4 +457,4 @@
       !IF (LHOOK) CALL DR_HOOK('SDISSIP_ARDH_VEC',1,ZHOOK_HANDLE)
 
       RETURN
-      END SUBROUTINE SDISS_ARDH_VEC
+      END SUBROUTINE SDISS_ARDH_VEC_LOCAL

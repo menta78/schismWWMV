@@ -1,4 +1,4 @@
-      SUBROUTINE SINPUT (IPP, F, FL, THWNEW, USNEW, Z0NEW, &
+      SUBROUTINE SINPUT_LOCAL (IPP, F, FL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, XLLWS, SSIN, DSSIN)
 ! ----------------------------------------------------------------------
 
@@ -277,4 +277,4 @@
       !IF (LHOOK) CALL DR_HOOK('SINPUT',1,ZHOOK_HANDLE)
 
       RETURN
-      END SUBROUTINE SINPUT
+      END SUBROUTINE SINPUT_LOCAL

@@ -1045,10 +1045,9 @@
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
 !         REAL(rkind), ALLOCATABLE     :: DELFL(:)
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
-         REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
          REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
-         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:), FMEANWS(:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:), FMEANWS(:), USOLD(:,:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
          INTEGER, ALLOCATABLE         :: INLCOEF(:,:), MIJ(:)

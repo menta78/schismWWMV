@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEANWS (F, EM, FM, XLLWS)
+      SUBROUTINE FEMEANWS_LOCAL (IPP, F, EM, FM, XLLWS)
 
 ! ----------------------------------------------------------------------
 
@@ -64,7 +64,9 @@
 
       IMPLICIT NONE
 
-      INTEGER :: M,K,IJS,IJL
+      INTEGER, INTENT(IN) :: IPP
+
+      INTEGER :: M,K
       REAL(rkind) :: DELT25, DELT2, CM, CHECKTA
       REAL(rkind) :: F(NANG,NFRE)
       REAL(rkind) :: TEMP2, EM, FM, THRESHOLD
@@ -109,7 +111,7 @@
 
       !IF (LHOOK) CALL DR_HOOK('FEMEANWS',1,ZHOOK_HANDLE)
 
-      END SUBROUTINE FEMEANWS
+      END SUBROUTINE FEMEANWS_LOCAL
 ! ----------------------------------------------------------------------
 !
 ! ----------------------------------------------------------------------
