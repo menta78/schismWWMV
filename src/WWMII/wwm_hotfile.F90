@@ -512,7 +512,6 @@ MODULE wwm_hotfile_mod
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
           iret=nf90_inq_varid(ncid, "ac", ac_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
-          IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 14')
           DO IP=1,MNP
             iret=nf90_get_var(ncid,ac_id,ACLOC, start=(/1,1,iplg(IP),IHOTPOS_IN/), count = (/MSC, MDC, 1, 1 /))
             CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)

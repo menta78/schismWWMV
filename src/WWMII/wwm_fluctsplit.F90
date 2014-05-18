@@ -1113,7 +1113,7 @@
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
 !               GTEMP1 = MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
-               GTEMP2 = IMATRAA(IS,ID,IP)/MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
+               GTEMP2 = IMATRAA(IS,ID,IP)/MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
                DELFL  = COFRM4(IS)*DT4S
                USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                FLHAB  = ABS(GTEMP2*DT4S)
@@ -1311,7 +1311,7 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                !GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                !GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-               GTEMP1 = MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
+               GTEMP1 = MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
                GTEMP2 = IMATRAA(IP,IS,ID)/GTEMP1!/PI2/SPSIG(IS)
                DELT = DT4S
                XIMP = 1.0
