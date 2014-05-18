@@ -1,4 +1,4 @@
-      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL, KLEV)
+      SUBROUTINE AIRSEA_LOCAL (IPP, U10, TAUW, US, Z0, KLEV)
 
 ! ----------------------------------------------------------------------
 
@@ -64,18 +64,20 @@
      &                      ZERO, ONE, THR
 
       IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: IPP
 ! ----------------------------------------------------------------------
-      REAL(rkind),INTENT(IN)  :: U10(IJS:IJL),TAUW(IJS:IJL)
-      REAL(rkind),INTENT(OUT) :: US(IJS:IJL),Z0(IJS:IJL)
-      INTEGER, INTENT(IN)     :: IJS, IJL, KLEV
+      REAL(rkind),INTENT(IN)  :: U10,TAUW
+      REAL(rkind),INTENT(OUT) :: US,Z0
+      INTEGER, INTENT(IN)     :: KLEV
 !      REAL(KIND=JPRB) ::ZHOOK_HANDLE
-      INTEGER                :: I, J, IJ, ILEV
+      INTEGER                :: I, J, ILEV
       REAL(rkind), PARAMETER :: EPS1 = 0.00001
       REAL(rkind)            :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1
 
 ! ----------------------------------------------------------------------
 
-      !REAL,DIMENSION(IJS:IJL) ::  U10,TAUW,US,Z0
+      !REAL,DIMENSION ::  U10,TAUW,US,Z0
 !      REAL ZHOOK_HANDLE
 
 ! ----------------------------------------------------------------------
@@ -90,35 +92,31 @@
 !*    2. DETERMINE TOTAL STRESS FROM TABLE.
 !        ----------------------------------
 
-      DO IJ=IJS,IJL
-        XI      = SQRT(TAUW(IJ))/DELTAUW
-        I       = MIN ( ITAUMAX-1, INT(XI) )
-        DELI1   = MIN(1.,XI - REAL(I))
-        DELI2   = 1. - DELI1
-        XJ      = U10(IJ)/DELU
-        J       = MIN ( JUMAX-1, INT(XJ) )
-        DELJ1   = MIN(1.,XJ - REAL(J))
-        DELJ2   = 1. - DELJ1
-        US(IJ)  = (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2 &
-     &       +(TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111115,'(2I10,5F15.8)') I, ITAUMAX, XI, TAUW(IJ), DELTAUW 
-      ENDDO
+      XI      = SQRT(TAUW)/DELTAUW
+      I       = MIN ( ITAUMAX-1, INT(XI) )
+      DELI1   = MIN(1.,XI - REAL(I))
+      DELI2   = 1. - DELI1
+      XJ      = U10/DELU
+      J       = MIN ( JUMAX-1, INT(XJ) )
+      DELJ1   = MIN(1.,XJ - REAL(J))
+      DELJ2   = 1. - DELJ1
+      US  = (TAUT(I,J,ILEV)*DELI2 + TAUT(I+1,J,ILEV)*DELI1)*DELJ2 &
+   &       +(TAUT(I,J+1,ILEV)*DELI2 + TAUT(I+1,J+1,ILEV)*DELI1)*DELJ1
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111115,'(2I10,5F15.8)') I, ITAUMAX, XI, TAUW, DELTAUW 
 
 !*    3. DETERMINE ROUGHNESS LENGTH.
 !        ---------------------------
-      DO IJ=IJS,IJL
 !!!        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
 !!!        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
-        IF (US(IJ) .GT. THR) THEN
-          UST2 = US(IJ)**2
-          ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1) 
-          Z0(IJ)  = ALPHA*UST2/G/SQRT(ARG) 
-        ELSE
-          Z0(IJ) = ZERO
-        ENDIF
-        IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111115,'(5F15.8)') UST2, ARG, TAUW(IJ), EPS1,  Z0(IJ)
-      ENDDO
+      IF (US .GT. THR) THEN
+        UST2 = US**2
+        ARG = MAX(1.-(TAUW/UST2),EPS1) 
+        Z0  = ALPHA*UST2/G/SQRT(ARG) 
+      ELSE
+        Z0 = ZERO
+      ENDIF
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111115,'(5F15.8)') UST2, ARG, TAUW, EPS1, Z0
 
 !      IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
       RETURN
-      END SUBROUTINE AIRSEA
+      END SUBROUTINE AIRSEA_LOCAL

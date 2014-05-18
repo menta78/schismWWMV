@@ -1,5 +1,6 @@
       SUBROUTINE SNONLIN_LOCAL (IPP, F, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
 
+
 ! ----------------------------------------------------------------------
 
 !**** *SNONLIN* - COMPUTATION OF NONLINEAR TRANSFER RATE AND ITS
@@ -117,7 +118,7 @@
       IF (ISHALLO.NE.1) THEN
         IF (ISNONLIN.EQ.0) THEN
 !AR: change dep to depth to dep in WWM 
-            ENHFR = 0.75*DEP(IPP)*AKMEAN(IPP)
+            ENHFR = 0.75*DEP(IPP)*AKMEAN
             ENHFR = MAX(ENHFR,.5)
             ENHFR = 1.+(5.5/ENHFR)*(1.-.833*ENHFR) * &
      &            EXP(-1.25*ENHFR)
