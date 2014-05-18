@@ -92,8 +92,8 @@
 !        ---------------
 
       F1P1 = LOG10(FRATIO)
-      ISP = INT(LOG10(1.+ALAMD)/F1P1+.000001)
-      ISM = FLOOR(LOG10(1.-ALAMD)/F1P1+.0000001)
+      ISP = INT(LOG10(ONE + ALAMD)/F1P1+.000001_rkind)
+      ISM = FLOOR(LOG10(ONE - ALAMD)/F1P1+.0000001_rkind)
 
       MFRSTLW=1+ISM
       MLSTHG=NFRE-ISM
