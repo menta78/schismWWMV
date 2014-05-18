@@ -2325,7 +2325,7 @@
         ! Arrays for Jacobi-Gauss-Seidel solver
         !
         IF (AMETHOD .eq. 7) THEN
-          IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
+          IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
             ALLOCATE(LIST_ADJ_VERT(MAX_DEG,MNP), VERT_DEG(MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
             J = 0
@@ -2389,7 +2389,7 @@
             ASPAR_JAC = zero
           END IF
           !
-          IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.ge.1)) THEN
+          IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN
             ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             B_JAC = zero

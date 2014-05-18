@@ -3935,17 +3935,17 @@
       !
       ! The advection part of the equation
       !
-      IF (ASPAR_LOCAL_LEVEL .ge. 1) THEN
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
       !
-      IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+      IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       END IF
-      IF (ASPAR_LOCAL_LEVEL .ge. 1) THEN
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
           DO IP=1,NP_RES
             CALL GET_BLOCAL(IP, BLOC)
@@ -3971,7 +3971,7 @@
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
-          IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+          IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
             ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
@@ -4155,7 +4155,7 @@
         IF (L_SOLVER_NORM) THEN
           Norm_L2=0
           DO IP=1,NP_RES
-            IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+            IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
               ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
               IF (SOURCE_IMPL) THEN
                 IF (LNONL) THEN
