@@ -833,15 +833,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      SUBROUTINE WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: ncid, nbTime
+      integer, intent(inout) :: ntime_dims
       character (len = *), parameter :: UNITS = "units"
       character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
       integer iret, fifteen_dims, var_id
-      integer ntime_dims
       iret=nf90_inq_dimid(ncid, 'fifteen', fifteen_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
       IF (nbTime.gt.0) THEN
@@ -1022,7 +1022,7 @@
         CALL WRITE_PARAM_1(ncid, one_dims)
       ENDIF
       !
-      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
       IF (GRIDWRITE) THEN
 # ifdef MPI_PARALL_GRID
@@ -1462,7 +1462,7 @@
         CALL WRITE_PARAM_1(ncid, one_dims)
       ENDIF
       !
-      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       IF (LSPHE) THEN
         iret=nf90_def_var(ncid,"lon",NF90_RUNTYPE,(/ nbstat_dims/),var_id)
       ELSE

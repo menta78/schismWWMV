@@ -785,7 +785,7 @@
 !
 ! 1.a  estimation of surface roughness parameters
 !
-      Z0VISC = 0.1*nu_air/MAX(USTAR,0.0001)
+      Z0VISC = 0.1_rkind*nu_air/MAX(USTAR,0.0001_rkind)
       Z0NOZ = MAX(Z0VISC,ZZ0RAT*Z0)
       FACLN1 = U / LOG(ZZWND/Z0NOZ)
       FACLN2 = LOG(Z0NOZ)
@@ -823,17 +823,17 @@
           PVISC=(0.5-SMOOTH)
         ELSE 
           IF (RE.LE.SSWELLF(4)) THEN
-            PTURB =  0.
-            PVISC =  1.
+            PTURB =  ZERO
+            PVISC =  ONE
           ELSE
-            PTURB =  1.
-            PVISC =  0.
+            PTURB =  ONE
+            PVISC =  ZERO
             END IF
           END IF
       ELSE
-        PTURB=1.
-        PVISC=1.
-        END IF
+        PTURB=ONE
+        PVISC=ONE
+      END IF
         
 !
       IF (SSWELLF(2).EQ.0) THEN 
@@ -869,8 +869,8 @@
 
 # ifdef STAB3
       DO ISTAB=1,2
-      IF (ISTAB.EQ.1) UST=USTAR*(1.-USTARsigma)
-      IF (ISTAB.EQ.2) UST=USTAR*(1.+USTARsigma)
+      IF (ISTAB.EQ.1) UST=USTAR*(ONE - USTARsigma)
+      IF (ISTAB.EQ.2) UST=USTAR*(ONE + USTARsigma)
 # endif
       TAUX = UST**2* MyCOS(USDIR)
       TAUY = UST**2* MySIN(USDIR)
@@ -1061,16 +1061,16 @@
       ! finds the values in the tabulated stress TAUHFT
       XI=UST/DELUST
       IND  = MAX(1,MIN (IUSTAR-1, INT(XI)))
-      DELI1= MAX(MIN (1. ,XI-FLOAT(IND)),0.)
-      DELI2= 1. - DELI1
+      DELI1= MAX(MIN (ONE, XI-FLOAT(IND)),ZERO)
+      DELI2= ONE - DELI1
       XJ=MAX(0.,(G9*Z0/MAX(UST,0.00001)**2-AALPHA) / DELALP)
       J    = MAX(1 ,MIN (IALPHA-1, INT(XJ)))
-      DELJ1= MAX(0.,MIN (1.      , XJ-FLOAT(J)))
-      DELJ2=1. - DELJ1
+      DELJ1= MAX(0.,MIN (ONE     , XJ-FLOAT(J)))
+      DELJ2=ONE- DELJ1
       IF (TTAUWSHELTER.GT.0) THEN 
         XK = CONST0*TEMP / DELTAIL
          I = MIN (ILEVTAIL-1, INT(XK))
-         DELK1= MIN (1. ,XK-FLOAT(I))
+         DELK1= MIN (ONE,XK-FLOAT(I))
          DELK2=1. - DELK1
          TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1 )*DELJ2 &
                +(TAUHFT2(IND,J+1,I)*DELI2+TAUHFT2(IND+1,J+1,I)*DELI1)*DELJ1)*DELK2 &

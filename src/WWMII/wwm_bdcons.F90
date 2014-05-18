@@ -2168,7 +2168,7 @@
       !
       CALL WRITE_PARAM_1(ncid, one_dims)
       !
-      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime)
+      CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
       iret=nf90_def_var(ncid,'IOBP',NF90_INT,(/ mnp_dims /), var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
