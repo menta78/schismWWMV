@@ -52,7 +52,7 @@
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, FRATIO, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
      &                      CL11, CL21, DAL1, DAL2, MFRSTLW, MLSTHG, IU06, ACL1, ACL2, &
-     &                      MNP, &
+     &                      MNP, ONE, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
