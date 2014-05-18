@@ -68,7 +68,7 @@
 
       DO M=1,NFRE
         IF(DEP(IPP).LT.999) THEN
-          ARG = 2.* DEP(IJ)*WK(M,IPP)!TFAK(INDEP(IJ),M)
+          ARG = 2.* DEP(IPP)*WK(M,IPP)!TFAK(INDEP(IJ),M)
           ARG = MIN(ARG,50.)
           SBO = CONST*WK(M,IPP)/SINH(ARG)
 !          SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
