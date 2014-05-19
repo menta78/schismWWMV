@@ -233,7 +233,8 @@
 !AR: All crap ... defining K without using means that nobody has ever checked the results or anything else, so why coding at all?
 !AR: Mathieu can you please fix this !!!
 
-      WRITE(WINDBG%FHNDL,*) MAIN%TMJD, SEWI%TMJD-1.E-8, MAIN%TMJD .ge. SEWI%TMJD-1.E-8, MAIN%TMJD .le. SEWI%EMJD, SEWI%EMJD
+      WRITE(WINDBG%FHNDL,*) 'MAIN%TMJD=', MAIN%TMJD
+      WRITE(WINDBG%FHNDL,*) 'SEWI(TMJD,EMJD)=', SEWI%TMJD, SEWI%EMJD
       IF ( LSEWD .AND. (MAIN%TMJD .ge. SEWI%TMJD-1.E-8) .AND. (MAIN%TMJD .le. SEWI%EMJD+1.e-8) ) THEN
         IF (IWINDFORMAT == 1) THEN
 !NDM: Need to add the facility for LINTERWD
@@ -617,7 +618,6 @@
       END IF
       WRITE(WINDBG%FHNDL,*) ' sum(StatusUse)=', sum(StatusUse)
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -681,6 +681,7 @@
         END IF
       END IF
 # endif
+      SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -824,14 +825,6 @@
             WIND_TIME_IT   (IT+(IFILE-1)*NDT_WIND_FILE) = IT
           END DO
         END DO ! IFILE
-        SEWI%DELT = (WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1)) * DAY2SEC
-
-!        DO IFILE = 1, NUM_NETCDF_FILES
-!          DO IT = 1, NDT_WIND_FILE
-!            WRITE(WINDBG%FHNDL,*) IFILE, IT, WIND_TIME_ALL_FILES(IT+(IFILE-1)*NDT_WIND_FILE)
-!          END DO
-!        END DO
-
         IF (LWRITE_ORIG_WIND) THEN
           WRITE (3010, '(I10)') 0
           WRITE (3010, '(I10)') NDX_WIND * NDY_WIND
@@ -1194,9 +1187,6 @@
           END DO
         END DO ! IFILE
 110     FORMAT (I4, ' ', I4, ' ', F15.3, ' ', F15.3, ' ', a15)
-        SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
-
-        WRITE(WINDBG%FHNDL,*) 'WIND TIME STEP', SEWI%DELT, DAY2SEC, WIND_TIME_ALL_FILES(2), WIND_TIME_ALL_FILES(1)
 
         IF (LWRITE_ORIG_WIND) THEN
           WRITE (3010, '(I10)') 0
@@ -1399,7 +1389,6 @@
           CALL CT2MJD(CHRDATE,START_TIME)
           !WRITE(WINDBG%FHNDL,*) CHRDATE, START_TIME
         END DO ! IFILE
-        SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
         !
         ! Now the geographic interpolation
         !
