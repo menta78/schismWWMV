@@ -12,10 +12,13 @@
 #ifdef MPI_PARALL_GRID
        INTEGER :: IE
 #endif
-       ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
-       DX1 = zero
-       DX2 = zero
+
+       IF (DIMMODE .EQ. 1) THEN
+         ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
+         DX1 = zero
+         DX2 = zero 
+       ENDIF
 
        ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
@@ -23,9 +26,11 @@
        YP  = zero
        DEP = zero
 
-       ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
-       INVSPHTRANS = zero
+       IF (LSPHE) THEN
+         ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
+         INVSPHTRANS = zero
+       ENDIF
 
        ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
@@ -78,6 +83,7 @@
          DAC_SIG = zero
          DAC_SOU = zero
        END IF
+
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
@@ -94,6 +100,7 @@
          CALL WWM_ABORT('Needs WWM_SOLVER for JACOBI_ITERATION (AMETHOD 7)')
 #endif
        END IF
+
 #ifdef SHYFEM_COUPLING
        IF (LSHYFEM) THEN
          ALLOCATE(SHYFZETA(NLVT,MNP),NLEV(MNP), stat=istat)
@@ -117,12 +124,22 @@
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-       ALLOCATE( WK(MSC,MNP), CG(MSC,MNP), DCGDX(MNP,MSC), WC(MNP,MSC), DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), stat=istat)
+       ALLOCATE( WK(MSC,MNP), CG(MSC,MNP), WC(MNP,MSC), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
        WK = ZERO 
        CG = ZERO 
-       DWKDX = ZERO
-       DCGDX = ZERO
+       WC = ZERO
+!
+! phase velocity, wave number, group velocity, dwdh, kh
+!
+       IF (MESTR .EQ. 7) THEN
+         ALLOCATE( DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), DCGDX(MNP,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
+         DWKDX = ZERO
+         DCGDX = ZERO
+         DWKDY = ZERO
+         DCGDY = ZERO
+       ENDIF
 !
        ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
@@ -168,14 +185,22 @@
 !  convergence analysis - shared
 !
        IF (LCONV .OR. (LQSTEA .AND. LCHKCONV)) THEN
-         ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+         ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
-         IP_IS_STEADY = 0
-         IE_IS_STEADY = 0
          SUMACOLD = zero
          HSOLD  = zero
          TM02OLD = zero
          KHSOLD  = zero
+       END IF
+!
+!  new stuff not ready  
+!
+       IF (.false.) THEN
+         ALLOCATE ( IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
+         IP_IS_STEADY = 0
+         IE_IS_STEADY = 0
+         STAT2D = ZERO
        END IF
 !
 !  output - shared
@@ -227,7 +252,7 @@
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
            SXX3D = zero
            SXY3D = zero
-            SYY3D = zero
+           SYY3D = zero
          END IF
        END IF
 #endif
@@ -236,76 +261,76 @@
        HMAX = zero
        ISHALLOW = 0
 
-       ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
-       FL = ZERO
-       FL3 = ZERO
-       SL = ZERO
-
-       ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
-       FMEAN = ZERO
-       EMEAN = ZERO
-       FMEANWS = ZERO
-       MIJ = 0
-       ENH = 1.d0
-       
-       ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
-       U10OLD = ZERO
-       USOLD = ZERO
-       THWOLD = ZERO 
-       THWNEW = ZERO
-       Z0OLD = ZERO
-       Z0NEW = ZERO 
-       ROAIRO = 1.2250000238 
-       ROAIRN = 1.2250000238 
-
-       ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
-       ZIDLOLD = ZERO
-       ZIDLNEW = ZERO
-       U10NEW = ZERO
-       USNEW = ZERO
-
-       ALLOCATE( FCONST(MNP,MSC), stat=istat)
-       FCONST = 1
+       IF (LSOURCESWAM .OR. MESIN == 2) THEN
+         ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
+         FL = ZERO
+         FL3 = ZERO
+         SL = ZERO
+         ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
+         FMEAN = ZERO
+         EMEAN = ZERO
+         FMEANWS = ZERO
+         MIJ = 0
+         ENH = 1.d0
+         ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
+         U10OLD = ZERO
+         USOLD = ZERO
+         THWOLD = ZERO 
+         THWNEW = ZERO
+         Z0OLD = ZERO
+         Z0NEW = ZERO 
+         ROAIRO = 1.2250000238 
+         ROAIRN = 1.2250000238 
+         ALLOCATE( ZIDLOLD(MNP,1), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
+         ZIDLOLD = ZERO
+         ZIDLNEW = ZERO
+         U10NEW = ZERO
+         USNEW = ZERO
+         ALLOCATE( FCONST(MNP,MSC), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32e')
+         FCONST = 1
+       ENDIF
 !
 !      init source term parameter 
 !      
-       IF (IPHYS.EQ.0) THEN
-!        ECMWF PHYSICS:
-         BETAMAX = 1.20
-         ZALP    = 0.008
-         TAUWSHELTER=0.0
-         IF(MSC.GT.30) THEN
-           ALPHA   = 0.0060
-         ELSE
-           ALPHA   = 0.0075
-         ENDIF
-       ELSE IF (IPHYS.EQ.1) THEN
-!        METEO FRANCE PHYSICS:
-         BETAMAX = 1.52
-         ZALP    = 0.0060
-         TAUWSHELTER=0.6
-         IF(MSC.GT.30) THEN
-           ALPHA   = 0.0090
-         ELSE
-           ALPHA   = 0.0095
-         ENDIF
-       ELSE IF (IPHYS.EQ.2) THEN
-!       COMBINED ECMWF/METEO FRANCE PHYSICS:
-         BETAMAX = 1.52
-         ZALP    = 0.0060
-         TAUWSHELTER=0.0
-         IF(MSC.GT.30) THEN
-           ALPHA   = 0.003
-         ELSE
-           ALPHA   = 0.004
-         ENDIF
-       ELSE
+      IF (IPHYS.EQ.0) THEN
+!       ECMWF PHYSICS:
+        BETAMAX = 1.20
+        ZALP    = 0.008
+        TAUWSHELTER=0.0
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0060
+        ELSE
+          ALPHA   = 0.0075
+        ENDIF
+      ELSE IF (IPHYS.EQ.1) THEN
+!       METEO FRANCE PHYSICS:
+        BETAMAX = 1.52
+        ZALP    = 0.0060
+        TAUWSHELTER=0.6
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0090
+        ELSE
+          ALPHA   = 0.0095
+        ENDIF
+      ELSE IF (IPHYS.EQ.2) THEN
+!      COMBINED ECMWF/METEO FRANCE PHYSICS:
+        BETAMAX = 1.52
+        ZALP    = 0.0060
+        TAUWSHELTER=0.0
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.003
+        ELSE
+          ALPHA   = 0.004
+        ENDIF
+      ELSE
          CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
-      ENDIF
+      ENDIF ! IPHYS
+
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
@@ -574,6 +599,8 @@
         FLUSH(STAT%FHNDL)
       END IF
 
+      STOP 'MEMORY CHECK 2' 
+
       IF (LZETA_SETUP) THEN
 #ifdef WWM_SETUP
         CALL INIT_WAVE_SETUP
@@ -594,6 +621,7 @@
         CALL INIT_WATLEV_INPUT
       END IF
 #endif
+     
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
       FLUSH(STAT%FHNDL)
@@ -675,9 +703,7 @@
 #endif
       FLUSH(STAT%FHNDL)
 
-      DO IP=1, MNP
-        AC1(:,:,IP) = AC2(:,:,IP)
-      END DO
+      AC1 = AC2
 
       END SUBROUTINE
 !**********************************************************************

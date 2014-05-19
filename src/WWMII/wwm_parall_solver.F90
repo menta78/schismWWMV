@@ -3541,6 +3541,8 @@
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC)
       INTEGER     :: ID1, ID2, IS, ID, IP
+
+
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -3567,6 +3569,8 @@
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
+
+
       IF (FREQ_SHIFT_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -3932,9 +3936,7 @@
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
-      !
-      ! The advection part of the equation
-      !
+
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
