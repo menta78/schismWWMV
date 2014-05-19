@@ -451,10 +451,6 @@
             dspl_send_tot(idx)=MSC*MDC*(IP-1)
             idxDspl_send=idxDspl_send+1
             wwm_ListDspl_send(idxDspl_send)=IP
-#ifdef DEBUG
-            WRITE(700+myrank,*) 'Send IP=', IP, 'IPglob=', IP_glob
-            FLUSH(700+myrank)
-#endif 
           END IF
         END DO
         call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwm_p2dsend_type(iNeigh), ierr)
@@ -584,7 +580,7 @@
             dspl_send(idx)=MSC*MDC*(IP-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
         call mpi_type_commit(wwmsl_send_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -605,7 +601,7 @@
             dspl_recv(idx)=MSC*MDC*(IPmap-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,1,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
         call mpi_type_commit(wwmsl_recv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -1781,10 +1777,6 @@
             IF (DoOper == 1) THEN
               idx=idx+1
               dspl_send(idx)=MSC*MDC*(IP-1)
-# ifdef DEBUG
-              WRITE(740+myrank,*) 'idx=', idx, 'IP=', IP
-              WRITE(740+myrank,*) '  IP_glob=', IP_glob, 'IPmap=', IPmap
-# endif
             END IF
           END IF
         END DO
