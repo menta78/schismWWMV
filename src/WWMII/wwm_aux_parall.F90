@@ -651,7 +651,7 @@
               IP_glob=ListIPLG(IP+ListFirst(iProc))
               IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
                 idx=idx+1
-                dspl_send(idx)=Indexes(IP_glob)-1
+                dspl_send(idx)=8*(Indexes(IP_glob)-1)
               END IF
             END DO
             call mpi_type_create_indexed_block(eSend,8,dspl_send,rtype,spparm_send_type(idx_nbproc), ierr)
