@@ -1487,9 +1487,7 @@
               WRITE(STAT%FHNDL,*) 'SUM OF WAVE ACTION', SUM(WBACOLD), SUM(WBAC) 
             ELSE IF (LBCWA) THEN 
 #ifdef NCDF
-              IF (MULTIPLE_IN_BOUND .or. (myrank .eq.0)) THEN
-                CALL INIT_NETCDF_WW3_WAVEPARAMETER
-              END IF
+              CALL INIT_NETCDF_WW3_WAVEPARAMETER
 #else
               CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
 #endif
