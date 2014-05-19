@@ -316,7 +316,7 @@
            eUint=0
            eVint=0
            DO ID=1,MDC
-             eLoc=AC2(IP,IS,ID)*eMult
+             eLoc=AC2(IS,ID,IP)*eMult
              eUint=eUint + eLoc*COSTH(ID)
              eVint=eVint + eLoc*SINTH(ID)
            END DO

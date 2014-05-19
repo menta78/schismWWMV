@@ -27,10 +27,9 @@
            OPEN(11103 ,file='p_waveh.dat'   ,form='unformatted', action='write')
            OPEN(11104 ,file='p_wavet.dat'   ,form='unformatted', action='write')
            OPEN(11105 ,file='p_waved.dat'   ,form='unformatted', action='write')
-           !OPEN(11106 ,file='p_wavekm.dat'  ,form='unformatted', action='write')
            OPEN(11106 ,file='p_wtauw.dat'  ,form='unformatted', action='write')
            OPEN(11107 ,file='p_wavetp.dat'  ,form='unformatted', action='write')
-           OPEN(11108 ,file='p_wavekp.dat'  ,form='unformatted', action='write')
+           OPEN(11108 ,file='p_wavewl.dat'  ,form='unformatted', action='write')
            OPEN(11109 ,file='p_orbit.dat'   ,form='unformatted', action='write')
            OPEN(11110 ,file='p_stokesx.dat' ,form='unformatted', action='write')
            OPEN(11111 ,file='p_stokesy.dat' ,form='unformatted', action='write')
@@ -47,6 +46,7 @@
 
            OPEN(11114 ,file='p_cd.dat' ,form='unformatted', action='write')
            OPEN(11115 ,file='p_jpress.dat' ,form='unformatted', action='write')
+           OPEN(11116 ,file='p_wdiss.dat' ,form='unformatted', action='write')
 
            WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END OPEN PIPE'
 
@@ -78,6 +78,7 @@
       close(11113)
       close(11114)
       close(11115)
+      close(11116)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -248,8 +249,8 @@
       INTEGER, INTENT(IN)  :: K
       INTEGER         :: IL, IP
       REAL(rkind)     :: ACLOC(MSC,MDC)
-      REAL(rkind)     :: HS,LPP
-      REAL(rkind)     :: SME01,SME10,KME01,KMWAM,KMWAM2, UBOT
+      REAL(rkind)     :: HS,WLM,LPP,KLM
+      REAL(rkind)     :: TM01, TM02, TM10, UBOT
       REAL(rkind)     :: TMBOT,ETOT, KPP,DM,DSPR,PEAKDSPR,PEAKDM
       REAL(rkind)     :: ORBITAL
       REAL(rkind)     :: BOTEXPER, ETOTS, ETOTC, DPEAK
@@ -286,22 +287,22 @@
           FLUSH(11102)
           FLUSH(11142)                        !ccf
           ACLOC(:,:) = AC2(:,:,IP)
-          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+
+          CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT 1')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
           WRITE(11103) HS
           FLUSH(11103)
-          WRITE(11104) SME01
+          WRITE(11104) TM01
           FLUSH(11104)
           WRITE(11105) DM
           FLUSH(11105)
-          !WRITE(11106) KMWAM
           WRITE(11106) TAUW(IP)
           FLUSH(11106)
           WRITE(11107) TPP
           FLUSH(11107)
-          WRITE(11108) KPP
+          WRITE(11108) WLM
           FLUSH(11108)
           WRITE(11109) ORBITAL
           FLUSH(11109)
@@ -319,12 +320,14 @@
           FLUSH(11114)
           WRITE(11115) JPRESS(IP)
           FLUSH(11115)
+          WRITE(11116) DISSIPATION(IP)
+          FLUSH(11116)
         END DO
 # else
         IF (LWINDFROMWWM) THEN
-          siz=5*NLVT + 11
+          siz=5*NLVT + 12
         ELSE
-          siz=5*NLVT + 9
+          siz=5*NLVT + 10
         END IF
         allocate(OUTT(np_global,siz), OUTT_TOT(np_global,siz), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_shyfem, allocate error 2')
@@ -337,23 +340,23 @@
             OUTT(iplg(IP), IL+4*NLVT) = STOKES_Y(IL,IP)
           END DO
           ACLOC(:,:) = AC2(:,:,IP)
-          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+          CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
           OUTT(iplg(IP), 1 + 5*NLVT) = HS
-          OUTT(iplg(IP), 2 + 5*NLVT) = SME01
+          OUTT(iplg(IP), 2 + 5*NLVT) = TM01
           OUTT(iplg(IP), 3 + 5*NLVT) = DM
-          !OUTT(iplg(IP), 4 + 5*NLVT) = KMWAM
           OUTT(iplg(IP), 4 + 5*NLVT) = TAUW(IP)
           OUTT(iplg(IP), 5 + 5*NLVT) = TPP
-          OUTT(iplg(IP), 6 + 5*NLVT) = KPP
+          OUTT(iplg(IP), 6 + 5*NLVT) = WLM
           OUTT(iplg(IP), 7 + 5*NLVT) = ORBITAL
           OUTT(iplg(IP), 8 + 5*NLVT) = CD(IP) 
           OUTT(iplg(IP), 9 + 5*NLVT) = JPRESS(IP)
+          OUTT(iplg(IP),10 + 5*NLVT) = DISSIPATION(IP)
           IF (LWINDFROMWWM) THEN
-            OUTT(iplg(IP), 10+ 5*NLVT) = WINDXY(IP,1)
-            OUTT(iplg(IP), 11+ 5*NLVT) = WINDXY(IP,2)
+            OUTT(iplg(IP), 11+ 5*NLVT) = WINDXY(IP,1)
+            OUTT(iplg(IP), 12+ 5*NLVT) = WINDXY(IP,2)
           END IF
         END DO
         call mpi_reduce(OUTT,OUTT_TOT,NP_GLOBAL*siz,rtype,MPI_SUM,0,comm,ierr)
@@ -391,15 +394,17 @@
             WRITE(11111) STOKES_Y_ret
             FLUSH(11111)
             IF (LWINDFROMWWM) THEN
-              WRITE(11112) OUTT(IP, 10 + 5*NLVT)
+              WRITE(11112) OUTT(IP, 11 + 5*NLVT)
               FLUSH(11112)
-              WRITE(11113) OUTT(IP, 11 + 5*NLVT)
+              WRITE(11113) OUTT(IP, 12 + 5*NLVT)
               FLUSH(11113)
             END IF
             WRITE(11114) OUTT(IP, 8 + 5*NLVT)
             FLUSH(11114)
             WRITE(11115) OUTT(IP, 9 + 5*NLVT)
             FLUSH(11115)
+            WRITE(11116) OUTT(IP, 10 + 5*NLVT)
+            FLUSH(11116)
           END DO
         END IF
         deallocate(OUTT)

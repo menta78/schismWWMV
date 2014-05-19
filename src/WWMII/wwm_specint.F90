@@ -965,8 +965,8 @@
                   END IF
                   DO ID = 1, MDC
                      IF (AC2(IS,ID,IP) < ZERO) AC2(IS,ID,IP) = ZERO 
-                     IF (FACTOR >= ZERO)  AC2(IP,IS,ID) = AC2(IP,IS,ID)*FACTOR
-                     AC2(IP,IS,ID) = MAX(zero,AC2(IP,IS,ID))
+                     IF (FACTOR >= ZERO)  AC2(IS,ID,IP) = AC2(IS,ID,IP)*FACTOR
+                     AC2(IS,ID,IP) = MAX(zero,AC2(IS,ID,IP))
                   END DO
                END IF
             END DO
