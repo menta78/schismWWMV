@@ -4054,7 +4054,7 @@
                 CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
               END IF
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = BLOC + IMATRA
+              eSum = eSum + IMATRA
             END IF
             DO IADJ=1,VERT_DEG(IP)
               IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
@@ -4248,7 +4248,7 @@
                   CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
                 END IF
                 ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
+                eSum = eSum + IMATRA
               END IF
               DO IADJ=1,VERT_DEG(IP)
                 IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
