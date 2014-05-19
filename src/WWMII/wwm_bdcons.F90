@@ -1761,6 +1761,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SINGLE_READ_NETCDF_WW3(IFILE,IT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IFILE, IT
+      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 3, HS_WW3)
+      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 2, FP_WW3)
+      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 5, T02_WW3)
+      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 4, DSPR_WW3)
+      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 1, DIR_WW3)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_NETCDF_WW3(IFILE,IT,CALLEDFROM)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1769,27 +1782,67 @@
       REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
       REAL(rkind), SAVE           :: TIME, scale_factor
       CHARACTER(LEN=25)    :: CALLEDFROM
-
-      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 3, HS_WW3)
-      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 2, FP_WW3)
-      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 5, T02_WW3)
-      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 4, DSPR_WW3)
-      CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 1, DIR_WW3)
+      INTEGER IX, IY, IPROC
+      REAL(rkind), ALLOCATABLE :: ARR_send_recv(:)
+      integer, allocatable :: bnd_rqst(:), bnd_stat(:,:)
+#ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_BOUND) THEN
+        CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+      ELSE
+        allocate(ARR_send_recv(5*NDX_BND*NDY_BND))
+        IF (myrank .eq. 0) THEN
+          CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+          J=0
+          DO IX=1,NDX_BND
+            DO IY=1,NDY_BND
+              J=J+1
+              ARR_send_recv(J)=HS_WW3(IX,IY)
+              J=J+1
+              ARR_send_recv(J)=FP_WW3(IX,IY)
+              J=J+1
+              ARR_send_recv(J)=T02_WW3(IX,IY)
+              J=J+1
+              ARR_send_recv(J)=DSPR_WW3(IX,IY)
+              J=J+1
+              ARR_send_recv(J)=DIR_WW3(IX,IY)
+            END DO
+          END DO
+          allocate(bnd_rqst(nproc-1), bnd_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('error in bnd_ allocates')
+          DO iProc=2,nproc
+            CALL mpi_isend(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, iProc-1, 2030, comm, bnd_rqst(iProc-1), ierr)
+          END DO
+          IF (nproc > 1) THEN
+            CALL MPI_WAITALL(nproc-1, bnd_rqst, bnd_stat, ierr)
+          END IF
+          deallocate(bnd_rqst, bnd_stat)
+        ELSE
+          CALL MPI_RECV(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, 0, 2030, comm, istatus, ierr)
+          J=0
+          DO IX=1,NDX_BND
+            DO IY=1,NDY_BND
+              J=J+1
+              HS_WW3(IX,IY) = ARR_send_recv(J)
+              J=J+1
+              FP_WW3(IX,IY) = ARR_send_recv(J)
+              J=J+1
+              T02_WW3(IX,IY) = ARR_send_recv(J)
+              J=J+1
+              DSPR_WW3(IX,IY) = ARR_send_recv(J)
+              J=J+1
+              DIR_WW3(IX,IY) = ARR_send_recv(J)
+            END DO
+          END DO
+        END IF
+      END IF
+#else
+      CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+#endif
 
       IF (LWRITE_WW3_RESULTS) THEN
         OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
-        IF (.NOT. ALLOCATED(U)) THEN
-          ALLOCATE(U(NDX_BND*NDY_BND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
-        END IF
-        IF (.NOT. ALLOCATED(V)) THEN
-          ALLOCATE(V(NDX_BND*NDY_BND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 15')
-        END IF
-        IF (.NOT. ALLOCATED(H)) THEN
-          ALLOCATE(H(NDX_BND*NDY_BND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
-        END IF
+        ALLOCATE(U(NDX_BND*NDY_BND), V(NDX_BND*NDY_BND), H(NDX_BND*NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
         COUNTER = 1
         DO J = 1, NDY_BND
           DO I = 1, NDX_BND
@@ -1805,6 +1858,7 @@
         DEALLOCATE(U,V,H)
       END IF
       END SUBROUTINE
+
 #endif
 !**********************************************************************
 !*                                                                    *
