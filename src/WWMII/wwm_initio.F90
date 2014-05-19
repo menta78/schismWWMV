@@ -1010,7 +1010,7 @@
          ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
          ENDIF
 
-         IF (MESTR .GT. 5) CALL GRAD_CG_K 
+         IF (MESTR == 6) CALL GRAD_CG_K 
 
          RETURN
       END SUBROUTINE
