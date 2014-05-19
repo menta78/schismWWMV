@@ -816,7 +816,11 @@
 # else
       CALLFROM='WWM'
 # endif
+
       CALL INITIALIZE_WWM
+
+!      STOP 'MEMORY TEST 1'
+
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
