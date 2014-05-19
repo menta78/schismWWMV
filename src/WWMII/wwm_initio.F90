@@ -599,8 +599,6 @@
         FLUSH(STAT%FHNDL)
       END IF
 
-      STOP 'MEMORY CHECK 2' 
-
       IF (LZETA_SETUP) THEN
 #ifdef WWM_SETUP
         CALL INIT_WAVE_SETUP
