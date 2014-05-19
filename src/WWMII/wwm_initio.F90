@@ -26,11 +26,9 @@
        YP  = zero
        DEP = zero
 
-       IF (LSPHE) THEN
-         ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
-         INVSPHTRANS = zero
-       ENDIF
+       ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
+       INVSPHTRANS = zero
 
        ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
