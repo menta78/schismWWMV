@@ -572,6 +572,7 @@
       real(rkind) :: Vlocal(MNP)
       integer iProc, IP
       IF (myrank .eq. 0) THEN
+        WRITE(STAT%FHNDL, *) 'Case 1, begin'
         DO iProc=2,nproc
           CALL mpi_isend(Vtotal, 1, oned_send_type(iProc-1), iProc-1, 2030, comm, oned_send_rqst(iProc-1), ierr)
         END DO
@@ -581,8 +582,11 @@
         IF (nproc > 1) THEN
           CALL MPI_WAITALL(nproc-1, oned_send_rqst, oned_send_stat, ierr)
         END IF
+        WRITE(STAT%FHNDL, *) 'Case 1, end'
       ELSE
+        WRITE(STAT%FHNDL, *) 'Case 2, begin'
         CALL MPI_RECV(Vlocal, MNP, rtype, 0, 2030, comm, istatus, ierr)
+        WRITE(STAT%FHNDL, *) 'Case 2, end'
       END IF
       END SUBROUTINE
 !**********************************************************************
