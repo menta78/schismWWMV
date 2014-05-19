@@ -944,10 +944,12 @@
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
-         LOGICAL                :: L_LOCAL_ASPAR = .FALSE.
+         INTEGER                :: ASPAR_LOCAL_LEVEL = 0
+                             ! value 0 CAD_THE, CAS_THE and ASPAR_JAC used
+                             ! value 1 ASPAR_JAC used
+                             ! value 2 no allocation
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
          REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
-         REAL(rkind), allocatable :: ASPARL_JAC(:,:,:)
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
@@ -959,21 +961,24 @@
 
          INTEGER                :: NNZ
          INTEGER                :: MAXMNECON
-
+         INTEGER                :: MAX_DEG
          INTEGER, ALLOCATABLE   :: IA(:)
          INTEGER, ALLOCATABLE   :: JA(:)
          INTEGER, ALLOCATABLE   :: POSI(:,:)
          INTEGER, ALLOCATABLE   :: JA_IE(:,:,:)
+         INTEGER, ALLOCATABLE   :: POS_IP_ADJ(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)
          INTEGER, ALLOCATABLE   :: IE_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: POS_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: I_DIAG(:)
+         INTEGER, ALLOCATABLE   :: VERT_DEG(:)
+         INTEGER, ALLOCATABLE   :: LIST_ADJ_VERT(:,:)
+
          INTEGER, ALLOCATABLE   :: ITER_EXP(:,:)
          INTEGER, ALLOCATABLE   :: ITER_EXPD(:)
          INTEGER                :: ITER_MAX
-
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
@@ -1040,10 +1045,9 @@
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
 !         REAL(rkind), ALLOCATABLE     :: DELFL(:)
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
-         REAL(rkind), ALLOCATABLE     :: USOLD(:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
          REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
-         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:), FMEANWS(:)
+         REAL(rkind), ALLOCATABLE     :: FCONST(:,:), RNLCOEF(:,:), FTRF(:), FMEANWS(:), USOLD(:,:)
 
          INTEGER, ALLOCATABLE         :: IKP(:), IKP1(:), IKM(:), IKM1(:), K1W(:,:), K2W(:,:), K11W(:,:), K21W(:,:)
          INTEGER, ALLOCATABLE         :: INLCOEF(:,:), MIJ(:)

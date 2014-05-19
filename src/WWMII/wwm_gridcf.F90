@@ -328,7 +328,6 @@
          MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
 
          ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
-        
          SPSIGL(1) = FRLOW * PI2
          DO IS = 2, MSCL
            SPSIGL(IS) = SPSIGL(IS-1) + SSB

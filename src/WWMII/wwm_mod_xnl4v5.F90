@@ -7809,8 +7809,6 @@ real eps
 eps = 1.e-20
 g = 9.81
 !
-z4x = z4x
-z4y = z4y
 !
 !      print *,'entering cplesh depth = ',h
       k1x0=w1x0

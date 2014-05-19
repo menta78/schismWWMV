@@ -701,7 +701,7 @@
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR, MAXITER,  &
      &      LNANINFCHK, LZETA_SETUP, ZETA_METH, LSOURCESWAM, PMIN,      &
      &      LSOURCESWWIII, BLOCK_GAUSS_SEIDEL, LNONL, LNANINFCHK,       &
-     &      L_SOLVER_NORM, L_LOCAL_ASPAR
+     &      L_SOLVER_NORM, ASPAR_LOCAL_LEVEL
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
@@ -1426,6 +1426,12 @@
            MESBF = 0
            LLIMT = .FALSE.
 
+         END IF
+
+         IF (AMETHOD .eq. 7) THEN
+           IF (LNONL .AND. (.NOT. SOURCE_IMPL)) THEN
+             CALL WWM_ABORT('SOURCE_IMPL=F and LNONL=T is absurd')
+           END IF
          END IF
 
          IF (LBCWA .OR. LBCSP) THEN
