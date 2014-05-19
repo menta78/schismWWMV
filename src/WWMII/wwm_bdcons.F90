@@ -925,8 +925,6 @@
 
       ADIR = DEG * DEGRAD
 
-!      write(*,*) adir, SPPAR(3), DEG, LNAUTIN
-
       IF (INT(SPPAR(6)) .EQ. 1) THEN
         DSPR = PI * SPPAR(4) / 180._rkind
         MS = MAX (DSPR**(-2) - TWO, 1._rkind)
@@ -2198,8 +2196,7 @@
             IF (IFLAG .GT. 0) THEN
               CALL WWM_ABORT('IFLAG incorrectly set 3')
             ELSE IF (IFLAG .LT. 0) THEN
-              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'  
-              EXIT
+              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'               EXIT
             END IF
           ENDDO
           MAXSTEP_WW3 = MAXSTEP_WW3 + 1
@@ -2732,7 +2729,6 @@
         END DO
       END IF
 #endif
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

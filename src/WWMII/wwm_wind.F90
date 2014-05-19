@@ -1497,12 +1497,10 @@
       REAL(rkind)                :: Vtotal2(MNP_WIND)
       REAL(rkind)                :: Vlocal(MNP)
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
-      WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 1'
       WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS IFILE=', IFILE, ' IT=', IT
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 #endif
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 2'
         IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
@@ -1618,30 +1616,23 @@
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,Vtotal2)
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 3'
 #ifdef MPI_PARALL_GRID
       END IF
 #endif
-      WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 4'
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 4.1'
         eField(:,1)=Vtotal1
         eField(:,2)=Vtotal2
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 4.2'
       ELSE
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 4.3'
         CALL SCATTER_ONED_ARRAY(Vtotal1, Vlocal)
         eField(:,1)=Vlocal
         CALL SCATTER_ONED_ARRAY(Vtotal2, Vlocal)
         eField(:,2)=Vlocal
-        WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 4.4'
       END IF
 #else
       eField(:,1)=Vtotal1
       eField(:,2)=Vtotal2
 #endif
-      WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS, step 5'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
