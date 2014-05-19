@@ -289,7 +289,7 @@
       IMPLICIT NONE
       integer iProc
       allocate(IOBPtotal(np_total), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_BOUND) THEN
         CALL SINGLE_READ_IOBP_TOTAL
@@ -360,7 +360,7 @@
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1
       END DO
       ALLOCATE( IWBNDLC(IWBMNP), IWBNDLC_REV(MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
       IWBNDLC_REV=0
       idx = 0
       DO IP = 1, MNP
@@ -381,7 +381,7 @@
         IF (IOBPtotal(IP) == 2 .OR. IOBPtotal(IP) == 4) IWBMNPGL = IWBMNPGL + 1
       END DO
       ALLOCATE( IWBNDGL(IWBMNPGL), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 3')
       idx=0
       DO IP = 1, NP_TOTAL
         IF (IOBPtotal(IP) == 2 .OR. IOBPtotal(IP) == 4) THEN
@@ -411,16 +411,16 @@
       ENDIF
       IF (LBCWA) THEN
         ALLOCATE( SPPARM(8,SPsize), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 4')
         SPPARM = 0.
       ENDIF
       IF (LBCWA .OR. LBCSP) THEN
         ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
         WBAC = 0.
         IF (LBINTER) THEN
           ALLOCATE( WBACOLD(MSC,MDC,SPsize), WBACNEW(MSC,MDC,SPsize), DSPEC(MSC,MDC,SPsize), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 14')
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 6')
           WBACOLD = 0.
           WBACNEW = 0.
           DSPEC   = 0.
@@ -491,7 +491,7 @@
          IF(LWW3GLOBALOUT) THEN
            IF (.NOT. ALLOCATED(WW3GLOBAL)) THEN
              ALLOCATE(WW3GLOBAL(8,MNP), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 22')
+             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 7')
            END IF
          END IF
 
@@ -925,8 +925,6 @@
 
       ADIR = DEG * DEGRAD
 
-!      write(*,*) adir, SPPAR(3), DEG, LNAUTIN
-
       IF (INT(SPPAR(6)) .EQ. 1) THEN
         DSPR = PI * SPPAR(4) / 180._rkind
         MS = MAX (DSPR**(-2) - TWO, 1._rkind)
@@ -1338,7 +1336,7 @@
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
         ALLOCATE(THD(MDC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 23')
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 8')
         DTHD=360./MDC
         RTH0=SPDIR(1)/DDIR
         DO ID = 1, MDC
@@ -1530,139 +1528,146 @@
       REAL(rkind), ALLOCATABLE :: BND_TIME(:)
       character (len = *), parameter :: CallFct = "INIT_NETCDF_WW3_WAVEPARAMETER"
       integer, dimension(nf90_max_var_dims) :: dimIDs
-      CALL TEST_FILE_EXIST_DIE("Missing WW3 boundary file : ", TRIM(WAV%FNAME))
-      OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
-      WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
+      INTEGER MAX_NDT_BND_FILE, iProc, eSize
+      INTEGER iVect(4)
+      REAL(rkind) rVect(4)
+# ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_BOUND .or. (myrank .eq. 0)) THEN
+# endif
+        CALL TEST_FILE_EXIST_DIE("Missing WW3 boundary file : ", TRIM(WAV%FNAME))
+        OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
+        WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
 
-      NUM_NETCDF_FILES_BND = 0
-      DO
-        READ( WAV%FHNDL, *, IOSTAT = ISTAT )
-        IF ( ISTAT /= 0 ) EXIT
-        NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND + 1
-      END DO
-      REWIND (WAV%FHNDL)
-      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
-
-      NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND / NUM_NETCDF_VAR_TYPES
-      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
-      WRITE(STAT%FHNDL,*) 'NUM_NETCDF_VAR_TYPES=', NUM_NETCDF_VAR_TYPES
-      ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
-      DO IT = 1, NUM_NETCDF_FILES_BND
-        DO IVAR = 1, NUM_NETCDF_VAR_TYPES
-          READ( WAV%FHNDL, *) NETCDF_FILE_NAMES_BND(IT,IVAR)
+        NUM_NETCDF_FILES_BND = 0
+        DO
+          READ( WAV%FHNDL, *, IOSTAT = ISTAT )
+          IF ( ISTAT /= 0 ) EXIT
+          NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND + 1
         END DO
-      END DO
-      CLOSE (WAV%FHNDL)
+        REWIND (WAV%FHNDL)
+        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
+
+        NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND / NUM_NETCDF_VAR_TYPES
+        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
+        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_VAR_TYPES=', NUM_NETCDF_VAR_TYPES
+        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
+        DO IT = 1, NUM_NETCDF_FILES_BND
+          DO IVAR = 1, NUM_NETCDF_VAR_TYPES
+            READ( WAV%FHNDL, *) NETCDF_FILE_NAMES_BND(IT,IVAR)
+          END DO
+        END DO
+        CLOSE (WAV%FHNDL)
 !
 ! four files are read to set up the wave spectra Hs, Tm01, Dir, Sprd
 !
-      ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
-      NDT_BND_FILE = 0
-      DO IFILE = 1, NUM_NETCDF_FILES_BND
-        WRITE(STAT%FHNDL,'(I10,10X,5A30)') IFILE, NETCDF_FILE_NAMES_BND(IFILE,:)
-      END DO
+        ALLOCATE(NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 10')
+        NDT_BND_FILE = 0
+        DO IFILE = 1, NUM_NETCDF_FILES_BND
+          WRITE(STAT%FHNDL,'(I10,10X,5A30)') IFILE, NETCDF_FILE_NAMES_BND(IFILE,:)
+        END DO
 !
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
-      DO IFILE = 1, NUM_NETCDF_FILES_BND
-        WRITE(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
-        CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-        ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        DO IFILE = 1, NUM_NETCDF_FILES_BND
+          WRITE(STAT%FHNDL,*) ifile, TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
+          ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
-        ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+          ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+          ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+          ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
+          CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
 
-        WRITE(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
-      END DO
+          WRITE(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
+        END DO
 !
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
-      ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
-      ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-      ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
 
-      ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
-      ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
-      ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
-      WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
+        WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
-      ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
+        ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 11')
 !
 ! read coordinates from files ....
 !
-      ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-      ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
-      OFFSET_X_BND = MINVAL(COORD_BND_X)
-      OFFSET_Y_BND = MINVAL(COORD_BND_Y)
+        OFFSET_X_BND = MINVAL(COORD_BND_X)
+        OFFSET_Y_BND = MINVAL(COORD_BND_Y)
 !
 ! resolution ...
 !
-      DX_BND  = ABS(MAXVAL(COORD_BND_X)-MINVAL(COORD_BND_X))/(NDX_BND-1)
-      DY_BND  = ABS(MAXVAL(COORD_BND_Y)-MINVAL(COORD_BND_Y))/(NDY_BND-1)
+        DX_BND  = ABS(MAXVAL(COORD_BND_X)-MINVAL(COORD_BND_X))/(NDX_BND-1)
+        DY_BND  = ABS(MAXVAL(COORD_BND_Y)-MINVAL(COORD_BND_Y))/(NDY_BND-1)
 !
 ! close netcdf file ...
 !
-      ISTAT = NF90_CLOSE(BND_NCID)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        ISTAT = NF90_CLOSE(BND_NCID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
-      NDT_BND_ALL_FILES = 0
-      write(STAT%FHNDL,*) NUM_NETCDF_FILES_BND
-      DO IT = 1, NUM_NETCDF_FILES_BND
-        NDT_BND_ALL_FILES = NDT_BND_ALL_FILES + NDT_BND_FILE(IT)
-        write(STAT%FHNDL,*) it, NDT_BND_FILE(it)
-      END DO
-      WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
+        NDT_BND_ALL_FILES = 0
+        write(STAT%FHNDL,*) NUM_NETCDF_FILES_BND
+        DO IT = 1, NUM_NETCDF_FILES_BND
+          NDT_BND_ALL_FILES = NDT_BND_ALL_FILES + NDT_BND_FILE(IT)
+          write(STAT%FHNDL,*) it, NDT_BND_FILE(it)
+        END DO
+        WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
 
-      ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAXVAL(NDT_BND_FILE)), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
-      BND_TIME_ALL_FILES = ZERO
+        WRITE(STAT%FHNDL, *) 'INIT_NETCDF_WW3_WAVEPARAMETER'
+        MAX_NDT_BND_FILE=MAXVAL(NDT_BND_FILE)
+        ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAX_NDT_BND_FILE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
+        BND_TIME_ALL_FILES = ZERO
 !
 ! read all time steps in the proper format and transform in wwm time line
 !
-      BND_TIME_ALL_FILES = 0.
-      DO IFILE = 1, NUM_NETCDF_FILES_BND
-        CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-        ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        DO IFILE = 1, NUM_NETCDF_FILES_BND
+          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
+          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
-        ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
-        BND_TIME = ZERO
+          ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
+          BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
-        ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+          ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
 
-        DO IT = 1, NDT_BND_FILE(IFILE)
-           BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
+          DO IT = 1, NDT_BND_FILE(IFILE)
+            BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
 !             CALL CT2MJD('19000101.000000',DTMP1)
 !             CALL CT2MJD('19900101.000000',DTMP2)
 !             CALL MJD2CT(DTMP1,chrdate)
@@ -1674,21 +1679,11 @@
 !             WRITE(*,*) BND_TIME_ALL_FILES(1,1), DT_DIFF_19901900
 !             IF (IT == 1 .AND. IFILE ==1) WRITE(*,*) DTMP1, DTMP2, DTMP1+DT_DIFF_19901900
 !             IF (IT == 1 .AND. IFILE ==1) WRITE(*,*) IFILE, IT, BND_TIME(IT), chrdate
+          END DO
+          DEALLOCATE(BND_TIME)
         END DO
-        DEALLOCATE(BND_TIME)
-      END DO
-      SEBO%DELT = (BND_TIME_ALL_FILES(1,2) - BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-      write(STAT%FHNDL,*) SEBO%DELT, BND_TIME_ALL_FILES(1,2), BND_TIME_ALL_FILES(1,1)
 
-      BND_TIME_ALL_FILES = BND_TIME_ALL_FILES + DT_DIFF_19901900
-
-      ALLOCATE (HS_WW3(NDX_BND,NDY_BND), FP_WW3(NDX_BND,NDY_BND), T02_WW3(NDX_BND,NDY_BND), DSPR_WW3(NDX_BND,NDY_BND), DIR_WW3(NDX_BND,NDY_BND), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
-      HS_WW3 = 0.
-      FP_WW3 = 0.
-      T02_WW3 = 0.
-      DSPR_WW3 = 0.
-      DIR_WW3 = 0.
+        BND_TIME_ALL_FILES = BND_TIME_ALL_FILES + DT_DIFF_19901900
 
         IF (LWRITE_ALL_WW3_RESULTS) THEN
           OPEN(3010, FILE  = 'sysglobalboundary.dat', STATUS = 'UNKNOWN')
@@ -1710,7 +1705,59 @@
           END DO
           CLOSE(3010)
         END IF
-
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+#ifdef MPI_PARALL_GRID
+      IF (.NOT. MULTIPLE_IN_BOUND) THEN
+        IF (myrank.eq.0) THEN
+          iVect(1)=NUM_NETCDF_FILES_BND
+          iVect(2)=MAX_NDT_BND_FILE
+          iVect(3)=NDX_BND
+          iVect(4)=NDY_BND
+          DO IPROC=2,nproc
+            CALL MPI_SEND(iVect,4,itype, iProc-1, 811, comm, ierr)
+          END DO
+          rVect(1)=OFFSET_X_BND
+          rVect(2)=OFFSET_Y_BND
+          rVect(3)=DX_BND
+          rVect(4)=DY_BND
+          DO IPROC=2,nproc
+            CALL MPI_SEND(rVect,4,rtype, iProc-1, 820, comm, ierr)
+          END DO
+          eSize=NUM_NETCDF_FILES_BND*MAX_NDT_BND_FILE
+          DO IPROC=2,nproc
+            CALL MPI_SEND(NDT_BND_FILE,NUM_NETCDF_FILES_BND,itype, iProc-1, 812, comm, ierr)
+            CALL MPI_SEND(BND_TIME_ALL_FILES,eSize,rtype, iProc-1, 813, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_RECV(iVect,4,itype, 0, 811, comm, istatus, ierr)
+          NUM_NETCDF_FILES_BND=iVect(1)
+          MAX_NDT_BND_FILE=iVect(2)
+          NDX_BND=iVect(3)
+          NDY_BND=iVect(4)
+          CALL MPI_RECV(rVect,4,rtype, 0, 820, comm, istatus, ierr)
+          OFFSET_X_BND=rVect(1)
+          OFFSET_Y_BND=rVect(2)
+          DX_BND=rVect(3)
+          DY_BND=rVect(4)
+          ALLOCATE(BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAX_NDT_BND_FILE), NDT_BND_FILE(NUM_NETCDF_FILES_BND), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 14')
+          CALL MPI_RECV(NDT_BND_FILE,NUM_NETCDF_FILES_BND,itype, 0, 812, comm, istatus, ierr)
+          eSize=NUM_NETCDF_FILES_BND*MAX_NDT_BND_FILE
+          CALL MPI_RECV(BND_TIME_ALL_FILES,eSize,rtype, 0, 813, comm, istatus, ierr)
+        END IF
+      END IF
+#endif
+      SEBO%DELT = (BND_TIME_ALL_FILES(1,2) - BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+      write(STAT%FHNDL,*) SEBO%DELT, BND_TIME_ALL_FILES(1,2), BND_TIME_ALL_FILES(1,1)
+      ALLOCATE (HS_WW3(NDX_BND,NDY_BND), FP_WW3(NDX_BND,NDY_BND), T02_WW3(NDX_BND,NDY_BND), DSPR_WW3(NDX_BND,NDY_BND), DIR_WW3(NDX_BND,NDY_BND), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 15')
+      HS_WW3 = 0.
+      FP_WW3 = 0.
+      T02_WW3 = 0.
+      DSPR_WW3 = 0.
+      DIR_WW3 = 0.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1790,6 +1837,7 @@
         CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
       ELSE
         allocate(ARR_send_recv(5*NDX_BND*NDY_BND))
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
         IF (myrank .eq. 0) THEN
           CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
           J=0
@@ -1808,7 +1856,7 @@
             END DO
           END DO
           allocate(bnd_rqst(nproc-1), bnd_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('error in bnd_ allocates')
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 17')
           DO iProc=2,nproc
             CALL mpi_isend(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, iProc-1, 2030, comm, bnd_rqst(iProc-1), ierr)
           END DO
@@ -1842,7 +1890,7 @@
       IF (LWRITE_WW3_RESULTS) THEN
         OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
         ALLOCATE(U(NDX_BND*NDY_BND), V(NDX_BND*NDY_BND), H(NDX_BND*NDY_BND), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 18')
         COUNTER = 1
         DO J = 1, NDY_BND
           DO I = 1, NDX_BND
@@ -1986,6 +2034,752 @@
       REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
       REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
       CALL SPPARM_INTER_STRUCT(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y, MNP, XP, YP, VAL, DOPEAK_BOUNDARY)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+!AR: check this for wave boundary nodes ....
+      SUBROUTINE READWAVEPARFVCOM()
+      USE DATAPOOL
+
+      IMPLICIT NONE
+ 
+      INTEGER         :: IP
+#ifdef MPI_PARALL_GRID
+      REAL(rkind)     :: RTMP
+      INTEGER         :: IPP
+#endif
+!     SPPARM(1): Hs, sign. wave height
+!     SPPARM(2): Wave period given by user (either peak or mean)
+!     SPPARM(3): average direction
+!     SPPARM(4): directional spread
+!     SPPARM(5): spectral shape (1-4),
+!                (1 - Pierson-Moskowitz,
+!                 2 - JONSWAP,
+!                 3 - BIN,
+!                 4 - Gauss)
+!                     negative peak (+) 
+!                     or mean frequency (-)
+!     SPPARM(6): directional spreading in degree (1) or exponent (2)
+!     SPPARM(7): gaussian width for the gauss spectrum 0.1
+!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.3
+
+      SPPARM(4,:) = 20.
+      SPPARM(5,:) = 2.
+      SPPARM(6,:) = 2.
+      SPPARM(7,:) = 0.1
+      SPPARM(8,:) = 3.3
+
+      IF (LINHOM) THEN
+        READ(WAV%FHNDL,*)
+      END IF
+
+#ifdef MPI_PARALL_GRID
+      IPP = 0
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNPGL
+          IF(ipgl(IWBNDGL(IP))%rank == myrank) THEN ! IF boundary nodes belong to local domain read values into boundary array
+            IPP = IPP + 1
+            READ (WAV%FHNDL, *) SPPARM(1,IPP), SPPARM(2,IPP), SPPARM(3,IPP)
+          ELSE
+            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP ! ELSE ... throw them away ...
+          ENDIF
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
+        DO IP = 1, IWBMNPGL
+          SPPARM(1:3,IP) = SPPARM(1:3,1)
+        END DO
+      END IF
+#else
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNP
+          READ (WAV%FHNDL, *) SPPARM(1,IP), SPPARM(2,IP), SPPARM(3,IP)
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
+        DO IP = 1, IWBMNP
+          SPPARM(1:3,IP) = SPPARM(1:3,1)
+        END DO
+      END IF
+#endif
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READSPEC1D(LFIRST)
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      INTEGER              :: IP, IS
+      LOGICAL, INTENT(IN)  :: LFIRST
+!
+!     Read Spectrum 1-D File ...
+!     Second Line ... number of frequencies
+!     Third  Line ... number of directions
+!
+      IF (LFIRST) THEN
+        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+        OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
+        READ (WAV%FHNDL,*) WBMSC
+        READ (WAV%FHNDL,*) WBMDC
+        !WRITE(*,*) WBMSC, WBMDC
+        CALL ALLOC_SPEC_BND
+        DO IS = 1, WBMSC
+          READ (WAV%FHNDL,*) SFRQ(IS,1)
+        END DO
+      END IF
+
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNP
+          DO IS = 1, WBMSC
+            READ (WAV%FHNDL, *) SPEG(IS,1,IP), SDIR(IS,1), SPRD(IS,1)
+          END DO
+        END DO
+      ELSE
+        DO IS = 1, WBMSC
+          READ (WAV%FHNDL, *) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
+          !WRITE(*,*) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
+        END DO
+      END IF
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READSPEC2D
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      END SUBROUTINE
+!**********************************************************************
+!* READSPEC2D_WW3INIT1
+!* Read the header of a WAVEWATCHIII binary spectral file to get 
+!* dimensions of the spectral grid and number of output locations 
+!* required for dynamic allocation.
+!*
+!* Called by GETWW3SPECTRA
+!*
+!* Authors: Aron Roland 
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)  
+!**********************************************************************
+      SUBROUTINE READSPEC2D_WW3_INIT_SPEC
+      USE DATAPOOL
+      IMPLICIT NONE
+      CHARACTER(LEN=30) :: GNAME
+      CHARACTER(LEN=21) :: LABEL
+      CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+      OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+      READ(WAV%FHNDL)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
+      WRITE(STAT%FHNDL,*) 'LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME'
+      WRITE(STAT%FHNDL,*) LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      CLOSE(WAV%FHNDL)
+      WRITE(STAT%FHNDL,*)'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
+      WRITE(STAT%FHNDL,*)'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
+      WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
+      END SUBROUTINE
+!**********************************************************************
+!* READSPEC2D_WW3INIT2
+!* Read the header of a WAVEWATCHIII binary spectral file to get
+!* frequencies and directions of the spectral grid and starting time
+!*
+!* Called by GETWW3SPECTRA
+!*
+!* Authors: Aron Roland
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)
+!**********************************************************************
+      SUBROUTINE READSPEC2D_WW3_INIT_TIME 
+      USE DATAPOOL
+        IMPLICIT NONE
+        REAL                 :: SPECDMP(MSC_WW3,MDC_WW3)
+        INTEGER              :: TMP, IFLAG, IP, TIME(2), IT
+        INTEGER, ALLOCATABLE :: ITIME(:,:)
+        CHARACTER(LEN=30)    :: GNAME
+        CHARACTER(LEN=21)    :: LABEL
+        CHARACTER(LEN=10)    :: PID
+        CHARACTER(LEN=20)    :: CTIME1, CTIME2
+        CHARACTER(LEN=15)    :: TIMESTRING
+
+        REAL :: TMP1(MSC_WW3),TMP2(MDC_WW3) !GD: in ww3 binary file, reals 
+        REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
+
+        WRITE(STAT%FHNDL,*)'START READSPEC2D_WW3_INIT_TIME'
+   
+        ALLOCATE(FQ_WW3(MSC_WW3), DR_WW3(MDC_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
+        FQ_WW3=ZERO
+        DR_WW3=ZERO
+        XP_WW3=ZERO
+        YP_WW3=ZERO
+ 
+        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+        OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+        READ(WAV%FHNDL)TMP1
+        FQ_WW3 = TMP1
+        READ(WAV%FHNDL)TMP2
+        DR_WW3 = TMP2
+        MAXSTEP_WW3 = 0
+
+        DO 
+          READ(WAV%FHNDL,IOSTAT=IFLAG) TIME
+          IF (IFLAG .GT. 0) THEN
+            CALL WWM_ABORT('IFLAG incorrectly set 1')
+          ELSE IF (IFLAG .LT. 0) THEN
+            WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 1, WHICH IS NICE'
+            EXIT
+          END IF
+          DO IP = 1, NP_WW3 
+            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+!            WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+            IF (IFLAG .GT. 0) THEN
+              CALL WWM_ABORT('IFLAG incorrectly set 2')
+            ELSE IF (IFLAG .LT. 0) THEN
+              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 2, WHICH IS NOT GOOD'
+              EXIT
+            END IF
+            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
+            IF (IFLAG .GT. 0) THEN
+              CALL WWM_ABORT('IFLAG incorrectly set 3')
+            ELSE IF (IFLAG .LT. 0) THEN
+              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'
+              EXIT
+            END IF
+          ENDDO
+          MAXSTEP_WW3 = MAXSTEP_WW3 + 1
+          IF (MAXSTEP_WW3 == 1) TSTART_WW3 = TIME
+        END DO
+
+        WRITE(STAT%FHNDL,*) 'NUMBER OF BUOYS', NP_WW3
+        WRITE(STAT%FHNDL,*) 'NUMBER OF TIME STEPS IN FILE', MAXSTEP_WW3 
+ 
+        REWIND(WAV%FHNDL)
+
+        ALLOCATE(ITIME(MAXSTEP_WW3,2), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
+        ITIME = 0
+
+        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+        READ(WAV%FHNDL)TMP1
+        READ(WAV%FHNDL)TMP2
+        DO IT = 1, MAXSTEP_WW3 
+          READ(WAV%FHNDL,IOSTAT=IFLAG) ITIME(IT,:)
+          DO IP = 1, NP_WW3
+            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
+          ENDDO
+        END DO
+
+        ALLOCATE (BND_TIME_ALL_FILES(1,MAXSTEP_WW3), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 21')
+        BND_TIME_ALL_FILES = ZERO
+
+        DO IT = 1, MAXSTEP_WW3 
+          WRITE(CTIME1,*) ITIME(IT,1) 
+          CALL LEADINGZERO(ITIME(IT,2),CTIME2)
+          TIMESTRING = ADJUSTL(TRIM(CTIME1)//'.'//ADJUSTL(CTIME2))
+          CALL CT2MJD(TIMESTRING, BND_TIME_ALL_FILES(1,IT))
+          WRITE(STAT%FHNDL,*) IT, TIMESTRING, BND_TIME_ALL_FILES(1,IT)
+        END DO
+
+        DTBOUND_WW3 = (BND_TIME_ALL_FILES(1,2)-BND_TIME_ALL_FILES(1,1))*DAY2SEC
+        SEBO%DELT = DTBOUND_WW3
+        SEBO%BMJD = BND_TIME_ALL_FILES(1,1) 
+        SEBO%EMJD = BND_TIME_ALL_FILES(1,MAXSTEP_WW3) 
+
+        CLOSE(WAV%FHNDL)
+        WRITE(STAT%FHNDL,*)'MIN. FREQ. IN WW3 SPECTRUM:',FQ_WW3(1)
+        WRITE(STAT%FHNDL,*)'MAX. FREQ. IN WW3 SPECTRUM:',FQ_WW3(MSC_WW3)
+        WRITE(STAT%FHNDL,*)'NUMBER OF TIME STEPS',MAXSTEP_WW3
+        WRITE(STAT%FHNDL,*)'TIME INCREMENT IN SPECTRAL FILE', DTBOUND_WW3
+        WRITE(STAT%FHNDL,*)'FIRST TIME STEP IN WW3 SPECTRUM FILE:',BND_TIME_ALL_FILES(1,1)
+        WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of wave boundary', SEBO%BMJD, SEBO%EMJD, SEBO%DELT
+        WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of simulation', MAIN%BMJD, MAIN%EMJD, MAIN%DELT
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3INIT2'
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE LEADINGZERO(INTIN,STRING)
+! AR: some fortran magic with leading zero's ...
+      INTEGER, INTENT(IN) :: INTIN
+      CHARACTER(LEN=6), INTENT(OUT) :: STRING
+      write( string, '(I6)' ) INTIN 
+      string = repeat('0',6-len_trim(adjustl(string)))//adjustl(string)
+      END SUBROUTINE
+!**********************************************************************
+!* READSPEC2D_WW3
+!* Reads spectra in WAVEWATCHIII binary spectral file 
+!*
+!* Called by GETWW3SPECTRA
+!*
+!* Authors: Aron Roland
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)
+!*
+!* Remarks: GD: Need to be modified for time interpolation. Input
+!*              arguments should include date for interpolation. If
+!*              constant forcing is required, this time can be set to 
+!*              zero and only the first step is read.  
+!* Remakrs: AR: At this time the whole file is read but this should be 
+!*              replaced by a direct access call to the binary file 
+!*              Gulliaume can you do this? It is not that urgent.
+!**********************************************************************
+      SUBROUTINE READ_SPEC_WW3(ISTEP,SPECOUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: ISTEP
+
+      INTEGER :: TMP
+      INTEGER :: IP, IT, TIME(2)
+
+      REAL(rkind), INTENT(OUT) :: SPECOUT(MSC_WW3,MDC_WW3,NP_WW3)
+
+      REAL :: SPECOUT_SGLE(MSC_WW3,MDC_WW3)
+      REAL :: FQ_WW3_SNGL(MSC_WW3), DR_WW3_SNGL(MDC_WW3)
+      REAL :: XP_WW3_SGLE(NP_WW3), YP_WW3_SGLE(NP_WW3)
+      REAL :: D(NP_WW3),UA(NP_WW3),UD(NP_WW3),CA(NP_WW3),CD2(NP_WW3)
+      REAL :: m0,m1,m2,df
+      INTEGER :: is,id
+
+      CHARACTER(LEN=30) :: GNAME
+      CHARACTER(LEN=21) :: LABEL
+      CHARACTER(LEN=10) :: PID(NP_WW3)
+
+      CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+      OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+      READ(WAV%FHNDL) LABEL,TMP,TMP,TMP,GNAME
+      READ(WAV%FHNDL) FQ_WW3_SNGL
+      READ(WAV%FHNDL) DR_WW3_SNGL
+      IF(LBCSE) THEN ! non-stationary ...
+        DO IT=1,MAXSTEP_WW3
+          READ(WAV%FHNDL) TIME
+          DO IP = 1, NP_WW3
+            READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
+            YP_WW3(IP) = YP_WW3_SGLE(IP)*DEGRAD
+            XP_WW3(IP) = XP_WW3_SGLE(IP)*DEGRAD
+            READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
+!            write(*,*) sum(SPECOUT_SGLE)
+            SPECOUT(:,:,IP) = SPECOUT_SGLE
+            m0 = 0.; m1 = 0.; m2 = 0.
+            DO ID = 1,MDC_WW3-1
+              DO IS = 1,MSC_WW3-1
+                DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+                M0 = M0+((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+                M1 = M1+((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+                M2 = M2+(((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)**TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
+!                write(*,*) 4*sqrt(m0), m1, m2, df
+              ENDDO
+            ENDDO
+          ENDDO ! IP
+          IF (IT == ISTEP) EXIT ! Read the certain timestep indicated by ISTEP ...
+        ENDDO ! IT 
+      ELSE ! stationary ... 
+        READ(WAV%FHNDL) TIME
+        DO IP = 1, NP_WW3
+          READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP), UA(IP),UD(IP),CA(IP),CD2(IP)
+          YP_WW3(IP) = YP_WW3_SGLE(IP)*DEGRAD
+          XP_WW3(IP) = XP_WW3_SGLE(IP)*DEGRAD
+          READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
+          SPECOUT(:,:,IP) = SPECOUT_SGLE
+        END DO
+      ENDIF
+      CLOSE(WAV%FHNDL)
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3'
+      END SUBROUTINE
+!**********************************************************************
+!* GETWW3SPECTRA
+!* Read a WAVEWATCHIII binary spectral file and do time and space 
+!* interpolation if required.
+!*
+!* Called by WAVE_BOUNDARY_CONDITIONS
+!*
+!* Authors: Aron Roland
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)
+!**********************************************************************
+        SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
+        USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
+        USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
+        USE DATAPOOL, ONLY: MDC_WW3
+#ifdef MPI_PARALL_GRID
+        USE DATAPOOL, ONLY: XLON, YLAT
+#endif
+        IMPLICIT NONE
+        INTEGER, INTENT(IN)      :: ISTEP
+        REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
+
+
+        INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
+        REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
+        REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
+        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
+        REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
+        REAL(rkind) :: XP_WWM,YP_WWM
+!
+! Read spectra in file
+!
+        CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
+!
+! Sort directions and carries spectra along (ww3 directions are not
+! montonic)
+!
+        DO IBWW3 = 1, NP_WW3
+          DO IS = 1,MSC_WW3
+            DR_WW3_TMP=DR_WW3
+            SPEC_WW3_TMP(IS,:,IBWW3) = SPEC_WW3_UNSORT(IS,:,IBWW3)
+            CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,MDC_WW3,2)
+            SPEC_WW3(IS,:,IBWW3) = SPEC_WW3_TMP(IS,:,IBWW3)
+            DR_WW3 = DR_WW3_TMP
+          ENDDO
+          DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
+!          WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
+        ENDDO ! IBWW3
+!
+! Interpolate ww3 spectra on wwm frequency grid
+! GD: at the moment 360º spanning grids are mandatory
+!
+        IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
+!          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
+!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
+!          WRITE(STAT%FHNDL,*)'WW3 spectra does not encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
+          CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
+        ELSE
+!          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
+!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
+          CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
+        ENDIF
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
+        ENDIF
+!
+! Interpolate ww3 spectra on wwm boundary nodes
+! GD: ww3 forcing works until here. Some more debugging is needed
+!
+        TMP = 0
+        IF(LINHOM) THEN !nearest-neighbour interpolation
+          DO IB=1,IWBMNP
+            IPGL = IWBNDLC(IB)
+#ifdef SELFE
+            XP_WWM=XLON(IPGL)! * RADDEG 
+            YP_WWM=YLAT(IPGL)! * RADDEG 
+#else
+            XP_WWM = XP(IPGL)
+            YP_WWM = YP(IPGL)
+#endif
+            IF (NP_WW3 .GT. 1) THEN
+              DO IBWW3=1,NP_WW3
+                DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
+                INDBWW3(IBWW3)=IBWW3
+              ENDDO
+              CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
+              CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
+              !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
+            ELSE
+              WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
+            ENDIF
+          ENDDO ! IB 
+        ELSE
+          DO IB=1,IWBMNP
+            WBACOUT(:,:,IB) = SPEC_WWM(:,:,1) 
+          ENDDO
+        ENDIF
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
+        END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+        SUBROUTINE INIT_BINARY_WW3_SPECTRA 
+        USE DATAPOOL
+        IMPLICIT NONE
+!
+! Read header to get grid dimension, frequencies and directions, 
+! output locations and first time step
+!
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START WITH INIT_BINARY_WW3_SPECTRA'
+
+        CALL READSPEC2D_WW3_INIT_SPEC
+        CALL READSPEC2D_WW3_INIT_TIME
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE WITH INIT_BINARY_WW3_SPECTRA'
+        END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+        SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
+        USE DATAPOOL, ONLY: rkind
+        IMPLICIT NONE
+
+        INTEGER, INTENT(IN) :: NP,P,D1,D2
+        REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
+        REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
+        INTEGER :: IP
+        REAL :: SW
+
+        SW=0
+        ZINT=0
+        DO IP=1,NP
+          SW=SW+WEIGHT(IP)**P
+          ZINT(:,:)=ZINT(:,:)+Z(:,:,IP)*(WEIGHT(IP)**P)
+        ENDDO
+        ZINT=ZINT/SW
+        END SUBROUTINE
+!**********************************************************************
+!* SPECTRALINT
+!* Interpolate spectrum on WWM spectral grid.
+!*
+!* Called by GETWW3SPECTRA
+!*
+!* Authors: Aron Roland
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)
+!*
+!* Remarks: GD)The spectral grid needs to be define over 360º and
+!*             the min (resp. max) frequencies need to be smaller
+!*             (resp. higher) than in WWM frequency grid.
+!**********************************************************************
+        SUBROUTINE SPECTRALINT(SPEC_WW3,SPEC_WWM)
+        USE DATAPOOL
+        IMPLICIT NONE
+
+        REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
+        REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
+
+        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
+        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
+
+        INTEGER     :: IP,IS,ID
+
+        REAL(rkind) :: JACOBIAN(MSC), AM, SM
+
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
+
+        JACOBIAN = ONE/(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
+ 
+        SPEC_WW3_TMP = ZERO
+        SPEC_WWM     = ZERO
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
+        ENDIF
+
+        DO IP=1,NP_WW3
+          DO IS=1,MSC_WW3
+            CALL INTERLIND(MDC_WW3,MDC,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
+          ENDDO
+          DO ID=1,MDC 
+            CALL INTERLIN (MSC_WW3,MSC,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
+          ENDDO
+          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+          DO ID = 1,MDC_WW3
+            DO IS = 1,MSC_WW3-1
+              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
+            ENDDO
+          ENDDO
+          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO 
+          DO ID = 1,MDC
+            DO IS = 1,MSC-1
+              DF = FR(IS+1)-FR(IS)
+              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO
+              SM = (FR(IS+1)+FR(IS))/TWO
+              M0_WWM =M0_WWM+AM*DF*DDIR
+              M1_WWM =M1_WWM+AM*SM*DF*DDIR
+              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
+            ENDDO
+          ENDDO
+          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+          WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
+        END DO
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        ENDIF
+
+! Do jacobian
+
+        DO IP = 1, NP_WW3
+          DO ID = 1, MDC
+            SPEC_WWM(:,ID,IP) = SPEC_WWM(:,ID,IP) * JACOBIAN(:) ! convert to wave action in sigma,theta space
+          END DO              
+        END DO
+
+        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
+        DO IP = 1, NP_WW3
+          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+          DO ID = 1,MDC_WW3
+            DO IS = 1,MSC_WW3-1
+              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
+            ENDDO
+          ENDDO
+          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
+          DO ID = 1,MDC
+            DO IS = 1,MSC-1
+              DF = SPSIG(IS+1)-SPSIG(IS)
+              SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
+              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
+              M0_WWM =M0_WWM+AM*DF*DDIR
+              M1_WWM =M1_WWM+AM*SM*DF*DDIR
+              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
+            ENDDO
+          ENDDO
+          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+          WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
+        END DO
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+        ENDIF
+        END SUBROUTINE
+!**********************************************************************
+!* INTERLIND
+!* Interpolate vector on a 2-pi periodic axis (directions in wwm grid).
+!*
+!* Called by SPECTRALINT
+!*
+!* Authors: Aron Roland
+!*          Kai Li
+!*          Guillaume Dodet (18/12/2012)
+!*
+!* Remarks: GD)This routine should be togeher with INTERLIN either here 
+!*             or in wwm_aux.F90.
+!**********************************************************************
+      SUBROUTINE INTERLIND (NX1, NX2, X1, X2, Y1, Y2)
+      USE DATAPOOL, ONLY : THR, rkind,PI2
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: NX1, NX2
+
+      REAL(rkind), INTENT(IN)    :: X1(NX1), Y1(NX1)
+      REAL(rkind), INTENT(IN)    :: X2(NX2)
+      REAL(rkind), INTENT(OUT)   :: Y2(NX2)
+
+      INTEGER             :: I, J
+      REAL(rkind)         :: DX1(NX1)
+
+      DO I = 1, NX1 - 1
+        DX1(I) = X1(I+1)-X1(I)
+      END DO
+      DX1(NX1) = X1(1)+PI2-X1(NX1)
+
+      DO I = 1, NX2
+        DO J = 1,NX1 - 1
+          IF (ABS(X2(I)-X1(J)) .LT. THR) THEN
+            Y2(I) = Y1(J)
+            EXIT
+          ELSE IF (X2(I) .GT. X1(J) .AND. X2(I) .LT. X1(J+1)) THEN
+            Y2(I) = Y1(J)+(Y1(J+1)-Y1(J))/DX1(J)*(X2(I)-X1(J))
+            EXIT
+          ELSE IF (X2(I) .GT. X1(NX1)) THEN
+            Y2(I) = Y1(NX1)+(Y1(1)-Y1(NX1))/DX1(NX1)*(X2(I)-X1(NX1))
+            EXIT
+          ELSE IF (X2(I) .LT. X1(1)) THEN
+            Y2(I) = Y1(NX1)+(Y1(1)-Y1(NX1))/DX1(NX1)*(X2(I)+PI2-X1(NX1))
+            EXIT            
+          END IF
+        END DO
+      END DO
+      END SUBROUTINE INTERLIND
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE  ALLOC_SPEC_BND()
+      USE DATAPOOL
+      IMPLICIT NONE
+      IF (LINHOM) THEN
+        ALLOCATE (SFRQ(WBMSC,IWBMNP), SPEG(WBMSC,WBMDC,IWBMNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 22')
+        ALLOCATE (SDIR(WBMSC,IWBMNP), SPRD(WBMSC,IWBMNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 23')
+      ELSE
+        ALLOCATE (SFRQ(WBMSC,1), SPEG(WBMSC,WBMDC,1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 24')
+        ALLOCATE (SDIR(WBMSC,1), SPRD(WBMSC,1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 25')
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READWAVEPARWW3()
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER         :: IP
+#ifdef MPI_PARALL_GRID
+      INTEGER         :: IPP
+      REAL(rkind)     :: RTMP
+#endif
+
+!     SPPARM(1): Hs, sign. wave height
+!     SPPARM(2): Wave period given by user (either peak or mean)
+!     SPPARM(3): average direction
+!     SPPARM(4): directional spread
+!     SPPARM(5): spectral shape (1-4),
+!                (1 - Pierson-Moskowitz,
+!                 2 - JONSWAP,
+!                 3 - BIN,
+!                 4 - Gauss)
+!                     negative peak (+) 
+!                     or mean frequency (-)
+!     SPPARM(6): directional spreading in degree (1) or exponent (2)
+!     SPPARM(7): gaussian width for the gauss spectrum 0.1
+!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.3
+
+      SPPARM(4,:) = 20.
+      SPPARM(5,:) = 2.
+      SPPARM(6,:) = 2.
+      SPPARM(7,:) = 0.1
+      SPPARM(8,:) = 3.3
+
+      IF (LINHOM) THEN
+        READ(WAV%FHNDL,*)
+      END IF
+
+#ifdef MPI_PARALL_GRID
+      IPP = 0
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNPGL
+          IF(ipgl(IWBNDGL(IP))%rank == myrank) THEN ! IF boundary nodes belong to local domain read values into boundary array
+            IPP = IPP + 1
+            READ (WAV%FHNDL, *) SPPARM(1,IPP), SPPARM(2,IPP), SPPARM(3,IPP)
+          ELSE
+            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP ! ELSE ... throw them away ...
+          ENDIF
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
+        DO IP = 1, IWBMNPGL
+          SPPARM(1:3,IP) = SPPARM(1:3,1)
+        END DO
+      END IF
+#else
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNP
+          READ (WAV%FHNDL, *) SPPARM(1,IP), SPPARM(2,IP), SPPARM(3,IP)
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
+        DO IP = 1, IWBMNP
+          SPPARM(1:3,IP) = SPPARM(1:3,1)
+        END DO
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
