@@ -673,6 +673,8 @@
         ELSE
           CALL MPI_RECV(eInt,1,itype, 0, 811, comm, istatus, ierr)
           NDT_WIND_ALL_FILES=eInt(1)
+          ALLOCATE(WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
           CALL MPI_RECV(WIND_TIME_ALL_FILES,NDT_WIND_ALL_FILES,rtype, 0, 812, comm, istatus, ierr)
           CALL MPI_RECV(WIND_TIME_IFILE,NDT_WIND_ALL_FILES,rtype, 0, 813, comm, istatus, ierr)
           CALL MPI_RECV(WIND_TIME_IT,NDT_WIND_ALL_FILES,rtype, 0, 814, comm, istatus, ierr)
@@ -1846,6 +1848,8 @@
         ELSE
           CALL MPI_RECV(eInt,1,itype, 0, 811, comm, istatus, ierr)
           nbtime_mjd=eInt(1)
+          ALLOCATE(WIND_TIME_MJD(nbtime_mjd), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
           CALL MPI_RECV(WIND_TIME_MJD,nbtime_mjd,rtype, 0, 812, comm, istatus, ierr)
         END IF
       END IF
