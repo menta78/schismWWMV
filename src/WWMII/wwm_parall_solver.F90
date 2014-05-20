@@ -4117,6 +4117,7 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
+      REAL(rkind) :: NEG_P(MSC,MDC)
       REAL(rkind) :: Sum_new, Sum_prev, eVal
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ
@@ -4239,7 +4240,7 @@
                 END DO
               END DO
             END IF
-          ELSE
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
             CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
@@ -4275,6 +4276,21 @@
                 END DO
               END DO
             END IF
+          ELSE
+            CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum + NEG_P
           END IF
           eSum=eSum/ASPAR_DIAG
           !eSum=max(zero,eSum)
@@ -4435,7 +4451,7 @@
                   END DO
                 END DO
               END IF
-            ELSE
+            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
               CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
               CALL GET_BLOCAL(IP, eSum)
               IF (SOURCE_IMPL) THEN
@@ -4470,6 +4486,19 @@
                   END DO
                 END DO
               END IF
+            ELSE
+              CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+              CALL GET_BLOCAL(IP, eSum)
+              IF (SOURCE_IMPL) THEN
+                IF (LNONL) THEN
+                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+                ELSE
+                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+                END IF
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
+                eSum = eSum + IMATRA
+              END IF
+              eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
             END IF
             Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
             Norm_LINF = max(Norm_LINF, abs(eSum))
