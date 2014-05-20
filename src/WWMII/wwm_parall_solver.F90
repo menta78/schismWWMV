@@ -3628,7 +3628,6 @@
         CP_THE = MAX(ZERO,CAD)
         CM_THE = MIN(ZERO,CAD)
         eFact=(DT4D/DDIR)*SI(IP)
-        CAD_THE(:,:,IP)=CAD
         DO ID=1,MDC
           ID1 = ID_PREV(ID)
           ID2 = ID_NEXT(ID)
@@ -3647,7 +3646,6 @@
         ELSE
           CAS=ZERO
         END IF
-        CAS_SIG(:,:,IP)=CAS
         eFact=DT4F*SI(IP)
         DO ID = 1, MDC
           CASS(1:MSC) = CAS(:,ID)
