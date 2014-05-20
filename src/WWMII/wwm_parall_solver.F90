@@ -3922,7 +3922,7 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
-      REAL(rkind) :: Sum_new, Sum_prev
+      REAL(rkind) :: Sum_new, Sum_prev, eVal
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ
 #ifdef TIMINGS
@@ -4051,10 +4051,12 @@
               IF (LNONL) THEN
                 CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
               ELSE
-                CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
               END IF
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = BLOC + IMATRA
+              eSum = eSum + IMATRA
             END IF
             DO IADJ=1,VERT_DEG(IP)
               IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
@@ -4248,7 +4250,7 @@
                   CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
                 END IF
                 ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
+                eSum = eSum + IMATRA
               END IF
               DO IADJ=1,VERT_DEG(IP)
                 IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
