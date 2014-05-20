@@ -3906,18 +3906,23 @@
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
       REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
       INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
+      REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
+      REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
+      REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
       REAL(rkind) :: DIFRU, USOC, WVC
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: DELTAL(3)
+      REAL(rkind) :: KP(3), NM, val1, val2
+      REAL(rkind) :: K_X(3), K_Y(3), CRFS_X(3), CRFS_Y(3)
+      REAL(rkind) :: CX(3), CY(3), CSX(3), CSY(3)
+      REAL(rkind) :: CRFS_U(3), K_U(3), LAMBDA_UX, LAMBDA_UY
+      REAL(rkind) :: UV_CUR(3,2)
+      REAL(rkind) :: DTK, TMP3
+      REAL(rkind) :: LAMBDA_X, LAMBDA_Y
       INTEGER     :: I1, I2, I3, NI(3)
       INTEGER     :: ID, IS, IE, IPOS
       INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal
+      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2, POS1, POS2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
