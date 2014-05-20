@@ -2385,14 +2385,16 @@
             END DO
             DEALLOCATE(REV_BOOK)
           ELSE
-            ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-            ASPAR_JAC = zero
-            TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
-            TMP2 = 1024**2
-            WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
-            TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
-            WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
+            IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
+              ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+              ASPAR_JAC = zero
+              TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
+              TMP2 = 1024**2
+              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
+              TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
+              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
+            END IF
           END IF
           !
           IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN
