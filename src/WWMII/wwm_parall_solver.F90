@@ -4469,19 +4469,18 @@
           END IF
           eSum=eSum/ASPAR_DIAG
           !eSum=max(zero,eSum)
-          Sum_new = sum(eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
           ELSE
             U_JACOBI(:,:,IP)=eSum
           END IF
-          if (Sum_new .gt. thr8) then
-            p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
-          else
-            p_is_converged = zero
-          endif
-
           IF (LCHKCONV) THEN
+            Sum_new = sum(eSum)
+            if (Sum_new .gt. thr8) then
+              p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
+            else
+              p_is_converged = zero
+            endif
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
                 IF (p_is_converged .lt. solverthr) is_converged=is_converged+1
@@ -4529,7 +4528,7 @@
         ! Check via number of converged points
         !
         IF (LCHKCONV) THEN
-          IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) EXIT
+          IF (p_is_converged .le. pmin) EXIT
         ENDIF
         !
         ! Check via the norm
