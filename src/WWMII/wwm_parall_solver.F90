@@ -4398,7 +4398,7 @@
                 END DO
               END DO
             END IF
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
             CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
@@ -4434,7 +4434,7 @@
                 END DO
               END DO
             END IF
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
             CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
@@ -4449,7 +4449,7 @@
               eSum = eSum + IMATRA
             END IF
             eSum=eSum + NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
             CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
