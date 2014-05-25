@@ -3679,6 +3679,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GET_IMATRA_IMATDA(IP, ACin, IMATRA, IMATDA)
+!AR: This is not good u are passing a array of size MNP but u are not using it make a local copy in the calling routine ...
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
