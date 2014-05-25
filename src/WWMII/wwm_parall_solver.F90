@@ -451,10 +451,6 @@
             dspl_send_tot(idx)=MSC*MDC*(IP-1)
             idxDspl_send=idxDspl_send+1
             wwm_ListDspl_send(idxDspl_send)=IP
-#ifdef DEBUG
-            WRITE(700+myrank,*) 'Send IP=', IP, 'IPglob=', IP_glob
-            FLUSH(700+myrank)
-#endif 
           END IF
         END DO
         call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwm_p2dsend_type(iNeigh), ierr)
@@ -584,7 +580,7 @@
             dspl_send(idx)=MSC*MDC*(IP-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
         call mpi_type_commit(wwmsl_send_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -605,7 +601,7 @@
             dspl_recv(idx)=MSC*MDC*(IPmap-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,1,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
         call mpi_type_commit(wwmsl_recv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -1781,10 +1777,6 @@
             IF (DoOper == 1) THEN
               idx=idx+1
               dspl_send(idx)=MSC*MDC*(IP-1)
-# ifdef DEBUG
-              WRITE(740+myrank,*) 'idx=', idx, 'IP=', IP
-              WRITE(740+myrank,*) '  IP_glob=', IP_glob, 'IPmap=', IPmap
-# endif
             END IF
           END IF
         END DO
@@ -3256,7 +3248,7 @@
         END DO
       END IF
 
-      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN! .AND. .NOT. LSOURCESWAM) THEN
+      IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
         DO IP = 1, NP_RES
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + IMATDAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the diagonal
           B(:,:,IP)             = B(:,:,IP) + IMATRAA(:,:,IP) * SI(IP) * DT4A !* IOBWB(IP) * IOBDP(IP) ! Add source term to the right hand side
@@ -3541,6 +3533,8 @@
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC)
       INTEGER     :: ID1, ID2, IS, ID, IP
+
+
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -3567,6 +3561,8 @@
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
+
+
       IF (FREQ_SHIFT_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -3632,7 +3628,6 @@
         CP_THE = MAX(ZERO,CAD)
         CM_THE = MIN(ZERO,CAD)
         eFact=(DT4D/DDIR)*SI(IP)
-        CAD_THE(:,:,IP)=CAD
         DO ID=1,MDC
           ID1 = ID_PREV(ID)
           ID2 = ID_NEXT(ID)
@@ -3651,7 +3646,6 @@
         ELSE
           CAS=ZERO
         END IF
-        CAS_SIG(:,:,IP)=CAS
         eFact=DT4F*SI(IP)
         DO ID = 1, MDC
           CASS(1:MSC) = CAS(:,ID)
@@ -3689,18 +3683,23 @@
       REAL(rkind) :: eVal
       IMATRA=0
       IMATDA=0
-      IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-        IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-          CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
-        ENDIF
-      ELSE
-        IF (LSOUBOUND) THEN ! Source terms on boundary ...
+      IF (LNONL) THEN
+        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
           IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-            CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
+            CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
+          ENDIF
+        ELSE
+          IF (LSOUBOUND) THEN ! Source terms on boundary ...
+            IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
+              CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
+            ENDIF
           ENDIF
         ENDIF
-      ENDIF
-      eVal = DT4A * IOBWB(IP) * IOBDP(IP) * SI(IP)
+      ELSE
+        IMATDA = IMATDAA(:,:,IP)
+        IMATRA = IMATRAA(:,:,IP)
+      END IF
+      eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
       IMATRA = IMATRA * eVal
       IMATDA = IMATDA * eVal
       END SUBROUTINE
@@ -3899,6 +3898,361 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: DIFRU, USOC, WVC
+      REAL(rkind) :: DELTAL(MSC,MDC,3)
+      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
+      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: eF(MSC,MDC)
+      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: ID, IS, IE, IPOS
+      INTEGER     :: I, IPGL1, IPrel, ICON
+      INTEGER     :: IP_fall, IPie, TheVal
+      INTEGER     :: ID1, ID2, POS1, POS2, IP1, IP2
+      REAL(rkind) :: CAD(MSC,MDC)
+      REAL(rkind) :: CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
+      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: eFact
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+      NEG_P=ZERO
+      ASPAR_DIAG=ZERO
+      DO ICON = 1, CCON(IP)
+        IE     =  IE_CELL2(IP,ICON)
+        IPOS   = POS_CELL2(IP,ICON)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        DO I=1,3
+          IPie = INE(I,IE)
+          DO ID=1,MDC
+            DO IS=1,MSC
+              IF (LSECU .OR. LSTCU) THEN
+                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)+CURTXY(IPie,1)
+                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)+CURTXY(IPie,2)
+              ELSE
+                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)
+              END IF
+              IF (LSPHE) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IPie,1)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*INVSPHTRANS(IPie,2)
+              END IF
+              IF (LDIFR) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*DIFRM(IPie)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IPie)
+                IF (LSECU .OR. LSTCU) THEN
+                  IF (IDIFFR .GT. 1) THEN
+                    WVC = SPSIG(IS)/WK(IS,IPie)
+                    USOC = (COSTH(ID)*CURTXY(IPie,1) + SINTH(ID)*CURTXY(IPie,2))/WVC
+                    DIFRU = ONE + USOC * (ONE - DIFRM(IPie))
+                  ELSE
+                    DIFRU = DIFRM(IPie)
+                  END IF
+                  CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IPie,1)
+                  CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IPie,2)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+        LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
+        FL11(:,:) = CXY(1,:,:,2)*IEN(1,IE)+CXY(2,:,:,2)*IEN(2,IE)
+        FL12(:,:) = CXY(1,:,:,3)*IEN(1,IE)+CXY(2,:,:,3)*IEN(2,IE)
+        FL21(:,:) = CXY(1,:,:,3)*IEN(3,IE)+CXY(2,:,:,3)*IEN(4,IE)
+        FL22(:,:) = CXY(1,:,:,1)*IEN(3,IE)+CXY(2,:,:,1)*IEN(4,IE)
+        FL31(:,:) = CXY(1,:,:,1)*IEN(5,IE)+CXY(2,:,:,1)*IEN(6,IE)
+        FL32(:,:) = CXY(1,:,:,2)*IEN(5,IE)+CXY(2,:,:,2)*IEN(6,IE)
+        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
+        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
+        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        KM = MIN(ZERO,K)
+        KP(:,:,:) = MAX(ZERO,K)
+        DELTAL(:,:,:) = CRFS(:,:,:) - KP(:,:,:)
+        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        TRIA03 = ONETHIRD * TRIA(IE)
+        !
+        IP1=INE(POS_TRICK(IPOS,1),IE)
+        IP2=INE(POS_TRICK(IPOS,2),IE)
+        K1(:,:) =  KP(:,:,IPOS)
+        DO ID=1,MDC
+          DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+        END DO
+        TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+        ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,IPOS)
+        eF(:,:) = -TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
+        NEG_P=NEG_P  + eF(:,:)*AC2(:,:,IP1)
+        eF(:,:) = -TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
+        NEG_P=NEG_P  + eF(:,:)*AC2(:,:,IP2)
+      END DO
+      IF (REFRACTION_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPTHETA(IP,CAD)
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=(DT4D/DDIR)*SI(IP)
+          DO ID=1,MDC
+            ID1 = ID-1
+            ID2 = ID+1
+            IF (ID1 == 1) ID1 = MDC
+            IF (ID2 == MDC) ID2 = 1
+            NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+            NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+          END DO
+          ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
+        END IF
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPSIGMA(IP,CAS)
+          eFact=DT4F*SI(IP)
+          DO ID = 1, MDC
+            CASS(1:MSC) = CAS(:,ID)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            DO IS=1,MSC
+              B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            END DO
+            DO IS=2,MSC
+              NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
+            END DO
+            DO IS=1,MSC-1
+              NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
+            END DO
+            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
+          END DO
+        END IF
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
+      REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
+      REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
+      REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
+      REAL(rkind) :: DIFRU, USOC, WVC
+      REAL(rkind) :: DELTAL(3)
+      REAL(rkind) :: KP(3), NM, val1, val2
+      REAL(rkind) :: K_X(3), K_Y(3), CRFS_X(3), CRFS_Y(3)
+      REAL(rkind) :: CX(3), CY(3), CSX(3), CSY(3)
+      REAL(rkind) :: CRFS_U(3), K_U(3), LAMBDA_UX, LAMBDA_UY
+      REAL(rkind) :: UV_CUR(3,2)
+      REAL(rkind) :: DTK, TMP3
+      REAL(rkind) :: LAMBDA_X, LAMBDA_Y
+      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: ID, IS, IE, IPOS
+      INTEGER     :: I, IPGL1, IPrel, ICON
+      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
+      INTEGER     :: ID1, ID2, POS1, POS2
+      REAL(rkind) :: CAD(MSC,MDC)
+      REAL(rkind) :: CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
+      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: eFact
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+      NEG_P=ZERO
+      ASPAR_DIAG=ZERO
+      DO ICON = 1, CCON(IP)
+        IE     =  IE_CELL2(IP,ICON)
+        IPOS   = POS_CELL2(IP,ICON)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        IF (LSECU .OR. LSTCU) THEN
+          IF (LSPHE) THEN
+            DO I=1,3
+              IPie=INE(I,IE)
+              UV_CUR(I,:)=CURTXY(IPie,:)*INVSPHTRANS(IPie,:)
+            END DO
+          ELSE
+            DO I=1,3
+              IPie=INE(I,IE)
+              UV_CUR(I,:)=CURTXY(IPie,:)
+            END DO
+          END IF
+          LAMBDA_UX=ONESIXTH*(UV_CUR(1,1)+UV_CUR(2,1)+UV_CUR(3,1))
+          LAMBDA_UY=ONESIXTH*(UV_CUR(1,2)+UV_CUR(2,2)+UV_CUR(3,2))
+          K_U(1)  = LAMBDA_UX * IEN(1,IE) + LAMBDA_UY * IEN(2,IE)
+          K_U(2)  = LAMBDA_UX * IEN(3,IE) + LAMBDA_UY * IEN(4,IE)
+          K_U(3)  = LAMBDA_UX * IEN(5,IE) + LAMBDA_UY * IEN(6,IE)
+          FL11_U = UV_CUR(2,1)*IEN(1,IE)+UV_CUR(2,2)*IEN(2,IE)
+          FL12_U = UV_CUR(3,1)*IEN(1,IE)+UV_CUR(3,2)*IEN(2,IE)
+          FL21_U = UV_CUR(3,1)*IEN(3,IE)+UV_CUR(3,2)*IEN(4,IE)
+          FL22_U = UV_CUR(1,1)*IEN(3,IE)+UV_CUR(1,2)*IEN(4,IE)
+          FL31_U = UV_CUR(1,1)*IEN(5,IE)+UV_CUR(1,2)*IEN(6,IE)
+          FL32_U = UV_CUR(2,1)*IEN(5,IE)+UV_CUR(2,2)*IEN(6,IE)
+          CRFS_U(1) = - ONESIXTH*(TWO *FL31_U + FL32_U + FL21_U + TWO * FL22_U)
+          CRFS_U(2) = - ONESIXTH*(TWO *FL32_U + TWO * FL11_U + FL12_U + FL31_U)
+          CRFS_U(3) = - ONESIXTH*(TWO *FL12_U + TWO * FL21_U + FL22_U + FL11_U)
+        ELSE
+          K_U=ZERO
+          CRFS_U=ZERO
+        END IF
+        IP1=INE(POS_TRICK(IPOS,1),IE)
+        IP2=INE(POS_TRICK(IPOS,2),IE)
+        DO IS=1,MSC
+          IF (LSPHE) THEN
+            DO I=1,3
+              IPie=INE(I,IE)
+              CSX(I)=CG(IS,IPie)*INVSPHTRANS(IPie,1)
+              CSY(I)=CG(IS,IPie)*INVSPHTRANS(IPie,2)
+            END DO
+          ELSE
+            DO I=1,3
+              IPie=INE(I,IE)
+              CSX(I)=CG(IS,IPie)
+              CSY(I)=CG(IS,IPie)
+            END DO
+          END IF
+          LAMBDA_X=ONESIXTH * (CX(1) + CX(2) + CX(3))
+          LAMBDA_Y=ONESIXTH * (CY(1) + CY(2) + CY(3))
+          K_X(1)  = LAMBDA_X * IEN(1,IE)
+          K_X(2)  = LAMBDA_X * IEN(3,IE)
+          K_X(3)  = LAMBDA_X * IEN(5,IE)
+          K_Y(1)  = LAMBDA_Y * IEN(2,IE)
+          K_Y(2)  = LAMBDA_Y * IEN(4,IE)
+          K_Y(3)  = LAMBDA_Y * IEN(6,IE)
+
+          FL11_X = CSX(2)*IEN(1,IE)
+          FL12_X = CSX(3)*IEN(1,IE)
+          FL21_X = CSX(3)*IEN(3,IE)
+          FL22_X = CSX(1)*IEN(3,IE)
+          FL31_X = CSX(1)*IEN(5,IE)
+          FL32_X = CSX(2)*IEN(5,IE)
+          FL11_Y = CSY(2)*IEN(2,IE)
+          FL12_Y = CSY(3)*IEN(2,IE)
+          FL21_Y = CSY(3)*IEN(4,IE)
+          FL22_Y = CSY(1)*IEN(4,IE)
+          FL31_Y = CSY(1)*IEN(6,IE)
+          FL32_Y = CSY(2)*IEN(6,IE)
+
+          CRFS_X(1)= - ONESIXTH*(TWO *FL31_X + FL32_X + FL21_X + TWO * FL22_X )
+          CRFS_X(2)= - ONESIXTH*(TWO *FL32_X + TWO * FL11_X + FL12_X + FL31_X )
+          CRFS_X(3)= - ONESIXTH*(TWO *FL12_X + TWO * FL21_X + FL22_X + FL11_X )
+          CRFS_Y(1)= - ONESIXTH*(TWO *FL31_Y + FL32_Y + FL21_Y + TWO * FL22_Y )
+          CRFS_Y(2)= - ONESIXTH*(TWO *FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y )
+          CRFS_Y(3)= - ONESIXTH*(TWO *FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y )
+
+          DO ID=1,MDC
+            DO I=1,3
+              K(I)=K_X(I)*COSTH(ID) + K_Y(I)*SINTH(ID) + K_U(I)
+              CRFS(I)=CRFS_X(I)*COSTH(ID) + CRFS_Y(I)*SINTH(ID) + CRFS_U(I)
+            END DO
+            KM = MIN(ZERO,K)
+            KP = MAX(ZERO,K)
+            DELTAL = CRFS - KP
+            NM=ONE/MIN(-THR,SUM(KM))
+            TRIA03 = ONETHIRD * TRIA(IE)
+            !
+            DTK =  KP(IPOS) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+            TMP3  =  DTK * NM
+            ASPAR_DIAG(IS,ID)=ASPAR_DIAG(IS,ID) + TRIA03+DTK- TMP3 * DELTAL(IPOS)
+            val1=-TMP3*DELTAL(POS_TRICK(IPOS,1))
+            val2=-TMP3*DELTAL(POS_TRICK(IPOS,2))
+            NEG_P(IS,ID)=NEG_P(IS,ID) + val1*AC2(IS,ID,IP1)
+            NEG_P(IS,ID)=NEG_P(IS,ID) + val2*AC2(IS,ID,IP2)
+          END DO
+        END DO
+      END DO
+      IF (REFRACTION_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPTHETA(IP,CAD)
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=(DT4D/DDIR)*SI(IP)
+          DO ID=1,MDC
+            ID1 = ID-1
+            ID2 = ID+1
+            IF (ID1 == 1) ID1 = MDC
+            IF (ID2 == MDC) ID2 = 1
+            NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+            NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+          END DO
+          ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
+        END IF
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPSIGMA(IP,CAS)
+          eFact=DT4F*SI(IP)
+          DO ID = 1, MDC
+            CASS(1:MSC) = CAS(:,ID)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            DO IS=1,MSC
+              B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            END DO
+            DO IS=2,MSC
+              NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
+            END DO
+            DO IS=1,MSC-1
+              NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
+            END DO
+            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
+          END DO
+        END IF
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -3922,26 +4276,25 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
-      REAL(rkind) :: Sum_new, Sum_prev
+      REAL(rkind) :: NEG_P(MSC,MDC)
+      REAL(rkind) :: Sum_new, Sum_prev, eVal
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
-      !
-      ! The advection part of the equation
-      !
-      IF (ASPAR_LOCAL_LEVEL .ge. 1) THEN
+
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
       !
-      IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+      IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       END IF
-      IF (ASPAR_LOCAL_LEVEL .ge. 1) THEN
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
           DO IP=1,NP_RES
             CALL GET_BLOCAL(IP, BLOC)
@@ -3967,7 +4320,7 @@
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
-          IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+          IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
             ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
@@ -4046,17 +4399,19 @@
                 END DO
               END DO
             END IF
-          ELSE
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
             CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
                 CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
               ELSE
-                CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
               END IF
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = BLOC + IMATRA
+              eSum = eSum + IMATRA
             END IF
             DO IADJ=1,VERT_DEG(IP)
               IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
@@ -4080,22 +4435,53 @@
                 END DO
               END DO
             END IF
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
+            CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum + NEG_P
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
+            CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum + NEG_P
+          ELSE
+            CALL WWM_ABORT('Not defined')
           END IF
           eSum=eSum/ASPAR_DIAG
           !eSum=max(zero,eSum)
-          Sum_new = sum(eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
           ELSE
             U_JACOBI(:,:,IP)=eSum
           END IF
-          if (Sum_new .gt. thr8) then
-            p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
-          else
-            p_is_converged = zero
-          endif
-
           IF (LCHKCONV) THEN
+            Sum_new = sum(eSum)
+            if (Sum_new .gt. thr8) then
+              p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
+            else
+              p_is_converged = zero
+            endif
             IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
               IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
                 IF (p_is_converged .lt. solverthr) is_converged=is_converged+1
@@ -4143,7 +4529,7 @@
         ! Check via number of converged points
         !
         IF (LCHKCONV) THEN
-          IF (p_is_converged .le. pmin .or. nbiter .eq. maxiter) EXIT
+          IF (p_is_converged .le. pmin) EXIT
         ENDIF
         !
         ! Check via the norm
@@ -4151,7 +4537,7 @@
         IF (L_SOLVER_NORM) THEN
           Norm_L2=0
           DO IP=1,NP_RES
-            IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+            IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
               ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
               IF (SOURCE_IMPL) THEN
                 IF (LNONL) THEN
@@ -4240,7 +4626,7 @@
                   END DO
                 END DO
               END IF
-            ELSE
+            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
               CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
               CALL GET_BLOCAL(IP, eSum)
               IF (SOURCE_IMPL) THEN
@@ -4250,7 +4636,7 @@
                   CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
                 END IF
                 ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
+                eSum = eSum + IMATRA
               END IF
               DO IADJ=1,VERT_DEG(IP)
                 IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
@@ -4275,6 +4661,34 @@
                   END DO
                 END DO
               END IF
+            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
+              CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+              CALL GET_BLOCAL(IP, eSum)
+              IF (SOURCE_IMPL) THEN
+                IF (LNONL) THEN
+                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+                ELSE
+                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+                END IF
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
+                eSum = eSum + IMATRA
+              END IF
+              eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
+            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
+              CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+              CALL GET_BLOCAL(IP, eSum)
+              IF (SOURCE_IMPL) THEN
+                IF (LNONL) THEN
+                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+                ELSE
+                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+                END IF
+                ASPAR_DIAG = ASPAR_DIAG + IMATDA
+                eSum = eSum + IMATRA
+              END IF
+              eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
+            ELSE
+              CALL WWM_ABORT('Wrong selection')
             END IF
             Norm_L2 = Norm_L2 + nwild_loc_res(IP)*(eSum**2)
             Norm_LINF = max(Norm_LINF, abs(eSum))

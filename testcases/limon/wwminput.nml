@@ -138,28 +138,28 @@
 /
 
 &ENGS          
- MESNL          = 0,                 
- MESIN          = 0,                 
+ MESNL          = 1,                 
+ MESIN          = 5,                 
  IFRIC          = 1,                 
- MESBF          = 0,                 
+ MESBF          = 1,                 
  FRICC          = 6.700000000000000E-002, 
  MESBR          = 1,                 
  ICRIT          = 1,                 
  ALPBJ          = 1.00000000000000,  
  BRHD           = 0.730000000000000, 
- LMAXETOT       = .F.,               
- MESDS          = 0,                 
- MESTR          = 0,                 
+ LMAXETOT       = .T.,               
+ MESDS          = 5,                 
+ MESTR          = 1,                 
  TRICO          = 1.00000000000000,  
  TRIRA          = 2.50000000000000,  
  TRIURS         = 0.100000000000000, 
 /
 
 &NUMS          
- ICOMP          = 0,                 
- AMETHOD        = 1,                 
+ ICOMP          = 3,                 
+ AMETHOD        = 7,                 
  SMETHOD        = 1,                 
- DMETHOD        = 0,                 
+ DMETHOD        = 2,                 
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
  MAXCFLTH       = 1.00000000000000,  
@@ -178,7 +178,7 @@
  LADVTEST       = .F.,               
  LSOUBOUND      = .F.,               
  LCONV          = .F.,               
- LCFL           = .F.,               
+ LCFL           = .T.,               
  LCHKCONV       = .T.,               
  NQSITER        = 10,                
  QSCONV1        = 0.980000000000000, 
@@ -221,6 +221,7 @@
  LSOURCESWWIII  = .F.,               
  BLOCK_GAUSS_SEIDEL = .T.,               
  LNONL          = .F.,               
+ ASPAR_LOCAL_LEVEL = 2 
 /
 
 &HISTORY       

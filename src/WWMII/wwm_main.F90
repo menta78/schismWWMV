@@ -625,7 +625,7 @@
         DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
         CALL SETSHALLOW
         CALL GRADDEP
-        CALL GRAD_CG_K
+        IF (MESTR == 6) CALL GRAD_CG_K
         CALL WAVE_K_C_CG
         CALL GRADCURT
         CALL SET_IOBPD
@@ -816,7 +816,11 @@
 # else
       CALLFROM='WWM'
 # endif
+
       CALL INITIALIZE_WWM
+
+!      STOP 'MEMORY TEST 1'
+
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)

@@ -56,7 +56,7 @@
 
          REAL(rkind)    :: SSNL3(MSC,MDC), SSNL4(MSC,MDC), SSINL(MSC,MDC), SSDS(MSC,MDC), DSSNL4(MSC,MDC)
          REAL(rkind)    :: SSBF(MSC,MDC), SSBR(MSC,MDC), SSINE(MSC,MDC), DSSNL3(MSC,MDC), DSSBR(MSC,MDC)
-         REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1, DAM(MSC*MDC)
+         REAL(rkind)    :: TMP_IN(MSC), TMP_DS(MSC), WN2(MSC*MDC),SPRDD(MDC),AK2VGM1,AKM1
 
          REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, AS
          REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ, FLLOWEST, GADIAG
@@ -125,16 +125,12 @@
          XFILT  = MAX ( ZERO , XFILT )
          XFLT   = XFILT
          FACP   = 2*XPP / PI2 * 0.62E-3 * PI2**4 / G9**2
-
          DO IK=1, NK
-           DAM(1+(IK-1)*NTH) = FACP / ( SIG(IK) * WK(IK,IP)**3 )
            WN2(1+(IK-1)*NTH) = WK(IK,IP)
          END DO
-!
          DO IK=1, NK
            IS0    = (IK-1)*NTH
            DO ITH=2, NTH
-             DAM(ITH+IS0) = DAM(1+IS0)
              WN2(ITH+IS0) = WN2(1+IS0)
            END DO
          END DO

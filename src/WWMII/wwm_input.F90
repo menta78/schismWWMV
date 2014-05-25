@@ -1075,7 +1075,7 @@
         CASE (1)
           OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
           allocate(XPtotal(np_total), DEPtotal(np_total), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('error in XPtotal, DEPtotal allocate')
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
           DO IP = 1, NP_TOTAL
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) XPtotal(IP), DEPtotal(IP)
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('error in the grid configuration file')
@@ -1109,7 +1109,7 @@
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
             NP_TOTAL = ITMP + JTMP
             allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), stat=istat)
-
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
             DO I = 1, 7
               READ(GRD%FHNDL, '(A)') RHEADER
             END DO
@@ -1125,6 +1125,7 @@
             END DO
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL
             allocate(INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
             DO I = 1, 3
               READ(GRD%FHNDL, '(A)') RHEADER
             END DO
@@ -1138,13 +1139,13 @@
           ELSE IF (IGRIDTYPE == 2) THEN ! periodic grid written by mathieu dutour
             READ(GRD%FHNDL,*) NE_TOTAL, NP_TOTAL
             allocate(DEPtotal(NP_TOTAL), stat=istat)
-            IF ( ISTAT /= 0 ) CALL WWM_ABORT('allocation error')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
             DO IP = 1, NP_TOTAL
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) DEPtotal(IP)
               IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=2 error in grid read 1')
             END DO
             allocate(TRIAtotal(NE_TOTAL), INEtotal(3,ne_total), IENtotal(6,ne_total), stat=istat)
-            IF ( ISTAT /= 0 ) CALL WWM_ABORT('allocation error')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
             DO IE = 1, NE_TOTAL
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) TRIAtotal(IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=2 error in grid read 2')
@@ -1166,7 +1167,7 @@
             READ(GRD%FHNDL,*, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in read mnp/mne')
             allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 2')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
             DO IP=1,NP_TOTAL
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XPDTMP, YPDTMP, ZPDTMP
               XPtotal(IP)  = XPDTMP
@@ -1182,7 +1183,7 @@
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL 
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NP_TOTAL 
             allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 3')
+            IF (istat/=0) CALL WWM_ABORT('allocate error 9')
             DO IP=1,NP_TOTAL
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) XPtotal(IP), YPtotal(IP), DEPtotal(IP)
               IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=4 error in grid read 1')
@@ -1228,7 +1229,7 @@
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=np_total + 7*ne_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error')
+            IF (istat/=0) CALL WWM_ABORT('allocate error 10')
             idx=0
             DO IP=1,NP_TOTAL
               idx=idx+1
@@ -1247,6 +1248,7 @@
           ELSE
             nb_real=3*np_total
             allocate(rbuf_real(nb_real), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 11')
             idx=0
             DO IP=1,NP_TOTAL
               rbuf_real(idx+1)=XPtotal(IP)
@@ -1264,13 +1266,15 @@
           np_total=rbuf_int(1)
           ne_total=rbuf_int(2)
           allocate(INEtotal(3,ne_total), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('allocate error 12')
           CALL MPI_RECV(INEtotal,3*ne_total,itype, 0, 32, comm, istatus, ierr)
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=np_total + 7*ne_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error')
+            IF (istat/=0) CALL WWM_ABORT('allocate error 13')
             CALL MPI_RECV(rbuf_real,nb_real,rtype, 0, 34, comm, istatus, ierr)
             allocate(DEPtotal(np_total), TRIAtotal(ne_total), IENtotal(6,ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 14')
             idx=0
             DO IP=1,NP_TOTAL
               idx=idx+1
@@ -1289,7 +1293,9 @@
           ELSE
             nb_real=3*np_total
             allocate(rbuf_real(nb_real), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 15')
             allocate(DEPtotal(np_total), XPtotal(np_total), YPtotal(np_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 16')
             CALL MPI_RECV(rbuf_real,nb_real,rtype, 0, 34, comm, istatus, ierr)
             idx=0
             DO IP=1,NP_TOTAL

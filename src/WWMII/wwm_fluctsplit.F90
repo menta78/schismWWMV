@@ -2020,9 +2020,11 @@
          SI = ZERO
          ITER_EXP = 0
          ITER_EXPD = 0
+
          ALLOCATE( I_DIAG(MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
          I_DIAG = 0
+
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
@@ -2063,7 +2065,7 @@
       INTEGER :: POS1, POS2, J1, J2
       INTEGER :: FPOS, EPOS, JP
       INTEGER, ALLOCATABLE :: REV_BOOK(:)
-      REAL(rkind)   :: TRIA03
+      REAL(rkind)   :: TRIA03, TMP1, TMP2
 
       INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
       INTEGER, ALLOCATABLE :: PTABLE(:,:)
@@ -2132,8 +2134,6 @@
       END IF
 # endif
 #endif
-         
-
 !
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'CALCULATE FLUCTUATION POINTER'
       ALLOCATE(CELLVERTEX(MNP,MAXMNECON,2), stat=istat)
@@ -2187,7 +2187,8 @@
           POS_CELL2(IP,I) = CELLVERTEX(IP,I,2)
         END DO
       END DO
-      deallocate(CELLVERTEX)
+      DEALLOCATE(CELLVERTEX)
+
       IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 
         ALLOCATE(PTABLE(COUNT_MAX,7), JA_IE(3,3,MNE), stat=istat)
@@ -2325,7 +2326,7 @@
         ! Arrays for Jacobi-Gauss-Seidel solver
         !
         IF (AMETHOD .eq. 7) THEN
-          IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
+          IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
             ALLOCATE(LIST_ADJ_VERT(MAX_DEG,MNP), VERT_DEG(MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
             J = 0
@@ -2384,12 +2385,19 @@
             END DO
             DEALLOCATE(REV_BOOK)
           ELSE
-            ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-            ASPAR_JAC = zero
+            IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
+              ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+              ASPAR_JAC = zero
+              TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
+              TMP2 = 1024**2
+              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
+              TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
+              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
+            END IF
           END IF
           !
-          IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.ge.1)) THEN
+          IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN
             ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             B_JAC = zero

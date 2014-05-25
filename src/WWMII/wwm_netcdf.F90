@@ -39,7 +39,7 @@
       IF (posSepDateTime .gt. 0) THEN
         YnameDate=YnameB(1:posSepDateTime-1) ! should be 1990-01-01
         YnameTimeP=YnameB(posSepDateTime+1:alenC) ! should be 0:0:0
-        alenC=LEN_TRIM(YnameTime)
+        alenC=LEN_TRIM(YnameTimeP)
         posBlank=INDEX(YnameTimeP(1:alenC), ' ')
         IF (posBlank .eq. 0) THEN
           YnameTime=YnameTimeP

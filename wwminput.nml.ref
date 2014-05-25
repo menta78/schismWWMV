@@ -376,8 +376,12 @@
                                           ! But the results depend on the
                                           ! number of processors
  LNONL   = F                              ! Solve the nonlinear system using simpler algorithm (Patankar) 
- L_LOCAL_ASPAR = F                        ! Do not store ASPAR, more computation
-                                          ! but less memory expenses
+ ASPAR_LOCAL_LEVEL =                      ! Aspar locality level
+                                          ! 0 ASPAR_JAC(MSC,MDC,MNP),
+                                          ! CAD_THE(MSC,MDC,MNP), CAS_SIG(MSC,MDC,MNP)
+                                          ! are allocated
+                                          ! 1: only ASPAR_JAC
+                                          ! 2: only small local arrays.
  L_SOLVER_NORM = F                        ! Compute solver norm as termination
                                           ! check of jacobi-Gauss-Seidel
                                           ! solver

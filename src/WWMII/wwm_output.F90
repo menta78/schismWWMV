@@ -2038,7 +2038,6 @@
             iret=nf90_inq_varid(ncid, TRIM(eStr), var_id)
             CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
             IF (PRINTMMA) THEN
-              Print *, 'Before PRINTMMA'
               CALL HISTORY_NC_PRINTMMA(eStr, OUTT,np_write,OUTVARS_COMPLETE,I)
             END IF
             IF (NF90_RUNTYPE == NF90_OUTTYPE_HIS) THEN

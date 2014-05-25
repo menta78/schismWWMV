@@ -175,7 +175,7 @@
          INTEGER, INTENT(IN) :: IP
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          
-         INTEGER      :: IS, ID, IMETHOD
+         INTEGER      :: IS, ID, IMETHOD, ICODE
          REAL(rkind)  :: VEC2RAD
          REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
@@ -184,6 +184,8 @@
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC, FF
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
+     
+         ICODE = 1 
          
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC
@@ -197,7 +199,7 @@
            U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
            Z0NEW(IP) = Z0OLD(IP,1)
            THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-           IF (.FALSE.) THEN
+           IF (ICODE == 1) THEN
              CALL IMPLSCH (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                     THWOLD(IP,1), USOLD(IP,1), &
      &                     TAUW(IP), Z0OLD(IP,1), &
@@ -205,7 +207,7 @@
      &                     U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                     Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                     SL(IP,:,:), FCONST(IP,:))
-           ELSE
+           ELSE IF (ICODE == 2) THEN
              CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                       THWOLD(IP,1), USOLD(IP,1), &
      &                       TAUW(IP), Z0OLD(IP,1), &
@@ -229,7 +231,10 @@
      &                      U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                      Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
      &                      SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-           ENDIF ! true false ...
+           ELSE IF (ICODE == 3) THEN
+             CALL IMPLSCH_LOCAL (IP, FL3(IP,:,:), FL(IP,:,:), 1, &
+     &                     SL(IP,:,:))
+           ENDIF ! ICODE
            DO IS = 1, MSC
              DO ID = 1, MDC
                ACLOC(IS,ID) =  MAX(ZERO, FL3(IP,ID,IS) / PI2 / SPSIG(IS))
@@ -965,8 +970,8 @@
                   END IF
                   DO ID = 1, MDC
                      IF (AC2(IS,ID,IP) < ZERO) AC2(IS,ID,IP) = ZERO 
-                     IF (FACTOR >= ZERO)  AC2(IP,IS,ID) = AC2(IP,IS,ID)*FACTOR
-                     AC2(IP,IS,ID) = MAX(zero,AC2(IP,IS,ID))
+                     IF (FACTOR >= ZERO)  AC2(IS,ID,IP) = AC2(IS,ID,IP)*FACTOR
+                     AC2(IS,ID,IP) = MAX(zero,AC2(IS,ID,IP))
                   END DO
                END IF
             END DO

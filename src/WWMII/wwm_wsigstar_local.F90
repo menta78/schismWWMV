@@ -1,4 +1,4 @@
-      SUBROUTINE WSIGSTAR (USNEW, Z0NEW, WSTAR, SIG_N)
+      SUBROUTINE WSIGSTAR_LOCAL (IPP, USNEW, Z0NEW, WSTAR, SIG_N)
 ! ----------------------------------------------------------------------
 
 !**** *WSIGSTAR* - COMPUTATION OF STANDARD DEVIATION OF USTAR.
@@ -47,15 +47,19 @@
 !      USE YOWCOUP  , ONLY : XKAPPA
 !      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-      USE DATAPOOL, ONLY : XKAPPA, RKIND
+     USE DATAPOOL, ONLY : XKAPPA, RKIND, ONETHIRD
 
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
+      INTEGER, INTENT(IN) :: IPP
+
       REAL, PARAMETER :: A = 0.8/1000.
       REAL, PARAMETER :: B = 0.08/1000.
 
-      REAL(rkind) :: ONETHIRD, BG_GUST
+      INTEGER :: IJ,IJS,IJL
+
+      REAL(rkind) :: BG_GUST
       REAL(rkind) :: U10, C_D, DC_DDU, SIG_CONV
       REAL(rkind) :: ZHOOK_HANDLE
       REAL(rkind) :: USNEW, Z0NEW, WSTAR
@@ -65,22 +69,21 @@
 
 ! ----------------------------------------------------------------------
 
-      ONETHIRD = 1./3.
       BG_GUST  = 0.        ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
 !
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
 !       BASED ON U*
 !
-        U10 = USNEW(IJ)/XKAPPA*LOG(10./Z0NEW)
-        C_D = A+B*U10
-        DC_DDU = B
-        SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-        SIG_N = MIN(0.5, SIG_CONV * &
-     &                        (BG_GUST*USNEW**3+ &
-     &                         0.5*XKAPPA*WSTAR**3)**ONETHIRD &
-     &                           /U10 &
-     &                 )
+      U10 = USNEW/XKAPPA*LOG(10./Z0NEW)
+      C_D = A+B*U10
+      DC_DDU = B
+      SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
+      SIG_N = MIN(0.5, SIG_CONV * &
+     &                      (BG_GUST*USNEW**3+ &
+     &                       0.5*XKAPPA*WSTAR**3)**ONETHIRD &
+     &                         /U10 &
+     &               )
+
       !IF (LHOOK) CALL DR_HOOK('WSIGSTAR',1,ZHOOK_HANDLE)
 
-      RETURN
-      END SUBROUTINE WSIGSTAR
+      END SUBROUTINE WSIGSTAR_LOCAL
