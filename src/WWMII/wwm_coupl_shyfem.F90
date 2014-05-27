@@ -138,11 +138,11 @@
           END DO
           DO iProc=2,nproc
             CALL MPI_SEND(VAR_REAL_TOT,np_global*siz,rtype, iProc-1, 196, comm, ierr)
-            CALL MPI_SEND(VAR_INT_TOT,np_global,rtype, iProc-1, 197, comm, ierr)
+            CALL MPI_SEND(VAR_INT_TOT,np_global,itype, iProc-1, 197, comm, ierr)
           END DO
         ELSE
           CALL MPI_RECV(VAR_REAL_TOT,np_global*siz,rtype, 0, 196, comm, istatus, ierr)
-          CALL MPI_RECV(VAR_INT_TOT,np_global,rtype, 0, 197, comm, istatus, ierr)
+          CALL MPI_RECV(VAR_INT_TOT,np_global,itype, 0, 197, comm, istatus, ierr)
         END IF
         DO IP = 1, MNP
           CURTXY(IP,1)=VAR_REAL_TOT(iplg(IP),NLVT+1)

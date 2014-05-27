@@ -89,7 +89,7 @@
 
          DO IS = 1, MSC
            SIGMA = SPSIG(IS)
-           BSAT(IS) = BSAT(IS) * CG(IP,IS) * WK(IS,IP)**3
+           BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
            STP_LO = WK(IS,IP)/KMESPC
            C_K(IS) =  (DELTA + (1.-DELTA) * STP_LO ) *STP_LO
            IF (BSAT(IS) < BSATR) THEN
@@ -156,7 +156,7 @@
 
          DO IS = 1, MSC
            SIGMA = SPSIG(IS)
-           BSAT(IS) = BSAT(IS) * CG(IP,IS) * WK(IS,IP)**3
+           BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
            C_K(IS) = (WK(IS,IP) / KMESPC) ** N2
            IF (BSAT(IS) < BSATR) THEN
              PSAT(IS) = 0.
