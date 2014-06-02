@@ -4074,7 +4074,7 @@
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
       REAL(rkind) :: K_X(3), K_Y(3), CRFS_X(3), CRFS_Y(3)
-      REAL(rkind) :: CX(3), CY(3), CSX(3), CSY(3)
+      REAL(rkind) :: CSX(3), CSY(3)
       REAL(rkind) :: CRFS_U(3), K_U(3), LAMBDA_UX, LAMBDA_UY
       REAL(rkind) :: UV_CUR(3,2)
       REAL(rkind) :: DTK, TMP3
@@ -4151,8 +4151,8 @@
               CSY(I)=CG(IS,IPie)
             END DO
           END IF
-          LAMBDA_X=ONESIXTH * (CX(1) + CX(2) + CX(3))
-          LAMBDA_Y=ONESIXTH * (CY(1) + CY(2) + CY(3))
+          LAMBDA_X=ONESIXTH * (CSX(1) + CSX(2) + CSX(3))
+          LAMBDA_Y=ONESIXTH * (CSY(1) + CSY(2) + CSY(3))
           K_X(1)  = LAMBDA_X * IEN(1,IE)
           K_X(2)  = LAMBDA_X * IEN(3,IE)
           K_X(3)  = LAMBDA_X * IEN(5,IE)
