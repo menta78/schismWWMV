@@ -4019,8 +4019,8 @@
           DO ID=1,MDC
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID1 == 1) ID1 = MDC
-            IF (ID2 == MDC) ID2 = 1
+            IF (ID == 1) ID1 = MDC
+            IF (ID == MDC) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
