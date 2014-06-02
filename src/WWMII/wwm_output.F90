@@ -248,7 +248,7 @@
            END IF
            IF (LCFL) THEN
              WRITE(OUT%FHNDL+10)  SNGL(TIME)
-             WRITE(OUT%FHNDL+10)  (SNGL(CFLCXY(IP,1)), SNGL(CFLCXY(IP,2)), SNGL(CFLCXY(IP,3)), IP = 1, MNP)
+             WRITE(OUT%FHNDL+10)  (SNGL(CFLCXY(1,IP)), SNGL(CFLCXY(2,IP)), SNGL(CFLCXY(3,IP)), IP = 1, MNP)
            ENDIF
          END IF ! myrank
 #else

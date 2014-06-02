@@ -2069,6 +2069,7 @@
 
       INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
       INTEGER, ALLOCATABLE :: PTABLE(:,:)
+      INTEGER :: SUM_CCON, SizeAlloc
 
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -2385,17 +2386,30 @@
               END DO
             END DO
             DEALLOCATE(REV_BOOK)
-          ELSE
-            IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
-              ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
-              ASPAR_JAC = zero
-              TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
-              TMP2 = 1024**2
-              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
-              TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
-              WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
-            END IF
+          END IF
+          IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
+            ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+            ASPAR_JAC = zero
+            TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
+            TMP2 = 1024**2
+            WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
+            TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
+            WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
+          END IF
+          IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+            SUM_CCON = 0
+            DO IP = 1, NP_RES
+              SUM_CCON = SUM_CCON +CCON(IP)
+            END DO
+            ALLOCATE(K_CRFS_MSC(12, MSC,SUM_CCON), K_CRFS_U(6,SUM_CCON), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9b')
+            SizeAlloc=12*MSC*SUM_CCON
+            WRITE(STAT%FHNDL,*) 'LEVEL 5, nb   =', SizeAlloc
+            SizeAlloc=MDC*MSC*NNZ
+            WRITE(STAT%FHNDL,*) 'ASPAR_JAC, nb =', SizeAlloc
+            SizeAlloc=MDC*MSC*MNP
+            WRITE(STAT%FHNDL,*) 'U_JAC, nb     =', SizeAlloc
           END IF
           !
           IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN

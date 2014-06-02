@@ -138,11 +138,11 @@
           END DO
           DO iProc=2,nproc
             CALL MPI_SEND(VAR_REAL_TOT,np_global*siz,rtype, iProc-1, 196, comm, ierr)
-            CALL MPI_SEND(VAR_INT_TOT,np_global,rtype, iProc-1, 197, comm, ierr)
+            CALL MPI_SEND(VAR_INT_TOT,np_global,itype, iProc-1, 197, comm, ierr)
           END DO
         ELSE
           CALL MPI_RECV(VAR_REAL_TOT,np_global*siz,rtype, 0, 196, comm, istatus, ierr)
-          CALL MPI_RECV(VAR_INT_TOT,np_global,rtype, 0, 197, comm, istatus, ierr)
+          CALL MPI_RECV(VAR_INT_TOT,np_global,itype, 0, 197, comm, istatus, ierr)
         END IF
         DO IP = 1, MNP
           CURTXY(IP,1)=VAR_REAL_TOT(iplg(IP),NLVT+1)
@@ -341,7 +341,7 @@
           END DO
           ACLOC(:,:) = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
-          CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT')
+          CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PIPE_SHYFEM_OUT 2')
           CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
           CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
           OUTT(iplg(IP), 1 + 5*NLVT) = HS
@@ -362,48 +362,48 @@
         call mpi_reduce(OUTT,OUTT_TOT,NP_GLOBAL*siz,rtype,MPI_SUM,0,comm,ierr)
         IF (myrank.eq.0) THEN
           DO IP=1,NP_GLOBAL
-            OUTT_TOT(IP,:)=OUTT_TOT(IP,:)/nwild_gb(IP)
+            OUTT_TOT(IP,:)=OUTT_TOT(IP,:)*nwild_gb(IP)
             DO IL = 1, NLVT
-              WRITE(11101)  OUTT(IP, IL       )
-              WRITE(11102)  OUTT(IP, IL+  NLVT)
-              WRITE(11142)  OUTT(IP, IL+2*NLVT)
+              WRITE(11101)  OUTT_TOT(IP, IL       )
+              WRITE(11102)  OUTT_TOT(IP, IL+  NLVT)
+              WRITE(11142)  OUTT_TOT(IP, IL+2*NLVT)
             END DO
             FLUSH(11101)
             FLUSH(11102)
             FLUSH(11142)                        !ccf
-            WRITE(11103) OUTT(IP, 1 + 5*NLVT)
+            WRITE(11103) OUTT_TOT(IP, 1 + 5*NLVT)
             FLUSH(11103)
-            WRITE(11104) OUTT(IP, 2 + 5*NLVT)
+            WRITE(11104) OUTT_TOT(IP, 2 + 5*NLVT)
             FLUSH(11104)
-            WRITE(11105) OUTT(IP, 3 + 5*NLVT)
+            WRITE(11105) OUTT_TOT(IP, 3 + 5*NLVT)
             FLUSH(11105)
-            WRITE(11106) OUTT(IP, 4 + 5*NLVT)
+            WRITE(11106) OUTT_TOT(IP, 4 + 5*NLVT)
             FLUSH(11106)
-            WRITE(11107) OUTT(IP, 5 + 5*NLVT)
+            WRITE(11107) OUTT_TOT(IP, 5 + 5*NLVT)
             FLUSH(11107)
-            WRITE(11108) OUTT(IP, 6 + 5*NLVT)
+            WRITE(11108) OUTT_TOT(IP, 6 + 5*NLVT)
             FLUSH(11108)
-            WRITE(11109) OUTT(IP, 7 + 5*NLVT)
+            WRITE(11109) OUTT_TOT(IP, 7 + 5*NLVT)
             FLUSH(11109)
             DO IL=1,NLVT
-              STOKES_X_ret(IL) = OUTT(IP, IL+3*NLVT)
-              STOKES_Y_ret(IL) = OUTT(IP, IL+4*NLVT)
+              STOKES_X_ret(IL) = OUTT_TOT(IP, IL+3*NLVT)
+              STOKES_Y_ret(IL) = OUTT_TOT(IP, IL+4*NLVT)
             END DO
             WRITE(11110) STOKES_X_ret
             FLUSH(11110)
             WRITE(11111) STOKES_Y_ret
             FLUSH(11111)
             IF (LWINDFROMWWM) THEN
-              WRITE(11112) OUTT(IP, 11 + 5*NLVT)
+              WRITE(11112) OUTT_TOT(IP, 11 + 5*NLVT)
               FLUSH(11112)
-              WRITE(11113) OUTT(IP, 12 + 5*NLVT)
+              WRITE(11113) OUTT_TOT(IP, 12 + 5*NLVT)
               FLUSH(11113)
             END IF
-            WRITE(11114) OUTT(IP, 8 + 5*NLVT)
+            WRITE(11114) OUTT_TOT(IP, 8 + 5*NLVT)
             FLUSH(11114)
-            WRITE(11115) OUTT(IP, 9 + 5*NLVT)
+            WRITE(11115) OUTT_TOT(IP, 9 + 5*NLVT)
             FLUSH(11115)
-            WRITE(11116) OUTT(IP, 10 + 5*NLVT)
+            WRITE(11116) OUTT_TOT(IP, 10 + 5*NLVT)
             FLUSH(11116)
           END DO
         END IF
