@@ -4509,13 +4509,16 @@
       REAL(rkind) :: NEG_P(MSC,MDC)
       REAL(rkind) :: Sum_new, Sum_prev, eVal
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      INTEGER :: I, K, IP_ADJ, IADJ
+      INTEGER :: I, K, IP_ADJ, IADJ, JDX
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
+      END IF
+      IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+        CALL COMPUTE_K_CRFS_XYU
       END IF
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
@@ -4544,9 +4547,9 @@
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
-
       DO
         is_converged = 0
+        JDX=0
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
@@ -4682,6 +4685,21 @@
             eSum=eSum - NEG_P
           ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
             CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum - NEG_P
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+            CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN
