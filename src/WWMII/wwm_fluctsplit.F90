@@ -2069,7 +2069,7 @@
 
       INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
       INTEGER, ALLOCATABLE :: PTABLE(:,:)
-      INTEGER :: SUM_CCON
+      INTEGER :: SUM_CCON, SizeAlloc
 
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -2401,8 +2401,14 @@
             DO IP = 1, NP_RES
               SUM_CCON = SUM_CCON +CCON(IP)
             END DO
-            ALLOCATE(K_CRFS_XYU(8, MSC,SUM_CCON), stat=istat)
+            ALLOCATE(K_CRFS_MSC(12, MSC,SUM_CCON), K_CRFS_U(6,SUM_CCON), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9b')
+            SizeAlloc=12*MSC*SUM_CCON
+            WRITE(STAT%FHNDL,*) 'LEVEL 5, nb   =', SizeAlloc
+            SizeAlloc=MDC*MSC*NNZ
+            WRITE(STAT%FHNDL,*) 'ASPAR_JAC, nb =', SizeAlloc
+            SizeAlloc=MDC*MSC*MNP
+            WRITE(STAT%FHNDL,*) 'U_JAC, nb     =', SizeAlloc
           END IF
           !
           IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN

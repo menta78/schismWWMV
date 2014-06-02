@@ -950,7 +950,7 @@
                              ! value 2 no allocation
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
          REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
-         REAL(rkind), allocatable :: K_CRFS_XYU(:,:,:)
+         REAL(rkind), allocatable :: K_CRFS_MSC(:,:,:), K_CRFS_U(:,:)
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
