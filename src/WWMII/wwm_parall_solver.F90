@@ -4254,6 +4254,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE COMPUTE_K_CRFS_XYU
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER IP, J
+      J=0
+      DO IP=1,NP_RES
+        
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE

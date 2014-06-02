@@ -144,6 +144,31 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SMOOTH_V2(VAR_IN, VAR_OUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: VAR_IN(MNP)
+      REAL(rkind), INTENT(OUT) :: VAR_OUT(MNP)
+      INTEGER IP, IADJ, IP_ADJ
+      REAL(rkind) :: SumVAR, SumSI, eVal
+      DO IP = 1, NP_RES
+        SumVAR=SI(IP) * VAR_IN(IP)
+        SumSI =SI(IP)
+        DO IADJ=1,VERT_DEG(IP)
+          IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+          SumVAR=SumVAR + SI(IP_ADJ)*VAR_IN(IP_ADJ)
+          SumSI =SumSI  + SI(IP_ADJ)
+        END DO
+        eVal=SumVAR/SumSI
+        VAR_OUT(IP)=eVal
+      END DO
+#ifdef MPI_PARALL_GRID
+      CALL exchange_p2d(VAR_OUT)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
      SUBROUTINE BOTEFCT( EWK, DFBOT )
         USE DATAPOOL
         IMPLICIT NONE  
