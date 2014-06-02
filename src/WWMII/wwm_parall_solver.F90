@@ -3919,6 +3919,7 @@
       INTEGER     :: I, IPGL1, IPrel, ICON
       INTEGER     :: IP_fall, IPie, TheVal
       INTEGER     :: ID1, ID2, POS1, POS2, IP1, IP2
+      INTEGER     :: IP_ADJ1, IP_ADJ2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -4449,7 +4450,7 @@
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
               eSum = eSum + IMATRA
             END IF
-            eSum=eSum + NEG_P
+            eSum=eSum - NEG_P
           ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
             CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
             CALL GET_BLOCAL(IP, eSum)
@@ -4464,7 +4465,7 @@
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
               eSum = eSum + IMATRA
             END IF
-            eSum=eSum + NEG_P
+            eSum=eSum - NEG_P
           ELSE
             CALL WWM_ABORT('Not defined')
           END IF
