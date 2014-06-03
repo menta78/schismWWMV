@@ -884,8 +884,8 @@
         IE_glob=INDXextent_IE(IE)
         ListMapped(IE_glob)=IE
       END DO
-      nnbr_ie_send=0
-      nnbr_ie_recv=0
+      ie_nnbr_send=0
+      ie_nnbr_recv=0
       DO iProc=1,nproc
         IF (iProc .ne. myrank+1) THEN
           MNE_loc=ListMNE(iProc)
@@ -905,7 +905,7 @@
           END DO
           ListCommon_recv(iProc)=nbCommon_recv
           IF (nbCommon_recv .gt. 0) THEN
-            nnbr_ie_recv=nnbr_ie_recv+1
+            ie_nnbr_recv=ie_nnbr_recv+1
           END IF
           !
           nbCommon_send=0
@@ -917,14 +917,14 @@
           END DO
           ListCommon_send(iProc)=nbCommon_send
           IF (nbCommon_send .gt. 0) THEN
-            nnbr_ie_send=nnbr_ie_send+1
+            ie_nnbr_send=ie_nnbr_send+1
           END IF
         END IF
       END DO
       !
       ! Building list of neighbors
       !
-      allocate(ListNeigh_ie_send(nnbr_ie_send), ListNeigh_ie_recv(nnbr_ie_recv), stat=istat)
+      allocate(ListNeigh_ie_send(ie_nnbr_send), ListNeigh_ie_recv(ie_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 27')
       idx_send=0
       idx_recv=0
@@ -941,9 +941,9 @@
       !
       ! Building MPI arrays
       !
-      allocate(ie_send_rqst(nnbr_ie_send), ie_recv_rqst(nnbr_ie_recv), ie_send_stat(MPI_STATUS_SIZE,nnbr_ie_send), ie_recv_stat(MPI_STATUS_SIZE,nnbr_ie_recv), ie_send_type(nnbr_ie_send), ie_recv_type(nnbr_ie_recv), stat=istat)
+      allocate(ie_send_rqst(ie_nnbr_send), ie_recv_rqst(ie_nnbr_recv), ie_send_stat(MPI_STATUS_SIZE,ie_nnbr_send), ie_recv_stat(MPI_STATUS_SIZE,ie_nnbr_recv), ie_send_type(ie_nnbr_send), ie_recv_type(ie_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 38')
-      DO iNeigh=1,nnbr_ie_send
+      DO iNeigh=1,ie_nnbr_send
         iProc=ListNeigh_ie_send(iNeigh)+1
         nbCommon=ListCommon_send(iProc)
         MNEextent_loc=ListMNEextent(iProc)
@@ -967,7 +967,7 @@
         call mpi_type_commit(ie_send_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
-      DO iNeigh=1,nnbr_ie_recv
+      DO iNeigh=1,ie_nnbr_recv
         iProc=ListNeigh_ie_recv(iNeigh)+1
         MNEextent_loc=ListMNEextent(iProc)
         nbCommon=ListCommon_recv(iProc)
@@ -995,8 +995,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE TRIG_EXTEND_TO_FULL_ARRAY(Vin, Vout)
-      
+      SUBROUTINE TRIG_SYNCHRONIZATION(V)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) :: V(MNEextent)
+      integer iNeigh, iRank
+      DO iNeigh=1,ie_nnbr_send
+        iRank=ListNeigh_ie_send(iNeigh)
+        CALL mpi_isend(V, 1, ie_send_type(iNeigh), iRank, 1020, comm, ie_send_rqst(iNeigh), ierr)
+      END DO
+      DO iNeigh=1,ie_nnbr_recv
+        iRank=ListNeigh_ie_recv(iNeigh)
+        call mpi_irecv(V,1,ie_recv_type(iNeigh),iRank,1020,comm,ie_recv_rqst(iNeigh),ierr)
+      END DO
+      IF (ie_nnbr_send > 0) THEN
+        call mpi_waitall(ie_nnbr_send, ie_send_rqst, ie_send_stat,ierr)
+      END IF
+      IF (ie_nnbr_recv > 0) THEN
+        call mpi_waitall(ie_nnbr_recv, ie_recv_rqst, ie_recv_stat,ierr)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

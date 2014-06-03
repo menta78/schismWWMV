@@ -1128,7 +1128,7 @@
 ! Data types for working with elements
 !
          integer :: MNEextent
-         integer :: nnbr_ie_send, nnbr_ie_recv
+         integer :: ie_nnbr_send, ie_nnbr_recv
          integer, allocatable :: ListMNE(:)
          integer, allocatable :: ListMNEextent(:)
          integer, allocatable :: ListINDXextent_IE(:)
