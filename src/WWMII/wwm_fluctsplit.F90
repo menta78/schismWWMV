@@ -2238,6 +2238,7 @@
         J = 0
         NNZ = 0
         DO IP = 1, MNP
+!AR: bug below ...
           ITMP(:) = 0
           DO I = 1, CCON(IP)
             J = J + 1
