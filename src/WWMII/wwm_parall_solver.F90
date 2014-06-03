@@ -4481,6 +4481,225 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE NEGATIVE_PART_D(J, IP, NEG_P, ASPAR_DIAG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      INTEGER, intent(inout) :: J
+      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: K(MSC,3), CRFS(MSC,3)
+      REAL(rkind) :: DELTAL(MSC,3)
+      REAL(rkind) :: KM(MSC,3), KP(MSC,3)
+      REAL(rkind) :: NM(MSC), K1(MSC)
+      REAL(rkind) :: DTK(MSC), TMP3(MSC)
+      REAL(rkind) :: eF(MSC)
+      REAL(rkind) :: CAD(MSC,MDC)
+      REAL(rkind) :: CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
+      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      INTEGER ICON, ID, IS, idx, IE, IPOS, IP1, IP2, TheVal
+      INTEGER ID1, ID2
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: TRIA03
+      REAL(rkind) :: eFact
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+      NEG_P=ZERO
+      ASPAR_DIAG=ZERO
+      DO ICON = 1, CCON(IP)
+        J=J+1
+        IE     =  IE_CELL2(IP,ICON)
+        IPOS   = POS_CELL2(IP,ICON)
+        DO ID=1,MDC
+          DO idx=1,3
+            K(:,idx)=K_CRFS_MSC(idx,:,J)*COSTH(ID) + K_CRFS_MSC(idx+3,:,J)*SINTH(ID) + K_CRFS_U(idx,J)
+            CRFS(:,idx)=K_CRFS_MSC(idx+6,:,J)*COSTH(ID) + K_CRFS_MSC(idx+9,:,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
+          END DO
+          KM = MIN(ZERO,K)
+          KP = MAX(ZERO,K)
+          DELTAL = CRFS - KP
+          NM(:)=ONE/MIN(-THR,KM(:,1) + KM(:,2) + KM(:,3))
+          TRIA03 = ONETHIRD * TRIA(IE)
+          !
+          IP1=INE(POS_TRICK(IPOS,1),IE)
+          IP2=INE(POS_TRICK(IPOS,2),IE)
+          DTK(:) =  KP(:,IPOS) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+          TMP3(:)  =  DTK(:) * NM(:)
+          ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + TRIA03+DTK(:)- TMP3(:) * DELTAL(:,IPOS)
+          eF(:) = -TMP3(:)*DELTAL(:,POS_TRICK(IPOS,1))
+          NEG_P(:,ID)=NEG_P(:,ID)  + eF(:)*AC2(:,ID,IP1)
+          eF(:) = -TMP3(:)*DELTAL(:,POS_TRICK(IPOS,2))
+          NEG_P(:,ID)=NEG_P(:,ID)  + eF(:)*AC2(:,ID,IP2)
+        END DO
+      END DO
+      IF (REFRACTION_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPTHETA(IP,CAD)
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=(DT4D/DDIR)*SI(IP)
+          DO ID=1,MDC
+            ID1 = ID-1
+            ID2 = ID+1
+            IF (ID == 1) ID1 = MDC
+            IF (ID == MDC) ID2 = 1
+            NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+            NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+          END DO
+          ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
+        END IF
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPSIGMA(IP,CAS)
+          eFact=DT4F*SI(IP)
+          DO ID = 1, MDC
+            CASS(1:MSC) = CAS(:,ID)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            DO IS=1,MSC
+              B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            END DO
+            DO IS=2,MSC
+              NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
+            END DO
+            DO IS=1,MSC-1
+              NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
+            END DO
+            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
+          END DO
+        END IF
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE NEGATIVE_PART_E(J, IP, NEG_P, ASPAR_DIAG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      INTEGER, intent(inout) :: J
+      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: K(3), CRFS(3)
+      REAL(rkind) :: DELTAL(3)
+      REAL(rkind) :: KM(3), KP(3)
+      REAL(rkind) :: NM, K1
+      REAL(rkind) :: DTK, TMP3
+      REAL(rkind) :: CAD(MSC,MDC)
+      REAL(rkind) :: CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
+      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      INTEGER ICON, ID, IS, idx, IE, IPOS, IP1, IP2, TheVal
+      INTEGER ID1, ID2
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: TRIA03
+      REAL(rkind) :: eFact
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+      NEG_P=ZERO
+      ASPAR_DIAG=ZERO
+      DO ICON = 1, CCON(IP)
+        J=J+1
+        IE     =  IE_CELL2(IP,ICON)
+        IPOS   = POS_CELL2(IP,ICON)
+        DO ID=1,MDC
+          DO IS=1,MSC
+            DO idx=1,3
+              K(idx)=K_CRFS_MSC(idx,IS,J)*COSTH(ID) + K_CRFS_MSC(idx+3,IS,J)*SINTH(ID) + K_CRFS_U(idx,J)
+              CRFS(idx)=K_CRFS_MSC(idx+6,IS,J)*COSTH(ID) + K_CRFS_MSC(idx+9,IS,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
+            END DO
+            KM = MIN(ZERO,K)
+            KP = MAX(ZERO,K)
+            DELTAL = CRFS - KP
+            NM=ONE/MIN(-THR,SUM(KM))
+            TRIA03 = ONETHIRD * TRIA(IE)
+            !
+            IP1=INE(POS_TRICK(IPOS,1),IE)
+            IP2=INE(POS_TRICK(IPOS,2),IE)
+            DTK =  KP(IPOS) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+            TMP3  =  DTK * NM
+            ASPAR_DIAG(IS,ID)=ASPAR_DIAG(IS,ID) + TRIA03+DTK - TMP3 * DELTAL(IPOS)
+            NEG_P(IS,ID)=NEG_P(IS,ID) -TMP3*DELTAL(POS_TRICK(IPOS,1))*AC2(IS,ID,IP1)
+            NEG_P(IS,ID)=NEG_P(IS,ID) - TMP3*DELTAL(POS_TRICK(IPOS,2))*AC2(IS,ID,IP2)
+          END DO
+        END DO
+      END DO
+      IF (REFRACTION_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPTHETA(IP,CAD)
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=(DT4D/DDIR)*SI(IP)
+          DO ID=1,MDC
+            ID1 = ID-1
+            ID2 = ID+1
+            IF (ID == 1) ID1 = MDC
+            IF (ID == MDC) ID2 = 1
+            NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+            NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+          END DO
+          ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
+        END IF
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPSIGMA(IP,CAS)
+          eFact=DT4F*SI(IP)
+          DO ID = 1, MDC
+            CASS(1:MSC) = CAS(:,ID)
+            CASS(0)     = 0.
+            CASS(MSC+1) = CASS(MSC)
+            CP_SIG = MAX(ZERO,CASS)
+            CM_SIG = MIN(ZERO,CASS)
+            DO IS=1,MSC
+              B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            END DO
+            DO IS=2,MSC
+              NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
+            END DO
+            DO IS=1,MSC-1
+              NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
+            END DO
+            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
+          END DO
+        END IF
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -4515,7 +4734,7 @@
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
-      IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+      IF (ASPAR_LOCAL_LEVEL .ge. 5) THEN
         CALL COMPUTE_K_CRFS_XYU
       END IF
 #ifdef TIMINGS
@@ -4698,6 +4917,36 @@
             eSum=eSum - NEG_P
           ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
             CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum - NEG_P
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 6) THEN
+            CALL NEGATIVE_PART_D(JDX, IP, NEG_P, ASPAR_DIAG)
+            CALL GET_BLOCAL(IP, eSum)
+            IF (SOURCE_IMPL) THEN
+              IF (LNONL) THEN
+                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ELSE
+                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+                IMATRA = IMATRAA(:,:,IP) * eVal
+                IMATDA = IMATDAA(:,:,IP) * eVal
+              END IF
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = eSum + IMATRA
+            END IF
+            eSum=eSum - NEG_P
+          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 7) THEN
+            CALL NEGATIVE_PART_E(JDX, IP, NEG_P, ASPAR_DIAG)
             CALL GET_BLOCAL(IP, eSum)
             IF (SOURCE_IMPL) THEN
               IF (LNONL) THEN

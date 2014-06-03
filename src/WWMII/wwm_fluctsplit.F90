@@ -2397,7 +2397,7 @@
             TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
             WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
           END IF
-          IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+          IF (ASPAR_LOCAL_LEVEL .ge. 5) THEN
             SUM_CCON = 0
             DO IP = 1, NP_RES
               SUM_CCON = SUM_CCON +CCON(IP)
