@@ -169,6 +169,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SMOOTH_ON_TRIANGLE(VAR_IN, VAR_OUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: VAR_IN(MNE)
+      REAL(rkind), INTENT(OUT) :: VAR_OUT(MNE)
+      INTEGER IE
+      REAL(rkind) :: eVal
+
+      DO IE=1,MNE
+        eVal=ZERO
+        
+
+        VAR_OUT(IE)=eVal
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
      SUBROUTINE BOTEFCT( EWK, DFBOT )
         USE DATAPOOL
         IMPLICIT NONE  
