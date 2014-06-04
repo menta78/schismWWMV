@@ -329,6 +329,8 @@
         IE_glob=INDXextent_IE(IE)
         ListMapped(IE_glob)=IE
       END DO
+      ListCommon_send=0
+      ListCommon_recv=0
       ie_nnbr_send=0
       ie_nnbr_recv=0
       DO iProc=1,nproc
@@ -348,22 +350,22 @@
               nbCommon_recv=nbCommon_recv+1
             END IF
           END DO
-          ListCommon_recv(iProc)=nbCommon_recv
           IF (nbCommon_recv .gt. 0) THEN
             ie_nnbr_recv=ie_nnbr_recv+1
+            ListCommon_recv(iProc)=nbCommon_recv
           END IF
           !
           nbCommon_send=0
           WRITE(STAT%FHNDL,*) 'Before read MNEextent=', MNEextent
-          DO IE=1,MNEextent
+          DO IE=1,MNE
             IE_glob=INDXextent_IE(IE)
             IF (ListMappedB(IE_glob).gt.0) THEN
               nbCommon_send=nbCommon_send+1
             END IF
           END DO
-          ListCommon_send(iProc)=nbCommon_send
           IF (nbCommon_send .gt. 0) THEN
             ie_nnbr_send=ie_nnbr_send+1
+            ListCommon_send(iProc)=nbCommon_send
           END IF
         END IF
       END DO
