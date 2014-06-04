@@ -53,17 +53,17 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 ##########################################################################################
 #####Libraries
 #From my own dir
-MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis 
+MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
@@ -73,7 +73,7 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := pelfe_$(ENV)
+EXEC   := ~/bin/pelfe_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
@@ -96,6 +96,10 @@ EXEC   := pelfe_$(ENV)
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
 
+# TVD flag (turn off for performance)
+# CHOOSE_TVD = yes
+# EXEC := $(EXEC)_CHOOSE_TVD
+
 # GOTM turbulence closure model
 # USE_GOTM = yes
 # EXEC := $(EXEC)_GOTM
@@ -113,8 +117,8 @@ endif
  USE_WWM = yes
  EXEC := $(EXEC)_WWM
 # Implicit schemes in WWM needs PetSc
- USE_PETSC = yes
- EXEC := $(EXEC)_PETSC
+# USE_PETSC = yes
+# EXEC := $(EXEC)_PETSC
 
 # TIMOR 
 # USE_TIMOR = yes
