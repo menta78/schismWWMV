@@ -100,8 +100,8 @@ EXEC   = $(HOME)/bin/pelfe_WWM3_$(ENV)
   PPFLAGS := $(PPFLAGS) -DUSE_WWM #-DST42 -DNCDF -DWWM_SOLVER
 
 #  Implicit schemes in WWM needs PetSc
-  USE_PETSC = yes
-  PPFLAGS := $(PPFLAGS) -DPETSC 
+#  USE_PETSC = yes
+#  PPFLAGS := $(PPFLAGS) -DPETSC 
 
 # TIMOR 
 #  USE_TIMOR = yes
