@@ -178,7 +178,9 @@
       REAL(rkind) :: eVal, eValB
       REAL(rkind) :: VARextent(MNEextent)
       VARextent(1:MNE)=VAR_IN
+#ifdef MPI_PARALL_GRID
       CALL TRIG_SYNCHRONIZATION(VARextent)
+#endif
       DO IE=1,MNE
         eVal=ZERO
         nb=0
