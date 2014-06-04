@@ -417,15 +417,11 @@
       END DO
       DO iNeigh=1,ie_nnbr_recv
         iProc=ListNeigh_ie_recv(iNeigh)+1
+        MNE_loc=ListMNE(iProc)
         MNEextent_loc=ListMNEextent(iProc)
         nbCommon=ListCommon_recv(iProc)
         allocate(dspl_recv(nbCommon), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 42')
-        ListMappedB=0
-        DO IE=1,MNEextent_loc
-          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
-          ListMappedB(IE_glob)=IE
-        END DO
         idx=0
         DO IE=1,MNE_loc
           IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
