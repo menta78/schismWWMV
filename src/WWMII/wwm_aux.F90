@@ -208,14 +208,12 @@
             I2 = INE(2,IE)
             I3 = INE(3,IE)
             WEI(NI) = WEI(NI) + 2.*TRIA(IE)
-!  begin modification by MDS
             DEDX(1) = IEN(1,IE)
             DEDX(2) = IEN(3,IE)
             DEDX(3) = IEN(5,IE)
             DEDY(1) = IEN(2,IE)
             DEDY(2) = IEN(4,IE)
             DEDY(3) = IEN(6,IE)
-!  end modification by MDS
             DVDXIE  = DOT_PRODUCT( VAR(NI),DEDX)
             DVDYIE  = DOT_PRODUCT( VAR(NI),DEDY)
             DVDX(NI) = DVDX(NI) + DVDXIE
@@ -242,6 +240,71 @@
            WRITE(2305) 1.
            WRITE(2305) (DVDX(IP), DVDY(IP), SQRT(DVDY(IP)**2+DVDY(IP)**2), IP = 1, MNP)
          ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DIFFERENTIATE_XYDIR_AND_SMOOTH(VAR, DVDX, DVDY, nbIter)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: nbIter
+      REAL(rkind), INTENT(IN)  :: VAR(MNP)
+      REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
+      INTEGER           :: NI(3)
+      INTEGER           :: IE, I1, I2, I3, IP
+      REAL(rkind)            :: DEDY(3),DEDX(3)
+      REAL(rkind)            :: DVDXIE, DVDYIE
+      REAL(rkind)            :: WEI(MNP)
+      REAL(rkind)            :: IE_DY(MNE),IE_DX(MNE)
+      REAL(rkind)            :: IE_DY_SMO(MNE),IE_DX_SMO(MNE)
+      WEI(:)  = 0.0_rkind
+      DO IE = 1, MNE 
+        NI = INE(:,IE)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        WEI(NI) = WEI(NI) + 2.*TRIA(IE)
+        DEDX(1) = IEN(1,IE)
+        DEDX(2) = IEN(3,IE)
+        DEDX(3) = IEN(5,IE)
+        DEDY(1) = IEN(2,IE)
+        DEDY(2) = IEN(4,IE)
+        DEDY(3) = IEN(6,IE)
+        DVDXIE  = DOT_PRODUCT( VAR(NI),DEDX)
+        DVDYIE  = DOT_PRODUCT( VAR(NI),DEDY)
+        IE_DX(IE)=DVDXIE
+        IE_DY(IE)=DVDYIE
+      END DO
+      !
+      ! Now smoothing
+      !
+      CALL SMOOTH_ON_TRIANGLE(IE_DX, IE_DX_SMO, nbIter)
+      CALL SMOOTH_ON_TRIANGLE(IE_DY, IE_DY_SMO, nbIter)
+      !
+      ! Mapping to nodes
+      !
+      DVDX(:) = 0.0_rkind
+      DVDY(:) = 0.0_rkind
+      DO IE = 1, MNE 
+        NI = INE(:,IE)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+        DVDX(NI) = DVDX(NI) + IE_DX_SMO(IE)
+        DVDY(NI) = DVDY(NI) + IE_DY_SMO(IE)
+      END DO
+      DVDX(:) = DVDX(:)/WEI(:)
+      DVDY(:) = DVDY(:)/WEI(:)
+      DO IP = 1, MNP
+        IF (DEP(IP) .LT. DMIN) THEN
+          DVDX(IP) = 0.
+          DVDY(IP) = 0.
+        END IF
+      END DO
+#ifdef MPI_PARALL_GRID 
+      CALL exchange_p2d(DVDX)
+      CALL exchange_p2d(DVDY)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
