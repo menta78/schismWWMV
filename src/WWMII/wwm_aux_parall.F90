@@ -342,7 +342,7 @@
           END DO
           !
           nbCommon_recv=0
-          DO IP=1,MNE_loc
+          DO IE=1,MNE_loc
             IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
             IF (ListMapped(IE_glob).gt.0) THEN
               nbCommon_recv=nbCommon_recv+1
@@ -354,8 +354,9 @@
           END IF
           !
           nbCommon_send=0
+          WRITE(STAT%FHNDL,*) 'Before read MNEextent=', MNEextent
           DO IE=1,MNEextent
-            IE_glob=INDXextent_IE(IP)
+            IE_glob=INDXextent_IE(IE)
             IF (ListMappedB(IE_glob).gt.0) THEN
               nbCommon_send=nbCommon_send+1
             END IF
@@ -403,12 +404,12 @@
         DO IE=1,MNE
           IE_glob=INDXextent_IE(IE)
           IEloc=ListMappedB(IE_glob)
-          IF (IPloc.gt.0) THEN
+          IF (IEloc.gt.0) THEN
             idx=idx+1
             dspl_send(idx)=IE-1
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwmmat_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,ie_send_type(iNeigh), ierr)
         call mpi_type_commit(ie_send_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
