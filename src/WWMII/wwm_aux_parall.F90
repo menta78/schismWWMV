@@ -166,6 +166,8 @@
         END DO
       END DO
       MNEextent=sum(StatusNeed)
+      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
+      FLUSH(STAT%FHNDL)
       allocate(INDXextent_IE(MNEextent), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 6')
       DO IE=1,MNE
@@ -185,6 +187,8 @@
         IE_glob=INDXextent_IE(IE)
         StatusNeed(IE_glob)=IE
       END DO
+      WRITE(STAT%FHNDL,*) 'Step 1'
+      FLUSH(STAT%FHNDL)
       !
       ! Now building the neighbor list
       !
@@ -200,7 +204,11 @@
           IEneighbor(I,IE)=IEloc
         END DO
       END DO
-#ifdef MPI_PARAL-GRID
+      WRITE(STAT%FHNDL,*) 'Step 2'
+      FLUSH(STAT%FHNDL)
+#ifdef MPI_PARALL_GRID
+      WRITE(STAT%FHNDL,*) 'Step 2.1'
+      FLUSH(STAT%FHNDL)
       !
       ! Collecting the ListMNE, ListMNEextent
       !
@@ -218,17 +226,26 @@
           ListMNEextent(IPROC)=eInt(2)
         END DO
         DO IPROC=2,nproc
-          CALL MPI_SEND(ListMNE,nproc,itype,0,2050,comm,ierr)
-          CALL MPI_SEND(ListMNEextent,nproc,itype,0,2051,comm,ierr)
+          iRank=IPROC-1
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 1'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListMNE,nproc,itype,iRank,2050,comm,ierr)
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 2'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListMNEextent,nproc,itype,iRank,2051,comm,ierr)
         END DO
       ELSE
         eInt(1)=MNE
         eInt(2)=MNEextent
+        WRITE(STAT%FHNDL,*) 'Before MPI_SEND 3'
+        FLUSH(STAT%FHNDL)
         CALL MPI_SEND(eInt,2,itype,0,2049,comm,ierr)
         CALL MPI_RECV(ListMNE, nproc, itype,0,2050,comm,istatus,ierr)
-        CALL MPI_RECV(ListMNEextent, nproc, itype,0,2050,comm,istatus,ierr)
+        CALL MPI_RECV(ListMNEextent, nproc, itype,0,2051,comm,istatus,ierr)
       END IF
       deallocate(eInt)
+      WRITE(STAT%FHNDL,*) 'Step 3'
+      FLUSH(STAT%FHNDL)
       !
       ! Collecting the ListINDXextent_IE
       !
@@ -253,12 +270,21 @@
           deallocate(eInt)
         END DO
         DO IPROC=2,nproc
-          CALL MPI_SEND(ListINDXextent_IE,sumExtent,nproc,itype,0,2052,comm,ierr)
+          iRank=IPROC-1
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 4'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListINDXextent_IE,sumExtent,itype,iRank,2052,comm,ierr)
         END DO
       ELSE
+        WRITE(STAT%FHNDL,*) 'Before MPI_SEND 5'
+        FLUSH(STAT%FHNDL)
         CALL MPI_SEND(INDXextent_IE,MNEextent,itype,0,2051,comm,ierr)
+        WRITE(STAT%FHNDL,*) 'Before MPI_RECV 5'
+        FLUSH(STAT%FHNDL)
         CALL MPI_RECV(ListINDXextent_IE, sumExtent, itype,0,2052,comm,istatus,ierr)
       END IF
+      WRITE(STAT%FHNDL,*) 'Step 4'
+      FLUSH(STAT%FHNDL)
       !
       ! Now building ListFirst
       !
@@ -293,6 +319,7 @@
 #else
       IEstatus=1      
 #endif
+      WRITE(STAT%FHNDL,*) 'sum(IEstatus)=', sum(IEstatus)
 #ifdef MPI_PARALL_GRID
       !
       ! Now building synchronization arrays
