@@ -685,7 +685,7 @@
       integer :: nbCommon, IPloc, IE_glob, IEloc
       integer :: IP1, IP2, IP3
       integer :: IPglob1, IPglob2, IPglob3
-      integer :: iRank, sumExtent, IEadj
+      integer :: iRank, sumExtent, IEadj, eVal
       integer :: I1, I2, J1, J2
       integer, allocatable :: INDX_IE(:,:)
       integer, allocatable :: IE_LocalGlobal(:), StatusNeed(:)
@@ -693,7 +693,7 @@
       integer, allocatable :: eInt(:), dspl_send(:), dspl_recv(:)
       integer, allocatable :: INDXextent_IE(:)
       integer, allocatable :: IEneighbor_V1(:,:)
-
+      integer, allocatable :: IEmembership(:)
       allocate(CCON_total(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 1')
       CCON_TOTAL=0
@@ -873,12 +873,37 @@
         CALL MPI_RECV(ListINDXextent_IE, sumExtent, itype,0,2052,comm,istatus,ierr)
       END IF
       !
-      ! Now building synchronization arrays
+      ! Now building ListFirst
       !
       ListFirst=0
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNEextent(iProc-1)
       END DO
+      !
+      ! Determine IE membership
+      !
+      allocate(IEmembership(ne_total), stat=istat)
+      IEmembership=0
+      DO iProc=1,nproc
+        MNE_loc=ListMNE(iProc)
+        DO IE=1,MNE_loc
+          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+          IF (IEmembership(IE_glob) .eq. 0) THEN
+            IEmembership(IE_glob)=iProc
+          END IF
+        END DO
+      END DO
+      allocate(IEstatus(MNE))
+      DO IE=1,MNE
+        IE_glob=INDXextent_IE(IE)
+        eVal=0
+        IF (IEmembership(IE_glob) .eq. myrank+1) eVal=1
+        IEstatus(IE)=eVal
+      END DO
+      deallocate(IEmembership)
+      !
+      ! Now building synchronization arrays
+      !
       ListMapped=0
       DO IE=1,MNEextent
         IE_glob=INDXextent_IE(IE)
@@ -991,6 +1016,7 @@
         call mpi_type_commit(ie_recv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
+      deallocate(INDX_IE, IE_LocalGlobal, StatusNeed, CCON_total, INDXextent_IE, IEneighbor_V1)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

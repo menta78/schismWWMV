@@ -1141,7 +1141,7 @@
          integer, allocatable :: ie_send_stat(:,:)
          integer, allocatable :: ie_recv_stat(:,:)
          integer, allocatable :: IEneighbor(:,:)
-
+         integer, allocatable :: IEstatus(:)
 !
 ! Data types of our linear equation solver.
 !

@@ -174,18 +174,23 @@
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)  :: VAR_IN(MNE)
       REAL(rkind), INTENT(OUT) :: VAR_OUT(MNE)
-      INTEGER IE, IEadj, I
-      REAL(rkind) :: eVal
+      INTEGER IE, IEadj, I, nb
+      REAL(rkind) :: eVal, eValB
       REAL(rkind) :: VARextent(MNEextent)
       VARextent(1:MNE)=VAR_IN
       CALL TRIG_SYNCHRONIZATION(VARextent)
       DO IE=1,MNE
-        eVal=3*VAR_IN(IE)
+        eVal=ZERO
+        nb=0
         DO I=1,3
           IEadj=IEneighbor(I,IE)
-          eVal=eVal + VARextent(IEadj)
+          IF (IEadj .gt. 0) THEN
+            eVal=eVal + VARextent(IEadj)
+            nb=nb+1
+          END IF
         END DO
-        VAR_OUT(IE)=eVal/6.0_rkind
+        eValB=(MyREAL(6-nb)*VAR_IN(IE) + eVal)/6.0_rkind
+        VAR_OUT(IE)=eValB
       END DO
       END SUBROUTINE
 !**********************************************************************
