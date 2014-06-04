@@ -169,6 +169,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SMOOTH_ON_TRIANGLE(VAR_IN, VAR_OUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: VAR_IN(MNE)
+      REAL(rkind), INTENT(OUT) :: VAR_OUT(MNE)
+      INTEGER IE, IEadj, I, nb
+      REAL(rkind) :: eVal, eValB
+      REAL(rkind) :: VARextent(MNEextent)
+      VARextent(1:MNE)=VAR_IN
+#ifdef MPI_PARALL_GRID
+      CALL TRIG_SYNCHRONIZATION(VARextent)
+#endif
+      DO IE=1,MNE
+        eVal=ZERO
+        nb=0
+        DO I=1,3
+          IEadj=IEneighbor(I,IE)
+          IF (IEadj .gt. 0) THEN
+            eVal=eVal + VARextent(IEadj)
+            nb=nb+1
+          END IF
+        END DO
+        eValB=(MyREAL(6-nb)*VAR_IN(IE) + eVal)/6.0_rkind
+        VAR_OUT(IE)=eValB
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
      SUBROUTINE BOTEFCT( EWK, DFBOT )
         USE DATAPOOL
         IMPLICIT NONE  

@@ -1,4 +1,447 @@
 #include "wwm_functions.h"
+!**********************************************************************
+!* Determine if nodes are in the domain for the computation of        *
+!* energy and similar things                                          *
+!**********************************************************************
+      SUBROUTINE BUILD_IPSTATUS
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IP
+      allocate(IPstatus(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_IPSTATUS, step 1')
+#ifndef MPI_PARALL_GRID
+      IPstatus=1
+#else
+      IPstatus=0
+      DO IP=1,NP_RES
+        IF(ASSOCIATED(IPGL(IPLG(IP))%NEXT)) THEN !interface nodes
+          IF(IPGL(IPLG(ip))%NEXT%RANK .ge. MYRANK) THEN  ! interface node is not in the sum already ...
+            IPstatus(IP)=1
+          ENDIF 
+        ELSE
+          IPstatus(IP)=1
+        ENDIF
+      END DO
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE BUILD_TRIANGLE_CORRESPONDENCES
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer :: ListMapped(ne_total)
+      integer :: ListMappedB(ne_total)
+#ifdef MPI_PARALL_GRID
+      integer :: ListFirst(nproc)
+      integer :: ListCommon_recv(nproc)
+      integer :: ListCommon_send(nproc)
+#endif
+      integer :: IEfound, IE2, IE, J, IP
+      integer :: IPglob, I, MAXMNECCON_TOTAL, idx
+      integer :: iProc, MNE_loc, MNEextent_loc
+      integer :: nbCommon_send, nbCommon_recv
+      integer :: idx_send, idx_recv, iNeigh
+      integer :: nbCommon, IPloc, IE_glob, IEloc
+      integer :: IP1, IP2, IP3
+      integer :: IPglob1, IPglob2, IPglob3
+      integer :: iRank, sumExtent, IEadj, eVal
+      integer :: I1, I2, J1, J2
+      integer, allocatable :: INDX_IE(:,:)
+      integer, allocatable :: IE_LocalGlobal(:), StatusNeed(:)
+      integer, allocatable :: CCON_total(:)
+      integer, allocatable :: eInt(:), dspl_send(:), dspl_recv(:)
+      integer, allocatable :: INDXextent_IE(:)
+      integer, allocatable :: IEneighbor_V1(:,:)
+      integer, allocatable :: IEmembership(:)
+      allocate(CCON_total(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 1')
+      CCON_TOTAL=0
+      DO IE=1,NE_TOTAL
+        DO I=1,3
+          IPglob=INEtotal(I,IE)
+          CCON_TOTAL(IPglob)=CCON_TOTAL(IPglob) + 1
+        END DO
+      END DO
+      MAXMNECCON_TOTAL=maxval(CCON_TOTAL)
+      !
+      allocate(INDX_IE(MAXMNECCON_TOTAL, np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 2')
+      CCON_TOTAL=0
+      DO IE=1,NE_TOTAL
+        DO I=1,3
+          IPglob=INEtotal(I,IE)
+          idx=CCON_TOTAL(IPglob)
+          CCON_TOTAL(IPglob)=idx + 1
+          INDX_IE(idx+1, IPglob)=IE
+        END DO
+      END DO
+      !
+      allocate(IE_LocalGlobal(MNE), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 3')
+      DO IE=1,MNE
+        IP1=INE(1,IE)
+        IP2=INE(2,IE)
+        IP3=INE(3,IE)
+#ifdef MPI_PARALL_GRID
+        IPglob1=iplg(IP1)
+        IPglob2=iplg(IP2)
+        IPglob3=iplg(IP3)
+#else
+        IPglob1=IP1
+        IPglob2=IP2
+        IPglob3=IP3
+#endif
+        IEfound=-1
+        DO J=1,CCON_TOTAL(IPglob1)
+          IE2=INDX_IE(J, IPglob1)
+          IF ((IPglob1 .eq. INEtotal(1,IE2)).and.(IPglob2 .eq. INEtotal(2,IE2)).and.(IPglob3 .eq. INEtotal(3,IE2))) THEN
+            IEfound=IE2
+          END IF
+        END DO
+        IF (IEfound .eq. -1) THEN
+          write(DBG%FHNDL,*) 'IE=', IE
+          write(DBG%FHNDL,*) 'IP123=', IP1, IP2, IP3
+          write(DBG%FHNDL,*) 'IPglob123=', IPglob1, IPglob2, IPglob3
+          write(DBG%FHNDL,*) 'CCON_TOTAL=', CCON_TOTAL(IPglob1)
+          DO J=1,CCON_TOTAL(IPglob1)
+            IE2=INDX_IE(J, IPglob1)
+            write(DBG%FHNDL,*) 'J=', J, 'IE2=', IE2
+            write(DBG%FHNDL,*) 'INE(:,IE2)=', INEtotal(1,IE2), INEtotal(2,IE2), INEtotal(3,IE2)
+          END DO
+          CALL WWM_ABORT('Did not find the triangle')
+        END IF
+        IE_LocalGlobal(IE)=IEfound
+      END DO
+      !
+      allocate(IEneighbor_V1(3,MNE), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 4')
+      DO IE=1,MNE
+        DO I1=1,3
+          IF (I1 .eq. 3) THEN
+            I2=1
+          ELSE
+            I2=I1+1
+          END IF
+          IP1=INE(I1,IE)
+          IP2=INE(I2,IE)
+#ifdef MPI_PARALL_GRID
+          IPglob1=iplg(IP1)
+          IPglob2=iplg(IP2)
+#else
+          IPglob1=IP1
+          IPglob2=IP2
+#endif
+          IEadj=-1
+          DO J=1,CCON_TOTAL(IPglob1)
+            IF (IEadj .eq. -1) THEN
+              IE2=INDX_IE(J, IPglob1)
+              DO J1=1,3
+                IF (J1 .eq. 3) THEN
+                  J2=1
+                ELSE
+                  J2=J1+1
+                END IF
+                IF ((INEtotal(J1,IE2) .eq. IPglob2).and.(INEtotal(J2,IE2) .eq. IPglob1)) THEN
+                  IEadj=IE2
+                END IF
+              END DO
+            END IF            
+          END DO
+          IEneighbor_V1(I1,IE)=IEadj
+        END DO
+      END DO
+      !
+      allocate(StatusNeed(ne_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 5')
+      StatusNeed=0
+      DO IE=1,MNE
+        IE_glob=IE_LocalGlobal(IE)
+        StatusNeed(IE_glob)=1
+        DO I=1,3
+          IEadj=IEneighbor_V1(I,IE)
+          IF (IEadj .ne. -1) THEN
+            StatusNeed(IEadj)=1
+          END IF
+        END DO
+      END DO
+      MNEextent=sum(StatusNeed)
+      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
+      FLUSH(STAT%FHNDL)
+      allocate(INDXextent_IE(MNEextent), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 6')
+      DO IE=1,MNE
+        IE_glob=IE_LocalGlobal(IE)
+        INDXextent_IE(IE)=IE_glob
+        StatusNeed(IE_glob)=0
+      END DO
+      idx=MNE
+      DO IE=1,NE_TOTAL
+        IF (StatusNeed(IE) .eq. 1) THEN
+          idx=idx+1
+          INDXextent_IE(idx)=IE
+        END IF
+      END DO
+      StatusNeed=0
+      DO IE=1,MNEextent
+        IE_glob=INDXextent_IE(IE)
+        StatusNeed(IE_glob)=IE
+      END DO
+      WRITE(STAT%FHNDL,*) 'Step 1'
+      FLUSH(STAT%FHNDL)
+      !
+      ! Now building the neighbor list
+      !
+      allocate(IEneighbor(3,MNE), stat=istat)
+      DO IE=1,MNE
+        DO I=1,3
+          IE_glob=IEneighbor_V1(I,IE)
+          IF (IE_glob .eq. -1) THEN
+            IEloc=-1
+          ELSE
+            IEloc=StatusNeed(IE_glob)
+          END IF
+          IEneighbor(I,IE)=IEloc
+        END DO
+      END DO
+      WRITE(STAT%FHNDL,*) 'Step 2'
+      FLUSH(STAT%FHNDL)
+#ifdef MPI_PARALL_GRID
+      WRITE(STAT%FHNDL,*) 'Step 2.1'
+      FLUSH(STAT%FHNDL)
+      !
+      ! Collecting the ListMNE, ListMNEextent
+      !
+      allocate(ListMNE(nproc), ListMNEextent(nproc), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 7')
+      allocate(eInt(2), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 8')
+      IF (myrank .eq. 0) THEN
+        ListMNE(1)=MNE
+        ListMNEextent(1)=MNEextent
+        DO IPROC=2,nproc
+          iRank=IPROC-1
+          CALL MPI_RECV(eInt, 2, itype,iRank,2049,comm,istatus,ierr)
+          ListMNE(IPROC)=eInt(1)
+          ListMNEextent(IPROC)=eInt(2)
+        END DO
+        DO IPROC=2,nproc
+          iRank=IPROC-1
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 1'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListMNE,nproc,itype,iRank,2050,comm,ierr)
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 2'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListMNEextent,nproc,itype,iRank,2051,comm,ierr)
+        END DO
+      ELSE
+        eInt(1)=MNE
+        eInt(2)=MNEextent
+        WRITE(STAT%FHNDL,*) 'Before MPI_SEND 3'
+        FLUSH(STAT%FHNDL)
+        CALL MPI_SEND(eInt,2,itype,0,2049,comm,ierr)
+        CALL MPI_RECV(ListMNE, nproc, itype,0,2050,comm,istatus,ierr)
+        CALL MPI_RECV(ListMNEextent, nproc, itype,0,2051,comm,istatus,ierr)
+      END IF
+      deallocate(eInt)
+      WRITE(STAT%FHNDL,*) 'Step 3'
+      FLUSH(STAT%FHNDL)
+      !
+      ! Collecting the ListINDXextent_IE
+      !
+      sumExtent=sum(ListMNEextent)
+      allocate(ListINDXextent_IE(sumExtent), stat=istat)
+      IF (myrank .eq. 0) THEN
+        idx=0
+        DO J=1,MNEextent
+          idx=idx+1
+          ListINDXextent_IE(idx)=INDXextent_IE(J)
+        END DO
+        DO IPROC=2,nproc
+          iRank=IPROC-1
+          MNEextent_loc=ListMNEextent(IPROC)
+          allocate(eInt(MNEextent_loc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 9')
+          CALL MPI_RECV(eInt, MNEextent_loc, itype,iRank,2051,comm,istatus,ierr)
+          DO J=1,MNEextent_loc
+            idx=idx+1
+            ListINDXextent_IE(idx)=eInt(J)
+          END DO
+          deallocate(eInt)
+        END DO
+        DO IPROC=2,nproc
+          iRank=IPROC-1
+          WRITE(STAT%FHNDL,*) 'Before MPI_SEND 4'
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(ListINDXextent_IE,sumExtent,itype,iRank,2052,comm,ierr)
+        END DO
+      ELSE
+        WRITE(STAT%FHNDL,*) 'Before MPI_SEND 5'
+        FLUSH(STAT%FHNDL)
+        CALL MPI_SEND(INDXextent_IE,MNEextent,itype,0,2051,comm,ierr)
+        WRITE(STAT%FHNDL,*) 'Before MPI_RECV 5'
+        FLUSH(STAT%FHNDL)
+        CALL MPI_RECV(ListINDXextent_IE, sumExtent, itype,0,2052,comm,istatus,ierr)
+      END IF
+      WRITE(STAT%FHNDL,*) 'Step 4'
+      FLUSH(STAT%FHNDL)
+      !
+      ! Now building ListFirst
+      !
+      ListFirst=0
+      DO iProc=2,nproc
+        ListFirst(iProc)=ListFirst(iProc-1) + ListMNEextent(iProc-1)
+      END DO
+#endif
+      !
+      ! Determine IE membership
+      !
+      allocate(IEstatus(MNE))
+#ifdef MPI_PARALL_GRID
+      allocate(IEmembership(ne_total), stat=istat)
+      IEmembership=0
+      DO iProc=1,nproc
+        MNE_loc=ListMNE(iProc)
+        DO IE=1,MNE_loc
+          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+          IF (IEmembership(IE_glob) .eq. 0) THEN
+            IEmembership(IE_glob)=iProc
+          END IF
+        END DO
+      END DO
+      DO IE=1,MNE
+        IE_glob=INDXextent_IE(IE)
+        eVal=0
+        IF (IEmembership(IE_glob) .eq. myrank+1) eVal=1
+        IEstatus(IE)=eVal
+      END DO
+      deallocate(IEmembership)
+#else
+      IEstatus=1      
+#endif
+      WRITE(STAT%FHNDL,*) 'sum(IEstatus)=', sum(IEstatus)
+#ifdef MPI_PARALL_GRID
+      !
+      ! Now building synchronization arrays
+      !
+      ListMapped=0
+      DO IE=1,MNEextent
+        IE_glob=INDXextent_IE(IE)
+        ListMapped(IE_glob)=IE
+      END DO
+      ListCommon_send=0
+      ListCommon_recv=0
+      ie_nnbr_send=0
+      ie_nnbr_recv=0
+      DO iProc=1,nproc
+        IF (iProc .ne. myrank+1) THEN
+          MNE_loc=ListMNE(iProc)
+          MNEextent_loc=ListMNEextent(iProc)
+          ListMappedB=0
+          DO IE=1,MNEextent_loc
+            IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+            ListMappedB(IE_glob)=IE
+          END DO
+          !
+          nbCommon_recv=0
+          DO IE=1,MNE_loc
+            IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+            IF (ListMapped(IE_glob).gt.0) THEN
+              nbCommon_recv=nbCommon_recv+1
+            END IF
+          END DO
+          IF (nbCommon_recv .gt. 0) THEN
+            ie_nnbr_recv=ie_nnbr_recv+1
+            ListCommon_recv(iProc)=nbCommon_recv
+          END IF
+          !
+          nbCommon_send=0
+          WRITE(STAT%FHNDL,*) 'Before read MNEextent=', MNEextent
+          DO IE=1,MNE
+            IE_glob=INDXextent_IE(IE)
+            IF (ListMappedB(IE_glob).gt.0) THEN
+              nbCommon_send=nbCommon_send+1
+            END IF
+          END DO
+          IF (nbCommon_send .gt. 0) THEN
+            ie_nnbr_send=ie_nnbr_send+1
+            ListCommon_send(iProc)=nbCommon_send
+          END IF
+        END IF
+      END DO
+      !
+      ! Building list of neighbors
+      !
+      allocate(ListNeigh_ie_send(ie_nnbr_send), ListNeigh_ie_recv(ie_nnbr_recv), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 27')
+      idx_send=0
+      idx_recv=0
+      DO iProc=1,nproc
+        IF (ListCommon_send(iProc) .gt. 0) THEN
+          idx_send=idx_send+1
+          ListNeigh_ie_send(idx_send)=iProc-1
+        END IF
+        IF (ListCommon_recv(iProc) .gt. 0) THEN
+          idx_recv=idx_recv+1
+          ListNeigh_ie_recv(idx_recv)=iProc-1
+        END IF
+      END DO
+      !
+      ! Building MPI arrays
+      !
+      allocate(ie_send_rqst(ie_nnbr_send), ie_recv_rqst(ie_nnbr_recv), ie_send_stat(MPI_STATUS_SIZE,ie_nnbr_send), ie_recv_stat(MPI_STATUS_SIZE,ie_nnbr_recv), ie_send_type(ie_nnbr_send), ie_recv_type(ie_nnbr_recv), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 38')
+      DO iNeigh=1,ie_nnbr_send
+        iProc=ListNeigh_ie_send(iNeigh)+1
+        nbCommon=ListCommon_send(iProc)
+        MNEextent_loc=ListMNEextent(iProc)
+        ListMappedB=0
+        DO IE=1,MNEextent_loc
+          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+          ListMappedB(IE_glob)=IE
+        END DO
+        allocate(dspl_send(nbCommon), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 40')
+        idx=0
+        DO IE=1,MNE
+          IE_glob=INDXextent_IE(IE)
+          IEloc=ListMappedB(IE_glob)
+          IF (IEloc.gt.0) THEN
+            idx=idx+1
+            dspl_send(idx)=IE-1
+          END IF
+        END DO
+        call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,ie_send_type(iNeigh), ierr)
+        call mpi_type_commit(ie_send_type(iNeigh), ierr)
+        deallocate(dspl_send)
+      END DO
+      DO iNeigh=1,ie_nnbr_recv
+        iProc=ListNeigh_ie_recv(iNeigh)+1
+        MNEextent_loc=ListMNEextent(iProc)
+        nbCommon=ListCommon_recv(iProc)
+        allocate(dspl_recv(nbCommon), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 42')
+        ListMappedB=0
+        DO IE=1,MNEextent_loc
+          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+          ListMappedB(IE_glob)=IE
+        END DO
+        idx=0
+        DO IE=1,MNE_loc
+          IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
+          IEloc=ListMapped(IE_glob)
+          IF (IEloc .gt. 0) THEN
+            idx=idx+1
+            dspl_recv(idx)=IEloc-1
+          END IF
+        END DO
+        call mpi_type_create_indexed_block(nbCommon,1,dspl_recv,rtype,ie_recv_type(iNeigh), ierr)
+        call mpi_type_commit(ie_recv_type(iNeigh), ierr)
+        deallocate(dspl_recv)
+      END DO
+      deallocate(INDX_IE, IE_LocalGlobal, StatusNeed, CCON_total, INDXextent_IE, IEneighbor_V1)
+#endif
+      END SUBROUTINE
 #ifdef MPI_PARALL_GRID
 !**********************************************************************
 !* Some MPI_BARRIER are just not reliable. This construction makes    *
@@ -664,6 +1107,29 @@
           END IF
         END DO
         deallocate(Indexes)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TRIG_SYNCHRONIZATION(V)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) :: V(MNEextent)
+      integer iNeigh, iRank
+      DO iNeigh=1,ie_nnbr_send
+        iRank=ListNeigh_ie_send(iNeigh)
+        CALL mpi_isend(V, 1, ie_send_type(iNeigh), iRank, 1020, comm, ie_send_rqst(iNeigh), ierr)
+      END DO
+      DO iNeigh=1,ie_nnbr_recv
+        iRank=ListNeigh_ie_recv(iNeigh)
+        call mpi_irecv(V,1,ie_recv_type(iNeigh),iRank,1020,comm,ie_recv_rqst(iNeigh),ierr)
+      END DO
+      IF (ie_nnbr_send > 0) THEN
+        call mpi_waitall(ie_nnbr_send, ie_send_rqst, ie_send_stat,ierr)
+      END IF
+      IF (ie_nnbr_recv > 0) THEN
+        call mpi_waitall(ie_nnbr_recv, ie_recv_rqst, ie_recv_stat,ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************

@@ -1125,6 +1125,25 @@
          integer, dimension(:,:), pointer :: spparm_send_stat
          integer, dimension(:), pointer :: spparm_send_type
 !
+! Data types for working with elements
+!
+         integer :: MNEextent
+         integer :: ie_nnbr_send, ie_nnbr_recv
+         integer, allocatable :: ListMNE(:)
+         integer, allocatable :: ListMNEextent(:)
+         integer, allocatable :: ListINDXextent_IE(:)
+         integer, allocatable :: ListNeigh_ie_send(:)
+         integer, allocatable :: ListNeigh_ie_recv(:)
+         integer, allocatable :: ie_send_type(:)
+         integer, allocatable :: ie_recv_type(:)
+         integer, allocatable :: ie_send_rqst(:)
+         integer, allocatable :: ie_recv_rqst(:)
+         integer, allocatable :: ie_send_stat(:,:)
+         integer, allocatable :: ie_recv_stat(:,:)
+         integer, allocatable :: IEneighbor(:,:)
+         integer, allocatable :: IEstatus(:)
+         integer, allocatable :: IPstatus(:)
+!
 ! Data types of our linear equation solver.
 !
          integer, allocatable :: ListMNP(:)
