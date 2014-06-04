@@ -1,6 +1,7 @@
 #include "wwm_functions.h"
 !**********************************************************************
-!*                                                                    *
+!* Determine if nodes are in the domain for the computation of        *
+!* energy and similar things                                          *
 !**********************************************************************
       SUBROUTINE BUILD_IPSTATUS
       USE DATAPOOL
@@ -72,7 +73,7 @@
           IPglob=INEtotal(I,IE)
           idx=CCON_TOTAL(IPglob)
           CCON_TOTAL(IPglob)=idx + 1
-          INDX_IE(idx, IPglob)=IE
+          INDX_IE(idx+1, IPglob)=IE
         END DO
       END DO
       !
@@ -80,7 +81,7 @@
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 3')
       DO IE=1,MNE
         IP1=INE(1,IE)
-        IP2=INE(1,IE)
+        IP2=INE(2,IE)
         IP3=INE(3,IE)
 #ifdef MPI_PARALL_GRID
         IPglob1=iplg(IP1)
@@ -99,6 +100,15 @@
           END IF
         END DO
         IF (IEfound .eq. -1) THEN
+          write(DBG%FHNDL,*) 'IE=', IE
+          write(DBG%FHNDL,*) 'IP123=', IP1, IP2, IP3
+          write(DBG%FHNDL,*) 'IPglob123=', IPglob1, IPglob2, IPglob3
+          write(DBG%FHNDL,*) 'CCON_TOTAL=', CCON_TOTAL(IPglob1)
+          DO J=1,CCON_TOTAL(IPglob1)
+            IE2=INDX_IE(J, IPglob1)
+            write(DBG%FHNDL,*) 'J=', J, 'IE2=', IE2
+            write(DBG%FHNDL,*) 'INE(:,IE2)=', INEtotal(1,IE2), INEtotal(2,IE2), INEtotal(3,IE2)
+          END DO
           CALL WWM_ABORT('Did not find the triangle')
         END IF
         IE_LocalGlobal(IE)=IEfound
@@ -150,7 +160,9 @@
         StatusNeed(IE_glob)=1
         DO I=1,3
           IEadj=IEneighbor_V1(I,IE)
-          StatusNeed(IEadj)=1
+          IF (IEadj .ne. -1) THEN
+            StatusNeed(IEadj)=1
+          END IF
         END DO
       END DO
       MNEextent=sum(StatusNeed)
@@ -180,7 +192,11 @@
       DO IE=1,MNE
         DO I=1,3
           IE_glob=IEneighbor_V1(I,IE)
-          IEloc=StatusNeed(IE_glob)
+          IF (IE_glob .eq. -1) THEN
+            IEloc=-1
+          ELSE
+            IEloc=StatusNeed(IE_glob)
+          END IF
           IEneighbor(I,IE)=IEloc
         END DO
       END DO
