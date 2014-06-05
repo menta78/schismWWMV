@@ -54,8 +54,8 @@
 #ENV         = BLKLGT
 #ENV         = GORDON
 #ENV         = FRANZIUS
-ENV         = MATHIEU
-#ENV = ARON
+#ENV         = MATHIEU
+ENV = ARON
 #ENV = LCLUSTER
 #ENV = ZANKE
 #ENV = DKRZ
@@ -548,22 +548,23 @@ ifeq ($(ENV),ARON)
   FCP = mpif90
   FLD = $(FCP)
 # MPI vserion (1 or 2)
-  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 -DWWM_SOLVER 
+  PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 # DEBUG + DEVELOPEMENT
 #  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
 #  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-# PERFORMANCE SAVE OPTIMIZATION
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback 
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl 
-# AGGRESSIVE OPTIMIZATION
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
-#  FCPFLAGS += -openmp
-#  FLDFLAGS += -openmp 
+# PERFORMANCE SAVE OPTIMIZATION
+
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -check all -assume byterecl
+#  FLDFLAGS = -O1 -g -traceback -check all -assume byterecl
+
+# AGGRESSIVE OPTIMIZATION
+
+  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
   #####Libraries
-  MTSLIBS = -L/home/aron/opt/ParMetis-3.1-64bit -lparmetis -lmetis
-  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff # for netcdf4.x.x
+  MTSLIBS = $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
+  CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf #-lnetcdff # for netcdf4.x.x
   CDFMOD  = -I$(NETCDF_INCDIR)
   ifdef USE_GOTM
     GTMMOD =  -I/home/aron/SVN/SELFE/tags/GOTM/gotm-3.2.5/32bit/gotm-3.2.5/modules/IFORT/ #modules
@@ -574,17 +575,8 @@ ifeq ($(ENV),ARON)
   endif
 
   #PETSC
-
-  ifdef USE_PETSC
-    include ${PETSC_DIR}/conf/variables
-    PETSCLIBS = -L${PETSC_DIR}/lib/ -lpetsc
-    PETSCMOD = -I${PETSC_DIR}/include/
-    CDFLIBS += ${PETSC_LIB}
-  else
-    PETSCLIBS =
-    PETSCMOD =
-  endif
-
+  FCPFLAGS += ${PETSC_FC_INCLUDES}
+  MTSLIBS     += ${PETSC_LIB}
 endif
 ################################################################################
 # Environment for Linux / 32 bit /  Intel Compiler / MPICH
@@ -826,7 +818,8 @@ OBJS := $(OBJS) wwm_pdlib.o wwm_datapl.o wwm_petscpool.o  wwm_m_constants.o wwm_
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_wave_setup.o wwm_initio.o wwm_input.o wwm_bdcons.o \
        wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_snl4_wrt.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_netcdf.o wwm_fluctsplit.o wwm_buildstress.o wwm_wsigstar.o \
-       wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
+       wwm_aki.o wwm_fkmean.o wwm_femeanws.o wwm_femean.o wwm_frcutindex.o wwm_friction.o wwm_breaking.o \
+       wwm_tauhf.o wwm_stresso.o wwm_airsea.o wwm_stress.o wwm_jafu.o wwm_transf.o wwm_nlweigt.o \
        wwm_sinput.o wwm_sdissip.o wwm_sinput_ard.o wwm_sdiss_ardh_vec.o \
        wwm_inisnonlin.o wwm_snonlin.o wwm_sbottom.o wwm_implsch2.o wwm_implsch.o wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o \
        wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
