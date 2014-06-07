@@ -1530,7 +1530,7 @@
 #endif
       REAL(rkind) :: B_SIG(MSC), eFact, lambda
       REAL(rkind) :: NEG_P(MSC,MDC)
-      REAL(rkind) :: Sum_new, Sum_prev, eVal
+      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew, DiffOld
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ, JDX
 #ifdef TIMINGS
@@ -1794,7 +1794,10 @@
           IF (LCHKCONV) THEN
             Sum_new = sum(eSum)
             if (Sum_new .gt. thr8) then
-              p_is_converged = abs(Sum_prev - Sum_new)/Sum_new
+              DiffNew=sum(abs(ACLOC - eSum))
+!              DiffOld=abs(Sum_prev - Sum_new)
+!              p_is_converged = DiffOld/Sum_new
+              p_is_converged = DiffNew/Sum_new
             else
               p_is_converged = zero
             endif

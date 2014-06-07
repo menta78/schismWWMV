@@ -244,6 +244,41 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE DIFFERENTIATE_XYDIR_NEIGHADJ(VAR, DVDX, DVDY)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: VAR(MNP)
+      REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
+      INTEGER       :: IE, IP, IADJ, IP_ADJ
+      REAL(rkind)   :: xpdiff, ypdiff, dist, eSum
+      REAL(rkind)   :: XPcomp, YPcomp, eXP, eYP, eCoeff
+      DO IP=1,NP_RES
+        eSum=ZERO
+        XPcomp=ZERO
+        YPcomp=ZERO
+        DO IADJ=1,VERT_DEG(IP)
+          IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+          xpdiff=XP(IP_ADJ) - XP(IP)
+          ypdiff=YP(IP_ADJ) - YP(IP)
+          dist=sqrt(xpdiff*xpdiff+ypdiff*ypdiff)
+          eSum=eSum + ONE/dist
+          eCoeff=(VAR(IP_ADJ) - VAR(IP))/(dist**3)
+          XPcomp = XPcomp + xpdiff*eCoeff
+          YPcomp = YPcomp + ypdiff*eCoeff
+        END DO
+        eXP=XPcomp / eSum
+        eYP=YPcomp / eSum
+        DVDX(IP)=eXP
+        DVDY(IP)=eYP
+      END DO
+#ifdef MPI_PARALL_GRID 
+      CALL exchange_p2d(DVDX)
+      CALL exchange_p2d(DVDY)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE DIFFERENTIATE_XYDIR_AND_SMOOTH(VAR, DVDX, DVDY, nbIter)
       USE DATAPOOL
       IMPLICIT NONE
