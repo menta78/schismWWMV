@@ -2284,7 +2284,9 @@
           DO I = 1, MNP ! Run through all columns
             IF (ITMP(I) .GT. 0) THEN
               K = K + 1
-              IADJ=IADJ + 1
+              IF (I .ne. IP) THEN
+                IADJ=IADJ + 1
+              END IF
               JA(K) = I
             END IF
           END DO
@@ -2347,8 +2349,11 @@
               DO I = 1, MNP
                 IF (ITMP(I) .GT. 0) THEN
                   K = K + 1
-                  IADJ=IADJ + 1
-                  LIST_ADJ_VERT(IADJ,IP)=I
+                  IF (I .ne. IP) THEN
+                    IADJ=IADJ + 1
+                    LIST_ADJ_VERT(IADJ,IP)=I
+                    Print *, 'IP/IADJ/I=', IP, IADJ,I
+                  END IF
                   JA(K) = I
                 END IF
               END DO
@@ -2361,14 +2366,18 @@
             DO IP=1,MNP
               DO J=IA(IP),IA(IP+1)-1
                 JP=JA(J)
-                FPOS=-1
-                DO EPOS=1,MAX_DEG
-                  IF (LIST_ADJ_VERT(EPOS,IP) .eq. JP) THEN
-                    FPOS=EPOS
+                IF (IP .ne. JP) THEN
+                  FPOS=-1
+                  DO EPOS=1,MAX_DEG
+                    IF (LIST_ADJ_VERT(EPOS,IP) .eq. JP) THEN
+                      FPOS=EPOS
+                    END IF
+                  END DO
+                  IF (FPOS .eq. -1) THEN
+                    CALL WWM_ABORT('INDEXING FAILURE')
                   END IF
-                END DO
-                IF (FPOS .eq. -1) THEN
-                  CALL WWM_ABORT('INDEXING FAILURE')
+                ELSE
+                  FPOS=-400
                 END IF
                 REV_BOOK(J)=FPOS
               END DO
