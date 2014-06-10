@@ -274,8 +274,6 @@
          ELSE
             WLM = ZERO
          ENDIF
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************:
 !*                                                                    *
@@ -543,8 +541,6 @@
            KMWAM2      = 10.0_rkind
 
          end if 
-
-         RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -978,8 +974,6 @@
            KMWAM2      = 10.0_rkind
 
          end if 
-
-       RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -1049,8 +1043,6 @@
            TMBOT       = ZERO 
 
          ENDIF 
-
-       RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -1120,8 +1112,6 @@
          ENDIF 
 
          !WRITE(*,'(9F15.4)') DEPLOC,SUM(ACLOC),CURTXYLOC,SUM(WKLOC), ETOT_SKD, ETOT_SKDSIG 
-
-       RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -1139,8 +1129,6 @@
          ELSE
            URSELL = ZERO
          END IF 
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1188,7 +1176,7 @@
            ENDIF
          END DO
 
-         IF (ETOT .LT. VERYSMALL) GOTO 101
+         IF (ETOT .LT. VERYSMALL) RETURN
 
          IF (ETOT > ZERO) THEN
            HS_W = 4.0*SQRT(ETOT)
@@ -1243,9 +1231,6 @@
          ELSE
             TM_W = ZERO
          ENDIF
-
- 
-101      RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -1379,8 +1364,6 @@
        END IF
 
        !WRITE(*,'(11F15.4)') FPP, KPP, CGPP, WKDEPP, WNPP, CPP, TPP, LPP, PEAKDM, PEAKFF, PEAKDSPR 
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1504,8 +1487,6 @@
           KPPD  = ZERO
           CGPD  = ZERO
        END IF
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1557,8 +1538,6 @@
            DM   = ZERO
            DSPR = ZERO
          END IF
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1610,8 +1589,6 @@
            DM   = ZERO
            DSPR = ZERO
          END IF
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1801,8 +1778,6 @@
            WLM  = ZERO
 
          END IF
-
-       RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1896,8 +1871,6 @@
            ETOTWS      = ZERO
 
          end if 
-
-       RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -2025,8 +1998,6 @@
            KMWAM2      = 10.0_rkind
 
          end if 
-
-       RETURN
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
