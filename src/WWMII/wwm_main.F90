@@ -678,33 +678,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WWMINPULNML
-        USE DATAPOOL, only : INP
-        IMPLICIT NONE
-        INTEGER nbArg
-#ifdef SELFE
-        INP%FNAME  = 'wwminput.nml'
-#else
-# ifndef PGMCL_COUPLING
-        nbArg=command_argument_count()
-        IF (nbArg > 1) THEN
-          CALL WWM_ABORT('Number of argument is 0 or 1')
-        ENDIF
-        IF (nbArg.eq.0) THEN
-          INP%FNAME  = 'wwminput.nml'
-        ELSE
-          CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
-        ENDIF
-# else
-        USE mod_coupler, only : Iwaves, INPname
-        IMPLICIT NONE
-        INP%FNAME=INPname(Iwaves)
-# endif
-#endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
 #if !defined SELFE && !defined PDLIB && defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
@@ -802,7 +775,6 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
-      CALL SET_WWMINPULNML
 
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)

@@ -454,6 +454,8 @@
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
+     
+      CALL SET_WWMINPULNML 
 
 ! variable nx1 should be initialized in selfe code, not here!
 #if defined MPI_PARALL_GRID && !defined PDLIB
@@ -1529,3 +1531,31 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SET_WWMINPULNML
+        USE DATAPOOL, only : INP
+        IMPLICIT NONE
+        INTEGER nbArg
+#ifdef SELFE
+        INP%FNAME  = 'wwminput.nml'
+#else
+# ifndef PGMCL_COUPLING
+        nbArg=command_argument_count()
+        IF (nbArg > 1) THEN
+          CALL WWM_ABORT('Number of argument is 0 or 1')
+        ENDIF
+        IF (nbArg.eq.0) THEN
+          INP%FNAME  = 'wwminput.nml'
+        ELSE
+          CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
+        ENDIF
+# else
+        USE mod_coupler, only : Iwaves, INPname
+        IMPLICIT NONE
+        INP%FNAME=INPname(Iwaves)
+# endif
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+
