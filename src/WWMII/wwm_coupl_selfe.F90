@@ -426,7 +426,10 @@
           do IS=1,nsa
             if(idry_s(IS)==0) then
               HTOT=(eta2(isidenode(IS,1))+eta2(isidenode(IS,2))+DEP8(isidenode(IS,1))+DEP8(isidenode(IS,2)))/2
-              if(HTOT<=0) call parallel_abort('RADIATION_STRESS: (999)')
+!AR: Mathieu here everything becomes messed up the depth at the nodes where it blows should be 20. but it is 0. but the sum(dep8) is the same. Can u please debug this? 
+              write(*,*) sum(eta2), sum(dep8)
+              write(*,*) HTOT, eta2(isidenode(IS,1)), eta2(isidenode(IS,2)), DEP8(isidenode(IS,1)), DEP8(isidenode(IS,2)),isidenode(1,IS),isidenode(2,IS)
+              if(HTOT.le.ZERO) call parallel_abort('RADIATION_STRESS: (997)')
               do il = 1, nvrt
                 WWAVE_FORCE(il,IS,1)=WWAVE_FORCE(il,IS,1)-dr_dxy(1,il,IS)/HTOT
               end do
@@ -438,7 +441,7 @@
           do IS=1,nsa
             if(idry_s(IS)==0) then
               HTOT=(eta2(isidenode(IS,1))+eta2(isidenode(IS,2))+DEP8(isidenode(IS,1))+DEP8(isidenode(IS,2)))/2
-              if(HTOT<=0) call parallel_abort('RADIATION_STRESS: (998)')
+              if(HTOT<ZERO) call parallel_abort('RADIATION_STRESS: (998)')
               do il = 1, nvrt 
                 WWAVE_FORCE(il,IS,2)=WWAVE_FORCE(il,IS,2)-dr_dxy(2,il,IS)/HTOT
               end do
@@ -453,7 +456,7 @@
           do IS=1,nsa
             if(idry_s(IS)==0) then
               HTOT=(eta2(isidenode(IS,1))+eta2(isidenode(IS,2))+DEP8(isidenode(IS,1))+DEP8(isidenode(IS,2)))/2
-              if(HTOT<=0) call parallel_abort('RADIATION_STRESS: (997)')
+              if(HTOT<ZERO) call parallel_abort('RADIATION_STRESS: (999)')
               WWAVE_FORCE(:,IS,1)=WWAVE_FORCE(:,IS,1)-dr_dxy(2,:,IS)/HTOT
               WWAVE_FORCE(:,IS,2)=WWAVE_FORCE(:,IS,2)-dr_dxy(1,:,IS)/HTOT
             endif

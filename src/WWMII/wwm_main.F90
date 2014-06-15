@@ -93,6 +93,8 @@
 
          SIMUTIME = SIMUTIME + MAIN%DELT
 
+         WRITE(*,*) SUM(DEP8)
+
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -199,6 +201,8 @@
            LSEWL       = .FALSE.
          END IF
 
+         WRITE(*,*) SUM(DEP8)
+
          LCALC       = .TRUE.
 
          IF (LNANINFCHK) THEN
@@ -232,12 +236,16 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
          FLUSH(STAT%FHNDL)
 
+         WRITE(*,*) SUM(DEP8)
+
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
             CALL QUASI_STEADY(KKK)
          ELSE
             CALL NON_STEADY(KKK,CALLFROM)
          END IF
+
+         WRITE(*,*) SUM(DEP8)
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER COMPUTE ',  SUM(AC2)
@@ -273,6 +281,7 @@
 !
 ! Compute radiation stress ...
 !
+
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
          ELSE 
@@ -282,6 +291,9 @@
              CALL RADIATION_STRESS_SELFE
 !           ENDIF
          END IF 
+
+         WRITE(*,*) SUM(DEP8)
+         stop
 
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
