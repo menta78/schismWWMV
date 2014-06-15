@@ -478,6 +478,7 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
       FLUSH(STAT%FHNDL)
       CALL READ_SPATIAL_GRID_TOTAL
+
 #ifndef MPI_PARALL_GRID
       MNP=NP_TOTAL
       MNE=NE_TOTAL
@@ -503,11 +504,13 @@
       DEP=DEP8
       INETMP=INE
 # else
+# ifndef SELFE
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
+# endif
       CALL INIT_ARRAYS
       DEP  = DEP8
       WLDEP  = DEP
