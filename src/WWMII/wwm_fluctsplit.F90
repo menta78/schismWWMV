@@ -454,11 +454,11 @@
 !                 WRITE(DBG%FHNDL,*) '1st IP LOOP CYCLE', IT, IP, IP_IS_STEADY(IP)
 !                  CYCLE
 !               ENDIF
-               IF (IOBP(IP) .NE. 0 .AND. CCON(IP) .GT. 3) THEN
+!               IF (IOBP(IP) .NE. 0 .AND. CCON(IP) .GT. 3) THEN
                  U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
-               ELSE IF (IOBP(IP) .EQ. 0) THEN
-                 U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP) 
-               ENDIF
+!               ELSE IF (IOBP(IP) .EQ. 0) THEN
+!                 U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP) 
+!               ENDIF
              ENDDO
 !             WRITE(*,'(2I10,F20.10,2I20,F20.10)') ID, IS, U(IP_TEST), IOBPD(ID,IP_TEST), IOBDP(IP_TEST), DEP(IP_TEST)
 #ifdef MPI_PARALL_GRID

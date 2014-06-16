@@ -18,8 +18,8 @@
 ! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu-Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
 !
 ! Contributors: Christian Ferrarin (ISMAR-CNR), Fabrice Ardhuin (IFREMER), Yaron Toledo (Tel-Aviv University), Thomas Huxhorn (TUD), Ivica Janekovic (IRB, Zagreb), 
-! Will Perrie (Fisheries, Canada), Bash Toulany (Fisheries, Canada), Harry Wang (VIMS), Andrea Fortunato (LNEC), Guillaume Dodet (LNEC), Kai Li (XXXX)
-! Andreas Wurpts (Forschungsstelle Küste, Norderney), Michael Glozman (Cameri, Technion), Boris Lehmann (TUD, Darmstadt) 
+! Will Perrie (Fisheries, Canada), Bash Toulany (Fisheries, Canada), Harry Wang (VIMS), Andrea Fortunato (LNEC), Guillaume Dodet (LNEC), Kai Li (LNEC)
+! Andreas Wurpts (Forschungsstelle Küste, Norderney), Michael Glozman (Cameri, Technion)
 !				
 ! Copyright: 2008 - XXXX Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
 ! All Rights Reserved                                     
@@ -34,9 +34,7 @@
 !**********************************************************************
 #ifdef SELFE
  !!!     SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-      SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,HS_DUMON,SBR_X,SBR_Y,STOKES_X,STOKES_Y,JPRESS,RADFLAG2)   !! modif AD
-
-
+      SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)   !! modif AD
 
          USE DATAPOOL
          use elfe_msgp!, only : myrank,parallel_abort,itype,comm,ierr
@@ -49,23 +47,13 @@
          CHARACTER(LEN=3), INTENT(OUT) :: RADFLAG2
 
          REAL(rkind), SAVE  :: SIMUTIME
-         REAL(rkind)        :: T1, T2, mpi_wtime
+         REAL(rkind)        :: T1, T2
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 
-         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT, IPGL
+         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
-
-
-!!!!!!!!!!!!!!!!!! modif AD
-          REAL(rkind) :: SSBR_DUMON_ALL(MNP,MSC,MDC),QB_DUMON_ALL(MNP)
-          REAL(rkind) :: SBR_X(MNP),SBR_Y(MNP)
-          REAL(rkind) :: STOKES_X(NVRT,MNP),STOKES_Y(NVRT,MNP),JPRESS(MNP)
-          REAL(rkind) :: HS_DUMON(MNP),ETOT_DUMON(MNP)
-!!!!!!!!!!!!!!!!!!  end modif AD
-      
-
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
          CALL FLUSH(STAT%FHNDL)
@@ -90,7 +78,7 @@
 #ifdef TIMINGS
          T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
          T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
-#endif TIMINGS
+#endif 
 
          DT_PROVIDED=NSTEPWWM*DT_SELFE
 
@@ -260,11 +248,9 @@
 
          CALLFROM='SELFE'
          IF (LQSTEA) THEN
-            CALL QUASI_STEADY(KKK)
+           CALL QUASI_STEADY(KKK)
          ELSE
-!!!!! modif AD
-            CALL UN_STEADY(KKK,CALLFROM,SSBR_DUMON_ALL,QB_DUMON_ALL)
-!!!!! modif AD
+           CALL UN_STEADY(KKK,CALLFROM)
          END IF
 
          IF (LNANINFCHK) THEN
@@ -302,24 +288,23 @@
 !
 ! Compute radiation stress ...
 !
-
-!!!!!! modif AD : if RADFLAG=VOR , then coupling with selfe will gives stokes_velocity (Eq. 17 from Bennis 2011), Wave-induced pressure (Eq. 20) and source momentums (Eq.21) 
+! RADFLAG=VOR , then coupling with selfe will gives stokes_velocity (Eq. 17 from Bennis 2011), Wave-induced pressure (Eq. 20) and source momentums (Eq.21) 
          RADFLAG2=RADFLAG !for output into SELFE
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
            STOKES_X=ZERO
            STOKES_Y=ZERO
            JPRESS=ZERO
-           SBR_X=ZERO
-           SBR_Y=ZERO
+           SBR=ZERO
+           SBR=ZERO
          ELSE 
            IF (RADFLAG == 'VOR') THEN
-             CALL STOKES_STRESS_INTEGRAL_SELFE(SSBR_DUMON_ALL,STOKES_X,STOKES_Y,JPRESS,SBR_X,SBR_Y,HS_DUMON,ETOT_DUMON)
+             CALL STOKES_STRESS_INTEGRAL_SELFE
            ELSE
              CALL RADIATION_STRESS_SELFE
            ENDIF
          END IF 
-!!!!!! end modif AD
+! end modif AD
 
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
@@ -351,6 +336,7 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
          CALL FLUSH(STAT%FHNDL)
+#endif
  
       END SUBROUTINE WWM_II
 !**********************************************************************
@@ -420,7 +406,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE UN_STEADY(K,CALLFROM,SSBR_DUMON_ALL,QB_DUMON_ALL)
+      SUBROUTINE UN_STEADY(K,CALLFROM)
 
          USE DATAPOOL
 #ifdef MPI_PARALL_GRID
@@ -429,13 +415,7 @@
 
          IMPLICIT NONE
 
-!!!!! modif AD
-         REAL(rkind), INTENT(OUT)  :: SSBR_DUMON_ALL(MNP,MSC,MDC),QB_DUMON_ALL(MNP)
-!!!!! end modif AD
-
          INTEGER, INTENT(IN) :: K
-
-      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING NON_STEADY' 
 
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
          REAL           :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
@@ -445,10 +425,13 @@
 #ifdef TIMINGS
       CALL MY_WTIME(TIME1)
 #endif
+
       CALL IO_1(K)
+
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
+
       IF (ICOMP .EQ. 0) THEN
         CALL COMPUTE_SIMPLE_EXPLICIT
       ELSE IF (ICOMP .EQ. 1) THEN 

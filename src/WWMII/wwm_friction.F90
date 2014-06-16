@@ -12,8 +12,8 @@
          REAL(rkind), INTENT(OUT)      :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
          REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          INTEGER                       :: IS, ID, J
-         REAL(rkind)                   :: KDEP
-         REAL(rkind)                   :: AKN , CFBOT, XDUM
+         REAL(rkind)                   :: KDEP, COST, SINT
+         REAL(rkind)                   :: AKN , CFBOT, XDUM, TMP_X, TMP_Y
          REAL(rkind)                   :: ADUM, CDUM, DDUM, FW
 
          PBOTF(1)   =  0.005
@@ -25,6 +25,9 @@
            PBOTF(3) = FRICC
            PBOTF(5) = FRICC
          END IF
+
+         SBF(:,IP) = ZERO
+         TMP_X     = ZERO; TMP_Y = ZERO
 
          SSBF = ZERO
          DSSBF = ZERO
@@ -70,6 +73,24 @@
              END IF
            END DO
          END DO
+
+         DO IS=1,MSC
+           DO ID=1,MDC
+             COST = COSTH(ID)!COS(SPDIR(ID))
+             SINT = SINTH(ID)!SIN(SPDIR(ID))
+!             SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+!             SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+             SBF(1,IP)=SBF(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBF(IS,ID)*DS_INCR(IS)*DDIR
+             SBF(2,IP)=SBF(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBF(IS,ID)*DS_INCR(IS)*DDIR
+           ENDDO
+         ENDDO
+         !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
+         !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
+
+#ifdef DEBUG
+        WRITE(DBG%FHNDL,*) 'THE NORMS OF FRICTION', TMP_X, TMP_Y
+#endif
+
 
       END SUBROUTINE
 !**********************************************************************

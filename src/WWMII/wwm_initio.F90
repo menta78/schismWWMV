@@ -72,6 +72,11 @@
          IMATDAA = zero
        END IF
 
+       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
+       SBR = ZERO
+       SBF = ZERO
+
        IF (LITERSPLIT) THEN
 !         ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
          ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)

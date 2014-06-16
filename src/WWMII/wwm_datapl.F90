@@ -760,7 +760,7 @@
          REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
          REAL(rkind)                   :: PSURF(6)
 
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:), SBR(:,:), SBF(:,:), STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 

@@ -20,6 +20,10 @@
       USE eclight
 #endif
 
+#ifdef USE_WWM
+      USE DATAPOOL, only: STOKES_X, STOKES_Y, JPRESS, SBR, SBF
+#endif
+
 #ifdef USE_ICM
       USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
                           &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
@@ -174,7 +178,6 @@
 
 #ifdef USE_WWM
       CHARACTER(LEN=3) :: RADFLAG
-      real(rkind) :: hs_temp(npa),sbr(2,npa),sbf(2,npa),jpress(npa)
       real(rkind),allocatable :: stokes_vel(:,:,:),stokes_w(:,:),stokes_w_nd(:,:), &
      &stokes_vel_sd(:,:,:)
 #endif /*USE_WWM*/
@@ -536,10 +539,8 @@
         wtmp1=mpi_wtime()
         if(myrank==0) write(16,*)'starting WWM'
         !call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm)
-        call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm,hs_temp,sbr(1,:),sbr(2,:),sbf(1,:),sbf(2,:), &
-     &stokes_vel(1,:,:),stokes_vel(2,:,:),jpress,RADFLAG)
+        call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm,RADFLAG)
 
-!    hs_temp(npa): significant wave height
 !    sbr(2,npa): momentum flux vector due to wave breaking (nearshore depth-induced breaking; see Bennis 2011)
 !    sbf(2,npa): momentum lost by waves due to the bottom friction (not used for the moment)
 !    stokes_vel(2,nvrt,npa): Stokes velocity
@@ -689,8 +690,8 @@
         !Wave breaking = sbr/rh0/g*f(z), where the vertical profile function
         !f(z)=cosh(5*sqrt(2)*(z+h)/Hs) / Int_{-h}^{eta} cosh(5*sqrt(2)*(z+h)/Hs) dz
         do j=1,ns !resident
-          tmp0=sum(hs_temp(isidenode(:,j)))/2 !Hs
-          if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.2) cycle
+          tmp0=sum(out_wwm(isidenode(:,j),1))/2.d0 !Hs
+          if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.2) cycle ! What is this with 0.2, please explain all heuristical constants very precicly, this will not enter the code like this!
 
           !Wet side
           swild=0

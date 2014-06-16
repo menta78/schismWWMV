@@ -3,49 +3,33 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE(SSBR_DUMON_ALL,STOKES_X,STOKES_Y,JPRESS,SBR_X,SBR_Y,HS_DUMON,ETOT_DUMON)
+      SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
 
         use elfe_glbl, only: iplg,errmsg,hmin_radstress
         USE elfe_msgp
 
         USE DATAPOOL
         implicit none
-        integer IP, k, ID, IS, IL
-        real(rkind) eF1, eF2, eDelta, TheInt, eDep, eHeight
-        real(rkind) eFrac, eFracB, eQuot
-        real(rkind) eQuot1, eScal
-        real(rkind) eOmega, eMult, kD, eSinc
-        real(rkind) USTOKESpart, VSTOKESpart, eJPress
-        real(rkind) ACLOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        real(rkind) PPTAIL, CETAIL, CKTAIL
-        logical DoTail
-        real(rkind) eWkReal
-        real(rkind) SumHeight
-        real(rkind) eJPress_loc, eProd, eUint, eVint
-        real(rkind) eUSTOKES_loc(NVRT), eVSTOKES_loc(NVRT)
-        real(rkind) ZZETA
-!!!!!!!!!!!!!!!!!! modif AD
-         REAL(rkind), INTENT(IN) :: SSBR_DUMON_ALL(MNP,MSC,MDC)
-         REAL(rkind), INTENT(OUT)  :: SBR_X(MNP),SBR_Y(MNP)
-         REAL(rkind), INTENT(OUT)  :: STOKES_X(NVRT,MNP),STOKES_Y(NVRT,MNP),JPRESS(MNP)
-         REAL(rkind), INTENT(OUT)  :: HS_DUMON(MNP),ETOT_DUMON(MNP)
-         REAL(rkind) :: tmp,TMP_X,TMP_Y,SINT,COST
-         REAL(rkind)  :: HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2!!!!!!!! modif AD  (mean_parameter)
-         REAL(rkind)  :: ACLOC1(MSC,MDC) !!! modif AD (mean_parameter)
-
-!!!!!!!!!!!!!!!!!!  end modif AD
+        integer     :: IP, k, ID, IS, IL
+        real(rkind) :: eF1, eF2, eDelta, TheInt, eDep, eHeight
+        real(rkind) :: eFrac, eFracB, eQuot
+        real(rkind) :: eQuot1, eScal
+        real(rkind) :: eOmega, eMult, kD, eSinc
+        real(rkind) :: USTOKESpart, VSTOKESpart, eJPress
+        real(rkind) :: eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
+        real(rkind) :: PPTAIL, CETAIL, CKTAIL
+        logical     :: DoTail
+        real(rkind) :: eWkReal
+        real(rkind) :: SumHeight
+        real(rkind) :: eJPress_loc, eProd, eUint, eVint
+        real(rkind) :: eUSTOKES_loc(NVRT), eVSTOKES_loc(NVRT)
+        real(rkind) :: ZZETA
+        REAL(rkind) :: tmp,TMP_X,TMP_Y,SINT,COST
+        REAL(rkind) :: HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
+        REAL(rkind) :: ACLOC(MSC,MDC) 
  
-
-         HS_DUMON=ZERO
-         ETOT_DUMON=ZERO
-         SBR_X=ZERO
-         SBR_Y=ZERO
-         TMP_X=ZERO
-         TMP_Y=ZERO
-
-
         DO IP=1,MNP
-          tmp=max(DEP8(IP)+ETA2(IP),hmin_radstress) !!!!!!!!!!  modif AD
+          tmp=max(DEP8(IP)+ETA2(IP),hmin_radstress)
           eDep=tmp
 !!!          eDep=SHYFZETA(NLEV(IP),MNP)
           eUSTOKES_loc=0
@@ -87,45 +71,7 @@
           STOKES_X(:,IP)=eUSTOKES_loc
           STOKES_Y(:,IP)=eVSTOKES_loc
           JPRESS(IP)=eJPress_loc
-
-
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! modif AD : calcul of Int  (k/sigma) S_br  dtheta dsigma !!!!!!!!!!
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! where S_br comes from the wave model : S_br= (-alpha Q_b \underline_sigma)/(beta**2 * pi) * E
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! For more details see thesis of Aaron Roland p.66 
-
-           ACLOC1 = AC2(:,:,IP)
-           CALL MEAN_WAVE_PARAMETER(IP,ACLOC1,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-           HS_DUMON(IP)=HS
-           ETOT_DUMON(IP)=ETOT
-
- 
-            DO IS=1,MSC
-              DO ID=1,MDC
-                COST = COSTH(ID)!COS(SPDIR(ID))
-                SINT = SINTH(ID)!SIN(SPDIR(ID))
-                  
- !               SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
- !               SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
- 
- 
-                SBR_X(IP)=SBR_X(IP)+SINT*(WK(IP,IS)/SPSIG(IS))*SSBR_DUMON_ALL(IP,IS,ID)*DS_INCR(IS)*DDIR
-                SBR_Y(IP)=SBR_Y(IP)+COST*(WK(IP,IS)/SPSIG(IS))*SSBR_DUMON_ALL(IP,IS,ID)*DS_INCR(IS)*DDIR
-  
-              ENDDO
-            ENDDO
- 
-            TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
-            TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
- 
-
-        ENDDO
-
-
-         WRITE(16,*)'NORM OF SBR',TMP_X,TMP_Y
- 
- 
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! end modif AD
-
+        ENDDO ! IP
 
       END SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
 !**********************************************************************
@@ -337,8 +283,8 @@
         do IS=1,nsa
           if(idry_s(IS)==0) then
             HTOT=(eta2(isidenode(1,IS))+eta2(isidenode(2,IS))+DEP8(isidenode(1,IS))+DEP8(isidenode(2,IS)))/2
-            write(*,*) sum(eta2), sum(dep8)
-            write(*,*) HTOT, eta2(isidenode(1,IS)), eta2(isidenode(2,IS)), DEP8(isidenode(1,IS)), DEP8(isidenode(1,IS)), isidenode(1,IS), isidenode(1,IS) 
+!            write(*,*) sum(eta2), sum(dep8)
+!            write(*,*) HTOT, eta2(isidenode(1,IS)), eta2(isidenode(2,IS)), DEP8(isidenode(1,IS)), DEP8(isidenode(1,IS)), isidenode(1,IS), isidenode(1,IS) 
             if (isidenode(1,IS) == 150 .AND. isidenode(2,IS) == 149) stop
             if(HTOT<=0) call parallel_abort('RADIATION_STRESS: (999)')
             HTOT=max(HTOT,hmin_radstress)
