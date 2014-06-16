@@ -42,12 +42,13 @@
        USE sed_mod, only : Wsed,Srho,Nbed,MBEDP,bedldu,bedldv,bed,bottom,    &
                           &bed_frac,mcoefd,bed_fracn,bed_d50n,bed_taun,&
                           &bedforms_rough,bed_rough,izcr,izsw,izwr,izbld, &
-                          &bed,bed_mass        
+                          &bed,ithck,iaged
 #endif
 
 #ifdef USE_SED2D
       use sed2d_mod, only : Cdsed,cflsed,d50moy,dpdxy,nb_class,qav,  &
-                           &qb,qs,qtot,z0cr_e,z0_e,z0sw_e,z0wr_e
+                           &qb,qs,qtot,z0cr_e,z0_e,z0sw_e,z0wr_e, &
+                           &idrag_sed2d=>idrag
 #endif
 
 #ifdef USE_OIL
@@ -149,7 +150,7 @@
                      &bubt(2,nea),bigu(2,nsa),ghat1(2,nea),etp(npa),h1d(0:nvrt),SS1d(0:nvrt), &
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
-                     &e2coef(npa*(mnei+1)),vsource(nea)
+                     &vsource(nea)
       real(rkind) :: swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
      &swild3(20+ntracers),swild4(2,3+2*ntracers)
       real(4) :: swild8(nvrt,2) !used in ST nudging
@@ -171,7 +172,15 @@
 !      integer :: flag_model,flag_ic
       real(rkind),allocatable :: Bio_bdefp(:,:),tr_tc(:,:),tr_tl(:,:)
 
+#ifdef USE_WWM
+      CHARACTER(LEN=3) :: RADFLAG
+      real(rkind) :: hs_temp(npa),sbr(2,npa),sbf(2,npa),jpress(npa)
+      real(rkind),allocatable :: stokes_vel(:,:,:),stokes_w(:,:),stokes_w_nd(:,:), &
+     &stokes_vel_sd(:,:,:)
+#endif /*USE_WWM*/
+
 !     End of declarations
+
       if(nonhydro==1) then
         allocate(qhat(nvrt,npa),dqnon_dxy(2,nvrt,nsa),qmatr(nvrt,-1:1,0:(mnei+1),np), &
      &qir(nvrt,np),stat=istat)
@@ -204,6 +213,12 @@
 #ifdef USE_SED
        allocate(tr_tc(ntracers,nea),tr_tl(ntracers,nea),stat=istat)
        if(istat/=0) call parallel_abort('STEP: sed. allocation failure')
+#endif
+
+#ifdef USE_WWM
+       allocate(stokes_vel(2,nvrt,npa),stokes_w(nvrt,nea),stokes_w_nd(nvrt,npa), &
+     &stokes_vel_sd(2,nvrt,nsa),stat=istat)
+       if(istat/=0) call parallel_abort('STEP: WWM allocation failure')
 #endif
 
 !      End alloc.
@@ -520,12 +535,21 @@
       if(mod(it,nstep_wwm)==0) then
         wtmp1=mpi_wtime()
         if(myrank==0) write(16,*)'starting WWM'
-        call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm)
+        !call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm)
+        call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm,hs_temp,sbr(1,:),sbr(2,:),sbf(1,:),sbf(2,:), &
+     &stokes_vel(1,:,:),stokes_vel(2,:,:),jpress,RADFLAG)
+
+!    hs_temp(npa): significant wave height
+!    sbr(2,npa): momentum flux vector due to wave breaking (nearshore depth-induced breaking; see Bennis 2011)
+!    sbf(2,npa): momentum lost by waves due to the bottom friction (not used for the moment)
+!    stokes_vel(2,nvrt,npa): Stokes velocity
+!    jpress(npa): waved-induced pressure
 
 !     Outputs (via datapool):
-!     wwave_force(nvrt,nsa,2): =0 if icou_elfe_wwm=0
-!       wwave_force(:,1:nsa,1:2) = Rsx, Rsy in my notes (the terms in momen. eq.)
-!       and has a dimension of m/s/s
+!     wwave_force(2,nvrt,nsa): =0 if icou_elfe_wwm=0. In [e,p]frame (not sframe!).
+!       wwave_force(1:2,:,1:nsa) = Rsx, Rsy in my notes (the terms in momen. eq.)
+!       and has a dimension of m/s/s. This is overwritten under Vortex
+!       formulation later.
 !     out_wwm_windpar(npa,10): 
 !         1) = WINDXY(IP,1) ! wind vector u10,x
 !         2) = WINDXY(IP,2) ! wind vector u10,y
@@ -599,6 +623,195 @@
           call parallel_abort(errmsg)
         endif !sum
       endif !mod()
+
+!     Caculate vortex force of Bennis (2011)
+!     Overwrites wwave_force(2,nvrt,nsa) (in eframe if ics=2)
+      if(RADFLAG.eq.'VOR') then
+        wwave_force=0
+
+        !Stokes vel. at side (in pframe if ics=2)
+        stokes_vel_sd=0
+        do i=1,nsa
+          if(idry_s(i)==0) then
+            n1=isidenode(1,i); n2=isidenode(2,i)
+            stokes_vel_sd(:,:,i)=(stokes_vel(:,:,n1)+stokes_vel(:,:,n2))/2
+          endif
+        enddo !i
+
+        !Vortex terms
+        call hgrad_nodes(2,0,nvrt,npa,nsa,uu2,dr_dxy)
+        do i=1,ns
+          if(idry_s(i)==0) then
+            n1=isidenode(1,i); n2=isidenode(2,i)
+            !f*v_s-du/dy*v_s
+            wwave_force(1,:,i)=wwave_force(1,:,i)+(cori(i)-dr_dxy(2,:,i))*stokes_vel_sd(2,:,i)
+            !-f*u_s+du/dy*u_s
+            wwave_force(2,:,i)=wwave_force(2,:,i)+(-cori(i)+dr_dxy(2,:,i))*stokes_vel_sd(1,:,i)
+          endif
+        enddo !i
+
+        call hgrad_nodes(2,0,nvrt,npa,nsa,vv2,dr_dxy)
+        do i=1,ns
+          if(idry_s(i)==0) then
+            n1=isidenode(1,i); n2=isidenode(2,i)
+            !dv/dx*v_s
+            wwave_force(1,:,i)=wwave_force(1,:,i)+dr_dxy(1,:,i)*stokes_vel_sd(2,:,i)
+            !-dv/dx*u_s
+            wwave_force(2,:,i)=wwave_force(2,:,i)-dr_dxy(1,:,i)*stokes_vel_sd(1,:,i)
+          endif
+        enddo !i
+
+        !pressure term 
+        do j=1,ns !resident
+          if(idry_s(j)==1) cycle
+
+          !Wet side
+          icount1=0 
+          tmp1=0; tmp2=0
+          do l=1,2 !elements
+            ie=isdel(l,j)
+            if(ie/=0) then; if(idry_e(ie)==0) then
+              icount1=icount1+1
+              tmp1=tmp1+dot_product(jpress(elnode(:,ie)),dldxy(:,1,ie)) !in eframe
+              tmp2=tmp2+dot_product(jpress(elnode(:,ie)),dldxy(:,2,ie))
+            endif; endif 
+          enddo !l
+
+          if(icount1/=0) then
+            tmp1=tmp1/icount1
+            tmp2=tmp2/icount1
+          endif
+
+          wwave_force(1,:,j)=wwave_force(1,:,j)-tmp1
+          wwave_force(2,:,j)=wwave_force(2,:,j)-tmp2
+        enddo !j
+
+        !Wave breaking = sbr/rh0/g*f(z), where the vertical profile function
+        !f(z)=cosh(5*sqrt(2)*(z+h)/Hs) / Int_{-h}^{eta} cosh(5*sqrt(2)*(z+h)/Hs) dz
+        do j=1,ns !resident
+          tmp0=sum(hs_temp(isidenode(:,j)))/2 !Hs
+          if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.2) cycle
+
+          !Wet side
+          swild=0
+          do k=kbs(j),nvrt
+            swild(k)=cosh(5*sqrt(2.d0)*(zs(k,j)+dps(j)))/tmp0
+          enddo !k
+ 
+          sum1=0 !integral
+          do k=kbs(j),nvrt-1
+            sum1=sum1+(swild(k+1)+swild(k))/2*(zs(k+1,j)-zs(k,j))
+          enddo !k
+          
+          if(sum1==0) call parallel_abort('STEP: integral=0')
+          wwave_force(1,:,j)=wwave_force(1,:,j)+swild(1:nvrt)/sum1*sum(sbr(1,isidenode(:,j)))/2/rho0/grav
+          wwave_force(2,:,j)=wwave_force(2,:,j)+swild(1:nvrt)/sum1*sum(sbr(2,isidenode(:,j)))/2/rho0/grav
+        enddo !j
+
+        call exchange_s3d_2(wwave_force)
+
+!       Calculate Stokes w-vel.: stokes_w(nvrt,nea)
+        stokes_w=0 !for dry and below bottom levels
+        do i=1,nea
+          if(idry_e(i)==1) cycle
+
+!	      Wet elements with 3 wet nodes
+!         Compute upward normals and areas @ all levels
+          n1=elnode(1,i)
+          n2=elnode(2,i)
+          n3=elnode(3,i)
+          if(kbe(i)==0) then
+            write(errmsg,*)'Impossible 95'
+            call parallel_abort(errmsg)
+          endif
+          do l=kbe(i),nvrt
+            if(ics==1) then
+              xcon=(ynd(n2)-ynd(n1))*(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))-(ynd(n3)-ynd(n1))* &
+     &(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))
+              ycon=(xnd(n3)-xnd(n1))*(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))-(xnd(n2)-xnd(n1))* &
+     &(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))
+              zcon=area(i)*2
+            else !lat/lon
+              !eframe
+              call cross_product(xel(2,i)-xel(1,i),yel(2,i)-yel(1,i),znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1), &
+     &                           xel(3,i)-xel(1,i),yel(3,i)-yel(1,i),znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1), &
+     &                           xcon,ycon,zcon)
+            endif !ics
+
+            area_e(l)=sqrt(xcon**2+ycon**2+zcon**2)/2
+            if(area_e(l)==0) then
+              write(errmsg,*)'Zero area:',i,l
+              call parallel_abort(errmsg)
+            endif
+            sne(1,l)=xcon/area_e(l)/2 !in eframe
+            sne(2,l)=ycon/area_e(l)/2
+            sne(3,l)=zcon/area_e(l)/2 !>0
+          enddo !l
+
+!         Bottom b.c.
+          ubar=sum(stokes_vel(1,k,elnode(:,i)))/3 !average bottom hvel
+          vbar=sum(stokes_vel(2,k,elnode(:,i)))/3
+          dhdx=dp(n1)*dldxy(1,1,i)+dp(n2)*dldxy(2,1,i)+dp(n3)*dldxy(3,1,i) !eframe
+          dhdy=dp(n1)*dldxy(1,2,i)+dp(n2)*dldxy(2,2,i)+dp(n3)*dldxy(3,2,i)
+          stokes_w(kbe(i),i)=-dhdx*ubar-dhdy*vbar
+
+          do l=kbe(i),nvrt-1
+            sum1=0
+            do j=1,3
+              jsj=elside(j,i)
+              tmp1=stokes_vel_sd(1,l,jsj)
+              tmpx1=stokes_vel_sd(1,l+1,jsj)
+              tmp2=stokes_vel_sd(2,l,jsj)
+              tmpy2=stokes_vel_sd(2,l+1,jsj)
+              if(ics==1) then
+                vnor1=tmp1*sframe(1,1,jsj)+tmp2*sframe(2,1,jsj)
+                vnor2=tmpx1*sframe(1,1,jsj)+tmpy2*sframe(2,1,jsj)
+              else !lat/lon
+                !vnor1=su2(l,jsj) !normal
+                !vnor2=su2(l+1,jsj)
+                call project_hvec(tmp1,tmp2,eframe(:,:,i),sframe(:,:,jsj),vnor1,x1)
+                call project_hvec(tmpx1,tmpy2,eframe(:,:,i),sframe(:,:,jsj),vnor2,x1)
+              endif !ics
+              sum1=sum1+ssign(j,i)*(zs(max(l+1,kbs(jsj)),jsj)-zs(max(l,kbs(jsj)),jsj))*distj(jsj)*(vnor1+vnor2)/2
+            enddo !j=1,3
+
+            ubar=sum(stokes_vel(1,l,elnode(:,i)))/3 !level l
+            vbar=sum(stokes_vel(2,l,elnode(:,i)))/3
+            ubar1=sum(stokes_vel(1,l+1,elnode(:,i)))/3 !level l+1
+            vbar1=sum(stokes_vel(2,l+1,elnode(:,i)))/3
+!           Impose bottom no-flux b.c.
+            if(l==kbe(i)) then
+              bflux=0
+            else
+              bflux=ubar*sne(1,l)+vbar*sne(2,l)+stokes_w(l,i)*sne(3,l)
+            endif
+
+            stokes_w(l+1,i)=(-sum1-(ubar1*sne(1,l+1)+vbar1*sne(2,l+1))*area_e(l+1) + &
+     &bflux*area_e(l))/sne(3,l+1)/area_e(l+1)
+          enddo !l=kbe(i),nvrt-1
+        enddo !i=1,nea
+
+!       Convert to node
+        stokes_w_nd=0
+        do i=1,np !resident only
+          if(idry(i)==1) cycle
+
+!         Wet node
+          do k=kbp(i),nvrt
+            tmp0=0
+            do j=1,nne(i)
+              ie=indel(j,i)
+              stokes_w_nd(k,i)=stokes_w_nd(k,i)+stokes_w(max(k,kbe(ie)),ie)*area(ie)
+              tmp0=tmp0+area(ie)
+            enddo !j
+            stokes_w_nd(k,i)=stokes_w_nd(k,i)/tmp0
+          enddo !k
+        enddo !i
+
+        call exchange_p3dw(stokes_w_nd)
+
+      endif !RADFLAG.eq.'VOR'
+
 #endif /*USE_WWM*/
 
 !...  compute wind stress components (in lat/lon frame if ics=2; in map projection E-N direction if ics=1)
@@ -1521,8 +1734,9 @@
           htot=max(hmin_man,dp(i)+eta2(i)) !>0
           Cdp(i)=grav*rmanning(i)*rmanning(i)/htot**0.333
 #ifdef USE_SED2D
-          if(idrag<0) then
+          if(idrag_sed2d<-1) then
             Cdp(i)=Cdsed(i)
+            if(Cdp(i)/=Cdp(i)) call parallel_abort('SED2D: NaN for Cd')
           endif
 #endif
         enddo !i
@@ -2222,6 +2436,12 @@
 
       webt=we
 
+!     For vortex formulation, temporarily alter w-vel (will be restored after
+!     btrack)
+#ifdef USE_WWM
+      if(RADFLAG.eq.'VOR') ww2=ww2+stokes_w_nd
+#endif
+
 !     Initialize inter-subdomain backtracking count
       nbtrk=0
 
@@ -2864,6 +3084,11 @@
         enddo !j
       enddo !i=1,nea
 
+!     Restore w-vel
+#ifdef USE_WWM
+      if(RADFLAG.eq.'VOR') ww2=ww2-stokes_w_nd
+#endif
+
       if(myrank==0) write(16,*)'done backtracking'
 
 #ifdef INCLUDE_TIMING
@@ -2973,7 +3198,8 @@
 !         ELM option
 !==============================================================
           !Density mean profile (rho_mean) removed
-          !dr_dxy in sframe if ics=2
+          !dr_dxy in eframe if ics=2
+          !Error: may not work for ics=2
           call hgrad_nodes(1,0,nvrt,npa,nsa,prho(:,1:npa)-rho_mean(:,1:npa),dr_dxy)  
 
 !         bcc: -g/rho0* \int_z^\eta dr_dxy dz; trapzoidal rule (in sframe if ics=2)
@@ -3302,24 +3528,12 @@
               v2=sv2(1,isd)
               taux2=(tau(1,n1)+tau(1,n2))/2
               tauy2=(tau(2,n1)+tau(2,n2))/2
-!#ifdef USE_WWM
-!              tmp1=wwave_force(1,isd,1)
-!              tmp2=wwave_force(1,isd,2)
-!#endif /*USE_WWM*/
             else !lat/lon; project to eframe
               call project_hvec(sdbt(1,1,isd),sdbt(2,1,isd),sframe(:,:,isd),eframe(:,:,i),sdbtu,sdbtv)
               call project_hvec(su2(1,isd),sv2(1,isd),sframe(:,:,isd),eframe(:,:,i),u2,v2)
               swild10(1:3,1:3)=(pframe(:,:,n1)+pframe(:,:,n2))/2
               call project_hvec((tau(1,n1)+tau(1,n2))/2,(tau(2,n1)+tau(2,n2))/2, &
      &swild10(1:3,1:3),eframe(:,:,i),taux2,tauy2)
-!#ifdef USE_WWM
-!              call project_hvec(wwave_force(1,isd,1),wwave_force(1,isd,2), &
-!     &sframe(:,:,isd),eframe(:,:,i),tmp1,tmp2)
-!#ifdef DEBUG
-!              wafo(:,isd,1) = tmp1
-!              wafo(:,isd,2) = tmp2
-!#endif
-!#endif /*USE_WWM*/
             endif !ics
             hat_gam_x=sdbtu+dt*(-dprdx/rho0+0.69*grav*detpdx)+ &
      &(1-theta2)*cori(isd)*dt*v2-grav*(1-thetai)*dt*detadx+dt*taux2/htot
@@ -3327,11 +3541,11 @@
      &(1-theta2)*cori(isd)*dt*u2-grav*(1-thetai)*dt*detady+dt*tauy2/htot
 #ifdef USE_WWM
             !wwave_force in eframe
-            hat_gam_x=hat_gam_x+dt*wwave_force(1,isd,1)
-            hat_gam_y=hat_gam_y+dt*wwave_force(1,isd,2)
+            hat_gam_x=hat_gam_x+dt*wwave_force(1,1,isd)
+            hat_gam_y=hat_gam_y+dt*wwave_force(2,1,isd)
 #ifdef DEBUG
-            wafo(:,isd,1)=wwave_force(1,isd,1)
-            wafo(:,isd,2)=wwave_force(1,isd,2)
+            wafo(:,isd,1)=wwave_force(1,1,isd)
+            wafo(:,isd,2)=wwave_force(2,1,isd)
 #endif
 #endif /*USE_WWM*/
             del=hhat(isd)**2+(theta2*cori(isd)*dt*htot)**2 !delta>0
@@ -3368,25 +3582,14 @@
             do j=1,3 !side
               isd=elside(j,i)
               do k=kbs(isd)+1,nvrt
-!                if(ics==1) then
-!                  swild(1:2)=wwave_force(k,isd,1:2)
-!                  swild(3:4)=wwave_force(k-1,isd,1:2)
-!                else !lon/lat; to eframe
-!                  call project_hvec(wwave_force(k,isd,1),wwave_force(k,isd,2), &
-!     &sframe(:,:,isd),eframe(:,:,i),swild(1),swild(2))
-!                  call project_hvec(wwave_force(k-1,isd,1),wwave_force(k-1,isd,2), &
-!     &sframe(:,:,isd),eframe(:,:,i),swild(3),swild(4))
-!                endif !ics
-!                if(k==kbs(isd)+1) swild3(1:2)=swild(1:2) !save the bottom
-
                 !wwave_force in eframe
                 rs1=rs1+area(i)/3*(zs(k,isd)-zs(k-1,isd))* & !(swild(1)+swild(3))/2
-     &(wwave_force(k,isd,1)+wwave_force(k-1,isd,1))/2
+     &(wwave_force(1,k,isd)+wwave_force(1,k-1,isd))/2
                 rs2=rs2+area(i)/3*(zs(k,isd)-zs(k-1,isd))* & !(swild(2)+swild(4))/2
-     &(wwave_force(k,isd,2)+wwave_force(k-1,isd,2))/2
+     &(wwave_force(2,k,isd)+wwave_force(2,k-1,isd))/2
               enddo !k
-              rs1=rs1-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,1)
-              rs2=rs2-dt*chigamma*area(i)/3*wwave_force(kbs(isd)+1,isd,2)
+              rs1=rs1-dt*chigamma*area(i)/3*wwave_force(1,kbs(isd)+1,isd)
+              rs2=rs2-dt*chigamma*area(i)/3*wwave_force(2,kbs(isd)+1,isd)
             enddo !j=1,3
             ghat1(1,i)=ghat1(1,i)+dt*rs1
             ghat1(2,i)=ghat1(2,i)+dt*rs2
@@ -3572,6 +3775,21 @@
           dot2=dldxy(id,1,ie)*ghat1(1,ie)+dldxy(id,2,ie)*ghat1(2,ie)
         
           qel(i)=qel(i)+(1-thetai)*dt*area(ie)*dot1+thetai*dt*dot2
+#ifdef USE_WWM
+          if(RADFLAG.eq.'VOR'.and.idry_e(ie)==0) then
+            sum1=0; sum2=0 !in eframe
+            do m=1,3 !wet sides
+              isd=elside(m,ie)
+              do k=kbs(isd),nvrt-1
+                sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(1,k+1,isd)+stokes_vel_sd(1,k,isd))/2/3
+                sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(2,k+1,isd)+stokes_vel_sd(2,k,isd))/2/3
+              enddo !k
+            enddo !m
+            dot3=dldxy(id,1,ie)*sum1+dldxy(id,2,ie)*sum2
+            qel(i)=qel(i)+dt*dot3
+          endif
+#endif
+
           do l=1,3
             if(id==l) then
               fac=2
@@ -3690,7 +3908,27 @@
               else
                 Unbar=bigu(1,isd)
               endif !ics
-              qel(i)=qel(i)-(1-thetai)*dt*distj(isd)*Unbar/2
+              tmp0=(1-thetai)*dt*distj(isd)*Unbar/2
+              !Overwrite tmp0 for vortex formulation
+#ifdef USE_WWM
+              if(RADFLAG.eq.'VOR') then
+                sum1=0 !integral; x-comp.
+                sum2=0 !integral
+                do k=kbs(isd),nvrt-1 !isd is wet
+                  sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(1,k+1,isd)+stokes_vel_sd(1,k,isd))/2
+                  sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(2,k+1,isd)+stokes_vel_sd(2,k,isd))/2
+                enddo !k
+                if(ics==1) then
+                  Unbar=sum1*sframe(1,1,isd)+sum2*sframe(2,1,isd)
+                else
+                  call project_hvec(sum1,sum2,pframe(:,:,i),sframe(:,:,isd),Unbar,tmp)
+                  !Unbar=bigu(1,isd)
+                endif !ics
+                tmp0=thetai*dt*distj(isd)*Unbar/2
+              endif !RADFLAG
+#endif/*USE_WWM*/
+
+              qel(i)=qel(i)-tmp0 !(1-thetai)*dt*distj(isd)*Unbar/2
             endif
           enddo !l=1,2 sides
         endif !isbnd: bnd node i
@@ -4018,13 +4256,13 @@
 #ifdef  USE_WWM
             !wwave_force in eframe
             if(ics==1) then
-              tmp1=wwave_force(1,j,1)
-              tmp2=wwave_force(1,j,2)
+              tmp1=wwave_force(1,1,j)
+              tmp2=wwave_force(2,1,j)
             else !use swild10 as approx.
-              call project_hvec(wwave_force(1,j,1),wwave_force(1,j,2),swild10(1:3,1:3),sframe(:,:,j),tmp1,tmp2)
+              call project_hvec(wwave_force(1,1,j),wwave_force(2,1,j),swild10(1:3,1:3),sframe(:,:,j),tmp1,tmp2)
             endif !ics
-            hat_gam_x=hat_gam_x+dt*tmp1 !wwave_force(1,j,1)
-            hat_gam_y=hat_gam_y+dt*tmp2 !wwave_force(1,j,2)
+            hat_gam_x=hat_gam_x+dt*tmp1
+            hat_gam_y=hat_gam_y+dt*tmp2
 #endif /*USE_WWM*/
           !Add deta2 to \hat{Gamma}
           hat_gam_x=hat_gam_x-grav*thetai*dt*deta2_dx(j)
@@ -4154,22 +4392,22 @@
 #ifdef  USE_WWM
             if(ics==1) then
               if(k<nvrt) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k+1)/6*dt* &
-     &(2*wwave_force(k,j,1:2)+wwave_force(k+1,j,1:2))
+     &(2*wwave_force(1:2,k,j)+wwave_force(1:2,k+1,j))
               !if(k>kbs(j)+1) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt* &
               if(k>ibtm) rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt* &
-     &(2*wwave_force(k,j,1:2)+wwave_force(k-1,j,1:2))
+     &(2*wwave_force(1:2,k,j)+wwave_force(1:2,k-1,j))
             else !use swild10 as approx. to eframe
-              call project_hvec(wwave_force(k,j,1),wwave_force(k,j,2), &
+              call project_hvec(wwave_force(1,k,j),wwave_force(2,k,j), &
      &swild10(1:3,1:3),sframe(:,:,j),swild(1),swild(2))
               if(k<nvrt) then
-                call project_hvec(wwave_force(k+1,j,1),wwave_force(k+1,j,2), &
+                call project_hvec(wwave_force(1,k+1,j),wwave_force(2,k+1,j), &
      &swild10(1:3,1:3),sframe(:,:,j),swild(3),swild(4))
                 rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k+1)/6*dt*(2*swild(1:2)+swild(3:4))
               endif !if(k<nvrt)
              
               !if(k>kbs(j)+1) then
               if(k>ibtm) then
-                call project_hvec(wwave_force(k-1,j,1),wwave_force(k-1,j,2), &
+                call project_hvec(wwave_force(1,k-1,j),wwave_force(2,k-1,j), &
      &swild10(1:3,1:3),sframe(:,:,j),swild(3),swild(4))
                 rrhs(1:2,kin)=rrhs(1:2,kin)+dzz(k)/6*dt*(2*swild(1:2)+swild(3:4))
               endif !if(k>kbs(j)+1)
@@ -4269,12 +4507,25 @@
 
           if(isbs(j)==-1) then !land bnd
             if(islip==0) then !free slip
+              vnorm=0 !for most cases
+              !Normal component from vortex formulation
+#ifdef USE_WWM
+              if(RADFLAG.eq.'VOR') then
+                if(ics==1) then
+                  vnorm=stokes_vel_sd(1,k,j)*sframe(1,1,j)+stokes_vel_sd(2,k,j)*sframe(2,1,j)
+                else
+                  call project_hvec(stokes_vel_sd(1,k,j),stokes_vel_sd(2,k,j), &
+     &pframe(:,:,isidenode(1,j)),sframe(:,:,j),vnorm,vtmp)
+                endif
+              endif !RADFLAG
+#endif               
+
               if(ics==1) then
                 vtan=su2(k,j)*sframe(1,2,j)+sv2(k,j)*sframe(2,2,j)
-                su2(k,j)=vtan*sframe(1,2,j)
-                sv2(k,j)=vtan*sframe(2,2,j)
+                su2(k,j)=vtan*sframe(1,2,j)-vnorm*sframe(1,1,j)
+                sv2(k,j)=vtan*sframe(2,2,j)-vnorm*sframe(2,1,j)
               else !lat/lon
-                su2(k,j)=0
+                su2(k,j)=-vnorm
               endif !ics
             else !no slip
               su2(k,j)=0
@@ -5760,27 +6011,21 @@
         endif !if_source
 
 #ifdef USE_ICM
-      if(myrank==0) write(16,*)'impose ICM point source S..'
+      !ICM's method for imposing point source
       if(iWQPS==2) then 
-!       Impose point source bc
+        if(myrank==0) write(16,*)'impose ICM point source S..'
+        !Impose point source bc
         do i=1,nea
           if(idry_e(i)==1) cycle
-          if(PSQ(i).ne.0.) then
+          if(PSQ(i).ne.0) then
+            PSK(i)=max(kbe(i)+1,min(nvrt,PSK(i)))
             bigv=area(i)*(ze(PSK(i),i)-ze(PSK(i)-1,i)) !volume
-!YC            bdy_frc(2,PSK(i),i)=area(i)*(tsel(2,PSK(i),i)*(PSQ(i))/area(i))/bigv
-!!YC            tsel(2,PSK(i),i)=0.
-             tsel(2,PSK(i),i)=(tsel(2,PSK(i),i)*bigv)/(bigv-PSQ(i)*dt) !ZG
-       
-!YJZ: Error: the following should be commented out
-            do k=PSK(i)-1,PSK(i)-1
-              tsel(2,k,i)=tsel(2,PSK(i),i)
-            enddo
-
-            if(tsel(2,PSK(i),i).lt.0.) tsel(2,PSK(i),i)=0.
+            !YC bdy_frc(2,PSK(i),i)=area(i)*(tsel(2,PSK(i),i)*(PSQ(i))/area(i))/bigv
+            ! tsel(2,PSK(i),i)=(tsel(2,PSK(i),i)*bigv)/(bigv-PSQ(i)*dt) !ZG
           endif
         enddo !i
+        if(myrank==0) write(16,*)'end impose ICM point source S..'
       endif !iWQPS
-      if(myrank==0) write(16,*)'end impose ICM point source S..'
 #endif /*USE_ICM*/
 
 !       Nudging
@@ -6147,79 +6392,55 @@
         trel(1:ntracers,:,:)=tr_el(1:ntracers,:,:)
         if(difnum_max_l>difnum_max_l2) difnum_max_l2=difnum_max_l
 
+!       Point sources/sinks using operator splitting (that guarentees max.
+!       principle); at bottom layer
+!       Do nothing for net sinks
+!Error: need to reconcile with ICM
+        if(if_source==1) then
+          do i=1,nea
+            if(idry_e(i)==1.or.vsource(i)<=0) cycle
+
+            !Positive source only
+            bigv=area(i)*(ze(kbe(i)+1,i)-ze(kbe(i),i))
+            if(bigv<=0) call parallel_abort('STEP: bigv==0 (3)')
+            rat=vsource(i)*dt/bigv !ratio of volumes (>0)
+            do j=1,ntracers
+              trel(j,kbe(i)+1,i)=(trel(j,kbe(i)+1,i)+rat*msource(j+2,i))/(1+rat)
+            enddo !j
+          enddo !i
+        endif !if_source
+
 #ifdef USE_ICM
-      if(myrank==0) write(16,*)'adjust ICM pt source..'
       if(iWQPS==2) then
-!       Impose point source bc added by YC
+        if(myrank==0) write(16,*)'adjust ICM pt source (trcr) ..'
+        ! Impose point source bc added by YC
         do i=1,nea
           if(idry_e(i)==1) cycle
           if(PSQ(i).ne.0.) then
-!YC	    if(it.eq.1) then
-!YC	      TotV_old = 0.
-!YC	      TotM_old = 0.
-!YC              do k=kbe(i)+1,nvrt
-!YC	        e_vol=(ze(k,i)-ze(k-1,i))*area(i)
-!YC		TotM_old=  TotM_old + e_vol*trel(23,k,i)
-!YC                TotV_old = TotV_old + e_vol
-!YC              enddo
-!YC              init_23_tr= TotM_old/TotV_old
-!YC	    endif
-!YC	    TotV_new = 0.
-!YC	    TotM_new = 0.
-!YC            do k=kbe(i)+1,nvrt
-!YC	      e_vol=(ze(k,i)-ze(k-1,i))*area(i)
-!YC	      TotM_new=  TotM_new + e_vol*trel(23,k,i)
-!YC              TotV_new = TotV_new + e_vol
-!YC            enddo
-!YC            if (init_23_tr.le.WWPDO(i)/(86400*abs(PSQ(i)))) then
-!YC	      do k=kbe(i)+1,nvrt
-!YC                trel(23,k,i)=(TotM_old+(WWPDO(i)*dt/86400.))/(TotV_new)                  !tested by YC
-!YC                if (trel(23,k,i).gt.WWPDO(i)/(86400*abs(PSQ(i)))) then
-          bigv=area(i)*(ze(PSK(i),i)-ze(PSK(i)-1,i)) !volume
-          do n=8,ntracers
-            if(n.eq.8) total_loading=WWPRPOC(i)
-            if(n.eq.9) total_loading=WWPLPOC(i)
-            if(n.eq.10) total_loading=WWPDOCA(i)
-            if(n.eq.11) total_loading=WWPRPON(i)
-            if(n.eq.12) total_loading=WWPLPON(i)
-            if(n.eq.13) total_loading=WWPDON(i)
-            if(n.eq.14) total_loading=WWPNH4(i)
-            if(n.eq.15) total_loading=WWPNO3(i)
-            if(n.eq.16) total_loading=WWPRPOP(i)
-            if(n.eq.17) total_loading=WWPLPOP(i)
-            if(n.eq.18) total_loading=WWPDOP(i)
-            if(n.eq.19) total_loading=WWPPO4t(i)
-            if(n.eq.20) total_loading=WWPSU(i)
-            if(n.eq.21) total_loading=WWPSAt(i)
-            if(n.eq.22) total_loading=WWPCOD(i)
-            if(n.eq.23) total_loading=WWPDO(i)
-!!YC            trel(n,PSK(i),i)=total_loading/(86400*abs(PSQ(i)))
-            trel(n,PSK(i),i)=(trel(n,PSK(i),i)*(bigv+PSQ(i)*dt)+(total_loading*dt/86400.))/bigv
-!!YC            trel(n,PSK(i)-1:PSK(i)-4,i)=trel(n,PSK(i),i)
-!            do k=PSK(i)-1,PSK(i)-6
-!              trel(n,k,i)=trel(n,PSK(i),i)
-!            enddo
-!YC            trel(n,nvrt,i)=WWPDO(i)/(86400*abs(PSQ(i)))
-          enddo
-!YC                endif
-!YC              enddo
-!YC            endif    
-!YC            if (init_23_tr.gt.WWPDO(i)/(86400*abs(PSQ(i)))) then
-!YC              do k=kbe(i)+1,nvrt
-!YC                trel(23,nvrt,i)=WWPDO(i)/(86400*abs(PSQ(i)))
-!YC                trel(23,k,i)=(TotM_old+(WWPDO(i)*dt/86400.))/(TotV_new)                  !tested by YC
-!YC                if (trel(23,k,i).lt.WWPDO(i)/(86400*abs(PSQ(i)))) then
-!YC                  trel(23,k,i)=WWPDO(i)/(86400*abs(PSQ(i)))
-!YC                endif
-!YC              enddo
-!YC	    endif
-!YC            if(myrank==0)write(995,'(24f18.4)')time/86400.,PSQ(i),WWPDO(i),trel(23,nvrt,i)
-!YC 	    TotV_old=TotV_new
-!YC         TotM_old=TotM_new
+            bigv=area(i)*(ze(PSK(i),i)-ze(PSK(i)-1,i)) !volume
+            do n=8,ntracers
+              if(n.eq.8) total_loading=WWPRPOC(i)
+              if(n.eq.9) total_loading=WWPLPOC(i)
+              if(n.eq.10) total_loading=WWPDOCA(i)
+              if(n.eq.11) total_loading=WWPRPON(i)
+              if(n.eq.12) total_loading=WWPLPON(i)
+              if(n.eq.13) total_loading=WWPDON(i)
+              if(n.eq.14) total_loading=WWPNH4(i)
+              if(n.eq.15) total_loading=WWPNO3(i)
+              if(n.eq.16) total_loading=WWPRPOP(i)
+              if(n.eq.17) total_loading=WWPLPOP(i)
+              if(n.eq.18) total_loading=WWPDOP(i)
+              if(n.eq.19) total_loading=WWPPO4t(i)
+              if(n.eq.20) total_loading=WWPSU(i)
+              if(n.eq.21) total_loading=WWPSAt(i)
+              if(n.eq.22) total_loading=WWPCOD(i)
+              if(n.eq.23) total_loading=WWPDO(i)
+              ! trel(n,PSK(i),i)=(trel(n,PSK(i),i)*(bigv+PSQ(i)*dt)+(total_loading*dt/86400.))/bigv
+            enddo
           endif
         enddo !i
+        if(myrank==0) write(16,*)'done adjust ICM pt source..'
       endif
-      if(myrank==0) write(16,*)'done adjust ICM pt source..'
 #endif /*USE_ICM*/
 
 !       Nudging
@@ -6418,7 +6639,7 @@
 #ifdef INCLUDE_TIMING
       timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 
-#endif
+#endif /*USE_SED2D*/
 
 #ifdef INCLUDE_TIMING
 ! end transport
@@ -6932,7 +7153,7 @@
                   floatout=bedldu(i,j-indx_out(1,1))
                   floatout2=bedldv(i,j-indx_out(1,1))
                 else if(j<=indx_out(1,1)+2*ntracers) then
-                  !bfrac_n.61
+                  !bfrac_n.61 (top layer only)
                   floatout=bed_fracn(i,j-indx_out(1,1)-ntracers)
                 else if(j==indx_out(1,1)+1+2*ntracers) then
                   !bedd50.61
@@ -6940,7 +7161,7 @@
                 else if (j==indx_out(1,1)+2+2*ntracers) then
                   !bstress.61
                   floatout=bed_taun(i)*rho0 ! in N.m-2
-               else if (j==indx_out(1,1)+3+2*ntracers) then
+                else if (j==indx_out(1,1)+3+2*ntracers) then
                   !brough.61
                   floatout=bed_rough(i)*1000.d0 ! in mm
                 endif
@@ -7112,6 +7333,14 @@
         call elfe_output_custom(lwrite,5,1,208,'z0wr',1,nea,bottom(:,izwr))
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
       endif !iof_ns
+      if(iof_ns(19)==1)then
+        call elfe_output_custom(lwrite,5,1,219,'bthk',1,nea,sum(bed(:,:,ithck),1))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bthk.66'
+      endif !iof_ns
+      if(iof_ns(20)==1)then
+        call elfe_output_custom(lwrite,5,1,220,'bage',1,nea,sum(bed(:,:,iaged),1))
+        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bage.66'
+      endif !iof_ns
 #elif USE_SED2D
       if(iof_ns(6)==1)then
         call elfe_output_custom(lwrite,5,1,206,'z0eq',1,nea,z0_e(:))
@@ -7150,27 +7379,27 @@
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bdoc.66'
       endif 
       if(iof_ns(13)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'bnh4',1,nea,SED_BENNH4)
+        call elfe_output_custom(lwrite,5,1,213,'bnh4',1,nea,SED_BENNH4)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bnh4.66'
       endif 
       if(iof_ns(14)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'bno3',1,nea,SED_BENNO3)
+        call elfe_output_custom(lwrite,5,1,214,'bno3',1,nea,SED_BENNO3)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bno3.66'
       endif 
       if(iof_ns(15)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'bpo4',1,nea,BENPO4)
+        call elfe_output_custom(lwrite,5,1,215,'bpo4',1,nea,BENPO4)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpo4.66'
       endif 
       if(iof_ns(16)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'bcod',1,nea,SED_BENCOD)
+        call elfe_output_custom(lwrite,5,1,216,'bcod',1,nea,SED_BENCOD)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting bcod.66'
       endif 
       if(iof_ns(17)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'sbdo',1,nea,sed_BENDO)
+        call elfe_output_custom(lwrite,5,1,217,'sbdo',1,nea,sed_BENDO)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbdo.66'
       endif 
       if(iof_ns(18)==1) then
-        call elfe_output_custom(lwrite,5,1,212,'sbsa',1,nea,BENSA)
+        call elfe_output_custom(lwrite,5,1,218,'sbsa',1,nea,BENSA)
         if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbsa.66'
       endif 
 #endif /*USE_ICM*/
@@ -7493,7 +7722,8 @@
         IHOTSTP=IHOTSTP+2
         do i=1,np
           write(36,rec=IHOTSTP+1)dp(i)
-          IHOTSTP=IHOTSTP+1
+          write(36,rec=IHOTSTP+2)rough_p(i)
+          IHOTSTP=IHOTSTP+2
         enddo !i=1,np
 
         do i=1,MBEDP
@@ -7506,15 +7736,14 @@
         enddo !i
 
         do i=1,ntracers
-          do j=1,2
-            do k=1,ne
-              do m=1,Nbed
-                write(36,rec=IHOTSTP+1)bed_mass(m,k,j,i)
-                IHOTSTP=IHOTSTP+1
-              enddo !m
-            enddo !k
-          enddo !j
+          do k=1,ne
+            do m=1,Nbed
+              write(36,rec=IHOTSTP+1)bed_frac(m,k,i)
+              IHOTSTP=IHOTSTP+1
+            enddo !m
+          enddo !k
         enddo !i
+
         close(36)
 #endif /*USE_SED*/
 
@@ -7611,6 +7840,10 @@
 
 #ifdef USE_SED
       deallocate(tr_tc,tr_tl)
+#endif
+ 
+#ifdef USE_WWM
+      deallocate(stokes_vel,stokes_w,stokes_w_nd,stokes_vel_sd)
 #endif
 
       end subroutine selfe_step

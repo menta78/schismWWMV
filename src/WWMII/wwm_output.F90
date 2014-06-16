@@ -156,8 +156,6 @@
          CURRPARS = zero 
          WINDPARS = zero 
 
-         CALL WAVEFORCE 
-
 #ifdef MPI_PARALL_GRID
          IF (LQSTEA .AND. LCHKCONV) ITER_LOCAL = DBLE(IP_IS_STEADY)
 #endif

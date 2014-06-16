@@ -42,7 +42,7 @@
 #endif
 
 #ifdef USE_SED
-       USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_mass
+       USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_frac
 #endif
 
 
@@ -218,9 +218,10 @@
         call parallel_abort(errmsg)
       endif
 
-#ifdef USE_SED2D
+!     Some modules are not available in lon/lat mode yet
+#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR
       if(ics==2) then      
-        write(errmsg,*)'SED2D model cannot be run on lon/lat!'
+        write(errmsg,*)'Some models cannot be run on lon/lat!'
         call parallel_abort(errmsg)
       endif
 #endif
@@ -644,7 +645,7 @@
          variable_dim(indx2+1+i)='2D vector'
 
          outfile(indx2+1+ntracers+i)='bfrac_'//ifile_char(1:ifile_len)//'.61'
-         variable_nm(indx2+1+ntracers+i)='Bedfr #'//trim(ifile_char)
+         variable_nm(indx2+1+ntracers+i)='Bedfr (top layer) #'//trim(ifile_char)
          variable_dim(indx2+1+ntracers+i)='2D scalar'
       enddo !i
 
@@ -783,7 +784,7 @@
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
 
-      noutput_ns=18 !hvel.67,vert.69,temp.70,salt.70 etc
+      noutput_ns=20 !hvel.67,vert.69,temp.70,salt.70 etc
       allocate(outfile_ns(noutput_ns),iof_ns(noutput_ns),stat=istat)
       outfile_ns(1)='hvel.67' !must be consistent when calling the output routine later
       outfile_ns(2)='vert.69'
@@ -803,6 +804,8 @@
       outfile_ns(16)='bcod.66'
       outfile_ns(17)='sbdo.66'
       outfile_ns(18)='sbsa.66'
+      outfile_ns(19)='bthk.66'
+      outfile_ns(20)='bage.66'
 
       !varnm_ns is not used at the moment except for noting purpose
       !varnm_ns(1)='3D horizontal vel. at sides and whole levels'
@@ -823,6 +826,8 @@
       !varnm_ns(16)='ICM: SED_BENCOD'
       !varnm_ns(17)='ICM: sed_BENDO'
       !varnm_ns(18)='ICM: BENSA'
+      !varnm_ns(19)='SED: total bed layer thickness (m)'
+      !varnm_ns(20)='SED: total bed layer age (sec)'
 
       do i=1,noutput_ns
         call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
@@ -1313,7 +1318,7 @@
 
 !     Wave model arrays
 #ifdef  USE_WWM
-      allocate(wwave_force(nvrt,nsa,2),out_wwm(npa,35),out_wwm_windpar(npa,10),stat=istat)
+      allocate(wwave_force(2,nvrt,nsa),out_wwm(npa,35),out_wwm_windpar(npa,10),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: WWM allocation failure')
       wwave_force=0; out_wwm=0; out_wwm_windpar=0
 #endif
@@ -4315,11 +4320,6 @@
 #endif 
 #endif /*USE_SED2D*/
 
-#ifdef USE_SED
-!...    Sediment model initialization
-        call sed_init
-#endif /*USE_SED*/
-
       if(myrank==0) write(16,*)'done initializing cold start'
       
 !-------------------------------------------------------------------------------
@@ -4450,23 +4450,26 @@
 #ifdef USE_SED
         do i=1,np_global
           read(36) ipgb,double1
+          read(36) ipgb,tmp1
           if(ipgl(ipgb)%rank==myrank) then
             ip=ipgl(ipgb)%id
             dp(ip)=double1
+            rough_p(ip)=tmp1
           endif
         enddo !i
 
-        allocate(swild99(Nbed,MBEDP),swild98(Nbed,2,ntracers),stat=istat)
+        deallocate(swild4)
+        allocate(swild4(Nbed,ntracers),swild99(Nbed,MBEDP),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: alloc failure (55)')
         do i=1,ne_global
-          read(36) iegb,swild99,swild98
+          read(36) iegb,swild4,swild99
           if(iegl(iegb)%rank==myrank) then
             ie=iegl(iegb)%id
+            bed_frac(:,ie,:)=swild4
             bed(:,ie,:)=swild99
-            bed_mass(:,ie,:,:)=swild98
           endif
         enddo !i
-        deallocate(swild99,swild98)
+        deallocate(swild99)
 
 #endif /*USE_SED*/
 
@@ -4552,6 +4555,7 @@
 
         ! Close hotstart file
         close(36)
+
         if(itur==3) then
           do i=1,npa
             do j=1,nvrt
@@ -4956,14 +4960,17 @@
 !...  end hot start section
       endif !ihot/=0
 
+#ifdef USE_SED
+!...    Sediment model initialization
+        call sed_init
+#endif /*USE_SED*/
+
 !       Initialize time series for hydraulic structures that use them, including 
 !       opening files and "fast forwarding" to the restart time
         
       if(ihydraulics/=0.and.nhtblocks>0) then
          call init_struct_time_series(time)
       endif
-
-
 
 !...  init. eta1 (for some routines like WWM) and i.c. (for ramp function)
       eta1=eta2 

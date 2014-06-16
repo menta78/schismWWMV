@@ -744,7 +744,7 @@
         do k=kbe(i),nvrt
           ze(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3))/3
           if(k>=kbe(i)+1) then; if(ze(k,i)-ze(k-1,i)<=0) then
-            write(errmsg,*)'Weird element:',k,i,ze(k,i),ze(k-1,i)
+            write(errmsg,*)'Weird element (1):',k,i,ze(k,i),ze(k-1,i)
             call parallel_abort(errmsg)
           endif; endif
         enddo !k
@@ -764,14 +764,14 @@
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
-            write(errmsg,*)'Weird side:',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
+            write(errmsg,*)'Weird side (0):',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
             call parallel_abort(errmsg)
           endif
           kbs(i)=min(kbp(n1),kbp(n2))
           do k=kbs(i),nvrt
             zs(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2))/2
             if(k>=kbs(i)+1) then; if(zs(k,i)-zs(k-1,i)<=0) then
-              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
+              write(errmsg,*)'Weird side (1):',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
      &znl(max(k,kbp(n2)),n2),znl(max(k-1,kbp(n1)),n1),znl(max(k-1,kbp(n2)),n2)
               call parallel_abort(errmsg)
             endif; endif
@@ -1147,7 +1147,7 @@
         do k=kbe(i),nvrt
           ze(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3))/3
           if(k>=kbe(i)+1) then; if(ze(k,i)-ze(k-1,i)<=0) then
-            write(errmsg,*)'Weird element:',k,i,ze(k,i),ze(k-1,i)
+            write(errmsg,*)'Weird element (2):',k,i,ze(k,i),ze(k-1,i)
             call parallel_abort(errmsg)
           endif; endif
         enddo !k
@@ -1261,20 +1261,21 @@
         kbs(i)=0 !dry
         if(idry_s2(i)==0) then !wet side with 2 wet nodes
           if(idry2(n1)/=0.or.idry2(n2)/=0) then
-            write(errmsg,*)'Side-node inconsistency:',it,islg(i),'node:',iplg(n1),iplg(n2), &
+            write(errmsg,*)'Side-node inconsistency (1):',it,islg(i),'node:',iplg(n1),iplg(n2), &
+!'
               eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
               (isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
-            write(errmsg,*)'Weird side:',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
+            write(errmsg,*)'Weird side (2):',islg(i),iplg(n1),iplg(n2),eta2(n1),eta2(n2)
             call parallel_abort(errmsg)
           endif
           kbs(i)=min(kbp(n1),kbp(n2))
           do k=kbs(i),nvrt
             zs(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2))/2
             if(k>=kbs(i)+1) then; if(zs(k,i)-zs(k-1,i)<=0) then
-              write(errmsg,*)'Weird side:',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
+              write(errmsg,*)'Weird side (3):',k,iplg(n1),iplg(n2),znl(max(k,kbp(n1)),n1), &
      &znl(max(k,kbp(n2)),n2),znl(max(k-1,kbp(n1)),n1),znl(max(k-1,kbp(n2)),n2)
               call parallel_abort(errmsg)
             endif; endif
