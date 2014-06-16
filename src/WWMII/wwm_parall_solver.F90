@@ -426,7 +426,10 @@
           wwm_ListNeigh(idx)=iProc
         END IF
       END DO
-      allocate(wwm_p2dsend_rqst(wwm_nnbr_send), wwm_p2drecv_rqst(wwm_nnbr_recv), wwm_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_send), wwm_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv), wwm_p2dsend_type(wwm_nnbr_send), wwm_p2drecv_type(wwm_nnbr_recv), wwmtot_p2dsend_type(wwm_nnbr_send), wwmtot_p2drecv_type(wwm_nnbr_recv), stat=istat)
+      allocate(wwm_p2dsend_rqst(wwm_nnbr_send), wwm_p2drecv_rqst(wwm_nnbr_recv), &
+     &wwm_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_send), wwm_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv), &
+     &wwm_p2dsend_type(wwm_nnbr_send), wwm_p2drecv_type(wwm_nnbr_recv), &
+     &wwmtot_p2dsend_type(wwm_nnbr_send), wwmtot_p2drecv_type(wwm_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 30')
       idxDspl_send=0
       DO iNeigh=1,wwm_nnbr_send
@@ -556,7 +559,9 @@
           wwm_ListNbCommon_recv_sl(idx_recv)=nbCommon
         END IF
       END DO
-      allocate(wwmsl_send_rqst(wwm_nnbr_send_sl), wwmsl_recv_rqst(wwm_nnbr_recv_sl), wwmsl_send_stat(MPI_STATUS_SIZE,wwm_nnbr_send_sl), wwmsl_recv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv_sl), wwmsl_send_type(wwm_nnbr_send_sl), wwmsl_recv_type(wwm_nnbr_recv_sl), stat=istat)
+      allocate(wwmsl_send_rqst(wwm_nnbr_send_sl), wwmsl_recv_rqst(wwm_nnbr_recv_sl), &
+     &wwmsl_send_stat(MPI_STATUS_SIZE,wwm_nnbr_send_sl), wwmsl_recv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv_sl), &
+     &wwmsl_send_type(wwm_nnbr_send_sl), wwmsl_recv_type(wwm_nnbr_recv_sl), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 35')
       idxDspl_send=0
       DO iNeigh=1,wwm_nnbr_send_sl
@@ -721,7 +726,12 @@
           ListCommon_send(iProc)=nbCommon_send
         END IF
       END DO
-      allocate(wwmmat_p2dsend_rqst(wwm_nnbr_m_send), wwmmat_p2drecv_rqst(wwm_nnbr_m_recv), wwmmat_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_m_send), wwmmat_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_m_recv), wwmmat_p2dsend_type(wwm_nnbr_m_send), wwmmat_p2drecv_type(wwm_nnbr_m_recv), wwm_ListNbCommon_m_send(wwm_nnbr_m_send), wwm_ListNbCommon_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_send(wwm_nnbr_m_send), stat=istat)
+      allocate(wwmmat_p2dsend_rqst(wwm_nnbr_m_send), wwmmat_p2drecv_rqst(wwm_nnbr_m_recv), &
+     &wwmmat_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_m_send), &
+     &wwmmat_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_m_recv), wwmmat_p2dsend_type(wwm_nnbr_m_send), &
+     &wwmmat_p2drecv_type(wwm_nnbr_m_recv), wwm_ListNbCommon_m_send(wwm_nnbr_m_send), &
+     &wwm_ListNbCommon_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_recv(wwm_nnbr_m_recv), &
+     &wwm_ListNeigh_m_send(wwm_nnbr_m_send), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 38')
       idx=0
       sumNbCommon_send=0
@@ -1529,7 +1539,10 @@
       WRITE(740+myrank,*) 'WWM_P2D: wwm_nnbr=', wwm_nnbr
       WRITE(740+myrank,*) 'WWM_P2D: wwm_ListNeigh built'
 # endif
-      allocate(LocalColor % u2l_p2dsend_rqst(u2l_nnbr_send), LocalColor % u2l_p2drecv_rqst(u2l_nnbr_recv), LocalColor % u2l_p2dsend_stat(MPI_STATUS_SIZE,u2l_nnbr_send), LocalColor % u2l_p2drecv_stat(MPI_STATUS_SIZE,u2l_nnbr_recv), LocalColor % u2l_p2dsend_type(u2l_nnbr_send), LocalColor % u2l_p2drecv_type(u2l_nnbr_recv), stat=istat)
+      allocate(LocalColor % u2l_p2dsend_rqst(u2l_nnbr_send), LocalColor % u2l_p2drecv_rqst(u2l_nnbr_recv), &
+     &LocalColor % u2l_p2dsend_stat(MPI_STATUS_SIZE,u2l_nnbr_send), &
+     &LocalColor % u2l_p2drecv_stat(MPI_STATUS_SIZE,u2l_nnbr_recv), &
+     &LocalColor % u2l_p2dsend_type(u2l_nnbr_send), LocalColor % u2l_p2drecv_type(u2l_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 58')
 # ifdef DEBUG
       WRITE(740+myrank,*) 'WWM_P2D: alloc done'
@@ -1733,7 +1746,12 @@
       !
       ! Now creating the sync exchange
       !
-      allocate(LocalColor % sync_p2dsend_rqst(sync_nnbr_send), LocalColor % sync_p2drecv_rqst(sync_nnbr_recv), LocalColor % sync_p2dsend_stat(MPI_STATUS_SIZE,sync_nnbr_send), LocalColor % sync_p2drecv_stat(MPI_STATUS_SIZE,sync_nnbr_recv), LocalColor % sync_p2dsend_type(sync_nnbr_send), LocalColor % sync_p2drecv_type(sync_nnbr_recv), stat=istat)
+      allocate(LocalColor % sync_p2dsend_rqst(sync_nnbr_send), &
+     &LocalColor % sync_p2drecv_rqst(sync_nnbr_recv), &
+     &LocalColor % sync_p2dsend_stat(MPI_STATUS_SIZE,sync_nnbr_send), &
+     &LocalColor % sync_p2drecv_stat(MPI_STATUS_SIZE,sync_nnbr_recv), &
+     &LocalColor % sync_p2dsend_type(sync_nnbr_send), &
+     &LocalColor % sync_p2drecv_type(sync_nnbr_recv), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 62')
 # ifdef DEBUG
       WRITE(740+myrank,*) 'SYNC sync_nnbr_send=', sync_nnbr_send
