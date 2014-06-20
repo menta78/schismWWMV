@@ -439,9 +439,6 @@
 #if !defined PDLIB && defined MPI_PARALL_GRID
       USE ELFE_GLBL, only : ics
 #endif
-#ifdef WWM_SETUP
-      USE WAVE_SETUP
-#endif
 #ifdef PETSC
       USE PETSC_CONTROLLER, ONLY : PETSC_INIT
 #endif
@@ -722,9 +719,6 @@
 #ifdef ST41
          USE W3SRC4MD_OLD
 #endif
-#ifdef WWM_SETUP
-         USE WAVE_SETUP
-#endif
 #ifdef ST42
          USE W3SRC4MD
 #endif
@@ -749,11 +743,9 @@
 #endif
            END IF
          END IF
-#ifdef WWM_SETUP
          IF (LZETA_SETUP) THEN
            CALL FINALIZE_WAVE_SETUP
          END IF
-#endif
          CALL DEALLOC_SPECTRAL_GRID
          CALL CLOSE_IOBP
          CALL TERMINATE_STATION_OUTPUT

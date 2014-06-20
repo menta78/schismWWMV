@@ -1,28 +1,4 @@
-#ifdef WWM_SETUP
 #include "wwm_functions.h"
-#undef DEBUG
-#define DEBUG
-      MODULE WAVE_SETUP
-      IMPLICIT NONE
-#ifdef PETSC
-#include "finclude/petscsysdef.h"
-#include "finclude/petscmatdef.h"
-#include "finclude/petscvecdef.h"
-#include "finclude/petscviewerdef.h"
-#include "finclude/petscdrawdef.h"
-#include "finclude/petsckspdef.h"
-#include "finclude/petscsysdef.h"
-#include "finclude/petscaodef.h"
-#include "finclude/petscisdef.h"
-#include "petscversion.h"
-      KSP                :: solver_setup  ! Krylov solver
-      PC                 :: prec_setup    ! KSP associated preconditioner
-      Mat                :: matrix_setup;
-      Vec                :: myB_setup, myX_setup
-      PetscScalar, pointer :: myB_setuptemp(:), myX_setuptemp(:)
-#endif
-      CONTAINS
-
       SUBROUTINE COMPUTE_LH_STRESS(F_X, F_Y)
       USE DATAPOOL
       implicit none
@@ -575,5 +551,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      END MODULE
-#endif
