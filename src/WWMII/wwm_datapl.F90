@@ -937,7 +937,7 @@
 !
 ! logicals used by the Jacobi-Gauss-Seidel solver.
 !
-         LOGICAL                :: BLOCK_GAUSS_SEIDEL = .FALSE.
+         LOGICAL                :: BLOCK_GAUSS_SEIDEL = .TRUE.
          LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
