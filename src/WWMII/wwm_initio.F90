@@ -1533,7 +1533,7 @@
 
         HMAX = BRHD * DEP
 
-!        IF (LMONO_IN) HMAX = HMAX * SQRT(2.)
+        IF (LMONO_IN) HMAX = HMAX * SQRT(2.)
 
       END SUBROUTINE SET_HMAX
 !**********************************************************************

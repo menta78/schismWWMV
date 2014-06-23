@@ -892,7 +892,6 @@
 
          HS = 4.*SQRT(ETOT)
 
-!AR: Fuckung lmono shit crap !
          !IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
 
          EMAX = 1./16. * (HMAX(IP))**2
