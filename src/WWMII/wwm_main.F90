@@ -409,16 +409,12 @@
       SUBROUTINE UN_STEADY(K,CALLFROM)
 
          USE DATAPOOL
-#ifdef MPI_PARALL_GRID
-         use elfe_msgp, only : myrank
-#endif
-
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: K
 
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
-         REAL           :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
+         REAL(rkind)    :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
 
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
@@ -503,7 +499,7 @@
 # endif
 #endif
 
-      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'LEAVING NON_STEADY'
+      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'LEAVING UN_STEADY'
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
       END SUBROUTINE
@@ -824,7 +820,7 @@
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
-          CALL NON_STEADY(K,CALLFROM)
+          CALL UN_STEADY(K,CALLFROM)
         END IF
       END DO
 
