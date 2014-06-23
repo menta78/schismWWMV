@@ -2277,7 +2277,7 @@
 !
 ! The termination criterions several can be chosen
 !
-        WRITE(STAT%FHNDL,'(A10,3I10,2F20.10)') 'solver', nbiter, is_converged, np_total-is_converged, p_is_converged, pmin
+        WRITE(STAT%FHNDL,'(A10,3I10,E30.20,F10.5)') 'solver', nbiter, is_converged, np_total-is_converged, p_is_converged, pmin
         !
         ! Number of iterations. If too large the exit.
         !

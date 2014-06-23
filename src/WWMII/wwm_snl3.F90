@@ -146,10 +146,6 @@
         END DO
       END IF
  
-      IF (IP == TESTNODE) THEN
-        WRITE(*,*) 'FINAL SUMS', SUM(IMATRA), SUM(IMATDA), SUM(SSNL3)
-      ENDIF
-
       deallocate(sa)
 
       end subroutine 
