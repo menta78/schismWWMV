@@ -973,7 +973,6 @@
              IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
          ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
-
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS' 
            CALL NLWEIGT
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
@@ -1525,7 +1524,7 @@
 
         HMAX = BRHD * DEP
 
-        IF (LMONO_IN) HMAX = HMAX * SQRT(2.)
+        IF (LMONO_IN) HMAX = HMAX * SQRT(TWO)
 
       END SUBROUTINE SET_HMAX
 !**********************************************************************

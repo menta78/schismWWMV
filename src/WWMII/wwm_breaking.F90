@@ -54,7 +54,7 @@
             CALL WWM_ABORT('ICRIT HAS A WRONG VALUE')
         END SELECT
 
-        !IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(TWO)
+        IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(TWO)
  
         IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
           BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )

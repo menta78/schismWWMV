@@ -410,7 +410,7 @@
          FRM5 = ZERO 
          COFRM4 = ZERO
 
-         if (lsourceswam) then
+         if (LSOURCESWAM) then
            ALLOCATE(TH(MDC), stat=istat)
            th = zero
            DELTH = PI2/REAL(MDC)
