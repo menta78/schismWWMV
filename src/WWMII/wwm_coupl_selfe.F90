@@ -64,12 +64,15 @@
 !              eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
               eQuot1=DCOSH(2*kD*eFrac)/eSinhkd2
               eProd=eSigma*eWkReal*eQuot1
-              eUSTOKES_loc(k)=eUSTOKES_loc(k) + eUint*eProd
-              eVSTOKES_loc(k)=eVSTOKES_loc(k) + eVint*eProd
+!YJZ: error
+              eUSTOKES_loc(IL)=eUSTOKES_loc(IL) + eUint*eProd
+              eVSTOKES_loc(IL)=eVSTOKES_loc(IL) + eVint*eProd
             ENDDO
           END DO
-          STOKES_X(:,IP)=eUSTOKES_loc
-          STOKES_Y(:,IP)=eVSTOKES_loc
+          !STOKES_X(:,IP)=eUSTOKES_loc
+          !STOKES_Y(:,IP)=eVSTOKES_loc
+          STOKES_VEL(1,:,IP)=eUSTOKES_loc
+          STOKES_VEL(2,:,IP)=eVSTOKES_loc
           JPRESS(IP)=eJPress_loc
         ENDDO ! IP
 
@@ -280,12 +283,13 @@
 !       and has a dimension of m/s/s
         call hgrad_nodes(IMET_DRY,0,NVRT,MNP,nsa,SXX3D0,dr_dxy)
         call exchange_s3d_2(dr_dxy)
+
         do IS=1,nsa
           if(idry_s(IS)==0) then
             HTOT=(eta2(isidenode(1,IS))+eta2(isidenode(2,IS))+DEP8(isidenode(1,IS))+DEP8(isidenode(2,IS)))/2
 !            write(*,*) sum(eta2), sum(dep8)
 !            write(*,*) HTOT, eta2(isidenode(1,IS)), eta2(isidenode(2,IS)), DEP8(isidenode(1,IS)), DEP8(isidenode(1,IS)), isidenode(1,IS), isidenode(1,IS) 
-            if (isidenode(1,IS) == 150 .AND. isidenode(2,IS) == 149) stop
+!            if (isidenode(1,IS) == 150 .AND. isidenode(2,IS) == 149) stop
             if(HTOT<=0) call parallel_abort('RADIATION_STRESS: (999)')
             HTOT=max(HTOT,hmin_radstress)
             do il = 1, nvrt

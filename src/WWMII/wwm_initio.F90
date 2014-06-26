@@ -72,10 +72,16 @@
          IMATDAA = zero
        END IF
 
-       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
-       SBR = ZERO
-       SBF = ZERO
+!       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
+!       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
+!       SBR = ZERO
+!       SBF = ZERO
+
+!       ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
+!       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10b')
+!       STOKES_X = ZERO
+!       STOKES_Y = ZERO
+!       JPRESS = ZERO
 
        IF (LITERSPLIT) THEN
 !         ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero

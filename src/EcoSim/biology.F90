@@ -279,7 +279,7 @@
 !
 !  Number of biological iterations.
 !
-      integer :: BioIter
+      integer :: BioIter 
 
 ! Marta Rodrigues
 ! Zooplankton flag
@@ -644,11 +644,12 @@
       END DO
 !
 !  Calculated IOP parameter values.
-!
+!     
+      aDOC =reshape( aDOCall, (/ Ndom, NBands /), ORDER=(/ 2, 1 /) )
       aDOC410(ilab)=aDOC(ilab,1)*EXP(0.014_r8*(ec_wave_ab(1)-410.0_r8))
-      aDOC410(irct)=aDOC(irct,1)*EXP(0.025_r8*(ec_wave_ab(1)-410.0_r8))
+      IF(Ndom==2) aDOC410(irct)=aDOC(irct,1)*EXP(0.025_r8*(ec_wave_ab(1)-410.0_r8))
       aDOC300(ilab)=EXP(0.0145_r8*(410.0_r8-300.0_r8))
-      aDOC300(irct)=EXP(0.0145_r8*(410.0_r8-300.0_r8))
+      IF(Ndom==2) aDOC300(irct)=EXP(0.0145_r8*(410.0_r8-300.0_r8))
 
       RETURN
       END SUBROUTINE initialize_biology

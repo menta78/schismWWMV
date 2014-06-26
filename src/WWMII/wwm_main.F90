@@ -12,7 +12,12 @@
 ! The source code is entirely rewritten with respect to WWM (Hsu et al., 2005). The numerics have been completely revised (Roland, 2008)
 ! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
 ! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
-! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SELFE (Roland et al. 2012).  
+! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SELFE (Roland et al. 2012). In this version we have combined 
+! some recent source term formulation following the work of Peter Janssen and Jean Bidlot from the ECMWF. The so called ECWAM model was 
+! continuesly updated and improved. We still have the WW3 3.14 version of the source terms of Fabrice but we have now from ECWAM (METEO FRANCE) 
+! the formulation of Fabrice coded by Lotfi Aouf from Meteo France. This source terms formulation can be used with the IPHYS switch. We 
+! will do in the futre now some code consolidation with respect to the source terms part. All external codes are courtesy to ECWMF or others as 
+! indicated in the source code. If something is not cited right please correct. 
 ! 
 ! Developers:                                                   
 ! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu-Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
@@ -34,10 +39,10 @@
 !**********************************************************************
 #ifdef SELFE
  !!!     SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-      SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)   !! modif AD
+      SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)
 
          USE DATAPOOL
-         use elfe_msgp!, only : myrank,parallel_abort,itype,comm,ierr
+         use elfe_msgp !, only : myrank,parallel_abort,itype,comm,ierr
          use elfe_glbl, only : iplg,ielg
 
          IMPLICIT NONE
@@ -45,6 +50,7 @@
          INTEGER, INTENT(IN)   :: NSTEP_WWM0, icou_elfe_wwm
          REAL(rkind), INTENT(IN)    :: DT_SELFE0
          CHARACTER(LEN=3), INTENT(OUT) :: RADFLAG2
+!         REAL(rkind), INTENT(OUT) :: STOKES_X,STOKES_Y,JPRESS,SBR,SBF
 
          REAL(rkind), SAVE  :: SIMUTIME
          REAL(rkind)        :: T1, T2
@@ -266,7 +272,6 @@
          CALL FLUSH(STAT%FHNDL)
 
          DO IP = 1, MNP
-           write(44444,*) IP, DEP8(IP)
            ACLOC = AC2(:,:,IP)
            IF (DEP(IP) .GT. DMIN) THEN
              CALL INTPAR(IP, MSC, ACLOC, OUTPAR)
@@ -274,7 +279,7 @@
              CALL WINDPAR(IP,OUTWINDPAR)
              WIND_INTPAR(IP,:) = OUTWINDPAR
              IF (LMONO_OUT) THEN
-               OUTT_INTPAR(IP,1) = OUTT_INTPAR(IP,1) / SQRT(2.)
+               OUTT_INTPAR(IP,1) = OUTT_INTPAR(IP,1) / SQRT(TWO)
              END IF
            ELSE
              OUTT_INTPAR(IP,:) = ZERO
@@ -282,9 +287,13 @@
            END IF
          END DO
 
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING RESULTS', SIMUTIME
+         CALL FLUSH(STAT%FHNDL)
+
 #ifdef TIMINGS
          TIME4 = mpi_wtime()
 #endif
+
 !
 ! Compute radiation stress ...
 !
@@ -292,11 +301,13 @@
          RADFLAG2=RADFLAG !for output into SELFE
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
-           STOKES_X=ZERO
-           STOKES_Y=ZERO
+           !STOKES_X=ZERO
+           !STOKES_Y=ZERO
+           STOKES_VEL=0
            JPRESS=ZERO
            SBR=ZERO
-           SBR=ZERO
+           !YJZ: I changed the following to SBF
+           SBF=ZERO
          ELSE 
            IF (RADFLAG == 'VOR') THEN
              CALL STOKES_STRESS_INTEGRAL_SELFE
@@ -305,6 +316,9 @@
            ENDIF
          END IF 
 ! end modif AD
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING VORTEX', SIMUTIME
+         CALL FLUSH(STAT%FHNDL)
 
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
@@ -323,6 +337,9 @@
            WRITE(DBG%FHNDL,*) ' END OF MAIN ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
+
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'END OF COMPUTATIONS NOW RETURN TO SELFE', SIMUTIME
+         CALL FLUSH(STAT%FHNDL)
 
 #ifdef TIMINGS
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'

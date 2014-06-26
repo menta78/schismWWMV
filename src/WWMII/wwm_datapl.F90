@@ -66,7 +66,8 @@
      &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
-     &                         RKIND
+     &                         RKIND,                        &
+     &                         STOKES_VEL,JPRESS,SBR,SBF !for vortex formulation
 # endif
 #endif
       IMPLICIT NONE
@@ -760,7 +761,7 @@
          REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
          REAL(rkind)                   :: PSURF(6)
 
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:), SBR(:,:), SBF(:,:), STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:), STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 

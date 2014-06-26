@@ -2713,7 +2713,9 @@
                  bdy_frc(itrc,k,i)=0.d0 !MFR - Check later...
                ELSE 
                  bdy_frc(itrc,k,i)=Bio_new(k,itrc)/dt
-                 IF(isnan(bdy_frc(itrc,k,i)))THEN
+                 !IF(isnan(bdy_frc(itrc,k,i)))THEN
+                 !ZYL: isnan is not recognized on some system
+                 IF(bdy_frc(itrc,k,i)/=bdy_frc(itrc,k,i))THEN
                    WRITE(600,*) myrank,bdy_frc(itrc,k,i),itrc,k,i
                  ENDIF
                END IF

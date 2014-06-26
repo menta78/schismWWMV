@@ -186,7 +186,7 @@
                  END IF
                ENDIF
              ELSE IF (MESIN == 2) THEN ! Cycle 4, Bidlot et al. ...
-               CALL WWM_ABORT('PLEASE USE LSOURCEWAM = T FOR ECWAM SOURCE TERM FORMULATION') 
+               CALL WWM_ABORT('PLEASE USE "LSOURCEWAM = T" FOR ECWAM SOURCE TERM FORMULATION') 
              ELSE IF (MESIN == 3) THEN ! Makin & Stam
                CALL SET_WIND( IP, WIND10, WINDTH )
                IFRIC = 4

@@ -1,84 +1,99 @@
-    
-    SUBROUTINE read_sed_input
+      SUBROUTINE read_sed_input
+!--------------------------------------------------------------------!
+! This subroutine reads sediment model inputs                        !
+!                                                                    !
+! Author: Ligia Pinto                                                !
+! Date: xx/09/2007                                                   !
+!                                                                    !
+! History: 2012/12 - F.Ganthy : form homogenisation of sediments     !
+!          routines                                                  !
+!          2013/01 - F.Ganthy : Introduction of switchs for roughness!
+!          predictor                                                 !
+!          2013/01 - F.Ganthy : Implementation of avalanching        !
+!          2013/05 - F.Ganthy : Updates related to ripple predictor  !
+!          2013/05 - F.Ganthy : Updates to the ripple predictor:     !
+!                               - Changes on the total bedform       !
+!                                 roughness computation              !
+!                               - Add wave-ripple computation from   !
+!                                 Nielsen (1992)                     !
+!          2013/05 - F.Ganthy : Add different sediment behavior:     !
+!                                - MUD-like or SAND-like             !
+!          2013/05 - F.Ganthy : Re-introduction of the number of bed !
+!                               sediment layers within sediment.in   !
+!                                                                    !
+!--------------------------------------------------------------------!
 
-        
-!!======================================================================
-!! September, 2007                                                     ! 
-!!==========================================================Ligia Pinto=
-!!                                                                     !
-!! This subroutine reads sediment model inputs                         !
-!!                                                                     ! 
-!!======================================================================	 
-
-
-      USE sed_param, only: rhom,r4,r8
-      USE elfe_glbl, only: ntracers 
-      USE elfe_msgp, only: myrank,parallel_abort
-      USE sed_mod, only: Csed,Erate,Sd50,Srho,Wsed,poros,tau_ce,&
-     &morph_fac,newlayer_thick,bedload_coeff      
-
+      USE elfe_glbl, ONLY: rkind,ntracers 
+      USE elfe_msgp, ONLY: myrank,parallel_abort
+      USE sed_mod      
 
       IMPLICIT NONE
       SAVE  
 
-      ! Local variables
+!- Local variables --------------------------------------------------!
 
       CHARACTER(len=100) :: var1, var2
       INTEGER :: i, j, ierror
 
       INTEGER :: line, len_str, loc, loc2, lstr_tmp
-      character(len=90) :: line_str,str_tmp,str_tmp2
+      CHARACTER(len=90) :: line_str,str_tmp,str_tmp2
 
-      allocate(Sd50(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: Sd50 allocation failure')
-      allocate(Csed(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: Csed allocation failure')
-      allocate(Srho(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: Srho allocation failure')
-      allocate(Wsed(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: Wsed allocation failure')
-      allocate(Erate(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: Erate allocation failure')
-      allocate(tau_ce(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: tau_ce allocation failure')
-      !allocate(tau_cd(ntracers),stat=i)
-      !if(i/=0)call parallel_abort('main: tau_cd allocation failure')
-      allocate(poros(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: poros allocation failure')
-      allocate(morph_fac(ntracers),stat=i)
-      if(i/=0)call parallel_abort('main: morph_fac allocation failure')
+!- Start Statement --------------------------------------------------!
+
+      IF(myrank==0) write(16,*)'Entering read_sed_input routine'
+
+      ALLOCATE(Sd50(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: Sd50 allocation failure')
+      ALLOCATE(Srho(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: Srho allocation failure')
+      ALLOCATE(Wsed(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: Wsed allocation failure')
+      ALLOCATE(Erate(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: Erate allocation failure')
+      ALLOCATE(tau_ce(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: tau_ce allocation failure')
+      ALLOCATE(poros(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: poros allocation failure')
+      ALLOCATE(morph_fac(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: morph_fac allocation failure')
+      ALLOCATE(Sedtype(ntracers),stat=i)
+      IF(i/=0) CALL parallel_abort('main: Sedtype allocation failure')
       
+       
+!--------------------------------------------------------------------
+! - Scan sediment.in.
+!--------------------------------------------------------------------
 
-      
+      OPEN(5,FILE='sediment.in',STATUS='old')
+      IF(myrank==0) WRITE(16,*)'reading sediment.in'
+      IF(myrank==0) WRITE(16,'(A,A,I2,A)')'##### Number of Tracers',  &
+      &             ' / Sediment Classes required in sediment.in: ', &
+      &             ntracers,' #####'
 
-      ! Scan sediment.in
-      open(5,file='sediment.in',status='old')
-      if(myrank==0) WRITE(16,*)'reading sediment.in'
-      if(myrank==0) write(*,'(A,I2,A)')'##### Number of Tracers / Sediment Classes required in sediment.in: ',ntracers,' #####'
-
-      rewind(5) !zu anfang der datei springen
+      REWIND(5) !go to beginning of file
       line=0
 
-      ! PS: start reading
-      do
-
-        ! PS: read line an break on '!'
+      ! - PS: start reading
+      DO
+        ! - PS: read line an break on '!'
         line=line+1
-        read(5,'(a)',end=99)line_str
-        line_str=adjustl(line_str)
-        len_str=len_trim(line_str)
-        if(len_str==0.or.line_str(1:1)=='!') cycle
+        READ(5,'(a)',END=99)line_str
+        line_str=ADJUSTL(line_str)
+        len_str=LEN_TRIM(line_str)
+        IF(len_str==0.OR.line_str(1:1)=='!') CYCLE
 
-        ! PS: locate '==' and '!'
-        loc=index(line_str,'==')
-        loc2=index(line_str,'!')
-        if(loc2/=0.and.loc2-1<loc+1) call parallel_abort('READ_PARAM: ! before =')
+        ! - PS: locate '==' and '!'
+        loc=INDEX(line_str,'==')
+        loc2=INDEX(line_str,'!')
+        IF(loc2/=0.AND.loc2-1<loc+1)THEN
+          CALL parallel_abort('READ_PARAM: ! before =')
+        ENDIF
 
-        ! PS: get name of the variable
+        ! - PS: get name of the variable
         str_tmp=''
         str_tmp(1:loc-1)=line_str(1:loc-1)
-        str_tmp=trim(str_tmp)
-        lstr_tmp=len_trim(str_tmp)
+        str_tmp=TRIM(str_tmp)
+        lstr_tmp=LEN_TRIM(str_tmp)
 
         ! PS: get the value
         !if(loc2/=0) then
@@ -90,89 +105,191 @@
         !str_tmp2=adjustl(str_tmp2)
         !str_tmp2=trim(str_tmp2)
 
+        ! - PS: switch between variables and set values
+        SELECT CASE(str_tmp)
 
-        ! PS: switch between variables and set values
-        select case(str_tmp)
+          CASE('NEWLAYER_THICK')
+            READ(line_str,*) var1, var2, newlayer_thick
 
-          case('NEWLAYER_THICK')
-            read(line_str,*) var1, var2, newlayer_thick
+          CASE('BEDLOAD_COEFF')
+            READ(line_str,*) var1, var2, bedload_coeff
 
-          case('BEDLOAD_COEFF')
-            read(line_str,*) var1, var2, bedload_coeff
+          CASE('SAND_SD50')
+            READ(line_str,*) var1, var2, (Sd50(i), i=1,ntracers)
 
-          case('SAND_SD50')
-            read(line_str,*) var1, var2, (Sd50(i), i=1,ntracers)
+          CASE('SAND_SRHO')
+            READ(line_str,*) var1, var2, (Srho(i), i=1,ntracers)
 
-          case('SAND_CSED')
-            read(line_str,*) var1, var2, (Csed(i), i=1,ntracers)
+          CASE('SAND_WSED')
+            READ(line_str,*) var1, var2, (Wsed(i), i=1,ntracers)
 
-          case('SAND_SRHO')
-            read(line_str,*) var1, var2, (Srho(i), i=1,ntracers)
+          CASE('SAND_ERATE')
+            READ(line_str,*) var1, var2, (Erate(i), i=1,ntracers)
 
-          case('SAND_WSED')
-            read(line_str,*) var1, var2, (Wsed(i), i=1,ntracers)
+          CASE('SAND_TAU_CE')
+            READ(line_str,*) var1, var2, (tau_ce(i), i=1,ntracers)
 
-          case('SAND_ERATE')
-            read(line_str,*) var1, var2, (Erate(i), i=1,ntracers)
+          CASE('SAND_POROS')
+            READ(line_str,*) var1, var2, (poros(i), i=1,ntracers)
 
-          case('SAND_TAU_CE')
-            read(line_str,*) var1, var2, (tau_ce(i), i=1,ntracers)
+          CASE('SAND_MORPH_FAC')
+            READ(line_str,*) var1, var2, (morph_fac(i), i=1,ntracers)
 
-          case('SAND_POROS')
-            read(line_str,*) var1, var2, (poros(i), i=1,ntracers)
+          CASE('SED_TYPE')
+            READ(line_str,*) var1, var2, (Sedtype(i), i=1,ntracers)
 
-          case('SAND_MORPH_FAC')
-            read(line_str,*) var1, var2, (morph_fac(i), i=1,ntracers)
+          CASE('sed_debug')
+            READ(line_str,*) var1, var2, sed_debug
 
-        end select
+          CASE('g')
+            READ(line_str,*) var1, var2, g
 
-      enddo !scan sediment.in
-99    close(5)
+          CASE('vonKar')
+            READ(line_str,*) var1, var2, vonKar
 
-      !-----------------------------------------------------------------------
-      !  Scale relevant input parameters
-      !
-      ! JS: Particel settling velocity (Wsed) input is in [mm/s]
-      ! JS: Median sediment grain diameter (Sd50) input is in [mm]
-      !-----------------------------------------------------------------------
-      !
+          CASE('Cdb_min')
+            READ(line_str,*) var1, var2, Cdb_min
+
+          CASE('Cdb_max')
+            READ(line_str,*) var1, var2, Cdb_max
+
+          CASE('rhom')
+            READ(line_str,*) var1, var2, rhom
+
+          CASE('porosity')
+            READ(line_str,*) var1, var2, porosity
+
+          CASE('bdldiffu')
+            READ(line_str,*) var1, var2, bdldiffu
+
+          !CASE('bedthick_overall')
+          !  READ(line_str,*) var1, var2, bedthick_overall
+
+          CASE('Nbed')
+            READ(line_str,*) var1, var2, Nbed
+
+          CASE('bedload')
+            READ(line_str,*) var1, var2, bedload
+
+          CASE('suspended_load')
+            READ(line_str,*) var1, var2, suspended_load
+
+          CASE('slope_formulation')
+            READ(line_str,*) var1, var2, slope_formulation
+
+          CASE('bc_for_weno')
+            READ(line_str,*) var1, var2, bc_for_weno
+
+          CASE('sed_morph')
+            READ(line_str,*) var1, var2, sed_morph
+
+          CASE('drag_formulation')
+            READ(line_str,*) var1, var2, drag_formulation
+
+          CASE('ddensed')
+            READ(line_str,*) var1, var2, ddensed
+
+          CASE('comp_ws')
+            READ(line_str,*) var1, var2, comp_ws
+
+          CASE('comp_tauce')
+            READ(line_str,*) var1, var2, comp_tauce
+
+          CASE('bedforms_rough')
+            READ(line_str,*) var1, var2, bedforms_rough
+
+          CASE('iwave_ripple')
+            READ(line_str,*) var1, var2, iwave_ripple
+
+          CASE('irough_bdld')
+            READ(line_str,*) var1, var2, irough_bdld
+
+          CASE('slope_avalanching')
+            READ(line_str,*) var1, var2, slope_avalanching
+
+          CASE('dry_slope_cr')
+            READ(line_str,*) var1, var2, dry_slope_cr
+ 
+          CASE('wet_slope_cr')
+            READ(line_str,*) var1, var2, wet_slope_cr
+
+          CASE('bedmass_filter')
+            READ(line_str,*) var1, var2, bedmass_filter
+
+          CASE('bedmass_threshold')
+            READ(line_str,*) var1, var2, bedmass_threshold
+
+        END SELECT
+
+      ENDDO !scan sediment.in
+99    CLOSE(5)
+
+
+!---------------------
+      g = g*1.0d0
+      vonKar = vonKar*1.0d0
+      Cdb_min = Cdb_min*1.0d0
+      Cdb_max = Cdb_max*1.0d0
+      rhom = rhom*1.0d0
+!      Nbed = Nbed*1.0d0
+      ! Conversion of threshold from mm to m
+      bedmass_threshold = bedmass_threshold/1000.0d0
+!---------------------
+
+!---------------------------------------------------------------------
+! - Scale input parameters
+!
+! Particel settling velocity (Wsed) input is in [mm/s]
+! Median sediment grain diameter (Sd50) input is in [mm]
+! Critical shear for erosion and deposition (Tau_ce) input is in [N/m2]
+!---------------------------------------------------------------------
+
       DO i=1,ntracers
-        Sd50(i)=Sd50(i)*0.001_r8
-        Wsed(i)=Wsed(i)*0.001_r8
-        tau_ce(i)=tau_ce(i)/rhom
-        !tau_cd(i)=tau_cd(i)/rhom
-        !tnu4(idsed(i))=SQRT(ABS(tnu4(idsed(i))))
-        !IF (Tnudg(idsed(i)).gt.0.0_r8) THEN
-        !  Tnudg(idsed(i))=1.0_r8/(Tnudg(idsed(i))*86400.0_r8)
-        !ELSE
-        !  Tnudg(idsed(i))=0.0_r8
-        !END IF
-      END DO
-      !--------------------------------------------!
-      ! screen output of sediment-model parameters !
-      !--------------------------------------------!
+        Sd50(i) = Sd50(i)*0.001d0
+        IF((comp_ws.EQ.1).AND.(Sedtype(i).EQ.1)) THEN
+          ! Sed type is SAND
+          CALL sed_settleveloc(i)
+        ELSE
+          ! Sed type is other (MUD or GRAVEL)
+          Wsed(i) = Wsed(i)*0.001d0
+        ENDIF
+        IF((comp_tauce.EQ.1).AND.(Sedtype(i).EQ.1))THEN
+          ! Sed type is SAND
+          CALL sed_taucrit(i)
+        ENDIF
+        ! tau_ce already read in for other Sed type (MUD or GRAVEL); scale to
+        ! get m^2/s/s
+        tau_ce(i) = tau_ce(i)/rhom
+      ENDDO ! End loop ntracers
 
-      ! output empty line
-      if(myrank==0) write(*,*)
+!---------------------------------------------------------------------
+! - Screen output of sediment-model parameters
+!---------------------------------------------------------------------
 
-      ! output table headers
-      !if(myrank==0) write(*,*)'Tracer # | Sd50 | Csed | Srho | Wsed | Erate | tau_ce | poros'
+       ! output empty line
+       IF(myrank==0) WRITE(16,*)
 
-      ! output individual values in a loop
-      !DO i=1,ntracers
-	!if(myrank==0) write(*,'(I2,A,F6.4,A,F6.1,A,F6.1,A,F6.1,A,F6.1,A,F6.1,A,F6.1)')i,'|',Sd50(i),'|',Csed(i),'|',Srho(i),'|',Wsed(i),'|',Erate(i),'|',tau_ce(i),'|',poros(i)
-      !END DO
+       IF(myrank==0) THEN
+         WRITE(16,*) 'Sediment Parameters:'
+         WRITE(16,*) '--------------------'
+         WRITE(16,*) 'sed_debug: ', sed_debug
+         WRITE(16,*) 'Nbed: ',Nbed
+         WRITE(16,*) 'porosity: ',porosity
+!         WRITE(16,*) 'bedthick_overall(1): ',bedthick_overall(1)
+         WRITE(16,*) 'New layer thickness',newlayer_thick
+         WRITE(16,*) '----------------------------------------------'
+         WRITE(16,*) 'Sed type  ;  Sd50 [m]  ;  Srho [kg/m3]  ;',     &
+         &          '  Wsed [m/s]  ;  Erate [kg/(m2/s)]  ;  tau_ce', &
+         &          ' [m2/s2]  ;  poros [-]  ;  morph_fac  '
+         DO i = 1,ntracers
+           WRITE(16,*) Sedtype(i),Sd50(i),Srho(i),Wsed(i),Erate(i),   &
+           &          tau_ce(i),poros(i),morph_fac(i)
+         ENDDO
+         WRITE(16,*)
+       ENDIF
 
-      if(myrank==0) then
-        write(*,*)'Sd50 [m]: ',Sd50(1:ntracers)
-        write(*,*)'Csed [kg/m3]: ', Csed(1:ntracers)
-        write(*,*)'Srho [kg/m3]: ', Srho(1:ntracers)
-        write(*,*)'Wsed [m/s]: ', Wsed(1:ntracers)
-        write(*,*)'Erate [kg/(m2*s)]: ', Erate(1:ntracers)
-        write(*,*)'tau_ce: [N/m2]', tau_ce(1:ntracers)
-        write(*,*)'poros [-]: ', poros(1:ntracers)
-        write(*,*)'morph_fac [-]: ', morph_fac(1:ntracers)
-      endif
 
-      RETURN
-      END SUBROUTINE read_sed_input
+       IF(myrank==0) WRITE(16,*)'Leaving read_sed_input routine'
+       RETURN
+!--------------------------------------------------------------------!
+       END SUBROUTINE read_sed_input

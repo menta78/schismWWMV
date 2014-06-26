@@ -21,6 +21,7 @@
 #endif
 
 #ifdef USE_WWM
+!Error: circulate module use; need to init. inside SELFE?
       USE DATAPOOL, only: STOKES_X, STOKES_Y, JPRESS, SBR, SBF
 #endif
 

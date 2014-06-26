@@ -1,23 +1,23 @@
-Makefile - makefile to compile the code. In lines below the text "specify different enviroment and/or preprocessing options" we have to active the options that we want to turn active (if you want to run the model with suspended sediment active turn on option SUSPENDED) 
+In order of ionvocation in Hydro code:
 
+sed_mod - parameters for sediment model
 
-elfe_main_V8.F90 - SELFE source code with sediment module included, all the inclusions are marked with the leters LLP or pre-proceced in C and identified with #USE_SED.
+read_sed_input - subroutine to read the sediment model inputs written in sediment.in file; optionally
+                 calculate settling vel and critical shear stress;
 
-sediment_v8.f90 - routine to compute the sediment source and sinks. It includes the vertical settling of the sediment, erosional and depositional flux, transport of multiple grain sizes, bedload based on Meyer Peter and Mueller (BEDLOAD_MP) or van Rijn (BEDLOAD_VR). The part of the code related with the waves is not implemented and the code is the original(#BBL_MODEL,#BEDLOAD_SOULSBY). 
+sed_init.-subroutine to set initial conditions for sediment tracer fields and initial bed conditions
 
-sed_init.f90 -subroutine to set initial conditions for sediment tracer fields and initial bed conditions
+sediment - routine to compute the sediment source and sinks. It includes the vertical settling of 
+           the sediment, erosional and depositional flux, transport of multiple grain sizes, bedload 
+           based on Meyer Peter and Mueller (not active yet) or van Rijn. Morphological model is found inside.
+           Vertical settling is handled with semi-Lagrangian PPM and eventually cast into a body force for
+           the transport solver.
 
-ini_sed.f90 - initialize several variables in the module sed_mod
+sed_bedload - bedload routines (including call to solve_jcg() for morphol. model)
 
-sed_mod.f90, sed_param.f90, ocean_mod.f90 - parameters for sediment model
+sed_friction - bottom formulations
 
-set_vbc.f90 - this module sets vertical boundary conditions for tracers (options UV_LOGDRAG, UV_QDRAG, UV_LDRAG)
+sed_filter - morphological filters
 
-stress_soulsby.f90 - compute bottom stress and tauc to use in the Meyer Peter and Muller formulation
+sed_misc_subs - misc routines
 
-read_sed_input.f90  -subroutine to read the sediment model inputs written in sediment.in file
-
--------------------------------------------------------------------------------------------
-My notes:
-
-(1) options not implemented: BBL_MODEL, BEDLOAD_SOULSBY 

@@ -1063,7 +1063,8 @@
       IND  = MAX(1,MIN (IUSTAR-1, INT(XI)))
       DELI1= MAX(MIN (ONE, XI-FLOAT(IND)),ZERO)
       DELI2= ONE - DELI1
-      XJ=MAX(0.,(G9*Z0/MAX(UST,0.00001)**2-AALPHA) / DELALP)
+!AR: this is tricky this runs out of int precision 
+      XJ=MIN(10E6,MAX(ZERO,(G9*Z0/MAX(UST,0.0001_rkind)**2-AALPHA) / DELALP))
       J    = MAX(1 ,MIN (IALPHA-1, INT(XJ)))
       DELJ1= MAX(0.,MIN (ONE     , XJ-FLOAT(J)))
       DELJ2=ONE- DELJ1
@@ -1907,7 +1908,7 @@
 !
 ! Determines roughness length
 !
-      SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0)
+      SQRTCDM1  = MIN(WINDSPEED/MAX(0.001,USTAR),100.0)
       Z0  = ZZWND*EXP(-KAPPA*SQRTCDM1)
 !AR: Here we need to start debugging ...       
       IF (USTAR.GT.0.001_rkind) THEN 
