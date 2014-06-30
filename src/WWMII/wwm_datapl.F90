@@ -84,14 +84,15 @@
 #endif
 
 #ifndef SELFE
-#  ifndef PDLIB
-#   ifdef USE_SINGLE
+# ifndef PDLIB
+#  ifdef USE_SINGLE
          integer,parameter :: rkind = 4
-#   else
+#  else
          integer,parameter :: rkind = 8      ! Default real datatype
-#   endif
+#  endif
 # endif
 #endif
+
          INTEGER    :: NP_TOTAL, NE_TOTAL
 #ifdef MPI_PARALL_GRID
          REAL(rkind), allocatable           :: nwild_gb(:)
@@ -761,7 +762,8 @@
          REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
          REAL(rkind)                   :: PSURF(6)
 
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:), STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+         REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
