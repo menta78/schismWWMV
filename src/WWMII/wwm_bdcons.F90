@@ -2330,7 +2330,7 @@
 !*              replaced by a direct access call to the binary file 
 !*              Gulliaume can you do this? It is not that urgent.
 !**********************************************************************
-      SUBROUTINE READ_SPEC_WW3(ISTEP,SPECOUT)
+      SUBROUTINE READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
       USE DATAPOOL
       IMPLICIT NONE
 
@@ -2361,7 +2361,7 @@
         DO IT=1,MAXSTEP_WW3
           READ(WAV%FHNDL) TIME
           DO IP = 1, NP_WW3
-            READ(WAV%FHNDL)PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
+            READ(WAV%FHNDL) PID(IP),YP_WW3_SGLE(IP),XP_WW3_SGLE(IP),D(IP),UA(IP),UD(IP),CA(IP),CD2(IP) ! As if XP and YP would change in time ... well i leave it as it is ... 
             YP_WW3(IP) = YP_WW3_SGLE(IP)*DEGRAD
             XP_WW3(IP) = XP_WW3_SGLE(IP)*DEGRAD
             READ(WAV%FHNDL)SPECOUT_SGLE(:,:)
@@ -2392,6 +2392,47 @@
       ENDIF
       CLOSE(WAV%FHNDL)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3'
+      END SUBROUTINE
+!**********************************************************************
+!* Reading spectra 
+!* (doing MPI exchanges if MULTIPLE_IN_BOUND = FALSE)
+!* (otherwise, all node read the same data)
+!*
+!* Called by WAVE_BOUNDARY_CONDITIONS
+!*
+!* Authors: Mathieu Dutour Sikiric
+!**********************************************************************
+      SUBROUTINE READ_SPEC_WW3(ISTEP,SPECOUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: ISTEP
+      REAL(rkind), INTENT(OUT) :: SPECOUT(MSC_WW3,MDC_WW3,NP_WW3)
+      integer, allocatable :: send_rqst(:)
+      integer, allocatable :: send_stat(:,:)
+      integer siz, iProc
+#ifndef MPI_PARALL_GRID
+      CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
+#else
+      IF (MULTIPLE_IN_BOUND) THEN
+        CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
+      ELSE
+        siz=MSC_WW3*MDC_WW3*NP_WW3
+        IF (myrank .eq. 0) THEN
+          allocate(send_rqst(nproc-1), send_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 30')
+          CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
+          DO iProc=2,nproc
+            CALL mpi_isend(SPECOUT, siz, rtype, iProc-1, 2030, comm, send_rqst(iProc-1), ierr)
+          END DO
+          IF (nproc .gt. 1) THEN
+            call mpi_waitall(nproc-1, send_rqst, send_stat,ierr)
+          END IF
+          deallocate(send_rqst, send_stat)
+        ELSE
+          CALL MPI_RECV(SPECOUT, siz, rtype, 0, 2030, comm, istatus, ierr)
+        END IF
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !* GETWW3SPECTRA
