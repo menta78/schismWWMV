@@ -632,7 +632,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_WWMINPUT()
+      SUBROUTINE READ_WWMINPUT
 #ifdef NCDF
          USE NETCDF
 #endif
@@ -652,7 +652,7 @@
          LOGICAL     :: USE_SINGLE_OUT
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
-     &      BEGTC, DELTC, UNITC, ENDTC, DMIN
+     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
      &      LETOT, NLVT, DTCOUP, IMET_DRY

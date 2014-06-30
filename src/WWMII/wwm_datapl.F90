@@ -287,6 +287,7 @@
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
+         LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 
 ! Entries needed for output of spectra
          LOGICAL    :: NETCDF_OUT_SPECTRA = .TRUE.
