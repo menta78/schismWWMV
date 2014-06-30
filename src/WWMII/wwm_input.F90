@@ -1521,9 +1521,9 @@
          END IF
 
          IF (LSOURCESWAM .AND. MELIM .NE. 3) THEN
-           call wwm_abort('FOR WAM U NEED MELIM == 3')
+           call wwm_abort('FOR WAM YOU NEED MELIM == 3')
          ELSE IF (.NOT. LSOURCESWAM .AND. MELIM .EQ. 3) THEN
-           call wwm_abort('FOR WWM SOURCES U NEED MELIM .LT. 3') 
+           call wwm_abort('FOR WWM SOURCES YOU NEED MELIM .LT. 3') 
          ENDIF
 
 #ifndef GRB
