@@ -1106,8 +1106,8 @@
           END IF
           CLOSE(GRD%FHNDL)
         CASE (2)
-          OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
           IF (IGRIDTYPE == 1) THEN ! system.dat format ... XFN
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             DO I = 1, 2
               READ(GRD%FHNDL, '(A)') RHEADER
             END DO
@@ -1145,7 +1145,9 @@
               INEtotal(2,IE)=LTMP+1
               INEtotal(3,IE)=MTMP+1
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 2) THEN ! periodic grid written by mathieu dutour
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL,*) NE_TOTAL, NP_TOTAL
             allocate(DEPtotal(NP_TOTAL), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
@@ -1171,7 +1173,9 @@
               IENtotal(5,IE) = -DYP1
               IENtotal(6,IE) = DXP1
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 3) THEN ! selfe gr3
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL,*)
             READ(GRD%FHNDL,*, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in read mnp/mne')
@@ -1188,7 +1192,9 @@
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, LTMP, INEtotal(:,IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=3 error in grid reading 2')
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 4) THEN ! Old WWM format
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL 
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NP_TOTAL 
             allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
@@ -1201,6 +1207,7 @@
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) INEtotal(:,IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=4 error in grid read 2')
             END DO
+            CLOSE(GRD%FHNDL)
 #ifdef NCDF
           ELSE IF (IGRIDTYPE == 5) THEN ! Netcdf format
             ISTAT = NF90_OPEN(GRD%FNAME, NF90_NOWRITE, ncid)
@@ -1218,13 +1225,13 @@
             FLUSH(DBG%FHNDL)
 
             ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
             ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsA)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
             ISTAT = nf90_inquire_dimension(ncid, dimidsB(1), name=MNPstr, len=np_total)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
             WRITE(DBG%FHNDL,*) 'MNPstr=', TRIM(MNPstr)
             FLUSH(DBG%FHNDL)
 
@@ -1232,43 +1239,42 @@
             IF (istat/=0) CALL WWM_ABORT('allocate error 9')
 
             ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
 
             ISTAT = nf90_get_var(ncid, var_id, DEPtotal)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
 
             ISTAT = nf90_inq_varid(ncid, 'ele', var_id)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
 
             ISTAT = nf90_get_var(ncid, var_id, INEtotal)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
             IF (LSPHE) THEN
               ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 
               ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
             ELSE
               ISTAT = nf90_inq_varid(ncid, 'lon', var_id1)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
               ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
             END IF
             ISTAT = nf90_get_var(ncid, var_id1, XPtotal)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
 
             ISTAT = nf90_get_var(ncid, var_id2, YPtotal)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
 
             ISTAT = NF90_CLOSE(ncid)
-            CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
 #endif
           ELSE
             CALL WWM_ABORT('IGRIDTYPE WRONG')
           END IF
-          CLOSE(GRD%FHNDL)
         CASE DEFAULT
           CALL WWM_ABORT('WRONG GRID DIMENSION')
       END SELECT

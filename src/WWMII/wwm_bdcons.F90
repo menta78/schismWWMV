@@ -212,12 +212,18 @@
 !**********************************************************************
       SUBROUTINE SINGLE_READ_IOBP_TOTAL
       USE DATAPOOL
+#ifdef NCDF
+      USE NETCDF
+#endif
       IMPLICIT NONE
       INTEGER I, IP, IFSTAT
       REAL(rkind)       :: ATMP, BTMP, BNDTMP
       INTEGER ITMP
+#ifdef NCDF
+      INTEGER ncid, var_id
+      character (len = *), parameter :: CallFct="SINGLE_READ_IOBP_TOTAL"
+#endif
       CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
-      OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
       IOBPtotal = 0
 !
 ! Reading of raw boundary file
@@ -226,6 +232,7 @@
       WRITE(STAT%FHNDL,*) 'BND%FHNDL=', BND%FHNDL
       WRITE(STAT%FHNDL,*) 'BND%FNAME=', TRIM(BND%FNAME)
       IF (IGRIDTYPE.eq.1) THEN ! XFN 
+        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         DO I = 1, 2
           READ(BND%FHNDL,*)
         END DO
@@ -235,33 +242,69 @@
         DO I = 1, 7
           READ(BND%FHNDL,*)
         END DO
+        DO IP = 1, NP_TOTAL
+          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          IF ( IFSTAT /= 0 ) THEN
+            CALL WWM_ABORT('error in the bnd file 2')
+          END IF
+          ITMP=INT(BNDTMP)
+          IOBPtotal(IP) = ITMP
+        END DO
+        CLOSE(BND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
+        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)
+        DO IP = 1, NP_TOTAL
+          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          IF ( IFSTAT /= 0 ) THEN
+            CALL WWM_ABORT('error in the bnd file 2')
+          END IF
+          ITMP=INT(BNDTMP)
+          IOBPtotal(IP) = ITMP
+        END DO
+        CLOSE(BND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
+        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)
+        DO IP = 1, NP_TOTAL
+          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          IF ( IFSTAT /= 0 ) THEN
+            CALL WWM_ABORT('error in the bnd file 2')
+          END IF
+          ITMP=INT(BNDTMP)
+          IOBPtotal(IP) = ITMP
+        END DO
+        CLOSE(BND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
+        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)
-      END IF
-      DO IP = 1, NP_TOTAL
-        IF (IGRIDTYPE.eq.1) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.2) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.3) THEN
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
-        ELSE IF (IGRIDTYPE.eq.4) THEN
+        DO IP = 1, NP_TOTAL
           READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
-        END IF
-        IF ( IFSTAT /= 0 ) THEN
-          CALL WWM_ABORT('error in the bnd file 2')
-        END IF
-        ITMP=INT(BNDTMP)
-        IOBPtotal(IP) = ITMP
-      END DO
-      CLOSE(BND%FHNDL)
+          IF ( IFSTAT /= 0 ) THEN
+            CALL WWM_ABORT('error in the bnd file 2')
+          END IF
+          ITMP=INT(BNDTMP)
+          IOBPtotal(IP) = ITMP
+        END DO
+        CLOSE(BND%FHNDL)
+#ifdef NCDF
+      ELSE IF (IGRIDTYPE.eq.5) THEN ! netcdf boundary format
+        ISTAT = NF90_OPEN(BND%FNAME, NF90_NOWRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+        ISTAT = nf90_inq_varid(ncid, 'IOBP', var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+        ISTAT = nf90_get_var(ncid, var_id, IOBPtotal)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+        ISTAT = NF90_CLOSE(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+#endif
+      END IF
       DO IP = 1, NP_TOTAL
         IF (IOBPtotal(IP) .GT. 4) THEN
           WRITE(wwmerr, *) 'NextGen: We need iobp<=2 but ip=', IP, ' iobp=', IOBPtotal(IP)
