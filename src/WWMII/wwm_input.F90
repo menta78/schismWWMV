@@ -1064,12 +1064,21 @@
 !**********************************************************************
       SUBROUTINE SINGLE_READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
+#ifdef NCDF
+      USE NETCDF
+#endif
       IMPLICIT NONE
       INTEGER :: I, IP, IE, ITMP, JTMP
       REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
       REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
       INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
       CHARACTER(LEN=100) :: RHEADER
+#ifdef NCDF
+      INTEGER :: ncid, dimidsB(2), dimidsA(1)
+      character (len=20) :: MNEstr, MNPstr
+      INTEGER var_id1, var_id2, var_id
+      character (len = *), parameter :: CallFct="SINGLE_READ_SPATIAL_GRID_TOTAL"
+#endif
       CALL TEST_FILE_EXIST_DIE('Missing grid file : ', GRD%FNAME)
       SELECT CASE (DIMMODE)
         CASE (1)
@@ -1192,6 +1201,70 @@
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) INEtotal(:,IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=4 error in grid read 2')
             END DO
+#ifdef NCDF
+          ELSE IF (IGRIDTYPE == 5) THEN ! Netcdf format
+            ISTAT = NF90_OPEN(GRD%FNAME, NF90_NOWRITE, ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+            ISTAT = nf90_inq_varid(ncid, 'ele', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+            ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsB)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+            ISTAT = nf90_inquire_dimension(ncid, dimidsB(2), name=MNEstr, len=ne_total)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+            WRITE(DBG%FHNDL,*) 'MNEstr=', TRIM(MNEstr)
+            FLUSH(DBG%FHNDL)
+
+            ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+            ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsA)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+            ISTAT = nf90_inquire_dimension(ncid, dimidsB(1), name=MNPstr, len=np_total)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+            WRITE(DBG%FHNDL,*) 'MNPstr=', TRIM(MNPstr)
+            FLUSH(DBG%FHNDL)
+
+            allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 9')
+
+            ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id, DEPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+            ISTAT = nf90_inq_varid(ncid, 'ele', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id, INEtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+            IF (LSPHE) THEN
+              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+            ELSE
+              ISTAT = nf90_inq_varid(ncid, 'lon', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+            END IF
+            ISTAT = nf90_get_var(ncid, var_id1, XPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id2, YPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+            ISTAT = NF90_CLOSE(ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+#endif
           ELSE
             CALL WWM_ABORT('IGRIDTYPE WRONG')
           END IF
