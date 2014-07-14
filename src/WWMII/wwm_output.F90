@@ -2,7 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_HISTORY_AND_STATION
+      SUBROUTINE GENERAL_OUTPUT
+      USE WWM_HOTFILE_MOD
       USE DATAPOOL
       IMPLICIT NONE
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4,L5)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD, (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)
@@ -16,86 +17,92 @@
         CALL OUTPUT_STATION(RTIME*DAY2SEC,.FALSE.)
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
       END IF
-      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_AND_STATION' 
+      IF (LHOTF) THEN
+        IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
+          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
+          FLUSH(STAT%FHNDL)
+          CALL OUTPUT_HOTFILE
+          HOTF%TMJD = HOTF%TMJD + HOTF%DELT*SEC2DAY
+        END IF
+      END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT' 
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_OUTPUT( TIME, LINIT_OUTPUT )
-        USE DATAPOOL, ONLY : rkind, SEC2DAY, OUT_HISTORY, OUT_STATION, STAT 
-        IMPLICIT NONE
-        REAL(rkind), INTENT(IN)    :: TIME
-        LOGICAL, INTENT(IN) :: LINIT_OUTPUT
-        CALL OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-        CALL OUTPUT_STATION( TIME, LINIT_OUTPUT )
-        OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
-        OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)    :: TIME
+      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
+      CALL OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
+      CALL OUTPUT_STATION( TIME, LINIT_OUTPUT )
+      OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
+      OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
 
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
-        FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-         USE DATAPOOL
-         IMPLICIT NONE
-         REAL(rkind), INTENT(IN)    :: TIME
-         LOGICAL, INTENT(IN) :: LINIT_OUTPUT
-         SELECT CASE (VAROUT_HISTORY%IOUTP)
-            CASE (0)
-               ! Do nothing ...
-            CASE (1)
-               CALL OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
-            CASE (2)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)    :: TIME
+      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
+      SELECT CASE (VAROUT_HISTORY%IOUTP)
+        CASE (0)
+          ! Do nothing ...
+        CASE (1)
+          CALL OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
+        CASE (2)
 #ifdef NCDF
-               CALL OUTPUT_HISTORY_NC
+          CALL OUTPUT_HISTORY_NC
 #else
-               CALL WWM_ABORT('For History in netcdf, need netcdf!')
+          CALL WWM_ABORT('For History in netcdf, need netcdf!')
 #endif
 #ifdef DARKO
-            CASE (3)
-               CALL OUTPUT_HISTORY_SHP( TIME )
+        CASE (3)
+          CALL OUTPUT_HISTORY_SHP( TIME )
 #endif
-            CASE DEFAULT
-               WRITE(DBG%FHNDL,*) 'IOUTP=', VAROUT_HISTORY%IOUTP
-               CALL WWM_ABORT('WRONG NO OUTPUT SPECIFIED')
-         END SELECT
-
-         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
-         FLUSH(STAT%FHNDL)
+        CASE DEFAULT
+          WRITE(DBG%FHNDL,*) 'IOUTP=', VAROUT_HISTORY%IOUTP
+          CALL WWM_ABORT('WRONG NO OUTPUT SPECIFIED')
+      END SELECT
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_STATION( TIME, LINIT_OUTPUT )
-        USE DATAPOOL
-        IMPLICIT NONE
-        REAL(rkind), INTENT(IN)    :: TIME
-        LOGICAL, INTENT(IN) :: LINIT_OUTPUT
-        CHARACTER(LEN=15)   :: CTIME
-        CALL MJD2CT(MAIN%TMJD, CTIME)
-
-        IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
-          WRITE(STAT%FHNDL,*) 'WRITING STATION OUTPUT'
-          SELECT CASE (VAROUT_STATION%IOUTP)
-            CASE (0)
-              ! Do nothing ...
-            CASE (1)
-              CALL OUTPUT_STE(CTIME, LINIT_OUTPUT)
-            CASE (2)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)    :: TIME
+      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
+      CHARACTER(LEN=15)   :: CTIME
+      CALL MJD2CT(MAIN%TMJD, CTIME)
+      IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
+        WRITE(STAT%FHNDL,*) 'WRITING STATION OUTPUT'
+        SELECT CASE (VAROUT_STATION%IOUTP)
+          CASE (0)
+            ! Do nothing ...
+          CASE (1)
+            CALL OUTPUT_STE(CTIME, LINIT_OUTPUT)
+          CASE (2)
 #ifdef NCDF
-              CALL OUTPUT_STATION_NC
+            CALL OUTPUT_STATION_NC
 #else
-              CALL WWM_ABORT('STATION_NC: Need to compile with netcdf')
+            CALL WWM_ABORT('STATION_NC: Need to compile with netcdf')
 #endif
-            CASE DEFAULT
-               CALL WWM_ABORT('WRONG NO STATION OUTPUT SPECIFIED')
-          END SELECT
-        END IF
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
-        FLUSH(STAT%FHNDL)
+          CASE DEFAULT
+            CALL WWM_ABORT('WRONG NO STATION OUTPUT SPECIFIED')
+        END SELECT
+      END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
