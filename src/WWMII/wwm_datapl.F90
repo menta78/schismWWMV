@@ -290,10 +290,10 @@
          LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 
 ! Entries needed for output of spectra
-         LOGICAL    :: NETCDF_OUT_SPECTRA = .FALSE.
-         LOGICAL    :: NETCDF_OUT_PARAM = .FALSE.
-         CHARACTER(LEN=140) :: NETCDF_OUT_FILE = "boundary_out_spec.nc"
-         LOGICAL    :: USE_SINGLE_OUT_BOUC = .TRUE.
+         LOGICAL    :: BOUC_NETCDF_OUT_SPECTRA = .FALSE.
+         LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
+         CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
+         LOGICAL    :: BOUC_USE_SINGLE_OUT = .TRUE.
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 

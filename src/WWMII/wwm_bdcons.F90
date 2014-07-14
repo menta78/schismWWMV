@@ -2924,14 +2924,14 @@
       iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
       CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       !
-      IF (NETCDF_OUT_PARAM) THEN
+      IF (BOUC_NETCDF_OUT_PARAM) THEN
         iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
         iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       END IF
       !
-      IF (NETCDF_OUT_SPECTRA) THEN
+      IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
@@ -2962,6 +2962,29 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
       iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
       CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_NETCDF_BOUNDARY_OUTPUT
+      USE DATAPOOL
+      IMPLICIT NONE
+      LOGICAL, SAVE :: IsFirstTime = .true.
+      IF (IsFirstTime) THEN
+        IsFirstTime=.FALSE.
+#ifdef MPI_PARALL_GRID
+        IF (myrank .eq. rank_boundary) THEN
+#endif
+          IF (BOUC_NETCDF_OUT_PARAM) THEN
+            allocate(SPPARM_GL(8,IWBMNPGL), stat=istat)
+          END IF
+          IF (BOUC_NETCDF_OUT_SPECTRA) THEN
+            allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
+          END IF
+#ifdef MPI_PARALL_GRID
+        END IF
+#endif
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3010,7 +3033,8 @@
       !
       ! Getting the needed global arrays 
       !
-      IF (NETCDF_OUT_PARAM .and. LBCWA) THEN
+      CALL INIT_NETCDF_BOUNDARY_OUTPUT
+      IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
         IF (LINHOM) THEN
           CALL REDUCE_BOUNDARY_ARRAY_SPPARM
         ELSE
@@ -3025,7 +3049,7 @@
 #endif
         END IF
       END IF
-      IF (NETCDF_OUT_PARAM) THEN
+      IF (BOUC_NETCDF_OUT_PARAM) THEN
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
       !
@@ -3041,7 +3065,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
         recs_his=recs_his+1
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
-        IF (NETCDF_OUT_PARAM .and. LBCWA) THEN
+        IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
           iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
@@ -3052,7 +3076,7 @@
             CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
           ENDIF
         END IF
-        IF (NETCDF_OUT_SPECTRA) THEN
+        IF (BOUC_NETCDF_OUT_SPECTRA) THEN
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
@@ -3062,11 +3086,16 @@
             iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
             CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
           ENDIF
-        
         END IF
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       END IF
+      IF (OUT_BOUC % IDEF.gt.0) THEN
+        IF (recs_his .eq. OUT_BOUC % IDEF) THEN
+          ifile=ifile+1
+          IsInitDone = .FALSE.
+        ENDIF
+      ENDIF
       END SUBROUTINE
 # endif
 #endif
