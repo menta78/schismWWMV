@@ -1277,17 +1277,17 @@
             CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
             IF (LSPHE) THEN
-              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
-
-              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
-            ELSE
               ISTAT = nf90_inq_varid(ncid, 'lon', var_id1)
               CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
 
               ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
               CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+            ELSE
+              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
             END IF
             ISTAT = nf90_get_var(ncid, var_id1, XPtotal)
             CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
