@@ -125,6 +125,12 @@
  NCDF_SPR_NAME  = 'spr'              ! NETCDF var. name for the mean directional spreading (normally it is just 'spr')
  NCDF_FP_NAME   = 'fp'               ! NETCDF var. name for the peak freq. (normally it is just 'fp')
  NCDF_F02_NAME  = 't02'              ! NETCDF var. name for the zero down crossing freq. (normally it is just 't02')
+ NETCDF_OUT_PARAM = F    ! netcdf output of boundary parameters (default F)
+ NETCDF_OUT_SPECTRA = F  ! netcdf output of boundary spectra (default F)
+ NETCDF_OUT_FILE         ! file name for netcdf boundary output
+                         ! default "boundary_out_spec.nc"
+ USE_SINGLE_OUT = T      ! use single precision in netcdf boundary
+                         ! output (default T)
 /
 
 &WIND ! THIS IS NOW USED IN SELFE
