@@ -1851,9 +1851,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE OUTPUT_HISTORY_NC
-!
-!     NETCDF TYPE OUTPUT BY IVICA JANEKOVIC
-!
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE

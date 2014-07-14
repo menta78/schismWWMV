@@ -1031,12 +1031,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SETUP_BOUNDARY_SCATTER_ARRAY
+      SUBROUTINE SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
       USE DATAPOOL
       IMPLICIT NONE
       integer :: ListFirst(nproc)
       integer MNPloc, iProc, IP, IP_glob
-      integer, allocatable :: dspl_send(:), Indexes(:)
+      integer, allocatable :: dspl_spparm(:), Indexes(:)
+      integer, allocatable :: dspl_wbac(:)
       integer :: NbSend(nproc)
       integer irank, eSend, idx, idx_nbproc
       ListFirst=0
@@ -1044,7 +1045,7 @@
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
       END DO
       IF (myrank .eq. rank_boundary) THEN
-        spparm_nbproc=0
+        bound_nbproc=0
         DO irank=0,nproc-1
           eSend=0
           IF (irank .ne. rank_boundary) THEN
@@ -1057,13 +1058,20 @@
               END IF
             END DO
             IF (eSend .gt. 0) THEN
-              spparm_nbproc=spparm_nbproc+1
+              bound_nbproc=bound_nbproc+1
             END IF
           END IF
           NbSend(iProc)=eSend
         END DO
-        allocate(spparm_listproc(spparm_nbproc), spparm_send_rqst(spparm_nbproc), spparm_send_stat(MPI_STATUS_SIZE,spparm_nbproc), spparm_send_type(spparm_nbproc), Indexes(np_total), stat=istat)
+        allocate(bound_listproc(bound_nbproc), Indexes(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('allocate error')
+        !
+        allocate(spparm_rqst(bound_nbproc), spparm_stat(MPI_STATUS_SIZE,bound_nbproc), spparm_type(bound_nbproc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+        !
+        allocate(wbac_rqst(bound_nbproc), wbac_stat(MPI_STATUS_SIZE,bound_nbproc), wbac_type(bound_nbproc), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+        !
         idx=0
         DO IP=1,np_total
           IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
@@ -1085,24 +1093,101 @@
           IF ((irank .ne. rank_boundary).and.(eSend.gt.0)) THEN
             iProc=irank+1
             idx_nbproc=idx_nbproc+1
-            spparm_listproc(idx_nbproc)=iProc
+            bound_listproc(idx_nbproc)=iProc
             MNPloc=ListMNP(iProc)
-            allocate(dspl_send(eSend), stat=istat)
+            allocate(dspl_spparm(eSend), dspl_wbac(eSend), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
             idx=0
             DO IP=1,MNPloc
               IP_glob=ListIPLG(IP+ListFirst(iProc))
               IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
                 idx=idx+1
-                dspl_send(idx)=8*(Indexes(IP_glob)-1)
+                dspl_spparm(idx)=8*(Indexes(IP_glob)-1)
+                dspl_wbac(idx)=MSC*MDC*(Indexes(IP_glob)-1)
               END IF
             END DO
-            call mpi_type_create_indexed_block(eSend,8,dspl_send,rtype,spparm_send_type(idx_nbproc), ierr)
-            call mpi_type_commit(spparm_send_type(idx_nbproc), ierr)
-            deallocate(dspl_send)
+            call mpi_type_create_indexed_block(eSend,8,dspl_spparm,rtype,spparm_type(idx_nbproc), ierr)
+            call mpi_type_commit(spparm_type(idx_nbproc), ierr)
+            call mpi_type_create_indexed_block(eSend,8,dspl_wbac,rtype,wbac_type(idx_nbproc), ierr)
+            call mpi_type_commit(wbac_type(idx_nbproc), ierr)
+            deallocate(dspl_spparm, dspl_wbac)
           END IF
         END DO
         deallocate(Indexes)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SCATTER_BOUNDARY_ARRAY(Vtotal, Vlocal)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(in) :: Vtotal(8, IWBMNPGL)
+      real(rkind), intent(out) :: Vlocal(8, IWBMNP)
+      integer iProc, IP, irank
+      IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
+        RETURN
+      END IF
+      IF (myrank .eq. rank_boundary) THEN
+        DO irank=1,bound_nbproc
+          CALL mpi_isend(Vtotal, 1, spparm_type(irank), bound_listproc(irank)-1, 2030, comm, spparm_rqst(irank), ierr)
+        END DO
+        DO IP=1,IWBMNP
+          Vlocal(:,IP)=Vtotal(:,Indexes_boundary(IP))
+        END DO
+        IF (bound_nbproc > 0) THEN
+          CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
+        END IF
+      ELSE
+        CALL MPI_RECV(Vlocal, IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE REDUCE_BOUNDARY_ARRAY_SPPARM
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer iProc, IP, irank
+      IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
+        RETURN
+      END IF
+      IF (myrank .eq. rank_boundary) THEN
+        DO irank=1,bound_nbproc
+          CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank)-1, 2030, comm, spparm_rqst(irank), ierr)
+        END DO
+        DO IP=1,IWBMNP
+          SPPARM_GL(:, Indexes_boundary(IP))=SPPARM(:, IP)
+        END DO
+        IF (bound_nbproc > 0) THEN
+          CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
+        END IF
+      ELSE
+        CALL MPI_SEND(SPPARM, IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE REDUCE_BOUNDARY_ARRAY_WBAC
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer iProc, IP, irank
+      IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
+        RETURN
+      END IF
+      IF (myrank .eq. rank_boundary) THEN
+        DO irank=1,bound_nbproc
+          CALL mpi_irecv(WBAC_GL, 1, wbac_type(irank), bound_listproc(irank)-1, 2030, comm, wbac_rqst(irank), ierr)
+        END DO
+        DO IP=1,IWBMNP
+          WBAC_GL(:,:,Indexes_boundary(IP))=WBAC(:,:,IP)
+        END DO
+        IF (bound_nbproc > 0) THEN
+          CALL MPI_WAITALL(bound_nbproc, wbac_rqst, wbac_stat, ierr)
+        END IF
+      ELSE
+        CALL MPI_SEND(WBAC, IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1126,32 +1211,6 @@
       END IF
       IF (ie_nnbr_recv > 0) THEN
         call mpi_waitall(ie_nnbr_recv, ie_recv_rqst, ie_recv_stat,ierr)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SCATTER_BOUNDARY_ARRAY(Vtotal, Vlocal)
-      USE DATAPOOL
-      IMPLICIT NONE
-      real(rkind) :: Vtotal(IWBMNPGL)
-      real(rkind) :: Vlocal(IWBMNP)
-      integer iProc, IP, irank
-      IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
-        RETURN
-      END IF
-      IF (myrank .eq. rank_boundary) THEN
-        DO irank=1,spparm_nbproc
-          CALL mpi_isend(Vtotal, 1, spparm_send_type(irank), spparm_listproc(irank)-1, 2030, comm, spparm_send_rqst(irank), ierr)
-        END DO
-        DO IP=1,IWBMNP
-          Vlocal(IP)=Vtotal(Indexes_boundary(IP))
-        END DO
-        IF (spparm_nbproc > 0) THEN
-          CALL MPI_WAITALL(spparm_nbproc, spparm_send_rqst, spparm_send_stat, ierr)
-        END IF
-      ELSE
-        CALL MPI_RECV(Vlocal, IWBMNP, rtype, 0, 2030, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************

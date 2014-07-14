@@ -118,7 +118,6 @@
         USE DATAPOOL
         IMPLICIT NONE
         INTEGER              :: IP
-
         DO IP = 1, MNP
           IF (DEP(IP) .LT. DMIN) THEN 
             IOBDP(IP) = 0 
@@ -2028,8 +2027,8 @@
           VAL(2,IP)=eVect(4)
           VAL(5,IP)  = -2.
         END IF
-        VAL(3,IP)=eVect(2)
-        VAL(4,IP)=eVect(5)
+        VAL(3,IP)  = eVect(2)
+        VAL(4,IP)  = eVect(5)
         VAL(6,IP)  = 1.
         VAL(7,IP)  = 0.1
         VAL(8,IP)  = 3.3
@@ -2044,7 +2043,6 @@
 !         3 - BIN
 !         4 - Gauss
 !         positive peak (+) or mean frequency (-)
-
 !     SPPARM(6): directional spreading in degree (1) or exponent (2)
 !     SPPARM(7): gaussian width for the gauss spectrum 0.1
 !     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.
@@ -2237,112 +2235,112 @@
 !**********************************************************************
       SUBROUTINE READSPEC2D_WW3_INIT_TIME 
       USE DATAPOOL
-        IMPLICIT NONE
-        REAL                 :: SPECDMP(MSC_WW3,MDC_WW3)
-        INTEGER              :: TMP, IFLAG, IP, TIME(2), IT
-        INTEGER, ALLOCATABLE :: ITIME(:,:)
-        CHARACTER(LEN=30)    :: GNAME
-        CHARACTER(LEN=21)    :: LABEL
-        CHARACTER(LEN=10)    :: PID
-        CHARACTER(LEN=20)    :: CTIME1, CTIME2
-        CHARACTER(LEN=15)    :: TIMESTRING
+      IMPLICIT NONE
+      REAL                 :: SPECDMP(MSC_WW3,MDC_WW3)
+      INTEGER              :: TMP, IFLAG, IP, TIME(2), IT
+      INTEGER, ALLOCATABLE :: ITIME(:,:)
+      CHARACTER(LEN=30)    :: GNAME
+      CHARACTER(LEN=21)    :: LABEL
+      CHARACTER(LEN=10)    :: PID
+      CHARACTER(LEN=20)    :: CTIME1, CTIME2
+      CHARACTER(LEN=15)    :: TIMESTRING
 
-        REAL :: TMP1(MSC_WW3),TMP2(MDC_WW3) !GD: in ww3 binary file, reals 
-        REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
+      REAL :: TMP1(MSC_WW3),TMP2(MDC_WW3) !GD: in ww3 binary file, reals 
+      REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
 
-        WRITE(STAT%FHNDL,*)'START READSPEC2D_WW3_INIT_TIME'
+      WRITE(STAT%FHNDL,*)'START READSPEC2D_WW3_INIT_TIME'
    
-        ALLOCATE(FQ_WW3(MSC_WW3), DR_WW3(MDC_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
-        FQ_WW3=ZERO
-        DR_WW3=ZERO
-        XP_WW3=ZERO
-        YP_WW3=ZERO
+      ALLOCATE(FQ_WW3(MSC_WW3), DR_WW3(MDC_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
+      FQ_WW3=ZERO
+      DR_WW3=ZERO
+      XP_WW3=ZERO
+      YP_WW3=ZERO
  
-        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
-        OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
-        READ(WAV%FHNDL)TMP1
-        FQ_WW3 = TMP1
-        READ(WAV%FHNDL)TMP2
-        DR_WW3 = TMP2
-        MAXSTEP_WW3 = 0
+      CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+      OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
+      READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+      READ(WAV%FHNDL)TMP1
+      FQ_WW3 = TMP1
+      READ(WAV%FHNDL)TMP2
+      DR_WW3 = TMP2
+      MAXSTEP_WW3 = 0
 
-        DO 
-          READ(WAV%FHNDL,IOSTAT=IFLAG) TIME
+      DO 
+        READ(WAV%FHNDL,IOSTAT=IFLAG) TIME
+        IF (IFLAG .GT. 0) THEN
+          CALL WWM_ABORT('IFLAG incorrectly set 1')
+        ELSE IF (IFLAG .LT. 0) THEN
+          WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 1, WHICH IS NICE'
+          EXIT
+        END IF
+        DO IP = 1, NP_WW3 
+          READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+!          WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
           IF (IFLAG .GT. 0) THEN
-            CALL WWM_ABORT('IFLAG incorrectly set 1')
+            CALL WWM_ABORT('IFLAG incorrectly set 2')
           ELSE IF (IFLAG .LT. 0) THEN
-            WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 1, WHICH IS NICE'
+            WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 2, WHICH IS NOT GOOD'
             EXIT
           END IF
-          DO IP = 1, NP_WW3 
-            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
-!            WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
-            IF (IFLAG .GT. 0) THEN
-              CALL WWM_ABORT('IFLAG incorrectly set 2')
-            ELSE IF (IFLAG .LT. 0) THEN
-              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 2, WHICH IS NOT GOOD'
-              EXIT
-            END IF
-            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
-            IF (IFLAG .GT. 0) THEN
-              CALL WWM_ABORT('IFLAG incorrectly set 3')
-            ELSE IF (IFLAG .LT. 0) THEN
-              WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'
-              EXIT
-            END IF
-          ENDDO
-          MAXSTEP_WW3 = MAXSTEP_WW3 + 1
-          IF (MAXSTEP_WW3 == 1) TSTART_WW3 = TIME
-        END DO
+          READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
+          IF (IFLAG .GT. 0) THEN
+            CALL WWM_ABORT('IFLAG incorrectly set 3')
+          ELSE IF (IFLAG .LT. 0) THEN
+            WRITE(STAT%FHNDL,*) 'END OF FILE REACHED AT 3, WHICH IS NOT GOOD'
+            EXIT
+          END IF
+        ENDDO
+        MAXSTEP_WW3 = MAXSTEP_WW3 + 1
+        IF (MAXSTEP_WW3 == 1) TSTART_WW3 = TIME
+      END DO
 
-        WRITE(STAT%FHNDL,*) 'NUMBER OF BUOYS', NP_WW3
-        WRITE(STAT%FHNDL,*) 'NUMBER OF TIME STEPS IN FILE', MAXSTEP_WW3 
+      WRITE(STAT%FHNDL,*) 'NUMBER OF BUOYS', NP_WW3
+      WRITE(STAT%FHNDL,*) 'NUMBER OF TIME STEPS IN FILE', MAXSTEP_WW3 
  
-        REWIND(WAV%FHNDL)
+      REWIND(WAV%FHNDL)
 
-        ALLOCATE(ITIME(MAXSTEP_WW3,2), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
-        ITIME = 0
+      ALLOCATE(ITIME(MAXSTEP_WW3,2), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 20')
+      ITIME = 0
 
-        READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
-        READ(WAV%FHNDL)TMP1
-        READ(WAV%FHNDL)TMP2
-        DO IT = 1, MAXSTEP_WW3 
-          READ(WAV%FHNDL,IOSTAT=IFLAG) ITIME(IT,:)
-          DO IP = 1, NP_WW3
-            READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
-            READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
-          ENDDO
-        END DO
+      READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
+      READ(WAV%FHNDL)TMP1
+      READ(WAV%FHNDL)TMP2
+      DO IT = 1, MAXSTEP_WW3 
+        READ(WAV%FHNDL,IOSTAT=IFLAG) ITIME(IT,:)
+        DO IP = 1, NP_WW3
+          READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+          READ(WAV%FHNDL,IOSTAT=IFLAG) SPECDMP(:,:)
+        ENDDO
+      END DO
 
-        ALLOCATE (BND_TIME_ALL_FILES(1,MAXSTEP_WW3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 21')
-        BND_TIME_ALL_FILES = ZERO
+      ALLOCATE (BND_TIME_ALL_FILES(1,MAXSTEP_WW3), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 21')
+      BND_TIME_ALL_FILES = ZERO
 
-        DO IT = 1, MAXSTEP_WW3 
-          WRITE(CTIME1,*) ITIME(IT,1) 
-          CALL LEADINGZERO(ITIME(IT,2),CTIME2)
-          TIMESTRING = ADJUSTL(TRIM(CTIME1)//'.'//ADJUSTL(CTIME2))
-          CALL CT2MJD(TIMESTRING, BND_TIME_ALL_FILES(1,IT))
-          WRITE(STAT%FHNDL,*) IT, TIMESTRING, BND_TIME_ALL_FILES(1,IT)
-        END DO
+      DO IT = 1, MAXSTEP_WW3 
+        WRITE(CTIME1,*) ITIME(IT,1) 
+        CALL LEADINGZERO(ITIME(IT,2),CTIME2)
+        TIMESTRING = ADJUSTL(TRIM(CTIME1)//'.'//ADJUSTL(CTIME2))
+        CALL CT2MJD(TIMESTRING, BND_TIME_ALL_FILES(1,IT))
+        WRITE(STAT%FHNDL,*) IT, TIMESTRING, BND_TIME_ALL_FILES(1,IT)
+      END DO
 
-        DTBOUND_WW3 = (BND_TIME_ALL_FILES(1,2)-BND_TIME_ALL_FILES(1,1))*DAY2SEC
-        SEBO%DELT = DTBOUND_WW3
-        SEBO%BMJD = BND_TIME_ALL_FILES(1,1) 
-        SEBO%EMJD = BND_TIME_ALL_FILES(1,MAXSTEP_WW3) 
+      DTBOUND_WW3 = (BND_TIME_ALL_FILES(1,2)-BND_TIME_ALL_FILES(1,1))*DAY2SEC
+      SEBO%DELT = DTBOUND_WW3
+      SEBO%BMJD = BND_TIME_ALL_FILES(1,1) 
+      SEBO%EMJD = BND_TIME_ALL_FILES(1,MAXSTEP_WW3) 
 
-        CLOSE(WAV%FHNDL)
-        WRITE(STAT%FHNDL,*)'MIN. FREQ. IN WW3 SPECTRUM:',FQ_WW3(1)
-        WRITE(STAT%FHNDL,*)'MAX. FREQ. IN WW3 SPECTRUM:',FQ_WW3(MSC_WW3)
-        WRITE(STAT%FHNDL,*)'NUMBER OF TIME STEPS',MAXSTEP_WW3
-        WRITE(STAT%FHNDL,*)'TIME INCREMENT IN SPECTRAL FILE', DTBOUND_WW3
-        WRITE(STAT%FHNDL,*)'FIRST TIME STEP IN WW3 SPECTRUM FILE:',BND_TIME_ALL_FILES(1,1)
-        WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of wave boundary', SEBO%BMJD, SEBO%EMJD, SEBO%DELT
-        WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of simulation', MAIN%BMJD, MAIN%EMJD, MAIN%DELT
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3INIT2'
+      CLOSE(WAV%FHNDL)
+      WRITE(STAT%FHNDL,*)'MIN. FREQ. IN WW3 SPECTRUM:',FQ_WW3(1)
+      WRITE(STAT%FHNDL,*)'MAX. FREQ. IN WW3 SPECTRUM:',FQ_WW3(MSC_WW3)
+      WRITE(STAT%FHNDL,*)'NUMBER OF TIME STEPS',MAXSTEP_WW3
+      WRITE(STAT%FHNDL,*)'TIME INCREMENT IN SPECTRAL FILE', DTBOUND_WW3
+      WRITE(STAT%FHNDL,*)'FIRST TIME STEP IN WW3 SPECTRUM FILE:',BND_TIME_ALL_FILES(1,1)
+      WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of wave boundary', SEBO%BMJD, SEBO%EMJD, SEBO%DELT
+      WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of simulation', MAIN%BMJD, MAIN%EMJD, MAIN%DELT
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3INIT2'
 
       END SUBROUTINE
 !**********************************************************************
@@ -2783,7 +2781,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE  ALLOC_SPEC_BND()
+      SUBROUTINE ALLOC_SPEC_BND()
       USE DATAPOOL
       IMPLICIT NONE
       IF (LINHOM) THEN
@@ -2877,7 +2875,7 @@
       integer, intent(in) :: ncid, nbTime
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, msc_dims, mdc_dims
+      integer mnp_dims, mne_dims, msc_dims, mdc_dims, eight_dims
       integer iret, var_id
       integer ntime_dims, iwbmnpgl_dims
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
@@ -2890,15 +2888,15 @@
       iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       iret = nf90_def_dim(ncid, 'np_global', np_global, mnp_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-      iret = nf90_def_dim(ncid, 'ne_global', ne_global, mne_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
       iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
       iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      iret = nf90_def_dim(ncid, 'eight',   8, eight_dims)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
       iret = nf90_def_dim(ncid, 'IWBMNPGL', IWBMNPGL, iwbmnpgl_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
       !
       CALL WRITE_PARAM_1(ncid, one_dims)
       !
@@ -2927,44 +2925,14 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       !
       IF (NETCDF_OUT_PARAM) THEN
-        iret=nf90_def_var(ncid,'HS',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
+        iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'meter (m)')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_att(ncid,var_id,'description','significant wave height')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        !
-        iret=nf90_def_var(ncid,'DIR',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'degree (deg)')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_att(ncid,var_id,'description','wave direction')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        !
-        iret=nf90_def_var(ncid,'FP',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'Hertz (Hz)')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_att(ncid,var_id,'description','wave peak frequency')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        !
-        iret=nf90_def_var(ncid,'SPR',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'degree (deg)')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_att(ncid,var_id,'description','directional spread')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        !
-        iret=nf90_def_var(ncid,'T02',NF90_OUTTYPE_BOUC,(/ iwbmnpgl_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
-        iret=nf90_put_att(ncid,var_id,UNITS,'second (s)')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_att(ncid,var_id,'description','mean period Tm02')
+        iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       END IF
       !
       IF (NETCDF_OUT_SPECTRA) THEN
-        iret=nf90_def_var(ncid,'ACbound',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims /), var_id)
+        iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
@@ -2994,7 +2962,6 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
       iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
       CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
-      !
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3006,10 +2973,11 @@
       logical, save :: IsInitDone = .FALSE.
       character(len =256) :: FILE_NAME, PRE_FILE_NAME
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUNDARY"
-      integer iret, ncid
+      integer iret, ncid, irec_dim, recs_his, var_id
       integer, save ::  ifile = 1
-      integer LPOS
+      integer LPOS, IP
       integer POSITION_BEFORE_POINT, nbTime
+      REAL(rkind)  :: eTimeDay
       LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
       IF (OUT_STATION%IDEF.gt.0) THEN
          WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
@@ -3040,16 +3008,65 @@
         END IF
       END IF
       !
+      ! Getting the needed global arrays 
+      !
+      IF (NETCDF_OUT_PARAM .and. LBCWA) THEN
+        IF (LINHOM) THEN
+          CALL REDUCE_BOUNDARY_ARRAY_SPPARM
+        ELSE
+#ifdef MPI_PARALL_GRID
+          IF (myrank .eq. 0) THEN
+#endif
+            DO IP=1,IWBMNPGL
+              SPPARM_GL(:,IP)=SPPARM(:,1)
+            END DO
+#ifdef MPI_PARALL_GRID
+          END IF
+#endif
+        END IF
+      END IF
+      IF (NETCDF_OUT_PARAM) THEN
+        CALL REDUCE_BOUNDARY_ARRAY_WBAC
+      END IF
+      !
       ! Now writing the boundary data
       !
-      iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
-      IF (NETCDF_OUT_PARAM) THEN
+      IF (myrank .eq. rank_boundary) THEN
+        eTimeDay=MAIN%TMJD
+        iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+        iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        recs_his=recs_his+1
+        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
+        IF (NETCDF_OUT_PARAM .and. LBCWA) THEN
+          iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+          IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
+            iret=nf90_put_var(ncid,var_id,SPPARM_GL, start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+          ELSE
+            iret=nf90_put_var(ncid,var_id,SNGL(SPPARM_GL), start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
+          ENDIF
+        END IF
+        IF (NETCDF_OUT_SPECTRA) THEN
+          iret=nf90_inq_varid(ncid, 'WBAC', var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+          IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
+            iret=nf90_put_var(ncid,var_id,WBAC_GL, start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+          ELSE
+            iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
+            CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
+          ENDIF
+        
+        END IF
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       END IF
-      IF (NETCDF_OUT_SPECTRA) THEN
-      END IF
-      iret=nf90_close(ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       END SUBROUTINE
 # endif
 #endif

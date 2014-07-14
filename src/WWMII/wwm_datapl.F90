@@ -557,12 +557,14 @@
 ! ... wave boundary stuff
 !
          REAL(rkind), ALLOCATABLE    :: WBAC   (:,:,:)
+         REAL(rkind), ALLOCATABLE    :: WBAC_GL(:,:,:)
          REAL(rkind), ALLOCATABLE    :: WBACOLD(:,:,:)
          REAL(rkind), ALLOCATABLE    :: WBACNEW(:,:,:)
          REAL(rkind), ALLOCATABLE    :: DSPEC  (:,:,:)
          REAL(rkind), ALLOCATABLE    :: SPEG   (:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: SPPARM(:,:)
+         REAL(rkind), ALLOCATABLE    :: SPPARM_GL(:,:)
          REAL(rkind), ALLOCATABLE    :: SFRQ  (:,:)
          REAL(rkind), ALLOCATABLE    :: SDIR  (:,:)
          REAL(rkind), ALLOCATABLE    :: SPRD  (:,:)
@@ -1121,12 +1123,16 @@
 
          ! For boundary exchanges of SPPARM of parametric condition
          integer :: rank_boundary=0 ! could be set to another rank.
-         integer :: spparm_nbproc
+         integer :: bound_nbproc
          integer, dimension(:), pointer :: Indexes_boundary
-         integer, dimension(:), pointer :: spparm_listproc
-         integer, dimension(:), pointer :: spparm_send_rqst
-         integer, dimension(:,:), pointer :: spparm_send_stat
-         integer, dimension(:), pointer :: spparm_send_type
+         integer, dimension(:), pointer :: bound_listproc
+         integer, dimension(:), pointer :: spparm_rqst
+         integer, dimension(:,:), pointer :: spparm_stat
+         integer, dimension(:), pointer :: spparm_type
+         !
+         integer, dimension(:), pointer :: wbac_rqst
+         integer, dimension(:,:), pointer :: wbac_stat
+         integer, dimension(:), pointer :: wbac_type
 !
 ! Data types for working with elements
 !
