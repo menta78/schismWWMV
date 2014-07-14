@@ -2973,6 +2973,9 @@
       IF (IsFirstTime) THEN
         IsFirstTime=.FALSE.
 #ifdef MPI_PARALL_GRID
+        CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
+#endif
+#ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN
 #endif
           IF (BOUC_NETCDF_OUT_PARAM) THEN
@@ -3053,6 +3056,8 @@
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
+      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
+      WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
       FLUSH(STAT%FHNDL)
 
 

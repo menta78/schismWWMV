@@ -1055,9 +1055,12 @@
         DO IP_glob=1,np_total
           IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
             idx=idx+1
-            Indexes(IP)=idx
+            Indexes(IP_glob)=idx
           END IF
         END DO
+        WRITE(STAT%FHNDL,*) 'idx=', idx
+        FLUSH(STAT%FHNDL)
+
         IF (IWBMNP .gt. 0) THEN
           allocate(Indexes_boundary(IWBMNP), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
