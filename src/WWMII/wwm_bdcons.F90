@@ -3039,7 +3039,7 @@
           CALL REDUCE_BOUNDARY_ARRAY_SPPARM
         ELSE
 #ifdef MPI_PARALL_GRID
-          IF (myrank .eq. 0) THEN
+          IF (myrank .eq. rank_boundary) THEN
 #endif
             DO IP=1,IWBMNPGL
               SPPARM_GL(:,IP)=SPPARM(:,1)
@@ -3052,43 +3052,50 @@
       IF (BOUC_NETCDF_OUT_PARAM) THEN
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
+      WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
+      FLUSH(STAT%FHNDL)
+
+
       !
       ! Now writing the boundary data
       !
       IF (myrank .eq. rank_boundary) THEN
         eTimeDay=MAIN%TMJD
         iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
         recs_his=recs_his+1
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
         IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
           iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
             iret=nf90_put_var(ncid,var_id,SPPARM_GL, start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(SPPARM_GL), start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
           ENDIF
         END IF
         IF (BOUC_NETCDF_OUT_SPECTRA) THEN
+          WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
+          FLUSH(STAT%FHNDL)
+          !
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 46, iret)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
             iret=nf90_put_var(ncid,var_id,WBAC_GL, start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 47, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 48, iret)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
           ENDIF
         END IF
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       END IF
       IF (OUT_BOUC % IDEF.gt.0) THEN
         IF (recs_his .eq. OUT_BOUC % IDEF) THEN

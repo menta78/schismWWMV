@@ -1023,11 +1023,12 @@
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
       END DO
       IF (myrank .eq. rank_boundary) THEN
+        NbSend=0
         bound_nbproc=0
         DO irank=0,nproc-1
+          iProc=irank+1
           eSend=0
           IF (irank .ne. rank_boundary) THEN
-            iProc=irank+1
             MNPloc=ListMNP(iProc)
             DO IP=1,MNPloc
               IP_glob=ListIPLG(IP+ListFirst(iProc))
@@ -1051,9 +1052,9 @@
         IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
         !
         idx=0
-        DO IP=1,np_total
+        DO IP_glob=1,np_total
           IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
-            idx=0
+            idx=idx+1
             Indexes(IP)=idx
           END IF
         END DO
@@ -1067,11 +1068,11 @@
         END IF
         idx_nbproc=0
         DO irank=0,nproc-1
+          iProc=irank+1
           eSend=NbSend(iProc)
           IF ((irank .ne. rank_boundary).and.(eSend.gt.0)) THEN
-            iProc=irank+1
             idx_nbproc=idx_nbproc+1
-            bound_listproc(idx_nbproc)=iProc
+            bound_listproc(idx_nbproc)=irank
             MNPloc=ListMNP(iProc)
             allocate(dspl_spparm(eSend), dspl_wbac(eSend), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
@@ -1086,7 +1087,7 @@
             END DO
             call mpi_type_create_indexed_block(eSend,8,dspl_spparm,rtype,spparm_type(idx_nbproc), ierr)
             call mpi_type_commit(spparm_type(idx_nbproc), ierr)
-            call mpi_type_create_indexed_block(eSend,8,dspl_wbac,rtype,wbac_type(idx_nbproc), ierr)
+            call mpi_type_create_indexed_block(eSend,MSC*MDC,dspl_wbac,rtype,wbac_type(idx_nbproc), ierr)
             call mpi_type_commit(wbac_type(idx_nbproc), ierr)
             deallocate(dspl_spparm, dspl_wbac)
           END IF
@@ -1108,7 +1109,7 @@
       END IF
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
-          CALL mpi_isend(Vtotal, 1, spparm_type(irank), bound_listproc(irank)-1, 2030, comm, spparm_rqst(irank), ierr)
+          CALL mpi_isend(Vtotal, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
         END DO
         DO IP=1,IWBMNP
           Vlocal(:,IP)=Vtotal(:,Indexes_boundary(IP))
@@ -1132,7 +1133,7 @@
       END IF
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
-          CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank)-1, 2030, comm, spparm_rqst(irank), ierr)
+          CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
         END DO
         DO IP=1,IWBMNP
           SPPARM_GL(:, Indexes_boundary(IP))=SPPARM(:, IP)
@@ -1150,13 +1151,13 @@
       SUBROUTINE REDUCE_BOUNDARY_ARRAY_WBAC
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, irank
+      integer iProc, IP, idx_proc
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
       IF (myrank .eq. rank_boundary) THEN
-        DO irank=1,bound_nbproc
-          CALL mpi_irecv(WBAC_GL, 1, wbac_type(irank), bound_listproc(irank)-1, 2030, comm, wbac_rqst(irank), ierr)
+        DO idx_proc=1,bound_nbproc
+          CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2030, comm, wbac_rqst(idx_proc), ierr)
         END DO
         DO IP=1,IWBMNP
           WBAC_GL(:,:,Indexes_boundary(IP))=WBAC(:,:,IP)
