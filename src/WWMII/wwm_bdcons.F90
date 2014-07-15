@@ -3053,7 +3053,19 @@
         END IF
       END IF
       IF (BOUC_NETCDF_OUT_PARAM) THEN
-        CALL REDUCE_BOUNDARY_ARRAY_WBAC
+        IF (LINHOM) THEN
+          CALL REDUCE_BOUNDARY_ARRAY_WBAC
+        ELSE
+#ifdef MPI_PARALL_GRID
+          IF (myrank .eq. rank_boundary) THEN
+#endif
+            DO IP=1,IWBMNPGL
+              WBAC_GL(:,:,IP)=WBAC(:,:,1)
+            END DO
+#ifdef MPI_PARALL_GRID
+          END IF
+#endif
+        END IF
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
       WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
