@@ -3038,41 +3038,15 @@
       !
       CALL INIT_NETCDF_BOUNDARY_OUTPUT
       IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
-        IF (LINHOM) THEN
-          CALL REDUCE_BOUNDARY_ARRAY_SPPARM
-        ELSE
-#ifdef MPI_PARALL_GRID
-          IF (myrank .eq. rank_boundary) THEN
-#endif
-            DO IP=1,IWBMNPGL
-              SPPARM_GL(:,IP)=SPPARM(:,1)
-            END DO
-#ifdef MPI_PARALL_GRID
-          END IF
-#endif
-        END IF
+        CALL REDUCE_BOUNDARY_ARRAY_SPPARM
       END IF
       IF (BOUC_NETCDF_OUT_PARAM) THEN
-        IF (LINHOM) THEN
-          CALL REDUCE_BOUNDARY_ARRAY_WBAC
-        ELSE
-#ifdef MPI_PARALL_GRID
-          IF (myrank .eq. rank_boundary) THEN
-#endif
-            DO IP=1,IWBMNPGL
-              WBAC_GL(:,:,IP)=WBAC(:,:,1)
-            END DO
-#ifdef MPI_PARALL_GRID
-          END IF
-#endif
-        END IF
+        CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
       WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
       WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
       FLUSH(STAT%FHNDL)
-
-
       !
       ! Now writing the boundary data
       !

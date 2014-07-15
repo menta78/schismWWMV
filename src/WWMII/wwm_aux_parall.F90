@@ -1022,27 +1022,29 @@
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
       END DO
-      IF (myrank .eq. rank_boundary) THEN
-        bound_nbproc=0
-        DO irank=0,nproc-1
-          iProc=irank+1
-          eSend=0
-          IF (irank .ne. rank_boundary) THEN
-            MNPloc=ListMNP(iProc)
-            DO IP=1,MNPloc
-              IP_glob=ListIPLG(IP+ListFirst(iProc))
-              IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
-                eSend=eSend+1
-              END IF
-            END DO
-            IF (eSend .gt. 0) THEN
-              bound_nbproc=bound_nbproc+1
+      bound_nbproc=0
+      rank_hasboundary=-1
+      DO irank=0,nproc-1
+        iProc=irank+1
+        eSend=0
+        IF (irank .ne. rank_boundary) THEN
+          MNPloc=ListMNP(iProc)
+          DO IP=1,MNPloc
+            IP_glob=ListIPLG(IP+ListFirst(iProc))
+            IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
+              eSend=eSend+1
             END IF
+          END DO
+          IF (eSend .gt. 0) THEN
+            bound_nbproc=bound_nbproc+1
+            rank_hasboundary=irank
           END IF
-          NbSend(iProc)=eSend
-          WRITE(STAT%FHNDL,*) 'iProc=', iProc, ' eSend=', eSend
-          FLUSH(STAT%FHNDL)
-        END DO
+        END IF
+        NbSend(iProc)=eSend
+        WRITE(STAT%FHNDL,*) 'iProc=', iProc, ' eSend=', eSend
+        FLUSH(STAT%FHNDL)
+      END DO
+      IF (myrank .eq. rank_boundary) THEN
         WRITE(STAT%FHNDL,*) 'bound_nbproc=', bound_nbproc
         FLUSH(STAT%FHNDL)
         allocate(bound_listproc(bound_nbproc), Indexes(np_total), stat=istat)
@@ -1137,22 +1139,48 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer iProc, IP, irank
+#ifndef MPI_PARALL_GRID
+      IF (LINHOM) THEN
+        SPPARM_GL=SPPARM
+      ELSE
+        DO IP=1,IWBMNPGL
+          SPPARM_GL(:,IP)=SPPARM(:,1)
+        END DO
+      ENDIF
+#else
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
-      IF (myrank .eq. rank_boundary) THEN
-        DO irank=1,bound_nbproc
-          CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
-        END DO
-        DO IP=1,IWBMNP
-          SPPARM_GL(:, Indexes_boundary(IP))=SPPARM(:, IP)
-        END DO
-        IF (bound_nbproc > 0) THEN
-          CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
+      IF (LINHOM) THEN
+        IF (myrank .eq. rank_boundary) THEN
+          DO irank=1,bound_nbproc
+            CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
+          END DO
+          DO IP=1,IWBMNP
+            SPPARM_GL(:, Indexes_boundary(IP))=SPPARM(:, IP)
+          END DO
+          IF (bound_nbproc > 0) THEN
+            CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
+          END IF
+        ELSE
+          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
         END IF
       ELSE
-        CALL MPI_SEND(SPPARM, IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+        IF (rank_boundary .ne. rank_hasboundary) THEN
+          IF (myrank .eq. rank_hasboundary) THEN
+            CALL MPI_SEND(SPPARM, 8, rtype, rank_boundary, 2035, comm, ierr)
+          END IF
+          IF (myrank .eq. rank_boundary) THEN
+            CALL MPI_RECV(SPPARM_GL,8,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
+          END IF
+        END IF
+        IF (myrank .eq. rank_boundary) THEN
+          DO IP=1,IWBMNPGL
+            SPPARM_GL(:,IP)=SPPARM(:,1)
+          END DO
+        END IF
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1161,46 +1189,71 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer iProc, IP, idx_proc
+#ifndef MPI_PARALL_GRID
+      IF (LINHOM) THEN
+        SPPARM_GL=SPPARM
+      ELSE
+        DO IP=1,IWBMNPGL
+          SPPARM_GL(:,IP)=SPPARM(:,1)
+        END DO
+      ENDIF
+#else
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
-      IF (myrank .eq. rank_boundary) THEN
-        WRITE(STAT%FHNDL,*) 'Before data receiving'
-        WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
-        WRITE(STAT%FHNDL,*) 'MSC/MDC=', MSC,MDC
-        WRITE(STAT%FHNDL,*) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
-        WRITE(STAT%FHNDL,*) 'size(WBAC_GL)=', size(WBAC_GL)
-        FLUSH(STAT%FHNDL)
-        WBAC_GL=0
-        DO idx_proc=1,bound_nbproc
-          WRITE(STAT%FHNDL,*) 'idx_proc/eProc=', idx_proc, bound_listproc(idx_proc)
+      IF (LINHOM) THEN
+        IF (myrank .eq. rank_boundary) THEN
+          WRITE(STAT%FHNDL,*) 'Before data receiving'
+          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
+          WRITE(STAT%FHNDL,*) 'MSC/MDC=', MSC,MDC
+          WRITE(STAT%FHNDL,*) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
+          WRITE(STAT%FHNDL,*) 'size(WBAC_GL)=', size(WBAC_GL)
           FLUSH(STAT%FHNDL)
-          CALL MPI_RECV(WBAC_GL,MSC*MDC*IWBMNPGL,rtype, bound_listproc(idx_proc), 2040, comm, istatus, ierr)
-!          CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2030, comm, wbac_rqst(idx_proc), ierr)
-          WRITE(STAT%FHNDL,*) 'MPI_IRECV ierr=', ierr
+          WBAC_GL=0
+          DO idx_proc=1,bound_nbproc
+            WRITE(STAT%FHNDL,*) 'idx_proc/eProc=', idx_proc, bound_listproc(idx_proc)
+            FLUSH(STAT%FHNDL)
+            CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2030, comm, wbac_rqst(idx_proc), ierr)
+            WRITE(STAT%FHNDL,*) 'MPI_IRECV ierr=', ierr
+            FLUSH(STAT%FHNDL)
+          END DO
+          WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
+          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
           FLUSH(STAT%FHNDL)
-        END DO
-        WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
-        WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
-        FLUSH(STAT%FHNDL)
-        DO IP=1,IWBMNP
-          WBAC_GL(:,:,Indexes_boundary(IP))=WBAC(:,:,IP)
-        END DO
-        IF (bound_nbproc > 0) THEN
-!          CALL MPI_WAITALL(bound_nbproc, wbac_rqst, wbac_stat, ierr)
-          WRITE(STAT%FHNDL,*) 'MPI_WAITALL ierr=', ierr
+          DO IP=1,IWBMNP
+            WBAC_GL(:,:,Indexes_boundary(IP))=WBAC(:,:,IP)
+          END DO
+          IF (bound_nbproc > 0) THEN
+            CALL MPI_WAITALL(bound_nbproc, wbac_rqst, wbac_stat, ierr)
+            WRITE(STAT%FHNDL,*) 'MPI_WAITALL ierr=', ierr
+            FLUSH(STAT%FHNDL)
+          END IF
+          WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
+          FLUSH(STAT%FHNDL)
+        ELSE
+          WRITE(STAT%FHNDL,*) 'Before data sending IWBMNP=', IWBMNP
+          WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
+          FLUSH(STAT%FHNDL)
+          CALL MPI_SEND(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2040, comm, ierr)
+          WRITE(STAT%FHNDL,*) 'MPI_SEND ierr=', ierr
           FLUSH(STAT%FHNDL)
         END IF
-        WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
-        FLUSH(STAT%FHNDL)
       ELSE
-        WRITE(STAT%FHNDL,*) 'Before data sending IWBMNP=', IWBMNP
-        WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
-        FLUSH(STAT%FHNDL)
-        CALL MPI_SEND(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2040, comm, ierr)
-        WRITE(STAT%FHNDL,*) 'MPI_SEND ierr=', ierr
-        FLUSH(STAT%FHNDL)
+        IF (rank_boundary .ne. rank_hasboundary) THEN
+          IF (myrank .eq. rank_hasboundary) THEN
+            CALL MPI_SEND(WBAC, MSC*MDC, rtype, rank_boundary, 2035, comm, ierr)
+          END IF
+          IF (myrank .eq. rank_boundary) THEN
+            CALL MPI_RECV(WBAC,MSC*MDC,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
+          END IF
+        END IF
+        IF (myrank .eq. rank_boundary) THEN
+          DO IP=1,IWBMNPGL
+            WBAC_GL(:,:,IP)=WBAC(:,:,1)
+          END DO
+        END IF
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

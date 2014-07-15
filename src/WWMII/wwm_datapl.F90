@@ -1123,6 +1123,7 @@
 
          ! For boundary exchanges of SPPARM of parametric condition
          integer :: rank_boundary=0 ! could be set to another rank.
+         integer :: rank_hasboundary = -1
          integer :: bound_nbproc
          integer, dimension(:), pointer :: Indexes_boundary
          integer, dimension(:), pointer :: bound_listproc
