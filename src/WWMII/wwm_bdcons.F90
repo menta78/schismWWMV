@@ -3044,6 +3044,7 @@
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
+      WRITE(STAT%FHNDL,*) 'sum(SPPARM)=', sum(SPPARM)
       WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
       WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
       FLUSH(STAT%FHNDL)
@@ -3073,6 +3074,7 @@
         END IF
         IF (BOUC_NETCDF_OUT_SPECTRA) THEN
           WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
+          WRITE(STAT%FHNDL,*) 'sum(SPPARM_GL)=', sum(SPPARM_GL)
           FLUSH(STAT%FHNDL)
           !
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)

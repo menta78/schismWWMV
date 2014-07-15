@@ -1168,10 +1168,10 @@
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN
           IF (myrank .eq. rank_hasboundary) THEN
-            CALL MPI_SEND(SPPARM, 8, rtype, rank_boundary, 2035, comm, ierr)
+            CALL MPI_SEND(SPPARM,8,rtype, rank_boundary, 2035, comm, ierr)
           END IF
           IF (myrank .eq. rank_boundary) THEN
-            CALL MPI_RECV(SPPARM_GL,8,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
+            CALL MPI_RECV(SPPARM,8,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
           END IF
         END IF
         IF (myrank .eq. rank_boundary) THEN
