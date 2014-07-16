@@ -3114,7 +3114,7 @@
       ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
-      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL)
+      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL), start=(/1,1,1,IT/), count = (/MSC,MDC, IWBMNPGL,1/))
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
       ISTAT = NF90_CLOSE(ncid)
