@@ -294,6 +294,8 @@
          LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
          LOGICAL    :: BOUC_USE_SINGLE_OUT = .TRUE.
+         CHARACTER(LEN=40), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
+
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
@@ -1120,6 +1122,9 @@
          integer, dimension(:), pointer :: oned_send_rqst
          integer, dimension(:,:), pointer :: oned_send_stat
          integer, dimension(:), pointer :: oned_send_type
+         integer, dimension(:), pointer :: twod_send_rqst
+         integer, dimension(:,:), pointer :: twod_send_stat
+         integer, dimension(:), pointer :: twod_send_type
 
          ! For boundary exchanges of SPPARM of parametric condition
          integer :: rank_boundary=0 ! could be set to another rank.

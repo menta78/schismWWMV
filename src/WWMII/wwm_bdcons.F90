@@ -2972,21 +2972,21 @@
       LOGICAL, SAVE :: IsFirstTime = .true.
       IF (IsFirstTime) THEN
         IsFirstTime=.FALSE.
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
         CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN
-#endif
+# endif
           IF (BOUC_NETCDF_OUT_PARAM) THEN
             allocate(SPPARM_GL(8,IWBMNPGL), stat=istat)
           END IF
           IF (BOUC_NETCDF_OUT_SPECTRA) THEN
             allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
           END IF
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
         END IF
-#endif
+# endif
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -3096,6 +3096,53 @@
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      integer, intent(in) :: IFILE, IT
+      character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_WBAC_SINGLE"
+      integer ncid, var_id
+      !
+      ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+      ISTAT = NF90_CLOSE(ncid)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_BOUNDARY_WBAC(IFILE, IT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: IFILE, IT
+      integer IP
+# ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_GRID) THEN
+        CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
+        DO IP=1,MNP
+          WBAC(:,:,IP)=WBAC_GL(:,:,iplg(IP))
+        END DO
+      ELSE
+        IF (myrank .eq. rank_boundary) THEN
+          CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
+        END IF
+        CALL SCATTER_BOUNDARY_ARRAY_WBAC
+      END IF
+# else
+      CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(WBAC_GL, IFILE, IT)
+# endif
       END SUBROUTINE
 # endif
 #endif
