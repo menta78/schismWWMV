@@ -2352,7 +2352,6 @@
                   IF (I .ne. IP) THEN
                     IADJ=IADJ + 1
                     LIST_ADJ_VERT(IADJ,IP)=I
-                    Print *, 'IP/IADJ/I=', IP, IADJ,I
                   END IF
                   JA(K) = I
                 END IF

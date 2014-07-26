@@ -125,6 +125,12 @@
  NCDF_SPR_NAME  = 'spr'              ! NETCDF var. name for the mean directional spreading (normally it is just 'spr')
  NCDF_FP_NAME   = 'fp'               ! NETCDF var. name for the peak freq. (normally it is just 'fp')
  NCDF_F02_NAME  = 't02'              ! NETCDF var. name for the zero down crossing freq. (normally it is just 't02')
+ NETCDF_OUT_PARAM = F    ! netcdf output of boundary parameters (default F)
+ NETCDF_OUT_SPECTRA = F  ! netcdf output of boundary spectra (default F)
+ NETCDF_OUT_FILE         ! file name for netcdf boundary output
+                         ! default "boundary_out_spec.nc"
+ USE_SINGLE_OUT = T      ! use single precision in netcdf boundary
+                         ! output (default T)
 /
 
 &WIND ! THIS IS NOW USED IN SELFE
@@ -311,7 +317,7 @@
                                      ! Limiter according to Hersbach Janssen (1999)
                                      ! For MESIN = 1 and MESDS = 1, which represents Cycle 3 formulation or Ardhuin, or other formulations except Cycle4, use MELIM = 1 and LIMFAK = 0.1
                                      ! For MESIN = 2 and MESDS = 2, which represents Cycle 4 formulation, use MELIM = 2 and LIMFAK = 0.6
-
+                                     ! For WAM we need MELIM = 3
  LIMFAK         = 0.6                ! Proportionality coefficient for the action limiter MAX_DAC_DT = Limfak * Limiter; see notes above for value
  LDIFR          = T                  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
  IDIFFR         = 1                  ! Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)

@@ -84,14 +84,15 @@
 #endif
 
 #ifndef SELFE
-#  ifndef PDLIB
-#   ifdef USE_SINGLE
+# ifndef PDLIB
+#  ifdef USE_SINGLE
          integer,parameter :: rkind = 4
-#   else
+#  else
          integer,parameter :: rkind = 8      ! Default real datatype
-#   endif
+#  endif
 # endif
 #endif
+
          INTEGER    :: NP_TOTAL, NE_TOTAL
 #ifdef MPI_PARALL_GRID
          REAL(rkind), allocatable           :: nwild_gb(:)
@@ -286,12 +287,15 @@
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
+         LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 
 ! Entries needed for output of spectra
-         LOGICAL    :: NETCDF_OUT_SPECTRA = .TRUE.
-         LOGICAL    :: NETCDF_OUT_PARAM = .TRUE.
-         CHARACTER(LEN=140) :: NETCDF_OUT_FILE = "boundary_out_spec.nc"
-         LOGICAL    :: USE_SINGLE_OUT_BOUC
+         LOGICAL    :: BOUC_NETCDF_OUT_SPECTRA = .FALSE.
+         LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
+         CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
+         LOGICAL    :: BOUC_USE_SINGLE_OUT = .TRUE.
+         CHARACTER(LEN=40), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
+
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 
@@ -555,12 +559,14 @@
 ! ... wave boundary stuff
 !
          REAL(rkind), ALLOCATABLE    :: WBAC   (:,:,:)
+         REAL(rkind), ALLOCATABLE    :: WBAC_GL(:,:,:)
          REAL(rkind), ALLOCATABLE    :: WBACOLD(:,:,:)
          REAL(rkind), ALLOCATABLE    :: WBACNEW(:,:,:)
          REAL(rkind), ALLOCATABLE    :: DSPEC  (:,:,:)
          REAL(rkind), ALLOCATABLE    :: SPEG   (:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: SPPARM(:,:)
+         REAL(rkind), ALLOCATABLE    :: SPPARM_GL(:,:)
          REAL(rkind), ALLOCATABLE    :: SFRQ  (:,:)
          REAL(rkind), ALLOCATABLE    :: SDIR  (:,:)
          REAL(rkind), ALLOCATABLE    :: SPRD  (:,:)
@@ -761,7 +767,8 @@
          REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
          REAL(rkind)                   :: PSURF(6)
 
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:), STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+         REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
@@ -1115,15 +1122,23 @@
          integer, dimension(:), pointer :: oned_send_rqst
          integer, dimension(:,:), pointer :: oned_send_stat
          integer, dimension(:), pointer :: oned_send_type
+         integer, dimension(:), pointer :: twod_send_rqst
+         integer, dimension(:,:), pointer :: twod_send_stat
+         integer, dimension(:), pointer :: twod_send_type
 
          ! For boundary exchanges of SPPARM of parametric condition
          integer :: rank_boundary=0 ! could be set to another rank.
-         integer :: spparm_nbproc
+         integer :: rank_hasboundary = -1
+         integer :: bound_nbproc
          integer, dimension(:), pointer :: Indexes_boundary
-         integer, dimension(:), pointer :: spparm_listproc
-         integer, dimension(:), pointer :: spparm_send_rqst
-         integer, dimension(:,:), pointer :: spparm_send_stat
-         integer, dimension(:), pointer :: spparm_send_type
+         integer, dimension(:), pointer :: bound_listproc
+         integer, dimension(:), pointer :: spparm_rqst
+         integer, dimension(:,:), pointer :: spparm_stat
+         integer, dimension(:), pointer :: spparm_type
+         !
+         integer, dimension(:), pointer :: wbac_rqst
+         integer, dimension(:,:), pointer :: wbac_stat
+         integer, dimension(:), pointer :: wbac_type
 !
 ! Data types for working with elements
 !

@@ -82,6 +82,8 @@
  NCDF_SPR_NAME  = 'spr',             
  NCDF_FP_NAME   = 'fp',              
  NCDF_F02_NAME  = 't02',             
+ NETCDF_OUT_PARAM = .T. , 
+ NETCDF_OUT_SPECTRA = .T. , 
 /
 
 &WIND          

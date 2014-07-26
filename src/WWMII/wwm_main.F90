@@ -681,21 +681,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_2(K)
-         USE WWM_HOTFILE_MOD
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN) :: K
-
-         CALL OUTPUT_HISTORY_AND_STATION
-
-         IF (LHOTF) THEN
-           IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
-             WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
-             FLUSH(STAT%FHNDL)
-             CALL OUTPUT_HOTFILE
-             HOTF%TMJD = HOTF%TMJD + HOTF%DELT*SEC2DAY
-           END IF
-         END IF
+         CALL GENERAL_OUTPUT
 #ifndef SELFE
 # if !defined PGMCL_COUPLING
          IF (LCPL .AND. LTIMOR) THEN

@@ -632,7 +632,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_WWMINPUT()
+      SUBROUTINE READ_WWMINPUT
 #ifdef NCDF
          USE NETCDF
 #endif
@@ -643,16 +643,20 @@
          IMPLICIT NONE
 
          CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
-         REAL(rkind)            :: DELTC
+         CHARACTER(LEN=20) :: BEGTC_OUT, UNITC_OUT, ENDTC_OUT
+         CHARACTER(LEN=140) :: NETCDF_OUT_FILE
+
+         REAL(rkind)            :: DELTC, DELTC_OUT
 
          REAL(rkind)              :: DEG
          INTEGER :: MULTIPLEIN, MULTIPLEOUT
          LOGICAL :: MULTIPLE_IN
+         LOGICAL :: NETCDF_OUT_PARAM, NETCDF_OUT_SPECTRA
          REAL(rkind) :: DEFINETC
          LOGICAL     :: USE_SINGLE_OUT
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
-     &      BEGTC, DELTC, UNITC, ENDTC, DMIN
+     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
      &      LETOT, NLVT, DTCOUP, IMET_DRY
@@ -669,7 +673,8 @@
      &      WBHS, WBTP, WBDM, WBDS, WBSS, WBDSMS, WBGAUSS, WBPKEN,      &
      &      NCDF_HS_NAME, NCDF_DIR_NAME, NCDF_SPR_NAME, NCDF_FP_NAME,   &
      &      NCDF_F02_NAME, MULTIPLE_IN, NETCDF_OUT_PARAM,               &
-     &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT
+     &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT,        &
+     &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
@@ -733,7 +738,6 @@
 !
          MAIN%BEGT   = BEGTC
          MAIN%DELT   = DELTC
-         MAIN%DTCOUP = DTCOUP
          MAIN%UNIT   = UNITC
          MAIN%ENDT   = ENDTC
          CALL CT2MJD(MAIN%BEGT, MAIN%BMJD)
@@ -743,6 +747,7 @@
          MAIN%ISTP = NINT( MAIN%TOTL / MAIN%DELT )
          MAIN%TMJD = MAIN%BMJD
 
+         MAIN%DTCOUP = DTCOUP
          IF (MAIN%DELT .LT. THR) CALL WWM_ABORT('TIME STEP IS ZERO')
 
 #ifdef SELFE
@@ -808,28 +813,51 @@
 !     *** BOUNDARY CONDITIONS section
 !
 #ifdef NCDF
-         USE_SINGLE_OUT=USE_SINGLE_OUT_BOUC
+         USE_SINGLE_OUT=BOUC_USE_SINGLE_OUT
          DEFINETC=-1
 #endif
          MULTIPLE_IN=MULTIPLE_IN_BOUND
+         BEGTC=MAIN%BEGT
+         ENDTC=MAIN%ENDT
+         UNITC=MAIN%UNIT
+         DELTC=MAIN%DELT
+         BEGTC_OUT=MAIN%BEGT
+         ENDTC_OUT=MAIN%ENDT
+         UNITC_OUT=MAIN%UNIT
+         DELTC_OUT=MAIN%DELT
+         NETCDF_OUT_FILE=BOUC_NETCDF_OUT_FILE
+#ifdef NCDF
+         NETCDF_OUT_PARAM  =BOUC_NETCDF_OUT_PARAM
+         NETCDF_OUT_SPECTRA=BOUC_NETCDF_OUT_SPECTRA
+         NETCDF_OUT_FILE=BOUC_NETCDF_OUT_FILE
+#endif
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
          FLUSH(CHK%FHNDL)
          MULTIPLE_IN_BOUND=MULTIPLE_IN
 #ifdef NCDF
-         USE_SINGLE_OUT_BOUC=USE_SINGLE_OUT
+         BOUC_NETCDF_OUT_PARAM  =NETCDF_OUT_PARAM
+         BOUC_NETCDF_OUT_SPECTRA=NETCDF_OUT_SPECTRA
+         BOUC_NETCDF_OUT_FILE   =NETCDF_OUT_FILE
+         BOUC_USE_SINGLE_OUT=USE_SINGLE_OUT
          IF (rkind.eq.4) THEN
            NF90_OUTTYPE_BOUC=NF90_REAL
          ELSE
-           IF (USE_SINGLE_OUT_BOUC) THEN
+           IF (BOUC_USE_SINGLE_OUT) THEN
              NF90_OUTTYPE_BOUC=NF90_REAL
            ELSE
              NF90_OUTTYPE_BOUC=NF90_DOUBLE
            ENDIF
          ENDIF
+         OUT_BOUC % BEGT=BEGTC_OUT
+         OUT_BOUC % ENDT=ENDTC_OUT
+         OUT_BOUC % UNIT=UNITC_OUT
+         OUT_BOUC % DELT=DELTC_OUT
          OUT_BOUC % DEFINETC=DEFINETC
          OUT_BOUC % FNAME = NETCDF_OUT_FILE
-
+         CALL CT2MJD(OUT_BOUC % BEGT, OUT_BOUC % BMJD)
+         CALL CT2MJD(OUT_BOUC % ENDT, OUT_BOUC % EMJD)
+         CALL CU2SEC(OUT_BOUC % UNIT, OUT_BOUC % DELT)
          IF (DEFINETC .lt. 0) THEN
            OUT_BOUC % IDEF = -1
          ELSE
@@ -1064,12 +1092,21 @@
 !**********************************************************************
       SUBROUTINE SINGLE_READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
+#ifdef NCDF
+      USE NETCDF
+#endif
       IMPLICIT NONE
       INTEGER :: I, IP, IE, ITMP, JTMP
       REAL(rkind)  :: XPDTMP, YPDTMP, ZPDTMP
       REAL(rkind) DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
       INTEGER KTMP, LTMP, MTMP, NTMP, OTMP
       CHARACTER(LEN=100) :: RHEADER
+#ifdef NCDF
+      INTEGER :: ncid, dimidsB(2), dimidsA(1)
+      character (len=20) :: MNEstr, MNPstr
+      INTEGER var_id1, var_id2, var_id
+      character (len = *), parameter :: CallFct="SINGLE_READ_SPATIAL_GRID_TOTAL"
+#endif
       CALL TEST_FILE_EXIST_DIE('Missing grid file : ', GRD%FNAME)
       SELECT CASE (DIMMODE)
         CASE (1)
@@ -1097,8 +1134,8 @@
           END IF
           CLOSE(GRD%FHNDL)
         CASE (2)
-          OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
           IF (IGRIDTYPE == 1) THEN ! system.dat format ... XFN
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             DO I = 1, 2
               READ(GRD%FHNDL, '(A)') RHEADER
             END DO
@@ -1136,7 +1173,9 @@
               INEtotal(2,IE)=LTMP+1
               INEtotal(3,IE)=MTMP+1
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 2) THEN ! periodic grid written by mathieu dutour
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL,*) NE_TOTAL, NP_TOTAL
             allocate(DEPtotal(NP_TOTAL), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
@@ -1162,7 +1201,9 @@
               IENtotal(5,IE) = -DYP1
               IENtotal(6,IE) = DXP1
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 3) THEN ! selfe gr3
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL,*)
             READ(GRD%FHNDL,*, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in read mnp/mne')
@@ -1179,7 +1220,9 @@
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) KTMP, LTMP, INEtotal(:,IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=3 error in grid reading 2')
             END DO
+            CLOSE(GRD%FHNDL)
           ELSE IF (IGRIDTYPE == 4) THEN ! Old WWM format
+            OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NE_TOTAL 
             READ(GRD%FHNDL, *, IOSTAT = ISTAT) NP_TOTAL 
             allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
@@ -1192,10 +1235,74 @@
               READ(GRD%FHNDL, *, IOSTAT = ISTAT) INEtotal(:,IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=4 error in grid read 2')
             END DO
+            CLOSE(GRD%FHNDL)
+#ifdef NCDF
+          ELSE IF (IGRIDTYPE == 5) THEN ! Netcdf format
+            ISTAT = NF90_OPEN(GRD%FNAME, NF90_NOWRITE, ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+            ISTAT = nf90_inq_varid(ncid, 'ele', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+            ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsB)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+            ISTAT = nf90_inquire_dimension(ncid, dimidsB(2), name=MNEstr, len=ne_total)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+            WRITE(DBG%FHNDL,*) 'MNEstr=', TRIM(MNEstr)
+            FLUSH(DBG%FHNDL)
+
+            ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+
+            ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsA)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
+            ISTAT = nf90_inquire_dimension(ncid, dimidsB(1), name=MNPstr, len=np_total)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+            WRITE(DBG%FHNDL,*) 'MNPstr=', TRIM(MNPstr)
+            FLUSH(DBG%FHNDL)
+
+            allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, ne_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('allocate error 9')
+
+            ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id, DEPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+            ISTAT = nf90_inq_varid(ncid, 'ele', var_id)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id, INEtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+            IF (LSPHE) THEN
+              ISTAT = nf90_inq_varid(ncid, 'lon', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+            ELSE
+              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+            END IF
+            ISTAT = nf90_get_var(ncid, var_id1, XPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+
+            ISTAT = nf90_get_var(ncid, var_id2, YPtotal)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+
+            ISTAT = NF90_CLOSE(ncid)
+            CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
+#endif
           ELSE
             CALL WWM_ABORT('IGRIDTYPE WRONG')
           END IF
-          CLOSE(GRD%FHNDL)
         CASE DEFAULT
           CALL WWM_ABORT('WRONG GRID DIMENSION')
       END SELECT
@@ -1521,9 +1628,9 @@
          END IF
 
          IF (LSOURCESWAM .AND. MELIM .NE. 3) THEN
-           call wwm_abort('FOR WAM U NEED MELIM == 3')
+           call wwm_abort('FOR WAM YOU NEED MELIM == 3')
          ELSE IF (.NOT. LSOURCESWAM .AND. MELIM .EQ. 3) THEN
-           call wwm_abort('FOR WWM SOURCES U NEED MELIM .LT. 3') 
+           call wwm_abort('FOR WWM SOURCES YOU NEED MELIM .LT. 3') 
          ENDIF
 
 #ifndef GRB
