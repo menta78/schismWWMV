@@ -53,10 +53,10 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl
-  FCPFLAGS = $(PPFLAGS) -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface -fpe0
-  FLDFLAGS = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface -fpe0
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+  FLDFLAGS = -O1 -g -traceback -assume byterecl
+#  FCPFLAGS = $(PPFLAGS) -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface -fpe0
+#  FLDFLAGS = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interface -fpe0
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################

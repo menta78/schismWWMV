@@ -108,12 +108,12 @@
       enddo !i
 #endif
 
+      call date_and_time(date,timestamp)
+      if(myrank==0) write(16,'(/4a)') 'Run completed successfully at ',date,', ',timestamp
+
 #ifdef USE_WWM
       call TERMINATE_WWM
 #endif /*USE_WWM*/
-
-      call date_and_time(date,timestamp)
-      if(myrank==0) write(16,'(/4a)') 'Run completed successfully at ',date,', ',timestamp
 
 !     Close file handles - may have problem on some systems
       do i=1,2000

@@ -403,7 +403,7 @@ module elfe_glbl
   !Declarations for other modules
 ! WWM
 !#ifdef  USE_WWM
-  real(rkind),save,allocatable :: wwave_force(:,:,:)
+  real(rkind),save,allocatable :: wwave_force(:,:,:),stokes_vel(:,:,:),jpress(:),sbr(:,:),sbf(:,:)
   real,save,allocatable :: out_wwm(:,:),out_wwm_windpar(:,:)
 !#endif
   integer,save :: msc2,mdc2

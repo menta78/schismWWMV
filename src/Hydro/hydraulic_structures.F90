@@ -17,8 +17,9 @@
       integer, parameter :: WEIR        = 3  !< weir flow, including transition to submerged flow
       integer, parameter :: PIPE        = 4  !< pipe flow -- right now just circular orifice
       integer, parameter :: RADIAL      = 5  !< radial gate -- simplified form of HEC-RAS formula with default exponents
+      integer, parameter :: RADIAL_RH   = 6  !< radial gate -- simplified form of HEC-RAS formula with default exponents
 
-!---- Constants for ts_unit
+!---- Constants for ts_unitradia
       integer, parameter :: TS_DISABLED       = -1
 
 !---- Type representing a structure
@@ -27,6 +28,7 @@
       real(rkind) :: width  = HUGE(1.d0)    !< width or pipe radius
       real(rkind) :: height = HUGE(1.d0)    !< height or vertical length of aperture, should be > 2*radius (ie, width) for circular
       real(rkind) :: coef   = HUGE(1.d0)    !< flow coefficient (physical)
+      real(rkind) :: coef_lin = HUGE(1.d0)  !< flow coefficient part that varies linearly (eg with submergence, relative gate hght)
       real(rkind) :: op_down = 1.0d0        !< operation (modulation from 0 to 1) of the gate flow in downstream direction
       real(rkind) :: op_up   = 1.d0         !< operation (modulation from 0 to 1) of the gate flow in the reverse direction
       real(rkind) :: prescribed_flow =0.0d0 !< prescribed flow (relevant for transfers)
@@ -104,6 +106,11 @@
             structures(iblock)%struct_type = RADIAL
             read(31,*)structures(iblock)%elev, structures(iblock)%width, structures(iblock)%height
             read(31,*)structures(iblock)%coef, structures(iblock)%op_down, structures(iblock)%op_up
+          case("radial_relheight")
+            structures(iblock)%struct_type = RADIAL_RH
+            read(31,*)structures(iblock)%elev, structures(iblock)%width, structures(iblock)%height
+            read(31,*)structures(iblock)%coef,structures(iblock)%coef_lin
+            read(31,*)structures(iblock)%op_down, structures(iblock)%op_up
           case("weir")
             structures(iblock)%struct_type = WEIR
             read(31,*)structures(iblock)%elev, structures(iblock)%width
@@ -185,7 +192,7 @@
               read(fort_unit,*)ttt,install,&
                                structures(istruct)%nduplicate,structures(istruct)%op_down, structures(istruct)%op_up, &
                                structures(istruct)%elev,structures(istruct)%width
-            case(RADIAL,ORIFICE)
+            case(RADIAL,RADIAL_RH,ORIFICE)
               read(fort_unit,*)ttt,install,&
                              structures(istruct)%nduplicate, structures(istruct)%op_down, structures(istruct)%op_up, &
                              structures(istruct)%elev,structures(istruct)%width, structures(istruct)%height
@@ -223,7 +230,8 @@
       real(rkind) :: diff
       real(rkind) :: op
       real(rkind) :: signed_coef,depth_flow
-      real(rkind) :: area,radius,angle,submerge_ratio
+      real(rkind) :: area,radius,angle
+      real(rkind) :: subflow,subfrac,submerge_ratio,relheight
       real(rkind) :: max_elev, min_elev, dratio, attenuation
       real(rkind) :: tailw_depth,headw_energy_head
       real(rkind) :: coef_matching_factor
@@ -256,7 +264,6 @@
 
       if(struct%struct_type .ne. HYDTRANSFER) then
         depth_flow = min(struct%height,max_elev - struct%elev)
-!JZ: 'op==0.d0' is risky; consider integer operation?
         if (depth_flow <= 0.D0 .or. op == 0.d0)then
           flow = 0.d0
 	  return
@@ -302,23 +309,34 @@
       case(RADIAL)
         headw_energy_head = max_elev - struct%elev
         tailw_depth = min_elev - struct%elev
-        coef_matching_factor = sqrt(3.d0)        
-
         submerge_ratio = tailw_depth/headw_energy_head
         area = struct%width*depth_flow        
         if (submerge_ratio < PART_SUBMERGE) then
 	    ! free flow
-            flow = signed_coef*sqrt2g*area*sqrt(headw_energy_head)/coef_matching_factor
+            flow = signed_coef*sqrt2g*area*sqrt(headw_energy_head)
         else if (submerge_ratio < FULL_SUBMERGE) then
             ! partially submerged (transitional) flow
+            ! matches free case at PART_SUBMERGE and transitions linearly to submerged
             diff = max_elev - min_elev
-            flow = signed_coef*area*sqrt2g*sqrt(3.d0*diff)/coef_matching_factor
+            coef_matching_factor = sqrt(1.d0/(1.d0-PART_SUBMERGE))
+            flow = signed_coef*area*sqrt2g*sqrt(diff)
+            ! now weigh the two so that the flow makes a linear transition
+            subfrac = (submerge_ratio-PART_SUBMERGE)/(FULL_SUBMERGE - PART_SUBMERGE)
+            flow = ((1.d0 - subfrac)*coef_matching_factor + subfrac)*flow
         else 
             ! fully submerged flow uses orifice equational
             diff = max_elev-min_elev
             flow = signed_coef*area*sqrt2g*sqrt(diff)
         end if
 
+      case(RADIAL_RH)
+        headw_energy_head = max_elev - struct%elev
+        tailw_depth = min_elev - struct%elev
+        relheight = min(1.d0,struct%height/headw_energy_head)
+        area = struct%width*depth_flow
+        signed_coef = signed_coef+sign(relheight*struct%coef_lin,elev_up-elev_down)
+        diff = max_elev-min_elev
+        flow = signed_coef*area*sqrt2g*sqrt(diff)
       case default
 	write(errmsg,*)"Structure type code not recognized for hydraulic structure #",struct%struct_name
         call parallel_abort(errmsg)
@@ -381,13 +399,21 @@
       integer, intent(in)      :: unit       !< Fortran unit to be read
       real(rkind), intent(in)  :: time       !< Time to which to advance the file
       real(rkind), intent(out) :: time_next  !< Pre-fetched time at which to expect the next value
+      real(rkind) :: t  ! dummy for reading in case reading fails
       real(rkind) :: time_read 
       time_read = 0.d0
 
       do while(time_read <= time)
-        read(unit,*)time_read
+        read(unit,*,end=10)t
+        time_read = t
       end do
       time_next = time_read
+      backspace(unit)
+      backspace(unit)
+      return
+ 10   continue
+      ! Special code for when the end of file is reached.
+      time_next = huge(1.d0)
       backspace(unit)
       backspace(unit)
       return

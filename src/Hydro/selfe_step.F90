@@ -20,11 +20,6 @@
       USE eclight
 #endif
 
-#ifdef USE_WWM
-!Error: circulate module use; need to init. inside SELFE?
-      USE DATAPOOL, only: STOKES_X, STOKES_Y, JPRESS, SBR, SBF
-#endif
-
 #ifdef USE_ICM
       USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
                           &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
@@ -179,8 +174,8 @@
 
 #ifdef USE_WWM
       CHARACTER(LEN=3) :: RADFLAG
-      real(rkind),allocatable :: stokes_vel(:,:,:),stokes_w(:,:),stokes_w_nd(:,:), &
-     &stokes_vel_sd(:,:,:)
+      real(rkind),allocatable :: stokes_w(:,:),stokes_w_nd(:,:), &
+     &stokes_vel_sd(:,:,:) !,jpress(:),sbr(:,:),sbf(:,:),stokes_vel(:,:,:)
 #endif /*USE_WWM*/
 
 !     End of declarations
@@ -220,7 +215,7 @@
 #endif
 
 #ifdef USE_WWM
-       allocate(stokes_vel(2,nvrt,npa),stokes_w(nvrt,nea),stokes_w_nd(nvrt,npa), &
+       allocate(stokes_w(nvrt,nea),stokes_w_nd(nvrt,npa), &
      &stokes_vel_sd(2,nvrt,nsa),stat=istat)
        if(istat/=0) call parallel_abort('STEP: WWM allocation failure')
 #endif
@@ -535,24 +530,21 @@
 !   Wind wave model (WWM)
 !-------------------------------------------------------------------------------
 #ifdef USE_WWM
-!     Error: 2D not checked
       if(mod(it,nstep_wwm)==0) then
         wtmp1=mpi_wtime()
         if(myrank==0) write(16,*)'starting WWM'
-        !call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm)
         call WWM_II(it,icou_elfe_wwm,dt,nstep_wwm,RADFLAG)
 
-!    sbr(2,npa): momentum flux vector due to wave breaking (nearshore depth-induced breaking; see Bennis 2011)
-!    sbf(2,npa): momentum lost by waves due to the bottom friction (not used for the moment)
-!    stokes_vel(2,nvrt,npa): Stokes velocity
-!    jpress(npa): waved-induced pressure
-
-!     Outputs (via datapool):
-!     wwave_force(2,nvrt,nsa): =0 if icou_elfe_wwm=0. In [e,p]frame (not sframe!).
+!       Outputs (via datapool):
+!       sbr(2,npa): momentum flux vector due to wave breaking (nearshore depth-induced breaking; see Bennis 2011)
+!       sbf(2,npa): momentum lost by waves due to the bottom friction (not used for the moment)
+!       stokes_vel(2,nvrt,npa): Stokes velocity
+!       jpress(npa): waved-induced pressure
+!       wwave_force(2,nvrt,nsa): =0 if icou_elfe_wwm=0. In [e,p]frame (not sframe!).
 !       wwave_force(1:2,:,1:nsa) = Rsx, Rsy in my notes (the terms in momen. eq.)
 !       and has a dimension of m/s/s. This is overwritten under Vortex
 !       formulation later.
-!     out_wwm_windpar(npa,10): 
+!       out_wwm_windpar(npa,10): 
 !         1) = WINDXY(IP,1) ! wind vector u10,x
 !         2) = WINDXY(IP,2) ! wind vector u10,y
 !         3) = SQRT(WINDXY(IP,1)**2.+WINDXY(IP,2)**2.) ! wind magnitutde u10
@@ -564,7 +556,7 @@
 !         9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2
 !        10) = CD(IP)       ! Drag Coefficient
 
-!     out_wwm(npa,30): output variables from WWM (all 2D); see names in NVARS() in the routine
+!       out_wwm(npa,30): output variables from WWM (all 2D); see names in NVARS() in the routine
 !                      BASIC_PARAMETER() in wwm_initio.F90 for details; below is a snapshot from there:
          !OUTPAR(1)   = HS       ! Significant wave height
          !OUTPAR(2)   = TM01     ! Mean average period
@@ -7281,7 +7273,7 @@
               endif !scope of WWM; j<=indx_out(3,2)
 #endif /*USE_WWM*/
 
-              if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then !age
+              if(flag_model==0) then; if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then !age
                 do k=max0(1,kbp00(i)),nvrt
                   tmp1=max(1.d-5,tr_nd(j-indx_out(4,1)+1,k,i))
                   floatout=tr_nd(j-indx_out(4,1)+1+ntracers/2,k,i)/tmp1/86400
@@ -7292,7 +7284,7 @@
                   write(ichan(j),"(a4)",advance="no") a_4
 #endif
                 enddo !k
-              endif !scope of age
+              endif; endif !scope of age
 
             endif !j
           enddo !i=1,np
@@ -7845,7 +7837,7 @@
 #endif
  
 #ifdef USE_WWM
-      deallocate(stokes_vel,stokes_w,stokes_w_nd,stokes_vel_sd)
+      deallocate(stokes_w,stokes_w_nd,stokes_vel_sd)
 #endif
 
       end subroutine selfe_step

@@ -907,6 +907,7 @@
 !**********************************************************************
       SUBROUTINE BREAK_LIMIT_ALL
       USE DATAPOOL
+      USE elfe_msgp, only: myrank
       IMPLICIT NONE
 
       INTEGER              :: IP
@@ -930,7 +931,7 @@
 !        WRITE(300,*) '   ', IP, ' HS=', HS, ' BRHD=', BRHD
 
         IF (ETOT .GT. EMAX) THEN
-          WRITE(300,*) '   break XP=', XP(IP)
+          if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
           RATIO = EMAX/ETOT
           AC2(:,:,IP) = RATIO * ACLOC(:,:)
           AC1(:,:,IP) = RATIO * ACLOC(:,:)

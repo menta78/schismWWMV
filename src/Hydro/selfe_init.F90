@@ -1318,9 +1318,11 @@
 
 !     Wave model arrays
 #ifdef  USE_WWM
-      allocate(wwave_force(2,nvrt,nsa),out_wwm(npa,35),out_wwm_windpar(npa,10),stat=istat)
+      allocate(wwave_force(2,nvrt,nsa),out_wwm(npa,35),out_wwm_windpar(npa,10), &
+     &stokes_vel(2,nvrt,npa),jpress(npa),sbr(2,npa),sbf(2,npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: WWM allocation failure')
       wwave_force=0; out_wwm=0; out_wwm_windpar=0
+      stokes_vel=0; jpress=0; sbr=0; sbf=0 
 #endif
 
 #ifdef USE_TIMOR
