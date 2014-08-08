@@ -976,8 +976,8 @@
           END DO
           call mpi_type_create_indexed_block(MNPloc,1,dspl_oned,rtype,oned_send_type(iProc-1), ierr)
           call mpi_type_commit(oned_send_type(iProc-1), ierr)
-          call mpi_type_create_indexed_block(MNPloc,2,dspl_twod,rtype,oned_send_type(iProc-1), ierr)
-          call mpi_type_commit(oned_send_type(iProc-1), ierr)
+          call mpi_type_create_indexed_block(MNPloc,2,dspl_twod,rtype,twod_send_type(iProc-1), ierr)
+          call mpi_type_commit(twod_send_type(iProc-1), ierr)
           deallocate(dspl_oned, dspl_twod)
         END DO
         FLUSH(STAT%FHNDL)
