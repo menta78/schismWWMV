@@ -161,6 +161,98 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SMOOTH( BETA, MNP, XP, YP, VAR )
+         USE DATAPOOL, ONLY : RKIND, ZERO, ONE, TWO
+         IMPLICIT NONE
+
+         INTEGER :: MNP
+         REAL(rkind), INTENT(IN)    :: XP(MNP), YP(MNP)
+         REAL(rkind), INTENT(INOUT) :: VAR(MNP)
+         REAL(rkind), INTENT(IN)    :: BETA
+         REAL(rkind)                :: VART(MNP)
+         REAL(rkind)                :: SW, SWQ, DISX, DISY, DIST, DIS
+         INTEGER                    :: I, J, IP
+         
+         DO I = 1, MNP
+            SW = ZERO
+            SWQ = ZERO
+            DO J = 1, MNP               
+               DISX = (XP(I) - XP(J))**2
+               DISY = (YP(I) - YP(J))**2
+               DIST = DISX + DISY
+               IF (DIST > TINY(1.)) THEN
+                  DIS = SQRT(DIST)**BETA
+               ELSE
+                  DIS = ONE
+               END IF 
+               SW = SW + DIS
+               SWQ = SWQ + DIS*VAR(J)
+            END DO
+            VART(I) = SWQ / SW
+         END DO
+         VAR(:) = VART(:)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SMOOTH_V2(VAR_IN, VAR_OUT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: VAR_IN(MNP)
+      REAL(rkind), INTENT(OUT) :: VAR_OUT(MNP)
+      INTEGER IP, IADJ, IP_ADJ
+      REAL(rkind) :: SumVAR, SumSI, eVal
+      DO IP = 1, NP_RES
+        SumVAR=SI(IP) * VAR_IN(IP)
+        SumSI =SI(IP)
+        DO IADJ=1,VERT_DEG(IP)
+          IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+          SumVAR=SumVAR + SI(IP_ADJ)*VAR_IN(IP_ADJ)
+          SumSI =SumSI  + SI(IP_ADJ)
+        END DO
+        eVal=SumVAR/SumSI
+        VAR_OUT(IP)=eVal
+      END DO
+#ifdef MPI_PARALL_GRID
+      CALL exchange_p2d(VAR_OUT)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SMOOTH_ON_TRIANGLE(VAR_IN, VAR_OUT, nbIter)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: nbIter
+      REAL(rkind), INTENT(IN)  :: VAR_IN(MNE)
+      REAL(rkind), INTENT(OUT) :: VAR_OUT(MNE)
+      INTEGER IE, IEadj, I, nb, iIter
+      REAL(rkind) :: eVal, eValB
+      REAL(rkind) :: VARextent(MNEextent)
+      VAR_OUT=VAR_IN
+      DO iIter=1,nbIter
+        VARextent(1:MNE)=VAR_OUT
+#ifdef MPI_PARALL_GRID
+        CALL TRIG_SYNCHRONIZATION(VARextent)
+#endif
+        DO IE=1,MNE
+          eVal=ZERO
+          nb=0
+          DO I=1,3
+            IEadj=IEneighbor(I,IE)
+            IF (IEadj .gt. 0) THEN
+              eVal=eVal + VARextent(IEadj)
+              nb=nb+1
+            END IF
+          END DO
+          eValB=(MyREAL(6-nb)*VARextent(IE) + eVal)/6.0_rkind
+          VAR_OUT(IE)=eValB
+        END DO
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE DIFFERENTIATE_XDIR(VAR, DVDX)
          USE DATAPOOL
          IMPLICIT NONE
