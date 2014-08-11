@@ -840,7 +840,7 @@
       integer, intent(in) :: ncid, nbTime
       integer, intent(inout) :: ntime_dims
       character (len = *), parameter :: UNITS = "units"
-      character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME_HEADER"
       integer iret, fifteen_dims, var_id
       iret=nf90_inq_dimid(ncid, 'fifteen', fifteen_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
