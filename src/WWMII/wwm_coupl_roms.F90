@@ -103,10 +103,7 @@
           CURTXY(IP,:)=CURTXY_TOT(iplg(IP),:)
           WATLEV(IP)=WATLEV_TOT(iplg(IP))
         END DO
-        deallocate(rbuf_real)
-        deallocate(WINDXY_TOT)
-        deallocate(CURTXY_TOT)
-        deallocate(WATLEV_TOT)
+        deallocate(rbuf_real, WINDXY_TOT, CURTXY_TOT, WATLEV_TOT)
 # endif
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
         FLUSH(DBG%FHNDL)
@@ -209,8 +206,7 @@
      &                    OUTT_TOT(IP,15), OUTT_TOT(IP,16)
           END DO
         END IF
-        deallocate(OUTT)
-        deallocate(OUTT_TOT)
+        deallocate(OUTT, OUTT_TOT)
 # endif
       END IF
       WRITE(DBG%FHNDL,*) 'export WWM: ending of writing data'
@@ -346,9 +342,7 @@
         WRITE(DBG%FHNDL,*) 'MinValIndex(Dir,Inv)=', MinValIndex, MinValIndexInv
         FLUSH(DBG%FHNDL)
 #  endif
-        deallocate(TheIndex)
-        deallocate(NumberNode)
-        deallocate(NumberTrig)
+        deallocate(TheIndex, NumberNode, NumberTrig)
       END SUBROUTINE
 # else
       SUBROUTINE WWM_CreateMatrixPartition
@@ -372,9 +366,7 @@
       USE DATAPOOL
       USE mod_coupler
       IMPLICIT NONE
-      deallocate(MatrixBelongingWAV)
-      deallocate(ReindexPerm_wav)
-      deallocate(ReindexPermInv_wav)
+      deallocate(MatrixBelongingWAV, ReindexPerm_wav, ReindexPermInv_wav)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -826,58 +818,39 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_DEALLOCATE
-        USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total, istatus, ierr, itype, myrank
-        USE mod_coupler
-        USE PGMCL_LIBRARY
-        USE pgmcl_interp
-        implicit none
-        logical DoNearest
-        integer, allocatable :: rbuf_int(:)
-        integer IP, iNodeSel, idx, eRankRecv
-        real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
-        real(rkind) minBathy, maxBathy
-        real(rkind) SumDepReceive
-        CALL SetComputationalNodes(ArrLocal, NnodesWAV, OCNid)
-        CALL WWM_DeallocMatrixPartition
-        deallocate(LONtrig_wav, LATtrig_wav, ListTrig_wav)
-        deallocate(LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
-        deallocate(LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
-        deallocate(LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
-        deallocate(MatrixBelongingOCN_rho)
-        deallocate(MatrixBelongingOCN_u)
-        deallocate(MatrixBelongingOCN_v)
-        DEALLOCATE(z_w_loc)
-        DEALLOCATE(eUSTOKES_loc)
-        DEALLOCATE(eVSTOKES_loc)
-        CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_rho)
-        CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_u)
-        CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_v)
-        CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_rho)
-        CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_u)
-        CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_v)
-        deallocate(CosAng)
-        deallocate(SinAng)
-        deallocate(dep_rho)
-        deallocate(A_wav_rho_3D)
-        deallocate(A_wav_stat)
-        deallocate(A_wav_uvz)
-        deallocate(A_wav_u_3D)
-        deallocate(A_wav_v_3D)
-        deallocate(A_wav_ur_3D)
-        deallocate(A_wav_vr_3D)
-        deallocate(A_wav_rho)
-        deallocate(z_r)
-        deallocate(PartialU1)
-        deallocate(PartialV1)
-        deallocate(PartialU2)
-        deallocate(PartialV2)
-        deallocate(z_w_wav)
-        deallocate(U_wav)
-        deallocate(V_wav)
-        deallocate(USTOKES_wav)
-        deallocate(VSTOKES_wav)
-        deallocate(ZETA_CORR)
-        deallocate(J_PRESSURE)
+      USE DATAPOOL, only : MNP, rkind, DEP, XP, YP, np_total, ne_total, istatus, ierr, itype, myrank
+      USE mod_coupler
+      USE PGMCL_LIBRARY
+      USE pgmcl_interp
+      implicit none
+      logical DoNearest
+      integer, allocatable :: rbuf_int(:)
+      integer IP, iNodeSel, idx, eRankRecv
+      real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
+      real(rkind) minBathy, maxBathy
+      real(rkind) SumDepReceive
+      CALL WWM_DeallocMatrixPartition
+      deallocate(LONtrig_wav, LATtrig_wav, ListTrig_wav)
+      deallocate(LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
+      deallocate(LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
+      deallocate(LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
+      deallocate(MatrixBelongingOCN_rho)
+      deallocate(MatrixBelongingOCN_u)
+      deallocate(MatrixBelongingOCN_v)
+      DEALLOCATE(z_w_loc, eUSTOKES_loc, eVSTOKES_loc)
+      CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_rho)
+      CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_u)
+      CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_v)
+      CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_rho)
+      CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_u)
+      CALL DEALLOCATE_Arr(TheArr_WAVtoOCN_v)
+      deallocate(CosAng, SinAng, dep_rho)
+      deallocate(A_wav_rho_3D, A_wav_stat, A_wav_uvz, A_wav_rho)
+      deallocate(A_wav_u_3D, A_wav_v_3D, A_wav_ur_3D, A_wav_vr_3D)
+      deallocate(z_r, z_w_wav, U_wav, V_wav)
+      deallocate(PartialU1, PartialV1, PartialU2, PartialV2)
+      deallocate(USTOKES_wav, VSTOKES_wav)
+      deallocate(ZETA_CORR, J_PRESSURE)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
