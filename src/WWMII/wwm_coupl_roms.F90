@@ -689,9 +689,9 @@
         FLUSH(DBG%FHNDL)
 # endif
 # ifdef FIRST_ORDER_ARDHUIN
-        allocate(A_wav_ur_3D(2,MNP), A_wav_vr_3D(2,MNP), U_wav(MNP, 2), V_wav(MNP, 2), stat=istat)
+        allocate(A_wav_ur_3D(2,MNP), A_wav_vr_3D(2,MNP), U_wav(2,MNP), V_wav(2,MNP), stat=istat)
 # else
-        allocate(A_wav_ur_3D(Nlevel,MNP), A_wav_vr_3D(Nlevel,MNP), U_wav(MNP, Nlevel), V_wav(MNP, Nlevel), stat=istat)
+        allocate(A_wav_ur_3D(Nlevel,MNP), A_wav_vr_3D(Nlevel,MNP), U_wav(Nlevel, MNP), V_wav(Nlevel,MNP), stat=istat)
 # endif
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 23.4')
         allocate(CosAng(MNP), SinAng(MNP), dep_rho(MNP), A_wav_rho_3D(Nlevel+1,MNP), A_wav_stat(19,MNP), A_wav_uvz(3,MNP), A_wav_rho(MNP), stat=istat)
@@ -897,12 +897,12 @@
           z_w_loc=z_w_wav(:,IP)
           eDep=z_w_loc(Nlevel)-z_w_loc(0)
 # ifdef FIRST_ORDER_ARDHUIN
-          PartialU1(1)=(U_wav(IP,2) - U_wav(IP,2))/(z_r(Nlevel)-z_r(Nlevel-1))
-          PartialV1(1)=(V_wav(IP,2) - V_wav(IP,1))/(z_r(Nlevel)-z_r(Nlevel-1))
+          PartialU1(1)=(U_wav(2,IP) - U_wav(1,IP))/(z_r(Nlevel)-z_r(Nlevel-1))
+          PartialV1(1)=(V_wav(2,IP) - V_wav(1,IP))/(z_r(Nlevel)-z_r(Nlevel-1))
 # else
           DO k=2,Nlevel
-            PartialU1(k)=(U_wav(IP,k) - U_wav(IP,k-1))/(z_r(k)-z_r(k-1))
-            PartialV1(k)=(V_wav(IP,k) - V_wav(IP,k-1))/(z_r(k)-z_r(k-1))
+            PartialU1(k)=(U_wav(k,IP) - U_wav(k-1,IP))/(z_r(k)-z_r(k-1))
+            PartialV1(k)=(V_wav(k,IP) - V_wav(k-1,IP))/(z_r(k)-z_r(k-1))
           END DO
           PartialU1(1)=PartialU1(2)
           PartialV1(1)=PartialV1(2)
@@ -915,8 +915,8 @@
             eF1=(z_r(k)-z_r(k-1))/(z_r(k+1)-z_r(k-1))
             eF2=(z_r(k+1)-z_r(k))/(z_r(k+1)-z_r(k-1))
             eDelta=(z_r(k) - z_r(k+1))*(z_r(k-1) - z_r(k))
-            PartialU2(k)=(U_wav(IP,k+1)*eF1 + U_wav(IP,k-1)*eF2 - U_wav(IP,k))/eDelta
-            PartialV2(k)=(V_wav(IP,k+1)*eF1 + V_wav(IP,k-1)*eF2 - V_wav(IP,k))/eDelta
+            PartialU2(k)=(U_wav(k+1,IP)*eF1 + U_wav(k-1,IP)*eF2 - U_wav(k,IP))/eDelta
+            PartialV2(k)=(V_wav(k+1,IP)*eF1 + V_wav(k-1,IP)*eF2 - V_wav(k,IP))/eDelta
           END DO
           PartialU2(1)=PartialU2(2)
           PartialV2(1)=PartialV2(2)
@@ -988,13 +988,13 @@
                 eFracB=eHeight/eDep
                 eSinc=MySINH(eFracB*kD)/(eFracB*kD)
                 eQuot=eWkReal*2*MyCOSH(2*kD*eFrac)/eSinh2kd
-                eFct=U_wav(IP,k)*COSTH(ID)+V_wav(IP,k)*SINTH(ID)
+                eFct=U_wav(k,IP)*COSTH(ID)+V_wav(k,IP)*SINTH(ID)
                 TheInt=TheInt+eHeight*eFct*eQuot*eSinc
               END DO
               eOmega=eSigma + TheInt*eWkReal
 #  ifdef STOKES_DRIFT_USING_INTEGRAL
               DO k=1,Nlevel
-                MFACT=eSigma/(eOmega - (U_wav(IP,k)*COSTH(ID)+V_wav(IP,k)*SINTH(ID))*eWkReal)
+                MFACT=eSigma/(eOmega - (U_wav(k,IP)*COSTH(ID)+V_wav(k,IP)*SINTH(ID))*eWkReal)
                 MFACT=MAX(MFACT, eMinMfact)
                 MFACT=MIN(MFACT, eMaxMfact)
                 eFrac=(z_r(k) - z_w_loc(0))/eDep
@@ -1017,7 +1017,7 @@
                 eVSTOKES_loc(k)=eVSTOKES_loc(k) + VSTOKESpart
               ENDDO
 #  else
-              MFACT=eSigma/(eOmega - (U_wav(IP,Nlevel)*COSTH(ID)+V_wav(IP,Nlevel)*SINTH(ID))*eWkReal)
+              MFACT=eSigma/(eOmega - (U_wav(Nlevel,IP)*COSTH(ID)+V_wav(Nlevel,IP)*SINTH(ID))*eWkReal)
 #  endif
               eScal=COSTH(ID)*PartialU1(Nlevel)+SINTH(ID)*PartialV1(Nlevel)
               eZeta=eWk/eSinhkd + (MFACT*eWk/eSigma)*eScal
@@ -1158,7 +1158,7 @@
 # endif
         DO idx=1,MNP
           IP=ReindexPerm_wav(idx)
-          U_wav(IP,:)=A_wav_ur_3D(:,idx)
+          U_wav(:,IP)=A_wav_ur_3D(:,idx)
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 5'
@@ -1187,7 +1187,7 @@
 # endif
         DO idx=1,MNP
           IP=ReindexPerm_wav(idx)
-          V_wav(IP,:)=A_wav_vr_3D(:,idx)
+          V_wav(:,IP)=A_wav_vr_3D(:,idx)
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 6'
@@ -1199,12 +1199,12 @@
 #else
           DO kLev=1,Nlevel
 #endif
-            u1=U_wav(IP,kLev)
-            v1=V_wav(IP,kLev)
+            u1=U_wav(kLev,IP)
+            v1=V_wav(kLev,IP)
             u2=u1*CosAng(IP)-v1*SinAng(IP)
             v2=v1*CosAng(IP)+u1*SinAng(IP)
-            U_wav(IP,kLev)=u2
-            V_wav(IP,kLev)=v2
+            U_wav(kLev,IP)=u2
+            V_wav(kLev,IP)=v2
           END DO
           CURTXY(IP,1)=u2
           CURTXY(IP,2)=v2
