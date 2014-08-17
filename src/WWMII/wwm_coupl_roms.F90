@@ -1122,7 +1122,7 @@
 #  ifdef NO_ASYNC
         CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_rho, 203, Nlevel+1, A_wav_rho_3D)
 #  else
-        CALL MPI_INTERP_Arecv_3D_r8(TheAsync_OCNtoWAV_rho, 203, A_wav_rho_3D)
+        CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_rho, 203, A_wav_rho_3D)
 #  endif
 # endif
 # ifdef DEBUG_WWM
@@ -1153,7 +1153,7 @@
         CALL MPI_INTERP_RECV_3D_r8(TheArr_OCNtoWAV_u, 204, Nlevel, A_wav_ur_3D)
 #   endif
 #  else
-        CALL MPI_INTERP_Arecv_3D_r8(TheAsync_OCNtoWAV_u, 204, A_wav_ur_3D)
+        CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_u, 204, A_wav_ur_3D)
 #  endif
 # endif
         DO idx=1,MNP
