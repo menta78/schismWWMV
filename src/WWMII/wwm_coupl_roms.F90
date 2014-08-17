@@ -427,7 +427,7 @@
         USE pgmcl_interp
         implicit none
         logical DoNearest
-        integer, allocatable :: rbuf_int(:)
+        integer rbuf_int(1)
         integer IP, iNodeSel, idx, eRankRecv
         integer istat
         real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
@@ -501,7 +501,6 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        allocate(rbuf_int(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 15')
         eRankRecv=ArrLocal % ListFirstRank(OCNid)
         CALL MPI_RECV(rbuf_int,1,itype, eRankRecv, 103, MPI_COMM_WORLD, istatus, ierr)
@@ -512,7 +511,6 @@
 # endif
         ALLOCATE(z_w_loc(0:Nlevel), eUSTOKES_loc(Nlevel), eVSTOKES_loc(Nlevel), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 16')
-        deallocate(rbuf_int)
         DoNearest=.TRUE.
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 11, rnk=', myrank
@@ -824,7 +822,6 @@
       USE pgmcl_interp
       implicit none
       logical DoNearest
-      integer, allocatable :: rbuf_int(:)
       integer IP, iNodeSel, idx, eRankRecv
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
