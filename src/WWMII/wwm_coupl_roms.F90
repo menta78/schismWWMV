@@ -804,7 +804,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18.1')
         allocate(z_w_wav(0:Nlevel, MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
-        allocate(USTOKES_wav(MNP, Nlevel), VSTOKES_wav(MNP, Nlevel), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
+        allocate(USTOKES_wav(Nlevel,MNP), VSTOKES_wav(Nlevel,MNP), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'End ROMS_COUPL_INITIALIZE'
@@ -1027,10 +1027,8 @@
             END DO
           END DO
 # endif
-          DO k=1,Nlevel
-            USTOKES_wav(IP,k)=eUSTOKES_loc(k)
-            VSTOKES_wav(IP,k)=eVSTOKES_loc(k)
-          END DO
+          USTOKES_wav(:,IP)=eUSTOKES_loc
+          VSTOKES_wav(:,IP)=eVSTOKES_loc
           ZETA_CORR(IP)=eZetaCorr_loc
           J_PRESSURE(IP)=eJPress_loc
         ENDDO
@@ -1260,8 +1258,8 @@
           idx=ReindexPermInv_wav(IP)
 # ifdef STOKES_DRIFT_USING_INTEGRAL
           DO kLev=1,Nlevel
-            u1=USTOKES_wav(IP,kLev)
-            v1=VSTOKES_wav(IP,kLev)
+            u1=USTOKES_wav(kLev,IP)
+            v1=VSTOKES_wav(kLev,IP)
             u2=u1*CosAng(IP)+v1*SinAng(IP)
             v2=v1*CosAng(IP)-u1*SinAng(IP)
             A_wav_u_3D(kLev,idx)=u2
