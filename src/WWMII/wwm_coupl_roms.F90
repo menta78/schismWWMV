@@ -802,7 +802,7 @@
         allocate(PartialU1(Nlevel), PartialV1(Nlevel), PartialU2(Nlevel), PartialV2(Nlevel), stat=istat)
 # endif
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18.1')
-        allocate(z_w_wav(MNP, 0:Nlevel), stat=istat)
+        allocate(z_w_wav(0:Nlevel, MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
         allocate(USTOKES_wav(MNP, Nlevel), VSTOKES_wav(MNP, Nlevel), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
@@ -892,9 +892,9 @@
 # endif
         DO IP=1,MNP
           DO k=1,Nlevel
-            z_r(k)=(z_w_wav(IP,k)+z_w_wav(IP,k-1))/2
+            z_r(k)=(z_w_wav(k,IP)+z_w_wav(k-1,IP))/2
           END DO
-          z_w_loc=z_w_wav(IP,:)
+          z_w_loc=z_w_wav(:,IP)
           eDep=z_w_loc(Nlevel)-z_w_loc(0)
 # ifdef FIRST_ORDER_ARDHUIN
           PartialU1(1)=(U_wav(IP,2) - U_wav(IP,2))/(z_r(Nlevel)-z_r(Nlevel-1))
@@ -1129,10 +1129,10 @@
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 3'
         FLUSH(DBG%FHNDL)
 # endif
-        DO kLev=0,Nlevel
-          DO idx=1,MNP
-            IP=ReindexPerm_wav(idx)
-            z_w_wav(IP,kLev)=A_wav_rho_3D(kLev+1,idx)
+        DO idx=1,MNP
+          IP=ReindexPerm_wav(idx)
+          DO kLev=0,Nlevel
+            z_w_wav(kLev,IP)=A_wav_rho_3D(kLev+1,idx)
           END DO
         END DO
 # ifdef DEBUG_WWM
