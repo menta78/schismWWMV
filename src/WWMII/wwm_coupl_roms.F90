@@ -501,7 +501,6 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 15')
         eRankRecv=ArrLocal % ListFirstRank(OCNid)
         CALL MPI_RECV(rbuf_int,1,itype, eRankRecv, 103, MPI_COMM_WORLD, istatus, ierr)
         Nlevel=rbuf_int(1)
