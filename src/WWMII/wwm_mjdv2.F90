@@ -116,8 +116,11 @@
       CHARACTER(LEN=15), INTENT(IN) :: STIME
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
+      real(rkind) XMJD_1858
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
       CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
+      CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
+      XMJD=XMJD - XMJD_1858
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -128,7 +131,10 @@
       CHARACTER(LEN=15), INTENT(OUT) :: STIME
       real(rkind), INTENT(IN) :: XMJD
       integer year, month, day, hour, min, sec
-      CALL JD2DATE(year, month, day, hour, min, sec, XMJD)
+      real(rkind) XMJD_1858, eMJD
+      CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
+      eMJD = XMJD + XMJD_1858
+      CALL JD2DATE(year, month, day, hour, min, sec, eMJD)
       CALL DATE_ConvertSix2string(year, month, day, hour, min, sec, STIME)
       END SUBROUTINE
 !**********************************************************************
