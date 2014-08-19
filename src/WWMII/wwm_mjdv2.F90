@@ -2,7 +2,139 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE DATE2JD(year, month, day, hour, min, sec, eJD)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: year, month, day, hour, min, sec
+      real(rkind), intent(out) :: eJD
+      integer a, y, m
+      a = floor((MyREAL(14) - MyREAL(month))/MyREAL(12));
+      y = year + 4800 - a;
+      m = month + 12*a - 3;
+      ! For a date in the Gregorian calendar:
+      eJD = day +                                                      &
+     &   + floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5))        &
+     &   + y*365 + floor(MyREAL(y)/MyREAL(4))                          &
+     &   - floor(MyREAL(y)/MyREAL(100))                                &
+     &   + floor(MyREAL(y)/MyREAL(400)) - 32045                        &
+     &   + ( sec + 60*min + 3600*(hour - 12) )/86400
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DATE_ConvertSix2mjd(year, month, day, hour, min, sec, eMJD)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: year, month, day, hour, min, sec
+      real(rkind), intent(out) :: eMJD
+      real(rkind) :: eJD1, eJD2
+      CALL DATE2JD(year, month, day, hour, min, sec, eJD1)
+!      CALL DATE2JD(1968, 5, 23, 0, 0, 0, eJD2)
+      CALL DATE2JD(1858, 11, 18, 0, 0, 0, eJD2)
+      eMJD=eJD1-eJD2
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DATE_ConvertString2six(year, month, day, hour, min, sec, eTimeStr)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(out) :: year, month, day, hour, min, sec
+      character(len=15), intent(in) :: eTimeStr
+      character(len=4) eYear
+      character(len=2) eMonth, eDay, eHour, eMin, eSec
+      eYear(1:1)  = eTimeStr(1:1)
+      eYear(2:2)  = eTimeStr(2:2)
+      eYear(3:3)  = eTimeStr(3:3)
+      eYear(4:4)  = eTimeStr(4:4)
+      eMonth(1:1) = eTimeStr(5:5)
+      eMonth(2:2) = eTimeStr(6:6)
+      eDay(1:1)   = eTimeStr(7:7)
+      eDay(2:2)   = eTimeStr(8:8)
+      eHour(1:1)  = eTimeStr(10:10)
+      eHour(2:2)  = eTimeStr(11:11)
+      eMin(1:1)   = eTimeStr(12:12)
+      eMin(2:2)   = eTimeStr(13:13)
+      eSec(1:1)   = eTimeStr(14:14)
+      eSec(2:2)   = eTimeStr(15:15)
+      read(eYear , '(i10)' ) year
+      read(eMonth, '(i10)' ) month
+      read(eDay  , '(i10)' ) day
+      read(eHour , '(i10)' ) hour
+      read(eMin  , '(i10)' ) min
+      read(eSec  , '(i10)' ) sec
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DATE_ConvertSix2string(year, month, day, hour, min, sec, eTimeStr)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: year, month, day, hour, min, sec
+      character(len=15), intent(out) :: eTimeStr
+      WRITE(eTimeStr, 20) year, month, day, hour, min, sec
+  20  FORMAT (i4.4, i2.2, i2.2, '.', i2.2, i2.2, i2.2)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE JD2DATE(year, month, day, hour, min, sec, eJD)
+      ! The following algorithm is from the Calendar FAQ.
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(out) :: year, month, day, hour, min, sec
+      real(rkind), intent(in) :: eJD
+      integer ijd, a, b, c, d, e, m
+      real(rkind) :: fjd, second
+      ijd = floor(eJD + 0.5_rkind)
+      !
+      a = ijd + 32044;
+      b = floor((MyREAL(4)*MyREAL(a) + MyREAL(3)) / MyREAL(146097))
+      c = a - floor((MyREAL(b) * MyREAL(146097)) / MyREAL(4));
+      !
+      d = floor((MyREAL(4)*MyREAL(c) + MyREAL(3)) / MyREAL(1461))
+      e = c - floor((MyREAL(1461)*MyREAL(d)) / MyREAL(4));
+      m = floor((MyREAL(5) * MyREAL(e) + MyREAL(2)) / MyREAL(153))
+      !
+      day   = e - floor((MyREAL(153) * MyREAL(m) + MyREAL(2)) / MyREAL(5)) + 1;
+      month = m + 3 - 12 * floor(MyREAL(m) / MyREAL(10))
+      year  = b * 100 + d - 4800 + floor(MyREAL(m) / MyREAL(10))
+      !
+      fjd    = eJD - MyREAL(ijd) + 0.5_rkind
+      second = MyREAL(86400) * fjd
+      hour   = floor(second/MyREAL(3600))
+      second = second - MyREAL(3600)*MyREAL(hour)
+      min    = floor(second/MyREAL(60))
+      sec    = INT(second - MyREAL(60)*min)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE CT2MJD(STIME,XMJD)
+      USE DATAPOOL
+      IMPLICIT NONE
+      CHARACTER(LEN=15), INTENT(IN) :: STIME
+      real(rkind), INTENT(OUT) :: XMJD
+      integer year, month, day, hour, min, sec
+      CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
+      CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE MJD2CT(XMJD,STIME)
+      USE DATAPOOL
+      IMPLICIT NONE
+      CHARACTER(LEN=15), INTENT(OUT) :: STIME
+      real(rkind), INTENT(IN) :: XMJD
+      integer year, month, day, hour, min, sec
+      CALL JD2DATE(year, month, day, hour, min, sec, XMJD)
+      CALL DATE_ConvertSix2string(year, month, day, hour, min, sec, STIME)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CT2MJD_V1(STIME,XMJD)
          USE DATAPOOL, ONLY : RKIND
          IMPLICIT NONE
          CHARACTER(LEN=15), INTENT(IN) :: STIME
@@ -35,7 +167,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE MJD2CT(XMJD,STIME)
+      SUBROUTINE MJD2CT_V1(XMJD,STIME)
          USE DATAPOOL, ONLY : RKIND
          IMPLICIT NONE
          CHARACTER(LEN=15), INTENT(OUT) :: STIME
