@@ -78,14 +78,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE JD2DATE(year, month, day, hour, min, sec, eJD)
+      SUBROUTINE NORMALIZE_NEARESTSECOND(eDateIn, eDateOut)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: eDateIn
+      REAL(rkind), intent(out) :: eDateOut
+      eDateOut=NINT(eDateIn/MyREAL(86400))/MyREAL(86400)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE JD2DATE(year, month, day, hour, min, sec, PreJD)
       ! The following algorithm is from the Calendar FAQ.
       USE DATAPOOL
       IMPLICIT NONE
       integer, intent(out) :: year, month, day, hour, min, sec
-      real(rkind), intent(in) :: eJD
+      real(rkind), intent(in) :: PreJD
       integer ijd, a, b, c, d, e, m
-      real(rkind) :: fjd, second
+      real(rkind) :: fjd, second, eJD
+      CALL NORMALIZE_NEARESTSECOND(PreJD, eJD)
       ijd = floor(eJD + 0.5_rkind)
       !
       a = ijd + 32044;
