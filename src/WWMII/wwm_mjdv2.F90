@@ -76,27 +76,39 @@
   20  FORMAT (i4.4, i2.2, i2.2, '.', i2.2, i2.2, i2.2)
       END SUBROUTINE
 !**********************************************************************
-!*                                                                    *
+!*    The function below is broken because the range of integers      *
+!*    is too small for holding integer values for the range           *
+!*    considered. Any idea how to avoid that?                         *
 !**********************************************************************
-      SUBROUTINE NORMALIZE_NEARESTSECOND(eDateIn, eDateOut)
+      SUBROUTINE NORMALIZE_NEARESTSECOND_BROKEN(eDateIn, eDateOut)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), intent(in) :: eDateIn
       REAL(rkind), intent(out) :: eDateOut
-      eDateOut=NINT(eDateIn/MyREAL(86400))/MyREAL(86400)
+      REAL(rkind) TheProd, TheProdB, TheRet
+      integer TheProdI
+      TheProd=eDateIn*MyREAL(86400)
+      TheProdI=NINT(TheProd)
+      TheProdB=MyREAL(TheProdI)
+      TheRet=TheProdB/MyREAL(86400)
+      Print *, 'eDateIn=', eDateIn
+      Print *, 'TheProd=', TheProd
+      Print *, 'TheProdI=', TheProdI
+      Print *, 'TheProdB=', TheProdB
+      Print *, 'TheRet=', TheRet
+      eDateOut=TheRet
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE JD2DATE(year, month, day, hour, min, sec, PreJD)
+      SUBROUTINE JD2DATE(year, month, day, hour, min, sec, eJD)
       ! The following algorithm is from the Calendar FAQ.
       USE DATAPOOL
       IMPLICIT NONE
       integer, intent(out) :: year, month, day, hour, min, sec
-      real(rkind), intent(in) :: PreJD
+      real(rkind), intent(in) :: eJD
       integer ijd, a, b, c, d, e, m
-      real(rkind) :: fjd, second, eJD
-      CALL NORMALIZE_NEARESTSECOND(PreJD, eJD)
+      real(rkind) :: fjd, second
       ijd = floor(eJD + 0.5_rkind)
       !
       a = ijd + 32044;
