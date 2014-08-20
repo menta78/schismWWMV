@@ -96,12 +96,10 @@
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
-!           allocate(A_THE(MSC,MDC,NP_RES), C_THE(MSC,MDC,NP_RES), stat=istat)
            allocate(CAD_THE(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.1')
          END IF
          IF (FREQ_SHIFT_IMPL) THEN
-!           allocate(A_SIG(MSC,MDC,NP_RES), C_SIG(MSC,MDC,NP_RES), stat=istat)
            allocate(CAS_SIG(MSC,MDC,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.2')
          END IF
@@ -351,20 +349,25 @@
       IMPLICIT NONE
 
       IF (DIMMODE == 1) THEN
-        DEALLOCATE( DX1, XP, INVSPHTRANS, DEP)
-      ELSE IF (DIMMODE == 2) THEN
-        DEALLOCATE( DX2, XP, YP, INVSPHTRANS, DEP, INE, IEN, TRIA)
-      ENDIF
+        DEALLOCATE( DX1, DX2)
+      END IF
+
+      DEALLOCATE(XP, YP, DEP)
+      DEALLOCATE(INVSPHTRANS)
+      DEALLOCATE(INE, IEN, TRIA)
 !
 ! spectral grid - shared
 !
       DEALLOCATE( SPSIG, SPDIR, FR, COSTH, SINTH, COS2TH, SIN2TH)
       DEALLOCATE( SINCOSTH, SIGPOW, DS_BAND, DS_INCR)
+      DEALLOCATE(MSC_HF)
 !
 ! action densities and source terms - shared
 !
-      DEALLOCATE (AC2)
-      DEALLOCATE (AC1)
+      IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
+        DEALLOCATE (U_JACOBI)
+      END IF
+      DEALLOCATE (AC2, AC1)
       IF (ICOMP .GE. 2) THEN
         DEALLOCATE (IMATRAA, IMATDAA)
       END IF
@@ -373,6 +376,16 @@
         DEALLOCATE (DAC_ADV, DAC_THE, DAC_SIG, DAC_SOU)
       END IF
 
+#ifdef WWM_SOLVER
+      IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
+         IF (REFRACTION_IMPL) THEN
+           deallocate(CAD_THE)
+         END IF
+         IF (FREQ_SHIFT_IMPL) THEN
+           deallocate(CAS_SIG)
+         END IF
+      END IF
+#endif
 #ifdef SHYFEM_COUPLING
       IF (LSHYFEM) THEN
         DEALLOCATE(SHYFZETA, NLEV)

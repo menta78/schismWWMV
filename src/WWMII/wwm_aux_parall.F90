@@ -976,8 +976,8 @@
           END DO
           call mpi_type_create_indexed_block(MNPloc,1,dspl_oned,rtype,oned_send_type(iProc-1), ierr)
           call mpi_type_commit(oned_send_type(iProc-1), ierr)
-          call mpi_type_create_indexed_block(MNPloc,2,dspl_twod,rtype,oned_send_type(iProc-1), ierr)
-          call mpi_type_commit(oned_send_type(iProc-1), ierr)
+          call mpi_type_create_indexed_block(MNPloc,2,dspl_twod,rtype,twod_send_type(iProc-1), ierr)
+          call mpi_type_commit(twod_send_type(iProc-1), ierr)
           deallocate(dspl_oned, dspl_twod)
         END DO
         FLUSH(STAT%FHNDL)
@@ -1017,7 +1017,7 @@
       integer iProc, IP
       IF (myrank .eq. 0) THEN
         DO iProc=2,nproc
-          CALL mpi_isend(Vtotal, 1, twod_send_type(iProc-1), iProc-1, 2030, comm, twod_send_rqst(iProc-1), ierr)
+          CALL mpi_isend(Vtotal, 1, twod_send_type(iProc-1), iProc-1, 2068, comm, twod_send_rqst(iProc-1), ierr)
         END DO
         DO IP=1,MNP
           Vlocal(:,IP)=Vtotal(:,iplg(IP))
@@ -1026,7 +1026,7 @@
           CALL MPI_WAITALL(nproc-1, twod_send_rqst, twod_send_stat, ierr)
         END IF
       ELSE
-        CALL MPI_RECV(Vlocal, 2*MNP, rtype, 0, 2030, comm, istatus, ierr)
+        CALL MPI_RECV(Vlocal, 2*MNP, rtype, 0, 2068, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1141,7 +1141,7 @@
       END IF
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
-          CALL mpi_isend(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
+          CALL mpi_isend(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2072, comm, spparm_rqst(irank), ierr)
         END DO
         DO IP=1,IWBMNP
           SPPARM(:,IP)=SPPARM_GL(:,Indexes_boundary(IP))
@@ -1150,7 +1150,7 @@
           CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
         END IF
       ELSE
-        CALL MPI_RECV(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+        CALL MPI_RECV(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2072, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1165,7 +1165,7 @@
       END IF
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
-          CALL mpi_isend(WBAC_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
+          CALL mpi_isend(WBAC_GL, 1, spparm_type(irank), bound_listproc(irank), 2096, comm, spparm_rqst(irank), ierr)
         END DO
         DO IP=1,IWBMNP
           WBAC(:,:,IP)=WBAC_GL(:,:,Indexes_boundary(IP))
@@ -1174,7 +1174,7 @@
           CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
         END IF
       ELSE
-        CALL MPI_RECV(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+        CALL MPI_RECV(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1199,7 +1199,7 @@
       IF (LINHOM) THEN
         IF (myrank .eq. rank_boundary) THEN
           DO irank=1,bound_nbproc
-            CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2030, comm, spparm_rqst(irank), ierr)
+            CALL mpi_irecv(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2099, comm, spparm_rqst(irank), ierr)
           END DO
           DO IP=1,IWBMNP
             SPPARM_GL(:, Indexes_boundary(IP))=SPPARM(:, IP)
@@ -1208,15 +1208,15 @@
             CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
           END IF
         ELSE
-          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2030, comm, istatus, ierr)
+          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, istatus, ierr)
         END IF
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN
           IF (myrank .eq. rank_hasboundary) THEN
-            CALL MPI_SEND(SPPARM,8,rtype, rank_boundary, 2035, comm, ierr)
+            CALL MPI_SEND(SPPARM,8,rtype, rank_boundary, 2045, comm, ierr)
           END IF
           IF (myrank .eq. rank_boundary) THEN
-            CALL MPI_RECV(SPPARM,8,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
+            CALL MPI_RECV(SPPARM,8,rtype, rank_hasboundary, 2045, comm, istatus, ierr)
           END IF
         END IF
         IF (myrank .eq. rank_boundary) THEN
@@ -1258,7 +1258,7 @@
           DO idx_proc=1,bound_nbproc
             WRITE(STAT%FHNDL,*) 'idx_proc/eProc=', idx_proc, bound_listproc(idx_proc)
             FLUSH(STAT%FHNDL)
-            CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2030, comm, wbac_rqst(idx_proc), ierr)
+            CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2040, comm, wbac_rqst(idx_proc), ierr)
             WRITE(STAT%FHNDL,*) 'MPI_IRECV ierr=', ierr
             FLUSH(STAT%FHNDL)
           END DO

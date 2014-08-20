@@ -9,11 +9,9 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER     :: IT, IFILE
-      INTEGER     :: IP, FORECASTHOURS
       REAL(rkind) :: WDIRT
       REAL(rkind) :: cf_w1, cf_w2
 
-      FORECASTHOURS = 0
       WINDXY(:,:) = 0.0
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
@@ -45,15 +43,11 @@
           FLUSH(WINDBG%FHNDL)
           IF (LWDIR) THEN
             CALL DEG2NAUT(WDIR, WDIRT, LNAUTIN)
-            DO IP = 1, MNP
-              WINDXY(IP,1) =  WVEL * COS(WDIRT * DEGRAD)
-              WINDXY(IP,2) =  WVEL * SIN(WDIRT * DEGRAD)
-            END DO
+            WINDXY(:,1) =  WVEL * COS(WDIRT * DEGRAD)
+            WINDXY(:,2) =  WVEL * SIN(WDIRT * DEGRAD)
           ELSE
-            DO IP = 1, MNP
-              WINDXY(IP,1) = CWINDX
-              WINDXY(IP,2) = CWINDY
-            END DO
+            WINDXY(:,1) = CWINDX
+            WINDXY(:,2) = CWINDY
           END IF
         ELSE ! LCWIN
           WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT

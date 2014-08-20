@@ -907,7 +907,6 @@
 !**********************************************************************
       SUBROUTINE BREAK_LIMIT_ALL
       USE DATAPOOL
-      USE elfe_msgp, only: myrank
       IMPLICIT NONE
 
       INTEGER              :: IP

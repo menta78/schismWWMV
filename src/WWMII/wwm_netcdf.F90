@@ -72,6 +72,7 @@
       eStrTime( 4: 4)=YnameYear( 4: 4)
       !
       ! month
+      WRITE(WINDBG%FHNDL,*) 'YnameMonth=', YnameMonth
       lenMonth=LEN_TRIM(YnameMonth)
       IF (lenMonth .eq. 2) THEN
         eStrTime( 5: 5)=YnameMonth( 1: 1)
@@ -79,7 +80,7 @@
       ELSE
         IF (lenMonth .eq. 1) THEN
           eStrTime( 5: 5)='0'
-          eStrTime( 5: 5)=YnameMonth( 1: 1)
+          eStrTime( 6: 6)=YnameMonth( 1: 1)
         ELSE
           CALL WWM_ABORT('DIE in trying to get the month')
         END IF
@@ -840,7 +841,7 @@
       integer, intent(in) :: ncid, nbTime
       integer, intent(inout) :: ntime_dims
       character (len = *), parameter :: UNITS = "units"
-      character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
+      character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME_HEADER"
       integer iret, fifteen_dims, var_id
       iret=nf90_inq_dimid(ncid, 'fifteen', fifteen_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)

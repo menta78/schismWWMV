@@ -1900,14 +1900,14 @@
           allocate(bnd_rqst(nproc-1), bnd_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 17')
           DO iProc=2,nproc
-            CALL mpi_isend(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, iProc-1, 2030, comm, bnd_rqst(iProc-1), ierr)
+            CALL mpi_isend(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, iProc-1, 2032, comm, bnd_rqst(iProc-1), ierr)
           END DO
           IF (nproc > 1) THEN
             CALL MPI_WAITALL(nproc-1, bnd_rqst, bnd_stat, ierr)
           END IF
           deallocate(bnd_rqst, bnd_stat)
         ELSE
-          CALL MPI_RECV(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, 0, 2030, comm, istatus, ierr)
+          CALL MPI_RECV(ARR_send_recv, 5*NDX_BND*NDY_BND, rtype, 0, 2032, comm, istatus, ierr)
           J=0
           DO IX=1,NDX_BND
             DO IY=1,NDY_BND
@@ -2463,14 +2463,14 @@
           IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 30')
           CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
           DO iProc=2,nproc
-            CALL mpi_isend(SPECOUT, siz, rtype, iProc-1, 2030, comm, send_rqst(iProc-1), ierr)
+            CALL mpi_isend(SPECOUT, siz, rtype, iProc-1, 2034, comm, send_rqst(iProc-1), ierr)
           END DO
           IF (nproc .gt. 1) THEN
             call mpi_waitall(nproc-1, send_rqst, send_stat,ierr)
           END IF
           deallocate(send_rqst, send_stat)
         ELSE
-          CALL MPI_RECV(SPECOUT, siz, rtype, 0, 2030, comm, istatus, ierr)
+          CALL MPI_RECV(SPECOUT, siz, rtype, 0, 2034, comm, istatus, ierr)
         END IF
       END IF
 #endif
@@ -3114,7 +3114,11 @@
       ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
+<<<<<<< HEAD
       ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL), start=(/1,1,1,IT/), count = (/MSC,MDC, IWBMNPGL,1/)
+=======
+      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/MSC,MDC, IWBMNPGL,1/))
+>>>>>>> 2679da223e81ce76098c33bbba14f8e36854b6e2
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
 
       ISTAT = NF90_CLOSE(ncid)
