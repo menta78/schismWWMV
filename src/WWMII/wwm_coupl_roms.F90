@@ -243,31 +243,29 @@
           MatrixBelongingWAV=0
           DO i=1,MNP
             eIdx=iplg(i)
-            MatrixBelongingWAV(eIdx,1)=1
+            MatrixBelongingWAV(eIdx,1)=i
             All_LocalToGlobal(i,1)=eIdx
           ENDDO
           NumberNode(1)=MNP
           DO iProc=2,NnodesWAV
-            allocate(rbuf_int(2), stat=istat)
+            allocate(rbuf_int(1), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 5')
-            CALL MPI_RECV(rbuf_int,2,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
+            CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
             MNPloc=rbuf_int(1)
-            MNEloc=rbuf_int(2)
             NumberNode(iProc)=MNPloc
-            NumberTrig(iProc)=MNEloc
             deallocate(rbuf_int)
-!
+            !
             allocate(rbuf_int(MNPloc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 6')
             CALL MPI_RECV(rbuf_int,MNPloc,itype, iProc-1, 195, WAV_COMM_WORLD, istatus, ierr)
             DO IP=1,MNPloc
               eIdx=rbuf_int(IP)
-              MatrixBelongingWAV(eIdx,iProc)=1
+              MatrixBelongingWAV(eIdx,iProc)=IP
               All_LocalToGlobal(IP,iProc)=eIdx
             END DO
             deallocate(rbuf_int)
           END DO
-!
+          !
           allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 7')
           idx=0
@@ -282,20 +280,13 @@
           END DO
           deallocate(rbuf_int)
         ELSE
-          allocate(rbuf_int(2), stat=istat)
+          allocate(rbuf_int(1), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 8')
           rbuf_int(1)=MNP
-          rbuf_int(2)=MNE
-          CALL MPI_SEND(rbuf_int,2,itype, 0, 194, WAV_COMM_WORLD, ierr)
+          CALL MPI_SEND(rbuf_int,1,itype, 0, 194, WAV_COMM_WORLD, ierr)
           deallocate(rbuf_int)
 
-          allocate(rbuf_int(MNP), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 9')
-          DO i=1,MNP
-            rbuf_int(i)=iplg(i)
-          END DO
-          CALL MPI_SEND(rbuf_int,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
-          deallocate(rbuf_int)
+          CALL MPI_SEND(iplg,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
 !
           allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 10')
