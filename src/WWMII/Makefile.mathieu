@@ -1,4 +1,4 @@
-include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 #PROG = wwmadv
 

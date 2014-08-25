@@ -97,7 +97,7 @@
            IF (IOBP(IP) .EQ. 2) CYCLE ! skip active boundary points ...
            CALL PROPTHETA(IP,CAD)
            DO IS = 1, MSC
-             ACQ( 1:MDC) = AC2(IS,:,IP)
+             ACQ(1:MDC) = AC2(IS,:,IP)
              CADS(1:MDC) = CAD(IS,:)
              CFLCAD = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR 
              IF (CFLCAD .LT. THR) CYCLE
@@ -109,7 +109,7 @@
              END IF 
              ITER = MAX(1,ITER)
              DT4DI = DT4D / MyREAL(ITER)
-             !write(DBG%FHNDL,*) ip, is, iter, dt4di, sum(cads),sum(acq)
+             write(DBG%FHNDL,*) ip, is, iter, dt4di, sum(cads),sum(acq)
              DO IT = 1, ITER ! Iteration
                CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
              END DO          ! end Interation
@@ -643,11 +643,12 @@
          END SELECT
 
          IF (LSPHE) THEN
-            DO IS = 1, MSC
-               DO ID = 1, MDC
-                 CAD(IS,ID) = CAD(IS,ID)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
-               END DO
-            END DO
+           DO IS = 1, MSC
+              DO ID = 1, MDC
+                CAD(IS,ID) = CAD(IS,ID)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
+                !WRITE(*,*) IS, ID, CG(IS,IP), COSTH(ID), TAN(YP(IP)*DEGRAD)/REARTH
+              END DO
+           END DO
          END IF
 
          IF (LFILTERTH) THEN
@@ -660,6 +661,7 @@
               END IF
             END DO
          END IF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
