@@ -69,7 +69,7 @@
      &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, IAB, SWELLFT, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, ONE, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, TAUWSHELTER, &
-     &                FRATIO, EMEAN, USNEW, THWNEW, DEGRAD, LCFLX, &
+     &                FRATIO, EMEAN, USNEW, THWNEW, DEGRAD, LCFLX, MSC, MDC, &
      &                SINTH, COSTH, &
      &                ROWATER => RHOW, &
      &                ROAIR => RHOA, &
@@ -138,6 +138,7 @@
 
       W=26.
       TPIINV = 1./ZPI
+      MIJ = MSC
 
       ROG = ROWATER*G
 

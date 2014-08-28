@@ -411,7 +411,7 @@
         if(time>=wtime2) then
           wtime1=wtime2
           wtime2=wtime2+wtiminc
-          read(22,*) wx2,wy2
+          read(22,*)tmp,wx2,wy2
           windx1=windx2
           windy1=windy2
           windx2=wx2
@@ -436,7 +436,7 @@
 !          unformatted binary read)
           allocate(rwild(np_global,3),stat=istat)
           if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
-          read(22,*)rwild(:,:) 
+          read(22,*)tmp,rwild(:,:) 
           do i=1,np_global
             if(ipgl(i)%rank==myrank) then
               nd=ipgl(i)%id
@@ -455,6 +455,7 @@
           pr(i)=pr1(i)+wtratio*(pr2(i)-pr1(i))
         enddo !i
       endif !nws=4
+
 #ifdef USE_ICM
 ! calculating WMS used for reareation,added by wangzg
       if(irea==1) then
@@ -470,6 +471,7 @@
         enddo !i
       endif !irea=1
 #endif
+
 !     CORIE mode
       if(nws>=2.and.nws<=3) then
         if(time>=wtime2) then
@@ -508,7 +510,7 @@
         enddo !i
 
 !       Overwrite wind with wind.th
-!        read(22,*)wx2,wy2
+!        read(22,*)tmp,wx2,wy2
 !        windx1=wx2; windy1=wy2
 !        windx2=wx2; windy2=wy2
 !        windx=wx2; windy=wy2
@@ -569,7 +571,7 @@
          !OUTPAR(9)   = DM       ! Mean average energy transport direction
          !OUTPAR(10)  = DSPR     ! Mean directional spreading
          !OUTPAR(11)  = FPP      ! Discrete peak period (sec)
-         !OUTPAR(12)  = TPP      ! Continues peak period based on higher order moments (sec) 
+         !OUTPAR(12)  = TPP      ! Continuous peak period based on higher order moments (sec) 
          !OUTPAR(13)  = CPP      ! Peak phase vel. (m/s)
          !OUTPAR(14)  = WNPP     ! Peak n-factor
          !OUTPAR(15)  = CGPP     ! Peak group vel.
@@ -1496,9 +1498,9 @@
 
           if(time>th_time3(2,3)) then !not '>=' to avoid last step
             ath3(:,:,1,3)=ath3(:,:,2,3)  
-            do j=1,2+ntracers
-              read(65,*)tmp,ath3(1:nsources,j,2,3) !swild(1:nsources)
-            enddo !j
+            !do j=1,2+ntracers
+            read(65,*)tmp,ath3(1:nsources,1:2+ntracers,2,3)
+            !enddo !j
             th_time3(1,3)=th_time3(2,3)
             th_time3(2,3)=th_time3(2,3)+th_dt3(3)
           endif !time
@@ -5845,7 +5847,7 @@
 !        Upwind and TVD option
 !
 !*************************************************************************************
-      if(iupwind_t/=0.or.iupwind_s/=0) then
+      if(iupwind_t/=0) then
 !       b.c. and body forces
         bdy_frc=0; flx_sf=0; flx_bt=0
 
@@ -5966,9 +5968,13 @@
         endif !iSun=2
 #endif /*USE_ICM*/
 
-        up_tvd=(iupwind_t==2.or.iupwind_s==2)
+        up_tvd=iupwind_t>=2
         tr_el(1:2,:,:)=tsel(1:2,:,:)
-        call do_transport_tvd(it,0,up_tvd,tvd_mid1,flimiter1,2,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        if(iupwind_t<=2) then !upwind or explicit TVD
+          call do_transport_tvd(it,0,up_tvd,tvd_mid1,flimiter1,2,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        else if(iupwind_t==3) then !implicit TVD
+          call do_transport_tvd_imp(it,0,up_tvd,tvd_mid1,flimiter1,2,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        endif !iupwind_t
         tsel(1:2,:,:)=tr_el(1:2,:,:)
         if(difnum_max_l>difnum_max_l2) difnum_max_l2=difnum_max_l
 
@@ -6353,8 +6359,12 @@
             call parallel_abort('Unknown tracer model (9)')
         end select !flag_model
 
-        up_tvd=itr_met==2
-        call do_transport_tvd(it,1,up_tvd,tvd_mid2,flimiter2,ntracers,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        up_tvd=itr_met>=2
+        if(itr_met<=2) then !upwind or explicit TVD
+          call do_transport_tvd(it,1,up_tvd,tvd_mid2,flimiter2,ntracers,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        else if(itr_met==3) then !implicit TVD
+          call do_transport_tvd_imp(it,1,up_tvd,tvd_mid2,flimiter2,ntracers,difnum_max_l,nvrt,npa,ptbt(4,:,:))
+        endif !itr_met
         if(myrank==0) write(16,*)'done tracer transport...'
 
 !#ifdef USE_TIMOR
@@ -7544,7 +7554,7 @@
               endif
             enddo !j
             write(250+i,'(e14.6,6000(1x,e14.6))')time,sta_out_gb(:,i)
-            if(i>4) write(250+i,'(e14.6,100000(1x,e14.6))')time,sta_out3d_gb(:,:,i),zta_out3d_gb(:,:,i)
+!            if(i>4) write(250+i,'(e14.6,100000(1x,e14.6))')time,sta_out3d_gb(:,:,i),zta_out3d_gb(:,:,i)
           enddo !i
           write(16,*)'done station outputs...'
         endif !myrank

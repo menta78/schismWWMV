@@ -61,7 +61,7 @@
 
        IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
          ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9a')
          U_JACOBI = zero
        END IF
 
@@ -522,8 +522,11 @@
       END IF
       write(DBG%FHNDL,*) 'sum(XPtotal)=', sum(XPtotal)
       write(DBG%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
+      write(DBG%FHNDL,*) 'sum(DEPtotal)=', sum(DEPtotal)
+      write(DBG%FHNDL,*) 'sum(INEtotal)=', sum(INEtotal)
+      write(DBG%FHNDL,*) NP_TOTAL, NE_TOTAL, MDC, MSC
       CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
-      call fillPublicVars()
+      call fillPublicVars
       CALL INIT_ARRAYS
       XP = XPTMP
       YP = YPTMP

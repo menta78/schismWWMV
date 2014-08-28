@@ -1,4 +1,4 @@
-      SUBROUTINE FEMEAN (IP, F, EM, FM, LLAK)
+      SUBROUTINE FEMEAN_LOCAL (IP, F, EM, FM, LLAK)
 
 ! ----------------------------------------------------------------------
 
@@ -128,4 +128,4 @@
       ENDIF
 
       RETURN
-      END SUBROUTINE FEMEAN
+      END SUBROUTINE FEMEAN_LOCAL

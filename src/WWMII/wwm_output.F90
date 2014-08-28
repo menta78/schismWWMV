@@ -377,7 +377,7 @@
       REAL(rkind) :: XYTMP(2,MNP)
       XYTMP(1,:) = XP
       XYTMP(2,:) = YP
-      CALL FIND_ELE(MNE,MNP,INE,XYTMP,eX, eY,IEfind)
+      CALL FIND_ELE(MNE,MNP,INE,XYTMP,eX,eY,IEfind)
       DO I=1,3
         IP=INE(I,IEfind)
         X(I)=XP(IP)
@@ -1204,7 +1204,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)    :: IP, ISMAX
+         INTEGER, INTENT(IN)           :: IP, ISMAX
          REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind)   , INTENT(OUT)   :: OUTPAR(OUTVARS)
 
@@ -1253,7 +1253,7 @@
          OUTPAR(24)  = TMBOT    ! near bottom period. 
 
          IF (TPP .GT. THR) THEN
-           CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
+           CALL URSELL_NUMBER(HS,MyREAL(1)/TPP,DEP(IP),URSELL)
            OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
          ELSE
            OUTPAR(25) = ZERO    ! Uresell number based on peak period ...
@@ -1359,7 +1359,7 @@
       END IF
 
       IF (VAROUT_HISTORY%ComputeUrsell) THEN
-        CALL URSELL_NUMBER(HS,1./TPP,DEP(IP),URSELL)
+        CALL URSELL_NUMBER(HS,MyREAL(1)/TPP,DEP(IP),URSELL)
         OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
       END IF
 
@@ -1471,7 +1471,7 @@
       END IF
 
       IF (VAROUT_STATION%ComputeUrsell) THEN
-        CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
+        CALL URSELL_NUMBER(HS,MyREAL(1)/TPP,DEPLOC,URSELL)
         OUTPAR(28) = URSELL    ! Uresell number based on peak period ...
       END IF
 
@@ -1578,7 +1578,7 @@
          OUTPAR(24)  = TMBOT    ! near bottom period. 
 
          IF (TPP .GT. THR) THEN
-           CALL URSELL_NUMBER(HS,1./TPP,DEPLOC,URSELL)
+           CALL URSELL_NUMBER(HS,MyREAL(1)/TPP,DEPLOC,URSELL)
            OUTPAR(25) = URSELL    ! Uresell number based on peak period ...
          ENDIF
 

@@ -2221,6 +2221,7 @@ subroutine aquire_hgrid(full_aquire)
       write(16,'(5i8)') i,irbuf(4*i+1),irbuf(4*i+2),irbuf(4*i+3),irbuf(4*i+4)
     enddo
     write(16,*)
+    call flush(16) ! flush "mirror.out"
   endif !myrank==0
   deallocate(isbuf,irbuf)
   call parallel_barrier

@@ -1647,6 +1647,7 @@
           write(16,*) 'netCDF dataset and existence: ', &
      &              trim(info%name), info%exist
           write(16,*)
+          call flush(16) ! flush "mirror.out"
         endif
 
 ! run should fail if dataset doesn't exist and fail_if_missing is set
@@ -1656,7 +1657,10 @@
 
 ! if this dataset exists, then get additional info
         if (info%exist) then
-          if(myrank==0) write(16,*) 'getting additional info for: ', info%name
+          if(myrank==0) then
+            write(16,*) 'getting additional info for: ', info%name
+            call flush(16) ! flush "mirror.out"
+          endif
           
           call get_times_etc (info%name, info%times, &
      &                        info%file_num_for_time, &
@@ -1910,6 +1914,7 @@
           write(16,*) 'num_times = ', num_times
           write(16,*) 'first time = ', times(1)
           write(16,*) 'last  time = ', times(num_times)
+          call flush(16) ! flush "mirror.out"
         endif
 
 !       write(*,*) dataset_name, num_files, num_times
