@@ -1208,7 +1208,7 @@
             CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
           END IF
         ELSE
-          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, istatus, ierr)
+          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, ierr)
         END IF
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN
