@@ -1276,7 +1276,7 @@
       REAL(rkind)              :: XYTMP(2,MNP)
 #ifdef MPI_PARALL_GRID
       integer :: iProc
-      integer, allocatable :: rbuf_int(:)
+      integer :: rbuf_int(1)
 #endif
 !
 !    set the site output
@@ -1307,6 +1307,7 @@
         XYTMP(2,:) = YP
         WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
         DO I = 1, IOUTS
+          STATION(I)%ELEMENT=0
           CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
           IF (STATION(I)%ELEMENT .GT. 0) THEN
             STATION(I)%IFOUND  = 1
@@ -1325,8 +1326,6 @@
             FLUSH(DBG%FHNDL)
           END IF
         END DO
-        allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
         DO I = 1, IOUTS
           CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1, itype,MPI_SUM,0,COMM,IERR)
           IF (myrank == 0) THEN
@@ -1341,7 +1340,6 @@
             STATION(I)%ISUM=rbuf_int(1)
           END IF
         END DO
-        deallocate(rbuf_int)
         IF (myrank == 0) THEN
           DO I = 1, IOUTS
             IF (STATION(I)%ISUM .EQ. 0) THEN
@@ -1351,7 +1349,6 @@
             END IF
           END DO
         END IF
-
         ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(MSC,MDC,IOUTS), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
         ACLOC_SUM           = 0.
@@ -1370,6 +1367,7 @@
         IF (DIMMODE .EQ. 2) THEN
           WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
           DO I = 1, IOUTS
+            STATION(I)%ELEMENT=0
             CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
             IF (STATION(I)%ELEMENT == 0) THEN
               STATION(I)%IFOUND = 0

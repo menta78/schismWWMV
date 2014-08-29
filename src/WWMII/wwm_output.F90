@@ -377,6 +377,7 @@
       REAL(rkind) :: XYTMP(2,MNP)
       XYTMP(1,:) = XP
       XYTMP(2,:) = YP
+      IEfind=0
       CALL FIND_ELE(MNE,MNP,INE,XYTMP,eX,eY,IEfind)
       DO I=1,3
         IP=INE(I,IEfind)
