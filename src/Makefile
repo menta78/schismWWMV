@@ -44,7 +44,6 @@ endif
 -include ../mk/Make.defs.local  #optional include
 include ../mk/Make.defs.config
 
-
 ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
   $(print Here)
   MODULEOUTDIR = -J
@@ -55,6 +54,15 @@ else
     MODULEOUTDIR = -module 
   endif
 endif
+
+
+##########
+# Check for serial compiler and revert to parallel if not provided
+#########
+ifeq ($(FCS),)
+    FCS := ${FCP}
+endif
+
 
 
 ############
@@ -180,7 +188,7 @@ endif
 
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
         selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
-        io_subs.o misc_subs.o transport.o sflux_9c.o lap.o
+        io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o sflux_9c.o lap.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
@@ -226,7 +234,12 @@ $(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
 
 
 $(PARMETISDIR)/%.a:
-	+$(MAKE) --directory=$(PARMETISDIR)		
+	+$(MAKE) --directory=$(PARMETISDIR)
+
+.PHONY: parmetis
+parmetis:
+	+$(MAKE) clean --directory=$(PARMETISDIR)
+	+$(MAKE) --directory=$(PARMETISDIR)
 
 
 .PHONY: depend
@@ -236,9 +249,10 @@ depend: o/$(config)/.dummy o/$(config)/.depend ../bin/.dummy
 
 o/$(config)/.depend: o/$(config)/.dummy
 	@echo Building depend list
-	@echo $(FULLSRC)
+	@echo $(util_srcs_abs)
 	@ ../mk/sfmakedepend.pl -d o/$(config) -I $(VPATH) -f o/$(config)/.depend_extended $(FULLSRC) > depend.out
-	@ ../mk/cull_depends.py o/$(config)/.depend_extended o/$(config)/.depend "$(CONFIG_OBJS)"
+	@echo $(FULL_CONFIG_OBJS)
+	@ ../mk/cull_depends.py o/$(config)/.depend_extended o/$(config)/.depend "$(FULL_CONFIG_OBJS)" 
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include o/$(config)/.depend
@@ -255,91 +269,68 @@ o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
 
 
 ################# Utility
-.PHONY: utility
+# The utility directory contains a lot of single-file executables plus a few that rely on shared subroutines
+# for things like geometry calculations.
+#
+# The executables will be discovered automatically
+# Files with re-usable routines should be maually added to the list util_lib_src a few lines below.
+# Please consider moving the common files to UtilLib if you think the subroutines can be re-used 
+# by utility scripts in several directories ... we'd like to start creating a modern API-driven library.
 
-util_dirs := ArcGIS Combining_Scripts Grid_Scripts NCOM OneWayNestScripts Particle_Tracking Post-Processing-Fortran Sflux_nc SMS stat3
+
+src_extension := .f90
+util_lib_src := selfe_geometry.f90 extract_mod.f90 compute_zcor.f90 stat_pool.f90 stat_pool.f90 stripsearch_unstr.f90
+util_lib_obj := $(subst $(src_extension),.o,$(util_lib_src))
+util_lib_config_objs := $(addprefix o/$(config)/, $(util_lib_obj))
+
+
+util_dirs :=  Combining_Scripts Grid_Scripts NCOM OneWayNestScripts Particle_Tracking Post-Processing-Fortran Sflux_nc SMS Stat3 UtilLib ArcGIS
 util_dirs := $(addprefix Utility/,$(util_dirs))
 VPATH := $(VPATH) $(util_dirs)
 
-src_extension := .f90
 
 # list of source files in all the other source directories
 ifneq ($(util_dirs),)
-  util_srcs := $(notdir $(wildcard $(foreach ext,$(src_extension),$(addsuffix /*$(ext),$(util_dirs)))))
+  util_srcs_abs := $(wildcard $(foreach ext,$(src_extension),$(addsuffix /*$(ext),$(util_dirs))))
+  util_srcs_all := $(notdir $(util_srcs_abs) )
 endif
 
-# remove a couple of items that don't compile as executables... gotta find out what to do about these
-# also utilities depend on multiple source code files are filtered out. seperated configuration for them are written below in the "util_other" section.
-util_srcs := $(filter-out binary_2_ncstruc.f90 combine_output5.f90 combine_output6.f90 selfe_geometry.f90 stripsearch_unstr.f90 compute_zcor.f90 extract_mod.f90 extract_slab.f90 extract_timeseries.f90 extract_xyzt.f90 stat3.f90 stat_pool.f90,$(util_srcs))
-
+# remove library items that don't compile as executables
+util_srcs  := $(filter-out $(util_lib_src),$(util_srcs_all))
 util_execs := $(addprefix ../bin/,$(subst $(src_extension),.ex,$(util_srcs)))
+util_objs  := $(subst $(src_extension),.o,$(util_srcs))
+util_config_objs := $(addprefix o/$(config)/, $(util_objs)) 
+
+FULLSRC := $(FULLSRC) $(util_srcs_abs)
+FULL_CONFIG_OBJS = $(CONFIG_OBJS) $(util_config_objs) $(util_lib_config_objs)
+
+.PHONY: utility
+
+utility: $(util_execs) o/$(config)/libutil_lib.a
 
 
-util_objs := $(subst $(src_extension),.o,$(util_srcs))
-util_config_objs := $(addprefix o/$(config)/, $(util_objs))
+#$(util_execs): $(util_config_objs) o/$(config)/libutil_lib.a
+#	$(FCS) $(SCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Lo/$(config) -lutil_lib -Io/$(config)  $(CDFLIBS) $(GTTMOD) $(CDFMOD) $< -o $@
+$(util_execs): ../bin/%.ex : o/$(config)/%.o o/$(config)/libutil_lib.a
+	$(FCS) $(SCPFLAGS) $< ${MODULEOUTDIR}o/$(config) -Lo/$(config) -lutil_lib -Io/$(config)  $(CDFLIBS) $(GTTMOD) $(CDFMOD) -o $@
 
-utility: $(util_execs) util_other o/$(config)/.dummy
+o/$(config)/libutil_lib.a: $(util_lib_config_objs)
+	$(AR) $(ARFLAGS) $@ $^
 
-#	@echo building $(util_execs) $(util_srcs)
+
+#$(util_config_obs) : $(util_srcs) o/$(config)/.dummy  ../bin/.dummy
+#	$(SCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+
 
 o/$(config)/%.o : %.f90 o/$(config)/.dummy  ../bin/.dummy
-#	ifort -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-# The FCP flag contains mpi wrapper. It is not clean, but can be used to change compiler depend on "Make.defs.local".
-	$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-
-
+#	$(FCS) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
+	$(FCS) -c $(FCPFLAGS) $< ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) -o $@
 
 
 ../bin/%.ex: o/$(config)/%.o  ../bin/.dummy
 	$(FLD) $(FLDFLAGS) $< $(LIBS) ${MODULEOUTDIR}. -I. -o $@
 
 
-# The below section need to be imporved, as it is not smart and clean enough, but it works.
-
-util_other: ../bin/binary_2_ncstruc.ex ../bin/combine_output5.ex ../bin/combine_output6.ex ../bin/extract_slab.ex ../bin/extract_timeseries.ex ../bin/extract_xyzt.ex ../bin/stat3.ex
-
-../bin/binary_2_ncstruc.ex: o/$(config)/binary_2_ncstruc.o o/$(config)/stripsearch_unstr.o  ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/stripsearch_unstr.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-../bin/combine_output5.ex: o/$(config)/combine_output5.o o/$(config)/selfe_geometry.o  ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/selfe_geometry.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-../bin/combine_output6.ex: o/$(config)/combine_output6.o o/$(config)/selfe_geometry.o  ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/selfe_geometry.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-../bin/extract_slab.ex: o/$(config)/extract_slab.o o/$(config)/extract_mod.o ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-../bin/extract_timeseries.ex: o/$(config)/extract_timeseries.o o/$(config)/extract_mod.o ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-../bin/extract_xyzt.ex: o/$(config)/extract_xyzt.o o/$(config)/extract_mod.o ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/extract_mod.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-o/$(config)/extract_slab.o: extract_slab.f90 o/$(config)/extract_mod.mod ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-o/$(config)/extract_timeseries.o: extract_timeseries.f90 o/$(config)/extract_mod.mod ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-o/$(config)/extract_xyzt.o: extract_xyzt.f90 o/$(config)/extract_mod.mod ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-o/$(config)/extract_mod.o: extract_mod.f90 ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-o/$(config)/extract_mod.mod: extract_mod.f90 ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-../bin/stat3.ex: o/$(config)/stat_pool.o o/$(config)/stat3.o ../bin/.dummy
-	$(FLD) $(FLDFLAGS) $< o/$(config)/stat3.o $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-o/$(config)/stat_pool.o o/$(config)/stat_pool.mod: stat_pool.f90 ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-
-o/$(config)/stat3.o: stat3.f90 o/$(config)/stat_pool.mod ../bin/.dummy
-	$(FCP) -c $(FCPFLAGS) ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
 
 
 
@@ -356,10 +347,10 @@ make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
 
 o/$(config)/.dummy:
 	@echo $(make_defs_local_exists)
-        ifeq ( $(strip $(make_defs_local_exists)), )
-             $(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
+	ifeq ( $(strip $(make_defs_local_exists)), )
+			$(error Make.defs.local does not exist in the /mk directory. Please create one using another mk/Make.defs.xxx as a template.  \
              If you put your Make.defs.xxx file in svn, you can make a symbolic link Make.defs.local pointing to it.[1])
-        endif
+	endif
 	$(ECHO)mkdir -p o/$(config)
 	@touch o/$(config)/.dummy
 
@@ -384,6 +375,5 @@ clean:
 	$(QUIET)rm -f *.F90 *.c *.o *.mod $(EXEC)
 	$(QUIET)rm -rf o/*
 	$(QUIET)rm -rf ../bin/*
-
-
+	$(QUIET)rm -rf $(PARMETISDIR)/*.a
 

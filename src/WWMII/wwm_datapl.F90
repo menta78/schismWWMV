@@ -768,7 +768,9 @@
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+#ifndef SELFE
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+#endif
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
