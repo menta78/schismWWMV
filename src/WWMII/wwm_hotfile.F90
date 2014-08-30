@@ -169,7 +169,7 @@ MODULE wwm_hotfile_mod
 #ifdef NCDF
         iret=nf90_open(TRIM(FILERET), nf90_nowrite, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
-        iret=nf90_inq_dimid(ncid,'mnp',mnp_dims)
+        iret=nf90_inq_dimid(ncid,"mnp",mnp_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         iret=nf90_inquire_dimension(ncid, mnp_dims, len=nploc)
         CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
@@ -514,7 +514,10 @@ MODULE wwm_hotfile_mod
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
           DO IP=1,MNP
             iret=nf90_get_var(ncid,ac_id,ACLOC, start=(/1,1,iplg(IP),IHOTPOS_IN/), count = (/MSC, MDC, 1, 1 /))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+            IF (iret /= 0) THEN
+              Print *, 'This time send direcly your bug to Mathieu.Dutour@gmail.com'
+              CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+            END IF
             AC2(:,:,IP)=ACLOC
           END DO
           iret=nf90_close(ncid)
@@ -621,19 +624,19 @@ MODULE wwm_hotfile_mod
           iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
           CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_HOT, np_write, ne_write)
-          iret=nf90_inq_dimid(ncid, 'mnp', mnp_dims)
-          CALL REPORT_ERROR_INQ(iret, 'mnp')
+          iret=nf90_inq_dimid(ncid, "mnp", mnp_dims)
+          CALL REPORT_ERROR_INQ(iret, "mnp")
 
-          iret=nf90_inq_dimid(ncid, 'msc', msc_dims)
-          CALL REPORT_ERROR_INQ(iret, 'msc')
+          iret=nf90_inq_dimid(ncid, "msc", msc_dims)
+          CALL REPORT_ERROR_INQ(iret, "msc")
 
-          iret=nf90_inq_dimid(ncid, 'mdc', mdc_dims)
+          iret=nf90_inq_dimid(ncid, "mdc", mdc_dims)
           CALL REPORT_ERROR_INQ(iret, 'mdc')
 
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
           CALL REPORT_ERROR_INQ(iret, 'ocean_time')
 
-          iret=nf90_def_var(ncid,'ac',NF90_RUNTYPE,(/ msc_dims, mdc_dims, mnp_dims, ntime_dims/),ac_id)
+          iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ msc_dims, mdc_dims, mnp_dims, ntime_dims/),ac_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
 
           iret=nf90_put_att(ncid,ac_id,UNITS,'unknown')
