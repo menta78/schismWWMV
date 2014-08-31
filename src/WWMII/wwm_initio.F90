@@ -1186,6 +1186,8 @@
          WINDBG%FHNDL   = STARTHNDL + 17 
          SRCDBG%FHNDL   = STARTHNDL + 18
 
+         IU06           = STAT%FHNDL
+
 #ifndef MPI_PARALL_GRID
          open(DBG%FHNDL,file='wwmdbg.out',status='unknown') !non-fatal errors
          open(STAT%FHNDL,file='wwmstat.out',status='unknown') !non-fatal errors

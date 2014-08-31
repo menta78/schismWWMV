@@ -1091,7 +1091,7 @@
          INTEGER                :: KFRH, MFRSTLW, MLSTHG
 
          INTEGER, PARAMETER     :: ISNONLIN = 1 
-         INTEGER, PARAMETER     :: IU06 = 222222
+         INTEGER                :: IU06 
          INTEGER, PARAMETER     :: ILEV = 1
          INTEGER, PARAMETER     :: ITAUMAX=100
          INTEGER, PARAMETER     :: JUMAX=50

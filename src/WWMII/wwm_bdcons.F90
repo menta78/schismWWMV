@@ -2597,14 +2597,15 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
+
         USE DATAPOOL, ONLY: rkind
         IMPLICIT NONE
 
-        INTEGER, INTENT(IN) :: NP,P,D1,D2
+        INTEGER, INTENT(IN)      :: NP,P,D1,D2
         REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
         REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
-        INTEGER :: IP
-        REAL :: SW
+        INTEGER                  :: IP
+        REAL                     :: SW
 
         SW=0
         ZINT=0
