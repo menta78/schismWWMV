@@ -418,34 +418,6 @@
       END SUBROUTINE
 #ifdef MPI_PARALL_GRID
 !**********************************************************************
-!* Some MPI_BARRIER are just not reliable. This construction makes    *
-!* that every process receive and send to every other process         *
-!**********************************************************************
-      SUBROUTINE MYOWN_MPI_BARRIER(iresult)
-      USE DATAPOOL
-      IMPLICIT NONE
-      integer, intent(in) :: iresult
-      integer eInt(1)
-      integer iRank, jRank, eTag
-      eInt(1)=4
-      WRITE(STAT%FHNDL,*) 'Before the loop of send/recv stat=', iresult
-      FLUSH(STAT%FHNDL)
-      DO iRank=0,nproc-1
-        eTag=137 + iRank
-        IF (myrank .eq. iRank) THEN
-          DO jRank=0,nproc-1
-            IF (iRank.ne. jRank) THEN
-              CALL MPI_SEND(eInt,1,itype,jRank,eTag,comm,ierr)
-            END IF
-          END DO
-        ELSE
-          CALL MPI_RECV(eInt, 1, itype,iRank,eTag,comm,istatus,ierr)
-        END IF
-      END DO
-      WRITE(STAT%FHNDL,*) 'After the loop of send/recv stat=', iresult
-      FLUSH(STAT%FHNDL)
-      END SUBROUTINE
-!**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE AC_COHERENCY(AC, string)
