@@ -12,7 +12,7 @@
       y = year + 4800 - a;
       m = month + 12*a - 3;
       ! For a date in the Gregorian calendar:
-      eJD = day +                                                      &
+      eJD = day                                                        &
      &   + floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5))        &
      &   + y*365 + floor(MyREAL(y)/MyREAL(4))                          &
      &   - floor(MyREAL(y)/MyREAL(100))                                &

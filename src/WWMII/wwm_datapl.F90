@@ -768,7 +768,9 @@
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+#ifndef SELFE
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+#endif
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
@@ -1089,7 +1091,7 @@
          INTEGER                :: KFRH, MFRSTLW, MLSTHG
 
          INTEGER, PARAMETER     :: ISNONLIN = 1 
-         INTEGER, PARAMETER     :: IU06 = 222222
+         INTEGER                :: IU06 
          INTEGER, PARAMETER     :: ILEV = 1
          INTEGER, PARAMETER     :: ITAUMAX=100
          INTEGER, PARAMETER     :: JUMAX=50
