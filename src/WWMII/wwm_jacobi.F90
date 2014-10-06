@@ -155,8 +155,6 @@
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
-
-
       IF (FREQ_SHIFT_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -206,30 +204,14 @@
 !* This gives
 !*
 !* (1) N_i^(n+1) = N_i^n + (delta t/delta x)
-!*            (u_i^n N_i^(n+1) - u_(i-1)^n N_(i-1)^(n+1)) if u_i^n > 0
+!*            (u_(i+1)^n N_(i+1)^(n+1) - u_i^n N_i^(n+1)) if u_i^n > 0
 !* (2) N_i^(n+1) = N_i^n + (delta t/delta x)
-!*            (u_(i+1)^n N_(i+1)^(n+1) - u_i^n N_i^(n+1)) if u_i^n < 0
-!*
-!* We write u_+ = max(0,u)  u_- = min(0,u) so that u = u_+   +   u_-
-!* and we write w = (delta t)/(delta x) u^n
-!* 
-!* This gives us a single equation:
-!* N_i^(n+1) = N_i^n + w_i+ N_i^(n+1) - w_(i-1,+) N_(i-1)^(n+1)
-!*               + w_(i+1,-) N_(i+1)^(n+1) - w_(i,-) N_i^(n+1)
-!* which after rewrites give us
-!* N_i^n = N_i^(n+1)     [1 - w_(i,+) + w_(i,-)]
-!*       + N_(i-1)^(n+1) [    w_(i-1,+)        ]
-!*       + N_(i+1)^(n+1) [   -w_(i+1,-)        ]
-!* 
-!* For the refraction this is sufficient to describe the system
-!* since the coordinates are circular.
-!* Note that the 1 does not appear directly since it is added to
-!* the diagonal that is part of a larger system.
+!*            (u_i^n N_i^(n+1) - u_(i-1)^n N_(i-1)^(n+1)) if u_i^n < 0
 !* 
 !* The notations for tridiagonal system are available from
 !* http://en.wikipedia.org/wiki/Tridiagonal_matrix
 !*
-!* For frequency shifting, things are more complicate:
+!* For frequency shifting, things are complicated:
 !* 
 !* Boundary condition: For low frequency, energy disappear. For
 !* high frequency, we prolongate the energy by using a parametrization
@@ -238,18 +220,26 @@
 !* Grid: the gridsize is variable. DS_INCR(IS) is essentially defined
 !* as  DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
 !* Therefore the system that needs to be resolved is for i=1,MSC
+!*
+!* We write f_{n,+} = 1 if u_i^n > 0
+!*                    0 otherwise
+!* We write f_{n,-} = 0 if u_i^n > 0
+!*                    1 otherwise
+!* We write u_{i,n,+} = u_i f_{n,+} and similarly for other variables.
 !* 
 !* N_i^(n+1) = N_i^n + (delta t) [
-!*   { u_i+      N_i^(n+1)     - u_(i-1,+) N_(i-1)^(n+1) }/DS_INCR_i
-!* + { u_(i+1,-) N_(i+1)^(n+1) - u_(i,-) N_i^(n+1)       }/DS_INCR_i+1
+!* + { u_(i+1,n,+) N_(i+1)^(n+1) - u_(i,n,+)   N_i^(n+1)     }/DS_INCR_i+1
+!*   { u_(i,n,-)   N_i^(n+1)     - u_(i-1,n,-) N_(i-1)^(n+1) }/DS_INCR_i
+!* 
 !* 
 !* The boundary conditions are expressed as
 !* N_0^{n+1}=0 and N_{MSC+1}^{n+1} = N_{MSC}^{n+1} PTAIL(5)
 !* 
 !* which after rewrites give us
-!* N_i^n = N_i^(n+1)     [1 + Delta t { -u_(i,+)/DS_i + u_(i,-)/DS_(i+1)} ]
-!*       + N_(i-1)^(n+1) [    Delta t {  u_(i-1,+)/DS_i              }    ]
-!*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,-)/DS_(i+1)          }    ]
+!* N_i^n = N_i^(n+1)     [1 + Delta t { u_(i,n,+)/DS_i+1  
+!*                                  -   u_(i,n,-)/DS_i          }    ]
+!*       + N_(i-1)^(n+1) [    Delta t {  u_(i-1,n,-)/DS_i       }    ]
+!*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,n,+)/DS_(i+1)   }    ]
 !*
 !* Now, further continuing we get
 !* 
@@ -263,7 +253,9 @@
       REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 
       REAL(rkind) :: TheVal, eFact
-      REAL(rkind) :: CP_SIG(MSC), CM_SIG(MSC)
+      REAL(rkind) :: CP_SIG, CM_SIG
+      REAL(rkind) :: CP_SIG_ip1, CM_SIG_im1
+      REAL(rkind) :: FP, FM
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC)
@@ -301,20 +293,30 @@
         END IF
         eFact=DT4F*SI(IP)
         DO ID = 1, MDC
-          CP_SIG = MAX(ZERO, CAS(:,ID))
-          CM_SIG = MIN(ZERO, CAS(:,ID))
-          ! Now forming the tridiagonal system
           DO IS=1,MSC
-            B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS)/DS_INCR(IS))
+            IF (CAS(IS,ID) .gt. 0) THEN
+              FP=ONE
+              FM=ZERO
+            ELSE
+              FP=ZERO
+              FM=ONE
+            END IF
+            CP_SIG=CAS(IS,ID) * FP
+            CM_SIG=CAS(IS,ID) * FM
+            B_SIG(IS)=eFact*(CP_SIG/DS_INCR(IS+1) - CM_SIG/DS_INCR(IS))
+            IF (IS .eq. MSC) THEN
+              CP_SIG_ip1=CAS(MSC,ID)*FP*PTAIL(5)
+              B_SIG(MSC)=B_SIG(MSC) - eFact*CP_SIG_ip1/DS_INCR(IS)
+            END IF
+            IF (IS .gt. 1) THEN
+              CM_SIG_im1=CAS(IS-1,ID)*FM
+              A_SIG(IS,ID)=eFact*CM_SIG_im1/DS_INCR(IS)
+            END IF
+            IF (IS .lt. MSC) THEN
+              CP_SIG_ip1=CAS(IS+1,ID)*FP
+              C_SIG(IS,ID)=-eFact*CP_SIG_ip1/DS_INCR(IS+1)
+            END IF
           END DO
-          DO IS=2,MSC
-            A_SIG(IS,ID) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-          END DO
-          !
-          DO IS=1,MSC-1
-            C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-          END DO
-          B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
         END DO
       END IF
