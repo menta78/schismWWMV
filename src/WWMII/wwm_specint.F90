@@ -346,11 +346,21 @@
                    TEMP   = USFM*DELFL
                    FLHAB  = MIN(FLHAB,TEMP)
                    IMATRAA(IS,ID,IP) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IS,ID,IP))))
+                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(SMALL,ABS(IMATRAA(IS,ID,IP))))
                    IMATDAA(IS,ID,IP) = ZERO ! -FL(IP,ID,IS)
                  ENDIF 
                ENDDO ! ID
              ENDDO ! IS
+             IF (LNANINFCHK) THEN
+               IF (SUM(IMATRAA(:,:,IP)) .NE. SUM(IMATRAA(:,:,IP))) THEN
+                 WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+                 CALL WWM_ABORT('NAN IN SOURCES 1a') 
+               ENDIF
+               IF (SUM(IMATDAA(:,:,IP)) .NE. SUM(IMATDAA(:,:,IP))) THEN
+                 WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+                 CALL WWM_ABORT('NAN IN SOURCES 1b') 
+               ENDIF
+             ENDIF
              ACLOC = AC2(:,:,IP)
              IF (.NOT. LINID) THEN
                CALL SET_WIND( IP, WIND10, WINDTH )
