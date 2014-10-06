@@ -327,51 +327,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-# ifdef WWM_MPI
       SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
-        USE mod_coupler
-        USE DATAPOOL, only : DBG, parallel_abort, np_global, ne_global
-        implicit none
-        integer i, j, k, iegb, istat
-        character(len=256) :: RHEADER
-        integer nb1, nb2
-        integer TheId
-        allocate(LONtrig_wav(np_global), LATtrig_wav(np_global), ListTrig_wav(ne_global,3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 13')
-        TheId=13000
-        open(TheId,file='hgrid.gr3',status='old',iostat=istat)
-        read(TheId,*) RHEADER
-        read(TheId,*) nb1, nb2
-        IF ((nb1.ne.ne_global).or.(nb2.ne.np_global)) THEN
-          WRITE(DBG%FHNDL,*) 'nb1=', nb1, ' ne_global=', ne_global
-          WRITE(DBG%FHNDL,*) 'nb2=', nb2, ' np_global=', np_global
-          FLUSH(DBG%FHNDL)
-          CALL WWM_ABORT('Inconsistency')
-        END IF
-        do i=1,np_global
-          read(TheId,*) j, LONtrig_wav(i), LATtrig_wav(i)
-        enddo
-        do i=1,ne_global
-          read(TheId,*) iegb,j,(ListTrig_wav(iegb,k),k=1,3)
-          IF (j/=3) then
-            call wwm_abort('WWM_CreateGlobalLON_LAT_ListTrig error')
-          END IF
-        enddo
-        close(TheId)
+      USE mod_coupler
+      USE DATAPOOL
+      implicit none
+      CALL GET_GRID_ARRAY_FE_r8(NP_TOTAL, NE_TOTAL, XPtotal, YPtotal, INEtotal, eGrid_wav)
       END SUBROUTINE
-# else
-      SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
-        USE mod_coupler
-        USE DATAPOOL
-        implicit none
-        integer istat
-        allocate(LONtrig_wav(MNP), LATtrig_wav(MNP), ListTrig_wav(MNE,3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 14')
-        LONtrig_wav=XP
-        LATtrig_wav=YP
-        ListTrig_wav=INE
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -411,9 +372,7 @@
         FLUSH(DBG%FHNDL)
 # endif
         IF (MyRankLocal.eq.0) THEN
-          CALL M2M_send_fem_r8(ArrLocal, OCNid,                         &
-     &        np_total, ne_total, LONtrig_wav, LATtrig_wav,             &
-     &        ListTrig_wav)
+          CALL M2M_send_fem(ArrLocal, OCNid, eGrid_wav)
           CALL M2M_send_node_partition(ArrLocal, OCNid,                 &
      &        np_total, NnodesWAV, MatrixBelongingWAV)
         ENDIF
@@ -421,20 +380,17 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 3, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 4, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 5, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 6, rnk=', myrank
         FLUSH(DBG%FHNDL)
@@ -473,31 +429,25 @@
 # endif
         CALL GetString(MyRankGlobal, eStr)
         FileSave_OCNtoWAV_rho='InterpSave_OCNtoWAV_rho'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_rho, eStr, mMat_OCNtoWAV_rho, DoNearest,    &
-     &    xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn,       &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_rho, eGrid_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 12, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
         FileSave_OCNtoWAV_u='InterpSave_OCNtoWAV_u'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_u, eStr, mMat_OCNtoWAV_u, DoNearest,        &
-     &    xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn,                 &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_u, eGrid_wav)
         FileSave_OCNtoWAV_v='InterpSave_OCNtoWAV_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 13, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_v, eStr, mMat_OCNtoWAV_v, DoNearest,        &
-     &    xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn,                 &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_v, eGrid_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
         FLUSH(DBG%FHNDL)
@@ -557,31 +507,25 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 17, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_rho, eStr, mMat_WAVtoOCN_rho, DoNearest,    &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
+     &    eGrid_wav, eGrid_ocn_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 18, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
         FileSave_WAVtoOCN_u='InterpSave_WAVtoOCN_u'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_u, eStr, mMat_WAVtoOCN_u, DoNearest,        &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
+     &    eGrid_wav, eGrid_ocn_u)
         FileSave_WAVtoOCN_v='InterpSave_WAVtoOCN_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 19, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_v, eStr, mMat_WAVtoOCN_v, DoNearest,        &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
+     &    eGrid_wav, eGrid_ocn_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 20, rnk=', myrank
         FLUSH(DBG%FHNDL)
