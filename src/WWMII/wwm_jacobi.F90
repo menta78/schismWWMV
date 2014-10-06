@@ -155,8 +155,6 @@
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
-
-
       IF (FREQ_SHIFT_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -195,6 +193,57 @@
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
+!* For the refraction, we use the Upwind implicit scheme
+!* N^{n+1} = N^n + f(N^(n+1))
+!* This solves the differential equation N'=f(N)
+!*
+!* Courant, R., Isaacson, E., and Rees, M. (1952). "On the Solution of
+!* Nonlinear Hyperbolic Differential Equations by Finite Differences",
+!* Comm. Pure Appl. Math., 5, 243–255.
+!*
+!* This gives
+!*
+!* (1) N_i^(n+1) = N_i^n + (delta t/delta x)
+!*            (u_(i+1)^n N_(i+1)^(n+1) - u_i^n N_i^(n+1)) if u_i^n > 0
+!* (2) N_i^(n+1) = N_i^n + (delta t/delta x)
+!*            (u_i^n N_i^(n+1) - u_(i-1)^n N_(i-1)^(n+1)) if u_i^n < 0
+!* 
+!* The notations for tridiagonal system are available from
+!* http://en.wikipedia.org/wiki/Tridiagonal_matrix
+!*
+!* For frequency shifting, things are complicated:
+!* 
+!* Boundary condition: For low frequency, energy disappear. For
+!* high frequency, we prolongate the energy by using a parametrization
+!* of the tail: PTAIL(5).
+!* 
+!* Grid: the gridsize is variable. DS_INCR(IS) is essentially defined
+!* as  DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
+!* Therefore the system that needs to be resolved is for i=1,MSC
+!*
+!* We write f_{n,+} = 1 if u_i^n > 0
+!*                    0 otherwise
+!* We write f_{n,-} = 0 if u_i^n > 0
+!*                    1 otherwise
+!* We write u_{i,n,+} = u_i f_{n,+} and similarly for other variables.
+!* 
+!* N_i^(n+1) = N_i^n + (delta t) [
+!* + { u_(i+1,n,+) N_(i+1)^(n+1) - u_(i,n,+)   N_i^(n+1)     }/DS_INCR_i+1
+!*   { u_(i,n,-)   N_i^(n+1)     - u_(i-1,n,-) N_(i-1)^(n+1) }/DS_INCR_i
+!* 
+!* 
+!* The boundary conditions are expressed as
+!* N_0^{n+1}=0 and N_{MSC+1}^{n+1} = N_{MSC}^{n+1} PTAIL(5)
+!* 
+!* which after rewrites give us
+!* N_i^n = N_i^(n+1)     [1 + Delta t { u_(i,n,+)/DS_i+1  
+!*                                  -   u_(i,n,-)/DS_i          }    ]
+!*       + N_(i-1)^(n+1) [    Delta t {  u_(i-1,n,-)/DS_i       }    ]
+!*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,n,+)/DS_(i+1)   }    ]
+!*
+!* Now, further continuing we get
+!* 
+!* 
 !**********************************************************************
       SUBROUTINE GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
       USE DATAPOOL
@@ -204,7 +253,9 @@
       REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 
       REAL(rkind) :: TheVal, eFact
-      REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CP_SIG, CM_SIG
+      REAL(rkind) :: CP_SIG_ip1, CM_SIG_im1
+      REAL(rkind) :: FP, FM
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC)
@@ -242,23 +293,30 @@
         END IF
         eFact=DT4F*SI(IP)
         DO ID = 1, MDC
-          CASS(1:MSC) = CAS(:,ID)
-          CASS(0)     = 0.
-          CASS(MSC+1) = CASS(MSC)
-          CP_SIG = MAX(ZERO,CASS)
-          CM_SIG = MIN(ZERO,CASS)
-          ! Now forming the tridiagonal system
           DO IS=1,MSC
-            B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+            IF (CAS(IS,ID) .gt. 0) THEN
+              FP=ONE
+              FM=ZERO
+            ELSE
+              FP=ZERO
+              FM=ONE
+            END IF
+            CP_SIG=CAS(IS,ID) * FP
+            CM_SIG=CAS(IS,ID) * FM
+            B_SIG(IS)=eFact*(CP_SIG/DS_INCR(IS+1) - CM_SIG/DS_INCR(IS))
+            IF (IS .eq. MSC) THEN
+              CP_SIG_ip1=CAS(MSC,ID)*FP*PTAIL(5)
+              B_SIG(MSC)=B_SIG(MSC) - eFact*CP_SIG_ip1/DS_INCR(IS)
+            END IF
+            IF (IS .gt. 1) THEN
+              CM_SIG_im1=CAS(IS-1,ID)*FM
+              A_SIG(IS,ID)=eFact*CM_SIG_im1/DS_INCR(IS)
+            END IF
+            IF (IS .lt. MSC) THEN
+              CP_SIG_ip1=CAS(IS+1,ID)*FP
+              C_SIG(IS,ID)=-eFact*CP_SIG_ip1/DS_INCR(IS+1)
+            END IF
           END DO
-          DO IS=2,MSC
-            A_SIG(IS,ID) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-          END DO
-          !
-          DO IS=1,MSC-1
-            C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-          END DO
-          B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
           ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
         END DO
       END IF
