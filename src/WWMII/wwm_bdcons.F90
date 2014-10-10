@@ -764,14 +764,12 @@
       CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
       DO IS=1,MSC
         eSum=sum(ACLOC(IS,:))
-        WRITE(STAT%FHNDL,*) 'IS=', IS, eSum
       END DO
       CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
       ADIR = DEG * DEGRAD
       DO ID=1,MDC
         eSum=sum(ACLOC(:,ID))
         DiffAng=(360.0_rkind/PI2)*(SPDIR(ID) - ADIR)
-        WRITE(STAT%FHNDL,*) 'ID=', ID, eSum, DiffAng
       END DO
       END SUBROUTINE
 !**********************************************************************

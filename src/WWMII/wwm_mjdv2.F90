@@ -21,7 +21,8 @@
      &   + floor(MyREAL(y)/MyREAL(400)) - MyREAL(32045)
       eFracDay=(MyREAL(sec) +                                          &
      &          MyREAL(60)*MyREAL(min) +                               &
-     &          MyREAL(3600)*MyREAL(hour)  )/MyREAL(86400)
+     &          MyREAL(3600)*(MyREAL(hour) - MyREAL(12))               &
+     &          )/MyREAL(86400)
       eJD=eJDbase + eFracDay
       END SUBROUTINE
 !**********************************************************************
