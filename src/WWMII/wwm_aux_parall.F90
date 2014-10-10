@@ -166,8 +166,8 @@
         END DO
       END DO
       MNEextent=sum(StatusNeed)
-      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
+!      FLUSH(STAT%FHNDL)
       allocate(INDXextent_IE(MNEextent), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 6')
       DO IE=1,MNE
@@ -334,7 +334,6 @@
           END IF
           !
           nbCommon_send=0
-          WRITE(STAT%FHNDL,*) 'Before read MNEextent=', MNEextent
           DO IE=1,MNE
             IE_glob=INDXextent_IE(IE)
             IF (ListMappedB(IE_glob).gt.0) THEN

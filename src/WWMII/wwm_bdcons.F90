@@ -227,9 +227,6 @@
 !
 ! Reading of raw boundary file
 !
-      WRITE(STAT%FHNDL,*) 'IGRIDTYPE=', IGRIDTYPE
-      WRITE(STAT%FHNDL,*) 'BND%FHNDL=', BND%FHNDL
-      WRITE(STAT%FHNDL,*) 'BND%FNAME=', TRIM(BND%FNAME)
       IF (IGRIDTYPE.eq.1) THEN ! XFN 
         OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         DO I = 1, 2
