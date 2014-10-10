@@ -2297,6 +2297,12 @@
           !eSum=max(zero,eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
+            IF (LNANINFCHK) THEN
+              IF (SUM(eSum) .ne. SUM(esum)) THEN
+                WRITE(DBG%FHNDL,*) IP, SUM(IMATDA), SUM(IMATRA), SUM(ASPAR_DIAG)
+                CALL WWM_ABORT('NAN IN SOLVER')
+              ENDIF
+            ENDIF
           ELSE
             U_JACOBI(:,:,IP)=eSum
           END IF
