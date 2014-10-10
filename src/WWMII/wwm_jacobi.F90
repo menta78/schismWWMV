@@ -227,13 +227,12 @@
 !*                    1 otherwise
 !* We write u_{i,n,+} = u_i f_{n,+} and similarly for other variables.
 !* 
+!* If we continue like that then we eventually get a non-conservative
+!* scheme. See below for details.
+!* 
 !* N_i^(n+1) = N_i^n + (delta t) [
 !* + { u_(i+1,n,+) N_(i+1)^(n+1) - u_(i,n,+)   N_i^(n+1)     }/DS_INCR_i+1
 !*   { u_(i,n,-)   N_i^(n+1)     - u_(i-1,n,-) N_(i-1)^(n+1) }/DS_INCR_i
-!* 
-!* 
-!* The boundary conditions are expressed as
-!* N_0^{n+1}=0 and N_{MSC+1}^{n+1} = N_{MSC}^{n+1} PTAIL(5)
 !* 
 !* which after rewrites give us
 !* N_i^n = N_i^(n+1)     [1 + Delta t { u_(i,n,+)/DS_i+1  
@@ -241,7 +240,16 @@
 !*       + N_(i-1)^(n+1) [    Delta t {  u_(i-1,n,-)/DS_i       }    ]
 !*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,n,+)/DS_(i+1)   }    ]
 !*
-!* Now, further continuing we get
+!* Instead, we set u_{i,n,+} = u_{i,+} = max(u_i, 0)
+!*                 u_{i,n,-} = u_{i,-} = min(u_i, 0)
+!* and the equations become simpler:
+!* N_i^n = N_i^(n+1)     [1 + Delta t { u_(i,+)/DS_i+1  
+!*                                  -   u_(i,-)/DS_i          }    ]
+!*       + N_(i-1)^(n+1) [    Delta t {  u_(i-1,-)/DS_i       }    ]
+!*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,+)/DS_(i+1)   }    ]
+!* 
+!* The boundary conditions are expressed as
+!* N_0^{n+1}=0 and N_{MSC+1}^{n+1} = N_{MSC}^{n+1} PTAIL(5)
 !* 
 !* 
 !**********************************************************************
@@ -2289,6 +2297,12 @@
           !eSum=max(zero,eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
+            IF (LNANINFCHK) THEN
+              IF (SUM(eSum) .ne. SUM(esum)) THEN
+                WRITE(DBG%FHNDL,*) IP, SUM(IMATDA), SUM(IMATRA), SUM(ASPAR_DIAG)
+                CALL WWM_ABORT('NAN IN SOLVER')
+              ENDIF
+            ENDIF
           ELSE
             U_JACOBI(:,:,IP)=eSum
           END IF

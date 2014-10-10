@@ -1174,6 +1174,14 @@
          integer wwm_nnbr_send, wwm_nnbr_recv
          integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
          integer, allocatable :: wwm_ListNeigh(:)
+!
+! Variables for the JACOBI SOLVER
+!
+!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
+!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+         REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
+
+
 #ifdef WWM_SOLVER
       TYPE LocalColorInfo
          integer, dimension(:), pointer :: ListColor
@@ -1320,11 +1328,5 @@
       LOGICAL DO_SYNC_LOW_2_UPP
       LOGICAL DO_SYNC_UPP_2_LOW
       LOGICAL DO_SYNC_FINAL
-      !
-      ! For the JACOBI_ITERATION
-      !
-!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
-      REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
 #endif
       END MODULE
