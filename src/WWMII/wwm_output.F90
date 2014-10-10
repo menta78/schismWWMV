@@ -37,6 +37,7 @@
       !
       ! The boundary output
       !
+#ifdef NCDF
       WRITE(STAT%FHNDL,*) 'Boundary step 1'
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
         WRITE(STAT%FHNDL,*) 'Boundary step 2'
@@ -47,6 +48,7 @@
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
         END IF
       END IF
+#endif
       !
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
       FLUSH(STAT%FHNDL)

@@ -2868,7 +2868,6 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef NCDF
-# ifdef MPI_PARALL_GRID
       SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
       USE DATAPOOL
       USE NETCDF
@@ -3145,5 +3144,4 @@
       CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(WBAC_GL, IFILE, IT)
 # endif
       END SUBROUTINE
-# endif
 #endif
