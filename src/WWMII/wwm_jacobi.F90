@@ -2300,7 +2300,7 @@
             AC2(:,:,IP)=eSum
             IF (LNANINFCHK) THEN
               IF (SUM(eSum) .ne. SUM(esum)) THEN
-                WRITE(DBG%FHNDL,*) ipgl(IP), SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
+                WRITE(DBG%FHNDL,*) IP, SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
                 CALL WWM_ABORT('NAN IN SOLVER')
               ENDIF
             ENDIF
