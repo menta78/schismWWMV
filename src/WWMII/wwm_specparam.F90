@@ -1499,14 +1499,13 @@
          REAL(rkind),    INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind),    INTENT(OUT)   :: ETOTS, ETOTC, DM, DSPR
 
-         INTEGER                :: IS, ID
-
+         INTEGER                       :: IS, ID
          REAL(rkind)                   :: DS, EDI, EAD, ETOT1, EHFR
          REAL(rkind)                   :: EFTAIL, VEC2DEG, DEG, FF
 
          ETOTC = ZERO
          ETOTS = ZERO
-         ETOT1  = ZERO
+         ETOT1 = ZERO
 
          EFTAIL = ONE / (PTAIL(1)-ONE)
 
@@ -1538,6 +1537,7 @@
            DM   = ZERO
            DSPR = ZERO
          END IF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
