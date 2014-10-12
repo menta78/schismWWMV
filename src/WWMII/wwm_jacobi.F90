@@ -2294,12 +2294,13 @@
             CALL WWM_ABORT('Not defined')
           END IF
           eSum=eSum/ASPAR_DIAG
+          IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
           !eSum=max(zero,eSum)
           IF (BLOCK_GAUSS_SEIDEL) THEN
             AC2(:,:,IP)=eSum
             IF (LNANINFCHK) THEN
               IF (SUM(eSum) .ne. SUM(esum)) THEN
-                WRITE(DBG%FHNDL,*) IP, SUM(esum), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG(IP), DEP(IP)
+                WRITE(DBG%FHNDL,*) ipgl(IP), SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
                 CALL WWM_ABORT('NAN IN SOLVER')
               ENDIF
             ENDIF
