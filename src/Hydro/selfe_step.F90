@@ -603,11 +603,9 @@
             do i=1,9
               write(12,*)'sum1:',i,sum(out_wwm_windpar(:,i))
             end do
-          else if(sum2/=sum2) then
-            write(errmsg,*)'NaN from WWM in force:', sum2
-            call parallel_abort(errmsg)
-          else if(sum3/=sum3) then
-            do i=1,35 
+          endif
+          if(sum3/=sum3) then
+            do i=1,31 
               sum4=sum(out_wwm(:,i))
               write(12,*)'sum4:',i,sum4
               if(sum4/=sum4) then
@@ -617,7 +615,7 @@
               endif
             enddo !i
           endif !sum3
-          write(errmsg,*)'NaN from WWM in output:',sum1,sum2,sum3
+          write(errmsg,*)'NaN from WWM:',sum1,sum2,sum3
           call parallel_abort(errmsg)
         endif !sum
       endif !mod()

@@ -23,7 +23,8 @@
 !c-----------------------------------------------------------------------
 
 !      alphas = datan(-(dhx*cosv+dhy*sinv)) !alpha(s)
-      if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(1.0,alphas)
+!      if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(1.0,alphas)
+      if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(real(1.0,8),alphas)
       cosas = dcos(alphas)
       sinas = dsin(alphas)
       tan_alphat = cosas*(dhx*sinv-dhy*cosv)
@@ -36,7 +37,8 @@
       endif
 
 !ZYL
-       if (isnan(tauc)==-1) then
+!       if (isnan(tauc)==-1) then
+       if (isnan(tauc).eqv..true.) then
             write(errmsg,*)'tauc is NaN "i"',tauc,i,tauc0,sed_angle,cosas,cosat,tan_alphat,sinas
             call parallel_abort(errmsg)
        endif
