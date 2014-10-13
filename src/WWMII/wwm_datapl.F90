@@ -901,7 +901,14 @@
          REAL(rkind), ALLOCATABLE :: WKLOC_SUM(:,:)
          REAL(rkind), ALLOCATABLE :: CURTXYLOC_SUM(:,:)
 #endif
-
+#if defined NCDF && defined MPI_PARALL_GRID
+         integer, dimension(:), pointer :: ac2_hot_rqst
+         integer, dimension(:,:), pointer :: ac2_hot_stat
+         integer, dimension(:), pointer :: ac2_hot_type
+         integer, dimension(:), pointer :: varoned_hot_rqst
+         integer, dimension(:,:), pointer :: varoned_hot_stat
+         integer, dimension(:), pointer :: varoned_hot_type
+#endif
          TYPE LINEOUTS
             CHARACTER(LEN=20) :: NAME
             INTEGER,ALLOCATABLE :: ELEMENT(:)

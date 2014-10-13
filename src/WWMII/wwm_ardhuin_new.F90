@@ -415,11 +415,11 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4
-        USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
-        IMPLICIT NONE
-        INTEGER :: MSC_TEST, MDC_TEST, ISTAT
+      USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
+      IMPLICIT NONE
+      INTEGER :: MSC_TEST, MDC_TEST, ISTAT
 
-        IF (LPRECOMP_EXIST) THEN
+      IF (LPRECOMP_EXIST) THEN
           READ (5002, IOSTAT=ISTAT)                        &
         & MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
@@ -443,8 +443,8 @@
           CALL WWM_ABORT('THE fort.5002 file does not match your specifications')
         ENDIF
           
-        END IF
-     END SUBROUTINE
+      END IF
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
