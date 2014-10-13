@@ -227,9 +227,6 @@
 !
 ! Reading of raw boundary file
 !
-      WRITE(STAT%FHNDL,*) 'IGRIDTYPE=', IGRIDTYPE
-      WRITE(STAT%FHNDL,*) 'BND%FHNDL=', BND%FHNDL
-      WRITE(STAT%FHNDL,*) 'BND%FNAME=', TRIM(BND%FNAME)
       IF (IGRIDTYPE.eq.1) THEN ! XFN 
         OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         DO I = 1, 2
@@ -767,14 +764,12 @@
       CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
       DO IS=1,MSC
         eSum=sum(ACLOC(IS,:))
-        WRITE(STAT%FHNDL,*) 'IS=', IS, eSum
       END DO
       CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
       ADIR = DEG * DEGRAD
       DO ID=1,MDC
         eSum=sum(ACLOC(:,ID))
         DiffAng=(360.0_rkind/PI2)*(SPDIR(ID) - ADIR)
-        WRITE(STAT%FHNDL,*) 'ID=', ID, eSum, DiffAng
       END DO
       END SUBROUTINE
 !**********************************************************************
@@ -2597,14 +2592,15 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
+
         USE DATAPOOL, ONLY: rkind
         IMPLICIT NONE
 
-        INTEGER, INTENT(IN) :: NP,P,D1,D2
+        INTEGER, INTENT(IN)      :: NP,P,D1,D2
         REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
         REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
-        INTEGER :: IP
-        REAL :: SW
+        INTEGER                  :: IP
+        REAL                     :: SW
 
         SW=0
         ZINT=0
@@ -2867,7 +2863,6 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef NCDF
-# ifdef MPI_PARALL_GRID
       SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
       USE DATAPOOL
       USE NETCDF
@@ -3148,5 +3143,4 @@
       CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(WBAC_GL, IFILE, IT)
 # endif
       END SUBROUTINE
-# endif
 #endif

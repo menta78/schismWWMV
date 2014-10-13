@@ -92,7 +92,7 @@
       REAL(rkind), ALLOCATABLE       :: CUMULW(:,:),QBI(:,:)
       INTEGER                 :: DIKCUMUL
       ! table and variable for wave breaking dissipation term
-      INTEGER,    PARAMETER   :: NDTAB=2000 ! Max depth: convolution calculation in W3SDS4 
+      INTEGER,    PARAMETER   :: NDTAB=2000 ! Max depth: convolution calculation in W3SDS4
       INTEGER,    PARAMETER   :: NKHS=2000, NKD=1300, NKHI=100
       REAL(rkind), PARAMETER         :: PI=3.14157, G=9.81
       REAL(rkind),    PARAMETER      :: FAC_KD1=1.01, FAC_KD2=1000._rkind
@@ -373,7 +373,7 @@
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)
 
-        ALLOCATE(IKTAB(MK,2000), stat=istat)
+        ALLOCATE(IKTAB(MK,NDTAB), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 5')
         IKTAB = 0
 
@@ -633,10 +633,6 @@
 ! 6.  Final test output ---------------------------------------------- *
 !
 !/T      WRITE (NDST,9060) EMEAN, WNMEAN, TPIINV, CP, CD, Z0
-!
-      RETURN
-!
-! Formats
 !
 !/T 9060 FORMAT (' TEST W3SPR3 : E,WN MN :',F8.3,F8.4/                  &
 !/T              '        FP, CP, CD, Z0 :',F8.3,F7.2,1X,2F9.5)
@@ -1071,6 +1067,7 @@
       IF (TTAUWSHELTER.GT.0) THEN 
         XK = CONST0*TEMP / DELTAIL
          I = MIN (ILEVTAIL-1, INT(XK))
+         !WRITE(*,*) XK, I, CONST0, TEMP, DELTAIL, SUM(A), IP
          DELK1= MIN (ONE,XK-FLOAT(I))
          DELK2=1. - DELK1
          TAU1 =((TAUHFT2(IND,J,I)*DELI2+TAUHFT2(IND+1,J,I)*DELI1 )*DELJ2 &

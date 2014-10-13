@@ -493,11 +493,11 @@
 #endif
      
       call get_param('param.in','itr_met',1,itr_met,tmp,stringvalue)
-      if(itr_met/=1.and.itr_met/=2) then
+      if(itr_met<1.or.itr_met>3) then
         write(errmsg,*)'Unknown tracer method',itr_met
         call parallel_abort(errmsg)
       endif
-      if(itr_met==2) then !TVD
+      if(itr_met>=2) then !TVD
         call get_param('param.in','tvd_mid2',0,itmp,tmp,tvd_mid2)
         call get_param('param.in','flimiter2',0,itmp,tmp,flimiter2)
         call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
@@ -809,14 +809,14 @@
 
       !varnm_ns is not used at the moment except for noting purpose
       !varnm_ns(1)='3D horizontal vel. at sides and whole levels'
-      !varnm_ns(2)='Vertical vel. at centroids and whol levels'
+      !varnm_ns(2)='Vertical vel. at centroids and whole levels'
       !varnm_ns(3)='temperature at prism centers'
       !varnm_ns(4)='salinity at prism centers'
-      !varnm_ns(5)='Sediment transport z0 at prism center (m)'
-      !varnm_ns(6)='Roughness length z0 at prism center(m)'
-      !varnm_ns(7)='Current-ripples z0 at prism center(m)'
-      !varnm_ns(8)='Sand-waves z0 at prism center (m)'
-      !varnm_ns(9)='Wave-ripples z0 at prism center (m)'
+      !varnm_ns(5)='Sediment transport z0 at elem. center (m)'
+      !varnm_ns(6)='Roughness length z0 at elem. center(m)'
+      !varnm_ns(7)='Current-ripples z0 at elem. center(m)'
+      !varnm_ns(8)='Sand-waves z0 at elem. center (m)'
+      !varnm_ns(9)='Wave-ripples z0 at elem. center (m)'
       !varnm_ns(10)='barotropic pressure gradient force at side centers'
       !varnm_ns(11)='wave force at side centers and whole levels'
       !varnm_ns(12)='ICM: BENDOC'
@@ -909,15 +909,14 @@
       if(lm2d) ihhat=0
 
 !...  Transport options: ELM or upwind
-!     iupwind_t: 0: ELM; 1: upwind; 2: TVD
+!     iupwind_t: 0: ELM; 1: upwind; 2: TVD (explicit); 3: TVD (implicit vertical)
 !     Fix iupwind_s=iupwind_t
       call get_param('param.in','iupwind_t',1,iupwind_t,tmp,stringvalue)
-!      call get_param('param.in','iupwind_s',1,iupwind_s,tmp,stringvalue)
 !     Reset for 2D model
       if(lm2d) iupwind_t=1
 
       iupwind_s=iupwind_t
-      if(iupwind_t<0.or.iupwind_t>2) then
+      if(iupwind_t<0.or.iupwind_t>3) then
         write(errmsg,*)'Unknown iupwind:',iupwind_t,iupwind_s
         call parallel_abort(errmsg)
       endif
@@ -925,7 +924,7 @@
 !     tvd_mid1: model AA (my own formulation); CC (Casulli's definition of upwind
 !     ratio)
 !     TVD scheme will be used if itvd_e=1 and min(total depth) >=h_tvd
-      if(iupwind_t==2) then
+      if(iupwind_t>=2) then
         call get_param('param.in','tvd_mid',0,itmp,tmp,tvd_mid1)
         call get_param('param.in','flimiter',0,itmp,tmp,flimiter1)
         call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
@@ -1363,6 +1362,7 @@
 
         itmp1=maxval(iflux_e)
         call mpi_allreduce(itmp1,max_flreg,1,itype,MPI_MAX,comm,ierr)
+        if(max_flreg<=0) call parallel_abort('INIT: fluxflag.prop flag wrong')
       endif !iflux
 
 !     Test message passing here
@@ -1488,7 +1488,10 @@
         enddo !i=1,npa
 
         call mpi_reduce(zdev_max,tmp,1,rtype,MPI_MAX,0,comm,ierr)
-        if(myrank==0) write(16,*)'Max. pframe dev. from radial= ',real(tmp) !zdev_max
+        if(myrank==0) then
+          write(16,*)'Max. pframe dev. from radial= ',real(tmp) !zdev_max
+          call flush(16) ! flush "mirror.out"
+        endif
       endif !ics==2
 
 !...  Modified depth
@@ -2220,12 +2223,12 @@
           !msource.th: values in concentration dimension (psu etc). At
           !each step, 2+ntracers lines are read (in order: T,S,tracers)
           open(65,file='msource.th',status='old') 
-          do j=1,2+ntracers
-            read(65,*)tmp,ath3(1:nsources,j,1,3)
-          enddo !j
-          do j=1,2+ntracers
-            read(65,*)th_dt3(3),ath3(1:nsources,j,2,3)
-          enddo !j
+          !do j=1,2+ntracers
+          read(65,*)tmp,ath3(1:nsources,1:2+ntracers,1,3)
+          !enddo !j
+          !do j=1,2+ntracers
+          read(65,*)th_dt3(3),ath3(1:nsources,1:2+ntracers,2,3)
+          !enddo !j
           if(abs(tmp)>1.e-6.or.th_dt3(3)<dt) call parallel_abort('SELFE_INIT: msource.th start time wrong')
           th_time3(1,3)=0
           th_time3(2,3)=th_dt3(3)
@@ -2542,7 +2545,7 @@
         read(32,*)
         read(32,*) itmp1,itmp2
         if(itmp1/=ne_global.or.itmp2/=np_global) &
-     &call parallel_abort('Check drag.gr3')
+     &call parallel_abort('Check manning.gr3')
         do i=1,np_global
           read(32,*)j,xtmp,ytmp,tmp
           if(tmp<0) then
@@ -3038,7 +3041,7 @@
 !     TVD scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd. itvd_e and h_tvd are shared 
 !     between T,S and all tracers
       itvd_e=0 !init. for upwind
-      if(iupwind_t==2.or.itr_met==2) then
+      if(iupwind_t>=2.or.itr_met>=2) then
         open(32,file='tvd.prop',status='old')
         do i=1,ne_global
           read(32,*)j,tmp
@@ -3157,6 +3160,7 @@
             endif
           enddo !i
           write(16,*)'done preparing station outputs'
+          call flush(16) ! flush "mirror.out"
         endif
       endif !iout_sta
 
@@ -3457,7 +3461,10 @@
       deallocate(ipiv,akr,akrp,work4,xy_kr)
 !...  End Kriging preparation
 
-      if(myrank==0) write(16,*)'done init (1)...'
+      if(myrank==0) then
+        write(16,*)'done init (1)...'
+        call flush(16)  ! flush "mirror.out"
+      endif 
 
 !	
 !*******************************************************************
@@ -3717,8 +3724,10 @@
 !...  Wind vector always in lat/lon frame and so will have problem at poles
       if(nws==1) then
         open(22,file='wind.th',status='old')
-        read(22,*) wx1,wy1
-        read(22,*) wx2,wy2
+        read(22,*)tmp1,wx1,wy1
+        read(22,*)tmp2,wx2,wy2
+        if(abs(tmp1)>1.e-4.or.abs(tmp2-wtiminc)>1.e-4) &
+     &call parallel_abort('check time stamp in wind.th')
         do i=1,npa
           windx1(i)=wx1
           windy1(i)=wy1
@@ -3731,7 +3740,7 @@
 
       if(nws==4) then
         open(22,file='wind.th',status='old')
-        read(22,*)rwild(:,:)
+        read(22,*)tmp1,rwild(:,:)
         do i=1,np_global
           if(ipgl(i)%rank==myrank) then
             nd=ipgl(i)%id
@@ -3741,7 +3750,7 @@
           endif
         enddo !i
 
-        read(22,*)rwild(:,:)
+        read(22,*)tmp2,rwild(:,:)
         do i=1,np_global
           if(ipgl(i)%rank==myrank) then
             nd=ipgl(i)%id
@@ -3750,6 +3759,9 @@
             pr2(nd)=rwild(i,3)
           endif
         enddo !i
+        if(abs(tmp1)>1.e-4.or.abs(tmp2-wtiminc)>1.e-4) &
+     &call parallel_abort('check time stamp in wind.th (4)')
+
         wtime1=0
         wtime2=wtiminc
       endif !nws=4
@@ -3770,7 +3782,7 @@
 !       Overwrite wind with wind.th
 
 !        open(22,file='wind.th',status='old')
-!        read(22,*) wx1,wy1
+!        read(22,*)tmp,wx1,wy1
 !        windx1=wx1; windx2=wx1
 !        windy1=wy1; windy2=wy1
 !       End
@@ -4586,9 +4598,9 @@
           wtime1=ninv*wtiminc 
           wtime2=(ninv+1)*wtiminc 
           do it=0,ninv
-            read(22,*)wx1,wy1
+            read(22,*)tmp,wx1,wy1
           enddo
-          read(22,*)wx2,wy2
+          read(22,*)tmp,wx2,wy2
           windx1=wx1
           windy1=wy1
           windx2=wx2
@@ -4602,7 +4614,7 @@
           wtime1=ninv*wtiminc
           wtime2=(ninv+1)*wtiminc
           do it=0,ninv
-            read(22,*)rwild(:,:)
+            read(22,*)tmp,rwild(:,:)
           enddo
           do i=1,np_global
             if(ipgl(i)%rank==myrank) then
@@ -4612,7 +4624,7 @@
               pr1(nd)=rwild(i,3)
             endif
           enddo !i
-          read(22,*)rwild(:,:)
+          read(22,*)tmp,rwild(:,:)
           do i=1,np_global
             if(ipgl(i)%rank==myrank) then
               nd=ipgl(i)%id
@@ -4634,7 +4646,7 @@
 !          open(22,file='wind.th',status='old')
 !          rewind(22)
 !          do it=0,iths
-!            read(22,*)wx1,wy1
+!            read(22,*)tmp,wx1,wy1
 !          enddo !it
 !          windx1=wx1; windx2=wx1
 !          windy1=wy1; windy2=wy1
@@ -4923,14 +4935,14 @@
             ninv=time/th_dt3(3)
             rewind(65)
             do it=0,ninv
-              do j=1,2+ntracers
-                read(65,*)tmp,ath3(1:nsources,j,1,3)
-              enddo !j
+              !do j=1,2+ntracers
+              read(65,*)tmp,ath3(1:nsources,1:2+ntracers,1,3)
+              !enddo !j
             enddo !it
             th_time3(1,3)=tmp
-            do j=1,2+ntracers
-              read(65,*)tmp,ath3(1:nsources,j,2,3)
-            enddo !j
+            !do j=1,2+ntracers
+            read(65,*)tmp,ath3(1:nsources,1:2+ntracers,2,3)
+            !enddo !j
             th_time3(2,3)=tmp
           endif !nsources
      
@@ -4953,7 +4965,7 @@
             do it=1,iths
               if(iof_sta(i)==1.and.mod(it,nspool_sta)==0) then
                 read(250+i,*)
-                if(i>4) read(250+i,*) !vertical profile for 3D var
+!                if(i>4) read(250+i,*) !vertical profile for 3D var
               endif
             enddo !it
           enddo !i
@@ -5229,7 +5241,10 @@
       wtimer(2,1)=wtmp1 !time-stepping section
 #endif
 
-      if(myrank==0) write(16,*)'time stepping begins...',iths+1,ntime
+      if(myrank==0) then
+        write(16,*)'time stepping begins...',iths+1,ntime
+        call flush(16) ! flush "mirror.out"
+      endif
 
       difnum_max_l2=0 !max. horizontal diffusion number reached by each process (check stability)
       iwbl_itmax=0 !cumulative max. of iterations for WBL (Grant-Madsen formulation) for a rank 

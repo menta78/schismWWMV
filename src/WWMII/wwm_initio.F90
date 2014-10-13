@@ -61,7 +61,7 @@
 
        IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
          ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9a')
          U_JACOBI = zero
        END IF
 
@@ -522,8 +522,11 @@
       END IF
       write(DBG%FHNDL,*) 'sum(XPtotal)=', sum(XPtotal)
       write(DBG%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
+      write(DBG%FHNDL,*) 'sum(DEPtotal)=', sum(DEPtotal)
+      write(DBG%FHNDL,*) 'sum(INEtotal)=', sum(INEtotal)
+      write(DBG%FHNDL,*) NP_TOTAL, NE_TOTAL, MDC, MSC
       CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
-      call fillPublicVars()
+      call fillPublicVars
       CALL INIT_ARRAYS
       XP = XPTMP
       YP = YPTMP
@@ -603,7 +606,8 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
       FLUSH(STAT%FHNDL)
 #if defined SELFE 
-      DMIN = DMIN_SELFE
+!AR: let dmin free ...
+!      DMIN = DMIN_SELFE
 #endif
       CALL SET_IOBP_NEXTGENERATION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
@@ -1183,6 +1187,8 @@
          WINDBG%FHNDL   = STARTHNDL + 17 
          SRCDBG%FHNDL   = STARTHNDL + 18
 
+         IU06           = STAT%FHNDL
+
 #ifndef MPI_PARALL_GRID
          open(DBG%FHNDL,file='wwmdbg.out',status='unknown') !non-fatal errors
          open(STAT%FHNDL,file='wwmstat.out',status='unknown') !non-fatal errors
@@ -1273,7 +1279,7 @@
       REAL(rkind)              :: XYTMP(2,MNP)
 #ifdef MPI_PARALL_GRID
       integer :: iProc
-      integer, allocatable :: rbuf_int(:)
+      integer :: rbuf_int(1)
 #endif
 !
 !    set the site output
@@ -1304,6 +1310,7 @@
         XYTMP(2,:) = YP
         WRITE(DBG%FHNDL,*) 'SEARCHING FOR STATION ACROSS RANKS', myrank
         DO I = 1, IOUTS
+          STATION(I)%ELEMENT=0
           CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
           IF (STATION(I)%ELEMENT .GT. 0) THEN
             STATION(I)%IFOUND  = 1
@@ -1322,8 +1329,6 @@
             FLUSH(DBG%FHNDL)
           END IF
         END DO
-        allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 41')
         DO I = 1, IOUTS
           CALL MPI_REDUCE(STATION(I)%IFOUND,STATION(I)%ISUM,1, itype,MPI_SUM,0,COMM,IERR)
           IF (myrank == 0) THEN
@@ -1338,7 +1343,6 @@
             STATION(I)%ISUM=rbuf_int(1)
           END IF
         END DO
-        deallocate(rbuf_int)
         IF (myrank == 0) THEN
           DO I = 1, IOUTS
             IF (STATION(I)%ISUM .EQ. 0) THEN
@@ -1348,7 +1352,6 @@
             END IF
           END DO
         END IF
-
         ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(MSC,MDC,IOUTS), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
         ACLOC_SUM           = 0.
@@ -1367,6 +1370,7 @@
         IF (DIMMODE .EQ. 2) THEN
           WRITE(STAT%FHNDL,*) 'FINDING ELEMENT CONNECTED TO STATION'
           DO I = 1, IOUTS
+            STATION(I)%ELEMENT=0
             CALL FIND_ELE ( MNE,MNP,INE,XYTMP,STATION(I)%XCOORD, STATION(I)%YCOORD,STATION(I)%ELEMENT )
             IF (STATION(I)%ELEMENT == 0) THEN
               STATION(I)%IFOUND = 0

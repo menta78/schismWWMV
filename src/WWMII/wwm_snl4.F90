@@ -359,11 +359,11 @@
                IF (SFNL(IS,ID).GT.0.) THEN                                   
                  IMATRA(IS,ID) = IMATRA(IS,ID) + SFNL(IS,ID) / SIGPI2
                ELSE
-                 IF (ACLOC(IS,ID) .GT. THR) IMATDA(IS,ID) =  IMATDA(IS,ID) - SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
+                 IF (ACLOC(IS,ID) .GT. 10.E-10) IMATDA(IS,ID) =  IMATDA(IS,ID) - SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
                END IF
              ELSE
                IMATRA(IS,ID) = IMATRA(IS,ID) + SFNL(IS,ID) / SIGPI2 
-               IF (ACLOC(IS,ID) .GT. THR) IMATDA(IS,ID) = IMATDA(IS,ID) + SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
+               IF (ACLOC(IS,ID) .GT. 10.E-10) IMATDA(IS,ID) = IMATDA(IS,ID) + SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
              END IF
            END DO
          END DO

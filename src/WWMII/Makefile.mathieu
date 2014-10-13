@@ -1,4 +1,4 @@
-include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/conf/variables
 PROG = $(HOME)/bin/wwmadv
 #PROG = wwmadv
 
@@ -17,7 +17,7 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
@@ -88,10 +88,11 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 #       dislin.o diclass.o \
 
+FFLAGS += -DWWM_SOLVER
 ifdef NETCDF
   all: $(NETC) $(PROG)
   LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
-  FFLAGS +=  -DNCDF -DWWM_SOLVER -I$(NETCDF_INCDIR)
+  FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)
 endif

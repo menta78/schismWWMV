@@ -346,11 +346,21 @@
                    TEMP   = USFM*DELFL
                    FLHAB  = MIN(FLHAB,TEMP)
                    IMATRAA(IS,ID,IP) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRAA(IS,ID,IP))))
+                   LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(SMALL,ABS(IMATRAA(IS,ID,IP))))
                    IMATDAA(IS,ID,IP) = ZERO ! -FL(IP,ID,IS)
                  ENDIF 
                ENDDO ! ID
              ENDDO ! IS
+             IF (LNANINFCHK) THEN
+               IF (SUM(IMATRAA(:,:,IP)) .NE. SUM(IMATRAA(:,:,IP))) THEN
+                 WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+                 CALL WWM_ABORT('NAN IN SOURCES 1a') 
+               ENDIF
+               IF (SUM(IMATDAA(:,:,IP)) .NE. SUM(IMATDAA(:,:,IP))) THEN
+                 WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+                 CALL WWM_ABORT('NAN IN SOURCES 1b') 
+               ENDIF
+             ENDIF
              ACLOC = AC2(:,:,IP)
              IF (.NOT. LINID) THEN
                CALL SET_WIND( IP, WIND10, WINDTH )
@@ -868,6 +878,57 @@
              END DO
            END DO
          END DO
+         END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE ACTION_LIMITER_LOCAL(IP,ACLOC,ACOLD)
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)        :: IP
+         INTEGER                    :: IS, ID
+         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
+         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
+         REAL(rkind)                :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
+         REAL(rkind)                :: MAXDACOLD
+
+
+         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+         SND   = PI2*5.6*1.0E-3
+
+         DELT = DT4S
+         XIMP = 1._rkind
+         DELT5 = XIMP*DELT
+         DELFL= COFRM4*DELT
+         MAXDAC = ZERO
+
+         DO IS = 1, MSC
+
+           IF (MELIM .EQ. 1) THEN
+             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+           ELSE IF (MELIM .EQ. 2) THEN
+             UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
+             MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
+           ELSE IF (MELIM .EQ. 3) THEN
+             IF (USNEW(IP) .GT. SMALL) THEN
+               MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
+             ELSE
+               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             ENDIF
+           END IF
+
+           DO ID = 1, MDC
+             NEWAC  = ACLOC(IS,ID)
+             OLDAC  = ACOLD(IS,ID)
+             NEWDAC = NEWAC - OLDAC
+             NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
+             ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
+           END DO
+
+         END DO
+
          END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

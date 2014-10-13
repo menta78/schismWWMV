@@ -62,9 +62,13 @@
          REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ, FLLOWEST, GADIAG
          REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), SUMACLOC, IMATRAT(MSC,MDC), BRLAMBDA(NSPEC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, FLOGSPRDM1, SNL3(MSC,MDC), DSNL3(MSC,MDC)
-         REAL    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
-         REAL    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
-         INTEGER :: IERR_WRT
+
+#ifdef SNL4_TSA
+         REAL           :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
+#endif
+
+         REAL           :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
+         INTEGER        :: IERR_WRT
 
 #ifdef TIMINGS 
          REAL(rkind)        :: T1, T2
@@ -78,9 +82,6 @@
          call MY_WTIME(TIME1)
 #endif 
 
-         WIND10 = ZERO 
-         SUMACLOC = SUM(ACLOC)
-
 !         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
 !           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
 !         END IF
@@ -92,6 +93,9 @@
            CALL MEAN_WAVE_PARAMETER(IP,ACLOC1,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
          END IF
 
+         SUMACLOC    = SUM(ACLOC)
+         WIND10      = ZERO
+         BRLAMBDA    = ZERO
          SSINE       = zero
          SSINL       = zero
          SSNL3       = zero
@@ -251,6 +255,7 @@
                  IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
                END IF
              ELSE IF (MESNL .EQ. 6) THEN
+#ifdef SNL4_TSA
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    TMPAC_TSA(ID,IS) = ACLOC(IS,ID) * CG(IS,IP)
@@ -260,15 +265,14 @@
                WK_TSA = WK(:,IP)
                DEP_TSA = DEP(IP)
                NZZ = (MSC*(MSC+1))/2
-#ifdef SNL4_TSA
                CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA)
-#endif
                DO IS = 1, MSC
                  DO ID = 1, MDC
                    IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IS,IP)
                    IMATDA(IS,ID) = IMATDA(IS,ID) + IMATDA_TSA(ID,IS)
                  END DO
                END DO
+#endif
              END IF
            END IF
            IF (IDISP == IP) THEN
@@ -428,17 +432,6 @@
 !------------------------------------------------------------------------------------------------------------------------!
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
 
-           DISSIPATION(IP) = 0.
-           AIRMOMENTUM(IP) = 0.
-           DO ID = 1, MDC
-             TMP_DS = ( SSBR(:,ID) + SSBF(:,ID) + SSDS(:,ID) ) * SPSIG * DDIR
-             TMP_IN = ( SSINE(:,ID) + SSINL(:,ID) ) * SPSIG * DDIR
-             DO IS = 2, MSC
-               DISSIPATION(IP) = DISSIPATION(IP) + ONEHALF * ( TMP_DS(IS) + TMP_DS(IS-1) ) * DS_INCR(IS)
-               AIRMOMENTUM(IP) = AIRMOMENTUM(IP) + ONEHALF * ( TMP_IN(IS) + TMP_IN(IS-1) ) * DS_INCR(IS)
-             END DO
-           END DO
-
            IF (MESIN == 1) THEN
              AS      = 0.
 #ifdef ST41
@@ -458,6 +451,18 @@
            ELSEIF (MESIN == 4) THEN
            ELSEIF (MESIN == 5) THEN
            ENDIF
+
+           DISSIPATION(IP) = 0.
+           AIRMOMENTUM(IP) = 0.
+           DO ID = 1, MDC
+             TMP_DS = ( SSBR(:,ID) + SSBF(:,ID) + SSDS(:,ID) ) * SPSIG * DDIR
+             TMP_IN = ( SSINE(:,ID) + SSINL(:,ID) ) * SPSIG * DDIR
+             DO IS = 2, MSC
+               DISSIPATION(IP) = DISSIPATION(IP) + ONEHALF * ( TMP_DS(IS) + TMP_DS(IS-1) ) * DS_INCR(IS)
+               AIRMOMENTUM(IP) = AIRMOMENTUM(IP) + ONEHALF * ( TMP_IN(IS) + TMP_IN(IS-1) ) * DS_INCR(IS)
+             END DO
+           END DO
+
          ENDIF
 
 #ifdef TIMINGS 

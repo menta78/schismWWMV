@@ -391,8 +391,8 @@ subroutine partition_hgrid
   endif !ivcor==1
 
   ! Count number of edges in dual graph
-  allocate(adjncy(100),stat=stat) !for single element
-  if(stat/=0) call parallel_abort('partition: adjncy(100) allocation failure')
+  allocate(adjncy(1000),stat=stat) !for single element
+  if(stat/=0) call parallel_abort('partition: adjncy(1000) allocation failure')
   ntedge=0 !total # of edges in the grid
   mxnedge=0 !max. # of local edges
   do ie=1,ne
@@ -414,6 +414,7 @@ subroutine partition_hgrid
           !if(l==nedge+1) then
           if(.not.found) then
             nedge=nedge+1
+            if(nedge>1000) call parallel_abort('PARTITION: bound (1)')
             adjncy(nedge)=jegb
           endif
         endif
@@ -2221,6 +2222,7 @@ subroutine aquire_hgrid(full_aquire)
       write(16,'(5i8)') i,irbuf(4*i+1),irbuf(4*i+2),irbuf(4*i+3),irbuf(4*i+4)
     enddo
     write(16,*)
+    call flush(16) ! flush "mirror.out"
   endif !myrank==0
   deallocate(isbuf,irbuf)
   call parallel_barrier

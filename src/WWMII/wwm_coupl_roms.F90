@@ -243,31 +243,29 @@
           MatrixBelongingWAV=0
           DO i=1,MNP
             eIdx=iplg(i)
-            MatrixBelongingWAV(eIdx,1)=1
+            MatrixBelongingWAV(eIdx,1)=i
             All_LocalToGlobal(i,1)=eIdx
           ENDDO
           NumberNode(1)=MNP
           DO iProc=2,NnodesWAV
-            allocate(rbuf_int(2), stat=istat)
+            allocate(rbuf_int(1), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 5')
-            CALL MPI_RECV(rbuf_int,2,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
+            CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
             MNPloc=rbuf_int(1)
-            MNEloc=rbuf_int(2)
             NumberNode(iProc)=MNPloc
-            NumberTrig(iProc)=MNEloc
             deallocate(rbuf_int)
-!
+            !
             allocate(rbuf_int(MNPloc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 6')
             CALL MPI_RECV(rbuf_int,MNPloc,itype, iProc-1, 195, WAV_COMM_WORLD, istatus, ierr)
             DO IP=1,MNPloc
               eIdx=rbuf_int(IP)
-              MatrixBelongingWAV(eIdx,iProc)=1
+              MatrixBelongingWAV(eIdx,iProc)=IP
               All_LocalToGlobal(IP,iProc)=eIdx
             END DO
             deallocate(rbuf_int)
           END DO
-!
+          !
           allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 7')
           idx=0
@@ -282,20 +280,13 @@
           END DO
           deallocate(rbuf_int)
         ELSE
-          allocate(rbuf_int(2), stat=istat)
+          allocate(rbuf_int(1), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 8')
           rbuf_int(1)=MNP
-          rbuf_int(2)=MNE
-          CALL MPI_SEND(rbuf_int,2,itype, 0, 194, WAV_COMM_WORLD, ierr)
+          CALL MPI_SEND(rbuf_int,1,itype, 0, 194, WAV_COMM_WORLD, ierr)
           deallocate(rbuf_int)
 
-          allocate(rbuf_int(MNP), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 9')
-          DO i=1,MNP
-            rbuf_int(i)=iplg(i)
-          END DO
-          CALL MPI_SEND(rbuf_int,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
-          deallocate(rbuf_int)
+          CALL MPI_SEND(iplg,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
 !
           allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, alloc error 10')
@@ -309,40 +300,7 @@
           END DO
           deallocate(rbuf_int)
         ENDIF
-
-        allocate(ReindexPerm_wav(MNP), ReindexPermInv_wav(MNP), TheIndex(np_global), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 11')
-        TheIndex=0
-        DO IP=1,MNP
-          IPc=iplg(IP)
-          TheIndex(IPc)=IP
-        END DO
-        idx=0
-        DO IPc=1,np_global
-          IP=TheIndex(IPc)
-          IF (IP.gt.0) THEN
-            idx=idx+1
-            ReindexPerm_wav(idx)=IP
-            ReindexPermInv_wav(IP)=idx
-          END IF
-        END DO
-#  ifdef DEBUG_WWM
-        MinValIndex=300
-        MinValIndexInv=300
-        DO IP=1,MNP
-          eVal=ReindexPerm_wav(IP)
-          IF (eVal.lt.MinValIndex) THEN
-            MinValIndex=eVal
-          END IF
-          eVal=ReindexPermInv_wav(IP)
-          IF (eVal.lt.MinValIndexInv) THEN
-            MinValIndexInv=eVal
-          END IF
-        END DO
-        WRITE(DBG%FHNDL,*) 'MinValIndex(Dir,Inv)=', MinValIndex, MinValIndexInv
-        FLUSH(DBG%FHNDL)
-#  endif
-        deallocate(TheIndex, NumberNode, NumberTrig)
+        deallocate(NumberNode, NumberTrig)
       END SUBROUTINE
 # else
       SUBROUTINE WWM_CreateMatrixPartition
@@ -350,13 +308,11 @@
         USE mod_coupler
         IMPLICIT NONE
         integer IP, istat
-        allocate(MatrixBelongingWAV(MNP, 1), ReindexPerm_wav(MNP), ReindexPermInv_wav(MNP), stat=istat)
+        allocate(MatrixBelongingWAV(MNP, 1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 12')
         DO IP=1,MNP
-          ReindexPerm_wav(IP)=IP
-          ReindexPermInv_wav(IP)=IP
+          MatrixBelongingWAV(IP,1)=IP
         ENDDO
-        MatrixBelongingWAV=1
       END SUBROUTINE
 # endif
 !**********************************************************************
@@ -366,56 +322,17 @@
       USE DATAPOOL
       USE mod_coupler
       IMPLICIT NONE
-      deallocate(MatrixBelongingWAV, ReindexPerm_wav, ReindexPermInv_wav)
+      deallocate(MatrixBelongingWAV)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-# ifdef WWM_MPI
       SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
-        USE mod_coupler
-        USE DATAPOOL, only : DBG, parallel_abort, np_global, ne_global
-        implicit none
-        integer i, j, k, iegb, istat
-        character(len=256) :: RHEADER
-        integer nb1, nb2
-        integer TheId
-        allocate(LONtrig_wav(np_global), LATtrig_wav(np_global), ListTrig_wav(ne_global,3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 13')
-        TheId=13000
-        open(TheId,file='hgrid.gr3',status='old',iostat=istat)
-        read(TheId,*) RHEADER
-        read(TheId,*) nb1, nb2
-        IF ((nb1.ne.ne_global).or.(nb2.ne.np_global)) THEN
-          WRITE(DBG%FHNDL,*) 'nb1=', nb1, ' ne_global=', ne_global
-          WRITE(DBG%FHNDL,*) 'nb2=', nb2, ' np_global=', np_global
-          FLUSH(DBG%FHNDL)
-          CALL WWM_ABORT('Inconsistency')
-        END IF
-        do i=1,np_global
-          read(TheId,*) j, LONtrig_wav(i), LATtrig_wav(i)
-        enddo
-        do i=1,ne_global
-          read(TheId,*) iegb,j,(ListTrig_wav(iegb,k),k=1,3)
-          IF (j/=3) then
-            call wwm_abort('WWM_CreateGlobalLON_LAT_ListTrig error')
-          END IF
-        enddo
-        close(TheId)
+      USE mod_coupler
+      USE DATAPOOL
+      implicit none
+      CALL GET_GRID_ARRAY_FE_r8(NP_TOTAL, NE_TOTAL, XPtotal, YPtotal, INEtotal, eGrid_wav)
       END SUBROUTINE
-# else
-      SUBROUTINE WWM_CreateGlobalLON_LAT_ListTrig
-        USE mod_coupler
-        USE DATAPOOL
-        implicit none
-        integer istat
-        allocate(LONtrig_wav(MNP), LATtrig_wav(MNP), ListTrig_wav(MNE,3), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 14')
-        LONtrig_wav=XP
-        LATtrig_wav=YP
-        ListTrig_wav=INE
-      END SUBROUTINE
-# endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -455,9 +372,7 @@
         FLUSH(DBG%FHNDL)
 # endif
         IF (MyRankLocal.eq.0) THEN
-          CALL M2M_send_fem_r8(ArrLocal, OCNid,                         &
-     &        np_total, ne_total, LONtrig_wav, LATtrig_wav,             &
-     &        ListTrig_wav)
+          CALL M2M_send_fem(ArrLocal, OCNid, eGrid_wav)
           CALL M2M_send_node_partition(ArrLocal, OCNid,                 &
      &        np_total, NnodesWAV, MatrixBelongingWAV)
         ENDIF
@@ -465,20 +380,17 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 3, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 4, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_u)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 5, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL M2M_recv_r8_grid(ArrLocal, OCNid,                          &
-     &   xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
+        CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 6, rnk=', myrank
         FLUSH(DBG%FHNDL)
@@ -517,31 +429,25 @@
 # endif
         CALL GetString(MyRankGlobal, eStr)
         FileSave_OCNtoWAV_rho='InterpSave_OCNtoWAV_rho'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_rho, eStr, mMat_OCNtoWAV_rho, DoNearest,    &
-     &    xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn,       &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_rho, eGrid_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 12, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
         FileSave_OCNtoWAV_u='InterpSave_OCNtoWAV_u'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_u, eStr, mMat_OCNtoWAV_u, DoNearest,        &
-     &    xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn,                 &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_u, eGrid_wav)
         FileSave_OCNtoWAV_v='InterpSave_OCNtoWAV_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 13, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FD_2_r8_FE(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_OCNtoWAV_v, eStr, mMat_OCNtoWAV_v, DoNearest,        &
-     &    xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn,                 &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav)
+     &    eGrid_ocn_v, eGrid_wav)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
         FLUSH(DBG%FHNDL)
@@ -601,31 +507,25 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 17, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_rho, eStr, mMat_WAVtoOCN_rho, DoNearest,    &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_rho, eta_rho, LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
+     &    eGrid_wav, eGrid_ocn_rho)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 18, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
         FileSave_WAVtoOCN_u='InterpSave_WAVtoOCN_u'
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_u, eStr, mMat_WAVtoOCN_u, DoNearest,        &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_u, eta_u, LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
+     &    eGrid_wav, eGrid_ocn_u)
         FileSave_WAVtoOCN_v='InterpSave_WAVtoOCN_v'
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 19, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL SAVE_CreateInterpolationSparseMatrix_r8_FE_2_r8_FD(        &
+        CALL SAVE_CreateInterpolationSparseMatrix(                      &
      &    FileSave_WAVtoOCN_v, eStr, mMat_WAVtoOCN_v, DoNearest,        &
-     &    ne_total, ListTrig_wav,                                       &
-     &    np_total, LONtrig_wav, LATtrig_wav,                           &
-     &    xi_v, eta_v, LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
+     &    eGrid_wav, eGrid_ocn_v)
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 20, rnk=', myrank
         FLUSH(DBG%FHNDL)
@@ -707,10 +607,9 @@
         FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 23, A_wav_rho)
-        DO idx=1,MNP
-          IP=ReindexPerm_wav(idx)
-          CosAng(IP)=COS(A_wav_rho(idx))
-          SinAng(IP)=SIN(A_wav_rho(idx))
+        DO IP=1,MNP
+          CosAng(IP)=COS(A_wav_rho(IP))
+          SinAng(IP)=SIN(A_wav_rho(IP))
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 25, rnk=', myrank
@@ -721,9 +620,8 @@
 # ifdef DEBUG_WWM
         SumDepReceive=0
 # endif
-        DO idx=1,MNP
-          IP=ReindexPerm_wav(idx)
-          dep_rho(IP)=A_wav_rho(idx)
+        DO IP=1,MNP
+          dep_rho(IP)=A_wav_rho(IP)
 # ifdef DEBUG_WWM
           SumDepReceive=SumDepReceive + abs(A_wav_rho(idx))
 # endif
@@ -1080,9 +978,9 @@
         WATLEVOLD=WATLEV
         DELTAT_WATLEV = MAIN%DTCOUP
         LCALC=.TRUE.
-        DO idx=1,MNP
-          u1=A_wav_uvz(1,idx)
-          v1=A_wav_uvz(2,idx)
+        DO IP=1,MNP
+          u1=A_wav_uvz(1,IP)
+          v1=A_wav_uvz(2,IP)
 # ifdef DEBUG_WWM
           IF (abs(u1).gt.MaxUwind) THEN
             MaxUwind=abs(u1)
@@ -1094,10 +992,9 @@
           SumVwind=SumVwind + abs(v1)
           NbPoint=NbPoint+1
 # endif
-          IP=ReindexPerm_wav(idx)
           u2=u1*CosAng(IP)-v1*SinAng(IP)
           v2=v1*CosAng(IP)+u1*SinAng(IP)
-          z1=A_wav_uvz(3,idx)
+          z1=A_wav_uvz(3,IP)
           WINDXY(IP,1)=u2
           WINDXY(IP,2)=v2
           WATLEV(IP)=z1
@@ -1127,10 +1024,9 @@
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 3'
         FLUSH(DBG%FHNDL)
 # endif
-        DO idx=1,MNP
-          IP=ReindexPerm_wav(idx)
+        DO IP=1,MNP
           DO kLev=0,Nlevel
-            z_w_wav(kLev,IP)=A_wav_rho_3D(kLev+1,idx)
+            z_w_wav(kLev,IP)=A_wav_rho_3D(kLev+1,IP)
           END DO
         END DO
 # ifdef DEBUG_WWM
@@ -1154,9 +1050,8 @@
         CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_u, 204, A_wav_ur_3D)
 #  endif
 # endif
-        DO idx=1,MNP
-          IP=ReindexPerm_wav(idx)
-          U_wav(:,IP)=A_wav_ur_3D(:,idx)
+        DO IP=1,MNP
+          U_wav(:,IP)=A_wav_ur_3D(:,IP)
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 5'
@@ -1183,9 +1078,8 @@
         WRITE(DBG%FHNDL,*) 'After the receive'
         FLUSH(DBG%FHNDL)
 # endif
-        DO idx=1,MNP
-          IP=ReindexPerm_wav(idx)
-          V_wav(:,IP)=A_wav_vr_3D(:,idx)
+        DO IP=1,MNP
+          V_wav(:,IP)=A_wav_vr_3D(:,IP)
         END DO
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 6'
@@ -1255,15 +1149,14 @@
 # endif
         CALL STOKES_STRESS_INTEGRAL_ROMS
         DO IP=1,MNP
-          idx=ReindexPermInv_wav(IP)
 # ifdef STOKES_DRIFT_USING_INTEGRAL
           DO kLev=1,Nlevel
             u1=USTOKES_wav(kLev,IP)
             v1=VSTOKES_wav(kLev,IP)
             u2=u1*CosAng(IP)+v1*SinAng(IP)
             v2=v1*CosAng(IP)-u1*SinAng(IP)
-            A_wav_u_3D(kLev,idx)=u2
-            A_wav_v_3D(kLev,idx)=v2
+            A_wav_u_3D(kLev,IP)=u2
+            A_wav_v_3D(kLev,IP)=v2
           END DO
 # endif
           u1=TAUWX(IP)
@@ -1271,11 +1164,11 @@
           u2=u1*CosAng(IP)+v1*SinAng(IP)
           v2=v1*CosAng(IP)-u1*SinAng(IP)
 # ifdef STOKES_DRIFT_USING_INTEGRAL
-          A_wav_u_3D(Nlevel+1,idx)=u2
-          A_wav_v_3D(Nlevel+1,idx)=v2
+          A_wav_u_3D(Nlevel+1,IP)=u2
+          A_wav_v_3D(Nlevel+1,IP)=v2
 # else
-          A_wav_u_3D(1,idx)=u2
-          A_wav_v_3D(1,idx)=v2
+          A_wav_u_3D(1,IP)=u2
+          A_wav_v_3D(1,IP)=v2
 # endif
 # ifdef DEBUG_WWM
           eNorm=SQRT(u2*u2 + v2*v2)
@@ -1348,7 +1241,6 @@
         NbAlpha=0
 # endif
         DO IP = 1, MNP
-          idx=ReindexPermInv_wav(IP)
           ACLOC = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
           CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PGMCL_ROMS_OUT')
@@ -1393,25 +1285,25 @@
           SumStokesNorm=SumStokesNorm + eStokesNorm
           NbPoint=NbPoint + 1
 # endif
-          A_wav_stat(1, idx)=HS
-          A_wav_stat(2, idx)=TM01
-          A_wav_stat(3, idx)=TM02
-          A_wav_stat(4, idx)=KLM
-          A_wav_stat(5, idx)=WLM
-          A_wav_stat(6, idx)=ORBITAL
-          A_wav_stat(7, idx)=TMBOT
-          A_wav_stat(8, idx)=DISSIPATION(IP)
-          A_wav_stat(9, idx)=QBLOCAL(IP)
-          A_wav_stat(10,idx)=DM
-          A_wav_stat(11,idx)=TPP
-          A_wav_stat(12,idx)=DSPR
-          A_wav_stat(13,idx)=PEAKDSPR
-          A_wav_stat(14,idx)=PEAKDM
-          A_wav_stat(15,idx)=UFRIC(IP)
-          A_wav_stat(16,idx)=Z0(IP)
-          A_wav_stat(17,idx)=CD(IP)
-          A_wav_stat(18,idx)=J_PRESSURE(IP)
-          A_wav_stat(19,idx)=ZETA_CORR(IP)
+          A_wav_stat(1, IP)=HS
+          A_wav_stat(2, IP)=TM01
+          A_wav_stat(3, IP)=TM02
+          A_wav_stat(4, IP)=KLM
+          A_wav_stat(5, IP)=WLM
+          A_wav_stat(6, IP)=ORBITAL
+          A_wav_stat(7, IP)=TMBOT
+          A_wav_stat(8, IP)=DISSIPATION(IP)
+          A_wav_stat(9, IP)=QBLOCAL(IP)
+          A_wav_stat(10,IP)=DM
+          A_wav_stat(11,IP)=TPP
+          A_wav_stat(12,IP)=DSPR
+          A_wav_stat(13,IP)=PEAKDSPR
+          A_wav_stat(14,IP)=PEAKDM
+          A_wav_stat(15,IP)=UFRIC(IP)
+          A_wav_stat(16,IP)=Z0(IP)
+          A_wav_stat(17,IP)=CD(IP)
+          A_wav_stat(18,IP)=J_PRESSURE(IP)
+          A_wav_stat(19,IP)=ZETA_CORR(IP)
         END DO
 # ifdef DEBUG_WWM
         avgHwave=SumHwave/NbPoint

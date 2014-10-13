@@ -768,7 +768,9 @@
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+#ifndef SELFE
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
+#endif
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
@@ -1089,7 +1091,7 @@
          INTEGER                :: KFRH, MFRSTLW, MLSTHG
 
          INTEGER, PARAMETER     :: ISNONLIN = 1 
-         INTEGER, PARAMETER     :: IU06 = 222222
+         INTEGER                :: IU06 
          INTEGER, PARAMETER     :: ILEV = 1
          INTEGER, PARAMETER     :: ITAUMAX=100
          INTEGER, PARAMETER     :: JUMAX=50
@@ -1172,6 +1174,14 @@
          integer wwm_nnbr_send, wwm_nnbr_recv
          integer wwm_nnbr_send_sl, wwm_nnbr_recv_sl
          integer, allocatable :: wwm_ListNeigh(:)
+!
+! Variables for the JACOBI SOLVER
+!
+!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
+!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
+         REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
+
+
 #ifdef WWM_SOLVER
       TYPE LocalColorInfo
          integer, dimension(:), pointer :: ListColor
@@ -1318,11 +1328,5 @@
       LOGICAL DO_SYNC_LOW_2_UPP
       LOGICAL DO_SYNC_UPP_2_LOW
       LOGICAL DO_SYNC_FINAL
-      !
-      ! For the JACOBI_ITERATION
-      !
-!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
-      REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
 #endif
       END MODULE

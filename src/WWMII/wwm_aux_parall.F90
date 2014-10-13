@@ -166,8 +166,8 @@
         END DO
       END DO
       MNEextent=sum(StatusNeed)
-      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'MNE/MNEextent=', MNE, MNEextent
+!      FLUSH(STAT%FHNDL)
       allocate(INDXextent_IE(MNEextent), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 6')
       DO IE=1,MNE
@@ -334,7 +334,6 @@
           END IF
           !
           nbCommon_send=0
-          WRITE(STAT%FHNDL,*) 'Before read MNEextent=', MNEextent
           DO IE=1,MNE
             IE_glob=INDXextent_IE(IE)
             IF (ListMappedB(IE_glob).gt.0) THEN
@@ -417,34 +416,6 @@
 #endif
       END SUBROUTINE
 #ifdef MPI_PARALL_GRID
-!**********************************************************************
-!* Some MPI_BARRIER are just not reliable. This construction makes    *
-!* that every process receive and send to every other process         *
-!**********************************************************************
-      SUBROUTINE MYOWN_MPI_BARRIER(iresult)
-      USE DATAPOOL
-      IMPLICIT NONE
-      integer, intent(in) :: iresult
-      integer eInt(1)
-      integer iRank, jRank, eTag
-      eInt(1)=4
-      WRITE(STAT%FHNDL,*) 'Before the loop of send/recv stat=', iresult
-      FLUSH(STAT%FHNDL)
-      DO iRank=0,nproc-1
-        eTag=137 + iRank
-        IF (myrank .eq. iRank) THEN
-          DO jRank=0,nproc-1
-            IF (iRank.ne. jRank) THEN
-              CALL MPI_SEND(eInt,1,itype,jRank,eTag,comm,ierr)
-            END IF
-          END DO
-        ELSE
-          CALL MPI_RECV(eInt, 1, itype,iRank,eTag,comm,istatus,ierr)
-        END IF
-      END DO
-      WRITE(STAT%FHNDL,*) 'After the loop of send/recv stat=', iresult
-      FLUSH(STAT%FHNDL)
-      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1208,7 +1179,7 @@
             CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
           END IF
         ELSE
-          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, istatus, ierr)
+          CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, ierr)
         END IF
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN

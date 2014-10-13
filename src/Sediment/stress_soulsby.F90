@@ -27,14 +27,16 @@
 ! Limitar o inclinacao a 0.9*(sed_angle) ou seja o angulo a atan(sed_angle*0.9)
 !        aux=min(abs(alphas),datan(sed_angle*0.9))
 !        alphas = sign(aux,alphas)
-	if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(1.0,alphas)
+!	if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(1.0,alphas)
+        if (abs(alphas)>datan(sed_angle))alphas=datan(sed_angle)*SIGN(real(1.0,8),alphas)
         cosas = dcos(alphas)
 	sinas = dsin(alphas)
 	tan_alphat = cosas*(dhx*sinv-dhy*cosv)
 	cosat = dcos(datan(tan_alphat))
         sinat = dsin(datan(tan_alphat))
         tauc = tauc0*((sinas*cosat+dsqrt((cosas*cosas*sed_angle*sed_angle)-(sinat*sinat*sinas*sinas)))/(sed_angle))
-        if (isnan(tauc)==-1) then
+!        if (isnan(tauc)==-1) then
+        if (isnan(tauc).eqv..true.) then
           write(errmsg,*)'tauc is NaN "i"',tauc
           call parallel_abort(errmsg)
         endif

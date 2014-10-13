@@ -7,17 +7,23 @@
       IMPLICIT NONE
       integer, intent(in) :: year, month, day, hour, min, sec
       real(rkind), intent(out) :: eJD
+      real(rkind) :: eJDbase, eFracDay
       integer a, y, m
       a = floor((MyREAL(14) - MyREAL(month))/MyREAL(12));
       y = year + 4800 - a;
       m = month + 12*a - 3;
       ! For a date in the Gregorian calendar:
-      eJD = day +                                                      &
+      eJDbase = MyREAL(day)                                            &
      &   + floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5))        &
-     &   + y*365 + floor(MyREAL(y)/MyREAL(4))                          &
+     &   + MyREAL(y)*MyREAL(365)                                       &
+     &   + floor(MyREAL(y)/MyREAL(4))                                  &
      &   - floor(MyREAL(y)/MyREAL(100))                                &
-     &   + floor(MyREAL(y)/MyREAL(400)) - 32045                        &
-     &   + ( sec + 60*min + 3600*(hour - 12) )/86400
+     &   + floor(MyREAL(y)/MyREAL(400)) - MyREAL(32045)
+      eFracDay=(MyREAL(sec) +                                          &
+     &          MyREAL(60)*MyREAL(min) +                               &
+     &          MyREAL(3600)*(MyREAL(hour) - MyREAL(12))               &
+     &          )/MyREAL(86400)
+      eJD=eJDbase + eFracDay
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -140,8 +146,12 @@
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
       real(rkind) XMJD_1858
+      Print *, 'STIME=', STIME
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
+      Print *, 'year/month/day=', year, month, day
+      Print *, 'hour/min/sec=', hour, min, sec
       CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
+      Print *, 'XMJD=', XMJD
       CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
       XMJD=XMJD - XMJD_1858
       END SUBROUTINE
