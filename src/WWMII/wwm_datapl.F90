@@ -905,9 +905,9 @@
          integer, dimension(:), pointer :: ac2_hot_rqst
          integer, dimension(:,:), pointer :: ac2_hot_stat
          integer, dimension(:), pointer :: ac2_hot_type
-         integer, dimension(:), pointer :: varoned_hot_rqst
-         integer, dimension(:,:), pointer :: varoned_hot_stat
-         integer, dimension(:), pointer :: varoned_hot_type
+         integer, dimension(:), pointer :: var_oned_hot_rqst
+         integer, dimension(:,:), pointer :: var_oned_hot_stat
+         integer, dimension(:), pointer :: var_oned_hot_type
 #endif
          TYPE LINEOUTS
             CHARACTER(LEN=20) :: NAME
