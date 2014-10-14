@@ -430,6 +430,7 @@ MODULE wwm_hotfile_mod
       IMPLICIT NONE
       integer iProc, IP, IPglob
       IF (myrank .eq. 0) THEN
+        WRITE(STAT%FHNDL, *) 'Before allocation of ACreturn'
         allocate(ACreturn(MSC,MDC,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
@@ -446,6 +447,7 @@ MODULE wwm_hotfile_mod
         CALL MPI_SEND(AC2, MSC*MDC*NP_RES, rtype, 0, 8123, comm, ierr)
       END IF
       IF (myrank .eq. 0) THEN
+        WRITE(STAT%FHNDL, *) 'Before allocation of VAR_ONEDreturnn'
         allocate(VAR_ONEDreturn(nbOned,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
@@ -530,7 +532,10 @@ MODULE wwm_hotfile_mod
       END IF
 #ifdef MPI_PARALL_GRID
       IF ((MULTIPLEOUT_HOT.eq.0).and.(myrank.eq.0)) THEN
-        deallocate(ACreturn, VAR_ONEDreturn)
+        WRITE(STAT%FHNDL, *) 'Before deallocation of ACreturn'
+        deallocate(ACreturn)
+        WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONEDreturn'
+        deallocate(VAR_ONEDreturn)
       END IF
 #endif
       deallocate(VAR_ONED)
@@ -825,10 +830,8 @@ MODULE wwm_hotfile_mod
         IF (MULTIPLEOUT_HOT.eq.0) THEN
           iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, np_global, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
-          deallocate(ACreturn);
           iret=nf90_put_var(ncid,var_oned_id,VAR_ONEDreturn,start=(/1, 1, POS/), count=(/ nbOned, np_global, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
-          deallocate(VAR_ONEDreturn);
         ELSE
           iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, MNP, 1 /))
           CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)

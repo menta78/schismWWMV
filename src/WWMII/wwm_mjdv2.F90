@@ -146,12 +146,12 @@
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
       real(rkind) XMJD_1858
-      Print *, 'STIME=', STIME
+!      Print *, 'STIME=', STIME
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
-      Print *, 'year/month/day=', year, month, day
-      Print *, 'hour/min/sec=', hour, min, sec
+!      Print *, 'year/month/day=', year, month, day
+!      Print *, 'hour/min/sec=', hour, min, sec
       CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
-      Print *, 'XMJD=', XMJD
+!      Print *, 'XMJD=', XMJD
       CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
       XMJD=XMJD - XMJD_1858
       END SUBROUTINE
