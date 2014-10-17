@@ -821,13 +821,12 @@
                END DO
              END DO
            END IF
-         END DO      
-
-      END SUBROUTINE
+         END DO
+         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ACTION_LIMITER
+         SUBROUTINE ACTION_LIMITER
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -882,7 +881,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ACTION_LIMITER_LOCAL(IP,ACLOC,ACOLD)
+         SUBROUTINE ACTION_LIMITER_LOCAL(IP,ACLOC,ACOLD)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -918,7 +917,6 @@
                MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
              ENDIF
            END IF
-
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
@@ -926,14 +924,12 @@
              NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
              ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
            END DO
-
          END DO
-
          END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE BREAK_LIMIT(IP,ACLOC,SSBRL)
+         SUBROUTINE BREAK_LIMIT(IP,ACLOC,SSBRL)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -962,46 +958,42 @@
            SSBRL = ACLOC - RATIO * ACLOC
            ACLOC = RATIO * ACLOC
          END IF
-        END SUBROUTINE
+         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE BREAK_LIMIT_ALL
-      USE DATAPOOL
-      IMPLICIT NONE
+         SUBROUTINE BREAK_LIMIT_ALL
+         USE DATAPOOL
+         IMPLICIT NONE
 
-      INTEGER              :: IP
-      REAL(rkind)          :: HS
-      REAL(rkind)          :: EMAX, RATIO, ETOT
-      REAL(rkind)          :: DINTSPEC
-      REAL(rkind)          :: ACLOC(MSC, MDC)
+         INTEGER              :: IP
+         REAL(rkind)          :: HS
+         REAL(rkind)          :: EMAX, RATIO, ETOT
+         REAL(rkind)          :: DINTSPEC
+         REAL(rkind)          :: ACLOC(MSC, MDC)
 !      Print *, 'Passing BREAK_LIMIT_ALL'
-
-      DO IP = 1, MNP
-        ACLOC = AC2(:,:,IP)
-        IF (ISHALLOW(IP) .EQ. 0) CYCLE
-
-        ETOT = DINTSPEC(IP,ACLOC)
-
-        HS = 4.*SQRT(ETOT)
-
-        EMAX = 1./16. * (HMAX(IP))**2
+         DO IP = 1, MNP
+           ACLOC = AC2(:,:,IP)
+           IF (ISHALLOW(IP) .EQ. 0) CYCLE
+           ETOT = DINTSPEC(IP,ACLOC)
+           HS = 4.*SQRT(ETOT)
+           EMAX = 1./16. * (HMAX(IP))**2
 !        WRITE(300,*) 'IP=', IP, ' HMAX=', HMAX(IP), ' DEP=', DEP(IP)
 !        WRITE(300,*) '   ', IP, ' EMAX=', EMAX, ' ETOT=', ETOT
 !        WRITE(300,*) '   ', IP, ' HS=', HS, ' BRHD=', BRHD
 
-        IF (ETOT .GT. EMAX) THEN
-          if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
-          RATIO = EMAX/ETOT
-          AC2(:,:,IP) = RATIO * ACLOC(:,:)
-          AC1(:,:,IP) = RATIO * ACLOC(:,:)
-        END IF
-      END DO
-      END SUBROUTINE
+           IF (ETOT .GT. EMAX) THEN
+             if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
+             RATIO = EMAX/ETOT
+             AC2(:,:,IP) = RATIO * ACLOC(:,:)
+             AC1(:,:,IP) = RATIO * ACLOC(:,:)
+           END IF
+         END DO
+         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE RESCALE_SPECTRUM()
+         SUBROUTINE RESCALE_SPECTRUM()
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IP, IS, ID
@@ -1036,11 +1028,11 @@
                END IF
             END DO
          END DO
-      END SUBROUTINE
+         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SETSHALLOW
+         SUBROUTINE SETSHALLOW
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IP
@@ -1052,7 +1044,7 @@
              ISHALLOW(IP) = 0
            END IF
          END DO
-      END SUBROUTINE
+         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
