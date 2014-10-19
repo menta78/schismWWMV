@@ -107,6 +107,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE MONTH_LEN(year, month, lenmonth)
+      IMPLICIT NONE
+      integer, intent(in) :: year, month
+      integer, intent(out) :: lenmonth
+      IF ((month .eq. 1).or.(month .eq. 3).or.(month .eq. 5).or.(month .eq. 7).or.(month .eq. 8).or.(month .eq. 10).or.(month .eq. 12)) THEN
+        lenmonth=31
+      END IF
+      IF ((month .eq. 4).or.(month .eq. 6).or.(month .eq. 9).or.(month .eq. 11)) THEN
+        lenmonth=30
+      END IF
+      IF (month .eq. 2) THEN
+        IF (MOD(year, 4) .ne. 0) THEN
+          lenmonth=28
+        ELSE
+          IF (MOD(year, 100) .ne. 0) THEN
+            lenmonth=29
+          ELSE
+            IF (MOD(year, 400) .ne. 0) THEN
+              lenmonth=28
+            ELSE
+              lenmonth=29
+            END IF
+          END IF
+        END IF
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE JD2DATE(year, month, day, hour, min, sec, eJD)
       ! The following algorithm is from the Calendar FAQ.
       USE DATAPOOL
@@ -114,6 +143,7 @@
       integer, intent(out) :: year, month, day, hour, min, sec
       real(rkind), intent(in) :: eJD
       integer ijd, a, b, c, d, e, m
+      integer secNear, lenmonth
       real(rkind) :: fjd, second
       ijd = floor(eJD + 0.5_rkind)
       !
@@ -135,6 +165,31 @@
       second = second - MyREAL(3600)*MyREAL(hour)
       min    = floor(second/MyREAL(60))
       sec    = INT(second - MyREAL(60)*min)
+      !
+      ! Now renormalizing
+      !
+      secNear=NINT(second - DBLE(60)*min)
+      IF (secNear .eq. 60) THEN
+        sec=0
+        min=min+1
+      END IF
+      IF (min .eq. 60) THEN
+        min=0
+        hour=hour+1
+      END IF
+      IF (hour .eq. 24) THEN
+        hour=0
+        day=day+1
+      END IF
+      CALL MONTH_LEN(year, month, lenmonth)
+      IF (day .eq. lenmonth+1) THEN
+        day=1
+        month=month+1
+      END IF
+      IF (month .eq. 13) THEN
+        month=1
+        year=year+1
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
