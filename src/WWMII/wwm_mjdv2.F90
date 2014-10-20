@@ -82,29 +82,6 @@
   20  FORMAT (i4.4, i2.2, i2.2, '.', i2.2, i2.2, i2.2)
       END SUBROUTINE
 !**********************************************************************
-!*    The function below is broken because the range of integers      *
-!*    is too small for holding integer values for the range           *
-!*    considered. Any idea how to avoid that?                         *
-!**********************************************************************
-      SUBROUTINE NORMALIZE_NEARESTSECOND_BROKEN(eDateIn, eDateOut)
-      USE DATAPOOL
-      IMPLICIT NONE
-      REAL(rkind), intent(in) :: eDateIn
-      REAL(rkind), intent(out) :: eDateOut
-      REAL(rkind) TheProd, TheProdB, TheRet
-      integer TheProdI
-      TheProd=eDateIn*MyREAL(86400)
-      TheProdI=NINT(TheProd)
-      TheProdB=MyREAL(TheProdI)
-      TheRet=TheProdB/MyREAL(86400)
-      Print *, 'eDateIn=', eDateIn
-      Print *, 'TheProd=', TheProd
-      Print *, 'TheProdI=', TheProdI
-      Print *, 'TheProdB=', TheProdB
-      Print *, 'TheRet=', TheRet
-      eDateOut=TheRet
-      END SUBROUTINE
-!**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE MONTH_LEN(year, month, lenmonth)
@@ -201,14 +178,8 @@
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
       real(rkind) XMJD_1858
-!      Print *, 'STIME=', STIME
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
-!      Print *, 'year/month/day=', year, month, day
-!      Print *, 'hour/min/sec=', hour, min, sec
-      CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
-!      Print *, 'XMJD=', XMJD
-      CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
-      XMJD=XMJD - XMJD_1858
+      CALL DATE_ConvertSix2mjd(year, month, day, hour, min, sec, XMJD)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
