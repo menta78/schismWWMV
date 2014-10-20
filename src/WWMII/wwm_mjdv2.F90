@@ -14,11 +14,11 @@
       m = month + 12*a - 3;
       ! For a date in the Gregorian calendar:
       eJDbase = MyREAL(day)                                            &
-     &   + floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5))        &
-     &   + MyREAL(y)*MyREAL(365)                                       &
-     &   + floor(MyREAL(y)/MyREAL(4))                                  &
-     &   - floor(MyREAL(y)/MyREAL(100))                                &
-     &   + floor(MyREAL(y)/MyREAL(400)) - MyREAL(32045)
+     & + MyREAL(floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5)))  &
+     & + MyREAL(y)*MyREAL(365)                                         &
+     & + MyREAL(floor(MyREAL(y)/MyREAL(4)))                            &
+     & - MyREAL(floor(MyREAL(y)/MyREAL(100)))                          &
+     & + MyREAL(floor(MyREAL(y)/MyREAL(400))) - MyREAL(32045)
       eFracDay=(MyREAL(sec) +                                          &
      &          MyREAL(60)*MyREAL(min) +                               &
      &          MyREAL(3600)*(MyREAL(hour) - MyREAL(12))               &
@@ -35,9 +35,19 @@
       real(rkind), intent(out) :: eMJD
       real(rkind) :: eJD1, eJD2
       CALL DATE2JD(year, month, day, hour, min, sec, eJD1)
+!      WRITE(STAT%FHNDL, *) 'year =', year
+!      WRITE(STAT%FHNDL, *) 'month=', month
+!      WRITE(STAT%FHNDL, *) 'day  =', day
+!      WRITE(STAT%FHNDL, *) 'hour =', hour
+!      WRITE(STAT%FHNDL, *) 'min  =', min
+!      WRITE(STAT%FHNDL, *) 'sec  =', sec
+!      WRITE(STAT%FHNDL, *) 'eJD1 =', eJD1
+
+
 !      CALL DATE2JD(1968, 5, 23, 0, 0, 0, eJD2)
-      CALL DATE2JD(1858, 11, 18, 0, 0, 0, eJD2)
+      CALL DATE2JD(1858, 11, 17, 0, 0, 0, eJD2)
       eMJD=eJD1-eJD2
+      WRITE(STAT%FHNDL, *) 'eMJD =', eMJD
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -141,7 +151,7 @@
       hour   = floor(second/MyREAL(3600))
       second = second - MyREAL(3600)*MyREAL(hour)
       min    = floor(second/MyREAL(60))
-      sec    = INT(second - MyREAL(60)*min)
+      sec    = floor(second - MyREAL(60)*min)
       !
       ! Now renormalizing
       !
