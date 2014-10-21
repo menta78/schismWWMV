@@ -398,6 +398,7 @@ MODULE wwm_hotfile_mod
       integer MNPloc, iProc, IP, IP_glob
       integer, allocatable :: dspl_ac(:), dspl_var_oned(:)
       ListFirst=0
+#ifdef NCDF
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
       END DO
@@ -422,12 +423,14 @@ MODULE wwm_hotfile_mod
           deallocate(dspl_ac, dspl_var_oned)
         END DO
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SETUP_RETURN_AC_VARONED
       IMPLICIT NONE
+#ifdef NCDF
       integer iProc, IP, IPglob
       IF (myrank .eq. 0) THEN
         WRITE(STAT%FHNDL, *) 'Before allocation of ACreturn'
@@ -463,6 +466,7 @@ MODULE wwm_hotfile_mod
       ELSE
         CALL MPI_SEND(VAR_ONED, nbOned*NP_RES, rtype, 0, 8124, comm, ierr)
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
