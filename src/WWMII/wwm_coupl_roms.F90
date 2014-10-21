@@ -457,6 +457,10 @@
           CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_u)
           CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_v)
         END IF
+        CALL DEALLOCATE_GRID_ARRAY(eGrid_wav)
+        CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_rho)
+        CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_u)
+        CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_v)
         !
         ! Fourth part: Computing restricted interpolation matrices
         ! and asynchronous arrays
