@@ -352,6 +352,9 @@
 !        character(len=40) :: FileSave1, FileSave2
 !        character(len=3) :: eStrFi
         real(rkind) SumDepReceive
+        !
+        ! First part: initializations of the code
+        !
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1, rnk=', myrank
         FLUSH(DBG%FHNDL)
@@ -371,8 +374,11 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 2, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
+        !
+        ! Second part: exchanging grids
+        !
         IF (MyRankLocal.eq.0) THEN
-          CALL M2M_send_fem(ArrLocal, OCNid, eGrid_wav)
+          CALL M2M_send_grid(ArrLocal, OCNid, eGrid_wav)
           CALL M2M_send_node_partition(ArrLocal, OCNid,                 &
      &        np_total, NnodesWAV, MatrixBelongingWAV)
         ENDIF
@@ -420,34 +426,41 @@
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 10, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        ALLOCATE(z_w_loc(0:Nlevel), eUSTOKES_loc(Nlevel), eVSTOKES_loc(Nlevel), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 16')
         DoNearest=.TRUE.
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 11, rnk=', myrank
         FLUSH(DBG%FHNDL)
 # endif
-        CALL GetString(MyRankGlobal, eStr)
+        !
+        ! Third part: computing interpolation matrices
+        !
         FileSave_OCNtoWAV_rho='InterpSave_OCNtoWAV_rho'
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_OCNtoWAV_rho, eStr, mMat_OCNtoWAV_rho, DoNearest,    &
-     &    eGrid_ocn_rho, eGrid_wav)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 12, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
         FileSave_OCNtoWAV_u='InterpSave_OCNtoWAV_u'
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_OCNtoWAV_u, eStr, mMat_OCNtoWAV_u, DoNearest,        &
-     &    eGrid_ocn_u, eGrid_wav)
         FileSave_OCNtoWAV_v='InterpSave_OCNtoWAV_v'
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 13, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_OCNtoWAV_v, eStr, mMat_OCNtoWAV_v, DoNearest,        &
-     &    eGrid_ocn_v, eGrid_wav)
+        CALL SAVE_CreateInterpolationSparseMatrix_Parall(               &
+     &    FileSave_OCNtoWAV_rho, mMat_OCNtoWAV_rho, DoNearest,          &
+     &    eGrid_ocn_rho, eGrid_wav,                                     &
+     &    WAV_COMM_WORLD, MatrixBelongingWAV)
+        CALL SAVE_CreateInterpolationSparseMatrix_Parall(               &
+     &    FileSave_OCNtoWAV_u, mMat_OCNtoWAV_u, DoNearest,              &
+     &    eGrid_ocn_u, eGrid_wav,                                       &
+     &    WAV_COMM_WORLD, MatrixBelongingWAV)
+        CALL SAVE_CreateInterpolationSparseMatrix_Parall(               &
+     &    FileSave_OCNtoWAV_v, mMat_OCNtoWAV_v, DoNearest,              &
+     &    eGrid_ocn_v, eGrid_wav,                                       &
+     &    WAV_COMM_WORLD, MatrixBelongingWAV)
+        CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_rho)
+        CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_u)
+        CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_v)
+        IF (MyRankLocal .eq. 0) THEN
+          CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_rho)
+          CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_u)
+          CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_v)
+        END IF
+        !
+        ! Fourth part: Computing restricted interpolation matrices
+        ! and asynchronous arrays
+        ! 
 # ifdef DEBUG_WWM
         WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
         FLUSH(DBG%FHNDL)
@@ -455,139 +468,64 @@
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_rho, MatrixBelongingWAV,                   &
      &    mMat_OCNtoWAV_rho, TheArr_OCNtoWAV_rho)
-# ifndef NO_ASYNC
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_rho,          &
      &    3, TheAsync_OCNtoWAV_uvz)
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_rho,          &
      &    Nlevel+1, TheAsync_OCNtoWAV_rho)
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'nbNeedTot=', TheArr_OCNtoWAV_rho % nbNeedTot
-        WRITE(DBG%FHNDL,*) 'nbProc=', TheArr_OCNtoWAV_rho % nbProc
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 14'
-        FLUSH(DBG%FHNDL)
-# endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_u, MatrixBelongingWAV,                     &
      &    mMat_OCNtoWAV_u, TheArr_OCNtoWAV_u)
-# ifndef NO_ASYNC
-#  ifdef FIRST_ORDER_ARDHUIN
+# ifdef FIRST_ORDER_ARDHUIN
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_u,            &
      &    2, TheAsync_OCNtoWAV_u)
-#  else
+# else
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_u,            &
      &    Nlevel, TheAsync_OCNtoWAV_u)
-#  endif
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 15, rnk=', myrank
-        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,     &
      &    MatrixBelongingOCN_v, MatrixBelongingWAV,                     &
      &    mMat_OCNtoWAV_v, TheArr_OCNtoWAV_v)
-# ifndef NO_ASYNC
-#  ifdef FIRST_ORDER_ARDHUIN
+# ifdef FIRST_ORDER_ARDHUIN
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_v,            &
      &    2, TheAsync_OCNtoWAV_v)
-#  else
+# else
         CALL MPI_INTERP_GetAsyncOutput_r8(TheArr_OCNtoWAV_v,            &
      &    Nlevel, TheAsync_OCNtoWAV_v)
-#  endif
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 16, rnk=', myrank
-        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
         CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
         CALL DeallocSparseMatrix(mMat_OCNtoWAV_v)
-        FileSave_WAVtoOCN_rho='InterpSave_WAVtoOCN_rho'
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 17, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_WAVtoOCN_rho, eStr, mMat_WAVtoOCN_rho, DoNearest,    &
-     &    eGrid_wav, eGrid_ocn_rho)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 18, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
-        FileSave_WAVtoOCN_u='InterpSave_WAVtoOCN_u'
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_WAVtoOCN_u, eStr, mMat_WAVtoOCN_u, DoNearest,        &
-     &    eGrid_wav, eGrid_ocn_u)
-        FileSave_WAVtoOCN_v='InterpSave_WAVtoOCN_v'
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 19, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
-        CALL SAVE_CreateInterpolationSparseMatrix(                      &
-     &    FileSave_WAVtoOCN_v, eStr, mMat_WAVtoOCN_v, DoNearest,        &
-     &    eGrid_wav, eGrid_ocn_v)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 20, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_rho,                   &
      &    mMat_WAVtoOCN_rho, TheArr_WAVtoOCN_rho)
-# ifndef NO_ASYNC
         CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_rho,           &
      &    19, TheAsync_WAVtoOCN_stat)
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 21, rnk=', myrank
-        FLUSH(DBG%FHNDL)
-# endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_u,                     &
      &    mMat_WAVtoOCN_u, TheArr_WAVtoOCN_u)
-# ifndef NO_ASYNC
-#  ifdef STOKES_DRIFT_USING_INTEGRAL
+# ifdef STOKES_DRIFT_USING_INTEGRAL
         CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_u,             &
      &    Nlevel+1, TheAsync_WAVtoOCN_u)
-#  else
+# else
         CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_u,             &
      &    1, TheAsync_WAVtoOCN_u)
-#  endif
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 22, rnk=', myrank
-        FLUSH(DBG%FHNDL)
 # endif
         CALL MPI_INTERP_GetSystemInputSide(ArrLocal, WAVid, OCNid,      &
      &    MatrixBelongingWAV, MatrixBelongingOCN_v,                     &
      &    mMat_WAVtoOCN_v, TheArr_WAVtoOCN_v)
-# ifndef NO_ASYNC
-#  ifdef STOKES_DRIFT_USING_INTEGRAL
+# ifdef STOKES_DRIFT_USING_INTEGRAL
         CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_v,             &
      &    Nlevel+1, TheAsync_WAVtoOCN_v)
-#  else
+# else
         CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_v,             &
      &    1, TheAsync_WAVtoOCN_v)
-#  endif
-# endif
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23, rnk=', myrank
-        FLUSH(DBG%FHNDL)
 # endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.1'
-        FLUSH(DBG%FHNDL)
-# endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.2'
-        FLUSH(DBG%FHNDL)
-# endif
         CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
-# ifdef DEBUG_WWM
-        WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 23.3'
-        FLUSH(DBG%FHNDL)
-# endif
+        !
+        ! Fifth part: more allocations and exchanges
+        !
 # ifdef FIRST_ORDER_ARDHUIN
         allocate(A_wav_ur_3D(2,MNP), A_wav_vr_3D(2,MNP), U_wav(2,MNP), V_wav(2,MNP), stat=istat)
 # else
@@ -692,14 +630,6 @@
         WRITE(DBG%FHNDL,*) 'AD, SumDiff=', SumDiff
         FLUSH(DBG%FHNDL)
 # endif
-        allocate(z_r(Nlevel), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18')
-# ifdef FIRST_ORDER_ARDHUIN
-        allocate(PartialU1(1), PartialV1(1), stat=istat)
-# else
-        allocate(PartialU1(Nlevel), PartialV1(Nlevel), PartialU2(Nlevel), PartialV2(Nlevel), stat=istat)
-# endif
-        IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 18.1')
         allocate(z_w_wav(0:Nlevel, MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
         allocate(USTOKES_wav(Nlevel,MNP), VSTOKES_wav(Nlevel,MNP), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
@@ -731,7 +661,6 @@
       deallocate(MatrixBelongingOCN_rho)
       deallocate(MatrixBelongingOCN_u)
       deallocate(MatrixBelongingOCN_v)
-      DEALLOCATE(z_w_loc, eUSTOKES_loc, eVSTOKES_loc)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_rho)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_u)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_v)
@@ -741,8 +670,7 @@
       deallocate(CosAng, SinAng, dep_rho)
       deallocate(A_wav_rho_3D, A_wav_stat, A_wav_uvz, A_wav_rho)
       deallocate(A_wav_u_3D, A_wav_v_3D, A_wav_ur_3D, A_wav_vr_3D)
-      deallocate(z_r, z_w_wav, U_wav, V_wav)
-      deallocate(PartialU1, PartialV1, PartialU2, PartialV2)
+      deallocate(z_w_wav, U_wav, V_wav)
       deallocate(USTOKES_wav, VSTOKES_wav)
       deallocate(ZETA_CORR, J_PRESSURE)
       END SUBROUTINE
@@ -784,6 +712,13 @@
         real(rkind) TotalSumUstokes, TotalSumVstokes
         real(rkind) SumHeight
         real(rkind) eJPress_loc, eZetaCorr_loc, eProd, eUint, eVint
+        real(rkind) z_r(Nlevel)
+        real(rkind) z_w_loc(0:Nlevel), eUSTOKES_loc(Nlevel), eVSTOKES_loc(Nlevel)
+# ifdef FIRST_ORDER_ARDHUIN
+        real(rkind) PartialU1(1), PartialV1(1)
+# else
+        real(rkind) PartialU1(Nlevel), PartialV1(Nlevel), PartialU2(Nlevel), PartialV2(Nlevel)
+# endif
 # ifndef FIRST_ORDER_ARDHUIN
         eMinMfact=-3
         eMaxMfact=5
