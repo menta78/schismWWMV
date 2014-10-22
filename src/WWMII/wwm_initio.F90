@@ -643,7 +643,7 @@
       END IF
 
 
-#ifndef PGMCL_COUPLING
+#ifndef ROMS_WWM_PGMCL_COUPLING
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
       FLUSH(STAT%FHNDL)
       IF (LWINDFROMWWM) THEN
@@ -696,7 +696,7 @@
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -711,7 +711,7 @@
         END IF
       END IF
 #endif
-#ifdef PGMCL_COUPLING
+#ifdef ROMS_WWM_PGMCL_COUPLING
       CALL ROMS_COUPL_INITIALIZE
 #endif
 
@@ -778,7 +778,7 @@
          CALL CLOSE_IOBP
          CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
          IF (LCPL) THEN
            IF (LTIMOR) THEN
              CALL TERMINATE_PIPES_TIMOR()
@@ -791,7 +791,7 @@
            END IF
          END IF
 #endif
-#ifdef PGMCL_COUPLING
+#ifdef ROMS_WWM_PGMCL_COUPLING
          CALL ROMS_COUPL_DEALLOCATE
 #endif
        END SUBROUTINE
@@ -954,11 +954,11 @@
          OUTT_VARNAMES(33) = 'CURR-Y'
          OUTT_VARNAMES(34) = 'DEPTH'
          OUTT_VARNAMES(35) = 'ELEVATION'
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIATE_WAVE_PARAMETER
+       SUBROUTINE INITIATE_WAVE_PARAMETER
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
          USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
@@ -1042,11 +1042,11 @@
          IF (MESTR == 6) CALL GRAD_CG_K 
 
          RETURN
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIAL_CONDITION(IFILE,IT)
+       SUBROUTINE INITIAL_CONDITION(IFILE,IT)
          USE WWM_HOTFILE_MOD
          USE DATAPOOL
 #ifdef NCDF
@@ -1145,11 +1145,11 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_FILE_HANDLES()
+       SUBROUTINE INIT_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -1255,11 +1255,11 @@
 
          OUT%FHNDL     = STARTHNDL + 24 
 
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CLOSE_FILE_HANDLES()
+       SUBROUTINE CLOSE_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
          close(DBG%FHNDL)
@@ -1268,7 +1268,7 @@
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)
          close( WINDBG%FHNDL)
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1565,7 +1565,7 @@
 #ifdef SELFE
       INP%FNAME  = 'wwminput.nml'
 #else
-# ifndef PGMCL_COUPLING
+# ifndef ROMS_WWM_PGMCL_COUPLING
       nbArg=command_argument_count()
       IF (nbArg > 1) THEN
         CALL WWM_ABORT('Number of argument is 0 or 1')

@@ -75,7 +75,7 @@
 !
 ! ... constants ... wwmDparam.mod
 !
-#if defined USE_SINGLE && defined PGMCL_COUPLING
+#if defined USE_SINGLE && defined ROMS_WWM_PGMCL_COUPLING
            Error, you must compile in double precision
 #endif
 #ifndef MPI_PARALL_GRID

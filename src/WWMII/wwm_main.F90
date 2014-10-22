@@ -20,7 +20,7 @@
 ! indicated in the source code. If something is not cited right please correct. 
 ! 
 ! Developers:                                                   
-! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu-Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
+! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
 !
 ! Contributors: Christian Ferrarin (ISMAR-CNR), Fabrice Ardhuin (IFREMER), Yaron Toledo (Tel-Aviv University), Thomas Huxhorn (TUD), Ivica Janekovic (IRB, Zagreb), 
 ! Will Perrie (Fisheries, Canada), Bash Toulany (Fisheries, Canada), Harry Wang (VIMS), Andrea Fortunato (LNEC), Guillaume Dodet (LNEC), Kai Li (LNEC)
@@ -640,7 +640,7 @@
 !
 !      *** coupling via pipe *** read pipe
 !
-#if !defined SELFE && !defined PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_IN(K)
 # ifdef SHYFEM_COUPLING
@@ -651,7 +651,7 @@
         CALL PIPE_ROMS_IN(K,IFILE,IT)
       END IF
 #endif
-#ifdef PGMCL_COUPLING
+#ifdef ROMS_WWM_PGMCL_COUPLING
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
         CALL PGMCL_ROMS_IN(K,IFILE,IT)
       END IF
@@ -686,7 +686,7 @@
          INTEGER, INTENT(IN) :: K
          CALL GENERAL_OUTPUT
 #ifndef SELFE
-# if !defined PGMCL_COUPLING
+# if !defined ROMS_WWM_PGMCL_COUPLING
          IF (LCPL .AND. LTIMOR) THEN
            CALL PIPE_TIMOR_OUT(K)
 #  ifdef SHYFEM_COUPLING
@@ -697,7 +697,7 @@
            CALL PIPE_ROMS_OUT(K)
          END IF
 # endif
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
          IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
            CALL PGMCL_ROMS_OUT(K)
          END IF
@@ -750,13 +750,13 @@
 !*                                                                    *
 !**********************************************************************
 #if !defined SELFE
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
       SUBROUTINE WWMIII_MPI(MyCOMM)
 # else
       PROGRAM WWMIII_MPI
 # endif
 
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler, only : WAV_COMM_WORLD
 # endif
 
@@ -769,15 +769,16 @@
      &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC
 
 # ifdef MPI_PARALL_GRID
-    use datapool, only: rkind, comm, myrank, ierr, nproc, parallel_finalize
+      USE datapool, only: rkind, comm, myrank, ierr, nproc,            &
+     &      parallel_finalize
 # endif
 
       implicit none
 
-# if defined MPI_PARALL_GRID || defined PGMCL_COUPLING
+# if defined MPI_PARALL_GRID || defined ROMS_WWM_PGMCL_COUPLING
       include 'mpif.h'
 # endif
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
       integer, intent(in) :: MyCOMM
 # endif
 # ifdef TIMINGS 
@@ -785,7 +786,7 @@
 # endif
       integer :: i,j,k
       character(len=15) CALLFROM
-# if !defined PGMCL_COUPLING && defined WWM_MPI
+# if !defined ROMS_WWM_PGMCL_COUPLING && defined WWM_MPI
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
@@ -795,7 +796,7 @@
 #endif
 
       
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
       comm=MyCOMM
       WAV_COMM_WORLD=MyCOMM
 # else
@@ -835,11 +836,11 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
 # endif
 
-# if defined MPI_PARALL_GRID && !defined PGMCL_COUPLING
+# if defined MPI_PARALL_GRID && !defined ROMS_WWM_PGMCL_COUPLING
       call parallel_finalize
 # endif
 
-# ifdef PGMCL_COUPLING
+# ifdef ROMS_WWM_PGMCL_COUPLING
       END SUBROUTINE
 # else
       END PROGRAM

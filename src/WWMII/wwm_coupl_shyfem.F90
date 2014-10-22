@@ -1,5 +1,5 @@
 #include "wwm_functions.h"
-#if !defined PGMCL_COUPLING && defined SHYFEM_COUPLING
+#if !defined ROMS_WWM_PGMCL_COUPLING && defined SHYFEM_COUPLING
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
