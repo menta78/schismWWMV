@@ -122,6 +122,9 @@ MODULE WWM_ROMS_PGMCL
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_INITIALIZE
+      ! We have to keep the DATAPOOL uses that way.
+      ! a single USE DATAPOOL creates compilation problem
+      ! because MPI_COMM_WORLD comes from two sources.
       USE DATAPOOL, only : DBG, rkind, STAT, np_total, ne_total
       USE DATAPOOL, only : XPtotal, YPtotal, INEtotal
       USE DATAPOOL, only : itype, istatus, ierr, MNP, istat
