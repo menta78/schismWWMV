@@ -451,6 +451,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE WWM_ROMS_PGMCL
+#endif
       USE DATAPOOL
 !#ifdef MPI_PARALL_GRID
 !# ifndef PDLIB
@@ -743,56 +746,59 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE TERMINATE_WWM
-         USE DATAPOOL
+#ifdef ROMS_WWM_PGMCL_COUPLING
+       USE WWM_ROMS_PGMCL
+#endif
+       USE DATAPOOL
 #ifdef ST41
-         USE W3SRC4MD_OLD
+       USE W3SRC4MD_OLD
 #endif
 #ifdef ST42
-         USE W3SRC4MD
+       USE W3SRC4MD
 #endif
 
 #ifdef PETSC
-         USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
+       USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
 #endif
 
-         CALL CLOSE_FILE_HANDLES
-         CALL DEALLOC_ARRAYS
+       CALL CLOSE_FILE_HANDLES
+       CALL DEALLOC_ARRAYS
 
 #ifdef MPI_PARALL_GRID
-         CALL DEALLOC_WILD_ARRAY
+       CALL DEALLOC_WILD_ARRAY
 #endif
-         IF (DIMMODE .EQ. 2) THEN
-           CALL DEALLOC_FLUCT_ARRAYS
-           CALL DEALLOC_FLUCT
+       IF (DIMMODE .EQ. 2) THEN
+         CALL DEALLOC_FLUCT_ARRAYS
+         CALL DEALLOC_FLUCT
 
-           IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
+         IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
 #ifdef PETSC
-             CALL PETSC_FINALIZE
+           CALL PETSC_FINALIZE
 #endif
-           END IF
          END IF
-         IF (LZETA_SETUP) THEN
-           CALL FINALIZE_WAVE_SETUP
-         END IF
-         CALL DEALLOC_SPECTRAL_GRID
-         CALL CLOSE_IOBP
-         CALL TERMINATE_STATION_OUTPUT
+       END IF
+       IF (LZETA_SETUP) THEN
+         CALL FINALIZE_WAVE_SETUP
+       END IF
+       CALL DEALLOC_SPECTRAL_GRID
+       CALL CLOSE_IOBP
+       CALL TERMINATE_STATION_OUTPUT
 
 #if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
-         IF (LCPL) THEN
-           IF (LTIMOR) THEN
-             CALL TERMINATE_PIPES_TIMOR()
+       IF (LCPL) THEN
+         IF (LTIMOR) THEN
+           CALL TERMINATE_PIPES_TIMOR()
 # ifdef SHYFEM_COUPLING
-           ELSE IF (LSHYFEM) THEN
-             CALL TERMINATE_PIPES_SHYFEM()
+         ELSE IF (LSHYFEM) THEN
+           CALL TERMINATE_PIPES_SHYFEM()
 # endif
-           ELSE IF (LROMS) THEN
-             CALL TERMINATE_PIPES_ROMS()
-           END IF
+         ELSE IF (LROMS) THEN
+           CALL TERMINATE_PIPES_ROMS()
          END IF
+       END IF
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
-         CALL ROMS_COUPL_DEALLOCATE
+       CALL ROMS_COUPL_DEALLOCATE
 #endif
        END SUBROUTINE
 !**********************************************************************

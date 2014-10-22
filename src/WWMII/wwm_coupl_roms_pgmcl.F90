@@ -1,10 +1,20 @@
 #include "wwm_functions.h"
-MODULE WWM_PGMCL_COUPLING_WITH_ROMS
+MODULE WWM_ROMS_PGMCL
       LOGICAL :: L_FIRST_ORDER_ARDHUIN
       LOGICAL :: L_STOKES_DRIFT_USING_INTEGRAL
       integer NlevelVert
       integer NlevelPartial
       integer NlevelIntegral
+      real*8, allocatable :: U_wav(:,:), V_wav(:,:)
+      real*8, allocatable :: A_wav_ur_3D(:,:), A_wav_vr_3D(:,:)
+      real*8, allocatable :: A_wav_rho_3D(:,:), A_wav_rho(:)
+      real*8, allocatable :: A_wav_stat(:,:), A_wav_uvz(:,:)
+      real*8, allocatable :: A_wav_u_3D(:,:), A_wav_v_3D(:,:)
+      real*8, allocatable :: z_w_wav(:,:)
+      real*8, allocatable :: USTOKES_wav(:,:), VSTOKES_wav(:,:)
+      real*8, allocatable :: ZETA_CORR(:), J_PRESSURE(:)
+      real*8, allocatable :: dep_rho(:)
+      real*8, allocatable :: CosAng(:), SinAng(:)
       CONTAINS
 !**********************************************************************
 !*                                                                    *
@@ -112,19 +122,23 @@ MODULE WWM_PGMCL_COUPLING_WITH_ROMS
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ROMS_COUPL_INITIALIZE
-      USE DATAPOOL
+      USE DATAPOOL, only : DBG, rkind, STAT, np_total, ne_total
+      USE DATAPOOL, only : XPtotal, YPtotal, INEtotal
+      USE DATAPOOL, only : itype, istatus, ierr, MNP, istat
       USE mod_coupler
       USE PGMCL_LIBRARY
       USE pgmcl_interp
+!      USE mod_parallel
       implicit none
       logical DoNearest
       integer rbuf_int(1)
       integer IP, iNodeSel, idx, eRankRecv
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
-!        character(len=40) :: FileSave1, FileSave2
-!        character(len=3) :: eStrFi
       real(rkind) SumDepReceive
+      character(len=40) :: FileSave_OCNtoWAV_rho
+      character(len=40) :: FileSave_OCNtoWAV_u
+      character(len=40) :: FileSave_OCNtoWAV_v
       !
       ! First part: initializations of the code
       !
@@ -743,12 +757,6 @@ MODULE WWM_PGMCL_COUPLING_WITH_ROMS
       USE DATAPOOL
       USE pgmcl_library
       USE mod_coupler
-# ifdef ST41
-      USE W3SRC4MD, only : UFRIC
-# endif
-# ifdef ST42
-      USE W3SRC4MD, only : UFRIC
-# endif
       implicit none
       INTEGER, INTENT(IN)  :: K
       integer IP, kLev, idx

@@ -602,7 +602,7 @@
 !**********************************************************************
       SUBROUTINE IO_1(K)
 #ifdef ROMS_WWM_PGMCL_COUPLING
-      USE WWM_PGMCL_COUPLING_WITH_ROMS
+      USE WWM_ROMS_PGMCL
 #endif
       USE DATAPOOL
       IMPLICIT NONE
@@ -685,7 +685,7 @@
 !**********************************************************************
       SUBROUTINE IO_2(K)
 #ifdef ROMS_WWM_PGMCL_COUPLING
-      USE WWM_PGMCL_COUPLING_WITH_ROMS
+      USE WWM_ROMS_PGMCL
 #endif
       USE DATAPOOL
       IMPLICIT NONE
