@@ -1,5 +1,5 @@
 #include "wwm_functions.h"
-MODULE ROMS_WWM_PGMCL_COUPLING
+MODULE WWM_PGMCL_COUPLING_WITH_ROMS
       LOGICAL :: L_FIRST_ORDER_ARDHUIN
       LOGICAL :: L_STOKES_DRIFT_USING_INTEGRAL
       integer NlevelVert
@@ -100,7 +100,7 @@ MODULE ROMS_WWM_PGMCL_COUPLING
       USE DATAPOOL
       USE mod_coupler
       IMPLICIT NONE
-      integer IP, istat
+      integer IP
       allocate(MatrixBelongingWAV(MNP, 1), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 12')
       DO IP=1,MNP
@@ -120,7 +120,6 @@ MODULE ROMS_WWM_PGMCL_COUPLING
       logical DoNearest
       integer rbuf_int(1)
       integer IP, iNodeSel, idx, eRankRecv
-      integer istat
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
 !        character(len=40) :: FileSave1, FileSave2
@@ -291,6 +290,9 @@ MODULE ROMS_WWM_PGMCL_COUPLING
       CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_v,               &
      &    NlevelIntegral, TheAsync_WAVtoOCN_v)
       deallocate(MatrixBelongingWAV)
+      deallocate(MatrixBelongingOCN_rho)
+      deallocate(MatrixBelongingOCN_u)
+      deallocate(MatrixBelongingOCN_v)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_v)
@@ -425,13 +427,6 @@ MODULE ROMS_WWM_PGMCL_COUPLING
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
       real(rkind) SumDepReceive
-      deallocate(LONtrig_wav, LATtrig_wav, ListTrig_wav)
-      deallocate(LON_rho_ocn, LAT_rho_ocn, MSK_rho_ocn)
-      deallocate(LON_u_ocn, LAT_u_ocn, MSK_u_ocn)
-      deallocate(LON_v_ocn, LAT_v_ocn, MSK_v_ocn)
-      deallocate(MatrixBelongingOCN_rho)
-      deallocate(MatrixBelongingOCN_u)
-      deallocate(MatrixBelongingOCN_v)
       deallocate(CosAng, SinAng, dep_rho)
       deallocate(A_wav_rho_3D, A_wav_stat, A_wav_uvz, A_wav_rho)
       deallocate(A_wav_u_3D, A_wav_v_3D, A_wav_ur_3D, A_wav_vr_3D)
@@ -749,10 +744,10 @@ MODULE ROMS_WWM_PGMCL_COUPLING
       USE pgmcl_library
       USE mod_coupler
 # ifdef ST41
-      USE W3SRC4MD_OLD, only : Z0, TAUWX, TAUWY, UFRIC, CD
+      USE W3SRC4MD, only : UFRIC
 # endif
 # ifdef ST42
-      USE W3SRC4MD_NEW, only : Z0, TAUWX, TAUWY, UFRIC, CD
+      USE W3SRC4MD, only : UFRIC
 # endif
       implicit none
       INTEGER, INTENT(IN)  :: K

@@ -601,6 +601,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_1(K)
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE WWM_PGMCL_COUPLING_WITH_ROMS
+#endif
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: K
@@ -681,29 +684,32 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_2(K)
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN) :: K
-         CALL GENERAL_OUTPUT
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE WWM_PGMCL_COUPLING_WITH_ROMS
+#endif
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: K
+      CALL GENERAL_OUTPUT
 #ifndef SELFE
 # if !defined ROMS_WWM_PGMCL_COUPLING
-         IF (LCPL .AND. LTIMOR) THEN
-           CALL PIPE_TIMOR_OUT(K)
+      IF (LCPL .AND. LTIMOR) THEN
+        CALL PIPE_TIMOR_OUT(K)
 #  ifdef SHYFEM_COUPLING
-         ELSE IF (LCPL .AND. LSHYFEM) THEN
-           CALL PIPE_SHYFEM_OUT(K)
+      ELSE IF (LCPL .AND. LSHYFEM) THEN
+        CALL PIPE_SHYFEM_OUT(K)
 #  endif
-         ELSE IF (LCPL .AND. LROMS) THEN
-           CALL PIPE_ROMS_OUT(K)
-         END IF
+      ELSE IF (LCPL .AND. LROMS) THEN
+        CALL PIPE_ROMS_OUT(K)
+      END IF
 # endif
 # ifdef ROMS_WWM_PGMCL_COUPLING
-         IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-           CALL PGMCL_ROMS_OUT(K)
-         END IF
+      IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
+        CALL PGMCL_ROMS_OUT(K)
+      END IF
 # endif
 #endif
-        END SUBROUTINE
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

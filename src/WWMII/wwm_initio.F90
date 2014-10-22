@@ -1560,6 +1560,9 @@
 !**********************************************************************
       SUBROUTINE SET_WWMINPULNML
       USE DATAPOOL, only : INP
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE mod_coupler, only : Iwaves, INPname
+#endif
       IMPLICIT NONE
       INTEGER nbArg
 #ifdef SELFE
@@ -1576,8 +1579,6 @@
         CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
       ENDIF
 # else
-      USE mod_coupler, only : Iwaves, INPname
-      IMPLICIT NONE
       INP%FNAME=INPname(Iwaves)
 # endif
 #endif
