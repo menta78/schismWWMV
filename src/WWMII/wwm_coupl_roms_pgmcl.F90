@@ -1,5 +1,7 @@
 #include "wwm_functions.h"
 MODULE WWM_ROMS_PGMCL
+#undef DEBUG
+#define DEBUG
       LOGICAL :: L_FIRST_ORDER_ARDHUIN
       LOGICAL :: L_STOKES_DRIFT_USING_INTEGRAL
       integer NlevelVert
@@ -31,7 +33,7 @@ MODULE WWM_ROMS_PGMCL
       integer, allocatable :: All_LocalToGlobal(:,:)
       integer i, eIdx, iProc, MNPloc, MNEloc, idx
       integer IPc, IP
-#  ifdef DEBUG_WWM
+#  ifdef DEBUG
       integer MinValIndex, MinValIndexInv, eVal
 #  endif
       allocate(MatrixBelongingWAV(np_global, NnodesWAV), NumberNode(NnodesWAV), NumberTrig(NnodesWAV), stat=istat)
@@ -128,10 +130,10 @@ MODULE WWM_ROMS_PGMCL
       USE DATAPOOL, only : DBG, rkind, STAT, np_total, ne_total
       USE DATAPOOL, only : XPtotal, YPtotal, INEtotal
       USE DATAPOOL, only : itype, istatus, ierr, MNP, istat
+      USE DATAPOOL, only : DEP, XP, YP
       USE mod_coupler
       USE PGMCL_LIBRARY
       USE pgmcl_interp
-!      USE mod_parallel
       implicit none
       logical DoNearest
       integer rbuf_int(1)
@@ -145,23 +147,25 @@ MODULE WWM_ROMS_PGMCL
       !
       ! First part: initializations of the code
       !
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1'
       FLUSH(DBG%FHNDL)
+      WRITE(STAT%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1'
+      FLUSH(STAT%FHNDL)
 # endif
       CALL SetComputationalNodes(ArrLocal, NnodesWAV, OCNid)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.2, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.2'
       FLUSH(DBG%FHNDL)
 # endif
       CALL WWM_CreateMatrixPartition
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.3, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 1.3'
       FLUSH(DBG%FHNDL)
 # endif
       CALL GET_GRID_ARRAY_FE_r8(NP_TOTAL, NE_TOTAL, XPtotal, YPtotal, INEtotal, eGrid_wav)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 2, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 2'
       FLUSH(DBG%FHNDL)
 # endif
       !
@@ -172,41 +176,56 @@ MODULE WWM_ROMS_PGMCL
         CALL M2M_send_node_partition(ArrLocal, OCNid,                 &
      &        np_total, NnodesWAV, MatrixBelongingWAV)
       ENDIF
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 3, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 3'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_rho)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 4, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 4'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_u)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 5, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 5'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_v)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 6, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'eGrid_ocn_rho : '
+      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_rho%LON_fd),  &
+     &     maxval(eGrid_ocn_rho%LON_fd)
+      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_rho%LAT_fd),  &
+     &     maxval(eGrid_ocn_rho%LAT_fd)
+      WRITE(DBG%FHNDL,*) 'eGrid_ocn_u : '
+      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_u%LON_fd),    &
+     &     maxval(eGrid_ocn_u%LON_fd)
+      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_u%LAT_fd),    &
+     &     maxval(eGrid_ocn_u%LAT_fd)
+      WRITE(DBG%FHNDL,*) 'eGrid_ocn_v : '
+      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_v%LON_fd),    &
+     &     maxval(eGrid_ocn_v%LON_fd)
+      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_v%LAT_fd),    &
+     &     maxval(eGrid_ocn_v%LAT_fd)
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 6'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
      &   NnodeRho, NnodesOCN, MatrixBelongingOCN_rho)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 7, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 7'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
      &   NnodeU, NnodesOCN, MatrixBelongingOCN_u)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 8, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 8'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
      &   NnodeV, NnodesOCN, MatrixBelongingOCN_v)
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 9'
       FLUSH(DBG%FHNDL)
 # endif
       eRankRecv=ArrLocal % ListFirstRank(OCNid)
@@ -227,13 +246,13 @@ MODULE WWM_ROMS_PGMCL
         L_STOKES_DRIFT_USING_INTEGRAL=.FALSE.
         NlevelIntegral=1
       END IF
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 10, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 10'
       FLUSH(DBG%FHNDL)
 # endif
       DoNearest=.TRUE.
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 11, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 11'
       FLUSH(DBG%FHNDL)
 # endif
       !
@@ -246,14 +265,26 @@ MODULE WWM_ROMS_PGMCL
      &    FileSave_OCNtoWAV_rho, mMat_OCNtoWAV_rho, DoNearest,          &
      &    eGrid_ocn_rho, eGrid_wav,                                     &
      &    WAV_COMM_WORLD, MatrixBelongingWAV)
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'After mMat_OCNtoWAV_rho'
+      FLUSH(DBG%FHNDL)
+# endif
       CALL SAVE_CreateInterpolationSparseMatrix_Parall(                 &
      &    FileSave_OCNtoWAV_u, mMat_OCNtoWAV_u, DoNearest,              &
      &    eGrid_ocn_u, eGrid_wav,                                       &
      &    WAV_COMM_WORLD, MatrixBelongingWAV)
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'After mMat_OCNtoWAV_u'
+      FLUSH(DBG%FHNDL)
+# endif
       CALL SAVE_CreateInterpolationSparseMatrix_Parall(                 &
      &    FileSave_OCNtoWAV_v, mMat_OCNtoWAV_v, DoNearest,              &
      &    eGrid_ocn_v, eGrid_wav,                                       &
      &    WAV_COMM_WORLD, MatrixBelongingWAV)
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'After mMat_OCNtoWAV_v'
+      FLUSH(DBG%FHNDL)
+# endif
       CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_rho)
       CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_u)
       CALL M2M_recv_sparseMatrix(ArrLocal, OCNid, mMat_WAVtoOCN_v)
@@ -270,8 +301,8 @@ MODULE WWM_ROMS_PGMCL
       ! Fourth part: Computing restricted interpolation matrices
       ! and asynchronous arrays
       !
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 14'
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_GetSystemOutputSide(ArrLocal, OCNid, WAVid,       &
@@ -325,8 +356,8 @@ MODULE WWM_ROMS_PGMCL
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 16.1')
       allocate(A_wav_u_3D(NlevelIntegral,MNP), A_wav_v_3D(NlevelIntegral,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 17')
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 24, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 24'
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 23, A_wav_rho)
@@ -334,25 +365,24 @@ MODULE WWM_ROMS_PGMCL
         CosAng(IP)=COS(A_wav_rho(IP))
         SinAng(IP)=SIN(A_wav_rho(IP))
       END DO
-# ifdef DEBUG_WWM
-      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 25, rnk=', myrank
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, step 25'
       WRITE(DBG%FHNDL,*) 'MyRankGlobal=', MyRankGlobal
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 217, A_wav_rho)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       SumDepReceive=0
 # endif
       DO IP=1,MNP
         dep_rho(IP)=A_wav_rho(IP)
-# ifdef DEBUG_WWM
-        SumDepReceive=SumDepReceive + abs(A_wav_rho(idx))
+# ifdef DEBUG
+        SumDepReceive=SumDepReceive + abs(A_wav_rho(IP))
 # endif
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'SumDepReceive=', SumDepReceive
       WRITE(DBG%FHNDL,*) 'WAV, ROMS_COUPL_INITIALIZE, WAV, step 33'
-      WRITE(DBG%FHNDL,*) 'WAV, rnk=', myrank
       FLUSH(DBG%FHNDL)
       AbsDiff=0
       SumDep1=0
@@ -419,7 +449,7 @@ MODULE WWM_ROMS_PGMCL
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
       allocate(USTOKES_wav(Nlevel,MNP), VSTOKES_wav(Nlevel,MNP), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'End ROMS_COUPL_INITIALIZE'
       FLUSH(DBG%FHNDL)
 # endif
@@ -649,21 +679,21 @@ MODULE WWM_ROMS_PGMCL
       INTEGER, INTENT(IN) :: K,IFILE,IT
       integer IP, kLev, i, idx
       real(rkind) u1, v1, u2, v2, z1
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       real(rkind) :: MaxUwind, SumUwind, avgUwind
       real(rkind) :: MaxVwind, SumVwind, avgVwind
       real(rkind) :: NbPoint
 # endif
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: Begin PGMCL_ROMS_IN'
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_uvz, 201, A_wav_uvz)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, After Data receive'
       FLUSH(DBG%FHNDL)
 # endif
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       MaxUwind=0.0_r8
       SumUwind=0.0_r8
       MaxVwind=0.0_r8
@@ -676,7 +706,7 @@ MODULE WWM_ROMS_PGMCL
       DO IP=1,MNP
         u1=A_wav_uvz(1,IP)
         v1=A_wav_uvz(2,IP)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
         IF (abs(u1).gt.MaxUwind) THEN
           MaxUwind=abs(u1)
         ENDIF
@@ -694,7 +724,7 @@ MODULE WWM_ROMS_PGMCL
         WINDXY(IP,2)=v2
         WATLEV(IP)=z1
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       avgUwind=SumUwind/NbPoint
       avgVwind=SumVwind/NbPoint
       WRITE(DBG%FHNDL,*) 'WAV, MaxUwind=', MaxUwind, ' avgUwind=', avgUwind
@@ -703,7 +733,7 @@ MODULE WWM_ROMS_PGMCL
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_rho, 203, A_wav_rho_3D)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 3'
       FLUSH(DBG%FHNDL)
 # endif
@@ -712,7 +742,7 @@ MODULE WWM_ROMS_PGMCL
           z_w_wav(kLev,IP)=A_wav_rho_3D(kLev+1,IP)
         END DO
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 4'
       FLUSH(DBG%FHNDL)
 # endif
@@ -720,19 +750,19 @@ MODULE WWM_ROMS_PGMCL
       DO IP=1,MNP
         U_wav(:,IP)=A_wav_ur_3D(:,IP)
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 5'
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_ARECV_3D_r8(TheAsync_OCNtoWAV_v, 205, A_wav_vr_3D)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'After the receive'
       FLUSH(DBG%FHNDL)
 # endif
       DO IP=1,MNP
         V_wav(:,IP)=A_wav_vr_3D(:,IP)
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 6'
       FLUSH(DBG%FHNDL)
 # endif
@@ -748,7 +778,7 @@ MODULE WWM_ROMS_PGMCL
         CURTXY(IP,1)=u2
         CURTXY(IP,2)=v2
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_IN, step 7'
       FLUSH(DBG%FHNDL)
 # endif
@@ -772,7 +802,7 @@ MODULE WWM_ROMS_PGMCL
       real(rkind) cPhase, eStokesNorm
       real(rkind) kD
       real(rkind) :: TPPD, KPPD, CGPD, CPPD
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       real(rkind) SumNormTau, MaxNormTau, AvgNormTau, eNorm
       real(rkind) AvgUFRICsqr, SumUFRICsqr
       real(rkind) AvgCd, SumCd
@@ -811,7 +841,7 @@ MODULE WWM_ROMS_PGMCL
           A_wav_u_3D(1,IP)=u2
           A_wav_v_3D(1,IP)=v2
         END IF
-# ifdef DEBUG_WWM
+# ifdef DEBUG
         eNorm=SQRT(u2*u2 + v2*v2)
         IF (eNorm.gt.MaxNormTau) THEN
           MaxNormTau=eNorm
@@ -819,7 +849,7 @@ MODULE WWM_ROMS_PGMCL
         SumNormTau=SumNormTau + eNorm
 # endif
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       AvgNormTau=SumNormTau / MNP
       WRITE(DBG%FHNDL,*) 'AvgNormTau=', AvgNormTau, 'MaxNormTau=', MaxNormTau
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.1'
@@ -834,11 +864,11 @@ MODULE WWM_ROMS_PGMCL
         CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_u, 208, A_wav_u_3D)
         CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_v, 211, A_wav_v_3D)
       END IF
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 5.3'
       FLUSH(DBG%FHNDL)
 # endif
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       MaxHwave=0.0
       SumHwave=0.0
       MaxTM02=0
@@ -861,7 +891,7 @@ MODULE WWM_ROMS_PGMCL
         CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PGMCL_ROMS_OUT')
         CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
         CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
         SumUFRICsqr=SumUFRICsqr + UFRIC(IP)*UFRIC(IP)
         eMag=SQRT(WINDXY(IP,1)**2 + WINDXY(IP,2)**2)
         eStressCd=CD(IP)*eMag*eMag
@@ -920,7 +950,7 @@ MODULE WWM_ROMS_PGMCL
         A_wav_stat(18,IP)=J_PRESSURE(IP)
         A_wav_stat(19,IP)=ZETA_CORR(IP)
       END DO
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       avgHwave=SumHwave/NbPoint
       avgLwave=SumLwave/NbPoint
       AvgTM02=SumTM02/NbPoint
@@ -943,7 +973,7 @@ MODULE WWM_ROMS_PGMCL
       FLUSH(DBG%FHNDL)
 # endif
       CALL MPI_INTERP_ASEND_3D_r8(TheAsync_WAVtoOCN_stat, 212, A_wav_stat)
-# ifdef DEBUG_WWM
+# ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WWM: PGMCL_ROMS_OUT, step 11'
       FLUSH(DBG%FHNDL)
 # endif
