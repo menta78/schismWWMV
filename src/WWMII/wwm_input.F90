@@ -1648,7 +1648,7 @@
            call wwm_abort('FOR WWM SOURCES YOU NEED MELIM .LT. 3') 
          ENDIF
 
-#ifndef GRB
+#ifndef GRIB_API_ECMWF 
          IF (IWINDFORMAT == 7) CALL wwm_abort('you need to compile with grib')
 #endif
 
