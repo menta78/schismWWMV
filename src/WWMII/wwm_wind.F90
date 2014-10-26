@@ -101,7 +101,7 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
           ELSE IF (IWINDFORMAT == 7) THEN ! GRIB forcing from ecmwf
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
@@ -187,7 +187,7 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
           ELSE IF (IWINDFORMAT == 7) THEN
             CALL INIT_GRIB_ECMWF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
@@ -219,7 +219,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind)             :: TMP(MNP,2)
-#if defined NCDF || defined GRB 
+#if defined NCDF || defined GRIB_API_ECMWF
       REAL(rkind)             :: cf_w1, cf_w2
       INTEGER                 :: IT, IFILE
 #endif
@@ -286,7 +286,7 @@
           REC1_old = REC1_new
           REC2_old = REC2_new
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
         ELSE IF (IWINDFORMAT == 7) THEN
           IF (K.EQ.1) THEN
             REC1_old = 0
@@ -2236,7 +2236,7 @@
       CALL SYNCHRONIZE_WIND_TIME_MJD
       END SUBROUTINE
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
 !****************************************************************************
@@ -2411,9 +2411,9 @@
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
       !
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
         call grib_count_in_file(ifile,n)
@@ -2443,10 +2443,10 @@
         END DO
         CALL GRIB_CLOSE_FILE(ifile)
         CALL KERNEL_INTERP_UV_WINDFD(outTotal)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         outwind=outTotal
       ELSE
@@ -2458,8 +2458,8 @@
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
         outwind(:,2)=Vlocal
       END IF
-#else
+# else
       outwind=outTotal
-#endif
+# endif
       END SUBROUTINE
 #endif

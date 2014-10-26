@@ -14,11 +14,11 @@
       m = month + 12*a - 3;
       ! For a date in the Gregorian calendar:
       eJDbase = MyREAL(day)                                            &
-     &   + floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5))        &
-     &   + MyREAL(y)*MyREAL(365)                                       &
-     &   + floor(MyREAL(y)/MyREAL(4))                                  &
-     &   - floor(MyREAL(y)/MyREAL(100))                                &
-     &   + floor(MyREAL(y)/MyREAL(400)) - MyREAL(32045)
+     & + MyREAL(floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5)))  &
+     & + MyREAL(y)*MyREAL(365)                                         &
+     & + MyREAL(floor(MyREAL(y)/MyREAL(4)))                            &
+     & - MyREAL(floor(MyREAL(y)/MyREAL(100)))                          &
+     & + MyREAL(floor(MyREAL(y)/MyREAL(400))) - MyREAL(32045)
       eFracDay=(MyREAL(sec) +                                          &
      &          MyREAL(60)*MyREAL(min) +                               &
      &          MyREAL(3600)*(MyREAL(hour) - MyREAL(12))               &
@@ -35,9 +35,19 @@
       real(rkind), intent(out) :: eMJD
       real(rkind) :: eJD1, eJD2
       CALL DATE2JD(year, month, day, hour, min, sec, eJD1)
+!      WRITE(STAT%FHNDL, *) 'year =', year
+!      WRITE(STAT%FHNDL, *) 'month=', month
+!      WRITE(STAT%FHNDL, *) 'day  =', day
+!      WRITE(STAT%FHNDL, *) 'hour =', hour
+!      WRITE(STAT%FHNDL, *) 'min  =', min
+!      WRITE(STAT%FHNDL, *) 'sec  =', sec
+!      WRITE(STAT%FHNDL, *) 'eJD1 =', eJD1
+
+
 !      CALL DATE2JD(1968, 5, 23, 0, 0, 0, eJD2)
-      CALL DATE2JD(1858, 11, 18, 0, 0, 0, eJD2)
+      CALL DATE2JD(1858, 11, 17, 0, 0, 0, eJD2)
       eMJD=eJD1-eJD2
+      WRITE(STAT%FHNDL, *) 'eMJD =', eMJD
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -82,27 +92,33 @@
   20  FORMAT (i4.4, i2.2, i2.2, '.', i2.2, i2.2, i2.2)
       END SUBROUTINE
 !**********************************************************************
-!*    The function below is broken because the range of integers      *
-!*    is too small for holding integer values for the range           *
-!*    considered. Any idea how to avoid that?                         *
+!*                                                                    *
 !**********************************************************************
-      SUBROUTINE NORMALIZE_NEARESTSECOND_BROKEN(eDateIn, eDateOut)
-      USE DATAPOOL
+      SUBROUTINE MONTH_LEN(year, month, lenmonth)
       IMPLICIT NONE
-      REAL(rkind), intent(in) :: eDateIn
-      REAL(rkind), intent(out) :: eDateOut
-      REAL(rkind) TheProd, TheProdB, TheRet
-      integer TheProdI
-      TheProd=eDateIn*MyREAL(86400)
-      TheProdI=NINT(TheProd)
-      TheProdB=MyREAL(TheProdI)
-      TheRet=TheProdB/MyREAL(86400)
-      Print *, 'eDateIn=', eDateIn
-      Print *, 'TheProd=', TheProd
-      Print *, 'TheProdI=', TheProdI
-      Print *, 'TheProdB=', TheProdB
-      Print *, 'TheRet=', TheRet
-      eDateOut=TheRet
+      integer, intent(in) :: year, month
+      integer, intent(out) :: lenmonth
+      IF ((month .eq. 1).or.(month .eq. 3).or.(month .eq. 5).or.(month .eq. 7).or.(month .eq. 8).or.(month .eq. 10).or.(month .eq. 12)) THEN
+        lenmonth=31
+      END IF
+      IF ((month .eq. 4).or.(month .eq. 6).or.(month .eq. 9).or.(month .eq. 11)) THEN
+        lenmonth=30
+      END IF
+      IF (month .eq. 2) THEN
+        IF (MOD(year, 4) .ne. 0) THEN
+          lenmonth=28
+        ELSE
+          IF (MOD(year, 100) .ne. 0) THEN
+            lenmonth=29
+          ELSE
+            IF (MOD(year, 400) .ne. 0) THEN
+              lenmonth=28
+            ELSE
+              lenmonth=29
+            END IF
+          END IF
+        END IF
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -114,6 +130,7 @@
       integer, intent(out) :: year, month, day, hour, min, sec
       real(rkind), intent(in) :: eJD
       integer ijd, a, b, c, d, e, m
+      integer secNear, lenmonth
       real(rkind) :: fjd, second
       ijd = floor(eJD + 0.5_rkind)
       !
@@ -134,7 +151,32 @@
       hour   = floor(second/MyREAL(3600))
       second = second - MyREAL(3600)*MyREAL(hour)
       min    = floor(second/MyREAL(60))
-      sec    = INT(second - MyREAL(60)*min)
+      sec    = floor(second - MyREAL(60)*min)
+      !
+      ! Now renormalizing
+      !
+      secNear=NINT(second - DBLE(60)*min)
+      IF (secNear .eq. 60) THEN
+        sec=0
+        min=min+1
+      END IF
+      IF (min .eq. 60) THEN
+        min=0
+        hour=hour+1
+      END IF
+      IF (hour .eq. 24) THEN
+        hour=0
+        day=day+1
+      END IF
+      CALL MONTH_LEN(year, month, lenmonth)
+      IF (day .eq. lenmonth+1) THEN
+        day=1
+        month=month+1
+      END IF
+      IF (month .eq. 13) THEN
+        month=1
+        year=year+1
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -146,14 +188,8 @@
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
       real(rkind) XMJD_1858
-      Print *, 'STIME=', STIME
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
-      Print *, 'year/month/day=', year, month, day
-      Print *, 'hour/min/sec=', hour, min, sec
-      CALL DATE2JD(year, month, day, hour, min, sec, XMJD)
-      Print *, 'XMJD=', XMJD
-      CALL DATE2JD(1858, 11, 17, 0, 0, 0, XMJD_1858)
-      XMJD=XMJD - XMJD_1858
+      CALL DATE_ConvertSix2mjd(year, month, day, hour, min, sec, XMJD)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

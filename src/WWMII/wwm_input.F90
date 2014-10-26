@@ -1497,7 +1497,7 @@
            IF (MESBR .GT. 1) THEN
              call wwm_abort('CHECK NUMS - MESBR OUT OF RANGE')
            END IF
-#ifdef PGMCL_COUPLING
+#ifdef ROMS_WWM_PGMCL_COUPLING
            IF (.NOT.LCPL) THEN
              CALL WWM_ABORT('LCPL=T if running with PGMCL')
            ENDIF
@@ -1570,14 +1570,14 @@
            END IF
          END IF
 
-#if !defined PGMCL_COUPLING && !defined SELFE
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined SELFE
          IF (LCPL) THEN
            IF (.NOT. LROMS .AND. .NOT. LSHYFEM .AND. .NOT. LTIMOR) THEN
              CALL WWM_ABORT('LROMS, LSHYFEM or LTIMOR must be true')
            END IF
          END IF
 #endif
-#ifndef PGMCL_COUPLING
+#ifndef ROMS_WWM_PGMCL_COUPLING
          IF (LCPL) THEN
 #endif
 #ifndef SELFE
@@ -1596,7 +1596,7 @@
              MAIN%ICPLT = INT(MAIN%DTCOUP/MAIN%DELT)
            END IF
 #endif
-#ifndef PGMCL_COUPLING
+#ifndef ROMS_WWM_PGMCL_COUPLING
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SWTICHES FOR THE LIMTER'

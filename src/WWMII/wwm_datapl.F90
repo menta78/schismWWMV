@@ -37,7 +37,9 @@
      &                         ielg,             & ! element local to global maping
      &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
 
+#ifndef ROMS_WWM_PGMCL_COUPLING
       use MPI
+#endif
      
 # endif
 # ifdef SELFE
@@ -75,7 +77,7 @@
 !
 ! ... constants ... wwmDparam.mod
 !
-#if defined USE_SINGLE && defined PGMCL_COUPLING
+#if defined USE_SINGLE && defined ROMS_WWM_PGMCL_COUPLING
            Error, you must compile in double precision
 #endif
 #ifndef MPI_PARALL_GRID
@@ -901,7 +903,14 @@
          REAL(rkind), ALLOCATABLE :: WKLOC_SUM(:,:)
          REAL(rkind), ALLOCATABLE :: CURTXYLOC_SUM(:,:)
 #endif
-
+#if defined NCDF && defined MPI_PARALL_GRID
+         integer, dimension(:), pointer :: ac2_hot_rqst
+         integer, dimension(:,:), pointer :: ac2_hot_stat
+         integer, dimension(:), pointer :: ac2_hot_type
+         integer, dimension(:), pointer :: var_oned_hot_rqst
+         integer, dimension(:,:), pointer :: var_oned_hot_stat
+         integer, dimension(:), pointer :: var_oned_hot_type
+#endif
          TYPE LINEOUTS
             CHARACTER(LEN=20) :: NAME
             INTEGER,ALLOCATABLE :: ELEMENT(:)

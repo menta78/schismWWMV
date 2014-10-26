@@ -135,9 +135,6 @@
       REAL(rkind)                    :: SSDSBM(0:4)
       REAL(rkind)                    :: ZZ0MAX
       LOGICAL                 :: LFIRSTSOURCE = .TRUE.
-!      REAL(rkind),ALLOCATABLE        :: CD(:), Z0(:), USTDIR(:) ! AR: Moved to datapool of WWM
-
-!/
       CONTAINS
 !/ ------------------------------------------------------------------- /
 !**********************************************************************

@@ -451,6 +451,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE WWM_ROMS_PGMCL
+#endif
       USE DATAPOOL
 !#ifdef MPI_PARALL_GRID
 !# ifndef PDLIB
@@ -643,7 +646,7 @@
       END IF
 
 
-#ifndef PGMCL_COUPLING
+#ifndef ROMS_WWM_PGMCL_COUPLING
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
       FLUSH(STAT%FHNDL)
       IF (LWINDFROMWWM) THEN
@@ -696,7 +699,7 @@
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -711,8 +714,12 @@
         END IF
       END IF
 #endif
-#ifdef PGMCL_COUPLING
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Before ROMS_COUPL_INITIALIZE'
+      FLUSH(STAT%FHNDL)
       CALL ROMS_COUPL_INITIALIZE
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After ROMS_COUPL_INITIALIZE'
+      FLUSH(STAT%FHNDL)
 #endif
 
 #ifdef TIMINGS
@@ -743,56 +750,59 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE TERMINATE_WWM
-         USE DATAPOOL
+#ifdef ROMS_WWM_PGMCL_COUPLING
+       USE WWM_ROMS_PGMCL
+#endif
+       USE DATAPOOL
 #ifdef ST41
-         USE W3SRC4MD_OLD
+       USE W3SRC4MD_OLD
 #endif
 #ifdef ST42
-         USE W3SRC4MD
+       USE W3SRC4MD
 #endif
 
 #ifdef PETSC
-         USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
+       USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
 #endif
 
-         CALL CLOSE_FILE_HANDLES
-         CALL DEALLOC_ARRAYS
+       CALL CLOSE_FILE_HANDLES
+       CALL DEALLOC_ARRAYS
 
 #ifdef MPI_PARALL_GRID
-         CALL DEALLOC_WILD_ARRAY
+       CALL DEALLOC_WILD_ARRAY
 #endif
-         IF (DIMMODE .EQ. 2) THEN
-           CALL DEALLOC_FLUCT_ARRAYS
-           CALL DEALLOC_FLUCT
+       IF (DIMMODE .EQ. 2) THEN
+         CALL DEALLOC_FLUCT_ARRAYS
+         CALL DEALLOC_FLUCT
 
-           IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
+         IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
 #ifdef PETSC
-             CALL PETSC_FINALIZE
+           CALL PETSC_FINALIZE
 #endif
-           END IF
          END IF
-         IF (LZETA_SETUP) THEN
-           CALL FINALIZE_WAVE_SETUP
-         END IF
-         CALL DEALLOC_SPECTRAL_GRID
-         CALL CLOSE_IOBP
-         CALL TERMINATE_STATION_OUTPUT
+       END IF
+       IF (LZETA_SETUP) THEN
+         CALL FINALIZE_WAVE_SETUP
+       END IF
+       CALL DEALLOC_SPECTRAL_GRID
+       CALL CLOSE_IOBP
+       CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined PGMCL_COUPLING
-         IF (LCPL) THEN
-           IF (LTIMOR) THEN
-             CALL TERMINATE_PIPES_TIMOR()
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
+       IF (LCPL) THEN
+         IF (LTIMOR) THEN
+           CALL TERMINATE_PIPES_TIMOR()
 # ifdef SHYFEM_COUPLING
-           ELSE IF (LSHYFEM) THEN
-             CALL TERMINATE_PIPES_SHYFEM()
+         ELSE IF (LSHYFEM) THEN
+           CALL TERMINATE_PIPES_SHYFEM()
 # endif
-           ELSE IF (LROMS) THEN
-             CALL TERMINATE_PIPES_ROMS()
-           END IF
+         ELSE IF (LROMS) THEN
+           CALL TERMINATE_PIPES_ROMS()
          END IF
+       END IF
 #endif
-#ifdef PGMCL_COUPLING
-         CALL ROMS_COUPL_DEALLOCATE
+#ifdef ROMS_WWM_PGMCL_COUPLING
+       CALL ROMS_COUPL_DEALLOCATE
 #endif
        END SUBROUTINE
 !**********************************************************************
@@ -954,11 +964,11 @@
          OUTT_VARNAMES(33) = 'CURR-Y'
          OUTT_VARNAMES(34) = 'DEPTH'
          OUTT_VARNAMES(35) = 'ELEVATION'
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIATE_WAVE_PARAMETER
+       SUBROUTINE INITIATE_WAVE_PARAMETER
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
          USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
@@ -1042,11 +1052,11 @@
          IF (MESTR == 6) CALL GRAD_CG_K 
 
          RETURN
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIAL_CONDITION(IFILE,IT)
+       SUBROUTINE INITIAL_CONDITION(IFILE,IT)
          USE WWM_HOTFILE_MOD
          USE DATAPOOL
 #ifdef NCDF
@@ -1145,11 +1155,11 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_FILE_HANDLES()
+       SUBROUTINE INIT_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -1255,11 +1265,11 @@
 
          OUT%FHNDL     = STARTHNDL + 24 
 
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CLOSE_FILE_HANDLES()
+       SUBROUTINE CLOSE_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
          close(DBG%FHNDL)
@@ -1268,7 +1278,7 @@
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)
          close( WINDBG%FHNDL)
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1560,12 +1570,15 @@
 !**********************************************************************
       SUBROUTINE SET_WWMINPULNML
       USE DATAPOOL, only : INP
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE mod_coupler, only : Iwaves, INPname
+#endif
       IMPLICIT NONE
       INTEGER nbArg
 #ifdef SELFE
       INP%FNAME  = 'wwminput.nml'
 #else
-# ifndef PGMCL_COUPLING
+# ifndef ROMS_WWM_PGMCL_COUPLING
       nbArg=command_argument_count()
       IF (nbArg > 1) THEN
         CALL WWM_ABORT('Number of argument is 0 or 1')
@@ -1576,8 +1589,6 @@
         CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
       ENDIF
 # else
-      USE mod_coupler, only : Iwaves, INPname
-      IMPLICIT NONE
       INP%FNAME=INPname(Iwaves)
 # endif
 #endif
