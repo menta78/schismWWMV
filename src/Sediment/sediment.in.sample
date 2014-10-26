@@ -134,7 +134,8 @@ comp_tauce == 0
 !- 0 = Disabled (rough.gr3 for both hydrodynamic and sediment)
 !- 1 = Z0 bedforms for hydrodynamics (if bfric=1) / Nikurasde for sediment  (Van Rijn, 2007)
 !- 2 = Z0 bedforms for both hydrodynamics (if bfric=1) and sediment
-!  (so '1' and '2' will send total roughness back to hydro)
+!  (so '1' and '2' will send total roughness back to hydro, but total roughness 
+!   is limited to dzb_min*1.e-2 - see sed_friction.F90)
 !- iwave_ripple:
 !- 0 = wave ripples computes following Grant and Madsen (1982)
 !- 1 = wave ripples computes following Nielsen (1992)

@@ -12,7 +12,8 @@ add_library(hydro hydraulic_structures.F90
                   misc_subs.F90
                   sflux_9c.F90 
                   solver_subs.F90 
-                  transport.F90
+                  transport_TVD.F90
+                  transport_TVD_imp.F90
                   )
 list( APPEND locallibs hydro)
 
