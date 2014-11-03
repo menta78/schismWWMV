@@ -1751,7 +1751,7 @@
         endif
 #endif
         Cdp=0; Cd=0 !for dry pts
-        Cdmax=-1 !max. Cd at node for this process (info only)
+        !Cdmax=-1 !max. Cd at node for this process (info only)
 !'      Drag at nodes
         ltmp1(1)=.false. !for WBL iteration
         do i=1,npa
@@ -1809,9 +1809,10 @@
             endif !bthick
           endif !rough_p
 
-          if(Cdp(i)>Cdmax) Cdmax=Cdp(i)
+          !if(Cdp(i)>Cdmax) Cdmax=Cdp(i)
         enddo !i=1,npa
-        if(it==iths_main+1) write(12,*)'Cdmax at 1st step= ',Cdmax
+        if(it==iths_main+1) write(12,*)'Cd min/max at 1st step= ',minval(Cdp),maxval(Cdp)
+        !write(12,*)'Cd min/max at 1st step= ',minval(Cdp),maxval(Cdp)
 
 !       Output warning for WBL if iteration didn't converge
 #ifdef USE_WWM
@@ -1831,18 +1832,18 @@
         enddo !i
 
 !       Output Cd for first step
-        if(it==iths_main+1) then
-          fdb='Cd_0000'
-          lfdb=len_trim(fdb)
-          write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-          open(32,file='outputs/'//trim(fdb),status='unknown')
-          !write(32,*)'Drag coefficents for nchi=1 or -1'
-          !write(32,*)nsa
-          do i=1,nsa
-            write(32,'(i6,2e14.6,1x,e11.3)')i,xcj(i),ycj(i),Cd(i)
-          enddo !i=1,ns
-          close(32)
-        endif
+!        if(it==iths_main+1) then
+!          fdb='Cd_0000'
+!          lfdb=len_trim(fdb)
+!          write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+!          open(32,file='outputs/'//trim(fdb),status='unknown')
+!          !write(32,*)'Drag coefficents for nchi=1 or -1'
+!          !write(32,*)nsa
+!          do i=1,nsa
+!            write(32,'(i6,2e14.6,1x,e11.3)')i,xcj(i),ycj(i),Cd(i)
+!          enddo !i=1,ns
+!          close(32)
+!        endif
       endif !iabs(nchi)==1
 
 !
@@ -1934,7 +1935,7 @@
 !           vertical
 !           Buoyancy frequency squared (1/s^2): -g/\rho0*(d\rho/dz))
             if(k==0.or.k==nlev) then
-              if(dfv(klev,j)<0) then
+              if(dfv(klev,j)<=0) then
                 write(errmsg,*)'Negative viscosity:',dfv(klev,j),iplg(j),klev
                 call parallel_abort(errmsg)
               endif
@@ -1955,7 +1956,7 @@
             endif
             tke1d(k)=q2(klev,j)
             L1d(k)=xl(klev,j)
-            if(tke1d(k)<0.or.L1d(k)<0) then
+            if(tke1d(k)<0.or.L1d(k)<=0) then
               write(errmsg,*)'Negative tke,mixl:',tke1d(k),L1d(k),iplg(j),klev
               call parallel_abort(errmsg)
             endif
@@ -6975,174 +6976,100 @@
 ! Write global output data
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-      ! Open existing processor specific file
-      !fgb=ifile_char(1:ifile_len)//'_0000'; lfgb=len_trim(fgb)
-      !write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
-
       do j=1,noutput
         if(iof(j)==1.and.mod(it,nspool)==0) then
-          a_4 = transfer(source=real(time),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-          !if having trouble with no adv. write
-          write(ichan(j)) a_4
-#else
-          write(ichan(j),"(a4)",advance="no") a_4
-#endif
-          a_4 = transfer(source=it,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-          write(ichan(j)) a_4
-#else
-          write(ichan(j),"(a4)",advance="no") a_4
-#endif
-
-          do i=1,np !residents only
-            a_4 = transfer(source=real(eta2(i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-            write(ichan(j)) a_4
-#else
-            write(ichan(j),"(a4)",advance="no") a_4
-#endif
-          enddo !i
-
-          do i=1,np !residents only
-            if(j<=12) then
-              floatout=0 !in case some are not defined
-              if(j.eq.1) then
-!                if(idry(i)==1) then
-!                  floatout=-9999
-!                else
-                floatout=eta2(i)
-!                endif
-              else if(j.eq.2) then !.and.ihconsv.ne.0) then
-                floatout=pr(i)
-              else if(j.eq.3.and.ihconsv.ne.0) then
-                floatout=airt1(i)
-              else if(j.eq.4.and.ihconsv.ne.0) then
-                floatout=shum1(i)
-              else if(j.eq.5.and.ihconsv.ne.0) then
-                floatout=srad(i)
-              else if(j.eq.6.and.ihconsv.ne.0) then
-                floatout=fluxsu(i)
-              else if(j.eq.7.and.ihconsv.ne.0) then
-                floatout=fluxlu(i)
-              else if(j.eq.8.and.ihconsv.ne.0) then
-                floatout=hradu(i)
-              else if(j.eq.9.and.ihconsv.ne.0) then
-                floatout=hradd(i)
-              else if(j.eq.10.and.ihconsv.ne.0) then
-                floatout=sflux(i)
-              else if(j.eq.11.and.isconsv.ne.0) then
-                floatout=fluxevp(i)
-              else if(j.eq.12.and.isconsv.ne.0) then
-                floatout=fluxprc(i)
+          write(ichan(j)) real(time,out_rkind)
+          write(ichan(j)) it
+          write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
+            if(j<=13) then
+              if(j==1) then
+                write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
+              else if(j==2) then !.and.ihconsv.ne.0) then
+                write(ichan(j)) (real(pr(i),out_rkind),i=1,np)
+              else if(j==3.and.ihconsv/=0) then
+                write(ichan(j)) (real(airt1(i),out_rkind),i=1,np)
+              else if(j==4.and.ihconsv/=0) then
+                write(ichan(j)) (real(shum1(i),out_rkind),i=1,np)
+              else if(j==5.and.ihconsv/=0) then
+                write(ichan(j)) (real(srad(i),out_rkind),i=1,np)
+              else if(j==6.and.ihconsv/=0) then
+                write(ichan(j)) (real(fluxsu(i),out_rkind),i=1,np)
+              else if(j==7.and.ihconsv/=0) then
+                write(ichan(j)) (real(fluxlu(i),out_rkind),i=1,np)
+              else if(j==8.and.ihconsv/=0) then
+                write(ichan(j)) (real(hradu(i),out_rkind),i=1,np)
+              else if(j==9.and.ihconsv/=0) then
+                write(ichan(j)) (real(hradd(i),out_rkind),i=1,np)
+              else if(j==10.and.ihconsv/=0) then
+                write(ichan(j)) (real(sflux(i),out_rkind),i=1,np)
+              else if(j==11.and.isconsv/=0) then
+                write(ichan(j)) (real(fluxevp(i),out_rkind),i=1,np)
+              else if(j==12.and.isconsv/=0) then
+                write(ichan(j)) (real(fluxprc(i),out_rkind),i=1,np)
+              else if(j==13) then
+                write(ichan(j)) (real(Cdp(i),out_rkind),i=1,np)
+              else ! for undefined case as floatout=0 in old code
+                write(ichan(j)) (0.0,i=1,np)
               endif
-
-              a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-              write(ichan(j)) a_4
-#else
-              write(ichan(j),"(a4)",advance="no") a_4
-#endif
-            else if(j<=15) then
-              if(j==13) then
+            else if(j<=16) then
+              if(j==14) then
                 if(nws==0) then
-                  floatout=0
-                  floatout2=0
-                else
-                  floatout=windx(i) !in ll frame if ics=2
-                  floatout2=windy(i)
+                  write(ichan(j))((0.0,0.0),i=1,np)
+                else !in ll frame if ics=2
+                  write(ichan(j)) (real(windx(i),out_rkind),real(windy(i),out_rkind),i=1,np)
                 endif
-              else if(j==14) then
-                floatout=tau(1,i) !in ll frame if ics=2
-                floatout2=tau(2,i)
-              else !j=15
-                floatout=dav(1,i)
-                floatout2=dav(2,i)
+              else if(j==15) then !in ll frame if ics=2
+                write(ichan(j)) (real(tau(1,i),out_rkind),real(tau(2,i),out_rkind),i=1,np)
+              else !j=16
+                write(ichan(j)) (real(dav(1,i),out_rkind),real(dav(2,i),out_rkind),i=1,np)
               endif
-              a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-              write(ichan(j)) a_4
-#else
-              write(ichan(j),"(a4)",advance="no") a_4
-#endif
-              a_4 = transfer(source=floatout2,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-              write(ichan(j)) a_4
-#else
-              write(ichan(j),"(a4)",advance="no") a_4
-#endif
-            else if(j<26) then
-              do k=max0(1,kbp00(i)),nvrt
+            else if(j<27) then
                 floatout=0 !for some undefined variables
-                if(j.eq.16) then
-                  floatout=ww2(k,i)
+                if(j==17) then
+                  write(ichan(j)) ((real(ww2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
                 else
-                  if(j.eq.17) then
-                    if(idry(i)==1) then
-                      floatout=-99
-                    else
-                      floatout=tnd(k,i)
-                    endif
-                  else if(j.eq.18) then
-                    if(idry(i)==1) then
-                      floatout=-99
-                    else
-                      floatout=snd(k,i)
-                    endif
-                  else if(j.eq.19) then
-                    floatout=prho(k,i)
-                  else if(j.eq.20) then
-                    floatout=dfh(k,i)
-                  else if(j.eq.21) then
-                    floatout=dfv(k,i)
-                  else if(j.eq.22) then
-                    floatout=q2(k,i)
-                  else if(j.eq.23) then
-                    floatout=xl(k,i)
+                  if(j==18) then
+                    do i=1,np
+                      if(idry(i)==1) then
+                        write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
+                      else
+                        write(ichan(j)) (real(tnd(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
+                      endif
+                    enddo
+                  else if(j==19) then
+                    do i=1,np
+                      if(idry(i)==1) then
+                        write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
+                      else
+                        write(ichan(j)) (real(snd(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
+                      endif
+                    enddo
+                  else if(j==20) then
+                    write(ichan(j)) ((real(prho(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+                  else if(j==21) then
+                    write(ichan(j)) ((real(dfh(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+                  else if(j==22) then
+                    write(ichan(j)) ((real(dfv(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+                  else if(j==23) then
+                    write(ichan(j)) ((real(q2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
                   else if(j==24) then
-                    if(idry(i)==1) then
-                      floatout=0
-                    else
-                      floatout=znl(max0(k,kbp(i)),i)
-                    endif
+                    write(ichan(j)) ((real(xl(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
                   else if(j==25) then
-                    floatout=qnon(k,i)
+                    do i=1,np
+                      if(idry(i)==1) then
+                        write(ichan(j)) (0.,k=max0(1,kbp00(i)),nvrt)
+                      else
+                        write(ichan(j)) (real(znl(max0(k,kbp(i)),i),out_rkind),k=max0(1,kbp00(i)),nvrt)
+                      endif
+                    enddo
+                  else if(j==26) then
+                      write(ichan(j)) ((real(qnon(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
                   endif
                 endif
-
-                a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-              enddo !k
-            else if(j==26) then
-              do k=max0(1,kbp00(i)),nvrt
-                a_4 = transfer(source=real(uu2(k,i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                a_4 = transfer(source=real(vv2(k,i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-              enddo !k
-
-            else if(j<=26+ntracers) then !tracers; implies ntracers>0
-              do k=max0(1,kbp00(i)),nvrt
-                floatout=tr_nd(j-26,k,i) !warning: '26' may need to change
-                a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-              enddo !k
+            else if(j==27) then
+              write(ichan(j)) ((real(uu2(k,i),out_rkind),real(vv2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            else if(j<=27+ntracers) then !tracers; implies ntracers>0
+              write(ichan(j)) ((real(tr_nd(j-27,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
             else !optional modules; MUST BE IN THE SAME ORDER AS BEFORE
 #ifdef USE_SED
               if(flag_model/=1) call parallel_abort('MAIN: strange output (2)')
@@ -7151,39 +7078,23 @@
 
                 if(j==indx_out(1,1)) then
                   ! depth.61
-                  floatout=dp(i)
+                  write(ichan(j)) (real(dp(i),out_rkind),i=1,np)
                 else if(j<=indx_out(1,1)+ntracers) then
                   !qbdl_n.62
-                  floatout=bedldu(i,j-indx_out(1,1))
-                  floatout2=bedldv(i,j-indx_out(1,1))
+                  write(ichan(j)) (real(bedldu(i,j-indx_out(1,1)),out_rkind),real(bedldv(i,j-indx_out(1,1)),out_rkind),i=1,np)
                 else if(j<=indx_out(1,1)+2*ntracers) then
                   !bfrac_n.61 (top layer only)
-                  floatout=bed_fracn(i,j-indx_out(1,1)-ntracers)
+                  write(ichan(j)) (real(bed_fracn(i,j-indx_out(1,1)-ntracers),out_rkind),i=1,np)
                 else if(j==indx_out(1,1)+1+2*ntracers) then
                   !bedd50.61
-                  floatout=bed_d50n(i)*1000.d0 ! in mm
+                  write(ichan(j)) (real(bed_d50n(i)*1000.d0,out_rkind),i=1,np) ! in mm
                 else if (j==indx_out(1,1)+2+2*ntracers) then
                   !bstress.61
-                  floatout=bed_taun(i)*rho0 ! in N.m-2
+                  write(ichan(j)) (real(bed_taun(i)*rho0,out_rkind),i=1,np) ! in N.m-2
                 else if (j==indx_out(1,1)+3+2*ntracers) then
                   !brough.61
-                  floatout=bed_rough(i)*1000.d0 ! in mm
+                  write(ichan(j)) (real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
                 endif
-                a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                if((j>=indx_out(1,1)+1).and.(j<=indx_out(1,1)+ntracers)) then
-                  a_4 = transfer(source=floatout2,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                  write(ichan(j)) a_4
-#else
-                  write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                endif
-
               endif !scope of SED model
 #endif /*USE_SED*/
 
@@ -7191,64 +7102,37 @@
               if((j>=indx_out(1,1)).and.(j<=indx_out(1,2))) then          
                 if(j>=indx_out(1,1).and.(j<=indx_out(1,1)+3)) then !scalar
                   if(j==indx_out(1,1)) then
-                    floatout=dp(i)
+                     write(ichan(j)) (real(dp(i),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+1) then
-                    floatout=Cdsed(i)
+                     write(ichan(j)) (real(Cdsed(i),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+2) then
-                    floatout=cflsed(i)
+                     write(ichan(j)) (real(cflsed(i),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+3) then
-                    floatout=d50moy(i,1)
+                     write(ichan(j)) (real(d50moy(i,1),out_rkind),i=1,np)
                   endif
                 else if(j>indx_out(1,1)+3) then !vector
                   if(j==indx_out(1,1)+4) then
-                    floatout=qtot(i,1)
-                    floatout2=qtot(i,2)
+                     write(ichan(j)) (real(qtot(i,1),out_rkind),real(qtot(i,2),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+5) then
-                    floatout=qs(i,1)
-                    floatout2=qs(i,2)
+                     write(ichan(j)) (real(qs(i,1),out_rkind),real(qs(i,2),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+6) then
-                    floatout=qb(i,1)
-                    floatout2=qb(i,2)
+                     write(ichan(j)) (real(qb(i,1),out_rkind),real(qb(i,2),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+7) then 
-                    floatout=dpdxy(i,1)
-                    floatout2=dpdxy(i,2)
+                     write(ichan(j)) (real(dpdxy(i,1),out_rkind),real(dpdxy(i,2),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+8) then
-                    floatout=qav(i,1)
-                    floatout2=qav(i,2)
+                     write(ichan(j)) (real(qav(i,1),out_rkind),real(qav(i,2),out_rkind),i=1,np)
                   endif
                 endif
-                a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                if(j>indx_out(1,1)+3) then !vector
-                  a_4 = transfer(source=floatout2,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                  write(ichan(j)) a_4
-#else
-                  write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                endif !vector
               endif !scope of SED2D model
 #endif /*USE_SED2D*/
 
 #ifdef USE_NAPZD
               if(j<=indx_out(2,2)) then
-                do k=max0(1,kbp00(i)),nvrt
-                  if(j==indx_out(2,1)) then
-                    floatout=Bio_bdefp(k,i)
-                  else !total N
-                    floatout=sum(tr_nd(1:4,k,i))
-                  endif
-                  a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                  write(ichan(j)) a_4
-#else
-                  write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                enddo !k
+                if(j==indx_out(2,1)) then
+                  write(ichan(j)) ((real(Bio_bdefp(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+                else !total N
+                  write(ichan(j)) ((real(sum(tr_nd(1:4,k,i)),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+                endif
               endif !scope of NAPZD
 #endif /*USE_NAPZD*/
 
@@ -7257,52 +7141,32 @@
                 if(j<=indx_out(3,2)-2) then !scalar
                   itmp=j-indx_out(3,1)+1
                   if(itmp>24) call parallel_abort('MAIN: wwm_out over')
-                  floatout=out_wwm(i,indx_wwm_out(itmp))
+                  write(ichan(j)) (real(out_wwm(i,indx_wwm_out(itmp)),out_rkind),i=1,np)
                 else !vectors
                   if (j==indx_out(3,2)-1) then
-                    floatout=out_wwm(i,8); floatout2=out_wwm(i,7);
+                    write(ichan(j)) (real(out_wwm(i,8),out_rkind),real(out_wwm(i,7),out_rkind),i=1,np)
                   else if (j==indx_out(3,2)) then
-                    floatout=out_wwm(i,27); floatout2=out_wwm(i,28);
+                    write(ichan(j)) (real(out_wwm(i,27),out_rkind),real(out_wwm(i,28),out_rkind),i=1,np)
                   endif
                 endif !j
-                a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                write(ichan(j)) a_4
-#else
-                write(ichan(j),"(a4)",advance="no") a_4
-#endif
-
-                if(j>indx_out(3,2)-2) then !vectors
-                  a_4 = transfer(source=floatout2,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                  write(ichan(j)) a_4
-#else
-                  write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                endif !vectors
               endif !scope of WWM; j<=indx_out(3,2)
 #endif /*USE_WWM*/
 
               if(flag_model==0) then; if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then !age
-                do k=max0(1,kbp00(i)),nvrt
-                  tmp1=max(1.d-5,tr_nd(j-indx_out(4,1)+1,k,i))
-                  floatout=tr_nd(j-indx_out(4,1)+1+ntracers/2,k,i)/tmp1/86400
-                  a_4 = transfer(source=floatout,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-                  write(ichan(j)) a_4
-#else
-                  write(ichan(j),"(a4)",advance="no") a_4
-#endif
-                enddo !k
+                do i=1,np
+                  do k=max0(1,kbp00(i)),nvrt
+                    tmp1=max(1.d-5,tr_nd(j-indx_out(4,1)+1,k,i))
+                    floatout=tr_nd(j-indx_out(4,1)+1+ntracers/2,k,i)/tmp1/86400
+                    write(ichan(j)) real(floatout,out_rkind)
+                  enddo !k
+                enddo !i
               endif; endif !scope of age
-
             endif !j
-          enddo !i=1,np
-
           if(myrank==0) write(16,'(a48)')'done outputting '//variable_nm(j)
         endif !iof(j).eq.1.and.mod(it,nspool).eq.0
       enddo !j=1,noutput
 
+      
 !...  Non-standard outputs
       if(iof_ns(1)==1) then 
         call elfe_output_custom(lwrite,6,2,201,'hvel',nvrt,nsa,su2,sv2)
@@ -7424,11 +7288,7 @@
         do i=1,noutput
           ichan(i)=100+i !output channel #
           if(iof(i)==1) then
-#ifdef USE_OPEN64
-            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace', form='BINARY')
-#else
-            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace')
-#endif
+            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
           endif
         enddo !i
       endif !it==ifile*ihfskip
@@ -7803,7 +7663,7 @@
 
       if(myrank==0) write(16,'(a,i12,a,f20.6)') 'TIME STEP= ',it,';  TIME= ',time
 !'
-      call flush(16) !flush "mirror.out" for every time step
+      flush(16) !flush "mirror.out" for every time step
       call parallel_barrier !synchronize before starting next time step
 
 
@@ -7851,3 +7711,4 @@
 #endif
 
       end subroutine selfe_step
+

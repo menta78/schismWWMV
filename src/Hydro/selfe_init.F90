@@ -517,7 +517,7 @@
       allocate(indx_out(10,2),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: indx_out failure')
 
-      noutput=26+ntracers !all Hydro and generic tracers outputs
+      noutput=27+ntracers !all Hydro and generic tracers outputs
 #ifdef USE_SED
       ! depth, d50, taub, z0, qbdl(ntracers), bedfrac(ntracers)
       noutput=noutput+4+2*ntracers
@@ -562,6 +562,7 @@
         write(errmsg,*)'Increase mnout in elfe_glbl to',noutput
         call parallel_abort(errmsg)
       endif
+
       outfile(1)='elev.61'
       outfile(2)='pres.61'
       outfile(3)='airt.61'
@@ -574,20 +575,21 @@
       outfile(10)='flux.61'
       outfile(11)='evap.61'
       outfile(12)='prcp.61'
-      outfile(13)='wind.62'
-      outfile(14)='wist.62'
-      outfile(15)='dahv.62'
-      outfile(16)='vert.63'
-      outfile(17)='temp.63'
-      outfile(18)='salt.63'
-      outfile(19)='conc.63'
-      outfile(20)='tdff.63'
-      outfile(21)='vdff.63'
-      outfile(22)='kine.63'
-      outfile(23)='mixl.63'
-      outfile(24)='zcor.63'
-      outfile(25)='qnon.63'
-      outfile(26)='hvel.64'
+      outfile(13)='bdrc.61'
+      outfile(14)='wind.62'
+      outfile(15)='wist.62'
+      outfile(16)='dahv.62'
+      outfile(17)='vert.63'
+      outfile(18)='temp.63'
+      outfile(19)='salt.63'
+      outfile(20)='conc.63'
+      outfile(21)='tdff.63'
+      outfile(22)='vdff.63'
+      outfile(23)='kine.63'
+      outfile(24)='mixl.63'
+      outfile(25)='zcor.63'
+      outfile(26)='qnon.63'
+      outfile(27)='hvel.64'
       variable_nm(1)='surface elevation'
       variable_nm(2)='atmopheric pressure'
       variable_nm(3)='air temperature'
@@ -600,36 +602,37 @@
       variable_nm(10)='total flux'
       variable_nm(11)='Evaporation rate (kg/m^2/s)'
       variable_nm(12)='Precipitation rate (kg/m^2/s)'
-      variable_nm(13)='wind speed'
-      variable_nm(14)='wind stress (m^2/s^2)'
-      variable_nm(15)='Depth averaged horizontal velocity'
-      variable_nm(16)='vertical velocity'
-      variable_nm(17)='temperature in C'
-      variable_nm(18)='salinity in psu'
-      variable_nm(19)='density anomaly in kg/m^3'
-      variable_nm(20)='eddy diffusivity in m^2/s'
-      variable_nm(21)='eddy viscosity in m^2/s'
-      variable_nm(22)='turbulent kinetic energy'
-      variable_nm(23)='turbulent mixing length'
-      variable_nm(24)='z coordinates'
-      variable_nm(25)='normalized non-hydrostatic pressure'
-      variable_nm(26)='horizontal velocity'
+      variable_nm(13)='Bottom drag coefficient [-]'
+      variable_nm(14)='wind speed'
+      variable_nm(15)='wind stress (m^2/s^2)'
+      variable_nm(16)='Depth averaged horizontal velocity'
+      variable_nm(17)='vertical velocity'
+      variable_nm(18)='temperature in C'
+      variable_nm(19)='salinity in psu'
+      variable_nm(20)='density anomaly in kg/m^3'
+      variable_nm(21)='eddy diffusivity in m^2/s'
+      variable_nm(22)='eddy viscosity in m^2/s'
+      variable_nm(23)='turbulent kinetic energy'
+      variable_nm(24)='turbulent mixing length'
+      variable_nm(25)='z coordinates'
+      variable_nm(26)='normalized non-hydrostatic pressure'
+      variable_nm(27)='horizontal velocity'
 
-      variable_dim(1:12)='2D scalar'
-      variable_dim(13:15)='2D vector'
-      variable_dim(16:25)='3D scalar'
-      variable_dim(26)='3D vector'
+      variable_dim(1:13)='2D scalar'
+      variable_dim(14:16)='2D vector'
+      variable_dim(17:26)='3D scalar'
+      variable_dim(27)='3D vector'
     
       do i=1,ntracers
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        outfile(26+i)='trcr_'//ifile_char(1:ifile_len)//'.63' 
-        variable_nm(26+i)='Tracer #'//trim(ifile_char)
-        variable_dim(26+i)='3D scalar'
+        outfile(27+i)='trcr_'//ifile_char(1:ifile_len)//'.63' 
+        variable_nm(27+i)='Tracer #'//trim(ifile_char)
+        variable_dim(27+i)='3D scalar'
       enddo !i
 
-      indx2=26+ntracers
+      indx2=27+ntracers
 #ifdef USE_SED
       outfile(indx2+1)='depth.61'
       variable_nm(indx2+1)='depth in m'
@@ -771,7 +774,7 @@
 !     For 2D model reset some flags
       if(lm2d) then
         iof(3:12)=0
-        iof(16:25)=0
+        iof(17:26)=0
       endif !lm2d
 
 !...  Non-standard outputs at sides, nodes and centroids and whole and half levels
@@ -5032,12 +5035,7 @@
       do i=1,noutput
         ichan(i)=100+i !output channel #
         if(iof(i)==1) then
-#ifdef USE_OPEN64
-            !openMPI has trouble with no adv. write
-            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form='BINARY')
-#else
-            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace')
-#endif
+          open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
         endif
       enddo !i
 

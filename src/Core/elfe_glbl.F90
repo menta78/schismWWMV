@@ -12,6 +12,13 @@ module elfe_glbl
 !#else
   integer,parameter :: rkind = 8      ! Default real datatype
 !#endif
+#ifdef DOUBLE_REAL_OUT
+  integer,parameter::out_rkind=8
+#else
+  integer,parameter ::out_rkind=4     !Default output real type
+#endif
+
+
 
   ! Some constants
   integer,parameter :: nthfiles=5 !# of type I (ASCII) .th files (for dimensioning)
@@ -85,8 +92,9 @@ module elfe_glbl
 
   ! Variables for global output files
   integer, parameter :: nbyte=4          !# bytes for output record size
-  integer, parameter :: mnout=150        !max. # of output files
-  integer, parameter :: mirec=1109000000 !max. record # to prevent output ~> 4GB
+  integer, parameter :: mnout=200        !max. # of output files
+!  integer, parameter :: mirec=1109000000 !max. record # to prevent output ~> 4GB
+!  character(len=11), parameter :: fileopenformat='unformatted'
 !  integer,save :: iwrite
   character(len=48),save :: start_time,version,data_format='DataFormat v5.0'
   character(len=12),save :: ifile_char

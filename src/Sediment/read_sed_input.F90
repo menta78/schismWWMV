@@ -245,7 +245,7 @@
 !---------------------------------------------------------------------
 
       DO i=1,ntracers
-        Sd50(i) = Sd50(i)*0.001d0
+        Sd50(i) = Sd50(i)*0.001d0 !to [m]
         IF((comp_ws.EQ.1).AND.(Sedtype(i).EQ.1)) THEN
           ! Sed type is SAND
           CALL sed_settleveloc(i)
@@ -279,7 +279,7 @@
          WRITE(16,*) 'New layer thickness',newlayer_thick
          WRITE(16,*) '----------------------------------------------'
          WRITE(16,*) 'Sed type  ;  Sd50 [m]  ;  Srho [kg/m3]  ;',     &
-         &          '  Wsed [m/s]  ;  Erate [kg/(m2/s)]  ;  tau_ce', &
+         &          '  Wsed [m/s]  ;  Erate [kg/m2/s]  ;  tau_ce', &
          &          ' [m2/s2]  ;  poros [-]  ;  morph_fac  '
          DO i = 1,ntracers
            WRITE(16,*) Sedtype(i),Sd50(i),Srho(i),Wsed(i),Erate(i),   &
