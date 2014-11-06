@@ -123,6 +123,23 @@ MODULE WWMaOCN_PGMCL
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE WWM_common_coupl_initialize
+      USE DATAPOOL, only : DBG
+      implicit none
+      CALL WWM_CreateMatrixPartition
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 1.3'
+      FLUSH(DBG%FHNDL)
+# endif
+      CALL GET_GRID_ARRAY_FE_r8(NP_TOTAL, NE_TOTAL, XPtotal, YPtotal, INEtotal, eGrid_wav)
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 2'
+      FLUSH(DBG%FHNDL)
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WWM_a_OCN_COUPL_INITIALIZE
       ! We have to keep the DATAPOOL uses that way.
       ! a single USE DATAPOOL creates compilation problem
@@ -156,16 +173,6 @@ MODULE WWMaOCN_PGMCL
       CALL SetComputationalNodes(ArrLocal, NnodesWAV, OCNid)
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 1.2'
-      FLUSH(DBG%FHNDL)
-# endif
-      CALL WWM_CreateMatrixPartition
-# ifdef DEBUG
-      WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 1.3'
-      FLUSH(DBG%FHNDL)
-# endif
-      CALL GET_GRID_ARRAY_FE_r8(NP_TOTAL, NE_TOTAL, XPtotal, YPtotal, INEtotal, eGrid_wav)
-# ifdef DEBUG
-      WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 2'
       FLUSH(DBG%FHNDL)
 # endif
       !
