@@ -200,20 +200,11 @@ MODULE WWMaOCN_PGMCL
       CALL M2M_recv_grid(ArrLocal, OCNid, eGrid_ocn_v)
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'eGrid_ocn_rho : '
-      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_rho%LON_fd),  &
-     &     maxval(eGrid_ocn_rho%LON_fd)
-      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_rho%LAT_fd),  &
-     &     maxval(eGrid_ocn_rho%LAT_fd)
+      CALL GRID_PRINT_KEY_INFO(DBG%FHNDL, eGrid_ocn_rho)
       WRITE(DBG%FHNDL,*) 'eGrid_ocn_u : '
-      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_u%LON_fd),    &
-     &     maxval(eGrid_ocn_u%LON_fd)
-      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_u%LAT_fd),    &
-     &     maxval(eGrid_ocn_u%LAT_fd)
+      CALL GRID_PRINT_KEY_INFO(DBG%FHNDL, eGrid_ocn_u)
       WRITE(DBG%FHNDL,*) 'eGrid_ocn_v : '
-      WRITE(DBG%FHNDL,*) 'lon(min/max)=',minval(eGrid_ocn_v%LON_fd),    &
-     &     maxval(eGrid_ocn_v%LON_fd)
-      WRITE(DBG%FHNDL,*) 'lat(min/max)=',minval(eGrid_ocn_v%LAT_fd),    &
-     &     maxval(eGrid_ocn_v%LAT_fd)
+      CALL GRID_PRINT_KEY_INFO(DBG%FHNDL, eGrid_ocn_v)
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 6'
       FLUSH(DBG%FHNDL)
 # endif

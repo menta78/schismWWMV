@@ -108,13 +108,6 @@
           ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
         END DO
       END IF
-# if defined DEBUG
-      WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
-      WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
-      DO IS=1,MSC
-        WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
-      END DO
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
