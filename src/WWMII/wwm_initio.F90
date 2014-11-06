@@ -452,7 +452,7 @@
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
 #ifdef ROMS_WWM_PGMCL_COUPLING
-      USE WWM_ROMS_PGMCL
+      USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
 !#ifdef MPI_PARALL_GRID
@@ -717,7 +717,7 @@
 #ifdef ROMS_WWM_PGMCL_COUPLING
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Before ROMS_COUPL_INITIALIZE'
       FLUSH(STAT%FHNDL)
-      CALL ROMS_COUPL_INITIALIZE
+      CALL WWM_a_OCN_COUPL_INITIALIZE
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After ROMS_COUPL_INITIALIZE'
       FLUSH(STAT%FHNDL)
 #endif
@@ -751,7 +751,7 @@
 !**********************************************************************
        SUBROUTINE TERMINATE_WWM
 #ifdef ROMS_WWM_PGMCL_COUPLING
-       USE WWM_ROMS_PGMCL
+       USE WWMaOCN_PGMCL
 #endif
        USE DATAPOOL
 #ifdef ST41
@@ -802,7 +802,7 @@
        END IF
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
-       CALL ROMS_COUPL_DEALLOCATE
+       CALL WWM_a_OCN_COUPL_DEALLOCATE
 #endif
        END SUBROUTINE
 !**********************************************************************

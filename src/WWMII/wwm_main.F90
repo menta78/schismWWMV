@@ -602,7 +602,7 @@
 !**********************************************************************
       SUBROUTINE IO_1(K)
 #ifdef ROMS_WWM_PGMCL_COUPLING
-      USE WWM_ROMS_PGMCL
+      USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
       IMPLICIT NONE
@@ -656,7 +656,7 @@
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-        CALL PGMCL_ROMS_IN(K,IFILE,IT)
+        CALL WAV_ocnAwav_import(K,IFILE,IT)
       END IF
       IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
 #endif
@@ -685,7 +685,7 @@
 !**********************************************************************
       SUBROUTINE IO_2(K)
 #ifdef ROMS_WWM_PGMCL_COUPLING
-      USE WWM_ROMS_PGMCL
+      USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
       IMPLICIT NONE
@@ -705,7 +705,7 @@
 # endif
 # ifdef ROMS_WWM_PGMCL_COUPLING
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-        CALL PGMCL_ROMS_OUT(K)
+        CALL WAV_ocnAwav_export(K)
       END IF
 # endif
 #endif
