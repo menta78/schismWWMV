@@ -25,7 +25,9 @@ MODULE WWMaOCN_PGMCL
 # ifdef WWM_MPI
       SUBROUTINE WWM_CreateMatrixPartition
       USE DATAPOOL
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
       implicit none
       integer, allocatable :: rbuf_int(:)
       integer, allocatable :: TheIndex(:)
@@ -33,6 +35,7 @@ MODULE WWMaOCN_PGMCL
       integer, allocatable :: All_LocalToGlobal(:,:)
       integer i, eIdx, iProc, MNPloc, MNEloc, idx
       integer IPc, IP
+      integer ierror
 #  ifdef DEBUG
       integer MinValIndex, MinValIndexInv, eVal
 #  endif
@@ -56,14 +59,14 @@ MODULE WWMaOCN_PGMCL
         DO iProc=2,NnodesWAV
           allocate(rbuf_int(1), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 3')
-          CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 194, WAV_COMM_WORLD, istatus, ierr)
+          CALL MPI_RECV(rbuf_int,1,MPI_INTEGER, iProc-1, 194, WAV_COMM_WORLD, istatus, ierror)
           MNPloc=rbuf_int(1)
           NumberNode(iProc)=MNPloc
           deallocate(rbuf_int)
           !
           allocate(rbuf_int(MNPloc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 4')
-          CALL MPI_RECV(rbuf_int,MNPloc,itype, iProc-1, 195, WAV_COMM_WORLD, istatus, ierr)
+          CALL MPI_RECV(rbuf_int,MNPloc,MPI_INTEGER, iProc-1, 195, WAV_COMM_WORLD, istatus, ierror)
           DO IP=1,MNPloc
             eIdx=rbuf_int(IP)
             MatrixBelongingWAV % TheMatrix(eIdx,iProc)=IP
@@ -82,21 +85,21 @@ MODULE WWMaOCN_PGMCL
           END DO
         END DO
         DO iProc=2,NnodesWAV
-          CALL MPI_SEND(rbuf_int,np_global*NnodesWAV,itype, iProc-1, 196, WAV_COMM_WORLD, ierr)
+          CALL MPI_SEND(rbuf_int,np_global*NnodesWAV,MPI_INTEGER, iProc-1, 196, WAV_COMM_WORLD, ierror)
         END DO
         deallocate(rbuf_int)
       ELSE
         allocate(rbuf_int(1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 6')
         rbuf_int(1)=MNP
-        CALL MPI_SEND(rbuf_int,1,itype, 0, 194, WAV_COMM_WORLD, ierr)
+        CALL MPI_SEND(rbuf_int,1,MPI_INTEGER, 0, 194, WAV_COMM_WORLD, ierror)
         deallocate(rbuf_int)
 
-        CALL MPI_SEND(iplg,MNP,itype, 0, 195, WAV_COMM_WORLD, ierr)
+        CALL MPI_SEND(iplg,MNP,MPI_INTEGER, 0, 195, WAV_COMM_WORLD, ierror)
 !
         allocate(rbuf_int(np_global*NnodesWAV), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 7')
-        CALL MPI_RECV(rbuf_int,np_global*NnodesWAV,itype, 0, 196, WAV_COMM_WORLD, istatus, ierr)
+        CALL MPI_RECV(rbuf_int,np_global*NnodesWAV,MPI_INTEGER, 0, 196, WAV_COMM_WORLD, istatus, ierror)
         idx=0
         DO iProc=1,NnodesWAV
           DO i=1,np_global
@@ -111,7 +114,12 @@ MODULE WWMaOCN_PGMCL
 # else
       SUBROUTINE WWM_CreateMatrixPartition
       USE DATAPOOL
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var
+#  endif
       IMPLICIT NONE
       integer IP
       CALL ALLOCATE_node_partition(MNP, 1, MatrixBelongingWAV)
@@ -124,7 +132,11 @@ MODULE WWMaOCN_PGMCL
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_common_coupl_initialize
-      USE DATAPOOL, only : DBG
+      USE DATAPOOL, only : DBG, XPtotal, YPtotal, INEtotal
+      USE DATAPOOL, only : NE_TOTAL, NP_TOTAL
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var
+#  endif
       implicit none
       CALL WWM_CreateMatrixPartition
 # ifdef DEBUG
@@ -146,13 +158,49 @@ MODULE WWMaOCN_PGMCL
       ! because MPI_COMM_WORLD comes from two sources.
       USE DATAPOOL, only : DBG, rkind, STAT, np_total, ne_total
       USE DATAPOOL, only : XPtotal, YPtotal, INEtotal
-      USE DATAPOOL, only : itype, istatus, ierr, MNP, istat
+      USE DATAPOOL, only : MNP, istat
       USE DATAPOOL, only : DEP, XP, YP
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var, only : MatrixBelongingWAV
+      USE coupling_var, only : MatrixBelongingOCN_rho
+      USE coupling_var, only : MatrixBelongingOCN_u
+      USE coupling_var, only : MatrixBelongingOCN_v
+      USE coupling_var, only : ArrLocal
+      USE coupling_var, only : eGrid_wav, eGrid_ocn_rho, eGrid_ocn_u, eGrid_ocn_v
+      USE coupling_var, only : WAV_COMM_WORLD
+      USE coupling_var, only : mMat_OCNtoWAV_rho
+      USE coupling_var, only : mMat_OCNtoWAV_u
+      USE coupling_var, only : mMat_OCNtoWAV_v
+      USE coupling_var, only : mMat_WAVtoOCN_rho
+      USE coupling_var, only : mMat_WAVtoOCN_u
+      USE coupling_var, only : mMat_WAVtoOCN_v
+      USE coupling_var, only : TheAsync_OCNtoWAV_rho
+      USE coupling_var, only : TheAsync_OCNtoWAV_uvz
+      USE coupling_var, only : TheArr_OCNtoWAV_rho
+      USE coupling_var, only : TheArr_OCNtoWAV_u
+      USE coupling_var, only : TheArr_OCNtoWAV_v
+      USE coupling_var, only : TheArr_WAVtoOCN_rho
+      USE coupling_var, only : TheArr_WAVtoOCN_u
+      USE coupling_var, only : TheArr_WAVtoOCN_v
+      USE coupling_var, only : TheAsync_OCNtoWAV_u
+      USE coupling_var, only : TheAsync_OCNtoWAV_v
+      USE coupling_var, only : TheAsync_WAVtoOCN_stat
+      USE coupling_var, only : TheAsync_WAVtoOCN_u
+      USE coupling_var, only : TheAsync_WAVtoOCN_v
+      USE coupling_var, only : NnodesWAV, Nlevel
+      USE coupling_var, only : OCNid => tOCNid
+      USE coupling_var, only : WAVid => tWAVid
+#  endif
+
       USE PGMCL_LIBRARY
       USE pgmcl_interp
       implicit none
+      integer status(MPI_STATUS_SIZE)
       logical DoNearest
+      integer ierror
       integer rbuf_int(1)
       integer IP, iNodeSel, idx, eRankRecv
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
@@ -227,7 +275,7 @@ MODULE WWMaOCN_PGMCL
       FLUSH(DBG%FHNDL)
 # endif
       eRankRecv=ArrLocal % ListFirstRank(OCNid)
-      CALL MPI_RECV(rbuf_int,4,itype, eRankRecv, 103, MPI_COMM_WORLD, istatus, ierr)
+      CALL MPI_RECV(rbuf_int,4,MPI_INTEGER, eRankRecv, 103, MPI_COMM_WORLD, status, ierror)
       Nlevel=rbuf_int(1)
       NlevelVert=rbuf_int(2)
       IF (rbuf_int(3) .eq. 1) THEN
@@ -428,7 +476,9 @@ MODULE WWMaOCN_PGMCL
 !**********************************************************************
       SUBROUTINE WWM_a_OCN_COUPL_DEALLOCATE
       USE DATAPOOL
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
       USE PGMCL_LIBRARY
       USE pgmcl_interp
       implicit none
@@ -448,7 +498,12 @@ MODULE WWMaOCN_PGMCL
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_ROMS
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var
+#  endif
       USE DATAPOOL
       implicit none
       integer IP, k, ID, IS
@@ -637,7 +692,12 @@ MODULE WWMaOCN_PGMCL
       SUBROUTINE WAV_ocnAwav_import(K,IFILE,IT)
       USE pgmcl_library
       USE datapool
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var
+#  endif
       implicit none
       INTEGER, INTENT(IN) :: K,IFILE,IT
       integer IP, kLev, i, idx
@@ -657,10 +717,10 @@ MODULE WWMaOCN_PGMCL
       FLUSH(DBG%FHNDL)
 # endif
 # ifdef DEBUG
-      MaxUwind=0.0_r8
-      SumUwind=0.0_r8
-      MaxVwind=0.0_r8
-      SumVwind=0.0_r8
+      MaxUwind=0
+      SumUwind=0
+      MaxVwind=0
+      SumVwind=0
       NbPoint=0
 # endif
       WATLEVOLD=WATLEV
@@ -752,7 +812,12 @@ MODULE WWMaOCN_PGMCL
       SUBROUTINE WAV_ocnAwav_export(K)
       USE DATAPOOL
       USE pgmcl_library
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var
+#  endif
       implicit none
       INTEGER, INTENT(IN)  :: K
       integer IP, kLev, idx
