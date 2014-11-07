@@ -107,7 +107,7 @@
          PetscScalar :: eValue
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
 
          POS_TRICK(1,1) = 2
@@ -150,7 +150,7 @@
          END DO
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME2)
+         CALL WAV_MY_WTIME(TIME2)
 #endif
 
          U(:) = AC2(ISS,IDD,:)
@@ -214,7 +214,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME3)
+         CALL WAV_MY_WTIME(TIME3)
 #endif
 
 !> \todo for efficiency reason this will be moved out of this part when the code is working, AR.
@@ -252,13 +252,13 @@
          call VecAssemblyEnd(myB, petscErr);CHKERRQ(petscErr);
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME4)
+         CALL WAV_MY_WTIME(TIME4)
 #endif
 ! Solve
          call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr)
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME5)
+         CALL WAV_MY_WTIME(TIME5)
 #endif
 
          !WRITE(*,*) TIME2-TIME1, TIME3-TIME2, TIME4-TIME3, TIME5-TIME4
@@ -285,7 +285,7 @@
          AC2(ISS,IDD,:) = X(:)
 
 #ifdef TIMINGS
-!          CALL MY_WTIME(TIME4)
+!          CALL WAV_MY_WTIME(TIME4)
 #endif
         END SUBROUTINE
 

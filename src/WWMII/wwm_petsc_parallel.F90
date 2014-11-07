@@ -506,12 +506,12 @@
          call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
 #ifdef TIMINGS
-         call MY_WTIME(startTime)
+         call WAV_MY_WTIME(startTime)
 #endif
          ! Solve!
          call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
 #ifdef TIMINGS
-         call MY_WTIME(endTime)
+         call WAV_MY_WTIME(endTime)
 #endif
          call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
          

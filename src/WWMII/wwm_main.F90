@@ -436,13 +436,13 @@
          CHARACTER(LEN=15)   :: CTIME,CALLFROM
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 #endif
 
       CALL IO_1(K)
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
+      CALL WAV_MY_WTIME(TIME2)
 #endif
 
       IF (ICOMP .EQ. 0) THEN
@@ -456,7 +456,7 @@
       END IF
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME3)
+      CALL WAV_MY_WTIME(TIME3)
 #endif
 
 #ifdef WWM_SETUP
@@ -466,7 +466,7 @@
 #endif
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME4)
+      CALL WAV_MY_WTIME(TIME4)
 #endif
 
       MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
@@ -482,7 +482,7 @@
       CALL IO_2(K)
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME5)
+      CALL WAV_MY_WTIME(TIME5)
 #endif
 
       IF (LCONV) THEN
@@ -490,7 +490,7 @@
       END IF
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME6)
+      CALL WAV_MY_WTIME(TIME6)
 #endif
 
       IF (.NOT. LDIFR) LCALC = .FALSE.
@@ -604,6 +604,9 @@
 #if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE WWMaOCN_PGMCL
 #endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE pgmcl_lib_WWM, only : WAV_all_import_export
+#endif
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: K
@@ -661,7 +664,7 @@
       IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
 #endif
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      CALL WAV_all_import_export
+      CALL WAV_all_import_export(K, IFILE, IT)
 #endif
 
 !
@@ -805,7 +808,7 @@
 # endif
 
 # ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 # endif
 
       
@@ -845,7 +848,7 @@
       END DO
 
 #ifdef TIMINGS
-       CALL MY_WTIME(TIME2)
+       CALL WAV_MY_WTIME(TIME2)
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
 # endif
 

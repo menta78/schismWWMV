@@ -2006,7 +2006,7 @@
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ, JDX
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 #endif
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
@@ -2016,7 +2016,7 @@
         CALL COMPUTE_K_CRFS_XYU
       END IF
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
+      CALL WAV_MY_WTIME(TIME2)
 #endif
       !
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
@@ -2034,7 +2034,7 @@
       END IF
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME3)
+      CALL WAV_MY_WTIME(TIME3)
 #endif
       !
       ! Now the Gauss Seidel iterations
@@ -2532,7 +2532,7 @@
       END DO
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME4)
+      CALL WAV_MY_WTIME(TIME4)
 #endif
 !
       DO IP = 1, MNP
@@ -2542,7 +2542,7 @@
       END DO
 
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME5)
+      CALL WAV_MY_WTIME(TIME5)
 #endif
 
 #ifdef TIMINGS

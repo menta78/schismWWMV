@@ -158,7 +158,7 @@
 #endif
 
 #ifdef TIMINGS
-        call MY_WTIME(startTime)
+        call WAV_MY_WTIME(startTime)
 #endif
         diagonal = 0
         i = 0; j = 0
@@ -231,7 +231,7 @@
         end do
         mean = mean / MNP
 #ifdef TIMINGS
-        call MY_WTIME(endTime)
+        call WAV_MY_WTIME(endTime)
 #endif
 
         ! print only a detailed info if there are zero diagonal entries

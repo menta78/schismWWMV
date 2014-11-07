@@ -67,7 +67,7 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef TIMINGS
-      SUBROUTINE MY_WTIME(wtime)
+      SUBROUTINE WAV_MY_WTIME(wtime)
       USE DATAPOOL, only : rkind
       implicit none
       real(rkind), intent(inout) :: wtime

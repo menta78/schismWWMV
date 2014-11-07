@@ -1677,11 +1677,11 @@
         call PetscLogStagePush(stageFill, petscErr);CHKERRQ(petscErr)
 
 #  ifdef TIMINGS
-        call MY_WTIME(startTime)
+        call WAV_MY_WTIME(startTime)
 #  endif
         call calcASPAR
 #  ifdef TIMINGS
-        call MY_WTIME(endTime)
+        call WAV_MY_WTIME(endTime)
 #endif
 #  ifdef TIMINGS
         if(rank == 0) print '("calcASPAR Time = ",f6.3," sec")',endTime - startTime
@@ -1690,11 +1690,11 @@
 !         call plotMatrix(matrix)
 
 #  ifdef TIMINGS
-!         call MY_WTIME(startTime)
+!         call WAV_MY_WTIME(startTime)
 #  endif
         call calcB
 #  ifdef TIMINGS
-!         call MY_WTIME(endTime)
+!         call WAV_MY_WTIME(endTime)
 #  endif
 #  ifdef TIMINGS
 !         if(rank == 0) print '("calcB Time = ",f6.3," sec")',endTime - startTime
@@ -1712,12 +1712,12 @@
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
         call PetscLogStagePush(stageSolve, petscErr);CHKERRQ(petscErr)
 #  ifdef TIMINGS
-        call MY_WTIME(startTime)
+        call WAV_MY_WTIME(startTime)
 #  endif
         ! Solve!
         call KSPSolve(Solver, myB, myX, petscErr);CHKERRQ(petscErr);
 #  ifdef TIMINGS
-        call MY_WTIME(endTime)
+        call WAV_MY_WTIME(endTime)
 #  endif
         call PetscLogStagePop(petscErr);CHKERRQ(petscErr)
 
@@ -1980,7 +1980,7 @@
 #  endif
 
 #  ifdef TIMINGS
-        call MY_WTIME(startTime)
+        call WAV_MY_WTIME(startTime)
 #  endif
 
         positionMax = -1
@@ -2063,7 +2063,7 @@
         CHKERRQ(petscErr);
         call VecDestroy(diagonal, petscErr);CHKERRQ(petscErr)
 #  ifdef TIMINGS
-        call MY_WTIME(endTime)
+        call WAV_MY_WTIME(endTime)
 #  endif
 
         ! print only a detailed info if there are zero diagonal entries

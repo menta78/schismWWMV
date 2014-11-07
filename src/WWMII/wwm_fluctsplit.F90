@@ -1021,7 +1021,7 @@
          external gmres
 
 #ifdef TIMINGS
-!         CALL MY_WTIME(TIME1)
+!         CALL WAV_MY_WTIME(TIME1)
 #endif
 
          IWKSP = 0
@@ -1169,7 +1169,7 @@
           END DO
 
 #ifdef TIMINGS
-          CALL MY_WTIME(TIME4)
+          CALL WAV_MY_WTIME(TIME4)
 #endif
 
 !         WRITE(DBG%FHNDL,*) 'SOLUTION'
@@ -1415,7 +1415,7 @@
           END DO
 
 #ifdef TIMINGS
-!          CALL MY_WTIME(TIME4)
+!          CALL WAV_MY_WTIME(TIME4)
 #endif
 
 !         WRITE(DBG%FHNDL,*) 'SOLUTION'
@@ -2701,7 +2701,7 @@
          END IF !LCALC
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
          IF (IVECTOR == 1) THEN
          DO ID = 1, MDC
@@ -2934,7 +2934,7 @@
 #endif
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
          ITER_MAX = MAXVAL(ITER_EXP)
          DT4AI = DT4A/ITER_MAX
@@ -3106,7 +3106,7 @@
         END DO
       END IF
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 #endif
       ITER_MAX = MAXVAL(ITER_EXP)
       DT4AI = DT4A/ITER_MAX
@@ -3265,7 +3265,7 @@
          END IF
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX

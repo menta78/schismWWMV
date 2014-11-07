@@ -454,12 +454,10 @@
 #if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE WWMaOCN_PGMCL
 #endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE pgmcl_lib_WWM, only : WAV_common_initialize
+#endif
       USE DATAPOOL
-!#ifdef MPI_PARALL_GRID
-!# ifndef PDLIB
-!    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
-!# endif
-!#endif
 #ifdef PDLIB
       USE yowpd, only : initFromGridDim
 #endif
@@ -481,7 +479,7 @@
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 #endif
      
       CALL SET_WWMINPULNML 
@@ -732,7 +730,7 @@
       FLUSH(STAT%FHNDL)
 #endif
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
+      CALL WAV_MY_WTIME(TIME2)
 #endif
 
 #if defined SELFE
@@ -761,6 +759,9 @@
        SUBROUTINE TERMINATE_WWM
 #ifdef ROMS_WWM_PGMCL_COUPLING
        USE WWMaOCN_PGMCL
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+       USE pgmcl_lib_WWM, only : WAV_all_deallocate
 #endif
        USE DATAPOOL
 #ifdef ST41
@@ -814,7 +815,7 @@
        CALL WWM_a_OCN_COUPL_DEALLOCATE
 #endif
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-       CALL WWM_all_deallocate
+       CALL WAV_all_deallocate
 #endif
        END SUBROUTINE
 !**********************************************************************

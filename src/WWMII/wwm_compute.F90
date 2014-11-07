@@ -41,13 +41,13 @@
          END IF
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
 
          CALL COMPUTE_DIFFRACTION
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME2)
+         CALL WAV_MY_WTIME(TIME2)
 #endif
 
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
@@ -60,7 +60,7 @@
          ENDIF
   
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME3)
+         CALL WAV_MY_WTIME(TIME3)
 #endif
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
@@ -72,7 +72,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME4)
+         CALL WAV_MY_WTIME(TIME4)
 #endif
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 
@@ -83,7 +83,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME5)
+         CALL WAV_MY_WTIME(TIME5)
 #endif
          IF (SMETHOD .GT. 0) THEN
            CALL COMPUTE_SOURCES_EXP
@@ -190,7 +190,7 @@
            IF (MINVAL(AC2) .LT. ZERO) CALL WWM_ABORT(' NEGATIVE IN COMPUTE 5')
          ENDIF
 #ifdef TIMINGS
-         CALL MY_WTIME(TIME6)
+         CALL WAV_MY_WTIME(TIME6)
 #endif
          IF (LMAXETOT .AND. SMETHOD .EQ. 0) CALL BREAK_LIMIT_ALL ! Miche for no source terms ... may cause oscilations ...
          IF (LNANINFCHK) THEN
@@ -245,24 +245,24 @@
         AC1 = AC2
 
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME1)
+        CALL WAV_MY_WTIME(TIME1)
 #endif
 
         CALL COMPUTE_DIFFRACTION
 
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME2)
+        CALL WAV_MY_WTIME(TIME2)
 #endif
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME3)
+        CALL WAV_MY_WTIME(TIME3)
 #endif
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME4)
+        CALL WAV_MY_WTIME(TIME4)
 #endif
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN 
           CALL SOURCE_INT_IMP_WAM_PRE 
@@ -271,20 +271,20 @@
         ENDIF 
 
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME5)
+        CALL WAV_MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME6)
+        CALL WAV_MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) CALL ACTION_LIMITER
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) CALL SOURCE_INT_IMP_WAM_POST
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME7)
+        CALL WAV_MY_WTIME(TIME7)
 #endif
         IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche  
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME8)
+        CALL WAV_MY_WTIME(TIME8)
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5
@@ -429,7 +429,7 @@
        ENDIF
 
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME1)
+        CALL WAV_MY_WTIME(TIME1)
 #endif
         CALL COMPUTE_DIFFRACTION
 
@@ -438,10 +438,10 @@
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
         ENDIF
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME2)
+        CALL WAV_MY_WTIME(TIME2)
 #endif
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME3)
+        CALL WAV_MY_WTIME(TIME3)
 #endif
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
           CALL SOURCE_INT_IMP_WAM_PRE
@@ -456,7 +456,7 @@
           IF (SUM(IMATDAA) .NE. SUM(IMATDAA)) CALL WWM_ABORT('NAN IN COMPUTE 3c')
         ENDIF
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME4)
+        CALL WAV_MY_WTIME(TIME4)
 #endif
         IF (AMETHOD .eq.5) THEN
 #ifdef PETSC
@@ -474,13 +474,13 @@
         ENDIF
 
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME5)
+        CALL WAV_MY_WTIME(TIME5)
 #endif
 !
         IF (SMETHOD .GT. 0 .AND. LSOURCESWAM .AND. MESIN .GT. 0) CALL SOURCE_INT_IMP_WAM_POST
 !
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME6)
+        CALL WAV_MY_WTIME(TIME6)
 #endif
         IF (LLIMT .AND. SMETHOD .GT. 0) CALL ACTION_LIMITER
 
@@ -496,7 +496,7 @@
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6')
         ENDIF
 #ifdef TIMINGS
-        CALL MY_WTIME(TIME7)
+        CALL WAV_MY_WTIME(TIME7)
 #endif
 #ifdef TIMINGS
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'

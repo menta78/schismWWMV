@@ -2,6 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#if !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       SUBROUTINE DATE2JD(year, month, day, hour, min, sec, eJD)
       USE DATAPOOL
       IMPLICIT NONE
@@ -206,6 +207,7 @@
       CALL JD2DATE(year, month, day, hour, min, sec, eMJD)
       CALL DATE_ConvertSix2string(year, month, day, hour, min, sec, STIME)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
