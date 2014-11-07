@@ -601,7 +601,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_1(K)
-#ifdef ROMS_WWM_PGMCL_COUPLING
+#if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
@@ -643,7 +643,7 @@
 !
 !      *** coupling via pipe *** read pipe
 !
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_IN(K)
 # ifdef SHYFEM_COUPLING
@@ -660,6 +660,10 @@
       END IF
       IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
 #endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      CALL WAV_all_import_export
+#endif
+
 !
 !      *** recalculate water level and current related values 
 !
@@ -684,7 +688,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE IO_2(K)
-#ifdef ROMS_WWM_PGMCL_COUPLING
+#if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
@@ -692,7 +696,7 @@
       INTEGER, INTENT(IN) :: K
       CALL GENERAL_OUTPUT
 #ifndef SELFE
-# if !defined ROMS_WWM_PGMCL_COUPLING
+# if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_OUT(K)
 #  ifdef SHYFEM_COUPLING
@@ -756,7 +760,7 @@
 !*                                                                    *
 !**********************************************************************
 #if !defined SELFE
-# ifdef ROMS_WWM_PGMCL_COUPLING
+# if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       SUBROUTINE WWMIII_MPI(MyCOMM)
 # else
       PROGRAM WWMIII_MPI
@@ -764,6 +768,9 @@
 
 # ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler, only : WAV_COMM_WORLD
+# endif
+# ifdef ROMS_WWM_PGMCL_COUPLING
+      USE coupling_var, only : WAV_COMM_WORLD
 # endif
 
       USE DATAPOOL, only: MAIN, SEBO,                                  &
@@ -781,10 +788,10 @@
 
       implicit none
 
-# if defined MPI_PARALL_GRID || defined ROMS_WWM_PGMCL_COUPLING
+# if defined MPI_PARALL_GRID || defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       include 'mpif.h'
 # endif
-# ifdef ROMS_WWM_PGMCL_COUPLING
+# if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       integer, intent(in) :: MyCOMM
 # endif
 # ifdef TIMINGS 
@@ -792,14 +799,14 @@
 # endif
       integer :: i,j,k
       character(len=15) CALLFROM
-# if !defined ROMS_WWM_PGMCL_COUPLING && defined WWM_MPI
+# if defined WWM_MPI && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
 
-#ifdef TIMINGS
+# ifdef TIMINGS
       CALL MY_WTIME(TIME1)
-#endif
+# endif
 
       
 # ifdef ROMS_WWM_PGMCL_COUPLING
@@ -842,11 +849,11 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
 # endif
 
-# if defined MPI_PARALL_GRID && !defined ROMS_WWM_PGMCL_COUPLING
+# if defined MPI_PARALL_GRID && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       call parallel_finalize
 # endif
 
-# ifdef ROMS_WWM_PGMCL_COUPLING
+# if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       END SUBROUTINE
 # else
       END PROGRAM

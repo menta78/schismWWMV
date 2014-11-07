@@ -451,7 +451,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
-#ifdef ROMS_WWM_PGMCL_COUPLING
+#if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE WWMaOCN_PGMCL
 #endif
       USE DATAPOOL
@@ -646,12 +646,14 @@
       END IF
 
 
-#ifndef ROMS_WWM_PGMCL_COUPLING
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
       FLUSH(STAT%FHNDL)
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LWINDFROMWWM) THEN
         CALL INIT_WIND_INPUT
       END IF
+#endif
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_OCN_WAV
       IF (.NOT. LCPL) THEN
         CALL INIT_CURRENT_INPUT
         CALL INIT_WATLEV_INPUT
@@ -699,7 +701,7 @@
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -722,7 +724,13 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After ROMS_COUPL_INITIALIZE'
       FLUSH(STAT%FHNDL)
 #endif
-
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Before WAV_common_initialize'
+      FLUSH(STAT%FHNDL)
+      CALL WAV_common_initialize
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After WAV_common_initialize'
+      FLUSH(STAT%FHNDL)
+#endif
 #ifdef TIMINGS
       CALL MY_WTIME(TIME2)
 #endif
@@ -789,7 +797,7 @@
        CALL CLOSE_IOBP
        CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
        IF (LCPL) THEN
          IF (LTIMOR) THEN
            CALL TERMINATE_PIPES_TIMOR()
@@ -804,6 +812,9 @@
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
        CALL WWM_a_OCN_COUPL_DEALLOCATE
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+       CALL WWM_all_deallocate
 #endif
        END SUBROUTINE
 !**********************************************************************
@@ -1574,12 +1585,15 @@
 #ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler, only : Iwaves, INPname
 #endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var, only : WWM_INPUTFILE
+#endif
       IMPLICIT NONE
       INTEGER nbArg
 #ifdef SELFE
       INP%FNAME  = 'wwminput.nml'
 #else
-# ifndef ROMS_WWM_PGMCL_COUPLING
+# if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       nbArg=command_argument_count()
       IF (nbArg > 1) THEN
         CALL WWM_ABORT('Number of argument is 0 or 1')
@@ -1590,7 +1604,12 @@
         CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
       ENDIF
 # else
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       INP%FNAME=INPname(Iwaves)
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      INP%FNAME=WWM_INPUTFILE
+#  endif
 # endif
 #endif
       END SUBROUTINE

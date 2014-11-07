@@ -1,5 +1,5 @@
 #include "wwm_functions.h"
-#if !defined ROMS_WWM_PGMCL_COUPLING
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
