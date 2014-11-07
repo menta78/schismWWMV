@@ -37,7 +37,7 @@
      &                         ielg,             & ! element local to global maping
      &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
 
-#ifndef ROMS_WWM_PGMCL_COUPLING
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       use MPI
 #endif
      
@@ -77,7 +77,7 @@
 !
 ! ... constants ... wwmDparam.mod
 !
-#if defined USE_SINGLE && defined ROMS_WWM_PGMCL_COUPLING
+#if defined USE_SINGLE && (defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
            Error, you must compile in double precision
 #endif
 #ifndef MPI_PARALL_GRID

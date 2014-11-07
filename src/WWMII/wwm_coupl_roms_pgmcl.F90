@@ -36,7 +36,8 @@ MODULE WWMaOCN_PGMCL
 #  ifdef DEBUG
       integer MinValIndex, MinValIndexInv, eVal
 #  endif
-      allocate(MatrixBelongingWAV(np_global, NnodesWAV), NumberNode(NnodesWAV), NumberTrig(NnodesWAV), stat=istat)
+      CALL ALLOCATE_node_partition(np_global, NnodesWAV, MatrixBelongingWAV)
+      allocate(NumberNode(NnodesWAV), NumberTrig(NnodesWAV), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 1')
       IF (myrank.ne.MyRankLocal) THEN
         CALL WWM_ABORT('die from ignominious death')
@@ -45,10 +46,10 @@ MODULE WWMaOCN_PGMCL
         allocate(All_LocalToGlobal(np_global, NnodesWAV), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 2')
         All_LocalToGlobal=0
-        MatrixBelongingWAV=0
+        MatrixBelongingWAV % TheMatrix=0
         DO i=1,MNP
           eIdx=iplg(i)
-          MatrixBelongingWAV(eIdx,1)=i
+          MatrixBelongingWAV % TheMatrix(eIdx,1)=i
           All_LocalToGlobal(i,1)=eIdx
         ENDDO
         NumberNode(1)=MNP
@@ -65,7 +66,7 @@ MODULE WWMaOCN_PGMCL
           CALL MPI_RECV(rbuf_int,MNPloc,itype, iProc-1, 195, WAV_COMM_WORLD, istatus, ierr)
           DO IP=1,MNPloc
             eIdx=rbuf_int(IP)
-            MatrixBelongingWAV(eIdx,iProc)=IP
+            MatrixBelongingWAV % TheMatrix(eIdx,iProc)=IP
             All_LocalToGlobal(IP,iProc)=eIdx
           END DO
           deallocate(rbuf_int)
@@ -77,7 +78,7 @@ MODULE WWMaOCN_PGMCL
         DO iProc=1,NnodesWAV
           DO IP=1,np_global
             idx=idx+1
-            rbuf_int(idx)=MatrixBelongingWAV(IP,iProc)
+            rbuf_int(idx)=MatrixBelongingWAV % TheMatrix(IP,iProc)
           END DO
         END DO
         DO iProc=2,NnodesWAV
@@ -100,7 +101,7 @@ MODULE WWMaOCN_PGMCL
         DO iProc=1,NnodesWAV
           DO i=1,np_global
             idx=idx+1
-            MatrixBelongingWAV(i,iProc)=rbuf_int(idx)
+            MatrixBelongingWAV % TheMatrix(i,iProc)=rbuf_int(idx)
           END DO
         END DO
         deallocate(rbuf_int)
@@ -113,10 +114,9 @@ MODULE WWMaOCN_PGMCL
       USE mod_coupler
       IMPLICIT NONE
       integer IP
-      allocate(MatrixBelongingWAV(MNP, 1), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('WWM_CreateMatrixPartition, allocate error 8')
+      CALL ALLOCATE_node_partition(MNP, 1, MatrixBelongingWAV)
       DO IP=1,MNP
-        MatrixBelongingWAV(IP,1)=IP
+        MatrixBelongingWAV % TheMatrix(IP,1)=IP
       ENDDO
       END SUBROUTINE
 # endif
@@ -181,7 +181,7 @@ MODULE WWMaOCN_PGMCL
       IF (MyRankLocal.eq.0) THEN
         CALL M2M_send_grid(ArrLocal, OCNid, eGrid_wav)
         CALL M2M_send_node_partition(ArrLocal, OCNid,                 &
-     &        np_total, NnodesWAV, MatrixBelongingWAV)
+     &        MatrixBelongingWAV)
       ENDIF
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 3'
@@ -209,19 +209,19 @@ MODULE WWMaOCN_PGMCL
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
-     &   NnodeRho, NnodesOCN, MatrixBelongingOCN_rho)
+     &   MatrixBelongingOCN_rho)
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 7'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
-     &   NnodeU, NnodesOCN, MatrixBelongingOCN_u)
+     &   MatrixBelongingOCN_u)
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 8'
       FLUSH(DBG%FHNDL)
 # endif
       CALL M2M_recv_node_partition(ArrLocal, OCNid,                     &
-     &   NnodeV, NnodesOCN, MatrixBelongingOCN_v)
+     &   MatrixBelongingOCN_v)
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 9'
       FLUSH(DBG%FHNDL)
@@ -335,10 +335,10 @@ MODULE WWMaOCN_PGMCL
      &    mMat_WAVtoOCN_v, TheArr_WAVtoOCN_v)
       CALL MPI_INTERP_GetAsyncInput_r8(TheArr_WAVtoOCN_v,               &
      &    NlevelIntegral, TheAsync_WAVtoOCN_v)
-      deallocate(MatrixBelongingWAV)
-      deallocate(MatrixBelongingOCN_rho)
-      deallocate(MatrixBelongingOCN_u)
-      deallocate(MatrixBelongingOCN_v)
+      CALL DEALLOCATE_node_partition(MatrixBelongingWAV)
+      CALL DEALLOCATE_node_partition(MatrixBelongingOCN_rho)
+      CALL DEALLOCATE_node_partition(MatrixBelongingOCN_u)
+      CALL DEALLOCATE_node_partition(MatrixBelongingOCN_v)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
       CALL DeallocSparseMatrix(mMat_OCNtoWAV_v)
@@ -386,38 +386,10 @@ MODULE WWMaOCN_PGMCL
       SumDep1=0
       SumDep2=0
       SumDiff=0
-      minBathy=140000
-      maxBathy=0
-      DO IP=1,MNP
-        IF (dep_rho(IP).lt.minBathy) THEN
-          minBathy=dep_rho(IP)
-        END IF
-        IF (dep_rho(IP).gt.maxBathy) THEN
-          maxBathy=dep_rho(IP)
-        END IF
-      END DO
-      WRITE(DBG%FHNDL,*) 'dep_rho, min=', minBathy, ' max=', maxBathy
+      WRITE(DBG%FHNDL,*) 'dep_rho, min=', minval(dep_rho), ' max=', maxval(dep_rho)
+      WRITE(DBG%FHNDL,*) 'DEP, min=', minval(DEP), ' max=', maxval(DEP)
       FLUSH(DBG%FHNDL)
-      minBathy=140000
-      maxBathy=0
-      DO IP=1,MNP
-        IF (DEP(IP).lt.minBathy) THEN
-          minBathy=DEP(IP)
-        END IF
-        IF (DEP(IP).gt.maxBathy) THEN
-          maxBathy=DEP(IP)
-        END IF
-      END DO
-      WRITE(DBG%FHNDL,*) 'DEP, min=', minBathy, ' max=', maxBathy
-      FLUSH(DBG%FHNDL)
-
-
       iNodeSel=-1
-!        CALL MyGetString(MyRankGlobal, eStrFi)
-!        FileSave1='DEP_infos' // eStrFi
-!        FileSave2='Lookup_infos' // eStrFi
-!        open(745, FILE=TRIM(FileSave1))
-!        open(746, FILE=TRIM(FileSave2))
       DO IP=1,MNP
         DEP(IP)=dep_rho(IP)
         eDiff=abs(dep_rho(IP) - DEP(IP))
@@ -434,18 +406,11 @@ MODULE WWMaOCN_PGMCL
           FLUSH(DBG%FHNDL)
         END IF
       END DO
-!        close(745)
-!        close(746)
-!        WRITE(DBG%FHNDL,*) 'AD, AbsDiff=', AbsDiff
-!        WRITE(DBG%FHNDL,*) 'AD, IP=', iNodeSel, dep_rho(iNodeSel), DEP(iNodeSel)
-!        WRITE(DBG%FHNDL,*) 'AD, xp, yp=', XP(iNodeSel), YP(iNodeSel)
       WRITE(DBG%FHNDL,*) 'AD, SumDep1=', SumDep1, ' SumDep2=', SumDep2
       WRITE(DBG%FHNDL,*) 'AD, SumDiff=', SumDiff
       FLUSH(DBG%FHNDL)
 # endif
-      allocate(z_w_wav(0:Nlevel, MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 19')
-      allocate(USTOKES_wav(Nlevel,MNP), VSTOKES_wav(Nlevel,MNP), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
+      allocate(z_w_wav(0:Nlevel, MNP), USTOKES_wav(Nlevel,MNP), VSTOKES_wav(Nlevel,MNP), ZETA_CORR(MNP), J_PRESSURE(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_coupl_roms, allocate error 20')
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'End WWM_a_OCN_COUPL_INITIALIZE'
