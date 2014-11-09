@@ -37,9 +37,9 @@
      &                         ielg,             & ! element local to global maping
      &                         nx1=>nx             ! nx is often used as a function parameter. So I renamed it to avoid name conflicts
 
-#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#  if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       use MPI
-#endif
+#  endif
      
 # endif
 # ifdef SELFE
