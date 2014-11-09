@@ -25,6 +25,12 @@ MODULE WWMaOCN_PGMCL
 # ifdef WWM_MPI
       SUBROUTINE WWM_CreateMatrixPartition
       USE DATAPOOL
+      USE pgmcl_library, only : ALLOCATE_node_partition
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var, only : MatrixBelongingWAV
+      USE coupling_var, only : NnodesWAV, MyRankLocal
+      USE coupling_var, only : WAV_COMM_WORLD
+#  endif
 #  ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler
 #  endif
