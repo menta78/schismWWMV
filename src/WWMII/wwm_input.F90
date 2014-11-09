@@ -1570,7 +1570,7 @@
            END IF
          END IF
 
-#if !defined ROMS_WWM_PGMCL_COUPLING && !defined SELFE
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined SELFE && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
          IF (LCPL) THEN
            IF (.NOT. LROMS .AND. .NOT. LSHYFEM .AND. .NOT. LTIMOR) THEN
              CALL WWM_ABORT('LROMS, LSHYFEM or LTIMOR must be true')

@@ -1587,7 +1587,7 @@
       USE mod_coupler, only : Iwaves, INPname
 #endif
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      USE coupling_var, only : WWM_INPUTFILE
+      USE coupling_var, only : WWM_InputFile
 #endif
       IMPLICIT NONE
       INTEGER nbArg
@@ -1609,7 +1609,7 @@
       INP%FNAME=INPname(Iwaves)
 #  endif
 #  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
-      INP%FNAME=WWM_INPUTFILE
+      INP%FNAME=WWM_InputFile
 #  endif
 # endif
 #endif
