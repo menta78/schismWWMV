@@ -770,10 +770,10 @@
 # endif
 
 # ifdef ROMS_WWM_PGMCL_COUPLING
-      USE mod_coupler, only : WAV_COMM_WORLD
+      USE mod_coupler, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-# ifdef ROMS_WWM_PGMCL_COUPLING
-      USE coupling_var, only : WAV_COMM_WORLD
+# if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
 
       USE DATAPOOL, only: MAIN, SEBO,                                  &
@@ -802,17 +802,28 @@
 # endif
       integer :: i,j,k
       character(len=15) CALLFROM
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
+      FLUSH(740+MyRankGlobal)
+# endif
+
 # if defined WWM_MPI && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
+# endif
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_init'
+      FLUSH(740+MyRankGlobal)
 # endif
 
 # ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 # endif
-
-      
-# ifdef ROMS_WWM_PGMCL_COUPLING
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, after WAV_MY_WTIME'
+      FLUSH(740+MyRankGlobal)
+# endif
+# if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       comm=MyCOMM
       WAV_COMM_WORLD=MyCOMM
 # else
@@ -821,7 +832,10 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
-
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_dup and WAV_COMM_WORLD'
+      FLUSH(740+MyRankGlobal)
+# endif
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
@@ -834,8 +848,16 @@
 # else
       CALLFROM='WWM'
 # endif
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_size/rank'
+      FLUSH(740+MyRankGlobal)
+# endif
 
       CALL INITIALIZE_WWM
+# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
+      write(740+MyRankGlobal,*)  'WWMIII_MPI, after INITIALIZE_WWM'
+      FLUSH(740+MyRankGlobal)
+# endif
 
 !      STOP 'MEMORY TEST 1'
 

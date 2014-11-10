@@ -207,7 +207,7 @@ MODULE WWMaOCN_PGMCL
       integer status(MPI_STATUS_SIZE)
       logical DoNearest
       integer ierror
-      integer rbuf_int(1)
+      integer rbuf_int(4)
       integer IP, iNodeSel, idx, eRankRecv
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
