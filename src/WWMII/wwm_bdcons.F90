@@ -94,7 +94,7 @@
         ENDDO
 #endif
 
-#ifdef DEBUG
+#if defined DEBUG && defined IOBPDOUT
 # ifdef MPI_PARALL_GRID
         IF (myrank == 0) THEN
 # endif

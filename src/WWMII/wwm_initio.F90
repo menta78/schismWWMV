@@ -1182,8 +1182,10 @@
             CHK%FNAME  = 'wwmcheck.nml'
            QSTEA%FNAME = 'qstea.out'
          WINDBG%FNAME  = 'winddbg.out'
+#if defined DEBUG && defined IOBPDOUT
          IOBPOUT%FNAME = 'iobp.out'
         IOBPDOUT%FNAME = 'iobpd.out'
+#endif
         SRCDBG%FNAME = 'srcdbg.out'
 !
 !2do ... dinstinguish between binary and ascii stuff ...
@@ -1202,8 +1204,10 @@
 
            IF (LQSTEA) QSTEA%FHNDL  = STARTHNDL + 12
 
+#if defined DEBUG && defined IOBPDOUT
          IOBPOUT%FHNDL  = STARTHNDL + 13
          IOBPDOUT%FHNDL = STARTHNDL + 14
+#endif
 
          DBG%FHNDL      = STARTHNDL + 15 
          STAT%FHNDL     = STARTHNDL + 16 
@@ -1257,8 +1261,10 @@
          WRITE(STAT%FHNDL,*) 'Input Filename   =', TRIM(INP%FNAME)
          WRITE(STAT%FHNDL,*) 'Check Filename   =', TRIM(CHK%FNAME)
          WRITE(STAT%FHNDL,*) 'Qstea Filename   =', TRIM(QSTEA%FNAME)
+#if defined DEBUG && defined IOBPDOUT
          WRITE(STAT%FHNDL,*) 'Iobp Filename    =', TRIM(IOBPOUT%FNAME)
          WRITE(STAT%FHNDL,*) 'Iobpd Filename   =', TRIM(IOBPDOUT%FNAME)
+#endif
          WRITE(STAT%FHNDL,*) 'WindDbg Filename =', TRIM(WINDBG%FNAME)
 #ifdef MPIP_PARALL_GRID
          ENDIF
@@ -1267,8 +1273,10 @@
          OPEN( INP%FHNDL,      FILE = TRIM(INP%FNAME))
          OPEN( CHK%FHNDL,      FILE = TRIM(CHK%FNAME))
          IF (LQSTEA) OPEN( QSTEA%FHNDL,    FILE = TRIM(QSTEA%FNAME))
+#if defined DEBUG && defined IOBPDOUT
          OPEN( IOBPOUT%FHNDL,  FILE = TRIM(IOBPOUT%FNAME))
          OPEN( IOBPDOUT%FHNDL, FILE = TRIM(IOBPDOUT%FNAME))
+#endif
 
            OUT1D%FHNDL = STARTHNDL + 19 
             MISC%FHNDL = STARTHNDL + 20 
@@ -1288,8 +1296,10 @@
          close(DBG%FHNDL)
          close(STAT%FHNDL)
          IF (LQSTEA) close( QSTEA%FHNDL)
+#if defined DEBUG && defined IOBPDOUT
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)
+#endif
          close( WINDBG%FHNDL)
        END SUBROUTINE
 !**********************************************************************
