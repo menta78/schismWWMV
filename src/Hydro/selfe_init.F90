@@ -763,17 +763,10 @@
 !        iof(24)=1
 !      endif
 !     For 2D model reset some flags
-<<<<<<< HEAD
 !      if(lm2d) then
 !        iof(3:12)=0
 !        iof(17:26)=0
 !      endif !lm2d
-=======
-      if(lm2d) then
-        iof(3:12)=0
-        iof(17:26)=0
-      endif !lm2d
->>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
 
 !...  Non-standard outputs at sides, nodes and centroids and whole and half levels
 !...  These outputs share same spool and stack size as standard ones
