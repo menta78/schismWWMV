@@ -45,7 +45,7 @@
 
       USE sed_mod
 
-      USE elfe_glbl, ONLY: nea,np,npa,mnei,ntracers,rkind,dav,dave,  &
+      USE elfe_glbl, ONLY: nea,np,npa,mnei_p,ntracers,rkind,dav,dave,  &
      &                     nvrt
       USE elfe_msgp, ONLY: myrank,parallel_abort
 
@@ -102,7 +102,7 @@
       !--------------------------------------------------------------!
       !* 2D arrays defined on elements
       !--------------------------------------------------------------!
-      ALLOCATE(mcoefd(0:(mnei+1),np),stat=i)
+      ALLOCATE(mcoefd(0:mnei_p,np),stat=i)
         IF (i/=0) CALL parallel_abort('Sed: mcoefd allocation failure')
       ALLOCATE(Hz(nvrt,nea),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: Hz allocation failure')
@@ -290,7 +290,7 @@
 
       USE sed_mod
 
-      USE elfe_glbl, ONLY: nea,npa,mnei,ntracers,ipgl,ielg,elnode,np_global,  &
+      USE elfe_glbl, ONLY: nea,npa,mnei_p,ntracers,ipgl,ielg,i34,elnode,np_global,  &
      &                     ifile_char,ifile_len,area,np,nne,indel,     &
      &                     isbnd,rough_p,errmsg,ihot
       USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_p2d
@@ -330,6 +330,7 @@
 ! - Computes matrix coefficients for the JCG solver
 ! Used for the computation of depth variation induced by bedload
 !--------------------------------------------------------------------!
+!Error: YJZ - not working for quads
       mcoefd = 0
       aux1 = 22.0d0/108.0d0
       aux2 = 7.0d0/108.0d0
@@ -349,6 +350,7 @@
 !--------------------------------------------------------------------!
 ! - Control volume at each node
 !--------------------------------------------------------------------!
+!Error: YJZ - not working for quads
       vc_area = 0.0d0
       DO i=1,nea
         DO j=1,3
@@ -401,9 +403,7 @@
         DO ised = 1,ntracers
           DO k = 1,Nbed
             DO i = 1,nea
-              bed_frac(k,i,ised) = (swild98(k,elnode(1,i),ised)+           &
-              &                     swild98(k,elnode(2,i),ised)+           &
-              &                     swild98(k,elnode(3,i),ised))/3.0d0
+              bed_frac(k,i,ised) = sum(swild98(k,elnode(1:i34(i),i),ised))/i34(i)
             ENDDO ! END loop nea
           ENDDO ! END loop Nbed
         ENDDO ! END loop ntracers
@@ -439,7 +439,7 @@
 !--------------------------------------------------------------------!
         DO i=1,Nbed
           DO j=1,nea
-            bed(i,j,ithck) = sum(bedthick_overall(elnode(1:3,j)))/3.d0/real(Nbed) !>0
+            bed(i,j,ithck) = sum(bedthick_overall(elnode(1:i34(j),j)))/i34(j)/real(Nbed) !>0
             bed(i,j,iaged) = 0.0d0
             bed(i,j,iporo) = porosity
           ENDDO ! End loop Nbed
@@ -518,9 +518,7 @@
         ! Nikurasde roughness length
         bottom(i,izNik) = bottom(i,isd50)/12.0d0
         ! Default roughness
-        bottom(i,izdef) = (rough_p(elnode(1,i))+                         &
-        &                  rough_p(elnode(2,i))+                         &
-        &                  rough_p(elnode(3,i)))/3.0d0
+        bottom(i,izdef) = sum(rough_p(elnode(1:i34(i),i)))/i34(i) 
         ! Apparent initial roughness
         bottom(i,izapp) = bottom(i,izdef)
         ! Roughness length effectively used (even if bedform predictor is not used)
@@ -550,7 +548,7 @@
       bed_fracn(:,:) = 0.0d0
       bdfc(:)        = 0.0d0
       DO i=1,nea
-        DO j=1,3
+        DO j=1,i34(i)
           DO ised=1,ntracers
             bed_fracn(elnode(j,i),ised) = bed_fracn(elnode(j,i),ised)+       &
             &                         bed_frac(1,i,ised)

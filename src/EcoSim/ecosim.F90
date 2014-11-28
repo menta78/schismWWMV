@@ -567,10 +567,14 @@
             E0_nz(nvrt)=0.0_r8
             Keuphotic=nvrt+1
             IF (SpecIr(i,21).gt.VSMALL) THEN
-              DO k=kbe(i)+1,nvrt-1
-                Ed_nz(k)=0.0_r8
-                E0_nz(k)=0.0_r8
-              END DO
+!MFR - SELFE 2D/3D
+              IF((kbe(i)+1).ne.nvrt)THEN
+                DO k=kbe(i)+1,nvrt-1
+                  Ed_nz(k)=0.0_r8
+                  E0_nz(k)=0.0_r8
+                END DO
+              ENDIF
+!MFR
               DO iband=1,NBands
                 dATT_sum(iband)=0.0_r8
                 DO k=kbe(i)+1,nvrt
@@ -679,12 +683,12 @@
 !        coefficients were calculated as m-1 / (mg DOC/liters sw).
 !        net factor = (12*0.001) = 0.012
 !
-                     tot_ab=tot_ab+                                      &
-     &                      0.012_r8*(Bio(k,iCDMC(ilab))*              &
-     &                                aDOC(ilab,iband)+                  &
-     &                                Bio(k,iCDMC(irct))*              &
-     &                                aDOC(irct,iband))+                 &
-     &                      awater(iband)
+                     tot_ab=tot_ab+ &
+     &                      0.012_r8*(Bio(k,iCDMC(ilab))* &
+     &                                aDOC(ilab,iband)+ &
+     &                                Bio(k,iCDMC(irct))* &
+                                      aDOC(irct,iband))+awater(iband)
+!     &                      awater(iband)
 
                      END IF  !CDOC=1
 !
@@ -739,7 +743,7 @@
 !
 !  Set avgcos for next level.
 !
-                    IF (k.ne.1) THEN
+                    IF (k.ne.(kbe(i)+1)) THEN
                       avgcos(k-1,iband)=avgcos(k,iband)
                     END IF
 !
@@ -1986,55 +1990,58 @@
 
 ! Marta Rodrigues (! To check later...)
 ! Sinking
+! MFR - At the moment sinking is set only for the 3D model
+        IF((kbe(i)+1).ne.nvrt)THEN
+          DO iphy=1,Nphy
+!            DO i=1,nea
+!              if(idry_e(i)==1) cycle
 
-        DO iphy=1,Nphy
-!          DO i=1,nea
-!            if(idry_e(i)==1) cycle
-            DO k=kbe(i)+1,nvrt-1
+              DO k=kbe(i)+1,nvrt-1
             
-              Bio_new(k,iPhyC(iphy))=Bio_new(k,iPhyC(iphy))+&
-                                    -WS(iphy)*((Bio(k+1,iPhyC(iphy))- &
-                                    Bio(k-1,iPhyC(iphy)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
-
-              Bio_new(k,iPhyN(iphy))=Bio_new(k,iPhyN(iphy))&
-                                    -WS(iphy)*((Bio(k+1,iPhyN(iphy))- &
-                                    Bio(k-1,iPhyN(iphy)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
-
-              Bio_new(k,iPhyP(iphy))=Bio_new(k,iPhyP(iphy))+&
-                                    -WS(iphy)*((Bio(k+1,iPhyP(iphy))- &
-                                    Bio(k-1,iPhyP(iphy)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
-
-              IF(IRON==1)THEN
-               Bio_new(k,iPhyF(iphy))=Bio_new(k,iPhyF(iphy))+&
-                                    -WS(iphy)*((Bio(k+1,iPhyF(iphy))- &
-                                    Bio(k-1,iPhyF(iphy)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
-              END IF  !IRON
-
-              IF(iphy<=2) THEN
-
-                Bio_new(k,iPhyS(iphy))=Bio_new(k,iPhyS(iphy))+&
-                                      -WS(iphy)*((Bio(k+1,iPhyS(iphy))- &
-                                      Bio(k-1,iPhyS(iphy)))/(ze(k+1,i)-   &
+                Bio_new(k,iPhyC(iphy))=Bio_new(k,iPhyC(iphy))- &
+                                      WS(iphy)*((Bio(k+1,iPhyC(iphy))- &
+                                      Bio(k-1,iPhyC(iphy)))/(ze(k+1,i)-   &
                                       ze(k-1,i)))
-              END IF
 
-              DO ipig=1,Npig
-                IF (iPigs(iphy,ipig).gt.0) THEN
-                  itrc=iPigs(iphy,ipig)
+                Bio_new(k,iPhyN(iphy))=Bio_new(k,iPhyN(iphy))- &
+                                      WS(iphy)*((Bio(k+1,iPhyN(iphy))- &
+                                      Bio(k-1,iPhyN(iphy)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
 
-                  Bio_new(k,itrc)=-WS(iphy)*((Bio(k+1,itrc)- &
+                Bio_new(k,iPhyP(iphy))=Bio_new(k,iPhyP(iphy))- &
+                                      WS(iphy)*((Bio(k+1,iPhyP(iphy))- &
+                                      Bio(k-1,iPhyP(iphy)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
+
+                IF(IRON==1)THEN
+                 Bio_new(k,iPhyF(iphy))=Bio_new(k,iPhyF(iphy))- &
+                                      WS(iphy)*((Bio(k+1,iPhyF(iphy))- &
+                                      Bio(k-1,iPhyF(iphy)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
+                END IF  !IRON
+
+                IF(iphy<=2) THEN
+
+                  Bio_new(k,iPhyS(iphy))=Bio_new(k,iPhyS(iphy))- &
+                                        WS(iphy)*((Bio(k+1,iPhyS(iphy))- &
+                                        Bio(k-1,iPhyS(iphy)))/(ze(k+1,i)-   &
+                                        ze(k-1,i)))
+                END IF
+
+                DO ipig=1,Npig
+                  IF (iPigs(iphy,ipig).gt.0) THEN
+                    itrc=iPigs(iphy,ipig)
+
+                    Bio_new(k,itrc)=-WS(iphy)*((Bio(k+1,itrc)- &
                                     Bio(k-1,itrc))/(ze(k+1,i)-   &
                                     ze(k-1,i)))
-                END IF
+                  END IF
   
-              END DO
-            END DO 
+                END DO
+              END DO  
 !          END DO 
-        END DO ! Nphy
+          END DO ! Nphy
+        ENDIF !3D
 
 !
 !-----------------------------------------------------------------------
@@ -2401,42 +2408,44 @@
 ! ----------------------------------------------------------------------
 ! Fecal matter sinking.
 ! ----------------------------------------------------------------------
+! MFR - At the moment sinking is set only for the 3D model
+          IF((kbe(i)+1).ne.nvrt)THEN
+            DO ifec=1,Nfec
+!             DO i=1,nea
+!                if(idry_e(i)==1) cycle
+                DO k=kbe(i)+1,nvrt-1
 
-          DO ifec=1,Nfec
-!           DO i=1,nea
-!              if(idry_e(i)==1) cycle
-              DO k=kbe(i)+1,nvrt-1
+                Bio_new(k,iFecC(ifec))=Bio_new(k,iFecC(ifec))- &
+                                      WF(ifec)*((Bio(k+1,iFecC(ifec))- &
+                                      Bio(k-1,iFecC(ifec)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
 
-              Bio_new(k,iFecC(ifec))=Bio_new(k,iFecC(ifec))+&
-                                    -WF(ifec)*((Bio(k+1,iFecC(ifec))- &
-                                    Bio(k-1,iFecC(ifec)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
+                Bio_new(k,iFecN(ifec))=Bio_new(k,iFecN(ifec))- &
+                                      WF(ifec)*((Bio(k+1,iFecN(ifec))- &
+                                      Bio(k-1,iFecN(ifec)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
 
-              Bio_new(k,iFecN(ifec))=Bio_new(k,iFecN(ifec))+&
-                                    -WF(ifec)*((Bio(k+1,iFecN(ifec))- &
-                                    Bio(k-1,iFecN(ifec)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
+                Bio_new(k,iFecP(ifec))=Bio_new(k,iFecP(ifec))- &
+                                      WF(ifec)*((Bio(k+1,iFecP(ifec))- &
+                                      Bio(k-1,iFecP(ifec)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
 
-              Bio_new(k,iFecP(ifec))=Bio_new(k,iFecP(ifec))+&
-                                    -WF(ifec)*((Bio(k+1,iFecP(ifec))- &
-                                    Bio(k-1,iFecP(ifec)))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
+                IF(IRON==1)THEN
+                 Bio_new(k,iFecF(ifec))= Bio_new(k,iFecF(ifec))- &
+                                      WF(ifec)*((Bio(k+1,iFecF(ifec))- &
+                                      Bio(k-1,iFecF(ifec)))/(ze(k+1,i)-   &
+                                      ze(k-1,i)))
+                END IF
 
-              IF(IRON==1)THEN
-               Bio_new(k,iFecF(ifec))= Bio_new(k,iFecF(ifec))+&
-                                     -WF(ifec)*((Bio(k+1,iFecF(ifec))- &
-                                     Bio(k-1,iFecF(ifec)))/(ze(k+1,i)-   &
-                                     ze(k-1,i)))
-              END IF
-
-              Bio_new(k,iFecS(ifec))=Bio_new(k,iFecS(ifec))+&
-                                      -WF(ifec)*((Bio(k+1,iFecS(ifec))- &
+                Bio_new(k,iFecS(ifec))=Bio_new(k,iFecS(ifec))- &
+                                      WF(ifec)*((Bio(k+1,iFecS(ifec))- &
                                       Bio(k-1,iFecS(ifec)))/(ze(k+1,i)-   &
                                       ze(k-1,i)))
 
-           END DO
+             END DO
 !          END DO 
-        END DO ! Nfec
+          END DO ! Nfec
+        END IF
 
 ! ----------------------------------------------------------------------
 
@@ -2831,7 +2840,7 @@
 	    Hconc=10.d0**(-pH)
 	    
 	    CO2star(i)=1.d0/(Hconc*Hconc+kdiss1(i)*Hconc+kdiss1(i)*kdiss2(i))
-            CO2star(i)=CO2star(i)*Hconc**2.d0*tr_el(iDIC_,nvrt,i)*10.d0**-6.d0 	
+            CO2star(i)=CO2star(i)*Hconc**2.d0*tr_el(iDIC_,nvrt,i)*10.d0**(-6.d0) 	
 					
 	    pCO2w(i)=CO2star(i)/solubCO2(i)				
 										

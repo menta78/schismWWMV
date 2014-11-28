@@ -137,15 +137,15 @@
         integer :: iBacN(Nbac)        ! Bacteria, Nitrogen group
         integer :: iBacP(Nbac)        ! Bacteria, Phosphorous group
         integer :: iBacF(Nbac)        ! Bacteria, Iron group
-        integer :: iCDMC(Ndom)        ! Color degradational matter
-        integer :: iDOMC(Ndom)        ! DOM, Carbon group
-        integer :: iDOMN(Ndom)        ! DOM, Nitrogen group
-        integer :: iDOMP(Ndom)        ! DOM, Phosphorous group
-        integer :: iFecC(Nfec)        ! Fecal matter, Carbon group
-        integer :: iFecN(Nfec)        ! Fecal matter, Nitrogen group
-        integer :: iFecP(Nfec)        ! Fecal matter, Phosphorous group
-        integer :: iFecF(Nfec)        ! Fecal matter, Iron group
-        integer :: iFecS(Nfec)        ! Fecal matter, Silica group
+        integer :: iCDMC(2)           ! Color degradational matter
+        integer :: iDOMC(2)           ! DOM, Carbon group
+        integer :: iDOMN(2)           ! DOM, Nitrogen group
+        integer :: iDOMP(2)           ! DOM, Phosphorous group
+        integer :: iFecC(2)           ! Fecal matter, Carbon group
+        integer :: iFecN(2)           ! Fecal matter, Nitrogen group
+        integer :: iFecP(2)           ! Fecal matter, Phosphorous group
+        integer :: iFecF(2)           ! Fecal matter, Iron group
+        integer :: iFecS(2)           ! Fecal matter, Silica group
         integer :: iPhyC(Nphy)        ! Phytoplankton, Carbon group
         integer :: iPhyN(Nphy)        ! Phytoplankton, Nitrogen group
         integer :: iPhyP(Nphy)        ! Phytoplankton, Phosphorous group

@@ -33,7 +33,7 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 
-      USE elfe_glbl, ONLY: dldxy,idry,nea,elnode,npa,rkind,area,xnd,ynd,    &
+      USE elfe_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,xnd,ynd,    &
      &                     errmsg,dp,np
       USE elfe_msgp, ONLY: comm,exchange_p2d,ierr,itype,myrank,      &
      &                     nproc,parallel_abort
@@ -85,7 +85,7 @@
 !--------------------------------------------------------------------!
 ! * Compute bed slope at element center
 !--------------------------------------------------------------------!
-          DO j=1,3
+          DO j=1,i34(i)
             dpdxy_el(i,1) = dpdxy_el(i,1)+dp1(elnode(j,i))*dldxy(j,1,i)
             dpdxy_el(i,2) = dpdxy_el(i,2)+dp1(elnode(j,i))*dldxy(j,2,i)
           ENDDO
@@ -98,8 +98,8 @@
 !   but this potentially overestimated the slumping at the wet-dry
 !   limit
 !--------------------------------------------------------------------!
-          ndry = idry(elnode(1,i))+idry(elnode(2,i))+idry(elnode(3,i))
-          IF(ndry.EQ.3) THEN
+          ndry = sum(idry(elnode(1:i34(i),i)))
+          IF(ndry.EQ.i34(i)) THEN
             slope_cr = dry_slope_cr
           ELSE
             slope_cr = wet_slope_cr
@@ -109,6 +109,7 @@
 !--------------------------------------------------------------------!
 ! * Preparation of system equation
 !--------------------------------------------------------------------!
+!Error: YJZ - not working for quads
           n1 = elnode(1,i)
           n2 = elnode(2,i)
           n3 = elnode(3,i)

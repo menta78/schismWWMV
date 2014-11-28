@@ -367,13 +367,10 @@
 ! define the local variables num_nodes
         num_nodes = npa
 
-!        fdb='sflux_0000'
-!        lfdb=len_trim(fdb)
-!        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-!        open(38,file='outputs/'//fdb,status='unknown')       
-!        rewind(38)
+#ifdef DEBUG
         write(38,*)
         write(38,*) 'enter surf_fluxes'
+#endif
 
 ! retrieve the downwelling radiative fluxes
         call get_rad (time, shortwave_d, longwave_d)
@@ -384,10 +381,12 @@
 #endif
 
 ! output info to debug file
+#ifdef DEBUG
         write(38,*)
         write(38,*) 'surf_fluxes: time      = ', time
         write(38,*) 'first_call             = ', first_call
         write(38,*) 'num_nodes              = ', num_nodes
+#endif
 
 ! output debugging info
         do i_node = 1, num_nodes
@@ -399,6 +398,7 @@
             sfc_lev = nvrt
           endif
 
+#ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*)
             write(38,*) 'i_node, sfc u, v, T = ', i_node, &
@@ -415,11 +415,15 @@
      &                  v_air(i_node), p_air(i_node), t_air(i_node), &
      &                  q_air(i_node)
           endif
+#endif
 
         enddo !i_node
 
 ! calculate the turbulent fluxes at the nodes
+#ifdef DEBUG
         write(38,*) 'above turb_fluxes'
+#endif
+
         call turb_fluxes (num_nodes, &
      &                    u_air, v_air, p_air, t_air, q_air, &
      &                    sen_flux, lat_flux, &
@@ -427,11 +431,17 @@
      &                    evap_flux, &
 #endif
      &                    tau_xz, tau_yz)
+
+#ifdef DEBUG
         write(38,*) 'below turb_fluxes'
+#endif
 
 ! now calculate upwards longwave flux at the surface, using black-body
 ! equation
+#ifdef DEBUG
         write(38,*) 'calculating longwave_u'
+#endif
+
         do i_node = 1, num_nodes
 
 ! specify the surface level at this node (depends on coordinate system)
@@ -477,6 +487,7 @@
 
         endif
 
+#ifdef DEBUG
         do i_node = 1, num_nodes
           if (mod(i_node-1,printit) .eq. 0) then
 
@@ -506,8 +517,9 @@
               write(38,*) 'i_node = ', i_node
               write(38,*) 'dry!'
             endif
-          endif
-        enddo
+          endif !mod
+        enddo !i
+#endif /*DEBUG*/
 
 ! set first_call to false, so subsequent calls will know that they're
 ! not the first call
@@ -583,17 +595,21 @@
         integer, parameter :: printit = 1000
         logical converged, dry
 
+#ifdef DEBUG
         write(38,*) 'enter turb_fluxes'
+#endif
 
 ! precalculate constants
         one_third = 1.0 / 3.0
 
 ! now loop over all points
         do i_node = 1, num_nodes
+#ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*)
             write(38,*) 'i_node = ', i_node
           endif
+#endif
 
 ! define whether this node is dry or not (depends on coordinate system)
           dry = &
@@ -643,6 +659,8 @@
 ! calculate the air virtual temperature and density
           t_v = (t_air(i_node) + t_freeze) * (1.0 + 0.608 * mix_ratio)
           rho_air = p_air(i_node) / (r_air * t_v)
+
+#ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*) 'e_sfc, q_sfc, mix_ratio = ', &
      &                   e_sfc, q_sfc, mix_ratio
@@ -652,6 +670,7 @@
      &                   delta_q, delta_theta_v, t_v
             write(38,*) 'rho_air = ', rho_air
           endif
+#endif
 
 ! check air and water speeds, and give warnings and/or bombs for
 ! excessive values
@@ -726,12 +745,15 @@
           endif
           monin = z_u / zeta_u
           zeta_t = z_t / monin
+
+#ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*) 'speed, z_0, u_star = ', &
      &                   speed, z_0, u_star
             write(38,*) 'zeta_u, zeta_t, monin = ', &
      &                   zeta_u, zeta_t, monin
           endif
+#endif
 
 ! iterate a maximum of max_iter times
           iter = 0
@@ -743,10 +765,13 @@
             z_0 = a1 * u_star * u_star / g + a2 * nu / u_star
             re = u_star * z_0 / nu
             z_0_t = z_0 / exp(b1 * (re**0.25) + b2)
+
+#ifdef DEBUG
             if (mod(i_node-1,printit) .eq. 0) then
               write(38,*) 're, z_0, z_0_t = ', &
      &                     re, z_0, z_0_t
             endif
+#endif
 
 ! calculate the zetas
             zeta_u = z_u / monin
@@ -758,9 +783,11 @@
               zeta_t = 2.5
               monin = z_t / zeta_t
               zeta_u = z_u / monin
-              if (mod(i_node-1,printit) .eq. 0) then
-                write(38,*) 'limiting zeta_u, zeta_t, monin!'
-              endif
+
+#ifdef DEBUG
+              if(mod(i_node-1,printit).eq.0) write(38,*) 'limiting zeta_u, zeta_t, monin!'
+!'
+#endif
             endif
 
 ! caulculate u_star, depending on zeta
@@ -910,6 +937,8 @@
      &                (beta * w_star)**2 )
 
             endif
+
+#ifdef DEBUG
             if (mod(i_node-1,printit) .eq. 0) then
               write(38,*) 'iter, u_star, q_star, theta_star = ', &
      &                     iter, u_star, q_star, theta_star
@@ -918,6 +947,7 @@
               write(38,*) 'iter, zeta_u, zeta_t = ', &
      &                     iter, zeta_u, zeta_t
             endif
+#endif
 
 ! bottom of main iteration loop
           if (.not. converged .and. iter .lt. max_iter) goto 100
@@ -959,12 +989,14 @@
             tau_yz(i_node) = 0.0
           endif
 
+#ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*) 'sen_flux, lat_flux = ', &
      &                   sen_flux(i_node), lat_flux(i_node)
             write(38,*) 'tau_xz, tau_yz = ', &
      &                   tau_xz(i_node), tau_yz(i_node)
           endif
+#endif
 
 ! end of wet/dry block
         endif
@@ -972,7 +1004,9 @@
 ! end of loop over points
         enddo
 
+#ifdef DEBUG
         write(38,*) 'exit turb_fluxes'
+#endif
 
       return
       end !turb_fluxes
@@ -1330,6 +1364,7 @@
         time_now = start_frac_jdate + time/secs_per_day
 
 ! output info to debug file
+#ifdef DEBUG
         write(38,*)
         write(38,*) 'get_wind: time (sec)   = ', time
         write(38,*) 'first_call             = ', first_call
@@ -1337,6 +1372,7 @@
         write(38,*) 'current jdate        = ', time_now
         write(38,*) 'dataset 1 exist = ', dataset_1%exist
         write(38,*) 'dataset 2 exist = ', dataset_2%exist
+#endif
 
 ! get the data at this time
         data_name = trim(uwind_name)
@@ -1421,10 +1457,12 @@
 !        rewind(40)
 
 ! output info to debug file
+#ifdef DEBUG
         write(38,*)
         write(38,*) 'get_rad:  time         = ', time
         write(38,*) 'first_call             = ', first_call
         write(38,*) 'num_nodes_out          = ', num_nodes_out
+#endif
 
 ! for the first call only, initialize starting date, datasets, etc 
         if (first_call) then
@@ -1482,7 +1520,9 @@
 
 ! get the current time
         time_now = start_frac_jdate + time/secs_per_day
+#ifdef DEBUG
         write(38,*) 'current jdate        = ', time_now
+#endif
 
 ! get the data at this time
         data_name = trim(dlwrf_name)
@@ -1505,7 +1545,9 @@
 
 ! reduce the downwards shortwave flux at the surface by the albedo
 ! (ensure there are no negative values from interpolation, etc)
+#ifdef DEBUG
         write(38,*) 'reducing shortwave'
+#endif
         do i_node = 1, num_nodes_out
           shortwave_d(i_node) = &
      &      max( (1.0- albedo(i_node))*shortwave_d(i_node), &
@@ -1547,10 +1589,12 @@
 !        rewind(41)
 
 ! output info to debug file
+#ifdef DEBUG
         write(38,*)
         write(38,*) 'get_precip_flux:  time = ', time
         write(38,*) 'first_call             = ', first_call
         write(38,*) 'num_nodes_out          = ', num_nodes_out
+#endif
 
 ! for the first call only, initialize starting date, datasets, etc 
         if (first_call) then
@@ -1606,7 +1650,9 @@
 
 ! get the current time
         time_now = start_frac_jdate + time/secs_per_day
+#ifdef DEBUG
         write(38,*) 'current jdate        = ', time_now
+#endif
 
 ! get the data at this time
         data_name = trim(prate_name)

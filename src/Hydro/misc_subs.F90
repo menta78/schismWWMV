@@ -10,6 +10,7 @@
 ! subroutine eqstate
 ! subroutine asm
 ! function rint_lag
+! function lindex
 ! function lindex_s 
 ! function covar
 ! subroutine cubic_spline
@@ -26,6 +27,9 @@
 ! subroutine zonal_flow
 ! subroutine wbl_GM
 ! subroutine area_coord
+! subroutine ibilinear
+! subroutine quad_shape
+! function quad_int
 
 !===============================================================================
 !===============================================================================
@@ -37,8 +41,8 @@
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl, only: rkind,errmsg,lm2d,ivcor,eta2,dp,kbp,nvrt,kz,h0,h_s,h_c,theta_b,theta_f,s_con1,sigma,ztot,cs, &
-                          &sigma_lcl,iplg
+      use elfe_glbl, only: rkind,errmsg,ivcor,eta2,dp,kbp,nvrt,kz,h0,h_s, &
+     &h_c,theta_b,theta_f,s_con1,sigma,ztot,cs,sigma_lcl,iplg
       use elfe_msgp, only: parallel_abort
       implicit none
 !#ifndef USE_MPIMODULE
@@ -60,7 +64,7 @@
       endif
 
 !     WARNING: explicitly specify bottom/surface to avoid underflow
-      if(lm2d.or.ivcor==2) then !SZ
+      if(ivcor==2) then !SZ
         hmod2=min(dp(inode),h_s)
         ztmp(kz)=-hmod2 !to avoid underflow
         ztmp(nvrt)=eta2(inode)
@@ -69,7 +73,7 @@
           kin=k-kz+1
           if(hmod2<=h_c) then
             ztmp(k)=sigma(kin)*(hmod2+eta2(inode))+eta2(inode)
-          !todo: assert
+           !todo: assert
           else if(eta2(inode)<=-h_c-(dp(inode)-h_c)*theta_f/s_con1) then
             write(errmsg,*)'ZCOOR: Pls choose a larger h_c:',eta2(inode),h_c,itag
             call parallel_abort(errmsg)
@@ -107,7 +111,7 @@
 !        endif
 
         kbpl=kbp(inode)
-        do k=kbpl,nvrt
+        do k=kbpl+1,nvrt-1
           ztmp(k)=(eta2(inode)+dp(inode))*sigma_lcl(k,inode)+eta2(inode)
         enddo !k
 
@@ -151,7 +155,7 @@
 
 !     Local
       integer :: i,j,k,l,m,nd,istop,itr,nsdf,nsdf_gb,isd,isd2,ie,ie2, &
-                 &n1,n2,n3,nodeA,inun,id,id1,l0,istat,iwet,icount,jj,kin
+                 &n1,n2,n3,n4,nodeA,inun,id,id1,l0,istat,iwet,icount,jj,kin
     
       real(rkind) :: cwtmp,tmp,flux_t,etm,dot11,dot12,dot21,dot22,stmp,ttmp
 
@@ -162,7 +166,7 @@
       real(rkind),allocatable :: swild(:,:,:)
       logical :: srwt_xchng(1),prwt_xchng(1)
       logical :: srwt_xchng_gb(1),prwt_xchng_gb(1)
-      logical :: cwtime,lmorph
+      logical :: cwtime
 !-------------------------------------------------------------------------------
 
 !     Flag for comm timing
@@ -175,7 +179,7 @@
       if(it==iths) then
         idry_e=0
         do i=1,nea
-          do j=1,3
+          do j=1,i34(i)
             nd=elnode(j,i)
             if(eta2(nd)+dp(nd)<=h0) then
               idry_e(i)=1
@@ -191,7 +195,7 @@
       idry_e2=idry_e !starting from step n's indices
       if(it/=iths) then
 
-!       Make dry first (to speed up ietration)
+!       Make dry first (to speed up iteration)
         do i=1,np
           if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
         enddo !i
@@ -639,13 +643,6 @@
 
 !...  z-coor. for nodes
 !...  
-!     Define lmorph for depth changes due to morphology
-#ifdef USE_SED
-        lmorph=.true.
-#else
-        lmorph=.false.
-#endif 
-
       !iback=0
       do i=1,npa
         if(ivcor==2) then; if(eta2(i)<=h0-h_s) then
@@ -966,7 +963,7 @@
       integer, intent(in) :: iths,it
 
 !     Local
-      integer :: i,j,k,kin,ie,ifl,n1,n2,n3,icount,nd,isd,jj,istat
+      integer :: i,j,k,kin,ie,ifl,n1,n2,n3,n4,icount,nd,isd,jj,istat
       real(rkind) :: cwtmp,utmp,vtmp,stmp,ttmp,dot11,dot12,dot21,dot22
 
       integer :: idry2(npa),idry_s2(nsa),idry_e2(nea)
@@ -974,7 +971,7 @@
       real(rkind),allocatable :: swild(:,:,:)
       logical :: srwt_xchng(1),prwt_xchng(1)
       logical :: srwt_xchng_gb(1),prwt_xchng_gb(1)
-      logical :: cwtime,lmorph
+      logical :: cwtime
 !-------------------------------------------------------------------------------
 
 ! Flag for comm timing
@@ -982,14 +979,6 @@
 
 !...  z-coor. for nodes
 !...  
-!     Define lmorph for depth changes due to morphology
-#ifdef USE_SED
-      lmorph=.true.
-#else
-      lmorph=.false.
-#endif 
-
-      !iback=0
       do i=1,npa
         if(dp(i)+eta2(i)<=h0) then !dry
           idry2(i)=1 
@@ -1001,57 +990,6 @@
         else !wet
           idry2(i)=0
           call zcoor(0,i,kbp(i),znl(:,i))
-
-!!         S-levels
-!          do k=kz,nvrt
-!            kin=k-kz+1
-!
-!            if(hmod(i)<=h_c) then
-!              !iback(i)=1
-!              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
-!            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
-!              write(errmsg,*)'Pls choose a larger h_c (1):', ' node:', iplg(i), ', elev prev:', eta1(i), ', elev cur:', eta2(i), ', h_c:', h_c
-!              call parallel_abort(errmsg)
-!            else
-!              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
-!            endif
-!          enddo !k=kz,nvrt
-!
-!!         z-levels
-!          if(dp(i)<=h_s) then
-!            kbp(i)=kz
-!          else !bottom index 
-!            if(imm>0.or.it==iths.or.lmorph) then
-!              kbp(i)=0 !flag
-!              do k=1,kz-1
-!                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
-!                  kbp(i)=k
-!                  exit
-!                endif
-!              enddo !k
-!              if(kbp(i)==0) then
-!                write(errmsg,*)'Cannot find a bottom level for node (3):',i
-!!'
-!                call parallel_abort(errmsg)
-!              endif
-!            endif !imm
-!
-!            if(kbp(i)>=kz.or.kbp(i)<1) then
-!              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
-!              call parallel_abort(errmsg)
-!            endif
-!            znl(kbp(i),i)=-dp(i)
-!            do k=kbp(i)+1,kz-1
-!              znl(k,i)=ztot(k)
-!            enddo !k
-!          endif
-!
-!          do k=kbp(i)+1,nvrt
-!            if(znl(k,i)-znl(k-1,i)<=0) then
-!              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
-!              call parallel_abort(errmsg)
-!            endif
-!          enddo !k
         endif !wet ot dry
       enddo !i=1,npa
 
@@ -1074,7 +1012,7 @@
 !      if(it/=iths) idry_e0=idry_e !save only for upwindtrack()
 
       do i=1,nea
-        idry_e2(i)=max0(idry2(elnode(1,i)),idry2(elnode(2,i)),idry2(elnode(3,i)))
+        idry_e2(i)=maxval(idry2(elnode(1:i34(i),i)))
       enddo !i
 
 !      write(10,*)'Element'
@@ -1138,14 +1076,19 @@
 
 !       Wet
         n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
-        if(idry2(n1)/=0.or.idry2(n2)/=0.or.idry2(n3)/=0) then
+        if(maxval(idry2(elnode(1:i34(i),i)))/=0) then
           write(errmsg,*)'level0: Element-node inconsistency (0):',ielg(i),idry_e2(i), &
-     &iplg(elnode(1:3,i)),idry2(elnode(1:3,i)),idry(elnode(1:3,i))
+     &iplg(elnode(1:i34(i),i)),idry2(elnode(1:i34(i),i)),idry(elnode(1:i34(i),i))
           call parallel_abort(errmsg)
         endif
-        kbe(i)=min(kbp(n1),kbp(n2),kbp(n3))
+        kbe(i)=minval(kbp(elnode(1:i34(i),i)))
         do k=kbe(i),nvrt
-          ze(k,i)=(znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3))/3
+          ze(k,i)=znl(max(k,kbp(n1)),n1)+znl(max(k,kbp(n2)),n2)+znl(max(k,kbp(n3)),n3)
+          if(i34(i)==4) then
+            n4=elnode(4,i)
+            ze(k,i)=ze(k,i)+znl(max(k,kbp(n4)),n4)
+          endif
+          ze(k,i)=ze(k,i)/i34(i)
           if(k>=kbe(i)+1) then; if(ze(k,i)-ze(k-1,i)<=0) then
             write(errmsg,*)'Weird element (2):',k,i,ze(k,i),ze(k-1,i)
             call parallel_abort(errmsg)
@@ -1263,8 +1206,8 @@
           if(idry2(n1)/=0.or.idry2(n2)/=0) then
             write(errmsg,*)'Side-node inconsistency (1):',it,islg(i),'node:',iplg(n1),iplg(n2), &
 !'
-              eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
-              (isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
+             &eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
+             &(isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
@@ -1305,7 +1248,7 @@
                 ie=isdel(j,i)
                 if(ie/=0) then
                   if(ie<0) call parallel_abort('levels0: ghost element')
-                  do jj=1,3 !side; in the aug. domain
+                  do jj=1,i34(ie) !side; in the aug. domain
                     isd=elside(jj,ie)
                     if(idry_s(isd)==0) then
                       icount=icount+1
@@ -1449,6 +1392,13 @@
       real(rkind) :: swild(2),swild2(nvrt,2),swild3(nvrt),swild5(3,2)
       real(rkind), allocatable :: swild4(:,:,:) !swild4 used for exchange
 
+!      swild=-99; swild2=-99; swild3=-99 !initialize for calling vinter
+!     Nodal vel.
+!     For ics=2, it is in nodal frame
+      if(indvel<=0) then !pure triangles only
+!-------------------------------------------------------------------------------
+      if(lhas_quad) call parallel_abort('nodalvel: (2)')
+
 !     Compute discontinuous hvel first (used in btrack etc)
 !     Defined in element frame for ics=2
       ufg=0; vfg=0
@@ -1475,17 +1425,12 @@
               vfg(k,i,j)=swild5(2,2)+swild5(3,2)-swild5(1,2)
             endif !ics
 !           impose bounds for ufg, vfg
-            ufg(k,i,j)=max(-rmaxvel,min(rmaxvel,ufg(k,i,j)))
-            vfg(k,i,j)=max(-rmaxvel,min(rmaxvel,vfg(k,i,j)))
+            ufg(k,i,j)=max(-rmaxvel1,min(rmaxvel1,ufg(k,i,j)))
+            vfg(k,i,j)=max(-rmaxvel2,min(rmaxvel2,vfg(k,i,j)))
           enddo !j
         enddo !k
       enddo !i=1,nea
 
-!      swild=-99; swild2=-99; swild3=-99 !initialize for calling vinter
-!     Nodal vel.
-!     For ics=2, it is in nodal frame
-      if(indvel<=0) then
-!-------------------------------------------------------------------------------
       uu2=0; vv2=0; ww2=0 !initialize and for dry nodes etc.
       do i=1,np !resident only
         if(idry(i)==1) cycle
@@ -1568,8 +1513,8 @@
           do j=1,nne(i)
             ie=indel(j,i)
             id=iself(j,i)
-            do l=1,2
-              isd=elside(nx(id,l),ie)
+            do l=1,2 !2 adjacent sides
+              isd=elside(nxq(l+i34(ie)-3,id,i34(ie)),ie)
               if(isdel(2,isd)==0) then !bnd side (even for ghost) - contribution doubles
                 nfac0=2
               else
@@ -1638,9 +1583,9 @@
 !                call vinter
 !              endif
 !            else !along S
-            swild(1)=we(k,ie)
+            !swild(1)=we(k,ie)
 !            endif !Z or S
-            ww2(k,i)=ww2(k,i)+swild(1)*area(ie)
+            ww2(k,i)=ww2(k,i)+we(k,ie)*area(ie)
             weit_w=weit_w+area(ie)
           enddo !j=1,nne(i)
 
@@ -2091,9 +2036,32 @@
 
       end function rint_lag
 
-!     Compute local index of a side (0 if inside aug. domain)
+      ! Compute local index of a node (0 if not a local node)
+      function lindex(node,ie)
+      use elfe_glbl
+      use elfe_msgp, only : parallel_abort
+      implicit none
+      integer :: lindex
+      integer,intent(in) :: node,ie
+      integer :: j
+
+      lindex=0 !error flag
+      do j=1,i34(ie)
+        if(node==elnode(j,ie)) lindex=j
+      enddo
+!     if(lindex.eq.0) then
+!       write(errmsg,*)'LINDEX: ',node,' is not in element ',ie
+!       call parallel_abort(errmsg)
+!     endif
+
+      end function lindex
+
+!===============================================================================
+!===============================================================================
+
+!     Compute local index of a side (0 if not a local side)
       function lindex_s(i,ie)
-      use elfe_glbl, only : rkind,elside
+      use elfe_glbl, only : rkind,elside,i34
       implicit none
 
       integer :: lindex_s
@@ -2102,7 +2070,7 @@
       integer :: l0,l
 
       l0=0 !local index
-      do l=1,3
+      do l=1,i34(ie)
         if(elside(l,ie)==i) then
           l0=l
           exit
@@ -2221,7 +2189,7 @@
 !===============================================================================
 !     Generate coefficients (2nd derivatives) for cubic spline for interpolation later
 !     Inputs: 
-!            npts: dimesion for xcor etc; # of data pts;
+!            npts: dimesion for xcor etc; # of data pts (>=2);
 !            xcor(npts): x coordinates; must be in ascending order (and distinctive);
 !            yy(npts): functional values; 
 !            yp1 and yp2: 1st derivatives at xcor(1) and xcor(npts);
@@ -2240,6 +2208,8 @@
       !Local
       integer :: k
       real(rkind) :: alow(npts),bdia(npts),cupp(npts),rrhs(npts),gam(npts)
+
+      if(npts<2) call parallel_abort('CUBIC_SP: npts<2')
 
       do k=1,npts
         if(k==1) then
@@ -2576,7 +2546,7 @@
 !              call project_hvec(dvar_dxy(1,k,i),dvar_dxy(2,k,i),eframe(:,:,ie),sframe(:,:,i),tmp1,tmp2)
 !              dvar_dxy(1,k,i)=tmp1
 !              dvar_dxy(2,k,i)=tmp2
- !           endif !ics
+!            endif !ics
           enddo !k          
 
         else !internal side
@@ -2851,8 +2821,8 @@
 
           vmer=-u00_zonal*sin(xlon(nd))*sin(alpha_zonal) !meridional vel.
           call project_hvec(uzonal,vmer,pframe(:,:,nd),eframe(:,:,i),utmp,vtmp)
-          ufg(:,i,j)=utmp 
-          vfg(:,i,j)=vtmp
+!          ufg(:,i,j)=utmp 
+!          vfg(:,i,j)=vtmp
         enddo !j
       enddo !i
       we=0
@@ -3009,7 +2979,7 @@
       end subroutine wbl_GM
 
 !===============================================================================
-!     Compute area coordinates for a given pt w.r.t. to an element
+!     Compute area coordinates for a given pt w.r.t. to a triangular element
 !     If ifl=1, will fix 0 or negative area coord. (assuming it's not too negative)
 !     and in this case, the pt will be nudged into the element
 !===============================================================================
@@ -3021,7 +2991,7 @@
       integer, intent(in) :: ifl !flag; =1: fix negative area coord.
       integer, intent(in) :: nnel !element #
       real(rkind), intent(in) :: gcor0(3),frame0(3,3) !proj. info for ics=2
-      real(rkind), intent(inout) :: xt,yt !coordinates (in the proj. of gcor0 if ics=2)
+      real(rkind), intent(inout) :: xt,yt !coordinates (in the local frame0 if ics=2)
       real(rkind), intent(out) :: arco(3)
  
       !Function
@@ -3075,3 +3045,311 @@
       endif !ifl
 
       end subroutine area_coord
+
+!===============================================================================
+!     Inverse bilinear mapping for quadrangles
+!     Convexity of the quad must have been checked, and the pt (x,y)
+!     must be 'reasonably' inside the quad. The routine will do what it
+!     can to compute nearest (xi,eta).
+!===============================================================================
+      subroutine ibilinear(itag,ie,x1,x2,x3,x4,y1,y2,y3,y4,x,y,xi,eta,shapef,icaseno)
+      use elfe_glbl, only : rkind,errmsg,ielg,area
+      use elfe_msgp, only : parallel_abort
+      implicit none
+      real(rkind), parameter:: small3=1.d-5
+      real(rkind), parameter:: thres=1.1d0 !threshold used to check local coord.
+
+      integer, intent(in) :: itag !tag received from quad_shape() to ID call routine (info only)
+      integer, intent(in) :: ie !local elem. #
+      real(rkind), intent(in) :: x1,x2,x3,x4,y1,y2,y3,y4,x,y !all in eframe if ics=2
+      integer, intent(out) :: icaseno
+      real(rkind), intent(out) :: xi,eta,shapef(4)
+
+      integer :: icount,i
+      real(rkind) :: axi(2),aet(2),bxy(2),root_xi(2),root_et(2), &
+     &x0,y0,dxi,deta,tmp1,tmp2,delta,beta,gamma
+
+!     Consts.
+      x0=(x1+x2+x3+x4)/4d0
+      y0=(y1+y2+y3+y4)/4d0
+      axi(1)=x2-x1+x3-x4 !C_1^x     
+      axi(2)=y2-y1+y3-y4 !C_1^y     
+      aet(1)=x3+x4-x1-x2 !C_2^x
+      aet(2)=y3+y4-y1-y2 !C_2^y
+      bxy(1)=x1-x2+x3-x4 !C_3^x
+      bxy(2)=y1-y2+y3-y4 !C_3^y
+      dxi=2d0*((x3-x4)*(y1-y2)-(y3-y4)*(x1-x2))
+      deta=2d0*((x4-x1)*(y3-y2)-(y4-y1)*(x3-x2))
+
+!     Inverse mapping
+      if(abs(dxi)<small3.and.abs(deta)<small3) then
+        icaseno=1      
+        !dd=4*area(ie) !axi(1)*aet(2)-axi(2)*aet(1)
+        !if(dd==0) then
+        !  write(errmsg,*)'IBILINEAR case 1, area=0'
+        !  call parallel_abort(errmsg)
+        !endif
+        xi=(aet(2)*(x-x0)-aet(1)*(y-y0))/area(ie)
+        eta=(axi(1)*(y-y0)-axi(2)*(x-x0))/area(ie)
+
+        if(abs(xi)>thres.or.abs(eta)>thres) then
+          write(errmsg,*)'IBILINEAR: Out of bound in ibilinear (1):',itag,xi,eta,ielg(ie),x,y,dxi,deta
+          call parallel_abort(errmsg)
+        endif
+
+      else if(abs(dxi)<small3.and.abs(deta)>=small3) then   
+        icaseno=2      
+        eta=4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))/deta
+
+        tmp1=area(ie)+bxy(1)*(y-y0)-bxy(2)*(x-x0)
+        if(abs(tmp1)<=small3) then
+          write(errmsg,*)'IBILINEAR: case II bomb; ',itag,eta,ielg(ie),x,y,tmp1,area(ie),x0,y0,bxy(1:2)
+          call parallel_abort(errmsg)
+        endif
+        xi=((x-x0)*aet(2)-(y-y0)*aet(1))/tmp1
+!        tmp1=axi(1)+bxy(1)*eta
+!        tmp2=axi(2)+bxy(2)*eta
+!        if(tmp1/=0) then
+!          xi=(4*(x-x0)-aet(1)*eta)/tmp1
+!        else if(tmp2/=0) then
+!          xi=(4*(y-y0)-aet(2)*eta)/tmp2
+!        else !both=0
+!          write(12,*)'IBILINEAR: case 2 arbitrary; ',itag
+!          xi=0
+!        endif
+        !Debug
+         !write(12,*)'CAse II:',ielg(ie),x,y,xi,eta
+
+        if(abs(xi)>thres.or.abs(eta)>thres) then
+          write(errmsg,*)'IBILINEAR: Out of bound in ibilinear (2):',itag,xi,eta,ielg(ie),x,y,tmp1
+          call parallel_abort(errmsg)
+        endif
+
+      else if(abs(dxi)>=small3.and.abs(deta)<small3) then   
+        icaseno=3      
+        xi=4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))/dxi
+        tmp1=area(ie)+bxy(2)*(x-x0)-bxy(1)*(y-y0)
+        if(abs(tmp1)<=small3) then
+          write(errmsg,*)'IBILINEAR: case III bomb; ',itag,eta,ielg(ie),x,y,tmp1,area(ie),x0,y0,bxy(1:2)
+          call parallel_abort(errmsg)
+        endif
+        eta=((y-y0)*axi(1)-(x-x0)*axi(2))/tmp1
+ 
+!        tmp1=aet(1)+bxy(1)*xi
+!        tmp2=aet(2)+bxy(2)*xi
+!        if(tmp1/=0) then
+!          eta=(4*(x-x0)-axi(1)*xi)/tmp1
+!        else if(tmp2/=0) then
+!          eta=(4*(y-y0)-axi(2)*xi)/tmp2
+!        else !both=0
+!          write(12,*)'IBILINEAR: case 3 arbitrary; ',itag
+!          eta=0
+!        endif
+        !Debug
+         !write(12,*)'CAse III:',ielg(ie),x,y,xi,eta
+
+        if(abs(xi)>thres.or.abs(eta)>thres) then
+          write(errmsg,*)'IBILINEAR: Out of bound in ibilinear (3):',itag,xi,eta,ielg(ie),x,y,tmp1
+          call parallel_abort(errmsg)
+        endif
+      else !General case
+        icaseno=4      
+        !beta=aet(2)*axi(1)-aet(1)*axi(2)-4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))
+        beta=4*area(ie)+4d0*(bxy(1)*(y-y0)-bxy(2)*(x-x0))
+        gamma=4d0*(aet(1)*(y-y0)-aet(2)*(x-x0))
+        delta=beta*beta-4*gamma*dxi
+        if(delta==0d0) then
+          xi=-beta/2d0/dxi
+          eta=(4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))-xi*dxi)/deta
+        else if(delta>0d0) then
+          root_xi(1)=(-beta+sqrt(delta))/2d0/dxi
+          root_xi(2)=(-beta-sqrt(delta))/2d0/dxi
+          icount=0
+          do i=1,2
+            root_et(i)=(4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))-root_xi(i)*dxi)/deta
+            if(abs(root_xi(i))<=1.d0.and.abs(root_et(i))<=1.d0) then
+              !Take either if there are two solutions
+              xi=root_xi(i)
+              eta=root_et(i)
+              icount=icount+1
+            endif
+          enddo !i
+          if(icount==0) then !one more chance
+            do i=1,2
+              if(abs(root_xi(i))<=thres.and.abs(root_et(i))<=thres) then
+                xi=root_xi(i); eta=root_et(i); icount=icount+1
+              endif
+            enddo !i
+            if(icount==0) then
+              write(errmsg,*)'IBILINEAR: Abnormal instances: ',itag,root_xi(:),root_et(:), &
+              &icount,ielg(ie),x,y,x1,x2,x3,x4,y1,y2,y3,y4,dxi,deta,bxy(1:2)
+              call parallel_abort(errmsg)
+            endif
+          endif !icount==0
+           
+        else !delta<0
+          write(errmsg,*)'IBILINEAR: No roots; ',itag,delta,ielg(ie),x,y
+          call parallel_abort(errmsg)
+        endif !delta
+
+        if(abs(xi)>thres.or.abs(eta)>thres) then
+          write(errmsg,*)'IBILINEAR: Out of bound in ibilinear (4):',itag,xi,eta,ielg(ie),x,y,delta, &
+     &root_xi(1:2),root_et(1:2)
+          call parallel_abort(errmsg)
+        endif
+      endif !4 cases
+
+      xi=min(1.d0,max(xi,-1.d0))
+      eta=min(1.d0,max(eta,-1.d0))
+      shapef(1)=(1d0-xi)*(1d0-eta)/4d0
+      shapef(2)=(1d0+xi)*(1d0-eta)/4d0
+      shapef(3)=(1d0+xi)*(1d0+eta)/4d0
+      shapef(4)=(1d0-xi)*(1d0+eta)/4d0
+
+      end subroutine ibilinear
+
+!===============================================================================
+!     If ifl=0, check if a pt (x,y) is inside a quad elem (ie), and if so, compute 4 shape
+!     functions (otherwise undefined).
+!     if ifl=1, assume the pt is reasonably inside quad, and compute
+!     shape functions and nudge the original pt into quad.
+!     If ics=2, (x,y) is assumed to be in elem. frame of ie.
+!===============================================================================
+      subroutine quad_shape(ifl,itag,ie,x,y,inside,shapef)
+      use elfe_glbl, only : rkind,errmsg,ics,ielg,area,xctr,yctr,zctr,eframe,i34, &
+     &elnode,xnd,ynd,znd,nxq,small2
+      use elfe_msgp, only : parallel_abort
+      implicit none
+
+      !itag: info only; tags to ID calling routine and to pass onto ibilinear 
+      !ie: local elem. #
+      integer, intent(in) :: ifl,itag,ie
+      real(rkind), intent(inout) :: x,y !in eframe if ics=2
+      integer, intent(out) :: inside !/=0: inside -sig. only if ifl=0
+      real(rkind), intent(out) :: shapef(4)
+
+      real(rkind) :: signa
+
+      integer :: i,in1,in2,nd,icaseno
+      real(rkind) :: swild(4,2),swild2(4),xi,eta,tmp
+      
+      if(i34(ie)/=4) call parallel_abort('quad_shape: not  quad')
+      inside=0
+
+      if(ics==1) then
+        swild(1:4,1)=xnd(elnode(1:4,ie))
+        swild(1:4,2)=ynd(elnode(1:4,ie))
+      else !ics=2
+        do i=1,4
+          nd=elnode(i,ie)
+          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd), &
+     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),swild(i,1),swild(i,2),tmp)
+        enddo !i
+      endif !ics
+
+      if(ifl==0) then
+        do i=1,4
+          in1=nxq(1,i,i34(ie))
+          in2=nxq(2,i,i34(ie))
+          swild2(i)=signa(swild(in1,1),swild(in2,1),x,swild(in1,2),swild(in2,2),y)
+        enddo !i
+        tmp=minval(swild2(1:4))/area(ie)
+        if(tmp>-small2) then
+          inside=1
+          call ibilinear(itag,ie,swild(1,1),swild(2,1),swild(3,1),swild(4,1), &
+     &swild(1,2),swild(2,2),swild(3,2),swild(4,2),x,y,xi,eta,shapef,icaseno)
+        endif !inside quad
+      else !ifl=1 - already inside
+        call ibilinear(itag,ie,swild(1,1),swild(2,1),swild(3,1),swild(4,1), &
+     &swild(1,2),swild(2,2),swild(3,2),swild(4,2),x,y,xi,eta,shapef,icaseno)
+        !Update pt
+        x=dot_product(swild(1:4,1),shapef(1:4))
+        y=dot_product(swild(1:4,2),shapef(1:4))
+      endif !ifl
+
+      end subroutine quad_shape
+
+!===============================================================================
+!     Numerical/analytical integration related to quad elements
+!     Inputs:
+!            indx: 1, return \int \phi_ip*\phi_l dA; 2, return \int \nabla\phi_ip \cdot \nabla\phi_l dA
+!            ie: elem. # (local)
+!            ip,ll: local node indices \in[1:4] of shape function
+!===============================================================================
+      function quad_int(indx,ie,ip,ll)
+      use elfe_glbl, only : rkind,errmsg,ics,ielg,area,i34, &
+     &elnode,nxq,ixi_n,iet_n,xel,yel
+      use elfe_msgp, only : parallel_abort
+      implicit none
+
+      real(rkind) :: quad_int
+      integer, intent(in) :: indx,ie,ip,ll
+
+      !Cubic quadrature at the moment
+      integer :: i,j,n1,n2,n3,n4
+      real(rkind) :: pt(2),weit(2),wild(100),x_xi,x_et,y_xi,y_et, &
+     &phiip_x,phiip_y,phill_x,phill_y,coe1,coe2,rjac,rint,tmp
+
+      if(i34(ie)/=4.or.ip<1.or.ip>4.or.ll<1.or.ll>4) call parallel_abort('quad_int: not quad')
+!Error: ics=2 not checked
+      !Const
+      pt(1)=0.57735
+      pt(2)=-pt(1)
+      weit=1
+
+      coe1=(xel(2,ie)-xel(1,ie))*(yel(3,ie)-yel(4,ie))-(xel(3,ie)-xel(4,ie))*(yel(2,ie)-yel(1,ie))
+      coe2=(xel(3,ie)-xel(2,ie))*(yel(4,ie)-yel(1,ie))-(xel(4,ie)-xel(1,ie))*(yel(3,ie)-yel(2,ie))
+      wild(1)=xel(2,ie)+xel(3,ie)-xel(1,ie)-xel(4,ie)
+      wild(2)=yel(2,ie)+yel(3,ie)-yel(1,ie)-yel(4,ie)
+      wild(3)=xel(1,ie)+xel(3,ie)-xel(2,ie)-xel(4,ie)
+      wild(4)=yel(1,ie)+yel(3,ie)-yel(2,ie)-yel(4,ie)
+      wild(5)=xel(3,ie)+xel(4,ie)-xel(1,ie)-xel(2,ie)
+      wild(6)=yel(3,ie)+yel(4,ie)-yel(1,ie)-yel(2,ie)
+
+      if(indx==1) then  !analytical
+        quad_int=1.d0/16*(1.+ixi_n(ip)*ixi_n(ll)/3.)*(area(ie)*(1.+iet_n(ip)*iet_n(ll)/3.)+ &
+     &coe2/8.*(iet_n(ip)+iet_n(ll)))+coe1/96*(1.+iet_n(ip)*iet_n(ll)/3.)*(ixi_n(ip)+ixi_n(ll))
+
+        !Debug
+!        tmp=0
+!        do i=1,2 !eta pt
+!          do j=1,2 !xi pt
+!            rjac=area(ie)/4+pt(j)/8*coe1+pt(i)/8*coe2 !Jacobian
+!            if(rjac<=0) call parallel_abort('quad_int: Jac<=0')
+!            rint=rjac*(1.+ixi_n(ip)*pt(j))*(1.+iet_n(ip)*pt(i))*(1.+ixi_n(ll)*pt(j))*(1.+iet_n(ll)*pt(i))/16.
+!            tmp=tmp+weit(i)*weit(j)*rint
+!          enddo !j
+!        enddo !i
+!        write(12,*)'COMP:',ielg(ie),ip,ll,real(quad_int),real(tmp),real((quad_int-tmp)/quad_int)
+
+      else !numerical  integration
+        quad_int=0
+        do i=1,2 !eta pt
+          do j=1,2 !xi pt
+            rjac=area(ie)/4+pt(j)/8*coe1+pt(i)/8*coe2 !Jacobian
+            if(rjac<=0) call parallel_abort('quad_int: Jac<=0')
+
+            if(indx==2) then
+              x_xi=0.25*(wild(1)+pt(i)*wild(3))
+              x_et=0.25*(wild(5)+pt(j)*wild(3))
+              y_xi=0.25*(wild(2)+pt(i)*wild(4))
+              y_et=0.25*(wild(6)+pt(j)*wild(4))
+              !Following 4 do not have Jacobian
+              phiip_x=y_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))-y_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))
+              phiip_y=x_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))-x_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))
+              phill_x=y_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))-y_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))
+              phill_y=x_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))-x_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))
+              rint=(phiip_x*phill_x+phiip_y*phill_y)/rjac
+            else
+              call parallel_abort('quad_int: unknown indx')
+            endif
+
+            quad_int=quad_int+weit(i)*weit(j)*rint
+          enddo !j
+        enddo !i
+      endif !indx
+
+      end function quad_int
+
+!===============================================================================
+!===============================================================================

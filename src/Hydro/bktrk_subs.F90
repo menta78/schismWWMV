@@ -636,8 +636,8 @@ subroutine inter_btrack(itime,nbt,btlist)
 
   ! Deallocate communication data structures
   deallocate(nbtsend,ibtsend,nbtrecv,ibtrecv, &
-  btsend_type,btsend_rqst,btsend_stat, &
-  btrecv_type,btrecv_rqst,btrecv_stat,stat=stat)
+  &btsend_type,btsend_rqst,btsend_stat, &
+  &btrecv_type,btrecv_rqst,btrecv_stat,stat=stat)
   if(stat/=0) call parallel_abort('INTER_BTRACK: rqst/stat deallocation failure')
 #if MPIVERSION==1
   deallocate(bbtsend,bbtrecv,stat=stat)
@@ -676,7 +676,7 @@ end subroutine inter_btrack
 !             frame0(3,3): frame tensor at original start pt (node/side/element) 
 !                          (2nd index is axis id) for ics=2;
 !             dtbk: target tracking step (actual step may be smaller)
-!             vis_coe: weighting factor between continuous and discontinuous vel.
+!             vis_coe: weighting factor between continuous and discontinuous vel. - not used anymore
 !             
 !       Input/output:
 !             time_rm: remaining time (<=dt);
@@ -687,7 +687,8 @@ end subroutine inter_btrack
 !             nnel,jlev: initial and final element and level;
 !
 !       Output:
-!             sclr(4): interpolated T,S, dfv, dfh (only if iexit=.false.);
+!             sclr(4): interpolated T,S, dfv, dfh (only if iexit=.false., and
+!             ELM transport and pure triangular grid) -should remove dfv, dfh;
 !             iexit: logical flag indicating backtracking exits augmented subdomain. If
 !                    iexit=.true., nnel is inside the aug. domain and should also be inside
 !                    one of the neighboring processes. (xt,yt) is inside nnel.
@@ -719,8 +720,8 @@ end subroutine inter_btrack
                      &tsd_min,tsd_max,ssd_min,ssd_max,t_min,t_max, &
                      &s_min,s_max,dfvint,dfhint
 
-      real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2),vxn(3),vyn(3),vzn(3)
-      real(rkind) :: arco(3),t_xi(6),s_xi(6),sig(3),subrat(4),ztmp(nvrt), &
+      real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2) !,vxn(3),vyn(3),vzn(3)
+      real(rkind) :: arco(4),t_xi(6),s_xi(6),sig(3),subrat(4),ztmp(nvrt), &
      &swild(10),swild2(10,nvrt),swild3(nvrt) 
       real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,2) !,tsdata(mnei_kr,2)
       logical :: lrk
@@ -923,7 +924,6 @@ end subroutine inter_btrack
           vmag=sqrt(uuint**2+vvint**2)
           if(vmag>velmin_btrack) then 
             !Nudge the final point a little; this may create variation using different # of processors
-            !time_rm=1.e-8*dt
             time_rm=1.e-4*dt
             iexit=.true.; return
           endif !vmag
@@ -958,8 +958,6 @@ end subroutine inter_btrack
               endif !ics
               uvdata(i,1)=vxl(1,1)*(1-zrat)+vxl(1,2)*zrat
               uvdata(i,2)=vxl(2,1)*(1-zrat)+vxl(2,2)*zrat
-              !uvdata(i,1)=uu2(jlev,nd)*(1-zrat)+uu2(jlev-1,nd)*zrat
-              !uvdata(i,2)=vv2(jlev,nd)*(1-zrat)+vv2(jlev-1,nd)*zrat
             endif
           enddo !all ball nodes
 
@@ -1016,7 +1014,7 @@ end subroutine inter_btrack
         call parallel_abort(errmsg)
       endif
  
-      if(iupwind_t/=0) return
+      if(iupwind_t/=0.or.lhas_quad) return
 
 !     Split-linear, quadratic or Kriging
       if(lqk(nnel)==1) then
@@ -1277,7 +1275,7 @@ end subroutine inter_btrack
 !       ipsgb: global originating node or side or element index; (info only)
 !       gcor0(3): global coord. of the originating pt (for ics=2);
 !       frame0(3,3): frame tensor at originating pt (2nd index is axis id) (for ics=2);
-!       vis_coe: weighting factor between continuous and discontinuous vel.
+!       vis_coe: weighting factor between continuous and discontinuous vel. - not used anymore
 !       time: time step from (x0,y0,z0) to (xt,yt,zt);
 !       x0,y0,z0:  starting pt. (x0,y0) must be inside nnel 
 !                  (for ics=2, z0 is in vertical direction and coord. are in frame0); 
@@ -1299,7 +1297,7 @@ end subroutine inter_btrack
 
 !      Following outputs are valid only if nfl<=1:
 !      kbpl: the local bottom level at (xt,yt);
-!      arco(3): area coordinates of (xt,yt);
+!      arco(4): shape functions of (xt,yt);
 !      zrat: vertical ratio of zt (=0 when zt=ztmp(jlev));
 !      ztmp(nvrt):  z-coords. at (xt,yt);
 !      uuint,vvint,wwint: interpolated vel. at end pt. In frame0 if ics=2.
@@ -1315,18 +1313,18 @@ end subroutine inter_btrack
       integer, intent(inout) :: nnel,jlev
       real(rkind), intent(inout) :: xt,yt,zt
       integer, intent(out) :: nfl,kbpl
-      real(rkind), intent(out) :: trm,arco(3),zrat,ztmp(nvrt),uuint,vvint,wwint
+      real(rkind), intent(out) :: trm,arco(4),zrat,ztmp(nvrt),uuint,vvint,wwint
 
       !Function
       real(rkind) :: signa
 
       !Local
-      integer :: jk(3)
-      real(rkind) :: wild(10,2),wild2(10,2),wild3(3,2) !,xy_l(3,2)
-      real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2),vxn(3),vyn(3),vzn(3),ztmp2(nvrt,3)
+      integer :: jk(4)
+      real(rkind) :: wild(10,2),wild2(10,2),wild3(4,2) !,xy_l(3,2)
+      real(rkind) :: vxl(4,2),vyl(4,2),vzl(4,2),vxn(4),vyn(4),vzn(4),ztmp2(nvrt,4)
 
       integer :: nnel00,jlev00,nel,i,j,l,nel_j,jd1,jd2,iflag,it,md1,md2,lit, &
-                 &isd,n1,n2,n3,kin,nd,lev,k
+                 &isd,n1,n2,n3,kin,nd,lev,k,inside1,inside2
       real(rkind) :: xt00,yt00,zt00,xcg,ycg,zcg,xcg2,ycg2,zcg2,pathl,ar_min1, &
                      &ar_min2,xn1,yn1,zn1,xn2,yn2,zn2,ar1,ar2,xin,yin,zin,tt1, &
                      &tt2,xt2,yt2,zt2,xtmp,ytmp,eps,dist,tmp,xctr3,yctr3,vtan, &
@@ -1381,17 +1379,29 @@ end subroutine inter_btrack
       endif
 
 !     Check start and end pts
-      call area_coord(0,nel,gcor0,frame0,xcg,ycg,arco)
-      ar_min1=minval(arco) !info for debug only
-      call area_coord(0,nel,gcor0,frame0,xt,yt,arco)
-      ar_min2=minval(arco)
-      if(ar_min2>-small1) then
-        !Fix A.C. for 0/negative
-        if(ar_min2<=0) call area_coord(1,nel,gcor0,frame0,xt,yt,arco)
-        nnel=nel
-        trm=0
-        go to 400
-      endif
+      if(i34(nel)==3) then 
+        call area_coord(0,nel,gcor0,frame0,xcg,ycg,arco)
+        ar_min1=minval(arco(1:3)) !info for debug only
+        call area_coord(0,nel,gcor0,frame0,xt,yt,arco)
+        ar_min2=minval(arco(1:3))
+        if(ar_min2>-small1) then
+          !Fix A.C. for 0/negative
+          if(ar_min2<=0) call area_coord(1,nel,gcor0,frame0,xt,yt,arco)
+          nnel=nel
+          trm=0
+          go to 400
+        endif
+      else !quad
+        call quad_shape(0,1,nel,xcg,ycg,inside1,arco) !info only
+        ar_min1=minval(arco) !info for debug only
+        call quad_shape(0,2,nel,xt,yt,inside2,arco)
+        ar_min2=minval(arco)
+        if(inside2/=0) then
+          nnel=nel
+          trm=0
+          go to 400
+        endif
+      endif !i34
 
 !     (xt,yt) not in nel, and thus (x0,y0) and (xt,yt) are distinctive
 !     Find starting edge nel_j
@@ -1400,9 +1410,9 @@ end subroutine inter_btrack
       loop6: do i=1,2
         wild=0; wild2=0 !initialize for debugging output
         nel_j=0
-        do j=1,3 !sides
-          jd1=elnode(nx(j,1),nel)
-          jd2=elnode(nx(j,2),nel)
+        do j=1,i34(nel) !sides
+          jd1=elnode(nxq(1,j,i34(nel)),nel)
+          jd2=elnode(nxq(2,j,i34(nel)),nel)
           if(ics==1) then
             xn1=xnd(jd1); yn1=ynd(jd1)
             xn2=xnd(jd2); yn2=ynd(jd2)
@@ -1432,7 +1442,7 @@ end subroutine inter_btrack
               nel_j=j; exit loop6
             endif
           endif !ar1>=0.and.ar2>=0
-        enddo !j=1,3
+        enddo !j=1,i34
 
         if(nel_j==0) then
           if(ics==1) then
@@ -1446,26 +1456,34 @@ end subroutine inter_btrack
             write(12,*)'QUICKSEARCH: no intersecting edge; start ID (node/side/elem)=', &
      &l_ns,'; start gb. node/side/elem #=',ipsgb,'; start level=',jlev,'; current elem=',ielg(nel), &
      &'; cg (local) coord.=',xcg2,ycg2,zcg2,'; end coord.=',xt2,yt2,zt2, &
-     &'; signed areas (cg,1,t)@ nodes followed by (cg,t,2)@ nodes=',wild2(1:3,1:2), &
+     &'; signed areas (cg,1,t)@ nodes followed by (cg,t,2)@ nodes=',wild2(1:i34(nel),1:2), &
      &'; xcg,ycg,xt,yt=',xcg,ycg,xt,yt, &
      &'; time step from cg to t=',time,'; time remaining=',trm, &
      &'; min. area coord. for cg, t=',ar_min1,ar_min2,'; input vel=',uuint0,vvint0,wwint0, &
      &idx,itr,jlev00
             !Nudge (xcg,ycg) to off centroid (to escape some tricky underflow)
-            wild(1,1)=1./3-1.12e-2; wild(2,1)=1./3-1.09e-2; wild(3,1)=1-wild(1,1)-wild(2,1) !A.C.
-            xtmp=dot_product(wild(1:3,1),wild3(1:3,1))
-            ytmp=dot_product(wild(1:3,1),wild3(1:3,2))
+            if(i34(nel)==3) then
+              wild(1,1)=1./3-1.12e-2; wild(2,1)=1./3-1.09e-2; wild(3,1)=1-wild(1,1)-wild(2,1) !A.C.
+            else
+              wild(1,1)=0.25-1.12e-2; wild(2,1)=0.25-1.09e-2; wild(3,1)=0.25+0.937e-2; wild(4,1)=1-sum(wild(1:3,1))
+            endif !i34
+            xtmp=dot_product(wild(1:i34(nel),1),wild3(1:i34(nel),1))
+            ytmp=dot_product(wild(1:i34(nel),1),wild3(1:i34(nel),2))
             eps=1.019e-2
             xcg=(1-eps)*xcg+eps*xtmp
             ycg=(1-eps)*ycg+eps*ytmp
 
-            call area_coord(0,nel,gcor0,frame0,xcg,ycg,arco)
-            ar_min1=minval(arco) !info for debug only
+            if(i34(nel)==3) then
+              call area_coord(0,nel,gcor0,frame0,xcg,ycg,arco)
+            else
+              call quad_shape(0,3,nel,xcg,ycg,inside1,arco)
+            endif !i34
+            ar_min1=minval(arco(1:i34(nel))) !info for debug only
           else !i=2; out of luck
             write(errmsg,*)'QUICKSEARCH: no intersecting edge; start ID (node/side/elem)=', &
      &l_ns,'; start gb. node/side/elem #=',ipsgb,'; start level=',jlev,'; current elem=',ielg(nel), &
      &'; cg (local) coord.=',xcg2,ycg2,zcg2,'; end coord.=',xt2,yt2,zt2, &
-     &'; signed areas (cg,1,t)@ nodes followed by (cg,t,2)@ nodes=',wild2(1:3,1:2), &
+     &'; signed areas (cg,1,t)@ nodes followed by (cg,t,2)@ nodes=',wild2(1:i34(nel),1:2), &
      &'; xcg,ycg,xt,yt=',xcg,ycg,xt,yt, &
      &'; time step from cg to t=',time,'; time remaining=',trm, &
      &'; min. area coord. for cg, t=',ar_min1,ar_min2,'; input vel=',uuint0,vvint0,wwint0, &
@@ -1503,8 +1521,8 @@ end subroutine inter_btrack
         trm=0 !min(trm,time)
         exit loop4
       endif
-      md1=elnode(nx(nel_j,1),nel)
-      md2=elnode(nx(nel_j,2),nel)
+      md1=elnode(nxq(1,nel_j,i34(nel)),nel)
+      md2=elnode(nxq(2,nel_j,i34(nel)),nel)
       
 !     Compute z position 
       dist=sqrt((xin-xt)**2+(yin-yt)**2)
@@ -1518,7 +1536,11 @@ end subroutine inter_btrack
 !     &uuint0,vvint0,wwint0,ar_min2,jlev00,vis_coe
 !        call parallel_abort(errmsg)
 
-        call area_coord(1,nel,gcor0,frame0,xt,yt,arco) !'1' - fix A.C.
+        if(i34(nel)==3) then
+          call area_coord(1,nel,gcor0,frame0,xt,yt,arco) !'1' - fix A.C.
+        else
+          call quad_shape(1,4,nel,xt,yt,inside2,arco)
+        endif
         nnel=nel
         trm=0
         exit loop4
@@ -1538,7 +1560,6 @@ end subroutine inter_btrack
         trm=min(trm,time) !>0
         nnel=nel
         return
-        !exit loop4
       endif
 
 !     Next element is inside aug. domain
@@ -1615,27 +1636,40 @@ end subroutine inter_btrack
 !      enddo !i
 !      ar_min1=minval(wild(1:3,1))/area(nel)
 
-      call area_coord(0,nel,gcor0,frame0,xt,yt,arco)
-      ar_min1=minval(arco)
-!      if(ar_min1==0) then
-!        write(errmsg,*)'QUICKSEARCH impossible(2):',idx,itr,l_ns,ipsgb, &
+      if(i34(nel)==3) then
+        call area_coord(0,nel,gcor0,frame0,xt,yt,arco)
+        ar_min1=minval(arco(1:3))
+!        if(ar_min1==0) then
+!          write(errmsg,*)'QUICKSEARCH impossible(2):',idx,itr,l_ns,ipsgb, &
 !     &ielg(nel),ielg(nnel00),x0,y0,xt00,yt00,xt,yt,time,uuint0,vvint0,wwint0
-!        call parallel_abort(errmsg)
-!      endif !ar_min1==0
+!          call parallel_abort(errmsg)
+!        endif !ar_min1==0
 
-      if(ar_min1>-small1) then
-        if(ar_min1<=0) call area_coord(1,nel,gcor0,frame0,xt,yt,arco) !Fix
-        nnel=nel
-        trm=0
-        exit loop4
-      endif
+        if(ar_min1>-small1) then
+          !arco will be fixed immediately outside loop4
+          !if(ar_min1<=0) call area_coord(1,nel,gcor0,frame0,xt,yt,arco) !Fix
+          nnel=nel
+          trm=0
+          exit loop4
+        endif
+      else !quad
+        call quad_shape(0,5,nel,xt,yt,inside2,arco)
+        ar_min1=minval(arco(1:4))
+        if(inside2/=0) then
+          !arco will be fixed immediately outside loop4
+          !call quad_shape(1,?,nel,xt,yt,inside2,arco) !force the pt inside
+          nnel=nel
+          trm=0
+          exit loop4
+        endif
+      endif !i34
 
 !     Next intersecting edge
       wild=0; wild2=0 !initialize for output
       nel_j=0
-      do j=1,3
-        jd1=elnode(nx(j,1),nel)
-        jd2=elnode(nx(j,2),nel)
+      do j=1,i34(nel)
+        jd1=elnode(nxq(1,j,i34(nel)),nel)
+        jd2=elnode(nxq(2,j,i34(nel)),nel)
 !       For abnormal case, same side (border side) cannot be hit again
         if(jd1==md1.and.jd2==md2.or.jd2==md1.and.jd1==md2) cycle
         if(ics==1) then
@@ -1669,6 +1703,7 @@ end subroutine inter_btrack
           endif
         endif !ar1>=0.and.ar2>=0
       enddo !j
+
       if(nel_j==0) then
         if(ics==1) then
           xcg2=xcg; ycg2=ycg; zcg2=0; xt2=xt; yt2=yt; zt2=0
@@ -1677,7 +1712,7 @@ end subroutine inter_btrack
           call project_pt('l2g',xt,yt,0.d0,gcor0,frame0,xt2,yt2,zt2)
         endif !ics   
         write(errmsg,*)'QUICKSEARCH: no intersecting edge (2): ',idx,itr,l_ns,ipsgb,ielg(nel), &
-     &xcg2,ycg2,zcg2,xt2,yt2,zt2,wild2(1:3,1:2),xcg,ycg,xt,yt,time,trm,uuint0,vvint0,wwint0
+     &xcg2,ycg2,zcg2,xt2,yt2,zt2,wild2(1:i34(nel),1:2),xcg,ycg,xt,yt,time,trm,uuint0,vvint0,wwint0,lit
         call parallel_abort(errmsg)
       endif !nel_j
 
@@ -1692,7 +1727,11 @@ end subroutine inter_btrack
       endif
 
 !     Compute area & sigma coord.
-      call area_coord(1,nnel,gcor0,frame0,xt,yt,arco)
+      if(i34(nnel)==3) then
+        call area_coord(1,nnel,gcor0,frame0,xt,yt,arco)
+      else
+        call quad_shape(1,6,nnel,xt,yt,inside2,arco)
+      endif !i34
 
 !      do j=1,3 !nodes
 !        nd=elnode(j,nnel)
@@ -1715,16 +1754,16 @@ end subroutine inter_btrack
 !        arco(3)=1-arco(1)-arco(2)
 !      endif
 
-!     Local elev. and depth
-      do j=1,3 !nodes
+!     Local z-coord.
+      do j=1,i34(nnel) !nodes
         nd=elnode(j,nnel)
         call zcoor(2,nd,jk(j),ztmp2(:,j))
       enddo !j
-      kbpl=minval(jk(:)) !min. bottom index
+      kbpl=minval(jk(1:i34(nnel))) !min. bottom index
 
       do k=kbpl,nvrt
         ztmp(k)=0
-        do j=1,3
+        do j=1,i34(nnel)
           ztmp(k)=ztmp(k)+ztmp2(max(k,jk(j)),j)*arco(j)
         enddo !j
       enddo !k
@@ -1787,8 +1826,8 @@ end subroutine inter_btrack
         if(ztmp(k)-ztmp(k-1)<0) then
           write(errmsg,*)'QUICKSEARCH: Inverted z-level in quicksearch:', &
      &ielg(nnel),k,ztmp(k),ztmp(k-1),kbpl,jk(:),ztmp(kbpl:nvrt),';', &
-     &arco(1:3),ztmp2(jk(1):nvrt,1),';',ztmp2(jk(2):nvrt,2),';',ztmp2(jk(3):nvrt,3),&
-     &eta2(elnode(:,nnel)),dp(elnode(:,nnel))
+     &arco(1:i34(nnel)),(ztmp2(jk(j):nvrt,j),j=1,i34(nnel)), &
+     &eta2(elnode(1:i34(nnel),nnel)),dp(elnode(1:i34(nnel),nnel))
           call parallel_abort(errmsg)
         endif
       enddo !k
@@ -1810,10 +1849,10 @@ end subroutine inter_btrack
           endif
         enddo !k
         !todo: assert
-        !if(jlev==0) then
-        !  write(errmsg,*)'QUICKSEARCH: Cannot find a vert. level:',zt,etal,dep,(ztmp(k),k=kbpl,nvrt)
-        !  call parallel_abort(errmsg)
-        !endif
+        if(jlev==0) then
+          write(errmsg,*)'QUICKSEARCH: Cannot find a vert. level:',zt,etal,dep,(ztmp(k),k=kbpl,nvrt)
+          call parallel_abort(errmsg)
+        endif
         zrat=(ztmp(jlev)-zt)/(ztmp(jlev)-ztmp(jlev-1))
       endif
 
@@ -1835,6 +1874,7 @@ end subroutine inter_btrack
 
 !     Interpolate vel.
       if(indvel==-1) then !interpolated hvel using P_1^NC
+        !Pure triangles only
 !       Interpolate in vertical 
         do j=1,3 !sides and nodes
           nd=elnode(j,nnel)
@@ -1858,34 +1898,34 @@ end subroutine inter_btrack
 
       else !indvel>=0; interpolated hvel using P_1
 !       No interpolate in time
-        do j=1,3 !nodes
+        do j=1,i34(nnel) !nodes
           nd=elnode(j,nnel)
           do l=1,2 !levels
             lev=jlev+l-2
             if(ics==1) then
               uu=uu2(lev,nd); vv=vv2(lev,nd)
-              uf=ufg(lev,nnel,j); vf=vfg(lev,nnel,j)
+              !uf=ufg(lev,nnel,j); vf=vfg(lev,nnel,j)
             else !lat/lon
               call project_hvec(uu2(lev,nd),vv2(lev,nd),pframe(:,:,nd),frame0,uu,vv)
-              call project_hvec(ufg(lev,nnel,j),vfg(lev,nnel,j),eframe(:,:,nnel),frame0,uf,vf)
+              !call project_hvec(ufg(lev,nnel,j),vfg(lev,nnel,j),eframe(:,:,nnel),frame0,uf,vf)
             endif !ics
-            vxl(j,l)=(1-vis_coe)*uu+vis_coe*uf
-            vyl(j,l)=(1-vis_coe)*vv+vis_coe*vf
+            vxl(j,l)=uu !+vis_coe*uf
+            vyl(j,l)=vv !+vis_coe*vf
             vzl(j,l)=ww2(lev,nd)
           enddo !l
         enddo !j
 
 !       Interpolate in vertical 
-        do j=1,3
+        do j=1,i34(nnel)
           vxn(j)=vxl(j,2)*(1-zrat)+vxl(j,1)*zrat
           vyn(j)=vyl(j,2)*(1-zrat)+vyl(j,1)*zrat
           vzn(j)=vzl(j,2)*(1-zrat)+vzl(j,1)*zrat
         enddo !j
 
 !       Interpolate in horizontal
-        uuint=vxn(1)*arco(1)+vxn(2)*arco(2)+vxn(3)*arco(3)
-        vvint=vyn(1)*arco(1)+vyn(2)*arco(2)+vyn(3)*arco(3)
-        wwint=vzn(1)*arco(1)+vzn(2)*arco(2)+vzn(3)*arco(3)
+        uuint=dot_product(vxn(1:i34(nnel)),arco(1:i34(nnel))) !vxn(1)*arco(1)+vxn(2)*arco(2)+vxn(3)*arco(3)
+        vvint=dot_product(vyn(1:i34(nnel)),arco(1:i34(nnel))) !vyn(1)*arco(1)+vyn(2)*arco(2)+vyn(3)*arco(3)
+        wwint=dot_product(vzn(1:i34(nnel)),arco(1:i34(nnel))) !vzn(1)*arco(1)+vzn(2)*arco(2)+vzn(3)*arco(3)
       endif !indvel
 
       end subroutine quicksearch

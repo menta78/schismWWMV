@@ -341,7 +341,7 @@
       real(r8), dimension(Nphy) :: mxHPUb = -99.d0
       real(r8), dimension(Nphy) :: b_HPUb = -99.d0
       real(r8), dimension(Nphy) :: FecDOC = -99.d0
-      real(r8), dimension(Nphy,Nfec) :: FecPEL = -99.d0
+      real(r8), dimension(Nphy,2) :: FecPEL = -99.d0
       real(r8), dimension(Nphy) :: FecCYC = -99.d0
       real(r8), dimension(Nphy) :: ExALG = -99.d0
       real(r8), dimension(Nphy) :: WS = -99.d0
@@ -383,7 +383,7 @@
 !
 !  DOM parameters.
 !
-      real(r8), dimension(Ndom) :: cDOCfrac_c = -99.d0
+      real(r8), dimension(2) :: cDOCfrac_c = -99.d0
       real(r8) :: RtUVR_DIC = -99.d0
       real(r8) :: RtUVR_DOC = -99.d0
 !
@@ -402,7 +402,7 @@
 !  Zooplankton parameters.
       
       real(r8), dimension(Nzoo) :: ZooDOC = -99.d0
-      real(r8), dimension(Nzoo,Nfec) :: ZooPEL = -99.d0
+      real(r8), dimension(Nzoo,2) :: ZooPEL = -99.d0
       real(r8), dimension(Nzoo) :: ZooCYC = -99.d0
       real(r8), dimension(Nzoo,Nphy) :: DeltaZoo = -99.d0
       real(r8), dimension(Nzoo,Nphy) :: EfcCap = -99.d0
@@ -481,8 +481,8 @@
 !  Absorption parameters.
 !
       real(r8), dimension(NBands) :: wavedp = -99.d0   ! a and b factor
-      real(r8), dimension(Ndom) :: aDOC410 = -99.d0    ! CDM absorption at 410
-      real(r8), dimension(Ndom) :: aDOC300 = -99.d0   ! CDM absorption at 300
+      real(r8), dimension(2) :: aDOC410 = -99.d0    ! CDM absorption at 410
+      real(r8), dimension(2) :: aDOC300 = -99.d0   ! CDM absorption at 300
       
 ! Marta Rodrigues
 !  Zooplankton calculated parameters.

@@ -40,7 +40,7 @@
 !            lwrite: 0 - didn't output (not output step); 1 - output successfully.
 !-------------------------------------------------------------------------------
       use elfe_glbl, only: rkind,errmsg,ihfskip,nspool,time_stamp, &
-     &it_main,iths_main,ifile_char,a_4,eta2,np,ne,ns
+     &it_main,iths_main,ifile_char,a_4,eta2,np,ne,ns,out_rkind !,fileopenformat
       use elfe_msgp, only: parallel_abort,myrank
       integer,intent(in) :: i23d,ivs,ichanout,idim1,idim2
       character(len=4),intent(in) :: fname
@@ -97,11 +97,7 @@
 !        inquire(file=fullname,exist=lex1)
 !        inquire(ichanout,exist=lex2)
 !        if(.not.lex1.or.(lex1.and..not.lex2)) then
-#ifdef USE_OPEN64
-        open(ichanout,file=fullname,status='replace', form='BINARY')
-#else
-        open(ichanout,file=fullname,status='replace')
-#endif
+         open(ichanout,file=fullname,status='replace',form="unformatted",access="stream")
       endif !it_main
 
 !     Return if not output step
@@ -113,56 +109,18 @@
 
 !     Write data at each step
 !Error: lat/lon not working
-      a_4 = transfer(source=real(time_stamp),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-      !if having trouble with no adv. write
-      write(ichanout) a_4
-#else
-      write(ichanout,"(a4)",advance="no") a_4
-#endif
-      a_4 = transfer(source=it_main,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-      write(ichanout) a_4
-#else
-      write(ichanout,"(a4)",advance="no") a_4
-#endif
+      write(ichanout) real(time_stamp,out_rkind)
+      write(ichanout) it_main
 !     Additional info: ivs
-      a_4 = transfer(source=ivs,mold=a_4)
-#ifdef AVOID_ADV_WRITE
-      write(ichanout) a_4
-#else
-      write(ichanout,"(a4)",advance="no") a_4
-#endif
-
-      do i=1,np !residents only
-        a_4 = transfer(source=real(eta2(i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-        write(ichanout) a_4
-#else
-        write(ichanout,"(a4)",advance="no") a_4
-#endif
-      enddo !i
-
-      do i=1,lim_out !residents only
-        do k=1,idim1
-          a_4 = transfer(source=real(outvar1(k,i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-          write(ichanout) a_4
-#else
-          write(ichanout,"(a4)",advance="no") a_4
-#endif
-
-          if(ivs==2.and.present(outvar2)) then
-            a_4 = transfer(source=real(outvar2(k,i)),mold=a_4)
-#ifdef AVOID_ADV_WRITE
-            write(ichanout) a_4
-#else
-            write(ichanout,"(a4)",advance="no") a_4
-#endif
-          endif !ivs
-        enddo !k
-      enddo !i
-
+      write(ichanout) ivs
+      write(ichanout) (real(eta2(i),out_rkind),i=1,np)
+      
+      if(ivs==2.and.present(outvar2)) then
+        write(ichanout) ((real(outvar1(k,i),out_rkind),real(outvar2(k,i),out_rkind),k=1,idim1),i=1,lim_out)
+      else
+        write(ichanout) ((real(outvar1(k,i),out_rkind),k=1,idim1),i=1,lim_out)
+      endif
+ 
 !     Open next stack to account for end of run
       if(mod(it_main,ihfskip)==0) then
         ifile=it_main/ihfskip+1
@@ -173,11 +131,7 @@
         write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
         fullname='outputs/'//(fgb(1:lfgb)//'_'//fname//sfix)
         close(ichanout)
-#ifdef USE_OPEN64
-        open(ichanout,file=fullname,status='replace', form='BINARY')
-#else
-        open(ichanout,file=fullname,status='replace')
-#endif
+        open(ichanout,file=fullname,status='replace',form="unformatted",access='stream')
       endif !mod
 
       end subroutine elfe_output_custom

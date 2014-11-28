@@ -34,7 +34,7 @@
 
       USE sed_mod,   ONLY: Cdb_min,Cdb_max,Zob,vonKar,bustr,bvstr,   &
                            tau_c,drag_formulation
-      USE elfe_glbl, ONLY: rkind,nvrt,nea,dfv,idry_e,kbe,elnode,uu2,vv2,ze
+      USE elfe_glbl, ONLY: rkind,nvrt,nea,dfv,idry_e,kbe,i34,elnode,uu2,vv2,ze
       USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_e2d
 
       IMPLICIT NONE
@@ -57,9 +57,9 @@
       ! - Set logarithmic bottom stress.
         DO i=1,nea
           IF(idry_e(i)==1) CYCLE
-          n1=elnode(1,i)
-          n2=elnode(2,i)
-          n3=elnode(3,i)
+!          n1=elnode(1,i)
+!          n2=elnode(2,i)
+!          n3=elnode(3,i)
           kb0 = kbe(i)
           kb1 = kbe(i)+1
           kb2 = kbe(i)+2
@@ -71,19 +71,21 @@
             cff1 = 1.0d0/DLOG(hh/Zob(i))
             cff2 = vonKar*vonKar*cff1*cff1
             wrk  = MIN(Cdb_max,MAX(Cdb_min,cff2))
-            cff3 = (vv2(kb1,n1)+vv2(kb1,n2)+vv2(kb1,n3))/3.0d0
-            cff4 = (uu2(kb1,n1)+uu2(kb1,n2)+uu2(kb1,n3))/3.0d0
+            cff3 = sum(vv2(kb1,elnode(1:i34(i),i)))/i34(i)
+            cff4 = sum(uu2(kb1,elnode(1:i34(i),i)))/i34(i)
             cff5 = DSQRT(cff4*cff4+cff3*cff3)
             ! Bottom stress
             bustr(i) = wrk*cff4*cff5
             bvstr(i) = wrk*cff3*cff5
           ELSE
-            cff3 = (vv2(kb2,n1)+vv2(kb2,n2)+vv2(kb2,n3))/3.0d0-      &
-            &      (vv2(kb1,n1)+vv2(kb1,n2)+vv2(kb1,n3))/3.0d0
-            cff4 = (uu2(kb2,n1)+uu2(kb2,n2)+uu2(kb2,n3))/3.0d0-      &
-            &      (uu2(kb1,n1)+uu2(kb1,n2)+uu2(kb1,n3))/3.0d0
-            cff5 = (dfv(kb1,n1)+dfv(kb1,n2)+dfv(kb1,n3)+             &
-            &       dfv(kb2,n1)+dfv(kb2,n2)+dfv(kb2,n3))/6.0d0
+            cff3 = sum(vv2(kb2,elnode(1:i34(i),i)))/i34(i)- &
+                  &sum(vv2(kb1,elnode(1:i34(i),i)))/i34(i)
+!            &      (vv2(kb1,n1)+vv2(kb1,n2)+vv2(kb1,n3))/3.0d0
+            cff4 = sum(uu2(kb2,elnode(1:i34(i),i)))/i34(i)- &
+                  &sum(uu2(kb1,elnode(1:i34(i),i)))/i34(i)
+!            &      (uu2(kb1,n1)+uu2(kb1,n2)+uu2(kb1,n3))/3.0d0
+            cff5 = sum(dfv(kb1,elnode(1:i34(i),i))+dfv(kb2,elnode(1:i34(i),i)))/2/i34(i)
+!            &       dfv(kb2,n1)+dfv(kb2,n2)+dfv(kb2,n3))/6.0d0
             hh = ze(kb2,i)-ze(kb1,i)
             IF(hh<=0) CALL parallel_abort('SED-current_stress: div. by 0')
             !' Bottom stress
@@ -284,7 +286,7 @@
 !--------------------------------------------------------------------!
 
       USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_e2d,exchange_p2d
-      USE elfe_glbl, ONLY: rkind,nvrt,nea,elnode,dpe,eta2,idry_e,dfv,    &
+      USE elfe_glbl, ONLY: rkind,nvrt,nea,i34,elnode,dpe,eta2,idry_e,dfv,    &
      &                     kbe,uu2,vv2,ze,pi,grav,rough_p,errmsg,    &
      &                     rho0,dzb_min,np,nne,indel,area,ielg
       USE sed_mod,   ONLY: Cdb_min,Cdb_max,bottom,vonKar,Zob,uorb,   &
@@ -323,9 +325,9 @@
 !---------------------------------------------------------------------
 ! ** Some preliminar initializations 
 !---------------------------------------------------------------------
-        n1 = elnode(1,i)
-        n2 = elnode(2,i)
-        n3 = elnode(3,i)
+        !n1 = elnode(1,i)
+        !n2 = elnode(2,i)
+        !n3 = elnode(3,i)
         ! Main bed sediment characteristics (previous time-step)
         tau_cr   = bottom(i,itauc)*rho0 ! Critical shear stress (N.m-2)
         rhosed   = bottom(i,idens)      ! Sediment density (kg.m-3)
@@ -357,7 +359,7 @@
 !---------------------------------------------------------------------
 
           ! Water depth
-          hwat = dpe(i)+(eta2(n1)+eta2(n2)+eta2(n3))/3.0d0
+          hwat = dpe(i)+sum(eta2(elnode(1:i34(i),i)))/i34(i)
 
 !---------------------------------------------------------------------
 ! ** Current-induced bed shear stress (skin friction only) in m2.s-2
@@ -373,23 +375,23 @@
               cff1 = 1.0d0/DLOG(hh/z0s)
               cff2 = vonKar*vonKar*cff1*cff1
               wrk  = MIN(Cdb_max,MAX(Cdb_min,cff2))
-              cff3 = (vv2(kb1,n1)+vv2(kb1,n2)+vv2(kb1,n3))/3.0d0
-              cff4 = (uu2(kb1,n1)+uu2(kb1,n2)+uu2(kb1,n3))/3.0d0
+              cff3 = sum(vv2(kb1,elnode(1:i34(i),i)))/i34(i)
+              cff4 = sum(uu2(kb1,elnode(1:i34(i),i)))/i34(i)
               cff5 = DSQRT(cff4*cff4+cff3*cff3)
               ! Bottom stress
               tau_c = DSQRT((wrk*cff4*cff5)**2.0d0+                  &
               &                (wrk*cff3*cff5)**2.0d0)
             ELSE
-              cff3 = (vv2(kb2,n1)+vv2(kb2,n2)+vv2(kb2,n3))/3.0d0-    &
-              &      (vv2(kb1,n1)+vv2(kb1,n2)+vv2(kb1,n3))/3.0d0
-              cff4 = (uu2(kb2,n1)+uu2(kb2,n2)+uu2(kb2,n3))/3.0d0-    &
-              &      (uu2(kb1,n1)+uu2(kb1,n2)+uu2(kb1,n3))/3.0d0
-              cff5 = (dfv(kb1,n1)+dfv(kb1,n2)+dfv(kb1,n3)+           &
-              &       dfv(kb2,n1)+dfv(kb2,n2)+dfv(kb2,n3))/6.0d0
+              cff3 = sum(vv2(kb2,elnode(1:i34(i),i)))/i34(i) - &
+              &      sum(vv2(kb1,elnode(1:i34(i),i)))/i34(i)
+              cff4 = sum(uu2(kb2,elnode(1:i34(i),i)))/i34(i) - &
+              &      sum(uu2(kb1,elnode(1:i34(i),i)))/i34(i) 
+              cff5 = sum(dfv(kb1,elnode(1:i34(i),i))+dfv(kb2,elnode(1:i34(i),i)))/2/i34(i)
+!              &       dfv(kb2,n1)+dfv(kb2,n2)+dfv(kb2,n3))/6.0d0
               hh = ze(kb2,i)-ze(kb1,i)
               IF(hh<=0) CALL parallel_abort('SED-Roughness: div. by 0')
               ! Bottom stress
-              tau_c = SQRT((cff5*cff4/hh)**2.0d0+                    &
+              tau_c = SQRT((cff5*cff4/hh)**2.0d0+ &
               &               (cff5*cff3/hh)**2.0d0)
             ENDIF ! End test on hh>z0s
             tau_c = tau_c*rho0 ! Tau in N.m-2

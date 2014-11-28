@@ -33,7 +33,7 @@
       open(10,file='outputs/'//fdb,status='replace')
       write(10,*)np,nproc
       do i=1,np
-        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(elevmax(i))
+        write(10,'(i11,3(1x,e20.12))')iplg(i),xnd(i),ynd(i),elevmax(i)
       enddo !i
       close(10)
 
@@ -43,7 +43,7 @@
       open(10,file='outputs/'//fdb,status='replace')
       write(10,*)np,nproc
       do i=1,np
-        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(dav_maxmag(i)),real(dav_max(1:2,i))
+        write(10,'(i11,5(1x,e20.12))')iplg(i),xnd(i),ynd(i),dav_maxmag(i),dav_max(1:2,i)
       enddo !i
       close(10)
 

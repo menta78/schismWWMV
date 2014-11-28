@@ -79,11 +79,11 @@
 
       USE sed_mod
       USE elfe_glbl, ONLY : rkind,nvrt,nea,npa,np,ntracers,idry_e,   &
-     &                      idry,area,xnd,ynd,znl,dt,elnode,xctr,yctr,   &
+     &                      idry,area,xnd,ynd,znl,dt,i34,elnode,xctr,yctr,   &
      &                      kbe,ze,pi,nne,indel,tr_el,bdy_frc,mntr,    &
      &                      errmsg,ielg,iplg,nond_global,iond_global,&
      &                      ipgl,nope_global,np_global,dp,h0,dpe,    &
-     &                      iegl,out_wwm,pi,eta2,dp00
+     &                      iegl,out_wwm,pi,eta2,dp00,dldxy
       USE elfe_msgp
 
       IMPLICIT NONE
@@ -214,12 +214,12 @@
         IF (idry_e(i).EQ.1) CYCLE
         htot  = 0.0d0
         kpeak = 0.0d0
-        DO j = 1,3
-          htot      = htot + (dp(elnode(j,i))+eta2(elnode(j,i)))/3.0d0
-          hs(i)     = hs(i) + out_wwm(elnode(j,i),1)/3.0d0
-          tp(i)     = tp(i) + out_wwm(elnode(j,i),12)/3.0d0
-          wlpeak(i) = wlpeak(i) + out_wwm(elnode(j,i),17)/3.0d0 !Peak wave length
-          uorb(i)   = uorb(i) + out_wwm(elnode(j,i),22)/3.0d0
+        DO j = 1,i34(i)
+          htot      = htot + (dp(elnode(j,i))+eta2(elnode(j,i)))/i34(i)
+          hs(i)     = hs(i) + out_wwm(elnode(j,i),1)/i34(i)
+          tp(i)     = tp(i) + out_wwm(elnode(j,i),12)/i34(i)
+          wlpeak(i) = wlpeak(i) + out_wwm(elnode(j,i),17)/i34(i) !Peak wave length
+          uorb(i)   = uorb(i) + out_wwm(elnode(j,i),22)/i34(i)
         ENDDO ! End loop 3
         ! * FG - Uorbp unused now
         !kpeak    = 2.0d0*pi/wlpeak(i)
@@ -305,21 +305,23 @@
 !    An equivalent implementation is found in elfe_main for dl 
 !    Dphi/Dx, Dphi/Dy
 !---------------------------------------------------------------------
-          nm1= elnode(1,i)
-          nm2= elnode(2,i)
-          nm3= elnode(3,i)
-          derx1 = ynd(nm2)-ynd(nm3)
-          derx2 = ynd(nm3)-ynd(nm1)
-          derx3 = ynd(nm1)-ynd(nm2)
-          dery1 = xnd(nm3)-xnd(nm2)
-          dery2 = xnd(nm1)-xnd(nm3)
-          dery3 = xnd(nm2)-xnd(nm1)
+!          nm1= elnode(1,i)
+!          nm2= elnode(2,i)
+!          nm3= elnode(3,i)
+!          derx1 = ynd(nm2)-ynd(nm3)
+!          derx2 = ynd(nm3)-ynd(nm1)
+!          derx3 = ynd(nm1)-ynd(nm2)
+!          dery1 = xnd(nm3)-xnd(nm2)
+!          dery2 = xnd(nm1)-xnd(nm3)
+!          dery3 = xnd(nm2)-xnd(nm1)
 
           ! Element area from SELFE
-          dzdx = (dp(nm1)*derx1+dp(nm2)*derx2+dp(nm3)*derx3)/        &
-          &      2.0d0/area(i)
-          dzdy = (dp(nm1)*dery1+dp(nm2)*dery2+dp(nm3)*dery3)/        &
-          &      2.0d0/area(i)
+!          dzdx = (dp(nm1)*derx1+dp(nm2)*derx2+dp(nm3)*derx3)/        &
+!          &      2.0d0/area(i)
+!          dzdy = (dp(nm1)*dery1+dp(nm2)*dery2+dp(nm3)*dery3)/        &
+!          &      2.0d0/area(i)
+          dzdx=dot_product(dp(elnode(1:i34(i),i)),dldxy(1:i34(i),1,i))
+          dzdy=dot_product(dp(elnode(1:i34(i),i)),dldxy(1:i34(i),2,i))
 
           ! Compute vector components of bottom stress induced by curents
           ! Here it is assumed that effects of waves on current direction
@@ -585,7 +587,7 @@
 
               !Error: distance should be 1/2 of Hz_inv2?
               !FC = dqc/dz ? 
-              FC(k,i) = (qc(k+1,i)-qc(k,i))*(Hz_inv2(k))
+              FC(k,i) = (qc(k+1,i)-qc(k,i))*Hz_inv2(k)
 
             ENDDO !End loop nvrt backwards
           ENDDO !End loop nea
@@ -659,6 +661,9 @@
 
           DO i=1,nea
             IF(idry_e(i)==1) CYCLE
+            
+            !Need to revamp the whole susp. part for 2D
+            if(nvrt==kbe(i)+1) call parallel_abort('SED: 2D prism')
 
             ! no-flux boundary condition
             FC(nvrt,i) = 0.0d0
@@ -667,7 +672,7 @@
               ! Linear continuation
               qL(nvrt,i) = qR(nvrt-1,i)
               qR(nvrt,i) = 2.0d0*qc(nvrt,i)-qL(nvrt,i)
-           ELSEIF (bc_for_weno == 2) THEN
+            ELSEIF (bc_for_weno == 2) THEN
               ! Neumann
               qL(nvrt,i) = qR(nvrt-1,i)
               qR(nvrt,i) = 1.5d0*qc(nvrt,i)-0.5d0*qL(nvrt,i)
@@ -1309,7 +1314,7 @@
       IF((sed_morph.EQ.2).AND.(Nbed.EQ.1))THEN
         k=1
         DO i=1,nea
-          tmp=sum(bedthick_overall(elnode(1:3,i)))/3
+          tmp=sum(bedthick_overall(elnode(1:i34(i),i)))/i34(i)
           bed(1,i,ithck) = tmp !bedthick_overall
           DO ised=1,ntracers
             bed_mass(1,i,nnew,ised)=tmp*Srho(ised)*(1.0d0-bed(1,i,iporo))*  &
