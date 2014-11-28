@@ -94,7 +94,7 @@
         ENDDO
 #endif
 
-#ifdef DEBUG
+#if defined DEBUG && defined IOBPDOUT
 # ifdef MPI_PARALL_GRID
         IF (myrank == 0) THEN
 # endif
@@ -2882,7 +2882,7 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
       iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
-      iret = nf90_def_dim(ncid, 'np_global', np_global, mnp_dims)
+      iret = nf90_def_dim(ncid, 'np_total', np_total, mnp_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
       iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
@@ -2898,39 +2898,39 @@
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
       iret=nf90_def_var(ncid,'IOBP',NF90_INT,(/ mnp_dims /), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
       iret=nf90_put_att(ncid,var_id,'description','boundary status of nodes')
       CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       iret=nf90_put_att(ncid,var_id,'case 0','interior point')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       iret=nf90_put_att(ncid,var_id,'case 1','island')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
       iret=nf90_put_att(ncid,var_id,'case 2','dirichlet condition')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
       iret=nf90_put_att(ncid,var_id,'case 3','neumann condition')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
       iret=nf90_put_att(ncid,var_id,'case 4','unknown')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
       !
       iret=nf90_def_var(ncid,'IWBNDGL',NF90_INT,(/ iwbmnpgl_dims /), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
       iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       !
       IF (BOUC_NETCDF_OUT_PARAM) THEN
         iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
         iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
       END IF
       !
       IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2949,14 +2949,14 @@
       CALL WRITE_PARAM_2(ncid)
       !
       iret=nf90_inq_varid(ncid, "IOBP", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
-      iret=nf90_put_var(ncid,var_id,IOBPtotal, start=(/1/), count =(/NP_GLOBAL/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+      iret=nf90_put_var(ncid,var_id,IOBPtotal, start=(/1/), count =(/np_total/) )
+      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
       !
       iret=nf90_inq_varid(ncid, "IWBNDGL", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
       iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

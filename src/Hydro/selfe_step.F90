@@ -1830,12 +1830,15 @@
             endif !bthick
           endif !rough_p
 
+<<<<<<< HEAD
 #ifdef USE_SED2D
           if(idrag_sed2d<-1) then
             Cdp(i)=Cdsed(i)
             if(Cdp(i)/=Cdp(i)) call parallel_abort('SED2D: NaN for Cd')
           endif
 #endif
+=======
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
           !if(Cdp(i)>Cdmax) Cdmax=Cdp(i)
         enddo !i=1,npa
         if(it==iths_main+1) write(12,*)'Cd min/max at 1st step= ',minval(Cdp),maxval(Cdp)
@@ -1871,7 +1874,11 @@
 !          enddo !i=1,ns
 !          close(32)
 !        endif
+<<<<<<< HEAD
       endif !nchi==1
+=======
+      endif !iabs(nchi)==1
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
 
 !
 !************************************************************************
@@ -7204,7 +7211,11 @@
 
                 if(j==indx_out(1,1)) then
                   ! depth.61
+<<<<<<< HEAD
                   write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
+=======
+                  write(ichan(j)) (real(dp(i),out_rkind),i=1,np)
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
                 else if(j<=indx_out(1,1)+ntracers) then
                   !qbdl_n.62
                   write(ichan(j)) (real(bedldu(i,j-indx_out(1,1)),out_rkind),real(bedldv(i,j-indx_out(1,1)),out_rkind),i=1,np)
@@ -7228,7 +7239,11 @@
               if((j>=indx_out(1,1)).and.(j<=indx_out(1,2))) then          
                 if(j>=indx_out(1,1).and.(j<=indx_out(1,1)+3)) then !scalar
                   if(j==indx_out(1,1)) then
+<<<<<<< HEAD
                      write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
+=======
+                     write(ichan(j)) (real(dp(i),out_rkind),i=1,np)
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
                   else if(j==indx_out(1,1)+1) then
                      write(ichan(j)) (real(Cdsed(i),out_rkind),i=1,np)
                   else if(j==indx_out(1,1)+2) then
@@ -7789,7 +7804,7 @@
 
       if(myrank==0) write(16,'(a,i12,a,f20.6)') 'TIME STEP= ',it,';  TIME= ',time
 !'
-      call flush(16) !flush "mirror.out" for every time step
+      flush(16) !flush "mirror.out" for every time step
       call parallel_barrier !synchronize before starting next time step
 
 

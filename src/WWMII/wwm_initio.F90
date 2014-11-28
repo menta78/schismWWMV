@@ -451,12 +451,13 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INITIALIZE_WWM
+#if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE WWMaOCN_PGMCL
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE pgmcl_lib_WWM, only : WAV_common_initialize
+#endif
       USE DATAPOOL
-!#ifdef MPI_PARALL_GRID
-!# ifndef PDLIB
-!    use datapool, only: msgp_tables, msgp_init, parallel_barrier, nx1
-!# endif
-!#endif
 #ifdef PDLIB
       USE yowpd, only : initFromGridDim
 #endif
@@ -478,7 +479,7 @@
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME1)
+      CALL WAV_MY_WTIME(TIME1)
 #endif
      
       CALL SET_WWMINPULNML 
@@ -643,12 +644,14 @@
       END IF
 
 
-#ifndef PGMCL_COUPLING
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
       FLUSH(STAT%FHNDL)
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LWINDFROMWWM) THEN
         CALL INIT_WIND_INPUT
       END IF
+#endif
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_OCN_WAV
       IF (.NOT. LCPL) THEN
         CALL INIT_CURRENT_INPUT
         CALL INIT_WATLEV_INPUT
@@ -696,7 +699,7 @@
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined PGMCL_COUPLING
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -711,12 +714,23 @@
         END IF
       END IF
 #endif
-#ifdef PGMCL_COUPLING
-      CALL ROMS_COUPL_INITIALIZE
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Before ROMS_COUPL_INITIALIZE'
+      FLUSH(STAT%FHNDL)
+      CALL WWM_common_coupl_initialize
+      CALL WWM_a_OCN_COUPL_INITIALIZE
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After ROMS_COUPL_INITIALIZE'
+      FLUSH(STAT%FHNDL)
 #endif
-
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Before WAV_common_initialize'
+      FLUSH(STAT%FHNDL)
+      CALL WAV_common_initialize
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'After WAV_common_initialize'
+      FLUSH(STAT%FHNDL)
+#endif
 #ifdef TIMINGS
-      CALL MY_WTIME(TIME2)
+      CALL WAV_MY_WTIME(TIME2)
 #endif
 
 #if defined SELFE
@@ -743,56 +757,65 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE TERMINATE_WWM
-         USE DATAPOOL
+#ifdef ROMS_WWM_PGMCL_COUPLING
+       USE WWMaOCN_PGMCL
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+       USE pgmcl_lib_WWM, only : WAV_all_deallocate
+#endif
+       USE DATAPOOL
 #ifdef ST41
-         USE W3SRC4MD_OLD
+       USE W3SRC4MD_OLD
 #endif
 #ifdef ST42
-         USE W3SRC4MD
+       USE W3SRC4MD
 #endif
 
 #ifdef PETSC
-         USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
+       USE PETSC_CONTROLLER, ONLY : PETSC_FINALIZE
 #endif
 
-         CALL CLOSE_FILE_HANDLES
-         CALL DEALLOC_ARRAYS
+       CALL CLOSE_FILE_HANDLES
+       CALL DEALLOC_ARRAYS
 
 #ifdef MPI_PARALL_GRID
-         CALL DEALLOC_WILD_ARRAY
+       CALL DEALLOC_WILD_ARRAY
 #endif
-         IF (DIMMODE .EQ. 2) THEN
-           CALL DEALLOC_FLUCT_ARRAYS
-           CALL DEALLOC_FLUCT
+       IF (DIMMODE .EQ. 2) THEN
+         CALL DEALLOC_FLUCT_ARRAYS
+         CALL DEALLOC_FLUCT
 
-           IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
+         IF (AMETHOD .EQ. 4 .OR. AMETHOD .EQ. 5) THEN
 #ifdef PETSC
-             CALL PETSC_FINALIZE
+           CALL PETSC_FINALIZE
 #endif
-           END IF
          END IF
-         IF (LZETA_SETUP) THEN
-           CALL FINALIZE_WAVE_SETUP
-         END IF
-         CALL DEALLOC_SPECTRAL_GRID
-         CALL CLOSE_IOBP
-         CALL TERMINATE_STATION_OUTPUT
+       END IF
+       IF (LZETA_SETUP) THEN
+         CALL FINALIZE_WAVE_SETUP
+       END IF
+       CALL DEALLOC_SPECTRAL_GRID
+       CALL CLOSE_IOBP
+       CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined PGMCL_COUPLING
-         IF (LCPL) THEN
-           IF (LTIMOR) THEN
-             CALL TERMINATE_PIPES_TIMOR()
+#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+       IF (LCPL) THEN
+         IF (LTIMOR) THEN
+           CALL TERMINATE_PIPES_TIMOR()
 # ifdef SHYFEM_COUPLING
-           ELSE IF (LSHYFEM) THEN
-             CALL TERMINATE_PIPES_SHYFEM()
+         ELSE IF (LSHYFEM) THEN
+           CALL TERMINATE_PIPES_SHYFEM()
 # endif
-           ELSE IF (LROMS) THEN
-             CALL TERMINATE_PIPES_ROMS()
-           END IF
+         ELSE IF (LROMS) THEN
+           CALL TERMINATE_PIPES_ROMS()
          END IF
+       END IF
 #endif
-#ifdef PGMCL_COUPLING
-         CALL ROMS_COUPL_DEALLOCATE
+#ifdef ROMS_WWM_PGMCL_COUPLING
+       CALL WWM_a_OCN_COUPL_DEALLOCATE
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+       CALL WAV_all_deallocate
 #endif
        END SUBROUTINE
 !**********************************************************************
@@ -954,11 +977,11 @@
          OUTT_VARNAMES(33) = 'CURR-Y'
          OUTT_VARNAMES(34) = 'DEPTH'
          OUTT_VARNAMES(35) = 'ELEVATION'
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIATE_WAVE_PARAMETER
+       SUBROUTINE INITIATE_WAVE_PARAMETER
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
          USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
@@ -1042,11 +1065,11 @@
          IF (MESTR == 6) CALL GRAD_CG_K 
 
          RETURN
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INITIAL_CONDITION(IFILE,IT)
+       SUBROUTINE INITIAL_CONDITION(IFILE,IT)
          USE WWM_HOTFILE_MOD
          USE DATAPOOL
 #ifdef NCDF
@@ -1145,11 +1168,11 @@
          ELSE IF (LHOTR .AND. .NOT. LINID) THEN
            CALL INPUT_HOTFILE
          END IF
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_FILE_HANDLES()
+       SUBROUTINE INIT_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
 #ifdef MPI_PARALL_GRID
@@ -1159,8 +1182,10 @@
             CHK%FNAME  = 'wwmcheck.nml'
            QSTEA%FNAME = 'qstea.out'
          WINDBG%FNAME  = 'winddbg.out'
+#if defined DEBUG && defined IOBPDOUT
          IOBPOUT%FNAME = 'iobp.out'
         IOBPDOUT%FNAME = 'iobpd.out'
+#endif
         SRCDBG%FNAME = 'srcdbg.out'
 !
 !2do ... dinstinguish between binary and ascii stuff ...
@@ -1179,8 +1204,10 @@
 
            IF (LQSTEA) QSTEA%FHNDL  = STARTHNDL + 12
 
+#if defined DEBUG && defined IOBPDOUT
          IOBPOUT%FHNDL  = STARTHNDL + 13
          IOBPDOUT%FHNDL = STARTHNDL + 14
+#endif
 
          DBG%FHNDL      = STARTHNDL + 15 
          STAT%FHNDL     = STARTHNDL + 16 
@@ -1234,8 +1261,10 @@
          WRITE(STAT%FHNDL,*) 'Input Filename   =', TRIM(INP%FNAME)
          WRITE(STAT%FHNDL,*) 'Check Filename   =', TRIM(CHK%FNAME)
          WRITE(STAT%FHNDL,*) 'Qstea Filename   =', TRIM(QSTEA%FNAME)
+#if defined DEBUG && defined IOBPDOUT
          WRITE(STAT%FHNDL,*) 'Iobp Filename    =', TRIM(IOBPOUT%FNAME)
          WRITE(STAT%FHNDL,*) 'Iobpd Filename   =', TRIM(IOBPDOUT%FNAME)
+#endif
          WRITE(STAT%FHNDL,*) 'WindDbg Filename =', TRIM(WINDBG%FNAME)
 #ifdef MPIP_PARALL_GRID
          ENDIF
@@ -1244,8 +1273,10 @@
          OPEN( INP%FHNDL,      FILE = TRIM(INP%FNAME))
          OPEN( CHK%FHNDL,      FILE = TRIM(CHK%FNAME))
          IF (LQSTEA) OPEN( QSTEA%FHNDL,    FILE = TRIM(QSTEA%FNAME))
+#if defined DEBUG && defined IOBPDOUT
          OPEN( IOBPOUT%FHNDL,  FILE = TRIM(IOBPOUT%FNAME))
          OPEN( IOBPDOUT%FHNDL, FILE = TRIM(IOBPDOUT%FNAME))
+#endif
 
            OUT1D%FHNDL = STARTHNDL + 19 
             MISC%FHNDL = STARTHNDL + 20 
@@ -1255,20 +1286,22 @@
 
          OUT%FHNDL     = STARTHNDL + 24 
 
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CLOSE_FILE_HANDLES()
+       SUBROUTINE CLOSE_FILE_HANDLES()
          USE DATAPOOL
          IMPLICIT NONE
          close(DBG%FHNDL)
          close(STAT%FHNDL)
          IF (LQSTEA) close( QSTEA%FHNDL)
+#if defined DEBUG && defined IOBPDOUT
          close( IOBPOUT%FHNDL)
          close( IOBPDOUT%FHNDL)
+#endif
          close( WINDBG%FHNDL)
-      END SUBROUTINE
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1560,12 +1593,18 @@
 !**********************************************************************
       SUBROUTINE SET_WWMINPULNML
       USE DATAPOOL, only : INP
+#ifdef ROMS_WWM_PGMCL_COUPLING
+      USE mod_coupler, only : Iwaves, INPname
+#endif
+#if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      USE coupling_var, only : WWM_InputFile
+#endif
       IMPLICIT NONE
       INTEGER nbArg
 #ifdef SELFE
       INP%FNAME  = 'wwminput.nml'
 #else
-# ifndef PGMCL_COUPLING
+# if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       nbArg=command_argument_count()
       IF (nbArg > 1) THEN
         CALL WWM_ABORT('Number of argument is 0 or 1')
@@ -1576,9 +1615,12 @@
         CALL GET_COMMAND_ARGUMENT(1, INP%FNAME)
       ENDIF
 # else
-      USE mod_coupler, only : Iwaves, INPname
-      IMPLICIT NONE
+#  ifdef ROMS_WWM_PGMCL_COUPLING
       INP%FNAME=INPname(Iwaves)
+#  endif
+#  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
+      INP%FNAME=WWM_InputFile
+#  endif
 # endif
 #endif
       END SUBROUTINE

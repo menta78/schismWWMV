@@ -67,9 +67,13 @@
       real(rkind), allocatable :: r_s(:) !local Courant number, this variable is only used in determining psi
       real(rkind), allocatable :: w_r(:) !=omega*r_s, used for hybrid scheme
       real(rkind), allocatable :: faceL(:,:) !TVD modification on approximated concentrations at faces with upward flux
+<<<<<<< HEAD
       real(rkind), allocatable :: faceLT(:,:) !TVD modification on approximated concentrations at faces with upward flux
       real(rkind), allocatable :: faceR(:,:) !TVD modification on approximated concentrations at faces with downward flux
       real(rkind), allocatable :: faceRT(:,:) !TVD modification on approximated concentrations at faces with downward flux
+=======
+      real(rkind), allocatable :: faceR(:,:) !TVD modification on approximated concentrations at faces with downward flux
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
       real(rkind), allocatable :: bigv_m(:,:) !prism volume
       real(rkind), allocatable :: res(:) !residual terms (or right hand side terms)
       real(rkind), allocatable :: v_diff(:,:) !vertical diffusive flux
@@ -110,6 +114,7 @@
 #endif
 
       allocate(trel_tmp(ntr,nvrt,nea), &
+<<<<<<< HEAD
               &flux_adv_hface(nvrt,nsa), &
               &flux_mod_hface(ntr,nvrt,ns),flux_mod_vface(ntr,nvrt,ne), &
               &up_rat_hface(ntr,nvrt,nsa), &
@@ -121,6 +126,19 @@
 #ifdef Out_Courant
       allocate(r_s0(nvrt), stat=istat)
       if(istat/=0) call parallel_abort('Transport: fail to allocate')
+=======
+               flux_adv_hface(nvrt,nsa), flux_adv_vface(nvrt,nea), &
+               flux_mod_hface(ntr,nvrt,ns),flux_mod_vface(ntr,nvrt,ne), &
+               up_rat_hface(ntr,nvrt,nsa),up_rat_vface(ntr,nvrt,nea), &
+               gradU(ntr,nvrt),deltaUS(ntr,nvrt),deltaUT(ntr,nvrt),omega(nvrt),u_p(nvrt),psi0(ntr,nvrt),psi1(ntr,nvrt), &
+               phi0(ntr,nvrt),phi1(ntr,nvrt),r_s(nvrt),w_r(nvrt), &
+               faceL(ntr,nvrt),faceR(ntr,nvrt),bigv_m(nea,nvrt),res(nvrt), &
+               v_diff(nvrt,nea),iConv(ntr),stat=istat)
+      if(istat/=0) call parallel_abort('Transport: fail to allocate')
+#ifdef Out_Courant
+      allocate(r_s0(nvrt), stat=istat)
+      if(istat/=0) call parallel_abort('Transport: fail to allocate')
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7
 #endif
 
 !    Sanity check for flimiter
@@ -821,6 +839,7 @@
 !     Save the final array from horizontal part as trel_tmp    
       trel_tmp(1:ntr,:,:)=tr_el(1:ntr,:,:)
 
+<<<<<<< HEAD
 !...  Fei: below is an e.g. of implicit upwind -feel free to add arrays if needed
 
 #ifdef Out_Courant
@@ -1213,3 +1232,354 @@
                v_diff,iConv)
 
       end subroutine do_transport_tvd_imp
+=======
+!...  Fei: below is an e.g. of implicit upwind -feel free to add arrays if needed   
+   
+#ifdef Out_Courant   
+      !Debug: file recording the vertical courant number at each element   
+      open(66,file='courant',status='replace')   
+#endif   
+   
+      do i=1,ne   
+        if(idry_e(i)==1) cycle   
+   
+!       Wet elements with 3 wet nodes   
+        n1=elnode(1,i)   
+        n2=elnode(2,i)   
+        n3=elnode(3,i)   
+   
+        iConv=-1 !all tracers set to -1 (not converged) initially   
+   
+        !temporal limiter set to 0 before the first iteration, which will be updated after each iteration   
+        psi0=0   
+   
+        !--------------------Parameters that do not change through iterations------------------   
+        !spatial limiter from the previous time step, not updated through iterations   
+        do k=kbe(i)+1,nvrt-1    
+            !spatial gradient = dT/dV, note that dV is not the volume of the prism,   
+            !but between prism centers where T is defined   
+            deltaUS(1:ntr,k)=trel_tmp(1:ntr,k+1,i)-trel_tmp(1:ntr,k,i)   
+            gradU(1:ntr,k)=deltaUS(1:ntr,k)/(ze(k+1,i)-ze(k-1,i))*2.0/area(i)   
+        enddo   
+        do k=kbe(i)+2,nvrt-1   
+            do m=1,ntr   
+                !The selection of TVD spatial limiters will be given a parameter in the future   
+                !---------Van Leer-----------   
+                !term1=gradU(m,k)*gradU(m,k-1)   
+                !term2=gradU(m,k)+gradU(m,k-1)   
+                !phi0(m,k)=(1.0_rkind+sign(1.0_rkind,term1))*term1/ &   
+                !    sign(max(abs(term2),epsilon(term2)),term2)   
+   
+                !---------Minmod-----------   
+                phi0(m,k)= 0.5*(sign(1.0_rkind,gradU(m,k))+sign(1.0_rkind,gradU(m,k-1))) &   
+                    * min(abs(gradU(m,k)),abs(gradU(m,k-1)))   
+   
+                !---------Superbee-----------   
+                !term1=gradU(m,k)*gradU(m,k-1)   
+                !term2=gradU(m,k)/sign(max(abs(gradU(m,k-1)),epsilon(gradU(m,k-1))),gradU(m,k-1))   
+                !phi0(m,k)=0.5*(1.0+sign(1.0,term1))*gradU(m,k-1)*max(min(2.0*term2,1.0),min(term2,1.0))   
+            enddo      
+        enddo      
+        !Caution: phi=0 at surface (nvrt) and bottom (kbe(i)+1), as well as extended levels      
+        phi0(1:ntr,1:kbe(i)+1)=0.0_rkind      
+        phi0(1:ntr,nvrt)=0.0_rkind      
+      
+!       Vertical diffusive flux      
+        v_diff(kbe(i),i)=0.0 !bottom      
+        v_diff(nvrt,i)=0.0 !surface      
+        do k=kbe(i)+1,nvrt-1      
+          av_df=(dfh1(k,n1)+dfh1(k,n2)+dfh1(k,n3))/3 !diffusivity      
+          av_dz=(ze(k+1,i)-ze(k-1,i))/2.d0      
+          v_diff(k,i)=area(i)*av_df/av_dz      
+        enddo      
+                
+        !debug: set vertical diffusion to 0 temporarily      
+        !v_diff=0.0      
+      
+        !r_s (local Courant number), only used for determining temporal limiter psi      
+        do k=kbe(i)+1,nvrt      
+            r_s(k)=dt/bigv_m(i,k)*sign(max(abs(flux_adv_vface(k,i)),abs(flux_adv_vface(k-1,i))), &       
+                flux_adv_vface(k,i)+flux_adv_vface(k-1,i) )      
+        enddo      
+#ifdef Out_Courant      
+        r_s0(kbe(i)+1:nvrt)=abs(r_s(kbe(i)+1:nvrt))      
+        r_s0(kbe(i))=maxval(r_s0(kbe(i)+1:nvrt))      
+        write(66,"(27F19.7)") (xnd(n1)+xnd(n2)+xnd(n3))/3.0, (ynd(n1)+ynd(n2)+ynd(n3))/3.0, r_s0      
+#endif      
+      
+        !Matrix, including advective flux and diffusive flux      
+        ndim=nvrt-kbe(i) !# of eqs/unknowns      
+        alow=0; bdia=1; cupp=0      
+        do k=kbe(i)+1,nvrt      
+          kin=k-kbe(i)       
+          dt_by_bigv = dt/bigv_m(i,k)      
+          if(k<nvrt) then      
+            tmp=dt_by_bigv*v_diff(k,i)      
+            cupp(kin)=cupp(kin)-tmp      
+            bdia(kin)=bdia(kin)+tmp      
+      
+            !Upwind advection      
+            tmp=abs(flux_adv_vface(k,i))*dt_by_bigv       
+            if(flux_adv_vface(k,i)<0) then !downward inflow      
+              cupp(kin)=cupp(kin)-tmp      
+              bdia(kin)=bdia(kin)+tmp      
+            endif       
+          endif !k<nvrt      
+      
+          if(k>kbe(i)+1) then      
+            tmp=dt_by_bigv*v_diff(k-1,i)      
+            alow(kin)=alow(kin)-tmp      
+            bdia(kin)=bdia(kin)+tmp      
+      
+            tmp=abs(flux_adv_vface(k-1,i))*dt_by_bigv      
+            if(flux_adv_vface(k-1,i)>0) then !upward inflow      
+              alow(kin)=alow(kin)-tmp      
+              bdia(kin)=bdia(kin)+tmp      
+            endif      
+          endif !k>kbe(i)+1      
+      
+        enddo      
+        !--------------------End: parameters that do not change through iterations------------------      
+      
+!--------------------------------------------------------------------------------------------------------      
+        do iterK=1,itmax !cycle through iterations      
+        do m=1,ntr !cycle through tracers.      
+        !Tracer loop is placed inside iteration loop to apply tridag efficiently,      
+        !although not all tracers converge at the same time, iConv is used to      
+        !monitor convergence of each tracer      
+!-----------------------------start iterations-----------------------------------------------------------      
+      
+        if (iConv(m)==0) cycle !already converged      
+      
+        if (iterK==1) then !first iteration, use initial phi and psi      
+            phi1(m,:)=phi0(m,:) !spatial limiter      
+            psi1(m,:)=psi0(m,:) !temporal limiter      
+        else      
+            !this iteration's psi0 is last iteration's psi1      
+            psi0(m,:)=psi1(m,:)        
+            !update temporal limiter      
+            deltaUT=tr_el(1:ntr,:,i)-trel_tmp(1:ntr,:,i) !temporal increment   
+            do k=kbe(i)+1,nvrt   
+                if (deltaUT(m,k)>=0) then   
+                    psi1(m,k)=max(0.0_rkind,min(2.0_rkind/r_s(k)*deltaUT(m,k) + psi0(m,k-1), deltaUT(m,k)))   
+                else   
+                    psi1(m,k)=min(0.0_rkind,max(2.0_rkind/r_s(k)*deltaUT(m,k) + psi0(m,k-1), deltaUT(m,k)))   
+                endif   
+            enddo   
+   
+            !update spatial limiter phi1, same formulation as phi0   
+            do k=kbe(i)+1,nvrt-1 !spatial gradient   
+                deltaUS(m,k)=tr_el(m,k+1,i)-tr_el(m,k,i)   
+                gradU(m,k)=deltaUS(m,k)/(ze(k+1,i)-ze(k-1,i))*2.0/area(i)   
+            enddo   
+            do k=kbe(i)+2,nvrt-1    
+                !The selection of TVD spatial limiters will be given a parameter in the future   
+                !--------Van Leer---------   
+                !term1=gradU(m,k)*gradU(m,k-1)   
+                !term2=gradU(m,k)+gradU(m,k-1)   
+                !phi1(m,k)=(1.0_rkind+sign(1.0_rkind,term1))*term1/ &   
+                !    sign(max(abs(term2),epsilon(term2)),term2)   
+   
+                !--------Minmod---------   
+                phi1(m,k)= 0.5*(sign(1.0_rkind,gradU(m,k))+sign(1.0_rkind,gradU(m,k-1))) &   
+                    * min(abs(gradU(m,k)),abs(gradU(m,k-1)))   
+   
+                !--------Superbee---------   
+                !term1=gradU(m,k)*gradU(m,k-1)   
+                !term2=gradU(m,k)/sign(max(abs(gradU(m,k-1)),epsilon(gradU(m,k-1))),gradU(m,k-1))   
+                !phi1(m,k)=0.5*(1.0+sign(1.0,term1))*gradU(m,k-1)*max(min(2.0*term2,1.0),min(term2,1.0))   
+            enddo   
+            phi1(1:ntr,1:kbe(i)+1)=0.0_rkind   
+            phi1(1:ntr,nvrt)=0.0_rkind   
+        endif   
+             
+        !TVD modification on face values   
+        !face(:,k) is defined on k+1/2, i.e. between (tr_el(:,k+1,:) and tr_el(:,k,:)   
+        do k=kbe(i)+1,nvrt-1   
+            faceL(m,k)=+0.5*phi1(m,k)*bigv_m(i,k)-0.5*psi1(m,k)   
+            faceR(m,k)=-0.5*phi1(m,k+1)*bigv_m(i,k+1)-0.5*psi1(m,k+1)   
+        enddo   
+        !surface, phi=0, only psi    
+        faceL(m,nvrt)=-0.5*psi1(m,nvrt)   
+        faceR(m,nvrt)=0.0   
+        !bottom, phi=0, only psi    
+        faceR(m,kbe(i))=-0.5*psi1(m,kbe(i)+1)   
+        faceL(m,kbe(i))=0.0   
+   
+        !assemble rrhs (residual terms)   
+        do k=kbe(i)+1,nvrt   
+          kin=k-kbe(i)    
+          !upwind part, only considering inflow   
+          if (flux_adv_vface(k-1,i)>0 .and. k>kbe(i)+1) then !k>kbe(i)+1, since tr_el(m,kbe(i),i) is not extended yet   
+              term1=flux_adv_vface(k-1,i)*(tr_el(m,k,i)-tr_el(m,k-1,i))    
+          else   
+              term1=0.0     
+          endif   
+          if (flux_adv_vface(k,i)<0 .and. k<nvrt) then  !k<nvrt, since tr_el(m,nvrt+1,i) is undefined   
+              term2=flux_adv_vface(k,i)*(tr_el(m,k,i)-tr_el(m,k+1,i)) !inflow   
+          else    
+              term2=0.0    
+          endif   
+          !vertical diffusion   
+          if (k==kbe(i)+1) then   
+              term6=0.0 !bottom   
+          else   
+              term6=deltaUS(m,k-1)   
+          endif   
+          if (k==nvrt) then   
+              term5=0.0 !surface   
+          else   
+              term5=deltaUS(m,k)   
+          endif   
+   
+          !residuals   
+          res(k)=tr_el(m,k,i)-trel_tmp(m,k,i)+ dt/bigv_m(i,k)*  &   
+          ( &   
+                (term1-term2)  &  !upwind part   
+                +0.5* ( &  !TVD part   
+                + (flux_adv_vface(k,i)+abs(flux_adv_vface(k,i)))*faceL(m,k) &   
+                - (flux_adv_vface(k-1,i)+abs(flux_adv_vface(k-1,i)))*faceL(m,k-1) &   
+                - (flux_adv_vface(k-1,i)-abs(flux_adv_vface(k-1,i)))*faceR(m,k-1)   &   
+                + (flux_adv_vface(k,i)-abs(flux_adv_vface(k,i)))*faceR(m,k)  &   
+                ) &   
+                + (  & !vertical diffusion, horizontal diffusion not included yet   
+                  - v_diff(k,i)*term5 &   
+                  + v_diff(k-1,i)*term6 &   
+                ) &   
+           )   
+   
+        enddo !k=kbe(i)+1,nvrt   
+   
+        !check convergence based on residuals   
+        temp=sqrt(sum(res(kbe(i)+1:nvrt)**2))   
+	    if ( temp < conv) then   
+            !write(*,*) "converges after tolf", iterK-1   
+            !iterN=iterN+iterK-1   
+            iConv(m)=0   
+            cycle !tracer loop   
+	    end if   
+   
+        !add current tracer to rrhs, flux_sf and flux_bt not included yet   
+        rrhs(m,1:ndim)=-res(kbe(i)+1:nvrt)   
+   
+        !-----------------------------------------------------------------------------   
+        enddo !tracers   
+        !-----------------------------------------------------------------------------   
+   
+        if (sum(iConv)==0) then !all tracers converge   
+            exit !iteration loop   
+        endif   
+   
+        !Note: soln is the increment of T, i.e (next step)-(this step)   
+        call tridag(nvrt,ntr,ndim,ntr,alow,bdia,cupp,rrhs,soln,gam)   
+   
+        !update concentration   
+        do m=1,ntr   
+            if (iConv(m)==0) cycle   
+            tr_el(m,kbe(i)+1:nvrt,i)=tr_el(m,kbe(i)+1:nvrt,i)+soln(m,1:ndim)   
+        enddo   
+   
+        !check convergence, based on increment   
+        do m=1,ntr   
+            if (iConv(m)==0) cycle   
+            temp=sqrt(sum(soln(m,1:ndim)**2))/sqrt(sum(tr_el(m,kbe(i)+1:nvrt,i)**2))   
+            if (temp<conv) then   
+                !write(*,*) "converges after TOTX", iterK   
+                !iterN=iterN+iterK   
+                iConv(m)=0   
+            endif      
+        enddo   
+        if (sum(iConv)==0) then !all tracers converge   
+            exit   
+        endif   
+   
+#ifdef RECORD_ITER   
+        if (iterK>iterK_MAX) then   
+            iterK_MAX=iterK   
+            iele_max=i   
+        endif      
+#endif /*RECORD_ITER*/   
+   
+        !-----------------------------------------------------------------------------   
+        enddo ! iterations   
+        !-----------------------------------------------------------------------------   
+   
+        do k=kbe(i)+1,nvrt   
+          kin=k-kbe(i)   
+   
+          if(imod==0) then !ST   
+            !tr_el(m,k,i)=soln(1,kin)   
+            if(ihconsv/=0) tr_el(1,k,i)=max(tempmin,min(tempmax,tr_el(1,k,i)))   
+            if(isconsv/=0) tr_el(2,k,i)=max(saltmin,min(saltmax,tr_el(2,k,i)))   
+          else !other tracers   
+#ifdef USE_NAPZD   
+!           CSD prevent bio from going negative here   
+!           CSD and collect bio deficit   
+!Bug: NBT not known here; also 1st index of tr_el wrong   
+            !do ibio=1,NBT   
+            do ibio=1,ntr   
+              !Here tr_el is already updated   
+              Bio_bdef(k,i)=Bio_bdef(k,i)+max(tr_el(ibio,k,i),0.d0)-tr_el(ibio,k,i)   
+              tr_el(ibio,k,i)=max(tr_el(ibio,k,i),0.d0)   
+            enddo   
+#else         
+            !tr_el(m,k,i)=soln(m,kin)   
+   
+#ifdef USE_SED   
+            do j=1,ntr   
+              if(tr_el(j,k,i).lt. -1.0E-20) then   
+!                     write(12,*)'negative sediment',i,k,tr_el(j,k,i)   
+                tr_el(j,k,i)=0.d0   
+              endif   
+            enddo   
+#endif /*USE_SED*/   
+#endif /*USE_NAPZD*/   
+   
+          endif !imod   
+        enddo !k   
+   
+!       Extend   
+        do k=1,kbe(i)   
+          tr_el(:,k,i)=tr_el(:,kbe(i)+1,i)   
+        enddo !k   
+   
+   
+      enddo !i=1,ne   
+   
+#ifdef Out_Courant   
+        close (66)   
+       ! pause   
+#endif   
+   
+#ifdef RECORD_ITER   
+      write(*,*) "max iterations at step ", it, ": ", iterK_MAX, "; element: ",iele_max   
+      iterK_MAX=0; iele_max=-1   
+#endif /*RECORD_ITER*/   
+   
+!     Update ghosts   
+#ifdef INCLUDE_TIMING   
+      cwtmp=mpi_wtime()   
+      timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2   
+#endif   
+      call exchange_e3d_tr(tr_el)   
+#ifdef INCLUDE_TIMING   
+      cwtmp2=mpi_wtime()   
+      wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp   
+#endif         
+   
+!     Output warning for diffusion number   
+!      if(difnum_max_l>0.5) write(12,*)'Transport: diffusion # exceeds 0.5:',it,imod,difnum_max_l   
+!'   
+   
+!     Deallocate temp. arrays   
+      deallocate(trel_tmp, &   
+               flux_adv_hface, flux_adv_vface, &   
+               flux_mod_hface,flux_mod_vface, &   
+               up_rat_hface,up_rat_vface, &   
+               gradU,deltaUS,deltaUT,omega,u_p,psi0,psi1, &   
+               phi0,phi1,r_s,w_r, &   
+               faceL,faceR,bigv_m,res, &   
+               v_diff,iConv)   
+   
+      end subroutine do_transport_tvd_imp   
+>>>>>>> 8b58d170a780f99abe62a58205e9ea8e1db083a7

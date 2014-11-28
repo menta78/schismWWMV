@@ -101,7 +101,7 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
           ELSE IF (IWINDFORMAT == 7) THEN ! GRIB forcing from ecmwf
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
@@ -187,7 +187,7 @@
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
             END IF
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
           ELSE IF (IWINDFORMAT == 7) THEN
             CALL INIT_GRIB_ECMWF !load wind_time_mjd and compute interp coefs
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
@@ -219,7 +219,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind)             :: TMP(MNP,2)
-#if defined NCDF || defined GRB 
+#if defined NCDF || defined GRIB_API_ECMWF
       REAL(rkind)             :: cf_w1, cf_w2
       INTEGER                 :: IT, IFILE
 #endif
@@ -286,7 +286,7 @@
           REC1_old = REC1_new
           REC2_old = REC2_new
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
         ELSE IF (IWINDFORMAT == 7) THEN
           IF (K.EQ.1) THEN
             REC1_old = 0
@@ -652,7 +652,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer IPROC, eInt(1)
-# ifdef MPI_PARALL_GRID
+#ifdef MPI_PARALL_GRID
       IF (.NOT. MULTIPLE_IN_WIND) THEN
         IF (myrank .eq. 0) THEN
           eInt(1)=NDT_WIND_ALL_FILES
@@ -674,8 +674,35 @@
           CALL MPI_RECV(WIND_TIME_IT,NDT_WIND_ALL_FILES,rtype, 0, 814, comm, istatus, ierr)
         END IF
       END IF
-# endif
+#endif
       SEWI%DELT = ( WIND_TIME_ALL_FILES(2) - WIND_TIME_ALL_FILES(1) ) * DAY2SEC
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SYNCHRONIZE_WIND_TIME_MJD
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IPROC, eInt(1)
+#ifdef MPI_PARALL_GRID
+      IF (.NOT. MULTIPLE_IN_WIND) THEN
+        IF (myrank .eq. 0) THEN
+          eInt(1)=nbtime_mjd
+          DO IPROC=2,nproc
+            CALL MPI_SEND(eInt,1,itype, iProc-1, 811, comm, ierr)
+          END DO
+          DO IPROC=2,nproc
+            CALL MPI_SEND(WIND_TIME_MJD,nbtime_mjd,rtype, iProc-1, 812, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_RECV(eInt,1,itype, 0, 811, comm, istatus, ierr)
+          nbtime_mjd=eInt(1)
+          ALLOCATE(WIND_TIME_MJD(nbtime_mjd), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
+          CALL MPI_RECV(WIND_TIME_MJD,nbtime_mjd,rtype, 0, 812, comm, istatus, ierr)
+        END IF
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -868,9 +895,9 @@
       REAL(rkind), SAVE          :: TIME
 
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
@@ -957,10 +984,10 @@
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,Vtotal2)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
      IF (MULTIPLE_IN_WIND) THEN
        eField(:,1)=Vtotal1
        eField(:,2)=Vtotal2
@@ -970,10 +997,10 @@
        CALL SCATTER_ONED_ARRAY(Vtotal2, Vlocal)
        eField(:,2)=Vlocal
      END IF
-#else
+# else
      eField(:,1)=Vtotal1
      eField(:,2)=Vtotal2
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1492,9 +1519,9 @@
       REAL(rkind)                :: Vlocal(MNP)
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
       WRITE(WINDBG%FHNDL,*) 'READ_NETCDF_CRFS IFILE=', IFILE, ' IT=', IT
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         IF (IFILE .GT. NUM_NETCDF_FILES) CALL WWM_ABORT('SOMETHING IS WRONG WE RUN OUT OF WIND TIME')
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
@@ -1610,10 +1637,10 @@
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,Vtotal2)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         eField(:,1)=Vtotal1
         eField(:,2)=Vtotal2
@@ -1623,10 +1650,10 @@
         CALL SCATTER_ONED_ARRAY(Vtotal2, Vlocal)
         eField(:,2)=Vlocal
       END IF
-#else
+# else
       eField(:,1)=Vtotal1
       eField(:,2)=Vtotal2
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1655,9 +1682,9 @@
       INTEGER, DIMENSION (nf90_max_var_dims) :: dimIDs
       real(rkind) :: ErrorCoord, XPinterp, YPinterp
       INTEGER IEwind
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         IF (2*IFILE .GT. NUM_NETCDF_FILES) THEN
           CALL WWM_ABORT('NARR ERROR: Not enough files')
         END IF
@@ -1793,10 +1820,10 @@
           ENDIF
         END DO
         WRITE(WINDBG%FHNDL,*) 'ErrorCoord=', ErrorCoord
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         eField(:,1)=Vtotal1
         eField(:,2)=Vtotal2
@@ -1806,36 +1833,9 @@
         CALL SCATTER_ONED_ARRAY(Vtotal2, Vlocal)
         eField(:,2)=Vlocal
       END IF
-#else
+# else
       eField(:,1)=Vtotal1
       eField(:,2)=Vtotal2
-#endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SYNCHRONIZE_WIND_TIME_MJD
-      USE DATAPOOL
-      IMPLICIT NONE
-      integer IPROC, eInt(1)
-# ifdef MPI_PARALL_GRID
-      IF (.NOT. MULTIPLE_IN_WIND) THEN
-        IF (myrank .eq. 0) THEN
-          eInt(1)=nbtime_mjd
-          DO IPROC=2,nproc
-            CALL MPI_SEND(eInt,1,itype, iProc-1, 811, comm, ierr)
-          END DO
-          DO IPROC=2,nproc
-            CALL MPI_SEND(WIND_TIME_MJD,nbtime_mjd,rtype, iProc-1, 812, comm, ierr)
-          END DO
-        ELSE
-          CALL MPI_RECV(eInt,1,itype, 0, 811, comm, istatus, ierr)
-          nbtime_mjd=eInt(1)
-          ALLOCATE(WIND_TIME_MJD(nbtime_mjd), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
-          CALL MPI_RECV(WIND_TIME_MJD,nbtime_mjd,rtype, 0, 812, comm, istatus, ierr)
-        END IF
-      END IF
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -1890,9 +1890,9 @@
       REAL(rkind) :: varTotal(MNP_WIND,2), Vtotal(MNP_WIND), Vlocal(MNP)
       character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
       INTEGER                            :: FID, ID
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
         ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -1912,10 +1912,10 @@
         ISTAT = NF90_CLOSE(FID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
         CALL KERNEL_INTERP_UV_WINDFD(varTotal)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         outwind=varTotal
       ELSE
@@ -1927,9 +1927,9 @@
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
         outwind(:,2)=Vlocal
       END IF
-#else
+# else
       outwind=varTotal
-#endif
+# endif
       END SUBROUTINE READ_INTERP_NETCDF_CF
 !****************************************************************************
 !*  CF_COMPLIANT WIND                                                       *
@@ -2091,12 +2091,12 @@
       real(rkind) :: UWIND_tot(np_total), VWIND_tot(np_total)
       real(rkind) :: Vtotal1(np_total), Vtotal2(np_total)
       real(rkind) :: Vlocal(MNP)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       integer IP_glob, IP
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
         ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -2118,10 +2118,10 @@
 
         Vtotal1 = cf_add_offset + cf_scale_factor*UWIND_tot
         Vtotal2 = cf_add_offset + cf_scale_factor*VWIND_tot
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         DO IP=1,MNP
           IP_glob=iplg(IP)
@@ -2134,10 +2134,10 @@
         CALL SCATTER_ONED_ARRAY(Vtotal2, Vlocal)
         outwind(:,2)=Vlocal
       END IF
-#else
+# else
       outwind(:,1)=Vtotal1
       outwind(:,2)=Vtotal2
-#endif
+# endif
       WRITE(WINDBG%FHNDL,*) 'READ_DIRECT_NETCDF_CF'
       WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
       WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
@@ -2236,7 +2236,7 @@
       CALL SYNCHRONIZE_WIND_TIME_MJD
       END SUBROUTINE
 #endif
-#ifdef GRB
+#ifdef GRIB_API_ECMWF
 !****************************************************************************
 !* This is functionality for reading GRIB file from ECMWF                   *
 !****************************************************************************
@@ -2411,9 +2411,9 @@
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
       !
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
-#endif
+# endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
         call grib_count_in_file(ifile,n)
@@ -2443,10 +2443,10 @@
         END DO
         CALL GRIB_CLOSE_FILE(ifile)
         CALL KERNEL_INTERP_UV_WINDFD(outTotal)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         outwind=outTotal
       ELSE
@@ -2458,8 +2458,8 @@
         CALL SCATTER_ONED_ARRAY(Vtotal, Vlocal)
         outwind(:,2)=Vlocal
       END IF
-#else
+# else
       outwind=outTotal
-#endif
+# endif
       END SUBROUTINE
 #endif

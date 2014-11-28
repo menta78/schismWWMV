@@ -28,9 +28,13 @@
 #if defined ST41 || defined ST42
 # define ST_DEF
 #endif
-#ifdef PGMCL_COUPLING
-# include "cppdefs.h"
-#endif
+! The cppdefs creates lots of trouble
+! since MPI is one symbol and it gets
+! translated from use MPI ---> use 1
+!
+!#ifdef ROMS_WWM_PGMCL_COUPLING
+!# include "cppdefs.h"
+!#endif
 #ifdef SELFE
 # define MPI_PARALL_GRID
 #endif

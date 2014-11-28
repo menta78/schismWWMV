@@ -79,7 +79,7 @@
          REAL(rkind)    :: XLCKS(MDC,MSC)
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME1)
+         call WAV_MY_WTIME(TIME1)
 #endif 
 
 !         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
@@ -145,7 +145,7 @@
 #endif
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME2)
+         call WAV_MY_WTIME(TIME2)
 #endif 
          IF ((ISELECT .EQ. 1 .OR. ISELECT .EQ. 10 .OR. ISELECT .EQ. 20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
@@ -222,7 +222,7 @@
 #endif
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME3)
+         call WAV_MY_WTIME(TIME3)
 #endif 
          IF (LNANINFCHK) THEN
            IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
@@ -294,7 +294,7 @@
 
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME4)
+         call WAV_MY_WTIME(TIME4)
 #endif 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
@@ -355,7 +355,7 @@
 #endif
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME5)
+         call WAV_MY_WTIME(TIME5)
 #endif 
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10) .AND.ISHALLOW(IP).EQ.1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. VERYSMALL) THEN
@@ -388,7 +388,7 @@
 
 
 #ifdef TIMINGS
-         call MY_WTIME(TIME6)
+         call WAV_MY_WTIME(TIME6)
 #endif 
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
@@ -398,7 +398,7 @@
            ENDIF
          END IF
 #ifdef TIMINGS
-         call MY_WTIME(TIME7)
+         call WAV_MY_WTIME(TIME7)
 #endif 
 
 #ifdef DEBUG
@@ -425,7 +425,7 @@
 #endif
 
 #ifdef TIMINGS
-        call MY_WTIME(TIME8)
+        call WAV_MY_WTIME(TIME8)
 #endif 
 !------------------------------------------------------------------------------------------------------------------------!
 !-------------------------------- RECALCULATE ALL SOURCE TERMS BASED ON THE NEW SPECTRA ---------------------------------! 
@@ -466,7 +466,7 @@
          ENDIF
 
 #ifdef TIMINGS 
-         call MY_WTIME(TIME9)
+         call WAV_MY_WTIME(TIME9)
 #ifdef WWM_MPI 
          IF (IP == MNP .AND. myrank == 0 ) THEN
 #else 
