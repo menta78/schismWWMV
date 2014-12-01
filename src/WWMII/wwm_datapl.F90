@@ -210,6 +210,7 @@
          LOGICAL :: REFRACTION_IMPL
          LOGICAL :: SOURCE_IMPL
          LOGICAL :: APPLY_DXP_CORR = .FALSE.
+         LOGICAL :: USE_EXACT_FORMULA_SPHERICAL_AREA = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.

@@ -2014,7 +2014,7 @@
       SUBROUTINE INIT_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         ALLOCATE( CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
+         ALLOCATE(CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
          CCON = 0
          SI = ZERO
@@ -2051,6 +2051,32 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE NEXT_IDX(len, i, iNext)
+      IMPLICIT NONE
+      integer, intent(in) :: len, i
+      integer, intent(out) :: iNext
+      IF (i .lt. len) THEN
+        iNext=i+1
+      ELSE
+        iNext=1
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE PREV_IDX(len, i, iPrev)
+      IMPLICIT NONE
+      integer, intent(in) :: len, i
+      integer, intent(out) :: iPrev
+      IF (i .gt. 1) THEN
+        iPrev=i-1
+      ELSE
+        iPrev=len
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE INIT_FLUCT
       USE DATAPOOL
       IMPLICIT NONE
@@ -2070,6 +2096,10 @@
       INTEGER, ALLOCATABLE :: CELLVERTEX(:,:,:)
       INTEGER, ALLOCATABLE :: PTABLE(:,:)
       INTEGER :: SUM_CCON, SizeAlloc
+      INTEGER nbMatch, IE2, ICON, INEXT, IE_ADJ
+      INTEGER IP_NEXT, IP_ADJ_NEXT, IP_ADJ_PREV
+      INTEGER POS_NEXT, POS_PREV
+      LOGICAL CHECK_COMBIN_ORIENT
 
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -2169,7 +2199,7 @@
         CALL WWM_ABORT('Do Not Sleep Before solving the problem')
       ENDIF
 
-      ALLOCATE (IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
+      ALLOCATE(IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
 ! order of the occurence in the loop during runtime
@@ -2189,6 +2219,50 @@
         END DO
       END DO
       DEALLOCATE(CELLVERTEX)
+
+      CHECK_COMBIN_ORIENT=.TRUE.
+      IF (CHECK_COMBIN_ORIENT) THEN
+        DO IE=1,MNE
+          DO I=1,3
+            INEXT=POS_TRICK(I,1)
+            IP=INE(I, IE)
+            IP_NEXT=INE(I, IE)
+            nbMatch=0
+            IE_ADJ=-1
+            DO ICON=1,CCON(IP)
+              IE2=IE_CELL2(IP,ICON)
+              IF (IE .ne. IE2) THEN
+                POS=POS_CELL2(IP, ICON)
+                POS_NEXT=POS_TRICK(POS,1)
+                IP_ADJ_NEXT=INE(POS_NEXT,IE2)
+                IF (IP_ADJ_NEXT .eq. IP_NEXT) THEN
+                  WRITE(DBG%FHNDL,*) 'Combinatorial orientability problem'
+                  WRITE(DBG%FHNDL,*) 'IE=', IE, ' IE2=', IE2
+                  WRITE(DBG%FHNDL,*) 'IP=', IP, ' IP_NEXT=', IP_NEXT
+                  FLUSH(DBG%FHNDL)
+                  CALL WWM_ABORT('Please correct the grid combinatorially 1')
+                END IF
+                POS_PREV=POS_TRICK(POS,2)
+                IP_ADJ_PREV=INE(POS_PREV,IE2)
+                IF (IP_ADJ_PREV .eq. IP_NEXT) THEN
+                  nbMatch=nbMatch+1
+                  IE_ADJ=IE2
+                END IF
+              END IF
+            END DO
+            IF (nbMatch .gt. 1) THEN
+              WRITE(DBG%FHNDL,*) 'nbMatch is too large.'
+              WRITE(DBG%FHNDL,*) 'Should be 0 for boundary edge'
+              WRITE(DBG%FHNDL,*) 'Should be 1 for interior edges'
+              WRITE(DBG%FHNDL,*) 'nbMatch=', nbMatch
+              FLUSH(DBG%FHNDL)
+              CALL WWM_ABORT('Please correct the grid combinatorially 2')
+            END IF
+          END DO
+        END DO
+
+      END IF
+
 
       IF (ICOMP .GT. 0 .OR. LEXPIMP .OR. LZETA_SETUP) THEN
 

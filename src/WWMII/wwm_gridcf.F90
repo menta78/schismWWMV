@@ -153,7 +153,11 @@
                      IEN(4,IE) =   DXP3
                      IEN(5,IE) = - DYP1
                      IEN(6,IE) =   DXP1
-                     DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
+                     IF (LSPHE .and. USE_EXACT_FORMULA_SPHERICAL_AREA) THEN
+                       CALL SPHERICAL_COORDINATE_AREA(XP(I1), XP(I2), XP(I3), YP(I1), YP(I2), YP(I3), DBLTMP)
+                     ELSE
+                       DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
+                     END IF
                      TRIA(IE) = DBLTMP
                    END IF
 
