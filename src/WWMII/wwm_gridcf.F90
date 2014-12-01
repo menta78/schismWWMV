@@ -3,6 +3,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE CORRECT_SINGLE_DXP(DXP)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(inout) :: DXP
+      IF (DXP .le. -180_rkind) THEN
+        DXP=DXP + 360
+      END IF
+      IF (DXP .ge. 180) THEN
+        DXP=DXP - 360
+      END IF
+      END SUBROUTINE
+
       SUBROUTINE INIT_SPATIAL_GRID
          USE DATAPOOL
          IMPLICIT NONE
@@ -75,6 +87,11 @@
                      DYP2=YP(I3) - YP(I2)
                      DXP3=XP(I1) - XP(I3)
                      DYP3=YP(I1) - YP(I3)
+                     IF (APPLY_DXP_CORR) THEN
+                       CALL CORRECT_SINGLE_DXP(DXP1)
+                       CALL CORRECT_SINGLE_DXP(DXP2)
+                       CALL CORRECT_SINGLE_DXP(DXP3)
+                     END IF
 
                      IEN(1,IE) = - DYP2
                      IEN(2,IE) =   DXP2

@@ -209,6 +209,7 @@
          LOGICAL :: FREQ_SHIFT_IMPL
          LOGICAL :: REFRACTION_IMPL
          LOGICAL :: SOURCE_IMPL
+         LOGICAL :: APPLY_DXP_CORR = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
