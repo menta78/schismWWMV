@@ -2228,7 +2228,7 @@
         ISTAT = nf90_close(fid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
 
-        wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + SHIFT_TIME_MJD + eTimeStart
+        wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + SHIFT_WIND_TIME + eTimeStart
         CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
 # ifdef MPI_PARALL_GRID
       END IF
