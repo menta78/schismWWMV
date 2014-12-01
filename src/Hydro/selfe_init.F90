@@ -45,8 +45,6 @@
        USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_frac
 #endif
 
-
-
 #ifdef USE_OIL
 #endif
 
@@ -179,27 +177,26 @@
 !-------------------------------------------------------------------------------
       version='description' !not really used
 !     2D flag (0: 3D model; other: 2D model)
-      call get_param('param.in','im2d',1,im2d,tmp,stringvalue)
-      if(im2d==0) then !3D
-        lm2d=.false.
-      else !2D
-        lm2d=.true.
-        !Implicit Coriolis
-        call get_param('param.in','theta2',2,itmp,theta2,stringvalue)
-      endif
+!      call get_param('param.in','im2d',1,im2d,tmp,stringvalue)
+!      if(im2d==0) then !3D
+!        lm2d=.false.
+!      else !2D
+!        lm2d=.true.
+!        !Implicit Coriolis
+!        call get_param('param.in','theta2',2,itmp,theta2,stringvalue)
+!      endif
 !     Check modules for 2D model
-      if(lm2d) then
-#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD || defined USE_TIMOR
-        write(errmsg,*)'2D model cannot have certain modules!'
-        call parallel_abort(errmsg)
-#endif
-      else !3D
-#ifdef USE_SED2D
-        write(errmsg,*)'SED2D model can only runs in 2d mode!'
-        call parallel_abort(errmsg)
-#endif 
-      endif !lm2d
-
+!      if(lm2d) then
+!#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD || defined USE_TIMOR
+!        write(errmsg,*)'2D model cannot have certain modules!'
+!        call parallel_abort(errmsg)
+!#endif
+!      else !3D
+!#ifdef USE_SED2D
+!        write(errmsg,*)'SED2D model can only runs in 2d mode!'
+!        call parallel_abort(errmsg)
+!#endif 
+!      endif !lm2d
 
 !     Some param. from WWM for elfe_msgp
       call get_param('param.in','msc2',1,msc2,tmp,stringvalue)
@@ -218,7 +215,7 @@
         call parallel_abort(errmsg)
       endif
 
-!     Some modules are not available in lon/lat mode yet
+!'    Some modules are not available in lon/lat mode yet
 #if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR
       if(ics==2) then      
         write(errmsg,*)'Some models cannot be run on lon/lat!'
@@ -239,7 +236,7 @@
         call parallel_abort(errmsg)
       endif
 
-!     imm: 0: without bed deformation; 1: with bed deformation (e.g., tsunami);
+!'    imm: 0: without bed deformation; 1: with bed deformation (e.g., tsunami);
 !     2: 3D bed deformation model (needs user coding)
 !     For imm=2, user needs to manually update bottom vel. etc in update_bdef()
 !     (not working yet for ics=2)
@@ -260,12 +257,6 @@
         write(errmsg,*)'Unknown ihot',ihot
         call parallel_abort(errmsg)
       endif
-!#ifdef USE_SWAN
-!      if(ihot==2) then
-!        write(errmsg,*)'ihot cannot be 2 for wave models',ihot
-!        call parallel_abort(errmsg)
-!      endif
-!#endif
 
       call get_param('param.in','ihydraulics',1,ihydraulics,tmp,stringvalue)
 
@@ -344,11 +335,11 @@
       call get_param('param.in','h0',2,itmp,h0,stringvalue)
       if(h0<=0) call parallel_abort('h0 must be positive')
 
-!...  Bottom friction (-1: 2D; 0,1 for 3D)
+!...  Bottom friction 
       call get_param('param.in','bfric',1,nchi,tmp,stringvalue)
-      if(iabs(nchi)>1) call parallel_abort('INIT: unknown nchi')
-      if(lm2d.and.nchi/=-1) call parallel_abort('INIT: 2D requires nchi=-1')
-      if(.not.lm2d.and.nchi==-1) call parallel_abort('INIT: 3D requires nchi/=-1')
+      if(nchi/=0.and.nchi/=1) call parallel_abort('INIT: unknown nchi')
+!      if(lm2d.and.nchi/=-1) call parallel_abort('INIT: 2D requires nchi=-1')
+!      if(.not.lm2d.and.nchi==-1) call parallel_abort('INIT: 3D requires nchi/=-1')
       
       if(nchi==1) then
 !       dzb_min: min. bottom boundary layer thickness [m]
@@ -356,11 +347,11 @@
         call get_param('param.in','dzb_decay',2,itmp,dzb_decay,stringvalue)
         if(dzb_min<=0.or.dzb_decay>0) call parallel_abort('INIT: dzb_min<=0 or dzb_decay>0')
       endif
-      if(nchi==-1) then
-!       Min depth used in Manning formulation
-        call get_param('param.in','hmin_man',2,itmp,hmin_man,stringvalue)
-        if(hmin_man<=0) call parallel_abort('INIT: hmin wrong in Manning')
-      endif
+!      if(nchi==-1) then
+!!       Min depth used in Manning formulation
+!        call get_param('param.in','hmin_man',2,itmp,hmin_man,stringvalue)
+!        if(hmin_man<=0) call parallel_abort('INIT: hmin wrong in Manning')
+!      endif
 
 !     Coriolis options (must be 1 if ics=2)
       call get_param('param.in','ncor',1,ncor,tmp,stringvalue)
@@ -772,10 +763,10 @@
 !        iof(24)=1
 !      endif
 !     For 2D model reset some flags
-      if(lm2d) then
-        iof(3:12)=0
-        iof(17:26)=0
-      endif !lm2d
+!      if(lm2d) then
+!        iof(3:12)=0
+!        iof(17:26)=0
+!      endif !lm2d
 
 !...  Non-standard outputs at sides, nodes and centroids and whole and half levels
 !...  These outputs share same spool and stack size as standard ones
@@ -909,14 +900,14 @@
         write(errmsg,*)'Unknown ihhat:',ihhat
         call parallel_abort(errmsg)
       endif
-      if(lm2d) ihhat=0
+!      if(lm2d) ihhat=0
 
 !...  Transport options: ELM or upwind
 !     iupwind_t: 0: ELM; 1: upwind; 2: TVD (explicit); 3: TVD (implicit vertical)
 !     Fix iupwind_s=iupwind_t
       call get_param('param.in','iupwind_t',1,iupwind_t,tmp,stringvalue)
 !     Reset for 2D model
-      if(lm2d) iupwind_t=1
+!      if(lm2d) iupwind_t=1
 
       iupwind_s=iupwind_t
       if(iupwind_t<0.or.iupwind_t>3) then
@@ -935,23 +926,17 @@
 
 !.... Blending factor for vel. in btrack (1 for internal sides; 2 for bnd sides
 !or nodes)
-      call get_param('param.in','blend_internal',2,itmp,vis_coe1,stringvalue)
-      call get_param('param.in','blend_bnd',2,itmp,vis_coe2,stringvalue)
-      if(vis_coe1<0.or.vis_coe1>1.or.vis_coe2<0.or.vis_coe2>1) then
-        write(errmsg,*)'Illegal blend_internal or blend_bnd:',vis_coe1,vis_coe2
-        call parallel_abort(errmsg)
-      endif
+!      call get_param('param.in','blend_internal',2,itmp,vis_coe1,stringvalue)
+!      call get_param('param.in','blend_bnd',2,itmp,vis_coe2,stringvalue)
+!      if(vis_coe1<0.or.vis_coe1>1.or.vis_coe2<0.or.vis_coe2>1) then
+!        write(errmsg,*)'Illegal blend_internal or blend_bnd:',vis_coe1,vis_coe2
+!        call parallel_abort(errmsg)
+!      endif
 
 !...  Shapiro filter (used if indvel<=0)
       call get_param('param.in','shapiro',2,itmp,shapiro,stringvalue)
       if(shapiro<0.or.shapiro>0.5) then
         write(errmsg,*)'Illegal shapiro:',shapiro
-        call parallel_abort(errmsg)
-      endif
-      !ishapiro_violation=1: geo. check; 0: no geo. check
-      call get_param('param.in','ishapiro_violation',1,ishapiro_violation,tmp,stringvalue)
-      if(ishapiro_violation<0.or.ishapiro_violation>1) then
-        write(errmsg,*)'Illegal ishapiro_violation:',ishapiro_violation
         call parallel_abort(errmsg)
       endif
 
@@ -964,13 +949,15 @@
       endif
 
 !...  Max. for vel. magnitude
-      call get_param('param.in','rmaxvel',2,itmp,rmaxvel,stringvalue)
-      if(rmaxvel<1) then
-        write(errmsg,*)'Illegal rmaxvel:',rmaxvel
+      call get_param('param.in','rmaxvel',2,itmp,tmp,stringvalue)
+      if(tmp<1) then
+        write(errmsg,*)'Illegal rmaxvel:',tmp
         call parallel_abort(errmsg)
       endif
-      !Add noise for btrack
-      rmaxvel=rmaxvel*1.011
+      !Add noise for btrack to prevent underflow in academic cases
+!      rmaxvel=rmaxvel*1.011
+      rmaxvel1=tmp !u-vel
+      rmaxvel2=tmp*1.013 !v-vel
 
 !...  min. vel for invoking btrack and for abnormal exit in quicksearch
       call get_param('param.in','velmin_btrack',2,itmp,velmin_btrack,stringvalue)
@@ -984,7 +971,7 @@
 !     normally; may need to lower it for some benchmark tests
 !     Default: btrack_nudge=1.013e-3
       call get_param('param.in','btrack_nudge',2,itmp,btrack_nudge,stringvalue)
-      if(btrack_nudge<=0.or.btrack_nudge>0.1) then
+      if(btrack_nudge<=0.or.btrack_nudge>0.5) then
         write(errmsg,*)'Illegal btrack_nudge:',btrack_nudge
         call parallel_abort(errmsg)
       endif
@@ -1106,16 +1093,16 @@
       endif
 
 !     Check compatability between 2D model and parameters
-      if(lm2d) then
-        if(ntracers/=0.or.nonhydro==1.or.ihdif/=0.or. &
-     &ibc==0.or.ibtp==1.or.nchi/=-1.or.ihconsv==1.or.isconsv==1.or. &
-     &itur/=0.or.ibcc_mean/=0.or.inu_st/=0.or.icst==2.or.nws==3) then
-          write(errmsg,*)'Uncompatable params. for 2D model:',ntracers, &
-     &nonhydro,ihdif,ibc,ibtp,nchi,ihconsv,isconsv,itur, &
-     &ibcc_mean,inu_st,icst,nws
-          call parallel_abort(errmsg)
-        endif
-      endif !lm2d
+!      if(lm2d) then
+!        if(ntracers/=0.or.nonhydro==1.or.ihdif/=0.or. &
+!     &ibc==0.or.ibtp==1.or.nchi/=-1.or.ihconsv==1.or.isconsv==1.or. &
+!     &itur/=0.or.ibcc_mean/=0.or.inu_st/=0.or.icst==2.or.nws==3) then
+!          write(errmsg,*)'Uncompatable params. for 2D model:',ntracers, &
+!     &nonhydro,ihdif,ibc,ibtp,nchi,ihconsv,isconsv,itur, &
+!     &ibcc_mean,inu_st,icst,nws
+!          call parallel_abort(errmsg)
+!        endif
+!      endif !lm2d
 
 !     Volume and mass sources/sinks option. For mass, only upwind/TVD is
 !     available
@@ -1123,8 +1110,8 @@
       if(if_source/=0.and.if_source/=1) call parallel_abort('Wrong if_source')
 
 !     Bottom b.c. option for momentum eq. (1: old; 2: new) 
-      call get_param('param.in','ibottom_bc',1,ibottom_bc,tmp,stringvalue)
-      if(ibottom_bc/=1.and.ibottom_bc/=2) call parallel_abort('Wrong ibottom_bc')
+!      call get_param('param.in','ibottom_bc',1,ibottom_bc,tmp,stringvalue)
+!      if(ibottom_bc/=1.and.ibottom_bc/=2) call parallel_abort('Wrong ibottom_bc')
 
 !...  Check parameter read in from param.in
       if(myrank==0) write(16,*)'done reading param.in; s2_mxnbt in param.in =',s2_mxnbt
@@ -1133,6 +1120,8 @@
 !...  End reading param.in
 
 !     Setup cyclic node index (used in decomp.)
+!     This part is kept for other modules only - nx() is not used in
+!     SELFE
       do i=1,3
         do j=1,2
           nx(i,j)=i+j
@@ -1143,6 +1132,20 @@
           endif
         enddo !j
       enddo !i
+
+!     nxq is the one actually used
+      do k=3,4 !elem. type
+        do i=1,k  !local index
+          do j=1,k-1 !offset
+            nxq(j,i,k)=i+j
+            if(nxq(j,i,k)>k) nxq(j,i,k)=nxq(j,i,k)-k
+            if(nxq(j,i,k)<1.or.nxq(j,i,k)>k) then
+              write(errmsg,*)'INIT: nx wrong',i,j,k,nxq(j,i,k)
+              call parallel_abort(errmsg)
+            endif
+          enddo !j
+        enddo !i
+      enddo !k
 
 !     Aquire vertical grid
       call aquire_vgrid
@@ -1214,14 +1217,24 @@
 !      call parallel_finalize
 !      stop
 
+!...  Quad does not work for certain options
+      if(lhas_quad) then
+        if(nonhydro==1.or.indvel<=0.or.iupwind_t==0.or.inunfl==1) &
+     &call parallel_abort('INIT: quad grid does not work for certain options')
+!'
+#if defined USE_WWM || defined USE_SED || defined USE_SED2D
+        call parallel_abort('INIT:quad not working for certain modules')
+#endif
+      endif !lhas_quad
+
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 ! Allocate data arrays
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !     Check geometry
-      if(npa>nea.or.nea>nsa) call parallel_abort('npa>nea.or.nea>nsa')
-      if(np>ne.or.ne>ns) call parallel_abort('np>ne.or.ne>ns')
+      if(npa>nsa.or.nea>nsa) call parallel_abort('npa>nsa.or.nea>nsa')
+!      if(np>ns.or.ne>ns) call parallel_abort('np>ns.or.ne>ns')
 
 !     Allocate message passing arrays
       allocate(rrqst(0:nproc-1),stat=istat)
@@ -1234,8 +1247,8 @@
       if(istat/=0) call parallel_abort('main: sstat allocation failure')
 
 !     Allocate the remaining grid geometry arrays held in elfe_glbl
-      allocate(kbe(nea),idry_e(nea),lqk(nea),ie_kr(nea), &
-     &krvel(nea),itvd_e(nea),ze(nvrt,nea),dldxy(3,2,nea),dp00(npa),kfp(npa),kbp(npa), &
+      allocate(kbe(nea),idry_e(nea),idry_e_2t(nea2),lqk(nea),ie_kr(nea), &
+     &krvel(nea),itvd_e(nea),ze(nvrt,nea),dldxy(4,2,nea),dp00(npa),kfp(npa),kbp(npa), &
      &kbp00(npa),kbp_e(np),idry(npa),hmod(npa),znl(nvrt,npa), &
      &kbs(nsa),idry_s(nsa),isidenei2(4,ns),zs(nvrt,nsa), &
      &delj(ns),ibnd_ext_int(npa),pframe(3,3,npa),sigma_lcl(nvrt,npa),stat=istat)
@@ -1249,9 +1262,9 @@
           & tsd(nvrt,nsa),ssd(nvrt,nsa),tnd(nvrt,npa),snd(nvrt,npa), &
           & prho(nvrt,npa),q2(nvrt,npa),xl(nvrt,npa),xlmin2(npa), &
           & uu2(nvrt,npa),vv2(nvrt,npa),ww2(nvrt,npa),bdef(npa),bdef1(npa),bdef2(npa),dfh(nvrt,npa), &
-          & tr_el(mntr,nvrt,nea),bdy_frc(mntr,nvrt,nea),flx_sf(mntr,nea),flx_bt(mntr,nea), &
+          & tr_el(mntr,nvrt,nea2),bdy_frc(mntr,nvrt,nea),flx_sf(mntr,nea),flx_bt(mntr,nea), &
           & xlon_el(nea),ylat_el(nea),albedo(npa),cspline_ypp_nd(nvrt,npa,2), &
-          & cspline_ypp_sd(nvrt,nsa,2),stat=istat)
+          & cspline_ypp_sd(nvrt,nsa,2),flux_adv_vface(nvrt,nea),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: dynamical arrays allocation failure')
 !'
 
@@ -1272,14 +1285,14 @@
 !'
 
 !     All other arrays
-      allocate(ptbt(4,nvrt,npa),sdbt(4,nvrt,nsa),webt(nvrt,nea), & !bubt(2,nea), & 
+      allocate(ptbt(4,nvrt,npa),sdbt(4,nvrt,nsa),webt(nvrt,nea), & 
          &  windx1(npa),windy1(npa),windx2(npa),windy2(npa),windx(npa),windy(npa), &
          &  tau(2,npa),iadv(npa),windfactor(npa),pr1(npa),airt1(npa),shum1(npa), &
          &  pr2(npa),airt2(npa),shum2(npa),pr(npa),sflux(npa),srad(npa),tauxz(npa),tauyz(npa), &
          &  fluxsu(npa),fluxlu(npa),hradu(npa),hradd(npa),chi(nsa),cori(nsa),Cd(nsa), &
          &  Cdp(npa),rmanning(npa),rough_p(npa),dfv(nvrt,npa),elev_nudge(npa),uv_nudge(npa), &
          &  hdif(nvrt,npa),hvis(nvrt,nea),d2uv(2,nvrt,nsa),fluxprc(npa),fluxevp(npa), & 
-         &  bcc(2,nvrt,nsa),sparsem(0:(mnei+1),np), & !sparsem for non-ghosts only
+         &  bcc(2,nvrt,nsa),sparsem(0:mnei_p,np), & !sparsem for non-ghosts only
          &  t_nudge(npa),s_nudge(npa),tr_nudge(npa),dr_dxy(2,nvrt,nsa), &
          &  fun_lat(0:2,npa),dav(2,npa),elevmax(npa),dav_max(2,npa),dav_maxmag(npa), &
          &  tnd_nu1(nvrt,npa),snd_nu1(nvrt,npa),tnd_nu2(nvrt,npa),snd_nu2(nvrt,npa),tnd_nu(nvrt,npa),snd_nu(nvrt,npa), &
@@ -1307,7 +1320,7 @@
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
 
 #ifdef USE_ECO
-      if(ntracers/=25) call parallel_abort('MAIN: ntracer/=25 in EcoSim')
+      if(ntracers>60) call parallel_abort('MAIN: ntracer>60 in EcoSim')
       allocate(Pair(nea), Tair(nea), Hair(nea), Uwind(nea), Vwind(nea), cloud(nea), &
                SpecIr(nea,Nbands),avcos(nea,Nbands),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: EcoSim allocation failure')
@@ -1353,18 +1366,18 @@
         if(istat/=0) call parallel_abort('MAIN: iflux_e alloc')
 
         open(32,file='fluxflag.prop',status='old')
+        max_flreg=-1
         do i=1,ne_global
           read(32,*)j,tmp1
-          if(tmp1<-1) call parallel_abort('MAIN: fluxflag.prop has <-1')
-          if(iegl(i)%rank==myrank) iflux_e(iegl(i)%id)=tmp1
+          itmp=tmp1
+          if(itmp<-1) call parallel_abort('MAIN: fluxflag.prop has <-1')
+          if(iegl(i)%rank==myrank) iflux_e(iegl(i)%id)=itmp
+          if(itmp>max_flreg) max_flreg=itmp
         enddo
         close(32)
-!        do i=1,nea !must be aug.
-!          iflux_e(i)=maxval(nwild2(elnode(1:3,i)))
-!        enddo !i
 
-        itmp1=maxval(iflux_e)
-        call mpi_allreduce(itmp1,max_flreg,1,itype,MPI_MAX,comm,ierr)
+!        itmp1=maxval(iflux_e)
+!        call mpi_allreduce(itmp1,max_flreg,1,itype,MPI_MAX,comm,ierr)
         if(max_flreg<=0) call parallel_abort('INIT: fluxflag.prop flag wrong')
       endif !iflux
 
@@ -1372,7 +1385,7 @@
 !      call parallel_finalize
 !      stop
 
-!     Initialize some arrays and constants
+!'    Initialize some arrays and constants
       tempmin=0; tempmax=40; saltmin=0; saltmax=42
 !     temp fix
 !      tempmin=0; tempmax=1005; saltmin=0; saltmax=42
@@ -1445,7 +1458,6 @@
 !        stop
 !      endif !ics
 
-!...  Finish off some remaining geometric calcualtions
 !     Output side length distribution 
       edge_max=-1 !max. side length
       edge_min=1.e25
@@ -1493,7 +1505,7 @@
         call mpi_reduce(zdev_max,tmp,1,rtype,MPI_MAX,0,comm,ierr)
         if(myrank==0) then
           write(16,*)'Max. pframe dev. from radial= ',real(tmp) !zdev_max
-          call flush(16) ! flush "mirror.out"
+          !call flush(16) ! flush "mirror.out"
         endif
       endif !ics==2
 
@@ -1528,23 +1540,34 @@
 
 !...  Derivatives of shape functions
 !...  For ics=2, this is done inside element frame
+!...  For quads, the derivative is evaluated at centroid
       do i=1,nea
-        do j=1,3
-          dldxy(j,1,i)=(yel(nx(j,1),i)-yel(nx(j,2),i))/2/area(i) !dL_j/dx
-          dldxy(j,2,i)=(xel(nx(j,2),i)-xel(nx(j,1),i))/2/area(i) !dL_j/dy
+        do j=1,i34(i)
+          if(i34(i)==3) then
+            dldxy(j,1,i)=(yel(nxq(1,j,i34(i)),i)-yel(nxq(2,j,i34(i)),i))/2/area(i) !dL_j/dx
+            dldxy(j,2,i)=(xel(nxq(2,j,i34(i)),i)-xel(nxq(1,j,i34(i)),i))/2/area(i) !dL_j/dy
+          else  !quad; evaluate at centroid
+            dldxy(j,1,i)=(yel(nxq(1,j,i34(i)),i)-yel(nxq(3,j,i34(i)),i))/2/area(i) !dphi_dx
+            dldxy(j,2,i)=(xel(nxq(3,j,i34(i)),i)-xel(nxq(1,j,i34(i)),i))/2/area(i) !dphi_dy
+          endif  !i34(i)
         enddo !j
       enddo !i=1,nea
 
 !Debug
-!      if(ics==2) then
-!        do i=1,nea
-!          do j=1,3
-!            swild(j)=xel(j,i)+2*yel(j,i)
-!          enddo !j
-!          write(12,*)'db_dx-ana=',dot_product(swild,dldxy(1:3,1,i))-1
-!          write(12,*)'db_dy-ana=',dot_product(swild,dldxy(1:3,2,i))-2
-!        enddo !i
-!      endif
+!      tmp1=0 !max. rel. error in x-der
+!      tmp2=0 !max. rel. error in y-der
+!      do i=1,nea
+!        do j=1,i34(i)
+!          swild(j)=xel(j,i)-1.7*yel(j,i)
+!        enddo !j
+!        tmp3=abs(dot_product(swild(1:i34(i)),dldxy(1:i34(i),1,i))-1)
+!        tmp4=abs(dot_product(swild(1:i34(i)),dldxy(1:i34(i),2,i))+1.7)
+!        write(12,*)i34(i),' ;db_dx-ana=',tmp3
+!        write(12,*)i34(i),' ;db_dy-ana=',tmp4
+!        tmp1=max(tmp1,tmp3)
+!        tmp2=max(tmp2,tmp4)
+!      enddo !i
+!      write(12,*)'Max. rel. error in x,y=',tmp1,tmp2/1.7
 !      call parallel_finalize
 !      stop      
 
@@ -1555,6 +1578,10 @@
      &(zctr(isdel(2,i))-zctr(isdel(1,i)))**2)    
         if(delj(i)==0) call parallel_abort('MAIN: Element distance =0')
       enddo !i
+
+!...  Local  coord. of 4 vertices of a quad
+      ixi_n=(/-1,1,1,-1/)
+      iet_n=(/-1,-1,1,1/)
 
 !...  Compute lat/lon at element center for EcoSim 
 #ifdef USE_ECO 
@@ -1573,12 +1600,8 @@
 
       do i=1,nea
         !Error: won't work near dateline!!!! Try to use compute_ll
-        xlon_el(i)=(xlon(elnode(1,i)) &
-                   +xlon(elnode(2,i)) &
-                   +xlon(elnode(3,i)))/3*180/pi !in degrees
-        ylat_el(i)=(ylat(elnode(1,i)) &
-                  +ylat(elnode(2,i))+ &
-                  ylat(elnode(3,i)))/3*180/pi
+        xlon_el(i)=sum(xlon(elnode(1:i34(i),i)))/i34(i)*180/pi
+        ylat_el(i)=sum(ylat(elnode(1:i34(i),i)))/i34(i)*180/pi
       enddo !i
 #endif
 
@@ -1743,7 +1766,7 @@
         endif
 
 !       For ics=2, uthnd, vthnd, uth, vth are all in lat/lon frame 
-!       (even at poles), with exception for uthnd, vthnd and Flather b.c. (see below)
+!       (even at poles), with exception for uthnd, vthnd under Flather b.c. (see below)
 !       For ics=1, they are in global frame
         if(ifltype(k)==1) then
           nfltype=nfltype+1
@@ -2002,11 +2025,11 @@
 !'
         if(nhtblocks>0) then
           allocate(isblock_nd(2,npa), &
-                   dir_block(3,nhtblocks), &
-                   isblock_sd(2,nsa), &
-                   isblock_el(nea),q_block(nhtblocks),vnth_block(2,nhtblocks), &
-                   q_block_lcl(nhtblocks),iq_block_lcl(nhtblocks), &
-                   iq_block(nhtblocks),stat=istat)
+                  &dir_block(3,nhtblocks), &
+                  &isblock_sd(2,nsa), &
+                  &isblock_el(nea),q_block(nhtblocks),vnth_block(2,nhtblocks), &
+                  &q_block_lcl(nhtblocks),iq_block_lcl(nhtblocks), &
+                  &iq_block(nhtblocks),stat=istat)
           if(istat/=0) call parallel_abort('MAIN: Alloc failed (9)')
 
           isblock_nd=0 !init.
@@ -2028,17 +2051,17 @@
             enddo !j
           enddo !i
 
-          !Compute block elements and (mean) face directions for each block (assumed
+          !Compute (mean) face directions for each block (assumed
           !to be outer normal of face "2" from the block element
           allocate(swild99(3,nhtblocks),ibuf1(nhtblocks,1),ibuf2(nhtblocks,1),stat=istat)
           if(istat/=0) call parallel_abort('MAIN: failed to alloc. (15)')
           swild99=0 !local copy of dir
           ibuf1=0 !local counter
           do i=1,ne
-            jblock=minval(isblock_nd(1,elnode(1:3,i)))
+            jblock=minval(isblock_nd(1,elnode(1:i34(i),i)))
             if(jblock>0) then
               !Look for face '2' side
-              do j=1,3 !side
+              do j=1,i34(i) !side
                 isd=elside(j,i)
                 n1=isidenode(1,isd); n2=isidenode(2,isd)
                 if(isblock_nd(1,n1)/=isblock_nd(1,n2)) then
@@ -2223,8 +2246,7 @@
           th_time3(1,1)=0
           th_time3(2,1)=th_dt3(1)
 
-          !msource.th: values in concentration dimension (psu etc). At
-          !each step, 2+ntracers lines are read (in order: T,S,tracers)
+          !msource.th: values in concentration dimension (psu etc)
           open(65,file='msource.th',status='old') 
           !do j=1,2+ntracers
           read(65,*)tmp,ath3(1:nsources,1:2+ntracers,1,3)
@@ -2242,6 +2264,7 @@
           read(64,*)tmp,ath3(1:nsinks,1,1,2)
           read(64,*)th_dt3(2),ath3(1:nsinks,1,2,2)
           if(abs(tmp)>1.e-6.or.th_dt3(2)<dt) call parallel_abort('SELFE_INIT: vsink.th start time wrong')
+!'
           th_time3(1,2)=0
           th_time3(2,2)=th_dt3(2)
         endif !nsinks
@@ -2281,7 +2304,7 @@
 !...  Compute neighborhood for internal sides for Shapiro filter
 !...  isidenei2(4,ns): 4 neighboring sides of a _resident_ side
 !...  Info for resident sides only!
-      !Flag for checking violation
+      !Flag for computing geometry
       ishapiro=0 
       if(indvel<=0) ishapiro=1
 #ifdef USE_SED2D
@@ -2289,14 +2312,8 @@
 #endif
 
       if(ishapiro==1) then
-        fdb='rogue_0000'
-        lfdb=len_trim(fdb)
-        write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-        open(10,file='outputs/'//fdb,status='replace')
-
-        iabort=0 !abort flag
-        loop18: do i=1,ns !resident sides only
-          if(isdel(2,i)==0) cycle loop18
+        do i=1,ns !resident sides only
+          if(isdel(2,i)==0) cycle 
 
 !         Internal sides
           do j=1,2
@@ -2306,146 +2323,11 @@
               write(errmsg,*)'Cannot find a side'
               call parallel_abort(errmsg)
             endif
-            nwild(2*j-1)=elside(nx(l0,1),ie)
-            nwild(2*j)=elside(nx(l0,2),ie)
+            nwild(2*j-1)=elside(nxq(1,l0,i34(ie)),ie)
+            nwild(2*j)=elside(nxq(i34(ie)-1,l0,i34(ie)),ie)
           enddo !j=1,2
           isidenei2(1:4,i)=nwild(1:4) !local index
-
-          if(ishapiro_violation==0) cycle loop18
-
-!         Check if pt "0" is inside
-          if(ics==1) then
-            x0=xcj(i); y0=ycj(i)
-            x1=xcj(isidenei2(1,i)); y1=ycj(isidenei2(1,i))
-            x2=xcj(isidenei2(2,i)); y2=ycj(isidenei2(2,i))
-            x3=xcj(isidenei2(3,i)); y3=ycj(isidenei2(3,i))
-            x4=xcj(isidenei2(4,i)); y4=ycj(isidenei2(4,i))
-          else !ics=2
-            x0=0; y0=0
-            do j=1,4
-              isd=isidenei2(j,i)
-              call project_pt('g2l',xcj(isd),ycj(isd),zcj(isd),(/xcj(i),ycj(i),zcj(i)/),&
-     &sframe(:,:,i),swild2(1,j),swild2(2,j),tmp)
-            enddo !j
-            x1=swild2(1,1); y1=swild2(2,1)
-            x2=swild2(1,2); y2=swild2(2,2)
-            x3=swild2(1,3); y3=swild2(2,3)
-            x4=swild2(1,4); y4=swild2(2,4)
-          endif !ics
-
-          ar4=signa(x0,x4,x1,y0,y4,y1)
-          ar3=signa(x0,x2,x3,y0,y2,y3)
-          if(ar3<=0.and.ar4<=0) then
-            write(errmsg,*)'Degenerate parallelogram'
-            call parallel_abort(errmsg)
-          endif
-
-!         Enlarge stencil if pt 0 is outside
-          if(ar3<=0.or.ar4<=0) then
-            if(ar3<=0) then
-              if(isdel(2,isidenei2(2,i))==0.or.isdel(2,isidenei2(3,i))==0) then
-                iabort=1
-                write(10,*)iplg(isidenode(1:2,i)),', bnd side (3)'
-                cycle loop18
-              endif
-
-              nwild(1)=2; nwild(2)=3
-              do k=1,2
-                id=isidenei2(nwild(k),i)
-                ie2=isdel(1,id)+isdel(2,id)-isdel(k,i) !inside aug. domain
-                if(isdel(1,id)<=0.or.isdel(2,id)<0.or.ie2/=isdel(1,id).and.ie2/=isdel(2,id)) then
-                  write(errmsg,*)'Filter sides out of aug. domain (1):',iplg(isidenode(1:2,i)),ie2,isdel(1:2,id)
-                  call parallel_abort(errmsg)
-                endif
-                l0=lindex_s(id,ie2)
-                if(l0==0) then
-                  write(errmsg,*)'Cannot find a side (9):',k
-                  call parallel_abort(errmsg)
-                endif
-                isidenei2(nwild(k),i)=elside(nx(l0,3-k),ie2)
-              enddo !k
-            endif !ar3
-         
-            if(ar4<=0) then
-              if(isdel(2,isidenei2(1,i))==0.or.isdel(2,isidenei2(4,i))==0) then
-                iabort=1
-                write(10,*)iplg(isidenode(1:2,i)),', bnd side (4)'
-                cycle loop18
-              endif
-
-              nwild(1)=1; nwild(2)=4
-              do k=1,2
-                id=isidenei2(nwild(k),i)
-                ie2=isdel(1,id)+isdel(2,id)-isdel(k,i)
-                if(isdel(1,id)<=0.or.isdel(2,id)<0.or.ie2/=isdel(1,id).and.ie2/=isdel(2,id)) then
-                  write(errmsg,*)'Filter sides out of aug. domain (2):',iplg(isidenode(1:2,i)),ie2,isdel(1:2,id)
-                  call parallel_abort(errmsg)
-                endif
-                l0=lindex_s(id,ie2)
-                if(l0==0) then
-                  write(errmsg,*)'Cannot find a side (8):',k
-                  call parallel_abort(errmsg)
-                endif
-                isidenei2(nwild(k),i)=elside(nx(l0,k),ie2)
-              enddo !k
-            endif !ar4
-         
-!           Check convexity of quad 1-4
-            if(ics==1) then
-              x0=xcj(i); y0=ycj(i)
-              x1=xcj(isidenei2(1,i)); y1=ycj(isidenei2(1,i))
-              x2=xcj(isidenei2(2,i)); y2=ycj(isidenei2(2,i))
-              x3=xcj(isidenei2(3,i)); y3=ycj(isidenei2(3,i))
-              x4=xcj(isidenei2(4,i)); y4=ycj(isidenei2(4,i))
-            else !ics=2
-              x0=0; y0=0
-              do j=1,4
-                isd=isidenei2(j,i)
-                call project_pt('g2l',xcj(isd),ycj(isd),zcj(isd),(/xcj(i),ycj(i),zcj(i)/),&
-     &sframe(:,:,i),swild2(1,j),swild2(2,j),tmp)
-              enddo !j
-              x1=swild2(1,1); y1=swild2(2,1)
-              x2=swild2(1,2); y2=swild2(2,2)
-              x3=swild2(1,3); y3=swild2(2,3)
-              x4=swild2(1,4); y4=swild2(2,4)
-            endif !ics
-
-            ar1=signa(x1,x2,x3,y1,y2,y3)
-            ar2=signa(x1,x3,x4,y1,y3,y4)
-            ar3=signa(x1,x2,x4,y1,y2,y4)
-            ar4=signa(x2,x3,x4,y2,y3,y4)
-            if(ar1<=0.or.ar2<=0.or.ar3<=0.or.ar4<=0) then
-              iabort=1
-              write(10,*)iplg(isidenode(1:2,i)),'  Concave quad '
-!              write(10,*)((isidenode(mm,isidenei2(m,i)),mm=1,2),m=1,4)
-              write(10,*)ar1,ar2,ar3,ar4
-              write(10,*)'--------------------------------------------'
-              cycle loop18
-            endif
-
-!           Check if pt "0" is inside
-            ar1=signa(x1,x2,x0,y1,y2,y0)
-            ar2=signa(x2,x3,x0,y2,y3,y0)
-            ar3=signa(x3,x4,x0,y3,y4,y0)
-            ar4=signa(x4,x1,x0,y4,y1,y0)
-            if(ar1<=0.or.ar2<=0.or.ar3<=0.or.ar4<=0) then
-              iabort=1
-              write(10,*)iplg(isidenode(1:2,i)),'  pt outside quad '
-              write(10,*)ar1,ar2,ar3,ar4
-!              write(10,*)((isidenode(mm,isidenei2(m,i)),mm=1,2),m=1,4)
-              write(10,*)'----------------------------------------'
-              cycle loop18
-            endif
-          endif !pt 0 outside
-        end do loop18 !i=1,ns
-
-        close(10)
-        call mpi_allreduce(iabort,iabort_gb,1,itype,MPI_SUM,comm,ierr)
-        if(iabort_gb>0) then
-          write(errmsg,*)'Check rogue_* for problems in side neighborhood'
-!'
-          call parallel_abort(errmsg)
-        endif
+        end do !i=1,ns
       endif !ishapiro
 
 !     End of pre-processing
@@ -2483,7 +2365,6 @@
 !...  Horizontal viscosity option
 !     ihorcon =0 means all hvis=0 and no hvis.gr3 is needed
       if(ihorcon/=0) then
-!        if(ics==2) call parallel_abort('ics=2 and ihorcon/=0')
         open(32,file='hvis.gr3',status='old')
         read(32,*)
         read(32,*) itmp1,itmp2
@@ -2495,9 +2376,7 @@
         enddo !i
         close(32)
         do i=1,nea
-          hvis(:,i)=(swild(elnode(1,i))&
-                    +swild(elnode(2,i))&
-                    +swild(elnode(3,i)))/3
+          hvis(:,i)=sum(swild(elnode(1:i34(i),i)))/i34(i)
         enddo !i
       endif !ihorcon/=0
       
@@ -2543,22 +2422,22 @@
       endif
 
 !...  Bottom friction
-      if(nchi==-1) then !read in Manning's n for 2D model
-        open(32,file='manning.gr3',status='old')
-        read(32,*)
-        read(32,*) itmp1,itmp2
-        if(itmp1/=ne_global.or.itmp2/=np_global) &
-     &call parallel_abort('Check manning.gr3')
-        do i=1,np_global
-          read(32,*)j,xtmp,ytmp,tmp
-          if(tmp<0) then
-            write(errmsg,*)'Negative Manning',tmp
-            call parallel_abort(errmsg)
-          endif
-          if(ipgl(i)%rank==myrank) rmanning(ipgl(i)%id)=tmp
-        enddo
-        close(32)
-      else if(nchi==0) then !read in drag coefficients for 3D model
+!      if(nchi==-1) then !read in Manning's n for 2D model
+!        open(32,file='manning.gr3',status='old')
+!        read(32,*)
+!        read(32,*) itmp1,itmp2
+!        if(itmp1/=ne_global.or.itmp2/=np_global) &
+!     &call parallel_abort('Check manning.gr3')
+!        do i=1,np_global
+!          read(32,*)j,xtmp,ytmp,tmp
+!          if(tmp<0) then
+!            write(errmsg,*)'Negative Manning',tmp
+!            call parallel_abort(errmsg)
+!          endif
+!          if(ipgl(i)%rank==myrank) rmanning(ipgl(i)%id)=tmp
+!        enddo
+!        close(32)
+      if(nchi==0) then !read in drag coefficients for 3D model
         open(32,file='drag.gr3',status='old')
         read(32,*)
         read(32,*) itmp1,itmp2
@@ -2649,10 +2528,12 @@
         close(32)
         lreadll=.true.
 
+#ifdef DEBUG
         fdb='sflux_0000'
         lfdb=len_trim(fdb)
         write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
         open(38,file='outputs/'//fdb,status='replace')
+#endif
       endif
 
       windfactor=1 !intialize for default
@@ -2886,8 +2767,7 @@
         endif !itur=3 or 4
       endif !itur
 
-!...  Interpolation flag for S,T and vel. in ELM
-!     Kriging in vel: no bnd nodes/sides vel. use Kriging as the filter is not applied there
+!...  Interpolation flag for S,T
       if(lq/=0) then
         lqk=lq
       else !lq==0
@@ -2907,10 +2787,11 @@
         close(32)
         do i=1,nea
           n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
-          lqk(i)=min(swild(n1),swild(n2),swild(n3))
+          lqk(i)=minval(swild(elnode(1:i34(i),i)))
         enddo !i
       endif
       
+!     Kriging in vel: no bnd nodes/sides vel. use Kriging as the filter is not applied there
       if(inter_mom/=-1) then
         krvel=inter_mom
       else !-1
@@ -2929,8 +2810,7 @@
         enddo !i
         close(32)
         do i=1,nea
-          n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
-          krvel(i)=min(swild(n1),swild(n2),swild(n3))
+          krvel(i)=minval(swild(elnode(1:i34(i),i)))
         enddo !i
       endif
 
@@ -3074,7 +2954,7 @@
 
 !       Allocate: zstal is vertical up; xsta, ysta, zsta are global coord. if ics=2
         allocate(xsta(nout_sta),ysta(nout_sta),zstal(nout_sta),zsta(nout_sta),iep_sta(nout_sta),iep_flag(nout_sta), &
-     &arco_sta(nout_sta,3),sta_out(nout_sta,nvar_sta),sta_out_gb(nout_sta,nvar_sta), &
+     &arco_sta(nout_sta,4),sta_out(nout_sta,nvar_sta),sta_out_gb(nout_sta,nvar_sta), &
      &sta_out3d(nvrt,nout_sta,nvar_sta),sta_out3d_gb(nvrt,nout_sta,nvar_sta), &
      &zta_out3d(nvrt,nout_sta,nvar_sta),zta_out3d_gb(nvrt,nout_sta,nvar_sta),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: sta. allocation failure')
@@ -3096,40 +2976,27 @@
         do i=1,ne
           do l=1,nout_sta
             if(iep_sta(l)/=0) cycle
-            do j=1,3
-              n1=elnode(nx(j,1),i)
-              n2=elnode(nx(j,2),i)
-              if(ics==1) then
-                xn1=xnd(n1)
-                yn1=ynd(n1)
-                xn2=xnd(n2)
-                yn2=ynd(n2)
-                xstal=xsta(l)
-                ystal=ysta(l)
-              else !to eframe
-                call project_pt('g2l',xnd(n1),ynd(n1),znd(n1), &
-     &(/xctr(i),yctr(i),zctr(i)/),eframe(:,:,i),xn1,yn1,tmp)
-                call project_pt('g2l',xnd(n2),ynd(n2),znd(n2), &
-     &(/xctr(i),yctr(i),zctr(i)/),eframe(:,:,i),xn2,yn2,tmp)
-                call project_pt('g2l',xsta(l),ysta(l),zsta(l), &
+
+            if(ics==1) then
+              xstal=xsta(l)
+              ystal=ysta(l)
+            else !to eframe
+              call project_pt('g2l',xsta(l),ysta(l),zsta(l), &
      &(/xctr(i),yctr(i),zctr(i)/),eframe(:,:,i),xstal,ystal,tmp)
-              endif !ics
-              swild(j)=signa(xn1,xn2,xstal,yn1,yn2,ystal) !temporary storage
-            enddo !j
-            ae=minval(swild(1:3)/area(i)) !abs(sum(abs(swild(1:3)))-area(i))/area(i)
-            !if(ae<=small2) then
-            if(ae>-small1) then
-              iep_sta(l)=i
-              arco_sta(l,1:3)=swild(1:3)/area(i)
-              arco_sta(l,1)=max(0.d0,min(1.d0,arco_sta(l,1)))
-              arco_sta(l,2)=max(0.d0,min(1.d0,arco_sta(l,2)))
-              if(arco_sta(l,1)+arco_sta(l,2)>1) then 
-                arco_sta(l,3)=0
-                arco_sta(l,2)=1-arco_sta(l,1)
-              else
-                arco_sta(l,3)=1-arco_sta(l,1)-arco_sta(l,2)
+            endif
+
+            if(i34(i)==3) then
+              call area_coord(0,i,(/xctr(i),yctr(i),zctr(i)/),eframe(:,:,i),xstal,ystal,arco_sta(l,1:3))
+              tmp=minval(arco_sta(l,1:3))
+              if(tmp>-small2) then
+                iep_sta(l)=i
+                if(tmp<0) call area_coord(1,i,(/xctr(i),yctr(i),zctr(i)/), &
+     &eframe(:,:,i),xstal,ystal,arco_sta(l,1:3)) !fix A.C.
               endif
-            endif !ae
+            else !quad
+              call quad_shape(0,0,i,xstal,ystal,itmp,arco_sta(l,1:4)) !arco_sta are 4 shape functions
+              if(itmp/=0) iep_sta(l)=i
+            endif !i34
           enddo !l; build pts
 
           ifl=0 !flag
@@ -3163,7 +3030,7 @@
             endif
           enddo !i
           write(16,*)'done preparing station outputs'
-          call flush(16) ! flush "mirror.out"
+          !call flush(16) ! flush "mirror.out"
         endif
       endif !iout_sta
 
@@ -3263,13 +3130,9 @@
 
 !     Inter-subdomain backtracking
       call init_inter_btrack !setup datatypes and mxnbt and _r
-!      allocate(btlist(mxnbt),stat=istat)
-!      if(istat/=0) call parallel_abort('MAIN: btlist allocation failure')
 
 !...  Compute neighborhood for 2-tier Kriging and invert matrix for resident elements only
 !     Compute ne_kr for dimensioning
-!      if(ics==2.and.inter_mom/=0) call parallel_abort('ics=2 and inter_mom/=0')
-!'
       ie_kr=0 !non-zero value points to local nth Kriging elements
       ne_kr=0 !total # of elements in Kriging zone
       do i=1,ne !resident
@@ -3284,9 +3147,9 @@
       do i=1,ne !resident
         if(krvel(i)/=1) cycle
   
-        nei_kr=3 !# of Kriging nodes for i
-        nwild(1:3)=elnode(1:3,i) !temporarily save Kriging nodes
-        do j=1,3 !resident nodes
+        nei_kr=i34(i) !# of Kriging nodes for i
+        nwild(1:i34(i))=elnode(1:i34(i),i) !temporarily save Kriging nodes
+        do j=1,i34(i) !resident nodes
           nd=elnode(j,i)
           loop14: do m=1,nnp(nd)
             nd2=indnd(m,nd)
@@ -3302,7 +3165,7 @@
             nei_kr=nei_kr+1
             nwild(nei_kr)=nd2
           enddo loop14 !m=1,nnp(nd)
-        enddo !j=1,3 nodes
+        enddo !j=1, nodes
         if(nei_kr>mnei_kr) mnei_kr=nei_kr
       enddo !i=1,ne
       write(12,*)'Max. # of Kriging points = ',mnei_kr
@@ -3316,10 +3179,10 @@
       do i=1,ne !resident
         if(krvel(i)/=1) cycle
  
-        ie=ie_kr(i)
-        nei_kr=3 !# of Kriging nodes for i
-        itier_nd(1:3,ie)=elnode(1:3,i) !temporarily save Kriging nodes
-        do j=1,3 !resident nodes
+        ie=ie_kr(i) !point to ie_th elem.
+        nei_kr=i34(i) !# of Kriging nodes for i
+        itier_nd(1:i34(i),ie)=elnode(1:i34(i),i) !temporarily save Kriging nodes
+        do j=1,i34(i) !resident nodes
           nd=elnode(j,i)
           loop15: do m=1,nnp(nd)
             nd2=indnd(m,nd)
@@ -3331,7 +3194,7 @@
             nei_kr=nei_kr+1
             itier_nd(nei_kr,ie)=nd2
           enddo loop15 !m=1,nnp(nd)
-        enddo !j=1,3 nodes
+        enddo !j=1, nodes
         itier_nd(0,ie)=nei_kr
 
 !       Debug
@@ -3386,7 +3249,7 @@
         akr((npp+1):(npp+3),(npp+1):(npp+3))=0
 !        bkr(1:(npp+3),1)=0 !does not matter
 
-!       Debug
+!       Save original
         akrmat_nd(1:(npp+3),1:(npp+3),ie)=akr(1:(npp+3),1:(npp+3))
 
 !        call gaussj(akr,npp+3,mnei_kr+3,bkr,1,1)
@@ -3466,7 +3329,7 @@
 
       if(myrank==0) then
         write(16,*)'done init (1)...'
-        call flush(16)  ! flush "mirror.out"
+        !call flush(16)  ! flush "mirror.out"
       endif 
 
 !	
@@ -3691,12 +3554,14 @@
           enddo !i
 
           do i=1,nea
-            n1=elnode(1,i)
-            n2=elnode(2,i)
-            n3=elnode(3,i)
+            !n1=elnode(1,i)
+            !n2=elnode(2,i)
+            !n3=elnode(3,i)
             do k=2,nvrt
-              tsel(1,k,i)=(tem0(k,n1)+tem0(k,n2)+tem0(k,n3)+tem0(k-1,n1)+tem0(k-1,n2)+tem0(k-1,n3))/6
-              tsel(2,k,i)=(sal0(k,n1)+sal0(k,n2)+sal0(k,n3)+sal0(k-1,n1)+sal0(k-1,n2)+sal0(k-1,n3))/6
+              !tsel(1,k,i)=(tem0(k,n1)+tem0(k,n2)+tem0(k,n3)+tem0(k-1,n1)+tem0(k-1,n2)+tem0(k-1,n3))/6
+              !tsel(2,k,i)=(sal0(k,n1)+sal0(k,n2)+sal0(k,n3)+sal0(k-1,n1)+sal0(k-1,n2)+sal0(k-1,n3))/6
+              tsel(1,k,i)=sum(tem0(k,elnode(1:i34(i),i))+tem0(k-1,elnode(1:i34(i),i)))/2/i34(i)
+              tsel(2,k,i)=sum(sal0(k,elnode(1:i34(i),i))+sal0(k-1,elnode(1:i34(i),i)))/2/i34(i)
             enddo !k
             tsel(1,1,i)=tsel(1,2,i) !mainly for hotstart format
             tsel(2,1,i)=tsel(2,2,i)
@@ -4292,12 +4157,8 @@
         if(ltmp)then
           do m=1,ntracers
             do i=1,nea
-              n1=elnode(1,i)
-              n2=elnode(2,i)
-              n3=elnode(3,i)
               do k=2,nvrt
-                trel0(m,k,i)=(tr_nd(m,k,n1)+tr_nd(m,k,n2)+tr_nd(m,k,n3)+ &
-     & tr_nd(m,k-1,n1)+tr_nd(m,k-1,n2)+tr_nd(m,k-1,n3))/6
+                trel0(m,k,i)=sum(tr_nd(m,k,elnode(1:i34(i),i))+tr_nd(m,k-1,elnode(1:i34(i),i)))/2/i34(i)
               enddo !k
               trel0(m,1,i)=trel0(m,2,i) !mainly for hotstart format
             enddo !i
@@ -5079,10 +4940,10 @@
       write(10,*)(real(ztot(k)),k=1,kz-1),(real(sigma(k)),k=1,nvrt-kz+1)
       if(ics==1) then
         write(10,*)np,ne,(real(xnd(m)),real(ynd(m)),real(dp00(m)),kbp00(m),m=1,np), &
-     &             (3,(elnode(mm,m),mm=1,3),m=1,ne)
+     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       else !lat/lon
         write(10,*)np,ne,(real(xlon(m)/pi*180),real(ylat(m)/pi*180),real(dp00(m)),kbp00(m),m=1,np), &
-     &             (3,(elnode(mm,m),mm=1,3),m=1,ne)
+     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       endif !ics
 
       close(10)
@@ -5114,10 +4975,10 @@
         dps(i)=(dp(n1)+dp(n2))/2
       enddo !i
       do i=1,nea
-        dpe(i)=1.e10
-        do j=1,3
-          if(dpe(i)>dp(elnode(j,i))) dpe(i)=dp(elnode(j,i))
-        enddo !j
+        dpe(i)=minval(dp(elnode(1:i34(i),i))) !1.e10
+!        do j=1,3
+!          if(dpe(i)>dp(elnode(j,i))) dpe(i)=dp(elnode(j,i))
+!        enddo !j
       enddo !i=1,ne
 
 !...  Compute initial vgrid
@@ -5139,7 +5000,7 @@
         if(idry(i)==1) cycle
         do k=1,nvrt
           kl=max(k,kbp(i))
-          prho(k,i)=eqstate(1,tnd(k,i),snd(k,i)              &
+          prho(k,i)=eqstate(1,tnd(k,i),snd(k,i)            &
 #ifdef USE_SED
      &                      ,tr_nd(1:ntracers,k,i),Srho(:) &
 #endif /*USE_SED*/

@@ -23,7 +23,7 @@
 !--------------------------------------------------------------------!
 
       USE sed_mod
-      USE elfe_glbl, ONLY: rkind,errmsg,dpe,nea,dt,elnode,eta2
+      USE elfe_glbl, ONLY: rkind,errmsg,dpe,nea,dt,i34,elnode,eta2
       USE elfe_msgp, ONLY: myrank,parallel_abort
 
       IMPLICIT NONE
@@ -79,9 +79,9 @@
 ! Ucrw = 0.95*((s-1)*g)**0.57*d50**0.43*Tp**0.14 if 5e-4<= d50 <2e-3
 !---------------------------------------------------------------------
 
-      htot = dpe(inea)+(eta2(elnode(1,inea))+   &
-      &                 eta2(elnode(2,inea))+   &
-      &                 eta2(elnode(3,inea)))/3.0d0
+      htot = dpe(inea)+sum(eta2(elnode(1:i34(inea),inea)))/i34(inea) 
+!      &                 eta2(elnode(2,inea))+   &
+!      &                 eta2(elnode(3,inea)))/3.0d0
 
       IF (Sd50(ised)>5.0d-5.AND.Sd50(ised)<5.0d-4) THEN
 
@@ -332,7 +332,7 @@
 !--------------------------------------------------------------------!
 
       USE sed_mod
-      USE elfe_glbl, ONLY : rkind,elnode,nea,npa,nne,idry,idry_e,xctr,   &
+      USE elfe_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
                             yctr,np,indel,errmsg,xnd,ynd
       USE elfe_msgp
       
@@ -362,6 +362,7 @@
 !---------------------------------------------------------------------
       qsan=0.0d0
 
+!Error: YJZ - not working for quads
       DO i = 1,nea
         IF(idry_e(i)==1) CYCLE
             
@@ -474,9 +475,9 @@
         IF (idry_e(i)==1) CYCLE
 
         ! Average bed change in element [m]
-        cff = (hbed_ised(elnode(1,i))+                                   &
-        &      hbed_ised(elnode(2,i))+                                   &
-        &      hbed_ised(elnode(3,i)))/3.d0
+        cff = sum(hbed_ised(elnode(1:i34(i),i)))/i34(i)
+!        &      hbed_ised(elnode(2,i))+                                   &
+!        &      hbed_ised(elnode(3,i)))/3.d0
 
         ! Average bed change in element [kg/m2]
         cff1=cff*Srho(ised)

@@ -2,283 +2,151 @@
 !===============================================================================
 ! ELCIRC GRID SUBROUTINES
 !
-! function lindex
+! subroutine aquire_vgrid
+! subroutine partition_hgrid
+! subroutine aquire_hgrid
 ! function signa
 ! subroutine dump_hgrid
-! subroutine partition_hgrid
-! subroutine aquire_vgrid
-! subroutine aquire_hgrid
 !
 !===============================================================================
 !===============================================================================
 
-! Compute local index of a node (0 if not a local node)
-function lindex(node,ie)
-  use elfe_glbl
-  use elfe_msgp, only : parallel_abort
-  implicit none
-  integer :: lindex
-  integer,intent(in) :: node,ie
-  integer :: j
-
-  lindex=0 !error flag
-  do j=1,3
-    if(node==elnode(j,ie)) lindex=j
-  enddo
-!  if(lindex.eq.0) then
-!    write(errmsg,*)'LINDEX: ',node,' is not in element ',ie
-!    call parallel_abort(errmsg)
-!  endif
-  
-end function lindex
-
-!===============================================================================
-!===============================================================================
-
-!function sums(x1,x2,x3,x4,y1,y2,y3,y4)
-!  use elfe_glbl, only : rkind
-!  implicit none
-!  real(rkind) :: sums
-!  real(rkind),intent(in) :: x1,x2,x3,x4,y1,y2,y3,y4
-!
-!  sums=abs((x4-x3)*(y2-y3)+(x2-x3)*(y3-y4))/2d0+&
-! &     abs((x4-x1)*(y3-y1)-(y4-y1)*(x3-x1))/2d0+&
-! &     abs((y4-y1)*(x2-x1)-(x4-x1)*(y2-y1))/2d0
-!  
-!end function sums
-
-!===============================================================================
-!===============================================================================
-
-function signa(x1,x2,x3,y1,y2,y3)
+subroutine aquire_vgrid
 !-------------------------------------------------------------------------------
-! Compute signed area formed by pts 1,2,3
-!-------------------------------------------------------------------------------
-  use elfe_glbl, only : rkind,errmsg
-  implicit none
-  real(rkind) :: signa
-  real(rkind),intent(in) :: x1,x2,x3,y1,y2,y3
-
-  signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2d0
-  
-end function signa
-
-!===============================================================================
-!===============================================================================
-
-!subroutine cpp(x,y,rlambda,phi,rlambda0,phi0)
-!!-------------------------------------------------------------------------------
-!! Transform from lon,lat (lamda,phi) coordinates into CPP coordinates.
-!! Lon,Lat must be in radians.
-!!-------------------------------------------------------------------------------
-!  use elfe_glbl, only : rkind
-!  implicit none
-!  real(rkind),intent(out) :: x,y
-!  real(rkind),intent(in) :: rlambda,phi,rlambda0,phi0
-!  real(rkind),parameter :: r=6378206.4d0
-!  x=r*(rlambda-rlambda0)*cos(phi0)
-!  y=phi*r
-!
-!end subroutine cpp
-
-!===============================================================================
-!===============================================================================
-
-subroutine dump_hgrid
-!-------------------------------------------------------------------------------
-! Dump horizontal grid data to processor specific formatted files
-! Write local-global mapping info
+! Aquire vertical grid data from vgrid.in
 !-------------------------------------------------------------------------------
   use elfe_glbl
   use elfe_msgp
   implicit none
-  integer, parameter :: maxbuf=max(100,3)
-  integer :: ie,ip,i,j,k,ngb1,ngb2,isd,isdgb,iegb1,iegb2
-  integer :: ibuf1(maxbuf),ibuf2(maxbuf),ibuf3(maxbuf)
-  type(llist_type),pointer :: llp
-!-------------------------------------------------------------------------------
+  integer :: i,j,k,l,jki,stat,kin,m
+  real(rkind) :: buf1(100),hmod2,zz
 
-#ifdef DEBUG
-  ! Dump elements
-  fdb='helem_0000'
-  lfdb=len_trim(fdb)
-  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-  open(10,file='outputs/'//fdb,status='unknown')
-  write(10,'(a,4i10)') '#',nea,ne,neg
-  do ie=1,nea
-    j=0
-    llp=>iegl(ielg(ie))
-    do
-      j=j+1
-! Check bound
-      if(j>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid (1)')
-      ibuf1(j)=llp%rank
-      ibuf2(j)=llp%id
-      llp=>llp%next
-      if(.not.associated(llp)) exit
-    enddo
-    if(ie<=ne) then
-      write(10,'(a,2i8,4e14.6)') 'Element ',ie,ielg(ie),xctr(ie),yctr(ie),zctr(ie),dpe(ie)
-    else
-      write(10,'(a,2i8,4e14.6)') '# Element ',ie,ielg(ie),xctr(ie),yctr(ie),zctr(ie),dpe(ie)
-    endif
-    write(10,'(a,3i8)') '####NODE:  ',(iplg(elnode(k,ie)),k=1,3)
-    do k=1,3
-      if(ic3(k,ie)>0) then
-        ibuf3(k)=ielg(ic3(k,ie))
-      elseif(ic3(k,ie)<0) then
-        if(ie<=ne) then !resident must have valid ic3
-          write(errmsg,*)'Resident element having wrong nbr:',ie,ielg(ie),myrank
-          call parallel_abort(errmsg)
-        endif
-        ibuf3(k)=ic3(k,ie)
-      else
-        ibuf3(k)=0
-      endif
+  !ivcor: types of vertical coord.; surface must all be nvrt (for sflux routines)
+  !ivcor=2 !SZ coordinates
 
-!     Check validity of elnode etc
-      if(elnode(k,ie)<=0.or.elside(k,ie)<=0) then
-        write(errmsg,*)'Check elnode or elside:',ielg(ie),(elnode(ip,ie),elside(ip,ie),ip=1,3)
-        call parallel_abort(errmsg)
-      endif
-
-    enddo !k
-    write(10,'(a,3i8)') '####IC3:   ',(ibuf3(k),k=1,3)
-    write(10,'(a,3i8)') '####JS:    ',(islg(elside(k,ie)),k=1,3)
-    write(10,'(a,3i8)') '####SSIGN: ',(int(ssign(k,ie)),k=1,3)
-    write(10,'(a,64i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
-  enddo !ie=1,nea
-  close(10)
-
-  ! Dump nodes
-  fdb='hnode_0000'
-  lfdb=len_trim(fdb)
-  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-  open(10,file='outputs/'//fdb,status='unknown')
-  write(10,'(a,4i10)') '#',npa,np,npg
-  do ip=1,npa
-    j=0
-    llp=>ipgl(iplg(ip))
-    do
-      j=j+1
-! Check bound
-      if(j>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid: node (1)')
-      ibuf1(j)=llp%rank
-      ibuf2(j)=llp%id
-      llp=>llp%next
-      if(.not.associated(llp)) exit
-    enddo
-
-   if(nnp(ip)>maxbuf.or.nne(ip)>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid: node (2)')
-    do k=1,nne(ip)
-      if(indel(k,ip)>0) then
-        ibuf3(k)=ielg(indel(k,ip))
-      elseif(indel(k,ip)<0) then
-        if(ip<=np) then
-          write(errmsg,*)'Surrounding element outside:',indel(k,ip),iplg(ip),k
-          call parallel_abort(errmsg)
-        endif
-
-        ibuf3(k)=indel(k,ip)
-      else
-!  Fatal error
-!        ibuf3(k)=0
-        write(errmsg,*)'Surrounding element not exist:',indel(k,ip),iplg(ip),k
-        call parallel_abort(errmsg) 
-      endif
-    enddo
-    if(ip<=np) then
-      write(10,'(a,2i8,4e14.6,2i4,50(i8,i4))') 'Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
-      isbnd(-2:2,ip),nne(ip),(ibuf3(k),iself(k,ip),k=1,nne(ip))
-    else
-      write(10,'(a,2i8,4e14.6,2i4,50(i8,i4))') '# Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
-      isbnd(-2:2,ip),nne(ip),(ibuf3(k),iself(k,ip),k=1,nne(ip))
-    endif
-    write(10,'(a,64i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
-
-    do k=1,nnp(ip)
-      if(indnd(k,ip)>0) then
-        ibuf3(k)=iplg(indnd(k,ip))
-      elseif(indnd(k,ip)<0) then
-        if(ip<=np) then !resident
-          write(errmsg,*)'Surrounding node outside:',indnd(k,ip),iplg(ip),k
-          call parallel_abort(errmsg)
-        endif
-
-        ibuf3(k)=indnd(k,ip)
-      else
-        write(errmsg,*)'Surrounding node not exist:',indnd(k,ip),iplg(ip),k
-        call parallel_abort(errmsg) 
-      endif
-    enddo !k
-    write(10,'(a,64i8)')'Nbr nodes:',(ibuf3(k),k=1,nnp(ip))
-    
-  enddo !ip=1,npa
-  close(10)
-
-  ! Dump sides
-  fdb='hside_0000'
-  lfdb=len_trim(fdb)
-  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-  open(10,file='outputs/'//fdb,status='unknown')
-  write(10,'(a,4i10)') '#',nsa,ns,nsg
-  do isd=1,nsa
-    isdgb=islg(isd)
-    ngb1=iplg(isidenode(1,isd)); ngb2=iplg(isidenode(2,isd));
-    if(isdel(1,isd)>0) then
-      iegb1=ielg(isdel(1,isd)) 
-    else if(isdel(1,isd)<0) then
-      iegb1=isdel(1,isd) 
-    else !=0
-      write(errmsg,*)'isdel(1,:) =0:',ngb1,ngb2
+!  if(lm2d) then
+!    !2D
+!    ivcor=2; nvrt=2; kz=1; nsig=2; h_s=1.e6; h_c=h_s !5
+!    theta_b=0; theta_f=1.e-4; s_con1=sinh(theta_f)
+!    allocate(ztot(nvrt),sigma(nvrt),cs(nvrt),dcs(nvrt),stat=stat) !for outputs only
+!    if(stat/=0) call parallel_abort('VGRID: ztot allocation failure')
+!    ztot(kz)=-h_s
+!    sigma(1)=-1 !bottom
+!    sigma(nsig)=0 !surface
+!  else !3D
+  open(19,file='vgrid.in',status='old',iostat=stat)
+  if(stat/=0) call parallel_abort('AQUIRE_VGIRD: open(19) failure')
+  read(19,*)ivcor
+  if(ivcor==2) then !SZ coordinates
+    read(19,*) nvrt,kz,h_s !kz>=1
+    if(nvrt<2) call parallel_abort('nvrt<2')
+    if(kz<1) then !.or.kz>nvrt-2) then
+      write(errmsg,*)'Wrong kz:',kz
       call parallel_abort(errmsg)
     endif
-    if(isdel(2,isd)>0) then; iegb2=ielg(isdel(2,isd)); else; iegb2=isdel(2,isd); endif;
-    j=0
-    llp=>isgl(islg(isd))
-    do
-      j=j+1
-      ibuf1(j)=llp%rank
-      ibuf2(j)=llp%id
-      llp=>llp%next
-      if(.not.associated(llp)) exit
-    enddo
-    if(isd<=ns) then
-      write(10,'(a,6i8,7e14.6,i4)') 'Side ',isd,isdgb,ngb1,ngb2,iegb1,iegb2, &
-      xcj(isd),ycj(isd),zcj(isd),dps(isd),distj(isd),sframe(1,1,isd),sframe(2,1,isd),isbs(isd)
-    else
-      write(10,'(a,6i8,7e14.6,i4)') '# Side', isd,isdgb,ngb1,ngb2,iegb1,iegb2, &
-      xcj(isd),ycj(isd),zcj(isd),dps(isd),distj(isd),sframe(1,1,isd),sframe(2,1,isd),isbs(isd)
+    if(h_s<6) then
+      write(errmsg,*)'h_s needs to be larger:',h_s
+      call parallel_abort(errmsg)
     endif
-    write(10,'(a,64i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
-  enddo !isd
-  close(10)
 
-  ! Dump local bnd info
-  fdb='bndinfo_0000'
-  lfdb=len_trim(fdb)
-  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
-  open(10,file='outputs/'//fdb,status='unknown')
-  write(10,'(a,i10)') 'Open bnd:',nope
-  do i=1,nope
-    write(10,*)'open bnd #',i,iopelg(i),(iplg(iond(i,j)),j=1,nond(i))
-  enddo !i
-  write(10,'(a,i10)') 'Land bnd:',nland
-  do i=1,nland
-    write(10,*)'land bnd #',i,(iplg(ilnd(i,j)),j=1,nlnd(i))
-  enddo !i
-  close(10)
+    ! Allocate vertical layers arrays
+    allocate(ztot(nvrt),sigma(nvrt),cs(nvrt),dcs(nvrt),stat=stat)
+    if(stat/=0) call parallel_abort('AQUIRE_VGIRD: ztot allocation failure')
 
-#endif /*DEBUG*/
+    ! # of z-levels excluding "bottom" at h_s
+    read(19,*) !for adding comment "Z levels"
+    do k=1,kz-1
+      read(19,*)j,ztot(k)
+      if(ztot(k)>=-h_s) then
+        write(errmsg,*)'Illegal Z level:',k
+        call parallel_abort(errmsg)
+      endif
+      if(k>1) then; if(ztot(k)<=ztot(k-1)) then
+        write(errmsg,*)'z-level inverted:',k
+        call parallel_abort(errmsg)
+      endif; endif
+    enddo !k
+    read(19,*) !level kz       
+    ! In case kz=1, there is only 1 ztot(1)=-h_s
+    ztot(kz)=-h_s
 
-  ! Rank 0 writes global to local element info
-  if(myrank==0) then
-    open(32,file='outputs/global_to_local.prop',status='unknown')
-    write(32,'(i8,1x,i4)')(ie,iegrpv(ie),ie=1,ne_global)
-    close(32)
-  endif
+    nsig=nvrt-kz+1 !# of S levels (including "bottom" & f.s.)
+    read(19,*) !for adding comment "S levels"
+    read(19,*)h_c,theta_b,theta_f
+    if(h_c<5.or.h_c>=h_s) then !large h_c to avoid 2nd type abnormaty
+      write(errmsg,*)'h_c needs to be larger:',h_c
+      call parallel_abort(errmsg)
+    endif
+    if(theta_b<0.or.theta_b>1) then
+      write(errmsg,*)'Wrong theta_b:',theta_b
+      call parallel_abort(errmsg)
+    endif
+    if(theta_f<=0) then
+      write(errmsg,*)'Wrong theta_f:',theta_f
+      call parallel_abort(errmsg)
+    endif
+    !Pre-compute constants
+    s_con1=sinh(theta_f)
 
-end subroutine dump_hgrid
+    sigma(1)=-1 !bottom
+    sigma(nsig)=0 !surface
+    read(19,*) !level kz
+    do k=kz+1,nvrt-1
+      kin=k-kz+1
+      read(19,*) j,sigma(kin)
+      if(sigma(kin)<=sigma(kin-1).or.sigma(kin)>=0) then
+        write(errmsg,*)'Check sigma levels at:',k,sigma(kin),sigma(kin-1)
+        call parallel_abort(errmsg)
+      endif
+    enddo !k
+    read(19,*) !level nvrt
+    close(19)
+  else if(ivcor==1) then !localized sigma
+    read(19,*)nvrt !needs hgrid to read the rest
+    close(19)
+    allocate(ztot(nvrt),sigma(nvrt),stat=stat)
+    if(stat/=0) call parallel_abort('AQUIRE_VGIRD: ztot allocation failure (2)')
+    !for output only - remove later
+    ztot=0; sigma=0 
+    kz=1; h_s=0; h_c=0; theta_b=0; theta_f=0
+  else
+    call parallel_abort('VGRID: Unknown ivcor')
+  endif !ivcor
+!  endif !lm2d
+
+  if(ivcor==2) then
+    ! Compute C(s) and C'(s)
+    do k=1,nsig
+      cs(k)=(1-theta_b)*sinh(theta_f*sigma(k))/sinh(theta_f)+ &
+       &theta_b*(tanh(theta_f*(sigma(k)+0.5))-tanh(theta_f*0.5))/2/tanh(theta_f*0.5)
+      dcs(k)=(1-theta_b)*theta_f*cosh(theta_f*sigma(k))/sinh(theta_f)+ &
+       &theta_b*theta_f/2/tanh(theta_f*0.5)/cosh(theta_f*(sigma(k)+0.5))**2
+    enddo !k
+  endif !ivcor==2
+
+  ! Output some sample z-coordinates
+!  if(myrank==0) then
+!    open(10,file='sample_z.out',status='replace')
+!    write(10,*)'Sample z coordinates'
+!    buf1(1)=h_s; buf1(2)=h_c; buf1(2:11)=(/(10*(i-1),i=2,11)/); buf1(12:28)=(/(200+50*(i-12), i=12,28)/)
+!    write(10,*)'h_c= ',h_c,', h_s=',h_s
+!    do i=1,28
+!      write(10,*)'Depth= ',buf1(i)
+!      do k=kz,nvrt
+!        kin=k-kz+1
+!        hmod2=min(buf1(i),h_s)
+!        if(hmod2<=h_c) then
+!          zz=sigma(kin)*hmod2
+!        else
+!          zz=h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
+!        endif
+!        write(10,*)k,zz
+!      enddo !k
+!    enddo !i
+!    close(10)
+!  endif
+
+end subroutine aquire_vgrid
 
 !===============================================================================
 !===============================================================================
@@ -352,9 +220,10 @@ subroutine partition_hgrid
   ! Aquire horizontal grid based on initial partition
   call aquire_hgrid(.false.)
 
-  !The following needs info from aquire_hgrid:
-  !ics; ielg; elnode; ic3; nne; indel; ne; nea; npa; xnd, ynd, znd, dp
+  !The following needs info 
+  !from aquire_hgrid: i34, ielg; elnode; ic3; nne; indel; ne; nea; npa; xnd, ynd, znd, dp
   !from aquire_vgrid: nvrt; ztot; kz; h_s.
+  !from selfe_init: ics
 
   !Do map projection for lat/lon
   if(allocated(xproj)) deallocate(xproj)
@@ -376,7 +245,7 @@ subroutine partition_hgrid
     enddo !i=1,npa
   endif !ics
 
-  !Read in kbp from vgrid.in if ivcor=1 fro partioning
+  !Read in kbp from vgrid.in if ivcor=1 for partioning
   !This will be remporary as it'll be recoputed once the final partioning is
   !done
   if(ivcor==1) then
@@ -385,7 +254,7 @@ subroutine partition_hgrid
     read(19,*); read(19,*)nvrt
     do i=1,np_global
       read(19,*)j,kbetmp
-        if(ipgl(i)%rank==myrank) kbp(ipgl(i)%id)=kbetmp
+      if(ipgl(i)%rank==myrank) kbp(ipgl(i)%id)=kbetmp
     enddo !i
     close(19)
   endif !ivcor==1
@@ -399,7 +268,7 @@ subroutine partition_hgrid
     iegb=ielg(ie)
     nedge=0 !# of local edges
     adjncy=0 !list of global element indices
-    do j=1,3
+    do j=1,i34(ie)
       ip=elnode(j,ie)
       do k=1,nne(ip)
         jegb=ielg(indel(k,ip)) !indel(k,ip) inside aug. domain
@@ -422,7 +291,7 @@ subroutine partition_hgrid
     enddo !j
     ntedge=ntedge+nedge
     mxnedge=max(mxnedge,nedge)
-  enddo
+  enddo !ie
   deallocate(adjncy)
 
   ! Use vertex and/or edge weights
@@ -456,17 +325,17 @@ subroutine partition_hgrid
     xtmp=0d0 !xctr
     ytmp=0d0
     dtmp=5.d10 !min. depth
-    do j=1,3
+    do j=1,i34(ie)
       ip=elnode(j,ie)
-      xtmp=xtmp+xproj(ip)/3.d0
-      ytmp=ytmp+yproj(ip)/3.d0
+      xtmp=xtmp+xproj(ip)/dble(i34(ie))
+      ytmp=ytmp+yproj(ip)/dble(i34(ie))
       if(dp(ip)<dtmp) dtmp=dp(ip)
-    enddo
+    enddo !j
     xyz(2*(ie-1)+1)=xtmp
     xyz(2*(ie-1)+2)=ytmp
     if(wgtflag==2.or.wgtflag==3) then
       if(ivcor==1) then
-        kbetmp=minval(kbp(elnode(1:3,ie)))
+        kbetmp=minval(kbp(elnode(1:i34(ie),ie)))
       else if(ivcor==2) then !SZ (including 2D)
         if(dtmp<=0) then
           kbetmp=nvrt !only for estimating nlev
@@ -487,7 +356,7 @@ subroutine partition_hgrid
 
       nlev(ie)=max(1,nvrt-kbetmp) !estimate of number of active levels (excluding bottom as most procedures do not use it)
       etmp=1d0; ptmp=0d0; stmp=0d0;
-      do j=1,3
+      do j=1,i34(ie)
         ip=elnode(j,ie)
         ptmp=ptmp+1d0/dble(nne(ip)) !each node contributes 1/nne
         if(ic3(j,ie)/=0) then
@@ -513,7 +382,7 @@ subroutine partition_hgrid
   do ie=1,ne
     iegb=ielg(ie)
     nedge=0
-    do j=1,3 !node
+    do j=1,i34(ie) !node
       ip=elnode(j,ie)
       do k=1,nne(ip)
         je=indel(k,ip)
@@ -525,7 +394,7 @@ subroutine partition_hgrid
               !side sharing
               !contribute i34-2 nodes and i34-1 sides to comm
               !Reduce weight adjwgt()?
-              if(wgtflag==1.or.wgtflag==3) adjwgt(l)=nlev(je)*(2*3-3)
+              if(wgtflag==1.or.wgtflag==3) adjwgt(l)=nlev(je)*(2*i34(je)-3)
               found=.true.
               exit
             endif
@@ -534,12 +403,12 @@ subroutine partition_hgrid
             adjncy(xadj(ie)+nedge)=jegb
             !node sharing
             !contribute i34-1 nodes and i34 sides to comm
-            if(wgtflag==1.or.wgtflag==3) adjwgt(xadj(ie)+nedge)=nlev(je)*(2*3-1)
+            if(wgtflag==1.or.wgtflag==3) adjwgt(xadj(ie)+nedge)=nlev(je)*(2*i34(je)-1)
             nedge=nedge+1
           endif
         endif !jegb/=iegb
       enddo !k=1,nne(ip)
-    enddo !j=1,3
+    enddo !j=1,
     xadj(ie+1)=xadj(ie)+nedge
   enddo !ie=1,ne
 
@@ -602,15 +471,9 @@ subroutine partition_hgrid
 !  int(out) edgecut: # of edges that are cut by the partitioning;
 !  int(out) part(): array size = # of local vertices. It stores indices of local vertices.
  
-!#ifdef USE_WRAP
-!  call Wrap_ParMETIS_V3_PartGeomKway(vtxdist,xadj,adjncy,vwgt,adjwgt,wgtflag, &
-!                            numflag,ndims,xyz,ncon,nproc,tpwgts,ubvec,options, &
-!                            edgecut,part,comm)
-!#else
   call ParMETIS_V3_PartGeomKway(vtxdist,xadj,adjncy,vwgt,adjwgt,wgtflag, &
-                            numflag,ndims,xyz,ncon,nproc,tpwgts,ubvec,options, &
-                            edgecut,part,comm)
-!#endif
+                            &numflag,ndims,xyz,ncon,nproc,tpwgts,ubvec,options, &
+                            &edgecut,part,comm)
 
   ! Change partition numbering to start from 0
   part=part-1
@@ -630,146 +493,6 @@ subroutine partition_hgrid
   if(ivcor==1) deallocate(kbp)
 
 end subroutine partition_hgrid
-
-!===============================================================================
-!===============================================================================
-
-subroutine aquire_vgrid
-!-------------------------------------------------------------------------------
-! Aquire vertical grid data from vgrid.in
-!-------------------------------------------------------------------------------
-  use elfe_glbl
-  use elfe_msgp
-  implicit none
-  integer :: i,j,k,l,jki,stat,kin,m
-  real(rkind) :: buf1(100),hmod2,zz
-
-  !ivcor: types of vertical coord.; surface must all be nvrt (for sflux routines)
-  !ivcor=2 !SZ coordinates
-
-  if(lm2d) then
-    !2D
-    ivcor=2; nvrt=2; kz=1; nsig=2; h_s=1.e6; h_c=h_s !5
-    theta_b=0; theta_f=1.e-4; s_con1=sinh(theta_f)
-    allocate(ztot(nvrt),sigma(nvrt),cs(nvrt),dcs(nvrt),stat=stat) !for outputs only
-    if(stat/=0) call parallel_abort('VGRID: ztot allocation failure')
-    ztot(kz)=-h_s
-    sigma(1)=-1 !bottom
-    sigma(nsig)=0 !surface
-  else !3D
-    open(19,file='vgrid.in',status='old',iostat=stat)
-    if(stat/=0) call parallel_abort('AQUIRE_VGIRD: open(19) failure')
-    read(19,*)ivcor
-    if(ivcor==2) then !SZ coordinates
-      read(19,*) nvrt,kz,h_s !kz>=1
-      if(nvrt<3) call parallel_abort('nvrt<3')
-      if(kz<1.or.kz>nvrt-2) then
-        write(errmsg,*)'Wrong kz:',kz
-        call parallel_abort(errmsg)
-      endif
-      if(h_s<6) then
-        write(errmsg,*)'h_s needs to be larger:',h_s
-        call parallel_abort(errmsg)
-      endif
-
-      ! Allocate vertical layers arrays
-      allocate(ztot(nvrt),sigma(nvrt),cs(nvrt),dcs(nvrt),stat=stat)
-      if(stat/=0) call parallel_abort('AQUIRE_VGIRD: ztot allocation failure')
-
-      ! # of z-levels excluding "bottom" at h_s
-      read(19,*) !for adding comment "Z levels"
-      do k=1,kz-1
-        read(19,*)j,ztot(k)
-        if(ztot(k)>=-h_s) then
-          write(errmsg,*)'Illegal Z level:',k
-          call parallel_abort(errmsg)
-        endif
-        if(k>1) then; if(ztot(k)<=ztot(k-1)) then
-          write(errmsg,*)'z-level inverted:',k
-          call parallel_abort(errmsg)
-        endif; endif
-      enddo !k
-      read(19,*) !level kz       
-      ! In case kz=1, there is only 1 ztot(1)=-h_s
-      ztot(kz)=-h_s
-
-      nsig=nvrt-kz+1 !# of S levels (including "bottom" & f.s.)
-      read(19,*) !for adding comment "S levels"
-      read(19,*)h_c,theta_b,theta_f
-      if(h_c<5.or.h_c>=h_s) then !large h_c to avoid 2nd type abnormaty
-        write(errmsg,*)'h_c needs to be larger:',h_c
-        call parallel_abort(errmsg)
-      endif
-      if(theta_b<0.or.theta_b>1) then
-        write(errmsg,*)'Wrong theta_b:',theta_b
-        call parallel_abort(errmsg)
-      endif
-      if(theta_f<=0) then
-        write(errmsg,*)'Wrong theta_f:',theta_f
-        call parallel_abort(errmsg)
-      endif
-      !Pre-compute constants
-      s_con1=sinh(theta_f)
-
-      sigma(1)=-1 !bottom
-      sigma(nsig)=0 !surface
-      read(19,*) !level kz
-      do k=kz+1,nvrt-1
-        kin=k-kz+1
-        read(19,*) j,sigma(kin)
-        if(sigma(kin)<=sigma(kin-1).or.sigma(kin)>=0) then
-          write(errmsg,*)'Check sigma levels at:',k,sigma(kin),sigma(kin-1)
-          call parallel_abort(errmsg)
-        endif
-      enddo !k
-      read(19,*) !level nvrt
-      close(19)
-    else if(ivcor==1) then !localized sigma
-      read(19,*)nvrt !needs hgrid to read the rest
-      close(19)
-      allocate(ztot(nvrt),sigma(nvrt),stat=stat)
-      if(stat/=0) call parallel_abort('AQUIRE_VGIRD: ztot allocation failure (2)')
-      !for output only - remove later
-      ztot=0; sigma=0 
-      kz=1; h_s=0; h_c=0; theta_b=0; theta_f=0
-    else
-      call parallel_abort('VGRID: Unknown ivcor')
-    endif !ivcor
-  endif !lm2d
-
-  if(ivcor==2) then
-    ! Compute C(s) and C'(s)
-    do k=1,nsig
-      cs(k)=(1-theta_b)*sinh(theta_f*sigma(k))/sinh(theta_f)+ &
-       &theta_b*(tanh(theta_f*(sigma(k)+0.5))-tanh(theta_f*0.5))/2/tanh(theta_f*0.5)
-      dcs(k)=(1-theta_b)*theta_f*cosh(theta_f*sigma(k))/sinh(theta_f)+ &
-       &theta_b*theta_f/2/tanh(theta_f*0.5)/cosh(theta_f*(sigma(k)+0.5))**2
-    enddo !k
-  endif !ivcor==2
-
-  ! Output some sample z-coordinates
-!  if(myrank==0) then
-!    open(10,file='sample_z.out',status='replace')
-!    write(10,*)'Sample z coordinates'
-!    buf1(1)=h_s; buf1(2)=h_c; buf1(2:11)=(/(10*(i-1),i=2,11)/); buf1(12:28)=(/(200+50*(i-12), i=12,28)/)
-!    write(10,*)'h_c= ',h_c,', h_s=',h_s
-!    do i=1,28
-!      write(10,*)'Depth= ',buf1(i)
-!      do k=kz,nvrt
-!        kin=k-kz+1
-!        hmod2=min(buf1(i),h_s)
-!        if(hmod2<=h_c) then
-!          zz=sigma(kin)*hmod2
-!        else
-!          zz=h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
-!        endif
-!        write(10,*)k,zz
-!      enddo !k
-!    enddo !i
-!    close(10)
-!  endif
-
-end subroutine aquire_vgrid
 
 !===============================================================================
 !===============================================================================
@@ -807,7 +530,7 @@ subroutine aquire_hgrid(full_aquire)
   integer,allocatable :: npproc(:)   ! Number of resident nodes on each processor
   integer,allocatable :: nsproc(:)   ! Number of resident sides on each processor
 
-  integer,allocatable :: nmgb(:,:)  ! Global element-node tables; i34gb(:)
+  integer,allocatable :: i34gb(:),nmgb(:,:)  ! Global element-node tables
   integer,allocatable :: ic3gb(:,:)          ! Global element-side-element table
   integer,allocatable :: jsgb(:,:)           ! Global element-side table
   integer,allocatable :: nnegb(:),inegb(:,:) ! Global node-element tables
@@ -819,9 +542,10 @@ subroutine aquire_hgrid(full_aquire)
   integer,allocatable :: ieg(:)            ! List of ghost elements (global index)
   integer,allocatable :: ipg(:)            ! List of ghost nodes (global index)
   integer,allocatable :: isg(:)            ! List of ghost sides (global index)
+  integer,allocatable :: ieg2(:)            ! List of 2-tier ghost elements (global index)
+  integer,allocatable :: ipg2(:)            ! List of 2-tier ghost nodes (global index)
+  integer,allocatable :: isg2(:)            ! List of 2-tier ghost sides (global index)
 
-!  integer :: mnei       ! Max number of neighboring elements surrounding a node
-  integer :: mneii      ! Max number of neighboring nodes surrounding a node
   integer :: mnopep     ! Max number of partitions of local open boundary segments
 
   integer :: stat
@@ -852,25 +576,27 @@ subroutine aquire_hgrid(full_aquire)
   read(14,*); read(14,*) ne_global,np_global
 
   ! Aquire global element-node tables from hgrid.gr3
-!  if(allocated(i34gb)) deallocate(i34gb); allocate(i34gb(ne_global),stat=stat);
-!  if(stat/=0) call parallel_abort('AQUIRE_HGRID: i34gb allocation failure')
-  if(allocated(nmgb)) deallocate(nmgb); allocate(nmgb(3,ne_global),stat=stat);
+  if(allocated(i34gb)) deallocate(i34gb); allocate(i34gb(ne_global),stat=stat);
+  if(stat/=0) call parallel_abort('AQUIRE_HGRID: i34gb allocation failure')
+  if(allocated(nmgb)) deallocate(nmgb); allocate(nmgb(4,ne_global),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: nmgb allocation failure')
   do i=1,np_global; read(14,*); enddo;
   do i=1,ne_global
-    read(14,*) iegb,j,(nmgb(k,iegb),k=1,3)
-    if(j/=3) then
-      write(errmsg,*) 'AQUIRE_HGRID: Unknown type of element',iegb,j
+    read(14,*) iegb,i34gb(iegb),(nmgb(k,iegb),k=1,i34gb(iegb))
+    if(i34gb(iegb)/=3.and.i34gb(iegb)/=4) then
+      write(errmsg,*) 'AQUIRE_HGRID: Unknown type of element',iegb,i34gb(iegb)
       call parallel_abort(errmsg)
     endif
+    if(i34gb(iegb)==4) lhas_quad=.true.
   enddo
+  if(myrank==0) write(16,*)'lhas_quad=',lhas_quad
 
   ! Count number of elements connected to each node (global)
   if(allocated(nnegb)) deallocate(nnegb); allocate(nnegb(np_global),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: nnegb allocation failure')
   nnegb=0
   do iegb=1,ne_global
-    do k=1,3
+    do k=1,i34gb(iegb)
       ipgb=nmgb(k,iegb)
       nnegb(ipgb)=nnegb(ipgb)+1
     enddo !k
@@ -894,8 +620,6 @@ subroutine aquire_hgrid(full_aquire)
     mnei=max(mnei,nnegb(ipgb))
   enddo
 
-  if(myrank==0.and..not.full_aquire) write(16,*)'mnei= ',mnei
-
   ! Build global node-element and self-reference table table
   if(allocated(inegb)) deallocate(inegb); allocate(inegb(np_global,mnei),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: inegb allocation failure')
@@ -903,7 +627,7 @@ subroutine aquire_hgrid(full_aquire)
 !  if(stat/=0) call parallel_abort('AQUIRE_HGRID: iselfgb allocation failure')
   nnegb=0
   do iegb=1,ne_global
-    do k=1,3
+    do k=1,i34gb(iegb)
       ipgb=nmgb(k,iegb)
       nnegb(ipgb)=nnegb(ipgb)+1
       inegb(ipgb,nnegb(ipgb))=iegb
@@ -911,53 +635,65 @@ subroutine aquire_hgrid(full_aquire)
     enddo !k
   enddo !iegb
 
+  !Compute mnei_p (max. # of nodes around a node)
+  mnei_p=0
+  do i=1,np_global
+    icount=0
+    do j=1,nnegb(i)
+      iegb=inegb(i,j)
+      icount=icount+i34gb(iegb)-2 !# of new surrounding nodes
+    enddo !j
+    mnei_p=max(mnei_p,icount+1) !account for bnd ball
+  enddo !i
+
+  if(myrank==0.and..not.full_aquire) write(16,*)'mnei, mnei_p = ',mnei,mnei_p
+
   ! Build global element-side-element table; this won't be affected by re-arrangement below
-  if(allocated(ic3gb)) deallocate(ic3gb); allocate(ic3gb(3,ne_global),stat=stat);
+  if(allocated(ic3gb)) deallocate(ic3gb); allocate(ic3gb(4,ne_global),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: ic3gb allocation failure')
   do iegb=1,ne_global
-    do k=1,3
+    do k=1,i34gb(iegb)
       ic3gb(k,iegb)=0 !index for boundary sides
-      ngb1=nmgb(nx(k,1),iegb)
-      ngb2=nmgb(nx(k,2),iegb)
+      ngb1=nmgb(nxq(1,k,i34gb(iegb)),iegb)
+      ngb2=nmgb(nxq(2,k,i34gb(iegb)),iegb)
       do l=1,nnegb(ngb1)
         jegb=inegb(ngb1,l)
-        if(jegb/=iegb.and.(nmgb(1,jegb)==ngb2.or.nmgb(2,jegb)==ngb2.or.nmgb(3,jegb)==ngb2)) &
-          ic3gb(k,iegb)=jegb
+        if(jegb/=iegb.and.(nmgb(1,jegb)==ngb2.or.nmgb(2,jegb)==ngb2.or. &
+     &nmgb(3,jegb)==ngb2.or.(i34gb(jegb)==4.and.nmgb(4,jegb)==ngb2))) ic3gb(k,iegb)=jegb
       enddo !l
       jegb=ic3gb(k,iegb)
-      if (jegb/=0) then
-        do l=1,3
-          if ((nmgb(nx(l,1),jegb).eq.ngb1).and.(nmgb(nx(l,2),jegb).eq.ngb2)) then
-            write(errmsg,*) 'Triangles ', iegb, ' and ', jegb, ' have opposite orientation'
+      if(jegb/=0) then
+        do l=1,i34gb(jegb)
+          if(nmgb(nxq(1,l,i34gb(jegb)),jegb)==ngb1.and.nmgb(nxq(2,l,i34gb(jegb)),jegb)==ngb2) then
+            write(errmsg,*) 'Elem ', iegb, ' and ', jegb, ' have opposite orientation'
             call parallel_abort(errmsg)
           endif
-        end do
+        end do  !l
       endif
     enddo !k
   enddo !iegb
 
   ! inegb to be re-arrange in counter-clockwise fashion after boundary info is read in
   ! Count global number of sides and build global element-side index table
-  if(allocated(jsgb)) deallocate(jsgb); allocate(jsgb(3,ne_global),stat=stat);
+  if(allocated(jsgb)) deallocate(jsgb); allocate(jsgb(4,ne_global),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: jsgb allocation failure')
   ns_global=0
   do iegb=1,ne_global
-    do j=1,3 !visit each side associated with element iegb
+    do j=1,i34gb(iegb) !visit each side associated with element iegb
       if(ic3gb(j,iegb)==0.or.iegb<ic3gb(j,iegb)) then !new global side
         ns_global=ns_global+1
         jsgb(j,iegb)=ns_global
         if(ic3gb(j,iegb)/=0) then !old internal side
           jegb=ic3gb(j,iegb)
           l=0
-          do k=1,3
+          do k=1,i34gb(jegb)
             if(ic3gb(k,jegb)==iegb) then
               l=k
               exit
             endif
           enddo !k
           if(l==0) then
-            write(errmsg,'(a,10i6)') 'AQUIRE_HGRID: Wrong ball info', &
-                                     iegb,j,ngb1,ngb2,ns_global
+            write(errmsg,'(a,10i6)') 'AQUIRE_HGRID: Wrong ball info',iegb,j,ns_global
             call parallel_abort(errmsg)
           endif
           jsgb(l,jegb)=ns_global
@@ -966,9 +702,8 @@ subroutine aquire_hgrid(full_aquire)
     enddo !j
   enddo !iegb
   if(ns_global.lt.ne_global.or.ns_global.lt.np_global) then
-    write(errmsg,*) &
-    'AQUIRE_HGRID: weird grid with ns_global < ne_global or ns_global < np_global', &
-    np_global,ne_global,ns_global
+    write(errmsg,*)'AQUIRE_HGRID: weird grid with ns_global < ne_global or ns_global < np_global', &
+    &np_global,ne_global,ns_global
     call parallel_abort(errmsg)
   endif
   if(full_aquire) then
@@ -1020,7 +755,6 @@ subroutine aquire_hgrid(full_aquire)
 
   ! Aquire global open boundary segments and nodes
   rewind(14); read(14,*); read(14,*);
-  !do i=1,np_global; read(14,*)j,x_global(i),y_global(i); enddo;
   do i=1,np_global; read(14,*); enddo;
   do i=1,ne_global; read(14,*); enddo;
   read(14,*); read(14,*);
@@ -1063,7 +797,7 @@ subroutine aquire_hgrid(full_aquire)
   enddo !k
   if(nvel_global/=nt) then
     write(errmsg,*) 'AQUIRE_HGRID: nvel_global /= total # of land bnd nodes', &
-                    nvel_global,nt
+                    &nvel_global,nt
     call parallel_abort(errmsg)
   endif
 
@@ -1108,42 +842,41 @@ subroutine aquire_hgrid(full_aquire)
       do j=1,nnegb(i)
         ie=inegb(i,j)
 !        ii=iselfgb(j,i)
-        ii=0
-        do l=1,3
+        ii=0 !local index
+        do l=1,i34gb(ie)
           if(nmgb(l,ie)==i) then
             ii=l; exit
           endif
         enddo !l
         if(ii==0) call parallel_abort('AQUIRE_HGRID: bomb (1)')
 
-        if(ic3gb(nx(ii,2),ie)==0) then
+        if(ic3gb(nxq(i34gb(ie)-1,ii,i34gb(ie)),ie)==0) then
           icount=icount+1
           inegb(i,1)=ie
-!          iselfgb(1,i)=ii
         endif
       enddo !j=1,nnegb(i)
       if(icount/=1) then
-        write(errmsg,*)'Illegal bnd node',i
+        write(errmsg,*)'Illegal bnd node',i,isbnd_global(i)
         call parallel_abort(errmsg)
       endif
     endif !bnd ball
 
+!   For internal balls, starting elem. is not altered
 !   Sequential search for the rest of elements
 !    nnpgb(i)=2
 !    inpgb(i,1)=nmgb(nx(iselfgb(1,i),1),inegb(i,1))
 !    inpgb(i,2)=nmgb(nx(iselfgb(1,i),2),inegb(i,1))
     do j=2,nnegb(i)
       ie=inegb(i,j-1)
-      ii=0
-      do l=1,3
+      ii=0 !local index
+      do l=1,i34gb(ie)
         if(nmgb(l,ie)==i) then
           ii=l; exit
         endif
       enddo !l
       if(ii==0) call parallel_abort('AQUIRE_HGRID: bomb (2)')
 
-      !new=ic3gb(nx(iselfgb(j-1,i),1),inegb(i,j-1))
-      new=ic3gb(nx(ii,1),ie)
+      new=ic3gb(nxq(i34gb(ie)-2,ii,i34gb(ie)),ie)
       if(new==0) then
         write(errmsg,*)'Incomplete ball',i
         call parallel_abort(errmsg)
@@ -1211,6 +944,12 @@ subroutine aquire_hgrid(full_aquire)
   allocate(isgl(ns_global),stat=stat)
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: isgl allocation failure')
 
+  ! Allocate 2-tier arrays for later
+  if(allocated(iegl2)) deallocate(iegl2); allocate(iegl2(2,ne_global),stat=stat)
+  if(allocated(ipgl2)) deallocate(ipgl2); allocate(ipgl2(2,np_global),stat=stat)
+  if(allocated(isgl2)) deallocate(isgl2); allocate(isgl2(2,ns_global),stat=stat)
+  if(stat/=0) call parallel_abort('AQUIRE_HGRID: iegl2 allocation failure')
+
   ! Build global-to-local element, node and side index tables
   if(nproc>1) then
     do iegb=1,ne_global
@@ -1219,7 +958,7 @@ subroutine aquire_hgrid(full_aquire)
       ie=neproc(irank)
       iegl(iegb)%rank=irank
       iegl(iegb)%id=ie
-      do k=1,3 !visit each node/side attached to element iegb
+      do k=1,i34gb(iegb) !visit each node/side attached to element iegb
         !Node table
         ipgb=nmgb(k,iegb) !ipgb is global node index
         if(ipgl(ipgb)%id==0) then !node not yet visited -- add to list
@@ -1337,7 +1076,7 @@ subroutine aquire_hgrid(full_aquire)
     neg=0; ieg=0;
     iegloop: do iegb=1,ne_global
       if(iegrpv(iegb)==myrank) cycle iegloop !skip resident elements
-      do j=1,3
+      do j=1,i34gb(iegb)
         ipgb=nmgb(j,iegb)
         if(ipgl(ipgb)%rank==myrank) then !local interface node => ghost element
           neg=neg+1
@@ -1353,16 +1092,16 @@ subroutine aquire_hgrid(full_aquire)
     enddo iegloop
 
     ! Build ordered list of ghost nodes/sides
-    if(allocated(ipg)) deallocate(ipg); allocate(ipg(neg*3),stat=stat);
+    if(allocated(ipg)) deallocate(ipg); allocate(ipg(neg*4),stat=stat);
     if(stat/=0) call parallel_abort('AQUIRE_HGRID: ipg allocation failure')
-    if(allocated(isg)) deallocate(isg); allocate(isg(neg*3),stat=stat);
+    if(allocated(isg)) deallocate(isg); allocate(isg(neg*4),stat=stat);
     if(stat/=0) call parallel_abort('AQUIRE_HGRID: isg allocation failure')
 
     npg=0; ipg=0;
     nsg=0; isg=0;
     do i=1,neg
       iegb=ieg(i)
-      do j=1,3
+      do j=1,i34gb(iegb)
         !Add to node list if not local interface node
         ipgb=nmgb(j,iegb)
         if(ipgl(ipgb)%rank/=myrank) then
@@ -1375,8 +1114,8 @@ subroutine aquire_hgrid(full_aquire)
           enddo kn
           if(.not.found) then !add to list
             npg=npg+1
-            if(npg>neg*3) then
-              write(errmsg,*)'Overflow in ipg:',neg*3
+            if(npg>neg*4) then
+              write(errmsg,*)'Overflow in ipg:',neg*4
               call parallel_abort(errmsg)
             endif
             ipg(npg)=ipgb
@@ -1395,14 +1134,14 @@ subroutine aquire_hgrid(full_aquire)
           enddo ks
           if(.not.found) then !add to list
             nsg=nsg+1
-            if(nsg>neg*3) then
-              write(errmsg,*)'Overflow in isg:',neg*3
+            if(nsg>neg*4) then
+              write(errmsg,*)'Overflow in isg:',neg*4
               call parallel_abort(errmsg)
             endif
             isg(nsg)=isgb
           endif !.not.found
         endif !not in myrank
-      enddo !j=1,3
+      enddo !j=1,
     enddo !i=1,neg
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1426,31 +1165,6 @@ subroutine aquire_hgrid(full_aquire)
   nea=ne+neg
   npa=np+npg
   nsa=ns+nsg
-
-  ! Output augmented subdomain size to mirror and/or screen
-  if(full_aquire) then
-    allocate(isbuf(9)); allocate(irbuf(9*nproc));
-    isbuf(1)=nea; isbuf(2)=ne; isbuf(3)=neg;
-    isbuf(4)=npa; isbuf(5)=np; isbuf(6)=npg;
-    isbuf(7)=nsa; isbuf(8)=ns; isbuf(9)=nsg;
-    call mpi_gather(isbuf,9,itype,irbuf,9,itype,0,comm,ierr)
-    if(ierr/=MPI_SUCCESS) call parallel_abort('AQUIRE_HGRID: gather subdomain size',ierr)
-    if(myrank==0) then
-      write(16,'(/a)') '**********Augmented Subdomain Sizes**********'
-      write(16,'(10a)') ' rank', &
-      '     nea','      ne','     neg', &
-      '     npa','      np','     npg', &
-      '     nsa','      ns','     nsg'
-      do i=0,nproc-1
-        write(16,'(i5,9i8)') i, &
-        irbuf(9*i+1),irbuf(9*i+2),irbuf(9*i+3), &
-        irbuf(9*i+4),irbuf(9*i+5),irbuf(9*i+6), &
-        irbuf(9*i+7),irbuf(9*i+8),irbuf(9*i+9)
-      enddo
-    endif !myrank==0
-    call parallel_barrier
-    deallocate(isbuf,irbuf)
-  endif !full_aquire
 
   ! Allocate and build augmented local-to-global element index tables
   if(allocated(ielg)) deallocate(ielg); allocate(ielg(nea),stat=stat);
@@ -1523,25 +1237,28 @@ subroutine aquire_hgrid(full_aquire)
 
   ! Allocate and build augmented element-node, element-side and
   ! element-side-element tables using local indices.
-  ! NOTE: The negative of the global element index is used for elements that
+  ! NOTE: The negative global element index is used for elements that
   ! lie outside the augmented subdomain in the element-side-element table.
-  if(allocated(elnode)) deallocate(elnode); allocate(elnode(3,nea),stat=stat);
+  if(allocated(i34)) deallocate(i34); allocate(i34(nea),stat=stat);
+  if(stat/=0) call parallel_abort('AQUIRE_HGRID: i34 allocation failure')
+  if(allocated(elnode)) deallocate(elnode); allocate(elnode(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: elnode allocation failure')
-  if(allocated(ic3)) deallocate(ic3); allocate(ic3(3,nea),stat=stat);
+  if(allocated(ic3)) deallocate(ic3); allocate(ic3(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: ic3 allocation failure')
-  if(allocated(elside)) deallocate(elside); allocate(elside(3,nea),stat=stat);
+  if(allocated(elside)) deallocate(elside); allocate(elside(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: elside (element-side table) allocation failure')
 
   do ie=1,nea
     iegb=ielg(ie)
-    do j=1,3
+    i34(ie)=i34gb(iegb)
+    do j=1,i34(ie)
       elnode(j,ie)=ipgl(nmgb(j,iegb))%id
       elside(j,ie)=isgl(jsgb(j,iegb))%id
       jegb=ic3gb(j,iegb) !>=0
       if(jegb/=0.and.iegl(max(1,jegb))%rank==myrank) then
         ic3(j,ie)=iegl(jegb)%id
       else
-        ic3(j,ie)=-jegb
+        ic3(j,ie)=-jegb !including bnd side
       endif
     enddo !j
   enddo !ie
@@ -1566,8 +1283,8 @@ subroutine aquire_hgrid(full_aquire)
         indel(k,ip)=-iegb
       endif
 !      iself(k,ip)=iselfgb(k,ipgb)
-      iself(k,ip)=0
-      do l=1,3
+      iself(k,ip)=0 !always follow global
+      do l=1,i34gb(iegb)
         if(nmgb(l,iegb)==ipgb) then
           iself(k,ip)=l; exit
         endif
@@ -1578,7 +1295,7 @@ subroutine aquire_hgrid(full_aquire)
 
   if(allocated(nnp)) deallocate(nnp); allocate(nnp(npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: nnp allocation failure')
-  if(allocated(indnd)) deallocate(indnd); allocate(indnd(mnei+1,npa),stat=stat);
+  if(allocated(indnd)) deallocate(indnd); allocate(indnd(mnei_p,npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: indnd allocation failure')
 
   nnp=0 
@@ -1587,29 +1304,33 @@ subroutine aquire_hgrid(full_aquire)
     do j=1,nnegb(ipgb)
       ie=inegb(ipgb,j)
       ii=iself(j,i) !self index
-      nnp(i)=nnp(i)+1
-      if(nnp(i)>mnei+1) then
-        write(errmsg,*)'Too many neighbor nodes (0):',i,mnei+1
-        call parallel_abort(errmsg)
-      endif
-      !Use indnd to temporarily store global node #
-      indnd(nnp(i),i)=nmgb(nx(ii,1),ie)
+
+      do k=1,i34gb(ie)-2 !# of new nodes (counter-clockwise order)
+        nnp(i)=nnp(i)+1
+        if(nnp(i)>mnei_p) then
+          write(errmsg,*)'Too many neighbor nodes (0):',i,j,k,ie,mnei_p
+          call parallel_abort(errmsg)
+        endif
+        !Use indnd to temporarily store global node #
+        indnd(nnp(i),i)=nmgb(nxq(k,ii,i34gb(ie)),ie)
+      enddo !k=1,i34gb(ie)-2
 
 !     Check last element
       if(j==nnegb(ipgb)) then 
+        intvalue=nmgb(nxq(i34gb(ie)-1,ii,i34gb(ie)),ie) !last node (global) to check
         if(isbnd_global(ipgb)==0) then !complete internal ball
 !         Check completeness
-          if(nmgb(nx(ii,2),ie)/=indnd(1,i)) then
+          if(intvalue/=indnd(1,i)) then
             write(errmsg,*)'Broken ball:',i
             call parallel_abort(errmsg)
           endif
         else !one more node for bnd ball
           nnp(i)=nnp(i)+1
-          if(nnp(i)>mnei+1) then
-            write(errmsg,*)'Too many neighbor nodes:',i,mnei+1
+          if(nnp(i)>mnei_p) then
+            write(errmsg,*)'Too many neighbor nodes:',i,mnei_p
             call parallel_abort(errmsg)
           endif
-          indnd(nnp(i),i)=nmgb(nx(ii,2),ie) !global
+          indnd(nnp(i),i)=intvalue !global
         endif !isbnd_global
       endif !j==nnegb(ipgb)
     enddo !j=1,nnegb(i)
@@ -1626,9 +1347,229 @@ subroutine aquire_hgrid(full_aquire)
   enddo !i=1,npa
 
   !-----------------------------------------------------------------------------
+  ! Build 2-tier ghost and augmented domain for higher-order schemes
+  ! Note that not all arrays as in 1-tier ghost are defined
+  ! Divide into different cases in which different definitions of 2-tier ghost
+  ! are used in order to maximize efficiency.
+  ! The 2-tier augmented domain is constructed by appending 2-tier ghosts
+  ! (elem/node/side) to the 1-tier augmented domain, and thus the original local order
+  ! is not altered.
+  !-----------------------------------------------------------------------------
+  i2tier_case=2
+  if(full_aquire) then
+    if(i2tier_case==1) then
+      !-----------------------------------------------------------------------------
+      ! Usual definition of 2-tier ghosts: an elem. that (1) surrounds a (1-tier) ghost
+      ! node and (2) is not in the (1-tier) aug. domain. All of its nodes/sides that are
+      ! not in the (1-tier) aug. domain are 2-tier ghosts.
+      ! The global-to-local arrays (iegl2 etc) are not linked list but simple 2D arrays.
+      !-----------------------------------------------------------------------------
+      if(nproc>1) then
+        if(allocated(ieg2)) deallocate(ieg2); allocate(ieg2(npg*mnei),stat=stat)
+        if(allocated(ipg2)) deallocate(ipg2); allocate(ipg2(npg*mnei*4),stat=stat)
+        if(allocated(isg2)) deallocate(isg2); allocate(isg2(npg*mnei*4),stat=stat)
+        if(stat/=0) call parallel_abort('AQUIRE_HGRID: ieg2 allocation failure')
+
+        !Count # of 2-tier ghost elem. (neg2)
+        neg2=0; npg2=0; nsg2=0
+        do ip=np+1,npa !ghost nodes
+          do l=1,nne(ip) 
+            k=indel(l,ip)
+            if(k==0) call parallel_abort('aquire_hgrid: bomb (1)')
+            if(k<0) then !outside aug.
+              k=iabs(k) !global elem. #
+              !Check against list
+              found=.false.
+              do j=1,neg2
+                if(k==ieg2(j)) then
+                  found=.true.; exit
+                endif
+              enddo !j
+
+              if(.not.found) then
+                neg2=neg2+1
+                if(neg2>npg*mnei) call parallel_abort('AQUIRE_HGRID: overflow (9)')
+                ieg2(neg2)=k !global
+
+                do jp=1,i34gb(k) !node/side
+                  ii=nmgb(jp,k) !global node
+                  if(ipgl(ii)%rank/=myrank) then
+                    found1=.false.
+                    do j=1,npg2
+                      if(ii==ipg2(j)) then
+                        found1=.true.; exit
+                      endif
+                    enddo !j
+                    if(.not.found1) then
+                      npg2=npg2+1
+                      if(npg2>4*npg*mnei) call parallel_abort('AQUIRE_HGRID: overflow (8)')
+                      ipg2(npg2)=ii
+                    endif
+                  endif !ipgl
+
+                  ii=jsgb(jp,k) !global side
+                  if(isgl(ii)%rank/=myrank) then
+                    found2=.false.
+                    do j=1,nsg2
+                      if(ii==isg2(j)) then
+                        found2=.true.; exit
+                      endif
+                    enddo !j
+                    if(.not.found2) then
+                      nsg2=nsg2+1
+                      if(nsg2>4*npg*mnei) call parallel_abort('AQUIRE_HGRID: overflow (5)')
+                      isg2(nsg2)=ii !global
+                    endif !new
+                  endif !ipgl
+
+                enddo !jp
+              endif !not found
+            endif !k
+          enddo !l=1,nne(ip)
+        enddo !ip=np+1,npa
+
+      else !nproc==1
+        neg2=0; npg2=0; nsg2=0
+      endif !nproc
+
+    else if(i2tier_case==2) then
+      !-----------------------------------------------------------------------------
+      ! TVD way of defining 2-tier ghosts (greedy): starting from a ghost elem,
+      ! and if at least 1 of its sides is on the interface, then check its
+      ! surrounding elem. and add those outside aug. domain as 2-tier ghost
+      ! elem. No 2-tier nodes/sides defined. 
+      !-----------------------------------------------------------------------------
+      if(nproc>1) then
+        if(allocated(ieg2)) deallocate(ieg2); allocate(ieg2(npg*mnei),stat=stat)
+        if(allocated(ipg2)) deallocate(ipg2); allocate(ipg2(npg*mnei*4),stat=stat)
+        if(allocated(isg2)) deallocate(isg2); allocate(isg2(npg*mnei*4),stat=stat)
+        if(stat/=0) call parallel_abort('AQUIRE_HGRID: ieg2 allocation failure(2)')
+
+        !Count # of 2-tier ghost elem. (neg2)
+        neg2=0; npg2=0; nsg2=0
+        do i=ne+1,nea
+          found=.false.
+          do j=1,i34(i)
+            if(elside(j,i)<=ns) then !must be interface
+              found=.true.; exit
+            endif
+          enddo !j
+          if(found) then
+            do j=1,i34(i)
+              ie=ic3(j,i)
+              if(ie<0) then !outside; check against list
+                found=.false.
+                ie=iabs(ie) !global index
+                do l=1,neg2
+                  if(ie==ieg2(l)) then
+                    found=.true.; exit
+                  endif
+                enddo !l
+                if(.not.found) then
+                  neg2=neg2+1
+                  if(neg2>npg*mnei) call parallel_abort('AQUIRE_HGRID: overflow (9.2)')
+                  ieg2(neg2)=ie !global
+                endif
+              endif
+            enddo !j
+          endif !found
+        enddo !i
+
+        !Check pure tri
+        if(.not.lhas_quad.and.neg2/=0) then
+          write(errmsg,*)'Pure tri should not have 2-tier:',neg2,ieg2(1:neg2)
+          call parallel_abort(errmsg)
+        endif
+      else !nproc==1
+        neg2=0; npg2=0; nsg2=0
+      endif !nproc
+    else
+      call parallel_abort('AQUIRE_HGRID: Unknown i2tier_case')
+    endif !i2tier_case
+
+    nea2=nea+neg2
+    npa2=npa+npg2
+    nsa2=nsa+nsg2
+    if(allocated(ielg2)) deallocate(ielg2); allocate(ielg2(nea2),stat=stat)
+    if(allocated(iplg2)) deallocate(iplg2); allocate(iplg2(npa2),stat=stat)
+    if(allocated(islg2)) deallocate(islg2); allocate(islg2(nsa2),stat=stat)
+    if(stat/=0) call parallel_abort('AQUIRE_HGRID: ielg2 allocation failure')
+
+    !Update local_to_global and global_to_local arrays (these are not linked lists)
+    ielg2(1:nea)=ielg(1:nea) !init
+    iplg2(1:npa)=iplg(1:npa)
+    islg2(1:nsa)=islg(1:nsa)
+
+    do i=1,ne_global
+      iegl2(1,i)=iegl(i)%rank !init
+      iegl2(2,i)=iegl(i)%id !init
+    enddo !i
+    do i=1,np_global
+      ipgl2(1,i)=ipgl(i)%rank
+      ipgl2(2,i)=ipgl(i)%id
+    enddo !i
+    do i=1,ns_global
+      isgl2(1,i)=isgl(i)%rank
+      isgl2(2,i)=isgl(i)%id 
+    enddo !i
+    
+    if(nproc>1) then
+      ielg2(nea+1:nea2)=ieg2(1:neg2)
+      iplg2(npa+1:npa2)=ipg2(1:npg2)
+      islg2(nsa+1:nsa2)=isg2(1:nsg2)
+      do ii=1,neg2
+        iegb=ieg2(ii)
+        iegl2(1,iegb)=myrank
+        iegl2(2,iegb)=nea+ii !local index
+      enddo !iegb
+
+      do ii=1,npg2
+        ipgb=ipg2(ii)
+        ipgl2(1,ipgb)=myrank
+        ipgl2(2,ipgb)=npa+ii !local index
+      enddo !iegb
+
+      do ii=1,nsg2
+        isgb=isg2(ii)
+        isgl2(1,isgb)=myrank
+        isgl2(2,isgb)=nsa+ii !local index
+      enddo !iegb
+
+      !Done with temp arrays
+      if(allocated(ieg2)) deallocate(ieg2)
+      if(allocated(ipg2)) deallocate(ipg2)
+      if(allocated(isg2)) deallocate(isg2)
+    endif !nproc>1
+
+    ! Output augmented subdomain size to mirror and/or screen
+    allocate(isbuf(15)); allocate(irbuf(15*nproc));
+    isbuf(1)=nea; isbuf(2)=ne; isbuf(3)=neg; isbuf(4)=nea2; isbuf(5)=neg2;
+    isbuf(6)=npa; isbuf(7)=np; isbuf(8)=npg; isbuf(9)=npa2; isbuf(10)=npg2;
+    isbuf(11)=nsa; isbuf(12)=ns; isbuf(13)=nsg; isbuf(14)=nsa2; isbuf(15)=nsg2;
+    call mpi_gather(isbuf,15,itype,irbuf,15,itype,0,comm,ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('AQUIRE_HGRID: gather subdomain size',ierr)
+    if(myrank==0) then
+      write(16,'(/a)') '**********Augmented Subdomain Sizes**********'
+      write(16,'(16a)') ' rank', &
+      &'     nea','      ne','     neg','     nea2','     neg2', &
+      &'     npa','      np','     npg','     npa2','     npg2', &
+      &'     nsa','      ns','     nsg','     nsa2','     nsg2'
+      do i=0,nproc-1
+        write(16,'(i5,15i8)') i, &
+        &irbuf(15*i+1),irbuf(15*i+2),irbuf(15*i+3),irbuf(15*i+4),irbuf(15*i+5), &
+        &irbuf(15*i+6),irbuf(15*i+7),irbuf(15*i+8),irbuf(15*i+9),irbuf(15*i+10), &
+        &irbuf(15*i+11),irbuf(15*i+12),irbuf(15*i+13),irbuf(15*i+14),irbuf(15*i+15)
+      enddo
+    endif !myrank==0
+    call parallel_barrier
+    deallocate(isbuf,irbuf)
+
+  endif !full_aquire
+
+  !-----------------------------------------------------------------------------
   ! Deallocate global grid geometry arrays
   !-----------------------------------------------------------------------------
-
+  if(allocated(i34gb)) deallocate(i34gb)
   if(allocated(nmgb)) deallocate(nmgb)
   if(allocated(ic3gb)) deallocate(ic3gb)
   if(allocated(jsgb)) deallocate(jsgb)
@@ -1653,13 +1594,11 @@ subroutine aquire_hgrid(full_aquire)
   znd=0 !for ics=1
   if(allocated(dp)) deallocate(dp); allocate(dp(npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: dp allocation failure')
-!  if(allocated(idrynode)) deallocate(idrynode); allocate(idrynode(npa),stat=stat);
-!  if(stat/=0) call parallel_abort('AQUIRE_HGRID: idrynode allocation failure')
   if(allocated(xlon)) deallocate(xlon); allocate(xlon(npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: xlon allocation failure')
   if(allocated(ylat)) deallocate(ylat); allocate(ylat(npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: ylat allocation failure')
-!  idrynode=0 !not dry
+
   open(14,file='hgrid.gr3',status='old',iostat=stat)
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: open(14) failure')
   read(14,*); read(14,*);
@@ -1697,7 +1636,7 @@ subroutine aquire_hgrid(full_aquire)
   ! where j is the axis id, i is the component id, ie is the local element id
   ! Compute xel, yel - coord. in element frame for ics=2 (for ics=1 they 
   ! are same as xnd,ynd)
-  ! WARINING: be careful when using average to compute lat/lon at center because of around dateline
+  ! WARINING: be careful when using average to compute lat/lon at center around dateline
   if(allocated(xctr)) deallocate(xctr); allocate(xctr(nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: xctr allocation failure')
   if(allocated(yctr)) deallocate(yctr); allocate(yctr(nea),stat=stat);
@@ -1713,28 +1652,29 @@ subroutine aquire_hgrid(full_aquire)
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: dpe allocation failure')
   if(allocated(eframe)) deallocate(eframe); allocate(eframe(3,3,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: eframe allocation failure')
-  if(allocated(xel)) deallocate(xel); allocate(xel(3,nea),stat=stat);
+  if(allocated(xel)) deallocate(xel); allocate(xel(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: xel allocation failure')
-  if(allocated(yel)) deallocate(yel); allocate(yel(3,nea),stat=stat);
+  if(allocated(yel)) deallocate(yel); allocate(yel(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: yel allocation failure')
 
   eframe=0 !for ics=1
   thetan=-1.e10 !max. dot product for checking only
+  found=.false. !check quad areas
   do ie=1,nea
     xctr(ie)=0d0
     yctr(ie)=0d0
     dpe(ie)=1.d10
-    do j=1,3
-      xctr(ie)=xctr(ie)+xnd(elnode(j,ie))/3.d0
-      yctr(ie)=yctr(ie)+ynd(elnode(j,ie))/3.d0
+    do j=1,i34(ie)
+      xctr(ie)=xctr(ie)+xnd(elnode(j,ie))/dble(i34(ie))
+      yctr(ie)=yctr(ie)+ynd(elnode(j,ie))/dble(i34(ie))
       !zctr initialized
-      if(ics==2) zctr(ie)=zctr(ie)+znd(elnode(j,ie))/3.d0
+      if(ics==2) zctr(ie)=zctr(ie)+znd(elnode(j,ie))/dble(i34(ie))
       if(dp(elnode(j,ie))<dpe(ie)) dpe(ie)=dp(elnode(j,ie))
     enddo !j
 
     if(ics==1) then
-      xel(1:3,ie)=xnd(elnode(1:3,ie))
-      yel(1:3,ie)=ynd(elnode(1:3,ie))
+      xel(1:i34(ie),ie)=xnd(elnode(1:i34(ie),ie))
+      yel(1:i34(ie),ie)=ynd(elnode(1:i34(ie),ie))
     else !lat/lon
       call compute_ll(xctr(ie),yctr(ie),zctr(ie),ar1,ar2)
       !local ll frame
@@ -1752,8 +1692,8 @@ subroutine aquire_hgrid(full_aquire)
       egb1=eframe(1,3,ie)*xctr(ie)+eframe(2,3,ie)*yctr(ie)+eframe(3,3,ie)*zctr(ie) !dot product
       if(egb1<=0) then
         write(errmsg,*)'AQUIRE_HGRID: orientation wrong:',ielg(ie),egb1,&
-     &xlon(elnode(1:3,ie)),ylat(elnode(1:3,ie)),&
-     &xnd(elnode(1:3,ie)),ynd(elnode(1:3,ie)),znd(elnode(1:3,ie))
+     &xlon(elnode(1:i34(ie),ie)),ylat(elnode(1:i34(ie),ie)),&
+     &xnd(elnode(1:i34(ie),ie)),ynd(elnode(1:i34(ie),ie)),znd(elnode(1:i34(ie),ie))
         call parallel_abort(errmsg)
       endif
 
@@ -1769,7 +1709,7 @@ subroutine aquire_hgrid(full_aquire)
       if(ar1>thetan) thetan=ar1
 
       !Compute local x,y coord.
-      do j=1,3 !nodes
+      do j=1,i34(ie) !nodes
         nn=elnode(j,ie) 
         xel(j,ie)=(xnd(nn)-xctr(ie))*eframe(1,1,ie)+(ynd(nn)-yctr(ie))*eframe(2,1,ie)+ &
      &(znd(nn)-zctr(ie))*eframe(3,1,ie)
@@ -1780,11 +1720,27 @@ subroutine aquire_hgrid(full_aquire)
 
     area(ie)=signa(xel(1,ie),xel(2,ie),xel(3,ie),yel(1,ie),yel(2,ie),yel(3,ie))
     if(area(ie)<=0.d0) then
-      write(errmsg,'(a,2i8)') 'AQUIRE_HGRID: negative area at',ie,ielg(ie)
-      call parallel_abort(errmsg)
+      found=.true.
+      write(12,'(a,2i8)') 'AQUIRE_HGRID: negative area at',ielg(ie)
     endif 
-    radiel(ie)=sqrt(area(ie)/pi) !Equivalent radius
+
+    if(i34(ie)==4) then
+      ar1=signa(xel(1,ie),xel(3,ie),xel(4,ie),yel(1,ie),yel(3,ie),yel(4,ie))
+      area(ie)=area(ie)+ar1
+      !Also check other diagonal
+      ar2=signa(xel(1,ie),xel(2,ie),xel(4,ie),yel(1,ie),yel(2,ie),yel(4,ie))
+      ar3=signa(xel(2,ie),xel(3,ie),xel(4,ie),yel(2,ie),yel(3,ie),yel(4,ie))
+      if(min(ar1,ar2,ar3)<=0.d0) then
+        found=.true.
+        write(12,*) 'AQUIRE_HGRID: concave quad at ',ielg(ie)
+      endif
+    endif !i34
+
+    if(.not.found) radiel(ie)=sqrt(area(ie)/pi) !Equivalent radius
   enddo !ie=1,nea
+
+  !Report fatal area errors
+  if(found) call parallel_abort('Negative elem. areas; check nonfatal_*')
 
   if(ics==2) then
     call mpi_reduce(thetan,dptmp,1,rtype,MPI_MAX,0,comm,ierr)
@@ -1813,13 +1769,12 @@ subroutine aquire_hgrid(full_aquire)
   ! Build side data for augmented subdomain
   do ie=1,nea
     iegb=ielg(ie)
-    do j=1,3
+    do j=1,i34(ie)
       jsj=elside(j,ie)
-      n1=elnode(nx(j,1),ie)
-      n2=elnode(nx(j,2),ie)
-      if(ic3(j,ie)==0 &
-      .or.(ic3(j,ie)>0.and.iegb<ielg(max(1,ic3(j,ie)))) &
-      .or.(ic3(j,ie)<0.and.iegb<iabs(ic3(j,ie)))) then !new local side
+      n1=elnode(nxq(1,j,i34(ie)),ie)
+      n2=elnode(nxq(2,j,i34(ie)),ie)
+      if(ic3(j,ie)==0.or.(ic3(j,ie)>0.and.iegb<ielg(max(1,ic3(j,ie)))) &
+      &.or.(ic3(j,ie)<0.and.iegb<iabs(ic3(j,ie)))) then !new local side
         isdel(1,jsj)=ie
         isdel(2,jsj)=ic3(j,ie)
         isidenode(1,jsj)=n1
@@ -1839,16 +1794,16 @@ subroutine aquire_hgrid(full_aquire)
         write(errmsg,*) 'AQUIRE_HGRID: Zero side',jsj
         call parallel_abort(errmsg)
       endif
-    enddo !j=1,3
+    enddo !j=1,
   enddo !ie=1,nea
 
   ! Allocate and compute sign (for outer normal vector) associated
   ! with each side of an element
-  if(allocated(ssign)) deallocate(ssign); allocate(ssign(3,nea),stat=stat);
+  if(allocated(ssign)) deallocate(ssign); allocate(ssign(4,nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: ssign allocation failure')
   do ie=1,nea
     iegb=ielg(ie)
-    do j=1,3
+    do j=1,i34(ie)
       jsj=elside(j,ie)
       je=isdel(1,jsj)
       if(je==0) then !impossible
@@ -1954,6 +1909,7 @@ subroutine aquire_hgrid(full_aquire)
   !-----------------------------------------------------------------------------
 
   ! Scan segments to count number of local open boundary segments and nodes
+  !iopegl(0,nope_global) is the # of local fragmentations ('1' is not used yet)
   if(allocated(iopegl)) deallocate(iopegl); allocate(iopegl(0:1,nope_global),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: iopegl allocation failure')
   iopegl=0  !count of partitions of local segments
@@ -2004,7 +1960,7 @@ subroutine aquire_hgrid(full_aquire)
 
   ! Initialize some for all cases
 !  iopegl(0,k): # of local fragmentations of global segment k.
-!  iopegl(j,k): (1<=j<=iopegl(0,k)) local segment # of jth fragmentation of  global segment k.
+!  iopegl(j,k): (1<=j<=iopegl(0,k)) local open bnd segment # of jth fragmentation of  global segment k.
   nond=0; iopegl=0;
   ! Aquire local open boundary segments and nodes
   jj=nope !temporary storage for checking dimension
@@ -2173,22 +2129,25 @@ subroutine aquire_hgrid(full_aquire)
       n4=ipgl(n2)%id
       do ii=1,nne(n3)
         ie=indel(ii,n3)
-        if(ie>0) then !resident element
+        if(ie>0) then !inside aug.
           k=0 !flag
-          do jj=1,3
+          do jj=1,i34(ie)
             isd=elside(jj,ie)
             if((isidenode(1,isd)==n3.or.isidenode(2,isd)==n3).and. &
-               (isidenode(1,isd)==n4.or.isidenode(2,isd)==n4)) then
+              &(isidenode(1,isd)==n4.or.isidenode(2,isd)==n4)) then
               k=isd; exit
             endif
           enddo !jj
-          if(k>0) then
+          if(k<=0) then
+            write(errmsg,*)'aquire_hgrid: impossible (5)',n1,n2
+            call parallel_abort(errmsg)
+          else !k>0
             if(isdel(2,k)/=0) then
               write(errmsg,*)'aquire_hgrid: impossible (1)',n1,n2,isdel(1:2,k),ielg(isdel(1:2,k)),ielg(ie),iplg(isidenode(1:2,isd))
               call parallel_abort(errmsg)
             endif
             isbs(k)=i; exit
-          endif
+          endif !k
         endif !ie>0
       enddo !ii=1,nne(n3)
     enddo !j
@@ -2222,7 +2181,6 @@ subroutine aquire_hgrid(full_aquire)
       write(16,'(5i8)') i,irbuf(4*i+1),irbuf(4*i+2),irbuf(4*i+3),irbuf(4*i+4)
     enddo
     write(16,*)
-    call flush(16) ! flush "mirror.out"
   endif !myrank==0
   deallocate(isbuf,irbuf)
   call parallel_barrier
@@ -2361,6 +2319,248 @@ end subroutine aquire_hgrid
 
 !===============================================================================
 !===============================================================================
-! END ELCIRC GRID SUBROUTINES
+
+function signa(x1,x2,x3,y1,y2,y3)
+!-------------------------------------------------------------------------------
+! Compute signed area formed by pts 1,2,3 (positive counter-clockwise)
+!-------------------------------------------------------------------------------
+  use elfe_glbl, only : rkind,errmsg
+  implicit none
+  real(rkind) :: signa
+  real(rkind),intent(in) :: x1,x2,x3,y1,y2,y3
+
+  signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2d0
+  
+end function signa
+
+!===============================================================================
+!===============================================================================
+
+subroutine dump_hgrid
+!-------------------------------------------------------------------------------
+! Dump horizontal grid data to processor specific formatted files
+! Write local-global mapping info
+!-------------------------------------------------------------------------------
+  use elfe_glbl
+  use elfe_msgp
+  implicit none
+  integer, parameter :: maxbuf=max(100,3)
+  integer :: ie,ip,i,j,k,ngb1,ngb2,isd,isdgb,iegb1,iegb2
+  integer :: ibuf1(maxbuf),ibuf2(maxbuf),ibuf3(maxbuf)
+  type(llist_type),pointer :: llp
+!-------------------------------------------------------------------------------
+
+#ifdef DEBUG
+  ! Dump elements
+  fdb='helem_0000'
+  lfdb=len_trim(fdb)
+  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+  open(10,file='outputs/'//fdb,status='unknown')
+  write(10,'(a,4i10)') '#',nea,ne,neg
+  do ie=1,nea
+    j=0
+    llp=>iegl(ielg(ie))
+    do
+      j=j+1
+! Check bound
+      if(j>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid (1)')
+      ibuf1(j)=llp%rank
+      ibuf2(j)=llp%id
+      llp=>llp%next
+      if(.not.associated(llp)) exit
+    enddo !j
+    if(ie<=ne) then
+      write(10,'(a,2i8,4e14.6)') 'Element ',ie,ielg(ie),xctr(ie),yctr(ie),zctr(ie),dpe(ie)
+    else
+      write(10,'(a,2i8,4e14.6)') '# Element ',ie,ielg(ie),xctr(ie),yctr(ie),zctr(ie),dpe(ie)
+    endif
+    write(10,'(a,4i8)') '####NODE:  ',(iplg(elnode(k,ie)),k=1,i34(ie))
+    do k=1,i34(ie)
+      if(ic3(k,ie)>0) then
+        ibuf3(k)=ielg(ic3(k,ie))
+      elseif(ic3(k,ie)<0) then
+        if(ie<=ne) then !resident must have valid ic3
+          write(errmsg,*)'Resident element having wrong nbr:',ie,ielg(ie),myrank
+          call parallel_abort(errmsg)
+        endif
+        ibuf3(k)=ic3(k,ie)
+      else
+        ibuf3(k)=0
+      endif
+
+!     Check validity of elnode etc
+      if(elnode(k,ie)<=0.or.elside(k,ie)<=0) then
+        write(errmsg,*)'Check elnode or elside:',ielg(ie),(elnode(ip,ie),elside(ip,ie),ip=1,i34(ie))
+        call parallel_abort(errmsg)
+      endif
+
+    enddo !k
+    write(10,'(a,4i8)') '####IC3:   ',(ibuf3(k),k=1,i34(ie))
+    write(10,'(a,4i8)') '####JS:    ',(islg(elside(k,ie)),k=1,i34(ie))
+    write(10,'(a,4(1x,f10.3))') '####SSIGN: ',(ssign(k,ie),k=1,i34(ie))
+    write(10,'(a,1000i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
+  enddo !ie=1,nea
+
+  !2-tier ghost elem
+  do ie=nea+1,nea2
+    iegb1=ielg2(ie)
+    if(iegl(iegb1)%rank==myrank) call parallel_abort('DUMP_HGRID: 2-tier elem (0)')
+    if(iegl2(1,iegb1)/=myrank) call parallel_abort('DUMP_HGRID: 2-tier elem')
+    if(iegb1<1.or.iegb1>ne_global) call parallel_abort('DUMP_HGRID: 2-tier elem (2)')
+    write(10,'(a,3i8)') '2-t element ',ie-nea,ie,iegb1
+  enddo !ie
+  close(10)
+
+  ! Dump nodes
+  fdb='hnode_0000'
+  lfdb=len_trim(fdb)
+  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+  open(10,file='outputs/'//fdb,status='unknown')
+  write(10,'(a,4i10)') '#',npa,np,npg
+  do ip=1,npa
+    j=0
+    llp=>ipgl(iplg(ip))
+    do
+      j=j+1
+! Check bound
+      if(j>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid: node (1)')
+      ibuf1(j)=llp%rank
+      ibuf2(j)=llp%id
+      llp=>llp%next
+      if(.not.associated(llp)) exit
+    enddo !j
+
+   if(nnp(ip)>maxbuf.or.nne(ip)>maxbuf) call parallel_abort('Increase buffer size in dump_hgrid: node (2)')
+    do k=1,nne(ip)
+      if(indel(k,ip)>0) then
+        ibuf3(k)=ielg(indel(k,ip))
+      elseif(indel(k,ip)<0) then
+        if(ip<=np) then
+          write(errmsg,*)'Surrounding element outside:',indel(k,ip),iplg(ip),k
+          call parallel_abort(errmsg)
+        endif
+
+        ibuf3(k)=indel(k,ip)
+      else
+!  Fatal error
+!        ibuf3(k)=0
+        write(errmsg,*)'Surrounding element not exist:',indel(k,ip),iplg(ip),k
+        call parallel_abort(errmsg) 
+      endif
+    enddo !k
+    if(ip<=np) then
+      write(10,'(a,2i8,4e14.6,2i4,1000(i8,i4))') 'Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
+      &isbnd(-2:2,ip),nne(ip),(ibuf3(k),iself(k,ip),k=1,nne(ip))
+    else
+      write(10,'(a,2i8,4e14.6,2i4,1000(i8,i4))') '# Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
+      &isbnd(-2:2,ip),nne(ip),(ibuf3(k),iself(k,ip),k=1,nne(ip))
+    endif
+    write(10,'(a,1000i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
+
+    do k=1,nnp(ip)
+      if(indnd(k,ip)>0) then
+        ibuf3(k)=iplg(indnd(k,ip))
+      elseif(indnd(k,ip)<0) then
+        if(ip<=np) then !resident
+          write(errmsg,*)'Surrounding node outside:',indnd(k,ip),iplg(ip),k
+          call parallel_abort(errmsg)
+        endif
+
+        ibuf3(k)=indnd(k,ip)
+      else
+        write(errmsg,*)'Surrounding node not exist:',indnd(k,ip),iplg(ip),k
+        call parallel_abort(errmsg) 
+      endif
+    enddo !k
+    write(10,'(a,1000i8)')'Nbr nodes:',(ibuf3(k),k=1,nnp(ip))
+    
+  enddo !ip=1,npa
+
+  !2-tier ghost 
+  do ip=npa+1,npa2
+    ngb1=iplg2(ip)
+    if(ipgl(ngb1)%rank==myrank) call parallel_abort('DUMP_HGRID: 2-tier node (0)')
+    if(ipgl2(1,ngb1)/=myrank) call parallel_abort('DUMP_HGRID: 2-tier node')
+    if(ngb1<1.or.ngb1>np_global) call parallel_abort('DUMP_HGRID: 2-tier node (2)')
+    write(10,'(a,3i8)') '2-t node:',ip-npa,ip,ngb1
+  enddo !ip
+  close(10)
+
+  ! Dump sides
+  fdb='hside_0000'
+  lfdb=len_trim(fdb)
+  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+  open(10,file='outputs/'//fdb,status='unknown')
+  write(10,'(a,4i10)') '#',nsa,ns,nsg
+  do isd=1,nsa
+    isdgb=islg(isd)
+    ngb1=iplg(isidenode(1,isd)); ngb2=iplg(isidenode(2,isd));
+    if(isdel(1,isd)>0) then
+      iegb1=ielg(isdel(1,isd)) 
+    else if(isdel(1,isd)<0) then
+      iegb1=isdel(1,isd) 
+    else !=0
+      write(errmsg,*)'isdel(1,:) =0:',ngb1,ngb2
+      call parallel_abort(errmsg)
+    endif
+    if(isdel(2,isd)>0) then; iegb2=ielg(isdel(2,isd)); else; iegb2=isdel(2,isd); endif;
+    j=0
+    llp=>isgl(islg(isd))
+    do
+      j=j+1
+      ibuf1(j)=llp%rank
+      ibuf2(j)=llp%id
+      llp=>llp%next
+      if(.not.associated(llp)) exit
+    enddo
+    if(isd<=ns) then
+      write(10,'(a,6i8,7e14.6,i4)') 'Side ',isd,isdgb,ngb1,ngb2,iegb1,iegb2, &
+      &xcj(isd),ycj(isd),zcj(isd),dps(isd),distj(isd),sframe(1,1,isd),sframe(2,1,isd),isbs(isd)
+    else
+      write(10,'(a,6i8,7e14.6,i4)') '# Side', isd,isdgb,ngb1,ngb2,iegb1,iegb2, &
+      &xcj(isd),ycj(isd),zcj(isd),dps(isd),distj(isd),sframe(1,1,isd),sframe(2,1,isd),isbs(isd)
+    endif
+    write(10,'(a,1000i8)') '####PList:',(ibuf1(k),ibuf2(k),k=1,j)
+  enddo !isd
+
+  !2-tier ghost 
+  do isd=nsa+1,nsa2
+    isdgb=islg2(isd)
+    if(isgl(isdgb)%rank==myrank) call parallel_abort('DUMP_HGRID: 2-tier side (0)')
+    if(isgl2(1,isdgb)/=myrank) call parallel_abort('DUMP_HGRID: 2-tier side')
+    if(isdgb<1.or.isdgb>ns_global) call parallel_abort('DUMP_HGRID: 2-tier side (2)')
+    write(10,'(a,3i8)') '2-t side:',isd-nsa,isd,isdgb
+  enddo !ip
+  close(10)
+
+  ! Dump local bnd info
+  fdb='bndinfo_0000'
+  lfdb=len_trim(fdb)
+  write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
+  open(10,file='outputs/'//fdb,status='unknown')
+  write(10,'(a,i10)') 'Open bnd:',nope
+  do i=1,nope
+    write(10,*)'open bnd #',i,iopelg(i),(iplg(iond(i,j)),j=1,nond(i))
+  enddo !i
+  write(10,'(a,i10)') 'Land bnd:',nland
+  do i=1,nland
+    write(10,*)'land bnd #',i,(iplg(ilnd(i,j)),j=1,nlnd(i))
+  enddo !i
+  close(10)
+
+#endif /*DEBUG*/
+
+  ! Rank 0 writes global to local element info
+  if(myrank==0) then
+    open(32,file='outputs/global_to_local.prop',status='unknown')
+    write(32,'(i8,1x,i4)')(ie,iegrpv(ie),ie=1,ne_global)
+    close(32)
+  endif
+
+end subroutine dump_hgrid
+
+!===============================================================================
+!===============================================================================
+! END GRID SUBROUTINES
 !===============================================================================
 !===============================================================================

@@ -19,10 +19,11 @@ module elfe_msgp
 !  use mpi
 !#endif
   use elfe_glbl, only : rkind, llist_type,nvrt, &
-                        ne_global,ne,neg,nea,ielg,iegl,iegrpv,elnode,elside, &
-                        np_global,np,npg,npa,iplg,ipgl,nne,indel,dp, &
-                        ns_global,ns,nsg,nsa,islg,isgl,isdel,isidenode, &
-                        errmsg,fdb,lfdb,mntr,ntracers,msc2,mdc2
+                       &ne_global,ne,neg,nea,ielg,iegl,iegrpv,elnode,elside, &
+                       &np_global,np,npg,npa,iplg,ipgl,nne,indel,dp, &
+                       &ns_global,ns,nsg,nsa,islg,isgl,isdel,isidenode, &
+                       &errmsg,fdb,lfdb,mntr,ntracers,msc2,mdc2,i34,nea2, &
+                       &ielg2,iegl2
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -55,6 +56,9 @@ module elfe_msgp
 !  integer,public,save :: nnbr_s                   ! Number of neighboring processors (sides); share with nodes (nnbr_p)
 !  integer,public,save,allocatable :: nbrrank_s(:)  ! Rank of neighboring processors (sides)
 !  integer,public,save,allocatable :: ranknbr_s(:)  ! Mapping from MPI rank to neighbor index (sides)
+  integer,public,save :: nnbr_2t                 ! Number of neighboring processors (2-tier elements)
+  integer,public,save,allocatable :: nbrrank_2t(:)  ! Rank of neighboring processors (2-tier elements)
+  integer,public,save,allocatable :: ranknbr_2t(:)  ! Mapping from MPI rank to neighbor index (2-tierelements)
 
   !-----------------------------------------------------------------------------
   ! Private data
@@ -63,7 +67,6 @@ module elfe_msgp
   integer,save :: mnesend                 ! Max number of elements to send to a nbr
   integer,save,allocatable :: nesend(:)   ! Number of elements to send to each nbr
   integer,save,allocatable :: iesend(:,:) ! Local index of send elements
-
   integer,save :: mnerecv                 ! Max number of elements to receive from a nbr
   integer,save,allocatable :: nerecv(:)   ! Number of elements to receive from each nbr
   integer,save,allocatable :: ierecv(:,:) ! Local index of recv elements
@@ -71,7 +74,6 @@ module elfe_msgp
   integer,save :: mnpsend                 ! Max number of nodes to send to a nbr
   integer,save,allocatable :: npsend(:)   ! Number of nodes to send to each nbr
   integer,save,allocatable :: ipsend(:,:) ! Local index of send nodes
-
   integer,save :: mnprecv                 ! Max number of nodes to receive from a nbr
   integer,save,allocatable :: nprecv(:)   ! Number of nodes to receive from each nbr
   integer,save,allocatable :: iprecv(:,:) ! Local index of recv nodes
@@ -79,10 +81,16 @@ module elfe_msgp
   integer,save :: mnssend                 ! Max number of sides to send to a nbr
   integer,save,allocatable :: nssend(:)   ! Number of sides to send to each nbr
   integer,save,allocatable :: issend(:,:) ! Local index of send sides
-
   integer,save :: mnsrecv                 ! Max number of sides to receive from a nbr
   integer,save,allocatable :: nsrecv(:)   ! Number of sides to receive from each nbr
   integer,save,allocatable :: isrecv(:,:) ! Local index of recv sides
+
+  integer,save :: mnesend_2t              ! Max number of 2-tier elements to send to a nbr
+  integer,save,allocatable :: nesend_2t(:)   ! Number of 2-tier elements to send to each nbr
+  integer,save,allocatable :: iesend_2t(:,:) ! Local index of send 2-tier elements
+  integer,save :: mnerecv_2t              ! Max number of 2-tier elements to receive from a nbr
+  integer,save,allocatable :: nerecv_2t(:)   ! Number of 2-tier elements to receive from each nbr
+  integer,save,allocatable :: ierecv_2t(:,:) ! Local index of 2-tier recv elements
 
   integer,save,allocatable :: e2dsend_type(:)    ! 2D element send MPI datatype
   integer,save,allocatable :: e2dsend_rqst(:)    ! 2D element send request handles
@@ -97,6 +105,13 @@ module elfe_msgp
   integer,save,allocatable :: e2direcv_type(:)    ! 2D element recv MPI datatype (integer)
   integer,save,allocatable :: e2direcv_rqst(:)    ! 2D element recv request handles (integer)
   integer,save,allocatable :: e2direcv_stat(:,:)  ! 2D element recv status handles (integer)
+
+  integer,save,allocatable :: e2di_2t_send_type(:)    ! 2D 2-tier element send MPI datatype (integer)
+  integer,save,allocatable :: e2di_2t_send_rqst(:)    ! 2D 2-tier element send request handles (integer)
+  integer,save,allocatable :: e2di_2t_send_stat(:,:)  ! 2D 2-tier element send status handles (integer)
+  integer,save,allocatable :: e2di_2t_recv_type(:)    ! 2D 2-tier element recv MPI datatype (integer)
+  integer,save,allocatable :: e2di_2t_recv_rqst(:)    ! 2D 2-tier element recv request handles (integer)
+  integer,save,allocatable :: e2di_2t_recv_stat(:,:)  ! 2D 2-tier element recv status handles (integer)
 
   integer,save,allocatable :: e3dwsend_type(:)   ! 3D-whole-level element send MPI datatype
   integer,save,allocatable :: e3dwsend_rqst(:)   ! 3D-whole-level element send request handles
@@ -254,6 +269,13 @@ module elfe_msgp
   integer,save,allocatable :: e3d_tr2_recv_rqst(:)   
   integer,save,allocatable :: e3d_tr2_recv_stat(:,:) 
 
+  integer,save,allocatable :: e3d_2t_tr_send_type(:)   ! Tracer transport 2-tier element send MPI datatype
+  integer,save,allocatable :: e3d_2t_tr_send_rqst(:)   
+  integer,save,allocatable :: e3d_2t_tr_send_stat(:,:) 
+  integer,save,allocatable :: e3d_2t_tr_recv_type(:)   
+  integer,save,allocatable :: e3d_2t_tr_recv_rqst(:)   
+  integer,save,allocatable :: e3d_2t_tr_recv_stat(:,:) 
+
 ! Following are 4D arrays (:,:,:,:) exchange types
 
   !-----------------------------------------------------------------------------
@@ -272,6 +294,8 @@ module elfe_msgp
   public :: exchange_e3d_2          ! ghost element exchange of type (2,nvrt,nm) where nm>=nea
   public :: exchange_e3d_tr         ! Tracer transport ghost element exchange of type (mntr,nvrt,nm) where nm>=nea
   public :: exchange_e3d_tr2        ! Tracer transport ghost element exchange of type (ntracers,nvrt,nm) where nm>=nea
+  public :: exchange_e2di_2t        ! 2-tier ghost elem. exchange of type (nm) where nm>=nea2
+  public :: exchange_e3d_2t_tr      ! 2-tier ghost elem. exchange of type (mntr,nvrt,nm) where nm>=nea2
   public :: exchange_p2d            ! 2D ghost node exchange
   public :: exchange_p3dw           ! 3D-whole-level ghost node exchange
   public :: exchange_p2di           ! 2D ghost node exchange (integer)
@@ -349,10 +373,10 @@ subroutine parallel_abort(string,error)
       write(*,'(i4,2a)') myrank,': MPI ERROR: ',s
       if(lopen) write(11,'(i4,2a)') myrank,': MPI ERROR: ',s
     endif
-    do i=1,200; inquire(i,opened=lopen); if(lopen) close(i); enddo;
+    do i=1,500; inquire(i,opened=lopen); if(lopen) close(i); enddo;
     call mpi_abort(comm,error,ierror)
   else
-    do i=1,200; inquire(i,opened=lopen); if(lopen) close(i); enddo;
+    do i=1,500; inquire(i,opened=lopen); if(lopen) close(i); enddo;
     call mpi_abort(comm,0,ierror)
   endif
 
@@ -467,6 +491,7 @@ subroutine msgp_tables
   type(llist_type),pointer :: nd,sd
   logical,allocatable :: nbr(:),nbr_p(:),nbr_s(:)
   integer,allocatable :: iegrecv(:,:),iegsend(:,:)
+  integer,allocatable :: iegrecv_2t(:,:),iegsend_2t(:,:)
   integer,allocatable :: ipgrecv(:,:),ipgsend(:,:)
   integer,allocatable :: isgrecv(:,:),isgsend(:,:)
   integer,allocatable :: srqst(:),sstat(:,:)
@@ -559,7 +584,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Element Receive Table:'
   do i=1,nnbr
     write(10,'(a,3i8)') 'nbrindx,rank,nerecv: ',&
-    ranknbr(nbrrank(i)),nbrrank(i),nerecv(i)
+    &ranknbr(nbrrank(i)),nbrrank(i),nerecv(i)
     do j=1,nerecv(i)
       write(10,'(t1,2i8)') ierecv(j,i),iegrecv(j,i)
     enddo
@@ -589,20 +614,16 @@ subroutine msgp_tables
 
   do i=1,nnbr
     call mpi_irecv(nesend(i),1,itype,nbrrank(i),10,comm,rrqst(i),ierr)
-    if(ierr/=MPI_SUCCESS) &
-    call parallel_abort('msgp_tables: mpi_irecv tag=10',ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv tag=10',ierr)
   enddo
   do i=1,nnbr
     call mpi_isend(nerecv(i),1,itype,nbrrank(i),10,comm,srqst(i),ierr)
-    if(ierr/=MPI_SUCCESS) &
-    call parallel_abort('msgp_tables: mpi_isend tag=10',ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend tag=10',ierr)
   enddo
   call mpi_waitall(nnbr,rrqst,rstat,ierr)
-  if(ierr/=MPI_SUCCESS) &
-  call parallel_abort('msgp_tables: mpi_waitall rrqst tag=10',ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=10',ierr)
   call mpi_waitall(nnbr,srqst,sstat,ierr)
-  if(ierr/=MPI_SUCCESS) &
-  call parallel_abort('msgp_tables: mpi_waitall srqst tag=10',ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=10',ierr)
 
   ! Compute maximum number of send elements
   mnesend=0
@@ -619,21 +640,17 @@ subroutine msgp_tables
   ! Communicate element send lists (global index) with nbrs
   do i=1,nnbr
     call mpi_irecv(iegsend(1,i),nesend(i),itype,nbrrank(i),11,comm,rrqst(i),ierr)
-    if(ierr/=MPI_SUCCESS) &
-    call parallel_abort('msgp_tables: mpi_irecv tag=11',ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv tag=11',ierr)
   enddo
   do i=1,nnbr
 !  iegrecv(1,i) is the starting address, nerecv(i) is the count
     call mpi_isend(iegrecv(1,i),nerecv(i),itype,nbrrank(i),11,comm,srqst(i),ierr)
-    if(ierr/=MPI_SUCCESS) &
-    call parallel_abort('msgp_tables: mpi_isend tag=11',ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend tag=11',ierr)
   enddo
   call mpi_waitall(nnbr,rrqst,rstat,ierr)
-  if(ierr/=MPI_SUCCESS) &
-  call parallel_abort('msgp_tables: mpi_waitall rrqst tag=11',ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=11',ierr)
   call mpi_waitall(nnbr,srqst,sstat,ierr)
-  if(ierr/=MPI_SUCCESS) &
-  call parallel_abort('msgp_tables: mpi_waitall srqst tag=11',ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=11',ierr)
 
   ! Construct locally indexed element send table
   do i=1,nnbr
@@ -646,7 +663,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Element Send Table:'
   do i=1,nnbr
     write(10,'(a,3i8)') 'nbrindx,rank,nesend: ',&
-    ranknbr(nbrrank(i)),nbrrank(i),nesend(i)
+    &ranknbr(nbrrank(i)),nbrrank(i),nesend(i)
     do j=1,nesend(i)
       write(10,'(t1,2i8)') iesend(j,i),iegsend(j,i)
     enddo
@@ -663,13 +680,15 @@ subroutine msgp_tables
   ! Construct node message-passing tables
   !-----------------------------------------------------------------------------
   ! Neigbor table (excluding myrank itself)
+  ! Neighbors from 2-layers into ghost zone in order to find the smallest rank
+  ! for each ghost node later
   allocate(nbr_p(0:nproc-1),stat=stat)
   if(stat/=0) call parallel_abort('msgp_tables: nbr allocation failure')
   nbr_p=.false.
   do ie=ne+1,nea
     iegb=ielg(ie)
     nbr_p(iegrpv(iegb))=.true.
-    do j=1,3 !nodes
+    do j=1,i34(ie) !nodes
       itmp=elnode(j,ie) !nmgb(j,iegb)
       do l=1,nne(itmp) !nnegb(itmp)
         k=indel(l,itmp) !inegb(itmp,l)
@@ -710,6 +729,8 @@ subroutine msgp_tables
   deallocate(nbr_p)
 
   ! Allocate and count number of recv nodes
+  ! nprecv(i): # of ghost nodes to be received from neighbor i to myrank
+  ! npsend(i): # of ghost nodes to be sent to neighbor i (from myrank)
   allocate(nprecv(nnbr_p),stat=stat)
   if(stat/=0) call parallel_abort('msgp_tables: nprecv allocation failure')
   nprecv=0
@@ -809,7 +830,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Node Receive Table:'
   do i=1,nnbr_p
     write(10,'(a,3i8)') 'nbrindx,rank,nprecv: ',&
-    ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nprecv(i)
+    &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nprecv(i)
     if(nprecv(i)==0) then
       write(10,*) 'Zero recv'
 !      write(errmsg,*) 'MSGP: Zero recv; see ctb*'
@@ -896,7 +917,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Node Send Table:'
   do i=1,nnbr_p
     write(10,'(a,3i8)') 'nbrindx,rank,npsend: ',&
-    ranknbr_p(nbrrank_p(i)),nbrrank_p(i),npsend(i)
+    &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),npsend(i)
     if(npsend(i)==0) then
       write(10,*) 'Zero send'
 !      write(errmsg,*) 'MSGP: Zero send; see ctb*'
@@ -1042,7 +1063,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Side Receive Table:'
   do i=1,nnbr_p
     write(10,'(a,3i8)') 'nbrindx,rank,nsrecv: ',&
-    ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nsrecv(i)
+    &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nsrecv(i)
     if(nsrecv(i)==0) then
       write(10,*)'Zero recv side'
 !      write(errmsg,*) 'MSGP: Zero recv side; see ctb*'
@@ -1121,7 +1142,7 @@ subroutine msgp_tables
   write(10,'(a)') 'Side Send Table:'
   do i=1,nnbr_p
     write(10,'(a,3i8)') 'nbrindx,rank,nssend: ',&
-    ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nssend(i)
+    &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nssend(i)
     if(nssend(i)==0) then
       write(10,*)'Zero send side'
 !      write(errmsg,*) 'MSGP: Zero send side; see ctb*'
@@ -1155,6 +1176,178 @@ subroutine msgp_tables
   deallocate(isgsend)
   deallocate(isgrecv)
 
+  !===============================================================================
+  ! Construct table of 2-tier neighbors for elements
+  !===============================================================================
+
+  ! Use rank association of ghost elements to identify neighboring processors
+  allocate(nbr(0:nproc-1),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nbr allocation failure')
+  nbr=.false.
+  do ie=ne+1,nea2
+    if(iegrpv(ielg2(ie))==myrank) call parallel_abort('msgp_tables: bomb(1)')
+    nbr(iegrpv(ielg2(ie)))=.true.
+  enddo
+
+  ! Count neighbors
+  nnbr_2t=0
+  do irank=0,nproc-1
+    if(nbr(irank)) nnbr_2t=nnbr_2t+1
+  enddo
+
+  ! Build table of neighbors
+  allocate(nbrrank_2t(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nbrrank_2t allocation failure')
+  allocate(ranknbr_2t(0:nproc-1),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: ranknbr_2t allocation failure')
+  nnbr_2t=0
+  ranknbr_2t=0
+  do irank=0,nproc-1
+    if(nbr(irank)) then
+      nnbr_2t=nnbr_2t+1
+      nbrrank_2t(nnbr_2t)=irank
+      ranknbr_2t(irank)=nnbr_2t
+    endif
+  enddo
+
+  ! Finished with nbr
+  deallocate(nbr)
+
+  !-----------------------------------------------------------------------------
+  ! Construct 2-tier element message-passing tables
+  !-----------------------------------------------------------------------------
+
+  ! Allocate and count number of recv ghost elements
+  allocate(nerecv_2t(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nerecv_2t allocation failure')
+  nerecv_2t=0
+  do ie=ne+1,nea2
+    irank=iegrpv(ielg2(ie))
+! try not to use i in nerecv_2t() (OK because nnbr_2t>0)
+    do i=1,nnbr_2t; if(irank==nbrrank_2t(i)) exit; enddo;
+    nerecv_2t(i)=nerecv_2t(i)+1
+  enddo
+
+  ! Compute maximum number of recv ghost elements
+  mnerecv_2t=0
+  do i=1,nnbr_2t
+    if(nerecv_2t(i)==0) call parallel_abort('msgp_tables: 0  recv')
+    mnerecv_2t=max(mnerecv_2t,nerecv_2t(i))
+  enddo
+
+  ! Allocate and construct tables for recv elements
+  allocate(ierecv_2t(mnerecv_2t,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: ierecv_2t allocation failure')
+  allocate(iegrecv_2t(mnerecv_2t,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: iegrecv_2t allocation failure')
+  nerecv_2t=0
+  do ie=ne+1,nea2
+    irank=iegrpv(ielg2(ie))
+    do i=1,nnbr_2t; if(irank==nbrrank_2t(i)) exit; enddo;
+    nerecv_2t(i)=nerecv_2t(i)+1
+    ierecv_2t(nerecv_2t(i),i)=ie        !local index
+    iegrecv_2t(nerecv_2t(i),i)=ielg2(ie)  !global index
+  enddo
+#ifdef DEBUG
+  write(10,'(a,i8)') 'Number of neighbors:',nnbr_2t
+  write(10,'(a)') '##########################################################'
+  write(10,'(a)') '2-tier Element Receive Table:'
+  do i=1,nnbr_2t
+    write(10,'(a,3i8)') 'nbrindx,rank,nerecv: ',&
+    &ranknbr_2t(nbrrank_2t(i)),nbrrank_2t(i),nerecv_2t(i)
+    do j=1,nerecv_2t(i)
+      write(10,'(t1,2i8)') ierecv_2t(j,i),iegrecv_2t(j,i)
+    enddo
+  enddo
+  write(10,'(a)') '##########################################################'
+  call parallel_barrier
+#endif
+
+  ! Allocate message-passing objects and flags
+  deallocate(rrqst,rstat,srqst,sstat)
+  allocate(rrqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: rrqst allocation failure')
+  allocate(rstat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: rstat allocation failure')
+  allocate(srqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: srqst allocation failure')
+  allocate(sstat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: sstat allocation failure')
+
+  ! Allocate element send count array
+  allocate(nesend_2t(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nesend_2t allocation failure')
+
+  ! Communicate ghost element counts with nbrs
+! nerecv_2t(i): # of ghost elements to be received from neighbor i to myrank
+! nesend_2t(i): # of ghost elements to be sent to neighbor i (from myrank)
+! Communication involves all neighbors (and synchronized)
+
+  do i=1,nnbr_2t
+    call mpi_irecv(nesend_2t(i),1,itype,nbrrank_2t(i),15,comm,rrqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv tag=15',ierr)
+  enddo
+  do i=1,nnbr_2t
+    call mpi_isend(nerecv_2t(i),1,itype,nbrrank_2t(i),15,comm,srqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend tag=15',ierr)
+  enddo
+  call mpi_waitall(nnbr_2t,rrqst,rstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=15',ierr)
+  call mpi_waitall(nnbr_2t,srqst,sstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=15',ierr)
+
+  ! Compute maximum number of send elements
+  mnesend_2t=0
+  do i=1,nnbr_2t
+    if(nesend_2t(i)==0) call parallel_abort('msgp_tables: 0 send')
+    mnesend_2t=max(mnesend_2t,nesend_2t(i))
+  enddo
+
+  ! Allocate tables for send elements
+  allocate(iesend_2t(mnesend_2t,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: iesend_2t allocation failure')
+  allocate(iegsend_2t(mnesend_2t,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: iegsend_2t allocation failure')
+
+  ! Communicate element send lists (global index) with nbrs
+  do i=1,nnbr_2t
+    call mpi_irecv(iegsend_2t(1,i),nesend_2t(i),itype,nbrrank_2t(i),16,comm,rrqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv tag=16',ierr)
+  enddo
+  do i=1,nnbr
+!  iegrecv_2t(1,i) is the starting address, nerecv_2t(i) is the count
+    call mpi_isend(iegrecv_2t(1,i),nerecv_2t(i),itype,nbrrank_2t(i),16,comm,srqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend tag=16',ierr)
+  enddo
+  call mpi_waitall(nnbr_2t,rrqst,rstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=16',ierr)
+  call mpi_waitall(nnbr_2t,srqst,sstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=16',ierr)
+
+  ! Construct locally indexed element send table
+  do i=1,nnbr_2t
+    do j=1,nesend_2t(i)
+      if(iegl2(1,iegsend_2t(j,i))/=myrank) call parallel_abort('send 2-element not resident!')
+      iesend_2t(j,i)=iegl2(2,iegsend_2t(j,i)) !local elem index
+    enddo
+  enddo
+#ifdef DEBUG
+  write(10,'(a)') '2-tier Element Send Table:'
+  do i=1,nnbr_2t
+    write(10,'(a,3i8)') 'nbrindx,rank,nesend: ',&
+    &ranknbr_2t(nbrrank_2t(i)),nbrrank_2t(i),nesend_2t(i)
+    do j=1,nesend_2t(i)
+      write(10,'(t1,2i8)') iesend_2t(j,i),iegsend_2t(j,i)
+    enddo
+  enddo
+  write(10,'(a)') '##########################################################'
+  call parallel_barrier
+#endif
+
+  ! Done with global indexed arrays -- deallocate
+  deallocate(iegsend_2t)
+  deallocate(iegrecv_2t)
+
   !-----------------------------------------------------------------------------
   ! Finished
   !-----------------------------------------------------------------------------
@@ -1185,7 +1378,7 @@ subroutine msgp_init
   if(nproc==1) return
 
   ! Allocate and setup displacement vectors
-  maxmax=max(mnesend,mnerecv,mnpsend,mnprecv,mnssend,mnsrecv)
+  maxmax=max(mnesend,mnerecv,mnpsend,mnprecv,mnssend,mnsrecv,mnesend_2t,mnerecv_2t)
   allocate(blen_send(maxmax), blen_recv(maxmax), dspl_send(maxmax), dspl_recv(maxmax),stat=stat)
   if(stat/=0) call parallel_abort('msgp_init: dspl allocation failure')
 
@@ -2359,6 +2552,97 @@ endif !ntracers>0
   enddo !i=1,nnbr
 
   !-----------------------------------------------------------------------------
+  ! Setup 2D 2-tier Element Message-Passing (integers)
+  !-----------------------------------------------------------------------------
+
+  ! 2D 2-tier element comm request and status handles
+  allocate(e2di_2t_send_rqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_send_rqst allocation failure')
+  allocate(e2di_2t_send_stat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_send_stat allocation failure')
+  allocate(e2di_2t_recv_rqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_recv_rqst allocation failure')
+  allocate(e2di_2t_recv_stat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_recv_stat allocation failure')
+
+  ! 2D element comm MPI user-defined datatypes
+  allocate(e2di_2t_send_type(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_send_type allocation failure')
+  allocate(e2di_2t_recv_type(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e2di_2t_recv_type allocation failure')
+
+  do i=1,nnbr_2t
+    blen_send(:)=1
+    dspl_send(1:mnesend_2t)=iesend_2t(:,i)-1
+#if MPIVERSION==1
+    call mpi_type_indexed(nesend_2t(i),blen_send,dspl_send,itype,e2di_2t_send_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nesend_2t(i),1,dspl_send,itype,e2di_2t_send_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create e2di_2t_send_type',ierr)
+    call mpi_type_commit(e2di_2t_send_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit e2di_2t_send_type',ierr)
+
+    !Recv
+    blen_recv(:)=1
+    dspl_recv(1:mnerecv_2t)=ierecv_2t(:,i)-1
+#if MPIVERSION==1
+    call mpi_type_indexed(nerecv_2t(i),blen_recv,dspl_recv,itype,e2di_2t_recv_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nerecv_2t(i),1,dspl_recv,itype,e2di_2t_recv_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create e2di_2t_recv_type',ierr)
+    call mpi_type_commit(e2di_2t_recv_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit e2di_2t_recv_type',ierr)
+  enddo
+
+  !-----------------------------------------------------------------------------
+  ! Setup 3D 2-tier Element Message-Passing (double).
+  ! The order of indices must be (mntr,nvrt,nm), where nm>=nea2.
+  !-----------------------------------------------------------------------------
+
+  ! 3D 2-tier element comm request and status handles
+  allocate(e3d_2t_tr_send_rqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_send_rqst allocation failure')
+  allocate(e3d_2t_tr_send_stat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_send_stat allocation failure')
+  allocate(e3d_2t_tr_recv_rqst(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_recv_rqst allocation failure')
+  allocate(e3d_2t_tr_recv_stat(MPI_STATUS_SIZE,nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_recv_stat allocation failure')
+
+  ! 2D element comm MPI user-defined datatypes
+  allocate(e3d_2t_tr_send_type(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_send_type allocation failure')
+  allocate(e3d_2t_tr_recv_type(nnbr_2t),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: e3d_2t_tr_recv_type allocation failure')
+
+  do i=1,nnbr_2t
+    blen_send(:)=nvrt*mntr
+    dspl_send(1:mnesend_2t)=(iesend_2t(:,i)-1)*nvrt*mntr
+#if MPIVERSION==1
+    call mpi_type_indexed(nesend_2t(i),blen_send,dspl_send,rtype,e3d_2t_tr_send_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nesend_2t(i),nvrt*mntr,dspl_send,rtype,e3d_2t_tr_send_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create e3d_2t_tr_send_type',ierr)
+    call mpi_type_commit(e3d_2t_tr_send_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit e3d_2t_tr_send_type',ierr)
+
+    !Recv
+    blen_recv(:)=nvrt*mntr
+    dspl_recv(1:mnerecv_2t)=(ierecv_2t(:,i)-1)*nvrt*mntr
+#if MPIVERSION==1
+    call mpi_type_indexed(nerecv_2t(i),blen_recv,dspl_recv,rtype,e3d_2t_tr_recv_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nerecv_2t(i),nvrt*mntr,dspl_recv,rtype,e3d_2t_tr_recv_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create e3d_2t_tr_recv_type',ierr)
+    call mpi_type_commit(e3d_2t_tr_recv_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit e3d_2t_tr_recv_type',ierr)
+  enddo
+
+  !-----------------------------------------------------------------------------
   ! Finished
   !-----------------------------------------------------------------------------
 
@@ -3300,9 +3584,75 @@ subroutine exchange_e3d_2(e3d_2_data)
 
 end subroutine exchange_e3d_2
 
+subroutine exchange_e2di_2t(e2di_2t_data)
+!-------------------------------------------------------------------------------
+! 2D 2-tier Ghost Element Exchange (integers)
+! The dimension of e2di_2t_data must be nm where nm>=nea2 
+!-------------------------------------------------------------------------------
+  implicit none
+  integer,intent(inout) :: e2di_2t_data(:)
+  integer :: i
+!-------------------------------------------------------------------------------
+
+  ! Handle single processor case
+  if(nproc==1) return
+
+  ! Post receives
+  do i=1,nnbr_2t
+    call mpi_irecv(e2di_2t_data,1,e2di_2t_recv_type(i),nbrrank_2t(i),17,comm,e2di_2t_recv_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e2di_2t: irecv tag=17',ierr)
+  enddo
+
+  ! Post sends
+  do i=1,nnbr_2t
+    call mpi_isend(e2di_2t_data,1,e2di_2t_send_type(i),nbrrank_2t(i),17,comm,e2di_2t_send_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e2di_2t: isend tag=17',ierr)
+  enddo
+
+  ! Wait for completion
+  call mpi_waitall(nnbr_2t,e2di_2t_recv_rqst,e2di_2t_recv_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e2di_2t: waitall recv',ierr)
+  call mpi_waitall(nnbr_2t,e2di_2t_send_rqst,e2di_2t_send_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e2di_2t: waitall send',ierr)
+
+end subroutine exchange_e2di_2t
+
+subroutine exchange_e3d_2t_tr(e3d_2t_data)
+!-------------------------------------------------------------------------------
+! 3D 2-tier Ghost Element Exchange 
+! The dimension of e3d_2t_data must be (mntr,nvrt,nm) where nm>=nea2 
+!-------------------------------------------------------------------------------
+  implicit none
+  real(rkind),intent(inout) :: e3d_2t_data(:,:,:)
+  integer :: i
+!-------------------------------------------------------------------------------
+
+  ! Handle single processor case
+  if(nproc==1) return
+
+  ! Post receives
+  do i=1,nnbr_2t
+    call mpi_irecv(e3d_2t_data,1,e3d_2t_tr_recv_type(i),nbrrank_2t(i),18,comm,e3d_2t_tr_recv_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e3d_2t_tr: irecv tag=18',ierr)
+  enddo
+
+  ! Post sends
+  do i=1,nnbr_2t
+    call mpi_isend(e3d_2t_data,1,e3d_2t_tr_send_type(i),nbrrank_2t(i),18,comm,e3d_2t_tr_send_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e3d_2t_tr: isend tag=18',ierr)
+  enddo
+
+  ! Wait for completion
+  call mpi_waitall(nnbr_2t,e3d_2t_tr_recv_rqst,e3d_2t_tr_recv_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e3d_2t_tr: waitall recv',ierr)
+  call mpi_waitall(nnbr_2t,e3d_2t_tr_send_rqst,e3d_2t_tr_send_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_e3d_2t_tr: waitall send',ierr)
+
+end subroutine exchange_e3d_2t_tr
+
 end module elfe_msgp
 !===============================================================================
 !===============================================================================
-! END ELCIRC PARALLEL MESSAGE PASSING MODULE
+! END PARALLEL MESSAGE PASSING MODULE
 !===============================================================================
 !===============================================================================

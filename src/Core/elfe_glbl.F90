@@ -63,7 +63,7 @@ module elfe_glbl
                   &iwind_form,inu_st,irec_nu,irec_nu_tr,itur,iupwind_t,iupwind_s,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,icst,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ishapiro,ishapiro_violation,ibottom_bc
+                  &inv_atm_bnd,ishapiro
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,wtiminc,npstime,npstiminc, &
                       &surf_time1,surf_time2,time_nu,step_nu,time_nu_tr,step_nu_tr,dzb_min,vdmax_pp1, &
@@ -83,12 +83,14 @@ module elfe_glbl
                   &max_flreg
 
   real(rkind),save :: q2min,tempmin,tempmax,saltmin,saltmax, &
-                      &vis_coe1,vis_coe2,h_bcc1,velmin_btrack,h_tvd,rmaxvel, &
+                      &vis_coe1,vis_coe2,h_bcc1,velmin_btrack,h_tvd,rmaxvel1,rmaxvel2, &
                       &difnum_max_l2,wtime1,wtime2,fluxsu00,srad00,cmiu0, &
                       &cpsi2,rpub,rmub,rnub,cpsi1,psimin,eps_min,tip_dp
-  logical,save :: lm2d !2D or 3D model
+!  logical,save :: lm2d !2D or 3D model
+  logical,save :: lhas_quad=.false. !existence of quads
   logical,save :: lflbc !flag to indicate existence of ifltype/=0
   logical,save :: lreadll=.false. !if true, xlon and ylat are already read in and can be used by any routine/modules
+  integer,save :: i2tier_case !how  2-tier ghosts are constructed
 
   ! Variables for global output files
   integer, parameter :: nbyte=4          !# bytes for output record size
@@ -163,11 +165,17 @@ module elfe_glbl
   integer,save :: ne           ! Local number of resident elements
   integer,save :: neg          ! Local number of ghost elements
   integer,save :: nea          ! Local number of elements in augmented subdomain (ne+neg)
+  integer,save :: neg2         ! Local number of 2-tier ghost elements
+  integer,save :: nea2         ! Local number of elements in 2-tier augmented subdomain (ne+neg+neg2)
   integer,save,allocatable :: ielg(:)      ! Local-to-global element index table (augmented)
   type(llist_type),save,pointer :: iegl(:) ! Global-to-local element index table (augmented)
   integer,save,allocatable :: iegrpv(:)    ! Global element to resident processor vector
-  integer,save :: nx(3,2)                       ! Cyclic index of nodes in an element
-  integer,save,allocatable :: elnode(:,:)      ! Element-node tables,i34
+  integer,save :: nx(3,2)                       ! Cyclic index of nodes in an element (kept only for modules)
+  !nxq(i,j,k): i: offset; j: local index; k: elem. type (3 or 4)
+  integer,save :: nxq(3,4,4)                       ! Cyclic index of nodes in an element (tri/quads)
+  integer,save :: ixi_n(4),iet_n(4)          !local coord. of 4 vertices of quads
+  integer,save,allocatable :: i34(:)           !elem. type (3 or 4)
+  integer,save,allocatable :: elnode(:,:)      ! Element-node tables
 !  integer,save,allocatable :: nmgb(:,:)  ! Global element-node tables;
   integer,save,allocatable :: iself(:,:)          ! Index of node in element-node table
   integer,save,allocatable :: ic3(:,:)            ! Element-side-element tables
@@ -182,6 +190,7 @@ module elfe_glbl
   real(rkind),save,allocatable :: dpe(:)          ! Depth at element centers
   integer,save,allocatable :: kbe(:)       ! Element bottom vertical indices
   integer,save,allocatable :: idry_e(:)       ! wet/dry flag
+  integer,save,allocatable :: idry_e_2t(:)       ! wet/dry flag including 2-tier ghost zone
   integer,save,allocatable :: interpol(:)       ! interpolation mode
   integer,save,allocatable :: lqk(:)       ! interpolation for S,T in btrack
   integer,save,allocatable :: ie_kr(:)       ! used in Kriging
@@ -191,7 +200,9 @@ module elfe_glbl
   !Derivatives of shape function in an element
   !For ics=1, the global coordinates are used
   !For ics=2, element frame is used
-  !dldxy(j,k,ie)=dL_{j}/dx_{k}, where j=1:3 (shape function index), k=1:2; ie is the local element index
+  !dldxy(j,k,ie)=dL_{j}/dx_{k}, where j=1:i34(ie) (shape function index), k=1:2 for x|y; 
+  !ie is the local element index. For quads, the derivative is evaluated at
+  !centroid
   real(rkind),save,allocatable :: dldxy(:,:,:)
   !Transformation tensor for element frame: eframe(i,j,ie) for ics=2
   !where j is the axis id, i is the component id, ie is the local element id (aug.)
@@ -199,19 +210,22 @@ module elfe_glbl
   !Undefined for ics=1
   real(rkind),save,allocatable :: eframe(:,:,:)
   !x,y coordinates of each element node in the _element_ frame
-  !xel(3,nea)
+  !xel(4,nea)
   real(rkind),save,allocatable :: xel(:,:),yel(:,:)
   integer,save,allocatable :: iflux_e(:) !for computing fluxes
+  integer,save,allocatable :: ielg2(:)      ! Local-to-global element index table (2-tier augmented)
+  integer,save,allocatable :: iegl2(:,:)      ! Global-to-local element index table (2-tier augmented)
 
   ! Node geometry data
-  ! Max number of neighboring elements surrounding a node 
-  ! Max. number of surrounding nodes is mnei+1
-  integer,save :: mnei 
+  integer,save :: mnei  ! Max number of neighboring elements surrounding a node
+  integer,save :: mnei_p  ! Max number of neighboring nodes surrounding a node
   integer,save :: mnei_kr   ! Max # of Kriging nodes
   integer,save :: np_global    ! Global number of nodes
   integer,save :: np           ! Local number of resident nodes
   integer,save :: npg          ! Local number of ghost nodes
   integer,save :: npa          ! Local number of nodes in augmented subdomain (np+npg)
+  integer,save :: npg2         ! Local number of 2-tier ghost nodes
+  integer,save :: npa2          ! Local number of nodes in 2-tier augmented subdomain (np+npg+npg2)
   integer,save,allocatable :: iplg(:)      ! Local-to-global node index table (augmented)
   type(llist_type),save,pointer :: ipgl(:) ! Global-to-local node index table (augmented)
   !Node cartesian coordinates. They mean different things for ics=1 (plane projection) or ics=2 (sphere);
@@ -238,12 +252,16 @@ module elfe_glbl
   ! where j is the axis id, i is the component id, ip is the local node id (aug.)
   ! For ics=1, this is not used
   real(rkind),save,allocatable :: pframe(:,:,:)
+  integer,save,allocatable :: iplg2(:)      ! Local-to-global node index table (2-tier augmented)
+  integer,save,allocatable :: ipgl2(:,:)      ! Global-to-local node index table (2-tier augmented)
 
   ! Side geometry data
   integer,save :: ns_global    ! Global number of sides
   integer,save :: ns           ! Local number of resident sides
   integer,save :: nsg          ! Local number of ghost sides
   integer,save :: nsa          ! Local number of sides in augmented subdomain (ns+nsg)
+  integer,save :: nsg2         ! Local number of 2-tier ghost sides
+  integer,save :: nsa2         ! Local number of sides in 2-tier augmented subdomain (ns+nsg+nsg2)
   integer,save,allocatable :: islg(:)      ! Local-to-global side index table (augmented)
   type(llist_type),save,pointer :: isgl(:) ! Global-to-local side index table (augmented)
   integer,save,allocatable :: isdel(:,:)             ! Side-element tables
@@ -265,6 +283,8 @@ module elfe_glbl
   ! For ics=1, only sframe(1:2,1:2,isd) are used
   real(rkind),save,allocatable :: sframe(:,:,:)
   real(rkind),save,allocatable :: isblock_sd(:,:)
+  integer,save,allocatable :: islg2(:)      ! Local-to-global side index table (2-tier augmented)
+  integer,save,allocatable :: isgl2(:,:)      ! Global-to-local side index table (2-tier augmented)
 
   ! Open boundary segment data
   integer,save :: nope_global                  ! Global number of local open bndry segments
@@ -316,9 +336,11 @@ module elfe_glbl
   integer,save,allocatable :: ieg_source(:)   !global elem. indices for volume/mass sources
   integer,save,allocatable :: ieg_sink(:)   !global elem. indices for volume/mass sinks
   real(rkind),save,allocatable :: tsel(:,:,:) ! S,T at elements and half levels for upwind & TVD scheme
-  real(rkind),save,allocatable :: trel(:,:,:) !tracer converntration @ prism center; used as permanent storage
-  real(rkind),save,allocatable :: tr_el(:,:,:) !tracer converntration @ prism center; used as temp. storage 
-  real(rkind),save,allocatable :: tr_nd(:,:,:) !tracer converntration @ node and whole levels
+  real(rkind),save,allocatable :: trel(:,:,:) !tracer concentration @ prism center; used as permanent storage
+  !tracer concentration @ prism center; used as temp. storage. tr_el(mntr,nvrt,nea2) but last index usually
+  !is  valid up to nea only except for TVD
+  real(rkind),save,allocatable :: tr_el(:,:,:) 
+  real(rkind),save,allocatable :: tr_nd(:,:,:) !tracer concentration @ node and whole levels
   real(rkind),save,allocatable :: bdy_frc(:,:,:) !body force at prism center Q_{i,k}
   real(rkind),save,allocatable :: flx_sf(:,:) !surface b.c. \kappa*dC/dz = flx_sf (at element center)
   real(rkind),save,allocatable :: flx_bt(:,:) !bottom b.c.
@@ -333,6 +355,7 @@ module elfe_glbl
   !Vertical velocity at element centers & whole levels, calculated using F.V.M. For hydrostatic 
   !model, this is the same as we(); for non-hydrostatic model, this is only used in upwind transport
   real(rkind),save,allocatable :: we_fv(:,:) 
+  real(rkind),save,allocatable :: flux_adv_vface(:,:) !unmodified vertical fluxes (positive upward)
   !x & y-component of velocity at side centers & whole levels
   !For ics=1, these are defined in the _global_ frame
   !For ics=2, these are defined in the _side_ frame

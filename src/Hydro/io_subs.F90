@@ -43,8 +43,8 @@
         if(ics==1) then
           write(32,*) i,real(xctr(i)),real(yctr(i)),real(dpe(i))
         else
-          tmp1=sum(xlon(elnode(1:3,i)))/3
-          tmp2=sum(ylat(elnode(1:3,i)))/3
+          tmp1=sum(xlon(elnode(1:i34(i),i)))/i34(i)
+          tmp2=sum(ylat(elnode(1:i34(i),i)))/i34(i)
           write(32,*) i,real(tmp1),real(tmp2),real(dpe(i))
         endif !ics
       enddo !i

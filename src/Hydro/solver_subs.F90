@@ -16,7 +16,7 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,indnd,errmsg
+  use elfe_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei_p,nnp,indnd,errmsg
   use elfe_msgp
   implicit none
 !#ifndef USE_MPIMODULE
@@ -25,7 +25,7 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
   integer,intent(in) :: itime !for outputting only
   integer,intent(in) :: moitn,mxitn    !output interval and max iterations
   real(rkind),intent(in) :: rtol       !relative tolerance
-  real(rkind),intent(in) :: s(0:(mnei+1),np)  !sparse matrix
+  real(rkind),intent(in) :: s(0:mnei_p,np)  !sparse matrix
   real(rkind),intent(inout) :: x(npa)  !eta2 -- with initial guess
   real(rkind),intent(in) :: b(np)      !qel
   real(rkind),intent(in) :: bc(npa)    !b.c. (elbc)
@@ -34,8 +34,8 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
   real(rkind) :: rdotrl,rdotr,rdotzl,rdotz,old_rdotz,beta,alphal,alpha,cwtmp
   real(rkind) :: rtol2,rdotr0
   real(rkind) :: z(np),r(np),p(npa),sp(np)
-  integer :: inz(mnei+1,np),nnz(np)
-  real(rkind) :: snz(0:(mnei+1),np),bb(np)
+  integer :: inz(mnei_p,np),nnz(np)
+  real(rkind) :: snz(0:mnei_p,np),bb(np)
 !-------------------------------------------------------------------------------
 
 ! Load local storage for non-zeros of sparse matrix and include essential BCs

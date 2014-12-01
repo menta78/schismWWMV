@@ -517,7 +517,7 @@ MODULE wwm_hotfile_mod
         VAR_ONED(38,IP)=FORCEXY(IP,2)
       END DO
 #ifdef MPI_PARALL_GRID
-      IF (HOTFILE_INIT .eq. .FALSE.) THEN
+      IF (.NOT. HOTFILE_INIT) THEN
         HOTFILE_INIT=.TRUE.
         CALL INIT_HOTFILE_OUTPUT
       END IF

@@ -1,4 +1,4 @@
-!new11
+!
 !===============================================================================
 !===============================================================================
 ! ELFE transport models
@@ -51,7 +51,7 @@
       real(rkind) :: iupwind_e(ne) !to mark upwind prisms when TVD is used
       real(rkind), allocatable :: trel_tmp(:,:,:) !tracer @ elements and half levels
       real(rkind), allocatable :: flux_adv_hface(:,:) ! original horizontal flux (the local x-driection) 
-      real(rkind), allocatable :: flux_adv_vface(:,:) ! original vertical flux (positive upward) 
+!      real(rkind), allocatable :: flux_adv_vface(:,:) ! original vertical flux (positive upward) 
       real(rkind), allocatable :: flux_mod_hface(:,:,:) !limited advective fluxes on horizontal faces
       real(rkind), allocatable :: flux_mod_vface(:,:,:) !limited advective fluxes on vertical faces
       real(rkind), allocatable :: up_rat_hface(:,:,:) !upwind ratios for horizontal faces
@@ -62,7 +62,7 @@
       real(rkind) :: dtbe(ne)
 #endif
 
-      real(rkind) :: sne(3,nvrt),area_e(nvrt),psumtr(ntr),delta_tr(ntr),adv_tr(ntr), &
+      real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr), &
      &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(ntr,nvrt),soln(ntr,nvrt),gam(nvrt), &
      &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr)
       integer :: nwild(2)
@@ -85,9 +85,9 @@
 #endif
 
       allocate(trel_tmp(ntr,nvrt,nea), &
-               flux_adv_hface(nvrt,nsa), flux_adv_vface(nvrt,nea), &
-               flux_mod_hface(ntr,nvrt,ns),flux_mod_vface(ntr,nvrt,ne), &
-               up_rat_hface(ntr,nvrt,nsa),up_rat_vface(ntr,nvrt,nea),stat=istat)
+              &flux_adv_hface(nvrt,nsa), &
+              &flux_mod_hface(ntr,nvrt,ns),flux_mod_vface(ntr,nvrt,ne), &
+              &up_rat_hface(ntr,nvrt,nsa),up_rat_vface(ntr,nvrt,nea),stat=istat)
       if(istat/=0) call parallel_abort('Transport: fail to allocate')
 
 !    Sanity check for flimiter
@@ -98,15 +98,27 @@
      endif
 #endif /* CHOOSE_TVD */
 
+!     For TVD, prepare some arrays for 2-tier ghosts
+#ifdef INCLUDE_TIMING
+      cwtmp=mpi_wtime()
+      timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
+#endif
+      if(up_tvd) then
+        idry_e_2t(1:ne)=idry_e(1:ne)
+        call exchange_e2di_2t(idry_e_2t) !now has values up to nea2
+        call exchange_e3d_2t_tr(tr_el)
+      endif !up_tvd
+#ifdef INCLUDE_TIMING
+      wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
+#endif
+
 !'    Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
 !     Use we_fv for vertical vel.
-!     Warning: manipulated horizontal fluxes below for some open bnd elements
-
 !     For rewetted elements, tr_el takes the value from last wet step
 
 !     Compute (pre-limiting) fluxes at all faces 
       flux_adv_hface=-1.d34 !flags
-      flux_adv_vface=-1.d34 !flags
+!      flux_adv_vface=-1.d34 !flags
 
 !     Horizontal fluxes
       do j=1,ns !resident side
@@ -126,129 +138,69 @@
             endif !ics
             flux_adv_hface(k,j)=(zs(k,j)-zs(k-1,j))*distj(j)*(vnor1+vnor2)/2 !normal * area = flux (in local x-direction)
 
-  !         Debug
-  !         if(it==46.and.i==58422) write(99,*)j,k,vnor1,vnor2,flux_adv_hface(k,jsj)
+!         Debug
+!         if(it==46.and.i==58422) write(99,*)j,k,vnor1,vnor2,flux_adv_hface(k,jsj)
           endif !is_land
         enddo !k=kbs(i)+1,nvrt
-
-!       Check near bottom vel. and flux - not used anymore
-!        khh2=0 !larger of the 2 element bottom indices
-!        do l=1,2 !element
-!          ie=isdel(l,j)
-!          if(ie/=0.and.idry_e(max(1,ie))==0.and.kbe(max(1,ie))>khh2) khh2=kbe(ie)
-!        enddo !l
-     !@   if(khh2==0) then
-     !@     write(errmsg,*)'Transport: cannot find the higher bottom:',j,ielg(isdel(1:2,j)),isdel(1:2,j)
-     !@     call parallel_abort(errmsg)
-     !@   endif
-     !@   if(kbs(j)>khh2) then
-     !@     write(errmsg,*)'Transport: side index > element:',kbs(j),khh2
-     !@     call parallel_abort(errmsg)
-     !@   endif
-     !@   do k=kbs(j)+1,khh2-1
-     !@     if(flux_adv_hface(k,j)/=0) then
-     !@        write(errmsg,*)'Transport: Non-zero hvel below element bottom:',k,ielg(isdel(1:2,j)),flux_adv_hface(k,j)
-!'
-     !@        call parallel_abort(errmsg)
-     !@     endif
-     !@    enddo !k
-     
       enddo !j=1,ns
 
-!     Compute vertical fluxes 
-      do i=1,ne !resident only
-        if(idry_e(i)==1) cycle
-
-!       Wet element with 3 wet nodes
-!       Compute upward normals (in eframe if ics=2) and areas @ all levels
-        n1=elnode(1,i)
-        n2=elnode(2,i)
-        n3=elnode(3,i)
-        isd1=elside(1,i)
-        isd2=elside(2,i)
-        isd3=elside(3,i)
- !@       if(kbe(i)==0) then
- !@         write(errmsg,*)'Transport: Impossible 95 (2)'
- !@         call parallel_abort(errmsg)
- !@       endif
-        do l=kbe(i),nvrt
-          if(ics==1) then
-            xcon=(ynd(n2)-ynd(n1))*(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))-(ynd(n3)-ynd(n1))* &
-     &(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))
-            ycon=(xnd(n3)-xnd(n1))*(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))-(xnd(n2)-xnd(n1))* &
-     &(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))
-            zcon=area(i)*2
-          else !lat/lon
-            !eframe
-            call cross_product(xel(2,i)-xel(1,i),yel(2,i)-yel(1,i),znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1), &
-     &                         xel(3,i)-xel(1,i),yel(3,i)-yel(1,i),znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1), &
-     &                         xcon,ycon,zcon)
-          endif !ics
-          area_e(l)=sqrt(xcon**2.d0+ycon**2.d0+zcon**2.d0)/2.d0
-   !@       if(area_e(l)==0) then
-   !@         write(errmsg,*)'Transport: Zero area (2):',i,l
-   !@         call parallel_abort(errmsg)
-   !@       endif
-          sne(1,l)=xcon/area_e(l)/2.d0
-          sne(2,l)=ycon/area_e(l)/2.d0
-          sne(3,l)=zcon/area_e(l)/2.d0 !>0
-        enddo !l
-
-        do k=kbe(i),nvrt
-          if(k==kbe(i)) then !bottom normal vel. is assumed to be 0 (bed deformation not working)
-            dot1=0 !we_fv(kbe(i),i)
-          else
-            if(ics==1) then
-              dot1=(su2(k,isd1)+su2(k,isd2)+su2(k,isd3))/3.d0*sne(1,k)+ & !upward normal vel.
-     &             (sv2(k,isd1)+sv2(k,isd2)+sv2(k,isd3))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
-            else !lat/lon
-              do j=1,3 !side
-                isd=elside(j,i)
-                call project_hvec(su2(k,isd),sv2(k,isd),sframe(:,:,isd),eframe(:,:,i),swild4(j,1),swild4(j,2))
-              enddo !j
-              dot1=sum(swild4(1:3,1))/3.d0*sne(1,k)+sum(swild4(1:3,2))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
-            endif !ics
-          endif
-          flux_adv_vface(k,i)=dot1*area_e(k) !vertical flux (positive upward)
-        enddo !k=kbe(i),nvrt
-
-!       Zero out vertical fluxes and compensate with horizontal flux for some open bnd elements
-        if(1==2) then !does not work for degenerate sides
-!----------------------
-        j0=0 !side index; use the larger one if there are 2 open bnd sides
-        do j=1,3 !sides
-          isd=elside(j,i)
-!new fix
-          if(isbs(isd)>0.and.ifltype(max(1,isbs(isd)))==0) j0=j !open bnd with type 0 b.c.
-        enddo !j
-
-        do k=kbe(i)+1,nvrt
-          if(j0/=0) then
-            flux_adv_vface(k,i)=0; flux_adv_vface(k-1,i)=0
-            isd0=elside(j0,i)
-            sum1=0
-            do j=1,2 !other 2 sides
-              isd=elside(nx(j0,j),i)   ! optimization error, or is this the right index order?
-              sum1=sum1+ssign(nx(j0,j),i)*flux_adv_hface(k,isd)
-            enddo !j
-            flux_adv_hface(k,isd0)=-sum1/ssign(j0,i)
-          endif !j0/=0
-
-          swild(k)=flux_adv_vface(k,i)-flux_adv_vface(k-1,i) !local volume conservation
-          do j=1,3 !side
-            tmp=ssign(j,i)*flux_adv_hface(k,elside(j,i)) !local outward flux
-            swild(k)=swild(k)+tmp !volume conservation metric
-          enddo !j
-
-!          if(abs(swild(k))>1.e-10) then
-!            write(errmsg,*)'Transport: volume conserv. violated:',ielg(i),j0,k,swild(k)
-!            call parallel_abort(errmsg)
+!     Compute vertical fluxes - already done in selfe_step
+!      do i=1,ne !resident only
+!        if(idry_e(i)==1) cycle
+!
+!!       Wet element with 3 wet nodes
+!!       Compute upward normals (in eframe if ics=2) and areas @ all levels
+!        n1=elnode(1,i)
+!        n2=elnode(2,i)
+!        n3=elnode(3,i)
+!        isd1=elside(1,i)
+!        isd2=elside(2,i)
+!        isd3=elside(3,i)
+! !@       if(kbe(i)==0) then
+! !@         write(errmsg,*)'Transport: Impossible 95 (2)'
+! !@         call parallel_abort(errmsg)
+! !@       endif
+!        do l=kbe(i),nvrt
+!          if(ics==1) then
+!            xcon=(ynd(n2)-ynd(n1))*(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))-(ynd(n3)-ynd(n1))* &
+!     &(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))
+!            ycon=(xnd(n3)-xnd(n1))*(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))-(xnd(n2)-xnd(n1))* &
+!     &(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))
+!            zcon=area(i)*2
+!          else !lat/lon
+!            !eframe
+!            call cross_product(xel(2,i)-xel(1,i),yel(2,i)-yel(1,i),znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1), &
+!     &                         xel(3,i)-xel(1,i),yel(3,i)-yel(1,i),znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1), &
+!     &                         xcon,ycon,zcon)
+!          endif !ics
+!          area_e(l)=sqrt(xcon**2.d0+ycon**2.d0+zcon**2.d0)/2.d0
+!   !@       if(area_e(l)==0) then
+!   !@         write(errmsg,*)'Transport: Zero area (2):',i,l
+!   !@         call parallel_abort(errmsg)
+!   !@       endif
+!          sne(1,l)=xcon/area_e(l)/2.d0
+!          sne(2,l)=ycon/area_e(l)/2.d0
+!          sne(3,l)=zcon/area_e(l)/2.d0 !>0
+!        enddo !l
+!
+!        do k=kbe(i),nvrt
+!          if(k==kbe(i)) then !bottom normal vel. is assumed to be 0 (bed deformation not working)
+!            dot1=0 !we_fv(kbe(i),i)
+!          else
+!            if(ics==1) then
+!              dot1=(su2(k,isd1)+su2(k,isd2)+su2(k,isd3))/3.d0*sne(1,k)+ & !upward normal vel.
+!     &             (sv2(k,isd1)+sv2(k,isd2)+sv2(k,isd3))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
+!            else !lat/lon
+!              do j=1,3 !side
+!                isd=elside(j,i)
+!                call project_hvec(su2(k,isd),sv2(k,isd),sframe(:,:,isd),eframe(:,:,i),swild4(j,1),swild4(j,2))
+!              enddo !j
+!              dot1=sum(swild4(1:3,1))/3.d0*sne(1,k)+sum(swild4(1:3,2))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
+!            endif !ics
 !          endif
-!          if(j0/=0) write(12,*)'Volume conserv:',ielg(i),k,j0,swild(k)
-        enddo !k=kbe(i)+1,nvrt
-!----------------------
-        endif !1==2
-      enddo !i=1,ne
+!          flux_adv_vface(k,i)=dot1*area_e(k) !vertical flux (positive upward)
+!        enddo !k=kbe(i),nvrt
+!      enddo !i=1,ne
 
 !     Exchange flux_adv
 #ifdef INCLUDE_TIMING
@@ -256,7 +208,7 @@
       timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
       call exchange_s3dw(flux_adv_hface)
-      call exchange_e3dw(flux_adv_vface)
+!      call exchange_e3dw(flux_adv_vface)
 #ifdef INCLUDE_TIMING
       wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
@@ -272,7 +224,7 @@
           if(itvd_e(i)==0) then
             iupwind_e(i)=1 
           else !itvd_e=1
-            do j=1,3
+            do j=1,i34(i)
               nd=elnode(j,i)
               toth=eta2(nd)+dp(nd)
               if(toth<h_tvd) then
@@ -337,10 +289,12 @@
 
             psum=0 !sum of original fluxes
             psumtr(1:ntr)=0 !sum of products (|Q|*(T-T))
-         !@   if(flux_adv_vface(kup,i)<-1.d33.or.flux_adv_vface(kup-1,i)<-1.d33) then
-         !@     write(errmsg,*)'Left out vertical flux (4):',i,kup
-         !@     call parallel_abort(errmsg)
-         !@   endif
+#ifdef DEBUG
+            if(flux_adv_vface(kup,i)<-1.d33.or.flux_adv_vface(kup-1,i)<-1.d33) then
+              write(errmsg,*)'Left out vertical flux (4):',i,kup
+              call parallel_abort(errmsg)
+            endif
+#endif
             if(flux_adv_vface(kup,i)<0.and.kup/=nvrt) then
               psum=psum+abs(flux_adv_vface(kup,i))
               psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup,i))*(tr_el(1:ntr,kup+1,i)-tr_el(1:ntr,kup,i))
@@ -349,14 +303,16 @@
               psum=psum+abs(flux_adv_vface(kup-1,i))
               psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup-1,i))*(tr_el(1:ntr,kup-1,i)-tr_el(1:ntr,kup,i))
             endif
-            do j=1,3
+            do j=1,i34(i)
               jsj=elside(j,i)
               ie=ic3(j,i)
-         !@     if(flux_adv_hface(kup,jsj)<-1.d33) then
-         !@       write(errmsg,*)'Left out horizontal flux (5):',jsj,kup
-         !@       call parallel_abort(errmsg)
-         !@     endif
               if(ie/=0) then; if(idry_e(ie)==0.and.kup>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(kup,jsj)<0) then
+#ifdef DEBUG
+              if(flux_adv_hface(kup,jsj)<-1.d33) then
+                write(errmsg,*)'Left out horizontal flux (5):',jsj,kup
+                call parallel_abort(errmsg)
+              endif
+#endif
                 psum=psum+abs(flux_adv_hface(kup,jsj))
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_hface(kup,jsj))*(tr_el(1:ntr,kup,ie)-tr_el(1:ntr,kup,i))
               endif; endif
@@ -383,7 +339,7 @@
 #endif
 #ifdef DEBUG
             if( flux_lim( up_rat_vface(1,k,i), flimiter ) &
-                > 0.1) ntot_v=ntot_v+1
+                &> 0.1) ntot_v=ntot_v+1
 #endif            
           enddo !k=kbe(i)+1,nvrt-1
         enddo !i=1,ne
@@ -396,7 +352,7 @@
           if(idry_s(i)==1) cycle
 
 !         At least one element is wet
-          up_rat_hface(:,:,i)=-1.d0 !initialize (for below bottom and abnomral cases)
+          up_rat_hface(:,:,i)=-1.d0 !initialize (for below bottom and abnormal cases)
           if(isdel(2,i)==0.or.(isdel(2,i)/=0.and.idry_e(max(1,isdel(2,i)))==1).or.idry_e(isdel(1,i))==1) cycle
 
 !         Not bnd face; 2 elements are wet
@@ -410,7 +366,7 @@
 !          enddo !k
  
 !         Leave k=kbs unchanged
-          do k=kbs(i)+1,nvrt !prisms
+          do k=kbs(i)+1,nvrt !faces
             if(flux_adv_hface(k,i)<-1.d33) then
               write(errmsg,*)'Left out horizontal flux (3):',i,k
               call parallel_abort(errmsg)
@@ -424,8 +380,7 @@
             psum=0
             psumtr(1:ntr)=0
             if(flux_adv_vface(k,iup)<-1.d33.or.flux_adv_vface(k-1,iup)<-1.d33) then
-              print*,flux_adv_vface(k,iup), flux_adv_vface(k-1,iup)
-              write(errmsg,*)'Left out vertical flux (6):',iup,k
+              write(errmsg,*)'Left out vertical flux (6):',iup,k,flux_adv_vface(k,iup), flux_adv_vface(k-1,iup)
               call parallel_abort(errmsg)
             endif
             if(flux_adv_vface(k,iup)<0.and.k/=nvrt) then
@@ -436,23 +391,50 @@
               psum=psum+abs(flux_adv_vface(k-1,iup))
               psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(k-1,iup))*(tr_el(1:ntr,k-1,iup)-tr_el(1:ntr,k,iup))
             endif
-            do j=1,3
-              jsj=elside(j,iup)
-              ie=ic3(j,iup) !must be inside aug. domain; >=0
-      !@        if(ie<0) then
-      !@          write(errmsg,*)'TVD: upwind element outside:',iplg(isidenode(1:2,i))
-      !@          call parallel_abort(errmsg)
-      !@        endif
 
-      !@        if(flux_adv_hface(k,jsj)<-1.d33) then
-      !@          write(errmsg,*)'Left out horizontal flux (6):',jsj,k
-      !@          call parallel_abort(errmsg)
-       !@       endif
-              if(ie/=0) then; if(idry_e(ie)==0.and.k>=kbs(jsj)+1.and.ssign(j,iup)*flux_adv_hface(k,jsj)<0) then
+            do j=1,i34(iup)
+              jsj=elside(j,iup)
+              ie=ic3(j,iup) !must be inside 2-tier aug. domain
+#ifdef DEBUG
+              if(ie>0) then !inside 1-tier aug. domain
+                !Check consistency between iegl and iegl2 etc
+                if(ielg(ie)/=ielg2(ie)) call parallel_abort('TRANS:2.1')
+                ind1=ielg(ie)
+                if(iegl2(1,ind1)/=myrank) call parallel_abort('TRANS:2.3')
+                if(iegl(ind1)%id/=iegl2(2,ind1)) call parallel_abort('TRANS:2.2')
+                if(idry_e_2t(ie)/=idry_e(ie)) call parallel_abort('TRANS:2.4')
+!'
+              endif
+#endif
+              if(ie<0) then !outside 1-tier aug. domain
+                ie=iabs(ie) !global elem.
+                write(12,*)'inside 2-tier ghost zone:',ie
+!Error: eventually into DEBUG or assert mode
+                if(iegl2(1,ie)/=myrank) then
+                  write(errmsg,*)'TVD: element outside:',ie
+                  call parallel_abort(errmsg)
+                endif
+                ind1=iegl2(2,ie) !local elem. index in 2-tier aug. domain
+                if(ind1<=nea.or.ind1>nea2) then
+                  write(errmsg,*)'TVD: element wrong:',ind1,nea,nea2
+                  call parallel_abort(errmsg)
+                endif
+                ie=ind1
+              endif
+
+              !idry_e_2t, tr_el are valid up to 2-tier aug.
+              if(ie/=0) then; if(idry_e_2t(ie)==0.and.k>=kbs(jsj)+1.and.ssign(j,iup)*flux_adv_hface(k,jsj)<0) then
+#ifdef DEBUG
+                if(flux_adv_hface(k,jsj)<-1.d33) then
+                  write(errmsg,*)'Left out horizontal flux (6):',jsj,k
+                  call parallel_abort(errmsg)
+                endif
+#endif
                 psum=psum+abs(flux_adv_hface(k,jsj))
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_hface(k,jsj))*(tr_el(1:ntr,k,ie)-tr_el(1:ntr,k,iup))
               endif; endif
             enddo !j
+
 #ifdef CHOOSE_TVD     
             if(tvd_mid.eq.'AA') then
 #endif
@@ -490,7 +472,7 @@
         do i=1,ne
           if(iupwind_e(i)/=0) then
             up_rat_vface(:,:,i)=0
-            do j=1,3 !sides
+            do j=1,i34(i) !sides
               up_rat_hface(:,:,elside(j,i))=0
             enddo !j
           endif
@@ -545,43 +527,51 @@
               if(flux_adv_vface(kup-l,i)*(1-2*l)>0) then !outflow
                 do j=1,ntr
                   rat=up_rat_vface(j,kup-l,i)
-         !@         if(rat<-1.d33) then
-          !@          write(errmsg,*)'Left out (1):',i,kup-l,rat,it_sub,j
-          !@          call parallel_abort(errmsg)
-          !@        else 
+#ifdef DEBUG
+                  if(rat<-1.d33) then
+                    write(errmsg,*)'Left out (1):',i,kup-l,rat,it_sub,j
+                    call parallel_abort(errmsg)
+                  endif
+#endif
                   if(abs(rat)>1.e-5) then
                     tmp=flux_lim(rat,flimiter)/rat/2.d0
-                    !@if(tmp<0.or.tmp>1) then
-                    !@  write(errmsg,*)'Flux limiting failed (1):',tmp,rat,flux_adv_vface(kup-l,i),l,kup
-                    !@  call parallel_abort(errmsg)
-                    !@endif 
+#ifdef DEBUG
+                    if(tmp<0.or.tmp>1) then
+                      write(errmsg,*)'Flux limiting failed (1):',tmp,rat,flux_adv_vface(kup-l,i),l,kup
+                      call parallel_abort(errmsg)
+                    endif 
+#endif
                     delta_tr(j)=delta_tr(j)+tmp
                   endif
                 enddo !j=1,ntr
               endif !outflow face
             enddo !l=0,1
 
-            do j=1,3
+            do j=1,i34(i)
               jsj=elside(j,i) !residents
               !ie=ic3(j,i)
               if(kup>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(kup,jsj)>0) then
                 do jj=1,ntr
                   rat=up_rat_hface(jj,kup,jsj)
-           !@       if(rat<-1.d33) then
-           !@         write(errmsg,*)'Left out (3):',i,j,kup,rat,jj
-           !@         call parallel_abort(errmsg)
-           !@       endif 
+#ifdef DEBUG
+                  if(rat<-1.d33) then
+                    write(errmsg,*)'Left out (3):',i,j,kup,rat,jj
+                    call parallel_abort(errmsg)
+                  endif 
+#endif
                   if(abs(rat)>1.d-5) then
                     tmp=flux_lim(rat,flimiter)/rat/2.d0
-            !@        if(tmp<0.or.tmp>1) then
-            !@          write(errmsg,*)'Flux limiting failed (3):',tmp,rat,jj
-            !@          call parallel_abort(errmsg)
-            !@        endif 
+#ifdef DEBUG
+                    if(tmp<0.or.tmp>1) then
+                      write(errmsg,*)'Flux limiting failed (3):',tmp,rat,jj
+                      call parallel_abort(errmsg)
+                    endif 
+#endif
                     delta_tr(jj)=delta_tr(jj)+tmp
                   endif
                 enddo !jj=1,ntr
               endif
-            enddo !j=1,3
+            enddo !j
 
             do j=1,ntr
               flux_mod_vface(j,k,i)=flux_adv_vface(k,i)*(1.d0 &
@@ -611,48 +601,56 @@
               if(flux_adv_vface(k-l,iup)*(1-2*l)>0) then !outflow
                 do j=1,ntr
                   rat=up_rat_vface(j,k-l,iup)
-      !@            if(rat<-1.d33) then
-      !@              write(errmsg,*)'Left out (5):',iup,k-l,rat,j
-      !@              call parallel_abort(errmsg)
-      !@             endif
+#ifdef DEBUG
+                  if(rat<-1.d33) then
+                    write(errmsg,*)'Left out (5):',iup,k-l,rat,j
+                    call parallel_abort(errmsg)
+                  endif
+#endif
                   if(abs(rat)>1.d-5) then
                     tmp=flux_lim(rat,flimiter)/rat/2.d0
-      !@              if(tmp<0.or.tmp>1) then
-      !@                write(errmsg,*)'Flux limiting failed (5):',tmp,rat,j
-      !@                call parallel_abort(errmsg)
-      !@             endif
+#ifdef DEBUG
+                    if(tmp<0.or.tmp>1) then
+                      write(errmsg,*)'Flux limiting failed (5):',tmp,rat,j
+                      call parallel_abort(errmsg)
+                    endif
+#endif
                     delta_tr(j)=delta_tr(j)+tmp
                   endif
                 enddo !j=1,ntr
               endif !outflow face
             enddo !l=0,1
 
-            do j=1,3
+            do j=1,i34(iup)
               jsj=elside(j,iup) !inside aug. domain
-              ie=ic3(j,iup) !not really used
+!              ie=ic3(j,iup) !not really used
               if(k>=kbs(jsj)+1.and.ssign(j,iup)*flux_adv_hface(k,jsj)>0) then !outflow
                 do jj=1,ntr
                   rat=up_rat_hface(jj,k,jsj)
-        !@          if(rat<-1.d33) then
-        !@            write(errmsg,*)'Left out (7):',iup,ielg(ie),k,rat,jj
-        !@            call parallel_abort(errmsg)
-        !@          else 
+#ifdef DEBUG
+                  if(rat<-1.d33) then
+                    write(errmsg,*)'Left out (7):',iup,ielg(ie),k,rat,jj
+                    call parallel_abort(errmsg)
+                  endif
+#endif
                   if(abs(rat)>1.e-5) then
                     tmp=flux_lim(rat,flimiter)/rat/2.d0
-        !@            if(tmp<0.or.tmp>1) then
-        !@              write(errmsg,*)'Flux limiting failed (7):',tmp,rat,jj
-        !@              call parallel_abort(errmsg)
-        !@            endif
+#ifdef DEBUG
+                    if(tmp<0.or.tmp>1) then
+                      write(errmsg,*)'Flux limiting failed (7):',tmp,rat,jj
+                      call parallel_abort(errmsg)
+                    endif
+#endif
                     delta_tr(jj)=delta_tr(jj)+tmp
                   endif
                 enddo !jj=1,ntr
               endif !outflow
-            enddo !j=1,3
+            enddo !j
 
             do j=1,ntr
               flux_mod_hface(j,k,i)=flux_adv_hface(k,i)*(1.d0 &
-                 - flux_lim( up_rat_hface(j,k,i) , flimiter )/2.d0 &
-                 + delta_tr(j)) 
+                 &- flux_lim( up_rat_hface(j,k,i) , flimiter )/2.d0 &
+                 &+ delta_tr(j)) 
             enddo !j
           enddo !k=kbs(i)+1,nvrt
         enddo !i=1,ns
@@ -688,22 +686,22 @@
               endif
             endif !TVD
 
-            do j=1,3
+            do j=1,i34(i)
               jsj=elside(j,i) !resident side
               ie=ic3(j,i)
-              !@do jj=1,ntr
-              !@  if(flux_mod_hface(jj,k,jsj)<-1.d33) then
-              !@    write(errmsg,*)'Left out horizontal flux (10):',i,k,j,jj
-              !@    call parallel_abort(errmsg)
-              !@  endif
-              !@enddo !jj=1,ntr
-
               if(k>=kbs(jsj)+1) then
-                ref_flux = flux_mod_hface(1,k,jsj)
+                ref_flux = flux_mod_hface(1,k,jsj) !flux_mod(:) same sign as flux_adv
                 same_sign = (ssign(j,i)*ref_flux)<0
 !DIR$ IVDEP 
-                if((ie/=0.and.idry_e(max(1,ie))==0.or.ie==0.and.isbs(jsj)>0).and.same_sign) then !flux_mod(:) same sign as flux_adv
+                if((ie/=0.and.idry_e(max(1,ie))==0.or.ie==0.and.isbs(jsj)>0).and.same_sign) then
                   do jj=1,ntr
+#ifdef DEBUG
+                    if(flux_mod_hface(jj,k,jsj)<-1.d33) then
+                      write(errmsg,*)'Left out horizontal flux (10):',i,k,j,jj
+                      call parallel_abort(errmsg)
+                    endif
+#endif
+
                     psumtr(jj)=psumtr(jj)+abs(flux_mod_hface(jj,k,jsj))
                   enddo !jj
 !                     Debug
@@ -747,13 +745,14 @@
         wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
 #endif
 
-   !@     if(dtb<=0.or.dtb>time_r) then
-   !@       write(errmsg,*)'Transport: Illegal sub step:',dtb,time_r
-   !@       call parallel_abort(errmsg)
-   !@     endif
+#ifdef DEBUG
+        if(dtb<=0.or.dtb>time_r) then
+          write(errmsg,*)'Transport: Illegal sub step:',dtb,time_r
+          call parallel_abort(errmsg)
+        endif
+#endif
 
 !       Output time step
-        !if(up_tvd.and.myrank==int(buf2(2,1)).and.ie01>0) &
         if(myrank==int(buf2(2,1)).and.ie01>0) &
      &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
      &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
@@ -764,16 +763,12 @@
       time_r=time_r-dtb
 
 !     Store last step's S,T
-      trel_tmp(1:ntr,:,:)=tr_el(1:ntr,:,:)
+      trel_tmp(1:ntr,:,:)=tr_el(1:ntr,:,1:nea)
 
       do i=1,ne
         if(idry_e(i)==1) cycle
 
-!       Wet elements with 3 wet nodes
-        n1=elnode(1,i)
-        n2=elnode(2,i)
-        n3=elnode(3,i)
-
+!       Wet elements with wet nodes
 !       Matrix
         ndim=nvrt-kbe(i)
         do k=kbe(i)+1,nvrt
@@ -782,18 +777,22 @@
           cupp(kin)=0
           bigv=area(i)*(ze(k,i)-ze(k-1,i)) !volume
           dtb_by_bigv = dtb/bigv
-    !@?      if(bigv<=0) then
-    !@?        write(errmsg,*)'Negative volume: ',bigv,i,k
-    !@?        call parallel_abort(errmsg)
-    !@?      endif
+#ifdef DEBUG
+          if(bigv<=0) then
+            write(errmsg,*)'Negative volume (5): ',bigv,i,k
+            call parallel_abort(errmsg)
+          endif
+#endif
           bdia(kin)=1
           if(k<nvrt) then
-            av_df=(dfh1(k,n1)+dfh1(k,n2)+dfh1(k,n3))/3
+            av_df=sum(dfh1(k,elnode(1:i34(i),i)))/i34(i)
             av_dz=(ze(k+1,i)-ze(k-1,i))/2.d0
-   !@         if(av_dz<=0) then
-   !@           write(errmsg,*)'Impossible 111'
-   !@           call parallel_abort(errmsg)
-   !@         endif
+#ifdef DEBUG
+            if(av_dz<=0) then
+              write(errmsg,*)'Impossible 111'
+              call parallel_abort(errmsg)
+            endif
+#endif
             tmp=area(i)*dtb_by_bigv*av_df/av_dz
             cupp(kin)=cupp(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
@@ -809,12 +808,14 @@
           endif !k<nvrt
 
           if(k>kbe(i)+1) then
-            av_df=(dfh1(k-1,n1)+dfh1(k-1,n2)+dfh1(k-1,n3))/3
+            av_df=sum(dfh1(k-1,elnode(1:i34(i),i)))/i34(i)
             av_dz=(ze(k,i)-ze(k-2,i))/2.d0
-     !@       if(av_dz<=0) then
-     !@         write(errmsg,*)'Impossible 112'
-     !@         call parallel_abort(errmsg)
-     !@       endif
+#ifdef DEBUG
+            if(av_dz<=0) then
+              write(errmsg,*)'Impossible 112'
+              call parallel_abort(errmsg)
+            endif
+#endif
             tmp=area(i)*dtb_by_bigv*av_df/av_dz
             alow(kin)=alow(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
@@ -836,22 +837,24 @@
 !          delta_tr(1:ntr)=0 !sum of tracer fluxes at all inflow bnds
 !         Alternative mass conservative form for the advection part (Eq. C32); contribute to rrhs
           adv_tr(1:ntr)=trel_tmp(1:ntr,k,i) 
- !@         if(ntr>1) then; if(flux_mod_vface(1,k,i)*flux_mod_vface(2,k,i)<0) then
- !@           write(errmsg,*)'Left out vertical flux (0):',i,k,flux_mod_vface(1:2,k,i)
- !@           call parallel_abort(errmsg)
- !@         endif; endif
-!@          do jj=1,ntr
- !@           if(flux_mod_vface(jj,k,i)<-1.d33) then
- !@             write(errmsg,*)'Left out vertical flux:',i,k,flux_mod_vface(jj,k,i),jj
- !@             call parallel_abort(errmsg)
- !@           endif
-!@          enddo !jj
+
+#ifdef DEBUG
+          if(ntr>1) then; if(flux_mod_vface(1,k,i)*flux_mod_vface(2,k,i)<0) then
+            write(errmsg,*)'Left out vertical flux (0):',i,k,flux_mod_vface(1:2,k,i)
+            call parallel_abort(errmsg)
+          endif; endif
+          do jj=1,ntr
+            if(flux_mod_vface(jj,k,i)<-1.d33) then
+              write(errmsg,*)'Left out vertical flux:',i,k,flux_mod_vface(jj,k,i),jj
+              call parallel_abort(errmsg)
+            endif
+          enddo !jj
+#endif
 
           if(k/=nvrt.and.flux_mod_vface(1,k,i)<0) then !all flux_mod(:) same sign
             if(up_tvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k,i))
-                !delta_tr(jj)=delta_tr(jj)+abs(flux_mod_vface(jj,k,i))*trel_tmp(jj,k+1,i)
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k+1,i)-trel_tmp(jj,k,i))
               enddo !jj
             else !upwind
@@ -864,7 +867,6 @@
             if(up_tvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k-1,i))
-                !delta_tr(jj)=delta_tr(jj)+abs(flux_mod_vface(jj,k-1,i))*trel_tmp(jj,k-1,i)
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k-1,i)-trel_tmp(jj,k,i))
               enddo !jj
             else !upwind
@@ -893,7 +895,7 @@
           endif !TVD
 
 !         Horizontal faces
-          do j=1,3
+          do j=1,i34(i)
             jsj=elside(j,i) !resident side
             iel=ic3(j,i)
 
@@ -917,10 +919,12 @@
                 enddo !lll
               enddo !ll
               ind1=nwild(1); ind2=nwild(2);
-     !@         if(ind1==0.or.ind2==0) then
-     !@           write(errmsg,*)'Cannot find a local index'
-     !@           call parallel_abort(errmsg)
-     !@        endif
+#ifdef DEBUG
+              if(ind1==0.or.ind2==0) then
+                write(errmsg,*)'Cannot find a local index'
+                call parallel_abort(errmsg)
+              endif
+#endif
 
               if(imod==0) then !TS
                 if(itetype(ibnd)==0) then !set to be same as interior (so cancel out below)
@@ -971,34 +975,27 @@
               endif !imod
             endif !iel
 
-   !@         if(ntr>1) then; if(flux_mod_hface(1,k,jsj)*flux_mod_hface(2,k,jsj)<0) then
-   !@           write(errmsg,*)'Left out horizontal flux (0):',i,j,k,flux_mod_hface(1:2,k,jsj)
-   !@           call parallel_abort(errmsg)
-   !@         endif; endif
-   !@         do jj=1,ntr
-   !@           if(flux_mod_hface(jj,k,jsj)<-1.d33) then
-   !@             write(errmsg,*)'Left out horizontal flux:',i,j,k,flux_mod_hface(jj,k,jsj),jj
-   !@             call parallel_abort(errmsg)
-   !@           endif
-   !@         enddo !jj
-
             if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_mod_hface(1,k,jsj)<0) then !inflow
               do jj=1,ntr
+#ifdef DEBUG
+                if(flux_mod_hface(jj,k,jsj)<-1.d33) then
+                  write(errmsg,*)'Left out horizontal flux:',i,j,k,flux_mod_hface(jj,k,jsj),jj
+                  call parallel_abort(errmsg)
+                endif
+#endif
+
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_hface(jj,k,jsj))
-                !delta_tr(jj)=delta_tr(jj)+abs(flux_mod_hface(jj,k,jsj))*trel_tmp(jj,k,iel)
-                !adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,iel)-trel_tmp(jj,k,i))
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp_outside(jj)-trel_tmp(jj,k,i))
               enddo !jj
             endif !inflow
 
             if(up_tvd.and.k>=kbs(jsj)+1) then
               do jj=1,ntr
-                !adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,i)-trel_tmp(jj,k,iel))* &
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,i)-trel_tmp_outside(jj))* &
      &flux_lim( up_rat_hface(jj,k,jsj), flimiter )/2.d0
               enddo !jj
             endif
-          enddo !j=1,3
+          enddo !j
 
 !         Check Courant number
 !new11
@@ -1006,7 +1003,7 @@
             if(1-dtb_by_bigv*psumtr(jj)<0) then
               write(errmsg,*)'Courant # condition violated:',i,k,1-dtb_by_bigv*psumtr(jj),jj
               call parallel_abort(errmsg)
-           endif
+            endif
           enddo !jj
 !new11
 
@@ -1025,10 +1022,9 @@
 
 !         Horizontal diffusion
           if(ihdif/=0) then
-            do j=1,3 !sides
+            do j=1,i34(i) !sides
               jsj=elside(j,i) !residents
               iel=ic3(j,i)
-!new fix
               if(iel==0.or.idry_e(max(1,iel))==1) cycle
 
               nd1=isidenode(1,jsj)
@@ -1096,7 +1092,11 @@
       cwtmp=mpi_wtime()
       timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
-      call exchange_e3d_tr(tr_el)
+      if(up_tvd) then !extend to 2-tier aug.
+        call exchange_e3d_2t_tr(tr_el)
+      else !pure upwind
+        call exchange_e3d_tr(tr_el)
+      endif
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime()
       wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
@@ -1128,7 +1128,7 @@
       if(myrank==0) write(17,*)it,it_sub
       
 !     Deallocate
-      deallocate(trel_tmp,flux_adv_hface,flux_adv_vface,flux_mod_hface,flux_mod_vface,&
+      deallocate(trel_tmp,flux_adv_hface,flux_mod_hface,flux_mod_vface,&
      &           up_rat_hface, up_rat_vface)
       !if(up_tvd) deallocate(swild3)
 
