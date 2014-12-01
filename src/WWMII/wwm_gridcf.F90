@@ -170,33 +170,29 @@
                 IF (LWRONG) THEN
 
 #ifdef MPI_PARALL_GRID
-                 IF (myrank == 0)  THEN
+                  IF (myrank == 0)  THEN
 #endif
-                  GRDCOR%FNAME = 'sysrenum.dat'
-                  OPEN(GRDCOR%FHNDL, FILE=GRDCOR%FNAME, STATUS='UNKNOWN')
-                  WRITE(GRDCOR%FHNDL,'(I10)') 0
-                  WRITE(GRDCOR%FHNDL,'(I10)') MNP
-                  IF (LSPHE) THEN
-                    DO IP = 1, MNP
-                      WRITE(GRDCOR%FHNDL,'(I10,3F15.8)') IP-1, XP(IP), YP(IP), DEP(IP)
+                    GRDCOR%FNAME = 'sysrenum.dat'
+                    OPEN(GRDCOR%FHNDL, FILE=GRDCOR%FNAME, STATUS='UNKNOWN')
+                    WRITE(GRDCOR%FHNDL,'(I10)') 0
+                    WRITE(GRDCOR%FHNDL,'(I10)') MNP
+                    IF (LSPHE) THEN
+                      DO IP = 1, MNP
+                        WRITE(GRDCOR%FHNDL,'(I10,3F15.8)') IP-1, XP(IP), YP(IP), DEP(IP)
+                      END DO
+                    ELSE
+                      DO IP = 1, MNP
+                        WRITE(GRDCOR%FHNDL,'(I10,3F15.6)') IP-1, XP(IP), YP(IP), DEP(IP)
+                      END DO
+                    ENDIF
+                    WRITE(GRDCOR%FHNDL,'(I10)') MNE
+                    DO IE = 1, MNE
+                      WRITE(GRDCOR%FHNDL,'(5I10)') INE(1,IE)-1, INE(2,IE)-1, INE(3,IE)-1, 0, IE-1
                     END DO
-                  ELSE
-                    DO IP = 1, MNP
-                      WRITE(GRDCOR%FHNDL,'(I10,3F15.6)') IP-1, XP(IP), YP(IP), DEP(IP)
-                    END DO
-                  ENDIF
-                  WRITE(GRDCOR%FHNDL,'(I10)') MNE
-                  DO IE = 1, MNE
-                    WRITE(GRDCOR%FHNDL,'(5I10)') INE(1,IE)-1, INE(2,IE)-1, INE(3,IE)-1, 0, IE-1
-                  END DO
-                  CLOSE(GRDCOR%FHNDL)
-
+                    CLOSE(GRDCOR%FHNDL)
 #ifdef MPI_PARALL_GRID
-                 END IF
+                  END IF
 #endif
-
-                END IF
-                IF (LWRONG) THEN
                   WRITE(DBG%FHNDL,*) 'The Elements in your mesh are not correctly numbered!'
                   WRITE(DBG%FHNDL,*) 'New mesh is written to', TRIM(GRDCOR%FNAME)
                   WRITE(DBG%FHNDL,*) 'There are totally', IEWRONGSUM, 'wrong Elements' 
