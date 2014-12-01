@@ -1,8 +1,61 @@
 #include "wwm_functions.h"
-!     Last change:  1    17 Feb 2004    0:18 am
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SPHERICAL_COORDINATE_DISTANCE(LON1, LON2, LAT1, LAT2, DIST)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: LON1, LON2, LAT1, LAT2
+      REAL(rkind), intent(out) :: DIST
+      REAL(rkind) :: lon1rad, lon2rad, lat1rad, lat2rad
+      REAL(rkind) :: COEFF
+      REAL(rkind) :: x1, y1, z1, x2, y2, z2
+      REAL(rkind) :: scalprod
+      COEFF=PI/180.0_rkind
+      lon1rad=LON1*COEFF
+      lon2rad=LON2*COEFF
+      lat1rad=LAT1*COEFF
+      lat2rad=LAT2*COEFF
+      x1=cos(lon1rad)*cos(lat1rad)
+      y1=sin(lon1rad)*cos(lat1rad)
+      z1=sin(lat1rad)
+      x2=cos(lon2rad)*cos(lat2rad)
+      y2=sin(lon2rad)*cos(lat2rad)
+      z2=sin(lat2rad)
+      scalprod=x1*x2+y1*y2+z1*z2;
+      IF (scalprod .ge. 1) THEN
+        DIST=0;
+      ELSE
+        DIST=acos(scalprod)
+      END IF
+      END SUBROUTINE
+!********************************************************************************
+!* See formula for area of spherical triangle in                                *
+!* http://math.stackexchange.com/questions/9819/area-of-a-spherical-triangle    *
+!*                                                                              *
+!********************************************************************************
+      SUBROUTINE SPHERICAL_COORDINATE_AREA(LON1, LON2, LON3, LAT1, LAT2, LAT3, AREA)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: LON1, LON2, LON3, LAT1, LAT2, LAT3
+      REAL(rkind), intent(out) :: AREA
+      REAL(rkind) :: DistA, DistB, DistC, DistS
+      REAL(rkind) :: eTan1, eTan2, eTan3, eTan4
+      REAL(rkind) :: eProd, sqrtProd
+      CALL SPHERICAL_COORDINATE_DISTANCE(LON1, LON2, LAT1, LAT2, DistA)
+      CALL SPHERICAL_COORDINATE_DISTANCE(LON1, LON3, LAT1, LAT3, DistB)
+      CALL SPHERICAL_COORDINATE_DISTANCE(LON2, LON3, LAT2, LAT3, DistC)
+      DistS=(DistA + DistB + DistC)/2.0_rkind
+      eTan1=tan(DistS/2.0_rkind)
+      eTan2=tan((DistS - DistA)/2.0_rkind)
+      eTan3=tan((DistS - DistB)/2.0_rkind)
+      eTan4=tan((DistS - DistC)/2.0_rkind)
+      eProd=eTan1*eTan2*eTan3*eTan4
+      sqrtProd=SQRT(eProd)
+      AREA=4.0_rkind*ATAN(sqrtProd)
+      END SUBROUTINE
+
+
       SUBROUTINE CORRECT_SINGLE_DXP(DXP)
       USE DATAPOOL
       IMPLICIT NONE
@@ -24,6 +77,7 @@
          REAL(rkind)            :: DBLTMP, DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
          REAL(rkind)            :: PROV1, PROV2, PROV3
          INTEGER           :: I1, I2, I3, TMPINE, NI(3)
+         INTEGER           :: J1, J2, J3
          INTEGER           :: IP, IE, IEWRONG, IEWRONGSUM
          LOGICAL           :: LWRONG
 
@@ -127,7 +181,19 @@
                       LWRONG = .TRUE.
                       IEWRONG = IE
                       IEWRONGSUM = IEWRONGSUM + 1
-                      WRITE(DBG%FHNDL,*) 'WRONG ELEMENT', IE, 'WRONG NODENUMBERS', INE(:,IE)
+                      WRITE(DBG%FHNDL,*) 'WRONG ELEMENT', IE
+                      J1=INE(1,IE)
+                      J2=INE(2,IE)
+                      J3=INE(3,IE)
+                      WRITE(DBG%FHNDL,*) 'NODENUMBERS I1=', J1
+                      WRITE(DBG%FHNDL,*) 'NODENUMBERS I2=', J2
+                      WRITE(DBG%FHNDL,*) 'NODENUMBERS I3=', J3
+                      WRITE(DBG%FHNDL,*) 'XP1, YP1=', XP(J1), YP(J1)
+                      WRITE(DBG%FHNDL,*) 'XP2, YP2=', XP(J2), YP(J2)
+                      WRITE(DBG%FHNDL,*) 'XP3, YP3=', XP(J3), YP(J3)
+                      WRITE(DBG%FHNDL,*) 'DXP1, DYP1=', DXP1, DYP1
+                      WRITE(DBG%FHNDL,*) 'DXP2, DYP2=', DXP2, DYP2
+                      WRITE(DBG%FHNDL,*) 'DXP3, DYP3=', DXP3, DYP3
                       WRITE(DBG%FHNDL,'(A40,6F15.8)') 'EDGELENGTHS OF THE WRONG ELEMENT', IEN(:,IE)
                    ELSE IF (TRIA(IE) .LT. THR) THEN 
                      write(DBG%FHNDL,*) 'IE=', IE, ' TRIA=', TRIA(IE)
