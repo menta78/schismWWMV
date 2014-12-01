@@ -1250,6 +1250,7 @@
 
             ISTAT = nf90_inquire_dimension(ncid, dimidsB(2), name=MNEstr, len=ne_total)
             CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+            WRITE(DBG%FHNDL,*) 'NE_TOTAL=', NE_TOTAL
             WRITE(DBG%FHNDL,*) 'MNEstr=', TRIM(MNEstr)
             FLUSH(DBG%FHNDL)
 
@@ -1259,8 +1260,9 @@
             ISTAT = nf90_inquire_variable(ncid, var_id, dimids=dimidsA)
             CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
 
-            ISTAT = nf90_inquire_dimension(ncid, dimidsB(1), name=MNPstr, len=np_total)
+            ISTAT = nf90_inquire_dimension(ncid, dimidsA(1), name=MNPstr, len=np_total)
             CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+            WRITE(DBG%FHNDL,*) 'NP_TOTAL=', NP_TOTAL
             WRITE(DBG%FHNDL,*) 'MNPstr=', TRIM(MNPstr)
             FLUSH(DBG%FHNDL)
 
@@ -1281,16 +1283,16 @@
 
             IF (LSPHE) THEN
               ISTAT = nf90_inq_varid(ncid, 'lon', var_id1)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
-
-              ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
-              CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
-            ELSE
-              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
               CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
 
-              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
+              ISTAT = nf90_inq_varid(ncid, 'lat', var_id2)
               CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+            ELSE
+              ISTAT = nf90_inq_varid(ncid, 'x', var_id1)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+
+              ISTAT = nf90_inq_varid(ncid, 'y', var_id2)
+              CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
             END IF
             ISTAT = nf90_get_var(ncid, var_id1, XPtotal)
             CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
@@ -1304,6 +1306,16 @@
           ELSE
             CALL WWM_ABORT('IGRIDTYPE WRONG')
           END IF
+          DO IE=1,NE_TOTAL
+            DO I=1,3
+              IP=INEtotal(IE,I)
+              IF ((IP .lt. 1).or.(IP.gt.NP_TOTAL)) THEN
+                Print *, 'IE=', IE, ' I=', I
+                Print *, 'IP=', IP, ' NP_TOTAL=', NP_TOTAL
+                CALL WWM_ABORT('INCOHERENCY IN INEtotal')
+              END IF
+            END DO
+          END DO
         CASE DEFAULT
           CALL WWM_ABORT('WRONG GRID DIMENSION')
       END SELECT
