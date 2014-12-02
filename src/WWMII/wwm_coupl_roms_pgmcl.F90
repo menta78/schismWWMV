@@ -32,7 +32,8 @@ MODULE WWMaOCN_PGMCL
       USE coupling_var, only : WAV_COMM_WORLD
 #  endif
 #  ifdef ROMS_WWM_PGMCL_COUPLING
-      USE mod_coupler
+      USE mod_coupler, only : MatrixBelongingWAV, NnodesWAV
+      USE mod_coupler, only : MyRankLocal, eGrid_wav, WAV_COMM_WORLD
 #  endif
       implicit none
       integer, allocatable :: rbuf_int(:)
@@ -138,10 +139,14 @@ MODULE WWMaOCN_PGMCL
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_common_coupl_initialize
+      USE pgmcl_library, only : GET_GRID_ARRAY_FE_R8
       USE DATAPOOL, only : DBG, XPtotal, YPtotal, INEtotal
       USE DATAPOOL, only : NE_TOTAL, NP_TOTAL
 #  if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var
+#  endif
+#  ifdef ROMS_WWM_PGMCL_COUPLING
+      USE mod_coupler, only : eGrid_wav
 #  endif
       implicit none
       CALL WWM_CreateMatrixPartition

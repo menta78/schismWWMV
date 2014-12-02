@@ -1951,6 +1951,9 @@
   40     FORMAT (a,'_',i4.4,'.nc')
 # endif
       ENDIF
+!
+! Creating the initial history file description
+!
       IF (IsInitDone.eqv..FALSE.) THEN ! At the beginning ...
         IsInitDone=.TRUE.
         recs_his2=0
@@ -1995,6 +1998,9 @@
         ENDIF
 !$OMP END MASTER
       END IF
+!
+! Computing the variables for output.
+!
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HIS.eq.0) THEN
         ALLOCATE(OUTT_LOC(NP_GLOBAL,OUTVARS_COMPLETE), OUTT(NP_GLOBAL,OUTVARS_COMPLETE), stat=istat)
@@ -2035,6 +2041,9 @@
       IF (LMONO_OUT) THEN
         OUTT(:,1) = OUTT(:,1) / SQRT(2.)
       ENDIF
+!
+! Writing down the variable in the history file.
+!
       IF (IOBPD_HISTORY) THEN
         allocate(IOBPDoutput(MDC, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 6')
