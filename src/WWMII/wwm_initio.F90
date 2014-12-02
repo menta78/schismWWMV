@@ -1117,7 +1117,6 @@
                IF(DEP(IP) .GT. DMIN) THEN
                  IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
                  IF (INITSTYLE == 1) THEN
-                   Print *, 'IP=', IP, ' WIND10=', WIND10
                    IF (WIND10 .GT. 1.) THEN !AR: why one? 
                      WINDTH = VEC2DEG(WINDX,WINDY)
                      CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
@@ -1137,7 +1136,6 @@
                      SPPAR(8) = 3.3
                      CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
                      AC2(:,:,IP) = ACLOC
-                     Print *, '   sumAC=', sum(ACLOC)
                    ELSE
                      ACLOC = 1.E-8
                    END IF
