@@ -1309,7 +1309,7 @@
           END IF
           DO IE=1,NE_TOTAL
             DO I=1,3
-              IP=INEtotal(IE,I)
+              IP=INEtotal(I,IE)
               IF ((IP .lt. 1).or.(IP.gt.NP_TOTAL)) THEN
                 Print *, 'IE=', IE, ' I=', I
                 Print *, 'IP=', IP, ' NP_TOTAL=', NP_TOTAL
