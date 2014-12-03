@@ -249,6 +249,12 @@
                 AVETA = AVETA/MyREAL(MNE)
                 AVETL = (TLMIN+TLMAX)/TWO
 #endif
+#ifdef DEBUG
+                WRITE(STAT%FHNDL,*) 'AVETL=', AVETL
+                WRITE(STAT%FHNDL,*) 'TLMIN=', TLMIN
+                WRITE(STAT%FHNDL,*) 'TLMAX=', TLMAX
+                FLUSH(STAT%FHNDL)
+#endif
 
                 IF (LWRONG) THEN
 

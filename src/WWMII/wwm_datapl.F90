@@ -299,6 +299,7 @@
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
          LOGICAL    :: BOUC_USE_SINGLE_OUT = .TRUE.
          CHARACTER(LEN=40), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
+         LOGICAL    :: HACK_HARD_SET_IOBP = .FALSE.
 
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.

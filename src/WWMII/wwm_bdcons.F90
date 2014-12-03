@@ -440,6 +440,26 @@
 #ifdef MPI_PARALL_GRID
       CALL EXCHANGE_P2DI(IOBP)
 #endif
+      IF (HACK_HARD_SET_IOBP) THEN
+        ! For hackish purposes, sometimes, we want to have an interior point
+        ! set to Neumann condition 2 for example.
+        ! Use that option only if you are sure of yourself.
+        DO IP = 1, NP_TOTAL
+#ifdef MPI_PARALL_GRID
+# ifndef PDLIB
+          IF (ipgl(ip)%rank == myrank) THEN
+            IOBP(ipgl(ip)%id) = IOBPtotal(IP)
+          END IF
+# else
+          IF (ipgl(ip)%id .gt. 0) THEN
+            IOBP(ipgl(ip)%id) = IOBPtotal(IP)
+          END IF
+# endif
+#else
+          IOBP(IP) = IOBPtotal(IP)
+#endif
+        END DO
+      END IF
 !
 ! allocate wave boundary arrays ... 
 !
