@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -71,11 +72,12 @@
       SUBROUTINE INIT_SPATIAL_GRID
          USE DATAPOOL
          IMPLICIT NONE
-         REAL(rkind)            :: TL1, TL2, TL3
-         REAL(rkind)            :: TMPTLMIN
-         REAL(rkind)            :: TMPTLMAX 
-         REAL(rkind)            :: DBLTMP, DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
-         REAL(rkind)            :: PROV1, PROV2, PROV3
+         REAL(rkind) :: TL1, TL2, TL3
+         REAL(rkind) :: TMPTLMIN
+         REAL(rkind) :: TMPTLMAX 
+         REAL(rkind) :: DBLTMP, DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
+         REAL(rkind) :: PROV1, PROV2, PROV3
+         REAL(rkind) :: AREA, AREA_RAD
          INTEGER           :: I1, I2, I3, TMPINE, NI(3)
          INTEGER           :: J1, J2, J3
          INTEGER           :: IP, IE, IEWRONG, IEWRONGSUM
@@ -153,12 +155,23 @@
                      IEN(4,IE) =   DXP3
                      IEN(5,IE) = - DYP1
                      IEN(6,IE) =   DXP1
+                     DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
                      IF (LSPHE .and. USE_EXACT_FORMULA_SPHERICAL_AREA) THEN
-                       CALL SPHERICAL_COORDINATE_AREA(XP(I1), XP(I2), XP(I3), YP(I1), YP(I2), YP(I3), DBLTMP)
+                       CALL SPHERICAL_COORDINATE_AREA(XP(I1), XP(I2), XP(I3), YP(I1), YP(I2), YP(I3), AREA_RAD)
+                       AREA=AREA_RAD*RADDEG*RADDEG
+#ifdef DEBUG
+                       WRITE(STAT%FHNDL,*) 'IE=', IE
+                       WRITE(STAT%FHNDL,*) 'I123=', I1, I2, I3
+                       WRITE(STAT%FHNDL,*) 'XP123=', XP(I1), XP(I2), XP(I3)
+                       WRITE(STAT%FHNDL,*) 'YP123=', YP(I1), YP(I2), YP(I3)
+                       WRITE(STAT%FHNDL,*) '  AREA=', AREA
+                       WRITE(STAT%FHNDL,*) 'DBLTMP=', DBLTMP
+                       FLUSH(STAT%FHNDL)
+#endif
                      ELSE
-                       DBLTMP = (DXP3*DYP1 - DYP3*DXP1)*ONEHALF
+                       AREA=DBLTMP
                      END IF
-                     TRIA(IE) = DBLTMP
+                     TRIA(IE) = AREA
                    END IF
 
 

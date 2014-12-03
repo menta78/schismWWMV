@@ -109,9 +109,9 @@ MODULE WWMaOCN_PGMCL
         CALL MPI_RECV(rbuf_int,np_global*NnodesWAV,MPI_INTEGER, 0, 196, WAV_COMM_WORLD, istatus, ierror)
         idx=0
         DO iProc=1,NnodesWAV
-          DO i=1,np_global
+          DO IP=1,np_global
             idx=idx+1
-            MatrixBelongingWAV % TheMatrix(i,iProc)=rbuf_int(idx)
+            MatrixBelongingWAV % TheMatrix(IP,iProc)=rbuf_int(idx)
           END DO
         END DO
         deallocate(rbuf_int)
