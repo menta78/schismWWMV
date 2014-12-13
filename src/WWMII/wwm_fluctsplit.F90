@@ -9,7 +9,8 @@
  
          INTEGER             :: IS, ID, IP
          REAL(rkind)         :: DTMAX
- 
+
+         IF (.NOT. LVECTOR) THEN 
 !$OMP PARALLEL
          IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
@@ -34,6 +35,9 @@
            END DO
          END IF
 !$OMP END PARALLEL
+         ELSE
+           CALL EXPLICIT_N_SCHEME_VECTOR
+         ENDIF
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
