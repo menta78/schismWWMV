@@ -5,7 +5,7 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42 -DWWM_SETUP 
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI = on 
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
@@ -34,8 +34,8 @@ F90 = mpif90
 
 #INTEL
 #save opti
-#F90OPTI = -fpp -traceback -g -O1 -fpe0
-F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -fpe0
+F90OPTI = -fpp -traceback -g -O1 
+#F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled -fpe0
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check uninit -check bounds -check pointers -fpe0
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fpe0
