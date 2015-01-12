@@ -480,9 +480,6 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
-     
-      CALL SET_WWMINPULNML 
-
 ! variable nx1 should be initialized in selfe code, not here!
 #if defined MPI_PARALL_GRID && !defined PDLIB
       do i=1,3
@@ -1590,7 +1587,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WWMINPULNML
+      SUBROUTINE SET_WWMINPUTNML
       USE DATAPOOL, only : INP
 #ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler, only : Iwaves, INPname
