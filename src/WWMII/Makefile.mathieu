@@ -17,11 +17,11 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
-PDLIB = on
+PDLIB =
 
 
 #F90 = gfortran
