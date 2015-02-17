@@ -205,7 +205,6 @@ MODULE WWMaOCN_PGMCL
       USE coupling_var, only : OCNid => tOCNid
       USE coupling_var, only : WAVid => tWAVid
 #  endif
-
       USE PGMCL_LIBRARY
       USE pgmcl_interp
       implicit none
@@ -217,6 +216,7 @@ MODULE WWMaOCN_PGMCL
       real(rkind) eDiff, AbsDiff, SumDep1, SumDep2, SumDiff
       real(rkind) minBathy, maxBathy
       real(rkind) SumDepReceive
+      real(rkind) TOTAL_ERR, eErr
       character(len=40) :: FileSave_OCNtoWAV_rho
       character(len=40) :: FileSave_OCNtoWAV_u
       character(len=40) :: FileSave_OCNtoWAV_v
@@ -350,10 +350,6 @@ MODULE WWMaOCN_PGMCL
         CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_u)
         CALL M2M_send_sparseMatrix(ArrLocal, OCNid, mMat_OCNtoWAV_v)
       END IF
-      CALL DEALLOCATE_GRID_ARRAY(eGrid_wav)
-      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_rho)
-      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_u)
-      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_v)
       !
       ! Fourth part: Computing restricted interpolation matrices
       ! and asynchronous arrays
@@ -398,12 +394,6 @@ MODULE WWMaOCN_PGMCL
       CALL DEALLOCATE_node_partition(MatrixBelongingOCN_rho)
       CALL DEALLOCATE_node_partition(MatrixBelongingOCN_u)
       CALL DEALLOCATE_node_partition(MatrixBelongingOCN_v)
-      CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
-      CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
-      CALL DeallocSparseMatrix(mMat_OCNtoWAV_v)
-      CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
-      CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
-      CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
       !
       ! Fifth part: more allocations and exchanges
       !
@@ -422,6 +412,23 @@ MODULE WWMaOCN_PGMCL
         CosAng(IP)=COS(A_wav_rho(IP))
         SinAng(IP)=SIN(A_wav_rho(IP))
       END DO
+      CALL MPI_INTERP_RECV_r8(TheArr_OCNtoWAV_rho, 2043, A_wav_rho)
+      CALL PRINT_TO_FILE_SPARSEMATRIX(DBG%FHNDL, eGrid_ocn_rho, eGrid_wav, mMat_OCNtoWAV_rho)
+      TOTAL_ERR=0
+      DO IP=1,MNP
+        eErr=abs(A_wav_rho(IP) - XP(IP))
+        IF (eErr .gt. 0.1) THEN
+          WRITE(DBG%FHNDL,*) 'IP=', IP
+          WRITE(DBG%FHNDL,*) 'A_wav_rho(IP), XP(IP)=', A_wav_rho(IP), XP(IP)
+        END IF
+      END DO
+# ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'CHECKING for the interpolation'
+      WRITE(DBG%FHNDL,*) 'TOTAL_ERR = ', TOTAL_ERR
+      FLUSH(DBG%FHNDL)
+# endif
+
+
 # ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WAV, WWM_a_OCN_COUPL_INITIALIZE, step 25'
       WRITE(DBG%FHNDL,*) 'MyRankGlobal=', MyRankGlobal
@@ -475,6 +482,16 @@ MODULE WWMaOCN_PGMCL
       WRITE(DBG%FHNDL,*) 'End WWM_a_OCN_COUPL_INITIALIZE'
       FLUSH(DBG%FHNDL)
 # endif
+      CALL DeallocSparseMatrix(mMat_OCNtoWAV_rho)
+      CALL DeallocSparseMatrix(mMat_OCNtoWAV_u)
+      CALL DeallocSparseMatrix(mMat_OCNtoWAV_v)
+      CALL DeallocSparseMatrix(mMat_WAVtoOCN_rho)
+      CALL DeallocSparseMatrix(mMat_WAVtoOCN_u)
+      CALL DeallocSparseMatrix(mMat_WAVtoOCN_v)
+      CALL DEALLOCATE_GRID_ARRAY(eGrid_wav)
+      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_rho)
+      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_u)
+      CALL DEALLOCATE_GRID_ARRAY(eGrid_ocn_v)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_rho)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_u)
       CALL DEALLOCATE_Arr(TheArr_OCNtoWAV_v)
