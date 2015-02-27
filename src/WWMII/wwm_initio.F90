@@ -476,6 +476,9 @@
 !
       INTEGER        :: IT, IFILE, i, j, IP
       REAL(rkind)    :: TIME1, TIME2
+#ifdef SELFE
+      CALL SET_WWMINPUTNML
+#endif
       
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
