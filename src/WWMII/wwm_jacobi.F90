@@ -2328,6 +2328,8 @@
 #endif
           p_is_converged = (real(np_total) - real(is_converged))/real(np_total) * 100.
           !if (myrank == 0) write(*,*) nbiter, is_converged, np_total, p_is_converged, solverthr
+        ELSE
+          p_is_converged = 0
         ENDIF 
 
 #ifdef MPI_PARALL_GRID
