@@ -2,7 +2,7 @@
 !*                                                                    *
 !**********************************************************************
       MODULE flmud_pool
-        use elfe_glbl, only : rkind,mudc=>tr_nd,rhosed,laddmud_d,laddmud_v,vts,wsink,rhomud
+        use schism_glbl, only : rkind,mudc=>tr_nd,rhosed,laddmud_d,laddmud_v,vts,wsink,rhomud
 
         save
 

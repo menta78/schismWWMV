@@ -3,7 +3,7 @@
 !**********************************************************************
       subroutine init_flmud
 
-        use elfe_glbl, only : npa, nvrt, kbp, rkind, irouse_test,idry
+        use schism_glbl, only : npa, nvrt, kbp, rkind, irouse_test,idry
         use flmud_pool
         implicit none
 
@@ -97,7 +97,7 @@
 !**********************************************************************
       subroutine flmud(ip,dt,rough_p,SS1d,NN1d,tke1d,eps1d,L1d,num1d,nuh1d)
 
-        use elfe_glbl, only : npa, nvrt, kbp, rkind, irouse_test
+        use schism_glbl, only : npa, nvrt, kbp, rkind, irouse_test
         use flmud_pool 
         implicit none
 
@@ -182,7 +182,7 @@
 !**********************************************************************
         subroutine init_flmud_arrays
           
-          use elfe_glbl, only: nvrt,npa,ntracers,rhosed
+          use schism_glbl, only: nvrt,npa,ntracers,rhosed
           use flmud_pool
            
           implicit none
@@ -201,7 +201,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine get_mudc(ip,nf,phi,phip)
-        use elfe_glbl, only: kbp, nvrt, rkind,iplg
+        use schism_glbl, only: kbp, nvrt, rkind,iplg
         use flmud_pool 
 
         implicit none
@@ -233,7 +233,7 @@
 !**********************************************************************
        subroutine get_mudrho(ip,nf)
 
-        use elfe_glbl, only: idry, kbp, nvrt, rkind,iplg
+        use schism_glbl, only: idry, kbp, nvrt, rkind,iplg
         use flmud_pool 
         implicit none
 
@@ -259,7 +259,7 @@
 !**********************************************************************
       subroutine set_hind_wsink(ip,phi,phip,phigel)
 !
-        use elfe_glbl, only: nvrt, kbp, grav, rkind,iplg
+        use schism_glbl, only: nvrt, kbp, grav, rkind,iplg
         use flmud_pool
 !
         implicit none
@@ -334,7 +334,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine stress_mud(ip,SS1d)
-        use elfe_glbl, only : grav, kbp, nvrt, rkind, prho,iplg
+        use schism_glbl, only : grav, kbp, nvrt, rkind, prho,iplg
         use flmud_pool 
         implicit none
 
@@ -390,7 +390,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine set_yieldstress(rhop,tau_y)
-        use elfe_glbl, only: rkind
+        use schism_glbl, only: rkind
         implicit none
 !
         real(rkind), INTENT(IN)  :: rhop
@@ -403,7 +403,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine set_toorman_constants(rhop,mu8,mu0,beta,c)
-        use elfe_glbl, only: rkind 
+        use schism_glbl, only: rkind 
         implicit none
 !
         real(rkind), INTENT(IN)  :: rhop
@@ -424,7 +424,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine set_mud_roughness(ip,alpha,SS1d)
-        use elfe_glbl, only: uu2, vv2, kbp, znl, dfv, rkind, prho,nvrt
+        use schism_glbl, only: uu2, vv2, kbp, znl, dfv, rkind, prho,nvrt
         use flmud_pool
         implicit none
 
@@ -470,7 +470,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine set_bottom_stress(ip,bstress,SS1d)
-        use elfe_glbl, only: nvrt, kbp, uu2, vv2, dfv, rkind, znl,nvrt
+        use schism_glbl, only: nvrt, kbp, uu2, vv2, dfv, rkind, znl,nvrt
         use flmud_pool
         implicit none
 
@@ -497,7 +497,7 @@
 !**********************************************************************
       subroutine set_bottom_visk(ip,ufric,visk1,visk2)
 
-        use elfe_glbl, only: nvrt, kbp, rkind, znl
+        use schism_glbl, only: nvrt, kbp, rkind, znl
         implicit none
 
         integer                             :: nlev
@@ -523,8 +523,8 @@
 !*                                                                    *
 !**********************************************************************
       subroutine get_floc_diam(ip,dt,nf)
-        use elfe_glbl, only: dfv, kbp, nvrt, znl, rkind, errmsg,iplg
-        use elfe_msgp, only: parallel_abort
+        use schism_glbl, only: dfv, kbp, nvrt, znl, rkind, errmsg,iplg
+        use elfe_msgp!, only: parallel_abort
         use flmud_pool
         implicit none
 
@@ -588,12 +588,12 @@
            if (dmf_mud(1,il,ip) .lt. 0.) then
              write(errmsg,'(a20,I10,10F20.10)')'neg. diam in dmf_mud rk0', &
      & il, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew,nf(il), dold
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            if (dmf_mud(1,il,ip) .ne. dmf_mud(1,il,ip) ) then
              write(errmsg,'(a20,I10,10F15.10)')'NaN in dmf_mud rk0', il, nf(il), dold/dm0, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            mu = 1.E-3  !*(prho(l,ip)+1000.)  !DS: was ist hier los
@@ -612,12 +612,12 @@
 
            if (dnew .ne. dnew ) then
              write(*,'(a20,I10,10F15.10)')'NaN in dmf_mud rk1', il, nf(il), dold/dm0, g_dot, beta, dm0, dfv(ip,il), dt,dold,dnew
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            if (dnew .lt. 0.) then
              write(errmsg,'(a20,I10,10F20.10)')'neg. diam in dmf_mud rk1', il, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew, nf(il), dold
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            nf(il)= alpha * (dold/dm0)**beta
@@ -632,12 +632,12 @@
 
            if (dnew .ne. dnew) then
              write(errmsg,'(a20,I10,10F15.10)')'NaN in dmf_mud rk2', il, nf(il), dold/dm0, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            if (dnew .lt. 0.) then
              write(errmsg,'(a20,I10,10F20.10)')'neg. diam in dmf_mud rk2', il, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew, nf(il), dold
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
            nf(il)= alpha * (dold/dm0)**beta
@@ -651,12 +651,12 @@
            dmf_mud(1,il,ip) = dnew
            if (dmf_mud(1,il,ip) .ne. dmf_mud(1,il,ip)) then
              write(errmsg,'(a20,I10,10F20.10)')'NaN in dmf_mud rk3', il, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew, nf(il), dold
-             call parallel_abort(errmsg) 
+             !call parallel_abort(errmsg) 
            endif
 
            if (dmf_mud(1,il,ip) .lt. 0.) then
              write(errmsg,'(a20,I10,10F20.10)')'neg. diam in dmf_mud rk3', il, g_dot, beta, dm0, dfv(ip,il), dt, dold, dnew, nf(il), dold
-             call parallel_abort(errmsg)
+             !call parallel_abort(errmsg)
            endif
 
 
@@ -677,7 +677,7 @@
 !*                                                                    *
 !**********************************************************************
       subroutine RISK(Ustar,R)
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         real(rkind), intent(in)  :: ustar
@@ -697,7 +697,7 @@
 !*                                                                    *
 !********************************************************************** 
       subroutine shields(ip,il,d,nu,rhost,usc)
-        use elfe_glbl, only : rkind, grav, prho
+        use schism_glbl, only : rkind, grav, prho
         use flmud_pool !, only : rhow 
         implicit none
 
@@ -728,7 +728,7 @@
 !*                                                                    *
 !**********************************************************************
        subroutine get_cgel(ip,nf,cgel,phigel)
-        use elfe_glbl, only : rkind, grav, kbp, nvrt,iplg
+        use schism_glbl, only : rkind, grav, kbp, nvrt,iplg
         use flmud_pool
         implicit none
 
@@ -759,7 +759,7 @@
 !*                                                                    *
 !**********************************************************************
         subroutine set_yield(ip,rough_p,tstress)
-        use elfe_glbl, only : rkind, nvrt, kbp, dfv, dfh, prho,iplg
+        use schism_glbl, only : rkind, nvrt, kbp, dfv, dfh, prho,iplg
         use flmud_pool !, only : dfv_yield, dfh_yield, rough_mud
         implicit none
 
@@ -803,7 +803,7 @@
 !*                                                                    *
 !**********************************************************************
         subroutine write_point_output(ip,SS1d,NN1d,tke1d,eps1d,L1d,num1d,nuh1d)
-        use elfe_glbl, only : rkind, nvrt, kbp, dfv, dfh, prho,iplg,uu2,vv2,znl,wsink,vts
+        use schism_glbl, only : rkind, nvrt, kbp, dfv, dfh, prho,iplg,uu2,vv2,znl,wsink,vts
         use flmud_pool 
         implicit none
 
