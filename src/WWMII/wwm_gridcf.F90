@@ -148,7 +148,6 @@
                        CALL CORRECT_SINGLE_DXP(DXP2)
                        CALL CORRECT_SINGLE_DXP(DXP3)
                      END IF
-
                      IEN(1,IE) = - DYP2
                      IEN(2,IE) =   DXP2
                      IEN(3,IE) = - DYP3
@@ -173,8 +172,6 @@
                      END IF
                      TRIA(IE) = AREA
                    END IF
-
-
                    IF (TRIA(IE) .LT. 0.0) THEN
                       TMPINE = INE(2,IE)
                       INE(2,IE) = INE(3,IE)

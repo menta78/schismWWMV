@@ -582,13 +582,11 @@
         IF (LOUTITER) CALL WWM_OUTPUT(ITERTIME,.FALSE.)
       END DO
 
-#ifdef MPI_PARALL_GRID
       MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
       RTIME = MAIN%TMJD - MAIN%BMJD
+#ifdef MPI_PARALL_GRID
       IF (myrank == 0) WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #else
-      MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
-      RTIME = MAIN%TMJD - MAIN%BMJD
       WRITE(STAT%FHNDL,101)  K, MAIN%ISTP, RTIME*DAY2SEC
 #endif
       FLUSH(STAT%FHNDL)
@@ -736,7 +734,7 @@
       INTEGER FHNDL
       !
       FHNDL=12
-      CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
+      CALL TEST_FILE_EXIST_DIE("3: Missing input file : ", TRIM(INP%FNAME))
       OPEN(FHNDL, FILE = TRIM(INP%FNAME))
       READ(FHNDL, NML = PROC)
       READ(FHNDL, NML = GRID)
@@ -802,26 +800,19 @@
 # endif
       integer :: i,j,k
       character(len=15) CALLFROM
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
-      FLUSH(740+MyRankGlobal)
-# endif
-
+!
+! First defining the input file.
+!
+      CALL SET_WWMINPUTNML
+!
+! MPI initialization if needed.
+!
 # if defined WWM_MPI && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       call mpi_init(ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_init')
 # endif
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_init'
-      FLUSH(740+MyRankGlobal)
-# endif
-
 # ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
-# endif
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, after WAV_MY_WTIME'
-      FLUSH(740+MyRankGlobal)
 # endif
 # if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       comm=MyCOMM
@@ -832,35 +823,23 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_dup')
 #  endif
 # endif
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_dup and WAV_COMM_WORLD'
-      FLUSH(740+MyRankGlobal)
-# endif
 # ifdef MPI_PARALL_GRID
       call mpi_comm_size(comm,nproc,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
-#  ifndef PDLIB
-      CALL SIMPLE_PRE_READ
-#  endif
       CALLFROM='WWM_MPI'
 # else
       CALLFROM='WWM'
 # endif
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_size/rank'
-      FLUSH(740+MyRankGlobal)
-# endif
-
+!
+! Initializations
+!
+      CALL SIMPLE_PRE_READ
       CALL INITIALIZE_WWM
-# if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
-      write(740+MyRankGlobal,*)  'WWMIII_MPI, after INITIALIZE_WWM'
-      FLUSH(740+MyRankGlobal)
-# endif
-
-!      STOP 'MEMORY TEST 1'
-
+!
+! Time loop
+!
       DO K = 1, MAIN%ISTP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)

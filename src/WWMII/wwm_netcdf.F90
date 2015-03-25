@@ -866,7 +866,7 @@
       iret=nf90_put_att(ncid,var_id,"calendar",'gregorian')
       CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
       !
-      iret=nf90_def_var(ncid,'ocean_time_str',NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
+      iret=nf90_def_var(ncid,'ocean_time_str', NF90_CHAR,(/ fifteen_dims, ntime_dims/), var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
       END SUBROUTINE
 !**********************************************************************

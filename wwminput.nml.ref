@@ -222,18 +222,20 @@
 
 &NUMS ! Numerical methods
  ICOMP          = 0
-                                     ! This parameter controls the way how the splitting is done and whether implicit or explicit schemes are used for spectral advection
-                                     ! ICOMP = 0
-                                     ! This means that all dimensions are integrated using explicit methods. Similar
-                                     ! to WW3, actually the same schemes are available in WW3 4.1.
-                                     ! ICOMP = 1
-                                     ! This mean that advection in geographical space is done using implicit
-                                     ! Methods, source terms and spectral space are still integrated as done in
-                                     ! WW3.
-                                     ! ICOMP = 2
-                                     ! This means that the advection is done using implicit methods and that the
-                                     ! source terms are integrated semi-implicit using Patankar rules and linearized
-                                     ! source terms as done in SWAN. Spectral part is still a fractional step
+    ! This parameter controls the way how the splitting is done and whether implicit or explicit schemes are used for spectral advection
+    ! ICOMP = 0
+    ! This means that all dimensions are integrated using explicit methods. Similar
+    ! to WW3, actually the same schemes are available in WW3 4.1.
+    ! ICOMP = 1
+    ! This mean that advection in geographical space is done using implicit
+    ! Methods, source terms and spectral space are still integrated as done in
+    ! explicitly.
+    ! ICOMP = 2
+    ! This means that the advection is done using implicit methods and that the
+    ! source terms are integrated semi-implicit using Patankar rules and linearized
+    ! source terms as done in SWAN. Spectral part is still a fractional step
+    ! ICOMP = 3
+    ! We use implicit method for advection, refraction, freq. shifting and source terms.
 
  AMETHOD        = 1
                                      ! AMETHOD controls the different Methods in geographical space

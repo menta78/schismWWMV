@@ -476,13 +476,13 @@
 !
       INTEGER        :: IT, IFILE, i, j, IP
       REAL(rkind)    :: TIME1, TIME2
+#ifdef SELFE
+      CALL SET_WWMINPUTNML
+#endif
       
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
-     
-      CALL SET_WWMINPULNML 
-
 ! variable nx1 should be initialized in selfe code, not here!
 #if defined MPI_PARALL_GRID && !defined PDLIB
       do i=1,3
@@ -1253,7 +1253,7 @@
 
          WRITE(DBG%FHNDL, *) 'THR=', THR
          WRITE(DBG%FHNDL, *) 'THR8=', THR8
-         CALL TEST_FILE_EXIST_DIE("Missing input file : ", TRIM(INP%FNAME))
+         CALL TEST_FILE_EXIST_DIE("1: Missing input file : ", TRIM(INP%FNAME))
 #ifdef MPIP_PARALL_GRID
          IF (myrank == 0) THEN
 #endif
@@ -1268,7 +1268,7 @@
 #ifdef MPIP_PARALL_GRID
          ENDIF
 #endif
-         CALL TEST_FILE_EXIST_DIE("Missing input file : ", INP%FNAME)
+         CALL TEST_FILE_EXIST_DIE("2: Missing input file : ", TRIM(INP%FNAME))
          OPEN( INP%FHNDL,      FILE = TRIM(INP%FNAME))
          OPEN( CHK%FHNDL,      FILE = TRIM(CHK%FNAME))
          IF (LQSTEA) OPEN( QSTEA%FHNDL,    FILE = TRIM(QSTEA%FNAME))
@@ -1590,7 +1590,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WWMINPULNML
+      SUBROUTINE SET_WWMINPUTNML
       USE DATAPOOL, only : INP
 #ifdef ROMS_WWM_PGMCL_COUPLING
       USE mod_coupler, only : Iwaves, INPname
