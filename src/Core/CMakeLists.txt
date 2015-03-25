@@ -3,12 +3,12 @@
 make_define_option("USE_HA"  "Use the Harmonic Analsis option" OFF "harm.F90")
 
 add_library(core ${local_extra_code}
-                 elfe_glbl.F90
-                 elfe_msgp.F90
-                 selfe_assert.F90
+                 schism_glbl.F90
+                 schism_msgp.F90
+                 schism_assert.F90
            )
 list( APPEND locallibs core)
-set(selfemodlibs ${locallibs} ${selfemodlibs} PARENT_SCOPE)
+set(schismmodlibs ${locallibs} ${schismmodlibs} PARENT_SCOPE)
 
 
 

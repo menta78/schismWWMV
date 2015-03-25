@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !===============================================================================
 ! ELCIRC LINEAR SOLVER ROUTINES
@@ -16,8 +30,8 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei_p,nnp,indnd,errmsg
-  use elfe_msgp
+  use schism_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei_p,nnp,indnd,errmsg
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -224,8 +238,8 @@ subroutine solve_jcg_qnon(itime,moitn,mxitn,rtol,nvrt1,mnei1,np1,npa1,ihydro2,qm
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl !, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,indnd,errmsg
-  use elfe_msgp
+  use schism_glbl !, only : rkind,np,npa,wtimer,iplg,ipgl,mnei,nnp,indnd,errmsg
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -500,8 +514,8 @@ subroutine tridag(nmax,nvec,n,nc,a,b,c,r,u,gam)
 ! u: output with nc columns (transposed to rows)
 ! gam: a working array.
 !-------------------------------------------------------------------------------
-  use elfe_glbl, only : rkind,errmsg
-  use elfe_msgp, only : parallel_abort
+  use schism_glbl, only : rkind,errmsg
+  use schism_msgp, only : parallel_abort
   implicit none
 
   integer, intent(in) :: nmax,nvec,n,nc

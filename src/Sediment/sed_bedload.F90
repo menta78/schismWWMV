@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !=====================================================================
 !=====================================================================
 ! MORSELFE BEDLOAD SUBROUTINES
@@ -23,8 +37,8 @@
 !--------------------------------------------------------------------!
 
       USE sed_mod
-      USE elfe_glbl, ONLY: rkind,errmsg,dpe,nea,dt,i34,elnode,eta2
-      USE elfe_msgp, ONLY: myrank,parallel_abort
+      USE schism_glbl, ONLY: rkind,errmsg,dpe,nea,dt,i34,elnode,eta2
+      USE schism_msgp, ONLY: myrank,parallel_abort
 
       IMPLICIT NONE
       SAVE
@@ -332,9 +346,9 @@
 !--------------------------------------------------------------------!
 
       USE sed_mod
-      USE elfe_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
+      USE schism_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
                             yctr,np,indel,errmsg,xnd,ynd
-      USE elfe_msgp
+      USE schism_msgp
       
       IMPLICIT NONE
 

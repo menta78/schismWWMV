@@ -1,6 +1,21 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
+
 !===============================================================================
 !===============================================================================
-! ELCIRC GRID SUBROUTINES
+! SCHISM GRID SUBROUTINES
 !
 ! subroutine aquire_vgrid
 ! subroutine partition_hgrid
@@ -15,8 +30,8 @@ subroutine aquire_vgrid
 !-------------------------------------------------------------------------------
 ! Aquire vertical grid data from vgrid.in
 !-------------------------------------------------------------------------------
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
   integer :: i,j,k,l,jki,stat,kin,m
   real(rkind) :: buf1(100),hmod2,zz
@@ -160,8 +175,8 @@ subroutine partition_hgrid
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -223,7 +238,7 @@ subroutine partition_hgrid
   !The following needs info 
   !from aquire_hgrid: i34, ielg; elnode; ic3; nne; indel; ne; nea; npa; xnd, ynd, znd, dp
   !from aquire_vgrid: nvrt; ztot; kz; h_s.
-  !from selfe_init: ics
+  !from schism_init: ics
 
   !Do map projection for lat/lon
   if(allocated(xproj)) deallocate(xproj)
@@ -508,8 +523,8 @@ subroutine aquire_hgrid(full_aquire)
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -559,8 +574,8 @@ subroutine aquire_hgrid(full_aquire)
   ! Initialize
   !-----------------------------------------------------------------------------
 
-  mntr=max(ntracers,2)
-  ntracers2=ntracers+2
+  !mntr=max(ntracers,2)
+  !ntracers2=ntracers+2
 
   !-----------------------------------------------------------------------------
   ! Open global grid file
@@ -1635,7 +1650,7 @@ subroutine aquire_hgrid(full_aquire)
   ! Compute transformation tensor for element frame eframe(i,j,ie) for ics=2
   ! where j is the axis id, i is the component id, ie is the local element id
   ! Compute xel, yel - coord. in element frame for ics=2 (for ics=1 they 
-  ! are same as xnd,ynd)
+  ! are copied from xnd,ynd)
   ! WARINING: be careful when using average to compute lat/lon at center around dateline
   if(allocated(xctr)) deallocate(xctr); allocate(xctr(nea),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: xctr allocation failure')
@@ -2124,7 +2139,8 @@ subroutine aquire_hgrid(full_aquire)
       n2=iond_global(i,j+1)
       if(ipgl(n1)%rank/=myrank.or.ipgl(n2)%rank/=myrank) cycle
 
-!     Both nodes are in aug. domain
+!     Both nodes are in aug. domain. However, side (n3,n4) may not be in this
+!     rank -e.g., ghost zone includes n3 and n4 on 2 separate fronts
       n3=ipgl(n1)%id !local node index
       n4=ipgl(n2)%id
       do ii=1,nne(n3)
@@ -2138,10 +2154,8 @@ subroutine aquire_hgrid(full_aquire)
               k=isd; exit
             endif
           enddo !jj
-          if(k<=0) then
-            write(errmsg,*)'aquire_hgrid: impossible (5)',n1,n2
-            call parallel_abort(errmsg)
-          else !k>0
+
+          if(k>0) then
             if(isdel(2,k)/=0) then
               write(errmsg,*)'aquire_hgrid: impossible (1)',n1,n2,isdel(1:2,k),ielg(isdel(1:2,k)),ielg(ie),iplg(isidenode(1:2,isd))
               call parallel_abort(errmsg)
@@ -2324,7 +2338,7 @@ function signa(x1,x2,x3,y1,y2,y3)
 !-------------------------------------------------------------------------------
 ! Compute signed area formed by pts 1,2,3 (positive counter-clockwise)
 !-------------------------------------------------------------------------------
-  use elfe_glbl, only : rkind,errmsg
+  use schism_glbl, only : rkind,errmsg
   implicit none
   real(rkind) :: signa
   real(rkind),intent(in) :: x1,x2,x3,y1,y2,y3
@@ -2341,8 +2355,8 @@ subroutine dump_hgrid
 ! Dump horizontal grid data to processor specific formatted files
 ! Write local-global mapping info
 !-------------------------------------------------------------------------------
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
   integer, parameter :: maxbuf=max(100,3)
   integer :: ie,ip,i,j,k,ngb1,ngb2,isd,isdgb,iegb1,iegb2

@@ -1,10 +1,24 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !===============================================================================
-! ELFE HYDRAULIC SUBROUTINES
+! SCHISM HYDRAULIC SUBROUTINES
 
       module hydraulic_structures
-      use elfe_glbl, only : rkind,grav
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,grav
+      use schism_msgp, only : parallel_abort
       implicit none
 
 
@@ -60,7 +74,7 @@
 !>     Parse and process structure information
 !>===============================================================================
       subroutine load_structures(filename)
-      use elfe_glbl, only : errmsg
+      use schism_glbl, only : errmsg
       implicit none
       character(LEN=*) :: filename
       integer          :: iblock,in,npair,ipair
@@ -141,7 +155,7 @@
 !>    the pattern structure_name.th
 !>===============================================================================     
       subroutine init_struct_time_series(time)
-      use elfe_glbl, only: rkind
+      use schism_glbl, only: rkind
       implicit none
       real(rkind) :: time
       real(rkind) :: time_next
@@ -170,7 +184,7 @@
 !>=============================================================================== 
 
       subroutine read_struct_ts(time)
-      use elfe_glbl, only: errmsg,rkind
+      use schism_glbl, only: errmsg,rkind
       implicit none
       real(rkind), intent(in) :: time
       real(rkind)             :: time_next
@@ -213,8 +227,8 @@
 !>     Compute thru flow at a hydraulic structure
 !>===============================================================================
       subroutine calc_struc_flow(istruct,elev_up,elev_down,flow)
-      use elfe_glbl, only : rkind,grav,pi,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,grav,pi,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
       integer, intent(in)     :: istruct !index of the struc
       real(rkind), intent(in)  :: elev_up            ! elevation at reference points '1' ('upstream')    [m]
@@ -393,7 +407,7 @@
 !>    todo: EOF issues are not currently handled
 !>===============================================================================
       subroutine irreg_time_history_advance(unit, time, time_next)
-      use elfe_glbl, only : rkind
+      use schism_glbl, only : rkind
       implicit none
 
       integer, intent(in)      :: unit       !< Fortran unit to be read

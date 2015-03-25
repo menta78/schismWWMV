@@ -1,10 +1,24 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !=====================================================================
 !=====================================================================
 ! MORSELFE BOTTOM FRICTION SUBROUTINES
 !
 ! subroutine sed_current_stress
 ! subroutine sed_wavecurrent_stress
-! subroutine sed_roughness (called inside selfe_step)
+! subroutine sed_roughness (called inside schism_step)
 ! subroutine stress_soulsby (not used now)
 ! subroutine stress (not used now)
 !
@@ -34,8 +48,8 @@
 
       USE sed_mod,   ONLY: Cdb_min,Cdb_max,Zob,vonKar,bustr,bvstr,   &
                            tau_c,drag_formulation
-      USE elfe_glbl, ONLY: rkind,nvrt,nea,dfv,idry_e,kbe,i34,elnode,uu2,vv2,ze
-      USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_e2d
+      USE schism_glbl, ONLY: rkind,nvrt,nea,dfv,idry_e,kbe,i34,elnode,uu2,vv2,ze
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_e2d
 
       IMPLICIT NONE
       SAVE
@@ -164,8 +178,8 @@
 
       USE sed_mod,   ONLY: uorb,tp,Zob,bustr,bvstr,tau_c,      &
      &                      tau_w,tau_wc
-      USE elfe_glbl, ONLY: rkind,pi,nea,idry_e,errmsg
-      USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_e2d
+      USE schism_glbl, ONLY: rkind,pi,nea,idry_e,errmsg
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_e2d
 
       IMPLICIT NONE
       SAVE
@@ -285,8 +299,8 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 
-      USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_e2d,exchange_p2d
-      USE elfe_glbl, ONLY: rkind,nvrt,nea,i34,elnode,dpe,eta2,idry_e,dfv,    &
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_e2d,exchange_p2d
+      USE schism_glbl, ONLY: rkind,nvrt,nea,i34,elnode,dpe,eta2,idry_e,dfv,    &
      &                     kbe,uu2,vv2,ze,pi,grav,rough_p,errmsg,    &
      &                     rho0,dzb_min,np,nne,indel,area,ielg
       USE sed_mod,   ONLY: Cdb_min,Cdb_max,bottom,vonKar,Zob,uorb,   &
@@ -651,8 +665,8 @@
 !n!
 !n!---------------------------------------------------------------------
 !n!
-!n      USE elfe_glbl, ONLY: errmsg,rkind
-!n      USE elfe_msgp, ONLY: parallel_abort 
+!n      USE schism_glbl, ONLY: errmsg,rkind
+!n      USE schism_msgp, ONLY: parallel_abort 
 !n
 !n      IMPLICIT NONE
 !n      SAVE     
@@ -701,8 +715,8 @@
 !n!
 !n!---------------------------------------------------------------------
 !n
-!n      USE elfe_glbl, ONLY: errmsg,rkind
-!n      USE elfe_msgp, ONLY: parallel_abort
+!n      USE schism_glbl, ONLY: errmsg,rkind
+!n      USE schism_msgp, ONLY: parallel_abort
 !n
 !n      IMPLICIT NONE
 !n      SAVE

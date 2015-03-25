@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below. These settings are based on the following options.
@@ -75,7 +75,7 @@ else
   IBMCPP =
 endif
 
-PPFLAGS := $(PPFLAGS) $(IBMCPP)-DSELFE 
+PPFLAGS := $(PPFLAGS) $(IBMCPP)-DSCHISM
 
 ifneq ($(USE_OPEN64),)
     ifeq ($(USE_64), yes)
@@ -91,7 +91,7 @@ endif
 # rules to build objects for executable programs and libraries
 
 #Search path
-VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMII/ \
+VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMIII/ \
         /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
         TIMOR/
 
@@ -99,10 +99,32 @@ ifdef USE_PETSC
   include ${PETSC_DIR}/conf/variables
 endif
 
-OBJS = elfe_glbl.o elfe_msgp.o misc_modules.o selfe_driver.o
+OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_driver.o
 
-ifdef CHOOSE_TVD
-  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DCHOOSE_TVD
+ifdef USE_PREC_EVAP
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPREC_EVAP
+endif
+
+ifdef USE_MM5
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DMM5
+endif
+
+ifeq ($(TVD_LIM),SB)
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DTVD_SB
+else
+  ifeq ($(TVD_LIM),VL)
+    PPFLAGS := $(PPFLAGS) $(IBMCPP)-DTVD_VL
+  else
+    ifeq ($(TVD_LIM),OS)
+      PPFLAGS := $(PPFLAGS) $(IBMCPP)-DTVD_OS
+    else 
+      ifeq ($(TVD_LIM),MM)
+        PPFLAGS := $(PPFLAGS) $(IBMCPP)-DTVD_MM
+      else
+        $(error TVD_LIM must be defined!)
+      endif
+    endif
+  endif
 endif
 
 ifdef USE_DEBUG
@@ -125,6 +147,14 @@ endif
 ifdef USE_HA
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_HA
   OBJS := $(OBJS) harm.o
+endif
+
+ifdef USE_GEN
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_GEN
+endif
+
+ifdef USE_AGE
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_AGE
 endif
 
 ifdef USE_ECO
@@ -169,7 +199,7 @@ OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_para
        wwm_sinput.o wwm_sinput_local.o wwm_sinput_ard.o wwm_sinput_ard_local.o wwm_wsigstar.o wwm_wsigstar_local.o wwm_tauhf.o wwm_airsea.o wwm_airsea_local.o \
        wwm_jafu.o wwm_nlweigt.o wwm_buildstress.o wwm_inisnonlin.o wwm_fkmean.o wwm_fkmean_local.o wwm_frcutindex.o wwm_frcutindex_local.o wwm_femeanws.o \
        wwm_femeanws_local.o wwm_sdissip.o wwm_sdissip_local.o wwm_implsch.o wwm_implsch_local.o wwm_implsch2.o \
-       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
+       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pgmcl.o wwm_coupl_roms_pipe.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o
 endif
 
 ifdef USE_PETSC
@@ -188,8 +218,8 @@ ifdef USE_SED2D
                   sed2d_main.o sed2d_main_mcml.o
 endif
 
-OBJS := $(OBJS) grid_subs.o hydraulic_structures.o selfe_init.o \
-        selfe_step.o selfe_finalize.o bktrk_subs.o solver_subs.o \
+OBJS := $(OBJS) grid_subs.o hydraulic_structures.o schism_init.o \
+        schism_step.o schism_finalize.o bktrk_subs.o solver_subs.o \
         io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o sflux_9c.o lap.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
@@ -205,7 +235,7 @@ FULLSRC := $(foreach f,$(subst .o,.F90,$(OBJS)),$(firstword $(wildcard $(VPATH:%
 LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
 
 ################################################################################
-# Build commands for SELFE
+# Build commands for SCHISM
 ################################################################################
 
 .PRECIOUS: $(SELFE_HOME)/mk/.check.$(config) o/$(config)/%.o o/$(config)/.dummy
@@ -214,18 +244,18 @@ LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
 
 # Allow for the override of executable name by the user
 ifeq ($(EXEC),)
-    EXEC := pelfe.$(config).ex
+    EXEC := pschism.$(config).ex
 endif
 
 
-.PHONY: pelfe
+.PHONY: pschism
 
-pelfe: $(EXEC) o/$(config)/.dummy
+pschism: $(EXEC) o/$(config)/.dummy
 
 
 
 .PHONY: all
-all: pelfe utility
+all: pschism utility
 
 
 PARMETISDIR := ./ParMetis-3.1-Sep2010
@@ -282,7 +312,7 @@ o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
 
 
 src_extension := .f90
-util_lib_src := selfe_geometry.f90 extract_mod.f90 compute_zcor.f90 stat_pool.f90 stat_pool.f90 stripsearch_unstr.f90
+util_lib_src := schism_geometry.f90 extract_mod.f90 compute_zcor.f90 stat_pool.f90 stat_pool.f90 stripsearch_unstr.f90 argparse.F90
 util_lib_obj := $(subst $(src_extension),.o,$(util_lib_src))
 util_lib_config_objs := $(addprefix o/$(config)/, $(util_lib_obj))
 
@@ -375,8 +405,10 @@ o/$(config)/.dummy:
 
 .PHONY: clean
 clean:
-	$(QUIET)rm -f *.F90 *.c *.o *.mod $(EXEC)
+	$(QUIET)rm -f $(EXEC)
 	$(QUIET)rm -rf o/*
 	$(QUIET)rm -rf ../bin/*
-	$(QUIET)rm -rf $(PARMETISDIR)/*.a
+###	$(QUIET)rm -rf $(PARMETISDIR)/*.a
+	(cd $(PARMETISDIR)/METISLib ; make realclean )
+	(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
 

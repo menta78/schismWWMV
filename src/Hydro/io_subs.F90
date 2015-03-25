@@ -1,6 +1,20 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !===============================================================================
-! ELCIRC FILE I/O SUBROUTINES
+! SCHISM FILE I/O SUBROUTINES
 !
 ! subroutine write_obe
 ! subroutine report_timers
@@ -14,8 +28,8 @@
 ! Output centers.bp and sidecenters.bp
 ! NOTE: Valid for single processor only!
 !-------------------------------------------------------------------------------
-      use elfe_glbl
-      use elfe_msgp
+      use schism_glbl
+      use schism_msgp
       implicit none
       integer :: i,j
       real(rkind) ::  tmp1,tmp2
@@ -63,8 +77,8 @@
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl, only : rkind,mxtimer,wtimer
-      use elfe_msgp
+      use schism_glbl, only : rkind,mxtimer,wtimer
+      use schism_msgp
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -213,8 +227,8 @@
 ! (3) value is an integer, double, or 2-char string; for double, any of the format is acceptable:
 !     40 40. 4.e1
 !     Use of decimal point in integers is OK but discouraged.
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort,myrank
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort,myrank
       implicit none
 
       character(*),intent(in) :: fname 
@@ -265,17 +279,17 @@
           if(vartype==0) then !string
             varvalue2=str_tmp2(1:2)
 #ifdef DEBUG
-            if(myrank==0) write(86,*)varname,' = ',varvalue2
+            if(myrank==0) write(99,*)varname,' = ',varvalue2
 #endif
           else if(vartype==1) then !integer
             read(str_tmp2,*)ivarvalue
 #ifdef DEBUG
-            if(myrank==0) write(86,*)varname,' = ',ivarvalue
+            if(myrank==0) write(99,*)varname,' = ',ivarvalue
 #endif
           else if(vartype==2) then !float
             read(str_tmp2,*)varvalue1
 #ifdef DEBUG
-            if(myrank==0) write(86,*)varname,' = ',real(varvalue1)
+            if(myrank==0) write(99,*)varname,' = ',real(varvalue1)
 #endif
           else
             write(errmsg,*)'read_param: unknown type:',vartype
@@ -297,6 +311,6 @@
 
 !===============================================================================
 !===============================================================================
-! END ELFE FILE I/O SUBROUTINES
+! END FILE I/O SUBROUTINES
 !===============================================================================
 !===============================================================================

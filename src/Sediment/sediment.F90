@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
       subroutine sediment(it,moitn,mxitn,rtol,dave)
 !--------------------------------------------------------------------!
 !  This routine computes the sediment sources and sinks and adds     !
@@ -78,13 +92,13 @@
 !--------------------------------------------------------------------!
 
       USE sed_mod
-      USE elfe_glbl, ONLY : rkind,nvrt,nea,npa,np,ntracers,idry_e,   &
+      USE schism_glbl, ONLY : rkind,nvrt,nea,npa,np,ntracers,idry_e,   &
      &                      idry,area,xnd,ynd,znl,dt,i34,elnode,xctr,yctr,   &
      &                      kbe,ze,pi,nne,indel,tr_el,bdy_frc,mntr,    &
      &                      errmsg,ielg,iplg,nond_global,iond_global,&
      &                      ipgl,nope_global,np_global,dp,h0,dpe,    &
      &                      iegl,out_wwm,pi,eta2,dp00,dldxy
-      USE elfe_msgp
+      USE schism_msgp
 
       IMPLICIT NONE
       SAVE
@@ -302,7 +316,7 @@
 ! - Compute bottom slopes
 !   Jan check x-y-assignment
 !jl. Derivatives of shape functions
-!    An equivalent implementation is found in elfe_main for dl 
+!    An equivalent implementation is found in schism_main for dl 
 !    Dphi/Dx, Dphi/Dy
 !---------------------------------------------------------------------
 !          nm1= elnode(1,i)
@@ -315,7 +329,7 @@
 !          dery2 = xnd(nm1)-xnd(nm3)
 !          dery3 = xnd(nm2)-xnd(nm1)
 
-          ! Element area from SELFE
+          ! Element area from main
 !          dzdx = (dp(nm1)*derx1+dp(nm2)*derx2+dp(nm3)*derx3)/        &
 !          &      2.0d0/area(i)
 !          dzdy = (dp(nm1)*dery1+dp(nm2)*dery2+dp(nm3)*dery3)/        &

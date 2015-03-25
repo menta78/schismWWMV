@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !!==============================================================================!
 !! February, 2009                                                               !
 !!======================================================Marta Rodrigues=========!
@@ -10,7 +24,7 @@ subroutine read_ecoin
 
      use bio_param
      use biology
-     use elfe_glbl, only: rkind  
+     use schism_glbl, only: rkind  
 
      implicit none
      
@@ -1156,8 +1170,8 @@ subroutine read_inputs (varname,vartype,ivarvalue,varvalue1,varvalue2)
   ! (3) value is an integer, double, or 2-char string; for double, any of the format is acceptable:
   !     40 40. 4.e1
   !     Use of decimal point in integers is OK but discouraged.
-  use elfe_glbl, only : rkind,errmsg
-  use elfe_msgp, only : parallel_abort,myrank
+  use schism_glbl, only : rkind,errmsg
+  use schism_msgp, only : parallel_abort,myrank
   use bio_param
   use biology
   implicit real(rkind)(a-h,o-z), integer(i-n)
@@ -1205,19 +1219,19 @@ subroutine read_inputs (varname,vartype,ivarvalue,varvalue1,varvalue2)
        if(vartype==0) then !string
          read(str_tmp2,*) varvalue2
 #ifdef DEBUG
-         if(myrank==0) write(86,*)varname,' = ',varvalue2
+         if(myrank==0) write(99,*)varname,' = ',varvalue2
 #endif
        else if(vartype==1) then !integer
 	  read(str_tmp2,*) ivarvalue
   
 #ifdef DEBUG
-         if(myrank==0) write(86,*)varname,' = ',ivarvalue
+         if(myrank==0) write(99,*)varname,' = ',ivarvalue
 #endif
        else if(vartype==2) then !float
           read(str_tmp2,*)varvalue1
 	 
 #ifdef DEBUG
-         if(myrank==0) write(86,*)varname,' = ',real(varvalue1)
+         if(myrank==0) write(99,*)varname,' = ',real(varvalue1)
 #endif
        else
          write(errmsg,*)'read_param: unknown type:',vartype

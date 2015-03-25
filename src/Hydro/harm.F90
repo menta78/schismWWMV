@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !******************************************************************************
 ! PADCIRC VERSION 45.11 02/02/2006                                            *
 !    last changes in this file prior to VERSION 44.15                         *
@@ -77,7 +91,7 @@
 !***********************************************************************
 !
       MODULE HARM
-      USE elfe_glbl, only: rkind,pi,MNHARF,CHARMV,ipgl
+      USE schism_glbl, only: rkind,pi,MNHARF,CHARMV,ipgl
 !
 !     REAL(8),PRIVATE,PARAMETER :: PI=3.141592653589793D0
       INTEGER NFREQ
@@ -383,6 +397,7 @@
       REAL(rkind) PHASEDE,EAV,ESQ,TIME,RSE,FTIME,EAVDIF,EVADIF
       REAL(rkind) ELAV(NP),ELVA(NP)
 !      REAL(rkind) ELAV(NP),ELVA(NP)
+      REAL(rkind),ALLOCATABLE  ::  PHASEE(:),EMAG(:)
 !
       INTEGER NTSTEPS,ITMV
       REAL(8) TIMEBEG
@@ -392,6 +407,7 @@
 !
       convrd=180.d0/pi
 !
+      ALLOCATE ( PHASEE(MNHARF),EMAG(MNHARF) )
 !
 !**** Open velocity station harmonic output file and write header information
 !
@@ -499,6 +515,9 @@
       end do
 
       CLOSE(53)
+
+!     Deallocate arrays
+      DEALLOCATE (PHASEE,EMAG)
       
       if (charmv) then
 !
@@ -548,6 +567,8 @@
       REAL(8) CONVRD
 !      REAL(rkind) XVELAV(NP),YVELAV(NP),XVELVA(NP),YVELVA(NP)
       REAL(rkind) XVELAV(NP),YVELAV(NP),XVELVA(NP),YVELVA(NP)
+      REAL(rkind),ALLOCATABLE :: UMAG(:),VMAG(:),PHASEU(:),PHASEV(:)
+      REAL(rkind),ALLOCATABLE :: Y(:)
       INTEGER NTSTEPS,ITMV
       REAL(8) TIMEBEG
       REAL(rkind) DT,FMV
@@ -556,6 +577,9 @@
 !
       convrd=180.d0/pi
 !
+      ALLOCATE ( Y(2*MNHARF) )
+      ALLOCATE ( UMAG(MNHARF),VMAG(MNHARF) )
+      ALLOCATE ( PHASEU(MNHARF),PHASEV(MNHARF) )
 !
 !**** Open velocity station harmonic output file and write header information
 !
@@ -726,6 +750,11 @@
       end do
 
       CLOSE(54)
+
+!  Deallocate arrays
+      DEALLOCATE ( Y )
+      DEALLOCATE ( UMAG,VMAG )
+      DEALLOCATE ( PHASEU,PHASEV )
 
       if ( charmv ) then 
 !

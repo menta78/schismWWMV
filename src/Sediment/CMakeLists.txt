@@ -18,7 +18,7 @@ add_library(sediment sed_mod.F90 sed_misc_subs.F90
             sed_friction.F90 sed_filter.F90 
             sediment.F90 sed_bedload.F90)
 
-set(selfemodlibs sediment ${selfemodlibs} PARENT_SCOPE)
+set(schismmodlibs sediment ${schismmodlibs} PARENT_SCOPE)
 
 ##### Dependencies
 add_dependencies(sediment core)

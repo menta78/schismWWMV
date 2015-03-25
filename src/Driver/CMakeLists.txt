@@ -20,9 +20,9 @@ if (NOT PARMETIS_DIR)
 endif (NOT PARMETIS_DIR)
 find_package(Parmetis REQUIRED)
 message(STATUS "Full ParMetis CMake features coming soon: don't worry about errors that only involve PARMETIS_TEST_RUNS")
-list(APPEND selfe_libs ${NetCDFLIBS})
-list(APPEND selfe_libs ${PARMETIS_LIBRARIES})
-message(STATUS "selfe_libs ${selfe_libs}")
+list(APPEND schism_libs ${NetCDFLIBS})
+list(APPEND schism_libs ${PARMETIS_LIBRARIES})
+message(STATUS "schism_libs ${schism_libs}")
 
 if (USE_GOTM)
   if (NOT DEFINED GOTM_DIR)
@@ -35,17 +35,19 @@ if (USE_GOTM)
     endif( DEFINED ${ENV{GOTM_DIR} )
   endif(NOT DEFINED GOTM_DIR)
   find_package(GOTM REQUIRED)
-  set( selfe_libs ${selfe_libs} ${GOTM_LIBRARIES})
+  set( schism_libs ${schism_libs} ${GOTM_LIBRARIES})
   include_directories(${GOTM_INCLUDE_DIRS})
 endif(USE_GOTM)
 
 
 #####  Target executable
 
-add_executable ( pelfe selfe_driver.F90 )
-add_dependencies( pelfe ${selfemodlibs})
-message("Using selfe module libraries ${selfemodlibs}")
-target_link_libraries (pelfe ${selfemodlibs} ${selfe_libs} )
-mpi_wrap( pelfe )
+
+add_executable ( pschism schism_driver.F90 )
+add_dependencies( pschism ${schismmodlibs})
+message("Using schism module libraries ${schismmodlibs}")
+target_link_libraries (pschism ${schismmodlibs} ${schism_libs} )
+mpi_wrap( pschism )
+
 
 

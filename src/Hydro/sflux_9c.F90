@@ -1,6 +1,21 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
-!                Heat exchange sub-model of ELCIRC / SELFE             !
+!                Heat exchange sub-model of ELCIRC / SELFE/ SCHISM  
 !                     Version 9 (February 23, 2007)                    !
 !                                                                      !
 !           Center for Coastal and Land-Margin Research                !
@@ -21,13 +36,12 @@
 !       this code.  This list does not include variables passed in as
 !       arguments. . .
 !
-! From module elfe_glbl:
+! From module schism_glbl:
 !       rkind
 !       npa
 !       uu2
 !       vv2
-!       tnd
-!       snd
+!       tr_nd
 !       kfp
 !       idry
 !       nvrt
@@ -40,7 +54,7 @@
 !       lfdb
 !       albedo
 !
-! From module elfe_msgp:
+! From module schism_msgp:
 !       myrank
 !       parallel_abort
 !
@@ -48,10 +62,10 @@
 !
 ! This file contains four primary subroutines:
 !
-!	get_wind         (called from within SELFE)
+!	get_wind         (called from within SCHISM)
 !	get_rad          (called from within surf_fluxes)
 !	get_precip_flux  (called from within surf_fluxes - IF ENABLED)
-!	surf_fluxes      (called from within SELFE)
+!	surf_fluxes      (called from within SCHISM)
 !
 ! In addition, there are a number of secondary routines and functions
 ! that are called by those listed above. For a complete list see below
@@ -72,7 +86,7 @@
 ! constant values, etc.
 !
 ! The second set (with the USE_NETCDF preprocessing conditional
-! defined) uses the ELCIRC/SELFE netCDF I/O component to specify the
+! defined) uses the ELCIRC/SCHISM netCDF I/O component to specify the
 ! time- and space-varying forcing quantities.
 !
 ! The precipitation and evaporation fluxes of fresh water through the
@@ -334,9 +348,9 @@
 #endif
      &                   nws, fluxsu00, srad00)
 
-        use elfe_glbl, only : rkind, npa, uu2, vv2, tnd, snd, &
+        use schism_glbl, only : rkind, npa, uu2, vv2, tr_nd, & !tnd, snd, &
      &                     kfp, idry, nvrt, ivcor,ipgl,fdb,lfdb
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_msgp, only : myrank,parallel_abort
         implicit none
 
 ! input/output variables
@@ -402,15 +416,9 @@
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*)
             write(38,*) 'i_node, sfc u, v, T = ', i_node, &
-#ifndef SELFE
-     &                  uu2(i_node, sfc_lev), &
-     &                  vv2(i_node, sfc_lev), &
-     &                  tnd(i_node, sfc_lev)
-#else /* SELFE */
      &                  uu2(sfc_lev,i_node), &
      &                  vv2(sfc_lev,i_node), &
-     &                  tnd(sfc_lev,i_node)
-#endif /* SELFE */
+     &                  tr_nd(1,sfc_lev,i_node)
             write(38,*) 'u, v, p, T, q (air) = ', u_air(i_node), &
      &                  v_air(i_node), p_air(i_node), t_air(i_node), &
      &                  q_air(i_node)
@@ -452,23 +460,17 @@
           endif
 
           longwave_u(i_node) = emissivity * stefan * &
-#ifndef SELFE
-     &                      ( t_freeze + tnd(i_node, sfc_lev) ) ** 4
-#else /* SELFE */
-     &                      ( t_freeze + tnd(sfc_lev,i_node) ) ** 4
-#endif /* SELFE */
+     &( t_freeze + tr_nd(1,sfc_lev,i_node) ) ** 4
 
         enddo
 
 ! reset flux values if the nws flag is set
         if (nws .eq. 3) then
-
-          open (96, file=grid_file, status='old')
-
-          read(96,*)
-          read(96,*) ne_global,np_global
+          open(31,file=grid_file, status='old')
+          read(31,*)
+          read(31,*) ne_global,np_global
           do i_node = 1, np_global
-            read(96,*) i_node_tmp, x_tmp, y_tmp, sflux_frac
+            read(31,*) i_node_tmp, x_tmp, y_tmp, sflux_frac
             if(ipgl(i_node)%rank==myrank) then
               itmp=ipgl(i_node)%id
               sen_flux(itmp)    = sflux_frac * fluxsu00
@@ -482,9 +484,7 @@
 #endif
             endif
           enddo
-
-          close(96)
-
+          close(31)
         endif
 
 #ifdef DEBUG
@@ -544,9 +544,9 @@
 #endif
      &                        tau_xz, tau_yz)
 
-        use elfe_glbl, only : rkind, uu2, vv2, tnd, snd, &
+        use schism_glbl, only : rkind, uu2, vv2,tr_nd, & !tnd, snd, &
      &                     kfp, idry, nvrt, ivcor,errmsg
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_msgp, only : myrank,parallel_abort
         implicit none
 
 ! input/output variables
@@ -629,13 +629,8 @@
 
 ! calculate q_sfc from e_sfc
 ! (e_sfc reduced for salinity using eqn from Smithsonian Met Tables)
-#ifndef SELFE
-          e_sfc = (1.0 - 0.000537 * snd(i_node, sfc_lev)) &
-     &          * esat_flat_r(tnd(i_node, sfc_lev) + t_freeze)
-#else /* SELFE */
-          e_sfc = (1.0 - 0.000537 * snd(sfc_lev,i_node)) &
-     &          * esat_flat_r(tnd(sfc_lev,i_node) + t_freeze)
-#endif /* SELFE */
+          e_sfc = (1.0 - 0.000537 * tr_nd(2,sfc_lev,i_node)) &
+     &          * esat_flat_r(tr_nd(1,sfc_lev,i_node) + t_freeze)
           q_sfc = epsilon_r * e_sfc &
      &          / ( p_air(i_node) - e_sfc * (1.0 - epsilon_r) )
 
@@ -647,11 +642,7 @@
           theta_air = (t_air(i_node) + t_freeze) + 0.0098*z_t
           theta_v_air = theta_air * (1.0 + 0.608 * mix_ratio)
           delta_theta = theta_air - &
-#ifndef SELFE
-     &                  (tnd(i_node, sfc_lev) + t_freeze)
-#else /* SELFE */
-     &                  (tnd(sfc_lev,i_node) + t_freeze)
-#endif /* SELFE */
+     &                  (tr_nd(1,sfc_lev,i_node) + t_freeze)
           delta_q = q_air(i_node) - q_sfc
           delta_theta_v = delta_theta * (1.0 + 0.608 * mix_ratio) &
      &                  + 0.608 * theta_air * delta_q
@@ -677,13 +668,13 @@
           speed_air = sqrt( u_air(i_node)*u_air(i_node) + &
      &                      v_air(i_node)*v_air(i_node) )
           speed_water &
-#ifndef SELFE
+#ifndef SCHISM
      &      = sqrt( uu2(i_node, sfc_lev)*uu2(i_node, sfc_lev) + &
      &              vv2(i_node, sfc_lev)*vv2(i_node, sfc_lev) )
-#else /* SELFE */
+#else /* SCHISM */
      &      = sqrt( uu2(sfc_lev,i_node)*uu2(sfc_lev,i_node) + &
      &              vv2(sfc_lev,i_node)*vv2(sfc_lev,i_node) )
-#endif /* SELFE */
+#endif /* SCHISM */
 
           if (speed_air .gt. speed_air_stop) then
             write(errmsg,*) 'speed_air exceeds ', speed_air_stop
@@ -707,23 +698,23 @@
           if (delta_theta_v .ge. 0) then                    ! stable
             speed = &
      &        max( sqrt( &
-#ifndef SELFE
+#ifndef SCHISM
      &               (u_air(i_node) - uu2(i_node, sfc_lev))**2 + &
      &               (v_air(i_node) - vv2(i_node, sfc_lev))**2 ), &
-#else /* SELFE */
+#else /* SCHISM */
      &               (u_air(i_node) - uu2(sfc_lev,i_node))**2 + &
      &               (v_air(i_node) - vv2(sfc_lev,i_node))**2 ), &
-#endif /* SELFE */
+#endif /* SCHISM */
      &             0.1_rkind)
           else                                              ! unstable
             speed = &
-#ifndef SELFE
+#ifndef SCHISM
      &        sqrt( (u_air(i_node) - uu2(i_node, sfc_lev))**2 + &
      &              (v_air(i_node) - vv2(i_node, sfc_lev))**2 + &
-#else /* SELFE */
+#else /* SCHISM */
      &        sqrt( (u_air(i_node) - uu2(sfc_lev,i_node))**2 + &
      &              (v_air(i_node) - vv2(sfc_lev,i_node))**2 + &
-#endif /* SELFE */
+#endif /* SCHISM */
      &              (beta * w_star)**2 )
           endif
 
@@ -911,13 +902,13 @@
 
               speed = &
      &          max( sqrt( &
-#ifndef SELFE
+#ifndef SCHISM
      &                 (u_air(i_node) - uu2(i_node, sfc_lev))**2 + &
      &                 (v_air(i_node) - vv2(i_node, sfc_lev))**2 ), &
-#else /* SELFE */
+#else /* SCHISM */
      &                 (u_air(i_node) - uu2(sfc_lev,i_node))**2 + &
      &                 (v_air(i_node) - vv2(sfc_lev,i_node))**2 ), &
-#endif /* SELFE */
+#endif /* SCHISM */
      &               0.1_rkind)
 
             else                                              ! unstable
@@ -927,13 +918,13 @@
      &                 ** one_third
 
               speed = &
-#ifndef SELFE
+#ifndef SCHISM
      &          sqrt( (u_air(i_node) - uu2(i_node, sfc_lev))**2 + &
      &                (v_air(i_node) - vv2(i_node, sfc_lev))**2 + &
-#else /* SELFE */
+#else /* SCHISM */
      &          sqrt( (u_air(i_node) - uu2(sfc_lev,i_node))**2 + &
      &                (v_air(i_node) - vv2(sfc_lev,i_node))**2 + &
-#endif /* SELFE */
+#endif /* SCHISM */
      &                (beta * w_star)**2 )
 
             endif
@@ -961,28 +952,28 @@
 
 ! calculate wind stresses
           speed_res = &
-#ifndef SELFE
+#ifndef SCHISM
      &          sqrt( (u_air(i_node) - uu2(i_node, sfc_lev))**2 + &
      &                (v_air(i_node) - vv2(i_node, sfc_lev))**2 )
-#else /* SELFE */
+#else /* SCHISM */
      &          sqrt( (u_air(i_node) - uu2(sfc_lev,i_node))**2 + &
      &                (v_air(i_node) - vv2(sfc_lev,i_node))**2 )
-#endif /* SELFE */
+#endif /* SCHISM */
           if (speed_res .gt. 0.0) then
             tau = rho_air * u_star * u_star * speed_res / speed
             tau_xz(i_node) = - tau &
-#ifndef SELFE
+#ifndef SCHISM
      &                     * (u_air(i_node) - uu2(i_node, sfc_lev)) &
-#else /* SELFE */
+#else /* SCHISM */
      &                     * (u_air(i_node) - uu2(sfc_lev,i_node)) &
-#endif /* SELFE */
+#endif /* SCHISM */
      &                     / speed_res
             tau_yz(i_node) = - tau &
-#ifndef SELFE
+#ifndef SCHISM
      &                     * (v_air(i_node) - vv2(i_node, sfc_lev)) &
-#else /* SELFE */
+#else /* SCHISM */
      &                     * (v_air(i_node) - vv2(sfc_lev,i_node)) &
-#endif /* SELFE */
+#endif /* SCHISM */
      &                     / speed_res
           else
             tau_xz(i_node) = 0.0
@@ -1017,7 +1008,7 @@
 ! Dec 1992.
 !
       function esat_flat_r(t)
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         real(rkind)             :: esat_flat_r
         real(rkind), intent(in) :: t
@@ -1041,7 +1032,7 @@
       end
 !-----------------------------------------------------------------------
       function psi_m(zeta)
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         real(rkind)             :: psi_m
         real(rkind), intent(in) :: zeta
@@ -1057,7 +1048,7 @@
       end
 !-----------------------------------------------------------------------
       function psi_h(zeta)
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         real(rkind)             :: psi_h
         real(rkind), intent(in) :: zeta
@@ -1070,8 +1061,8 @@
       end
 !-----------------------------------------------------------------------
 !      subroutine get_albedo (albedo, num_nodes_out)
-!        use elfe_glbl, only : rkind,ipgl
-!        use elfe_msgp, only : myrank,parallel_abort
+!        use schism_glbl, only : rkind,ipgl
+!        use schism_msgp, only : myrank,parallel_abort
 !        implicit none
 !        integer, intent(in) :: num_nodes_out
 !        real(rkind), intent(out), dimension(num_nodes_out) :: &
@@ -1086,8 +1077,8 @@
 !-----------------------------------------------------------------------
       subroutine rotate_winds (u, v, num_nodes_out)
 
-        use elfe_glbl, only : rkind,ipgl
-        use elfe_msgp, only : myrank
+        use schism_glbl, only : rkind,ipgl
+        use schism_msgp, only : myrank
         implicit none
 
 ! input/output variables
@@ -1153,8 +1144,8 @@
       end !rotate_winds
 !-----------------------------------------------------------------------
       subroutine check_allocation(variable, location, status)
-        use elfe_glbl, only : errmsg
-        use elfe_msgp, only : parallel_abort
+        use schism_glbl, only : errmsg
+        use schism_msgp, only : parallel_abort
         implicit none
         character(*), intent(in) :: variable, location
         integer, intent(in) :: status
@@ -1171,7 +1162,7 @@
 !-----------------------------------------------------------------------
       module netcdf_io
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         
         integer, parameter :: max_files = 1000 !max. # of nc files
@@ -1275,8 +1266,8 @@
       subroutine get_wind (time, u_air_node, v_air_node, p_air_node, &
      &                     t_air_node, q_air_node)
 
-        use elfe_glbl, only : rkind, npa,fdb,lfdb
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind, npa,fdb,lfdb
+        use schism_msgp, only : myrank,parallel_abort
         use netcdf_io
         implicit none
         
@@ -1429,8 +1420,8 @@
 !-----------------------------------------------------------------------
       subroutine get_rad (time, shortwave_d, longwave_d)
 
-        use elfe_glbl, only : rkind, npa,fdb,lfdb,albedo
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind, npa,fdb,lfdb,albedo
+        use schism_msgp, only : myrank,parallel_abort
         use netcdf_io
         implicit none
         
@@ -1563,8 +1554,8 @@
 !-----------------------------------------------------------------------
       subroutine get_precip_flux (time, precip_flux)
 
-        use elfe_glbl, only : rkind, npa,fdb,lfdb
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind, npa,fdb,lfdb
+        use schism_msgp, only : myrank,parallel_abort
         use netcdf_io
         implicit none
         
@@ -1671,8 +1662,8 @@
 !-----------------------------------------------------------------------
       subroutine get_dataset_info (info)
 
-        use elfe_glbl, only : rkind, npa, xlon, ylat
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind, npa, xlon, ylat
+        use schism_msgp, only : myrank,parallel_abort
         use netcdf_io
         implicit none
         type(dataset_info), intent(inout) :: info
@@ -1846,8 +1837,8 @@
      &                          num_files, jdate_for_file, &
      &                          nx, ny, max_times, max_files)
 
-        use elfe_glbl, only : rkind
-        use elfe_msgp, only : myrank
+        use schism_glbl, only : rkind
+        use schism_msgp, only : myrank
         implicit none
 
         character, intent(in) ::  dataset_name*50
@@ -1976,7 +1967,7 @@
      &                           file_julian_date, max_file_times, &
      &                           num_file_times)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         include 'netcdf.inc'
 
@@ -2060,7 +2051,7 @@
       subroutine check_times (test_time, times, num_times, &
      &                        repeat_num, repeat, at_end)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         integer, intent(in) :: num_times
@@ -2123,7 +2114,7 @@
       end !get_dims
 !-----------------------------------------------------------------------
       subroutine halt_error (message)
-        use elfe_msgp, only : parallel_abort
+        use schism_msgp, only : parallel_abort
         implicit none
         character(*), intent(in) :: message
 
@@ -2135,7 +2126,7 @@
       subroutine read_coord (file_name, data_name, coord, &
      &                       nx, ny)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         include 'netcdf.inc'
 
@@ -2176,7 +2167,7 @@
       subroutine read_data (file_name, data_name, data, &
      &                      nx, ny, time_num)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
         include 'netcdf.inc'
 
@@ -2285,8 +2276,8 @@
      &                       num_nodes_out, in_elem_for_out_node, &
      &                       weight)
 
-        use elfe_glbl, only : rkind,errmsg
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind,errmsg
+        use schism_msgp, only : myrank,parallel_abort
         implicit none
 
         integer, intent(in) :: nx, ny, num_elems, num_nodes
@@ -2526,7 +2517,7 @@
 !-----------------------------------------------------------------------
       subroutine fix_coords (lon, lat, nx, ny)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         integer, intent(in) :: nx, ny
@@ -2559,7 +2550,7 @@
 !-----------------------------------------------------------------------
       subroutine get_sflux_inputs ()
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         use netcdf_io
         implicit none
         
@@ -2580,9 +2571,9 @@
      &      call halt_error ('you must have sflux_inputs_file!')
 
 ! open input deck, and read in namelist
-          open (unit=77, file=sflux_inputs_file, status='old')
-          read(77, nml=sflux_inputs)
-          close (unit = 77)
+          open(31, file=sflux_inputs_file, status='old')
+          read(31, nml=sflux_inputs)
+          close(31)
 !         write(*,nml=sflux_inputs)
 
 ! validate the inputs
@@ -2612,7 +2603,7 @@
       subroutine get_bracket (time, input_times, time_num_1, &
      &                        got_bracket, num_times)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         integer, intent(in) :: num_times
@@ -2638,8 +2629,8 @@
      &                           data_out, got_suitable_bracket, &
      &                           num_nodes_out)
 
-        use elfe_glbl, only : rkind,errmsg
-        use elfe_msgp, only : myrank,parallel_abort
+        use schism_glbl, only : rkind,errmsg
+        use schism_msgp, only : myrank,parallel_abort
         use netcdf_io
         implicit none
 
@@ -2725,7 +2716,7 @@
      &                        time_2, file_num_2, file_time_2, &
      &                        data_out, nx, ny)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         integer, intent(in) :: file_num_1, file_time_1, &
@@ -2768,7 +2759,7 @@
      &                        num_nodes, num_nodes_out, &
      &                        nx, ny)
 
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         implicit none
 
         integer, intent(in) :: num_nodes, num_nodes_out, num_elems
@@ -2814,7 +2805,7 @@
      &                               data_name, data_out, &
      &                               num_nodes_out)
       
-        use elfe_glbl, only : rkind
+        use schism_glbl, only : rkind
         use netcdf_io
         implicit none
 

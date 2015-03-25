@@ -1,6 +1,21 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
+
 !===============================================================================
 !===============================================================================
-! ELCIRC BACKTRACKING SUBROUTINES
+! SCHISM BACKTRACKING SUBROUTINES
 !
 ! subroutine init_inter_btrack
 ! subroutine inter_btrack
@@ -18,8 +33,8 @@ subroutine init_inter_btrack
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -95,8 +110,8 @@ subroutine inter_btrack(itime,nbt,btlist)
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use elfe_glbl
-  use elfe_msgp
+  use schism_glbl
+  use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -666,7 +681,7 @@ end subroutine inter_btrack
 ! Routine for backtracking. 			   
 ! For ics=2, tracking is done in the starting frame/plane. 
 !       Input:
-!             l_ns: node if l_ns=1; side if l_ns=2; element if l_ns=3;
+!             l_ns: side if l_ns=2; element if l_ns=3;
 !             ipsgb: global originating node or side or element index (info only);
 !             ifl_bnd: Flag for originating node or side on the boundary (for Kriging);
 !             j0: Originating vertical level (info only);
@@ -687,16 +702,15 @@ end subroutine inter_btrack
 !             nnel,jlev: initial and final element and level;
 !
 !       Output:
-!             sclr(4): interpolated T,S, dfv, dfh (only if iexit=.false., and
-!             ELM transport and pure triangular grid) -should remove dfv, dfh;
+!             sclr(4): no longer used;
 !             iexit: logical flag indicating backtracking exits augmented subdomain. If
 !                    iexit=.true., nnel is inside the aug. domain and should also be inside
 !                    one of the neighboring processes. (xt,yt) is inside nnel.
 !									   
 !***************************************************************************
 !
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort,myrank
+      use schism_glbl
+      use schism_msgp, only : parallel_abort,myrank
       implicit none
 !      real(rkind), parameter :: per1=1.e-3 !used to check error in tracking
 !      real(rkind), parameter :: safety=0.8 !safyty factor in estimating time step
@@ -705,7 +719,7 @@ end subroutine inter_btrack
       real(rkind), intent(in) :: gcor0(3),frame0(3,3),dtbk,vis_coe
       real(rkind), intent(inout) :: time_rm,time_rm2,uuint,vvint,wwint,xt,yt,zt
       integer, intent(inout) :: nnel,jlev
-      real(rkind), intent(out) :: sclr(4) !ttint,ssint,dfvint,dfhint
+      real(rkind), intent(out) :: sclr(4)
       logical, intent(out) :: iexit
 
       !Local
@@ -715,15 +729,14 @@ end subroutine inter_btrack
       integer :: idt,iflqs1,kbpl,iadptive,nnel0,jlev0,ie,npp,nd,ifl,i,n1, &
                  &n2,n3,kbb,ibelow,isd,in1,in2,j,jj
       real(rkind) :: x0,y0,z0,dtb,trm,zrat,uuint1,vvint1,wwint1,vmag,rr, &
-                     &covar2,ttint,ssint,xn1,xn2,xn3,yn1,yn2,yn3,tmp, &
+                     &covar2,xn1,xn2,xn3,yn1,yn2,yn3,tmp, &
                      &aa1,aa2,aa3,tnd_min,tnd_max,snd_min,snd_max, &
-                     &tsd_min,tsd_max,ssd_min,ssd_max,t_min,t_max, &
                      &s_min,s_max,dfvint,dfhint
 
       real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2) !,vxn(3),vyn(3),vzn(3)
       real(rkind) :: arco(4),t_xi(6),s_xi(6),sig(3),subrat(4),ztmp(nvrt), &
      &swild(10),swild2(10,nvrt),swild3(nvrt) 
-      real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,2) !,tsdata(mnei_kr,2)
+      real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,2) 
       logical :: lrk
 
 !     Constants used in 5th order R-K
@@ -1006,254 +1019,12 @@ end subroutine inter_btrack
 
 !...  Interpolation at the foot for S,T
 !...  Not calculated for upwind/TVD
-      ttint=0; ssint=0 !initialize
-      sclr=0
+      sclr=0 !not used
 !     nnel wet
       if(zrat<0.or.zrat>1) then
         write(errmsg,*)'BTRACK: zrat wrong:',jlev,zrat
         call parallel_abort(errmsg)
       endif
- 
-      if(iupwind_t/=0.or.lhas_quad) return
-
-!     Split-linear, quadratic or Kriging
-      if(lqk(nnel)==1) then
-!-----------------------------------------------------------------------
-!     Split-linear
-      ifl=0 !flag
-      do i=1,4
-        if(i<=3) then !3 triangles with a node and 2 sides
-          n1=elnode(i,nnel)
-          n2=elside(nx(i,2),nnel)
-          n3=elside(nx(i,1),nnel)
-          if(ics==1) then
-            xn1=xnd(n1); yn1=ynd(n1)
-            xn2=xcj(n2); yn2=ycj(n2)
-            xn3=xcj(n3); yn3=ycj(n3)
-          else !lat/lon
-            call project_pt('g2l',xnd(n1),ynd(n1),znd(n1),gcor0,frame0,xn1,yn1,tmp)
-            call project_pt('g2l',xcj(n2),ycj(n2),zcj(n2),gcor0,frame0,xn2,yn2,tmp)
-            call project_pt('g2l',xcj(n3),ycj(n3),zcj(n3),gcor0,frame0,xn3,yn3,tmp)
-          endif !ics
-          aa1=signa(xt,xn2,xn3,yt,yn2,yn3)
-          aa2=signa(xn1,xt,xn3,yn1,yt,yn3)
-          aa3=signa(xn1,xn2,xt,yn1,yn2,yt)
-          subrat(i)=min(aa1,aa2,aa3)/area(nnel)
-          !aa=abs(aa1)+abs(aa2)+abs(aa3)
-          !subrat(i)=abs(aa-area(nnel)/4)*4/area(nnel)
-          !if(subrat(i)<small2) then
-          if(subrat(i)>=-small2) then
-            ifl=1
-            sig(1)=aa1*4/area(nnel)
-            sig(2)=aa2*4/area(nnel)
-            sig(1)=max(0._rkind,min(1._rkind,sig(1)))
-            sig(2)=max(0._rkind,min(1._rkind,sig(2)))
-            if(sig(1)+sig(2)>1) then
-              sig(3)=0
-              sig(2)=1-sig(1)
-            else
-              sig(3)=1-sig(1)-sig(2)
-            endif
-
-!           S,T extended
-!            t_xi(1)=tnd(jlev,n1)*(1-zrat)+tnd(jlev-1,n1)*zrat
-!            t_xi(2)=tsd(jlev,n2)*(1-zrat)+tsd(jlev-1,n2)*zrat
-
-!            smax=-99; tmin=100; ibb=0 !flag
-!           Prepare for cubic spline (not used)
-!            do jj=1,3 !node or side
-!              if(jj==1) then
-!                vxl(jj,1)=znl(kbp(n1),n1)
-!                vxl(jj,2)=znl(nvrt,n1)
-!              else if(jj==2) then
-!                vxl(jj,1)=zs(kbs(n2),n2)
-!                vxl(jj,2)=zs(nvrt,n2)
-!              else
-!                vxl(jj,1)=zs(kbs(n3),n3)
-!                vxl(jj,2)=zs(nvrt,n3)
-!              endif  
-!            enddo !jj
-!            zmin=maxval(vxl(1:3,1)) !not really used
-!            zmax=minval(vxl(1:3,2))
-
-            do jj=1,3 !node or side
-              if(jj==1) then
-                kbb=kbp(n1)
-                swild3(kbb:nvrt)=znl(kbb:nvrt,n1)
-                swild2(1,kbb:nvrt)=tnd(kbb:nvrt,n1)
-                swild2(2,kbb:nvrt)=snd(kbb:nvrt,n1)
-              else if(jj==2) then
-                kbb=kbs(n2)
-                swild3(kbb:nvrt)=zs(kbb:nvrt,n2)
-                swild2(1,kbb:nvrt)=tsd(kbb:nvrt,n2)
-                swild2(2,kbb:nvrt)=ssd(kbb:nvrt,n2)
-              else !=3
-                kbb=kbs(n3)
-                swild3(kbb:nvrt)=zs(kbb:nvrt,n3)
-                swild2(1,kbb:nvrt)=tsd(kbb:nvrt,n3)
-                swild2(2,kbb:nvrt)=ssd(kbb:nvrt,n3)
-              endif
-
-              call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
-              t_xi(jj)=swild(1); s_xi(jj)=swild(2)
-            enddo !jj=1,3
-
-            ttint=t_xi(1)*sig(1)+t_xi(2)*sig(2)+t_xi(3)*sig(3)
-            ssint=s_xi(1)*sig(1)+s_xi(2)*sig(2)+s_xi(3)*sig(3)
-            exit
-          endif !subrat(i)<small2
-        else !i=4: center triangle
-          n1=elside(1,nnel)
-          n2=elside(2,nnel)
-          n3=elside(3,nnel)
-          if(ics==1) then
-            xn1=xcj(n1); yn1=ycj(n1)
-            xn2=xcj(n2); yn2=ycj(n2)
-            xn3=xcj(n3); yn3=ycj(n3)
-          else !lat/lon
-            call project_pt('g2l',xcj(n1),ycj(n1),zcj(n1),gcor0,frame0,xn1,yn1,tmp)
-            call project_pt('g2l',xcj(n2),ycj(n2),zcj(n2),gcor0,frame0,xn2,yn2,tmp)
-            call project_pt('g2l',xcj(n3),ycj(n3),zcj(n3),gcor0,frame0,xn3,yn3,tmp)
-          endif !ics
-          aa1=signa(xt,xn2,xn3,yt,yn2,yn3)
-          aa2=signa(xn1,xt,xn3,yn1,yt,yn3)
-          aa3=signa(xn1,xn2,xt,yn1,yn2,yt)
-          subrat(i)=min(aa1,aa2,aa3)/area(nnel)
-          !aa=abs(aa1)+abs(aa2)+abs(aa3)
-          !subrat(i)=abs(aa-area(nnel)/4)*4/area(nnel)
-          !if(subrat(i)<small2) then
-          if(subrat(i)>=-small2) then
-            ifl=1
-            sig(1)=aa1*4/area(nnel)
-            sig(2)=aa2*4/area(nnel)
-            sig(1)=max(0._rkind,min(1._rkind,sig(1)))
-            sig(2)=max(0._rkind,min(1._rkind,sig(2)))
-            if(sig(1)+sig(2)>1) then
-              sig(3)=0
-              sig(2)=1-sig(1)
-            else
-              sig(3)=1-sig(1)-sig(2)
-            endif
-
-!            t_xi(1)=tsd(jlev,n1)*(1-zrat)+tsd(jlev-1,n1)*zrat
-!            t_xi(2)=tsd(jlev,n2)*(1-zrat)+tsd(jlev-1,n2)*zrat
-
-!            smax=-99; tmin=100; ibb=0 !flag
-!            do jj=1,3 !side
-!              isd=elside(jj,nnel)
-!              vxl(jj,1)=zs(kbs(isd),isd)
-!              vxl(jj,2)=zs(nvrt,isd)
-!            enddo !jj
-!            zmin=maxval(vxl(1:3,1)) !not really used
-!            zmax=minval(vxl(1:3,2))
-
-            do jj=1,3 !side
-              isd=elside(jj,nnel)
-              kbb=kbs(isd)
-              swild3(kbb:nvrt)=zs(kbb:nvrt,isd)
-              swild2(1,kbb:nvrt)=tsd(kbb:nvrt,isd)
-              swild2(2,kbb:nvrt)=ssd(kbb:nvrt,isd)
-              call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
-              t_xi(jj)=swild(1); s_xi(jj)=swild(2)
-            enddo !jj=1,3
-
-!            if(ibb==1) then
-!              if(smax<-98) then
-!                write(11,*)'Max. S failed to exist (2):',zt,nnel
-!                stop
-!              endif
-!              t_xi(1:3)=tmin; s_xi(1:3)=smax
-!            endif
-
-            ttint=t_xi(1)*sig(1)+t_xi(2)*sig(2)+t_xi(3)*sig(3)
-            ssint=s_xi(1)*sig(1)+s_xi(2)*sig(2)+s_xi(3)*sig(3)
-            exit
-          endif !subrat(i)
-        endif !i<=3
-      enddo !i=1,4
-
-      if(ifl==0) then
-        write(errmsg,*)'BTRACK: Not in any sub-element',ielg(nnel),(subrat(i),i=1,4),xt,yt
-        call parallel_abort(errmsg)
-      endif
-
-!-----------------------------------------------------------------------
-      else if(lqk(nnel)==2) then
-!-----------------------------------------------------------------------
-!     Quadratic interplation
-
-      do i=1,3 !nodes and sides
-        nd=elnode(i,nnel)
-        isd=elside(i,nnel)
-!       check (range extended)
-!        if(tnd(jlev,nd)<-98.or.snd(jlev,nd)<-98.or.tsd(jlev,isd)<-98.or.ssd(jlev,isd)<-98) then
-!          write(errmsg,*)'BTRACK: Wrong S,T:',i,iplg(nd),islg(isd),tnd(jlev,nd),snd(jlev,nd),tsd(jlev,isd),ssd(jlev,isd)
-!          call parallel_abort(errmsg)
-!        endif
-
-        !Cubic spline in the vertical (use bottom value if zt is below bottom of node/side)
-        !vxl(1:3,1|2): T|S @ 3 nodes; vyl(1:3,1|2): T|S @ 3 sides
-        call eval_cubic_spline(nvrt-kbp(nd)+1,znl(kbp(nd):nvrt,nd),tnd(kbp(nd):nvrt,nd), &
-     &cspline_ypp_nd(kbp(nd):nvrt,nd,1),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,1))
-        call eval_cubic_spline(nvrt-kbp(nd)+1,znl(kbp(nd):nvrt,nd),snd(kbp(nd):nvrt,nd), &
-     &cspline_ypp_nd(kbp(nd):nvrt,nd,2),1,zt,0,znl(kbp(nd),nd),znl(nvrt,nd),vxl(i,2))
-
-        call eval_cubic_spline(nvrt-kbs(isd)+1,zs(kbs(isd):nvrt,isd),tsd(kbs(isd):nvrt,isd), &
-     &cspline_ypp_sd(kbs(isd):nvrt,isd,1),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,1))
-        call eval_cubic_spline(nvrt-kbs(isd)+1,zs(kbs(isd):nvrt,isd),ssd(kbs(isd):nvrt,isd), &
-     &cspline_ypp_sd(kbs(isd):nvrt,isd,2),1,zt,0,zs(kbs(isd),isd),zs(nvrt,isd),vyl(i,2))
-
-        !Impose bounds in vertical
-        tnd_max=maxval(tnd(kbp(nd):nvrt,nd))
-        tnd_min=minval(tnd(kbp(nd):nvrt,nd))
-        vxl(i,1)=max(tnd_min,min(tnd_max,vxl(i,1)))
-
-        snd_max=maxval(snd(kbp(nd):nvrt,nd))
-        snd_min=minval(snd(kbp(nd):nvrt,nd))
-        vxl(i,2)=max(snd_min,min(snd_max,vxl(i,2)))
-
-        tsd_max=maxval(tsd(kbs(isd):nvrt,isd))
-        tsd_min=minval(tsd(kbs(isd):nvrt,isd))
-        vyl(i,1)=max(tsd_min,min(tsd_max,vyl(i,1)))
-
-        ssd_max=maxval(ssd(kbs(isd):nvrt,isd))
-        ssd_min=minval(ssd(kbs(isd):nvrt,isd))
-        vyl(i,2)=max(ssd_min,min(ssd_max,vyl(i,2)))
-      enddo !i=1,3 - nodes and sides
-
-      ttint=0; ssint=0 
-      do i=1,3 !nodes and sides
-        nd=elnode(i,nnel)
-        isd=elside(i,nnel)
-        in1=nx(i,1)
-        in2=nx(i,2)
-        ttint=ttint+vxl(i,1)*(2*arco(i)*arco(i)-arco(i))+vyl(i,1)*4*arco(in1)*arco(in2)
-        ssint=ssint+vxl(i,2)*(2*arco(i)*arco(i)-arco(i))+vyl(i,2)*4*arco(in1)*arco(in2)
-      enddo !i=1,3 - nodes and sides
-
-!     Impose bound in horizontal
-      t_max=max(maxval(vxl(1:3,1)),maxval(vyl(1:3,1)))
-      t_min=min(minval(vxl(1:3,1)),minval(vyl(1:3,1)))
-      s_max=max(maxval(vxl(1:3,2)),maxval(vyl(1:3,2)))
-      s_min=min(minval(vxl(1:3,2)),minval(vyl(1:3,2)))
-      ttint=max(t_min,min(t_max,ttint))
-      ssint=max(s_min,min(s_max,ssint))
-
-!-----------------------------------------------------------------------
-      endif !linear or quadratic
-
-!     Compute viscosity/diffusivity
-      do i=1,3 !nodes
-        nd=elnode(i,nnel)
-        vxl(i,1)=dfv(jlev,nd)*(1-zrat)+dfv(jlev-1,nd)*zrat
-        vxl(i,2)=dfh(jlev,nd)*(1-zrat)+dfh(jlev-1,nd)*zrat
-      enddo !i
-      dfvint=sum(vxl(1:3,1)*arco(1:3))
-      dfhint=sum(vxl(1:3,2)*arco(1:3))
-
-!     Store scalar values
-      sclr(1)=ttint; sclr(2)=ssint
-      sclr(3)=dfvint; sclr(4)=dfhint
 
       end subroutine btrack
 
@@ -1271,7 +1042,7 @@ end subroutine inter_btrack
 !     Inputs: 
 !       idx: ID identifying where quicksearch is called (info only);
 !       itr: iteration # in btrack (info only);
-!       l_ns: node if l_ns=1; side if l_ns=2; element if l_ns=3; (info only)
+!       l_ns: side if l_ns=2; element if l_ns=3; (info only)
 !       ipsgb: global originating node or side or element index; (info only)
 !       gcor0(3): global coord. of the originating pt (for ics=2);
 !       frame0(3,3): frame tensor at originating pt (2nd index is axis id) (for ics=2);
@@ -1303,8 +1074,8 @@ end subroutine inter_btrack
 !      uuint,vvint,wwint: interpolated vel. at end pt. In frame0 if ics=2.
 !********************************************************************************
 !
-      use elfe_glbl
-      use elfe_msgp, only : myrank,parallel_abort
+      use schism_glbl
+      use schism_msgp, only : myrank,parallel_abort
       use hydraulic_structures, only: nhtblocks
       implicit none
 
@@ -1904,10 +1675,8 @@ end subroutine inter_btrack
             lev=jlev+l-2
             if(ics==1) then
               uu=uu2(lev,nd); vv=vv2(lev,nd)
-              !uf=ufg(lev,nnel,j); vf=vfg(lev,nnel,j)
             else !lat/lon
               call project_hvec(uu2(lev,nd),vv2(lev,nd),pframe(:,:,nd),frame0,uu,vv)
-              !call project_hvec(ufg(lev,nnel,j),vfg(lev,nnel,j),eframe(:,:,nnel),frame0,uf,vf)
             endif !ics
             vxl(j,l)=uu !+vis_coe*uf
             vyl(j,l)=vv !+vis_coe*vf
@@ -1946,7 +1715,7 @@ end subroutine inter_btrack
 !										*
 !********************************************************************************
 !
-      use elfe_glbl, only: rkind 
+      use schism_glbl, only: rkind 
       implicit none
       real(rkind), parameter :: small=0.0 !small positive number or 0
 

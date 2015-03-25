@@ -1,6 +1,20 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !===============================================================================
-! ELFE MISCELLANEOUS SUBROUTINES
+! SCHISM MISCELLANEOUS SUBROUTINES
 !
 ! subroutine zcoor
 ! subroutine levels1
@@ -41,9 +55,9 @@
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl, only: rkind,errmsg,ivcor,eta2,dp,kbp,nvrt,kz,h0,h_s, &
+      use schism_glbl, only: rkind,errmsg,ivcor,eta2,dp,kbp,nvrt,kz,h0,h_s, &
      &h_c,theta_b,theta_f,s_con1,sigma,ztot,cs,sigma_lcl,iplg
-      use elfe_msgp, only: parallel_abort
+      use schism_msgp, only: parallel_abort
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -142,8 +156,8 @@
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl
-      use elfe_msgp
+      use schism_glbl
+      use schism_msgp
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -219,7 +233,9 @@
 !          close(10)
 !        endif
 
-        istop=0 !stop iteration and go to extrapolation stage
+        !istop: 1- ready for final extrap. stage; 2- ready for final
+        !checks and exit loop15
+        istop=0 
         itr=0
         loop15: do
           itr=itr+1
@@ -633,7 +649,7 @@
         endif
       enddo !i
 
-!...  Reset elevation at dry nodes
+!...  Limit elevation at dry nodes
       do i=1,npa
         if(idry2(i)==1) then
           !eta2(i)=min(0.d0,-dp(i))
@@ -734,7 +750,7 @@
         n1=elnode(1,i); n2=elnode(2,i); n3=elnode(3,i)
         if(idry2(n1)/=0.or.idry2(n2)/=0.or.idry2(n3)/=0) then
           write(errmsg,*)'level1: Element-node inconsistency (0):',ielg(i),idry_e(i), &
-                    iplg(elnode(1:3,i)),idry2(elnode(1:3,i))
+     &iplg(elnode(1:3,i)),idry2(elnode(1:3,i))
           call parallel_abort(errmsg)
         endif
         kbe(i)=min(kbp(n1),kbp(n2),kbp(n3))
@@ -756,8 +772,8 @@
           n2=isidenode(2,i)
           if(idry2(n1)/=0.or.idry2(n2)/=0) then
             write(errmsg,*)'Side-node inconsistency:',it,islg(i),'node:',iplg(n1),iplg(n2), &
-              eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
-              (isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
+     &eta2(n1),eta2(n2),idry2(n1),idry2(n2),';element:', &
+     &(isdel(j,i),ielg(isdel(j,i)),idry_e2(isdel(j,i)),j=1,2)
             call parallel_abort(errmsg)
           endif
           if(dps(i)+(eta2(n1)+eta2(n2))/2<=h0) then
@@ -787,8 +803,6 @@
             do k=1,nvrt
               uu2(k,i)=0
               vv2(k,i)=0
-!              tnd(k,i)=0
-!              snd(k,i)=0
               ttmp=0
               stmp=0
               icount=0
@@ -799,92 +813,30 @@
                   icount=icount+1
                   uu2(k,i)=uu2(k,i)+uu2(k,nd)
                   vv2(k,i)=vv2(k,i)+vv2(k,nd)
-!                  tnd(k,i)=tnd(k,i)+tnd(k,nd)
-!                  snd(k,i)=snd(k,i)+snd(k,nd)
-                  ttmp=ttmp+tnd(k,nd)
-                  stmp=stmp+snd(k,nd)
+                  ttmp=ttmp+tr_nd(1,k,nd) !tnd(k,nd)
+                  stmp=stmp+tr_nd(2,k,nd) !snd(k,nd)
                 endif
               enddo !j
               if(icount==0) then
-!                Use last wet value
-!                if(ifort12(7)==0) then
-!                  ifort12(7)=1
-!                  write(12,*)'Isolated rewetted node:',iplg(i)
-!                endif
-!                tnd(k,i)=tem0(k,i)
-!                snd(k,i)=sal0(k,i)
+                !Use last wet value
               else
                 uu2(k,i)=uu2(k,i)/icount
                 vv2(k,i)=vv2(k,i)/icount
-!                tnd(k,i)=tnd(k,i)/icount
-!                snd(k,i)=snd(k,i)/icount
-                tnd(k,i)=ttmp/icount
-                snd(k,i)=stmp/icount
+                tr_nd(1,k,i)=ttmp/icount
+                tr_nd(2,k,i)=stmp/icount
               endif
             enddo !k=1,nvrt
           endif !rewetted
         enddo !i=1,npa
       endif !it/=iths
 
-!     Compute S,T for re-wetted sides 
-      srwt_xchng(1)=.false.
-      if(it/=iths) then
-        do i=1,nsa
-          if(idry_s(i)==1.and.idry_s2(i)==0) then
-            if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
-            if(i>ns) cycle !do the rest only for residents
-
-            n1=isidenode(1,i)
-            n2=isidenode(2,i)
-            do k=1,nvrt
-!              tsd(k,i)=0
-!              ssd(k,i)=0
-              ttmp=0
-              stmp=0
-              icount=0
-              do j=1,2
-                ie=isdel(j,i)
-                if(ie/=0) then
-                  if(ie<0) call parallel_abort('levels1: ghost element')
-                  do jj=1,3 !side; in the aug. domain
-                    isd=elside(jj,ie)
-                    if(isd/=i.and.idry_s(isd)==0) then
-                      icount=icount+1
-!                      tsd(k,i)=tsd(k,i)+tsd(k,isd)
-!                      ssd(k,i)=ssd(k,i)+ssd(k,isd)
-                      ttmp=ttmp+tsd(k,isd)
-                      stmp=stmp+ssd(k,isd)
-                    endif
-                  enddo !jj
-                endif !ie/=0
-              enddo !j
-              if(icount==0) then
-!                if(ifort12(10)==0) then
-!                  ifort12(10)=1
-!                  write(12,*)'Isolated rewetted side:',i,iplg(n1),iplg(n2)
-!                endif
-!                tsd(k,i)=(tem0(k,n1)+tem0(k,n2))/2
-!                ssd(k,i)=(sal0(k,n1)+sal0(k,n2))/2
-              else
-!                tsd(k,i)=tsd(k,i)/icount
-!                ssd(k,i)=ssd(k,i)/icount
-                tsd(k,i)=ttmp/icount
-                ssd(k,i)=stmp/icount
-              endif
-            enddo !k
-          endif !rewetted
-        enddo !i=1,ns
-      endif !it/=iths
-
       if(nproc>1) then
 #ifdef INCLUDE_TIMING
         if(cwtime) cwtmp=mpi_wtime()
 #endif
-!       See if the node/side exchange is needed
+!       See if the node exchange is needed
         call mpi_allreduce(prwt_xchng,prwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
         if(ierr/=MPI_SUCCESS) call parallel_abort('levels1: allreduce prwt_xchng_gb',ierr)
-        call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
-        if(ierr/=MPI_SUCCESS) call parallel_abort('levels1: allreduce srwt_xchng_gb',ierr)
 !'
 #ifdef INCLUDE_TIMING
         if(cwtime) wtimer(10,2)=wtimer(10,2)+mpi_wtime()-cwtmp
@@ -897,8 +849,8 @@
 !'
           swild(1,:,1:npa)=uu2(:,:)
           swild(2,:,1:npa)=vv2(:,:)
-          swild(3,:,1:npa)=tnd(:,:)
-          swild(4,:,1:npa)=snd(:,:)
+          swild(3,:,1:npa)=tr_nd(1,:,:) !tnd(:,:)
+          swild(4,:,1:npa)=tr_nd(2,:,:) !snd(:,:)
 #ifdef INCLUDE_TIMING
           if(cwtime) cwtmp=mpi_wtime()
 #endif
@@ -908,30 +860,10 @@
 #endif
           uu2(:,:)=swild(1,:,1:npa)
           vv2(:,:)=swild(2,:,1:npa)
-          tnd(:,:)=swild(3,:,1:npa)
-          snd(:,:)=swild(4,:,1:npa)
+          tr_nd(1,:,:)=swild(3,:,1:npa)
+          tr_nd(2,:,:)=swild(4,:,1:npa)
           deallocate(swild)
         endif !prwt_xchng_gb
-
-!       update ghost sides
-        if(srwt_xchng_gb(1)) then
-          allocate(swild(2,nvrt,nsa),stat=istat)
-          if(istat/=0) call parallel_abort('Levels0: fail to allocate swild')
-!'
-          swild(1,:,:)=tsd(:,:)
-          swild(2,:,:)=ssd(:,:)
-#ifdef INCLUDE_TIMING
-          if(cwtime) cwtmp=mpi_wtime()
-#endif
-          call exchange_s3d_2(swild)
-#ifdef INCLUDE_TIMING
-          if(cwtime) wtimer(10,2)=wtimer(10,2)+mpi_wtime()-cwtmp
-#endif
-          tsd(:,:)=swild(1,:,:)
-          ssd(:,:)=swild(2,:,:)
-          deallocate(swild)
-        endif
-
       endif !nproc>1
 
 !      close(10)
@@ -954,8 +886,8 @@
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl
-      use elfe_msgp
+      use schism_glbl
+      use schism_msgp
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -1120,8 +1052,8 @@
                   !Assume small element size in wet/dry zone so pframes are close to each other
                   utmp=utmp+uu2(k,nd)
                   vtmp=vtmp+vv2(k,nd)
-                  ttmp=ttmp+tnd(k,nd)
-                  stmp=stmp+snd(k,nd)
+                  ttmp=ttmp+tr_nd(1,k,nd) !tnd(k,nd)
+                  stmp=stmp+tr_nd(2,k,nd) !snd(k,nd)
                 endif
               enddo !j
               if(icount==0) then
@@ -1129,13 +1061,13 @@
 !                  ifort12(7)=1
 !                  write(12,*)'Isolated rewetted node:',iplg(i)
 !                endif
-!                tnd(k,i)=tem0(k,i)
-!                snd(k,i)=sal0(k,i)
+!                tr_nd(1,k,i)=(k,i)
+!                tr_nd(2,k,i)=(k,i)
               else
                 uu2(k,i)=utmp/icount
                 vv2(k,i)=vtmp/icount
-                tnd(k,i)=ttmp/icount
-                snd(k,i)=stmp/icount
+                tr_nd(1,k,i)=ttmp/icount
+                tr_nd(2,k,i)=stmp/icount
               endif
             enddo !k=1,nvrt
           endif !rewetted
@@ -1237,12 +1169,10 @@
             n1=isidenode(1,i)
             n2=isidenode(2,i)
             do k=1,nvrt
-!              su2(k,i)=0
-!              sv2(k,i)=0
               utmp=0
               vtmp=0
-              ttmp=0
-              stmp=0
+              !ttmp=0
+              !stmp=0
               icount=0
               do j=1,2
                 ie=isdel(j,i)
@@ -1268,24 +1198,16 @@
 
                       utmp=utmp+swild2(1) !su2(k,isd)
                       vtmp=vtmp+swild2(2) !sv2(k,isd)
-                      ttmp=ttmp+tsd(k,isd)
-                      stmp=stmp+ssd(k,isd)
+                      !ttmp=ttmp+tsd(k,isd)
+                      !stmp=stmp+ssd(k,isd)
                     endif
                   enddo !jj
                 endif !ie/=0
               enddo !j
               if(icount==0) then
-!                if(ifort12(10)==0) then
-!                  ifort12(10)=1
-!                  write(12,*)'Isolated rewetted side:',i,iplg(n1),iplg(n2)
-!                endif
-!                tsd(k,i)=(tem0(k,n1)+tem0(k,n2))/2
-!                ssd(k,i)=(sal0(k,n1)+sal0(k,n2))/2
               else
                 su2(k,i)=utmp/icount
                 sv2(k,i)=vtmp/icount
-                tsd(k,i)=ttmp/icount
-                ssd(k,i)=stmp/icount
               endif
             enddo !k
           endif !rewetted
@@ -1317,8 +1239,8 @@
         if(prwt_xchng_gb(1)) then
           swild(1,:,1:npa)=uu2(:,:)
           swild(2,:,1:npa)=vv2(:,:)
-          swild(3,:,1:npa)=tnd(:,:)
-          swild(4,:,1:npa)=snd(:,:)
+          swild(3,:,1:npa)=tr_nd(1,:,:) !tnd(:,:)
+          swild(4,:,1:npa)=tr_nd(2,:,:) !snd(:,:)
 #ifdef INCLUDE_TIMING
           if(cwtime) cwtmp=mpi_wtime()
 #endif
@@ -1328,16 +1250,16 @@
 #endif
           uu2(:,:)=swild(1,:,1:npa)
           vv2(:,:)=swild(2,:,1:npa)
-          tnd(:,:)=swild(3,:,1:npa)
-          snd(:,:)=swild(4,:,1:npa)
+          tr_nd(1,:,:)=swild(3,:,1:npa)
+          tr_nd(2,:,:)=swild(4,:,1:npa)
         endif
 
 !       update ghost sides
         if(srwt_xchng_gb(1)) then
           swild(1,:,:)=su2(:,:)
           swild(2,:,:)=sv2(:,:)
-          swild(3,:,:)=tsd(:,:)
-          swild(4,:,:)=ssd(:,:)
+          swild(3,:,:)=0 !tsd(:,:) - not used
+          swild(4,:,:)=0 !ssd(:,:)
 #ifdef INCLUDE_TIMING
           if(cwtime) cwtmp=mpi_wtime()
 #endif
@@ -1347,8 +1269,8 @@
 #endif
           su2(:,:)=swild(1,:,:)
           sv2(:,:)=swild(2,:,:)
-          tsd(:,:)=swild(3,:,:)
-          ssd(:,:)=swild(4,:,:)
+          !tsd(:,:)=swild(3,:,:)
+          !ssd(:,:)=swild(4,:,:)
         endif
 
         if(prwt_xchng_gb(1).or.srwt_xchng_gb(1)) deallocate(swild)
@@ -1368,13 +1290,13 @@
 
       subroutine nodalvel
 !-------------------------------------------------------------------------------
-! Convert normal vel. to 3D nodal vel. at WHOLE levels.
+! Convert side vel. to node vel. at WHOLE levels.
 !-------------------------------------------------------------------------------
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl
-      use elfe_msgp
+      use schism_glbl
+      use schism_msgp
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -1383,50 +1305,86 @@
 !      integer, intent(in) :: ifltype(max(1,nope_global))
 
 !     Local
-      integer :: i,j,k,l,m,icount,ie,id,isd,nfac,nfac0,istat
-      real(rkind) :: cwtmp,weit,weit_w
+      integer :: i,j,k,l,m,icount,ie,id,isd,isd2,isd3,nfac,nfac0,istat
+      real(rkind) :: cwtmp,weit,weit_w,ud1,vd1,ud2,vd2
 
       logical :: ltmp,ltmp2
       !don't change dimension of swild2
-      integer :: nwild(3)
-      real(rkind) :: swild(2),swild2(nvrt,2),swild3(nvrt),swild5(3,2)
+      integer :: nwild(4)
+      real(rkind) :: swild(2),swild2(nvrt,2),swild3(nvrt),swild5(4,2)
       real(rkind), allocatable :: swild4(:,:,:) !swild4 used for exchange
 
-!      swild=-99; swild2=-99; swild3=-99 !initialize for calling vinter
+!     swild=-99; swild2=-99; swild3=-99 !initialize for calling vinter
 !     Nodal vel.
 !     For ics=2, it is in nodal frame
-      if(indvel<=0) then !pure triangles only
+      if(indvel<=0) then 
 !-------------------------------------------------------------------------------
-      if(lhas_quad) call parallel_abort('nodalvel: (2)')
-
-!     Compute discontinuous hvel first (used in btrack etc)
+!     Compute discontinuous hvel first 
 !     Defined in element frame for ics=2
       ufg=0; vfg=0
       do i=1,nea
         do k=1,nvrt
-          do j=1,3
-            nwild(1)=elside(j,i)
-            nwild(2)=elside(nx(j,1),i)
-            nwild(3)=elside(nx(j,2),i)
+          !Save side vel.
+          do j=1,i34(i) !side index
+            isd=elside(j,i)
             if(ics==1) then
-              ufg(k,i,j)=su2(k,nwild(2))+su2(k,nwild(3))-su2(k,nwild(1))
-              vfg(k,i,j)=sv2(k,nwild(2))+sv2(k,nwild(3))-sv2(k,nwild(1))
+              swild5(j,1)=su2(k,isd)
+              swild5(j,2)=sv2(k,isd)
             else !lat/lon
               !Element frame
-              do m=1,3
-                !u for side nwild(m)
-                swild5(m,1)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,1,i))+ &
-                           &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,1,i))
-                !v
-                swild5(m,2)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,2,i))+ &
-                           &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,2,i))
-              enddo !m
-              ufg(k,i,j)=swild5(2,1)+swild5(3,1)-swild5(1,1)
-              vfg(k,i,j)=swild5(2,2)+swild5(3,2)-swild5(1,2)
+              swild5(j,1)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,1,i))+ &
+                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,1,i))
+              !v
+              swild5(j,2)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,2,i))+ &
+                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,2,i))
             endif !ics
-!           impose bounds for ufg, vfg
-            ufg(k,i,j)=max(-rmaxvel1,min(rmaxvel1,ufg(k,i,j)))
-            vfg(k,i,j)=max(-rmaxvel2,min(rmaxvel2,vfg(k,i,j)))
+          enddo !j
+  
+          if(i34(i)==3) then !Triangles
+            do j=1,3
+              isd=j !elside(j,i)
+              isd2=nxq(1,j,i34(i)) !elside(nx(j,1),i)
+              isd3=nxq(2,j,i34(i)) !elside(nx(j,2),i)
+!              if(ics==1) then
+!                ufg(j,k,i)=su2(k,nwild(2))+su2(k,nwild(3))-su2(k,nwild(1))
+!                vfg(j,k,i)=sv2(k,nwild(2))+sv2(k,nwild(3))-sv2(k,nwild(1))
+!              else !lat/lon
+!                !Element frame
+!                do m=1,3
+!                  !u for side nwild(m)
+!                  swild5(m,1)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,1,i))+ &
+!                             &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,1,i))
+!                  !v
+!                  swild5(m,2)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,2,i))+ &
+!                             &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,2,i))
+!                enddo !m
+!              endif !ics
+              ufg(j,k,i)=swild5(isd2,1)+swild5(isd3,1)-swild5(isd,1)
+              vfg(j,k,i)=swild5(isd2,2)+swild5(isd3,2)-swild5(isd,2)
+            enddo !j
+          else !quads
+            !Split it into 2 tri's
+            !Compute the vel. at centers of diagonals
+            ud1=dot_product(swild5(1:4,1),shape_c2(1:4,1,i)) !center of nodes 1,3
+            vd1=dot_product(swild5(1:4,2),shape_c2(1:4,1,i))
+            ud2=dot_product(swild5(1:4,1),shape_c2(1:4,2,i)) !center of nodes 2,4
+            vd2=dot_product(swild5(1:4,2),shape_c2(1:4,2,i))
+
+            ufg(2,k,i)=swild5(1,1)+swild5(4,1)-ud1
+            vfg(2,k,i)=swild5(1,2)+swild5(4,2)-vd1
+            ufg(4,k,i)=swild5(2,1)+swild5(3,1)-ud1
+            vfg(4,k,i)=swild5(2,2)+swild5(3,2)-vd1
+
+            ufg(1,k,i)=swild5(3,1)+swild5(4,1)-ud2
+            vfg(1,k,i)=swild5(3,2)+swild5(4,2)-vd2
+            ufg(3,k,i)=swild5(1,1)+swild5(2,1)-ud2
+            vfg(3,k,i)=swild5(1,2)+swild5(2,2)-vd2
+          endif !tri or quads
+
+          !impose bounds for ufg, vfg
+          do j=1,i34(i)
+            ufg(j,k,i)=max(-rmaxvel1,min(rmaxvel1,ufg(j,k,i)))
+            vfg(j,k,i)=max(-rmaxvel2,min(rmaxvel2,vfg(j,k,i)))
           enddo !j
         enddo !k
       enddo !i=1,nea
@@ -1446,14 +1404,14 @@
               icount=icount+1
 
               if(ics==1) then
-                uu2(k,i)=uu2(k,i)+ufg(k,ie,id)
-                vv2(k,i)=vv2(k,i)+vfg(k,ie,id)
+                uu2(k,i)=uu2(k,i)+ufg(id,k,ie)
+                vv2(k,i)=vv2(k,i)+vfg(id,k,ie)
               else !lat/lon
                 !To node frame
-                uu2(k,i)=uu2(k,i)+ufg(k,ie,id)*dot_product(eframe(:,1,ie),pframe(:,1,i))+ &
-                                 &vfg(k,ie,id)*dot_product(eframe(:,2,ie),pframe(:,1,i)) 
-                vv2(k,i)=vv2(k,i)+ufg(k,ie,id)*dot_product(eframe(:,1,ie),pframe(:,2,i))+ &
-                                 &vfg(k,ie,id)*dot_product(eframe(:,2,ie),pframe(:,2,i)) 
+                uu2(k,i)=uu2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,1,i))+ &
+                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,1,i)) 
+                vv2(k,i)=vv2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,2,i))+ &
+                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,2,i)) 
               endif !ics
             endif !idry_e
 
@@ -1670,8 +1628,8 @@
 !                   is used below bottom or above surface.
 !       ibelow: flag indicating if zt is below za(k1)
 !
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: nmax1,nmax2,nc,k1,k2,k3
@@ -1753,8 +1711,8 @@
      &                  ,sconc,Srho,laddmud_d &
 #endif /*USE_TIMOR*/
      &                 )
-      use elfe_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg,ifort12,ntracers !,rhomud,npa,iplg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg,ifort12,ntracers !,rhomud,npa,iplg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: eqstate
@@ -1814,16 +1772,16 @@
 #endif /*USE_SED*/
 
 #ifdef USE_TIMOR
-      if(laddmud_d) then
-        rho_w=eqstate
-        do ised=1,ntracers
-          if(rho_w>Srho(ised)) then
-            write(errmsg,*)'EQSTATE: Impossible (8):',indx,ised,rho_w,Srho(ised),sconc(ised)
-            call parallel_abort(errmsg)            
-          endif
-          eqstate=eqstate+sconc(ised)*(1-rho_w/Srho(ised))
-        enddo !ised
-      endif !laddmud_d
+!      if(laddmud_d) then
+!        rho_w=eqstate
+!        do ised=1,ntracers
+!          if(rho_w>Srho(ised)) then
+!            write(errmsg,*)'EQSTATE: Impossible (8):',indx,ised,rho_w,Srho(ised),sconc(ised)
+!            call parallel_abort(errmsg)            
+!          endif
+!          eqstate=eqstate+sconc(ised)*(1-rho_w/Srho(ised))
+!        enddo !ised
+!      endif !laddmud_d
 #endif /*USE_TIMOR*/
 
       end function eqstate
@@ -1832,8 +1790,8 @@
 !===============================================================================
       subroutine asm(i,j,vd,td,qd1,qd2)
 !     Algebraic Stress Models
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: i,j
@@ -1905,8 +1863,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
       function rint_lag(mnv,Nmin,Nmax,m,k,sigma,sigmap,sigma_prod,psi,gam,coef)
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: rint_lag
@@ -2038,8 +1996,8 @@
 
       ! Compute local index of a node (0 if not a local node)
       function lindex(node,ie)
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
       implicit none
       integer :: lindex
       integer,intent(in) :: node,ie
@@ -2061,7 +2019,7 @@
 
 !     Compute local index of a side (0 if not a local side)
       function lindex_s(i,ie)
-      use elfe_glbl, only : rkind,elside,i34
+      use schism_glbl, only : rkind,elside,i34
       implicit none
 
       integer :: lindex_s
@@ -2081,8 +2039,8 @@
       end function lindex_s
 
       function covar(kr_co,hh)
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: covar
@@ -2138,8 +2096,8 @@
 !===============================================================================
       subroutine eval_cubic_spline(npts,xcor,yy,ypp,npts2,xout,ixmin,xmin,xmax,yyout)
       ! todo: when runtime warnings are enabled, the argument yy usually results in a temporary. Do we want this?
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: npts,npts2,ixmin
@@ -2197,8 +2155,8 @@
 !            ypp(npts): 2nd deriavtives used in interpolation.
 !===============================================================================
       subroutine cubic_spline(npts,xcor,yy,yp1,yp2,ypp)
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: npts
@@ -2264,8 +2222,8 @@
 !     Should work for 2D case as well.
 !===============================================================================
       subroutine do_cubic_spline(npts,xcor,yy,yp1,yp2,npts2,xout,ixmin,xmin,xmax,yyout)
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: npts,npts2,ixmin
@@ -2281,12 +2239,12 @@
       end subroutine do_cubic_spline
 
 !===============================================================================
-!     Compute mean density (rho_mean) at nodes (whole levels) or elements (half levels) 
+!     Compute mean density (rho_mean) at prism centers
 !     using cubic spline
 !===============================================================================
       subroutine mean_density
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
 ! LLP
 #ifdef USE_SED
       use sed_mod, only : Srho
@@ -2305,95 +2263,44 @@
       allocate(swild2(nvrt,nea,2),stat=istat)
 
       rho_mean=-99
-      if(iupwind_t==0) then !ELM
-!LLP
-#if defined USE_SED || defined USE_TIMOR
-        call parallel_abort('mean_density: sed. model & ELM')
-#endif /*USE_SED*/
-! LLP end
-!       T,S @ nodes
-        do i=1,npa
-          if(idry(i)==1) cycle
+!     T,S @ elements
+      do i=1,nea
+        if(idry_e(i)==1) cycle
 
-!         Wet nodes
-!         Extrapolation used above surface
-          if(znl(kbp(i),i)<z_r(1)) then !.or.znl(nvrt,i)>z_r(nz_r)) then
-            call parallel_abort('MISC: 2.node depth too big for ts.ic')
-          endif 
-!         Use swild2 for temporarily saving T,S
-          call eval_cubic_spline(nz_r,z_r,tem1,cspline_ypp(1:nz_r,1),nvrt-kbp(i)+1,znl(kbp(i):nvrt,i), &
-     &0,z_r(1),z_r(nz_r),swild2(kbp(i):nvrt,i,1))
-          call eval_cubic_spline(nz_r,z_r,sal1,cspline_ypp(1:nz_r,2),nvrt-kbp(i)+1,znl(kbp(i):nvrt,i), &
-     &0,z_r(1),z_r(nz_r),swild2(kbp(i):nvrt,i,2))
+!       Wet element
+        if(ze(kbe(i),i)<z_r(1)) then !.or.ze(nvrt,i)>z_r(nz_r)) then
+          call parallel_abort('MISC: 2.ele. depth too big for ts.ic')
+        endif 
 
-!         Impose no slip b.c. to be consistent with ELM transport
-          if(Cdp(i)/=0) then
-            swild2(kbp(i),i,1:2)=swild2(kbp(i)+1,i,1:2)
-          endif
-
-!         Extend
-          do k=1,kbp(i)-1
-            swild2(k,i,1:2)=swild2(kbp(i),i,1:2)
-          enddo !k
-
-!         Whole levels
-!Error: not rigorous
-          do k=1,nvrt
-            kl=max(k,kbp(i))
-            rho_mean(k,i)=eqstate(3,swild2(k,i,1),swild2(k,i,2) &
-#ifdef USE_SED
-     &                            ,tr_nd(:,k,i),Srho(:)    &
-#endif /*USE_SED*/
-#ifdef USE_TIMOR
-!Error: need to use cubic spline also for mud density; also need to average for
-!element
-     &                            ,tr_nd(1:ntracers,kl,i),rhomud(1:ntracers,kl,i),laddmud_d &
-#endif
-     &                           )
-
-          enddo !k
-        enddo !i=1,npa
-
-      else !upwind
-!       T,S @ elements
-        do i=1,nea
-          if(idry_e(i)==1) cycle
-
-!         Wet element
-          if(ze(kbe(i),i)<z_r(1)) then !.or.ze(nvrt,i)>z_r(nz_r)) then
-            call parallel_abort('MISC: 2.ele. depth too big for ts.ic')
-          endif 
-
-          do k=kbe(i)+1,nvrt
-            swild(k)=(ze(k,i)+ze(k-1,i))/2
-          enddo !k
-          call eval_cubic_spline(nz_r,z_r,tem1,cspline_ypp(1:nz_r,1),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
+        do k=kbe(i)+1,nvrt
+          swild(k)=(ze(k,i)+ze(k-1,i))/2
+        enddo !k
+        call eval_cubic_spline(nz_r,z_r,tem1,cspline_ypp(1:nz_r,1),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
      &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,i,1))
-          call eval_cubic_spline(nz_r,z_r,sal1,cspline_ypp(1:nz_r,2),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
+        call eval_cubic_spline(nz_r,z_r,sal1,cspline_ypp(1:nz_r,2),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
      &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,i,2))
 
-!         Extend
-          do k=1,kbe(i)
-            swild2(k,i,1:2)=swild2(kbe(i)+1,i,1:2)
-          enddo !k
+!       Extend
+        do k=1,kbe(i)
+          swild2(k,i,1:2)=swild2(kbe(i)+1,i,1:2)
+        enddo !k
 
-!         Half levels
-          do k=1,nvrt
-            rho_mean(k,i)=eqstate(4,swild2(k,i,1),swild2(k,i,2) &
+!       Half levels
+        do k=1,nvrt
+          rho_mean(k,i)=eqstate(4,swild2(k,i,1),swild2(k,i,2) &
 ! LLP
 #ifdef USE_SED
-     &                             ,trel(:,k,i),Srho(:)    &
+     &                             ,tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
 #endif /*USE_SED*/
 #ifdef USE_TIMOR
 !Error: need to use cubic spline also for mud density; also need to average for element
-     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
+!     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif
 
 !LLP end
      &                            )
-          enddo !k
-        enddo !i=1,nea
-      endif !ELM or upwind
+        enddo !k
+      enddo !i=1,nea
 
       deallocate(swild2)
 
@@ -2422,8 +2329,8 @@
 !     eframe is along lon/lat and the 2 eframes are close).
 !===============================================================================
       subroutine hgrad_nodes(imet_dry,ihbnd,nvrt1,npa1,nsa1,var_nd,dvar_dxy)
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
       implicit none
 
       !imet_dry: flag used for internal wet sides only. 1: zero out derivative along Pts '3' and '4' if one of
@@ -2646,8 +2553,8 @@
 !     For imm=2, user needs to update bottom depth and velocity
 !===============================================================================
       subroutine update_bdef(time,x0,y0,dep,vel)
-      use elfe_glbl, only: rkind
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only: rkind
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind), intent(in) :: time,x0,y0
@@ -2672,8 +2579,8 @@
 !===============================================================================
 
       subroutine project_pt(dir,xi,yi,zi,origin0,frame0,xo,yo,zo)
-      use elfe_glbl, only: rkind
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only: rkind
+      use schism_msgp, only : parallel_abort
       implicit none
 
       character(len=3), intent(in) :: dir
@@ -2708,8 +2615,8 @@
 !===============================================================================
 
       subroutine project_hvec(u0,v0,frame0,frameout,u1,v1)
-      use elfe_glbl, only: rkind
-!      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only: rkind
+!      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind), intent(in) :: u0,v0,frame0(3,3),frameout(3,3)
@@ -2724,7 +2631,7 @@
 !     Cross-product of two vectors: (x1,y1,z1) x (x2,y2,z2) = (x3,y3,z3)
 !===============================================================================
       subroutine cross_product(x1,y1,z1,x2,y2,z2,x3,y3,z3)
-      use elfe_glbl, only : rkind
+      use schism_glbl, only : rkind
       implicit none
       real(rkind),intent(in) :: x1,y1,z1,x2,y2,z2
       real(rkind),intent(out) :: x3,y3,z3
@@ -2739,8 +2646,8 @@
 !     Given global coord. (may not be on surface of earth), find lat/lon in radian
 !===============================================================================
       subroutine compute_ll(xg,yg,zg,rlon,rlat)
-      use elfe_glbl, only : rkind,pi,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,pi,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
       real(rkind),intent(in) :: xg,yg,zg
       real(rkind),intent(out) :: rlon,rlat
@@ -2761,8 +2668,8 @@
 !     Routine for testing zonal flow (lat/lon)
 !===============================================================================
       subroutine zonal_flow
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
       implicit none
 
       !Local
@@ -2821,8 +2728,8 @@
 
           vmer=-u00_zonal*sin(xlon(nd))*sin(alpha_zonal) !meridional vel.
           call project_hvec(uzonal,vmer,pframe(:,:,nd),eframe(:,:,i),utmp,vtmp)
-!          ufg(:,i,j)=utmp 
-!          vfg(:,i,j)=vtmp
+!          ufg(j,:,i)=utmp 
+!          vfg(j,:,i)=vtmp
         enddo !j
       enddo !i
       we=0
@@ -2834,8 +2741,8 @@
 !     Compact zonal flow (test case #3) vel. 
 !===============================================================================
       function u_compactzonal(rlat,u00_zonal)
-      use elfe_glbl, only : rkind,errmsg,pi
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,errmsg,pi
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: u_compactzonal
@@ -2884,8 +2791,8 @@
 !             iabnormal - 0: normal; 1: abnormal returns due to small waves; 2: abnormal return
 !                         due to non-convergence of iteration
 
-      use elfe_glbl, only : rkind,pi,grav,errmsg
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl, only : rkind,pi,grav,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind), intent(in) :: taubx,tauby,z0,ubm,wfr,wdir
@@ -2984,8 +2891,8 @@
 !     and in this case, the pt will be nudged into the element
 !===============================================================================
       subroutine area_coord(ifl,nnel,gcor0,frame0,xt,yt,arco)
-      use elfe_glbl
-      use elfe_msgp, only : parallel_abort
+      use schism_glbl
+      use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: ifl !flag; =1: fix negative area coord.
@@ -3052,18 +2959,18 @@
 !     must be 'reasonably' inside the quad. The routine will do what it
 !     can to compute nearest (xi,eta).
 !===============================================================================
-      subroutine ibilinear(itag,ie,x1,x2,x3,x4,y1,y2,y3,y4,x,y,xi,eta,shapef,icaseno)
-      use elfe_glbl, only : rkind,errmsg,ielg,area
-      use elfe_msgp, only : parallel_abort
+      subroutine ibilinear(itag,ie,area,x1,x2,x3,x4,y1,y2,y3,y4,x,y,xi,eta,shapef,icaseno)
+      use schism_glbl, only : rkind,errmsg,ielg
+      use schism_msgp, only : parallel_abort
       implicit none
       real(rkind), parameter:: small3=1.d-5
       real(rkind), parameter:: thres=1.1d0 !threshold used to check local coord.
 
       integer, intent(in) :: itag !tag received from quad_shape() to ID call routine (info only)
-      integer, intent(in) :: ie !local elem. #
-      real(rkind), intent(in) :: x1,x2,x3,x4,y1,y2,y3,y4,x,y !all in eframe if ics=2
-      integer, intent(out) :: icaseno
-      real(rkind), intent(out) :: xi,eta,shapef(4)
+      integer, intent(in) :: ie !local elem. # (info only)
+      real(rkind), intent(in) :: area,x1,x2,x3,x4,y1,y2,y3,y4,x,y !all coord. in eframe if ics=2; area is the area of quad
+      integer, intent(out) :: icaseno !case #
+      real(rkind), intent(out) :: xi,eta,shapef(4) !local coordinates and 4 shape functions
 
       integer :: icount,i
       real(rkind) :: axi(2),aet(2),bxy(2),root_xi(2),root_et(2), &
@@ -3084,13 +2991,8 @@
 !     Inverse mapping
       if(abs(dxi)<small3.and.abs(deta)<small3) then
         icaseno=1      
-        !dd=4*area(ie) !axi(1)*aet(2)-axi(2)*aet(1)
-        !if(dd==0) then
-        !  write(errmsg,*)'IBILINEAR case 1, area=0'
-        !  call parallel_abort(errmsg)
-        !endif
-        xi=(aet(2)*(x-x0)-aet(1)*(y-y0))/area(ie)
-        eta=(axi(1)*(y-y0)-axi(2)*(x-x0))/area(ie)
+        xi=(aet(2)*(x-x0)-aet(1)*(y-y0))/area !(ie)
+        eta=(axi(1)*(y-y0)-axi(2)*(x-x0))/area !(ie)
 
         if(abs(xi)>thres.or.abs(eta)>thres) then
           write(errmsg,*)'IBILINEAR: Out of bound in ibilinear (1):',itag,xi,eta,ielg(ie),x,y,dxi,deta
@@ -3101,9 +3003,9 @@
         icaseno=2      
         eta=4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))/deta
 
-        tmp1=area(ie)+bxy(1)*(y-y0)-bxy(2)*(x-x0)
+        tmp1=area+bxy(1)*(y-y0)-bxy(2)*(x-x0)
         if(abs(tmp1)<=small3) then
-          write(errmsg,*)'IBILINEAR: case II bomb; ',itag,eta,ielg(ie),x,y,tmp1,area(ie),x0,y0,bxy(1:2)
+          write(errmsg,*)'IBILINEAR: case II bomb; ',itag,eta,ielg(ie),x,y,tmp1,area,x0,y0,bxy(1:2)
           call parallel_abort(errmsg)
         endif
         xi=((x-x0)*aet(2)-(y-y0)*aet(1))/tmp1
@@ -3128,9 +3030,9 @@
       else if(abs(dxi)>=small3.and.abs(deta)<small3) then   
         icaseno=3      
         xi=4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))/dxi
-        tmp1=area(ie)+bxy(2)*(x-x0)-bxy(1)*(y-y0)
+        tmp1=area+bxy(2)*(x-x0)-bxy(1)*(y-y0)
         if(abs(tmp1)<=small3) then
-          write(errmsg,*)'IBILINEAR: case III bomb; ',itag,eta,ielg(ie),x,y,tmp1,area(ie),x0,y0,bxy(1:2)
+          write(errmsg,*)'IBILINEAR: case III bomb; ',itag,eta,ielg(ie),x,y,tmp1,area,x0,y0,bxy(1:2)
           call parallel_abort(errmsg)
         endif
         eta=((y-y0)*axi(1)-(x-x0)*axi(2))/tmp1
@@ -3155,7 +3057,7 @@
       else !General case
         icaseno=4      
         !beta=aet(2)*axi(1)-aet(1)*axi(2)-4d0*(bxy(2)*(x-x0)-bxy(1)*(y-y0))
-        beta=4*area(ie)+4d0*(bxy(1)*(y-y0)-bxy(2)*(x-x0))
+        beta=4*area+4d0*(bxy(1)*(y-y0)-bxy(2)*(x-x0))
         gamma=4d0*(aet(1)*(y-y0)-aet(2)*(x-x0))
         delta=beta*beta-4*gamma*dxi
         if(delta==0d0) then
@@ -3216,55 +3118,55 @@
 !     If ics=2, (x,y) is assumed to be in elem. frame of ie.
 !===============================================================================
       subroutine quad_shape(ifl,itag,ie,x,y,inside,shapef)
-      use elfe_glbl, only : rkind,errmsg,ics,ielg,area,xctr,yctr,zctr,eframe,i34, &
+      use schism_glbl, only : rkind,errmsg,ics,ielg,area,xel,yel,eframe,i34, &
      &elnode,xnd,ynd,znd,nxq,small2
-      use elfe_msgp, only : parallel_abort
+      use schism_msgp, only : parallel_abort
       implicit none
 
       !itag: info only; tags to ID calling routine and to pass onto ibilinear 
       !ie: local elem. #
       integer, intent(in) :: ifl,itag,ie
       real(rkind), intent(inout) :: x,y !in eframe if ics=2
-      integer, intent(out) :: inside !/=0: inside -sig. only if ifl=0
+      integer, intent(out) :: inside !/=0: inside -matters only if ifl=0
       real(rkind), intent(out) :: shapef(4)
 
       real(rkind) :: signa
 
       integer :: i,in1,in2,nd,icaseno
-      real(rkind) :: swild(4,2),swild2(4),xi,eta,tmp
+      real(rkind) :: swild2(4),xi,eta,tmp
       
       if(i34(ie)/=4) call parallel_abort('quad_shape: not  quad')
       inside=0
 
-      if(ics==1) then
-        swild(1:4,1)=xnd(elnode(1:4,ie))
-        swild(1:4,2)=ynd(elnode(1:4,ie))
-      else !ics=2
-        do i=1,4
-          nd=elnode(i,ie)
-          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd), &
-     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),swild(i,1),swild(i,2),tmp)
-        enddo !i
-      endif !ics
+!      if(ics==1) then
+!        swild(1:4,1)=xnd(elnode(1:4,ie))
+!        swild(1:4,2)=ynd(elnode(1:4,ie))
+!      else !ics=2
+!        do i=1,4
+!          nd=elnode(i,ie)
+!          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd), &
+!     &(/xctr(ie),yctr(ie),zctr(ie)/),eframe(:,:,ie),swild(i,1),swild(i,2),tmp)
+!        enddo !i
+!      endif !ics
 
       if(ifl==0) then
         do i=1,4
           in1=nxq(1,i,i34(ie))
           in2=nxq(2,i,i34(ie))
-          swild2(i)=signa(swild(in1,1),swild(in2,1),x,swild(in1,2),swild(in2,2),y)
+          swild2(i)=signa(xel(in1,ie),xel(in2,ie),x,yel(in1,ie),yel(in2,ie),y)
         enddo !i
         tmp=minval(swild2(1:4))/area(ie)
         if(tmp>-small2) then
           inside=1
-          call ibilinear(itag,ie,swild(1,1),swild(2,1),swild(3,1),swild(4,1), &
-     &swild(1,2),swild(2,2),swild(3,2),swild(4,2),x,y,xi,eta,shapef,icaseno)
+          call ibilinear(itag,ie,area(ie),xel(1,ie),xel(2,ie),xel(3,ie),xel(4,ie), &
+     &yel(1,ie),yel(2,ie),yel(3,ie),yel(4,ie),x,y,xi,eta,shapef,icaseno)
         endif !inside quad
       else !ifl=1 - already inside
-        call ibilinear(itag,ie,swild(1,1),swild(2,1),swild(3,1),swild(4,1), &
-     &swild(1,2),swild(2,2),swild(3,2),swild(4,2),x,y,xi,eta,shapef,icaseno)
+        call ibilinear(itag,ie,area(ie),xel(1,ie),xel(2,ie),xel(3,ie),xel(4,ie), &
+     &yel(1,ie),yel(2,ie),yel(3,ie),yel(4,ie),x,y,xi,eta,shapef,icaseno)
         !Update pt
-        x=dot_product(swild(1:4,1),shapef(1:4))
-        y=dot_product(swild(1:4,2),shapef(1:4))
+        x=dot_product(xel(1:4,ie),shapef(1:4))
+        y=dot_product(yel(1:4,ie),shapef(1:4))
       endif !ifl
 
       end subroutine quad_shape
@@ -3277,9 +3179,9 @@
 !            ip,ll: local node indices \in[1:4] of shape function
 !===============================================================================
       function quad_int(indx,ie,ip,ll)
-      use elfe_glbl, only : rkind,errmsg,ics,ielg,area,i34, &
+      use schism_glbl, only : rkind,errmsg,ics,ielg,area,i34, &
      &elnode,nxq,ixi_n,iet_n,xel,yel
-      use elfe_msgp, only : parallel_abort
+      use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: quad_int

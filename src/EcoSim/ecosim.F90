@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
     
           SUBROUTINE ecosim(Uwind,Vwind)
 !
@@ -50,8 +64,9 @@
 !
       USE bio_param
       USE biology
-      USE elfe_glbl, only : nea,nvrt,tsel,bdy_frc,flx_sf,flx_bt,idry_e,kbe,ze,tr_el,dt,ntracers2,ntracers
-      USE elfe_msgp, only : myrank,parallel_abort
+      USE schism_glbl, only : nea,nvrt,tr_el,bdy_frc,flx_sf,flx_bt,idry_e,kbe,ze,dt, &
+     &irange_tr !,ntracers2,ntracers
+      USE schism_msgp, only : myrank,parallel_abort
 
       IMPLICIT NONE
       SAVE
@@ -72,7 +87,7 @@
 !  Local variable declarations.
 !
       integer :: Iter, Tindex, ibio, id, itrc, i, j, k
-      integer :: ibac, iband, idom, ifec, iphy, ipig
+      integer :: ibac, iband, idom, ifec, iphy, ipig, ntr_local
 !Marta Rodrigues
       integer :: izoo  
       
@@ -163,9 +178,10 @@
       real(r8), dimension(nvrt,Nphy,NBands) :: aPHYN_al
       real(r8), dimension(nvrt,Nphy,NBands) :: aPHYN_at
 
-      real(r8), dimension(nvrt,ntracers2) :: Bio
-      real(r8), dimension(nvrt,ntracers) :: Bio_old
-      real(r8), dimension(nvrt,ntracers) :: Bio_new
+      real(r8), dimension(nvrt,NBIT2) :: Bio
+      real(r8), dimension(nvrt,NBIT) :: Bio_old
+      real(r8), dimension(nvrt,NBIT) :: Bio_new
+!      real(r8),save,allocatable :: Bio(:,:),Bio_old(:,:),Bio_new(:,:)
 
 ! Marta Rodrigues
       real(r8), dimension(nvrt,Nzoo) :: GtZOO
@@ -190,7 +206,7 @@
 
       real(r8), intent(in) :: Uwind(nea)
       real(r8), intent(in) :: Vwind(nea) 
-            
+
 !
 !=======================================================================
 !  Add EcoSim Source/Sink terms.
@@ -252,7 +268,7 @@
 !            if(idry_e(i)==1) cycle
             DO k=kbe(i)+1,nvrt               
 !MFR              Bio(k,itrc)=MAX(MinVal,tr_el(itrc,k,i)*Hz_inv(k))
-              Bio(k,itrc)=MAX(MinVal,tr_el(itrc,k,i))
+              Bio(k,itrc)=MAX(MinVal,tr_el(itrc+irange_tr(1,6)-1,k,i))
               Bio_old(k,itrc)=Bio(k,itrc)
               
 !! HGA - The new tendency terms were not initialized.  This gives
@@ -272,8 +288,8 @@
 !        DO i=1,nea
 !          if(idry_e(i)==1) cycle
           DO k=kbe(i)+1,nvrt
-            Bio(k,itemp)=tsel(1,k,i)  !MFR *Hz_inv(k,i)
-            Bio(k,isalt)=tsel(2,k,i)  !MFR *Hz_inv(k,i)
+            Bio(k,itemp)=tr_el(1,k,i) !tsel(1,k,i) !MFR *Hz_inv(k,i)
+            Bio(k,isalt)=tr_el(2,k,i) !tsel(2,k,i) !MFR *Hz_inv(k,i)
           END DO
 !        END DO
 
@@ -2719,13 +2735,13 @@
 ! MFR ... To check tracer concentration
                Bio(k,itrc)=Bio_old(k,itrc)+Bio_new(k,itrc)
                IF(Bio(k,itrc)<MinVal)THEN
-                 bdy_frc(itrc,k,i)=0.d0 !MFR - Check later...
+                 bdy_frc(itrc+irange_tr(1,6)-1,k,i)=0.d0 !MFR - Check later...
                ELSE 
-                 bdy_frc(itrc,k,i)=Bio_new(k,itrc)/dt
+                 bdy_frc(itrc+irange_tr(1,6)-1,k,i)=Bio_new(k,itrc)/dt
                  !IF(isnan(bdy_frc(itrc,k,i)))THEN
                  !ZYL: isnan is not recognized on some system
-                 IF(bdy_frc(itrc,k,i)/=bdy_frc(itrc,k,i))THEN
-                   WRITE(600,*) myrank,bdy_frc(itrc,k,i),itrc,k,i
+                 IF(bdy_frc(itrc+irange_tr(1,6)-1,k,i)/=bdy_frc(itrc+irange_tr(1,6)-1,k,i))THEN
+                   WRITE(600,*) myrank,bdy_frc(itrc+irange_tr(1,6)-1,k,i),itrc,k,i
                  ENDIF
                END IF
 
@@ -2744,14 +2760,14 @@
 ! ---------------------------------------------------------------------
 ! Calculates bottom flux for SELFE
 ! ---------------------------------------------------------------------
-!       flx_bt(mntr,nea)
-        flx_bt = 0.d0
+!       flx_bt(ntracers,nea)
+        flx_bt(irange_tr(1,6):irange_tr(2,6),:,:) = 0.d0
 !
 ! ---------------------------------------------------------------------
 ! Calculates surface flux for SELFE
 ! ---------------------------------------------------------------------
-!       flx_sf(mntr,nea)
-        flx_sf = 0.d0
+!       flx_sf(ntracers,nea)
+        flx_sf(irange_tr(1,6):irange_tr(2,6),:,:) = 0.d0
 	
 ! Include surface flux from reaeration for DO and DIC
 
@@ -2759,8 +2775,8 @@
 	    wind_speed(i)=SQRT(Uwind(i)*Uwind(i)+Vwind(i)*Vwind(i))
             ! To prevent unrealistic Kreaer
 	    IF(wind_speed(i)>=10.0d0) wind_speed(i)=10.0d0         
-	    temp(i)=tsel(1,nvrt,i)
-	    salt(i)=tsel(2,nvrt,i)
+	    temp(i)=tr_el(1,nvrt,i) !tsel(1,nvrt,i)
+	    salt(i)=tr_el(2,nvrt,i) !tsel(2,nvrt,i)
 	    
 	    IF(REAER_flag==1)then !Use Wanninkhof,1992
 	      
@@ -2812,9 +2828,10 @@
 	                                (ScO2(i)/660.d0)**(-0.5d0)  
 	    
 	    
-	    reaerDO(i)=Kreaer(i)*(DOsat(i)+DOW(i)-tr_el(iDO_,nvrt,i))
+	    !reaerDO(i)=Kreaer(i)*(DOsat(i)+DOW(i)-tr_el(iDO_,nvrt,i))
+	    reaerDO(i)=Kreaer(i)*(DOsat(i)+DOW(i)-tr_el(iDO_-1+irange_tr(1,6),nvrt,i))
 
-	    flx_sf(iDO_,i)=reaerDO(i)
+	    flx_sf(iDO_+irange_tr(1,6)-1,i)=reaerDO(i)
 	    
 ! DIC (CO2)
 
@@ -2840,13 +2857,14 @@
 	    Hconc=10.d0**(-pH)
 	    
 	    CO2star(i)=1.d0/(Hconc*Hconc+kdiss1(i)*Hconc+kdiss1(i)*kdiss2(i))
-            CO2star(i)=CO2star(i)*Hconc**2.d0*tr_el(iDIC_,nvrt,i)*10.d0**(-6.d0) 	
+            !CO2star(i)=CO2star(i)*Hconc**2.d0*tr_el(iDIC_,nvrt,i)*10.d0**(-6.d0) 	
+            CO2star(i)=CO2star(i)*Hconc**2.d0*tr_el(iDIC_-1+irange_tr(1,6),nvrt,i)*10.d0**(-6.d0) 	
 					
 	    pCO2w(i)=CO2star(i)/solubCO2(i)				
 										
             reaerCO2(i)=Kreaer(i)*solubCO2(i)*(pCO2w(i)-pCO2a)
 	    
-	    flx_sf(iDIC_,i)=reaerCO2(i)
+	    flx_sf(iDIC_+irange_tr(1,6)-1,i)=reaerCO2(i)
 	    
 	END DO     	    
 !----------------------------------------------------------------------	   

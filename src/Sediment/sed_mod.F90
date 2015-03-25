@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
       MODULE sed_mod
 !--------------------------------------------------------------------!
 ! Variables declaration for 3D sediment model                        !
@@ -95,7 +109,7 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 
-       USE elfe_glbl, ONLY: rkind
+       USE schism_glbl, ONLY: rkind
 
        IMPLICIT NONE
        SAVE
@@ -200,7 +214,7 @@
        REAL(rkind) :: Cdb_min
        REAL(rkind) :: Cdb_max
 ! Mean density (Kg/m3) used when the Boussinesq approximation is
-! inferred. In SELFE rho0 is the fresh water density
+! inferred. from main; rho0 is the fresh water density
        REAL(rkind) :: rhom
 
        REAL(rkind), ALLOCATABLE :: Hz(:,:) !Hz(nvrt,nea)

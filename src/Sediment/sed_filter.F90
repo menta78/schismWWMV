@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !=====================================================================
 !=====================================================================
 ! MORSELFE FILTER SUBROUTINES
@@ -33,9 +47,9 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 
-      USE elfe_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,xnd,ynd,    &
+      USE schism_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,xnd,ynd,    &
      &                     errmsg,dp,np
-      USE elfe_msgp, ONLY: comm,exchange_p2d,ierr,itype,myrank,      &
+      USE schism_msgp, ONLY: comm,exchange_p2d,ierr,itype,myrank,      &
      &                     nproc,parallel_abort
       USE sed_mod,   ONLY: dry_slope_cr,wet_slope_cr,vc_area
 
@@ -255,8 +269,8 @@
 !                     extrema and surrounding value of D50          !
 !                                                                   !
 !-------------------------------------------------------------------!
-      USE elfe_glbl, ONLY : rkind,nea,ic3,idry_e,ntracers,area
-      USE elfe_msgp, ONLY : myrank,exchange_e2d,parallel_abort
+      USE schism_glbl, ONLY : rkind,nea,ic3,idry_e,ntracers,area
+      USE schism_msgp, ONLY : myrank,exchange_e2d,parallel_abort
       USE sed_mod,   ONLY : bed_mass,bed,ithck,Srho,iporo,bed_frac, &
                             nnew,bedmass_filter,bedmass_threshold,  &
                             Sd50

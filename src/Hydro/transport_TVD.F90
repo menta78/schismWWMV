@@ -1,27 +1,40 @@
+!   Copyright 2014 College of William and Mary
 !
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !===============================================================================
-! ELFE transport models
+! SCHISM transport models
 !
 !  subroutine do_transport_tvd
-!  function flux_lim[1,2]
+!  function flux_lim
 !
 !===============================================================================
 !===============================================================================
 !
 
 !     Do upwind and TVD transport
-      subroutine do_transport_tvd(it,imod,up_tvd,tvd_mid,flimiter,ntr,difnum_max_l,nvrt1,npa1,dfh1)
+      subroutine do_transport_tvd(it,ltvd,ntr,difnum_max_l) !,nvrt1,npa1,dfh1)
 
 !#ifdef USE_MPIMODULE
 !      use mpi
 !#endif
-      use elfe_glbl
-      use elfe_msgp
+      use schism_glbl
+      use schism_msgp
       use misc_modules
 
 !#ifdef USE_TIMOR
-!      USE flmud_pool, only: wsink !wsink(ntracers,nvrt,npa)>=0 (positive down)
+!      USE flmud_pool, only: wsink !wsink([],nvrt,npa)>=0 (positive down)
 !#endif /*USE_TIMOR*/
       implicit none
 !#ifndef USE_MPIMODULE
@@ -29,22 +42,15 @@
 !#endif
 
       integer, intent(in) :: it !time stepping #; info only
-      integer, intent(in) :: imod !=0: ST equations; 1: other tracers
-      logical, intent(in) :: up_tvd !true if TVD is used (must be for all tracers)
-      character(len=2), intent(in) :: tvd_mid,flimiter
-      integer, intent(in) :: ntr !# of tracers
-      integer, intent(in) :: nvrt1,npa1 !for dimensioning
-      real(rkind), intent(in) :: dfh1(nvrt1,npa1) 
+      logical, intent(in) :: ltvd !true if TVD is used (must be for all tracers)
+!      character(len=2), intent(in) :: flimiter
+      integer, intent(in) :: ntr !# of tracers (for dimensioning)
+!      integer, intent(in) :: nvrt1 !,npa1 !for dimensioning
+!      real(rkind), intent(in) :: dfh1(nvrt1,npa1) 
       real(rkind), intent(out) :: difnum_max_l !max. horizontal diffusion number reached by this process (check stability)
 
 !     Functions used
-#ifdef CHOOSE_TVD
-#define flux_lim( a, b ) flux_lim1( ( a ), ( b ) )
-       real(rkind) :: flux_lim1
-#else
-#define flux_lim( a, b )  flux_lim2( ( a ) )
-       real(rkind) :: flux_lim2     
-#endif
+      real(rkind) :: flux_lim
 
 
 !     Working temporary arrays in this routine
@@ -90,24 +96,16 @@
               &up_rat_hface(ntr,nvrt,nsa),up_rat_vface(ntr,nvrt,nea),stat=istat)
       if(istat/=0) call parallel_abort('Transport: fail to allocate')
 
-!    Sanity check for flimiter
-#ifndef CHOOSE_TVD
-     if (up_tvd.and..not. (flimiter == 'SB' .and. tvd_mid=='AA'))then
-         call parallel_abort('Non-default tvd limiter or algorithm choice &
-     &not allowed. Either use flimiter=Superbee and tvd_mid=AA or recompile and define CHOOSE_TVD.')
-     endif
-#endif /* CHOOSE_TVD */
-
 !     For TVD, prepare some arrays for 2-tier ghosts
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
       timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
-      if(up_tvd) then
+      if(ltvd) then
         idry_e_2t(1:ne)=idry_e(1:ne)
         call exchange_e2di_2t(idry_e_2t) !now has values up to nea2
         call exchange_e3d_2t_tr(tr_el)
-      endif !up_tvd
+      endif !ltvd
 #ifdef INCLUDE_TIMING
       wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
@@ -144,63 +142,7 @@
         enddo !k=kbs(i)+1,nvrt
       enddo !j=1,ns
 
-!     Compute vertical fluxes - already done in selfe_step
-!      do i=1,ne !resident only
-!        if(idry_e(i)==1) cycle
-!
-!!       Wet element with 3 wet nodes
-!!       Compute upward normals (in eframe if ics=2) and areas @ all levels
-!        n1=elnode(1,i)
-!        n2=elnode(2,i)
-!        n3=elnode(3,i)
-!        isd1=elside(1,i)
-!        isd2=elside(2,i)
-!        isd3=elside(3,i)
-! !@       if(kbe(i)==0) then
-! !@         write(errmsg,*)'Transport: Impossible 95 (2)'
-! !@         call parallel_abort(errmsg)
-! !@       endif
-!        do l=kbe(i),nvrt
-!          if(ics==1) then
-!            xcon=(ynd(n2)-ynd(n1))*(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))-(ynd(n3)-ynd(n1))* &
-!     &(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))
-!            ycon=(xnd(n3)-xnd(n1))*(znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1))-(xnd(n2)-xnd(n1))* &
-!     &(znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1))
-!            zcon=area(i)*2
-!          else !lat/lon
-!            !eframe
-!            call cross_product(xel(2,i)-xel(1,i),yel(2,i)-yel(1,i),znl(max(l,kbp(n2)),n2)-znl(max(l,kbp(n1)),n1), &
-!     &                         xel(3,i)-xel(1,i),yel(3,i)-yel(1,i),znl(max(l,kbp(n3)),n3)-znl(max(l,kbp(n1)),n1), &
-!     &                         xcon,ycon,zcon)
-!          endif !ics
-!          area_e(l)=sqrt(xcon**2.d0+ycon**2.d0+zcon**2.d0)/2.d0
-!   !@       if(area_e(l)==0) then
-!   !@         write(errmsg,*)'Transport: Zero area (2):',i,l
-!   !@         call parallel_abort(errmsg)
-!   !@       endif
-!          sne(1,l)=xcon/area_e(l)/2.d0
-!          sne(2,l)=ycon/area_e(l)/2.d0
-!          sne(3,l)=zcon/area_e(l)/2.d0 !>0
-!        enddo !l
-!
-!        do k=kbe(i),nvrt
-!          if(k==kbe(i)) then !bottom normal vel. is assumed to be 0 (bed deformation not working)
-!            dot1=0 !we_fv(kbe(i),i)
-!          else
-!            if(ics==1) then
-!              dot1=(su2(k,isd1)+su2(k,isd2)+su2(k,isd3))/3.d0*sne(1,k)+ & !upward normal vel.
-!     &             (sv2(k,isd1)+sv2(k,isd2)+sv2(k,isd3))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
-!            else !lat/lon
-!              do j=1,3 !side
-!                isd=elside(j,i)
-!                call project_hvec(su2(k,isd),sv2(k,isd),sframe(:,:,isd),eframe(:,:,i),swild4(j,1),swild4(j,2))
-!              enddo !j
-!              dot1=sum(swild4(1:3,1))/3.d0*sne(1,k)+sum(swild4(1:3,2))/3.d0*sne(2,k)+we_fv(k,i)*sne(3,k)
-!            endif !ics
-!          endif
-!          flux_adv_vface(k,i)=dot1*area_e(k) !vertical flux (positive upward)
-!        enddo !k=kbe(i),nvrt
-!      enddo !i=1,ne
+!     Compute vertical fluxes - already done in schism_step
 
 !     Exchange flux_adv
 #ifdef INCLUDE_TIMING
@@ -208,7 +150,6 @@
       timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
       call exchange_s3dw(flux_adv_hface)
-!      call exchange_e3dw(flux_adv_vface)
 #ifdef INCLUDE_TIMING
       wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
@@ -218,7 +159,7 @@
 #endif
 
 !     Mark upwind prisms for efficiency
-      if(up_tvd) then
+      if(ltvd) then
         iupwind_e=0
         do i=1,ne
           if(itvd_e(i)==0) then
@@ -233,7 +174,7 @@
             enddo !j
           endif !itvd_e
         enddo !i=1,ne
-      endif !up_tvd
+      endif !ltvd
 
       do i=1,ntr
         flux_mod_hface(i,1:nvrt,1:ns)=flux_adv_hface(1:nvrt,1:ns)
@@ -263,7 +204,7 @@
       it_sub=it_sub+1
 
 !     Compute flux limiters and modify fluxes
-      if(up_tvd) then !TVD is used for all tracers
+      if(ltvd) then !TVD is used for all tracers
         up_rat_hface=-1.d34 !flags
         up_rat_vface=-1.d34 !flags
 !       Vertical limiters
@@ -319,27 +260,13 @@
             enddo !j
 
 ! This is the clculation of the TVD stability/variation. Selection is a performance killer.
-#ifdef CHOOSE_TVD
-            if(tvd_mid.eq.'AA') then !my formulation
-#endif
-              do j=1,ntr
-                tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*abs(flux_adv_vface(k,i))
-                if(abs(tmp)>1.e-20) up_rat_vface(j,k,i)=psumtr(j)/tmp !otherwise it remains at -1
-              enddo !j
-#ifdef CHOOSE_TVD
-            else if(tvd_mid.eq.'CC') then !Casulli's
-              do j=1,ntr
-                tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*psum
-                if(abs(tmp)>1.e-20) up_rat_vface(j,k,i)=psumtr(j)/tmp
-              enddo !j
-            else
-              write(errmsg,*)'Unknown tvd_mid:',tvd_mid
-              call parallel_abort(errmsg)
-            endif
-#endif
+            do j=1,ntr
+              tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*abs(flux_adv_vface(k,i))
+              if(abs(tmp)>1.e-20) up_rat_vface(j,k,i)=psumtr(j)/tmp !otherwise it remains at -1
+            enddo !j
+
 #ifdef DEBUG
-            if( flux_lim( up_rat_vface(1,k,i), flimiter ) &
-                &> 0.1) ntot_v=ntot_v+1
+            if( flux_lim( up_rat_vface(1,k,i))> 0.1) ntot_v=ntot_v+1
 #endif            
           enddo !k=kbe(i)+1,nvrt-1
         enddo !i=1,ne
@@ -420,7 +347,7 @@
                   call parallel_abort(errmsg)
                 endif
                 ie=ind1
-              endif
+              endif !ie<0
 
               !idry_e_2t, tr_el are valid up to 2-tier aug.
               if(ie/=0) then; if(idry_e_2t(ie)==0.and.k>=kbs(jsj)+1.and.ssign(j,iup)*flux_adv_hface(k,jsj)<0) then
@@ -435,24 +362,12 @@
               endif; endif
             enddo !j
 
-#ifdef CHOOSE_TVD     
-            if(tvd_mid.eq.'AA') then
-#endif
-              do j=1,ntr
-                tmp=(tr_el(j,k,iup)-tr_el(j,k,ido))*abs(flux_adv_hface(k,i))
-                if(abs(tmp)>1.e-20) up_rat_hface(j,k,i)=psumtr(j)/tmp
-              enddo !j
-#ifdef CHOOSE_TVD
-            else !model CC
-              do j=1,ntr
-                tmp=(tr_el(j,k,iup)-tr_el(j,k,ido))*psum
-                if(abs(tmp)>1.e-20) up_rat_hface(j,k,i)=psumtr(j)/tmp
-              enddo !j
-            endif
-#endif
+            do j=1,ntr
+              tmp=(tr_el(j,k,iup)-tr_el(j,k,ido))*abs(flux_adv_hface(k,i))
+              if(abs(tmp)>1.e-20) up_rat_hface(j,k,i)=psumtr(j)/tmp
+            enddo !j
 #ifdef DEBUG
-            if(flux_lim( up_rat_hface(1,k,i), flimiter ) &
-     &>0.1) ntot_h=ntot_h+1
+            if(flux_lim( up_rat_hface(1,k,i))>0.1) ntot_h=ntot_h+1
 #endif
           enddo !k=kbs(i)+1,nvrt
         enddo !i=1,ns
@@ -483,27 +398,27 @@
 #endif
 
 !       Exchange up_rat
-        if(ntr==2) then
+!        if(ntr==2) then
+!#ifdef INCLUDE_TIMING
+!          cwtmp=mpi_wtime()
+!#endif
+!          call exchange_s3d_2(up_rat_hface)
+!          call exchange_e3d_2(up_rat_vface)
+!#ifdef INCLUDE_TIMING
+!          wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
+!#endif
+!        else if(ntr==ntracers) then
 #ifdef INCLUDE_TIMING
-          cwtmp=mpi_wtime()
+        cwtmp=mpi_wtime()
 #endif
-          call exchange_s3d_2(up_rat_hface)
-          call exchange_e3d_2(up_rat_vface)
+        call exchange_s3d_tr2(up_rat_hface)
+        call exchange_e3d_tr2(up_rat_vface)
 #ifdef INCLUDE_TIMING
-          wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
+        wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
-        else if(ntr==ntracers) then
-#ifdef INCLUDE_TIMING
-          cwtmp=mpi_wtime()
-#endif
-          call exchange_s3d_tr2(up_rat_hface)
-          call exchange_e3d_tr2(up_rat_vface)
-#ifdef INCLUDE_TIMING
-          wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
-#endif
-        else
-          call parallel_abort('Transport: unknown tracer number')
-        endif
+!        else
+!          call parallel_abort('Transport: unknown tracer number')
+!        endif
 
 #ifdef INCLUDE_TIMING
         cwtmp2=mpi_wtime()
@@ -534,7 +449,7 @@
                   endif
 #endif
                   if(abs(rat)>1.e-5) then
-                    tmp=flux_lim(rat,flimiter)/rat/2.d0
+                    tmp=flux_lim(rat)/rat/2.d0
 #ifdef DEBUG
                     if(tmp<0.or.tmp>1) then
                       write(errmsg,*)'Flux limiting failed (1):',tmp,rat,flux_adv_vface(kup-l,i),l,kup
@@ -560,7 +475,7 @@
                   endif 
 #endif
                   if(abs(rat)>1.d-5) then
-                    tmp=flux_lim(rat,flimiter)/rat/2.d0
+                    tmp=flux_lim(rat)/rat/2.d0
 #ifdef DEBUG
                     if(tmp<0.or.tmp>1) then
                       write(errmsg,*)'Flux limiting failed (3):',tmp,rat,jj
@@ -574,10 +489,8 @@
             enddo !j
 
             do j=1,ntr
-              flux_mod_vface(j,k,i)=flux_adv_vface(k,i)*(1.d0 &
-     &                - flux_lim( up_rat_vface(j,k,i), flimiter )/2.d0 &
-     &                + delta_tr(j))
-
+              flux_mod_vface(j,k,i)=flux_adv_vface(k,i)*(1.d0- &
+     &flux_lim(up_rat_vface(j,k,i))/2.d0+delta_tr(j))
             enddo !j
           enddo !k=kbe(i)+1,nvrt-1  
         enddo !i=1,ne
@@ -588,7 +501,6 @@
           if(idry_e(isdel(2,i))==1) cycle
 
 !         Both elements are wet
-!          kb=max(kbe(isdel(1,i)),kbe(isdel(2,i)))
           do k=kbs(i)+1,nvrt
             if(flux_adv_hface(k,i)>0) then
               iup=isdel(1,i)
@@ -608,7 +520,7 @@
                   endif
 #endif
                   if(abs(rat)>1.d-5) then
-                    tmp=flux_lim(rat,flimiter)/rat/2.d0
+                    tmp=flux_lim(rat)/rat/2.d0
 #ifdef DEBUG
                     if(tmp<0.or.tmp>1) then
                       write(errmsg,*)'Flux limiting failed (5):',tmp,rat,j
@@ -634,7 +546,7 @@
                   endif
 #endif
                   if(abs(rat)>1.e-5) then
-                    tmp=flux_lim(rat,flimiter)/rat/2.d0
+                    tmp=flux_lim(rat)/rat/2.d0
 #ifdef DEBUG
                     if(tmp<0.or.tmp>1) then
                       write(errmsg,*)'Flux limiting failed (7):',tmp,rat,jj
@@ -648,21 +560,20 @@
             enddo !j
 
             do j=1,ntr
-              flux_mod_hface(j,k,i)=flux_adv_hface(k,i)*(1.d0 &
-                 &- flux_lim( up_rat_hface(j,k,i) , flimiter )/2.d0 &
-                 &+ delta_tr(j)) 
+              flux_mod_hface(j,k,i)=flux_adv_hface(k,i)*(1.d0- &
+     &flux_lim(up_rat_hface(j,k,i))/2.d0+delta_tr(j)) 
             enddo !j
           enddo !k=kbs(i)+1,nvrt
         enddo !i=1,ns
 
-      endif !up_tvd; flux limiter
+      endif !ltvd; flux limiter
 
 !     Compute sub time step
 !     Strike out \hat{S}^- (including all horizontal and vertical bnds, and where ic3(j,i) is dry)
 !     Caution: \hat{S}^- conditions must be consistent later in the advective flux part!!!!!!
 !     Implicit vertical flux for upwind; explicit for TVD
 
-      if(up_tvd.or.it_sub==1) then !for upwind, only compute dtb for the first step
+      if(ltvd.or.it_sub==1) then !for upwind, only compute dtb for the first step
         dtbl=time_r
         ie01=0 !element # where the exteme is attained (local)
         lev01=0 !level #
@@ -673,7 +584,7 @@
           do k=kbe(i)+1,nvrt !prism
             psumtr(1:ntr)=0.d0 !sum of modified fluxes for all inflow bnds
    
-            if(up_tvd.and.iupwind_e(i)==0) then !TVD for all tracers
+            if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               if(k/=nvrt.and.flux_mod_vface(1,k,i)<0) then !flux_mod and flux_adv same sign
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_mod_vface(1:ntr,k,i))
 !               Debug
@@ -757,7 +668,7 @@
      &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
      &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
 
-      endif !up_tvd.or.it_sub==1; compute dtb
+      endif !ltvd.or.it_sub==1; compute dtb
 
       dtb=min(dtb,time_r) !for upwind
       time_r=time_r-dtb
@@ -785,7 +696,7 @@
 #endif
           bdia(kin)=1
           if(k<nvrt) then
-            av_df=sum(dfh1(k,elnode(1:i34(i),i)))/i34(i)
+            av_df=sum(dfh(k,elnode(1:i34(i),i)))/i34(i)
             av_dz=(ze(k+1,i)-ze(k-1,i))/2.d0
 #ifdef DEBUG
             if(av_dz<=0) then
@@ -797,18 +708,16 @@
             cupp(kin)=cupp(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
 
-#ifdef USE_TIMOR
-            if(imod==1) then
-              !Sink vel.
-              !Error: need to differentiate tracer index
-              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
-
-            endif
-#endif /*USE_TIMOR*/
+!#ifdef USE_TIMOR
+!              !Sink vel.
+!              !Error: need to differentiate tracer index
+!              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
+!
+!#endif /*USE_TIMOR*/
           endif !k<nvrt
 
           if(k>kbe(i)+1) then
-            av_df=sum(dfh1(k-1,elnode(1:i34(i),i)))/i34(i)
+            av_df=sum(dfh(k-1,elnode(1:i34(i),i)))/i34(i)
             av_dz=(ze(k,i)-ze(k-2,i))/2.d0
 #ifdef DEBUG
             if(av_dz<=0) then
@@ -820,15 +729,15 @@
             alow(kin)=alow(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
 
-#ifdef USE_TIMOR
-            if(imod==1) then
-              !Sink vel.
-              !Error: need to differentiate tracer index
-
-              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
-
-            endif
-#endif /*USE_TIMOR*/
+!#ifdef USE_TIMOR
+!            if(imod==1) then
+!              !Sink vel.
+!              !Error: need to differentiate tracer index
+!
+!              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
+!
+!            endif
+!#endif /*USE_TIMOR*/
           endif !k>kbe(i)+1
 
 !         Advective flux
@@ -852,7 +761,7 @@
 #endif
 
           if(k/=nvrt.and.flux_mod_vface(1,k,i)<0) then !all flux_mod(:) same sign
-            if(up_tvd.and.iupwind_e(i)==0) then !TVD for all tracers
+            if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k,i))
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k+1,i)-trel_tmp(jj,k,i))
@@ -864,7 +773,7 @@
             endif
           endif
           if(k-1/=kbe(i).and.flux_mod_vface(1,k-1,i)>0) then
-            if(up_tvd.and.iupwind_e(i)==0) then !TVD for all tracers
+            if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k-1,i))
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k-1,i)-trel_tmp(jj,k,i))
@@ -877,19 +786,17 @@
           endif
 
 !         Additional terms in adv_tr (Eq. C32)
-          if(up_tvd) then
+          if(ltvd) then !for upwind prism, up_rat_vface=0
             if(k/=nvrt) then
               do jj=1,ntr
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k,i)&
-     &              - trel_tmp(jj,k+1,i))* &
-     &              flux_lim( up_rat_vface(jj,k,i), flimiter )/2.d0
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k,i)- &
+     &trel_tmp(jj,k+1,i))*flux_lim(up_rat_vface(jj,k,i))/2.d0
               enddo !jj
             endif
             if(k-1/=kbe(i)) then
               do jj=1,ntr
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k,i) &
-     &                     - trel_tmp(jj,k-1,i))* &
-     &             flux_lim( up_rat_vface(jj,k-1,i), flimiter )/2.d0
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k,i)- &
+     &trel_tmp(jj,k-1,i))*flux_lim(up_rat_vface(jj,k-1,i))/2.d0
               enddo !jj
             endif
           endif !TVD
@@ -926,53 +833,62 @@
               endif
 #endif
 
-              if(imod==0) then !TS
-                if(itetype(ibnd)==0) then !set to be same as interior (so cancel out below)
-                  trel_tmp_outside(1)=trel_tmp(1,k,i)
-                else if(itetype(ibnd)==1.or.itetype(ibnd)==2) then
-                  trel_tmp_outside(1)=tobc(ibnd)*tth(1,1,ibnd)+(1-tobc(ibnd))*trel_tmp(1,k,i)
-                else if(itetype(ibnd)==3) then
-                  tmp=(tem0(k,isidenode(1,jsj))+tem0(k-1,isidenode(2,jsj)))/2.d0
-                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
-                else if(itetype(ibnd)==4) then
-                  tmp=(tth(k,ind1,ibnd)+tth(k-1,ind1,ibnd)+tth(k,ind2,ibnd)+tth(k-1,ind2,ibnd))/4
-                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
-                else
-                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ITETYPE'
-                  call parallel_abort(errmsg)
-                endif !itetype
+!              if(imod==0) then !TS
+!                if(itetype(ibnd)==0) then !set to be same as interior (so cancel out below)
+!                  trel_tmp_outside(1)=trel_tmp(1,k,i)
+!                else if(itetype(ibnd)==1.or.itetype(ibnd)==2) then
+!                  trel_tmp_outside(1)=tobc(ibnd)*tth(1,1,ibnd)+(1-tobc(ibnd))*trel_tmp(1,k,i)
+!                else if(itetype(ibnd)==3) then
+!                  tmp=(tem0(k,isidenode(1,jsj))+tem0(k-1,isidenode(2,jsj)))/2.d0
+!                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
+!                else if(itetype(ibnd)==4) then
+!                  tmp=(tth(k,ind1,ibnd)+tth(k-1,ind1,ibnd)+tth(k,ind2,ibnd)+tth(k-1,ind2,ibnd))/4
+!                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
+!                else
+!                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ITETYPE'
+!                  call parallel_abort(errmsg)
+!                endif !itetype
+!
+!                if(isatype(ibnd)==0) then !set to be same as interior (so cancel out below)
+!                  trel_tmp_outside(2)=trel_tmp(2,k,i)
+!                else if(isatype(ibnd)==1.or.isatype(ibnd)==2) then
+!                  trel_tmp_outside(2)=sobc(ibnd)*sth(1,1,ibnd)+(1-sobc(ibnd))*trel_tmp(2,k,i)
+!                else if(isatype(ibnd)==3) then
+!                  tmp=(sal0(k,isidenode(1,jsj))+sal0(k-1,isidenode(2,jsj)))/2.d0
+!                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
+!                else if(isatype(ibnd)==4) then
+!                  tmp=(sth(k,ind1,ibnd)+sth(k-1,ind1,ibnd)+sth(k,ind2,ibnd)+sth(k-1,ind2,ibnd))/4
+!                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
+!                else
+!                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ISATYPE'
+!                  call parallel_abort(errmsg)
+!                endif !isatype
+!
+!              else !tracers
 
-                if(isatype(ibnd)==0) then !set to be same as interior (so cancel out below)
-                  trel_tmp_outside(2)=trel_tmp(2,k,i)
-                else if(isatype(ibnd)==1.or.isatype(ibnd)==2) then
-                  trel_tmp_outside(2)=sobc(ibnd)*sth(1,1,ibnd)+(1-sobc(ibnd))*trel_tmp(2,k,i)
-                else if(isatype(ibnd)==3) then
-                  tmp=(sal0(k,isidenode(1,jsj))+sal0(k-1,isidenode(2,jsj)))/2.d0
-                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
-                else if(isatype(ibnd)==4) then
-                  tmp=(sth(k,ind1,ibnd)+sth(k-1,ind1,ibnd)+sth(k,ind2,ibnd)+sth(k-1,ind2,ibnd))/4
-                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
-                else
-                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ISATYPE'
-                  call parallel_abort(errmsg)
-                endif !isatype
+              do jj=1,natrm
+                if(ntrs(jj)<=0) cycle
 
-              else !tracers
-                if(itrtype(ibnd)==0) then !set to be same as interior (so cancel out below)
-                  trel_tmp_outside(:)=trel_tmp(:,k,i)
-                else if(itrtype(ibnd)==1.or.itrtype(ibnd)==2) then
-                  trel_tmp_outside(:)=trobc(ibnd)*trth(:,1,1,ibnd)+(1-trobc(ibnd))*trel_tmp(:,k,i)
-                else if(itrtype(ibnd)==3) then
-                  trel_tmp_outside(:)=trobc(ibnd)*trel0(:,k,i)+(1-trobc(ibnd))*trel_tmp(:,k,i)
-                else if(itrtype(ibnd)==4) then
-                  trel_tmp_outside(:)=trobc(ibnd)* &
-     &(trth(:,k,ind1,ibnd)+trth(:,k,ind2,ibnd)+trth(:,k-1,ind1,ibnd)+trth(:,k-1,ind2,ibnd))/4+ &
-     &(1-trobc(ibnd))*trel_tmp(:,k,i)
-                else
-                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ITRTYPE'
-                  call parallel_abort(errmsg)
-                endif !itrtype
-              endif !imod
+                do ll=irange_tr(1,jj),irange_tr(2,jj)
+                  if(itrtype(jj,ibnd)==0) then !set to be same as interior (so cancel out below)
+                    trel_tmp_outside(ll)=trel_tmp(ll,k,i)
+                  else if(itrtype(jj,ibnd)==1.or.itrtype(jj,ibnd)==2) then
+                    trel_tmp_outside(ll)=trobc(jj,ibnd)*trth(ll,1,1,ibnd)+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
+                  else if(itrtype(jj,ibnd)==3) then
+                    tmp=sum(tr_nd0(ll,k,elnode(1:i34(i),i))+tr_nd0(ll,k-1,elnode(1:i34(i),i)))/2/i34(i)
+                    trel_tmp_outside(ll)=trobc(jj,ibnd)*tmp+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
+                    !trel_tmp_outside(ll)=trobc(jj,ibnd)*trel0(ll,k,i)+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
+                  else if(itrtype(jj,ibnd)==4) then
+                    trel_tmp_outside(ll)=trobc(jj,ibnd)* &
+     &(trth(ll,k,ind1,ibnd)+trth(ll,k,ind2,ibnd)+trth(ll,k-1,ind1,ibnd)+trth(ll,k-1,ind2,ibnd))/4+ &
+     &(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
+                  else
+                    write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ITRTYPE:',jj,ibnd
+!'
+                    call parallel_abort(errmsg)
+                  endif !itrtype
+                enddo !ll  
+              enddo !jj  
             endif !iel
 
             if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_mod_hface(1,k,jsj)<0) then !inflow
@@ -989,10 +905,10 @@
               enddo !jj
             endif !inflow
 
-            if(up_tvd.and.k>=kbs(jsj)+1) then
+            if(ltvd.and.k>=kbs(jsj)+1) then !for upwind prism, up_rat_hface=0
               do jj=1,ntr
                 adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,i)-trel_tmp_outside(jj))* &
-     &flux_lim( up_rat_hface(jj,k,jsj), flimiter )/2.d0
+     &flux_lim(up_rat_hface(jj,k,jsj))/2.d0
               enddo !jj
             endif
           enddo !j
@@ -1010,7 +926,7 @@
           rrhs(1:ntr,kin)=adv_tr(1:ntr)
 
 !         Check consistency between 2 formulations in TVD
-!            if(up_tvd) then 
+!            if(ltvd) then 
 !              if(abs(adv_t-rrhs(1,kin))>1.e-4.or.abs(adv_s-rrhs(2,kin))>1.e-4) then
 !                write(11,*)'Inconsistency between 2 TVD schemes:',i,k,adv_t,rrhs(1,kin),adv_s,rrhs(2,kin)
 !                stop
@@ -1050,40 +966,25 @@
         call tridag(nvrt,ntr,ndim,ntr,alow,bdia,cupp,rrhs,soln,gam)
         do k=kbe(i)+1,nvrt
           kin=k-kbe(i)
+          tr_el(:,k,i)=soln(:,kin)
+          if(ihconsv/=0) tr_el(1,k,i)=max(tempmin,min(tempmax,soln(1,kin)))
+          if(isconsv/=0) tr_el(2,k,i)=max(saltmin,min(saltmax,soln(2,kin)))
 
-          if(imod==0) then !ST
-            tr_el(1:2,k,i)=soln(1:2,kin)
-            if(ihconsv/=0) tr_el(1,k,i)=max(tempmin,min(tempmax,soln(1,kin)))
-            if(isconsv/=0) tr_el(2,k,i)=max(saltmin,min(saltmax,soln(2,kin)))
-          else !other tracers
-#ifdef USE_NAPZD
-!           CSD prevent bio from going negative here
-!           CSD and collect bio deficit
-!Bug: NBT not known here; also 1st index of tr_el wrong
-            !do ibio=1,NBT
-            do ibio=1,ntr
-              tr_el(ibio,k,i)=max(soln(ibio,kin),0.d0)
-              Bio_bdef(k,i)=Bio_bdef(k,i)+tr_el(ibio,k,i)-soln(ibio,kin)
-            enddo
-#else      
-            tr_el(1:ntr,k,i)=soln(1:ntr,kin)
+          !tr_el(1:ntr,k,i)=soln(1:ntr,kin)
 
 #ifdef USE_SED
-            do j=1,ntr
-              if(tr_el(j,k,i).lt. -1.0E-20) then
-!                     write(12,*)'negative sediment',i,k,tr_el(j,k,i)
-                tr_el(j,k,i)=0.d0
-              endif
-            enddo
+          do j=irange_tr(1,3),irange_tr(2,3) !1,ntr
+            if(tr_el(j,k,i).lt. -1.0E-20) then
+!             write(12,*)'negative sediment',i,k,tr_el(j,k,i)
+              tr_el(j,k,i)=0.d0
+            endif
+          enddo
 #endif /*USE_SED*/
-#endif /*USE_NAPZD*/
-
-          endif !imod
         enddo !k
 
 !       Extend
         do k=1,kbe(i)
-          tr_el(1:ntr,k,i)=tr_el(1:ntr,kbe(i)+1,i)
+          tr_el(:,k,i)=tr_el(:,kbe(i)+1,i)
         enddo !k
       enddo !i=1,ne
 
@@ -1092,10 +993,10 @@
       cwtmp=mpi_wtime()
       timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
 #endif
-      if(up_tvd) then !extend to 2-tier aug.
+      if(ltvd) then !extend to 2-tier aug.
         call exchange_e3d_2t_tr(tr_el)
       else !pure upwind
-        call exchange_e3d_tr(tr_el)
+        call exchange_e3d_tr2(tr_el)
       endif
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime()
@@ -1107,12 +1008,12 @@
        end do loop11
 
 !     Output warning for diffusion number
-      if(difnum_max_l>0.5) write(12,*)'Transport: diffusion # exceeds 0.5:',it,imod,difnum_max_l
+      if(difnum_max_l>0.5) write(12,*)'Transport: diffusion # exceeds 0.5:',it,difnum_max_l
 !'
 
 #ifdef DEBUG
 !     Output _estimated_ # of divisions etc.
-      if(up_tvd) then 
+      if(ltvd) then 
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
 #endif
@@ -1123,18 +1024,17 @@
 #endif
         if(myrank==0) &
           write(16,*)'Total # of vertical and S faces limited = ',ntot_hgb,ntot_vgb
-      endif !up_tvd
+      endif !ltvd
 #endif /*DEBUG*/
       if(myrank==0) write(17,*)it,it_sub
       
 !     Deallocate
       deallocate(trel_tmp,flux_adv_hface,flux_mod_hface,flux_mod_vface,&
      &           up_rat_hface, up_rat_vface)
-      !if(up_tvd) deallocate(swild3)
 
 !     Debug output of time steps allowed at each element
 #ifdef DEBUG
-      call elfe_output_custom(istat,5,1,205,'dtbe',1,ne,dtbe)
+      call schism_output_custom(istat,5,1,205,'dtbe',1,ne,dtbe)
       if(myrank==0.and.istat==1) write(16,*)'done outputting dtbe.66'
 #endif
 
@@ -1143,41 +1043,31 @@
 !===============================================================================
 !     Flux limiter functions used in TVD schemes
 !===============================================================================
-      function flux_lim1(ss,flimiter)
-      use elfe_glbl, only : rkind,errmsg
-      use elfe_msgp, only : parallel_abort
+      function flux_lim(ss)
+      use schism_glbl, only : rkind,errmsg
+      use schism_msgp, only : parallel_abort
       implicit none
    
-      real(rkind) :: flux_lim1
-      real(rkind), intent(in) :: ss
-      character(len=2), intent(in) :: flimiter
+      real(rkind) :: flux_lim
+      real(rkind), intent(in) :: ss !upwind ratio
+!      character(len=2), intent(in) :: flimiter
 
-      if(flimiter.eq.'SB') then !Superbee
-        flux_lim1=max(0.d0,min(1.d0,2.0d0*ss),min(2.d0,ss))
-      else if(flimiter.eq.'MM') then !MINMOD
-        flux_lim1=max(0.d0,min(1.d0,ss))
-      else if(flimiter.eq.'OS') then !OSHER
-        flux_lim1=max(0.d0,min(2.d0,ss))
-      else if(flimiter.eq.'VL') then !Van Leer
-        flux_lim1=(ss+abs(ss))/(1.0d0+abs(ss))
-      else
-        write(errmsg,*)'flux_lim: Unknown limiter:',flimiter
-        call parallel_abort(errmsg)
-      endif
+#ifdef TVD_SB
+      !Superbee
+      flux_lim=max(0.d0,min(1.d0,2.0d0*ss),min(2.d0,ss))
+#elif TVD_VL
+      !Van Leer
+      flux_lim=(ss+abs(ss))/(1.0d0+abs(ss))
+#elif TVD_MM
+      !MINMOD
+      flux_lim=max(0.d0,min(1.d0,ss))
+#elif TVD_OS
+      !OSHER
+      flux_lim=max(0.d0,min(2.d0,ss))
+#else
+      write(errmsg,*)'TVD limiter not defined'
+      call parallel_abort(errmsg)
+#endif
 
-      end function flux_lim1
-
-!===========================================
-
-      function flux_lim2(ss)
-      use elfe_glbl, only : rkind
-      implicit none
-   
-      real(rkind) :: flux_lim2
-      real(rkind), intent(in) :: ss
-
-
-      flux_lim2=max(0.d0,min(1.d0,2.d0*ss),min(2.d0,ss))
-
-      end function flux_lim2
+      end function flux_lim
 

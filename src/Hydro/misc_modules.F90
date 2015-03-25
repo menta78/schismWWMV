@@ -1,8 +1,22 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 !     The following routines/functions require explicit interface to 
 !     use advanced FORTRAN features
 !
-!     subroutine elfe_output_custom
+!     subroutine schism_output_custom
 !===============================================================================
 
       module misc_modules
@@ -11,7 +25,7 @@
       contains
 !===============================================================================
 !===============================================================================
-      subroutine elfe_output_custom(lwrite,i23d,ivs,ichanout,fname,idim1,idim2,outvar1,outvar2)
+      subroutine schism_output_custom(lwrite,i23d,ivs,ichanout,fname,idim1,idim2,outvar1,outvar2)
 !-------------------------------------------------------------------------------
 !     Custom outputs for generic use. Can be called from any routine, but make sure that
 !     the calling routine is called inside the main time loop 
@@ -39,9 +53,9 @@
 !     Outputs:
 !            lwrite: 0 - didn't output (not output step); 1 - output successfully.
 !-------------------------------------------------------------------------------
-      use elfe_glbl, only: rkind,errmsg,ihfskip,nspool,time_stamp, &
+      use schism_glbl, only: rkind,errmsg,ihfskip,nspool,time_stamp, &
      &it_main,iths_main,ifile_char,a_4,eta2,np,ne,ns,out_rkind !,fileopenformat
-      use elfe_msgp, only: parallel_abort,myrank
+      use schism_msgp, only: parallel_abort,myrank
       integer,intent(in) :: i23d,ivs,ichanout,idim1,idim2
       character(len=4),intent(in) :: fname
       real(rkind),intent(in) :: outvar1(idim1,idim2)
@@ -56,7 +70,7 @@
       
 !     Check optional argument
       if(ivs==2.and..not.present(outvar2)) then
-        write(errmsg,*)'elfe_output_custom: vector needs more info'
+        write(errmsg,*)'schism_output_custom: vector needs more info'
         call parallel_abort(errmsg)
       endif
 
@@ -81,7 +95,7 @@
       else if(i23d==12) then
         sfix='.73'; lim_out=np
       else
-        call parallel_abort('elfe_output_custom: unknown name')
+        call parallel_abort('schism_output_custom: unknown name')
       endif
 
 !     Open first stack
@@ -134,7 +148,7 @@
         open(ichanout,file=fullname,status='replace',form="unformatted",access='stream')
       endif !mod
 
-      end subroutine elfe_output_custom
+      end subroutine schism_output_custom
 !===============================================================================
 !===============================================================================
 

@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !=====================================================================
 !=====================================================================
 ! MORSELFE INITIALIZATION SUBROUTINES
@@ -14,7 +28,7 @@
 !                                                                    !
 ! Adapted from former subroutines initialize_scalars and             !
 ! initialize_ocean (former init_sed.F90), other allocation formerly  !
-! done within selfe_init.F90 were also moved within this subroutine. !
+! done within schism_init.F90 were also moved within this subroutine. !
 !                                                                    !
 ! Author: florian ganthy (fganthy@lnec.pt ; florian.ganthy@gmail.com)!
 ! Date: 2013/06/07                                                   !
@@ -45,9 +59,9 @@
 
       USE sed_mod
 
-      USE elfe_glbl, ONLY: nea,np,npa,mnei_p,ntracers,rkind,dav,dave,  &
+      USE schism_glbl, ONLY: nea,np,npa,mnei_p,ntracers,rkind,dav,dave,  &
      &                     nvrt
-      USE elfe_msgp, ONLY: myrank,parallel_abort
+      USE schism_msgp, ONLY: myrank,parallel_abort
 
       IMPLICIT NONE
 
@@ -250,7 +264,7 @@
 ! Adapted from former subroutines initialize_scalars,                !
 ! initialize_ocean (former init_sed.F90), and sed_init (former       !
 ! sed_init.F90) and other initializations formerly done within       !
-!selfe_init.F90 were also moved within this subroutine.              !
+!schism_init.F90 were also moved within this subroutine.              !
 !                                                                    !
 ! The former subroutine sed_init.F90 was adapted from ROMS routine   !
 ! ana_sediment.h                                                     !
@@ -290,10 +304,10 @@
 
       USE sed_mod
 
-      USE elfe_glbl, ONLY: nea,npa,mnei_p,ntracers,ipgl,ielg,i34,elnode,np_global,  &
+      USE schism_glbl, ONLY: nea,npa,mnei_p,ntracers,ipgl,ielg,i34,elnode,np_global,  &
      &                     ifile_char,ifile_len,area,np,nne,indel,     &
      &                     isbnd,rough_p,errmsg,ihot
-      USE elfe_msgp, ONLY: myrank,parallel_abort,exchange_p2d
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
 
       IMPLICIT NONE
 
@@ -318,7 +332,7 @@
 
 !--------------------------------------------------------------------!
 ! - Set tracer identification indices.
-! In SELFE T and S are in diferent arrays from the tracers array...
+! In SCHISM T and S are in different arrays from the tracers array...
 !--------------------------------------------------------------------!
       ic = 0
       DO i = 1,ntracers
