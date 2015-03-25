@@ -1,0 +1,97 @@
+bktrk_subs.F90:              rr=sqrt((xnd(nd)-xt)**2+(ynd(nd)-yt)**2)
+bktrk_subs.F90:              call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),(/xctr(nnel),yctr(nnel),zctr(nnel)/), &
+bktrk_subs.F90:            xn1=xnd(n1); yn1=ynd(n1)
+bktrk_subs.F90:            call project_pt('g2l',xnd(n1),ynd(n1),znd(n1),gcor0,frame0,xn1,yn1,tmp)
+bktrk_subs.F90:            xn1=xnd(jd1); yn1=ynd(jd1)
+bktrk_subs.F90:            xn2=xnd(jd2); yn2=ynd(jd2)
+bktrk_subs.F90:            call project_pt('g2l',xnd(jd1),ynd(jd1),znd(jd1),gcor0,frame0,xn1,yn1,zn1)
+bktrk_subs.F90:            call project_pt('g2l',xnd(jd2),ynd(jd2),znd(jd2),gcor0,frame0,xn2,yn2,zn2)
+bktrk_subs.F90:!          xn1=xnd(k1); yn1=ynd(k1)
+bktrk_subs.F90:!          xn2=xnd(k2); yn2=ynd(k2)
+bktrk_subs.F90:!          call project_pt('g2l',xnd(k1),ynd(k1),znd(k1),gcor0,frame0,xn1,yn1,tmp)
+bktrk_subs.F90:!          call project_pt('g2l',xnd(k2),ynd(k2),znd(k2),gcor0,frame0,xn2,yn2,tmp)
+bktrk_subs.F90:          xn1=xnd(jd1); yn1=ynd(jd1)
+bktrk_subs.F90:          xn2=xnd(jd2); yn2=ynd(jd2)
+bktrk_subs.F90:          call project_pt('g2l',xnd(jd1),ynd(jd1),znd(jd1),gcor0,frame0,xn1,yn1,tmp)
+bktrk_subs.F90:          call project_pt('g2l',xnd(jd2),ynd(jd2),znd(jd2),gcor0,frame0,xn2,yn2,tmp)
+bktrk_subs.F90:!          wild(j,1)=xnd(nd)
+bktrk_subs.F90:!          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(j,1),wild(j,2),tmp)
+grid_subs.F90:      write(10,'(a,2i8,4e14.6,2i4,50(i8,i4))') 'Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
+grid_subs.F90:      write(10,'(a,2i8,4e14.6,2i4,50(i8,i4))') '# Node ',ip,iplg(ip),xnd(ip),ynd(ip),znd(ip),dp(ip), &
+grid_subs.F90:  !ics; ielg; nm; ic3; nne; ine; ne; nea; npa; xnd, ynd, znd, dp
+grid_subs.F90:    xproj=xnd; yproj=ynd
+grid_subs.F90:      xproj(i)=2*rearth*xnd(i)/(rearth+znd(i))
+grid_subs.F90:  if(allocated(xnd)) deallocate(xnd); allocate(xnd(npa),stat=stat);
+grid_subs.F90:        xnd(ii)=xtmp
+grid_subs.F90:        xnd(ii)=rearth*cos(ylat(ii))*cos(xlon(ii))
+grid_subs.F90:  ! are same as xnd,ynd)
+grid_subs.F90:      xctr(ie)=xctr(ie)+xnd(nm(ie,j))/3.d0
+grid_subs.F90:      xel(1:3,ie)=xnd(nm(ie,1:3))
+grid_subs.F90:     &ylat(nm(ie,1:3)),xnd(nm(ie,1:3)),ynd(nm(ie,1:3)),znd(nm(ie,1:3))
+grid_subs.F90:        xel(j,ie)=(xnd(nn)-xctr(ie))*eframe(1,1,ie)+(ynd(nn)-yctr(ie))*eframe(2,1,ie)+ &
+grid_subs.F90:        yel(j,ie)=(xnd(nn)-xctr(ie))*eframe(1,2,ie)+(ynd(nn)-yctr(ie))*eframe(2,2,ie)+ &
+grid_subs.F90:      xcj(jsj)=(xnd(n1)+xnd(n2))/2d0
+grid_subs.F90:      distj(jsj)=sqrt((xnd(n2)-xnd(n1))**2+(ynd(n2)-ynd(n1))**2+(znd(n2)-znd(n1))**2)
+grid_subs.F90:      thetan=atan2(xnd(n1)-xnd(n2),ynd(n2)-ynd(n1))
+grid_subs.F90:      ar1=xnd(n2)-xnd(n1)
+misc_subs.F90:          xn1=xnd(node1)
+misc_subs.F90:          xn2=xnd(node2)
+misc_subs.F90:          call project_pt('g2l',xnd(node1),ynd(node1),znd(node1), &
+misc_subs.F90:          call project_pt('g2l',xnd(node2),ynd(node2),znd(node2), &
+misc_subs.F90:!            xn1=xnd(node1)
+misc_subs.F90:!            xn2=xnd(node2)
+misc_subs.F90:!            call project_pt('g2l',xnd(node1),ynd(node1),znd(node1), &
+misc_subs.F90:!            call project_pt('g2l',xnd(node2),ynd(node2),znd(node2), &
+misc_subs.F90:          y43=xn1-xn2 !xnd(node1)-xnd(node2)
+misc_subs.F90:            xn3=xnd(node3)
+misc_subs.F90:            xn4=xnd(node4)
+misc_subs.F90:            call project_pt('g2l',xnd(node3),ynd(node3),znd(node3), &
+misc_subs.F90:            call project_pt('g2l',xnd(node4),ynd(node4),znd(node4), &
+misc_subs.F90:          x43=xn4-xn3 !xnd(node4)-xnd(node3)
+misc_subs.F90:          wild(j,1)=xnd(nd)
+misc_subs.F90:          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(j,1),wild(j,2),tmp)
+selfe_finalize.F90:        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(elevmax(i))
+selfe_finalize.F90:        write(10,*)iplg(i),real(xnd(i)),real(ynd(i)),real(dav_maxmag(i)),real(dav_max(i,1:2))
+selfe_init.F90:!          call compute_ll(xnd(i),ynd(i),znd(i),rlon,rlat)
+selfe_init.F90:!          dis=sqrt((x2-xnd(i))**2+(y2-ynd(i))**2+(z2-znd(i))**2)
+selfe_init.F90:!     &xnd(i),ynd(i),znd(i),x2,y2,z2,dis
+selfe_init.F90:          tmp=sqrt(xnd(i)**2+ynd(i)**2+znd(i)**2)
+selfe_init.F90:          swild(1)=xnd(i)/tmp
+selfe_init.F90:                xn1=xnd(n1)
+selfe_init.F90:                xn2=xnd(n2)
+selfe_init.F90:                call project_pt('g2l',xnd(n1),ynd(n1),znd(n1), &
+selfe_init.F90:                call project_pt('g2l',xnd(n2),ynd(n2),znd(n2), &
+selfe_init.F90:            call project_pt('g2l',xnd(n1),ynd(n1),znd(n1), &
+selfe_init.F90:              rr=sqrt((xnd(n1)-xnd(n2))**2+(ynd(n1)-ynd(n2))**2+(znd(n1)-znd(n2))**2)
+selfe_init.F90:              call project_pt('g2l',xnd(n2),ynd(n2),znd(n2), &
+selfe_init.F90:            akr(i,npp+2)=xnd(n1)
+selfe_init.F90:          akr(npp+2,1:npp)=xnd(itier_nd(ie,1:npp))
+selfe_init.F90:!           ft1=0.5+0.5*tanh((xnd(i)/1000-338)/4)
+selfe_init.F90:        write(10,*)np,ne,(real(xnd(m)),real(ynd(m)),real(dp00(m)),kbp00(m),m=1,np), &
+selfe_init.F90:          call update_bdef(iths*dt,xnd(i),ynd(i),dep,swild)
+selfe_init.F90:          dp(i)=dep !min(1.,7-(xnd(i)+iths*dt))
+selfe_step.F90:              vfg(k,i,j)=xnd(nd)*rot_f
+selfe_step.F90:            vv2(k,i)=xnd(i)*rot_f
+selfe_step.F90:            swild(1)=xnd(nd0); swild(2)=ynd(nd0); swild(3)=znd(nd0)
+selfe_step.F90:                xt=xnd(nd0)
+selfe_step.F90:     &(/xnd(nd0),ynd(nd0),znd(nd0)/),pframe(:,:,nd0),xctr2,yctr2,tmp)
+selfe_step.F90:!                    hatx=xnd(nd0)*cos(alpha_zonal)+znd(nd0)*sin(alpha_zonal)
+selfe_step.F90:!                    hatz=-xnd(nd0)*sin(alpha_zonal)+znd(nd0)*cos(alpha_zonal)
+selfe_step.F90:!                    write(12,*)'Node ',iplg(nd0),j,xt4,yt4,zt4,xex,yex,zex,dis,xnd(nd0),ynd(nd0),znd(nd0)
+selfe_step.F90:!          prho(k,i)=exp(-((xnd(i)-x0)**2+(ynd(i)-y0)**2)/2/600/600) !exact soln
+selfe_step.F90:!        call project_pt('l2g',xtmp,ytmp,0.d0,(/xnd(i),ynd(i),znd(i)/),pframe(:,:,i),xg,yg,zg)
+selfe_step.F90:                    xn1=xnd(n1)
+selfe_step.F90:                    xn2=xnd(n2)
+selfe_step.F90:                    call project_pt('g2l',xnd(n1),ynd(n1),znd(n1),(/xctr(i),yctr(i),zctr(i)/), &
+selfe_step.F90:                    call project_pt('g2l',xnd(n2),ynd(n2),znd(n2),(/xctr(i),yctr(i),zctr(i)/), &
+selfe_step.F90:                  bdia(j)=xn1-xn2 !xnd(n1)-xnd(n2)
+selfe_step.F90:          !dot1=(xnd(n3)-xnd(n2))**2+(ynd(n3)-ynd(n2))**2
+selfe_step.F90:          !dot2=(xnd(n3)-xnd(n2))*(xnd(i)-xnd(n3))+(ynd(n3)-ynd(n2))*(ynd(i)-ynd(n3))
+selfe_step.F90:            ycon=(xnd(n3)-xnd(n1))*(znl(l,n2)-znl(l,n1))-(xnd(n2)-xnd(n1))*(znl(l,n3)-znl(l,n1))
+selfe_step.F90:            ycon=(xnd(n3)-xnd(n1))*(znl(l,n2)-znl(l,n1))-(xnd(n2)-xnd(n1))*(znl(l,n3)-znl(l,n1))
+selfe_step.F90:              vfg(k,i,j)=xnd(nd)*rot_f
+selfe_step.F90:            vv2(k,i)=xnd(i)*rot_f
+selfe_step.F90:          call update_bdef(time,xnd(i),ynd(i),dep,swild)
+selfe_step.F90:          dp(i)=dep !min(1.,7-(xnd(i)+time))
+solver_subs.F90:      dist2=(xnd(ip)-xnd(nd))**2+(ynd(ip)-ynd(nd))**2 
+transport.F90:            ycon=(xnd(n3)-xnd(n1))*(znl(l,n2)-znl(l,n1))-(xnd(n2)-xnd(n1))*(znl(l,n3)-znl(l,n1))

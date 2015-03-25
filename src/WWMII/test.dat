@@ -1,0 +1,3692 @@
+      F O R C H E C K  (R)  V14.3.05
+Copyright (c) 1984-2013  Forcheck b.v. All rights reserved
+Licensed to: TU Darmstadt_1, Darmstadt, DE
+Limited to a single user
+PC/Linux (), serial: 9611677
+Maintenance has expired
+
+   -- INT compiler emulation
+
+   -- Fortran 95 syntax
+
+   -- commandline argument: -ninf -nwarn -ff -I /home/aron/opt/netcdf3/include,/home/aron/opt/mpich2_1.3_intel/include,/home/aron/opt/petsc_withSuperLU/include,/home/aron/GIT/pdlib/src -define ST42,NCDF,WWM_MPI,WWM_SOLVER,PDLIB elfe_glbl.F90 elfe_msgp.F90 grid_subs.F90 io_subs.F90 misc_subs.F90 solver_subs.F90 wwm_airsea.F90 wwm_airsea_local.F90 wwm_aki.F90 wwm_ardhuin_new.F90 wwm_ardhuin_old.F90 wwm_aux.F90 wwm_aux_parall.F90 wwm_babanin.F90 wwm_bdcons.F90 wwm_blasaux.F90 wwm_breaking.F90 wwm_buildstress.F90 wwm_compute.F90 wwm_coupl_roms.F90 wwm_coupl_selfe.F90 wwm_coupl_shyfem.F90 wwm_coupl_timor.F90 wwm_cycle3.F90 wwm_datapl.F90 wwm_diclass.F90 wwm_diffrac.F90 wwm_dislin.F90 wwm_dissipation.F90 wwm_femean.F90 wwm_femean_local.F90 wwm_femeanws.F90 wwm_femeanws_local.F90 wwm_fkmean.F90 wwm_fkmean_local.F90 wwm_fluctsplit.F90 wwm_frcutindex.F90 wwm_frcutindex_local.F90 wwm_friction.F90 wwm_gridcf.F90 wwm_hotfile.F90 wwm_implsch2.F90 wwm_implsch2_local.F90 wwm_implsch.F90 wwm_implsch_local.F90 wwm_inisnonlin.F90 wwm_initio.F90 wwm_input.F90 wwm_jafu.F90 wwm_main.F90 wwm_m_constants.F90 wwm_m_fileio.F90 wwm_mjdv2.F90 wwm_mod_xnl4v5.F90 wwm_netcdf.F90 wwm_nlweigt.F90 wwm_nums1d.F90 wwm_numsigma.F90 wwm_numtheta.F90 wwm_output.F90 wwm_parall_solver.F90 wwm_pdlib.F90 wwm_petsc_block.F90 wwm_petsc_controller.F90 wwm_petsc_parallel.F90 wwm_petscpool.F90 wwm_petsc_seriell.F90 wwm_sbottom.F90 wwm_sbottom_local.F90 wwm_sdiss_ardh_vec.F90 wwm_sdiss_ardh_vec_local.F90 wwm_sdissip.F90 wwm_sdissip_local.F90 wwm_serv_xnl4v5.F90 wwm_sinput_ard.F90 wwm_sinput_ard_local.F90 wwm_sinput.F90 wwm_sinput_local.F90 wwm_snl3.F90 wwm_snl42.F90 wwm_snl4.F90 wwm_snl4_tsa.F90 wwm_snl4_wrt.F90 wwm_snonlin.F90 wwm_snonlin_local.F90 wwm_sourceterms.F90 wwm_sparskit.F90 wwm_specint.F90 wwm_specparam.F90 wwm_stress.F90 wwm_stresso.F90 wwm_stresso_local.F90 wwm_tauhf.F90 wwm_transf.F90 wwm_wave_setup.F90 wwm_wind.F90 wwm_windinput.F90 wwm_wsigstar.F90 wwm_wsigstar_local.F90 /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/netcdf.f90 /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/typeSizes.f90 /home/aron/GIT/pdlib/src/yowdatapool.F90 /home/aron/GIT/pdlib/src/yowelementpool.F90 /home/aron/GIT/pdlib/src/yowerror.F90 /home/aron/GIT/pdlib/src/yowexchangeModule.F90 /home/aron/GIT/pdlib/src/yowmpiModule.F90 /home/aron/GIT/pdlib/src/yownodepool.F90 /home/aron/GIT/pdlib/src/yowpd.F90 /home/aron/GIT/pdlib/src/yowpdlibmain.F90 /home/aron/GIT/pdlib/src/yowrankModule.F90 /home/aron/GIT/pdlib/src/yowsidepool.F90 /home/aron/config/Software/Linux/Forchk/newforchk/forcheck.nl/libraries/MPI.flb
+
+   -- scanning input files
+
+      - file: elfe_glbl.F90
+
+      - file: elfe_msgp.F90
+
+      - file: grid_subs.F90
+
+      - file: io_subs.F90
+
+      - file: misc_subs.F90
+
+      - file: solver_subs.F90
+
+      - file: wwm_airsea.F90
+
+      - file: wwm_airsea_local.F90
+
+      - file: wwm_aki.F90
+
+      - file: wwm_ardhuin_new.F90
+
+      - file: wwm_ardhuin_old.F90
+
+      - file: wwm_aux.F90
+
+      - file: wwm_aux_parall.F90
+
+      - file: wwm_babanin.F90
+
+      - file: wwm_bdcons.F90
+
+      - file: wwm_blasaux.F90
+
+      - file: wwm_breaking.F90
+
+      - file: wwm_buildstress.F90
+
+      - file: wwm_compute.F90
+
+      - file: wwm_coupl_roms.F90
+
+      - file: wwm_coupl_selfe.F90
+
+      - file: wwm_coupl_shyfem.F90
+
+      - file: wwm_coupl_timor.F90
+
+      - file: wwm_cycle3.F90
+
+      - file: wwm_datapl.F90
+
+      - file: wwm_diclass.F90
+
+      - file: wwm_diffrac.F90
+
+      - file: wwm_dislin.F90
+
+      - file: wwm_dissipation.F90
+
+      - file: wwm_femean.F90
+
+      - file: wwm_femean_local.F90
+
+      - file: wwm_femeanws.F90
+
+      - file: wwm_femeanws_local.F90
+
+      - file: wwm_fkmean.F90
+
+      - file: wwm_fkmean_local.F90
+
+      - file: wwm_fluctsplit.F90
+
+      - file: wwm_frcutindex.F90
+
+      - file: wwm_frcutindex_local.F90
+
+      - file: wwm_friction.F90
+
+      - file: wwm_gridcf.F90
+
+      - file: wwm_hotfile.F90
+
+      - file: wwm_implsch2.F90
+
+      - file: wwm_implsch2_local.F90
+
+      - file: wwm_implsch.F90
+
+      - file: wwm_implsch_local.F90
+
+      - file: wwm_inisnonlin.F90
+
+      - file: wwm_initio.F90
+
+      - file: wwm_input.F90
+
+      - file: wwm_jafu.F90
+
+      - file: wwm_main.F90
+
+      - file: wwm_m_constants.F90
+
+      - file: wwm_m_fileio.F90
+
+      - file: wwm_mjdv2.F90
+
+      - file: wwm_mod_xnl4v5.F90
+
+      - file: wwm_netcdf.F90
+
+      - file: wwm_nlweigt.F90
+
+      - file: wwm_nums1d.F90
+
+      - file: wwm_numsigma.F90
+
+      - file: wwm_numtheta.F90
+
+      - file: wwm_output.F90
+
+      - file: wwm_parall_solver.F90
+
+      - file: wwm_pdlib.F90
+
+      - file: wwm_petsc_block.F90
+
+      - file: wwm_petsc_controller.F90
+
+      - file: wwm_petsc_parallel.F90
+
+      - file: wwm_petscpool.F90
+
+      - file: wwm_petsc_seriell.F90
+
+      - file: wwm_sbottom.F90
+
+      - file: wwm_sbottom_local.F90
+
+      - file: wwm_sdiss_ardh_vec.F90
+
+      - file: wwm_sdiss_ardh_vec_local.F90
+
+      - file: wwm_sdissip.F90
+
+      - file: wwm_sdissip_local.F90
+
+      - file: wwm_serv_xnl4v5.F90
+
+      - file: wwm_sinput_ard.F90
+
+      - file: wwm_sinput_ard_local.F90
+
+      - file: wwm_sinput.F90
+
+      - file: wwm_sinput_local.F90
+
+      - file: wwm_snl3.F90
+
+      - file: wwm_snl42.F90
+
+      - file: wwm_snl4.F90
+
+      - file: wwm_snl4_tsa.F90
+
+      - file: wwm_snl4_wrt.F90
+
+      - file: wwm_snonlin.F90
+
+      - file: wwm_snonlin_local.F90
+
+      - file: wwm_sourceterms.F90
+
+      - file: wwm_sparskit.F90
+
+      - file: wwm_specint.F90
+
+      - file: wwm_specparam.F90
+
+      - file: wwm_stress.F90
+
+      - file: wwm_stresso.F90
+
+      - file: wwm_stresso_local.F90
+
+      - file: wwm_tauhf.F90
+
+      - file: wwm_transf.F90
+
+      - file: wwm_wave_setup.F90
+
+      - file: wwm_wind.F90
+
+      - file: wwm_windinput.F90
+
+      - file: wwm_wsigstar.F90
+
+      - file: wwm_wsigstar_local.F90
+
+      - file: /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/netcdf.f90
+
+      - file: /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/typeSizes.f90
+
+      - file: /home/aron/GIT/pdlib/src/yowdatapool.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowelementpool.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowerror.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowmpiModule.F90
+
+      - file: /home/aron/GIT/pdlib/src/yownodepool.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowpd.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowrankModule.F90
+
+      - file: /home/aron/GIT/pdlib/src/yowsidepool.F90
+
+   -- program unit analysis
+
+   -- file: elfe_glbl.F90
+
+      - program unit: ELFE_GLBL
+
+         - module subprogram: RELEASE_GL
+
+         - module subprogram: RELEASE_LLIST
+
+   -- file: elfe_msgp.F90
+
+      - program unit: ELFE_MSGP
+
+         - module subprogram: PARALLEL_INIT
+
+         - module subprogram: PARALLEL_FINALIZE
+
+         - module subprogram: PARALLEL_ABORT
+
+         - module subprogram: PARALLEL_BARRIER
+
+         - module subprogram: PARALLEL_RRSYNC
+
+         - module subprogram: MSGP_TABLES
+
+         - module subprogram: MSGP_INIT
+
+         - module subprogram: EXCHANGE_E2D
+
+         - module subprogram: EXCHANGE_E2DI
+
+         - module subprogram: EXCHANGE_E3DW
+
+         - module subprogram: EXCHANGE_P2D
+
+         - module subprogram: EXCHANGE_P3DW
+
+         - module subprogram: EXCHANGE_P2D_9
+
+         - module subprogram: EXCHANGE_P2DI
+
+         - module subprogram: EXCHANGE_S2D
+
+         - module subprogram: EXCHANGE_S2D_9
+
+         - module subprogram: EXCHANGE_S2DI
+
+         - module subprogram: EXCHANGE_S3DW
+
+         - module subprogram: EXCHANGE_S3D_5
+
+         - module subprogram: EXCHANGE_S3D_4
+
+         - module subprogram: EXCHANGE_S3D_2
+
+         - module subprogram: EXCHANGE_S3D_TR2
+
+         - module subprogram: EXCHANGE_P3D_2
+
+         - module subprogram: EXCHANGE_P3D_3
+
+         - module subprogram: EXCHANGE_P3D_4
+
+         - module subprogram: EXCHANGE_P3D_TR
+
+         - module subprogram: EXCHANGE_E3D_TR
+
+         - module subprogram: EXCHANGE_E3D_TR2
+
+         - module subprogram: EXCHANGE_E3D_2
+
+   -- file: grid_subs.F90
+
+      - program unit: LINDEX
+
+      - program unit: SIGNA
+
+      - program unit: DUMP_HGRID
+
+      - program unit: PARTITION_HGRID
+
+      - program unit: AQUIRE_VGRID
+
+      - program unit: AQUIRE_HGRID
+
+         - internal subprogram: SWAP_LLRANK
+
+         - internal subprogram: SORT_LLRANK
+
+         - internal subprogram: SORT
+
+   -- file: io_subs.F90
+
+      - program unit: WRITE_OBE
+
+      - program unit: REPORT_TIMERS
+
+      - program unit: GET_PARAM
+
+   -- file: misc_subs.F90
+
+      - program unit: ZCOOR
+              write(12,*)'ZCOOR: Inverted z-level:',itag,ivcor,k,kbpl,iplg(inode),eta2(inode),dp(inode),ztmp(k),ztmp(k-1),sigma_lcl(kbpl:nvrt,inode)
+
+      - program unit: LEVELS1
+    251  call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LAND,comm,ierr)
+(file: misc_subs.F90, line: 251)
+  MPI_ALLREDUCE, dummy argument no  1
+**[574 E] argument type inconsistent with first occurrence (int/log)
+(file: misc_subs.F90, line: 251)
+  MPI_ALLREDUCE, dummy argument no  2
+**[574 E] argument type inconsistent with first occurrence (int/log)
+    487  call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
+(file: misc_subs.F90, line: 487)
+  MPI_ALLREDUCE, dummy argument no  1
+**[574 E] argument type inconsistent with first occurrence (int/log)
+(file: misc_subs.F90, line: 487)
+  MPI_ALLREDUCE, dummy argument no  2
+**[574 E] argument type inconsistent with first occurrence (int/log)
+    575  call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
+(file: misc_subs.F90, line: 575)
+  MPI_ALLREDUCE, dummy argument no  1
+**[574 E] argument type inconsistent with first occurrence (int/log)
+(file: misc_subs.F90, line: 575)
+  MPI_ALLREDUCE, dummy argument no  2
+**[574 E] argument type inconsistent with first occurrence (int/log)
+    887  call mpi_allreduce(prwt_xchng,prwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
+(file: misc_subs.F90, line: 887)
+  MPI_ALLREDUCE, dummy argument no  1
+**[574 E] argument type inconsistent with first occurrence (int/log)
+(file: misc_subs.F90, line: 887)
+  MPI_ALLREDUCE, dummy argument no  2
+**[574 E] argument type inconsistent with first occurrence (int/log)
+    889  call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
+(file: misc_subs.F90, line: 889)
+  MPI_ALLREDUCE, dummy argument no  1
+**[574 E] argument type inconsistent with first occurrence (int/log)
+(file: misc_subs.F90, line: 889)
+  MPI_ALLREDUCE, dummy argument no  2
+**[574 E] argument type inconsistent with first occurrence (int/log)
+
+      - program unit: LEVELS0
+
+      - program unit: NODALVEL
+
+      - program unit: VINTER
+
+      - program unit: EQSTATE
+
+      - program unit: ASM
+
+      - program unit: RINT_LAG
+
+      - program unit: LINDEX_S
+
+      - program unit: COVAR
+
+      - program unit: EVAL_CUBIC_SPLINE
+
+      - program unit: CUBIC_SPLINE
+
+      - program unit: DO_CUBIC_SPLINE
+
+      - program unit: MEAN_DENSITY
+
+      - program unit: KRONECKER
+
+      - program unit: HGRAD_NODES
+
+      - program unit: UPDATE_BDEF
+
+      - program unit: PROJECT_PT
+
+      - program unit: PROJECT_HVEC
+
+      - program unit: CROSS_PRODUCT
+
+      - program unit: COMPUTE_LL
+
+      - program unit: ZONAL_FLOW
+
+      - program unit: U_COMPACTZONAL
+
+      - program unit: WBL_GM
+
+      - program unit: AREA_COORD
+
+   -- file: solver_subs.F90
+
+      - program unit: SOLVE_JCG
+
+      - program unit: SOLVE_JCG_QNON
+
+      - program unit: TRIDAG
+
+   -- file: /home/aron/GIT/pdlib/src/yowmpiModule.F90
+
+      - program unit: YOWMPIMODULE
+
+   -- file: /home/aron/GIT/pdlib/src/yowdatapool.F90
+
+      - program unit: YOWDATAPOOL
+
+   -- file: /home/aron/GIT/pdlib/src/yownodepool.F90
+
+      - program unit: YOWNODEPOOL
+
+         - module subprogram: CONNNODES
+
+         - module subprogram: NODES
+
+         - module subprogram: GHOSTS
+
+         - module subprogram: INSERTCONNNODE
+
+         - module subprogram: ISGHOST
+
+         - module subprogram: FINALIZENODEPOOL
+
+   -- file: /home/aron/GIT/pdlib/src/yowerror.F90
+
+      - program unit: YOWERROR
+
+         - module subprogram: PARALLEL_ABORT
+
+         - module subprogram: ABORT
+
+         - module subprogram: WARN
+
+   -- file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90
+
+      - program unit: YOWEXCHANGEMODULE
+     35  integer :: p1DRsendType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 35)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 35)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     36  integer :: p1DRrecvType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 36)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 36)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     37  integer :: p1DIsendType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 37)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 37)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     38  integer :: p1DIrecvType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 38)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 38)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     40  integer :: p2DRsendType1 = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 40)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 40)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     41  integer :: p2DRrecvType1 = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 41)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 41)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     42  integer :: p2DRsendType2 = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 42)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 42)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     43  integer :: p2DRrecvType2 = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 43)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 43)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     45  integer :: p3DRsendType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 45)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 45)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+     46  integer :: p3DRrecvType = MPI_DATATYPE_NULL
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 46)
+  MPI_DATATYPE_NULL
+**[198 E] constant expected
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 46)
+  MPI_DATATYPE_NULL
+**[293 E] constant expression expected
+
+         - module subprogram: FINALIZE
+     87  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 87)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     89  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 89)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     91  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 91)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     93  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 93)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     95  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 95)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     97  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 97)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+     99  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 99)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    101  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 101)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    103  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 103)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    105  if(ierr /= MPI_SUCCESS) call abort(('freeMPItype'), errno=(ierr), line=__LINE__, file=__FIL
+E__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 105)
+  MPItype'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: CREATEMPITYPE
+    127  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 127)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    129  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 129)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    132  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 132)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    134  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 134)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    138  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 138)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    140  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 140)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    143  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 143)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    145  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 145)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    151  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 151)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    153  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 153)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    156  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 156)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    158  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 158)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    164  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 164)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    166  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 166)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    169  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 169)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    171  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 171)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    177  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 177)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    179  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 179)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    182  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 182)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    184  if(ierr /= MPI_SUCCESS) call abort(('createMPIType'), errno=(ierr), line=__LINE__, file=__F
+ILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 184)
+  MPIType'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: INITNBRDOMAINS
+    196  if(stat/=0)  call abort(('neighborDomains allocation failure'), line=__LINE__, file=__FILE_
+_)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 196)
+  ns allocation failure'), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: CREATEMPITYPES
+
+         - module subprogram: EXCHANGE1DREAL
+    227  call abort(('sizeof(U) < npa'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 227)
+  ort(('sizeof(U) < npa'), line=...
+**[ 94 E] syntax error
+    242  call abort(('MPI_IRecv'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 242)
+  I_IRecv'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    258  call abort(('MPI_ISend'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 258)
+  I_ISend'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    264  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 264)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    266  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 266)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: EXCHANGE1DINT
+    285  call abort(('sizeof(U) < npa'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 285)
+  ort(('sizeof(U) < npa'), line=...
+**[ 94 E] syntax error
+    300  call abort(('MPI_IRecv'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 300)
+  I_IRecv'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    316  call abort(('MPI_ISend'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 316)
+  I_ISend'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    322  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 322)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    324  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 324)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: EXCHANGE2DREAL
+    344  call abort(('sizeof(U,2) < npa'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 344)
+  t(('sizeof(U,2) < npa'), line=...
+**[ 94 E] syntax error
+    349  call abort(('sizeof(U,1) /= n2ndDim or n3ndDim'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 349)
+  /= n2ndDim or n3ndDim'), line=...
+**[ 94 E] syntax error
+    367  call abort(('MPI_IRecv'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 367)
+  I_IRecv'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    383  call abort(('MPI_ISend'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 383)
+  I_ISend'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    399  call abort(('MPI_IRecv'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 399)
+  I_IRecv'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    415  call abort(('MPI_ISend'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 415)
+  I_ISend'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    422  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 422)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    424  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 424)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: EXCHANGE3DREAL
+    444  call abort(('sizeof(U,3) < npa'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 444)
+  t(('sizeof(U,3) < npa'), line=...
+**[ 94 E] syntax error
+    448  call abort(('sizeof(U,2) < n2ndDim'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 448)
+  sizeof(U,2) < n2ndDim'), line=...
+**[ 94 E] syntax error
+    452  call abort(('sizeof(U,1) < n3ndDim'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 452)
+  sizeof(U,1) < n3ndDim'), line=...
+**[ 94 E] syntax error
+    467  call abort(('MPI_IRecv'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 467)
+  I_IRecv'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    483  call abort(('MPI_ISend'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 483)
+  I_ISend'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    489  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 489)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+    491  if(ierr/=MPI_SUCCESS) call abort(('waitall'), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 491)
+  waitall'), errno=(ierr), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: SETDIMSIZE
+
+         - module subprogram: FINALIZEEXCHANGEMODULE
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 35)
+  MPI_DATATYPE_NULL
+**[697 E] name not explicitly typed, implicit type assumed
+(file: /home/aron/GIT/pdlib/src/yowexchangeModule.F90, line: 35)
+  MPI_DATATYPE_NULL
+**[307 E] variable not defined
+
+   -- file: /home/aron/GIT/pdlib/src/yowrankModule.F90
+
+      - program unit: YOWRANKMODULE
+
+         - module subprogram: INITRANKMODULE
+     45  if(stat/=0) call abort(('rank allocation failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 45)
+  nk allocation failure'), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: EXCHANGEIPLG
+     80  call abort(("MPI_IRecv"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 80)
+  I_IRecv"), errno=(ierr), line=...
+**[ 94 E] syntax error
+     99  call abort(("MPI_ISend"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 99)
+  I_ISend"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    110  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 110)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    112  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 112)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    127  call abort(("MPI_IRecv"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 127)
+  I_IRecv"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    146  call abort(("MPI_ISend"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 146)
+  I_ISend"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    157  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 157)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    159  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 159)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    165  if(stat/=0) call abort(('rank%iplg allocation failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 165)
+  lg allocation failure'), line=...
+**[ 94 E] syntax error
+    184  call abort(("MPI_IRecv"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 184)
+  I_IRecv"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    203  call abort(("MPI_ISend"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 203)
+  I_ISend"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    214  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 214)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+    216  if(ierr/=MPI_SUCCESS) call abort(("waitall"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 216)
+  waitall"), errno=(ierr), line=...
+**[ 94 E] syntax error
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 83)
+  MPI_REQUEST_NULL
+**[697 E] name not explicitly typed, implicit type assumed
+(file: /home/aron/GIT/pdlib/src/yowrankModule.F90, line: 83)
+  MPI_REQUEST_NULL
+**[307 E] variable not defined
+
+         - module subprogram: CALCISTART
+
+         - module subprogram: FINALIZERANKMODULE
+
+   -- file: /home/aron/GIT/pdlib/src/yowsidepool.F90
+
+      - program unit: YOWSIDEPOOL
+
+   -- file: /home/aron/GIT/pdlib/src/yowelementpool.F90
+
+      - program unit: YOWELEMENTPOOL
+
+         - module subprogram: GETDOMAINID
+
+         - module subprogram: BELONGTO
+
+         - module subprogram: FINALIZEELEMENTPOOL
+
+   -- file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90
+
+      - program unit: YOWPDLIBMAIN
+
+         - module subprogram: INITPD1
+
+         - module subprogram: INITPD2
+
+         - module subprogram: INITFROMGRID
+
+         - module subprogram: INITFROMGRIDDIM
+
+         - module subprogram: INITMPI
+    161  call abort(("A null communicator is not allowed"), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 161)
+  icator is not allowed"), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: READMESH
+    225  if(stat/=0) call abort(('XP allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 225)
+  ('XP allocate failure'), line=...
+**[ 94 E] syntax error
+    229  if(stat/=0) call abort(('YP allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 229)
+  ('YP allocate failure'), line=...
+**[ 94 E] syntax error
+    233  if(stat/=0) call abort(('DEP allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 233)
+  'DEP allocate failure'), line=...
+**[ 94 E] syntax error
+    248  if(stat/=0) call abort(('INE allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 248)
+  'INE allocate failure'), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: ASSIGNMESH
+    283  if(stat/=0) call abort(('nodes_global() allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 283)
+  al() allocate failure'), line=...
+**[ 94 E] syntax error
+    287  if(stat/=0) call abort(('xyz(,3) allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 287)
+  (,3) allocate failure'), line=...
+**[ 94 E] syntax error
+    303  if(stat/=0) call abort(('elements() allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 303)
+  ts() allocate failure'), line=...
+**[ 94 E] syntax error
+    307  if(stat/=0) call abort(('INE_global allocate failure'), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 307)
+  obal allocate failure'), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: PREPARTITION
+
+         - module subprogram: FINDCONNNODES
+
+         - module subprogram: RUNPARMETIS
+    570  call abort(("Poor initial vertex distribution detected"), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 570)
+  distribution detected"), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: POSTPARTITION
+
+         - module subprogram: FINDGHOSTNODES
+
+         - module subprogram: FINDCONNDOMAINS
+
+         - module subprogram: EXCHANGEGHOSTIDS
+    992  call abort((""), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 992)
+  call abort((""), line=...
+**[ 94 E] syntax error
+   1012  call abort(("mpi recv failure"), errno=(ierr), line=__LINE__, file=__FILE__)
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 1012)
+  failure"), errno=(ierr), line=...
+**[ 94 E] syntax error
+(file: /home/aron/GIT/pdlib/src/yowpdlibmain.F90, line: 942)
+  MPI_INT
+**[697 E] name not explicitly typed, implicit type assumed
+
+         - module subprogram: POSTPARTITION2
+
+         - module subprogram: FINALIZEPD
+
+         - module subprogram: NEWUNIT
+
+   -- file: /home/aron/GIT/pdlib/src/yowpd.F90
+
+      - program unit: YOWPD
+
+   -- file: wwm_pdlib.F90
+
+      - program unit: WWM_PDLIB
+
+         - module subprogram: INITPD
+
+         - module subprogram: PARALLEL_FINALIZE
+
+         - module subprogram: FILLPUBLICVARS
+    134  if(istat/=0) call abort(("allocate"), line=__LINE__, file=__FILE__)
+(file: wwm_pdlib.F90, line: 134)
+  call abort(("allocate"), line=...
+**[ 94 E] syntax error
+
+         - module subprogram: EXCHANGE_P2D
+
+         - module subprogram: EXCHANGE_P2DI
+
+         - module subprogram: EXCHANGE_P3D_WWM
+
+         - module subprogram: EXCHANGE_P4D_WWM
+
+   -- file: wwm_datapl.F90
+
+      - program unit: DATAPOOL
+
+   -- file: wwm_airsea.F90
+
+      - program unit: AIRSEA
+     96  DELI1   = MIN(1.,XI - REAL(I))
+(file: wwm_airsea.F90, line: 96)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    100  DELJ1   = MIN(1.,XJ - REAL(J))
+(file: wwm_airsea.F90, line: 100)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    114  ARG = MAX(1.-(TAUW(IJ)/UST2),EPS1)
+(file: wwm_airsea.F90, line: 114)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+   -- file: wwm_airsea_local.F90
+
+      - program unit: AIRSEA_LOCAL
+     97  DELI1   = MIN(1.,XI - REAL(I))
+(file: wwm_airsea_local.F90, line: 97)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    101  DELJ1   = MIN(1.,XJ - REAL(J))
+(file: wwm_airsea_local.F90, line: 101)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    113  ARG = MAX(1.-(TAUW/UST2),EPS1)
+(file: wwm_airsea_local.F90, line: 113)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+   -- file: wwm_aki.F90
+
+      - program unit: AKI
+
+   -- file: wwm_ardhuin_new.F90
+
+      - program unit: W3SRC4MD
+
+         - module subprogram: PREPARE_ARDHUIN
+
+         - module subprogram: READ_INSIN4
+          SUBROUTINE W3SPR4 (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS)
+
+         - module subprogram: W3SPR4
+
+         - module subprogram: W3SIN4
+    788  Z0VISC = 0.1*nu_air/MAX(USTAR,0.0001)
+(file: wwm_ardhuin_new.F90, line: 788)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+   1064  DELI1= MAX(MIN (1. ,XI-FLOAT(IND)),0.)
+(file: wwm_ardhuin_new.F90, line: 1064)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+   1066  XJ=MAX(0.,(G9*Z0/MAX(UST,0.00001)**2-AALPHA) / DELALP)
+(file: wwm_ardhuin_new.F90, line: 1066)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+(file: wwm_ardhuin_new.F90, line: 1066)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+   1068  DELJ1= MAX(0.,MIN (1.      , XJ-FLOAT(J)))
+(file: wwm_ardhuin_new.F90, line: 1068)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+   1073  DELK1= MIN (1. ,XK-FLOAT(I))
+(file: wwm_ardhuin_new.F90, line: 1073)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+         - module subprogram: INSIN4
+
+         - module subprogram: TABU_STRESS
+
+         - module subprogram: TABU_TAUHF
+
+         - module subprogram: TABU_TAUHF2
+
+         - module subprogram: CALC_USTAR
+   1910  SQRTCDM1  = MIN(WINDSPEED/USTAR,100.0)
+(file: wwm_ardhuin_new.F90, line: 1910)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+         - module subprogram: W3SDS4
+   2158  BTH0(:)=MAX(0.,BTH0S(:)/NSMOOTH(:))
+(file: wwm_ardhuin_new.F90, line: 2158)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+   2161  BTH(IS0+1:IS0+NTH)=MAX(0.,BTHS(IS0+1:IS0+NTH)/NSMOOTH(IK))
+(file: wwm_ardhuin_new.F90, line: 2161)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+   2174  X=TANH(MIN(K(IK)*DEPTH,10.))
+(file: wwm_ardhuin_new.F90, line: 2174)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+   2188  D((IK-1)*NTH+1:IK*NTH) = SDIAGISO +
+   2189  COEF2*((MAX(0.,BTH((IK-1)*NTH+1:IK*NTH)-COEF1))**SSDSP)
+(file: wwm_ardhuin_new.F90, line: 2189)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+   2194  PB = (MAX(SQRT(BTH)-EPSR,0.))**2
+(file: wwm_ardhuin_new.F90, line: 2194)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_ardhuin_old.F90
+
+      - program unit: W3SRC4MD_OLD
+
+   -- file: wwm_aux.F90
+
+      - program unit: GRADDEP
+
+      - program unit: GRADCURT
+
+      - program unit: GRAD_CG_K
+
+      - program unit: DIFFERENTIATE_XDIR
+
+      - program unit: DIFFERENTIATE_XYDIR
+
+      - program unit: WAVEKCG
+
+      - program unit: MAKE_WAVE_TABLE
+
+      - program unit: ALL_FROM_TABLE
+
+      - program unit: CG_FROM_TABLE
+
+      - program unit: K_FROM_TABLE
+
+      - program unit: WAVE_K_C_CG
+
+      - program unit: CHECK_STEADY
+                IF (CONVK1 .LT. EPSH1 .AND. CONVK2 .LT. EPSH2 .AND. CONVK3 .LT. EPSH3 .AND. CONVK4 .LT. EPSH4 .AND. CONVK5 .LT. EPSH5) THEN
+
+      - program unit: TWOD2ONED
+
+      - program unit: ONED2TWOD
+
+      - program unit: GAMMA_FUNC
+
+      - program unit: GAMMLN
+
+      - program unit: VEC2RAD
+
+      - program unit: VEC2DEG
+
+      - program unit: DVEC2RAD
+
+      - program unit: DVEC2DEG
+
+      - program unit: DEG2NAUT
+
+      - program unit: MY_ISNAN
+
+      - program unit: MY_ISINF
+
+      - program unit: ISEQ0
+
+      - program unit: CHKVOL
+
+      - program unit: CHECKCONS
+
+      - program unit: ADVTEST
+
+      - program unit: ERG2WWM
+
+      - program unit: INTELEMENT_COEF
+
+      - program unit: INTELEMENT
+
+      - program unit: INTELEMENT_AC_LOC
+
+      - program unit: INTELEMENT_WW3GLOBAL_LOC
+
+      - program unit: CSEVAL
+
+      - program unit: ERROR
+
+      - program unit: WRINPGRD_XFN
+
+      - program unit: WRINPGRD_SHP
+
+      - program unit: XFNHEADER_1
+
+      - program unit: XFNHEADER_2
+
+      - program unit: RHEADER_NODE
+
+      - program unit: RHEADER_ELEMENT
+
+      - program unit: FIND_ELE
+
+      - program unit: FIND_ELE_WIND
+
+      - program unit: DINTSPEC_Y
+
+      - program unit: DINTSPEC
+
+      - program unit: INTERDIR
+
+      - program unit: INTERLIN
+
+      - program unit: WWM_ABORT
+
+      - program unit: TEST_FILE_EXIST_DIE
+
+      - program unit: GAUSS_SOLVER
+
+      - program unit: SOLVE_TRIDIAG
+
+      - program unit: GAUS1D
+
+      - program unit: SSORT2
+
+      - program unit: POSITION_BEFORE_POINT
+
+      - program unit: GETSTRING
+
+      - program unit: SPECSTAT
+
+      - program unit: INTER_STRUCT_DATA
+
+      - program unit: CREATEANGLEMATRIX
+
+      - program unit: CREATEANGLEMATRIX_V
+
+      - program unit: TWOPINORMALIZATION
+
+      - program unit: MYSIGN
+
+   -- file: wwm_aux_parall.F90
+
+      - program unit: MYOWN_MPI_BARRIER
+
+      - program unit: AC_COHERENCY
+
+      - program unit: I5B_TOTAL_COHERENCY_ERROR
+
+      - program unit: I5B_TOTAL_COHERENCY_ERROR_NPRES
+
+      - program unit: COLLECT_ALL_IPLG
+
+      - program unit: COLLECT_ALL_IA_JA
+
+      - program unit: SYMM_GRAPH_BUILD_ADJ
+
+      - program unit: GRAPH_BUILD_ADJ
+
+      - program unit: KERNEL_GRAPH_BUILD_ADJ
+
+      - program unit: GRAPH_TEST_CONNECT
+
+      - program unit: SETUP_ONED_SCATTER_ARRAY
+
+      - program unit: SCATTER_ONED_ARRAY
+
+      - program unit: SETUP_BOUNDARY_SCATTER_ARRAY
+            allocate(spparm_listproc(spparm_nbproc), spparm_send_rqst(spparm_nbproc), spparm_send_stat(MPI_STATUS_SIZE,spparm_nbproc), spparm_send_type(spparm_nbproc), Indexes(np_total), stat=istat)
+
+      - program unit: SCATTER_BOUNDARY_ARRAY
+
+   -- file: wwm_babanin.F90
+
+      - program unit: SDSBABANIN
+
+         - module subprogram: CALC_SDS
+
+         - module subprogram: INTEGRATE
+
+         - module subprogram: CALC_LFACTOR
+           write(DBG%FHNDL,'(A20,F15.8,A20,F15.8,A10,F15.8,A20,F15.8)')'tau_normal = ',tau_normal,' TAUWLIM =', TAUWLIM,'err =',err,'(abs(err)/TAUWLIM)  = ',abs(err)/TAUWLIM
+
+         - module subprogram: CALC_TAU_NORMAL
+
+         - module subprogram: SSWELL
+
+         - module subprogram: SWIND_DBYB
+
+   -- file: /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/typeSizes.f90
+
+      - program unit: TYPESIZES
+
+         - module subprogram: BYTESIZESOK
+
+   -- file: /home/aron/Work/Quellen/Bibliotheken/NETCDF/netcdf-3.6.3/f90/netcdf.f90
+
+      - program unit: NETCDF
+
+         - module subprogram: NF90_INQ_LIBVERS
+
+         - module subprogram: NF90_STRERROR
+
+         - module subprogram: NF90_INQ_BASE_PE
+
+         - module subprogram: NF90_SET_BASE_PE
+
+         - module subprogram: NF90_CREATE
+
+         - module subprogram: NF90_CREATE_MP
+
+         - module subprogram: NF90_OPEN
+
+         - module subprogram: NF90_OPEN_MP
+
+         - module subprogram: NF90_SET_FILL
+
+         - module subprogram: NF90_REDEF
+
+         - module subprogram: NF90_ENDDEF
+
+         - module subprogram: NF90_SYNC
+
+         - module subprogram: NF90_ABORT
+
+         - module subprogram: NF90_CLOSE
+
+         - module subprogram: NF90_DELETE
+
+         - module subprogram: NF90_INQUIRE
+
+         - module subprogram: NF90_DEF_DIM
+
+         - module subprogram: NF90_INQ_DIMID
+
+         - module subprogram: NF90_RENAME_DIM
+
+         - module subprogram: NF90_INQUIRE_DIMENSION
+
+         - module subprogram: NF90_COPY_ATT
+
+         - module subprogram: NF90_RENAME_ATT
+
+         - module subprogram: NF90_DEL_ATT
+
+         - module subprogram: NF90_INQ_ATTNAME
+
+         - module subprogram: NF90_INQUIRE_ATTRIBUTE
+
+         - module subprogram: NF90_PUT_ATT_TEXT
+
+         - module subprogram: NF90_GET_ATT_TEXT
+
+         - module subprogram: NF90_PUT_ATT_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_ONE_ONEBYTEINT
+
+         - module subprogram: NF90_GET_ATT_ONEBYTEINT
+
+         - module subprogram: NF90_GET_ATT_ONE_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_ONE_TWOBYTEINT
+
+         - module subprogram: NF90_GET_ATT_TWOBYTEINT
+
+         - module subprogram: NF90_GET_ATT_ONE_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_ONE_FOURBYTEINT
+
+         - module subprogram: NF90_GET_ATT_FOURBYTEINT
+
+         - module subprogram: NF90_GET_ATT_ONE_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_ONE_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_ATT_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_ATT_ONE_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_ATT_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_ATT_ONE_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_ATT_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_ATT_ONE_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_ATT_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_ATT_ONE_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_ATT_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_ATT_ONE_EIGHTBYTEREAL
+
+         - module subprogram: NF90_DEF_VAR_SCALAR
+
+         - module subprogram: NF90_DEF_VAR_ONEDIM
+
+         - module subprogram: NF90_DEF_VAR_MANYDIMS
+
+         - module subprogram: NF90_INQ_VARID
+
+         - module subprogram: NF90_INQUIRE_VARIABLE
+
+         - module subprogram: NF90_RENAME_VAR
+
+         - module subprogram: NF90_PUT_VAR_TEXT
+
+         - module subprogram: NF90_GET_VAR_TEXT
+
+         - module subprogram: NF90_PUT_VAR_1D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_2D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_3D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_4D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_5D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_6D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_7D_TEXT
+
+         - module subprogram: NF90_GET_VAR_1D_TEXT
+
+         - module subprogram: NF90_GET_VAR_2D_TEXT
+
+         - module subprogram: NF90_GET_VAR_3D_TEXT
+
+         - module subprogram: NF90_GET_VAR_4D_TEXT
+
+         - module subprogram: NF90_GET_VAR_5D_TEXT
+
+         - module subprogram: NF90_GET_VAR_6D_TEXT
+
+         - module subprogram: NF90_GET_VAR_7D_TEXT
+
+         - module subprogram: NF90_PUT_VAR_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_1D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_2D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_3D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_4D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_5D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_6D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_7D_ONEBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_1D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_2D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_3D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_4D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_5D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_6D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_7D_TWOBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_1D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_2D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_3D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_4D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_5D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_6D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_7D_FOURBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_1D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_2D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_3D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_4D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_5D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_6D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_7D_EIGHTBYTEINT
+
+         - module subprogram: NF90_PUT_VAR_1D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_2D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_3D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_4D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_5D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_6D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_7D_FOURBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_1D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_2D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_3D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_4D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_5D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_6D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_PUT_VAR_7D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_1D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_2D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_3D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_4D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_5D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_6D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_7D_ONEBYTEINT
+
+         - module subprogram: NF90_GET_VAR_1D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_2D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_3D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_4D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_5D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_6D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_7D_TWOBYTEINT
+
+         - module subprogram: NF90_GET_VAR_1D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_2D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_3D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_4D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_5D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_6D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_7D_FOURBYTEINT
+
+         - module subprogram: NF90_GET_VAR_1D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_2D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_3D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_4D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_5D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_6D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_7D_EIGHTBYTEINT
+
+         - module subprogram: NF90_GET_VAR_1D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_2D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_3D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_4D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_5D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_6D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_7D_FOURBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_1D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_2D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_3D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_4D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_5D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_6D_EIGHTBYTEREAL
+
+         - module subprogram: NF90_GET_VAR_7D_EIGHTBYTEREAL
+
+   -- file: wwm_bdcons.F90
+
+      - program unit: SET_IOBPD
+
+      - program unit: SET_IOBPD_BY_DEP
+
+      - program unit: GET_BOUNDARY_STATUS
+
+      - program unit: SINGLE_READ_IOBP_TOTAL
+
+      - program unit: READ_IOBP_TOTAL
+
+      - program unit: SET_IOBP_NEXTGENERATION
+
+      - program unit: CLOSE_IOBP
+
+      - program unit: WAVE_BOUNDARY_CONDITION
+
+      - program unit: SPECTRAL_SHAPE
+
+      - program unit: COMPUTE_ESTIMATE_PER_DIR_SHAPE
+
+      - program unit: OPTI_SPECTRAL_SHAPE
+
+      - program unit: KERNEL_SPECTRAL_SHAPE
+
+      - program unit: SPECTRUM_INT
+
+      - program unit: SET_WAVE_BOUNDARY
+
+      - program unit: SET_WAVE_BOUNDARY_CONDITION
+
+      - program unit: INIT_NETCDF_WW3_WAVEPARAMETER
+          ALLOCATE (HS_WW3(NDX_BND,NDY_BND), FP_WW3(NDX_BND,NDY_BND), T02_WW3(NDX_BND,NDY_BND), DSPR_WW3(NDX_BND,NDY_BND), DIR_WW3(NDX_BND,NDY_BND), stat=istat)
+
+      - program unit: READ_NETCDF_WW3_IVAR
+
+      - program unit: READ_NETCDF_WW3
+
+      - program unit: SPPARM_INTER_STRUCT
+
+      - program unit: INTER_STRUCT_BOUNDARY_V2
+
+      - program unit: INTER_STRUCT_DOMAIN_V2
+
+      - program unit: INTER_STRUCT_BOUNDARY
+
+      - program unit: INTER_STRUCT_DOMAIN
+
+      - program unit: WRITE_NETCDF_BOUND_HEADERS_1
+
+      - program unit: WRITE_NETCDF_BOUND_HEADERS_2
+
+      - program unit: WRITE_NETCDF_BOUNDARY
+
+   -- file: wwm_blasaux.F90
+
+      - program unit: DNRM2
+
+      - program unit: DDOT
+
+      - program unit: DAXPY
+
+   -- file: wwm_breaking.F90
+
+      - program unit: SDS_SWB
+
+   -- file: wwm_buildstress.F90
+
+      - program unit: BUILDSTRESS
+     84  CDINV = MIN(CDINV,10000.)
+(file: wwm_buildstress.F90, line: 84)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_compute.F90
+
+      - program unit: COMPUTE_SIMPLE_EXPLICIT
+
+      - program unit: COMPUTE_SEMI_IMPLICIT
+
+      - program unit: COMPUTE_SPATIAL
+
+      - program unit: COMPUTE_SOURCES_EXP
+
+      - program unit: CFLSPEC
+
+      - program unit: COMPUTE_IMPLICIT
+
+   -- file: wwm_coupl_roms.F90
+
+      - program unit: INIT_PIPES_ROMS
+
+      - program unit: TERMINATE_PIPES_ROMS
+
+      - program unit: PIPE_ROMS_IN
+
+      - program unit: PIPE_ROMS_OUT
+
+   -- file: wwm_coupl_selfe.F90
+
+      - program unit: WAVEFORCE
+
+   -- file: wwm_coupl_shyfem.F90
+
+   -- file: wwm_coupl_timor.F90
+
+      - program unit: INIT_PIPES_TIMOR
+
+      - program unit: TERMINATE_PIPES_TIMOR
+
+      - program unit: PIPE_TIMOR_IN
+
+      - program unit: PIPE_TIMOR_OUT
+
+   -- file: wwm_cycle3.F90
+
+      - program unit: CYCLE3
+               WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
+               WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
+               WRITE(*,'(A20,6E20.10)') 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL), MINVAL(SSBRL), MAXVAL(SSBRL), MINVAL(DSSBRL), MAXVAL(DSSBRL)
+               WRITE(*,'(A20,6E20.10)') 'LIMITER',  SUM(SSLIM), SUM(DSSLIM), MINVAL(SSLIM), MAXVAL(SSLIM), MINVAL(DSSLIM), MAXVAL(DSSLIM)
+               WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
+
+      - program unit: SDS_CYCLE3_NEW
+
+      - program unit: SIN_LIN
+
+      - program unit: SIN_EXP
+
+      - program unit: LIMITER
+
+   -- file: wwm_diclass.F90
+
+   -- file: wwm_diffrac.F90
+
+      - program unit: DIFFRA_SIMPLE
+
+      - program unit: SMOOTH
+
+      - program unit: BOTEFCT
+
+      - program unit: BOTFC
+    205  BOTFC = AUX/MAX(VERYSMALL,AUX1) - KH*DTANH(KH)/MAX(VERYSMALL,(2.*(COSHKH)**2))
+(file: wwm_diffrac.F90, line: 205)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: BOTFS
+
+      - program unit: CUREFCT
+
+      - program unit: BOTFC2
+    290  SINH2KH = DSINH(MIN(KDMAX,2.*KH))
+(file: wwm_diffrac.F90, line: 290)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    291  SINH3KH = DSINH(MIN(KDMAX,3.*KH))
+(file: wwm_diffrac.F90, line: 291)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: BOTFS2
+    324  SINH2KH = DSINH(MIN(KDMAX,2.*KH))
+(file: wwm_diffrac.F90, line: 324)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    325  SINH3KH = DSINH(MIN(KDMAX,3.*KH))
+(file: wwm_diffrac.F90, line: 325)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: CUREFCT2
+
+      - program unit: BOTEFCT2
+
+      - program unit: DIFFRA_EXTENDED
+
+      - program unit: COMPUTE_DIFFRACTION
+
+   -- file: wwm_dislin.F90
+
+   -- file: wwm_dissipation.F90
+
+      - program unit: SDS_CYCLE3
+
+      - program unit: SDS_NEDWAM_CYCLE4
+     98  PSAT(IS)= 0.25*PMK*(1.+DTANH(10.0*(BSAT(IS)/BSATR-1.0)))
+(file: wwm_dissipation.F90, line: 98)
+  DTANH, dummy argument no  1 (X)
+**[631 E] invalid argument type length for intrinsic procedure
+
+      - program unit: SDS_NEDWAM_CYCLE3
+    164  PSAT(IS)= 0.25*PMK*(1.+DTANH(10.0*(BSAT(IS)/BSATR-1.0)))
+(file: wwm_dissipation.F90, line: 164)
+  DTANH, dummy argument no  1 (X)
+**[631 E] invalid argument type length for intrinsic procedure
+
+   -- file: wwm_femean.F90
+
+      - program unit: FEMEAN
+
+   -- file: wwm_femean_local.F90
+
+      - program unit: FEMEAN
+
+   -- file: wwm_femeanws.F90
+
+      - program unit: FEMEANWS
+
+   -- file: wwm_femeanws_local.F90
+
+      - program unit: FEMEANWS_LOCAL
+
+   -- file: wwm_fkmean.F90
+
+      - program unit: FKMEAN
+
+   -- file: wwm_fkmean_local.F90
+
+      - program unit: FKMEAN_LOCAL
+
+   -- file: wwm_fluctsplit.F90
+
+      - program unit: FLUCT_EXPLICIT
+
+      - program unit: FLUCT_IMP_EXP_SOURCES
+
+      - program unit: FLUCT_IMP_SOURCES
+
+      - program unit: FLUCT_IMP_ALL
+
+      - program unit: FLUCTCFL
+
+      - program unit: EXPLICIT_N_SCHEME
+
+      - program unit: EXPLICIT_PSI_SCHEME
+
+      - program unit: EXPLICIT_LFPSI_SCHEME
+
+      - program unit: EIMPS_V1
+   1116  GTEMP2 = IMATRAA(IS,ID,IP)/MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
+(file: wwm_fluctsplit.F90, line: 1116)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+      - program unit: EIMPS_ASPAR_B_SOURCES_LOCAL
+   1314  GTEMP1 = MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
+(file: wwm_fluctsplit.F90, line: 1314)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+      - program unit: EIMPS
+
+      - program unit: SQUARE_NORM
+
+      - program unit: EIMPS_JACOBI_ITERATION
+
+      - program unit: CNIMPS_ASPAR_B
+
+      - program unit: CNIMPS
+
+      - program unit: CNEIMPS
+
+      - program unit: CADVXY
+
+      - program unit: CADVXY_VECTOR
+
+      - program unit: INIT_FLUCT_ARRAYS
+
+      - program unit: DEALLOC_FLUCT_ARRAYS
+
+      - program unit: INIT_FLUCT
+
+      - program unit: DEALLOC_FLUCT
+
+      - program unit: EXPLICIT_N_SCHEME_VECTOR
+
+      - program unit: EXPLICIT_N_SCHEME_VECTOR_HPCF
+
+      - program unit: EXPLICIT_N_SCHEME_HPCF2
+
+   -- file: wwm_frcutindex.F90
+
+      - program unit: FRCUTINDEX
+
+   -- file: wwm_frcutindex_local.F90
+
+      - program unit: FRCUTINDEX_LOCAL
+
+   -- file: wwm_friction.F90
+
+      - program unit: SDS_BOTF
+
+   -- file: wwm_gridcf.F90
+
+      - program unit: INIT_SPATIAL_GRID
+
+      - program unit: INIT_SPECTRAL_GRID
+    339  MSC2   = INT(FLOAT(MSC)/2._rkind)
+(file: wwm_gridcf.F90, line: 339)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+
+      - program unit: DEALLOC_SPECTRAL_GRID
+
+   -- file: wwm_hotfile.F90
+
+      - program unit: WWM_HOTFILE_MOD
+
+         - module subprogram: PRE_CREATE_LOCAL_HOTNAME
+
+         - module subprogram: CREATE_LOCAL_HOTNAME
+
+         - module subprogram: READ_AC_SIMPLE
+
+         - module subprogram: DETERMINE_NUMBER_PROC
+
+         - module subprogram: READ_IPLG
+
+         - module subprogram: DEALLOCATE_RECONSARR
+
+         - module subprogram: DETERMINE_NEEDED_HOTFILES
+
+         - module subprogram: INPUT_HOTFILE
+
+         - module subprogram: OUTPUT_HOTFILE
+
+         - module subprogram: INPUT_HOTFILE_BINARY
+
+         - module subprogram: OUTPUT_HOTFILE_BINARY
+
+         - module subprogram: INPUT_HOTFILE_NETCDF
+    515  IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 14')
+(file: wwm_hotfile.F90, line: 515)
+  ISTAT
+**[312 E] no value assigned to this variable
+
+         - module subprogram: OUTPUT_HOTFILE_NETCDF
+
+   -- file: wwm_implsch2.F90
+
+      - program unit: PREINTRHS
+    121  SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+(file: wwm_implsch2.F90, line: 121)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    146  WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
+(file: wwm_implsch2.F90, line: 146)
+  IU06
+**[312 E] no value assigned to this variable
+
+      - program unit: INTSPECWAM
+    326  GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+(file: wwm_implsch2.F90, line: 326)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+      - program unit: POSTINTRHS
+    512  WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
+(file: wwm_implsch2.F90, line: 512)
+  IU06
+**[312 E] no value assigned to this variable
+          IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(2I10,7F15.8,I10)') IJS, IJL,SUM(FL3),THWNEW, USNEW, Z0NEW,ROAIRN, TAUW,SUM(SL),MIJ(IJS:IJL)
+
+   -- file: wwm_implsch2_local.F90
+
+      - program unit: PREINTRHS_LOCAL
+    103  SPRD(K)=MAX(0.,COS(TH(K)-THWNEW(IPP)))**2
+(file: wwm_implsch2_local.F90, line: 103)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    124  WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
+(file: wwm_implsch2_local.F90, line: 124)
+  IU06
+**[312 E] no value assigned to this variable
+
+      - program unit: INTSPECWAM_LOCAL
+    287  GTEMP1 = MAX((1.-DELT5*FL(K,M)),1.)
+(file: wwm_implsch2_local.F90, line: 287)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+      - program unit: POSTINTRHS_LOCAL
+    449  WRITE(IU06,*) '   SUB. IMPLSCH: SINPUT CALLED AT THE END'
+(file: wwm_implsch2_local.F90, line: 449)
+  IU06
+**[312 E] no value assigned to this variable
+          IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111113,'(I10,7F15.8,I10)') IPP, SUM(FL3),THWNEW, USNEW, Z0NEW,ROAIRN, TAUW,SUM(SL),MIJ
+
+   -- file: wwm_implsch.F90
+
+      - program unit: IMPLSCH
+    209  SPRD(IJ,K)=MAX(0.,COS(TH(K)-THWNEW(IJ)))**2
+(file: wwm_implsch.F90, line: 209)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    236  WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
+(file: wwm_implsch.F90, line: 236)
+  IU06
+**[312 E] no value assigned to this variable
+    349  GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+(file: wwm_implsch.F90, line: 349)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_implsch_local.F90
+
+      - program unit: IMPLSCH_LOCAL
+    202  SPRD(K)=MAX(0.,COS(TH(K)-THWNEW(IPP)))**2
+(file: wwm_implsch_local.F90, line: 202)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    226  WRITE(IU06,*) '   SUB. IMPLSCH: AIRSEA CALLED BEFORE DO LOOP'
+(file: wwm_implsch_local.F90, line: 226)
+  IU06
+**[312 E] no value assigned to this variable
+    334  GTEMP1 = MAX((1.-DELT5*FL(K,M)),1.)
+(file: wwm_implsch_local.F90, line: 334)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_inisnonlin.F90
+
+      - program unit: INISNONLIN
+     79  EPMMA(X)= EXP(-MIN(1.25*X**4,50.))*(X**5)
+(file: wwm_inisnonlin.F90, line: 79)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_m_fileio.F90
+
+      - program unit: M_FILEIO
+
+         - module subprogram: Z_FILEIO
+
+         - module subprogram: Z_FCLOSE
+
+         - module subprogram: Z_FLUNIT
+
+   -- file: wwm_serv_xnl4v5.F90
+
+      - program unit: SERV_XNL4V5
+
+         - module subprogram: Y_GAULEG
+
+         - module subprogram: Z_CMPCG
+
+         - module subprogram: Z_INTP1
+
+         - module subprogram: Z_POLYAREA
+
+         - module subprogram: Z_STEPS
+
+         - module subprogram: Z_ROOT2
+
+         - module subprogram: Z_UPPER
+
+         - module subprogram: Z_WNUMB
+    730  xx      = y*(y+1./(1.+y*(0.66667+y*(0.35550+y*(0.16084+y*(0.06320+y*
+    731            (0.02174+y*(0.00654+y*(0.00171+y*(0.00039+y*0.00011))))))))))
+(file: wwm_serv_xnl4v5.F90, line: 731)
+**[ 16 O] (EXPRESSION STACK OVERFLOW)
+
+   -- file: wwm_m_constants.F90
+
+      - program unit: M_CONSTANTS
+
+         - module subprogram: INIT_CONSTANTS
+
+   -- file: wwm_mod_xnl4v5.F90
+
+      - program unit: M_XNLDATA
+
+         - module subprogram: XNL_INIT
+
+         - module subprogram: XNL_MAIN
+
+         - module subprogram: Q_ADDTAIL
+
+         - module subprogram: Q_ALLOCATE
+
+         - module subprogram: Q_CHKCONFIG
+
+         - module subprogram: Q_CHKCONS
+
+         - module subprogram: Q_CHKRES
+
+         - module subprogram: Q_CMPLOCUS
+
+         - module subprogram: Q_CTRGRID
+
+         - module subprogram: Q_DSCALE
+
+         - module subprogram: Q_ERROR
+
+         - module subprogram: Q_GETLOCUS
+
+         - module subprogram: Q_INIT
+
+         - module subprogram: Q_LOCPOS
+
+         - module subprogram: Q_MAKEGRID
+
+         - module subprogram: Q_MODIFY
+
+         - module subprogram: Q_NEAREST
+
+         - module subprogram: Q_POLAR2
+
+         - module subprogram: Q_SETCONFIG
+
+         - module subprogram: Q_SEARCHGRID
+
+         - module subprogram: Q_SETVERSION
+
+         - module subprogram: Q_STACK
+
+         - module subprogram: Q_SUMMARY
+
+         - module subprogram: Q_SYMMETRY
+
+         - module subprogram: Q_T13V4
+
+         - module subprogram: Q_WEIGHT
+
+         - module subprogram: Q_LOC_W1W3
+
+         - module subprogram: Q_XNL4V4
+
+         - module subprogram: X_COSK
+
+         - module subprogram: X_CPLE
+   7318  x_cple = xc_hh(k4x,k4y,k3x,k3y,k2x,k2y,k1x,k1y,depth)
+(file: wwm_mod_xnl4v5.F90, line: 7318)
+  K1X
+**[620 E] dummy input argument must not be defined
+(file: wwm_mod_xnl4v5.F90, line: 7318)
+  K1Y
+**[620 E] dummy input argument must not be defined
+
+         - module subprogram: X_FLOCUS
+
+         - module subprogram: X_JACOBIAN
+
+         - module subprogram: X_DISPER
+
+         - module subprogram: X_LOCUS1
+
+         - module subprogram: X_LOCUS2
+
+         - module subprogram: XC_HH
+
+         - module subprogram: TANZ
+
+         - module subprogram: COSZ
+
+         - module subprogram: XC_WEBB
+
+   -- file: wwm_initio.F90
+
+      - program unit: INIT_ARRAYS
+             ALLOCATE ( SUMACOLD(MNP), HSOLD(MNP), KHSOLD(MNP), TM02OLD(MNP), IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+           ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,MSC), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+           ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
+
+      - program unit: DEALLOC_ARRAYS
+
+      - program unit: INITIALIZE_WWM
+
+      - program unit: TERMINATE_WWM
+
+      - program unit: BUILD_WILD_ARRAY
+
+      - program unit: DEALLOC_WILD_ARRAY
+
+      - program unit: BASIC_PARAMETER
+
+      - program unit: INITIATE_WAVE_PARAMETER
+    942  CALL XNL_INIT(REAL(SPSIG),REAL(SPDIR),MSC,MDC,-4.0,REAL(G9),REAL(DEP),MNP,1,IQGRID,INODE,IE
+RR)
+(file: wwm_initio.F90, line: 942)
+  XNL_INIT, dummy argument no 10 (IQGRID)
+**[616 E] referenced input or input/output argument is not defined
+          (The dummy argument is referenced before defined)
+(file: wwm_initio.F90, line: 942)
+  IQGRID
+**[312 E] no value assigned to this variable
+(file: wwm_initio.F90, line: 942)
+  XNL_INIT, dummy argument no 11 (IPROC)
+**[616 E] referenced input or input/output argument is not defined
+          (The dummy argument is referenced and was not defined on entry)
+(file: wwm_initio.F90, line: 942)
+  INODE
+**[312 E] no value assigned to this variable
+
+      - program unit: INITIAL_CONDITION
+
+      - program unit: INIT_FILE_HANDLES
+
+      - program unit: CLOSE_FILE_HANDLES
+
+      - program unit: INIT_STATION_OUTPUT
+            ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
+            ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
+                WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', IELG(STATION(I)%ELEMENT), STATION(I)%IFOUND
+                WRITE(DBG%FHNDL,'(A10,I10,A20,I10,A15,2I10)') 'MYRANK', MYRANK, 'STATION =',I, 'IN ELEMENT =', STATION(I)%ELEMENT, STATION(I)%IFOUND
+            ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(MSC,MDC,IOUTS), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
+
+      - program unit: TERMINATE_STATION_OUTPUT
+
+      - program unit: READWAVEPARWWM
+
+      - program unit: READWAVEPARFVCOM
+
+      - program unit: READSPEC1D
+
+      - program unit: READSPEC2D
+
+      - program unit: READSPEC2D_WW3_INIT_SPEC
+
+      - program unit: READSPEC2D_WW3_INIT_TIME
+
+      - program unit: LEADINGZERO
+
+      - program unit: READ_SPEC_WW3
+
+      - program unit: GET_BINARY_WW3_SPECTRA
+
+      - program unit: INIT_BINARY_WW3_SPECTRA
+
+      - program unit: SHEPARDINT2D
+
+      - program unit: SPECTRALINT
+   1971  WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3
+_TMP), SUM(SPEC_WWM)
+(file: wwm_initio.F90, line: 1971)
+  IP
+**[312 E] no value assigned to this variable
+
+      - program unit: INTERLIND
+
+      - program unit: ALLOC_SPEC_BND
+
+      - program unit: READWAVEPARWW3
+
+      - program unit: INIT_WAVE_BOUNDARY_CONDITION
+
+      - program unit: SET_HMAX
+
+   -- file: wwm_input.F90
+
+      - program unit: READ_HISTORY_STATION_NAMELIST
+
+      - program unit: READ_WWMINPUT
+
+      - program unit: SINGLE_READ_SPATIAL_GRID_TOTAL
+
+      - program unit: READ_SPATIAL_GRID_TOTAL
+
+      - program unit: CHECK_LOGICS
+             IF (OUT_HISTORY%BMJD .GE. OUT_HISTORY%EMJD) CALL WWM_ABORT('CHECK OUTPUT HISTORY TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
+             IF (OUT_STATION%BMJD .GE. OUT_STATION%EMJD) CALL WWM_ABORT('CHECK OUTPUT STATION TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
+
+      - program unit: INIT_CURRENT_INPUT
+
+      - program unit: INIT_WATLEV_INPUT
+
+   -- file: wwm_jafu.F90
+
+      - program unit: JAFU
+
+   -- file: wwm_main.F90
+
+      - program unit: NON_STEADY
+
+      - program unit: QUASI_STEADY
+
+      - program unit: IO_1
+
+      - program unit: IO_2
+
+      - program unit: SET_WWMINPULNML
+
+      - program unit: WWMIII_MPI
+
+   -- file: wwm_mjdv2.F90
+
+      - program unit: CT2MJD
+
+      - program unit: MJD2CT
+
+      - program unit: CU2SEC
+
+      - program unit: MJDYMD
+
+   -- file: wwm_netcdf.F90
+
+      - program unit: CF_EXTRACT_TIME
+     42  alenC=LEN_TRIM(YnameTime)
+(file: wwm_netcdf.F90, line: 42)
+  LEN_TRIM, dummy argument no  1 (STRING)
+**[616 E] referenced input or input/output argument is not defined
+(file: wwm_netcdf.F90, line: 42)
+  YNAMETIME
+**[312 E] no value assigned to this variable
+
+      - program unit: DETERMINE_NEEDED_COMPUTATION
+          IF (TPPD .or. CPPD .or. KPPD .or. CGPD .or. TPP .or. CPP .or. WNPP .or. CGPP .or. KPP .or. LPP .or. PEAKD .or. PEAKDSPR .or. DPEAK) THEN
+
+      - program unit: SERIAL_GET_BOUNDARY
+
+      - program unit: SERIAL_WRITE_BOUNDARY
+
+      - program unit: REPORT_ERROR_INQ
+
+      - program unit: REPORT_ERROR_DEF
+
+      - program unit: GENERIC_NETCDF_ERROR
+
+      - program unit: NAMEVARIABLE
+
+      - program unit: WRITE_NETCDF_TIME_HEADER
+
+      - program unit: WRITE_NETCDF_TIME
+
+      - program unit: GET_IOBPD_OUTPUT
+
+      - program unit: WRITE_NETCDF_HEADERS_1
+   1094  iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ mdc_dims, p_dims, ntime_dims/), var_id)
+(file: wwm_netcdf.F90, line: 1094)
+  NTIME_DIMS
+**[312 E] no value assigned to this variable
+(file: wwm_netcdf.F90, line: 972)
+  NTIME_DIMS
+**[307 E] variable not defined
+
+      - program unit: WRITE_NETCDF_HEADERS_2
+
+      - program unit: WRITE_PARAM_1
+
+      - program unit: WRITE_PARAM_2
+
+      - program unit: DEFINE_STATION_NC
+
+      - program unit: WRITE_NETCDF_HEADERS_STAT_1
+
+      - program unit: WRITE_NETCDF_HEADERS_STAT_2
+
+   -- file: wwm_nlweigt.F90
+
+      - program unit: NLWEIGT
+     95  ISP = INT(LOG10(1.+ALAMD)/F1P1+.000001)
+(file: wwm_nlweigt.F90, line: 95)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+
+   -- file: wwm_nums1d.F90
+
+      - program unit: COMPUTE_ADVECTION1D_QUICKEST_A
+
+      - program unit: QUICKEST_ADV
+
+      - program unit: QUICKEST_VAR_ADV
+
+      - program unit: QUICKEST_DIR
+
+      - program unit: QUICKEST_FREQ
+
+   -- file: wwm_numsigma.F90
+
+      - program unit: COMPUTE_FREQUENCY_QUICKEST_A
+
+      - program unit: COMPUTE_FREQUENCY_UPWIND_EXPLICIT
+
+      - program unit: COMPUTE_FREQUENCY_UPWIND_IMPLICIT
+
+      - program unit: PROPSIGMA
+    186  DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
+(file: wwm_numsigma.F90, line: 186)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+                    CAS(IS,ID) = DWDH *( DEPDT(IP)+CURTXY(IP,1)*DDEP(IP,1) ) - CG(IS,IP)*WK(IS,IP)*(COS2TH(ID)*DCUX(IP,1)+ SINCOSTH(ID)*DCUY(IP,1))
+                      CAS(IS,ID) = DWDH * WK(IS,IP) * ( DEPDT(IP) + CURTXY(IP,1)*DDEP(IP,1) + CURTXY(IP,2)*DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+                      CAS(IS,ID) = DWDH * WK(IS,IP) * ( DEPDT(IP) + CURTXY(IP,1) * DDEP(IP,1) + CURTXY(IP,2) * DDEP(IP,2) ) - CG(IS,IP) * WK(IS,IP) * DIFRM(IP) * ( COS2TH(ID)*DCUX(IP,1) + SIN2TH(ID)*DCUY(IP,2) + SINCOSTH(ID)*( DCUY(IP,1) + DCUX(IP,2) ) )
+
+      - program unit: COMPUTE_FREQUENCY
+
+   -- file: wwm_numtheta.F90
+
+      - program unit: COMPUTE_DIRECTION_CNTG_A
+
+      - program unit: COMPUTE_DIRECTION_QUICKEST_A
+
+      - program unit: COMPUTE_DIRECTION_UPWIND_A
+
+      - program unit: COMPUTE_DIRECTION_UPWIND_IMPLICIT
+
+      - program unit: COMPUTE_DIRECTION_WENO_A
+
+      - program unit: PROPTHETA
+    612  DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
+(file: wwm_numtheta.F90, line: 612)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: COMPUTE_DIRECTION
+
+   -- file: wwm_output.F90
+
+      - program unit: OUTPUT_HISTORY_AND_STATION
+          WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4,L5)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD, (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)
+            WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD
+            WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
+
+      - program unit: WWM_OUTPUT
+
+      - program unit: OUTPUT_HISTORY
+
+      - program unit: OUTPUT_STATION
+
+      - program unit: OUTPUT_HISTORY_XFN
+
+      - program unit: PRINT_HS_TRIPLE
+
+      - program unit: OUTPUT_STE
+              CALL INTELEMENT_AC_LOC(I,ACLOC_STATIONS(:,:,I),CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I),WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
+                CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I), CURTXYLOC_STATIONS(I,:), ACLOC_STATIONS(:,:,I), STATION(I)%OUTPAR_NODE)
+
+      - program unit: OUTPUT_STATION_NC
+
+      - program unit: OUTPUT_LINE
+               CALL INTELEMENT_AC_LOC(I, ACLOC_STATIONS(:,:,I), CURTXYLOC_STATIONS(I,:),DEPLOC_STATIONS(I), WATLEVLOC_STATIONS(I),WKLOC_STATIONS(I,:))
+                   CALL INTPAR_LOC(I ,STATION(I)%ISMAX,WKLOC_STATIONS(I,:), DEPLOC_STATIONS(I),CURTXYLOC_STATIONS(I,:),ACLOC, STATION(I)%OUTPAR_NODE)
+
+      - program unit: CURRPAR
+
+      - program unit: WINDPAR
+
+      - program unit: INTPAR
+
+      - program unit: DEBUG_PRINT_HS_STATS
+
+      - program unit: PAR_COMPLETE
+
+      - program unit: PAR_COMPLETE_LOC
+            CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
+
+      - program unit: INTPAR_LOC
+
+      - program unit: INTSPEC
+
+      - program unit: OUTPUT_TEST
+
+      - program unit: CLSPEC
+   1777  FF = MIN(1.0_rkind,SQRT(EX**2.0+EY**2.0))
+(file: wwm_output.F90, line: 1777)
+  MIN, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: HISTORY_NC_PRINTMMA
+
+      - program unit: OUTPUT_HISTORY_NC
+
+   -- file: wwm_parall_solver.F90
+
+      - program unit: I5B_EXCHANGE_P4D_WWM
+
+      - program unit: I5B_EXCHANGE_SL_WWM
+
+      - program unit: I5B_EXCHANGE_ASPAR
+
+      - program unit: COLLECT_ALL_COVLOWER
+
+      - program unit: CREATE_WWM_P2D_EXCH
+          allocate(wwm_ListNbCommon_send(wwm_nnbr_send), wwm_ListNbCommon_recv(wwm_nnbr_recv), wwm_ListNeigh_send(wwm_nnbr_send), wwm_ListNeigh_recv(wwm_nnbr_recv), stat=istat)
+          allocate(wwm_p2dsend_rqst(wwm_nnbr_send), wwm_p2drecv_rqst(wwm_nnbr_recv), wwm_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_send), wwm_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv), wwm_p2dsend_type(wwm_nnbr_send), wwm_p2drecv_type(wwm_nnbr_recv), wwmtot_p2dsend_type(wwm_nnbr_send), wwmtot_p2drecv_type(wwm_nnbr_recv), stat=istat)
+          allocate(wwm_ListNbCommon_send_sl(wwm_nnbr_send_sl), wwm_ListNbCommon_recv_sl(wwm_nnbr_recv_sl), wwm_ListNeigh_send_sl(wwm_nnbr_send_sl), wwm_ListNeigh_recv_sl(wwm_nnbr_recv_sl), stat=istat)
+          allocate(wwmsl_send_rqst(wwm_nnbr_send_sl), wwmsl_recv_rqst(wwm_nnbr_recv_sl), wwmsl_send_stat(MPI_STATUS_SIZE,wwm_nnbr_send_sl), wwmsl_recv_stat(MPI_STATUS_SIZE,wwm_nnbr_recv_sl), wwmsl_send_type(wwm_nnbr_send_sl), wwmsl_recv_type(wwm_nnbr_recv_sl), stat=istat)
+
+      - program unit: CREATE_WWM_MAT_P2D_EXCH
+          allocate(wwmmat_p2dsend_rqst(wwm_nnbr_m_send), wwmmat_p2drecv_rqst(wwm_nnbr_m_recv), wwmmat_p2dsend_stat(MPI_STATUS_SIZE,wwm_nnbr_m_send), wwmmat_p2drecv_stat(MPI_STATUS_SIZE,wwm_nnbr_m_recv), wwmmat_p2dsend_type(wwm_nnbr_m_send), wwmmat_p2drecv_type(wwm_nnbr_m_recv), wwm_ListNbCommon_m_send(wwm_nnbr_m_send), wwm_ListNbCommon_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_recv(wwm_nnbr_m_recv), wwm_ListNeigh_m_send(wwm_nnbr_m_send), stat=istat)
+
+      - program unit: BUILD_MULTICOLORING
+
+      - program unit: DEALLOCATEGRAPH
+
+      - program unit: INIT_BLOCK_FREQDIR
+
+      - program unit: INIT_BLK_L2U_ARRAY
+          allocate(LocalColor % l2u_p2dsend_type(nbUpp_send), LocalColor % l2u_p2drecv_type(nbLow_recv), LocalColor % l2u_ListNeigh_send(nbUpp_send), LocalColor % l2u_ListNeigh_recv(nbLow_recv), ListNeed(MNP), IdxRev(MNP), stat=istat)
+
+      - program unit: SYMM_INIT_COLORING
+
+      - program unit: INIT_LOW_2_UPP_ARRAYS
+          allocate(LocalColor % Upp_s_rq(nbUpp_send), LocalColor % Upp_s_stat(MPI_STATUS_SIZE, nbUpp_send), LocalColor % Low_r_rq(nbLow_recv), LocalColor % Low_r_stat(MPI_STATUS_SIZE, nbLow_recv), stat=istat)
+
+      - program unit: INIT_COVLOWER_ARRAY
+          allocate(LocalColor % u2l_ListNbCommon_send(u2l_nnbr_send), LocalColor % u2l_ListNbCommon_recv(u2l_nnbr_recv), LocalColor % u2l_ListNeigh_send(u2l_nnbr_send), LocalColor % u2l_ListNeigh_recv(u2l_nnbr_recv), stat=istat)
+          allocate(LocalColor % u2l_p2dsend_rqst(u2l_nnbr_send), LocalColor % u2l_p2drecv_rqst(u2l_nnbr_recv), LocalColor % u2l_p2dsend_stat(MPI_STATUS_SIZE,u2l_nnbr_send), LocalColor % u2l_p2drecv_stat(MPI_STATUS_SIZE,u2l_nnbr_recv), LocalColor % u2l_p2dsend_type(u2l_nnbr_send), LocalColor % u2l_p2drecv_type(u2l_nnbr_recv), stat=istat)
+          allocate(LocalColor % sync_ListNbCommon_send(sync_nnbr_send), LocalColor % sync_ListNbCommon_recv(sync_nnbr_recv), LocalColor % sync_ListNeigh_send(sync_nnbr_send), LocalColor % sync_ListNeigh_recv(sync_nnbr_recv), stat=istat)
+          allocate(LocalColor % sync_p2dsend_rqst(sync_nnbr_send), LocalColor % sync_p2drecv_rqst(sync_nnbr_recv), LocalColor % sync_p2dsend_stat(MPI_STATUS_SIZE,sync_nnbr_send), LocalColor % sync_p2drecv_stat(MPI_STATUS_SIZE,sync_nnbr_recv), LocalColor % sync_p2dsend_type(sync_nnbr_send), LocalColor % sync_p2drecv_type(sync_nnbr_recv), stat=istat)
+
+      - program unit: DETERMINE_JSTATUS_L_U
+
+      - program unit: I5_RECV_ASPAR_PC
+
+      - program unit: I5_SEND_ASPAR_PC
+
+      - program unit: I5_CREATE_PRECOND_ILU0
+
+      - program unit: I5B_CREATE_PRECOND_ILU0
+
+      - program unit: I5B_CREATE_PRECOND
+
+      - program unit: I5B_EXCHANGE_P3_LOW_2_UPP_SEND
+
+      - program unit: I5B_EXCHANGE_P3_LOW_2_UPP_RECV
+
+      - program unit: I5B_EXCHANGE_P3_UPP_2_LOW_SEND
+            call mpi_isend(LocalColor % ACexch,1,LocalColor%u2l_p2dsend_type(iProc),iRank,1151,comm,LocalColor%u2l_p2dsend_rqst(iProc),ierr)
+
+      - program unit: I5B_EXCHANGE_P3_UPP_2_LOW_RECV
+            call mpi_irecv(LocalColor % ACexch,1,LocalColor%u2l_p2drecv_type(iProc),iRank,1151,comm,LocalColor % u2l_p2drecv_rqst(iProc),ierr)
+
+      - program unit: I5B_PARTIAL_SOLVE_L
+
+      - program unit: I5B_PARTIAL_SOLVE_U
+
+      - program unit: I5B_SYNC_SENDRECV
+
+      - program unit: I5B_APPLY_PRECOND
+
+      - program unit: I5B_APPLY_FCT
+
+      - program unit: REPLACE_NAN_ZERO
+
+      - program unit: I5B_L2_LINF
+
+      - program unit: I5B_SCALAR
+
+      - program unit: I5B_SUM_MAX
+
+      - program unit: I5B_SUMTOT
+
+      - program unit: I5B_BCGS_REORG_SOLVER
+
+      - program unit: I5B_ALLOCATE
+          allocate(SolDat % AC1(MSC,MDC,MNP), SolDat % AC3(MSC,MDC,MNP), SolDat % AC4(MSC,MDC,MNP), SolDat % AC5(MSC,MDC,MNP), SolDat % AC6(MSC,MDC,MNP), SolDat % AC7(MSC,MDC,MNP), stat=istat)
+
+      - program unit: WWM_SOLVER_INIT
+
+      - program unit: I5B_SOLVER_INIT
+
+      - program unit: I5B_FREE
+
+      - program unit: I5_SUM
+
+      - program unit: WWM_SOLVER_EIMPS
+
+      - program unit: EIMPS_B_BLOCK
+
+      - program unit: EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL
+
+      - program unit: EIMPS_ASPAR_BLOCK
+
+      - program unit: I5B_EIMPS
+
+      - program unit: ADD_FREQ_DIR_TO_ASPAR_COMP_CADS
+
+      - program unit: GET_FREQ_DIR_CONTRIBUTION
+
+      - program unit: GET_IMATRA_IMATDA
+
+      - program unit: GET_BLOCAL
+
+      - program unit: LINEAR_ASPAR_LOCAL
+
+      - program unit: EIMPS_TOTAL_JACOBI_ITERATION
+
+   -- file: wwm_petsc_block.F90
+
+   -- file: wwm_petsc_controller.F90
+
+   -- file: wwm_petsc_parallel.F90
+
+   -- file: wwm_petscpool.F90
+
+   -- file: wwm_petsc_seriell.F90
+
+   -- file: wwm_sbottom.F90
+
+      - program unit: SBOTTOM
+
+   -- file: wwm_sbottom_local.F90
+
+      - program unit: SBOTTOM_LOCAL
+(file: wwm_sbottom_local.F90, line: 71)
+  IJ
+**[307 E] variable not defined
+
+   -- file: wwm_sdiss_ardh_vec.F90
+
+      - program unit: SDISS_ARDH_VEC
+    191  WNMEAN2(IJ) = MAX( 1.E-10 , XKMEAN(IJ)  )
+(file: wwm_sdiss_ardh_vec.F90, line: 191)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    402  BTH0(IJ,M)=MAX(0.,BTH0S(IJ,M)/NSMOOTH(IJ,M))
+(file: wwm_sdiss_ardh_vec.F90, line: 402)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    409  BTH(IJ,K,M)=MAX(0.,BTHS(IJ,K,M)/NSMOOTH(IJ,M))
+(file: wwm_sdiss_ardh_vec.F90, line: 409)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    462  RENEWALFREQ(IJ,K)=RENEWALFREQ(IJ,K)+ CUMULW(M,K,M2,K2)
+    463               *(MAX(SQRT(BTH(IJ,K2,M2))-EPSR,0.))**2
+(file: wwm_sdiss_ardh_vec.F90, line: 463)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    478  DTEMP=SSDSC2 * SIG(M)
+    479     * (  SSDSC6 *(MAX(0.,BTH0(IJ,    M)*TMP03-SSDSC4))**P0
+    480     + (1-SSDSC6)*(MAX(0.,BTH (IJ,K,M)*TMP03-SSDSC4))**P0)
+    481     - (TMP04+DTURB)
+(file: wwm_sdiss_ardh_vec.F90, line: 479)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+(file: wwm_sdiss_ardh_vec.F90, line: 480)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+   -- file: wwm_sdiss_ardh_vec_local.F90
+
+      - program unit: SDISS_ARDH_VEC_LOCAL
+    149  DO M=1,MIJ-1
+(file: wwm_sdiss_ardh_vec_local.F90, line: 149)
+  MIJ
+**[312 E] no value assigned to this variable
+    190  WNMEAN2 = MAX( 1.E-10 , XKMEAN  )
+(file: wwm_sdiss_ardh_vec_local.F90, line: 190)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    367  BTH0(M)=MAX(0.,BTH0S(M)/NSMOOTH(M))
+(file: wwm_sdiss_ardh_vec_local.F90, line: 367)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    372  BTH(K,M)=MAX(0.,BTHS(K,M)/NSMOOTH(M))
+(file: wwm_sdiss_ardh_vec_local.F90, line: 372)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    416  RENEWALFREQ(K)=RENEWALFREQ(K)+ CUMULW(M,K,M2,K2)
+    417               *(MAX(SQRT(BTH(K2,M2))-EPSR,0.))**2
+(file: wwm_sdiss_ardh_vec_local.F90, line: 417)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    430  DTEMP=SSDSC2 * SIG(M)
+    431   * (  SSDSC6 *(MAX(0.,BTH0(    M)*TMP03-SSDSC4))**P0
+    432   + (1-SSDSC6)*(MAX(0.,BTH (K,M)*TMP03-SSDSC4))**P0)
+    433   - (TMP04+DTURB)
+(file: wwm_sdiss_ardh_vec_local.F90, line: 431)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+(file: wwm_sdiss_ardh_vec_local.F90, line: 432)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+(file: wwm_sdiss_ardh_vec_local.F90, line: 97)
+  MIJ
+**[307 E] variable not defined
+
+   -- file: wwm_sdissip.F90
+
+      - program unit: SDISSIP
+    205  ARG  = MIN(ALPH,50.)
+(file: wwm_sdissip.F90, line: 205)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_sdissip_local.F90
+
+      - program unit: SDISSIP_LOCAL
+    190  ARG  = MIN(ALPH,50.)
+(file: wwm_sdissip_local.F90, line: 190)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_sinput_ard.F90
+
+      - program unit: SINPUT_ARD
+    167  FW=MAX(ABS(SWELLF3),0.)
+(file: wwm_sinput_ard.F90, line: 167)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    210  Z0VIS(IJ) = 0.1*NU_AIR/MAX(USNEW(IJ),0.0001)
+(file: wwm_sinput_ard.F90, line: 210)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    211  Z0NOZ(IJ) = max(Z0VIS(IJ),0.04*Z0NEW(IJ))
+(file: wwm_sinput_ard.F90, line: 211)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    221  XI=(LOG10(MAX(ZORB(IJ),3.))
+    222  -ABMIN)/DELAB
+(file: wwm_sinput_ard.F90, line: 221)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    224  DELI1= MIN (1. ,XI-FLOAT(IND))
+(file: wwm_sinput_ard.F90, line: 224)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    376  XSTRESS(IJ)=XSTRESS(IJ)+SL(IJ,K,M)*CONST11/MAX(ROAIRN(IJ),1.)
+(file: wwm_sinput_ard.F90, line: 376)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    377  YSTRESS(IJ)=YSTRESS(IJ)+SL(IJ,K,M)*CONST22/MAX(ROAIRN(IJ),1.)
+(file: wwm_sinput_ard.F90, line: 377)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_sinput_ard_local.F90
+
+      - program unit: SINPUT_ARD_LOCAL
+    169  FW=MAX(ABS(SWELLF3),0.)
+(file: wwm_sinput_ard_local.F90, line: 169)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    201  Z0VIS = 0.1*NU_AIR/MAX(USNEW,0.0001)
+(file: wwm_sinput_ard_local.F90, line: 201)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    202  Z0NOZ = max(Z0VIS,0.04*Z0NEW)
+(file: wwm_sinput_ard_local.F90, line: 202)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    212  XI=(LOG10(MAX(ZORB,3.)) -ABMIN)/DELAB
+(file: wwm_sinput_ard_local.F90, line: 212)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    214  DELI1= MIN (1. ,XI-FLOAT(IND))
+(file: wwm_sinput_ard_local.F90, line: 214)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    332  XSTRESS=XSTRESS+SL(K,M)*CONST11/MAX(ROAIRN,1.)
+(file: wwm_sinput_ard_local.F90, line: 332)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    333  YSTRESS=YSTRESS+SL(K,M)*CONST22/MAX(ROAIRN,1.)
+(file: wwm_sinput_ard_local.F90, line: 333)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_sinput.F90
+
+      - program unit: SINPUT
+
+   -- file: wwm_sinput_local.F90
+
+      - program unit: SINPUT_LOCAL
+
+   -- file: wwm_snl3.F90
+
+      - program unit: TRIADSWAN_NEW
+     67  ISP    = INT( LOG(2.) / XISLN )
+(file: wwm_snl3.F90, line: 67)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+     71  ISM    = INT( LOG(0.5) / XISLN )
+(file: wwm_snl3.F90, line: 71)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+
+      - program unit: TRIAD_DINGEMANS
+
+      - program unit: D20
+
+      - program unit: DISPU2
+
+      - program unit: DELTA
+
+      - program unit: DDELTA_DX
+
+      - program unit: W
+
+      - program unit: TAU
+
+      - program unit: DWDX
+
+      - program unit: K
+           res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
+
+      - program unit: J
+
+      - program unit: SNL3TA
+
+      - program unit: KRON_DELTA
+
+      - program unit: SNL31
+    658  BIPH  = PI/TWO*(DTANH(0.2/URSELL)-ONE)
+(file: wwm_snl3.F90, line: 658)
+  DTANH, dummy argument no  1 (X)
+**[631 E] invalid argument type length for intrinsic procedure
+
+      - program unit: SNL32
+
+      - program unit: SNL33
+
+      - program unit: TRIADSWAN
+    983  ISP    = INT( LOG(2.) / XISLN )
+(file: wwm_snl3.F90, line: 983)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+    987  ISM    = INT( LOG(0.5) / XISLN )
+(file: wwm_snl3.F90, line: 987)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+   1037  SA(ID,IS) = MAX(ZERO, FT * ( EM * EM - 2. * EM * E0 ))
+(file: wwm_snl3.F90, line: 1037)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: TRIAD_POLNIKOV
+
+   -- file: wwm_snl42.F90
+
+      - program unit: PARAMETER4SNL2
+     46  ISP    = INT(LOG(1.0+LAMBDA)/XISLN)
+(file: wwm_snl42.F90, line: 46)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+     51  ISM    = INT(LOG(1.0-LAMBDA)/XISLN)
+(file: wwm_snl42.F90, line: 51)
+  INT, dummy argument no  1 (A)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+
+      - program unit: SNL41
+
+      - program unit: SNL42
+
+      - program unit: SNL43
+
+   -- file: wwm_snl4.F90
+
+      - program unit: PARAMETER4SNL
+     26  DELTH3 = DACOS((LAMM2**2+4.0-LAMP2**2)/(4.0*LAMM2))
+(file: wwm_snl4.F90, line: 26)
+  DACOS, dummy argument no  1 (X)
+**[631 E] invalid argument type length for intrinsic procedure
+
+      - program unit: SNL4
+
+   -- file: wwm_snl4_tsa.F90
+
+      - program unit: W3SNLXMD
+
+         - module subprogram: INSNLX
+
+         - module subprogram: W3SNLX
+
+         - internal subprogram: WKFNC
+   2077  x     = y * ( y +
+   2078  1./(1.00000+y*(0.66667+y*(0.35550+y*(0.16084+y*(0.06320
+   2079  +y*(0.02174+y*(0.00654+y*(0.00171+y*(0.00039+y*0.00011)
+   2080  )))))))))
+(file: wwm_snl4_tsa.F90, line: 2079)
+**[ 16 O] (EXPRESSION STACK OVERFLOW)
+
+         - module subprogram: GRIDSETR
+
+         - module subprogram: SHLOXR
+
+         - internal subprogram: WKFNC
+   2861  x     = y * ( y +
+   2862  1./(1.00000+y*(0.66667+y*(0.35550+y*(0.16084+y*(0.06320
+   2863  +y*(0.02174+y*(0.00654+y*(0.00171+y*(0.00039+y*0.00011)
+   2864  )))))))))
+(file: wwm_snl4_tsa.F90, line: 2863)
+**[ 16 O] (EXPRESSION STACK OVERFLOW)
+
+         - module subprogram: SHLOCR
+
+         - module subprogram: CPLSHR
+
+         - module subprogram: OPTSA2
+
+         - module subprogram: SNLR
+
+   -- file: wwm_snl4_wrt.F90
+
+      - program unit: WWMQUAD_WRT
+
+   -- file: wwm_snonlin.F90
+
+      - program unit: SNONLIN
+    121  ENHFR(IJ) = MAX(ENHFR(IJ),.5)
+(file: wwm_snonlin.F90, line: 121)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_snonlin_local.F90
+
+      - program unit: SNONLIN_LOCAL
+    122  ENHFR = MAX(ENHFR,.5)
+(file: wwm_snonlin_local.F90, line: 122)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_sourceterms.F90
+
+      - program unit: SOURCETERMS
+                     CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
+                     CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+    171  CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP
+), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+(file: wwm_sourceterms.F90, line: 171)
+  W3SIN4, dummy argument no 19 (BRLAMBDA)
+**[616 E] referenced input or input/output argument is not defined
+          (The dummy argument is referenced and was not defined on entry)
+(file: wwm_sourceterms.F90, line: 171)
+  BRLAMBDA
+**[312 E] no value assigned to this variable
+                     CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
+                     CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+    173  CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP)
+, TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+(file: wwm_sourceterms.F90, line: 173)
+  W3SIN4, dummy argument no 19 (BRLAMBDA)
+**[616 E] referenced input or input/output argument is not defined
+          (The dummy argument is referenced and was not defined on entry)
+                 CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
+                 CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+                 CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
+(file: wwm_sourceterms.F90, line: 65)
+  IMATDA_TSA
+**[307 E] variable not defined
+(file: wwm_sourceterms.F90, line: 65)
+  IMATRA_TSA
+**[307 E] variable not defined
+
+   -- file: wwm_sparskit.F90
+
+      - program unit: BCGSTAB
+
+      - program unit: GMRES
+
+      - program unit: IMPLU
+
+      - program unit: UPPDIR
+
+      - program unit: GIVENS
+
+      - program unit: STOPBIS
+
+      - program unit: TIDYCG
+
+      - program unit: BRKDN
+
+      - program unit: BISINIT
+
+      - program unit: MGSRO
+
+      - program unit: AMUX
+
+      - program unit: AMUXMS
+
+      - program unit: ATMUX
+
+      - program unit: ATMUXR
+
+      - program unit: AMUXE
+
+      - program unit: AMUXD
+
+      - program unit: AMUXJ
+
+      - program unit: VBRMV
+
+      - program unit: LSOL
+
+      - program unit: LDSOL
+
+      - program unit: LSOLC
+
+      - program unit: LDSOLC
+
+      - program unit: LDSOLL
+
+      - program unit: USOL
+
+      - program unit: UDSOL
+
+      - program unit: USOLC
+
+      - program unit: UDSOLC
+
+      - program unit: LUSOL
+
+      - program unit: LUTSOL
+
+      - program unit: QSPLIT
+
+      - program unit: RUNRC
+
+      - program unit: ILUT
+
+      - program unit: ILU0
+
+      - program unit: SOR
+
+      - program unit: PGMRES
+
+      - program unit: DISTDOT
+
+   -- file: wwm_specint.F90
+
+      - program unit: SOURCE_INT_EXP
+
+      - program unit: SOURCE_INT_IMP_WWM
+
+      - program unit: SOURCE_INT_EXP_WAM
+
+      - program unit: SOURCE_INT_IMP_WAM_PRE
+    336  GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+(file: wwm_specint.F90, line: 336)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    362  NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
+(file: wwm_specint.F90, line: 362)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    403  GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+(file: wwm_specint.F90, line: 403)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    429  NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
+(file: wwm_specint.F90, line: 429)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+      - program unit: SOURCE_INT_IMP_WAM_POST
+
+      - program unit: INT_IP_STAT
+
+      - program unit: RKS_SP3
+
+      - program unit: INT_IP_DYN
+                     ACLOC(IS,ID) = MAX( ZERO, 3._rkind/4._rkind * ACOLD(IS,ID) + 1._rkind/4._rkind * ACLOC(IS,ID) + 1._rkind/4._rkind * NEWDAC)
+                     ACLOC(IS,ID) = MAX( ZERO,  1._rkind/3._rkind * ACOLD(IS,ID) + 2._rkind/3._rkind * ACLOC(IS,ID) + 2._rkind/3._rkind * NEWDAC)
+    796  ACLOC(IS,ID) = MAX( ZERO, 3./4. * ACOLD(IS,ID) +  1./4. * ACLOC(IS,ID) + 1./4. * NEWDAC)
+(file: wwm_specint.F90, line: 796)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+    805  ACLOC(IS,ID) = MAX( ZERO, 1./3. * ACOLD(IS,ID) +  2./3. * ACLOC(IS,ID) + 2./3. * NEWDAC)
+(file: wwm_specint.F90, line: 805)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: ACTION_LIMITER
+
+      - program unit: BREAK_LIMIT
+
+      - program unit: BREAK_LIMIT_ALL
+
+      - program unit: RESCALE_SPECTRUM
+
+      - program unit: SETSHALLOW
+
+   -- file: wwm_specparam.F90
+
+      - program unit: PARAMENG
+
+      - program unit: STOKES_DRIFT_SURFACE_BAROTROPIC
+
+      - program unit: STOKES_DRIFT_SURFACE_BAROTROPIC_LOC
+
+      - program unit: MEAN_WAVE_PARAMETER
+
+      - program unit: MEAN_PARAMETER_BDCONS
+
+      - program unit: MEAN_PARAMETER
+
+      - program unit: MEAN_WAVE_PARAMETER_LOC
+
+      - program unit: WAVE_CURRENT_PARAMETER
+
+      - program unit: WAVE_CURRENT_PARAMETER_LOC
+
+      - program unit: URSELL_NUMBER
+
+      - program unit: WINDSEASWELLSEP
+
+      - program unit: PEAK_PARAMETER
+   1300  PEAKDSPR = SQRT(MAX(ZERO,2.-2.*PEAKFF)) * 180./PI
+(file: wwm_specparam.F90, line: 1300)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: PEAK_PARAMETER_LOC
+   1433  PEAKDSPR = SQRT(MAX(ZERO,2.-2.*PEAKFF)) * 180./PI
+(file: wwm_specparam.F90, line: 1433)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: MEAN_DIRECTION_AND_SPREAD
+   1554  DSPR = SQRT(MAX(ZERO,2.-2.*FF)) * 180./PI
+(file: wwm_specparam.F90, line: 1554)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: MEAN_DIRECTION_AND_SPREAD_LOC
+   1607  DSPR = SQRT(MAX(ZERO,2.-2.*FF)) * 180./PI
+(file: wwm_specparam.F90, line: 1607)
+  MAX, dummy argument no  2 (A2)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+      - program unit: MEAN_PARAMETER_LOC
+
+      - program unit: MEAN_FREQS
+
+      - program unit: MEAN_WAVEN
+
+   -- file: wwm_stress.F90
+
+      - program unit: STRESS
+    158  TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
+(file: wwm_stress.F90, line: 158)
+  MAX, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+   -- file: wwm_stresso.F90
+
+      - program unit: STRESSO
+    231  XSTRESS(IJ) = XSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
+(file: wwm_stresso.F90, line: 231)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    232  YSTRESS(IJ) = YSTRESS(IJ)/MAX(ROAIRN(IJ),1.)
+(file: wwm_stresso.F90, line: 232)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    254  COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
+(file: wwm_stresso.F90, line: 254)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    261  COSW     = MAX(COS(TH(K)-THWNEW(IJ)),0.)
+(file: wwm_stresso.F90, line: 261)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    270  UST   = MAX(USNEW(IJ),0.000001)
+(file: wwm_stresso.F90, line: 270)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    273  XI    = MIN(REAL(IUSTAR),XI)
+(file: wwm_stresso.F90, line: 273)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    276  DELI1 = MIN (1. ,XI-REAL(I))
+(file: wwm_stresso.F90, line: 276)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    280  XJ    = MIN(REAL(IALPHA),XJ)
+(file: wwm_stresso.F90, line: 280)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    283  DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+(file: wwm_stresso.F90, line: 283)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    298  UST   = MAX(USNEW(IJ),0.000001)
+(file: wwm_stresso.F90, line: 298)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    301  XI    = MIN(REAL(IUSTAR),XI)
+(file: wwm_stresso.F90, line: 301)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    304  DELI1 = MIN (1. ,XI-REAL(I))
+(file: wwm_stresso.F90, line: 304)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    308  XJ    = MIN(REAL(IALPHA),XJ)
+(file: wwm_stresso.F90, line: 308)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    311  DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+(file: wwm_stresso.F90, line: 311)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    316  DELK1= MIN (1. ,XK-FLOAT(II))
+(file: wwm_stresso.F90, line: 316)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    339  TAUW(IJ) = MAX(TAUW(IJ),0.)
+(file: wwm_stresso.F90, line: 339)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_stresso_local.F90
+
+      - program unit: STRESSO_LOCAL
+    215  XSTRESS = XSTRESS/MAX(ROAIRN,1.)
+(file: wwm_stresso_local.F90, line: 215)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    216  YSTRESS = YSTRESS/MAX(ROAIRN,1.)
+(file: wwm_stresso_local.F90, line: 216)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    232  COSW     = MAX(COS(TH(K)-THWNEW),0.)
+(file: wwm_stresso_local.F90, line: 232)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    237  COSW     = MAX(COS(TH(K)-THWNEW),0.)
+(file: wwm_stresso_local.F90, line: 237)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    244  UST   = MAX(USNEW,0.000001)
+(file: wwm_stresso_local.F90, line: 244)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    247  XI    = MIN(REAL(IUSTAR),XI)
+(file: wwm_stresso_local.F90, line: 247)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    250  DELI1 = MIN (1. ,XI-REAL(I))
+(file: wwm_stresso_local.F90, line: 250)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    254  XJ    = MIN(REAL(IALPHA),XJ)
+(file: wwm_stresso_local.F90, line: 254)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    257  DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+(file: wwm_stresso_local.F90, line: 257)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    270  UST   = MAX(USNEW,0.000001)
+(file: wwm_stresso_local.F90, line: 270)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    273  XI    = MIN(REAL(IUSTAR),XI)
+(file: wwm_stresso_local.F90, line: 273)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    276  DELI1 = MIN (1. ,XI-REAL(I))
+(file: wwm_stresso_local.F90, line: 276)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    280  XJ    = MIN(REAL(IALPHA),XJ)
+(file: wwm_stresso_local.F90, line: 280)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    283  DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
+(file: wwm_stresso_local.F90, line: 283)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    288  DELK1= MIN (1. ,XK-FLOAT(II))
+(file: wwm_stresso_local.F90, line: 288)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    309  TAUW = MAX(TAUW,0.)
+(file: wwm_stresso_local.F90, line: 309)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_tauhf.F90
+
+      - program unit: TAUHF_WAM
+    131  UST      = MAX(REAL(K)*DELUST,0.000001)
+(file: wwm_tauhf.F90, line: 131)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    135  DELY     = MAX((1.-YC)/REAL(JTOT-1),0.)
+(file: wwm_tauhf.F90, line: 135)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    141  ZARG     = MIN(XKAPPA/ZX,20.)
+(file: wwm_tauhf.F90, line: 141)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    142  ZMU      = MIN(G*Z0/CM**2*EXP(ZARG),1.)
+(file: wwm_tauhf.F90, line: 142)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    144  ZLOG         = MIN(LOG(ZMU),0.)
+(file: wwm_tauhf.F90, line: 144)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    178  UST0     = MAX(REAL(K)*DELUST,0.000001)
+(file: wwm_tauhf.F90, line: 178)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    183  DELY     = MAX((1.-YC)/REAL(JTOT),0.)
+(file: wwm_tauhf.F90, line: 183)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    194  ZARG     = MIN(XKAPPA/ZX,20.)
+(file: wwm_tauhf.F90, line: 194)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    195  ZMU      = MIN(G*Z0/CM**2*EXP(ZARG),1.)
+(file: wwm_tauhf.F90, line: 195)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    197  ZLOG         = MIN(LOG(ZMU),0.)
+(file: wwm_tauhf.F90, line: 197)
+  MIN, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+    202  UST          =SQRT(MAX(TAUW,0.))
+(file: wwm_tauhf.F90, line: 202)
+  MAX, dummy argument no  2 (A2)
+**[745 E] invalid argument kind type parameter for intrinsic procedure
+          (Argument must be of the same kind as others of the same type)
+
+   -- file: wwm_transf.F90
+
+      - program unit: TRANSF
+
+   -- file: wwm_wave_setup.F90
+
+   -- file: wwm_wind.F90
+
+      - program unit: INIT_WIND_INPUT
+
+      - program unit: UPDATE_WIND
+
+      - program unit: MOVE_BY_ONE_INDEX
+
+      - program unit: FIND_WIND_NEAREST_LOWER_IDX
+
+      - program unit: KERNEL_INTERP_UV_WINDFD
+
+      - program unit: COMPUTE_CF_COEFFICIENTS
+
+      - program unit: GET_CF_TIME_INDEX
+
+      - program unit: INIT_NETCDF_DWD
+          ALLOCATE (WIND_TIME(NDT_WIND_FILE), WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+
+      - program unit: READ_NETCDF_DWD
+
+      - program unit: INIT_NETCDF_CRFS
+          ALLOCATE (WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+
+      - program unit: INIT_NETCDF_NARR
+          ALLOCATE (WIND_TIME_NETCDF(NDT_WIND_FILE), WIND_TIME_ALL_FILES(NDT_WIND_ALL_FILES), WIND_TIME_IFILE(NDT_WIND_ALL_FILES), WIND_TIME_IT(NDT_WIND_ALL_FILES), stat=istat)
+
+      - program unit: READ_NETCDF_CRFS
+
+      - program unit: READ_NETCDF_NARR
+
+      - program unit: CHECK_WIND_TIME
+
+      - program unit: READ_INTERP_NETCDF_CF
+
+      - program unit: INIT_NETCDF_CF
+          allocate(CF_LON(NDX_WIND_FD, NDY_WIND_FD), CF_LAT(NDX_WIND_FD, NDY_WIND_FD), UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+
+      - program unit: READ_DIRECT_NETCDF_CF
+
+      - program unit: INIT_DIRECT_NETCDF_CF
+
+   -- file: wwm_windinput.F90
+
+      - program unit: SET_WIND
+
+      - program unit: SET_FRICTION
+
+      - program unit: SIN_LIN_CAV
+
+      - program unit: SIN_EXP_KOMEN
+
+      - program unit: SIN_MAKIN
+
+   -- file: wwm_wsigstar.F90
+
+      - program unit: WSIGSTAR
+     82  SIG_N(IJ) = MIN(0.5, SIG_CONV *
+     83                         (BG_GUST*USNEW(IJ)**3+
+     84                          0.5*XKAPPA*WSTAR(IJ)**3)**ONETHIRD
+     85                            /U10
+     86                  )
+(file: wwm_wsigstar.F90, line: 86)
+  MIN, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+
+   -- file: wwm_wsigstar_local.F90
+
+      - program unit: WSIGSTAR
+     78  SIG_N = MIN(0.5, SIG_CONV *
+     79                         (BG_GUST*USNEW**3+
+     80                          0.5*XKAPPA*WSTAR**3)**ONETHIRD
+     81                            /U10
+     82                  )
+(file: wwm_wsigstar_local.F90, line: 79)
+  USNEW
+**[558 E] missing argument list
+(file: wwm_wsigstar_local.F90, line: 82)
+  MIN, dummy argument no  1 (A1)
+**[631 E] invalid argument type length for intrinsic procedure
+          (Argument must have the same type length as others of the type)
+(file: wwm_wsigstar_local.F90, line: 74)
+  IJ
+**[697 E] name not explicitly typed, implicit type assumed
+
+   -- reference structure
+
+   -- global program analysis
+(file: wwm_femean_local.F90, line: 1)
+  FEMEAN
+**[506 E] multiple declaration of program unit or entry
+(file: wwm_wsigstar_local.F90, line: 1)
+  WSIGSTAR
+**[506 E] multiple declaration of program unit or entry
+(file: grid_subs.F90, line: 551)
+  MPI_ALLGATHER, referenced in PARTITION_HGRID, argument no  4 (RECVBUF)
+**[573 E] argument type inconsistent with specification
+(file: grid_subs.F90, line: 551)
+  MPI_ALLGATHER, referenced in PARTITION_HGRID
+**[511 E] explicit interface required
+(file: grid_subs.F90, line: 621)
+  MPI_ALLGATHERV, referenced in PARTITION_HGRID, argument no  4 (RECVBUF)
+**[573 E] argument type inconsistent with specification
+(file: grid_subs.F90, line: 621)
+  MPI_ALLGATHERV, referenced in PARTITION_HGRID
+**[511 E] explicit interface required
+(file: wwm_bdcons.F90, line: 1213)
+  GAMMA_FUNC, referenced in SPECTRUM_INT, argument no  1 (XX)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_initio.F90, line: 1883)
+  SHEPARDINT2D, referenced in GET_BINARY_WW3_SPECTRA, argument no  2 (WEIGHT)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_output.F90, line: 352)
+  FIND_ELE, referenced in PRINT_HS_TRIPLE, argument no  7 (ELE)
+**[616 E] referenced input or input/output argument is not defined
+          (The dummy argument is referenced before defined)
+(file: wwm_output.F90, line: 1228)
+  URSELL_NUMBER, referenced in INTPAR, argument no  2 (SME)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_output.F90, line: 1334)
+  URSELL_NUMBER, referenced in PAR_COMPLETE, argument no  2 (SME)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_output.F90, line: 1446)
+  URSELL_NUMBER, referenced in PAR_COMPLETE_LOC, argument no  2 (SME)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_output.F90, line: 1553)
+  URSELL_NUMBER, referenced in INTPAR_LOC, argument no  2 (SME)
+**[582 E] argument type length inconsistent with specification
+(file: wwm_sinput_ard_local.F90, line: 180)
+  WSIGSTAR, referenced in SINPUT_ARD_LOCAL
+**[565 E] number of arguments inconsistent with specification
+(file: wwm_sinput_ard_local.F90, line: 180)
+  WSIGSTAR, referenced in SINPUT_ARD_LOCAL, argument no  2 (IJL)
+**[579 E] argument type inconsistent with specification (int/real)
+(file: wwm_sinput_ard_local.F90, line: 180)
+  WSIGSTAR, referenced in SINPUT_ARD_LOCAL, argument no  3 (USNEW)
+**[590 E] array versus scalar conflict
+(file: wwm_sinput_ard_local.F90, line: 180)
+  WSIGSTAR, referenced in SINPUT_ARD_LOCAL, argument no  4 (Z0NEW)
+**[590 E] array versus scalar conflict
+(file: wwm_sinput_ard_local.F90, line: 180)
+  WSIGSTAR, referenced in SINPUT_ARD_LOCAL, argument no  5 (WSTAR)
+**[590 E] array versus scalar conflict
+(file: wwm_sinput_local.F90, line: 174)
+  WSIGSTAR, referenced in SINPUT_LOCAL
+**[565 E] number of arguments inconsistent with specification
+(file: wwm_sinput_local.F90, line: 174)
+  WSIGSTAR, referenced in SINPUT_LOCAL, argument no  1 (IJS)
+**[579 E] argument type inconsistent with specification (int/real)
+(file: wwm_sinput_local.F90, line: 174)
+  WSIGSTAR, referenced in SINPUT_LOCAL, argument no  2 (IJL)
+**[579 E] argument type inconsistent with specification (int/real)
+(file: wwm_sinput_local.F90, line: 174)
+  WSIGSTAR, referenced in SINPUT_LOCAL, argument no  3 (USNEW)
+**[590 E] array versus scalar conflict
+(file: wwm_sinput_local.F90, line: 174)
+  WSIGSTAR, referenced in SINPUT_LOCAL, argument no  4 (Z0NEW)
+**[590 E] array versus scalar conflict
+(file: mpi.f90, line: 250)
+  MPI_ALLGATHER, referenced in MPI, argument no  4 (RECVBUF)
+**[573 E] argument type inconsistent with specification
+
+   -- messages presented:
+
+    3x[ 16 O] (EXPRESSION STACK OVERFLOW)
+   83x[ 94 E] syntax error
+   10x[198 E] constant expected
+   10x[293 E] constant expression expected
+    7x[307 E] variable not defined
+   14x[312 E] no value assigned to this variable
+    2x[506 E] multiple declaration of program unit or entry
+    2x[511 E] explicit interface required
+    1x[558 E] missing argument list
+    2x[565 E] number of arguments inconsistent with specification
+    3x[573 E] argument type inconsistent with specification
+   10x[574 E] argument type inconsistent with first occurrence (int/log)
+    3x[579 E] argument type inconsistent with specification (int/real)
+    6x[582 E] argument type length inconsistent with specification
+    5x[590 E] array versus scalar conflict
+    6x[616 E] referenced input or input/output argument is not defined
+    2x[620 E] dummy input argument must not be defined
+   44x[631 E] invalid argument type length for intrinsic procedure
+    4x[697 E] name not explicitly typed, implicit type assumed
+   93x[745 E] invalid argument kind type parameter for intrinsic procedure
+
+number of table overflows:                3
+number of error messages:               307
+number of suppressed messages:         4058
+

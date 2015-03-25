@@ -1,0 +1,160 @@
+Build/elfe_glbl.o: elfe_glbl.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../elfe_glbl.F90
+Build/elfe_msgp.o: elfe_msgp.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../elfe_msgp.F90
+Build/grid_subs.o: grid_subs.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../grid_subs.F90
+Build/io_subs.o: io_subs.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../io_subs.F90
+Build/misc_subs.o: misc_subs.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../misc_subs.F90
+Build/solver_subs.o: solver_subs.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../solver_subs.F90
+Build/wwm_airsea.o: wwm_airsea.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_airsea.F90
+Build/wwm_aki.o: wwm_aki.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_aki.F90
+Build/wwm_ardhuin_new.o: wwm_ardhuin_new.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_ardhuin_new.F90
+Build/wwm_ardhuin_old.o: wwm_ardhuin_old.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_ardhuin_old.F90
+Build/wwm_aux.o: wwm_aux.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_aux.F90
+Build/wwm_babanin.o: wwm_babanin.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_babanin.F90
+Build/wwm_bdcons.o: wwm_bdcons.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_bdcons.F90
+Build/wwm_blasaux.o: wwm_blasaux.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_blasaux.F90
+Build/wwm_buildstress.o: wwm_buildstress.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_buildstress.F90
+Build/wwm_compute.o: wwm_compute.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_compute.F90
+Build/wwm_coupl_roms.o: wwm_coupl_roms.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_coupl_roms.F90
+Build/wwm_coupl_selfe.o: wwm_coupl_selfe.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_coupl_selfe.F90
+Build/wwm_coupl_shyfem.o: wwm_coupl_shyfem.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_coupl_shyfem.F90
+Build/wwm_coupl_timor.o: wwm_coupl_timor.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_coupl_timor.F90
+Build/wwm_datapl.o: wwm_datapl.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_datapl.F90
+Build/wwm_diclass.o: wwm_diclass.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_diclass.F90
+Build/wwm_diffrac.o: wwm_diffrac.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_diffrac.F90
+Build/wwm_dislin.o: wwm_dislin.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_dislin.F90
+Build/wwm_dissipation.o: wwm_dissipation.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_dissipation.F90
+Build/wwm_femean.o: wwm_femean.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_femean.F90
+Build/wwm_femeanws.o: wwm_femeanws.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_femeanws.F90
+Build/wwm_fkmean.o: wwm_fkmean.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_fkmean.F90
+Build/wwm_fluctsplit.o: wwm_fluctsplit.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_fluctsplit.F90
+Build/wwm_frcutindex.o: wwm_frcutindex.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_frcutindex.F90
+Build/wwm_gridcf.o: wwm_gridcf.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_gridcf.F90
+Build/wwm_hotfile.o: wwm_hotfile.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_hotfile.F90
+Build/wwm_implsch2.o: wwm_implsch2.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_implsch2.F90
+Build/wwm_implsch.o: wwm_implsch.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_implsch.F90
+Build/wwm_inisnonlin.o: wwm_inisnonlin.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_inisnonlin.F90
+Build/wwm_initio.o: wwm_initio.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_initio.F90
+Build/wwm_input.o: wwm_input.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_input.F90
+Build/wwm_jafu.o: wwm_jafu.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_jafu.F90
+Build/wwm_main.o: wwm_main.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_main.F90
+Build/wwm_m_constants.o: wwm_m_constants.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_m_constants.F90
+Build/wwm_m_fileio.o: wwm_m_fileio.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_m_fileio.F90
+Build/wwm_mjdv2.o: wwm_mjdv2.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_mjdv2.F90
+Build/wwm_mod_xnl4v5.o: wwm_mod_xnl4v5.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_mod_xnl4v5.F90
+Build/wwm_netcdf.o: wwm_netcdf.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_netcdf.F90
+Build/wwm_nlweigt.o: wwm_nlweigt.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_nlweigt.F90
+Build/wwm_nums1d.o: wwm_nums1d.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_nums1d.F90
+Build/wwm_numsigma.o: wwm_numsigma.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_numsigma.F90
+Build/wwm_numtheta.o: wwm_numtheta.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_numtheta.F90
+Build/wwm_output.o: wwm_output.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_output.F90
+Build/wwm_parall_solver.o: wwm_parall_solver.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_parall_solver.F90
+Build/wwm_pdlib.o: wwm_pdlib.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_pdlib.F90
+Build/wwm_petsc_block.o: wwm_petsc_block.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_petsc_block.F90
+Build/wwm_petsc_controller.o: wwm_petsc_controller.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_petsc_controller.F90
+Build/wwm_petsc_parallel.o: wwm_petsc_parallel.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_petsc_parallel.F90
+Build/wwm_petscpool.o: wwm_petscpool.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_petscpool.F90
+Build/wwm_petsc_seriell.o: wwm_petsc_seriell.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_petsc_seriell.F90
+Build/wwm_sbottom.o: wwm_sbottom.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sbottom.F90
+Build/wwm_sdiss_ardh_vec.o: wwm_sdiss_ardh_vec.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sdiss_ardh_vec.F90
+Build/wwm_sdissip.o: wwm_sdissip.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sdissip.F90
+Build/wwm_serv_xnl4v5.o: wwm_serv_xnl4v5.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_serv_xnl4v5.F90
+Build/wwm_sinput_ard.o: wwm_sinput_ard.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sinput_ard.F90
+Build/wwm_sinput.o: wwm_sinput.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sinput.F90
+Build/wwm_snl3.o: wwm_snl3.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snl3.F90
+Build/wwm_snl42.o: wwm_snl42.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snl42.F90
+Build/wwm_snl4.o: wwm_snl4.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snl4.F90
+Build/wwm_snl4_tsa.o: wwm_snl4_tsa.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snl4_tsa.F90
+Build/wwm_snl4_wrt.o: wwm_snl4_wrt.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snl4_wrt.F90
+Build/wwm_snonlin.o: wwm_snonlin.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_snonlin.F90
+Build/wwm_sourceterms.o: wwm_sourceterms.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sourceterms.F90
+Build/wwm_sparskit.o: wwm_sparskit.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_sparskit.F90
+Build/wwm_specint.o: wwm_specint.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_specint.F90
+Build/wwm_specparam.o: wwm_specparam.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_specparam.F90
+Build/wwm_stress.o: wwm_stress.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_stress.F90
+Build/wwm_stresso.o: wwm_stresso.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_stresso.F90
+Build/wwm_tauhf.o: wwm_tauhf.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_tauhf.F90
+Build/wwm_transf.o: wwm_transf.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_transf.F90
+Build/wwm_wave_setup.o: wwm_wave_setup.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_wave_setup.F90
+Build/wwm_wind.o: wwm_wind.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_wind.F90
+Build/wwm_windinput.o: wwm_windinput.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_windinput.F90
+Build/wwm_wsigstar.o: wwm_wsigstar.F90
+	cd $(SCRATCH_DIR) && $(FC) $(FFLAGS) -c ../wwm_wsigstar.F90

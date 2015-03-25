@@ -1,0 +1,9 @@
+        !COMPILER-GENERATED INTERFACE MODULE: Sun May 11 20:52:45 2014
+        MODULE CU2SEC__genmod
+          INTERFACE 
+            SUBROUTINE CU2SEC(UNITT,DT)
+              CHARACTER(*), INTENT(IN) :: UNITT
+              REAL(KIND=8), INTENT(INOUT) :: DT
+            END SUBROUTINE CU2SEC
+          END INTERFACE 
+        END MODULE CU2SEC__genmod
