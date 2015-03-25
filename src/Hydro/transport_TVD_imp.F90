@@ -34,9 +34,9 @@
       use schism_msgp
       use misc_modules
 
-!#ifdef USE_TIMOR
+!#ifdef USE_TIMOR_FLMUD
 !      USE flmud_pool, only: wsink !wsink([],nvrt,npa)>=0 (positive down)
-!#endif /*USE_TIMOR*/
+!#endif /*USE_TIMOR_FLMUD*/
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'

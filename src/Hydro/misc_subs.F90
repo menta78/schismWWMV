@@ -1707,9 +1707,9 @@
 #ifdef USE_SED 
      &                  ,sconc,Srho   &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
      &                  ,sconc,Srho,laddmud_d &
-#endif /*USE_TIMOR*/
+#endif /*USE_TIMOR_FLMUD*/
      &                 )
       use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg,ifort12,ntracers !,rhomud,npa,iplg
       use schism_msgp, only : parallel_abort
@@ -1721,7 +1721,7 @@
 #ifdef USE_SED
       real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
       real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
       logical, intent(in) :: laddmud_d
 #endif
@@ -1771,7 +1771,7 @@
       eqstate=eqstate+SedDen
 #endif /*USE_SED*/
 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !      if(laddmud_d) then
 !        rho_w=eqstate
 !        do ised=1,ntracers
@@ -1782,7 +1782,7 @@
 !          eqstate=eqstate+sconc(ised)*(1-rho_w/Srho(ised))
 !        enddo !ised
 !      endif !laddmud_d
-#endif /*USE_TIMOR*/
+#endif /*USE_TIMOR_FLMUD*/
 
       end function eqstate
 
@@ -2292,7 +2292,7 @@
 #ifdef USE_SED
      &                             ,tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !Error: need to use cubic spline also for mud density; also need to average for element
 !     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif
