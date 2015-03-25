@@ -52,8 +52,8 @@ PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl -fpp
+  FLDFLAGS = -O1 -g -traceback -assume byterecl -fpp
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################

@@ -93,7 +93,7 @@ endif
 #Search path
 VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMIII/ \
         /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
-        TIMOR/
+        TiMor/
 
 ifdef USE_PETSC
   include ${PETSC_DIR}/conf/variables
@@ -135,9 +135,16 @@ ifdef USE_TIMER
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DINCLUDE_TIMING
 endif
 
-ifdef USE_TIMOR
+ifdef USE_TIMOR_FLMUD
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
   OBJS := $(OBJS) flmud_input.o flmud_main.o flmud_pool.o
+endif
+
+ifdef USE_TIMOR
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
+  OBJS := $(OBJS) timor_datapl.o timor_main.o timor_init.o timor_sedisub.o timor_fluc.o  \
+       timor_d.o timor_c.o timor_b.o timor_a_up.o timor_a0.o \
+       timor_a_blub.o timor_upw_ups.o timor_hydro2d.o timor_hydro_Anlagen.o
 endif
 
 ifdef USE_GOTM
