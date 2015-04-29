@@ -1809,53 +1809,116 @@
       INTEGER :: I
       REAL(rkind)    :: tmp_arr(np_global)
 #endif
+      REAL(rkind) cf_w1, cf_w2
       WATLEV    = 0.
       WATLEVOLD = 0.
-      IF (LSTWL) THEN
-        IF (DIMMODE .EQ. 1) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("1: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+      IF (IWATLVFORMAT .eq. 1) THEN
+        IF (LSTWL) THEN
+          IF (DIMMODE .EQ. 1) THEN
+            IF (LCWLV) THEN
+              WATLEV = CWATLV
+              DEP    = WLDEP + WATLEV
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("1: Missing watlev file : ", WAT%FNAME)
+              OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
 #ifdef MPI_PARALL_GRID
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                WATLEV(ipgl(I)%id)=tmp_arr(I)
-              END IF
-            END DO
+              READ(WAT%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+              DO I=1,NP_GLOBAL
+                IF (ipgl(I)%rank==myrank) THEN
+                  IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                  WATLEV(ipgl(I)%id)=tmp_arr(I)
+                END IF
+              END DO
 #else
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+              READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+              IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
 #endif
-            CLOSE(WAT%FHNDL)
+              CLOSE(WAT%FHNDL)
+            END IF
+          ELSE IF (DIMMODE .EQ. 2) THEN
+            IF (LCWLV) THEN
+              WATLEV = CWATLV
+              DEP    = WLDEP + WATLEV
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
+              OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+              READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+              IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+              CLOSE(WAT%FHNDL)
+             END IF
           END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-            CLOSE(WAT%FHNDL)
-          END IF
+        ELSE IF (LSEWL) THEN
+          SEWL%TOTL = (SEWL%EMJD - SEWL%BMJD) * DAY2SEC
+          SEWL%ISTP = NINT( SEWL%TOTL / SEWL%DELT ) + 1
+          SEWL%TMJD = SEWL%BMJD
+          IF (LERGINP .AND. .NOT. LSECU) CALL ERG2WWM(SEWL%ISTP)
+          LSELN = .FALSE.
+          WRITE(STAT%FHNDL,*) 'Serial water level Condition -----------'
+          WRITE(STAT%FHNDL,*) SEWL%BEGT, SEWL%ENDT, SEWL%ISTP, SEWL%TOTL/3600.0, SEWL%DELT
+          CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
+          LSELN = .TRUE.
+          OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+          CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV, MULTIPLE_IN_WATLEV)
         END IF
-      ELSE IF (LSEWL) THEN
-        SEWL%TOTL = (SEWL%EMJD - SEWL%BMJD) * DAY2SEC
-        SEWL%ISTP = NINT( SEWL%TOTL / SEWL%DELT ) + 1
-        SEWL%TMJD = SEWL%BMJD
-        IF (LERGINP .AND. .NOT. LSECU) CALL ERG2WWM(SEWL%ISTP)
-        LSELN = .FALSE.
-        WRITE(STAT%FHNDL,*) 'Serial water level Condition -----------'
-        WRITE(STAT%FHNDL,*) SEWL%BEGT, SEWL%ENDT, SEWL%ISTP, SEWL%TOTL/3600.0, SEWL%DELT
-        CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
-        LSELN = .TRUE.
-        OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV, MULTIPLE_IN_WATLEV)
+      END IF
+      IF (IWATLVFORMAT .eq. 2) THEN
+#ifdef NCDF
+        CALL INIT_DIRECT_NETCDF_CF(eVAR_WATLEV, MULTIPLE_IN_WATLEV, WAT%FNAME, "zeta")
+        allocate(tmp_watlev1(MNP), tmp_watlev2(MNP), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_watlev, allocate error 1')
+        CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
+        CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC1_curr_new,tmp_curr1)
+        IF (cf_w1.NE.1) THEN
+          CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_curr_new,tmp_curr2)
+          WATLEV(:) = cf_w1*tmp_watlev1(:) + cf_w2*tmp_watlev2(:)
+        ELSE
+          WATLEV(:) = cf_w1*tmp_watlev1(:)
+        END IF
+#else
+        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+#endif
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE UPDATE_WATLEV(K)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: K
+      REAL(rkind) cf_w1, cf_w2
+      REAL(rkind)  :: TMP_WAT(MNP)
+      IF (IWATLVFORMAT .eq. 1) THEN
+        IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
+          CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
+          DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
+          SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
+          LCALC = .TRUE.
+        END IF
+        DELTAT_WATLEV = MAIN%DELT
+        WATLEVOLD = WATLEV
+        WATLEV    = WATLEV + DVWALV
+        DEPDT     = DVWALV / MAIN%DELT
+      END IF
+      IF (IWATLVFORMAT .eq. 2) THEN
+        IF (K.EQ.1) THEN
+          REC1_watlev_old = 0
+          REC2_watlev_old = 0
+        END IF
+        CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_watlev_new,REC2_watlev_new,cf_w1,cf_w2)
+        IF (REC1_watlev_new.NE.REC1_watlev_old) THEN
+          CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC1_watlev_new,tmp_watlev1)
+        END IF
+        IF (REC2_watlev_new.NE.REC2_watlev_old) THEN
+          CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_watlev_new,tmp_watlev2)
+        END IF
+        WATLEVOLD=WATLEV
+        IF (cf_w1.NE.1) THEN
+          WATLEV(:) = cf_w1*tmp_watlev1(:) + cf_w2*tmp_watlev2(:)
+        ELSE
+          WATLEV(:) = cf_w1*tmp_watlev1(:)
+        END IF
+        REC1_watlev_old = REC1_watlev_new
+        REC2_watlev_old = REC2_watlev_new
       END IF
       END SUBROUTINE

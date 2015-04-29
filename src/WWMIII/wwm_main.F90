@@ -610,7 +610,6 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: K
-      REAL(rkind)  :: TMP_CUR(MNP,2), TMP_WAT(MNP)
       INTEGER             :: IT, IFILE
       IF (LWINDFROMWWM) THEN
         CALL UPDATE_WIND(K)
@@ -621,16 +620,7 @@
           CALL UPDATE_CURRENT(K)
         END IF
         IF (LSEWL) THEN
-          IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
-            CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
-            DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
-            SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-            LCALC = .TRUE.
-          END IF
-          DELTAT_WATLEV = MAIN%DELT
-          WATLEVOLD = WATLEV
-          WATLEV    = WATLEV + DVWALV
-          DEPDT     = DVWALV / MAIN%DELT
+          CALL UPDATE_WATLEV(K)
         END IF
       END IF
 #endif

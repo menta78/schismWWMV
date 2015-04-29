@@ -494,6 +494,8 @@
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_curr1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_curr2(:,:)
+         REAL(rkind), ALLOCATABLE         :: tmp_watlev1(:)
+         REAL(rkind), ALLOCATABLE         :: tmp_watlev2(:)
 
 
          REAL(rkind), ALLOCATABLE         :: cf_a(:)
@@ -512,6 +514,8 @@
          INTEGER                    :: REC1_wind_new, REC2_wind_new
          INTEGER                    :: REC1_curr_old, REC2_curr_old
          INTEGER                    :: REC1_curr_new, REC2_curr_new
+         INTEGER                    :: REC1_watlev_old, REC2_watlev_old
+         INTEGER                    :: REC1_watlev_new, REC2_watlev_new
          TYPE VAR_NETCDF_CF
            character(len=100) :: eFileName
            character(len=100) :: eString
@@ -521,7 +525,7 @@
            integer idVar
            real(rkind), allocatable :: ListTime(:)
          END TYPE
-         TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR
+         TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
 
 
 ! END CF comppliant wind PART I.J.

@@ -1962,7 +1962,7 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
-        CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
+        CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
@@ -2011,6 +2011,65 @@
       WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(outwind(:,2)), maxval(outwind(:,2))
       FLUSH(WINDBG%FHNDL)
       END SUBROUTINE
+!****************************************************************************
+!*                                                                          *
+!****************************************************************************
+      SUBROUTINE READ_DIRECT_NETCDF_CF1(eVAR, RECORD_IN, outvar)
+      USE NETCDF
+      USE DATAPOOL
+      IMPLICIT NONE
+      TYPE(VAR_NETCDF_CF)                :: eVAR
+      INTEGER, INTENT(in)                :: RECORD_IN
+      REAL(rkind), INTENT(out)           :: outvar(MNP)
+      character (len = *), parameter :: CallFct="READ_DIRECT_NETCDF_CF"
+      INTEGER                            :: FID, ID
+      real(rkind) :: VAR_tot(np_total)
+      real(rkind) :: Vtotal(np_total)
+      real(rkind) :: Vlocal(MNP)
+      real(rkind) :: cf_scale_factor, cf_add_offset
+# ifdef MPI_PARALL_GRID
+      integer IP_glob, IP
+# endif
+      character(len=10) :: eStrU, eStrV
+      cf_scale_factor = eVAR % cf_scale_factor
+      cf_add_offset = eVAR % cf_add_offset
+# ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
+# endif
+        CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
+        ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+        ISTAT = NF90_inq_varid(FID, TRIM(eVAR % eString), ID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+
+        ISTAT = NF90_GET_VAR(FID, ID, VAR_tot, start = (/ 1, RECORD_IN /), count = (/ np_total, 1 /))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+
+        ISTAT = NF90_CLOSE(FID)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+
+        Vtotal = cf_add_offset + cf_scale_factor*VAR_tot
+# ifdef MPI_PARALL_GRID
+      END IF
+# endif
+# ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_WIND) THEN
+        DO IP=1,MNP
+          IP_glob=iplg(IP)
+          outvar(IP)=Vtotal(IP_glob)
+        END DO
+      ELSE
+        CALL SCATTER_ONED_ARRAY(Vtotal, outvar)
+      END IF
+# else
+      outvar=Vtotal
+# endif
+      WRITE(WINDBG%FHNDL,*) 'READ_DIRECT_NETCDF_CF1'
+      WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
+      FLUSH(WINDBG%FHNDL)
+      END SUBROUTINE
+
 !****************************************************************************
 !*                                                                          *
 !****************************************************************************
