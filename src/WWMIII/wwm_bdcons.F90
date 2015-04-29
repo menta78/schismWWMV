@@ -1435,7 +1435,7 @@
             END DO
           ENDIF
         END IF
-      END SUBROUTINE SET_WAVE_BOUNDARY
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1963,7 +1963,6 @@
         DEALLOCATE(U,V,H)
       END IF
       END SUBROUTINE
-
 #endif
 !**********************************************************************
 !*                                                                    *
@@ -2159,7 +2158,6 @@
         END DO
       END IF
 #endif
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2199,7 +2197,6 @@
           !WRITE(*,*) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
         END DO
       END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2207,7 +2204,6 @@
       SUBROUTINE READSPEC2D
       USE DATAPOOL
       IMPLICIT NONE
-
       END SUBROUTINE
 !**********************************************************************
 !* READSPEC2D_WW3INIT1
@@ -2356,7 +2352,6 @@
       WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of wave boundary', SEBO%BMJD, SEBO%EMJD, SEBO%DELT
       WRITE(STAT%FHNDL,*)'BEGING TIME, END TIME and DELT of simulation', MAIN%BMJD, MAIN%EMJD, MAIN%DELT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READSPEC2D_WW3INIT2'
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2793,7 +2788,7 @@
           END IF
         END DO
       END DO
-      END SUBROUTINE INTERLIND
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
