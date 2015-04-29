@@ -76,7 +76,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 
 
-OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
+OBJSELFE = elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
 OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
        wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
        wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \

@@ -680,7 +680,7 @@
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
-     &      SHIFT_WIND_TIME, MULTIPLE_IN
+     &      MULTIPLE_IN
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
@@ -1674,70 +1674,108 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER :: IP
+      real(rkind) :: cf_w1, cf_w2
 #ifdef MPI_PARALL_GRID
       INTEGER :: I
       REAL(rkind) :: tmp_arr(np_global)
 #endif
       CURTXY(:,:) = 0.0
-      IF (LSTCU) THEN
-        IF (DIMMODE .EQ. 1) THEN
-          IF (LCCUR) THEN
-            DO IP = 1, MNP
-              CURTXY(IP,1) = CCURTX
-            END DO
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("1: Missing current file : ", CUR%FNAME)
-            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
-            CLOSE(CUR%FHNDL)
-          END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCCUR) THEN
-            DO IP = 1, MNP
-              CURTXY(IP,1) = CCURTX
-              CURTXY(IP,2) = CCURTY
-            END DO
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing current file : ", CUR%FNAME)
-            OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+      IF (ICURRFORMAT .eq. 1) THEN
+        IF (LSTCU) THEN
+          IF (DIMMODE .EQ. 1) THEN
+            IF (LCCUR) THEN
+              DO IP = 1, MNP
+                CURTXY(IP,1) = CCURTX
+              END DO
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("1: Missing current file : ", CUR%FNAME)
+              OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+              READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
+              IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+              CLOSE(CUR%FHNDL)
+            END IF
+          ELSE IF (DIMMODE .EQ. 2) THEN
+            IF (LCCUR) THEN
+              DO IP = 1, MNP
+                CURTXY(IP,1) = CCURTX
+                CURTXY(IP,2) = CCURTY
+              END DO
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("2: Missing current file : ", CUR%FNAME)
+              OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
 #ifdef MPI_PARALL_GRID
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,1)=tmp_arr(I)
-              END IF
-            END DO
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
-            DO I=1,NP_GLOBAL
-              IF (ipgl(I)%rank==myrank) THEN
-                IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
-                CURTXY(ipgl(I)%id,2)=tmp_arr(I)
-              END IF
-            END DO
+              READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+              DO I=1,NP_GLOBAL
+                IF (ipgl(I)%rank==myrank) THEN
+                  IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                  CURTXY(ipgl(I)%id,1)=tmp_arr(I)
+                END IF
+              END DO
+              READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
+              DO I=1,NP_GLOBAL
+                IF (ipgl(I)%rank==myrank) THEN
+                  IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
+                  CURTXY(ipgl(I)%id,2)=tmp_arr(I)
+                END IF
+              END DO
 #else
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
-            READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,2)
-            IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+              READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,1)
+              IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
+              READ(CUR%FHNDL, *, IOSTAT = ISTAT) CURTXY(:,2)
+              IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the current velocity file')
 #endif
-            CLOSE(CUR%FHNDL)
+              CLOSE(CUR%FHNDL)
+            END IF
           END IF
+        ELSE IF (LSECU) THEN
+          SECU%TOTL = (SECU%EMJD - SECU%BMJD) * DAY2SEC
+          SECU%ISTP = NINT( SECU%TOTL / SECU%DELT ) + 1
+          SECU%TMJD = SECU%BMJD
+          LSECN = .FALSE.
+          WRITE(STAT%FHNDL,*) 'Serial current Condition -----------'
+          WRITE(STAT%FHNDL,*) SECU%BEGT, SECU%ENDT, SECU%ISTP, SECU%TOTL/3600.0, SECU%DELT
+          IF (LERGINP) CALL ERG2WWM(SECU%ISTP)
+          CALL TEST_FILE_EXIST_DIE("3: Missing current file : ", CUR%FNAME)
+          LSECN = .TRUE.
+          OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
+          CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY, MULTIPLE_IN_CURR)
         END IF
-      ELSE IF (LSECU) THEN
-        SECU%TOTL = (SECU%EMJD - SECU%BMJD) * DAY2SEC
-        SECU%ISTP = NINT( SECU%TOTL / SECU%DELT ) + 1
-        SECU%TMJD = SECU%BMJD
-        LSECN = .FALSE.
-        WRITE(STAT%FHNDL,*) 'Serial current Condition -----------'
-        WRITE(STAT%FHNDL,*) SECU%BEGT, SECU%ENDT, SECU%ISTP, SECU%TOTL/3600.0, SECU%DELT
-        IF (LERGINP) CALL ERG2WWM(SECU%ISTP)
-        CALL TEST_FILE_EXIST_DIE("3: Missing current file : ", CUR%FNAME)
-        LSECN = .TRUE.
-        OPEN(CUR%FHNDL, FILE = TRIM(CUR%FNAME), STATUS = 'OLD')
-        CALL CSEVAL( CUR%FHNDL, TRIM(CUR%FNAME), LCURFILE, 2, CURTXY, MULTIPLE_IN_CURR)
       END IF
+      IF (ICURRFORMAT .eq. 2) THEN
+#ifdef NCDF
+        CALL INIT_DIRECT_NETCDF_CF(eVAR_CURR, MULTIPLE_IN_CURR, CUR%FNAME, "Ucurr")
+        allocate(tmp_curr1(MNP,2), tmp_curr2(MNP,2), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_curr, allocate error 1')
+        CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
+        CALL READ_DIRECT_NETCDF_CF(REC1_curr_new,tmp_curr1)
+        IF (cf_w1.NE.1) THEN
+          CALL READ_DIRECT_NETCDF_CF(REC2_curr_new,tmp_curr2)
+          CURTXY(:,:) = cf_w1*tmp_curr1(:,:) + cf_w2*tmp_curr2(:,:)
+        ELSE
+          CURTXY(:,:) = cf_w1*tmp_curr1(:,:)
+        END IF
+#else
+        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+#endif
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE UPDATE_CURRENT
+      USE DATAPOOL
+      IF (ICURRFORMAT .eq. 1) THEN
+        IF ( (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
+          CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR, MULTIPLE_IN_CURR)
+          DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
+          SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
+          LCALC = .TRUE.
+        END IF
+        CURTXY = CURTXY + DVCURT
+      END IF
+      IF (ICURRFORMAT .eq. 2) THEN
+      END IF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

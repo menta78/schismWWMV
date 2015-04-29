@@ -187,7 +187,6 @@
          INTEGER    :: MNP_WIND
          REAL(rkind), allocatable :: XP_WIND(:), YP_WIND(:)
          REAL(rkind)       :: WINDFAC    = 1.0
-         REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
          REAL(rkind)       ::  CURFAC    = 1.0
 
@@ -489,10 +488,14 @@
 
 
 ! CF compliant wind PART I.J.
-         integer nbtime_mjd
+!         integer nbtime_mjd
+!         REAL(rkind), ALLOCATABLE         :: wind_time_mjd(:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind1(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_wind2(:,:)
-         REAL(rkind), ALLOCATABLE         :: wind_time_mjd(:)
+         REAL(rkind), ALLOCATABLE         :: tmp_curr1(:,:)
+         REAL(rkind), ALLOCATABLE         :: tmp_curr2(:,:)
+
+
          REAL(rkind), ALLOCATABLE         :: cf_a(:)
          REAL(rkind), ALLOCATABLE         :: cf_b(:)
          REAL(rkind), ALLOCATABLE         :: cf_c(:)
@@ -505,9 +508,22 @@
          INTEGER, ALLOCATABLE       :: CF_IX(:), CF_IY(:)
          REAL(rkind), ALLOCATABLE   :: CF_coeff(:,:)
          integer, allocatable :: SHIFTXY(:,:)
-         INTEGER                   :: REC1_old, REC2_old
-         INTEGER                          :: REC1_new, REC2_new
-         real(rkind) :: cf_scale_factor, cf_add_offset
+         INTEGER                    :: REC1_wind_old, REC2_wind_old
+         INTEGER                    :: REC1_wind_new, REC2_wind_new
+         INTEGER                    :: REC1_curr_old, REC2_curr_old
+         INTEGER                    :: REC1_curr_new, REC2_curr_new
+         TYPE VAR_NETCDF_CF
+           character(len=100) :: eFileName
+           character(len=100) :: eString
+           real(rkind) :: cf_scale_factor
+           real(rkind) :: cf_add_offset
+           integer nbTime
+           integer idVar
+           real(rkind), allocatable :: ListTime(:)
+         END TYPE
+         TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR
+
+
 ! END CF comppliant wind PART I.J.
 
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
