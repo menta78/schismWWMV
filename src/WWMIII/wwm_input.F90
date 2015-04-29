@@ -1888,6 +1888,7 @@
       INTEGER, intent(in) :: K
       REAL(rkind) cf_w1, cf_w2
       REAL(rkind)  :: TMP_WAT(MNP)
+      REAL(rkind)  :: DeltaTime
       IF (IWATLVFORMAT .eq. 1) THEN
         IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
           CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
@@ -1912,13 +1913,23 @@
         IF (REC2_watlev_new.NE.REC2_watlev_old) THEN
           CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_watlev_new,tmp_watlev2)
         END IF
+        TimeWAT_new = MAIN % TMJD
         WATLEVOLD=WATLEV
         IF (cf_w1.NE.1) THEN
           WATLEV(:) = cf_w1*tmp_watlev1(:) + cf_w2*tmp_watlev2(:)
         ELSE
           WATLEV(:) = cf_w1*tmp_watlev1(:)
         END IF
+        IF (REC1_watlev_old .gt. 0) THEN
+          DeltaTime=(TimeWAT_new - TimeWAT_old)*MyREAL(86400)
+          DVWALV = (WATLEV - WATLEVOLD) / DeltaTime
+          DEPDT  = DVWALV / MAIN%DELT
+        ELSE
+          DVWALV = 0
+          DEPDT = 0
+        END IF
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
+        TimeWAT_old = TimeWAT_new
       END IF
       END SUBROUTINE

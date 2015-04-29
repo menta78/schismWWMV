@@ -496,8 +496,7 @@
          REAL(rkind), ALLOCATABLE         :: tmp_curr2(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_watlev1(:)
          REAL(rkind), ALLOCATABLE         :: tmp_watlev2(:)
-
-
+         REAL(rkind)                      :: TimeWAT_old, TimeWAT_new
          REAL(rkind), ALLOCATABLE         :: cf_a(:)
          REAL(rkind), ALLOCATABLE         :: cf_b(:)
          REAL(rkind), ALLOCATABLE         :: cf_c(:)
