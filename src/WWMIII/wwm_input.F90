@@ -1747,9 +1747,9 @@
         allocate(tmp_curr1(MNP,2), tmp_curr2(MNP,2), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_curr, allocate error 1')
         CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
-        CALL READ_DIRECT_NETCDF_CF(REC1_curr_new,tmp_curr1)
+        CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC1_curr_new,tmp_curr1)
         IF (cf_w1.NE.1) THEN
-          CALL READ_DIRECT_NETCDF_CF(REC2_curr_new,tmp_curr2)
+          CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC2_curr_new,tmp_curr2)
           CURTXY(:,:) = cf_w1*tmp_curr1(:,:) + cf_w2*tmp_curr2(:,:)
         ELSE
           CURTXY(:,:) = cf_w1*tmp_curr1(:,:)
@@ -1762,8 +1762,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE UPDATE_CURRENT
+      SUBROUTINE UPDATE_CURRENT(K)
       USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: K
+      REAL(rkind)  :: TMP_CUR(MNP,2)
+      REAL(rkind) :: cf_w1, cf_w2
       IF (ICURRFORMAT .eq. 1) THEN
         IF ( (MAIN%TMJD > SECU%TMJD-1.E-8) .AND. (MAIN%TMJD < SECU%EMJD)) THEN
           CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR, MULTIPLE_IN_CURR)
@@ -1774,8 +1778,25 @@
         CURTXY = CURTXY + DVCURT
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
+        IF (K.EQ.1) THEN
+          REC1_curr_old = 0
+          REC2_curr_old = 0
+        END IF
+        CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
+        IF (REC1_curr_new.NE.REC1_curr_old) THEN
+          CALL READ_DIRECT_NETCDF_CF(eVAR_wind, REC1_curr_new,tmp_curr1)
+        END IF
+        IF (REC2_curr_new.NE.REC2_curr_old) THEN
+          CALL READ_DIRECT_NETCDF_CF(eVAR_wind, REC2_curr_new,tmp_curr2)
+        END IF
+        IF (cf_w1.NE.1) THEN
+          CURTXY(:,:) = cf_w1*tmp_curr1(:,:)+cf_w2*tmp_curr2(:,:)
+        ELSE
+          CURTXY(:,:) = cf_w1*tmp_curr1(:,:)
+        END IF
+        REC1_curr_old = REC1_curr_new
+        REC2_curr_old = REC2_curr_new
       END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
