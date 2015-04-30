@@ -1265,6 +1265,7 @@
       REAL(rkind)      :: DTMP
       integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
       CHARACTER(len=29) :: CHR
+      INTEGER IFILEsel, ITsel
       IF (LNANINFCHK) THEN
         WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
@@ -1288,28 +1289,28 @@
             ENDIF
           END IF
           IF (LBINTER) THEN
+            CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
             IF (IBOUNDFORMAT == 3) THEN
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', IFILE, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-              CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACNEW,CHR)
+              IFILEsel=IFILE
+              ITsel=IT
             ELSE
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', IFILE, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-              CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
+              IFILEsel=1
+              ITsel=1
             END IF
+            CALL WAVE_BOUNDARY_CONDITION(IFILEsel,ITsel,WBACNEW,CHR)
             DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
             WBAC    =  WBACOLD
             WBACOLD =  WBACNEW
           ELSE ! .NOT. LBINTER
+            CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
             IF (IBOUNDFORMAT == 3) THEN
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', IFILE, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-              CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
+              IFILEsel=IFILE
+              ITsel=IT
             ELSE
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', IFILE, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-              CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+              IFILEsel=1
+              ITsel=1
             END IF
+            CALL WAVE_BOUNDARY_CONDITION(IFILEsel,ITsel,WBAC,CHR)
           END IF
         ELSE IF (LBCSP) THEN
           IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
@@ -1318,38 +1319,30 @@
             IF (LBINTER) IT = IT + 1
           END IF
           IF (LBINTER) THEN
+            CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
             IF (IBOUNDFORMAT == 3) THEN
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', 1, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-              CALL WAVE_BOUNDARY_CONDITION(1,IT,WBACNEW,CHR)
+              ITsel=IT
             ELSE
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', 1, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-              CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
+              ITsel=1
             END IF
+            CALL WAVE_BOUNDARY_CONDITION(1,ITsel,WBACNEW,CHR)
             DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
             WBAC    =  WBACOLD
             WBACOLD =  WBACNEW
           ELSE ! .NOT. LBINTER
+            CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
             IF (IBOUNDFORMAT == 3) THEN
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-              CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
+              ITsel=IT
             ELSE
-              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', 1, IT, LBINTER
-              CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-              CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+              ITsel=1
             END IF
+            CALL WAVE_BOUNDARY_CONDITION(1,ITsel,WBAC,CHR)
           END IF ! LBINTER
         END IF
         SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
-      ELSE ! Interpolate in time ... no nead to read ...
+      ELSE ! Interpolate in time ... no need to read ...
         IF (LBINTER) THEN
           WBAC = WBAC + DSPEC
-          IF (LNANINFCHK) THEN
-            WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
-            IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
-          END IF
         END IF
       END IF
       DO IP = 1, IWBMNP
