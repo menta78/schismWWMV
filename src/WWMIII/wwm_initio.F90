@@ -1289,7 +1289,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE CLOSE_FILE_HANDLES()
+       SUBROUTINE CLOSE_FILE_HANDLES
          USE DATAPOOL
          IMPLICIT NONE
          close(DBG%FHNDL)
@@ -1304,7 +1304,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_STATION_OUTPUT()
+      SUBROUTINE INIT_STATION_OUTPUT
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER           :: I, NI(3), IP, IS
@@ -1465,7 +1465,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READWAVEPARWWM()
+      SUBROUTINE READWAVEPARWWM
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER         :: IP
@@ -1523,62 +1523,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_WAVE_BOUNDARY_CONDITION(IFILE, IT)
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        INTEGER, INTENT(OUT) :: IFILE, IT
-
-        REAL(rkind)            :: DTMP
-        INTEGER                :: ITMP
-        CHARACTER(len=25)     :: CHR
-
-!TODO: Makes sure initial condition work also when no wave boundary is set ...
-
-        IF (LBCWA .OR. LBCSP) THEN
-          IF (IBOUNDFORMAT == 3) THEN
-            IF (LBCSP) THEN
-              CALL INIT_BINARY_WW3_SPECTRA
-              DTMP = (MAIN%BMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-              IT   = NINT(DTMP/SEBO%DELT) + 1
-              CHR = 'FROM INIT_WAVE_BOUNDARY 1'
-              CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
-              IF (LBINTER) WBACOLD = WBAC
-              WRITE(STAT%FHNDL,*) 'INITIALIZING WAVE BOUNDARY IT =', IT
-              WRITE(STAT%FHNDL,*) 'SUM OF WAVE ACTION', SUM(WBACOLD), SUM(WBAC) 
-            ELSE IF (LBCWA) THEN 
-#ifdef NCDF
-              CALL INIT_NETCDF_WW3_WAVEPARAMETER
-#else
-              CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
-#endif
-              DTMP = (MAIN%BMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-              ITMP  = 0
-              DO IFILE = 1, NUM_NETCDF_FILES_BND
-                ITMP = ITMP + NDT_BND_FILE(IFILE)
-                IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-              END DO
-              ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-              IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-              IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-                IFILE = IFILE + 1
-                IT    = 1
-              ENDIF
-              WRITE(STAT%FHNDL,*) IFILE, IT, SUM(NDT_BND_FILE(1:IFILE-1)), NINT(DTMP/SEBO%DELT), SEBO%DELT
-              CHR = 'FROM INIT_WAVE_BOUNDARY 2'
-              CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
-              IF (LBINTER) WBACOLD = WBAC
-            END IF
-          ELSE ! BOUNDFORMAT
-            CHR = 'FROM INIT_WAVE_BOUNDARY 4'
-            CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-            IF (LBINTER) WBACOLD = WBAC
-          END IF
-        END IF
-      END SUBROUTINE INIT_WAVE_BOUNDARY_CONDITION
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE SET_HMAX
         USE DATAPOOL
 
@@ -1586,7 +1530,7 @@
 
         IF (LMONO_IN) HMAX = HMAX * SQRT(TWO)
 
-      END SUBROUTINE SET_HMAX
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
