@@ -226,8 +226,9 @@
 
          IFILE = 1
          IT    = 1
-
-         CALL SET_WAVE_BOUNDARY_CONDITION
+         IF (LBCSE) THEN
+           CALL SET_WAVE_BOUNDARY_CONDITION
+         END IF
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SETTING BOUNDARY CONDITION IN MAIN ',  SUM(AC2)
@@ -625,7 +626,9 @@
       END IF
 #endif
 #ifndef SELFE
-      CALL SET_WAVE_BOUNDARY_CONDITION
+      IF (LBCSE) THEN
+        CALL SET_WAVE_BOUNDARY_CONDITION
+      END IF
 #endif
 !
 !      *** coupling via pipe *** read pipe

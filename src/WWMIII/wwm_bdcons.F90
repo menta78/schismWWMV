@@ -1266,115 +1266,105 @@
       integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
       CHARACTER(len=29) :: CHR
       IF (LNANINFCHK) THEN
-        WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)
-        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1841')
+        WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
+        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
       ENDIF
-      IF (LBCSE) THEN 
-        IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
-          IF (LBCWA) THEN
-            IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-              DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-              !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
-              ITMP  = 0
-              DO IFILE = 1, NUM_NETCDF_FILES_BND
-                ITMP = ITMP + NDT_BND_FILE(IFILE)
-                IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-              END DO
-              ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-              IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-              IF (LBINTER) IT = IT + 1
-              IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-                IFILE = IFILE + 1
-                IT    = 1
-              ENDIF
-            END IF
-            IF (LBINTER) THEN
-              IF (IBOUNDFORMAT == 3) THEN
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', IFILE, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-                CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACNEW,CHR)
-              ELSE
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', IFILE, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-                CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
-              END IF
-              DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-              WBAC    =  WBACOLD
-              WBACOLD =  WBACNEW
-            ELSE ! .NOT. LBINTER
-              IF (IBOUNDFORMAT == 3) THEN
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', IFILE, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-                CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
-              ELSE
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', IFILE, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-                CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-              END IF
-            END IF
-          ELSE IF (LBCSP) THEN
-            IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-              DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-              IT   = NINT(DTMP/SEBO%DELT) + 1
-              IF (LBINTER) IT = IT + 1
-            END IF
-            IF (LBINTER) THEN
-              IF (IBOUNDFORMAT == 3) THEN
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', 1, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-                CALL WAVE_BOUNDARY_CONDITION(1,IT,WBACNEW,CHR)
-              ELSE
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', 1, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-                CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
-              END IF
-              DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-              WBAC    =  WBACOLD
-              WBACOLD =  WBACNEW
-              IF (LNANINFCHK) THEN
-                WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER TRUE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-              ENDIF
-            ELSE ! .NOT. LBINTER
-              IF (IBOUNDFORMAT == 3) THEN
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-                CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
-              ELSE
-                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', 1, IT, LBINTER
-                CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-                CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-              END IF
-              IF (LNANINFCHK) THEN
-                WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER FALSE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-              ENDIF
-            END IF ! LBINTER
+      IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
+        IF (LBCWA) THEN
+          IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
+            DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+            !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
+            ITMP  = 0
+            DO IFILE = 1, NUM_NETCDF_FILES_BND
+              ITMP = ITMP + NDT_BND_FILE(IFILE)
+              IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
+            END DO
+            ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
+            IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
+            IF (LBINTER) IT = IT + 1
+            IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
+              IFILE = IFILE + 1
+              IT    = 1
+            ENDIF
           END IF
-          SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
-        ELSE ! Interpolate in time ... no nead to read ...
           IF (LBINTER) THEN
-            WBAC = WBAC + DSPEC
-            IF (LNANINFCHK) THEN
-              WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
-              IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
+            IF (IBOUNDFORMAT == 3) THEN
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', IFILE, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
+              CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACNEW,CHR)
+            ELSE
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', IFILE, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
+              CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
             END IF
+            DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
+            WBAC    =  WBACOLD
+            WBACOLD =  WBACNEW
+          ELSE ! .NOT. LBINTER
+            IF (IBOUNDFORMAT == 3) THEN
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', IFILE, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
+              CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
+            ELSE
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', IFILE, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
+              CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+            END IF
+          END IF
+        ELSE IF (LBCSP) THEN
+          IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
+            DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+            IT   = NINT(DTMP/SEBO%DELT) + 1
+            IF (LBINTER) IT = IT + 1
+          END IF
+          IF (LBINTER) THEN
+            IF (IBOUNDFORMAT == 3) THEN
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', 1, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
+              CALL WAVE_BOUNDARY_CONDITION(1,IT,WBACNEW,CHR)
+            ELSE
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', 1, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
+              CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
+            END IF
+            DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
+            WBAC    =  WBACOLD
+            WBACOLD =  WBACNEW
+          ELSE ! .NOT. LBINTER
+            IF (IBOUNDFORMAT == 3) THEN
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
+              CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
+            ELSE
+              WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', 1, IT, LBINTER
+              CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
+              CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+            END IF
+          END IF ! LBINTER
+        END IF
+        SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
+      ELSE ! Interpolate in time ... no nead to read ...
+        IF (LBINTER) THEN
+          WBAC = WBAC + DSPEC
+          IF (LNANINFCHK) THEN
+            WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
+            IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
           END IF
         END IF
-        DO IP = 1, IWBMNP
-          IF (LINHOM) THEN
-            bIdx=IP
-          ELSE
-            bIdx=1
-          ENDIF
-          eIdx = IWBNDLC(IP)
-          AC2(:,:,eIdx) = WBAC(:,:,bIdx)
-        END DO
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
+      END IF
+      DO IP = 1, IWBMNP
+        IF (LINHOM) THEN
+          bIdx=IP
+        ELSE
+          bIdx=1
         ENDIF
-      ENDIF ! LBCSE ... 
+        eIdx = IWBNDLC(IP)
+        AC2(:,:,eIdx) = WBAC(:,:,bIdx)
+      END DO
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
+        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
