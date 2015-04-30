@@ -298,10 +298,14 @@
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
          LOGICAL    :: BOUC_USE_SINGLE_OUT = .TRUE.
          INTEGER    :: NUMBER_BOUC_NETCDF_FILE
+         LOGICAL    :: HACK_HARD_SET_IOBP = .FALSE.
+! Entries needed for input of spectra WWM style
          CHARACTER(LEN=140) :: NETCDF_IN_FILE
          CHARACTER(LEN=140), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
-         LOGICAL    :: HACK_HARD_SET_IOBP = .FALSE.
-
+         integer, allocatable :: BOUND_LIST_IFILE(:)
+         integer, allocatable :: BOUND_LIST_IT(:)
+         REAL(rkind), allocatable :: BOUND_LIST_TIME(:)
+         INTEGER BOUND_NB_TIME
 
          LOGICAL    :: LFIRSTREADBOUNDARY              = .FALSE.
 

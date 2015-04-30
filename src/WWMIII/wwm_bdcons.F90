@@ -3090,12 +3090,20 @@
 !*    or FileIn_0001.nc, ...., FileIn_0002.nc if they exist           *
 !**********************************************************************
       SUBROUTINE INIT_NETCDF_BOUNDARY_WWM
+      USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
       integer POSITION_BEFORE_POINT, LPOS
       character(len=140) FILE_NAME
       logical LFLIVE
-      INTEGER iFile, jFile
+      INTEGER iFile, jFile, iTime, nbtime_mjd
+      INTEGER dimids(2), varid, fid
+      real(rkind) :: ConvertToDay
+      real(rkind) :: eTimeStart, eTime
+      real(rkind), allocatable :: ListTime_mjd(:)
+      character (len=100) :: eStrUnitTime
+      integer idx
+      character (len = *), parameter :: CallFct="INIT_NETCDF_BOUNDAY_WWM"
       INQUIRE( FILE = TRIM(NETCDF_IN_FILE), EXIST = LFLIVE )
       !
       ! First determination of the file names
@@ -3134,8 +3142,62 @@
       !
       ! next reading the times
       !
+      BOUND_NB_TIME=0
+      DO iFile=1,NUMBER_BOUC_NETCDF_FILE
+        ISTAT = nf90_open(TRIM(BOUC_NETCDF_FILE_NAMES(iFile)), nf90_nowrite, fid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
+        ISTAT = nf90_inq_varid(fid, "ocean_time", varid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
 
+        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+
+        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+
+        ISTAT = nf90_close(fid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        BOUND_NB_TIME = BOUND_NB_TIME + nbtime_mjd
+      END DO
+
+      ALLOCATE(BOUND_LIST_IFILE(BOUND_NB_TIME), BOUND_LIST_IT(BOUND_NB_TIME), BOUND_LIST_TIME(BOUND_NB_TIME), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 28')
+      idx=0
+      DO iFile=1,NUMBER_BOUC_NETCDF_FILE
+        ISTAT = nf90_open(TRIM(BOUC_NETCDF_FILE_NAMES(iFile)), nf90_nowrite, fid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+
+        ISTAT = nf90_inq_varid(fid, "ocean_time", varid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+
+        ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+
+        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+
+        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        allocate(ListTime_mjd(nbtime_mjd), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+
+        ISTAT = nf90_get_var(fid, varid, ListTime_mjd)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+
+        ISTAT = nf90_close(fid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+
+        DO iTime=1,nbtime_mjd
+          idx=idx+1
+          eTime=ListTime_mjd(iTime)*ConvertToDay + eTimeStart
+          BOUND_LIST_IFILE(idx) = iFile
+          BOUND_LIST_IT(idx) = iTime
+          BOUND_LIST_TIME(idx) = eTime
+        END DO
+        DEALLOCATE(ListTime_mjd)
+      END DO
       RETURN
   10  FORMAT (a,'_',i4.4)
       END SUBROUTINE
