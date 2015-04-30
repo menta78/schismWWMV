@@ -1258,10 +1258,9 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WAVE_BOUNDARY_CONDITION(WBACOUT,CALLFROM)
+      SUBROUTINE WAVE_BOUNDARY_CONDITION(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      CHARACTER(len=25)          :: CALLFROM
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
       INTEGER                    :: IP
 #ifdef NCDF
@@ -1408,14 +1407,12 @@
       ENDIF
       IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
         IF (LBINTER) THEN
-          CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-          CALL WAVE_BOUNDARY_CONDITION(WBACNEW,CHR)
+          CALL WAVE_BOUNDARY_CONDITION(WBACNEW)
           DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
           WBAC    =  WBACOLD
           WBACOLD =  WBACNEW
         ELSE ! .NOT. LBINTER
-          CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
+          CALL WAVE_BOUNDARY_CONDITION(WBAC)
         END IF ! LBINTER
         SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
       ELSE ! Interpolate in time ... no need to read ...
@@ -1445,12 +1442,10 @@
       IMPLICIT NONE
       REAL(rkind)            :: DTMP
       INTEGER                :: ITMP
-      CHARACTER(len=25)     :: CHR
 !TODO: Makes sure initial condition work also when no wave boundary is set ...
       IF (IBOUNDFORMAT == 3) THEN
         IF (LBCSP) THEN ! Spectrum is prescribed
           CALL INIT_BINARY_WW3_SPECTRA
-          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
         END IF
         IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
 #ifdef NCDF
@@ -1458,15 +1453,10 @@
 #else
           CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
 #endif
-          CHR = 'FROM INIT_WAVE_BOUNDARY 2'
-          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
         END IF
-        IF (LBINTER) WBACOLD = WBAC
-      ELSE ! BOUNDFORMAT
-        CHR = 'FROM INIT_WAVE_BOUNDARY 4'
-        CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
-        IF (LBINTER) WBACOLD = WBAC
       END IF
+      CALL WAVE_BOUNDARY_CONDITION(WBAC)
+      IF (LBINTER) WBACOLD = WBAC
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2367,7 +2357,7 @@
 !* (doing MPI exchanges if MULTIPLE_IN_BOUND = FALSE)
 !* (otherwise, all node read the same data)
 !*
-!* Called by WAVE_BOUNDARY_CONDITIONS
+!* Called by WAVE_BOUNDARY_CONDITION
 !*
 !* Authors: Mathieu Dutour Sikiric
 !**********************************************************************
@@ -2408,7 +2398,7 @@
 !* Read a WAVEWATCHIII binary spectral file and do time and space 
 !* interpolation if required.
 !*
-!* Called by WAVE_BOUNDARY_CONDITIONS
+!* Called by WAVE_BOUNDARY_CONDITION
 !*
 !* Authors: Aron Roland
 !*          Kai Li
