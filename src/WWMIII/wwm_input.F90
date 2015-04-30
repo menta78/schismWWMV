@@ -675,7 +675,8 @@
      &      NCDF_F02_NAME, MULTIPLE_IN, NETCDF_OUT_PARAM,               &
      &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT,        &
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
-     &      HACK_HARD_SET_IOBP
+     &      HACK_HARD_SET_IOBP,                                         &
+     &      NETCDF_IN_FILE
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
@@ -864,6 +865,7 @@
          ELSE
            OUT_BOUC % IDEF = NINT(DEFINETC/DELTC)
          ENDIF
+
 #endif
          BND%FNAME = FILEBOUND
          WAV%FNAME = FILEWAVE

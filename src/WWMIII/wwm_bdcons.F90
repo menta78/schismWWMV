@@ -1442,6 +1442,9 @@
 #endif
         END IF
       END IF
+      IF (IBOUNDFORMAT == 4) THEN
+        CALL INIT_NETCDF_BOUNDARY_WWM
+      END IF
       CALL WAVE_BOUNDARY_CONDITION(WBAC)
       IF (LBINTER) WBACOLD = WBAC
       END SUBROUTINE
@@ -2893,8 +2896,8 @@
       integer iret, ncid, irec_dim, recs_his, var_id
       integer, save ::  ifile = 1
       integer LPOS, IP
-      integer POSITION_BEFORE_POINT, nbTime
       REAL(rkind)  :: eTimeDay
+      integer POSITION_BEFORE_POINT, nbTime
       LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
       IF (OUT_STATION%IDEF.gt.0) THEN
         WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
@@ -3082,10 +3085,59 @@
 # endif
       END SUBROUTINE
 !**********************************************************************
-!*                                                                    *
+!*    accepted input files for NETCDF_IN_FILE in wwminput.nml         *
+!*    NETCDF_IN_FILE = 'FileIn.nc' if FileIn.nc exists                *
+!*    or FileIn_0001.nc, ...., FileIn_0002.nc if they exist           *
 !**********************************************************************
       SUBROUTINE INIT_NETCDF_BOUNDARY_WWM
-      
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer POSITION_BEFORE_POINT, LPOS
+      character(len=140) FILE_NAME
+      logical LFLIVE
+      INTEGER iFile, jFile
+      INQUIRE( FILE = TRIM(NETCDF_IN_FILE), EXIST = LFLIVE )
+      !
+      ! First determination of the file names
+      !
+      IF (LFLIVE ) THEN
+        NUMBER_BOUC_NETCDF_FILE=1
+        ALLOCATE(BOUC_NETCDF_FILE_NAMES(1), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
+        BOUC_NETCDF_FILE_NAMES(1)=TRIM(NETCDF_IN_FILE)
+      ELSE
+        LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
+        iFile=0
+        DO
+          jFile=iFile+1
+          WRITE (FILE_NAME,10) NETCDF_IN_FILE(1:LPOS),jFile
+          INQUIRE( FILE = TRIM(FILE_NAME), EXIST = LFLIVE )
+          IF (LFLIVE .eqv. .FALSE.) THEN
+            EXIT
+          END IF
+          iFile=jFile
+        END DO
+        NUMBER_BOUC_NETCDF_FILE=iFile
+        IF (NUMBER_BOUC_NETCDF_FILE .eq. 0) THEN
+          Print *, 'Error in INIT_NETCDF_BOUNDARY_WWM'
+          Print *, 'NETCDF_IN_FILE=', TRIM(NETCDF_IN_FILE)
+          Print *, 'FILE_NAME=', TRIM(FILE_NAME)
+          CALL WWM_ABORT('We did not find the needed boundary files')
+        END IF
+        ALLOCATE(BOUC_NETCDF_FILE_NAMES(NUMBER_BOUC_NETCDF_FILE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
+        DO iFile=1,NUMBER_BOUC_NETCDF_FILE
+          WRITE (FILE_NAME,10) NETCDF_IN_FILE(1:LPOS),jFile
+          BOUC_NETCDF_FILE_NAMES(iFile)=TRIM(FILE_NAME)
+        END DO
+      END IF
+      !
+      ! next reading the times
+      !
+
+
+      RETURN
+  10  FORMAT (a,'_',i4.4)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
