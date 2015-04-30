@@ -1127,9 +1127,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SCATTER_BOUNDARY_ARRAY_WBAC
+      SUBROUTINE SCATTER_BOUNDARY_ARRAY_WBAC(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
       integer iProc, IP, irank
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
@@ -1139,13 +1140,13 @@
           CALL mpi_isend(WBAC_GL, 1, spparm_type(irank), bound_listproc(irank), 2096, comm, spparm_rqst(irank), ierr)
         END DO
         DO IP=1,IWBMNP
-          WBAC(:,:,IP)=WBAC_GL(:,:,Indexes_boundary(IP))
+          WBACOUT(:,:,IP)=WBAC_GL(:,:,Indexes_boundary(IP))
         END DO
         IF (bound_nbproc > 0) THEN
           CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
         END IF
       ELSE
-        CALL MPI_RECV(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
+        CALL MPI_RECV(WBACOUT, MSC*MDC*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************

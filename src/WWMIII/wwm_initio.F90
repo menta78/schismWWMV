@@ -684,9 +684,6 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
       FLUSH(STAT%FHNDL)
       CALL INITIAL_CONDITION
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
-      FLUSH(STAT%FHNDL)
-      CALL SET_WAVE_BOUNDARY
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
       FLUSH(STAT%FHNDL)
       CALL INIT_STATION_OUTPUT
@@ -1164,6 +1161,7 @@
        ELSE IF (LHOTR .AND. .NOT. LINID) THEN
          CALL INPUT_HOTFILE
        END IF
+       CALL SET_WAVE_BOUNDARY
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

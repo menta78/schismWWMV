@@ -1238,19 +1238,19 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_WAVE_BOUNDARY
-      USE DATAPOOL, ONLY: LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, AC2, WBAC
+      USE DATAPOOL
       IMPLICIT NONE
-      INTEGER :: IP, IPGL
+      INTEGER :: IP, eIdx
       IF (LBCWA .OR. LBCSP) THEN ! Spectrum or parametric boundary condition
         IF (LINHOM) THEN
           DO IP = 1, IWBMNP
-            IPGL = IWBNDLC(IP)
-            AC2(:,:,IPGL) = WBAC(:,:,IP)
+            eIdx = IWBNDLC(IP)
+            AC2(:,:,eIdx) = WBAC(:,:,IP)
           END DO
         ELSE
           DO IP = 1, IWBMNP
-            IPGL = IWBNDLC(IP)
-            AC2(:,:,IPGL) = WBAC(:,:,1)
+            eIdx = IWBNDLC(IP)
+            AC2(:,:,eIdx) = WBAC(:,:,1)
           END DO
         END IF
       END IF
@@ -1310,10 +1310,9 @@
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
               IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
+            ELSE IF (IBOUNDFORMAT == 4) THEN ! WWM SPPARM netcdf file
+              CALL READ_NETCDF_BOUNDARY_SPPARM
             END IF
-            DO IP = 1, IWBMNP
-              CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
-            END DO
           ELSE  ! Steady ...
             SPPARM = 0.
             WBAC   = 0.
@@ -1329,10 +1328,10 @@
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
             END IF
-            DO IP = 1, IWBMNP
-              CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 2', .FALSE.)
-            END DO
           END IF ! LBCSE ...
+          DO IP = 1, IWBMNP
+            CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
+          END DO
         ELSE ! Homogenous in space
           IF (IWBMNP .gt. 0) THEN
             IF (LBCSE) THEN ! Unsteady in time
@@ -1370,9 +1369,10 @@
             CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
           END IF
           IF (IBOUNDFORMAT == 3) THEN ! WW3
-            WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
             CALL GET_BINARY_WW3_SPECTRA(WBACOUT)
-            WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
+          END IF
+          IF (IBOUNDFORMAT == 4) THEN ! WWM WBAC netcdf
+            CALL READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
           END IF
         ELSE ! The boundary conditions is homogenous!
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
@@ -1385,7 +1385,6 @@
               CALL READSPEC2D
             ELSE IF (IBOUNDFORMAT == 3) THEN
               CALL GET_BINARY_WW3_SPECTRA(WBACOUT) 
-              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED SUCCEED'
             END IF
             CALL SPECTRUM_INT(WBACOUT)
           END IF ! LBSP1D .OR. LBSP2D
@@ -1420,15 +1419,7 @@
           WBAC = WBAC + DSPEC
         END IF
       END IF
-      DO IP = 1, IWBMNP
-        IF (LINHOM) THEN
-          bIdx=IP
-        ELSE
-          bIdx=1
-        ENDIF
-        eIdx = IWBNDLC(IP)
-        AC2(:,:,eIdx) = WBAC(:,:,bIdx)
-      END DO
+      CALL SET_WAVE_BOUNDARY
       IF (LNANINFCHK) THEN
         WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
@@ -2420,6 +2411,7 @@
       REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
       REAL(rkind) :: XP_WWM,YP_WWM
       INTEGER     :: IFILE, IT
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Begin GETWW3SPECTRA'
       CALL COMPUTE_IFILE_IT(IFILE, IT)
 !
 ! Read spectra in file
@@ -3022,26 +3014,29 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_NETCDF_BOUNDARY_WBAC(IFILE, IT)
+      SUBROUTINE READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      integer, intent(in) :: IFILE, IT
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      integer IFILE, IT
       integer IP
+      IFILE = -1
+      IT = -1
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
         DO IP=1,MNP
-          WBAC(:,:,IP)=WBAC_GL(:,:,iplg(IP))
+          WBACOUT(:,:,IP)=WBAC_GL(:,:,iplg(IP))
         END DO
       ELSE
         IF (myrank .eq. rank_boundary) THEN
           CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
         END IF
-        CALL SCATTER_BOUNDARY_ARRAY_WBAC
+        CALL SCATTER_BOUNDARY_ARRAY_WBAC(WBACOUT)
       END IF
 # else
       CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
-      WBAC=WBAC_GL
+      WBACOUT=WBAC_GL
 # endif
       END SUBROUTINE
 !**********************************************************************
@@ -3052,7 +3047,7 @@
       USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: IFILE, IT
-      character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_WBAC_SINGLE"
+      character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_SPPARM_SINGLE"
       integer ncid, var_id
       ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
@@ -3066,11 +3061,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_NETCDF_BOUNDARY_SPPARM(IFILE, IT)
+      SUBROUTINE READ_NETCDF_BOUNDARY_SPPARM
       USE DATAPOOL
       IMPLICIT NONE
-      integer, intent(in) :: IFILE, IT
+      INTEGER IFILE, IT
       integer IP
+      IFILE=-1
+      IT=-1
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_SPPARM_SINGLE(IFILE, IT)
