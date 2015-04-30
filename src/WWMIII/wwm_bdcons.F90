@@ -1132,7 +1132,6 @@
           END IF
         ENDDO
       END IF
-
       ETOT = 0.
       DO ID = 1, MDC
         DO IS = 2, MSC
@@ -1242,7 +1241,7 @@
       USE DATAPOOL, ONLY: LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, AC2, WBAC
       IMPLICIT NONE
       INTEGER :: IP, IPGL
-      IF (LBCWA .OR. LBCSP) THEN
+      IF (LBCWA .OR. LBCSP) THEN ! Spectrum or parametric boundary condition
         IF (LINHOM) THEN
           DO IP = 1, IWBMNP
             IPGL = IWBNDLC(IP)
@@ -1271,7 +1270,7 @@
         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
       ENDIF
       IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
-        IF (LBCWA) THEN
+        IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
           IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
             DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
             !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
@@ -1313,7 +1312,7 @@
             CALL WAVE_BOUNDARY_CONDITION(IFILEsel,ITsel,WBAC,CHR)
           END IF
         END IF
-        IF (LBCSP) THEN
+        IF (LBCSP) THEN ! Spectrum is prescribed
           IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
             DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
             IT   = NINT(DTMP/SEBO%DELT) + 1
@@ -1372,16 +1371,16 @@
       CHARACTER(len=25)     :: CHR
 !TODO: Makes sure initial condition work also when no wave boundary is set ...
       IF (IBOUNDFORMAT == 3) THEN
-        IF (LBCSP) THEN
+        IF (LBCSP) THEN ! Spectrum is prescribed
           CALL INIT_BINARY_WW3_SPECTRA
           DTMP = (MAIN%BMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
           IT   = NINT(DTMP/SEBO%DELT) + 1
           CHR = 'FROM INIT_WAVE_BOUNDARY 1'
           CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
           IF (LBINTER) WBACOLD = WBAC
-          WRITE(STAT%FHNDL,*) 'INITIALIZING WAVE BOUNDARY IT =', IT
           WRITE(STAT%FHNDL,*) 'SUM OF WAVE ACTION', SUM(WBACOLD), SUM(WBAC) 
-        ELSE IF (LBCWA) THEN 
+        END IF
+        IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
 #ifdef NCDF
           CALL INIT_NETCDF_WW3_WAVEPARAMETER
 #else
@@ -1462,8 +1461,7 @@
               CALL READWAVEPARFVCOM
             ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
 #ifdef NCDF
-              CHR = 'WAVE BOUNDARY COND. -1-'
-              CALL READ_NETCDF_WW3(IFILE,IT,CHR)
+              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
 #else
               CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
@@ -1482,8 +1480,7 @@
               CALL READWAVEPARFVCOM
             ELSE IF (IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
-              CHR = 'WAVE BOUNDARY COND. -2-'
-              CALL READ_NETCDF_WW3(IFILE,IT,CHR)
+              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
 #else
               CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
@@ -1674,8 +1671,8 @@
 !
 ! resolution ...
 !
-        DX_BND  = ABS(MAXVAL(COORD_BND_X)-MINVAL(COORD_BND_X))/(NDX_BND-1)
-        DY_BND  = ABS(MAXVAL(COORD_BND_Y)-MINVAL(COORD_BND_Y))/(NDY_BND-1)
+        DX_BND  = ABS(MAXVAL(COORD_BND_X) - MINVAL(COORD_BND_X))/(NDX_BND-1)
+        DY_BND  = ABS(MAXVAL(COORD_BND_Y) - MINVAL(COORD_BND_Y))/(NDY_BND-1)
 !
 ! close netcdf file ...
 !
@@ -1854,7 +1851,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SINGLE_READ_NETCDF_WW3(IFILE,IT)
+      SUBROUTINE READ_NETCDF_WW3_SINGLE(IFILE,IT)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IFILE, IT
@@ -1867,25 +1864,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_NETCDF_WW3(IFILE,IT,CALLEDFROM)
+      SUBROUTINE READ_NETCDF_WW3_PARAM(IFILE,IT)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IFILE, IT
       INTEGER              :: counter, ip, i, j
       REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
       REAL(rkind), SAVE           :: TIME, scale_factor
-      CHARACTER(LEN=25)    :: CALLEDFROM
       INTEGER IX, IY, IPROC
       REAL(rkind), ALLOCATABLE :: ARR_send_recv(:)
       integer, allocatable :: bnd_rqst(:), bnd_stat(:,:)
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_BOUND) THEN
-        CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+        CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
       ELSE
         allocate(ARR_send_recv(5*NDX_BND*NDY_BND))
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 16')
         IF (myrank .eq. 0) THEN
-          CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+          CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
           J=0
           DO IX=1,NDX_BND
             DO IY=1,NDY_BND
@@ -1930,9 +1926,8 @@
         END IF
       END IF
 #else
-      CALL SINGLE_READ_NETCDF_WW3(IFILE,IT)
+      CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
 #endif
-
       IF (LWRITE_WW3_RESULTS) THEN
         OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
         ALLOCATE(U(NDX_BND*NDY_BND), V(NDX_BND*NDY_BND), H(NDX_BND*NDY_BND), stat=istat)

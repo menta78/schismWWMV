@@ -1093,8 +1093,7 @@
          IF (.NOT. LHOTR .AND. LINID) THEN
             IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
-              CALLFROM = 'CALL FROM INIT. CONDITION'
-              CALL READ_NETCDF_WW3(IFILE,IT,CALLFROM)
+              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
 #else
               CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
