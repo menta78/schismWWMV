@@ -3,82 +3,78 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_IOBPD
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        INTEGER :: I
-        REAL(rkind) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
-        REAL(rkind) :: x1, y1, x2, y2
-        INTEGER :: I1, I2, I3, IE, IP, ID
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: I
+      REAL(rkind) :: DXP1, DXP2, DXP3, DYP1, DYP2, DYP3
+      REAL(rkind) :: x1, y1, x2, y2
+      INTEGER :: I1, I2, I3, IE, IP, ID
 #ifdef MPI_PARALL_GRID
-        INTEGER :: iwild(mnp)
+      INTEGER :: iwild(mnp)
 #endif
-        REAL(rkind) :: EVX, EVY
-        REAL(rkind) :: eDet1, eDet2
-
-        IOBPD = 0
-
-        DO IE=1,MNE
-          I1   =   INE(1,IE)
-          I2   =   INE(2,IE)
-          I3   =   INE(3,IE)
-          DXP1 =   IEN(6,IE)
-          DYP1 = - IEN(5,IE)
-          DXP2 =   IEN(2,IE)
-          DYP2 = - IEN(1,IE)
-          DXP3 =   IEN(4,IE)
-          DYP3 = - IEN(3,IE)
+      REAL(rkind) :: EVX, EVY
+      REAL(rkind) :: eDet1, eDet2
+      IOBPD = 0
+      DO IE=1,MNE
+        I1   =   INE(1,IE)
+        I2   =   INE(2,IE)
+        I3   =   INE(3,IE)
+        DXP1 =   IEN(6,IE)
+        DYP1 = - IEN(5,IE)
+        DXP2 =   IEN(2,IE)
+        DYP2 = - IEN(1,IE)
+        DXP3 =   IEN(4,IE)
+        DYP3 = - IEN(3,IE)
 !AR: ... modifly wave direction by currents ...
-          DO ID=1,MDC
-            EVX=COSTH(ID)
-            EVY=SINTH(ID)
-            DO I=1,3
-               IF (I.eq.1) THEN
-                  x1=   DXP1
-                  y1=   DYP1
-                  x2= - DXP3
-                  y2= - DYP3
-                  IP=   I1
-               END IF
-               IF (I.eq.2) THEN
-                  x1 =   DXP2
-                  y1 =   DYP2
-                  x2 = - DXP1
-                  y2 = - DYP1
-                  IP =   I2
-               END IF
-               IF (I.eq.3) THEN
-                  x1 =   DXP3
-                  y1 =   DYP3
-                  x2 = - DXP2
-                  y2 = - DYP2
-                  IP =   I3
-               END IF
+        DO ID=1,MDC
+          EVX=COSTH(ID)
+          EVY=SINTH(ID)
+          DO I=1,3
+            IF (I.eq.1) THEN
+              x1=   DXP1
+              y1=   DYP1
+              x2= - DXP3
+              y2= - DYP3
+              IP=   I1
+            END IF
+            IF (I.eq.2) THEN
+              x1 =   DXP2
+              y1 =   DYP2
+              x2 = - DXP1
+              y2 = - DYP1
+              IP =   I2
+            END IF
+            IF (I.eq.3) THEN
+              x1 =   DXP3
+              y1 =   DYP3
+              x2 = - DXP2
+              y2 = - DYP2
+              IP =   I3
+            END IF
 !AR: MDS please check if the new thr can pose a problem ...
-               if (abs(iobp(ip)) .eq. 1) then
-                 eDet1 = THR-x1*EVY+y1*EVX
-                 eDet2 = THR+x2*EVY-y2*EVX
-                 IF ((eDet1.gt.ZERO).and.(eDet2.gt.ZERO)) THEN
-                   IOBPD(ID,IP)=1
-                 ENDIF 
-               else ! land boundary ...
-                 IOBPD(ID,IP)=1
-               endif
-            END DO
+            IF (abs(iobp(ip)) .eq. 1) THEN
+              eDet1 = THR-x1*EVY+y1*EVX
+              eDet2 = THR+x2*EVY-y2*EVX
+              IF ((eDet1.gt.ZERO).and.(eDet2.gt.ZERO)) THEN
+                IOBPD(ID,IP)=1
+              ENDIF 
+            ELSE ! land boundary ...
+              IOBPD(ID,IP)=1
+            END IF
           END DO
         END DO
-
-        DO IP = 1, MNP
-          IF ( (LBCWA .OR. LBCSP) ) THEN
-            IF ( IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
-              IOBWB(IP) = 0
-              IOBPD(:,IP) = 1
-            ENDIF
-          END IF
-          IF ( IOBP(IP) == 3 .OR. IOBP(IP) == 4) THEN ! If Neumann boundary condition is given set IOBP to 3
-            IOBPD(:,IP) = 1 ! Update Neumann nodes ...
-          END IF
-        END DO
+      END DO
+      DO IP = 1, MNP
+        IF ( (LBCWA .OR. LBCSP) ) THEN
+          IF ( IOBP(IP) == 2 .OR. IOBP(IP) == 4) THEN
+            IOBWB(IP) = 0
+            IOBPD(:,IP) = 1
+          ENDIF
+        END IF
+        IF ( IOBP(IP) == 3 .OR. IOBP(IP) == 4) THEN ! If Neumann boundary condition is given set IOBP to 3
+          IOBPD(:,IP) = 1 ! Update Neumann nodes ...
+        END IF
+      END DO
 !2do: recode for mpi 
 !        IF (LBCWA .OR. LBCSP) THEN
 !          IF (.NOT. ANY(IOBP .EQ. 2)) THEN
@@ -86,28 +82,28 @@
 !          ENDIF
 !        ENDIF
 #ifdef MPI_PARALL_GRID
-        CALL exchange_p2di(IOBWB)
-        DO ID = 1, MDC
-           iwild = IOBPD(ID,:)
-           CALL exchange_p2di(iwild)
-           IOBPD(ID,:) = iwild
-        ENDDO
+      CALL exchange_p2di(IOBWB)
+      DO ID = 1, MDC
+        iwild = IOBPD(ID,:)
+        CALL exchange_p2di(iwild)
+        IOBPD(ID,:) = iwild
+      ENDDO
 #endif
 
 #if defined DEBUG && defined IOBPDOUT
 # ifdef MPI_PARALL_GRID
-        IF (myrank == 0) THEN
+      IF (myrank == 0) THEN
 # endif
-          DO IP = 1, MNP
-            WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
-          END DO
-          DO IP = 1, MNP
-            DO ID = 1, MDC
-              WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
-            ENDDO
-          END DO
+        DO IP = 1, MNP
+          WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
+        END DO
+        DO IP = 1, MNP
+          DO ID = 1, MDC
+            WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
+          ENDDO
+        END DO
 # ifdef MPI_PARALL_GRID
-        END IF
+      END IF
 # endif
 #endif
       END SUBROUTINE
@@ -115,16 +111,16 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_IOBPD_BY_DEP
-        USE DATAPOOL
-        IMPLICIT NONE
-        INTEGER              :: IP
-        DO IP = 1, MNP
-          IF (DEP(IP) .LT. DMIN) THEN 
-            IOBDP(IP) = 0 
-          ELSE 
-            IOBDP(IP) = 1
-          ENDIF
-        END DO
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER              :: IP
+      DO IP = 1, MNP
+        IF (DEP(IP) .LT. DMIN) THEN 
+          IOBDP(IP) = 0 
+        ELSE 
+          IOBDP(IP) = 1
+        ENDIF
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -490,40 +486,39 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CLOSE_IOBP
-        USE DATAPOOL
-        IMPLICIT NONE
-        DEALLOCATE( IWBNDLC)
+      USE DATAPOOL
+      IMPLICIT NONE
+      DEALLOCATE( IWBNDLC)
 #ifdef MPI_PARALL_GRID
-        DEALLOCATE( IWBNDGL)
+      DEALLOCATE( IWBNDGL)
 #endif
-        IF (LBCWA .OR. LBCSP) THEN
-          CLOSE(WAV%FHNDL)
-        END IF
-        IF (LBCWA) THEN
-          DEALLOCATE( SPPARM)
+      IF (LBCWA .OR. LBCSP) THEN
+        CLOSE(WAV%FHNDL)
+      END IF
+      IF (LBCWA) THEN
+        DEALLOCATE( SPPARM)
+      ENDIF
+      IF (LBCWA .OR. LBCSP) THEN
+        DEALLOCATE( WBAC)
+        IF (LBINTER) THEN
+          DEALLOCATE( WBACOLD)
+          DEALLOCATE( WBACNEW)
+          DEALLOCATE( DSPEC)
         ENDIF
-        IF (LBCWA .OR. LBCSP) THEN
-          DEALLOCATE( WBAC)
-          IF (LBINTER) THEN
-            DEALLOCATE( WBACOLD)
-            DEALLOCATE( WBACNEW)
-            DEALLOCATE( DSPEC)
-          ENDIF
-        END IF
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACOUT,CALLFROM)
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN)        :: IT, IFILE
-         CHARACTER(len=25)          :: CALLFROM
-         REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
-         INTEGER                    :: IP
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)        :: IT, IFILE
+      CHARACTER(len=25)          :: CALLFROM
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      INTEGER                    :: IP
 #ifdef NCDF
-         CHARACTER(len=25)          :: CHR
+      CHARACTER(len=25)          :: CHR
 #endif
 
 !AR: WAVE BOUNDARY
@@ -545,123 +540,121 @@
 !
 ! Count number of active boundary points ...
 !
-         WRITE(STAT%FHNDL,*) 'WAVE BOUNDARY CONDITION CALLED', IFILE, IT, CALLFROM
-
-         IF(LWW3GLOBALOUT) THEN
-           IF (.NOT. ALLOCATED(WW3GLOBAL)) THEN
-             ALLOCATE(WW3GLOBAL(8,MNP), stat=istat)
-             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 7')
-           END IF
-         END IF
-
-         IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
-           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Parametric Wave Boundary Condition is prescribed'
-           IF (LINHOM) THEN ! Inhomogenous in space
-             IF (LBCSE) THEN
-               SPPARM = 0.
-               WBAC   = 0.
-               IF (IBOUNDFORMAT == 1) THEN  ! WWM
-                 CALL READWAVEPARWWM
-               ELSE IF (IBOUNDFORMAT == 2) THEN ! FVCOM ... THIS WILL BE REPLACED BY SWAN TYPE BOUNDARY!
-                 CALL READWAVEPARFVCOM
-               ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
+      WRITE(STAT%FHNDL,*) 'WAVE BOUNDARY CONDITION CALLED', IFILE, IT, CALLFROM
+      IF(LWW3GLOBALOUT) THEN
+        IF (.NOT. ALLOCATED(WW3GLOBAL)) THEN
+          ALLOCATE(WW3GLOBAL(8,MNP), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 7')
+        END IF
+      END IF
+      IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Parametric Wave Boundary Condition is prescribed'
+        IF (LINHOM) THEN ! Inhomogenous in space
+          IF (LBCSE) THEN
+            SPPARM = 0.
+            WBAC   = 0.
+            IF (IBOUNDFORMAT == 1) THEN  ! WWM
+              CALL READWAVEPARWWM
+            ELSE IF (IBOUNDFORMAT == 2) THEN ! FVCOM ... THIS WILL BE REPLACED BY SWAN TYPE BOUNDARY!
+              CALL READWAVEPARFVCOM
+            ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
 #ifdef NCDF
-                 CHR = 'WAVE BOUNDARY COND. -1-'
-                 CALL READ_NETCDF_WW3(IFILE,IT,CHR)
+              CHR = 'WAVE BOUNDARY COND. -1-'
+              CALL READ_NETCDF_WW3(IFILE,IT,CHR)
 #else
-                 CALL WWM_ABORT('compile with DNCDF PPFLAG')
+              CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
-                 CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
-                 IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
-               END IF
-               DO IP = 1, IWBMNP
-                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
-               END DO
-             ELSE  ! Steady ...
-               SPPARM = 0.
-               WBAC   = 0.
-               IF (IBOUNDFORMAT == 1) THEN
-                 CALL READWAVEPARWWM
-               ELSE IF (IBOUNDFORMAT == 2) THEN
-                 CALL READWAVEPARFVCOM
-               ELSE IF (IBOUNDFORMAT == 3) THEN
+              CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
+              IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
+            END IF
+            DO IP = 1, IWBMNP
+              CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
+            END DO
+          ELSE  ! Steady ...
+            SPPARM = 0.
+            WBAC   = 0.
+            IF (IBOUNDFORMAT == 1) THEN
+              CALL READWAVEPARWWM
+            ELSE IF (IBOUNDFORMAT == 2) THEN
+              CALL READWAVEPARFVCOM
+            ELSE IF (IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
-                 CHR = 'WAVE BOUNDARY COND. -2-'
-                 CALL READ_NETCDF_WW3(IFILE,IT,CHR)
+              CHR = 'WAVE BOUNDARY COND. -2-'
+              CALL READ_NETCDF_WW3(IFILE,IT,CHR)
 #else
-                 CALL WWM_ABORT('compile with DNCDF PPFLAG')
+              CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
-                 CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
-               END IF
-               DO IP = 1, IWBMNP
-                 CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 2', .FALSE.)
-               END DO
-             END IF ! LBCSE ...
-           ELSE ! Homogenous in space
-             IF (IWBMNP .gt. 0) THEN
-               IF (LBCSE) THEN ! Unsteady in time
-                 IF (IBOUNDFORMAT == 1) THEN
-                   CALL READWAVEPARWWM
-                 ELSE IF (IBOUNDFORMAT == 2) THEN
-                   CALL READWAVEPARFVCOM
-                 END IF
-                 CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
-               ELSE ! Steady in time ...
-                 SPPARM = 0.
-                 WBAC   = 0.
-                 IF (LMONO_IN) THEN
-                   SPPARM(1,1) = WBHS * SQRT(2.)
-                 ELSE
-                   SPPARM(1,1) = WBHS
-                 END IF
-                 SPPARM(2,1) = WBTP
-                 SPPARM(3,1) = WBDM
-                 SPPARM(4,1) = WBDS
-                 SPPARM(5,1) = WBSS
-                 SPPARM(6,1) = WBDSMS
-                 SPPARM(7,1) = WBGAUSS
-                 SPPARM(8,1) = WBPKEN
-                 CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
-               END IF ! LBCSE
-             END IF
-           END IF ! LINHOM
-         ELSE IF (LBCSP) THEN ! Spectrum is prescribed
-           IF (LINHOM) THEN ! The boundary conditions is not homogenous!
-             IF (LBSP1D) THEN
-               CALL WWM_ABORT('No inhomogenous 1d spectra boundary cond. available') 
-             ELSE IF (LBSP2D) THEN
-               IF (IBOUNDFORMAT == 1) THEN ! WWM
-                 !CALL READSPEC2D
-                 CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
-               ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
-                 WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
-                 CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT)
-                 WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
-                 IF (LNANINFCHK) THEN
-                   WRITE(DBG%FHNDL,*) ' AFTER CALL GET_BINARY_WW3_SPECTRA',  SUM(WBACOUT)
-                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-                 ENDIF
-               ELSE IF (IBOUNDFORMAT .NE. 1 .OR. IBOUNDFORMAT .NE. 3) THEN
-                 CALL WWM_ABORT('IBOUNDFORMAT is not defined for the chosen value')
-               ENDIF
-             END IF
-           ELSE ! The boundary conditions is homogenous!
-             IF (LBSP1D) THEN ! 1-D Spectra is prescribed
-               WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
-               CALL READSPEC1D(LFIRSTREAD)
-               CALL SPECTRUM_INT(WBACOUT)
-             ELSE IF (LBSP2D) THEN ! 2-D Spectra is prescribed
-               WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
-               IF (IBOUNDFORMAT == 1) THEN
-                 CALL READSPEC2D
-               ELSE IF (IBOUNDFORMAT == 3) THEN
-                 CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT) 
-                 WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED SUCCEED'
-               END IF
-               CALL SPECTRUM_INT(WBACOUT)
-             END IF ! LBSP1D .OR. LBSP2D
-           END IF ! LINHOM
-         ENDIF ! LBCWA .OR. LBCSP
+              CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
+            END IF
+            DO IP = 1, IWBMNP
+              CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 2', .FALSE.)
+            END DO
+          END IF ! LBCSE ...
+        ELSE ! Homogenous in space
+          IF (IWBMNP .gt. 0) THEN
+            IF (LBCSE) THEN ! Unsteady in time
+              IF (IBOUNDFORMAT == 1) THEN
+                CALL READWAVEPARWWM
+              ELSE IF (IBOUNDFORMAT == 2) THEN
+                CALL READWAVEPARFVCOM
+              END IF
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
+            ELSE ! Steady in time ...
+              SPPARM = 0.
+              WBAC   = 0.
+              IF (LMONO_IN) THEN
+                SPPARM(1,1) = WBHS * SQRT(2.)
+              ELSE
+                SPPARM(1,1) = WBHS
+              END IF
+              SPPARM(2,1) = WBTP
+              SPPARM(3,1) = WBDM
+              SPPARM(4,1) = WBDS
+              SPPARM(5,1) = WBSS
+              SPPARM(6,1) = WBDSMS
+              SPPARM(7,1) = WBGAUSS
+              SPPARM(8,1) = WBPKEN
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
+            END IF ! LBCSE
+          END IF
+        END IF ! LINHOM
+      ELSE IF (LBCSP) THEN ! Spectrum is prescribed
+        IF (LINHOM) THEN ! The boundary conditions is not homogenous!
+          IF (LBSP1D) THEN
+            CALL WWM_ABORT('No inhomogenous 1d spectra boundary cond. available') 
+          ELSE IF (LBSP2D) THEN
+            IF (IBOUNDFORMAT == 1) THEN ! WWM
+              !CALL READSPEC2D
+              CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
+            ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
+              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
+              CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT)
+              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
+              IF (LNANINFCHK) THEN
+                WRITE(DBG%FHNDL,*) ' AFTER CALL GET_BINARY_WW3_SPECTRA',  SUM(WBACOUT)
+                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
+              ENDIF
+            ELSE IF (IBOUNDFORMAT .NE. 1 .OR. IBOUNDFORMAT .NE. 3) THEN
+              CALL WWM_ABORT('IBOUNDFORMAT is not defined for the chosen value')
+            ENDIF
+          END IF
+        ELSE ! The boundary conditions is homogenous!
+          IF (LBSP1D) THEN ! 1-D Spectra is prescribed
+            WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
+            CALL READSPEC1D(LFIRSTREAD)
+            CALL SPECTRUM_INT(WBACOUT)
+          ELSE IF (LBSP2D) THEN ! 2-D Spectra is prescribed
+            WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
+            IF (IBOUNDFORMAT == 1) THEN
+              CALL READSPEC2D
+            ELSE IF (IBOUNDFORMAT == 3) THEN
+              CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT) 
+              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED SUCCEED'
+            END IF
+            CALL SPECTRUM_INT(WBACOUT)
+          END IF ! LBSP1D .OR. LBSP2D
+        END IF ! LINHOM
+      ENDIF ! LBCWA .OR. LBCSP
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -798,7 +791,6 @@
       SUBROUTINE KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
       USE DATAPOOL
       IMPLICIT NONE
-
       REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
       REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
@@ -937,7 +929,6 @@
         ENDIF
 
       END DO
-
       MPER = 0.
       IF (.NOT.LOGPM.AND.ITPER.LT.100) THEN
         ITPER = ITPER + 1
@@ -994,7 +985,6 @@
       ELSE
         CTOT =  SQRT(0.5_rkind*MS/PI)/(1._rkind-0.25_rkind/MS)
       ENDIF
-
       LINCOUT = .FALSE.
       DO ID = 1, MDC
         AACOS = COS(SPDIR(ID) - ADIR)
@@ -1120,203 +1110,185 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SPECTRUM_INT(WBACOUT)
-         USE DATAPOOL
-         IMPLICIT NONE
-
-
-         REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
-         REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
-         REAL(rkind)                :: INSPF(WBMSC)
-         REAL(rkind)                :: INSPE(WBMSC)
-         REAL(rkind)                :: INDIR(WBMSC)
-         REAL(rkind)                :: INSPRD(WBMSC)
-         REAL(rkind)                :: INMS(WBMSC)
-         REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
-         INTEGER                    :: IS, IS2, ID
-         REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
-         REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
-         REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2
-         REAL(rkind)                :: EFTOT, TM1, OMEG, PPTAIL, OMEG2
-         REAL(rkind)                :: RA, ETAIL, EFTAIL
-
-         REAL(rkind), ALLOCATABLE   :: THD(:)
-         REAL(rkind)                :: DTHD, RTH0 
-
-         MS1 = WBDS
-         ADIR1 = WBDM
-
-         PSHAP(1) = 3.3
-         PSHAP(2) = 0.07
-         PSHAP(3) = 0.09
-         PSHAP(4) = 0.01
-         PSHAP(5) = 2.0
-         PSHAP(6) = 0.01
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
+      REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
+      REAL(rkind)                :: INSPF(WBMSC)
+      REAL(rkind)                :: INSPE(WBMSC)
+      REAL(rkind)                :: INDIR(WBMSC)
+      REAL(rkind)                :: INSPRD(WBMSC)
+      REAL(rkind)                :: INMS(WBMSC)
+      REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
+      INTEGER                    :: IS, IS2, ID
+      REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
+      REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
+      REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2
+      REAL(rkind)                :: EFTOT, TM1, OMEG, PPTAIL, OMEG2
+      REAL(rkind)                :: RA, ETAIL, EFTAIL
+      REAL(rkind)                :: THD(MDC)
+      REAL(rkind)                :: DTHD, RTH0 
+      MS1 = WBDS
+      ADIR1 = WBDM
+      PSHAP(1) = 3.3
+      PSHAP(2) = 0.07
+      PSHAP(3) = 0.09
+      PSHAP(4) = 0.01
+      PSHAP(5) = 2.0
+      PSHAP(6) = 0.01
 !
 !        2do Convert ... set the correct units ...
 !
-         DO IS = 1, WBMSC
-           INSPF(IS)  = SFRQ(IS,1) * PI2
-           INDIR(IS)  = SDIR(IS,1)
-           INSPRD(IS) = SPRD(IS,1) * DEGRAD
-           INSPE(IS)  = SPEG(IS,1,1) / PI2
-         END DO
-
-         ETOT = 0.0
-         DO IS = 2, WBMSC
-           DS = (INSPF(IS) - INSPF(IS-1)) 
-           EAD = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
-           ETOT = ETOT + EAD
-         END DO
-
-         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
-
-         ACLOC = 0.
-         CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INSPE, ACLOC(:,1))
-
-         DO IS = 1, MSC
-           IF (SPSIG(IS) .GT. INSPF(WBMSC)) THEN
-              WRITE (STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBMSC)/PI2
-              WRITE (STAT%FHNDL,*) 'Setting all Action above the max. measured freq. zero'
-              ACLOC(IS,1) = 0.0
-           END IF
-         END DO
-
-         ETOT = 0.0
-         DO IS = 2, MSC
-           DS   = SPSIG(IS) - SPSIG(IS-1)
-           EAD  = 0.5*(ACLOC(IS,1) + ACLOC(IS-1,1))*DS
-           ETOT = ETOT + EAD
-         END DO
-
-         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - INTERPOLATED', 4.0*SQRT(ETOT)
+      DO IS = 1, WBMSC
+        INSPF(IS)  = SFRQ(IS,1) * PI2
+        INDIR(IS)  = SDIR(IS,1)
+        INSPRD(IS) = SPRD(IS,1) * DEGRAD
+        INSPE(IS)  = SPEG(IS,1,1) / PI2
+      END DO
+      ETOT = 0.0
+      DO IS = 2, WBMSC
+        DS = (INSPF(IS) - INSPF(IS-1)) 
+        EAD = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
+        ETOT = ETOT + EAD
+      END DO
+      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
+      ACLOC = 0.
+      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INSPE, ACLOC(:,1))
+      DO IS = 1, MSC
+        IF (SPSIG(IS) .GT. INSPF(WBMSC)) THEN
+           WRITE (STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBMSC)/PI2
+           WRITE (STAT%FHNDL,*) 'Setting all Action above the max. measured freq. zero'
+           ACLOC(IS,1) = 0.0
+        END IF
+      END DO
+      ETOT = 0.0
+      DO IS = 2, MSC
+        DS   = SPSIG(IS) - SPSIG(IS-1)
+        EAD  = 0.5*(ACLOC(IS,1) + ACLOC(IS-1,1))*DS
+        ETOT = ETOT + EAD
+      END DO
+      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - INTERPOLATED', 4.0*SQRT(ETOT)
 !
 !        Convert to Wave Action if nessasary
 !
-         IF (LWBAC2EN) THEN
-           DO IS = 1, MSC
-             ACLOC(IS,1) = ACLOC(IS,1) / SPSIG(IS)
-           END DO
-         END IF
-!
-         ETOT = 0.0
-         DO IS = 2, MSC
-           DS   = SPSIG(IS) - SPSIG(IS-1)
-           EAD  = 0.5 * (SPSIG(IS)*ACLOC(IS,1)+SPSIG(IS-1)*ACLOC(IS-1,1))*DS
-           ETOT = ETOT + EAD
-         END DO
-
-         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - WAVE ACTION', 4.0*SQRT(ETOT)
+      IF (LWBAC2EN) THEN
+        DO IS = 1, MSC
+          ACLOC(IS,1) = ACLOC(IS,1) / SPSIG(IS)
+        END DO
+      END IF
+      ETOT = 0.0
+      DO IS = 2, MSC
+        DS   = SPSIG(IS) - SPSIG(IS-1)
+        EAD  = 0.5 * (SPSIG(IS)*ACLOC(IS,1)+SPSIG(IS-1)*ACLOC(IS-1,1))*DS
+        ETOT = ETOT + EAD
+      END DO
+      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - WAVE ACTION', 4.0*SQRT(ETOT)
 !
 !        Convert from nautical to cartesian direction if nessasary and from deg2rad
 !
-         DO IS = 1, WBMSC
-           CALL DEG2NAUT (INDIR(IS), DEG, LNAUTIN)
-           INDIR(IS) = DEG
-         END DO
+      DO IS = 1, WBMSC
+        CALL DEG2NAUT (INDIR(IS), DEG, LNAUTIN)
+        INDIR(IS) = DEG
+      END DO
 !
 !        Interpolate Directions in frequency space
 !
-         DO IS = 1, MSC
-           DO IS2 = 1, WBMSC - 1
-             IF (SPSIG(IS) .GT. INSPF(IS2) .AND. SPSIG(IS) .LT. INSPF(IS2+1)) THEN
-               DX     = INSPF(IS2+1) - INSPF(IS2)
-               DIFFDX = SPSIG(IS)    - INSPF(IS2)
-               CALL INTERDIR( INDIR(IS2), INDIR(IS2+1), DX, DIFFDX, YINTER)
-               SPCDIR(IS) = YINTER
-               IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
-             END IF
-           END DO
-           IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
-         END DO
-
-         CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INDIR, SPCDIR)
-
-         DO IS = 1, MSC
-           IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.
-         END DO
-!
-         DO IS = 1, MSC
-           DEG = SPCDIR(IS) * DEGRAD
-           SPCDIR(IS) = DEG
-         END DO
-!
-         IF (LINDSPRDEG) THEN
-           DO IS = 1, WBMSC
-             INMS(IS) = MAX (INSPRD(IS)**(-2) - TWO, ONE)
-           END DO
-         ELSE
-           DO IS = 1, WBMSC
-             INMS(IS) = INSPRD(IS)
-           END DO
-         END IF
+      DO IS = 1, MSC
+        DO IS2 = 1, WBMSC - 1
+          IF (SPSIG(IS) .GT. INSPF(IS2) .AND. SPSIG(IS) .LT. INSPF(IS2+1)) THEN
+            DX     = INSPF(IS2+1) - INSPF(IS2)
+            DIFFDX = SPSIG(IS)    - INSPF(IS2)
+            CALL INTERDIR( INDIR(IS2), INDIR(IS2+1), DX, DIFFDX, YINTER)
+            SPCDIR(IS) = YINTER
+            IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
+          END IF
+        END DO
+        IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
+      END DO
+      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INDIR, SPCDIR)
+      DO IS = 1, MSC
+        IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.
+      END DO
+      DO IS = 1, MSC
+        DEG = SPCDIR(IS) * DEGRAD
+        SPCDIR(IS) = DEG
+      END DO
+      IF (LINDSPRDEG) THEN
+        DO IS = 1, WBMSC
+          INMS(IS) = MAX (INSPRD(IS)**(-2) - TWO, ONE)
+        END DO
+      ELSE
+        DO IS = 1, WBMSC
+          INMS(IS) = INSPRD(IS)
+        END DO
+      END IF
 !
 !       Interpolate MS in Frequency Space, if LCUBIC than Cubic Spline Interpolation is used
 !
-         MS = 0.
-         CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INMS, MS)
-
-         DO IS = 1, MSC
-           IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) MS(IS) = MS(IS-1)
-         END DO
+      MS = 0.
+      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INMS, MS)
+      DO IS = 1, MSC
+        IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) MS(IS) = MS(IS-1)
+      END DO
 !
 !        Construction of a JONSWAP Spectra
 !
-           IF (LPARMDIR) THEN
-             IF (MS1.GT.10.) THEN
-               CTOT1 = SQRT(MS1/(2.*PI)) * (1. + 0.25/MS1)
-             ELSE
-               CTOT1 = 2.**MS1 * (GAMMA_FUNC(1.+0.5*MS1))**2 / (PI * GAMMA_FUNC(1.+MS1))
-             ENDIF
-             DO IS = 1, MSC
-               RA = ACLOC(IS,1)
-               CDIRT = 0.
-               DO ID = 1, MDC
-                 DDACOS = COS(SPDIR(ID) - ADIR1)
-                 IF (DDACOS .GT. 0.) THEN
-                   CDIR1 = CTOT1 * MAX (DDACOS**MS1, THR)
-                 ELSE
-                   CDIR1 = 0.
-                 ENDIF
-                 ACLOC(IS,ID) = RA * CDIR1
-                 CDIRT        = CDIRT + CDIR1 * DDIR
-               ENDDO
-             ENDDO
-           ELSE
-             DO IS = 1, MSC
-               IF (MS(IS).GT.10.) THEN
-                 CTOT(IS) = SQRT(MS(IS)/(2.*PI)) * (1. + 0.25/MS(IS))
-               ELSE
-                 CTOT(IS) = 2.**MS(IS) * (GAMMA_FUNC(1.+0.5*MS(IS)))**2.0 / (PI * GAMMA_FUNC(1.+MS(IS)))
-               ENDIF
-             END DO
-             DO IS = 1, MSC
-               RA = ACLOC(IS,1)
-               CDIRT = 0.
-               DO ID = 1, MDC
-                 DDACOS = COS(SPDIR(ID) - SPCDIR(IS))
-                 IF (DDACOS .GT. 0.) THEN
-                   CDIR(ID) = CTOT(IS) * MAX (DDACOS**MS(IS), ZERO)
-                 ELSE
-                   CDIR(ID) = 0.
-                 ENDIF
-                 ACLOC(IS,ID) = RA * CDIR(ID)
-                 CDIRT        = CDIRT + CDIR(ID) * DDIR
-               ENDDO
+      IF (LPARMDIR) THEN
+        IF (MS1.GT.10.) THEN
+          CTOT1 = SQRT(MS1/(2.*PI)) * (1. + 0.25/MS1)
+        ELSE
+          CTOT1 = 2.**MS1 * (GAMMA_FUNC(1.+0.5*MS1))**2 / (PI * GAMMA_FUNC(1.+MS1))
+        ENDIF
+        DO IS = 1, MSC
+          RA = ACLOC(IS,1)
+          CDIRT = 0.
+          DO ID = 1, MDC
+            DDACOS = COS(SPDIR(ID) - ADIR1)
+            IF (DDACOS .GT. 0.) THEN
+              CDIR1 = CTOT1 * MAX (DDACOS**MS1, THR)
+            ELSE
+              CDIR1 = 0.
+            ENDIF
+            ACLOC(IS,ID) = RA * CDIR1
+            CDIRT        = CDIRT + CDIR1 * DDIR
+          END DO
+        END DO
+      ELSE
+        DO IS = 1, MSC
+          IF (MS(IS).GT.10.) THEN
+            CTOT(IS) = SQRT(MS(IS)/(2.*PI)) * (1. + 0.25/MS(IS))
+          ELSE
+            CTOT(IS) = 2.**MS(IS) * (GAMMA_FUNC(1.+0.5*MS(IS)))**2.0 / (PI * GAMMA_FUNC(1.+MS(IS)))
+          ENDIF
+        END DO
+        DO IS = 1, MSC
+          RA = ACLOC(IS,1)
+          CDIRT = 0.
+          DO ID = 1, MDC
+            DDACOS = COS(SPDIR(ID) - SPCDIR(IS))
+            IF (DDACOS .GT. 0.) THEN
+              CDIR(ID) = CTOT(IS) * MAX (DDACOS**MS(IS), ZERO)
+            ELSE
+              CDIR(ID) = 0.
+            ENDIF
+            ACLOC(IS,ID) = RA * CDIR(ID)
+            CDIRT        = CDIRT + CDIR(ID) * DDIR
+          ENDDO
 
-               IF (100. - 1./CDIRT*100. .GT. 1.) THEN
-                 WRITE (STAT%FHNDL,*) 100 - 1./CDIRT*100., 'ERROR BIGGER THAN 1% IN THE DIRECTIONAL DISTTRIBUTION'
-                 WRITE (STAT%FHNDL,*) 'PLEASE CHECK THE AMOUNG OF DIRECTIONAL BINS AND THE PRESCRIBED DIRECTIONAL SPREADING'
-               END IF
-             ENDDO
-           END IF
+          IF (100. - 1./CDIRT*100. .GT. 1.) THEN
+            WRITE (STAT%FHNDL,*) 100 - 1./CDIRT*100., 'ERROR BIGGER THAN 1% IN THE DIRECTIONAL DISTTRIBUTION'
+            WRITE (STAT%FHNDL,*) 'PLEASE CHECK THE AMOUNG OF DIRECTIONAL BINS AND THE PRESCRIBED DIRECTIONAL SPREADING'
+          END IF
+        ENDDO
+      END IF
 
-       ETOT = 0.
-       DO ID = 1, MDC
-          DO IS = 2, MSC
-            DS = SPSIG(IS) - SPSIG(IS-1)
-            EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
-            ETOT = ETOT + EAD
-         END DO
+      ETOT = 0.
+      DO ID = 1, MDC
+        DO IS = 2, MSC
+          DS = SPSIG(IS) - SPSIG(IS-1)
+          EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+          ETOT = ETOT + EAD
+        END DO
       END DO
 
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
@@ -1373,13 +1345,13 @@
          TM2 = 0.
       END IF
 
-       ETOT = 0.
-       DO ID = 1, MDC
-          DO IS = 2, MSC
-            DS = SPSIG(IS) - SPSIG(IS-1)
-            EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
-            ETOT = ETOT + EAD
-         END DO
+      ETOT = 0.
+      DO ID = 1, MDC
+        DO IS = 2, MSC
+          DS = SPSIG(IS) - SPSIG(IS-1)
+          EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+          ETOT = ETOT + EAD
+        END DO
       END DO
 
       WBACOUT(:,:,1) = ACLOC
@@ -1392,8 +1364,6 @@
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
-        ALLOCATE(THD(MDC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 8')
         DTHD=360./MDC
         RTH0=SPDIR(1)/DDIR
         DO ID = 1, MDC
@@ -1404,7 +1374,6 @@
         WRITE (4001,1946) (MOD(2.5*PI-SPDIR(ID),PI2),ID=1,MDC)
         WRITE (4001,901) 'LAI SPEC', 0., 0., 0., 0., 0., 0., 0.
         WRITE (4001,902) ((ACLOC(IS,ID)*SPSIG(IS)/PI2*RHOW*G9,IS=1,MSC),ID=1,MDC)
-        DEALLOCATE(THD)
 
       END IF
 
@@ -1419,157 +1388,142 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_WAVE_BOUNDARY
-        USE DATAPOOL, ONLY: LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, AC2, WBAC
-        IMPLICIT NONE
-        INTEGER :: IP, IPGL
-        IF (LBCWA .OR. LBCSP) THEN
-          IF (LINHOM) THEN
-            DO IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
-              AC2(:,:,IPGL) = WBAC(:,:,IP)
-            END DO
-          ELSE
-            DO IP = 1, IWBMNP
-              IPGL = IWBNDLC(IP)
-              AC2(:,:,IPGL) = WBAC(:,:,1)
-            END DO
-          ENDIF
+      USE DATAPOOL, ONLY: LBCWA, LBCSP, LINHOM, IWBMNP, IWBNDLC, AC2, WBAC
+      IMPLICIT NONE
+      INTEGER :: IP, IPGL
+      IF (LBCWA .OR. LBCSP) THEN
+        IF (LINHOM) THEN
+          DO IP = 1, IWBMNP
+            IPGL = IWBNDLC(IP)
+            AC2(:,:,IPGL) = WBAC(:,:,IP)
+          END DO
+        ELSE
+          DO IP = 1, IWBMNP
+            IPGL = IWBNDLC(IP)
+            AC2(:,:,IPGL) = WBAC(:,:,1)
+          END DO
         END IF
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SET_WAVE_BOUNDARY_CONDITION
-         USE DATAPOOL
-         IMPLICIT NONE
-         REAL(rkind)      :: DTMP
-         integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
-         CHARACTER(len=29) :: CHR
-
-         IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)
-           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1841')
-         ENDIF
-
-         IF (LBCSE) THEN 
-           IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
-             IF (LBCWA) THEN
-               IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-                 DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-                 !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
-                 ITMP  = 0
-                 DO IFILE = 1, NUM_NETCDF_FILES_BND
-                   ITMP = ITMP + NDT_BND_FILE(IFILE)
-                   IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-                 END DO
-                 ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-                 IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-                 IF (LBINTER) IT = IT + 1
-                 IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-                   IFILE = IFILE + 1
-                   IT    = 1
-                 ENDIF
-               END IF
-               IF (LBINTER) THEN
-                 IF (IBOUNDFORMAT == 3) THEN
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', IFILE, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-                   CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACNEW,CHR)
-                 ELSE
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', IFILE, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-                   CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
-                 END IF
-                 DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-                 WBAC    =  WBACOLD
-                 WBACOLD =  WBACNEW
-               ELSE ! .NOT. LBINTER
-                 IF (IBOUNDFORMAT == 3) THEN
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', IFILE, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-                   CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
-                 ELSE
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', IFILE, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-                   CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-                 END IF
-               END IF
-
-             ELSE IF (LBCSP) THEN
-
-               IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-                 DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-                 IT   = NINT(DTMP/SEBO%DELT) + 1
-                 IF (LBINTER) IT = IT + 1
-               END IF
-
-               IF (LBINTER) THEN
-                 IF (IBOUNDFORMAT == 3) THEN
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', 1, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-                   CALL WAVE_BOUNDARY_CONDITION(1,IT,WBACNEW,CHR)
-                 ELSE
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', 1, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
-                   CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
-                 END IF
-                 DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-                 WBAC    =  WBACOLD
-                 WBACOLD =  WBACNEW
-                 IF (LNANINFCHK) THEN
-                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER TRUE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-                 ENDIF
-               ELSE ! .NOT. LBINTER
-                 IF (IBOUNDFORMAT == 3) THEN
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-                   CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
-                 ELSE
-                   WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', 1, IT, LBINTER
-                   CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
-                   CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-                 END IF
-                 IF (LNANINFCHK) THEN
-                   WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER FALSE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
-                   IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-                 ENDIF
-               END IF ! LBINTER
-
-             ENDIF 
-!
-             SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY ! Increment boundary time line ...
-!
-           ELSE ! Interpolate in time ... no nead to read ...
-
-             IF (LBINTER) THEN
-               WBAC = WBAC + DSPEC
-
-               IF (LNANINFCHK) THEN
-                 WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
-                 IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
-               ENDIF
-
-             END IF
-
-           END IF
-
-           DO IP = 1, IWBMNP
-             IF (LINHOM) THEN
-               bIdx=IP
-             ELSE
-               bIdx=1
-             ENDIF
-             eIdx = IWBNDLC(IP)
-             AC2(:,:,eIdx) = WBAC(:,:,bIdx)
-           END DO
-
-           IF (LNANINFCHK) THEN
-             WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
-             IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
-           ENDIF
-
-         ENDIF ! LBCSE ... 
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind)      :: DTMP
+      integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
+      CHARACTER(len=29) :: CHR
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,*) ' ENTERING SET BOUNDARY CONDITION ',  SUM(AC2)
+        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1841')
+      ENDIF
+      IF (LBCSE) THEN 
+        IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
+          IF (LBCWA) THEN
+            IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
+              DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+              !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
+              ITMP  = 0
+              DO IFILE = 1, NUM_NETCDF_FILES_BND
+                ITMP = ITMP + NDT_BND_FILE(IFILE)
+                IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
+              END DO
+              ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
+              IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
+              IF (LBINTER) IT = IT + 1
+              IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
+                IFILE = IFILE + 1
+                IT    = 1
+              ENDIF
+            END IF
+            IF (LBINTER) THEN
+              IF (IBOUNDFORMAT == 3) THEN
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', IFILE, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
+                CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACNEW,CHR)
+              ELSE
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', IFILE, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
+                CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
+              END IF
+              DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
+              WBAC    =  WBACOLD
+              WBACOLD =  WBACNEW
+            ELSE ! .NOT. LBINTER
+              IF (IBOUNDFORMAT == 3) THEN
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', IFILE, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
+                CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
+              ELSE
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', IFILE, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
+                CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+              END IF
+            END IF
+          ELSE IF (LBCSP) THEN
+            IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
+              DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+              IT   = NINT(DTMP/SEBO%DELT) + 1
+              IF (LBINTER) IT = IT + 1
+            END IF
+            IF (LBINTER) THEN
+              IF (IBOUNDFORMAT == 3) THEN
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 1', 1, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
+                CALL WAVE_BOUNDARY_CONDITION(1,IT,WBACNEW,CHR)
+              ELSE
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 2', 1, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 2'
+                CALL WAVE_BOUNDARY_CONDITION(1,1,WBACNEW,CHR)
+              END IF
+              DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
+              WBAC    =  WBACOLD
+              WBACOLD =  WBACNEW
+              IF (LNANINFCHK) THEN
+                WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER TRUE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
+                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
+              ENDIF
+            ELSE ! .NOT. LBINTER
+              IF (IBOUNDFORMAT == 3) THEN
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 3', 1, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
+                CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
+              ELSE
+                WRITE(STAT%FHNDL,*) 'CALL TO WAVE_BOUNDARY_CONDITION 4', 1, IT, LBINTER
+                CHR = 'SET_WAVE_BOUNDARY_CONDITION 4'
+                CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
+              END IF
+              IF (LNANINFCHK) THEN
+                WRITE(DBG%FHNDL,*) ' AFTER CALL TO WAVE_BOUNDARY_CONDITION LBINTER FALSE',  SUM(WBAC), SUM(WBACOLD), SUM(WBACNEW)
+                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
+              ENDIF
+            END IF ! LBINTER
+          END IF
+          SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
+        ELSE ! Interpolate in time ... no nead to read ...
+          IF (LBINTER) THEN
+            WBAC = WBAC + DSPEC
+            IF (LNANINFCHK) THEN
+              WRITE(DBG%FHNDL,*) ' AFTER TIME INTERPOLATION NO READ OF FILE',  SUM(WBAC), SUM(DSPEC)
+              IF (SUM(WBAC) .NE. SUM(WBAC)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1965')
+            END IF
+          END IF
+        END IF
+        DO IP = 1, IWBMNP
+          IF (LINHOM) THEN
+            bIdx=IP
+          ELSE
+            bIdx=1
+          ENDIF
+          eIdx = IWBNDLC(IP)
+          AC2(:,:,eIdx) = WBAC(:,:,bIdx)
+        END DO
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
+        ENDIF
+      ENDIF ! LBCSE ... 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2496,135 +2450,129 @@
 !*          Kai Li
 !*          Guillaume Dodet (18/12/2012)
 !**********************************************************************
-        SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
-        USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
-        USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
-        USE DATAPOOL, ONLY: MDC_WW3
+      SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
+      USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
+      USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
+      USE DATAPOOL, ONLY: MDC_WW3
 #ifdef MPI_PARALL_GRID
-        USE DATAPOOL, ONLY: XLON, YLAT
+      USE DATAPOOL, ONLY: XLON, YLAT
 #endif
-        IMPLICIT NONE
-        INTEGER, INTENT(IN)      :: ISTEP
-        REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
-
-
-        INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
-        REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
-        REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
-        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
-        REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
-        REAL(rkind) :: XP_WWM,YP_WWM
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)      :: ISTEP
+      REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
+      INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
+      REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
+      REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
+      REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
+      REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
+      REAL(rkind) :: XP_WWM,YP_WWM
 !
 ! Read spectra in file
 !
-        CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
+      CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)
 !
-        DO IBWW3 = 1, NP_WW3
-          DO IS = 1,MSC_WW3
-            DR_WW3_TMP=DR_WW3
-            SPEC_WW3_TMP(IS,:,IBWW3) = SPEC_WW3_UNSORT(IS,:,IBWW3)
-            CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,MDC_WW3,2)
-            SPEC_WW3(IS,:,IBWW3) = SPEC_WW3_TMP(IS,:,IBWW3)
-            DR_WW3 = DR_WW3_TMP
-          ENDDO
-          DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
+      DO IBWW3 = 1, NP_WW3
+        DO IS = 1,MSC_WW3
+          DR_WW3_TMP=DR_WW3
+          SPEC_WW3_TMP(IS,:,IBWW3) = SPEC_WW3_UNSORT(IS,:,IBWW3)
+          CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,MDC_WW3,2)
+          SPEC_WW3(IS,:,IBWW3) = SPEC_WW3_TMP(IS,:,IBWW3)
+          DR_WW3 = DR_WW3_TMP
+        ENDDO
+        DDIR_WW3 = DR_WW3(2) - DR_WW3(1)
 !          WRITE(STAT%FHNDL,*) 'AFTER SORTING', IBWW3, SUM(SPEC_WW3(:,:,IBWW3))
-        ENDDO ! IBWW3
+      ENDDO
 !
 ! Interpolate ww3 spectra on wwm frequency grid
 ! GD: at the moment 360º spanning grids are mandatory
 !
-        IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
+      IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
 !          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
 !          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
 !          WRITE(STAT%FHNDL,*)'WW3 spectra does not encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
-          CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
-        ELSE
+        CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
+      ELSE
 !          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
 !          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
-          CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
-        ENDIF
+        CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
+      ENDIF
 
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
-        ENDIF
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,*) 'SUMS AFTER INTERPOLATION', SUM(SPEC_WW3),SUM(SPEC_WWM)
+      ENDIF
 !
 ! Interpolate ww3 spectra on wwm boundary nodes
 ! GD: ww3 forcing works until here. Some more debugging is needed
 !
-        TMP = 0
-        IF(LINHOM) THEN !nearest-neighbour interpolation
-          DO IB=1,IWBMNP
-            IPGL = IWBNDLC(IB)
+      TMP = 0
+      IF(LINHOM) THEN !nearest-neighbour interpolation
+        DO IB=1,IWBMNP
+          IPGL = IWBNDLC(IB)
 #ifdef SELFE
-            XP_WWM=XLON(IPGL)! * RADDEG 
-            YP_WWM=YLAT(IPGL)! * RADDEG 
+          XP_WWM=XLON(IPGL)! * RADDEG 
+          YP_WWM=YLAT(IPGL)! * RADDEG 
 #else
-            XP_WWM = XP(IPGL)
-            YP_WWM = YP(IPGL)
+          XP_WWM = XP(IPGL)
+          YP_WWM = YP(IPGL)
 #endif
-            IF (NP_WW3 .GT. 1) THEN
-              DO IBWW3=1,NP_WW3
-                DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
-                INDBWW3(IBWW3)=IBWW3
-              ENDDO
-              CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
-              CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
-              !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
-            ELSE
-              WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
-            ENDIF
-          ENDDO ! IB 
-        ELSE
-          DO IB=1,IWBMNP
-            WBACOUT(:,:,IB) = SPEC_WWM(:,:,1) 
-          ENDDO
-        ENDIF
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
-        END SUBROUTINE
+          IF (NP_WW3 .GT. 1) THEN
+            DO IBWW3=1,NP_WW3
+              DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
+              INDBWW3(IBWW3)=IBWW3
+            ENDDO
+            CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
+            CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
+            !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
+          ELSE
+            WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
+          ENDIF
+        ENDDO ! IB 
+      ELSE
+        DO IB=1,IWBMNP
+          WBACOUT(:,:,IB) = SPEC_WWM(:,:,1) 
+        ENDDO
+      ENDIF
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE GETWW3SPECTRA'
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-        SUBROUTINE INIT_BINARY_WW3_SPECTRA 
-        USE DATAPOOL
-        IMPLICIT NONE
+      SUBROUTINE INIT_BINARY_WW3_SPECTRA 
+      USE DATAPOOL
+      IMPLICIT NONE
 !
 ! Read header to get grid dimension, frequencies and directions, 
 ! output locations and first time step
 !
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START WITH INIT_BINARY_WW3_SPECTRA'
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START WITH INIT_BINARY_WW3_SPECTRA'
 
-        CALL READSPEC2D_WW3_INIT_SPEC
-        CALL READSPEC2D_WW3_INIT_TIME
+      CALL READSPEC2D_WW3_INIT_SPEC
+      CALL READSPEC2D_WW3_INIT_TIME
 
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE WITH INIT_BINARY_WW3_SPECTRA'
-        END SUBROUTINE
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE WITH INIT_BINARY_WW3_SPECTRA'
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-        SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
-
-        USE DATAPOOL, ONLY: rkind
-        IMPLICIT NONE
-
-        INTEGER, INTENT(IN)      :: NP,P,D1,D2
-        REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
-        REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
-        INTEGER                  :: IP
-        REAL                     :: SW
-
-        SW=0
-        ZINT=0
-        DO IP=1,NP
-          SW=SW+WEIGHT(IP)**P
-          ZINT(:,:)=ZINT(:,:)+Z(:,:,IP)*(WEIGHT(IP)**P)
-        ENDDO
-        ZINT=ZINT/SW
-        END SUBROUTINE
+      SUBROUTINE SHEPARDINT2D(NP,WEIGHT,D1,D2,Z,ZINT,P)
+      USE DATAPOOL, ONLY: rkind
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)      :: NP,P,D1,D2
+      REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
+      REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
+      INTEGER                  :: IP
+      REAL                     :: SW
+      SW=0
+      ZINT=0
+      DO IP=1,NP
+        SW=SW+WEIGHT(IP)**P
+        ZINT(:,:)=ZINT(:,:)+Z(:,:,IP)*(WEIGHT(IP)**P)
+      ENDDO
+      ZINT=ZINT/SW
+      END SUBROUTINE
 !**********************************************************************
 !* SPECTRALINT
 !* Interpolate spectrum on WWM spectral grid.
@@ -2639,108 +2587,98 @@
 !*             the min (resp. max) frequencies need to be smaller
 !*             (resp. higher) than in WWM frequency grid.
 !**********************************************************************
-        SUBROUTINE SPECTRALINT(SPEC_WW3,SPEC_WWM)
-        USE DATAPOOL
-        IMPLICIT NONE
-
-        REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
-        REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
-
-        REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
-        REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
-
-        INTEGER     :: IP,IS,ID
-
-        REAL(rkind) :: JACOBIAN(MSC), AM, SM
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
-
-        JACOBIAN = ONE/(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
- 
-        SPEC_WW3_TMP = ZERO
-        SPEC_WWM     = ZERO
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
-        ENDIF
-
-        DO IP=1,NP_WW3
-          DO IS=1,MSC_WW3
-            CALL INTERLIND(MDC_WW3,MDC,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
+      SUBROUTINE SPECTRALINT(SPEC_WW3,SPEC_WWM)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
+      REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
+      REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
+      REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
+      INTEGER     :: IP,IS,ID
+      REAL(rkind) :: JACOBIAN(MSC), AM, SM
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
+      JACOBIAN = ONE/(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
+      SPEC_WW3_TMP = ZERO
+      SPEC_WWM     = ZERO
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
+      ENDIF
+      DO IP=1,NP_WW3
+        DO IS=1,MSC_WW3
+          CALL INTERLIND(MDC_WW3,MDC,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
+        ENDDO
+        DO ID=1,MDC 
+          CALL INTERLIN (MSC_WW3,MSC,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
+        ENDDO
+        M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+        DO ID = 1,MDC_WW3
+          DO IS = 1,MSC_WW3-1
+            DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+            AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+            SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+            M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+            M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+            M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
           ENDDO
-          DO ID=1,MDC 
-            CALL INTERLIN (MSC_WW3,MSC,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
+        ENDDO
+        M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO 
+        DO ID = 1,MDC
+          DO IS = 1,MSC-1
+            DF = FR(IS+1)-FR(IS)
+            AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO
+            SM = (FR(IS+1)+FR(IS))/TWO
+            M0_WWM =M0_WWM+AM*DF*DDIR
+            M1_WWM =M1_WWM+AM*SM*DF*DDIR
+            M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
           ENDDO
-          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-          DO ID = 1,MDC_WW3
-            DO IS = 1,MSC_WW3-1
-              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
-              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
-              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
-              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
-              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
-            ENDDO
-          ENDDO
-          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO 
-          DO ID = 1,MDC
-            DO IS = 1,MSC-1
-              DF = FR(IS+1)-FR(IS)
-              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO
-              SM = (FR(IS+1)+FR(IS))/TWO
-              M0_WWM =M0_WWM+AM*DF*DDIR
-              M1_WWM =M1_WWM+AM*SM*DF*DDIR
-              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
-            ENDDO
-          ENDDO
-          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
-          WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
-        END DO
+        ENDDO
+        WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+        WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
+      END DO
 
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
-        ENDIF
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER INTERPOLATION', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+      ENDIF
 
 ! Do jacobian
 
-        DO IP = 1, NP_WW3
-          DO ID = 1, MDC
-            SPEC_WWM(:,ID,IP) = SPEC_WWM(:,ID,IP) * JACOBIAN(:) ! convert to wave action in sigma,theta space
-          END DO              
-        END DO
+      DO IP = 1, NP_WW3
+        DO ID = 1, MDC
+          SPEC_WWM(:,ID,IP) = SPEC_WWM(:,ID,IP) * JACOBIAN(:) ! convert to wave action in sigma,theta space
+        END DO              
+      END DO
 
-        WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
-        DO IP = 1, NP_WW3
-          M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-          DO ID = 1,MDC_WW3
-            DO IS = 1,MSC_WW3-1
-              DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-              AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
-              SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
-              M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
-              M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
-              M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
-            ENDDO
+      WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
+      DO IP = 1, NP_WW3
+        M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
+        DO ID = 1,MDC_WW3
+          DO IS = 1,MSC_WW3-1
+            DF = FQ_WW3(IS+1)-FQ_WW3(IS)
+            AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
+            SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
+            M0_WW3 =M0_WW3+AM*DF*DDIR_WW3
+            M1_WW3 =M1_WW3+AM*SM*DF*DDIR_WW3
+            M2_WW3 =M2_WW3+AM*SM**2*DF*DDIR_WW3
           ENDDO
-          M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
-          DO ID = 1,MDC
-            DO IS = 1,MSC-1
-              DF = SPSIG(IS+1)-SPSIG(IS)
-              SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
-              AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
-              M0_WWM =M0_WWM+AM*DF*DDIR
-              M1_WWM =M1_WWM+AM*SM*DF*DDIR
-              M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
-            ENDDO
+        ENDDO
+        M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
+        DO ID = 1,MDC
+          DO IS = 1,MSC-1
+            DF = SPSIG(IS+1)-SPSIG(IS)
+            SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
+            AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
+            M0_WWM =M0_WWM+AM*DF*DDIR
+            M1_WWM =M1_WWM+AM*SM*DF*DDIR
+            M2_WWM =M2_WWM+AM*SM**2*DF*DDIR
           ENDDO
-          WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
-          WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
-        END DO
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
-        ENDIF
-        END SUBROUTINE
+        ENDDO
+        WRITE(STAT%FHNDL,*) 'POINT NUMBER', IP
+        WRITE(STAT%FHNDL,'(A10,2F20.10,A10,2F20.10)') 'M1 = ',M1_WW3, M1_WWM, 'M2 = ',M2_WW3, M2_WWM
+      END DO
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'AFTER JACOBIAN', IP, SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM)
+      ENDIF
+      END SUBROUTINE
 !**********************************************************************
 !* INTERLIND
 !* Interpolate vector on a 2-pi periodic axis (directions in wwm grid).
@@ -3016,11 +2954,11 @@
       REAL(rkind)  :: eTimeDay
       LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
       IF (OUT_STATION%IDEF.gt.0) THEN
-         WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
-  10     FORMAT (a,'_',i4.4)
+        WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
+  10    FORMAT (a,'_',i4.4)
       ELSE
-         WRITE (PRE_FILE_NAME,20) OUT_BOUC % FNAME(1:LPOS)
-  20     FORMAT (a)
+        WRITE (PRE_FILE_NAME,20) OUT_BOUC % FNAME(1:LPOS)
+  20    FORMAT (a)
       ENDIF
       WRITE (FILE_NAME,30) TRIM(PRE_FILE_NAME)
   30  FORMAT (a,'.nc')
