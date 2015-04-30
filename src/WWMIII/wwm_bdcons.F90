@@ -1258,164 +1258,9 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_WAVE_BOUNDARY_CONDITION
+      SUBROUTINE WAVE_BOUNDARY_CONDITION(WBACOUT,CALLFROM)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind)      :: DTMP
-      integer :: ITMP, IFILE, IP, eIdx, IT, bIdx
-      CHARACTER(len=29) :: CHR
-      INTEGER IFILEsel, ITsel
-      IF (LNANINFCHK) THEN
-        WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
-        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
-      ENDIF
-      IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
-        IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
-          IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-            DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-            !WRITE(*,*) DTMP, MAIN%BMJD, BND_TIME_ALL_FILES(1,1)
-            ITMP  = 0
-            DO IFILE = 1, NUM_NETCDF_FILES_BND
-              ITMP = ITMP + NDT_BND_FILE(IFILE)
-              IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-            END DO
-            ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-            IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-            IF (LBINTER) IT = IT + 1
-            IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-              IFILE = IFILE + 1
-              IT    = 1
-            ENDIF
-          END IF
-          IF (LBINTER) THEN
-            CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-            IF (IBOUNDFORMAT == 3) THEN
-              IFILEsel=IFILE
-              ITsel=IT
-            ELSE
-              IFILEsel=1
-              ITsel=1
-            END IF
-            CALL WAVE_BOUNDARY_CONDITION(IFILEsel,ITsel,WBACNEW,CHR)
-            DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-            WBAC    =  WBACOLD
-            WBACOLD =  WBACNEW
-          ELSE ! .NOT. LBINTER
-            CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-            IF (IBOUNDFORMAT == 3) THEN
-              IFILEsel=IFILE
-              ITsel=IT
-            ELSE
-              IFILEsel=1
-              ITsel=1
-            END IF
-            CALL WAVE_BOUNDARY_CONDITION(IFILEsel,ITsel,WBAC,CHR)
-          END IF
-        END IF
-        IF (LBCSP) THEN ! Spectrum is prescribed
-          IF (IBOUNDFORMAT == 3) THEN ! Find the right position in the file ...
-            DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-            IT   = NINT(DTMP/SEBO%DELT) + 1
-            IF (LBINTER) IT = IT + 1
-          END IF
-          IF (LBINTER) THEN
-            CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
-            IF (IBOUNDFORMAT == 3) THEN
-              ITsel=IT
-            ELSE
-              ITsel=1
-            END IF
-            CALL WAVE_BOUNDARY_CONDITION(1,ITsel,WBACNEW,CHR)
-            DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
-            WBAC    =  WBACOLD
-            WBACOLD =  WBACNEW
-          ELSE ! .NOT. LBINTER
-            CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
-            IF (IBOUNDFORMAT == 3) THEN
-              ITsel=IT
-            ELSE
-              ITsel=1
-            END IF
-            CALL WAVE_BOUNDARY_CONDITION(1,ITsel,WBAC,CHR)
-          END IF ! LBINTER
-        END IF
-        SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
-      ELSE ! Interpolate in time ... no need to read ...
-        IF (LBINTER) THEN
-          WBAC = WBAC + DSPEC
-        END IF
-      END IF
-      DO IP = 1, IWBMNP
-        IF (LINHOM) THEN
-          bIdx=IP
-        ELSE
-          bIdx=1
-        ENDIF
-        eIdx = IWBNDLC(IP)
-        AC2(:,:,eIdx) = WBAC(:,:,bIdx)
-      END DO
-      IF (LNANINFCHK) THEN
-        WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
-        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
-      ENDIF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_WAVE_BOUNDARY_CONDITION(IFILE, IT)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, INTENT(OUT) :: IFILE, IT
-      REAL(rkind)            :: DTMP
-      INTEGER                :: ITMP
-      CHARACTER(len=25)     :: CHR
-!TODO: Makes sure initial condition work also when no wave boundary is set ...
-      IF (IBOUNDFORMAT == 3) THEN
-        IF (LBCSP) THEN ! Spectrum is prescribed
-          CALL INIT_BINARY_WW3_SPECTRA
-          DTMP = (MAIN%BMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-          IT   = NINT(DTMP/SEBO%DELT) + 1
-          CHR = 'FROM INIT_WAVE_BOUNDARY 1'
-          CALL WAVE_BOUNDARY_CONDITION(1,IT,WBAC,CHR)
-          IF (LBINTER) WBACOLD = WBAC
-          WRITE(STAT%FHNDL,*) 'SUM OF WAVE ACTION', SUM(WBACOLD), SUM(WBAC) 
-        END IF
-        IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
-#ifdef NCDF
-          CALL INIT_NETCDF_WW3_WAVEPARAMETER
-#else
-          CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
-#endif
-          DTMP = (MAIN%BMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-          ITMP  = 0
-          DO IFILE = 1, NUM_NETCDF_FILES_BND
-            ITMP = ITMP + NDT_BND_FILE(IFILE)
-            IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-          END DO
-          ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-          IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-          IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-            IFILE = IFILE + 1
-            IT    = 1
-          ENDIF
-          WRITE(STAT%FHNDL,*) IFILE, IT, SUM(NDT_BND_FILE(1:IFILE-1)), NINT(DTMP/SEBO%DELT), SEBO%DELT
-          CHR = 'FROM INIT_WAVE_BOUNDARY 2'
-          CALL WAVE_BOUNDARY_CONDITION(IFILE,IT,WBAC,CHR)
-          IF (LBINTER) WBACOLD = WBAC
-        END IF
-      ELSE ! BOUNDFORMAT
-        CHR = 'FROM INIT_WAVE_BOUNDARY 4'
-        CALL WAVE_BOUNDARY_CONDITION(1,1,WBAC,CHR)
-        IF (LBINTER) WBACOLD = WBAC
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE WAVE_BOUNDARY_CONDITION(IFILE,IT,WBACOUT,CALLFROM)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, INTENT(IN)        :: IT, IFILE
       CHARACTER(len=25)          :: CALLFROM
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
       INTEGER                    :: IP
@@ -1442,7 +1287,6 @@
 !
 ! Count number of active boundary points ...
 !
-      WRITE(STAT%FHNDL,*) 'WAVE BOUNDARY CONDITION CALLED', IFILE, IT, CALLFROM
       IF(LWW3GLOBALOUT) THEN
         IF (.NOT. ALLOCATED(WW3GLOBAL)) THEN
           ALLOCATE(WW3GLOBAL(8,MNP), stat=istat)
@@ -1461,7 +1305,7 @@
               CALL READWAVEPARFVCOM
             ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
 #ifdef NCDF
-              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
+              CALL READ_NETCDF_WW3_PARAM
 #else
               CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
@@ -1480,7 +1324,7 @@
               CALL READWAVEPARFVCOM
             ELSE IF (IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
-              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
+              CALL READ_NETCDF_WW3_PARAM
 #else
               CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
@@ -1521,23 +1365,15 @@
       END IF
       IF (LBCSP) THEN ! Spectrum is prescribed
         IF (LINHOM) THEN ! The boundary conditions is not homogenous!
-          IF (LBSP1D) THEN
-            CALL WWM_ABORT('No inhomogenous 1d spectra boundary cond. available') 
-          ELSE IF (LBSP2D) THEN
-            IF (IBOUNDFORMAT == 1) THEN ! WWM
-              !CALL READSPEC2D
-              CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
-            ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
-              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
-              CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT)
-              WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
-              IF (LNANINFCHK) THEN
-                WRITE(DBG%FHNDL,*) ' AFTER CALL GET_BINARY_WW3_SPECTRA',  SUM(WBACOUT)
-                IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1945')
-              ENDIF
-            ELSE IF (IBOUNDFORMAT .NE. 1 .OR. IBOUNDFORMAT .NE. 3) THEN
-              CALL WWM_ABORT('IBOUNDFORMAT is not defined for the chosen value')
-            ENDIF
+          IF (LBSP1D) CALL WWM_ABORT('No inhomogenous 1d spectra boundary cond. available') 
+          IF (IBOUNDFORMAT == 1) THEN ! WWM
+            !CALL READSPEC2D
+            CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
+          END IF
+          IF (IBOUNDFORMAT == 3) THEN ! WW3
+            WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED'
+            CALL GET_BINARY_WW3_SPECTRA(WBACOUT)
+            WRITE(STAT%FHNDL,*)'GETWW3SPECTRA SUCCEEDED'
           END IF
         ELSE ! The boundary conditions is homogenous!
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
@@ -1549,13 +1385,88 @@
             IF (IBOUNDFORMAT == 1) THEN
               CALL READSPEC2D
             ELSE IF (IBOUNDFORMAT == 3) THEN
-              CALL GET_BINARY_WW3_SPECTRA(IT,WBACOUT) 
+              CALL GET_BINARY_WW3_SPECTRA(WBACOUT) 
               WRITE(STAT%FHNDL,*)'GETWW3SPECTRA CALLED SUCCEED'
             END IF
             CALL SPECTRUM_INT(WBACOUT)
           END IF ! LBSP1D .OR. LBSP2D
         END IF ! LINHOM
       ENDIF ! LBCWA .OR. LBCSP
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SET_WAVE_BOUNDARY_CONDITION
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind)      :: DTMP
+      integer :: ITMP, IP, eIdx, bIdx
+      CHARACTER(len=29) :: CHR
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
+        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
+      ENDIF
+      IF ( MAIN%TMJD > SEBO%TMJD-1.E-8 .AND. MAIN%TMJD < SEBO%EMJD ) THEN ! Read next time step from boundary file ...
+        IF (LBINTER) THEN
+          CHR = 'SET_WAVE_BOUNDARY_CONDITION 1'
+          CALL WAVE_BOUNDARY_CONDITION(WBACNEW,CHR)
+          DSPEC   = (WBACNEW-WBACOLD)/SEBO%DELT*MAIN%DELT
+          WBAC    =  WBACOLD
+          WBACOLD =  WBACNEW
+        ELSE ! .NOT. LBINTER
+          CHR = 'SET_WAVE_BOUNDARY_CONDITION 3'
+          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
+        END IF ! LBINTER
+        SEBO%TMJD = SEBO%TMJD + SEBO%DELT*SEC2DAY
+      ELSE ! Interpolate in time ... no need to read ...
+        IF (LBINTER) THEN
+          WBAC = WBAC + DSPEC
+        END IF
+      END IF
+      DO IP = 1, IWBMNP
+        IF (LINHOM) THEN
+          bIdx=IP
+        ELSE
+          bIdx=1
+        ENDIF
+        eIdx = IWBNDLC(IP)
+        AC2(:,:,eIdx) = WBAC(:,:,bIdx)
+      END DO
+      IF (LNANINFCHK) THEN
+        WRITE(DBG%FHNDL,*) ' FINISHED WITH BOUNDARY CONDITION ',  SUM(AC2)
+        IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_WAVE_BOUNDARY_CONDITION
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind)            :: DTMP
+      INTEGER                :: ITMP
+      CHARACTER(len=25)     :: CHR
+!TODO: Makes sure initial condition work also when no wave boundary is set ...
+      IF (IBOUNDFORMAT == 3) THEN
+        IF (LBCSP) THEN ! Spectrum is prescribed
+          CALL INIT_BINARY_WW3_SPECTRA
+          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
+        END IF
+        IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
+#ifdef NCDF
+          CALL INIT_NETCDF_WW3_WAVEPARAMETER
+#else
+          CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
+#endif
+          CHR = 'FROM INIT_WAVE_BOUNDARY 2'
+          CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
+        END IF
+        IF (LBINTER) WBACOLD = WBAC
+      ELSE ! BOUNDFORMAT
+        CHR = 'FROM INIT_WAVE_BOUNDARY 4'
+        CALL WAVE_BOUNDARY_CONDITION(WBAC,CHR)
+        IF (LBINTER) WBACOLD = WBAC
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1864,16 +1775,39 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_NETCDF_WW3_PARAM(IFILE,IT)
+      SUBROUTINE COMPUTE_IFILE_IT(IFILE, IT)
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: IFILE, IT
-      INTEGER              :: counter, ip, i, j
+      INTEGER, INTENT(OUT) :: IFILE, IT
+      REAL(rkind) :: DTMP
+      INTEGER ITMP
+      DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+      ITMP  = 0
+      DO IFILE = 1, NUM_NETCDF_FILES_BND
+        ITMP = ITMP + NDT_BND_FILE(IFILE)
+        IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
+      END DO
+      ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
+      IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
+      IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
+        IFILE = IFILE + 1
+        IT    = 1
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_NETCDF_WW3_PARAM
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER     :: IFILE, IT
+      INTEGER     :: counter, ip, i, j
       REAL(rkind), ALLOCATABLE    :: U(:), V(:), H(:)
       REAL(rkind), SAVE           :: TIME, scale_factor
       INTEGER IX, IY, IPROC
       REAL(rkind), ALLOCATABLE :: ARR_send_recv(:)
       integer, allocatable :: bnd_rqst(:), bnd_stat(:,:)
+      CALL COMPUTE_IFILE_IT(IFILE, IT)
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_BOUND) THEN
         CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
@@ -2480,7 +2414,7 @@
 !*          Kai Li
 !*          Guillaume Dodet (18/12/2012)
 !**********************************************************************
-      SUBROUTINE GET_BINARY_WW3_SPECTRA (ISTEP,WBACOUT)
+      SUBROUTINE GET_BINARY_WW3_SPECTRA(WBACOUT)
       USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
       USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
       USE DATAPOOL, ONLY: MDC_WW3
@@ -2488,7 +2422,6 @@
       USE DATAPOOL, ONLY: XLON, YLAT
 #endif
       IMPLICIT NONE
-      INTEGER, INTENT(IN)      :: ISTEP
       REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
       INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
       REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
@@ -2496,10 +2429,12 @@
       REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
       REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
       REAL(rkind) :: XP_WWM,YP_WWM
+      INTEGER     :: IFILE, IT
+      CALL COMPUTE_IFILE_IT(IFILE, IT)
 !
 ! Read spectra in file
 !
-      CALL READ_SPEC_WW3(ISTEP,SPEC_WW3_UNSORT)
+      CALL READ_SPEC_WW3(IT,SPEC_WW3_UNSORT)
 !
 ! Sort directions and carries spectra along (ww3 directions are not
 ! montonic)

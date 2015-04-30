@@ -474,7 +474,7 @@
 #endif
       IMPLICIT NONE
 !
-      INTEGER        :: IT, IFILE, i, j, IP
+      INTEGER        :: i, j, IP
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
@@ -680,10 +680,10 @@
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
       FLUSH(STAT%FHNDL)
-      CALL INIT_WAVE_BOUNDARY_CONDITION(IFILE,IT)
+      CALL INIT_WAVE_BOUNDARY_CONDITION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
       FLUSH(STAT%FHNDL)
-      CALL INITIAL_CONDITION(IFILE,IT)
+      CALL INITIAL_CONDITION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET BOUNDARY CONDITIONS'
       FLUSH(STAT%FHNDL)
       CALL SET_WAVE_BOUNDARY
@@ -1068,104 +1068,102 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE INITIAL_CONDITION(IFILE,IT)
-         USE WWM_HOTFILE_MOD
-         USE DATAPOOL
+       SUBROUTINE INITIAL_CONDITION
+       USE WWM_HOTFILE_MOD
+       USE DATAPOOL
 #ifdef NCDF
-         USE NETCDF
+       USE NETCDF
 #endif
-         IMPLICIT NONE
-
-         INTEGER         :: IP, IFILE, IT, I, K, L, M, IS, ID
-         REAL(rkind)     :: SPPAR(8)
-         REAL(rkind)     :: MS
-         REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
-         REAL(rkind)     :: WIND10, WINDTH, VEC2DEG
-         REAL(rkind)     :: WINDX, WINDY
-         REAL(rkind)     :: ACLOC(MSC,MDC)
-         REAL(rkind)     :: DEG
-         REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
+       IMPLICIT NONE
+       INTEGER         :: IP, I, K, L, M, IS, ID
+       REAL(rkind)     :: SPPAR(8)
+       REAL(rkind)     :: MS
+       REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
+       REAL(rkind)     :: WIND10, WINDTH, VEC2DEG
+       REAL(rkind)     :: WINDX, WINDY
+       REAL(rkind)     :: ACLOC(MSC,MDC)
+       REAL(rkind)     :: DEG
+       REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
 #ifdef NCDF
-         CHARACTER(len=25) :: CALLFROM
+       CHARACTER(len=25) :: CALLFROM
 #endif
-         TMPPAR = 0.
-
-         IF (.NOT. LHOTR .AND. LINID) THEN
-            IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
+       TMPPAR = 0.
+       IF (.NOT. LHOTR .AND. LINID) THEN
+         IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
-              CALL READ_NETCDF_WW3_PARAM(IFILE,IT)
+           CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with DNCDF PPFLAG')
+           CALL WWM_ABORT('compile with DNCDF PPFLAG')
 #endif
-              CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,TMPPAR)
+           CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,TMPPAR)
 !test the initial conditions ...
-              WRITE(2001) 1.
-              WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
-            END IF
-            DO IP = 1, MNP
-               !WRITE(*,*) 'wwm_initio.F90 l.1022', IP, SUM(AC2(:,:,IP))
-               IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) THEN
-                 AC2(:,:,IP) = ZERO
-                 CYCLE
-               ENDIF
-               ACLOC = 0.
-               WINDX  = WINDXY(IP,1)
-               WINDY  = WINDXY(IP,2)
-               WIND10 = SQRT(WINDX**2+WINDY**2)
-               IF(DEP(IP) .GT. DMIN) THEN
-                 IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
-                 IF (INITSTYLE == 1) THEN
-                   IF (WIND10 .GT. 1.) THEN !AR: why one? 
-                     WINDTH = VEC2DEG(WINDX,WINDY)
-                     CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
-                     FDLESS = G9*AVETL/WIND10**2
-                     HSLESS = MIN(0.21_rkind, 0.00288_rkind*FDLESS**0.45_rkind)
-                     TPLESS = MIN(ONE/0.13_rkind, 0.46_rkind*FDLESS**0.27_rkind)
-                     HS = HSLESS*WIND10**2/G9
-                     TP = TPLESS*WIND10/G9
-                     MS = 2.0_rkind
-                     SPPAR(1) = HS
-                     SPPAR(2) = TP ! Check whether TP is inside of spectal representation !!!
-                     SPPAR(3) = DEG
-                     SPPAR(4) = MS
-                     SPPAR(5) = 2.
-                     SPPAR(6) = 2.
-                     SPPAR(7) = 0.1
-                     SPPAR(8) = 3.3
-                     CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
-                     AC2(:,:,IP) = ACLOC
-                   ELSE
-                     ACLOC = 1.E-8
-                   END IF
-                 ELSE IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
-                   TMPPAR(5,IP) = 2.
-                   TMPPAR(6,IP) = 1.
-                   TMPPAR(7,IP) = 0.1
-                   TMPPAR(8,IP) = 3.3
-                   CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
-                   AC2(:,:,IP) = ACLOC
-                 ELSE IF (INITSTYLE == 3) THEN
-                   OPEN(1113,FILE='fort.10003',STATUS='OLD')
-                   DO ID=1,MDC
-                     DO IS=1,MSC
-                       READ(1113,*) K, M, AC2(IS,ID,IP)
-                       AC2(IS,ID,IP) =  AC2(IS,ID,IP) / PI2 / SPSIG(IS)
-                     ENDDO
-                   ENDDO
-                   REWIND(1113)
-                 END IF ! INITSTYLE
-                 IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche for initial cond.
-               ELSE
-                 FDLESS      = 0.
-                 HS          = 0.
-                 TP          = 0.
-                 WINDTH      = 0.
-                 AC2(:,:,IP) = 0.
-               END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
-            END DO ! IP
-         ELSE IF (LHOTR .AND. .NOT. LINID) THEN
-           CALL INPUT_HOTFILE
+           WRITE(2001) 1.
+           WRITE(2001) (TMPPAR(3,IP), TMPPAR(2,IP), TMPPAR(1,IP), IP = 1, MNP)
          END IF
+         DO IP = 1, MNP
+           !WRITE(*,*) 'wwm_initio.F90 l.1022', IP, SUM(AC2(:,:,IP))
+           IF (ABS(IOBP(IP)) .GT. 0 .AND. .NOT. LSOUBOUND) THEN
+             AC2(:,:,IP) = ZERO
+             CYCLE
+           ENDIF
+           ACLOC = 0.
+           WINDX  = WINDXY(IP,1)
+           WINDY  = WINDXY(IP,2)
+           WIND10 = SQRT(WINDX**2+WINDY**2)
+           IF(DEP(IP) .GT. DMIN) THEN
+             IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
+             IF (INITSTYLE == 1) THEN
+               IF (WIND10 .GT. 1.) THEN !AR: why one? 
+                 WINDTH = VEC2DEG(WINDX,WINDY)
+                 CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
+                 FDLESS = G9*AVETL/WIND10**2
+                 HSLESS = MIN(0.21_rkind, 0.00288_rkind*FDLESS**0.45_rkind)
+                 TPLESS = MIN(ONE/0.13_rkind, 0.46_rkind*FDLESS**0.27_rkind)
+                 HS = HSLESS*WIND10**2/G9
+                 TP = TPLESS*WIND10/G9
+                 MS = 2.0_rkind
+                 SPPAR(1) = HS
+                 SPPAR(2) = TP ! Check whether TP is inside of spectal representation !!!
+                 SPPAR(3) = DEG
+                 SPPAR(4) = MS
+                 SPPAR(5) = 2.
+                 SPPAR(6) = 2.
+                 SPPAR(7) = 0.1
+                 SPPAR(8) = 3.3
+                 CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
+                 AC2(:,:,IP) = ACLOC
+               ELSE
+                 ACLOC = 1.E-8
+               END IF
+             ELSE IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
+               TMPPAR(5,IP) = 2.
+               TMPPAR(6,IP) = 1.
+               TMPPAR(7,IP) = 0.1
+               TMPPAR(8,IP) = 3.3
+               CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
+               AC2(:,:,IP) = ACLOC
+             ELSE IF (INITSTYLE == 3) THEN
+               OPEN(1113,FILE='fort.10003',STATUS='OLD')
+               DO ID=1,MDC
+                 DO IS=1,MSC
+                   READ(1113,*) K, M, AC2(IS,ID,IP)
+                   AC2(IS,ID,IP) =  AC2(IS,ID,IP) / PI2 / SPSIG(IS)
+                 ENDDO
+               ENDDO
+               REWIND(1113)
+             END IF ! INITSTYLE
+             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche for initial cond.
+           ELSE
+             FDLESS      = 0.
+             HS          = 0.
+             TP          = 0.
+             WINDTH      = 0.
+             AC2(:,:,IP) = 0.
+           END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
+         END DO ! IP
+       ELSE IF (LHOTR .AND. .NOT. LINID) THEN
+         CALL INPUT_HOTFILE
+       END IF
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
