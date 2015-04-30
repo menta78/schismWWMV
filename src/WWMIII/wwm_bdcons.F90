@@ -1370,7 +1370,7 @@
           IF (IBOUNDFORMAT == 4) THEN ! WWM WBAC netcdf
             CALL READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
           END IF
-        ELSE ! The boundary conditions is homogenous!
+        ELSE ! The boundary conditions is homogeneous in space !
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
             WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
             CALL READSPEC1D(LFIRSTREAD)
@@ -3019,8 +3019,7 @@
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
       integer IFILE, IT
       integer IP
-      IFILE = -1
-      IT = -1
+      CALL COMPUTE_IFILE_IT_BOUND(IFILE, IT)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
@@ -3065,8 +3064,7 @@
       IMPLICIT NONE
       INTEGER IFILE, IT
       integer IP
-      IFILE=-1
-      IT=-1
+      CALL COMPUTE_IFILE_IT_BOUND(IFILE, IT)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_SPPARM_SINGLE(IFILE, IT)
@@ -3198,8 +3196,24 @@
         END DO
         DEALLOCATE(ListTime_mjd)
       END DO
+      
       RETURN
   10  FORMAT (a,'_',i4.4)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_IFILE_IT_BOUND(IFILE, IT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(out) :: IFILE, IT
+      REAL(rkind) :: DeltaTime, DeltaT
+      integer iTime      
+      DeltaTime=BOUND_LIST_TIME(2) - BOUND_LIST_TIME(1)
+      DeltaT=(MAIN%TMJD - BOUND_LIST_TIME(1))/DeltaTime
+      iTime=NINT(DeltaT) + 1
+      IFILE=BOUND_LIST_IFILE(iTime)
+      IT=BOUND_LIST_IT(iTime)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
