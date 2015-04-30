@@ -1263,10 +1263,6 @@
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
       INTEGER                    :: IP
-#ifdef NCDF
-      CHARACTER(len=25)          :: CHR
-#endif
-
 !AR: WAVE BOUNDARY
 
 !     SPPARM(1): Hs, sign. wave height
@@ -3025,8 +3021,8 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_WBAC_SINGLE(IFILE, IT)
-        DO IP=1,MNP
-          WBACOUT(:,:,IP)=WBAC_GL(:,:,iplg(IP))
+        DO IP=1,IWBMNP
+          WBACOUT(:,:,IP)=WBAC_GL(:,:,Indexes_boundary(IP))
         END DO
       ELSE
         IF (myrank .eq. rank_boundary) THEN
@@ -3071,8 +3067,8 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL READ_NETCDF_BOUNDARY_SPPARM_SINGLE(IFILE, IT)
-        DO IP=1,MNP
-          SPPARM(:,IP)=SPPARM_GL(:,iplg(IP))
+        DO IP=1,IWBMNP
+          SPPARM(:,IP)=SPPARM_GL(:,Indexes_boundary(IP))
         END DO
       ELSE
         IF (myrank .eq. rank_boundary) THEN
@@ -3084,6 +3080,12 @@
       CALL READ_NETCDF_BOUNDARY_SPPARM_SINGLE(IFILE, IT)
       SPPARM=SPPARM_GL
 # endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_NETCDF_BOUNDARY_WWM
+      
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
