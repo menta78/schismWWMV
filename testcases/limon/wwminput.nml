@@ -158,10 +158,10 @@
 /
 
 &NUMS          
- ICOMP          = 3,                 
- AMETHOD        = 7,                 
+ ICOMP          = 0,                 
+ AMETHOD        = 1,                 
  SMETHOD        = 1,                 
- DMETHOD        = 2,                 
+ DMETHOD        = 0,                 
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
  MAXCFLTH       = 1.00000000000000,  
@@ -227,12 +227,12 @@
 /
 
 &HISTORY       
- BEGTC          = '19980901.000000', 
- DELTC          = 1.00000000000000,
- UNITC          = 'SEC',             
- ENDTC          = '19990901.010000', 
+ BEGTC          = '19980901.000000',
+ DELTC          =  1.000000000000,
+ UNITC          = 'SEC',
+ ENDTC          = '19980901.000010',
  DEFINETC       = 0.000000000000000E+000, 
- OUTSTYLE       = 'NC',
+ OUTSTYLE       = 'XFN',
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
  IOBPD          = .F.,               

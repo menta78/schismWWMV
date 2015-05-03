@@ -284,7 +284,7 @@
          REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
 #endif
 
-         REAL(rkind)  :: REST
+         REAL(rkind)  :: REST, TESTMIN
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
 
@@ -333,16 +333,13 @@
 #ifdef positivity 
             CBAR_1_1 = 0.5 * (C(:,I1) + C(:,I3)) 
             CBAR_1_2 = 0.5 * (C(:,I1) + C(:,I2))
-
             CBAR_2_1 = 0.5 * (C(:,I2) + C(:,I3))
             CBAR_2_2 = 0.5 * (C(:,I2) + C(:,I1))
-
             CBAR_3_1 = 0.5 * (C(:,I2) + C(:,I3))
             CBAR_3_2 = 0.5 * (C(:,I1) + C(:,I3))
-     
-            KELEM(1,IE) = DOT_PRODUCT(CBAR_1_1,IEN(3:4,IE)) + DOT_PRODUCT(CBAR_1_2,IEN(5:6,IE)) 
-            KELEM(2,IE) = DOT_PRODUCT(CBAR_2_1,IEN(1:2,IE)) + DOT_PRODUCT(CBAR_2_2,IEN(5:6,IE))
-            KELEM(3,IE) = DOT_PRODUCT(CBAR_3_1,IEN(1:2,IE)) + DOT_PRODUCT(CBAR_3_2,IEN(3:4,IE))
+            KELEM(1,IE) = -DOT_PRODUCT(CBAR_1_1,IEN(3:4,IE)) -DOT_PRODUCT(CBAR_1_2,IEN(5:6,IE)) 
+            KELEM(2,IE) = -DOT_PRODUCT(CBAR_2_1,IEN(1:2,IE)) -DOT_PRODUCT(CBAR_2_2,IEN(5:6,IE))
+            KELEM(3,IE) = -DOT_PRODUCT(CBAR_3_1,IEN(1:2,IE)) -DOT_PRODUCT(CBAR_3_2,IEN(3:4,IE))
 #endif
             KTMP  = KELEM(:,IE)
             TMP   = SUM(MIN(ZERO,KTMP))
@@ -473,6 +470,8 @@
 !                  CYCLE
 !               ENDIF
 !               IF (IOBP(IP) .NE. 0 .AND. CCON(IP) .GT. 3) THEN
+                 TESTMIN = U(IP)-DTSI(IP)*ST(IP) 
+                 IF (TESTMIN .LT. ZERO) WRITE(99999,*) TESTMIN
                  U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
 !               ELSE IF (IOBP(IP) .EQ. 0) THEN
 !                 U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP) 

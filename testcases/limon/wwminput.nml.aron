@@ -230,7 +230,7 @@
  BEGTC          = '19980901.000000', 
  DELTC          = 1.00000000000000,
  UNITC          = 'SEC',             
- ENDTC          = '19990901.010000', 
+ ENDTC          = '19990901.000010', 
  DEFINETC       = 0.000000000000000E+000, 
  OUTSTYLE       = 'XFN',
  FILEOUT        = 'field.dat',       
