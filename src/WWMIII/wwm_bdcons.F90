@@ -3097,7 +3097,7 @@
       INTEGER iFile, jFile, iTime, nbtime_mjd
       INTEGER dimids(2), varid, fid
       real(rkind) :: ConvertToDay
-      real(rkind) :: eTimeStart, eTime
+      real(rkind) :: eTimeStart, eTime, dtbound
       real(rkind), allocatable :: ListTime_mjd(:)
       character (len=100) :: eStrUnitTime
       integer idx

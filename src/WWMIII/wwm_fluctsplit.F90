@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define positivity 
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -297,6 +298,9 @@
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
+         REAL(rkind)  :: CBAR_1_1(2), CBAR_1_2(2)
+         REAL(rkind)  :: CBAR_2_1(2), CBAR_2_2(2)
+         REAL(rkind)  :: CBAR_3_1(2), CBAR_3_2(2)
 !
 ! local parameter
 !
@@ -326,6 +330,20 @@
             KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
             KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
             KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+#ifdef positivity 
+            CBAR_1_1 = 0.5 * (C(:,I1) + C(:,I3)) 
+            CBAR_1_2 = 0.5 * (C(:,I1) + C(:,I2))
+
+            CBAR_2_1 = 0.5 * (C(:,I2) + C(:,I3))
+            CBAR_2_2 = 0.5 * (C(:,I2) + C(:,I1))
+
+            CBAR_3_1 = 0.5 * (C(:,I2) + C(:,I3))
+            CBAR_3_2 = 0.5 * (C(:,I1) + C(:,I3))
+     
+            KELEM(1,IE) = DOT_PRODUCT(CBAR_1_1,IEN(3:4,IE)) + DOT_PRODUCT(CBAR_1_2,IEN(5:6,IE)) 
+            KELEM(2,IE) = DOT_PRODUCT(CBAR_2_1,IEN(1:2,IE)) + DOT_PRODUCT(CBAR_2_2,IEN(5:6,IE))
+            KELEM(3,IE) = DOT_PRODUCT(CBAR_3_1,IEN(1:2,IE)) + DOT_PRODUCT(CBAR_3_2,IEN(3:4,IE))
+#endif
             KTMP  = KELEM(:,IE)
             TMP   = SUM(MIN(ZERO,KTMP))
             N(IE) = - ONE/MIN(-THR,TMP)

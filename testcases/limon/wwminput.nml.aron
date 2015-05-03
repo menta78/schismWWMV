@@ -232,7 +232,7 @@
  UNITC          = 'SEC',             
  ENDTC          = '19990901.010000', 
  DEFINETC       = 0.000000000000000E+000, 
- OUTSTYLE       = 'NC',
+ OUTSTYLE       = 'XFN',
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
  IOBPD          = .F.,               
