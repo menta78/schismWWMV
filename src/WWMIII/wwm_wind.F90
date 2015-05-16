@@ -2243,7 +2243,7 @@
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
-        NUM_NETCDF_FILES = 0
+        NUM_GRIB_FILES = 0
         DO
           READ( WIN%FHNDL, *, IOSTAT = ISTAT )
           IF ( ISTAT /= 0 ) EXIT
