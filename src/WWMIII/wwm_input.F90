@@ -1835,6 +1835,7 @@
               READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
               IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
 #endif
+            END IF
             CLOSE(WAT%FHNDL)
           END IF
         ELSE IF (DIMMODE .EQ. 2) THEN
