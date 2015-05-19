@@ -35,7 +35,7 @@
 !#ifdef ROMS_WWM_PGMCL_COUPLING
 !# include "cppdefs.h"
 !#endif
-#ifdef SELFE
+#ifdef SCHISM
 # define MPI_PARALL_GRID
 #endif
 #ifdef WWM_MPI

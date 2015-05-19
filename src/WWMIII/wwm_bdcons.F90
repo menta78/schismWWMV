@@ -370,7 +370,7 @@
         IOBP(IP) = IOBPtotal(IP)
 #endif
       END DO
-#ifdef SELFE
+#ifdef SCHISM
       DO IP = 1, NP_RES ! reset boundary flag in the case that wave boundary are not used but defined in the boundary file
         IF (.NOT. LBCWA .AND. .NOT. LBCSP) THEN
           IF (IOBP(IP) .EQ. 2 .OR. IOBP(IP) .EQ. 4) IOBP(IP) = 1
@@ -2457,7 +2457,7 @@
       IF(LINHOM) THEN !nearest-neighbour interpolation
         DO IB=1,IWBMNP
           IPGL = IWBNDLC(IB)
-#ifdef SELFE
+#ifdef SCHISM
           XP_WWM=XLON(IPGL)! * RADDEG 
           YP_WWM=YLAT(IPGL)! * RADDEG 
 #else

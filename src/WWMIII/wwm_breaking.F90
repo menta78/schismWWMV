@@ -24,7 +24,7 @@
 
       INTEGER :: IS, ID
 
-#ifdef SELFE
+#ifdef SCHISM
       SBR(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
@@ -87,7 +87,7 @@
         QB = ONE - 10.E-10
       END IF
 #elif SWAN_QB
-      IF (BETA .LT. 0.2D0) THEN
+     IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
         BETA2 = BETA*BETA
@@ -97,7 +97,18 @@
         QB = 1.0D0
       END IF
 #else
-      QB = ZERO
+      IF ( BETA .LT. 0.2_rkind ) THEN
+        QB     = ZERO
+      ELSE IF ( BETA .LT. ONE ) THEN
+        ARG    = EXP  (( QQ - 1. ) / BETA2 )
+        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+        DO IS = 1, 3
+          QB     = EXP((QB-1.)/BETA2)
+        END DO
+      ELSE
+        QB = ONE - 10.E-10
+      END IF
+!!!!     QB = ZERO   !!! modif AD
 #endif
       QBLOCAL(IP) = QB
 
@@ -151,17 +162,18 @@
         !if (surfa0 .lt. zero) write(*,*) ip, SURFA0
       END DO 
 
-#ifdef SELFE
+#ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
           COST = COSTH(ID)!COS(SPDIR(ID))
           SINT = SINTH(ID)!SIN(SPDIR(ID))
-!          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-!          SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-          SBR(1,IP)=SBR(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-          SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-        ENDDO
+!          SBR_X(IP)=SBR_X(IP)+SINT*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+!          SBR_Y(IP)=SBR_Y(IP)+COST*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+          SBR(1,IP)=SBR(1,IP)+G9*COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)  ! m.s-2 * (m-1/s-1) * m^2.s * s-1 * s-1 =>  m^2.s-2
+          SBR(2,IP)=SBR(2,IP)+G9*SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)   
+       ENDDO
       ENDDO
+
       !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
       !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif

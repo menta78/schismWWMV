@@ -12,12 +12,12 @@
 ! The source code is entirely rewritten with respect to WWM (Hsu et al., 2005). The numerics have been completely revised (Roland, 2008)
 ! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
 ! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
-! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SELFE (Roland et al. 2012). In this version we have combined 
+! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SCHISM (Roland et al. 2012). In this version we have combined 
 ! some recent source term formulation following the work of Peter Janssen and Jean Bidlot from the ECMWF. The so called ECWAM model was 
 ! continuesly updated and improved. We still have the WW3 3.14 version of the source terms of Fabrice but we have now from ECWAM (METEO FRANCE) 
 ! the formulation of Fabrice coded by Lotfi Aouf from Meteo France. This source terms formulation can be used with the IPHYS switch. We 
 ! will do in the futre now some code consolidation with respect to the source terms part. All external codes are courtesy to ECWMF or others as 
-! indicated in the source code. If something is not cited right please correct. 
+! indicated in the source code. If something is not cited right please correct or let me know a.roland@bgsite.de or aaronroland@gmx.de
 ! 
 ! Developers:                                                   
 ! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
@@ -26,24 +26,26 @@
 ! Will Perrie (Fisheries, Canada), Bash Toulany (Fisheries, Canada), Harry Wang (VIMS), Andrea Fortunato (LNEC), Guillaume Dodet (LNEC), Kai Li (LNEC)
 ! Andreas Wurpts (Forschungsstelle Küste, Norderney), Michael Glozman (Cameri, Technion)
 !				
-! Copyright: 2008 - XXXX Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
+! Copyright: 2008 - 2014 Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
 ! All Rights Reserved                                     
 !
 ! License: Redistribution of any files contained in this package is strictly prohibited
-! Any kind usage only allowed only with permission of Zanke & Partner (aaronroland@gmx.de)
+! Any kind of usage is only allowed with permission of Zanke & Partner (aaronroland@gmx.de)
 ! This includes commerical as well as academic usage. Developers and Contributers 
-! are not subject to this licese condition and can use this code as they wish. 
+! are not subject to this licese condition and can use this code as they wish. The code is not 
+! allowed to be redistributed, except by VIMS, which allowed to distribute this code subject to the above 
+! condtions together with SCHISM.
 ! For any kind of questions or licence inquries please contact: aaronroland@gmx.de
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef SELFE
+#ifdef SCHISM
  !!!     SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
       SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)
 
          USE DATAPOOL
-         use elfe_msgp !, only : myrank,parallel_abort,itype,comm,ierr
-         use elfe_glbl, only : iplg,ielg
+         use  schism_msgp !, only : myrank,parallel_abort,itype,comm,ierr
+         use schism_glbl, only : iplg,ielg
 
          IMPLICIT NONE
 
@@ -134,7 +136,7 @@
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE. 
-         ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SELFE 
+         ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -148,7 +150,7 @@
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SELFE 
+         ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ZERO
            WATLEVOLD   = ZERO
@@ -236,7 +238,7 @@
          ENDIF
 
          IF (LFIRSTSTEP) THEN
-           IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SELFE
+           IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SCHISM
            LFIRSTSTEP = .FALSE.
            LCALC      = .TRUE.
          END IF
@@ -299,7 +301,7 @@
 ! Compute radiation stress ...
 !
 ! RADFLAG=VOR , then coupling with selfe will gives stokes_velocity (Eq. 17 from Bennis 2011), Wave-induced pressure (Eq. 20) and source momentums (Eq.21) 
-         RADFLAG2=RADFLAG !for output into SELFE
+         RADFLAG2=RADFLAG !for output into SCHISM
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
            !STOKES_X=ZERO
@@ -339,14 +341,14 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'END OF COMPUTATIONS NOW RETURN TO SELFE', SIMUTIME
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'END OF COMPUTATIONS NOW RETURN TO SCHISM', SIMUTIME
          CALL FLUSH(STAT%FHNDL)
 
 #ifdef TIMINGS
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION        ', TIME3-TIME2
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'OUTPUT TO SELFE    ', TIME4-TIME3
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'OUTPUT TO SCHISM   ', TIME4-TIME3
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RADIATION STRESSES ', TIME5-TIME4
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
@@ -473,7 +475,7 @@
       MAIN%TMJD = MAIN%BMJD + MyREAL(K)*MAIN%DELT*SEC2DAY
       RTIME = MAIN%TMJD - MAIN%BMJD
 
-#ifndef SELFE
+#ifndef SCHISM
 #if defined WWM_MPI
       IF (myrank.eq.0) WRITE(*,101)  K, MAIN%ISTP, RTIME
 #else
@@ -571,7 +573,7 @@
      &             CONV5 .GT. 100._rkind*QSCONV5 .AND.                    &
      &             K .NE. 1) .OR.                                         &
      &             IT .EQ. NQSITER ) THEN
-#ifndef SELFE
+#ifndef SCHISM
             WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
 #else
             if (myrank == 0) WRITE(QSTEA%FHNDL,'(3I10,5F15.8)') K, IT, NQSITER, CONV1, CONV2, CONV3, CONV4, CONV5
@@ -615,7 +617,7 @@
       IF (LWINDFROMWWM) THEN
         CALL UPDATE_WIND(K)
       END IF
-#ifndef SELFE
+#ifndef SCHISM
       IF (.NOT. LCPL) THEN
         IF (LSECU) THEN
           CALL UPDATE_CURRENT(K)
@@ -625,7 +627,7 @@
         END IF
       END IF
 #endif
-#ifndef SELFE
+#ifndef SCHISM
       IF (LBCSE) THEN
         CALL SET_WAVE_BOUNDARY_CONDITION
       END IF
@@ -633,7 +635,7 @@
 !
 !      *** coupling via pipe *** read pipe
 !
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined SCHISM && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_IN(K)
 # ifdef SHYFEM_COUPLING
@@ -685,7 +687,7 @@
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: K
       CALL GENERAL_OUTPUT
-#ifndef SELFE
+#ifndef SCHISM
 # if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL .AND. LTIMOR) THEN
         CALL PIPE_TIMOR_OUT(K)
@@ -707,10 +709,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#if !defined SELFE && !defined PDLIB && defined MPI_PARALL_GRID
+#if !defined SCHISM && !defined PDLIB && defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
-      USE ELFE_GLBL, only : msc2, mdc2, ics
+      USE schism_glbl, only : msc2, mdc2, ics
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
@@ -749,7 +751,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#if !defined SELFE
+#if !defined SCHISM
 # if defined ROMS_WWM_PGMCL_COUPLING || defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       SUBROUTINE WWMIII_MPI(MyCOMM)
 # else

@@ -38,7 +38,7 @@
 # ifdef PDLIB
        INE(:,:) = INETMP(:,:)
 # else
-       INE = INETMP
+       INE = INETMP(1:3,:)
 # endif
 #endif
 !
@@ -244,14 +244,14 @@
        RSYY = zero
        FORCEXY = zero
 
-#ifdef SELFE
+#ifdef SCHISM
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
        SXX3D = zero
        SXY3D = zero
        SYY3D = zero
 #endif
-#ifndef SELFE
+#ifndef SCHISM
        IF (LCPL) THEN
          IF (LTIMOR.or.LSHYFEM) THEN
            ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
@@ -429,10 +429,10 @@
       DEALLOCATE( TAUW, TAUTOT, TAUWX, TAUWY, TAUHF)
       DEALLOCATE( Z0, CD, USTDIR)
       DEALLOCATE( RSXX, RSXY, RSYY)
-#ifdef SELFE
+#ifdef SCHISM
       DEALLOCATE( SXX3D, SXY3D, SYY3D)
 #endif
-#ifndef SELFE
+#ifndef SCHISM
       IF (LCPL) THEN
         IF (LTIMOR.or.LSHYFEM) THEN
           DEALLOCATE( SXX3D, SXY3D, SYY3D)
@@ -461,7 +461,7 @@
       USE yowpd, only : initFromGridDim
 #endif
 #if !defined PDLIB && defined MPI_PARALL_GRID
-      USE ELFE_GLBL, only : ics
+      USE schism_glbl, only : ics
 #endif
 #ifdef PETSC
       USE PETSC_CONTROLLER, ONLY : PETSC_INIT
@@ -533,7 +533,7 @@
       DEP=DEP8
       INETMP=INE
 # else
-# ifndef SELFE
+# ifndef SCHISM
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
@@ -605,7 +605,7 @@
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
       FLUSH(STAT%FHNDL)
-#if defined SELFE 
+#if defined SCHISM
 !AR: let dmin free ...
 !      DMIN = DMIN_SELFE
 #endif
@@ -695,7 +695,7 @@
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined SCHISM && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -729,7 +729,7 @@
       CALL WAV_MY_WTIME(TIME2)
 #endif
 
-#if defined SELFE
+#if defined SCHISM
       IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
         WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
         WRITE(DBG%FHNDL,*) 'MSC', MSC
@@ -1216,7 +1216,7 @@
          open(WINDBG%FHNDL,file='windbg.out',status='unknown') !non-fatal errors
          open(SRCDBG%FHNDL,file='srcdbg.out',status='unknown') !non-fatal errors
 #else
-# ifdef SELFE
+# ifdef SCHISM
          FDB  ='wwmdbg_0000'
          LFDB =len_trim(FDB)
          write(FDB(LFDB-3:LFDB),'(i4.4)') MYRANK
@@ -1539,7 +1539,7 @@
 #endif
       IMPLICIT NONE
       INTEGER nbArg
-#ifdef SELFE
+#ifdef SCHISM
       INP%FNAME  = 'wwminput.nml'
 #else
 # if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV

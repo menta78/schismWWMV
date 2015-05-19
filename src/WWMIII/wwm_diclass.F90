@@ -242,7 +242,7 @@
  
       WRITE(*,*) ZLEV 
 
-# ifndef SELFE
+# ifndef SCHISM
       WRITE(*,*) MAXVAL(ZLEV), MAXVAL(XRAY), MAXVAL(YRAY)
       WRITE(*,*) MINVAL(ZLEV), MINVAL(XRAY), MINVAL(YRAY)
 # endif

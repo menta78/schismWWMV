@@ -1128,7 +1128,7 @@
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST 
 # ifdef MPI_PARALL_GRID
-      USE ELFE_MSGP
+      USE schism_msgp
 # endif
 !/
       IMPLICIT NONE

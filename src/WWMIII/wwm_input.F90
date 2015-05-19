@@ -636,8 +636,8 @@
          USE NETCDF
 #endif
          USE DATAPOOL
-#ifdef SELFE
-         use elfe_glbl, only : ics
+#ifdef SCHISM
+         use schism_glbl, only : ics
 #endif
          IMPLICIT NONE
 
@@ -717,7 +717,7 @@
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
          FLUSH(CHK%FHNDL)
-#ifdef SELFE
+#ifdef SCHISM
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
              WRITE(DBG%FHNDL) LSPHE, ICS
@@ -752,7 +752,7 @@
          MAIN%DTCOUP = DTCOUP
          IF (MAIN%DELT .LT. THR) CALL WWM_ABORT('TIME STEP IS ZERO')
 
-#ifdef SELFE
+#ifdef SCHISM
          IF (DIMMODE .NE. 2 .OR. .NOT. LCPL) THEN
            WRITE(wwmerr,*)'You are running in less than 1d or LCPL = .F.',&
       &     DIMMODE,LCPL
@@ -769,7 +769,7 @@
          FLUSH(CHK%FHNDL)
 #if defined MPI_PARALL_GRID && !defined PDLIB
          IF (TRIM(FILEGRID) /= 'hgrid.gr3') THEN
-           CALL WWM_ABORT('With SELFE parallelization you need FILEGRID=hgrid.gr3 in wwminput.nml')
+           CALL WWM_ABORT('With SCHISM parallelization you need FILEGRID=hgrid.gr3 in wwminput.nml')
          END IF
 #endif
          GRD%FNAME = FILEGRID
@@ -1520,9 +1520,9 @@
            IF (LROMS.or.LTIMOR.or.LSHYFEM) THEN
              CALL WWM_ABORT('LROMS=LTIMOR=LSHYFEM=F if with ROMS_PGMCL')
            ENDIF
-#elif SELFE
+#elif SCHISM
            IF (.NOT. LCPL) THEN
-             CALL WWM_ABORT('LCPL=T if running with SELFE')
+             CALL WWM_ABORT('LCPL=T if running with SCHISM')
            ENDIF
 #endif
            IF (MESBF .GT. 0 .AND. FRICC .LT. 0.) THEN
@@ -1586,7 +1586,7 @@
            END IF
          END IF
 
-#if !defined ROMS_WWM_PGMCL_COUPLING && !defined SELFE && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined ROMS_WWM_PGMCL_COUPLING && !defined SCHISM && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
          IF (LCPL) THEN
            IF (.NOT. LROMS .AND. .NOT. LSHYFEM .AND. .NOT. LTIMOR) THEN
              CALL WWM_ABORT('LROMS, LSHYFEM or LTIMOR must be true')
@@ -1596,7 +1596,7 @@
 #ifndef ROMS_WWM_PGMCL_COUPLING
          IF (LCPL) THEN
 #endif
-#ifndef SELFE
+#ifndef SCHISM
            IF (MAIN%DTCOUP .LT. MAIN%DELT) THEN
              CALL WWM_ABORT('COUPLE TIME STEP IS SMALLER AS THE CALCULATION TIME STEP!')
            END IF
@@ -1835,32 +1835,19 @@
               READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
               IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
 #endif
-              CLOSE(WAT%FHNDL)
-            END IF
-          ELSE IF (DIMMODE .EQ. 2) THEN
-            IF (LCWLV) THEN
-              WATLEV = CWATLV
-              DEP    = WLDEP + WATLEV
-            ELSE
-              CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
-              OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-              READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-              IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-              CLOSE(WAT%FHNDL)
-             END IF
+            CLOSE(WAT%FHNDL)
           END IF
-        ELSE IF (LSEWL) THEN
-          SEWL%TOTL = (SEWL%EMJD - SEWL%BMJD) * DAY2SEC
-          SEWL%ISTP = NINT( SEWL%TOTL / SEWL%DELT ) + 1
-          SEWL%TMJD = SEWL%BMJD
-          IF (LERGINP .AND. .NOT. LSECU) CALL ERG2WWM(SEWL%ISTP)
-          LSELN = .FALSE.
-          WRITE(STAT%FHNDL,*) 'Serial water level Condition -----------'
-          WRITE(STAT%FHNDL,*) SEWL%BEGT, SEWL%ENDT, SEWL%ISTP, SEWL%TOTL/3600.0, SEWL%DELT
-          CALL TEST_FILE_EXIST_DIE("LSEWL: Missing watlev file : ", WAT%FNAME)
-          LSELN = .TRUE.
-          OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-          CALL CSEVAL( WAT%FHNDL,TRIM(WAT%FNAME), LWATLFILE, 1, WATLEV, MULTIPLE_IN_WATLEV)
+        ELSE IF (DIMMODE .EQ. 2) THEN
+          IF (LCWLV) THEN
+            WATLEV = CWATLV
+            DEP    = WLDEP + WATLEV
+          ELSE
+            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
+            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+            CLOSE(WAT%FHNDL)
+          END IF
         END IF
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN

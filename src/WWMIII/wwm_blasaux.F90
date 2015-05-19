@@ -130,7 +130,7 @@
       return
       end
 !-------------------------------------------------------------------------
-#ifndef SELFE
+#ifndef SCHISM
       real(rkind) function ddot(n,dx,incx,dy,incy)
       use datapool, only : rkind, ZERO
 !

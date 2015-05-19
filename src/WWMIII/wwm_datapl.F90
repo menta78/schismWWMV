@@ -5,20 +5,20 @@
 !*                                                                    *
 !**********************************************************************
       MODULE DATAPOOL
-#if defined SELFE && defined WWM_MPI
-#error "The combination of define SELFE and define MPI is illegal"
+#if defined SCHISM && defined WWM_MPI
+#error "The combination of define SCHISM and define MPI is illegal"
 #endif
 
-#if defined PETSC && !defined PDLIB && !defined WWM_MPI && !defined SELFE
+#if defined PETSC && !defined PDLIB && !defined WWM_MPI && !defined SCHISM
 #error "For PETSC, you need one parallelization scheme"
 #endif
 
 #ifdef PDLIB
       use wwm_pdlib
 #else
-# if defined(SELFE) || defined(WWM_MPI)
-      use elfe_msgp ! , only: comm,             & ! MPI communicator
-      use elfe_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
+# if defined(SCHISM) || defined(WWM_MPI)
+      use schism_msgp ! , only: comm,             & ! MPI communicator
+      use schism_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
      &                         np,               &
@@ -42,8 +42,8 @@
 #  endif
      
 # endif
-# ifdef SELFE
-         use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
+# ifdef SCHISM
+         use schism_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
      &                         DMIN_SELFE => h0,             & ! Dmin
      &                         NNE => nne,                   & !
      &                         ISELF => iself,               & !
@@ -85,7 +85,7 @@
         INTEGER :: NP_RES
 #endif
 
-#ifndef SELFE
+#ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
          integer,parameter :: rkind = 4
@@ -187,6 +187,7 @@
          INTEGER    :: MNP_WIND
          REAL(rkind), allocatable :: XP_WIND(:), YP_WIND(:)
          REAL(rkind)       :: WINDFAC    = 1.0
+         REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
          REAL(rkind)       ::  CURFAC    = 1.0
 
@@ -368,7 +369,7 @@
          INTEGER                :: NDYNITER_SNL3= 10
          INTEGER                :: NDYNITER_SBF = 10
 
-#ifdef SELFE
+#ifdef SCHISM
          REAL(rkind)            :: DT_SELFE, DT_WWM
 #endif
 !
@@ -458,7 +459,7 @@
          REAL(rkind), ALLOCATABLE      :: CG(:,:), DCGDX(:,:), DCGDY(:,:)
          REAL(rkind), ALLOCATABLE      :: WC(:,:)
 
-#ifdef SELFE
+#ifdef SCHISM
 !         REAL(rkind), ALLOCATABLE    :: CGX(:,:,:)
 !         REAL(rkind), ALLOCATABLE    :: CGY(:,:,:)
 #endif
@@ -798,7 +799,7 @@
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
-#ifndef SELFE
+#ifndef SCHISM
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
 #endif
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)

@@ -26,7 +26,7 @@
         PBOTF(5) = FRICC
       END IF
 
-#ifdef SELFE
+#ifdef SCHISM
       SBF(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
@@ -76,7 +76,7 @@
         END DO
       END DO
 
-#ifdef SELFE
+#ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
           COST = COSTH(ID)!COS(SPDIR(ID))
