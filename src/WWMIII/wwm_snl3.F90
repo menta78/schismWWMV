@@ -18,8 +18,7 @@
       real(rkind)    wisp, wisp1,w0, wm, wn0, wnm, ursell,facres,facscl,siglow
       
       real(rkind) :: E(MSC)
-      real(rkind), allocatable :: sa(:,:)
-
+      real(rkind) :: SA(1:MSC+ISP1,1:MDC)
       PTRIAD(1)  = 0.1
       PTRIAD(2)  = 2.2
       PTRIAD(3)  = 10.
@@ -43,9 +42,8 @@
       FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
 
       IF (ABS(FACSCL-2.).GT.0.05) THEN
-         FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
-         SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-         !WRITE(DBG%FHNDL,*) 'CHECK RESOLUTION', IRES, FACSCL, FACRES, SIGLOW
+        FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
+        SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
       END IF
 
       DEP_2 = DEP(IP)**2
@@ -60,7 +58,6 @@
       WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
       WISM1  = 1. - WISM
 
-      ALLOCATE (SA(1:MSC+ISP1,1:MDC))
 
       E  = 0.
       SA = 0.
@@ -129,9 +126,6 @@
           END DO
         END DO
       END IF
- 
-      deallocate(sa)
-
       end subroutine 
 !**********************************************************************
 !*                                                                    *
@@ -792,7 +786,7 @@
       REAL(rkind) EM,FT, RINT, SIGPI, SINBPH, STRI, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
       REAL(rkind) WISP, WISP1, W0, WM, WN0, WNM, IMATRATMP(MDC,MSC)
       REAL(rkind) E(MSC)
-      REAL(rkind), ALLOCATABLE :: SA(:,:)
+      REAL(rkind) SA(1:MDC,1:MSC+TRI_ISP1)
       PTRIAD(1)  = 0.25
       PTRIAD(2)  = 2.5
       PTRIAD(3)  = 10.
@@ -817,15 +811,6 @@
       END IF
       DEP_2 = DEP(IP)**2
       DEP_3 = DEP(IP)**3
-      TRI_ISP    = INT( LOG(2.) / XISLN )
-      TRI_ISP1   = TRI_ISP + 1
-      TRI_WISP   = (2. - XIS**TRI_ISP) / (XIS**TRI_ISP1 - XIS**TRI_ISP)
-      TRI_WISP1  = 1. - TRI_WISP
-      TRI_ISM    = INT( LOG(0.5) / XISLN )
-      TRI_ISM1   = TRI_ISM - 1
-      TRI_WISM   = (XIS**TRI_ISM -0.5) / (XIS**TRI_ISM - XIS**TRI_ISM1)
-      TRI_WISM1  = 1. - TRI_WISM
-      ALLOCATE (SA(1:MDC,1:MSC+TRI_ISP1))
       E  = 0.
       SA = 0.
       ISMAX = 1
@@ -893,7 +878,6 @@
           END DO
         ENDIF
       END IF
-      DEALLOCATE (SA)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
