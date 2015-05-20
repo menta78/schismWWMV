@@ -6,7 +6,6 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IS
-         REAL(rkind)    :: XISLN
          REAL(rkind)    :: AUX1, FREQ
          REAL(rkind)    :: LAMBDA, LAMM2, LAMP2
          REAL(rkind)    :: DELTH3, DELTH4
@@ -41,7 +40,6 @@
          WIDM   = CIDM - MyREAL(IDM)
          WIDM1  = 1.0 - WIDM
 
-         XISLN  = LOG(XIS)
          ISP    = INT(LOG(ONE+LAMBDA)/XISLN)
          ISP1   = ISP + 1
          WISP   = (1.0+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)

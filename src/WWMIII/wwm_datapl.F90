@@ -125,6 +125,7 @@
          REAL(rkind),  PARAMETER            :: ONEHALF  = ONE/TWO
 
          REAL(rkind), PARAMETER             :: PI        = 3.141592653589793_rkind
+         REAL(rkind), PARAMETER             :: PIHALF    = PI*ONEHALF
          REAL(rkind), PARAMETER             :: PI2       = TWO*PI
          REAL(rkind), PARAMETER             :: INVPI     = ONE/PI
          REAL(rkind), PARAMETER             :: INVPI2    = ONE/PI2
@@ -429,14 +430,23 @@
          REAL(rkind)      :: SFAC
          REAL(rkind)      :: FRATIO
          REAL(rkind)      :: FRINTH
-         REAL(rkind)      :: XIS
+         REAL(rkind)      :: XIS, XISLN
          REAL(rkind)      :: DDIR
          REAL(rkind)      :: DELTH ! PI2/MDC
          REAL(rkind)      :: FDIR
          REAL(rkind)      :: MINDIR
          REAL(rkind)      :: MAXDIR
          REAL(rkind)      :: FREQEXP
-
+!
+! Triads
+!
+         REAL(rkind)      :: TRI_WISM, TRI_WISM1
+         REAL(rkind)      :: TRI_WISP, TRI_WISP1
+         integer          :: TRI_ISP, TRI_ISP1
+         integer          :: TRI_ISM, TRI_ISM1
+!
+! spectra
+!
          INTEGER   :: ISBIN
 
          
