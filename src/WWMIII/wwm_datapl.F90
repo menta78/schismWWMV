@@ -445,6 +445,7 @@
          REAL(rkind)      :: TRI_WISP, TRI_WISP1
          integer          :: TRI_ISP, TRI_ISP1
          integer          :: TRI_ISM, TRI_ISM1
+         integer          :: TRI_ISBEGIN
 !
 ! spectra
 !
@@ -805,7 +806,7 @@
          REAL(rkind)             :: WISPTR, WISP1TR, WISMTR, WISM1TR
 
          REAL(rkind)                   :: PGIVE(8), PWIND(31), PQUAD(6), PWCAP(12)
-         REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
+         REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5), TRI_ARR(5)
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)

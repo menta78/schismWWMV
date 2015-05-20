@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine triadswan_new (ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
+      subroutine triad_eldeberky(ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
@@ -10,175 +10,119 @@
       real(rkind), intent(out)   :: ssnl3(msc,mdc), dssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-!
-      integer i1, i2, id, is, ism, ism1, ismax, isp, isp1,  ij1, ij2, ires
-
-      real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0, bb
-      real(rkind)    em,ft, rint, sigpi, sinbph, stri, wism, wism1 , fac1
-      real(rkind)    wisp, wisp1,w0, wm, wn0, wnm, ursell,facres,facscl,siglow
-      
+      integer i1, i2, id, is, ismax, ij1, ij2
+      real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0
+      real(rkind)    em,ft, rint, sigpi, sinbph, stri
+      real(rkind)    w0, wm, wn0, wnm, ursell, c1, c2, c3
       real(rkind) :: E(MSC)
-      real(rkind) :: SA(1:MSC+ISP1,1:MDC)
-      PTRIAD(1)  = 0.1
-      PTRIAD(2)  = 2.2
-      PTRIAD(3)  = 10.
-      PTRIAD(4)  = 0.2
-      PTRIAD(5)  = 0.01
+      real(rkind) :: SA(1:MSC+TRI_ISP1,1:MDC)
       ssnl3 = ZERO
       dssnl3 = ZERO
-      IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
-      IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
-      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
-
-      BB = 1./15.
-
       IF (HS .LT. SMALL) RETURN
 
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
-      IJ2    = INT (FLOAT(MSC) / 2.)
-      IJ1    = IJ2 - 1
-      FAC1   = SPSIG(IJ2) / SPSIG(IJ1)
-      IRES   = NINT ( LOG10( 2.) / LOG10( FAC1 ) )
-      FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
-
-      IF (ABS(FACSCL-2.).GT.0.05) THEN
-        FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
-        SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-      END IF
-
-      DEP_2 = DEP(IP)**2
-      DEP_3 = DEP(IP)**3
-      XISLN  = LOG( XIS )
-      ISP    = INT( LOG(2.) / XISLN )
-      ISP1   = ISP + 1
-      WISP   = (2. - XIS**ISP) / (XIS**ISP1 - XIS**ISP)
-      WISP1  = 1. - WISP
-      ISM    = INT( LOG(0.5) / XISLN )
-      ISM1   = ISM - 1
-      WISM   = (XIS**ISM -0.5) / (XIS**ISM - XIS**ISM1)
-      WISM1  = 1. - WISM
-
-
+      IF ( URSELL .le. TRI_ARR(5) ) RETURN
       E  = 0.
       SA = 0.
-
-      ISMAX = 1
-      DO IS = 1, MSC
-       IF ( SPSIG(IS) .LT. ( PTRIAD(2) * SMESPC) ) THEN
+      ISMAX = TRI_ISP1
+      DO IS = TRI_ISP1, MSC
+       IF ( SPSIG(IS) .LT. ( TRI_ARR(2) * SMESPC) ) THEN
           ISMAX = IS
         ENDIF
       ENDDO
-!      ISMAX = MIN( MSC, MAX ( ISMAX , ISP1 ) ) ! added fix the bug described below ...
-      ISMAX = MAX ( ISMAX , ISP1 )
-       
-      IF ( URSELL .GT. PTRIAD(5) ) THEN
-
-        BIPH   = (0.5*PI)*(MyTANH(PTRIAD(4)/URSELL)-1.)
-        SINBPH = ABS( SIN(BIPH) )
-
-        DO ID = 1, MDC
-          E = ACLOC(:,ID) * PI2 * SPSIG
-          DO IS = 1, ISMAX 
-            E0  = E(IS)
-            W0  = SPSIG(IS)
-            WN0 = WK(IS,IP)
-            C0  = W0 / WN0
-            IF ( IS.GT.-ISM1 ) THEN
-              EM  = WISM * E(IS+ISM1)      + WISM1 * E(IS+ISM)
-              WM  = WISM * SPSIG(IS+ISM1)  + WISM1 * SPSIG(IS+ISM)
-              WNM = WISM * WK(IS+ISM1,IP)  + WISM1 * WK(IS+ISM,IP)
-              CM  = WM / WNM
-            ELSE
-              EM  = ZERO
-              WM  = ZERO
-              WNM = ZERO
-              CM  = ZERO
-            END IF
-            AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
-            AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 - (2./5.) * W0**2 * DEP_2 ) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
-            RINT = AUX1 / AUX2
-            FT = PTRIAD(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
-            SA(IS,ID) = MAX(ZERO, FT * ( EM * (EM - 2*E0 )))
-          END DO
+      c1 = G9*(DEP(IP)**2)
+      c2 = (TWO/15._rkind)*G9*(DEP(IP)**4)
+      c3 = (TWO/5._rkind)*(DEP(IP)**3)
+      BIPH   = PIHALF*(MyTANH(TRI_ARR(4)/URSELL)-1.)
+      SINBPH = ABS( SIN(BIPH) )
+      DO ID = 1, MDC
+        E = ACLOC(:,ID) * PI2 * SPSIG
+        DO IS=TRI_ISBEGIN, ISMAX 
+          E0  = E(IS)
+          W0  = SPSIG(IS)
+          WN0 = WK(IS,IP)
+          C0  = W0 / WN0
+          EM  = TRI_WISM * E(IS+TRI_ISM1)      + TRI_WISM1 * E(IS+TRI_ISM)
+          WM  = TRI_WISM * SPSIG(IS+TRI_ISM1)  + TRI_WISM1 * SPSIG(IS+TRI_ISM)
+          WNM = TRI_WISM * WK(IS+TRI_ISM1,IP)  + TRI_WISM1 * WK(IS+TRI_ISM,IP)
+          CM  = WM / WNM
+          AUX1 = WNM**2 * ( G9 * DEP(IP) + TWO*CM**2 )
+          AUX2 = WN0 * ( c1 + c2 * WN0**2 - c3 * W0**2) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
+          RINT = AUX1 / AUX2
+          FT = TRI_ARR(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
+          SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E0)))
         END DO
-
+      END DO
+      DO ID = 1, MDC
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2
-          DO ID = 1, MDC
-            IF (ACLOC(IS,ID) .LT. THR) CYCLE
-            STRI = SA(IS,ID) - 2.*(WISP  * SA(IS+ISP1,ID) + WISP1 * SA(IS+ISP,ID))
-            IF (ABS(STRI) .LT. THR) CYCLE
-            IF (ICOMP .GE. 2) THEN
-              !SSNL3(IS,ID)  = STRI / SIGPI 
-              IF (STRI .GT. 0.) THEN
-                IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-                SSNL3(IS,ID)  =  STRI / SIGPI 
-              ELSE
-                IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
-                DSSNL3(IS,ID) =  -STRI/(ACLOC(IS,ID)*SIGPI)
-              END IF
-            ELSE
+          IF (ACLOC(IS,ID) .LT. THR) CYCLE
+          STRI = SA(IS,ID) - TWO*(TRI_WISP*SA(IS+TRI_ISP1,ID) + TRI_WISP1*SA(IS+TRI_ISP,ID))
+          IF (ABS(STRI) .LT. THR) CYCLE
+          IF (ICOMP .GE. 2) THEN
+            IF (STRI .GT. 0.) THEN
               IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-              IMATDA(IS,ID) = ZERO !IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
-              SSNL3(IS,ID)  = STRI / SIGPI
-              DSSNL3(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI) 
+              SSNL3(IS,ID)  =  STRI / SIGPI 
+            ELSE
+              IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
+              DSSNL3(IS,ID) =  -STRI/(ACLOC(IS,ID)*SIGPI)
             END IF
-          END DO
+          ELSE
+            IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+            IMATDA(IS,ID) = ZERO !IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
+            SSNL3(IS,ID)  = STRI / SIGPI
+            DSSNL3(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI) 
+          END IF
         END DO
-      END IF
-      end subroutine 
+      END DO
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine triad_dingemans (ip, acloc, imatra, imatda, ssnl3)
-!
-        use datapool
-        implicit none
-
-        integer, intent(in) :: ip
-        real(rkind), intent(in)    :: acloc(msc,mdc)
-        real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-        real(rkind), intent(out)   :: ssnl3(msc,mdc)
-        integer             :: is, is2, id
-        real(rkind)         :: ecloc(msc,mdc), e2(msc,mdc), d20
-        real(rkind)         :: df, domega, omega, omega1, fac, z1a, z1b
-        integer             :: j1, j2, jmin, j2abs
-
-        do is = 1, msc
-          do id = 1, mdc 
-            ecloc(is,id) = acloc(is,id) * spsig(is) * ddir
-          end do 
-        end do
-
-        ssnl3 = 0.
-
-        do id = 1, mdc
-          do is = 1,msc-1
-            df = ((spsig(is+1) - spsig(is)))/pi2
-            domega = pi2 * df
-            omega = spsig(is) * pi2 
-            jmin = nint(0.5*MyREAL(is))
-            if (2*jmin .eq. is) then
-               fac = 0.5 
-            else
-               fac = 1. 
-            endif
-            z1a = dep(ip) * (jmin*domega)**2 / g9
-            z1b = dep(ip) * ((jmin-is-1)*domega)**2 / g9
-            e2(is,id) = 0. 
-            do is2 = jmin, msc
-               j1    = is2 
-               j2    = is2 - is 
-               j2abs = iabs (j2)
+      SUBROUTINE triad_dingemans (ip, acloc, imatra, imatda, ssnl3)
+      use datapool
+      implicit none
+      integer, intent(in) :: ip
+      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      integer             :: is, is2, id
+      real(rkind)         :: ecloc(msc,mdc), e2(msc,mdc), d20
+      real(rkind)         :: df, domega, omega, omega1, fac, z1a, z1b
+      integer             :: j1, j2, jmin, j2abs
+      do is = 1, msc
+        do id = 1, mdc 
+          ecloc(is,id) = acloc(is,id) * spsig(is) * ddir
+        end do 
+      end do
+      ssnl3 = 0.
+      do id = 1, mdc
+        do is = 1,msc-1
+          df = ((spsig(is+1) - spsig(is)))/pi2
+          domega = pi2 * df
+          omega = spsig(is) * pi2 
+          jmin = nint(0.5*MyREAL(is))
+          if (2*jmin .eq. is) then
+            fac = 0.5 
+          else
+            fac = 1. 
+          endif
+          z1a = dep(ip) * (jmin*domega)**2 / g9
+          z1b = dep(ip) * ((jmin-is-1)*domega)**2 / g9
+          e2(is,id) = 0. 
+          do is2 = jmin, msc
+            j1    = is2 
+            j2    = is2 - is 
+            j2abs = iabs (j2)
 !            zero frequencies are skipped
-               if (j2 .eq. 0)  cycle
-               omega1 = is2 * domega
-               e2(is,id) = e2(is,id) + fac * d20(omega,omega1,dep(ip),z1a,z1b)* ecloc(j1,id)*ecloc(j2abs,id)
-               fac    = 1. 
-            end do
-            e2(is,id) = e2(is,id) * df
+            if (j2 .eq. 0)  cycle
+            omega1 = is2 * domega
+            e2(is,id) = e2(is,id) + fac * d20(omega,omega1,dep(ip),z1a,z1b)* ecloc(j1,id)*ecloc(j2abs,id)
+            fac    = 1. 
           end do
+          e2(is,id) = e2(is,id) * df
         end do
+      end do
       end subroutine
 !**********************************************************************
 !*                                                                    *
@@ -193,7 +137,6 @@
       real(rkind) :: aome2
       real(rkind) :: cthkh, cthk1h, cthk2h 
       real(rkind) :: d2, d20
-!
       omega2 = omega - omega1
       aome2  = abs (omega2)
       z1a = abs(z1a)
@@ -271,52 +214,50 @@
       implicit none
       integer, intent(in)        :: ip, is, is1, is2, n1, emf
       real(rkind)                :: res
-
-!!! mapping var.
-      real(rkind)                :: omegaa  
-      real(rkind)                :: omegab 
-      real(rkind)                :: omegac 
-      real(rkind)                :: cga  
-      real(rkind)                :: cgb  
-      real(rkind)                :: cgc  
-      real(rkind)                :: ka  
-      real(rkind)                :: kb  
-      real(rkind)                :: kc 
+      real(rkind)                :: omegaa
+      real(rkind)                :: omegab
+      real(rkind)                :: omegac
+      real(rkind)                :: cga
+      real(rkind)                :: cgb
+      real(rkind)                :: cgc
+      real(rkind)                :: ka
+      real(rkind)                :: kb
+      real(rkind)                :: kc
 !!! function declaration
       real(rkind)                :: tau
       
-      real(rkind)                :: a,b,c,d, e
+      real(rkind)                :: a,b,c,d,e
       
 !       n1=0 means +
 !       n1=1 means -
 !       em=0 without eldeberky & madsen
 !       em=1 with eldeberky & madsen
 
-        omegaa = spsig(is)
-        omegab = spsig(is)
-        omegac = spsig(is)
+      omegaa = spsig(is)
+      omegab = spsig(is)
+      omegac = spsig(is)
 
-        cga    = cg(ip,is)
-        cgc    = cg(ip,is1)
-        cgb    = cg(ip,is2)
+      cga    = cg(ip,is)
+      cgc    = cg(ip,is1)
+      cgb    = cg(ip,is2)
 
-        ka      = wk(ip,is)
-        kb      = wk(ip,is1)
-        kc      = wk(ip,is2)
+      ka      = wk(ip,is)
+      kb      = wk(ip,is1)
+      kc      = wk(ip,is2)
 
 !AR: reduce the +- stuff ...
 !
-        res =  one / (8 * sqrt(cga * cgb *cgc))  *  &        
+      res =  one / (8 * sqrt(cga * cgb *cgc))  *  &        
      &         ( (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc +  & 
      &         ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2) + & 
      &         ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa) + ( (-1)**(n1+1) * & 
      &         ( (-1)**(n1+1) * ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) ) ) )
 
-        a  = one / (8 * sqrt(cga * cgb *cgc))
-        b  = (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc
-        c  = ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2)
-        d  = ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa)  
-        e  = ( (-1)**(n1+1) * ( (-1)**(n1+1) * ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) )) 
+      a  = one / (8 * sqrt(cga * cgb *cgc))
+      b  = (-1)**n1 * (2 - emf * tau(ip, is, is1, is2, n1)) * kb * kc
+      c  = ( 1 - emf * tau(ip, is, is1, is2, n1)) * ((omegab * omegac)**2 / g9**2)
+      d  = ( kb**2 * omegac / omegaa) + ( (-1)**n1 * kc**2 * omegab / omegaa)  
+      e  = ( (-1)**(n1+1) * ( (-1)**(n1+1) * ( 1- emf * tau(ip, is, is1, is2,n1)) * ((omegaa**2 * omegab * omegac) / g9**2) )) 
       end function w
 !**********************************************************************
 !*                                                                    *
@@ -379,13 +320,11 @@
       function j(ip, is, is1, is2, id) result(res)
       use datapool, only : rkind, one, stat
       implicit none
-     
       integer, intent(in)        :: ip, is, is1, is2, id 
       real(rkind)                :: res
       !!! function declaration 
       real(rkind)                :: delta, ddelta_dx
-           
-        res = - ( one / (delta(ip, is, is1, is2)**3)  ) * ddelta_dx(ip, is, is1, is2, id)
+      res = - ( one / (delta(ip, is, is1, is2)**3)  ) * ddelta_dx(ip, is, is1, is2, id)
       end function j
 !**********************************************************************
 !*                                                                    *
@@ -450,7 +389,7 @@
          JAC = 1./(SPSIG(IS)*DDIR*FRINTF)
          snl3(is,id) = SUPER * JAC
          dsnl3(is,id) = SUPERD
-       end do ! is 
+       end do
        do is = 1, msc-1
          SUB   = ZERO; SUBD = ZERO
          f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir) * cg(ip,is)
@@ -507,12 +446,17 @@
       REAL(rkind)    :: NL3IS1, NL3IS2
       REAL(rkind)    :: cgl(msc),cl(msc),wkl(msc), AA
       REAL(rkind)    :: URSELL, BB, DEP1, DEP2, DEP3
-      REAL(rkind)    :: SF3P(MSC,MDC), SF3M(MSC,MDC)
       PTRIAD(1)  = 1. 
       PTRIAD(2)  = 2.5
       PTRIAD(3)  = 10.
       PTRIAD(4)  = 0.2
       PTRIAD(5)  = 0.01
+      IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
+      IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
+      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
+      ssnl3 = 0
+      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+      IF (URSELL .le. PTRIAD(5)) RETURN
       BB   = ONE/15._rkind
       AA   = TWO/FIVE
       DEP1 = DEP(IP)
@@ -521,52 +465,42 @@
       wkl = wk(ip,:)
       cgl = cg(ip,:)
       cl  = wc(ip,:)
-      IF (TRICO .GT. 0.)  PTRIAD(1) = TRICO
-      IF (TRIRA .GT. 0.)  PTRIAD(2) = TRIRA
-      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
-      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
-      IF (URSELL > PTRIAD(5)) THEN
-        I2     = INT(DBLE(MSC)/TWO)
-        I1     = I2-1
-        XISTRI = SPSIG(I2) / SPSIG(I1)
-        IRES   = NINT(LOG(TWO)/LOG(XISTRI))
-        ISMAX  = 1
-        DO IS = 1, MSC
-          IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
+      IRES   = NINT(LOG(TWO)/LOG(XIS))
+      ISMAX  = 1
+      DO IS = 1, MSC
+        IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
+      END DO
+      ISMAX = MAX(ISMAX,IRES+1)
+      BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
+      ASINB = ABS(SIN(BIPH))
+      DO ID = 1, MDC
+        ED = ACLOC(:,ID)*SPSIG
+        DO IS = 1, ISMAX-IRES
+          IS1     = IS+IRES
+          IS2     = IS
+          AUX1    = WKL(IS2)**2*(G9*DEP1+TWO*CL(IS2)**2)
+          AUX2    = WKL(IS1)*DEP1*(G9*DEP1+TWO*BB*G9*DEP3*WKL(IS1)**2-AA*SIGPOW(IS,2)*DEP2)
+          JAC     = AUX1/AUX2
+          FAC     = PTRIAD(1)*PI2*CL(IS1)*CGL(IS1)*JAC**2*ASINB
+          NL3IS1  = MAX(ZERO,FAC*(ED(IS2)*ED(IS2)-TWO*ED(IS2)*ED(IS1)))
+          DNL3IS1 = MAX(ZERO,FAC*(ED(IS2)-TWO*ED(IS1)))
+          NL3IS2  = TWO*NL3IS1
+          DNL3IS2 = TWO*DNL3IS1
+          IF (ICOMP .LT. 2) THEN
+            IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
+            IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
+            IMATDA(IS1,ID) = IMATDA(IS1,ID) + DNL3IS1 
+            IMATDA(IS2,ID) = IMATDA(IS2,ID) - DNL3IS2 
+          ELSE
+            IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
+            IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
+            IMATDA(IS1,ID) = IMATDA(IS1,ID) - DNL3IS1 
+            IMATDA(IS2,ID) = IMATDA(IS2,ID) + DNL3IS2 
+          ENDIF
+          SSNL3(IS1,ID) = SSNL3(IS1,ID) + NL3IS1
+          SSNL3(IS2,ID) = SSNL3(IS2,ID) - NL3IS2
         END DO
-        ISMAX = MAX(ISMAX,IRES+1)
-        BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
-        ASINB = ABS(SIN(BIPH))
-        DO ID = 1, MDC
-          ED = ACLOC(:,ID)*SPSIG
-          DO IS = 1, ISMAX-IRES
-            IS1     = IS+IRES
-            IS2     = IS
-            AUX1    = WKL(IS2)**2*(G9*DEP1+TWO*CL(IS2)**2)
-            AUX2    = WKL(IS1)*DEP1*(G9*DEP1+TWO*BB*G9*DEP3*WKL(IS1)**2-AA*SIGPOW(IS,2)*DEP2)
-            JAC     = AUX1/AUX2
-            FAC     = PTRIAD(1)*PI2*CL(IS1)*CGL(IS1)*JAC**2*ASINB
-            NL3IS1  = MAX(ZERO,FAC*(ED(IS2)*ED(IS2)-TWO*ED(IS2)*ED(IS1)))
-            DNL3IS1 = MAX(ZERO,FAC*(ED(IS2)-TWO*ED(IS1)))
-            NL3IS2  = TWO*NL3IS1
-            DNL3IS2 = TWO*DNL3IS1
-            IF (ICOMP .LT. 2) THEN
-              IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
-              IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
-              IMATDA(IS1,ID) = IMATDA(IS1,ID) + DNL3IS1 
-              IMATDA(IS2,ID) = IMATDA(IS2,ID) - DNL3IS2 
-            ELSE
-              IMATRA(IS1,ID) = IMATRA(IS1,ID) + NL3IS1 / SPSIG(IS1)
-              IMATRA(IS2,ID) = IMATRA(IS2,ID) - NL3IS2 / SPSIG(IS2)
-              IMATDA(IS1,ID) = IMATDA(IS1,ID) - DNL3IS1 
-              IMATDA(IS2,ID) = IMATDA(IS2,ID) + DNL3IS2 
-            ENDIF
-            SF3P(IS1,ID) = SF3P(IS1,ID) + NL3IS1
-            SF3M(IS2,ID) = SF3M(IS2,ID) - NL3IS2
-          END DO
-        END DO
-        SSNL3 = SF3P+SF3M
-      END IF
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -598,14 +532,13 @@
       IF (TRIRA .GT. 0.)  PTTRIAD(2) = TRIRA
       IF (TRIURS .GT. 0.) PTTRIAD(5) = TRIURS
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
+      URS = MIN ( URSELL , TEN )
+      IF ( URS .lt. PTTRIAD(5) ) RETURN
       DEP_2 = DEP(IP)**2
       DEP_3 = DEP(IP)**3
       BB     = 1. / 15.
       TRIEXP = .FALSE.
-      I2     = INT (FLOAT(MSC) / 2.)
-      I1     = I2 - 1
-      XISTRI = SPSIG(I2) / SPSIG(I1)
-      IRES   = NINT ( LOG( 2.) / LOG ( XISTRI ) )
+      IRES   = NINT ( LOG(TWO) / XISLN )
       ISMAX = 1
       DO IS = 1, MSC
         IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN
@@ -614,61 +547,58 @@
       ENDDO
       ISMAX = MAX ( ISMAX , IRES + 1 )
       TMN = PI2 / SMESPC
-      URS = MIN ( URSELL , TEN )
       IF (URS .LT. PTTRIAD(5)) THEN
         BIPH = 0.0
       ELSE
         BIPH = - PI2 / 8. * ( LOG10(URS) + 1.)
       ENDIF
       SINBPH = ABS( SIN(BIPH) )
-      IF ( URS .GE. PTTRIAD(5) ) THEN
-        DO ID = 1, MDC
-          DO IS = 1, MSC
-            E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
-          ENDDO
-          DO I = 1, ISMAX-IRES
-            J     = I + IRES
-            WiT   = SPSIG(I)
-            WjT   = SPSIG(J)
-            WNi   = WK(I,IP)
-            WNj   = WK(J,IP)
-            CGi   = CG(I,IP)
-            CGj   = CG(J,IP)
-            JACi  = PI2 * WiT
-            JACj  = PI2 * WjT
-            ALPH = 4. * WNi**2 * ( 0.5 + ( WiT**2 / ( WNi**2 * G9 * DEP(IP) ) ) )
-            BETA  = -2. * WNj * ( G9 * DEP(IP) + 2. * BB * G9 * DEP_3 * WNj**2 - ( BB + 1./3. ) * WjT**2 * DEP_2   )
-            FT    = PTTRIAD(1) * CGj * SINBPH * ( G9 * ALPH / BETA )**2
-            RHV_i = 0.
-            RHV_j = 0.
-            DIA_i = 0.
-            DIA_j = 0.
-            IF ( TRIEXP ) THEN
-              RHV_j = FT * ( (WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i) )
-              RHV_i = RHV_j
-              IF ( RHV_j .LE. 0. ) THEN
-                RHV_j = 0.
-                RHV_i = 0.
-              ENDIF
-              IMATRA(i,ID) = IMATRA(i,ID) - RHV_i / JACi
-              IMATRA(j,ID) = IMATRA(j,ID) + 0.5 * RHV_j / JACj
-              ssnl3(i,ID) = 0.5 * RHV_j / JACj
-            ELSE
-              RHV_j = FT * ((WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i))
-              DIA_i = FT * ((WjT/WNj) * E(i)        - 2. * (WiT/WNi) * E(j))
-              IF ( RHV_j .LE. 0. ) THEN
-                RHV_j = 0.
-                RHV_i = 0.
-                DIA_j = 0.
-                DIA_i = 0.
-              ENDIF
-              IMATRA(i,ID) = IMATRA(i,ID) - 0.5 * RHV_j / JACj
-              IMATDA(j,ID) = IMATDA(j,ID) - DIA_i
-              ssnl3(i,ID) = 0.5 * RHV_j / JACj
-            ENDIF
-          ENDDO
+      DO ID = 1, MDC
+        DO IS = 1, MSC
+          E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
         ENDDO
-      ENDIF
+        DO I = 1, ISMAX-IRES
+          J     = I + IRES
+          WiT   = SPSIG(I)
+          WjT   = SPSIG(J)
+          WNi   = WK(I,IP)
+          WNj   = WK(J,IP)
+          CGi   = CG(I,IP)
+          CGj   = CG(J,IP)
+          JACi  = PI2 * WiT
+          JACj  = PI2 * WjT
+          ALPH = 4. * WNi**2 * ( 0.5 + ( WiT**2 / ( WNi**2 * G9 * DEP(IP) ) ) )
+          BETA  = -2. * WNj * ( G9 * DEP(IP) + 2. * BB * G9 * DEP_3 * WNj**2 - ( BB + 1./3. ) * WjT**2 * DEP_2   )
+          FT    = PTTRIAD(1) * CGj * SINBPH * ( G9 * ALPH / BETA )**2
+          RHV_i = 0.
+          RHV_j = 0.
+          DIA_i = 0.
+          DIA_j = 0.
+          IF ( TRIEXP ) THEN
+            RHV_j = FT * ( (WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i) )
+            RHV_i = RHV_j
+            IF ( RHV_j .LE. 0. ) THEN
+              RHV_j = 0.
+              RHV_i = 0.
+            ENDIF
+            IMATRA(i,ID) = IMATRA(i,ID) - RHV_i / JACi
+            IMATRA(j,ID) = IMATRA(j,ID) + 0.5 * RHV_j / JACj
+            ssnl3(i,ID) = 0.5 * RHV_j / JACj
+          ELSE
+            RHV_j = FT * ((WjT/WNj) * E(i) * E(i) - 2. * (WiT/WNi) * E(j) * E(i))
+            DIA_i = FT * ((WjT/WNj) * E(i)        - 2. * (WiT/WNi) * E(j))
+            IF ( RHV_j .LE. 0. ) THEN
+              RHV_j = 0.
+              RHV_i = 0.
+              DIA_j = 0.
+              DIA_i = 0.
+            ENDIF
+            IMATRA(i,ID) = IMATRA(i,ID) - 0.5 * RHV_j / JACj
+            IMATDA(j,ID) = IMATDA(j,ID) - DIA_i
+            ssnl3(i,ID) = 0.5 * RHV_j / JACj
+          ENDIF
+        ENDDO
+      ENDDO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -697,14 +627,15 @@
       PTTRIAD(3)  = 10.
       PTTRIAD(4)  = 0.2
       PTTRIAD(5)  = 0.01
-      DEP_2 = DEP(IP)
-      DEP_3 = DEP(IP)
-      TRIEXP = .FALSE.
       IF (TRICO .GT. 0.)  PTTRIAD(1) = TRICO
       IF (TRIRA .GT. 0.)  PTTRIAD(2) = TRIRA
       IF (TRIURS .GT. 0.) PTTRIAD(5) = TRIURS
+      DEP_2 = DEP(IP)
+      DEP_3 = DEP(IP)
+      TRIEXP = .FALSE.
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
-      E(:) = 0.
+      IF ( URSELL .lt. PTTRIAD(5) ) RETURN
+      E = 0.
       I2     = INT (FLOAT(MSC) / 2.)
       I1     = I2 - 1
       XISTRI = SPSIG(I2) / SPSIG(I1)
@@ -716,168 +647,57 @@
         ENDIF
       ENDDO
       ISMAX = MAX ( ISMAX , IRES + 1 )
-      IF ( URSELL .GE. PTTRIAD(5) ) THEN
-        BIPH   = (0.5*PI)*(MyTANH(PTTRIAD(4)/URSELL)-1)
-        SINBPH = ABS( SIN(BIPH) )
-        DO ID = 1, MDC
-          DO IS = 1, MSC
-            E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
-          ENDDO
-          DO I = 1, ISMAX-IRES
-            J   = I + IRES
-            WiT  = SPSIG(I)
-            WjT  = SPSIG(J)
-            WNi = WK(I,IP)
-            WNj = WK(J,IP)
-            Ci  = WiT / WNi
-            Cj  = WjT / WNj
-            CGi = CG(i,IP)
-            CGj = CG(j,IP)
-            JACi = PI2 * WiT
-            JACj = PI2 * WjT
-            AUX1 = WNi**2 * ( G9 * DEP(IP) + 2. * Ci**2 )
-            AUX2 = WNj * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WNj**2 - (2./ 5.) * WjT**2 * DEP_2 )
-            RINT = AUX1 / AUX2
-            FT = PTTRIAD(1) * Cj * CGj * RINT**2 * SINBPH
-            RHV_i = 0.
-            RHV_j = 0.
-            DIA_i = 0.
-            DIA_j = 0.
-            IF ( TRIEXP ) THEN
-              RHV_j = FT * (  E(i) * E(i)  - 2. * E(j) * E(i) )
-              RHV_i = RHV_j
-              IF ( RHV_j .LE. 0. ) THEN
-                RHV_j = 0.
-                RHV_i = 0.
-              ENDIF
-              IMATRA(i,ID) = IMATRA(i,ID) - 2. * RHV_i / JACi
-              IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
-              ssnl3(i,id) = - 2. * RHV_i / JACi
-            ELSE
-              RHV_j = FT * ( E(i) * E(i) - 2. * E(j) * E(i) )
-              DIA_i = FT * ( E(i) - 2. * E(j) )
-              IF ( RHV_j .LE. 0. ) THEN
-                RHV_j = 0.
-                RHV_i = 0.
-                DIA_j = 0.
-                DIA_i = 0.
-              ENDIF
-              IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
-              IMATDA(i,ID) = IMATDA(i,ID) - 2. * DIA_i
-              ssnl3(j,id) = RHV_j / JACj
-            ENDIF
-          ENDDO
+      BIPH   = (0.5*PI)*(MyTANH(PTTRIAD(4)/URSELL)-1)
+      SINBPH = ABS( SIN(BIPH) )
+      DO ID = 1, MDC
+        DO IS = 1, MSC
+          E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
         ENDDO
-      ENDIF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      subroutine triadswan (ip, hs, smespc, acloc, imatra, imatda, SSNL3)
-      use datapool
-      implicit none
-      integer, intent(in)        :: ip
-      real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: SSNL3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-      INTEGER I1, I2, ID, IS, ISMAX, IJ1, IJ2, IRES
-      REAL(rkind) AUX1, AUX2, BIPH, C0, CM, DEP_2, DEP_3, E0, ACTMP(MDC,MSC), URSELL
-      REAL(rkind) EM,FT, RINT, SIGPI, SINBPH, STRI, FAC1, FACSCL, FACRES, SIGLOW, IMATDATMP(MDC,MSC)
-      REAL(rkind) WISP, WISP1, W0, WM, WN0, WNM, IMATRATMP(MDC,MSC)
-      REAL(rkind) E(MSC)
-      REAL(rkind) SA(1:MDC,1:MSC+TRI_ISP1)
-      PTRIAD(1)  = 0.25
-      PTRIAD(2)  = 2.5
-      PTRIAD(3)  = 10.
-      PTRIAD(4)  = 0.2
-      PTRIAD(5)  = 0.01
-      IF (TRICO .GT. 0.) PTRIAD(1) = TRICO
-      IF (TRIRA .GT. 0.) PTRIAD(2) = TRIRA
-      IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
-      CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
-      IMATRATMP = 0.
-      IMATDATMP = 0.
-      ACTMP = ACLOC
-      IJ2    = INT (FLOAT(MSC) / 2.)
-      IJ1    = IJ2 - 1
-      FAC1   = SPSIG(IJ2) / SPSIG(IJ1)
-      IRES   = NINT ( LOG10( 2.) / LOG10( FAC1 ) )
-      FACSCL = SPSIG(MSC)/SPSIG(MSC-IRES)
-
-      IF (ABS(FACSCL-2.).GT.0.05) THEN
-        FACRES = 10.**( LOG10(2.) / FLOAT(IRES) )
-        SIGLOW   = SPSIG(MSC) / ( FACRES**(FLOAT(MSC-1) ) )
-      END IF
-      DEP_2 = DEP(IP)**2
-      DEP_3 = DEP(IP)**3
-      E  = 0.
-      SA = 0.
-      ISMAX = 1
-      DO IS = 1, MSC
-       IF ( SPSIG(IS) .LT. ( PTRIAD(2) * SMESPC) ) THEN
-          ISMAX = IS
-        ENDIF
+        DO I = 1, ISMAX-IRES
+          J   = I + IRES
+          WiT  = SPSIG(I)
+          WjT  = SPSIG(J)
+          WNi = WK(I,IP)
+          WNj = WK(J,IP)
+          Ci  = WiT / WNi
+          Cj  = WjT / WNj
+          CGi = CG(i,IP)
+          CGj = CG(j,IP)
+          JACi = PI2 * WiT
+          JACj = PI2 * WjT
+          AUX1 = WNi**2 * ( G9 * DEP(IP) + 2. * Ci**2 )
+          AUX2 = WNj * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WNj**2 - (2./ 5.) * WjT**2 * DEP_2 )
+          RINT = AUX1 / AUX2
+          FT = PTTRIAD(1) * Cj * CGj * RINT**2 * SINBPH
+          RHV_i = 0.
+          RHV_j = 0.
+          DIA_i = 0.
+          DIA_j = 0.
+          IF ( TRIEXP ) THEN
+            RHV_j = FT * (  E(i) * E(i)  - 2. * E(j) * E(i) )
+            RHV_i = RHV_j
+            IF ( RHV_j .LE. 0. ) THEN
+              RHV_j = 0.
+              RHV_i = 0.
+            ENDIF
+            IMATRA(i,ID) = IMATRA(i,ID) - 2. * RHV_i / JACi
+            IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
+            ssnl3(i,id) = - 2. * RHV_i / JACi
+          ELSE
+            RHV_j = FT * ( E(i) * E(i) - 2. * E(j) * E(i) )
+            DIA_i = FT * ( E(i) - 2. * E(j) )
+            IF ( RHV_j .LE. 0. ) THEN
+              RHV_j = 0.
+              RHV_i = 0.
+              DIA_j = 0.
+              DIA_i = 0.
+            ENDIF
+            IMATRA(j,ID) = IMATRA(j,ID) + RHV_j / JACj
+            IMATDA(i,ID) = IMATDA(i,ID) - 2. * DIA_i
+            ssnl3(j,id) = RHV_j / JACj
+          ENDIF
+        ENDDO
       ENDDO
-
-      ISMAX = MAX ( ISMAX , TRI_ISP1 )
-      ISMAX = MIN( MSC, MAX ( ISMAX , TRI_ISP1 ) ) ! added fix the bug described below ...
-
-      IF ( URSELL .GT. PTRIAD(5) ) THEN
-        BIPH   = PIHALF * (MyTANH(PTRIAD(4)/URSELL)-1.)
-        SINBPH = ABS( SIN(BIPH) )
-        DO ID = 1, MDC
-           DO IS = 1, MSC
-              E(IS) = ACTMP(ID,IS) * PI2 * SPSIG(IS)
-           END DO
-           DO IS = 1, ISMAX
-              E0  = E(IS)
-              W0  = SPSIG(IS)
-              WN0 = WK(IS,IP)
-              C0  = W0 / WN0
-              IF (IS .GT. -TRI_ISM1 ) THEN
-                 EM  = TRI_WISM * E(IS+TRI_ISM1)      + TRI_WISM1 * E(IS+TRI_ISM)
-                 WM  = TRI_WISM * SPSIG(IS+TRI_ISM1)  + TRI_WISM1 * SPSIG(IS+TRI_ISM)
-                 WNM = TRI_WISM * WK(IS+TRI_ISM1,IP)  + TRI_WISM1 * WK(IS+TRI_ISM,IP)
-                 CM  = WM / WNM
-              ELSE
-                 EM  = 0.
-                 WM  = 0.
-                 WNM = 0.
-                 CM  = 0.
-              END IF
-              AUX1 = WNM**2 * ( G9 * DEP(IP) + 2.*CM**2 )
-              AUX2 = WN0 * DEP(IP) * ( G9 * DEP(IP) + (2./15.) * G9 * DEP_3 * WN0**2 -(2./ 5.) * W0**2 * DEP_2 )
-              RINT = AUX1 / AUX2
-              FT = PTRIAD(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
-              SA(ID,IS) = MAX(ZERO, FT * ( EM * EM - 2. * EM * E0 ))
-           END DO
-        END DO
-        IF (ICOMP .LT. 2) THEN
-          DO IS = 1, MSC
-             SIGPI = SPSIG(IS) * 2. * PI
-             DO ID = 1, MDC
-                STRI = SA(ID,IS) - 2.*(TRI_WISP  * SA(ID,IS+TRI_ISP1) + TRI_WISP1 * SA(ID,IS+TRI_ISP ))
-                ssnl3(is,id) = STRI
-                IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
-                IMATDA(IS,ID) =  IMATDA(IS,ID) + STRI / MAX(1.E-18_rkind, ACLOC(IS,ID)*SIGPI)
-             END DO
-          END DO
-        ELSE
-          DO IS = 1, MSC
-             SIGPI = SPSIG(IS) * 2. * PI
-             DO ID = 1, MDC
-                STRI = SA(ID,IS) - 2.*(TRI_WISP  * SA(ID,IS+TRI_ISP1) + TRI_WISP1 * SA(ID,IS+TRI_ISP ))
-                SSNL3(IS,ID) = STRI
-                IF (STRI .GT. ZERO) THEN
-                  IMATRA(IS,ID) =  IMATRA(IS,ID) + STRI / SIGPI
-                ELSE
-                  IMATDA(IS,ID) =  IMATDA(IS,ID) - STRI / MAX(1.E-18_rkind, ACLOC(IS,ID)*SIGPI)
-                ENDIF
-             END DO
-          END DO
-        ENDIF
-      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -891,12 +711,12 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
       INTEGER               :: J, IS, ID, IT, ITER
-      REAL*8                :: KI, KJ , ETOT
-      REAL*8                :: PROPFAK, DBETA, DSIGMA
-      REAL*8                :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
-      REAL*8                :: DELTAK(MSC), DK, H, TMP1, TMP2, TMP3
-      REAL*8                :: PART1(MSC), PART2(MSC), EPS(MSC)
-      REAL*8                :: SUMAC, KJKIKJ, KJKJKI
+      REAL(rkind)           :: KI, KJ , ETOT
+      REAL(rkind)           :: PROPFAK, DBETA, DSIGMA
+      REAL(rkind)           :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
+      REAL(rkind)           :: DELTAK(MSC), DK, H, TMP1, TMP2, TMP3
+      REAL(rkind)           :: PART1(MSC), PART2(MSC), EPS(MSC)
+      REAL(rkind)           :: SUMAC, KJKIKJ, KJKJKI
       ITER = 10
       ETOT = hs**2/FOUR
       DELTAK(1) = WK(IP,1)

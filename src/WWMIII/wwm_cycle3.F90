@@ -54,7 +54,7 @@
          IF (MESNL .GT. 0) CALL SNL41(IP,KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 
          IF (ISHALLOW(IP) .EQ. 1) THEN
-           IF (MESTR .GT. 0) CALL triadswan_new (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
+           IF (MESTR .GT. 0) CALL triad_eldeberky (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
            IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR) ! Maybe not KMWAM
            IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
          ENDIF

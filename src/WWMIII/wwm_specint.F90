@@ -371,7 +371,7 @@
              IF (ISHALLOW(IP) .EQ. 1) THEN
                CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                IF (MESTR .GT. 0) THEN
-                 CALL TRIADSWAN_NEW (IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
+                 CALL TRIAD_ELDEBERKY(IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
                  DO IS = 1, MSC
                    DO ID = 1, MDC
                      NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)
@@ -438,7 +438,7 @@
                  IF (ISHALLOW(IP) .EQ. 1) THEN
                    CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
                    IF (MESTR .GT. 0) THEN
-                     CALL TRIADSWAN_NEW (IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
+                     CALL TRIAD_ELDEBERKY(IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
                      DO IS = 1, MSC
                        DO ID = 1, MDC
                          NEWDAC = SSNL3(IS,ID)*DT4A/MAX((1.-DT4A*DSSNL3(IS,ID)),1.)

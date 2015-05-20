@@ -338,7 +338,7 @@
       SUBROUTINE INIT_TRIAD
       USE DATAPOOL
       IMPLICIT NONE
-      TRI_ISP    = INT( LOG(2.) / XISLN )
+      TRI_ISP    = INT( LOG(TWO) / XISLN )
       TRI_ISP1   = TRI_ISP + 1
       TRI_WISP   = (2. - XIS**TRI_ISP) / (XIS**TRI_ISP1 - XIS**TRI_ISP)
       TRI_WISP1  = 1. - TRI_WISP
@@ -346,24 +346,44 @@
       TRI_ISM1   = TRI_ISM - 1
       TRI_WISM   = (XIS**TRI_ISM -0.5) / (XIS**TRI_ISM - XIS**TRI_ISM1)
       TRI_WISM1  = 1. - TRI_WISM
+      TRI_ISBEGIN = MAX(1, 1-TRI_ISM1)
+      IF (MESTR .eq. 1) THEN
+        TRI_ARR(1)  = 0.1
+        TRI_ARR(2)  = 2.2
+        TRI_ARR(3)  = 10.
+        TRI_ARR(4)  = 0.2
+        TRI_ARR(5)  = 0.01
+        IF (TRICO .GT. 0.)  TRI_ARR(1) = TRICO
+        IF (TRIRA .GT. 0.)  TRI_ARR(2) = TRIRA
+        IF (TRIURS .GT. 0.) TRI_ARR(5) = TRIURS
+      END IF
+      IF (MESTR .eq. 5) THEN
+        TRI_ARR(1)  = 0.25
+        TRI_ARR(2)  = 2.5
+        TRI_ARR(3)  = 10.
+        TRI_ARR(4)  = 0.2
+        TRI_ARR(5)  = 0.01
+        IF (TRICO .GT. 0.) TRI_ARR(1) = TRICO
+        IF (TRIRA .GT. 0.) TRI_ARR(2) = TRIRA
+        IF (TRIURS .GT. 0.) TRI_ARR(5) = TRIURS
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_SPECTRAL_GRID()
-         USE DATAPOOL
-         IMPLICIT NONE
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER :: IS, ID
+      INTEGER :: MSC1, MSC2
+      REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
+      REAL(rkind)    :: TMP, CO1
 
-         INTEGER :: IS, ID
-         INTEGER :: MSC1, MSC2
-         REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
-         REAL(rkind)    :: TMP, CO1
-
-         ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
-         SPSIG = zero
-         SPDIR = zero
-         FR    = zero
+      ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
+      SPSIG = zero
+      SPDIR = zero
+      FR    = zero
 
          ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
@@ -453,7 +473,7 @@
 !    *** the ratio of the consecutive frequency ... for quad
 !
          IF ( MSC .GT. 3) THEN
-           MSC2   = INT(FLOAT(MSC)/2._rkind)
+           MSC2   = INT(MyREAL(MSC)/TWO)
            MSC1   = MSC2-1
            XIS    = SPSIG(MSC2)/SPSIG(MSC1)
            XISLN  = LOG(XIS)
