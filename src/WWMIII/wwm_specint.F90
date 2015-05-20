@@ -917,6 +917,7 @@
                MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
              ENDIF
            END IF
+
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
@@ -924,7 +925,9 @@
              NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
              ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
            END DO
+
          END DO
+
          END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

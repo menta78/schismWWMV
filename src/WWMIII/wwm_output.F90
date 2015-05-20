@@ -1156,7 +1156,7 @@
 
          OUTPAR    = 0.
 
-#ifdef SELFE
+#ifdef SCHISM
          OUTPAR(1) = UU2(NVRT,IP)         ! Current in X-direction
          OUTPAR(2) = VV2(NVRT,IP)         ! Current in Y-direction
          OUTPAR(3) = ETA2(IP)             ! Water Level

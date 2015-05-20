@@ -1,12 +1,12 @@
 #include "wwm_functions.h"
-#ifdef SELFE
+#ifdef SCHISM
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
 
-        use elfe_glbl, only: iplg,errmsg,hmin_radstress
-        USE elfe_msgp
+        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        USE schism_msgp
 
         USE DATAPOOL
         implicit none
@@ -82,8 +82,8 @@
 !**********************************************************************
       SUBROUTINE RADIATION_STRESS_SELFE
 
-        use elfe_glbl, only: iplg,errmsg,hmin_radstress
-        USE elfe_msgp !, only : myrank,parallel_abort
+        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        USE schism_msgp !, only : myrank,parallel_abort
 
         USE DATAPOOL
         IMPLICIT NONE
@@ -327,7 +327,7 @@
         enddo !IS
 
       END SUBROUTINE RADIATION_STRESS_SELFE
-#endif /*SELFE*/
+#endif /*SCHISM*/
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

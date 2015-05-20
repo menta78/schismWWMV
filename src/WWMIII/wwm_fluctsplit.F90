@@ -470,8 +470,8 @@
 !                  CYCLE
 !               ENDIF
 !               IF (IOBP(IP) .NE. 0 .AND. CCON(IP) .GT. 3) THEN
-                 TESTMIN = U(IP)-DTSI(IP)*ST(IP) 
-                 IF (TESTMIN .LT. ZERO) WRITE(99999,*) TESTMIN
+!                 TESTMIN = U(IP)-DTSI(IP)*ST(IP) 
+!                 IF (TESTMIN .LT. ZERO) WRITE(99999,*) TESTMIN
                  U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
 !               ELSE IF (IOBP(IP) .EQ. 0) THEN
 !                 U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP) 

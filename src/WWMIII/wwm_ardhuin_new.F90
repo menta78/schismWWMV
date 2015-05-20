@@ -443,8 +443,8 @@
           CALL WWM_ABORT('THE fort.5002 file does not match your specifications')
         ENDIF
           
-      END IF
-      END SUBROUTINE
+        END IF
+     END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
