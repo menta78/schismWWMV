@@ -86,7 +86,7 @@
       ELSE
         QB = ONE - 10.E-10
       END IF
-#elif SWAN_QB
+# elif SWAN_QB
      IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
@@ -96,7 +96,7 @@
       ELSE
         QB = 1.0D0
       END IF
-#else
+# else
       IF ( BETA .LT. 0.2_rkind ) THEN
         QB     = ZERO
       ELSE IF ( BETA .LT. ONE ) THEN
@@ -108,13 +108,9 @@
       ELSE
         QB = ONE - 10.E-10
       END IF
-!!!!     QB = ZERO   !!! modif AD
 #endif
       QBLOCAL(IP) = QB
-
-      !IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
-
-      IF (ICOMP .GE. 2) THEN ! linearized source terms ...
+      IF (ICOMP .GE. 2) THEN
         SURFA0 = 0.
         SURFA1 = 0.
         IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
@@ -135,7 +131,6 @@
         IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
           IF ( BETA2 .LT. ONE - 10.E-10) THEN
             SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
-            !rite(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
           ELSE
             SURFA0  = -(ALPBJ/PI)*SME 
           END IF
@@ -165,17 +160,12 @@
 #ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
-          COST = COSTH(ID)!COS(SPDIR(ID))
-          SINT = SINTH(ID)!SIN(SPDIR(ID))
-!          SBR_X(IP)=SBR_X(IP)+SINT*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-!          SBR_Y(IP)=SBR_Y(IP)+COST*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+          COST = COSTH(ID)
+          SINT = SINTH(ID)
           SBR(1,IP)=SBR(1,IP)+G9*COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)  ! m.s-2 * (m-1/s-1) * m^2.s * s-1 * s-1 =>  m^2.s-2
           SBR(2,IP)=SBR(2,IP)+G9*SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)   
        ENDDO
       ENDDO
-
-      !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
-      !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'THE NORMS OF SBR', TMP_X, TMP_Y

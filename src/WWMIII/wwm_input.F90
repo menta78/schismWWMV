@@ -1780,6 +1780,7 @@
         CURTXY = CURTXY + DVCURT
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
+#ifdef NCDF
         IF (K.EQ.1) THEN
           REC1_curr_old = 0
           REC2_curr_old = 0
@@ -1798,6 +1799,9 @@
         END IF
         REC1_curr_old = REC1_curr_new
         REC2_curr_old = REC2_curr_new
+#else
+        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+#endif
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1892,6 +1896,7 @@
         DEPDT     = DVWALV / MAIN%DELT
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
+#ifdef NCDF
         IF (K.EQ.1) THEN
           REC1_watlev_old = 0
           REC2_watlev_old = 0
@@ -1921,5 +1926,8 @@
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
         TimeWAT_old = TimeWAT_new
+#else
+        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+#endif
       END IF
       END SUBROUTINE

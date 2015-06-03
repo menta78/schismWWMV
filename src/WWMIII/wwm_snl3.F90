@@ -1,6 +1,7 @@
 #include "wwm_functions.h"
 !**********************************************************************
-!*                                                                    *
+!*  Yasser Eldeberky, Nonlinear Transformation of Wave Spectra in     *
+!*        the Nearshore Zone, PhD thesis, TU Delft                    *
 !**********************************************************************
       subroutine triad_eldeberky(ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
       use datapool
@@ -14,12 +15,13 @@
       real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0
       real(rkind)    em,ft, rint, sigpi, sinbph, stri
       real(rkind)    w0, wm, wn0, wnm, ursell, c1, c2, c3
+      real(rkind)    eCont
       real(rkind) :: E(MSC)
       real(rkind) :: SA(1:MSC+TRI_ISP1,1:MDC)
+
       ssnl3 = ZERO
       dssnl3 = ZERO
       IF (HS .LT. SMALL) RETURN
-
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
       IF ( URSELL .le. TRI_ARR(5) ) RETURN
       E  = 0.
@@ -59,19 +61,20 @@
           IF (ACLOC(IS,ID) .LT. THR) CYCLE
           STRI = SA(IS,ID) - TWO*(TRI_WISP*SA(IS+TRI_ISP1,ID) + TRI_WISP1*SA(IS+TRI_ISP,ID))
           IF (ABS(STRI) .LT. THR) CYCLE
+          eCont = STRI / SIGPI
           IF (ICOMP .GE. 2) THEN
             IF (STRI .GT. 0.) THEN
-              IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
-              SSNL3(IS,ID)  =  STRI / SIGPI 
+              IMATRA(IS,ID) = IMATRA(IS,ID) + eCont
+              SSNL3(IS,ID)  = eCont
             ELSE
-              IMATDA(IS,ID) = IMATDA(IS,ID) - STRI / (ACLOC(IS,ID)*SIGPI)
-              DSSNL3(IS,ID) =  -STRI/(ACLOC(IS,ID)*SIGPI)
+              IMATDA(IS,ID) = IMATDA(IS,ID) - eCont / ACLOC(IS,ID)
+              DSSNL3(IS,ID) = - eCont/ACLOC(IS,ID)
             END IF
           ELSE
-            IMATRA(IS,ID) = IMATRA(IS,ID) + STRI / SIGPI
+            IMATRA(IS,ID) = IMATRA(IS,ID) + eCont
             IMATDA(IS,ID) = ZERO !IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
-            SSNL3(IS,ID)  = STRI / SIGPI
-            DSSNL3(IS,ID) = STRI / (ACLOC(IS,ID)*SIGPI) 
+            SSNL3(IS,ID)  = eCont
+            DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
           END IF
         END DO
       END DO
@@ -95,7 +98,7 @@
           ecloc(is,id) = acloc(is,id) * spsig(is) * ddir
         end do 
       end do
-      ssnl3 = 0.
+      SSNL3 = 0.
       do id = 1, mdc
         do is = 1,msc-1
           df = ((spsig(is+1) - spsig(is)))/pi2
@@ -187,7 +190,6 @@
       function delta(ip, is, is1, is2) result(res)
       use datapool, only : rkind, wk
       implicit none
-
       integer, intent(in)        :: ip, is, is1, is2
       real(rkind)                :: res !return
       res = wk(ip,is) - wk(ip,is1) - wk(ip,is2)
@@ -223,11 +225,8 @@
       real(rkind)                :: ka
       real(rkind)                :: kb
       real(rkind)                :: kc
-!!! function declaration
       real(rkind)                :: tau
-      
       real(rkind)                :: a,b,c,d,e
-      
 !       n1=0 means +
 !       n1=1 means -
 !       em=0 without eldeberky & madsen
@@ -312,7 +311,7 @@
       real(rkind)                :: res
       real(rkind)                :: delta, dwdx, w, ddelta_dx
       
-       res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
+      res = one / ((delta(ip, is3, is4, is5))**2) * dwdx(ip,is,is1,is2,id,n1,emf) - (w(ip,is,is1,is2,n1,emf) / ((delta(ip, is, is1, is2))**3)) * ddelta_dx(ip, is3, is4, is5, id)
       end function k
 !**********************************************************************
 !*                                                                    *
@@ -531,6 +530,7 @@
       IF (TRICO .GT. 0.)  PTTRIAD(1) = TRICO
       IF (TRIRA .GT. 0.)  PTTRIAD(2) = TRIRA
       IF (TRIURS .GT. 0.) PTTRIAD(5) = TRIURS
+      ssnl3=0
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
       URS = MIN ( URSELL , TEN )
       IF ( URS .lt. PTTRIAD(5) ) RETURN
@@ -612,7 +612,7 @@
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
 
-      INTEGER           :: I, J, I1, I2
+      INTEGER           :: I, J
       INTEGER           :: IRES, ISMAX
       INTEGER           :: IS, ID
       REAL(rkind)              :: PTTRIAD(5)
@@ -636,10 +636,7 @@
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
       IF ( URSELL .lt. PTTRIAD(5) ) RETURN
       E = 0.
-      I2     = INT (FLOAT(MSC) / 2.)
-      I1     = I2 - 1
-      XISTRI = SPSIG(I2) / SPSIG(I1)
-      IRES   = NINT ( LOG( 2.) / LOG ( XISTRI ) )
+      IRES   = NINT ( LOG(TWO) / XISLN )
       ISMAX = 1
       DO IS = 1, MSC
        IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN

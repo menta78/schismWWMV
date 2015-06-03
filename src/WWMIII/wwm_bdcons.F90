@@ -1258,6 +1258,28 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE COMPUTE_IFILE_IT(IFILE, IT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(OUT) :: IFILE, IT
+      REAL(rkind) :: DTMP
+      INTEGER ITMP
+      DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+      ITMP  = 0
+      DO IFILE = 1, NUM_NETCDF_FILES_BND
+        ITMP = ITMP + NDT_BND_FILE(IFILE)
+        IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
+      END DO
+      ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
+      IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
+      IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
+        IFILE = IFILE + 1
+        IT    = 1
+      ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE WAVE_BOUNDARY_CONDITION(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1302,12 +1324,16 @@
 #ifdef NCDF
               CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with DNCDF PPFLAG')
+              CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=3')
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
               IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
             ELSE IF (IBOUNDFORMAT == 4) THEN ! WWM SPPARM netcdf file
+#ifdef NCDF
               CALL READ_NETCDF_BOUNDARY_SPPARM
+#else
+              CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=4')
+#endif
             END IF
           ELSE  ! Steady ...
             SPPARM = 0.
@@ -1368,7 +1394,11 @@
             CALL GET_BINARY_WW3_SPECTRA(WBACOUT)
           END IF
           IF (IBOUNDFORMAT == 4) THEN ! WWM WBAC netcdf
+#ifdef NCDF
             CALL READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
+#else
+            CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=4')
+#endif
           END IF
         ELSE ! The boundary conditions is homogeneous in space !
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
@@ -1438,12 +1468,16 @@
 #ifdef NCDF
           CALL INIT_NETCDF_WW3_WAVEPARAMETER
 #else
-          CALL WWM_ABORT('Compile with NCDF For WW3 bdcons')
+          CALL WWM_ABORT('Compile with -NCDF For WW3 bdcons')
 #endif
         END IF
       END IF
       IF (IBOUNDFORMAT == 4) THEN
+#ifdef NCDF
         CALL INIT_NETCDF_BOUNDARY_WWM
+#else
+        CALL WWM_ABORT('Compile with -NCDF for IBOUNDFORMAT=4')
+#endif
       END IF
       CALL WAVE_BOUNDARY_CONDITION(WBAC)
       IF (LBINTER) WBACOLD = WBAC
@@ -1751,28 +1785,6 @@
       CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 5, T02_WW3)
       CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 4, DSPR_WW3)
       CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 1, DIR_WW3)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_IFILE_IT(IFILE, IT)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, INTENT(OUT) :: IFILE, IT
-      REAL(rkind) :: DTMP
-      INTEGER ITMP
-      DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
-      ITMP  = 0
-      DO IFILE = 1, NUM_NETCDF_FILES_BND
-        ITMP = ITMP + NDT_BND_FILE(IFILE)
-        IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
-      END DO
-      ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
-      IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
-      IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
-        IFILE = IFILE + 1
-        IT    = 1
-      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
