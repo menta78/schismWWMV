@@ -1698,32 +1698,36 @@
 !     validity region: T: [0,40], S: [0:42]				   *
 !     Inputs: 
 !            indx: info re: where this routine is called; for debug only
+!            igb: global index for ndoe/elem. etc for debug only
 !            tem,sal: T,S (assumed to be at wet spots).
 !     Output: density.
 !									   *
 !***************************************************************************
 !   
-      function eqstate(indx,tem2,sal2 &
+      function eqstate(indx,igb,tem2,sal2 &
 #ifdef USE_SED 
-     &                  ,sconc,Srho   &
+     &                ,ntr_sed,sconc,Srho   &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
      &                  ,sconc,Srho,laddmud_d &
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
      &                 )
-      use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg,ifort12,ntracers !,rhomud,npa,iplg
+      use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg, &
+     &ifort12,ddensed,ieos_type,eos_a,eos_b
       use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: eqstate
       integer, intent(in) :: indx !info re: where this routine is called; for debug only
+      integer, intent(in) :: igb !global index for ndoe/elem. etc for debug only
       real(rkind), intent(in) :: tem2,sal2
 #ifdef USE_SED
-      real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
+      integer, intent(in) :: ntr_sed !for dim. SED3D arrays
+      real(rkind), intent(in) :: sconc(ntr_sed),Srho(ntr_sed)
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
-      real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
-      logical, intent(in) :: laddmud_d
+#ifdef USE_TIMOR
+!      real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
+!      logical, intent(in) :: laddmud_d
 #endif
 
       !Local 
@@ -1732,57 +1736,68 @@
 
       tem=tem2; sal=sal2
       if(tem<-98.or.sal<-98) then
-        write(errmsg,*)'EQSTATE: Impossible dry (7):',tem,sal
+        write(errmsg,*)'EQSTATE: Impossible dry (7):',tem,sal,indx,igb
         call parallel_abort(errmsg)
       endif
       if(tem<tempmin.or.tem>tempmax.or.sal<saltmin.or.sal>saltmax) then
         if(ifort12(6)==0) then
           ifort12(6)=1
-          write(12,*)'Invalid temp. or salinity for density:',tem,sal
+          write(12,*)'Invalid temp. or salinity for density:',tem,sal,indx,igb
         endif
         tem=max(tempmin,min(tem,tempmax))
         sal=max(saltmin,min(sal,saltmax))
       endif
 
-!     Density at one standard atmosphere
-      eqstate=1000-0.157406+6.793952E-2*tem-9.095290E-3*tem**2 &
+      select case(ieos_type)
+        case(0) !UNICEF
+!         Density at one standard atmosphere
+          eqstate=1000-0.157406+6.793952E-2*tem-9.095290E-3*tem**2 &
      &+1.001685E-4*tem**3-1.120083E-6*tem**4+6.536332E-9*tem**5+ &
      &sal*(0.824493-4.0899E-3*tem+&
      &7.6438E-5*tem**2-8.2467E-7*tem**3+5.3875E-9*tem**4)+&
      &sqrt(sal)**3*(-5.72466E-3+1.0227E-4*tem-1.6546E-6*tem**2)+&
      &4.8314E-4*sal**2
-      if(eqstate<980) then
-        write(errmsg,*)'Weird density:',eqstate,tem,sal
-        call parallel_abort(errmsg)
-      endif
+          if(eqstate<980) then
+            write(errmsg,*)'Weird density:',eqstate,tem,sal,indx,igb
+            call parallel_abort(errmsg)
+          endif
 
 #ifdef USE_SED
-!...  Add sediment density effects
-!      if (myrank==0) write(16,*)'sediment density effect'
-
-      SedDen=0.d0
-      do ised=1,ntracers
-!        write(12,*)Srho(ised),sconc(ised),eqstate
-!        if (sconc(ised) <= 0.d0)cycle
-!        cff1=1.d0/Srho(ised)
-        SedDen=SedDen+sconc(ised)*(1-eqstate/Srho(ised))
-!        write(12,*)SedDen,eqstate
-      enddo
-      eqstate=eqstate+SedDen
+!...      Add sediment density effects
+          if(ddensed==1) then
+!            if (myrank==0) write(16,*)'sediment density effect'
+            SedDen=0.d0
+            do ised=1,ntr_sed !ntracers
+!              write(12,*)'B4 sed. adjustment:',ised,Srho(ised),sconc(ised),eqstate
+              if(eqstate>Srho(ised)) then
+                write(errmsg,*)'MISC, Weird SED density:',eqstate,tem,sal,indx,igb,ised,Srho(ised),sconc(ised)
+                call parallel_abort(errmsg)
+              endif
+              SedDen=SedDen+max(0.d0,sconc(ised))*(1-eqstate/Srho(ised))
+!             write(12,*)'after sed. adjustment:',SedDen,eqstate
+            enddo
+            eqstate=eqstate+SedDen
+          endif !ddensed==1
 #endif /*USE_SED*/
 
-#ifdef USE_TIMOR_FLMUD
-!      if(laddmud_d) then
-!        rho_w=eqstate
-!        do ised=1,ntracers
-!          if(rho_w>Srho(ised)) then
-!            write(errmsg,*)'EQSTATE: Impossible (8):',indx,ised,rho_w,Srho(ised),sconc(ised)
-!            call parallel_abort(errmsg)            
-!          endif
-!          eqstate=eqstate+sconc(ised)*(1-rho_w/Srho(ised))
-!        enddo !ised
-!      endif !laddmud_d
-#endif /*USE_TIMOR_FLMUD*/
+#ifdef USE_TIMOR
+!          if(laddmud_d) then
+!            rho_w=eqstate
+!            do ised=1,ntracers
+!              if(rho_w>Srho(ised)) then
+!                write(errmsg,*)'EQSTATE: Impossible (8):',indx,ised,rho_w,Srho(ised),sconc(ised)
+!                call parallel_abort(errmsg)            
+!              endif
+!              eqstate=eqstate+sconc(ised)*(1-rho_w/Srho(ised))
+!            enddo !ised
+!          endif !laddmud_d
+#endif /*USE_TIMOR*/
+        case(1) !linear function of T only
+          eqstate=eos_b+eos_a*tem
+        case default
+          write(errmsg,*)'EQSTATE: unknown ieos_type',ieos_type
+          call parallel_abort(errmsg)
+      end select 
 
       end function eqstate
 
@@ -2287,12 +2302,12 @@
 
 !       Half levels
         do k=1,nvrt
-          rho_mean(k,i)=eqstate(4,swild2(k,i,1),swild2(k,i,2) &
+          rho_mean(k,i)=eqstate(5,ielg(i),swild2(k,i,1),swild2(k,i,2) &
 ! LLP
 #ifdef USE_SED
-     &                             ,tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
+     &                          ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !Error: need to use cubic spline also for mud density; also need to average for element
 !     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif

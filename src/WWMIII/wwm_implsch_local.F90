@@ -147,11 +147,11 @@
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
 
-      REAL(rkind) :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(NANG,NFRE)
+      REAL(rkind)                       :: FL(NANG,NFRE),FL3(NANG,NFRE),SL(NANG,NFRE)
       REAL(rkind),DIMENSION(NANG,NFRE)  :: SSDS,DSSDS,SSBF,DSSBF,SSNL4,DSSNL4,SSIN,DSSIN
-
+!
 ! ----------------------------------------------------------------------
- 
+! 
       INTEGER :: K,L,M,IG,ILEV,IDELT,IU06
       INTEGER :: MIJ
       INTEGER :: JU

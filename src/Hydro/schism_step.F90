@@ -134,7 +134,7 @@
                      &av_dep,vel_m1,vel_m2,xtmp,ytmp,ftmp,tvol12,fluxbnd, &
                      &fluxchan,fluxchan1,fluxchan2,tot_s,flux_s,ah,ubm,ramp_ss,Cdmax, &
                      &wmag_e,wmag_factor, & !wmag_e and wmag_facotr addedy by wangzg
-                     &bthick_ori,big_ubstar,big_vbstar,zsurf 
+                     &bthick_ori,big_ubstar,big_vbstar,zsurf,tot_bedmass
 
 !     Output handles
       character(len=72) :: it_char
@@ -169,6 +169,11 @@
      &swild3(20+ntracers),swild4(2,4)
       real(4) :: swild8(nvrt,2) !used in ST nudging
       logical :: lelbc(npa)
+
+!#ifdef FUJITSU
+      real(rkind) :: swild_tmp(3)
+      real(rkind) :: swild10_tmp(3,3)
+!#endif
       
       real(4),allocatable :: swild9(:,:) !used in tracer nudging
       real(rkind),allocatable :: rwild(:,:) 
@@ -1005,19 +1010,18 @@
 !      endif !nudging
 
 !...  Read in tracer nudging
-      do k=1,natrm
-        if(ntrs(k)<=0) cycle
+      if(time>time_nu_tr) then
+        do k=1,natrm
+          if(ntrs(k)<=0) cycle
 
-        if(inu_tr(k)==2) then
-          itmp1=irange_tr(1,k)
-          itmp2=irange_tr(2,k)
-          if(time>time_nu_tr) then
-            irec_nu_tr=irec_nu_tr+1
-            time_nu_tr=time_nu_tr+step_nu_tr
+          if(inu_tr(k)==2) then
+            itmp1=irange_tr(1,k)
+            itmp2=irange_tr(2,k)
+!            time_nu_tr=time_nu_tr+step_nu_tr
             trnd_nu1(itmp1:itmp2,:,:)=trnd_nu2(itmp1:itmp2,:,:)
             read(84+k)floatout
-            if(abs(floatout-time_nu_tr)>0.01) then
-              write(errmsg,*)'Wrong nudging time (2):',floatout,time_nu_tr
+            if(abs(floatout-time_nu_tr-step_nu_tr)>0.01) then
+              write(errmsg,*)'Wrong nudging time (2):',floatout,time_nu_tr+step_nu_tr
               call parallel_abort(errmsg)
             endif
             do i=1,np_global
@@ -1026,8 +1030,17 @@
                 trnd_nu2(itmp1:itmp2,:,ipgl(i)%id)=swild9(itmp1:itmp2,:)
               endif
             enddo !i
-          endif !time>time_nu_tr
+          endif !inu_tr(k)
+        enddo !k
+        time_nu_tr=time_nu_tr+step_nu_tr !shared
+      endif !time>time_nu_tr
 
+      do k=1,natrm
+        if(ntrs(k)<=0) cycle
+
+        if(inu_tr(k)==2) then
+          itmp1=irange_tr(1,k)
+          itmp2=irange_tr(2,k)
 !         Compute tracer
           rat=(time_nu_tr-time)/step_nu_tr
           if(rat<0.or.rat>1) then
@@ -1347,7 +1360,7 @@
                 trth(m,1,1,k)=(1-rat)*ath(icount,m,1,5)+rat*ath(icount,m,2,5)
               endif
             enddo !k
-          enddo !# of tracers
+          enddo !m: # of tracers
         endif !ntrs
       enddo !i
 
@@ -1492,20 +1505,25 @@
 !      endif !nsatype2
 
 !     Tracers
-      do i=1,natrm
-        if(ntrs(i)>0.and.nnode_tr2(i)>0) then
-          if(time>th_time2(2,5)) then
+      if(time>th_time2(2,5)) then
+        do i=1,natrm
+          if(ntrs(i)>0.and.nnode_tr2(i)>0) then
             ath2(irange_tr(1,i):irange_tr(2,i),:,:,1,5)=ath2(irange_tr(1,i):irange_tr(2,i),:,:,2,5)
-            irec_th(5)=irec_th(5)+1
-            read(68+i,rec=irec_th(5))floatout,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),2,5)
-            th_time2(1,5)=th_time2(2,5)
-            th_time2(2,5)=th_time2(2,5)+th_dt2(5)
+            read(68+i,rec=irec_th(5)+1)floatout,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),2,5)
           endif !time
+        enddo !i
 !        if(it==iths_main+1.and.abs(floatout-time)>1.e-4) then
 !          write(errmsg,*)'Starting time wrong for tracers 2',it,floatout
 !          call parallel_abort(errmsg)
 !        endif
+        !Following is meaningless if no models use *3D.th
+        th_time2(1,5)=th_time2(2,5)
+        th_time2(2,5)=th_time2(2,5)+th_dt2(5)
+        irec_th(5)=irec_th(5)+1
+      endif !time
 
+      do i=1,natrm
+        if(ntrs(i)>0.and.nnode_tr2(i)>0) then
           rat=(time-th_time2(1,5))/th_dt2(5)
           if(rat<-small1.or.rat>1+small1) then
             write(errmsg,*) 'STEP: rat out in tr3D.th:',rat,time,th_time2(1:2,5)
@@ -1765,22 +1783,22 @@
 
 
 !...  Bottom drag coefficients for nchi=-1 or 1; Cd and Cdp for nchi=0 already read in
-!      if(nchi==-1) then !2D
-!        Cdp=0; Cd=0 !for dry pts
-!!       Drag at nodes
-!        do i=1,npa
-!          if(idry(i)==1) cycle
-!!         Wet node
-!          htot=max(hmin_man,dp(i)+eta2(i)) !>0
-!          Cdp(i)=grav*rmanning(i)*rmanning(i)/htot**0.333
-!#ifdef USE_SED2D
-!          if(idrag_sed2d<-1) then
-!            Cdp(i)=Cdsed(i)
-!            if(Cdp(i)/=Cdp(i)) call parallel_abort('SED2D: NaN for Cd')
-!          endif
-!#endif
-!        enddo !i
-!      endif !nchi==-1
+      if(nchi==-1) then !2D
+        Cdp=0; Cd=0 !for dry pts
+!       Drag at nodes
+        do i=1,npa
+          if(idry(i)==1) cycle
+!         Wet node
+          htot=max(hmin_man,dp(i)+eta2(i)) !>0
+          Cdp(i)=grav*rmanning(i)*rmanning(i)/htot**0.333
+#ifdef USE_SED2D
+          if(idrag_sed2d<-1) then
+            Cdp(i)=Cdsed(i)
+            if(Cdp(i)/=Cdp(i)) call parallel_abort('SED2D: NaN for Cd')
+          endif
+#endif
+        enddo !i
+      endif !nchi==-1
 
       if(nchi==1) then !idrag=2
 #ifdef USE_SED
@@ -1875,7 +1893,7 @@
 #endif /*USE_WWM*/
       endif !nchi==1
 
-      if(nchi==1) then
+      if(nchi/=0) then
         do i=1,nsa
           if(idry_s(i)==1) cycle
           Cd(i)=(Cdp(isidenode(1,i))+Cdp(isidenode(2,i)))/2
@@ -1894,7 +1912,7 @@
 !          enddo !i=1,ns
 !          close(32)
 !        endif
-      endif !nchi==1
+      endif !nchi/=0
 
 !
 !************************************************************************
@@ -2038,9 +2056,9 @@
 
           call do_turbulence(nlev,dt,toth,u_taus,u_taub,z0s,z0b,h1d,NN1d,SS1d)
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
           call flmud(j,dt,rough_p(j),SS1d,NN1d,tke1d,eps1d,L1d,num1d,nuh1d)
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
 
 !         Debug11
 !          if(myrank==2.and.iplg(j)==14178.and.it==3253) write(98,*)(k,h1d(k),NN1d(k),SS1d(k), &
@@ -2057,13 +2075,13 @@
               call parallel_abort(errmsg)
             endif
  
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
             !Modify viscosity
             tmp=vts(klev,j)
             if(tmp/=tmp) call parallel_abort('GOTM: vts is NaN from TIMOR')
 !'
             if(laddmud_v) num1d(k)=num1d(k)+tmp
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
 
             dfv(klev,j)=min(diffmax(j),num1d(k)+diffmin(j)) 
             dfh(klev,j)=min(diffmax(j),nuh1d(k)+diffmin(j))
@@ -2090,7 +2108,7 @@
           enddo 
           cycle
         endif
-        if(prho(1,j)<-98) call parallel_abort('Impossible dry 2')
+        if(prho(1,j)<-98) call parallel_abort('STEP: Impossible dry 2')
 
 !       Wet node (and >1 layer); compute layer thickness etc.
 !       Error: use ufg?
@@ -2170,9 +2188,7 @@
         q2fs=max(q2fs,q2min)
         q2bot=16.6**(2.0/3)*Cdp(j)*(uu2(kbp(j)+1,j)**2+vv2(kbp(j)+1,j)**2)/2
         q2bot=max(q2bot,q2min)
-        !mixing length scale for the b.c.; hardwired at 0.1
-        zrat=0.1
-        xlbot=max(xlmin2(j),min(2.5_rkind,zrat*dzz(kbp(j)+1))*0.4_rkind) !"2.5" to prevent over-mixing
+        xlbot=max(xlmin2(j),min(2.5_rkind,xlsc0*dzz(kbp(j)+1))*0.4_rkind) !"2.5" to prevent over-mixing
 
 !        xlfs=max(xlmin2(j),xlsc0(j)*dzz(nvrt)*0.4_rkind) 
 !modif AD :: modification of mixing layer as Delpey et al.
@@ -2182,7 +2198,7 @@
 #else
         zsurf=dzz(nvrt)
 #endif
-        xlfs=max(xlmin2(j),zrat*zsurf*0.4_rkind)
+        xlfs=max(xlmin2(j),xlsc0*zsurf*0.4_rkind)
 
 !       Debug
 !        write(32,*)j,iplg(j),xlmin2(j),dzz(nvrt),xlfs
@@ -2650,8 +2666,16 @@
 
               time_rm=dt
               time_rm2=-99 !leftover from previous subdomain; init. as flag
-              call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild(1:3),swild10(1:3,1:3), &
+!#ifdef FUJITSU
+              !FUJITSU has issues with slices of arrays in this call
+              swild_tmp(1:3) = swild(1:3)
+              swild10_tmp(1:3,1:3) = swild10(1:3,1:3)
+              call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild_tmp,swild10_tmp, &
      &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
+!#else
+!              call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild(1:3),swild10(1:3,1:3), &
+!     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
+!#endif
 
               if(ltmp) then !Backtracking exits augmented subdomain
                 !Add trajectory to inter-subdomain backtracking list
@@ -3157,7 +3181,7 @@
                 endif !ics
                 cupp(j)=swild2(k,j)-(erho(k,i)-rho_mean(k,i))
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
                 !Limit density difference
                 cupp(j)=max(-80.d0,min(80.d0,cupp(j)))
 #endif
@@ -5180,7 +5204,7 @@
       do i=1,nea
         if(idry_e(i)==1) cycle
 
-!	Wet elements with 3 wet nodes
+!	Wet elements with wet nodes
 !	Compute upward normals and areas @ all levels
         n1=elnode(1,i)
         n2=elnode(2,i)
@@ -5302,12 +5326,13 @@
           we_fv(l+1,i)=(-sum1-(ubar1*sne(1,l+1)+vbar1*sne(2,l+1))*area_e(l+1) + &
      &bflux*area_e(l))/sne(3,l+1)/area_e(l+1)
 
-          !Save flux_adv_vface for transport
-          flux_adv_vface(l,i)=bflux*area_e(l) !not working for bed deformation
+          !Save flux_adv_vface for transport - not working for bed deformation
+          !Add (const) settling vel for each tracer, which does not upset volume balance
+          flux_adv_vface(l,1:ntracers,i)=bflux*area_e(l)-wsett(1:ntracers)*area(i) 
           !Add surface value as well
           if(l==nvrt-1) then
-            flux_adv_vface(l+1,i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
-     &we_fv(l+1,i)*sne(3,l+1))*area_e(l+1)
+            flux_adv_vface(l+1,1:ntracers,i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
+     &we_fv(l+1,i)*sne(3,l+1))*area_e(l+1)-wsett(1:ntracers)*area(i)
           endif !l
 
 !#ifdef USE_ICM
@@ -5509,7 +5534,7 @@
 ! Compute element depth averaged hvel for VRIJN bedload
 !----------------------------------------------------------------------
 
-        dav=0
+        dav=0 !in pframe
         do i=1,npa
           if(idry(i)==1) cycle
           do k=kbp(i),nvrt-1
@@ -5527,7 +5552,7 @@
           endif
         enddo !i=1,npa
 
-        dave=0.d0
+        dave=0.d0 !eframe which is close to pframe
         do i=1,nea
           if (idry_e(i)==1) cycle
           cff1=0.d0
@@ -5544,8 +5569,11 @@
         flx_bt(itmp1:itmp2,:)=0.d0
         flx_sf(itmp1:itmp2,:)=0.d0
 
-        call sediment(it,moitn0,mxitn0,rtol0,dave)
-        !bdy_frc updated by the routine above; flx_* are not
+        !flx_bt updated by the routine below
+        !IMPORTANT: with settling vel./=0, flx_bt=D-E-w_s*T_{kbe+1},
+        !since in well-formulated b.c., D \pprox -w_s*T_{kbe+1}. D&E are
+        !deposi. & erosional fluxes respectively
+        call sediment(it,moitn0,mxitn0,rtol0,dave,tot_bedmass)
         if(myrank==0) write(16,*) 'done sediment model...'
 #endif /*USE_SED*/
 
@@ -5609,13 +5637,13 @@
 #endif /*USE_ICM*/
 
 
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
 !        !Treat settling vel. inside routine
 !
 !        flx_bt=0
 !        flx_sf=0
 !        bdy_frc=0
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
 
         ltvd=itr_met>=2
         if(itr_met<=2) then !upwind or explicit TVD
@@ -5633,7 +5661,6 @@
         !do j=1,ntracers
         !  write(12,*)'After trc. trans.:',it,j,real(tr_el(j,:,8))
         !enddo !j
- 
 
 #ifdef USE_ICM
         if(myrank==0) write(16,*)'start ICM (5)..'
@@ -5763,41 +5790,45 @@
           swild98(1:ntracers,nvrt,i)=tr_el(1:ntracers,nvrt,i)
           swild98(1:ntracers,kbe(i),i)=tr_el(1:ntracers,kbe(i)+1,i)
 
-#ifdef USE_SED
-          !swild98 at surface and bottom. The total mass at centers equal to total mass at levels.
-          !tr_tc - tracer vertical total mass at centers
-          !tr_tl - tracer vertical total mass at levels
+          !For SED, consider using Rouse profile at bottom
 
-          tr_tc=0.d0
-          tr_tl=0.d0
-
-          do k=kbe(i)+1,nvrt
-            vol=(ze(k,i)-ze(k-1,i))*area(i)
-            tr_tc(1:ntracers,i)=tr_tc(1:ntracers,i)+vol*tr_el(1:ntracers,k,i)
-          enddo !k
-          do k=kbe(i)+1,nvrt-1
-            vol=(ze(k+1,i)-ze(k-1,i))/2*area(i)
-            tr_tl(1:ntracers,i)=tr_tl(1:ntracers,i)+vol*tr_el(1:ntracers,k,i)
-          enddo !k
-
-!!...     difussivity of surface level (nvrt)
-          av_df=sum(dfh(nvrt-1,elnode(1:i34(i),i)))/i34(i) !+dfh(nvrt-1,n2)+dfh(nvrt-1,n3))/3
-          swild(1:ntracers)=av_df+Wsed(1:ntracers)*(ze(nvrt,i)-ze(nvrt-1,i))
-          do j=1,ntracers
-            if(swild(j)==0) call parallel_abort('MAIN: sed. div. by 0 (1)')
-!'
-          enddo !j
-          swild98(1:ntracers,nvrt,i)=(av_df*tr_el(1:ntracers,nvrt-1,i))/swild(1:ntracers)
-!!... surface
-          vol=((ze(nvrt,i)-ze(nvrt-1,i))/2)*area(i)
-!!... bottom
-          vol1=((ze(kbe(i)+1,i)-ze(kbe(i),i))/2)*area(i)
-          tr_tl(1:ntracers,i)=tr_tl(1:ntracers,i)+vol*tr_el(1:ntracers,nvrt,i)
-!          if(myrank==0)write(16,*)'vol',vol,tr_tl(1,i)
-          if(vol1==0) call parallel_abort('MAIN: sed. div. by 0 (2)')
-          swild98(1:ntracers,kbe(i),i)=(tr_tc(1:ntracers,i)-tr_tl(1:ntracers,i))/vol1
-!          if(myrank==0)write(16,*)'vol1',vol1,tr_tc(1,i),tr_tl(1,i)
-#endif /*USE_SED*/
+!#ifdef USE_SED
+!          !swild98 at surface and bottom. The total mass at centers equal to total mass at levels.
+!          !tr_tc - tracer vertical total mass at centers
+!          !tr_tl - tracer vertical total mass at levels
+!
+!          tr_tc=0.d0
+!          tr_tl=0.d0
+!
+!          itmp1=irange_tr(1,5)
+!          itmp2=irange_tr(2,5)
+!          do k=kbe(i)+1,nvrt
+!            vol=(ze(k,i)-ze(k-1,i))*area(i)
+!            tr_tc(1:ntrs(5),i)=tr_tc(1:ntrs(5),i)+vol*tr_el(itmp1:itmp2,k,i)
+!          enddo !k
+!          do k=kbe(i)+1,nvrt-1
+!            vol=(ze(k+1,i)-ze(k-1,i))/2*area(i)
+!            tr_tl(1:ntrs(5),i)=tr_tl(1:ntrs(5),i)+vol*tr_el(itmp1:itmp2,k,i)
+!          enddo !k
+!
+!!!...     diffusivity of surface level (nvrt)
+!          av_df=sum(dfh(nvrt-1,elnode(1:i34(i),i)))/i34(i) !+dfh(nvrt-1,n2)+dfh(nvrt-1,n3))/3
+!          swild(1:ntrs(5))=av_df+Wsed(1:ntrs(5))*(ze(nvrt,i)-ze(nvrt-1,i))
+!          do j=1,ntrs(5)
+!            if(swild(j)==0) call parallel_abort('MAIN: sed. div. by 0 (1)')
+!!'
+!          enddo !j
+!          swild98(itmp1:itmp2,nvrt,i)=(av_df*tr_el(itmp1:itmp2,nvrt-1,i))/swild(1:ntrs(5))
+!!!... surface
+!          vol=((ze(nvrt,i)-ze(nvrt-1,i))/2)*area(i)
+!!!... bottom
+!          vol1=((ze(kbe(i)+1,i)-ze(kbe(i),i))/2)*area(i)
+!          tr_tl(1:ntrs(5),i)=tr_tl(1:ntrs(5),i)+vol*tr_el(itmp1:itmp2,nvrt,i)
+!!          if(myrank==0)write(16,*)'vol',vol,tr_tl(1,i)
+!          if(vol1==0) call parallel_abort('MAIN: sed. div. by 0 (2)')
+!          swild98(itmp1:itmp2,kbe(i),i)=(tr_tc(1:ntrs(5),i)-tr_tl(1:ntrs(5),i))/vol1
+!!          if(myrank==0)write(16,*)'vol1',vol1,tr_tc(1,i),tr_tl(1,i)
+!#endif /*USE_SED*/
         enddo !i=1,nea
 
 !       For rewetted nodes, use value at last wet step
@@ -5947,7 +5978,17 @@
 #ifdef INCLUDE_TIMING
         wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
-        if(myrank==0) write(25,*)time/86400,swild3(1:ntracers)
+
+        if(myrank==0) write(25,*)real(time/86400),swild3(1:ntracers)
+
+#ifdef USE_SED
+        !Add bedmass
+        tmp=0
+        do i=irange_tr(1,5),irange_tr(2,5)
+          tmp=tmp+swild3(i) !kg
+        enddo !i
+        if(myrank==0) write(25,*)'SED3D:',real(time/86400),tmp,tot_bedmass,tmp+tot_bedmass
+#endif
 
 !...  Compute nodal vel. for output and next backtracking
       call nodalvel !(ifltype)
@@ -5960,18 +6001,18 @@
           k2=max(k,kbp(i))
 
 !new9: debug
-#ifdef USE_TIMOR_FLMUD_FLMUD
+#ifdef USE_TIMOR
 !          if(tr_nd(irange_tr(),k2,i)<-98) then
 !            write(errmsg,*)'new9:',iplg(i),k,k2,tr_nd(1,k2,i),rhomud(1:ntracers,k2,i)
 !            call parallel_abort(errmsg)
 !          endif
 #endif
 
-          prho(k,i)=eqstate(1,tr_nd(1,k,i),tr_nd(2,k,i)           &
+          prho(k,i)=eqstate(3,iplg(i),tr_nd(1,k,i),tr_nd(2,k,i)           &
 #ifdef USE_SED
-     &                      ,tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)       &
+     &                     ,ntrs(5),tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)       &
 #endif 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !     &                      ,tr_nd(:,k2,i),rhomud(1:ntracers,k2,i),laddmud_d &
 #endif 
      &                     )
@@ -5984,7 +6025,7 @@
         do k=1,nvrt
           k2=max(k,kbe(i))
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !          do m=1,ntracers
 !            swild(m)=sum(rhomud(m,k2,elnode(1:3,i)))/3
 !          enddo !m
@@ -5995,11 +6036,11 @@
 !            call parallel_abort(errmsg)
 !          endif
 #endif
-          erho(k,i)=eqstate(2,tr_el(1,k,i),tr_el(2,k,i)   &
+          erho(k,i)=eqstate(4,ielg(i),tr_el(1,k,i),tr_el(2,k,i)   &
 #ifdef USE_SED
-     &                        ,tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)      &
+     &                    ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)      &
 #endif 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !     &                        ,trel(:,k,i),swild(1:ntracers),laddmud_d &
 #endif 
      &                       )          
@@ -6191,140 +6232,139 @@
           write(ichan(j)) real(time,out_rkind)
           write(ichan(j)) it
           write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
-            if(j<=13) then
-              if(j==1) then
-                write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
-              else if(j==2) then !.and.ihconsv.ne.0) then
-                write(ichan(j)) (real(pr(i),out_rkind),i=1,np)
-              else if(j==3.and.ihconsv/=0) then
-                write(ichan(j)) (real(airt1(i),out_rkind),i=1,np)
-              else if(j==4.and.ihconsv/=0) then
-                write(ichan(j)) (real(shum1(i),out_rkind),i=1,np)
-              else if(j==5.and.ihconsv/=0) then
-                write(ichan(j)) (real(srad(i),out_rkind),i=1,np)
-              else if(j==6.and.ihconsv/=0) then
-                write(ichan(j)) (real(fluxsu(i),out_rkind),i=1,np)
-              else if(j==7.and.ihconsv/=0) then
-                write(ichan(j)) (real(fluxlu(i),out_rkind),i=1,np)
-              else if(j==8.and.ihconsv/=0) then
-                write(ichan(j)) (real(hradu(i),out_rkind),i=1,np)
-              else if(j==9.and.ihconsv/=0) then
-                write(ichan(j)) (real(hradd(i),out_rkind),i=1,np)
-              else if(j==10.and.ihconsv/=0) then
-                write(ichan(j)) (real(sflux(i),out_rkind),i=1,np)
-              else if(j==11.and.isconsv/=0) then
-                write(ichan(j)) (real(fluxevp(i),out_rkind),i=1,np)
-              else if(j==12.and.isconsv/=0) then
-                write(ichan(j)) (real(fluxprc(i),out_rkind),i=1,np)
-              else if(j==13) then
-                write(ichan(j)) (real(Cdp(i),out_rkind),i=1,np)
-              else ! for undefined case as floatout=0 in old code
-                write(ichan(j)) (0.0,i=1,np)
+          if(j<=13) then
+            if(j==1) then
+              write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
+            else if(j==2) then !.and.ihconsv.ne.0) then
+              write(ichan(j)) (real(pr(i),out_rkind),i=1,np)
+            else if(j==3.and.ihconsv/=0) then
+              write(ichan(j)) (real(airt1(i),out_rkind),i=1,np)
+            else if(j==4.and.ihconsv/=0) then
+              write(ichan(j)) (real(shum1(i),out_rkind),i=1,np)
+            else if(j==5.and.ihconsv/=0) then
+              write(ichan(j)) (real(srad(i),out_rkind),i=1,np)
+            else if(j==6.and.ihconsv/=0) then
+              write(ichan(j)) (real(fluxsu(i),out_rkind),i=1,np)
+            else if(j==7.and.ihconsv/=0) then
+              write(ichan(j)) (real(fluxlu(i),out_rkind),i=1,np)
+            else if(j==8.and.ihconsv/=0) then
+              write(ichan(j)) (real(hradu(i),out_rkind),i=1,np)
+            else if(j==9.and.ihconsv/=0) then
+              write(ichan(j)) (real(hradd(i),out_rkind),i=1,np)
+            else if(j==10.and.ihconsv/=0) then
+              write(ichan(j)) (real(sflux(i),out_rkind),i=1,np)
+            else if(j==11.and.isconsv/=0) then
+              write(ichan(j)) (real(fluxevp(i),out_rkind),i=1,np)
+            else if(j==12.and.isconsv/=0) then
+              write(ichan(j)) (real(fluxprc(i),out_rkind),i=1,np)
+            else if(j==13) then
+              write(ichan(j)) (real(Cdp(i),out_rkind),i=1,np)
+            else ! for undefined case as floatout=0 in old code
+              write(ichan(j)) (0.0,i=1,np)
+            endif
+          else if(j<=16) then
+            if(j==14) then
+              if(nws==0) then
+                write(ichan(j))((0.0,0.0),i=1,np)
+              else !in ll frame if ics=2
+                write(ichan(j)) (real(windx(i),out_rkind),real(windy(i),out_rkind),i=1,np)
               endif
-            else if(j<=16) then
-              if(j==14) then
-                if(nws==0) then
-                  write(ichan(j))((0.0,0.0),i=1,np)
-                else !in ll frame if ics=2
-                  write(ichan(j)) (real(windx(i),out_rkind),real(windy(i),out_rkind),i=1,np)
-                endif
-              else if(j==15) then !in ll frame if ics=2
-                write(ichan(j)) (real(tau(1,i),out_rkind),real(tau(2,i),out_rkind),i=1,np)
-              else !j=16
-                write(ichan(j)) (real(dav(1,i),out_rkind),real(dav(2,i),out_rkind),i=1,np)
-              endif
-            else if(j<27) then
-                floatout=0 !for some undefined variables
-                if(j==17) then
-                  write(ichan(j)) ((real(ww2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                else
-                  if(j==18) then
-                    do i=1,np
-                      if(idry(i)==1) then
-                        write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
-                      else
-                        write(ichan(j)) (real(tr_nd(1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                      endif
-                    enddo
-                  else if(j==19) then
-                    do i=1,np
-                      if(idry(i)==1) then
-                        write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
-                      else
-                        write(ichan(j)) (real(tr_nd(2,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                      endif
-                    enddo
-                  else if(j==20) then
-                    write(ichan(j)) ((real(prho(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                  else if(j==21) then
-                    write(ichan(j)) ((real(dfh(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                  else if(j==22) then
-                    write(ichan(j)) ((real(dfv(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                  else if(j==23) then
-                    write(ichan(j)) ((real(q2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                  else if(j==24) then
-                    write(ichan(j)) ((real(xl(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                  else if(j==25) then
-                    do i=1,np
-                      if(idry(i)==1) then
-                        write(ichan(j)) (0.,k=max0(1,kbp00(i)),nvrt)
-                      else
-                        write(ichan(j)) (real(znl(max0(k,kbp(i)),i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                      endif
-                    enddo
-                  else if(j==26) then
-                      write(ichan(j)) ((real(qnon(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            else if(j==15) then !in ll frame if ics=2
+              write(ichan(j)) (real(tau(1,i),out_rkind),real(tau(2,i),out_rkind),i=1,np)
+            else !j=16
+              write(ichan(j)) (real(dav(1,i),out_rkind),real(dav(2,i),out_rkind),i=1,np)
+            endif
+          else if(j<27) then
+            floatout=0 !for some undefined variables
+            if(j==17) then
+              write(ichan(j)) ((real(ww2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            else
+              if(j==18) then
+                do i=1,np
+                  if(idry(i)==1) then
+                    write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
+                  else
+                    write(ichan(j)) (real(tr_nd(1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
                   endif
-                endif
-            else if(j==27) then
-              write(ichan(j)) ((real(uu2(k,i),out_rkind),real(vv2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!            else if(j<=27+ntracers) then !tracers; implies ntracers>0
-!              write(ichan(j)) ((real(tr_nd(j-27,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            else !optional modules; MUST BE IN THE SAME ORDER AS BEFORE
+                enddo
+              else if(j==19) then
+                do i=1,np
+                  if(idry(i)==1) then
+                    write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
+                  else
+                    write(ichan(j)) (real(tr_nd(2,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
+                  endif
+                enddo
+              else if(j==20) then
+                write(ichan(j)) ((real(prho(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j==21) then
+                write(ichan(j)) ((real(dfh(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j==22) then
+                write(ichan(j)) ((real(dfv(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j==23) then
+                write(ichan(j)) ((real(q2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j==24) then
+                write(ichan(j)) ((real(xl(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j==25) then
+                do i=1,np
+                  if(idry(i)==1) then
+                    write(ichan(j)) (0.,k=max0(1,kbp00(i)),nvrt)
+                  else
+                    write(ichan(j)) (real(znl(max0(k,kbp(i)),i),out_rkind),k=max0(1,kbp00(i)),nvrt)
+                  endif
+                enddo
+              else if(j==26) then
+                  write(ichan(j)) ((real(qnon(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              endif
+            endif
+          else if(j==27) then
+            write(ichan(j)) ((real(uu2(k,i),out_rkind),real(vv2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+!          else if(j<=27+ntracers) then !tracers; implies ntracers>0
+!            write(ichan(j)) ((real(tr_nd(j-27,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+          else !optional modules; MUST BE IN THE SAME ORDER AS BEFORE
 
 #ifdef USE_GEN
-              if(j>=indx_out(1,1).and.j<=indx_out(1,2)) then
-                ind_tr=j-indx_out(1,1)+irange_tr(1,3) !j-indx_out(1,1)+1+2
-                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              endif
+            if(j>=indx_out(1,1).and.j<=indx_out(1,2)) then
+              ind_tr=j-indx_out(1,1)+irange_tr(1,3) !j-indx_out(1,1)+1+2
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
 #endif
 
 #ifdef USE_AGE
-              if(j>=indx_out(2,1).and.j<=indx_out(2,2)) then
-                ind_tr=j-indx_out(2,1)+irange_tr(1,4) !index into tracer #
-                do i=1,np
-                  do k=max0(1,kbp00(i)),nvrt
-                    tmp1=max(1.d-5, tr_nd(ind_tr,k,i)) !tr_nd(j-indx_out(2,1)+1+2,k,i))
-                    !floatout=tr_nd(j-indx_out(2,1)+1+ntrs(4)/2+2,k,i)/tmp1/86400
-                    floatout=tr_nd(ind_tr+ntrs(4)/2,k,i)/tmp1/86400
-                    write(ichan(j)) real(floatout,out_rkind)
-                  enddo !k
-                enddo !i
-              endif
+            if(j>=indx_out(2,1).and.j<=indx_out(2,2)) then
+              ind_tr=j-indx_out(2,1)+irange_tr(1,4) !index into tracer #
+              do i=1,np
+                do k=max0(1,kbp00(i)),nvrt
+                  tmp1=max(1.d-5, tr_nd(ind_tr,k,i)) !tr_nd(j-indx_out(2,1)+1+2,k,i))
+                  !floatout=tr_nd(j-indx_out(2,1)+1+ntrs(4)/2+2,k,i)/tmp1/86400
+                  floatout=tr_nd(ind_tr+ntrs(4)/2,k,i)/tmp1/86400
+                  write(ichan(j)) real(floatout,out_rkind)
+                enddo !k
+              enddo !i
+            endif
 #endif
 
 #ifdef USE_SED
-              if(j>=indx_out(3,1).and.j<=indx_out(3,2)) then
+            if(j>=indx_out(3,1).and.j<=indx_out(3,2)) then
+              if(j<=indx_out(3,1)+ntrs(5)-1) then !conc
                 ind_tr=j-indx_out(3,1)+irange_tr(1,5) !index into tracer #
-
-                if(j<=indx_out(3,1)+ntrs(5)-1) then !conc
-                  write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-                else if(j<=indx_out(3,1)+2*ntrs(5)-1) then !bedload
-                  itmp1=j-indx_out(3,1)-2*ntrs(5)+2
-                  write(ichan(j))(real(bedldu(i,itmp1),out_rkind), &
+                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+              else if(j<=indx_out(3,1)+2*ntrs(5)-1) then !bedload
+                itmp1=j-indx_out(3,1)-ntrs(5)+1
+                write(ichan(j))(real(bedldu(i,itmp1),out_rkind), &
      &real(bedldv(i,itmp1),out_rkind),i=1,np)
-                else if(j<=indx_out(3,1)+3*ntrs(5)-1) then !bed fraction
-                  itmp1=j-indx_out(3,1)-3*ntrs(5)+2
-                  write(ichan(j))(real(bed_fracn(i,itmp1),out_rkind),i=1,np)
-                else if(j==indx_out(3,1)+3*ntrs(5)) then !depth
-                  write(ichan(j))(real(dp(i)-dp00(i),out_rkind),i=1,np)
-                else if(j==indx_out(3,1)+3*ntrs(5)+1) then !D50
-                  write(ichan(j))(real(bed_d50n(i)*1000.d0,out_rkind),i=1,np) ! in mm
-                else if(j==indx_out(3,1)+3*ntrs(5)+2) then !bot. stress
-                  write(ichan(j))(real(bed_taun(i)*rho0,out_rkind),i=1,np) ! in N.m-2 
-                else !roughness
-                  rite(ichan(j))(real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
-                endif !j
+              else if(j<=indx_out(3,1)+3*ntrs(5)-1) then !bed fraction
+                itmp1=j-indx_out(3,1)-2*ntrs(5)+1
+                write(ichan(j))(real(bed_fracn(i,itmp1),out_rkind),i=1,np)
+              else if(j==indx_out(3,1)+3*ntrs(5)) then !depth
+                write(ichan(j))(real(dp(i)-dp00(i),out_rkind),i=1,np)
+              else if(j==indx_out(3,1)+3*ntrs(5)+1) then !D50
+                write(ichan(j))(real(bed_d50n(i)*1000.d0,out_rkind),i=1,np) ! in mm
+              else if(j==indx_out(3,1)+3*ntrs(5)+2) then !bot. stress
+                write(ichan(j))(real(bed_taun(i)*rho0,out_rkind),i=1,np) ! in Pa
+              else !roughness
+                write(ichan(j))(real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
+              endif !j
 
 !                if(j==indx_out(1,1)) then
 !                  ! depth.61
@@ -6345,49 +6385,49 @@
 !                  !brough.61
 !                  write(ichan(j)) (real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
 !                endif
-!              endif !scope of SED model
+            endif !scope of SED model
 #endif /*USE_SED*/
 
 #ifdef USE_ECO
-              if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then
-                ind_tr=j-indx_out(4,1)+irange_tr(1,6) !index into tracer #
-                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              endif
+            if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then
+              ind_tr=j-indx_out(4,1)+irange_tr(1,6) !index into tracer #
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
 #endif
 
 #ifdef USE_ICM
-              if(j>=indx_out(5,1).and.j<=indx_out(5,2)) then
-                ind_tr=j-indx_out(5,1)+irange_tr(1,7) !index into tracer #
-                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              endif
+            if(j>=indx_out(5,1).and.j<=indx_out(5,2)) then
+              ind_tr=j-indx_out(5,1)+irange_tr(1,7) !index into tracer #
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
 #endif
 
 #ifdef USE_SED2D
-              if(j>=indx_out(6,1).and.j<=indx_out(6,2)) then          
-                if(j<=indx_out(6,1)+3) then !scalar
-                  if(j==indx_out(6,1)) then
-                     write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+1) then
-                     write(ichan(j)) (real(Cdsed(i),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+2) then
-                     write(ichan(j)) (real(cflsed(i),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+3) then
-                     write(ichan(j)) (real(d50moy(i,1),out_rkind),i=1,np)
-                  endif
-                else if(j>indx_out(6,1)+3) then !vector
-                  if(j==indx_out(6,1)+4) then
-                     write(ichan(j)) (real(qtot(i,1),out_rkind),real(qtot(i,2),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+5) then
-                     write(ichan(j)) (real(qs(i,1),out_rkind),real(qs(i,2),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+6) then
-                     write(ichan(j)) (real(qb(i,1),out_rkind),real(qb(i,2),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+7) then 
-                     write(ichan(j)) (real(dpdxy(i,1),out_rkind),real(dpdxy(i,2),out_rkind),i=1,np)
-                  else if(j==indx_out(6,1)+8) then
-                     write(ichan(j)) (real(qav(i,1),out_rkind),real(qav(i,2),out_rkind),i=1,np)
-                  endif
+            if(j>=indx_out(6,1).and.j<=indx_out(6,2)) then          
+              if(j<=indx_out(6,1)+3) then !scalar
+                if(j==indx_out(6,1)) then
+                   write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+1) then
+                   write(ichan(j)) (real(Cdsed(i),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+2) then
+                   write(ichan(j)) (real(cflsed(i),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+3) then
+                   write(ichan(j)) (real(d50moy(i,1),out_rkind),i=1,np)
                 endif
-              endif !scope of SED2D model
+              else if(j>indx_out(6,1)+3) then !vector
+                if(j==indx_out(6,1)+4) then
+                   write(ichan(j)) (real(qtot(i,1),out_rkind),real(qtot(i,2),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+5) then
+                   write(ichan(j)) (real(qs(i,1),out_rkind),real(qs(i,2),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+6) then
+                   write(ichan(j)) (real(qb(i,1),out_rkind),real(qb(i,2),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+7) then 
+                   write(ichan(j)) (real(dpdxy(i,1),out_rkind),real(dpdxy(i,2),out_rkind),i=1,np)
+                else if(j==indx_out(6,1)+8) then
+                   write(ichan(j)) (real(qav(i,1),out_rkind),real(qav(i,2),out_rkind),i=1,np)
+                endif
+              endif
+            endif !scope of SED2D model
 #endif /*USE_SED2D*/
 
 !#ifdef USE_NAPZD
@@ -6401,25 +6441,25 @@
 !#endif /*USE_NAPZD*/
 
 #ifdef USE_WWM
-              if((j>=indx_out(7,1)).and.(j<=indx_out(7,2))) then
-                if(j<=indx_out(7,2)-2) then !scalar
-                  itmp=j-indx_out(7,1)+1
-                  if(itmp>24) call parallel_abort('MAIN: wwm_out over')
-                  write(ichan(j)) (real(out_wwm(i,indx_wwm_out(itmp)),out_rkind),i=1,np)
-                else !vectors
-                  if (j==indx_out(7,2)-1) then
-                    write(ichan(j)) (real(out_wwm(i,8),out_rkind),real(out_wwm(i,7),out_rkind),i=1,np)
-                  else if (j==indx_out(7,2)) then
-                    write(ichan(j)) (real(out_wwm(i,27),out_rkind),real(out_wwm(i,28),out_rkind),i=1,np)
-                  endif
-                endif !j
-              endif !scope of WWM; j<=indx_out(3,2)
+            if((j>=indx_out(7,1)).and.(j<=indx_out(7,2))) then
+              if(j<=indx_out(7,2)-2) then !scalar
+                itmp=j-indx_out(7,1)+1
+                if(itmp>24) call parallel_abort('MAIN: wwm_out over')
+                write(ichan(j)) (real(out_wwm(i,indx_wwm_out(itmp)),out_rkind),i=1,np)
+              else !vectors
+                if (j==indx_out(7,2)-1) then
+                  write(ichan(j)) (real(out_wwm(i,8),out_rkind),real(out_wwm(i,7),out_rkind),i=1,np)
+                else if (j==indx_out(7,2)) then
+                  write(ichan(j)) (real(out_wwm(i,27),out_rkind),real(out_wwm(i,28),out_rkind),i=1,np)
+                endif
+              endif !j
+            endif !scope of WWM; j<=indx_out(3,2)
 #endif /*USE_WWM*/
-            endif !j
+          endif !j
+
           if(myrank==0) write(16,'(a48)')'done outputting '//variable_nm(j)
         endif !iof(j).eq.1.and.mod(it,nspool).eq.0
       enddo !j=1,noutput
-
       
 !...  Non-standard outputs
       if(iof_ns(1)==1) then 

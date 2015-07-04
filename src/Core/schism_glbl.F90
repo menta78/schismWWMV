@@ -43,7 +43,7 @@ module schism_glbl
   real(rkind),parameter :: pi=3.141592653589793d0
   real(rkind),parameter :: grav=9.81d0
   real(rkind),parameter :: rho0=1000.d0 !1025. !ref. density for S=33 and T=10C
-  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p)
+  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p); dimension J/kg/K
   real(rkind),parameter :: rearth=6378206.4d0 !earth radius
   real(rkind),parameter :: omega_e=7.292d-5 !angular freq. of earth rotation
   !For water quality model
@@ -75,10 +75,10 @@ module schism_glbl
   !Parameters from param.in
   integer,save :: ipre,nonhydro,indvel,imm,ihot,ics,iwbl,iharind,nws, &
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
-                  &iwind_form,irec_nu,irec_nu_tr,itur,ihhat,inu_elev, &
+                  &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ishapiro
+                  &inv_atm_bnd,ishapiro,ieos_type
   integer,save :: ntrs(natrm)
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
@@ -86,7 +86,8 @@ module schism_glbl
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
                       &shapiro,vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
-                      &prmsl_ref,cdh,hmin_radstress,dzb_decay
+                      &prmsl_ref,cdh,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
+                      &xlsc0
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
@@ -120,7 +121,7 @@ module schism_glbl
                   &noutput,ifort12(100),it_main,iths_main
   integer,save,dimension(mnout) :: ichan,iof !,mrec,irec
   integer,save,allocatable :: ichan_ns(:),iof_ns(:)
-  real(rkind) :: time_stamp
+  real(rkind) :: time_stamp !simulation time in sec
   character(len=48),save,allocatable :: outfile_ns(:) !,varnm_ns(:)
   character(len=48),save :: a_48
   character(len=16),save :: a_16
@@ -373,7 +374,7 @@ module schism_glbl
   !Vertical velocity at element centers & whole levels, calculated using F.V.M. For hydrostatic 
   !model, this is the same as we(); for non-hydrostatic model, this is only used in upwind transport
   real(rkind),save,allocatable :: we_fv(:,:) 
-  real(rkind),save,allocatable :: flux_adv_vface(:,:) !unmodified vertical fluxes (positive upward)
+  real(rkind),save,allocatable :: flux_adv_vface(:,:,:) !unmodified vertical fluxes (positive upward)
   !x & y-component of velocity at side centers & whole levels
   !For ics=1, these are defined in the _global_ frame
   !For ics=2, these are defined in the _side_ frame
@@ -418,7 +419,6 @@ module schism_glbl
                                   &elev_nudge(:),uv_nudge(:),fluxprc(:),fluxevp(:), &
                                   &dav(:,:),elevmax(:),dav_max(:,:),dav_maxmag(:), & 
                                   &etaic(:),diffmax(:),diffmin(:),dfq1(:,:),dfq2(:,:)
-!  real(4),save,dimension(:,:),allocatable :: tnd_nu1,snd_nu1,tnd_nu2,snd_nu2,tnd_nu,snd_nu
   real(4),save,dimension(:,:,:),allocatable :: trnd_nu1,trnd_nu2,trnd_nu
   integer,save,allocatable :: iadv(:),iwater_type(:) 
 
@@ -443,7 +443,8 @@ module schism_glbl
   ! Tracers
 !  character(len=48) :: inputfile
   integer :: flag_ic(natrm)
-  character(len=3) :: tr_mname(natrm) !names
+  character(len=3) :: tr_mname(natrm) !model names
+  real(rkind),save,allocatable :: wsett(:) !wsett(ntracers); settling velocity>=0 [m/s] for each tracer
 
   !Declarations for other modules
 ! WWM
@@ -454,17 +455,18 @@ module schism_glbl
   integer,save :: msc2,mdc2
 
 ! TIMOR
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
   real(rkind), parameter :: rhosed = 2650. ! kg/m3
   logical,save :: laddmud_d !switch on/off density effects
   logical,save :: laddmud_v !switch on/off viscosity effects
   real(rkind),save,allocatable :: vts(:,:) !vts(nvrt,npa) rheological viscosity [m^2/s]
-  real(rkind),save,allocatable :: wsink(:,:,:) !wsink([tr],nvrt,npa); sink velocity>=0 [m/s]
+!  real(rkind),save,allocatable :: wsink(:,:,:) !wsink([tr],nvrt,npa); sink velocity>=0 [m/s]
   real(rkind),save,allocatable   :: rhomud(:,:,:) ! rhomud([tr],nvrt,npa): Mud floc particle density [kg/m3]
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
 
 !#ifdef USE_SED
   real(rkind),save,allocatable :: dave(:)
+  INTEGER :: ddensed ! activation key for sediment density effects on water density
 !#endif
 
 !NAPZD
