@@ -509,7 +509,7 @@
            ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
            ESIGTAIL    = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,3) * DDIR * DS
 !
-! tail factors ... borowed from SWAN
+! tail factors ...
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
@@ -579,7 +579,7 @@
 
       IF (ETOT .GT. THR) THEN
 !
-! tail ratios same as in swan ...
+! tail ratios
 !
          DS    = SPSIG(MSC) - SPSIG(MSC-1)
          ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
@@ -589,9 +589,6 @@
 
          APTOT = ZERO
          EPTOT = ZERO
-!
-! tail ratios same as in swan ...
-!
          PPTAIL = PTAIL(1)
          APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - ONE
@@ -693,7 +690,7 @@
 
       IF (ETOT .GT. THR) THEN
 !
-! tail ratios same as in swan ...
+! tail ratios
 !
          DS    = SPSIG(MSC) - SPSIG(MSC-1)
          ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
@@ -703,9 +700,6 @@
 
          APTOT = ZERO
          EPTOT = ZERO
-!
-! tail ratios same as in swan ...
-!
          PPTAIL = PTAIL(1)
          APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - ONE
@@ -772,7 +766,7 @@
          ETOT1 = ZERO
          EKTOT = ZERO
 !
-! tail ratios same as in swan ...
+! tail ratios same
 !
          PPTAIL = PTAIL(1) - ONE
          CETAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
@@ -944,7 +938,7 @@
            ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
            ESIGTAIL    = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,3) * DDIR * DS
 !
-! tail factors ... borowed from SWAN
+! tail factors ...
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
@@ -1134,9 +1128,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WINDSEASWELLSEP( IP, ACLOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
-
-      ! swan routine
-
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -1594,10 +1585,10 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN) :: ISMAX
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: ISMAX
+      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: WKLOC(MSC), DEPLOC
          REAL(rkind), INTENT(IN)    :: CURTXYLOC(2)
 
@@ -1710,7 +1701,7 @@
          ETOT1 = ZERO
          EKTOT = ZERO
 !
-! tail ratios same as in swan ...
+! tail ratios
 !
          PPTAIL = PTAIL(1) - ONE
          CETAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
@@ -1850,7 +1841,7 @@
            ATAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,1) * DDIR * DS
            ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
 !
-! tail factors ... borowed from SWAN
+! tail factors ...
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 

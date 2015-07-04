@@ -63,9 +63,6 @@
 
 !      REAL ZHOOK_HANDLE
 
-! ----------------------------------------------------------------------
-      !IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
-
       DO M=1,NFRE
         DO IJ=IJS,IJL
           IF(DEP(IJ).LT.999) THEN
@@ -87,8 +84,4 @@
           ENDDO
         ENDDO
       ENDDO
-
-      !IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
-
-      RETURN
       END SUBROUTINE SBOTTOM
