@@ -35,6 +35,22 @@
         END IF
       END IF
       !
+      ! The wavewatch III exports
+      !
+      IF (EXPORT_BOUC_WW3) THEN
+        IF ( (MAIN%TMJD .GE. OUT_BOUC_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC_WW3%EMJD)) THEN
+!          CALL EXPORT_BOUC_WW3
+          OUT_BOUC_WW3%TMJD = OUT_BOUC_WW3%TMJD + OUT_BOUC_WW3%DELT*SEC2DAY
+        END IF
+      END IF
+      IF (EXPORT_WIND_WW3) THEN
+        IF ( (MAIN%TMJD .GE. OUT_WIND_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WIND_WW3%EMJD)) THEN
+!          CALL EXPORT_BOUC_WW3
+          OUT_WIND_WW3%TMJD = OUT_WIND_WW3%TMJD + OUT_WIND_WW3%DELT*SEC2DAY
+        END IF
+      END IF
+
+      !
       ! The boundary output
       !
 #ifdef NCDF

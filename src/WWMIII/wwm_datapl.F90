@@ -206,12 +206,6 @@
          LOGICAL           :: DOPEAK_BOUNDARY = .TRUE.
          LOGICAL           :: DOPEAK_GLOBAL = .TRUE.
 
-         LOGICAL :: EXPORT_GRID_WW3 = .FALSE.
-         LOGICAL :: EXPORT_BOUC_WW3 = .FALSE.
-         LOGICAL :: EXPORT_CURR_WW3 = .FALSE.
-         LOGICAL :: EXPORT_WALV_WW3 = .FALSE.
-         LOGICAL :: EXPORT_WIND_WW3 = .FALSE.
-         
          LOGICAL :: FREQ_SHIFT_IMPL
          LOGICAL :: REFRACTION_IMPL
          LOGICAL :: SOURCE_IMPL
@@ -352,6 +346,19 @@
          END TYPE Graph
 
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
+
+         LOGICAL :: EXPORT_GRID_WW3 = .FALSE.
+         LOGICAL :: EXPORT_BOUC_WW3 = .FALSE.
+         LOGICAL :: EXPORT_CURR_WW3 = .FALSE.
+         LOGICAL :: EXPORT_WALV_WW3 = .FALSE.
+         LOGICAL :: EXPORT_WIND_WW3 = .FALSE.
+         REAL(rkind) :: EXPORT_BOUC_DELTC
+         REAL(rkind) :: EXPORT_CURR_DELTC
+         REAL(rkind) :: EXPORT_WALV_DELTC
+         REAL(rkind) :: EXPORT_WIND_DELTC
+         TYPE (TIMEDEF)        :: OUT_BOUC_WW3, OUT_WIND_WW3, OUT_CURR_WW3, OUT_WALV_WW3
+         
+
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
