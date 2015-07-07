@@ -1278,8 +1278,14 @@
          OUTPARM%FHNDL = STARTHNDL + 22 
          OUTSP2D%FHNDL = STARTHNDL + 23 
 
-         OUT%FHNDL     = STARTHNDL + 24 
+         OUT%FHNDL     = STARTHNDL + 24
+         
+       FHNDL_EXPORT_BOUC_WW3 = STARTHNDL + 25
+       FHNDL_EXPORT_WIND_WW3 = STARTHNDL + 26
+       FHNDL_EXPORT_CURR_WW3 = STARTHNDL + 27
+       FHNDL_EXPORT_WALV_WW3 = STARTHNDL + 28
 
+         
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
