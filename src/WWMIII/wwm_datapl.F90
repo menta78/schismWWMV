@@ -206,7 +206,12 @@
          LOGICAL           :: DOPEAK_BOUNDARY = .TRUE.
          LOGICAL           :: DOPEAK_GLOBAL = .TRUE.
 
-
+         LOGICAL :: EXPORT_GRID_WW3 = .FALSE.
+         LOGICAL :: EXPORT_BOUC_WW3 = .FALSE.
+         LOGICAL :: EXPORT_CURR_WW3 = .FALSE.
+         LOGICAL :: EXPORT_WALV_WW3 = .FALSE.
+         LOGICAL :: EXPORT_WIND_WW3 = .FALSE.
+         
          LOGICAL :: FREQ_SHIFT_IMPL
          LOGICAL :: REFRACTION_IMPL
          LOGICAL :: SOURCE_IMPL
