@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INIT_TFN(TFN)
+      SUBROUTINE COMPUTE_TFN(TFN)
       USE DATAPOOL
       IMPLICIT NONE
       integer, intent(out) :: TFN(2)
@@ -14,15 +14,6 @@
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, eTimeStr)
       TFN(1)=year*10000 + month*100 + day
       TFN(2)=hour*10000 + min*100   + sec
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE EXPORT_BOUC_WW3_FORMAT
-      USE DATAPOOL
-      IMPLICIT NONE
-
-      
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -45,7 +36,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
-      CALL INIT_TFN(TFN)
+      CALL COMPUTE_TFN(TFN)
       allocate(Vwr(NX,NY), Uwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, current part')
 #if defined MPI_PARALL_GRID
@@ -79,6 +70,7 @@
         ELSE
           OPEN(TheOut, FILE='wind.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
         END IF
+        IsFirst=.FALSE.
         WRITE (TheOut) TFN
         WRITE (TheOut) ((Vwr(IX,IY),IX=1,NX),IY=1,NY)
         WRITE (TheOut) ((Uwr(IX,IY),IX=1,NX),IY=1,NY)
@@ -87,7 +79,6 @@
       END IF
 #endif
       deallocate(Vwr, Uwr)
-      IsFirst=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -110,7 +101,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
-      CALL INIT_TFN(TFN)
+      CALL COMPUTE_TFN(TFN)
       allocate(Vwr(NX,NY), Uwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, current part')
 #if defined MPI_PARALL_GRID
@@ -144,6 +135,7 @@
         ELSE
           OPEN(TheOut, FILE='current.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
         END IF
+        IsFirst=.FALSE.
         WRITE (TheOut) TFN
         WRITE (TheOut) ((Vwr(IX,IY),IX=1,NX),IY=1,NY)
         WRITE (TheOut) ((Uwr(IX,IY),IX=1,NX),IY=1,NY)
@@ -152,7 +144,6 @@
       END IF
 #endif
       deallocate(Vwr, Uwr)
-      IsFirst=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -174,7 +165,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
-      CALL INIT_TFN(TFN)
+      CALL COMPUTE_TFN(TFN)
       allocate(LEVwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, WALV part 1')
 #if defined MPI_PARALL_GRID
@@ -205,6 +196,7 @@
         ELSE
           OPEN(TheOut, FILE='level.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
         END IF
+        IsFirst=.FALSE.
         WRITE (TheOut) TFN
         WRITE (TheOut) ((LEVwr(IX,IY),IX=1,NX),IY=1,NY)
         CLOSE(TheOut)
@@ -212,5 +204,4 @@
       END IF
 #endif
       deallocate(LEVwr)
-      IsFirst=.FALSE.
       END SUBROUTINE

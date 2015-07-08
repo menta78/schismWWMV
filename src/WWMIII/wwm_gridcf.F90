@@ -430,7 +430,7 @@
          WRITE(STAT%FHNDL,*) 'SFAC, FRINTF, FRINTH', SFAC, FRINTF, FRINTH
 
          DO IS = 2, MSC
-           FR(IS) = FR(IS-1) * SFAC      
+           FR(IS) = FR(IS-1) * SFAC
          END DO
 
          SPSIG = FR * PI2 
