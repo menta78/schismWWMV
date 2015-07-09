@@ -3266,7 +3266,10 @@
         END IF
       END DO
       IF ((nbNeumann .gt. 0).or.(nbUnknown .gt. 0)) THEN
-        CALL WWM_ABORT('Cannot export boundary to WW3 if Neumann or Case 4')
+         Print *, 'nbDirichlet=', nbDirichlet
+         Print *, 'nbNeumann=', nbNeumann
+         Print *, 'nbUnknown=', nbUnknown
+         CALL WWM_ABORT('Cannot export boundary to WW3 if Neumann or Case 4')
       END IF
       NBI = nbDirichlet
       IF (NBI .ne. IWBMNPGL) THEN

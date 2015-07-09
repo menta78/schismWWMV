@@ -65,7 +65,7 @@
 #endif
         TheOut=FHNDL_EXPORT_CURR_WW3
         IF (IsFirst) THEN
-          OPEN(TheOut, FILE='wind.ww3', FORM='UNFORMATTED', status='new', action='write')
+          OPEN(TheOut, FILE='wind.ww3', FORM='UNFORMATTED', status='replace', action='write')
           WRITE (TheOut) IDSTR, IDFLD, NX, NY, GTYPE, FILLER(1:2), TIDEFLAG
         ELSE
           OPEN(TheOut, FILE='wind.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
@@ -130,7 +130,7 @@
 #endif
         TheOut=FHNDL_EXPORT_CURR_WW3
         IF (IsFirst) THEN
-          OPEN(TheOut, FILE='current.ww3', FORM='UNFORMATTED', status='new', action='write')
+          OPEN(TheOut, FILE='current.ww3', FORM='UNFORMATTED', status='replace', action='write')
           WRITE (TheOut) IDSTR, IDFLD, NX, NY, GTYPE, FILLER(1:2), TIDEFLAG
         ELSE
           OPEN(TheOut, FILE='current.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
@@ -191,7 +191,7 @@
 #endif
         TheOut=FHNDL_EXPORT_WALV_WW3
         IF (IsFirst) THEN
-          OPEN(TheOut, FILE='level.ww3', FORM='UNFORMATTED', status='new', action='write')
+          OPEN(TheOut, FILE='level.ww3', FORM='UNFORMATTED', status='replace', action='write')
           WRITE (TheOut) IDSTR, IDFLD, NX, NY, GTYPE, FILLER(1:2), TIDEFLAG
         ELSE
           OPEN(TheOut, FILE='level.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
