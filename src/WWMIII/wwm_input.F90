@@ -1862,17 +1862,17 @@
 #endif
             END IF
             CLOSE(WAT%FHNDL)
-          END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-            CLOSE(WAT%FHNDL)
+          ELSE IF (DIMMODE .EQ. 2) THEN
+            IF (LCWLV) THEN
+              WATLEV = CWATLV
+              DEP    = WLDEP + WATLEV
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
+              OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+              READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+              IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+              CLOSE(WAT%FHNDL)
+            END IF
           END IF
         END IF
       END IF
