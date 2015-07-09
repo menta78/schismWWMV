@@ -663,7 +663,7 @@
          NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
      &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
      &      LOPTSIG, CART2LATLON, LATLON2CART, APPLY_DXP_CORR,          &
-     &      USE_EXACT_FORMULA_SPHERICAL_AREA
+     &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_WW3
 
          NAMELIST /INIT/ LHOTR, LINID, INITSTYLE
 
@@ -676,20 +676,22 @@
      &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT,        &
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
      &      HACK_HARD_SET_IOBP,                                         &
-     &      NETCDF_IN_FILE
+     &      NETCDF_IN_FILE, LEXPORT_BOUC_WW3, EXPORT_BOUC_DELTC
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
-     &      MULTIPLE_IN
+     &      MULTIPLE_IN, LEXPORT_WIND_WW3, EXPORT_WIND_DELTC
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
-     &      LERGINP, CURFAC, ICURRFORMAT, MULTIPLE_IN
+     &      LERGINP, CURFAC, ICURRFORMAT, MULTIPLE_IN,                  &
+     &      LEXPORT_CURR_WW3, EXPORT_CURR_DELTC
 
          NAMELIST /WALV/ LSEWL, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERWL, LSTWL, LCWLV, CWATLV, FILEWATL, LERGINP,          &
-     &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN
+     &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN, LEXPORT_WALV_WW3,       &
+     &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
      &      MESBR, ICRIT, ALPBJ, BRHD,                                  &
@@ -827,6 +829,14 @@
          ENDTC_OUT=MAIN%ENDT
          UNITC_OUT=MAIN%UNIT
          DELTC_OUT=MAIN%DELT
+         OUT_BOUC_WW3 % BEGT = MAIN % BEGT
+         OUT_BOUC_WW3 % ENDT = MAIN % ENDT
+         OUT_BOUC_WW3 % UNIT = MAIN % UNIT
+         CALL CT2MJD(OUT_BOUC_WW3 % BEGT, OUT_BOUC_WW3 % BMJD)
+         CALL CT2MJD(OUT_BOUC_WW3 % ENDT, OUT_BOUC_WW3 % EMJD)
+         OUT_BOUC_WW3 % TMJD = OUT_BOUC_WW3 % BMJD
+         OUT_BOUC_WW3 % DELT = EXPORT_BOUC_DELTC
+         
          NETCDF_OUT_FILE=BOUC_NETCDF_OUT_FILE
 #ifdef NCDF
          NETCDF_OUT_PARAM  =BOUC_NETCDF_OUT_PARAM
@@ -921,7 +931,13 @@
          SEWI%DELT = DELTC
          SEWI%UNIT = UNITC
          SEWI%ENDT = ENDTC
-
+         OUT_WIND_WW3 % BEGT = MAIN % BEGT
+         OUT_WIND_WW3 % ENDT = MAIN % ENDT
+         OUT_WIND_WW3 % UNIT = MAIN % UNIT
+         CALL CT2MJD(OUT_WIND_WW3 % BEGT, OUT_WIND_WW3 % BMJD)
+         CALL CT2MJD(OUT_WIND_WW3 % ENDT, OUT_WIND_WW3 % EMJD)
+         OUT_WIND_WW3 % TMJD = OUT_WIND_WW3 % BMJD
+         OUT_WIND_WW3 % DELT = EXPORT_WIND_DELTC
          IF (SEWI%BEGT .LT. MAIN%BEGT) SEWI%BEGT = MAIN%BEGT
          IF (SEWI%ENDT .GT. MAIN%ENDT) SEWI%ENDT = MAIN%ENDT
 
@@ -949,6 +965,13 @@
          SECU%DELT = DELTC
          SECU%UNIT = UNITC
          SECU%ENDT = ENDTC
+         OUT_CURR_WW3 % BEGT = MAIN % BEGT
+         OUT_CURR_WW3 % ENDT = MAIN % ENDT
+         OUT_CURR_WW3 % UNIT = MAIN % UNIT
+         CALL CT2MJD(OUT_CURR_WW3 % BEGT, OUT_CURR_WW3 % BMJD)
+         CALL CT2MJD(OUT_CURR_WW3 % ENDT, OUT_CURR_WW3 % EMJD)
+         OUT_CURR_WW3 % TMJD = OUT_CURR_WW3 % BMJD
+         OUT_CURR_WW3 % DELT = EXPORT_CURR_DELTC
 
          IF (SECU%BEGT .LT. MAIN%BEGT) SECU%BEGT = MAIN%BEGT
          IF (SECU%ENDT .GT. MAIN%ENDT) SECU%ENDT = MAIN%ENDT
@@ -977,6 +1000,13 @@
          SEWL%DELT = DELTC
          SEWL%UNIT = UNITC
          SEWL%ENDT = ENDTC
+         OUT_WALV_WW3 % BEGT = MAIN % BEGT
+         OUT_WALV_WW3 % ENDT = MAIN % ENDT
+         OUT_WALV_WW3 % UNIT = MAIN % UNIT
+         CALL CT2MJD(OUT_WALV_WW3 % BEGT, OUT_WALV_WW3 % BMJD)
+         CALL CT2MJD(OUT_WALV_WW3 % ENDT, OUT_WALV_WW3 % EMJD)
+         OUT_WALV_WW3 % TMJD = OUT_WALV_WW3 % BMJD
+         OUT_WALV_WW3 % DELT = EXPORT_WALV_DELTC
 
          IF (SEWL%BEGT .LT. MAIN%BEGT) SEWL%BEGT = MAIN%BEGT
          IF (SEWL%ENDT .GT. MAIN%ENDT) SEWL%ENDT = MAIN%ENDT
@@ -1841,17 +1871,17 @@
 #endif
             END IF
             CLOSE(WAT%FHNDL)
-          END IF
-        ELSE IF (DIMMODE .EQ. 2) THEN
-          IF (LCWLV) THEN
-            WATLEV = CWATLV
-            DEP    = WLDEP + WATLEV
-          ELSE
-            CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
-            OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
-            READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
-            IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
-            CLOSE(WAT%FHNDL)
+          ELSE IF (DIMMODE .EQ. 2) THEN
+            IF (LCWLV) THEN
+              WATLEV = CWATLV
+              DEP    = WLDEP + WATLEV
+            ELSE
+              CALL TEST_FILE_EXIST_DIE("2: Missing watlev file : ", WAT%FNAME)
+              OPEN(WAT%FHNDL, FILE = TRIM(WAT%FNAME), STATUS = 'OLD')
+              READ(WAT%FHNDL, *, IOSTAT = ISTAT) WATLEV(:)
+              IF ( ISTAT > 0 )  CALL WWM_ABORT('error in the water level file')
+              CLOSE(WAT%FHNDL)
+            END IF
           END IF
         END IF
       END IF

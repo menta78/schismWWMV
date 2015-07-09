@@ -1,5 +1,6 @@
 #ifdef USE_SINGLE
 # define MyREAL(xinp) REAL(xinp)
+# define MySNGL(xinp) xinp
 # define MySQRT(xinp) SQRT(xinp)
 # define MyATAN2(xinp,yinp) ATAN2(xinp,yinp)
 # define MyABS(xinp) ABS(xinp)
@@ -12,6 +13,7 @@
 # define MyASIN(xinp) ASIN(xinp)
 # define MyACOS(xinp) ACOS(xinp)
 #else
+# define MySNGL(xinp) SNGL(xinp)
 # define MyREAL(xinp) DBLE(xinp)
 # define MySQRT(xinp) DSQRT(xinp)
 # define MyATAN2(xinp,yinp) DATAN2(xinp,yinp)

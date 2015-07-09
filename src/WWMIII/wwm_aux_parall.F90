@@ -1208,10 +1208,10 @@
       integer iProc, IP, idx_proc
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
-        SPPARM_GL=SPPARM
+        WBAC_GL=WBAC
       ELSE
         DO IP=1,IWBMNPGL
-          SPPARM_GL(:,IP)=SPPARM(:,1)
+          WBAC_GL(:,IP)=WBAC(:,1)
         END DO
       ENDIF
 #else

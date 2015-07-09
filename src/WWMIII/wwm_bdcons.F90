@@ -2946,7 +2946,7 @@
       IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_SPPARM
       END IF
-      IF (BOUC_NETCDF_OUT_PARAM) THEN
+      IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
@@ -3229,6 +3229,117 @@
       iTime=NINT(DeltaT) + 1
       IFILE=BOUND_LIST_IFILE(iTime)
       IT=BOUND_LIST_IT(iTime)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EXPORT_BOUC_WW3_FORMAT
+      USE DATAPOOL
+      IMPLICIT NONE
+      CHARACTER(LEN=32), PARAMETER :: IDSTRBC='WAVEWATCH III BOUNDARY DATA FILE'
+      CHARACTER(LEN=10), PARAMETER :: VERBPTBC = 'III  1.03 '
+      integer nbNeumann, nbDirichlet, nbUnknown
+      integer IP
+      LOGICAL, SAVE :: IsFirst = .TRUE.
+      REAL, allocatable :: XBPI(:), YBPI(:), RDBPI(:,:)
+      INTEGER, allocatable :: IPBPI(:,:)
+      REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
+      REAL, PARAMETER         :: DERA   = PI / 180.
+      real, allocatable :: ABPIO(:)
+      REAL(rkind) :: eCLATS, eCG, DEPLOC, eVal
+      REAL XFR, eTH, FREQ1, NK, NTH, IPglob
+      INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISP
+      INTEGER TheOut
+      INTEGER TIME2(2)
+      nbDirichlet=0
+      nbNeumann=0
+      nbUnknown=0
+      DO IP=1,np_total
+        IF (IOBPtotal(IP) == 2) THEN
+          nbDirichlet=nbDirichlet+1
+        END IF
+        IF (IOBPtotal(IP) == 3) THEN
+          nbNeumann=nbNeumann+1
+        END IF
+        IF (IOBPtotal(IP) == 4) THEN
+          nbUnknown=nbUnknown+1
+        END IF
+      END DO
+      IF ((nbNeumann .gt. 0).or.(nbUnknown .gt. 0)) THEN
+         Print *, 'nbDirichlet=', nbDirichlet
+         Print *, 'nbNeumann=', nbNeumann
+         Print *, 'nbUnknown=', nbUnknown
+         CALL WWM_ABORT('Cannot export boundary to WW3 if Neumann or Case 4')
+      END IF
+      NBI = nbDirichlet
+      IF (NBI .ne. IWBMNPGL) THEN
+        CALL WWM_ABORT('Code inconsistency error')
+      END IF
+
+      allocate(XBPI(NBI), YBPI(NBI), IPBPI(NBI,4), RDBPI(NBI,4), stat=istat)
+      CALL WWM_ABORT('Error allocate XBPI/YBPI')
+      idx=0
+      DO IP=1,NP_TOTAL
+        IF (IOBPtotal(IP) == 2) THEN
+          idx=idx+1
+          XBPI(idx)=MySNGL(XP(IP))
+          YBPI(idx)=MySNGL(YP(IP))
+        END IF
+      END DO
+      DO IB=1,NBI
+        IPBPI(IB,1)=IB
+        IPBPI(IB,2:4)=0
+      END DO
+      RDBPI(:,1)   = 1
+      RDBPI(:,2:4) = 0
+      CALL REDUCE_BOUNDARY_ARRAY_WBAC
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+#endif
+         TheOut = FHNDL_EXPORT_BOUC_WW3
+         IF (IsFirst .eqv. .TRUE.) THEN
+           OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='new', action='write')
+           NK    = MSC
+           NTH   = MDC
+           XFR   = MySNGL(SFAC)
+           FREQ1 = MySNGL(FR(1))
+           eTH   = MySNGL(SPDIR(1))
+           WRITE(TheOut) IDSTRBC, VERBPTBC, NK, NTH, XFR, FREQ1, eTH, NBI
+           WRITE(TheOut) (XBPI(I),I=1,NBI), (YBPI(I),I=1,NBI),                   &
+                         ((IPBPI(I,J),I=1,NBI),J=1,4),                           &
+                         ((RDBPI(I,J),I=1,NBI),J=1,4)
+         ELSE
+           OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
+         END IF
+         CALL COMPUTE_TFN(TIME2)
+         NSPEC_out = NK*NTH
+         allocate(ABPIO(NSPEC_out), stat=istat)
+         CALL WWM_ABORT('Error allocate ABPIO')
+         WRITE(TheOut) TIME2, NBI
+         DO IB=1,NBI
+           IPglob=IWBNDGL(IB)
+           DEPLOC = MAX(DMIN,DEPtotal(IPglob))
+           IF (LSPHE) THEN
+             eCLATS = COS(DERA*YPtotal(IPglob))
+           ELSE
+             eCLATS = 1
+           END IF
+           DO IK=1,NK
+             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+             eCG = WVCG              
+             DO ITH=1,NTH
+               ISP = ITH + (IK-1)*NTH
+               eVal= WBAC_GL(IK,ITH,IB)*eCG/eCLATS
+               ABPIO(ISP) = MySNGL(eVal)
+             END DO
+           END DO
+           WRITE(TheOut) ABPIO
+         END DO
+         deallocate(ABPIO)
+         CLOSE(TheOut)
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
