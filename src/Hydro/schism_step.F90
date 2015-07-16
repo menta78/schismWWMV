@@ -2056,9 +2056,9 @@
 
           call do_turbulence(nlev,dt,toth,u_taus,u_taub,z0s,z0b,h1d,NN1d,SS1d)
 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
           call flmud(j,dt,rough_p(j),SS1d,NN1d,tke1d,eps1d,L1d,num1d,nuh1d)
-#endif /*USE_TIMOR*/
+#endif /*USE_TIMOR_FLMUD*/
 
 !         Debug11
 !          if(myrank==2.and.iplg(j)==14178.and.it==3253) write(98,*)(k,h1d(k),NN1d(k),SS1d(k), &
@@ -2075,13 +2075,13 @@
               call parallel_abort(errmsg)
             endif
  
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
             !Modify viscosity
             tmp=vts(klev,j)
             if(tmp/=tmp) call parallel_abort('GOTM: vts is NaN from TIMOR')
 !'
             if(laddmud_v) num1d(k)=num1d(k)+tmp
-#endif /*USE_TIMOR*/
+#endif /*USE_TIMOR_FLMUD*/
 
             dfv(klev,j)=min(diffmax(j),num1d(k)+diffmin(j)) 
             dfh(klev,j)=min(diffmax(j),nuh1d(k)+diffmin(j))
@@ -3181,7 +3181,7 @@
                 endif !ics
                 cupp(j)=swild2(k,j)-(erho(k,i)-rho_mean(k,i))
 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
                 !Limit density difference
                 cupp(j)=max(-80.d0,min(80.d0,cupp(j)))
 #endif
@@ -5637,13 +5637,13 @@
 #endif /*USE_ICM*/
 
 
-!#ifdef USE_TIMOR
+!#ifdef USE_TIMOR_FLMUD
 !        !Treat settling vel. inside routine
 !
 !        flx_bt=0
 !        flx_sf=0
 !        bdy_frc=0
-!#endif /*USE_TIMOR*/
+!#endif /*USE_TIMOR_FLMUD*/
 
         ltvd=itr_met>=2
         if(itr_met<=2) then !upwind or explicit TVD
@@ -5894,6 +5894,18 @@
 #endif 
 #endif /*USE_SED2D*/
 
+#ifdef USE_TIMOR
+#ifdef INCLUDE_TIMING
+      cwtmp2=mpi_wtime() !start of timer
+#endif
+      !write(*,*) 'STARTING TIME LOOP TIMOR' 
+      call timor_timeloop(dt)
+#ifdef INCLUDE_TIMING
+      timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
+#endif 
+#endif /*USE_SED2D*/
+
+
 #ifdef INCLUDE_TIMING
 ! end transport
       wtmp2=mpi_wtime()
@@ -6001,7 +6013,7 @@
           k2=max(k,kbp(i))
 
 !new9: debug
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !          if(tr_nd(irange_tr(),k2,i)<-98) then
 !            write(errmsg,*)'new9:',iplg(i),k,k2,tr_nd(1,k2,i),rhomud(1:ntracers,k2,i)
 !            call parallel_abort(errmsg)
@@ -6012,7 +6024,7 @@
 #ifdef USE_SED
      &                     ,ntrs(5),tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)       &
 #endif 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !     &                      ,tr_nd(:,k2,i),rhomud(1:ntracers,k2,i),laddmud_d &
 #endif 
      &                     )
@@ -6025,7 +6037,7 @@
         do k=1,nvrt
           k2=max(k,kbe(i))
 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !          do m=1,ntracers
 !            swild(m)=sum(rhomud(m,k2,elnode(1:3,i)))/3
 !          enddo !m
@@ -6040,7 +6052,7 @@
 #ifdef USE_SED
      &                    ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)      &
 #endif 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !     &                        ,trel(:,k,i),swild(1:ntracers),laddmud_d &
 #endif 
      &                       )          

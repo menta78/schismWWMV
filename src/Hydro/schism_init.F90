@@ -202,7 +202,7 @@
 !      endif
 !     Check modules for 2D model
 !      if(lm2d) then
-!#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD || defined USE_TIMOR
+!#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD 
 !        write(errmsg,*)'2D model cannot have certain modules!'
 !        call parallel_abort(errmsg)
 !#endif
@@ -229,7 +229,7 @@
       endif
 
 !'    Some modules are not available in lon/lat mode yet
-#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR
+#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR || defined USE_TIMOR_FLMUD
       if(ics==2) then      
         write(errmsg,*)'Some models cannot be run on lon/lat!'
         call parallel_abort(errmsg)
@@ -513,9 +513,6 @@
 !#ifdef USE_NAPZD
 !#endif
 
-!#ifdef USE_TIMOR
-!#endif
-    
       !Total # of tracers (including T,S)
       !The big tracer arrays are: tr_el(ntracers,nvrt,nea2),tr_nd0(ntracers,nvrt,npa)
       !The order of each tracer modules can be seen above
@@ -596,7 +593,7 @@
       endif
 
 !...  Explicit transport solver cannot handle settling vel. yet
-#if defined USE_SED || defined USE_TIMOR
+#if defined USE_SED  || defined USE_TIMOR_FLMUD
       if(itr_met<=2) call parallel_abort('Some transport solver cannot handle settling vel.')
 #endif
 
@@ -1260,9 +1257,9 @@
       endif
 
       if(irouse_test==1) then
-#if defined USE_TIMOR || defined USE_SED
+#if defined USE_SED || USE_TIMOR_FLMUD
 #else
-        call parallel_abort('Rouse test needs USE_TIMOR or USE_SED')
+        call parallel_abort('Rouse test needs USE_TIMOR_FLMUD or USE_SED')
 #endif
 !        if(ntracers/=1) call parallel_abort('Rouse test requires ntracers=1')
       endif
@@ -1611,10 +1608,6 @@
       wwave_force=0; out_wwm=0; out_wwm_windpar=0
       stokes_vel=0; jpress=0; sbr=0; sbf=0 
 #endif
-
-#ifdef USE_TIMOR
-!     Allocate TIMOR arrays
-#endif 
 
 #ifdef USE_ICM
       call icm_init
@@ -4431,12 +4424,6 @@
       if(myrank==0) write(16,*)'done reading ICM parameters'
 #endif /*USE_ICM*/
 
-#ifdef USE_TIMOR
-      !TIMOR
-      !Init. TIMOR (tr_nd)
-      call init_flmud
-#endif /*USE_TIMOR*/
-
 !     Tracer i.c. @ nodes and prisms (T,S already done)
       do mm=3,natrm
         if(ntrs(mm)<=0) cycle
@@ -4520,7 +4507,7 @@
             call bio_init !init. tr_nd
 #endif
 
-!#ifdef USE_TIMOR
+!#ifdef USE_TIMOR_FLMUD
             !Already init'ed in init_flmud
             !tr_el(1:ntracers,:,1:npa)=tr_nd
 !#endif
@@ -4582,6 +4569,17 @@
       timer_ns(2)=timer_ns(2)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 
 #endif /*USE_SED2D*/
+
+#ifdef USE_TIMOR
+#ifdef INCLUDE_TIMING
+      cwtmp2=mpi_wtime() !start of timer
+#endif
+      call init_timor
+#ifdef INCLUDE_TIMING
+      timer_ns(2)=timer_ns(2)+mpi_wtime()-cwtmp2 !end timing this section
+#endif 
+#endif /*USE_TIMOR*/
+
 
       if(myrank==0) write(16,*)'done initializing cold start'
       
@@ -5405,7 +5403,7 @@
 #ifdef USE_SED
      &                     ,ntrs(5),tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:) &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !     &                      ,tr_nd(irange_tr(1,5):,kl,i),rhomud(1:ntracers,kl,i),laddmud_d &
 #endif
      &                      )
@@ -5418,7 +5416,7 @@
 
         do k=1,nvrt
           kl=max(k,kbe(i))
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !          do m=1,ntracers
 !            swild(m)=sum(rhomud(m,kl,elnode(1:3,i)))/3
 !          enddo !m
@@ -5428,7 +5426,7 @@
 #ifdef USE_SED
      &                    ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)         &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !     &                        ,tr_el(:,k,i),swild(1:ntracers),laddmud_d &
 #endif
 !LLP end

@@ -1708,9 +1708,9 @@
 #ifdef USE_SED 
      &                ,ntr_sed,sconc,Srho   &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
      &                  ,sconc,Srho,laddmud_d &
-#endif /*USE_TIMOR*/
+#endif /*USE_TIMOR_FLMUD*/
      &                 )
       use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg, &
      &ifort12,ddensed,ieos_type,eos_a,eos_b
@@ -1725,7 +1725,7 @@
       integer, intent(in) :: ntr_sed !for dim. SED3D arrays
       real(rkind), intent(in) :: sconc(ntr_sed),Srho(ntr_sed)
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !      real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
 !      logical, intent(in) :: laddmud_d
 #endif
@@ -1780,7 +1780,7 @@
           endif !ddensed==1
 #endif /*USE_SED*/
 
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !          if(laddmud_d) then
 !            rho_w=eqstate
 !            do ised=1,ntracers
@@ -2307,7 +2307,7 @@
 #ifdef USE_SED
      &                          ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR
+#ifdef USE_TIMOR_FLMUD
 !Error: need to use cubic spline also for mud density; also need to average for element
 !     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif
