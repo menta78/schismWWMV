@@ -342,3 +342,88 @@
       CALL SINGLE_READ_SPATIAL_GRID_TOTAL
 #endif
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EXPORT_GRID_WW3_FORMAT
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER nbDirichlet, nbIsland
+      INTEGER :: MapDirect(np_total)
+      INTEGER :: MapRevert(np_total)
+      INTEGER, allocatable :: IPbound(:), IPisland(:), ACTIVE(:)
+      INTEGER IP, IE2, eVal, IE, idxDirichlet, idxIsland
+#ifdef MPI_PARALL_GRID      
+      IF (myrank .ne. 0) THEN
+        RETURN
+      END IF
+#endif
+      nbDirichlet=0
+      nbIsland=0
+      DO IP=1,np_total
+        eVal=IOBPtotal(IP)
+        IF (eVal .eq. 2) THEN
+          nbDirichlet=nbDirichlet+1
+        END IF
+        IF ((eVal .eq. 1).or.(eVal .eq. 3).or.(eVal .eq. 4)) THEN
+          nbIsland=nbIsland+1
+        END IF
+      END DO
+      allocate(IPbound(nbDirichlet), IPisland(nbIsland), ACTIVE(nbDirichlet), stat=istat)
+      ACTIVE(:)=1    ! right now we are proceding this way. Maybe there is work here to improve
+      IF (istat/=0) CALL WWM_ABORT('allocate error 17')
+      idxDirichlet=0
+      idxIsland=0
+      DO IP=1,np_total
+        eVal=IOBPtotal(IP)
+        IF (eVal .eq. 2) THEN
+          idxDirichlet=idxDirichlet+1
+          IPbound(idxDirichlet)=IP
+        END IF
+        IF ((eVal .eq. 1).or.(eVal .eq. 3).or.(eVal .eq. 4)) THEN
+          idxIsland=idxIsland+1
+          IPisland(idxIsland)=IP
+        END IF
+      END DO
+      OPEN(FHNDL_EXPORT_GRID_WW3, FILE = 'mesh.msh', STATUS='unknown')
+      !
+      !*** write gmsh header
+      !
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$MeshFormat'
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '2 0 8'
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$EndMeshFormat'
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$Nodes'
+      WRITE(FHNDL_EXPORT_GRID_WW3,*) np_total
+      DO IP = 1, np_total
+         WRITE(FHNDL_EXPORT_GRID_WW3,'(I10,3F30.20)') IP, XPtotal(IP), YPtotal(IP), DEPtotal(IP)
+      END DO
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$EndNodes'
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$Elements'
+      WRITE(FHNDL_EXPORT_GRID_WW3,*)  ne_total + nbDirichlet + nbIsland
+      !
+      !*** write boundary
+      !
+      IE2=1
+      DO IP = 1, nbDirichlet
+        WRITE(FHNDL_EXPORT_GRID_WW3,'(6I10)') IE2, 15, 2, ACTIVE(IP), 0, IPbound(IP)
+        IE2=IE2+1
+      END DO
+      !
+      !*** write island
+      !
+      DO IP = 1, nbIsland
+        WRITE(FHNDL_EXPORT_GRID_WW3,'(6I10)') IE2, 15, 2, 0, IP, IPisland(IP)
+        IE2=IE2+1
+      END DO
+      !
+      !*** write gmsh elements
+      !
+      DO IE = 1, ne_total
+         WRITE(FHNDL_EXPORT_GRID_WW3,'(9I8)') IE2, 2, 3, 0, IE, 0, INE(1,IE), IEN(2,IE), IEN(3,IE)
+         IE2=IE2+1
+      END DO
+      WRITE(FHNDL_EXPORT_GRID_WW3,'(A)') '$EndElements'
+      CLOSE(FHNDL_EXPORT_GRID_WW3)
+      deallocate(IPbound, IPisland, ACTIVE)
+      END SUBROUTINE
+      
