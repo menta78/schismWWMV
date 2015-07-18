@@ -3269,7 +3269,7 @@
          Print *, 'nbDirichlet=', nbDirichlet
          Print *, 'nbNeumann=', nbNeumann
          Print *, 'nbUnknown=', nbUnknown
-         CALL WWM_ABORT('Cannot export boundary to WW3 if Neumann or Case 4')
+         Print *, 'Those points will be put to 0'
       END IF
       NBI = nbDirichlet
       IF (NBI .ne. IWBMNPGL) THEN
