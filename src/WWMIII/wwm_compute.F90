@@ -22,6 +22,9 @@
 
          AC1 = AC2
 
+         WRITE(*,*) DEP
+         STOP
+
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1') 
