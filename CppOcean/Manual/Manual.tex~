@@ -1,0 +1,208 @@
+\documentclass[12pt]{amsart}
+\usepackage{amsfonts, amsmath, latexsym, epsfig}
+\usepackage{amssymb}
+\usepackage{epsf}
+\usepackage{url}
+
+
+\newcommand{\RR}{\ensuremath{\mathbb{R}}}
+\newcommand{\NN}{\ensuremath{\mathbb{N}}}
+\newcommand{\QQ}{\ensuremath{\mathbb{Q}}}
+\newcommand{\CC}{\ensuremath{\mathbb{C}}}
+\newcommand{\ZZ}{\ensuremath{\mathbb{Z}}}
+\newcommand{\TT}{\ensuremath{\mathbb{T}}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{lemma}{Lemma}
+\newtheorem{problem}{Problem}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{claim}{Claim}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+%\newcommand{\qed}{\hfill $\Box$ }
+%\newcommand{\proof}{\noindent{\bf Proof.}\ \ }
+\def\QuotS#1#2{\leavevmode\kern-.0em\raise.2ex\hbox{$#1$}\kern-.1em/\kern-.1em\lower.25ex\hbox{$#2$}}
+
+
+%\usepackage{vmargin}
+%\setpapersize{custom}{21cm}{29.7cm}
+%\setmarginsrb{1.7cm}{1cm}{1.7cm}{3.5cm}{0pt}{0pt}{0pt}{0pt}
+%marge gauche, marge haut, marge droite, marge bas.
+\urlstyle{sf}
+%\author{Mathieu DUTOUR SIKIRI\'C}
+
+\DeclareMathOperator{\Aut}{Aut}
+\DeclareMathOperator{\Sym}{Sym}
+
+
+\begin{document}
+
+\author{Mathieu Dutour Sikiri\'c}
+\address{Mathieu Dutour Sikiri\'c, Rudjer Boskovi\'c Institute, Bijenicka 54, 10000 Zagreb, Croatia, Fax: +385-1-468-0245}
+\email{mdsikir@irb.hr}
+
+
+
+\title{{\tt C++} - ocean}
+
+
+\maketitle
+
+\begin{abstract}
+We explain here the C++ programs which are designed to work with oceanographic and meteorological data sets.
+\end{abstract}
+
+\section{Designs principles}
+
+\begin{enumerate}
+\item {\bf Namelist}: Namelists are used by many other oceanographic and meteorological programs (WWM, COSMO, WAM, etc.) and so the same file format is used by the C++ programs.
+\item {\bf No intermediate files}: It is common to have programs converting from format A to B and then using it. The problem of that approach is that the files in geoscience are usually big and this duplication is pointless.
+\item {\bf Access to all data files}: Interface have been designed for direct access to all kinds of data files in NETCDF and GRIB formats. Other file format will be added in the future if needed.
+\item {\bf No distinction between structured and unstructured}: Models come in all kind of shapes and the goal of the program is to accomodate them all.
+\item {\bf Common interfaces}: Same input structure between different programs
+\item {\bf Use NCL for plots}: NCL is probably the best language for making 2D graphics in geoscience and offers the largest set of possibilities. NCL is called by scripts written from the C++ program.
+\end{enumerate}
+
+
+
+
+
+
+\section{Model data input}
+
+The supported models are: {\tt WWM}, {\tt WAM}, {\tt COSMO}, {\tt WW3}, {\tt ROMS}, {\tt GRIB\_ECMWF}, {\tt GRIB\_GFS}, {\tt GRIB\_COSMO}, {\tt GRIB\_DWD}.
+The relevant values in the file are {\tt GridFile}, {\tt HisPrefix} and {\tt MODELNAME}.
+
+
+
+Currently the code supports the following models:
+\begin{enumerate}
+\item {\tt WWM}: The Wind Wave Model III for wave modelling. 3 formats of grids are supported at the present moment:
+{\bf .gr3}, {\bf .dat} (XFN format) and {\bf .nc} (netcdf file).
+Example of input file:
+\begin{verbatim}
+ MODELNAME = "WWM"
+ GridFile = "hgrid.gr3",
+ HisPrefix = "WWM_output_",
+\end{verbatim}
+or 
+\begin{verbatim}
+ MODELNAME = "WWM"
+ GridFile = "system.dat",
+ HisPrefix = "WWM_output_",
+\end{verbatim}
+or
+\begin{verbatim}
+ MODELNAME = "WWM"
+ GridFile = "WWM_output_0001.nc",
+ HisPrefix = "WWM_output_",
+\end{verbatim}
+\item {\tt WAM}: Both in its structured and unstructured versions.
+\begin{verbatim}
+ MODELNAME = "WAM"
+ GridFile = "WAM_output_0001.nc",
+ HisPrefix = "WWM_output_",
+\end{verbatim}
+(the first history file contains the grid)
+\item {\tt WW3}: The Wavewatch III model both in its structured and unstructured versions.
+\begin{verbatim}
+ MODELNAME = "WW3"
+ GridFile = "WAM_output_0001.nc",
+ HisPrefix = "WWM_output_",
+\end{verbatim}
+\item {\tt COSMO}: The atmospheric model and the netcdf output from the coupled version with ROMS and WAM.
+\begin{verbatim}
+ MODELNAME = "COSMO"
+ GridFile = "COSMO_output_0001.nc",
+ HisPrefix = "COSMO_output_",
+\end{verbatim}
+(the first history file contains the grid)
+\item {\tt ROMS}: The structured model for data output.
+\begin{verbatim}
+ MODELNAME = "ROMS"
+ GridFile = "roms_grid.nc",
+ HisPrefix = "ROMS_output_",
+\end{verbatim}
+\item {\tt GRIB} (variant ECMWF, DWD, COSMO, GFS). The GRIB files are essentially standardized but there are small differences between DWD, ECMWF, COSMO and GFS. Also the grid is part of the GRIB file so there is no need for GribFile here.
+\begin{verbatim}
+ MODELNAME = "GRIB_ECMWF", 
+ HisPrefix = "/home/mathieu/Forecast_input/ECMWF_coarse/", 
+\end{verbatim}
+
+\end{enumerate}
+
+
+\section{Time and variables}
+
+The times are enetered just as in {\tt WWM}.
+Example:
+\begin{verbatim}
+ BEGTC = "20150410.000000",
+ ENDTC = "20150421.120000",
+ DELTC = 7200, 
+ UNITC = "SEC", 
+\end{verbatim}
+
+The variables that are available for use and plots are:
+\begin{enumerate}
+\item {\bf WIND10}: 10m wind speed (as a vector with Uwind, Vwind components)
+\item {\bf SurfCurr}: Surface currents
+\item [\bf Hwave}: Significant Wave height
+\item {\bf WINDMAG}: Wind magnitude
+\item {\bf TempSurf}: Surface sea temperature
+\item {\bf SaltSurf}: Surface sea salinity
+\item {\bf AIRT2}: 2m air temperature
+\item {\bf Rh2}: 2m air humidity
+\item {\bf ZetaOcean}: free surface elevation
+\item {\bf MwaveFreq}: Mean wave frequency
+\item {\bf PwaveFreq}: Peak wave frequency
+\item {\bf AIRD}: Surface air density
+\item {\bf CdWave}: drag coefficient from the wave model
+\item {\bf AlphaWave}: Charnock coefficient from the wave model
+\item {\bf rain}: rainfall rate
+\item {\bf swrad}: shortwave radiation
+\item {\bf lwrad}: longwave radiation
+\item {\bf latent}: latent heat flux
+\item {\bf sensible}: sensible heat flux
+\item {\bf shflux}: surface heat flux
+\item {\bf ssflux}: surface salinity flux (ah ah)
+\item {\bf evaporation}: evaporation
+\item {\bf MwavePer}: mean wave period
+\item {\bf PwavePer}: Peak wave period
+\item {\bf SurfPres}: surface air pressure.
+\end{enumerate}
+
+
+
+
+
+
+
+
+\section{Programs available}
+
+The following programs are available:
+\begin{enumerate}
+\item {\bf PLOT_result}: It is for plotting data files.
+\item {\bf PLOT_diff_results}: It is for plotting the difference of model results.
+\item {\bf AltimeterComparison}: This is for comparison of model results with altimeter
+\item {\bf CREATE_sflux}: This is for creating sflux files from finite difference model usable by the SELFE model.
+\item {\bf INTERPOL_field}: This is for merging several different forcing files and creating an input file for the WWM model.
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
