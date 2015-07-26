@@ -144,7 +144,7 @@ ifdef USE_TIMOR
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
   OBJS := $(OBJS) timor_datapl.o timor_main.o timor_init.o timor_sedisub.o timor_fluc.o  \
        timor_d.o timor_c.o timor_b.o timor_a_up.o timor_a0.o \
-       timor_a_blub.o timor_upw_ups.o timor_hydro2d.o timor_hydro_Anlagen.o
+       timor_a_blub.o timor_upw_ups.o timor_hydro_Anlagen.o
 endif
 
 ifdef USE_GOTM
