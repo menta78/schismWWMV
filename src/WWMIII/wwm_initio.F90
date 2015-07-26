@@ -337,7 +337,7 @@
          CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
       ENDIF ! IPHYS
 
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -532,14 +532,18 @@
       YP = YPTMP
       DEP=DEP8
       INETMP=INE
+      DO IP=1,MNP
+         Print *, 'IP=', IP, 'DEP=', DEP(IP)
+         Print *, '      DEP8=', DEP8(IP)
+      END DO
 # else
-# ifndef SCHISM
+#  ifndef SCHISM
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
-# endif
+#  endif
       CALL INIT_ARRAYS
       DEP  = DEP8
       WLDEP  = DEP
@@ -554,6 +558,7 @@
       CALL COLLECT_ALL_IPLG
       CALL SETUP_ONED_SCATTER_ARRAY
 #endif
+      WRITE(STAT%FHNDL,*) '1: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       IF (CART2LATLON) THEN
         XP = XP / 111111.
         YP = YP / 111111.
@@ -574,6 +579,7 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
       FLUSH(STAT%FHNDL)
 #endif
+      WRITE(STAT%FHNDL,*) '2: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
 
 
       CALL CHECK_LOGICS
@@ -596,6 +602,7 @@
       CALL BUILD_IPSTATUS
       CALL BUILD_TRIANGLE_CORRESPONDENCES
       CALL SET_IOBPD_BY_DEP
+      WRITE(STAT%FHNDL,*) '3: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET DEPTH POINTER'
       FLUSH(STAT%FHNDL)
 
@@ -610,6 +617,7 @@
 !      DMIN = DMIN_SCHISM
 #endif
       CALL SET_IOBP_NEXTGENERATION
+      WRITE(STAT%FHNDL,*) '4: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
       FLUSH(STAT%FHNDL)
       CALL SET_IOBPD
@@ -643,21 +651,26 @@
       END IF
 
 
+      WRITE(STAT%FHNDL,*) '5: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE WIND CURRENT WATERLEVEL'
       FLUSH(STAT%FHNDL)
 #if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LWINDFROMWWM) THEN
         CALL INIT_WIND_INPUT
+        WRITE(STAT%FHNDL,*) '5.1: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       END IF
 #endif
 #if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_OCN_WAV
       IF (.NOT. LCPL) THEN
         CALL INIT_CURRENT_INPUT
+        WRITE(STAT%FHNDL,*) '5.2: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
         CALL INIT_WATLEV_INPUT
+        WRITE(STAT%FHNDL,*) '5.3: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       END IF
 #endif
      
 
+      WRITE(STAT%FHNDL,*) '6: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'COMPUTE THE WAVE PARAMETER'
       FLUSH(STAT%FHNDL)
       CALL INITIATE_WAVE_PARAMETER
@@ -678,6 +691,7 @@
 #endif
       ENDIF
 
+      WRITE(STAT%FHNDL,*) '7: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
       FLUSH(STAT%FHNDL)
       CALL INIT_WAVE_BOUNDARY_CONDITION
@@ -740,6 +754,7 @@
       END IF
 #endif
 
+      WRITE(STAT%FHNDL,*) '8: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE_WWM'
 #ifdef TIMINGS
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1

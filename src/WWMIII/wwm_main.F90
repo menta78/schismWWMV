@@ -238,7 +238,7 @@
          ENDIF
 
          IF (LFIRSTSTEP) THEN
-           IF (INITSTYLE == 1) CALL INITIAL_CONDITION(IFILE,IT)!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SCHISM
+           IF (INITSTYLE == 1) CALL INITIAL_CONDITION!We need to call for the case of wind dependent intiial guess this call since before we have no wind from SCHISM
            LFIRSTSTEP = .FALSE.
            LCALC      = .TRUE.
          END IF
@@ -650,7 +650,7 @@
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
         CALL WAV_ocnAwav_import(K,IFILE,IT)
       END IF
-      IF (K == 1) CALL INITIAL_CONDITION(IFILE,IT)
+      IF (K == 1) CALL INITIAL_CONDITION
 #endif
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       CALL WAV_all_import_export(K, IFILE, IT)
@@ -773,7 +773,7 @@
      &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, WBAC,        &
      &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
      &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
-     &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC
+     &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC, MNP
 
 # ifdef MPI_PARALL_GRID
       USE datapool, only: rkind, comm, myrank, ierr, nproc,            &
@@ -791,7 +791,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: i,j,k
+      integer :: i,j,k, IP
       character(len=15) CALLFROM
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
@@ -853,6 +853,10 @@
 !      STOP 'MEMORY TEST 1'
 
       DO K = 1, MAIN%ISTP
+        DO IP=1,MNP
+          Print *, 'IP=', IP, ' DEP=', DEP(IP)
+        END DO
+        STOP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE

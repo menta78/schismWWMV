@@ -2080,7 +2080,7 @@
       TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
       logical, intent(in) :: MULTIPLE_IN
       character(len=100), intent(in) :: eFileName
-      character(len=100), intent(in) :: eString
+      character(len=*), intent(in) :: eString
 !      
       INTEGER           :: fid, varid
       INTEGER           :: dimidsB(2), dimids(2)
