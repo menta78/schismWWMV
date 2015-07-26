@@ -655,7 +655,6 @@
 #if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       CALL WAV_all_import_export(K, IFILE, IT)
 #endif
-
 !
 !      *** recalculate water level and current related values 
 !
@@ -675,6 +674,9 @@
         ENDIF
         IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
       END IF
+!
+!
+!
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
