@@ -2165,7 +2165,7 @@
       CALL EXCHANGE_P2D(SI)
 #endif
 
-! We don't need MAXMNECON from selfe/pdlib if we compute CCON itself
+! We don't need MAXMNECON from SCHISM/pdlib if we compute CCON itself
 ! #ifdef MPI_PARALL_GRID
 !       MAXMNECON  = MNEI
 ! #else
@@ -2173,12 +2173,12 @@
 ! #endif
       MAXMNECON  = MAXVAL(CCON)
 
-! check agains selfe to make sure that there is no problem
+! check agains SCHISM to make sure that there is no problem
 #ifdef MPI_PARALL_GRID
 # ifndef PDLIB
       IF (MAXMNECON /= MNEI) THEN
         write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
-        write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
+        write(DBG%FHNDL,*) "MAXMNECON from SCHISM does not match self calc value. This could be problems", MAXMNECON, MNEI
       END IF
 # endif
 #endif

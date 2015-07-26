@@ -113,7 +113,7 @@
               IENtotal(6,IE) = DXP1
             END DO
             CLOSE(GRD%FHNDL)
-          ELSE IF (IGRIDTYPE == 3) THEN ! selfe gr3
+          ELSE IF (IGRIDTYPE == 3) THEN ! SCHISM gr3
             OPEN(GRD%FHNDL, FILE = GRD%FNAME, STATUS = 'OLD')
             READ(GRD%FHNDL,*)
             READ(GRD%FHNDL,*, IOSTAT = ISTAT) NE_TOTAL, NP_TOTAL

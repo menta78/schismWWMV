@@ -483,7 +483,7 @@
      
       CALL SET_WWMINPULNML 
 
-! variable nx1 should be initialized in selfe code, not here!
+! variable nx1 should be initialized in SCHISM code, not here!
 #if defined MPI_PARALL_GRID && !defined PDLIB
       do i=1,3
         do j=1,2
@@ -607,7 +607,7 @@
       FLUSH(STAT%FHNDL)
 #if defined SCHISM
 !AR: let dmin free ...
-!      DMIN = DMIN_SELFE
+!      DMIN = DMIN_SCHISM
 #endif
       CALL SET_IOBP_NEXTGENERATION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
@@ -730,10 +730,10 @@
 #endif
 
 #if defined SCHISM
-      IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
-        WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
+      IF (MSC_SCHISM .NE. MSC .OR. MDC_SCHISM .NE. MDC) THEN
+        WRITE(DBG%FHNDL,*) 'MSC_SCHISM', MSC_SCHISM
         WRITE(DBG%FHNDL,*) 'MSC', MSC
-        WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
+        WRITE(DBG%FHNDL,*) 'MDC_SCHISM', MDC_SELFE
         WRITE(DBG%FHNDL,*) 'MDC', MDC
         FLUSH(DBG%FHNDL)
         CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
@@ -794,7 +794,7 @@
        CALL CLOSE_IOBP
        CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined SCHISM && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
        IF (LCPL) THEN
          IF (LTIMOR) THEN
            CALL TERMINATE_PIPES_TIMOR()

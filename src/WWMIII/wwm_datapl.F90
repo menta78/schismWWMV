@@ -44,13 +44,13 @@
 # endif
 # ifdef SCHISM
          use schism_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
-     &                         DMIN_SELFE => h0,             & ! Dmin
+     &                         DMIN_SCHISM => h0,             & ! Dmin
      &                         NNE => nne,                   & !
      &                         ISELF => iself,               & !
      &                         NVRT => nvrt,                 & ! Max. Number of vertical Layers ...
      &                         KBP  => KBP,                  & ! Bottom index
      &                         IDRY => IDRY,                 & ! Dry/Wet flag
-     &                         ZETA => znl,                  & ! Z-Levels of SELFE
+     &                         ZETA => znl,                  & ! Z-Levels of SCHISM
      &                         ibnd_ext_int => ibnd_ext_int, & ! bounday flag ...
      &                         nsa,                          & ! Sides in the augmented domain
      &                         NS_RES => ns,                 & ! Local number of resident sides
@@ -62,8 +62,8 @@
      &                         SIGMACOR=>SIGMA,              & !sigma coord.
      &                         WINDX0=>WINDX,                & !x-wind
      &                         WINDY0=>WINDY,                & !x-wind
-     &                         MSC_SELFE => MSC2,            & !msc2 from selfe ...
-     &                         MDC_SELFE => MDC2,            & !mdc2 from selfe ...
+     &                         MSC_SCHISM => MSC2,            & !msc2 from SCHISM ...
+     &                         MDC_SCHISM => MDC2,            & !mdc2 from SCHISM ...
      &                         WWAVE_FORCE=>wwave_force,     & !wave-induced force
      &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
@@ -389,7 +389,7 @@
          INTEGER                :: NDYNITER_SBF = 10
 
 #ifdef SCHISM
-         REAL(rkind)            :: DT_SELFE, DT_WWM
+         REAL(rkind)            :: DT_SCHISM, DT_WWM
 #endif
 !
 ! ... file control ...
@@ -607,7 +607,7 @@
          INTEGER, ALLOCATABLE     :: IOBWB(:)
          INTEGER, ALLOCATABLE     :: IOBP(:)
 !
-! ... Selfe boundary stuff
+! ... SCHISM boundary stuff
 !
          INTEGER, ALLOCATABLE     :: IWBNDGL(:)
          INTEGER, ALLOCATABLE     :: IWBNDLC(:)

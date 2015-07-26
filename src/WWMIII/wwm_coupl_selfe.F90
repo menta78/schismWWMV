@@ -3,7 +3,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
+      SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
 
         use schism_glbl, only: iplg,errmsg,hmin_radstress
         USE schism_msgp
@@ -56,7 +56,7 @@
             DO IL = KBP(IP), NVRT
               ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
               eFrac=ZZETA/eDep
-! Need some better understanding of vertical levels in SELFE
+! Need some better understanding of vertical levels in SCHISM  
 ! for putting those correction terms.
 !              eHeight=z_w_loc(k)-z_w_loc(k-1)
 !              eFracB=eHeight/eDep
@@ -76,7 +76,7 @@
           JPRESS(IP)=eJPress_loc
         ENDDO ! IP
 
-      END SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
+      END SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

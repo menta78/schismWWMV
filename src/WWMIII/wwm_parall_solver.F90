@@ -15,7 +15,7 @@
 ! with hopefully higher speed.
 #undef ASPAR_B_COMPUTE_BLOCK
 #define ASPAR_B_COMPUTE_BLOCK
-! Either we use the SELFE exchange routine or ours that exchanges only
+! Either we use the SCHISM exchange routine or ours that exchanges only
 ! the ghost nodes and not the interface nodes.
 #undef NO_SELFE_EXCH
 #define NO_SELFE_EXCH

@@ -761,7 +761,7 @@
            call parallel_abort(wwmerr)
          endif
 !         MAIN%DELT   = DT_WWM   !DELTC
-         MAIN%DTCOUP = DT_SELFE !coupling time step
+         MAIN%DTCOUP = DT_SCHISM !coupling time step
 #endif
 !
 !     *** GRID section
@@ -796,7 +796,7 @@
 
 #ifdef MPI_PARALL_GRID
 # ifndef PDLIB
-!AR: I think we can allow that with SELFE we can use different GRIDTYPES even if selfe reads in .gr3 ... let's see ...
+!AR: I think we can allow that with SCHISM we can use different GRIDTYPES even if SCHISM reads in .gr3 ... let's see ...
          IF (IGRIDTYPE /= 3) CALL WWM_ABORT('In MPI, you need IGRIDTYPE=3')
 # endif
 #endif

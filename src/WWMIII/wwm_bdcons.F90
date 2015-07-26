@@ -256,7 +256,7 @@
           IOBPtotal(IP) = ITMP
         END DO
         CLOSE(BND%FHNDL)
-      ELSE IF (IGRIDTYPE.eq.3) THEN ! SELFE 
+      ELSE IF (IGRIDTYPE.eq.3) THEN ! SCHISM 
         OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
         READ(BND%FHNDL,*)
         READ(BND%FHNDL,*)

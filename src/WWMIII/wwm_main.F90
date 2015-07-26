@@ -40,8 +40,8 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef SCHISM
- !!!     SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-      SUBROUTINE WWM_II(IT_SELFE,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)
+ !!!     SUBROUTINE WWM_II(IT_SCHISM,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
+      SUBROUTINE WWM_II(IT_SCHISM,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)
 
          USE DATAPOOL
          use  schism_msgp !, only : myrank,parallel_abort,itype,comm,ierr
@@ -50,7 +50,7 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)   :: NSTEP_WWM0, icou_elfe_wwm
-         REAL(rkind), INTENT(IN)    :: DT_SELFE0
+         REAL(rkind), INTENT(IN)    :: DT_SCHISM0
          CHARACTER(LEN=3), INTENT(OUT) :: RADFLAG2
 !         REAL(rkind), INTENT(OUT) :: STOKES_X,STOKES_Y,JPRESS,SBR,SBF
 
@@ -58,7 +58,7 @@
          REAL(rkind)        :: T1, T2
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 
-         INTEGER     :: I, IP, IT_SELFE, K, IFILE, IT
+         INTEGER     :: I, IP, IT_SCHISM, K, IFILE, IT
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
@@ -71,7 +71,7 @@
 #endif 
 
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SELFE ',  SUM(AC2)
+           WRITE(DBG%FHNDL,*) ' STARTING WWM FROM SCHISM ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) call wwm_abort('NAN IN MAIN 1')
          ENDIF
 
@@ -80,21 +80,21 @@
 
          NSTEPWWM = NSTEP_WWM0
 
-         DT_SELFE      = DT_SELFE0
-         DELTAT_WATLEV = DT_SELFE0
+         DT_SCHISM      = DT_SELFE0
+         DELTAT_WATLEV = DT_SCHISM0
 
 #ifdef TIMINGS
-         T1 = MyREAL(IT_SELFE-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
-         T2 = MyREAL(IT_SELFE)*DT_SELFE0          ! End of time time step ...
+         T1 = MyREAL(IT_SCHISM-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
+         T2 = MyREAL(IT_SCHISM)*DT_SELFE0          ! End of time time step ...
 #endif 
 
-         DT_PROVIDED=NSTEPWWM*DT_SELFE
+         DT_PROVIDED=NSTEPWWM*DT_SCHISM
 
          IF (abs(MAIN%DELT - DT_PROVIDED).gt.THR) THEN
            WRITE(DBG%FHNDL,*) 'MAIN%DELT=', MAIN%DELT, ' in wwminput.nml'
            WRITE(DBG%FHNDL,*) 'But nstep_wwm*dt=', DT_PROVIDED
            WRITE(DBG%FHNDL,*) 'nstep_wwm=', NSTEPWWM
-           WRITE(DBG%FHNDL,*) '       dt=', DT_SELFE
+           WRITE(DBG%FHNDL,*) '       dt=', DT_SCHISM
            CALL WWM_ABORT('Correct coupled model time-steppings')
          ENDIF
 
@@ -164,7 +164,7 @@
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in selfe
+         ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -178,7 +178,7 @@
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ETA2
            WATLEVOLD   = ETA1
@@ -192,7 +192,7 @@
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO 
            WATLEVOLD   = ZERO 
@@ -206,7 +206,7 @@
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
-         ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in selfe  
+         ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO
            WATLEVOLD   = ZERO
@@ -223,7 +223,7 @@
          END IF
 
          IF (LNANINFCHK) THEN
-           CALL SELFE_NANCHECK_INPUT_A
+           CALL SCHISM_NANCHECK_INPUT_A
          END IF
 
          IFILE = 1
@@ -255,7 +255,7 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
          CALL FLUSH(STAT%FHNDL)
 
-         CALLFROM='SELFE'
+         CALLFROM='SCHISM'
          IF (LQSTEA) THEN
            CALL QUASI_STEADY(KKK)
          ELSE
@@ -300,7 +300,7 @@
 !
 ! Compute radiation stress ...
 !
-! RADFLAG=VOR , then coupling with selfe will gives stokes_velocity (Eq. 17 from Bennis 2011), Wave-induced pressure (Eq. 20) and source momentums (Eq.21) 
+! RADFLAG=VOR , then coupling with SCHISM will gives stokes_velocity (Eq. 17 from Bennis 2011), Wave-induced pressure (Eq. 20) and source momentums (Eq.21) 
          RADFLAG2=RADFLAG !for output into SCHISM
          IF (icou_elfe_wwm == 0 .OR. icou_elfe_wwm == 2 .OR. icou_elfe_wwm == 5 .OR. icou_elfe_wwm == 7) THEN
            WWAVE_FORCE = ZERO
@@ -313,9 +313,9 @@
            SBF=ZERO
          ELSE 
            IF (RADFLAG == 'VOR') THEN
-             CALL STOKES_STRESS_INTEGRAL_SELFE
+             CALL STOKES_STRESS_INTEGRAL_SCHISM
            ELSE
-             CALL RADIATION_STRESS_SELFE
+             CALL RADIATION_STRESS_SCHISM
            ENDIF
          END IF 
 ! end modif AD
@@ -327,7 +327,7 @@
          TIME5 = mpi_wtime()
 #endif
          IF (LNANINFCHK) THEN
-           CALL SELFE_NANCHECK_INPUT_B
+           CALL SCHISM_NANCHECK_INPUT_B
          END IF
 
          KKK = KKK + 1
@@ -362,7 +362,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SELFE_NANCHECK_INPUT_A
+      SUBROUTINE SCHISM_NANCHECK_INPUT_A
       USE DATAPOOL
       implicit none
       integer IP
@@ -392,11 +392,11 @@
           CALL FLUSH(DBG%FHNDL)
         END IF
       END DO
-      END SUBROUTINE SELFE_NANCHECK_INPUT_A
+      END SUBROUTINE SCHISM_NANCHECK_INPUT_A
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SELFE_NANCHECK_INPUT_B
+      SUBROUTINE SCHISM_NANCHECK_INPUT_B
       USE DATAPOOL
       implicit none
       integer IP, I
@@ -421,7 +421,7 @@
           END DO
         END IF 
       END DO
-      END SUBROUTINE SELFE_NANCHECK_INPUT_B
+      END SUBROUTINE SCHISM_NANCHECK_INPUT_B
 #endif
 !**********************************************************************
 !*                                                                    *
