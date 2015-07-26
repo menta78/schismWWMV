@@ -108,7 +108,7 @@ endif
 
 ifdef MPI
   LIBS += $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM #-DSHYFEM_COUPLING
   ifdef PDLIB
     OBJS= wwm_pdlib.o $(OBJWWM)
   else

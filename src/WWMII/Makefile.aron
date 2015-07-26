@@ -91,7 +91,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
 
 ifdef NETCDF
   all: $(NETC) $(PROG)
-  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
+  LIBS += -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff 
   FFLAGS +=  -DNCDF -DWWM_SOLVER -I$(NETCDF_INCDIR)
 else
   all: $(PROG)
