@@ -514,7 +514,6 @@
       YP=YPtotal
       DEP=DEPtotal
       INE=INEtotal
-      WLDEP=DEP
 #else
 # ifdef PDLIB
       IF (IGRIDTYPE .eq. 2) THEN
@@ -532,10 +531,6 @@
       YP = YPTMP
       DEP=DEP8
       INETMP=INE
-      DO IP=1,MNP
-         Print *, 'IP=', IP, 'DEP=', DEP(IP)
-         Print *, '      DEP8=', DEP8(IP)
-      END DO
 # else
 #  ifndef SCHISM
       call partition_hgrid
@@ -546,7 +541,6 @@
 #  endif
       CALL INIT_ARRAYS
       DEP  = DEP8
-      WLDEP  = DEP
       IF (ics .eq. 2) THEN
         XP = XLON*RADDEG
         YP = YLAT*RADDEG
@@ -558,6 +552,7 @@
       CALL COLLECT_ALL_IPLG
       CALL SETUP_ONED_SCATTER_ARRAY
 #endif
+      WLDEP=DEP
       WRITE(STAT%FHNDL,*) '1: sum/min/max(DEP)=', sum(DEP), minval(DEP), maxval(DEP)
       IF (CART2LATLON) THEN
         XP = XP / 111111.
