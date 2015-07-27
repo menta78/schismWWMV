@@ -853,10 +853,6 @@
 !      STOP 'MEMORY TEST 1'
 
       DO K = 1, MAIN%ISTP
-        DO IP=1,MNP
-          Print *, 'IP=', IP, ' DEP=', DEP(IP)
-        END DO
-        STOP
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
