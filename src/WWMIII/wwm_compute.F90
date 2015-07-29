@@ -45,7 +45,7 @@
 #endif
 
          CALL COMPUTE_DIFFRACTION
-         CALL Print_SumAC2("After COMPUTE_DIFFRACTION")
+!         CALL Print_SumAC2("After COMPUTE_DIFFRACTION")
          
          
 #ifdef TIMINGS
@@ -53,9 +53,9 @@
 #endif
 
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-         CALL Print_SumAC2("After COMPUTE_FREQUENCY 1")
+!         CALL Print_SumAC2("After COMPUTE_FREQUENCY 1")
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-         CALL Print_SumAC2("After COMPUTE_DIRECTION 1")
+!         CALL Print_SumAC2("After COMPUTE_DIRECTION 1")
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -1- ',  SUM(AC2)
@@ -67,9 +67,9 @@
          CALL WAV_MY_WTIME(TIME3)
 #endif
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-         CALL Print_SumAC2("After COMPUTE_FREQUENCY 2")
+!         CALL Print_SumAC2("After COMPUTE_FREQUENCY 2")
          IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-         CALL Print_SumAC2("After COMPUTE_DIRECTION 2")
+!         CALL Print_SumAC2("After COMPUTE_DIRECTION 2")
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -2- ',  SUM(AC2)
@@ -81,7 +81,7 @@
          CALL WAV_MY_WTIME(TIME4)
 #endif
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-         CALL Print_SumAC2("After COMPUTE_SPATIAL")
+!         CALL Print_SumAC2("After COMPUTE_SPATIAL")
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SPATIAL ',  SUM(AC2)
@@ -94,7 +94,7 @@
 #endif
          IF (SMETHOD .GT. 0) THEN
            CALL COMPUTE_SOURCES_EXP
-           CALL Print_SumAC2("After COMPUTE_SOURCES_EXP")
+!           CALL Print_SumAC2("After COMPUTE_SOURCES_EXP")
          ELSE IF (SMETHOD .GT. 0 .AND. LSOURCESWAM .AND. .FALSE.) THEN
            CALL WWM_ABORT('I SHOULD NOT BE HERE EVER THIS IS FOR MY OWN TESTING')
            FL = FL3 
