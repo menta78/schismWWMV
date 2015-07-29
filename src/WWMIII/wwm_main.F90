@@ -853,6 +853,7 @@
 !      STOP 'MEMORY TEST 1'
 
       DO K = 1, MAIN%ISTP
+        CALL Print_SumAC2("In the time loop")
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE

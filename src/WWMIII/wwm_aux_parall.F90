@@ -419,28 +419,48 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE AC_COHERENCY(AC, string)
+      SUBROUTINE TOTAL_SUMMATION(AC, Lsum)
       USE DATAPOOL
       IMPLICIT NONE
-      character(*), intent(in) :: string
-      REAL(rkind), intent(in) :: AC(MNP,MSC,MDC)
-      REAL(rkind) :: ACwork(MSC,MDC,MNP)
-      REAL(rkind) :: Lerror
-      INTEGER IP
+      real(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      real(rkind), intent(out) :: Lsum(MSC, MDC)
+      real(rkind) eField(MSC, MDC)
+      integer IP, iProc
+      Lsum(MSC, MDC)=ZERO
       DO IP=1,MNP
-        ACwork(:,:,IP)=AC(IP,:,:)
+         IF (IPstatus(IP) .eq. 1) THEN
+          Lsum = Lsum + AC(:,:,IP)  
+        END IF
       END DO
-      CALL I5B_TOTAL_COHERENCY_ERROR(MSC, ACwork, Lerror)
-      WRITE(STAT%FHNDL,*) 'coherency error between domains'
-      WRITE(STAT%FHNDL,*) 'Lerror=', Lerror, ' mesg=', TRIM(string)
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(eField,MSC*MDC,rtype, iProc-1, 43, comm, istatus, ierr)
+          Lsum=Lsum + eField
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(Lsum,MSC*MDC,rtype, iProc-1, 13, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(Lsum,MSC*MDC,rtype, 0, 43, comm, ierr)
+        CALL MPI_RECV(Lsum,MSC*MDC,rtype, 0, 13, comm, istatus, ierr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE Print_SumAC2(string)
+      USE DATAPOOL
+      implicit NONE
+      character(len=*) :: string
+      real(rkind) :: Lsum(MSC,MDC)
+      CALL TOTAL_SUMMATION(AC2, Lsum)
+      WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
-      USE DATAPOOL, only : MNP, MDC, rkind
-      USE DATAPOOL, only : ListIPLG, ListMNP
-      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
@@ -452,7 +472,6 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer MNPloc
-      integer istat
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
@@ -504,9 +523,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR_NPRES(MSCeffect, ACw, Lerror)
-      USE DATAPOOL, only : MNP, MDC, NP_RES, rkind
-      USE DATAPOOL, only : ListIPLG, ListMNP, ListNP_RES
-      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
@@ -518,7 +535,6 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer NP_RESloc
-      integer istat
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
@@ -729,7 +745,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SYMM_GRAPH_BUILD_ADJ(AdjGraph)
-      USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh, myrank, Graph
+      USE DATAPOOL
       implicit none
       type(Graph), intent(inout) :: AdjGraph
       CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, wwm_nnbr, wwm_ListNeigh)
@@ -872,7 +888,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GRAPH_TEST_CONNECT(AdjGraph, result)
-      USE DATAPOOL, only : Graph
+      USE DATAPOOL
       implicit none
       type(Graph), intent(in) :: AdjGraph
       integer, intent(out) :: result
