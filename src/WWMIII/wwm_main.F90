@@ -448,6 +448,7 @@
       CALL WAV_MY_WTIME(TIME2)
 #endif
 
+      CALL Print_SumAC2("Before the advection")
       IF (ICOMP .EQ. 0) THEN
         CALL COMPUTE_SIMPLE_EXPLICIT
       ELSE IF (ICOMP .EQ. 1) THEN 
@@ -457,6 +458,7 @@
       ELSE IF (ICOMP .EQ. 3) THEN 
         CALL COMPUTE_IMPLICIT
       END IF
+      CALL Print_SumAC2("After the advection")
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME3)
@@ -483,6 +485,7 @@
 #endif 
 #endif
       CALL IO_2(K)
+      CALL Print_SumAC2("After IO_2")
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME5)

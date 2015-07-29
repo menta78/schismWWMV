@@ -419,19 +419,59 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE TOTAL_SUMMATION(AC, Lsum)
+      SUBROUTINE TOTAL_SUMMATION_SCALAR(F, eSum)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(in) :: F(MNP)
+      real(rkind), intent(out) :: eSum
+      real(rkind) eField(1), Lsum(1)
+      integer IP, iProc
+      eSum=ZERO
+      DO IP=1,MNP
+        IF (IPstatus(IP) .eq. 1) THEN
+          eSum = eSum + F(IP)
+        END IF
+      END DO
+!      WRITE(STAT%FHNDL,*) 'sum(AC)=', sum(AC)
+!      WRITE(STAT%FHNDL,*) 'After summation, sum(Lsum)=', sum(Lsum)
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(eField,1,rtype, iProc-1, 43, comm, istatus, ierr)
+          eSum=eSum + eField(1)
+        END DO
+        Lsum(1)=eSum
+        DO iProc=2,nproc
+          CALL MPI_SEND(Lsum,1,rtype, iProc-1, 13, comm, ierr)
+        END DO
+      ELSE
+        Lsum(1)=eSum
+        CALL MPI_SEND(Lsum,1,rtype, 0, 43, comm, ierr)
+        CALL MPI_RECV(Lsum,1,rtype, 0, 13, comm, istatus, ierr)
+        eSum=Lsum(1)
+      END IF
+#endif
+!      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TOTAL_SUMMATION_AC(AC, Lsum)
       USE DATAPOOL
       IMPLICIT NONE
       real(rkind), intent(in) :: AC(MSC, MDC, MNP)
       real(rkind), intent(out) :: Lsum(MSC, MDC)
       real(rkind) eField(MSC, MDC)
       integer IP, iProc
-      Lsum(MSC, MDC)=ZERO
+      Lsum=ZERO
       DO IP=1,MNP
-         IF (IPstatus(IP) .eq. 1) THEN
-          Lsum = Lsum + AC(:,:,IP)  
+        IF (IPstatus(IP) .eq. 1) THEN
+          Lsum = Lsum + AC(:,:,IP)
         END IF
       END DO
+!      WRITE(STAT%FHNDL,*) 'sum(AC)=', sum(AC)
+!      WRITE(STAT%FHNDL,*) 'After summation, sum(Lsum)=', sum(Lsum)
+#ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         DO iProc=2,nproc
           CALL MPI_RECV(eField,MSC*MDC,rtype, iProc-1, 43, comm, istatus, ierr)
@@ -444,6 +484,8 @@
         CALL MPI_SEND(Lsum,MSC*MDC,rtype, 0, 43, comm, ierr)
         CALL MPI_RECV(Lsum,MSC*MDC,rtype, 0, 13, comm, istatus, ierr)
       END IF
+#endif     
+!      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -451,10 +493,23 @@
       SUBROUTINE Print_SumAC2(string)
       USE DATAPOOL
       implicit NONE
-      character(len=*) :: string
+      character(len=*), intent(in) :: string
       real(rkind) :: Lsum(MSC,MDC)
-      CALL TOTAL_SUMMATION(AC2, Lsum)
+!      WRITE(STAT%FHNDL,*) 'Direct sum(AC2)=', sum(AC2)
+      CALL TOTAL_SUMMATION_AC(AC2, Lsum)
       WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE Print_SumScalar(F, string)
+      USE DATAPOOL
+      implicit NONE
+      real(rkind), intent(in) :: F(MNP)
+      character(len=*) :: string
+      real(rkind) :: eSum
+      CALL TOTAL_SUMMATION_SCALAR(F, eSum)
+      WRITE(STAT%FHNDL,*) 'sum(F)=', eSum,' mesg:', TRIM(string)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
