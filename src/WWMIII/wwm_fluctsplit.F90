@@ -471,6 +471,12 @@
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
            DO IT = 1, ITER_EXP(IS,ID)
+<<<<<<< HEAD
+=======
+#ifdef DEBUG_COHERENCY_FLUCT
+             WRITE(STAT%FHNDL,*) 'IT=', IT
+#endif
+>>>>>>> 86ab949c8a0e307d24281bf67eb0eb6b1a65eeca
              ST = ZERO ! Init. ... only used over the residual nodes see IP loop
              DO IE = 1, MNE
 !               IF (IE_IS_STEADY(IE) .GT. 2) THEN
