@@ -13,7 +13,7 @@ How to compile the C++Ocean software:
    You will also need to download the rangs database for coastlines.
    and then set up NCARG_RANGS
 
-   ubuntu: sudo apt-get install libboost-all-dev
+   ubuntu: sudo apt-get install ncl-ncarg
      
 ---You need to install the boost libraries.
    Likely this is already available via ubuntu or similar package
@@ -24,6 +24,8 @@ How to compile the C++Ocean software:
    NOTE: There is no need for any compilation since boost is header based.
 
    ubuntu: sudo apt-get install libboost-all-dev
+
+   export BOOST_INCDIR=/usr/include/boost
 
 ---EIGEN (Matrix library)
    http://eigen.tuxfamily.org/
@@ -55,7 +57,7 @@ How to compile the C++Ocean software:
    After you are done with compilation, you need to set up environment variables
    GRIB_INCDIR and GRIB_C_LINK
    On my system this gives
-   export GRIB_PATH=/home/mathieu/opt/grib_api-1.13.1_ifort14.0.3_netcdf3.6.3
+   export GRIB_PATH=/home/aron/opt/grib_api-1.13.1_ifort14.0.3_netcdf3.6.3
    export GRIB_FORTRAN_LINK="-L$GRIB_PATH/lib -Wl,-rpath,$GRIB_PATH/lib -lgrib_api_f90 -lgrib_api -lgrib_api_f77"
    export GRIB_C_LINK="-L$GRIB_PATH/lib -lgrib_api -Wl,-rpath,$GRIB_PATH/lib"
    export GRIB_INCDIR="-I$GRIB_PATH/include"
