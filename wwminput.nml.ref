@@ -195,7 +195,8 @@
  LSTWL          = T                  ! Steady water level
  LCWLV          = T                  ! Constant water level
  CWATLV         = 0.0                ! elevation of the water level [m]
- FILEWATL       = ' '                ! water level file name; input file format: write(*,*) eta
+ IWATLVFORMAT   = 1
+ FILEWATL       = '_'                ! water level file name; input file format: write(*,*) eta
  MULTIPLE_IN   = T                   ! If T then all process are reading data
                                      ! If F then only process 0 does it and
                                      ! then spread to other nodes.
