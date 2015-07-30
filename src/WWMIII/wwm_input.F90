@@ -1543,7 +1543,7 @@
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
-        CALL INIT_DIRECT_NETCDF_CF(eVAR_WATLEV, MULTIPLE_IN_WATLEV, WAT%FNAME, "zeta")
+        CALL INIT_DIRECT_NETCDF_CF(eVAR_WATLEV, MULTIPLE_IN_WATLEV, WAT%FNAME, "WATLEV")
         allocate(tmp_watlev1(MNP), tmp_watlev2(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_watlev, allocate error 1')
         CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_watlev_new,REC2_watlev_new,cf_w1,cf_w2)

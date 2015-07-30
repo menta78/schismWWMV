@@ -2098,12 +2098,13 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
-        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
+        ISTAT = nf90_open(TRIM(eFileName), nf90_nowrite, fid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
         ! Reading wind attributes
 
-        Print *, 'eString=', TRIM(eString)
+!        Print *, 'eString=', TRIM(eString)
+!        Print *, 'FNAME=', TRIM(eFileName)
         ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
