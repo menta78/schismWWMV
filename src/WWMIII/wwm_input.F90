@@ -1431,6 +1431,7 @@
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
 #ifdef NCDF
+!        Print *, 'Begin ICURRFORMAT = 2'
         CALL INIT_DIRECT_NETCDF_CF(eVAR_CURR, MULTIPLE_IN_CURR, CUR%FNAME, "UsurfCurr")
         allocate(tmp_curr1(MNP,2), tmp_curr2(MNP,2), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_curr, allocate error 1')
@@ -1442,6 +1443,7 @@
         ELSE
           CURTXY(:,:) = cf_w1*tmp_curr1(:,:)
         END IF
+!        Print *, 'End ICURRFORMAT = 2'
 #else
         CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
 #endif
@@ -1467,6 +1469,7 @@
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
 #ifdef NCDF
+!        Print *, 'Begin ICURRFORMAT = 2'
         IF (K.EQ.1) THEN
           REC1_curr_old = 0
           REC2_curr_old = 0
@@ -1485,6 +1488,7 @@
         END IF
         REC1_curr_old = REC1_curr_new
         REC2_curr_old = REC2_curr_new
+!        Print *, 'End ICURRFORMAT = 2'
 #else
         CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
 #endif
@@ -1543,6 +1547,7 @@
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
+!        Print *, 'Begin IWATLVFORMAT = 2'
         CALL INIT_DIRECT_NETCDF_CF(eVAR_WATLEV, MULTIPLE_IN_WATLEV, WAT%FNAME, "WATLEV")
         allocate(tmp_watlev1(MNP), tmp_watlev2(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_watlev, allocate error 1')
@@ -1554,6 +1559,7 @@
         ELSE
           WATLEV(:) = cf_w1*tmp_watlev1(:)
         END IF
+!        Print *, 'End IWATLVFORMAT = 2'
 #else
         CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
 #endif
@@ -1583,6 +1589,7 @@
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
+!        Print *, 'Begin IWATLVFORMAT = 2'
         IF (K.EQ.1) THEN
           REC1_watlev_old = 0
           REC2_watlev_old = 0
@@ -1612,6 +1619,7 @@
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
         TimeWAT_old = TimeWAT_new
+!        Print *, 'End IWATLVFORMAT = 2'
 #else
         CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
 #endif
