@@ -471,7 +471,6 @@
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
            DO IT = 1, ITER_EXP(IS,ID)
-             WRITE(STAT%FHNDL,*) 'IT=', IT
              ST = ZERO ! Init. ... only used over the residual nodes see IP loop
              DO IE = 1, MNE
 !               IF (IE_IS_STEADY(IE) .GT. 2) THEN
