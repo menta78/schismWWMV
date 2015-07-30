@@ -1431,10 +1431,10 @@
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
 #ifdef NCDF
-        CALL INIT_DIRECT_NETCDF_CF(eVAR_CURR, MULTIPLE_IN_CURR, CUR%FNAME, "Ucurr")
+        CALL INIT_DIRECT_NETCDF_CF(eVAR_CURR, MULTIPLE_IN_CURR, CUR%FNAME, "UsurfCurr")
         allocate(tmp_curr1(MNP,2), tmp_curr2(MNP,2), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_curr, allocate error 1')
-        CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
+        CALL GET_CF_TIME_INDEX(eVAR_CURR, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
         CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC1_curr_new,tmp_curr1)
         IF (cf_w1.NE.1) THEN
           CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC2_curr_new,tmp_curr2)
@@ -1471,12 +1471,12 @@
           REC1_curr_old = 0
           REC2_curr_old = 0
         END IF
-        CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
+        CALL GET_CF_TIME_INDEX(eVAR_CURR, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
         IF (REC1_curr_new.NE.REC1_curr_old) THEN
-          CALL READ_DIRECT_NETCDF_CF(eVAR_wind, REC1_curr_new,tmp_curr1)
+          CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC1_curr_new,tmp_curr1)
         END IF
         IF (REC2_curr_new.NE.REC2_curr_old) THEN
-          CALL READ_DIRECT_NETCDF_CF(eVAR_wind, REC2_curr_new,tmp_curr2)
+          CALL READ_DIRECT_NETCDF_CF(eVAR_CURR, REC2_curr_new,tmp_curr2)
         END IF
         IF (cf_w1.NE.1) THEN
           CURTXY(:,:) = cf_w1*tmp_curr1(:,:)+cf_w2*tmp_curr2(:,:)
@@ -1546,16 +1546,16 @@
         CALL INIT_DIRECT_NETCDF_CF(eVAR_WATLEV, MULTIPLE_IN_WATLEV, WAT%FNAME, "zeta")
         allocate(tmp_watlev1(MNP), tmp_watlev2(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_watlev, allocate error 1')
-        CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_curr_new,REC2_curr_new,cf_w1,cf_w2)
-        CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC1_curr_new,tmp_curr1)
+        CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_watlev_new,REC2_watlev_new,cf_w1,cf_w2)
+        CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC1_watlev_new,tmp_watlev1)
         IF (cf_w1.NE.1) THEN
-          CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_curr_new,tmp_curr2)
+          CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_watlev_new,tmp_watlev2)
           WATLEV(:) = cf_w1*tmp_watlev1(:) + cf_w2*tmp_watlev2(:)
         ELSE
           WATLEV(:) = cf_w1*tmp_watlev1(:)
         END IF
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE
@@ -1613,7 +1613,7 @@
         REC2_watlev_old = REC2_watlev_new
         TimeWAT_old = TimeWAT_new
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE
