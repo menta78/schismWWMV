@@ -61,3 +61,6 @@ How to compile the C++Ocean software:
    export GRIB_FORTRAN_LINK="-L$GRIB_PATH/lib -Wl,-rpath,$GRIB_PATH/lib -lgrib_api_f90 -lgrib_api -lgrib_api_f77"
    export GRIB_C_LINK="-L$GRIB_PATH/lib -lgrib_api -Wl,-rpath,$GRIB_PATH/lib"
    export GRIB_INCDIR="-I$GRIB_PATH/include"
+
+   Developed by Mathieu Dutour Sikiric
+   Mathieu.Dutour@gmail.com
