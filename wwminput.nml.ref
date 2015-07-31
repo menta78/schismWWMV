@@ -67,6 +67,7 @@
                                      ! 2 ~ WWM-PERIODIC
                                      ! 3 ~ SELFE
                                      ! 4 ~ old WWM type 
+                                     ! 5 ~ Netcdf format of grid
  FILEGRID       = 'hgrid.gr3'        ! Name of the grid file. hgrid.gr3 or hgrid.ll if IGRIDTYPE = 3 (SELFE)
  LSLOP          = F                  ! Bottom Slope limiter (default=F)
  SLMAX          = 0.2                ! Maximum Slope (Default 0.2)
@@ -194,7 +195,8 @@
  LSTWL          = T                  ! Steady water level
  LCWLV          = T                  ! Constant water level
  CWATLV         = 0.0                ! elevation of the water level [m]
- FILEWATL       = ' '                ! water level file name; input file format: write(*,*) eta
+ IWATLVFORMAT   = 1
+ FILEWATL       = '_'                ! water level file name; input file format: write(*,*) eta
  MULTIPLE_IN   = T                   ! If T then all process are reading data
                                      ! If F then only process 0 does it and
                                      ! then spread to other nodes.

@@ -2008,7 +2008,7 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
-
+      p_is_converged=0
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
