@@ -118,17 +118,19 @@ or
  HisPrefix = "COSMO_output_",
 \end{verbatim}
 (the first history file contains the grid)
-\item {\tt ROMS}: The structured model for data output.
+\item {\tt ROMS} (Just {\tt ROMS} or {\tt ROMS\_IVICA}): The structured model for data output.
 \begin{verbatim}
  MODELNAME = "ROMS"
  GridFile = "roms_grid.nc",
  HisPrefix = "ROMS_output_",
 \end{verbatim}
-\item {\tt GRIB} (variant ECMWF, DWD, COSMO, GFS). The GRIB files are essentially standardized but there are small differences between DWD, ECMWF, COSMO and GFS. Also the grid is part of the GRIB file so there is no need for GribFile here.
+{\tt ROMS} is for normal ROMS output, {\tt ROMS\_output\_0001.nc}, etc. {\tt ROMS\_IVICA} is for files by date {\tt ROMS\_output\_20140101.nc}, etc.
+\item {\tt GRIB} (variant ECMWF, DWD, COSMO, GFS): The GRIB files are essentially standardized but there are small differences between DWD, ECMWF, COSMO and GFS. Also the grid is part of the GRIB file so there is no need for GribFile here.
 \begin{verbatim}
  MODELNAME = "GRIB_ECMWF", 
  HisPrefix = "/home/mathieu/Forecast_input/ECMWF_coarse/", 
 \end{verbatim}
+The {\tt GridFile} does not need to be set because the grid is part of the data itself.
 
 \end{enumerate}
 
@@ -194,9 +196,11 @@ Other programs can be written by basing oneself on this architecture.
 
 
 
-\subsection{PLOT\_result}
+\subsection{PLOT\_result and PLOT\_diff\_results}
 
-A minimal example file is given below:
+The {\tt PLOT\_result} and {\tt PLOT\_diff\_results} programs are designed to plot model output and plot it. The difference is that {\tt PLOT\_result} is for single model output, while {\tt PLOT\_diff\_results} is for finding the difference between two model outputs.
+
+A minimal example file for {\tt PLOT\_results} is given below:
 \begin{verbatim}
 &PROC
  MODELNAME = "GRIB_DWD", 
@@ -216,13 +220,9 @@ A minimal example file is given below:
 \end{verbatim}
 It means that model output of DWD from the directory {\tt /home/mathieu/Forecast\_input/DWD/} are being plotted every 2 hours and that the output directory is {\tt /home/mathieu/Forecast\_input/DWD/PlotWind/}. The extension of the images is {\tt png}.
 
-Variable that is plotted is {\tt WINDMAG} only.
+Variable that is plotted is {\tt WINDMAG} only as selected by the {\tt T/F} switches. If a variable is not put then it is false by default.
 
-
-
-\subsection{PLOT\_diff\_results}
-
-This is plotting results of two different models. An example file:
+A small example input file for {\tt PLOT\_diff\_results} is the follwoing:
 \begin{verbatim}
 &PROC
  MODELNAME = "WAM", 
@@ -245,7 +245,41 @@ This is plotting results of two different models. An example file:
  Hwave = T
 /
 \end{verbatim}
-This is the plot of coupled vs uncoupled WAM results 
+
+
+\subsubsection{Nature query option}
+We have following possible queries for the {\tt PLOT\_result}:
+\begin{verbatim}
+ListNatureQuery = 'instant', 'average', 'swathMax', 'swathMin'
+TimeFrameDay = 30
+\end{verbatim}
+By default only 'instant' is selected and value of the field at the precise time are plot.
+If 'average' is selected then we have the plots of average value of the field for the period $[t, t+ T]$ with $t$ the time just as for instant field and $T$ the value of {\tt TimeFrameDay}. So a $T=30$ corresponds to monthly averages.
+If 'swathMax' or 'swathMin' is selected then the maximum and minimum values over the time intervals $[t, t+T]$ are also plot.
+
+Above options are also possible for {\tt PLOT\_diff\_result}. But two more options 'MaxDiff' and 'MinDiff' are also possible. MaxDiff/MinDiff plots the maximum/minimum difference over the interval $[t, t+T]$. This is different from swathMax/swathMin which would plot the difference between the maximum over the interval of the models.
+
+\subsubsection{Colorbar selections}
+We have following options for the colormaps:
+\begin{verbatim}
+DoColorBar = T
+BoundSingle_var = Hwave, TM02
+BoundSingle_min = 0,   5
+BoundSingle_max = 4,   20
+BoundDiff_var = Hwave, TM02
+BoundDiff_min = -0.2, -2
+BoundDiff_max = 0.2,  2
+VariableColormap = F
+\end{verbatim}
+By default a fixed colorbar is used for the plots. The range is fixed in the code for each variable and is generally reasonable. If you want to change the minimum/maximum, then you need to use {\tt BoundSingle\_var/min/max} for {\tt PLOT\_result} and {\tt BoundDiff\_var/min/max} for {\tt PLOT\_diff\_results}.
+
+If you want a colorbar that varies from one time to the next then use {\tt VariableColormap} and the maximum and minimum of the field will be used. If you do not want and colorbar to plotted, then select {\tt DoColorBar = F}.
+
+
+
+
+
+
 
 
 
