@@ -133,6 +133,7 @@
       INTEGER :: COLLECTED(MNP), NEXTVERT(MNP), PREVVERT(MNP)
       INTEGER          :: ISFINISHED, INEXT, IPREV
       INTEGER          :: IPNEXT, IPPREV, ZNEXT, IP, I, IE
+      integer nb0, nb1, nbM1
       STATUS(:) = 0
       DO IE=1,MNE
         DO I=1,3
@@ -202,6 +203,24 @@
 #ifdef MPI_PARALL_GRID
       CALL exchange_p2di(STATUS)
 #endif
+      nb0=0
+      nb1=0
+      nbM1=0
+      DO IP=1,MNP
+        IF (STATUS(IP) .eq. 0) THEN
+          nb0=nb0+1
+        END IF
+        IF (STATUS(IP) .eq. 1) THEN
+          nb1=nb1+1
+        END IF
+        IF (STATUS(IP) .eq. -1) THEN
+          nbM1=nbM1+1
+        END IF
+      END DO
+      WRITE(STAT%FHNDL,*) 'Number of  0 in STATUS=', nb0
+      WRITE(STAT%FHNDL,*) 'Number of  1 in STATUS=', nb1
+      WRITE(STAT%FHNDL,*) 'Number of -1 in STATUS=', nbM1
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -215,6 +234,7 @@
       INTEGER I, IP, IFSTAT
       REAL(rkind)       :: ATMP, BTMP, BNDTMP
       INTEGER ITMP
+      integer nb0, nb1, nb2, nb3, nb4
 #ifdef NCDF
       INTEGER ncid, var_id
       character (len = *), parameter :: CallFct="SINGLE_READ_IOBP_TOTAL"
@@ -316,6 +336,140 @@
       ENDIF 
 # endif
 #endif
+      nb0=0
+      nb1=0
+      nb2=0
+      nb3=0
+      nb4=0
+      DO IP=1,NP_TOTAL
+        IF (IOBPtotal(IP) .eq. 0) THEN
+          nb0=nb0+1
+        END IF
+        IF (IOBPtotal(IP) .eq. 1) THEN
+          nb1=nb1+1
+        END IF
+        IF (IOBPtotal(IP) .eq. 2) THEN
+          nb2=nb2+1
+        END IF
+        IF (IOBPtotal(IP) .eq. 3) THEN
+          nb3=nb3+1
+        END IF
+        IF (IOBPtotal(IP) .eq. 4) THEN
+          nb4=nb4+1
+        END IF
+      END DO
+      WRITE(STAT%FHNDL,*) 'Number of 0 in IOBPtotal=', nb0
+      WRITE(STAT%FHNDL,*) 'Number of 1 in IOBPtotal=', nb1
+      WRITE(STAT%FHNDL,*) 'Number of 2 in IOBPtotal=', nb2
+      WRITE(STAT%FHNDL,*) 'Number of 3 in IOBPtotal=', nb3
+      WRITE(STAT%FHNDL,*) 'Number of 4 in IOBPtotal=', nb4
+      FLUSH(STAT%FHNDL)
+      CALL PRINT_STATISTICS_IOBP_TOTAL
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE PRINT_STATISTICS_IOBP_TOTAL
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer :: ContElements(np_total)
+      integer :: ListDegWork(np_total)
+      integer, allocatable :: ListAdjWithDupl(:,:)
+      integer, allocatable :: IEcontain(:,:)
+      integer, allocatable :: StatusAdj(:)
+      integer IE, I, IP, INEXT, IPREV, IPadj
+      integer IP_N, IP_P, eDeg, nb1, nb2, nb, J
+      integer NumberAllTwo, NumberBoundary, NumberPathological
+      integer SatMaxDeg, pos, MaxIEcont, eDegVert
+      ContElements=0
+      DO IE=1,NE_TOTAL
+        Print *, 'IE=', IE
+        Print *, 'INE=', INEtotal(1,IE), INEtotal(2,IE), INEtotal(3,IE)
+        DO I=1,3
+          IP=INEtotal(I,IE)
+          ContElements(IP)=ContElements(IP)+1
+        END DO
+      END DO
+      MaxIEcont=maxval(ContElements)
+      SatMaxDeg=2*MaxIEcont
+      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL))
+      allocate(IEcontain(MaxIEcont,NP_TOTAL))
+      ListDegWork=0
+      DO IE=1,NE_TOTAL
+        DO I=1,3
+          IF (I.eq.3) THEN
+            INEXT=1
+          ELSE
+            INEXT=I+1
+          END IF
+          IF (I.eq.1) THEN
+            IPREV=3
+          ELSE
+            IPREV=I-1
+          END IF
+          IP=INEtotal(I,IE)
+          IP_N=INEtotal(INEXT,IE)
+          IP_P=INEtotal(IPREV,IE)
+          pos=ListDegWork(IP)
+          ListAdjWithDupl(2*pos+1,IP)=IP_N
+          ListAdjWithDupl(2*pos+2,IP)=IP_P
+          IF ((IP.eq.IP_N).or.(IP.eq.IP_P)) THEN
+            Print *, 'IE=', IE
+            Print *, 'I=', I, 'IP=', IP
+            Print *, 'INEXT=', INEXT, ' IP_N=', IP_N
+            Print *, 'IPREV=', IPREV, ' IP_P=', IP_P
+            CALL WWM_ABORT("logical error")
+          END IF
+          IEcontain(pos+1,IP)=IE
+          ListDegWork(IP)=pos+1
+        END DO
+      END DO
+      allocate(StatusAdj(SatMaxDeg))
+      NumberAllTwo=0
+      NumberBoundary=0
+      NumberPathological=0
+      DO IP=1,NP_TOTAL
+        eDeg=ListDegWork(IP)
+        Print *, 'IP=', IP, ' eDeg=', eDeg
+        StatusAdj=0
+        nb1=0
+        nb2=0
+        eDegVert=2*eDeg
+        DO I=1,eDegVert
+          IF (StatusAdj(I) .eq. 0) THEN
+            IPadj=ListAdjWithDupl(I,IP)
+            nb=0
+            DO J=I,eDegVert
+              IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
+                nb=nb+1
+                StatusAdj(J)=1
+              END IF
+            END DO
+            Print *, '  nb=', nb
+            IF (nb .eq. 0) CALL WWM_ABORT("Clear bug in code")
+            IF (nb .gt. 2) THEN
+              WRITE(DBG%FHNDL,*) 'IP=', IP, 'IPadj=', IPadj
+              DO J=1,eDeg
+                IE=IEcontain(J,IP)
+                WRITE(DBG%FHNDL,*) 'IE=', IE
+                WRITE(DBG%FHNDL,*) 'INE=', INEtotal(1,IE), INEtotal(2,IE), INEtotal(3,IE)
+              END DO
+              CALL WWM_ABORT("Hopelessly pathological grid")
+            END IF
+            IF (nb .eq. 1) nb1=nb1+1
+            IF (nb .eq. 2) nb2=nb2+1
+          END IF
+        END DO
+        IF (nb1 .eq. 0) NumberAllTwo=NumberAllTwo + 1
+        IF (nb1 .eq. 1) CALL WWM_ABORT("Number 1 should not happen")
+        IF (nb1 .eq. 2) NumberBoundary=NumberBoundary + 1
+        IF (nb1 .gt. 2) NumberPathological=NumberPathological + 1
+      END DO
+      deallocate(StatusAdj, ListAdjWithDupl)
+      WRITE(STAT%FHNDL,*) 'NumberAllTwo      =', NumberAllTwo
+      WRITE(STAT%FHNDL,*) 'NumberBoundary    =', NumberBoundary
+      WRITE(STAT%FHNDL,*) 'NumberPathological=', NumberPathological
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -395,6 +549,8 @@
       DO IP = 1, MNP
         IF (IOBP(IP) == 2 .OR. IOBP(IP) == 4) IWBMNP = IWBMNP + 1
       END DO
+      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
+      FLUSH(STAT%FHNDL)
       ALLOCATE( IWBNDLC(IWBMNP), IWBNDLC_REV(MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
       IWBNDLC_REV=0
@@ -416,6 +572,8 @@
       DO IP = 1, NP_TOTAL
         IF (IOBPtotal(IP) == 2 .OR. IOBPtotal(IP) == 4) IWBMNPGL = IWBMNPGL + 1
       END DO
+      WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
+      FLUSH(STAT%FHNDL)
       ALLOCATE( IWBNDGL(IWBMNPGL), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 3')
       idx=0

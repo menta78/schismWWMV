@@ -1079,7 +1079,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
 ! boundary
         Oper=1
-!        CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
+        CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
         !
       END IF
       IF (IOBPD_HISTORY) THEN
@@ -1173,7 +1173,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
         !
         Oper=2
-!        CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
+        CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
       ENDIF
       END SUBROUTINE
 !**********************************************************************
