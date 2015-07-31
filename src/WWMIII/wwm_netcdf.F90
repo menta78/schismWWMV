@@ -296,6 +296,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SERIAL_GET_BOUNDARY_NEXTGENERATION(IOBP, NEIGHBOR)
+      USE DATAPOOL
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBP, NEIGHBOR)
       USE DATAPOOL, ONLY : DBG
       IMPLICIT NONE
@@ -370,7 +377,7 @@
         DO IP=1,np_glob
           IF ((COLLECTED(IP).eq.0).and.(STATUS(IP).eq.0)) THEN
             STATUS(IP)=-1
-            NEIGHBOR(IP)=NEXTVERT(IP)     ! new code
+            NEIGHBOR(IP)=NEXTVERT(IP)
           END IF
           IF (STATUS(IP).eq.0) THEN
             ISFINISHED=0
