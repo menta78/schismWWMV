@@ -32,7 +32,6 @@ How to compile the C++Ocean software:
    need to install
    ---First HDF5
       https://www.hdfgroup.org/HDF5/release/obtain5.html
-      (there are several bugs in the code that you need to solve)
    ---Then NETCDF-4 C library
       https://www.unidata.ucar.edu/downloads/netcdf/index.jsp
    ---Then the NETCDF-4 C++ library
