@@ -835,7 +835,7 @@
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_size')
       call mpi_comm_rank(comm,myrank,ierr)
       if(ierr/=MPI_SUCCESS) call wwm_abort('Error at mpi_comm_rank')
-#  ifndef PDLIB
+#  ifndef PDLIB 
       CALL SIMPLE_PRE_READ
 #  endif
       CALLFROM='WWM_MPI'
@@ -846,7 +846,6 @@
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_size/rank'
       FLUSH(740+MyRankGlobal)
 # endif
-
       CALL INITIALIZE_WWM
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after INITIALIZE_WWM'

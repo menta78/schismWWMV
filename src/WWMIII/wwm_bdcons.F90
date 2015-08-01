@@ -16,6 +16,7 @@
       REAL(rkind) :: EVX, EVY
       REAL(rkind) :: eDet1, eDet2
       IOBPD = 0
+
       DO IE=1,MNE
         I1   =   INE(1,IE)
         I2   =   INE(2,IE)
@@ -304,12 +305,13 @@
           CALL WWM_ABORT(wwmerr)
         ENDIF
       ENDDO
-#ifdef DEBUG
+#if defined DEBUG && defined IOBPDOUT
 # ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
 # endif
+        write(*,*) IOBPOUT%FHNDL, IOBPOUT%FNAME
         DO IP = 1, NP_TOTAL
-          WRITE(IOBPOUT%FHNDL,*) IP, IOBPtotal(IP)
+          WRITE(IOBPOUT%FHNDL,*) IP, IOBPtotal(IP), 'TEST'
         END DO
         FLUSH(IOBPOUT%FHNDL)
 # ifdef MPI_PARALL_GRID
@@ -340,7 +342,7 @@
         END IF
       END IF
 #else
-      CALL SINGLE_READ_IOBP_TOTAL
+       CALL SINGLE_READ_IOBP_TOTAL
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -482,6 +484,7 @@
           DSPEC   = 0.
         ENDIF
       END IF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -132,7 +132,7 @@
           IF ( BETA2 .LT. ONE - 10.E-10) THEN
             SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
           ELSE
-            SURFA0  = -(ALPBJ/PI)*SME 
+            SURFA0  = - ( ALPBJ / PI ) * SME 
           END IF
         ELSE
           SURFA0 = 0.
@@ -142,11 +142,10 @@
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2 ) THEN
+            DSSBR(IS,ID)  = SURFA1
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
             IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
-            DSSBR(IS,ID) = SURFA1
-            SSBR(IS,ID)  = SURFA0 * ACLOC(IS,ID)
             IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-            !if (abs(surfa0) .gt. zero) write(*,*) surfa0, surfa1
           ELSE IF (ICOMP .LT. 2 ) THEN
             IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
@@ -154,7 +153,6 @@
             IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
           END IF
         END DO
-        !if (surfa0 .lt. zero) write(*,*) ip, SURFA0
       END DO 
 
 #ifdef SCHISM

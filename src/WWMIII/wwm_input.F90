@@ -1121,6 +1121,7 @@
          HOTF%TOTL = (HOTF%EMJD - HOTF%BMJD) * DAY2SEC
          HOTF%ISTP = NINT( HOTF%TOTL / HOTF%DELT ) + 1
          HOTF%TMJD = HOTF%BMJD
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

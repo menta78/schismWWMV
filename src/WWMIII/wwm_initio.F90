@@ -575,7 +575,6 @@
       FLUSH(STAT%FHNDL)
 #endif
 
-
       CALL CHECK_LOGICS
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
       FLUSH(STAT%FHNDL)
