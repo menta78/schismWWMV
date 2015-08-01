@@ -315,7 +315,6 @@
       integer ListDegVertBound(np_total)
       integer,allocatable :: ListDegEdgeBound(:)
       integer idxEdgeBound, idx
-      integer NumberContainEdges
       integer iEdgeBound, MaxNbContEdge
       integer, allocatable :: MappingIP_iEdgeBound(:,:)
       integer jEdgeBound, eRealDeg, eRealDegBound
@@ -472,15 +471,19 @@
         END IF
       END DO
 
-      NumberContainEdges=0
+      NumberContainedEdges=0
+!      Print *, ' maxval(NumberContainedEdges)=', maxval(NumberContainedEdges)
       DO iEdgeBound=1,TheBound % nbEdgeBound
         DO I=1,2
           IP=TheBound % ListBoundEdge(I,iEdgeBound)
           NumberContainedEdges(IP)=NumberContainedEdges(IP)+1
         END DO
+!        Print *, 'iEdgeBound=', iEdgeBound, ' max=', maxval(NumberContainedEdges)
       END DO
       MaxNbContEdge=maxval(NumberContainedEdges)
       ListDegVertBound=0
+!      Print *, 'nbEdgeBound=', TheBound % nbEdgeBound
+!      Print *, 'MaxNbContEdge=', MaxNbContEdge, ' np_total=', np_total
       allocate(MappingIP_iEdgeBound(MaxNbContEdge,np_total))
       DO iEdgeBound=1,TheBound % nbEdgeBound
         DO I=1,2
@@ -746,6 +749,7 @@
       END DO
       deallocate(StatusAdj, ListAdjWithDupl)
       deallocate(MappingIP_iEdgeBound, ListDegEdgeBound)
+      Print *, 'LEaving subroutine'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -761,6 +765,7 @@
       deallocate(TheBound % CorrespVertex)
       deallocate(TheBound % TheCycleBelong)
       deallocate(TheBound % LenCycle)
+      deallocate(TheBound % IOBP)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -778,7 +783,9 @@
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
       type(BoundaryInfo) TheBound
+      Print *, 'Entering SERIAL_WRITE_BOUNDARY'
       CALL SERIAL_GET_BOUNDARY_NEXTGENERATION(TheBound)
+      Print *, 'After SERIAL_GET_BOUNDARY_NEXTGEN, Oper=', Oper
       IF ((Oper == 1).and.(TheBound % nbEdgeBound.gt.0)) THEN
         iret=nf90_inq_dimid(ncid, 'two', two_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
@@ -795,7 +802,7 @@
         iret=nf90_put_att(ncid,var_id,FULLNAME,'IP of boundary element')
         CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         !
-        iret=nf90_def_var(ncid,'ListBoundEdge',NF90_INT,(/ two_dims, nbVertBound_dims/),var_id)
+        iret=nf90_def_var(ncid,'ListBoundEdge',NF90_INT,(/ two_dims, nbEdgeBound_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'boundary edges')
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
@@ -825,6 +832,8 @@
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Length of cycles')
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
       END IF
+      Print *, 'After Oper=1'
+      Print *, 'TheBound % nbEdgeBound=', TheBound % nbEdgeBound
       IF ((Oper == 2).and.(TheBound % nbEdgeBound.gt.0)) THEN
         iret=nf90_inq_varid(ncid, "ListVertBound", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
@@ -856,12 +865,14 @@
         iret=nf90_put_var(ncid,var_id,TheBound % TheCycleBelong, start = (/1/), count = (/ TheBound % nbEdgeBound/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
         !
-        iret=nf90_inq_varid(ncid, "lencycle", var_id)
+        iret=nf90_inq_varid(ncid, "LenCycle", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % LenCycle, start = (/1/), count = (/ TheBound % NbCycle/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
       END IF
+      Print *, 'After Oper=2'
       CALL DeallocateBoundaryInfo(TheBound)
+      Print *, 'After deallocate'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
