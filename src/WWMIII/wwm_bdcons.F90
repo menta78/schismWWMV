@@ -1,5 +1,6 @@
 #include "wwm_functions.h"
 #define DEBUG
+#undef DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -383,8 +384,6 @@
       integer SatMaxDeg, pos, MaxIEcont, eDegVert
       ContElements=0
       DO IE=1,NE_TOTAL
-        Print *, 'IE=', IE
-        Print *, 'INE=', INEtotal(1,IE), INEtotal(2,IE), INEtotal(3,IE)
         DO I=1,3
           IP=INEtotal(I,IE)
           ContElements(IP)=ContElements(IP)+1
@@ -414,10 +413,10 @@
           ListAdjWithDupl(2*pos+1,IP)=IP_N
           ListAdjWithDupl(2*pos+2,IP)=IP_P
           IF ((IP.eq.IP_N).or.(IP.eq.IP_P)) THEN
-            Print *, 'IE=', IE
-            Print *, 'I=', I, 'IP=', IP
-            Print *, 'INEXT=', INEXT, ' IP_N=', IP_N
-            Print *, 'IPREV=', IPREV, ' IP_P=', IP_P
+            WRITE(DBG%FHNDL, *) 'IE=', IE
+            WRITE(DBG%FHNDL, *) 'I=', I, 'IP=', IP
+            WRITE(DBG%FHNDL, *) 'INEXT=', INEXT, ' IP_N=', IP_N
+            WRITE(DBG%FHNDL, *) 'IPREV=', IPREV, ' IP_P=', IP_P
             CALL WWM_ABORT("logical error")
           END IF
           IEcontain(pos+1,IP)=IE
@@ -430,7 +429,7 @@
       NumberPathological=0
       DO IP=1,NP_TOTAL
         eDeg=ListDegWork(IP)
-        Print *, 'IP=', IP, ' eDeg=', eDeg
+!        Print *, 'IP=', IP, ' eDeg=', eDeg
         StatusAdj=0
         nb1=0
         nb2=0
@@ -445,7 +444,7 @@
                 StatusAdj(J)=1
               END IF
             END DO
-            Print *, '  nb=', nb
+!           Print *, '  nb=', nb
             IF (nb .eq. 0) CALL WWM_ABORT("Clear bug in code")
             IF (nb .gt. 2) THEN
               WRITE(DBG%FHNDL,*) 'IP=', IP, 'IPadj=', IPadj

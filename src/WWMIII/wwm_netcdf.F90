@@ -373,11 +373,17 @@
           ListDegWork(IP)=pos+1
         END DO
       END DO
+      WRITE(STAT%FHNDL,*) 'Stage 1 finished'
+      FLUSH(STAT%FHNDL)
       allocate(StatusAdj(SatMaxDeg))
+      allocate(TheBound % IOBP(np_total))
       NumberAllTwo=0
       NumberBoundary=0
       NumberPathological=0
       TheBound % nbEdgeBound=0
+      TheBound % nbVertBound=0
+      IsPointClassicalBoundary=0
+      IsPointPathologicalBoundary=0
       DO IP=1,NP_TOTAL
         eDeg=ListDegWork(IP)
         StatusAdj=0
@@ -411,25 +417,31 @@
         END DO
         IF (nb1 .eq. 0) NumberAllTwo=NumberAllTwo + 1
         IF (nb1 .eq. 1) CALL WWM_ABORT("Number 1 should not happen")
-        IF (nb1 .eq. 2) NumberBoundary=NumberBoundary + 1
-        IF (nb1 .gt. 2) NumberPathological=NumberPathological + 1
+        IF (nb1 .eq. 2) THEN
+          NumberBoundary=NumberBoundary + 1
+          IsPointClassicalBoundary(IP)=1
+        END IF
+        IF (nb1 .gt. 2) THEN
+          NumberPathological=NumberPathological + 1
+          IsPointPathologicalBoundary(IP)=1
+        END IF
+        IF (nb1 .gt. 0) THEN
+          TheBound % IOBP(IP)=1
+          TheBound % nbVertBound=TheBound % nbVertBound+1
+        END IF
       END DO
       WRITE(STAT%FHNDL,*) 'NumberAllTwo      =', NumberAllTwo
       WRITE(STAT%FHNDL,*) 'NumberBoundary    =', NumberBoundary
       WRITE(STAT%FHNDL,*) 'NumberPathological=', NumberPathological
       FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,*) 'Stage 2 finished'
+      FLUSH(STAT%FHNDL)
       allocate(TheBound % ListBoundEdge(2, TheBound % nbEdgeBound))
-      IsPointClassicalBoundary=0
-      IsPointPathologicalBoundary=0
       idxEdgeBound=0
-      allocate(TheBound % IOBP(np_total))
       TheBound % IOBP = 0
-      TheBound % nbVertBound=0
       DO IP=1,NP_TOTAL
         eDeg=ListDegWork(IP)
         StatusAdj=0
-        nb1=0
-        nb2=0
         eDegVert=2*eDeg
         DO I=1,eDegVert
           IF (StatusAdj(I) .eq. 0) THEN
@@ -448,13 +460,9 @@
             END IF
           END IF
         END DO
-        IF (nb1 .eq. 2) IsPointClassicalBoundary(IP)=1
-        IF (nb1 .gt. 2) IsPointPathologicalBoundary(IP)=1
-        IF (nb1 .gt. 0) THEN
-          TheBound % IOBP(IP)=1
-          TheBound % nbVertBound=TheBound % nbVertBound+1
-        END IF
       END DO
+      WRITE(STAT%FHNDL,*) 'Stage 3 finished'
+      FLUSH(STAT%FHNDL)
       allocate(TheBound % ListVertBound(TheBound % nbVertBound))
       idx=0
       DO IP=1,np_total
@@ -482,6 +490,8 @@
           ListDegVertBound(IP)=eDeg+1
         END DO
       END DO
+      WRITE(STAT%FHNDL,*) 'Stage 4 finished'
+      FLUSH(STAT%FHNDL)
       allocate(TheBound % AdjacencyEdgeBound(2,TheBound % nbEdgeBound))
       allocate(ListDegEdgeBound(TheBound % nbEdgeBound))
       ListDegEdgeBound=0
@@ -504,9 +514,6 @@
           eDeg=ListDegWork(IP)
           eDegVert=2*eDeg
           StatusAdj=0
-          nb1=0
-          nb2=0
-          eDegVert=2*eDeg
           eRealDeg=0
           eRealDegBound=0
           DO I=1,eDegVert
@@ -525,11 +532,13 @@
           END DO
           allocate(ListAdjVert(eRealDeg))
           allocate(ListAdjVertBound(eRealDegBound))
+          StatusAdj=0
           idxDeg=0
           idxDegBound=0
           DO I=1,eDegVert
             IF (StatusAdj(I) .eq. 0) THEN
               IPadj=ListAdjWithDupl(I,IP)
+              IF (IPadj .eq. 0) CALL WWM_ABORT("IPadj should be non-zero") 
               nb=0
               DO J=I,eDegVert
                 IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
@@ -545,6 +554,7 @@
               END IF
             END IF
           END DO
+          if (idxDegBound .ne. eRealDegBound) CALL WWM_ABORT("Logical error on eRealDegBound")
           nbContIE=ListDegWork(IP)
           allocate(ListMatchVert(eRealDegBound))
           ListMatchVert=ListAdjVertBound
@@ -588,25 +598,31 @@
             ListAng(iVertBound)=eAng
           END DO
           allocate(ListPrevVertBound(eRealDegBound), ListNextVertBound(eRealDegBound))
+!          Print *, 'Before determination of next/prev s'
           DO iVertBound=1,eRealDegBound
+!            Print *, 'iVertBound=', iVertBound
             idxLargest=0
             idxSmallest=0
             eAngLargest=-1.0
             eAngSmallest=400.0
             DO jVertBound=1,eRealDegBound
-              eDiffAng=ListAng(jVertBound) - ListAng(iVertBound)
-              if (eDiffAng .lt. 0) eDiffAng = eDiffAng + PI2
-              IF (eDiffAng .gt. eAngLargest) THEN
-                eAngLargest=eDiffAng
-                idxLargest=jVertBound
-              END IF
-              IF (eDiffAng .lt. eAngSmallest) THEN
-                eAngSmallest=eDiffAng
-                idxSmallest=jVertBound
+              IF (jVertBound .ne. iVertBound) THEN
+                eDiffAng=ListAng(jVertBound) - ListAng(iVertBound)
+                if (eDiffAng .lt. 0) eDiffAng = eDiffAng + PI2
+                IF (eDiffAng .gt. eAngLargest) THEN
+                  eAngLargest=eDiffAng
+                  idxLargest=jVertBound
+                END IF
+                IF (eDiffAng .lt. eAngSmallest) THEN
+                  eAngSmallest=eDiffAng
+                  idxSmallest=jVertBound
+                END IF
               END IF
             END DO
             ListPrevVertBound(iVertBound)=ListAdjVertBound(idxSmallest)
             ListNextVertBound(iVertBound)=ListAdjVertBound(idxLargest)
+!            Print *, 'IP=', ListAdjVertBound(iVertBound), '   match=', ListMatchVert(iVertBound)
+!            Print *, 'iV=', iVertBound, ' prev/next=', ListPrevVertBound(iVertBound), ListNextVertBound(iVertBound)
           END DO
           deallocate(ListAng)
           allocate(ListIedgeBound(eRealDegBound))
@@ -630,6 +646,7 @@
             IF (iEdgeBoundFound .eq. -1) CALL WWM_ABORT("Error in finding iEdgeBoundFound")
             ListIedgeBound(iVertBound)=iEdgeBoundFound
           END DO
+          Print *, 'eRealDegBound=', eRealDegBound
           DO iVertBound=1,eRealDegBound
             IP1=ListAdjVertBound(iVertBound)
             IP2=ListMatchVert(iVertBound)
@@ -645,6 +662,7 @@
                 IF (ListAdjVertBound(jVertBound) .eq. IPadj) jVertBoundFound=jVertBound
               END DO
               IF (jVertBoundFound .eq. -1) CALL WWM_ABORT("Another error")
+              jVertBound=jVertBoundFound
               iEdgeBound=ListIedgeBound(iVertBound)
               jEdgeBound=ListIedgeBound(jVertBound)
               !
@@ -663,8 +681,17 @@
           deallocate(ListAdjVert, ListAdjVertBound)
         END IF
       END DO
+      WRITE(STAT%FHNDL,*) 'Stage 5 finished'
+      FLUSH(STAT%FHNDL)
       DO iEdgeBound=1,TheBound % nbEdgeBound
-        IF (ListDegEdgeBound(iEdgeBound) .ne. 2) CALL WWM_ABORT("Degree error")
+        WRITE(DBG%FHNDL,*) 'iEdgeBound/eDeg=', iEdgeBound, ListDegEdgeBound(iEdgeBound)
+      END DO
+      DO iEdgeBound=1,TheBound % nbEdgeBound
+        IF (ListDegEdgeBound(iEdgeBound) .ne. 2) THEN
+          WRITE(DBG%FHNDL,*) 'iEdgeBound=', iEdgeBound
+          WRITE(DBG%FHNDL,*) 'eDeg=', ListDegEdgeBound(iEdgeBound)
+          CALL WWM_ABORT("Degree error")
+        END IF
       END DO
       allocate(TheBound % NEIGHBORedge(TheBound % nbEdgeBound))
       allocate(TheBound % CorrespVertex(TheBound % nbEdgeBound))
@@ -757,82 +784,82 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
         !
         iret = nf90_def_dim(ncid, 'nbEdgeBound', TheBound % nbEdgeBound, nbEdgeBound_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         iret = nf90_def_dim(ncid, 'nbVertBound', TheBound % nbVertBound, nbVertBound_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
         iret = nf90_def_dim(ncid, 'NbCycle', TheBound % NbCycle, NbCycle_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
         !
         iret=nf90_def_var(ncid,'ListVertBound',NF90_INT,(/ nbVertBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'IP of boundary element')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         !
         iret=nf90_def_var(ncid,'ListBoundEdge',NF90_INT,(/ two_dims, nbVertBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'boundary edges')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         !
         iret=nf90_def_var(ncid,'AdjacencyEdgeBound',NF90_INT,(/ two_dims, nbEdgeBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'boundary edges')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
         iret=nf90_def_var(ncid,'NEIGHBORedge',NF90_INT,(/ nbEdgeBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'next boundary edge in the cycle')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
         !
         iret=nf90_def_var(ncid,'CorrespVertex',NF90_INT,(/ nbEdgeBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Corresponding vertex to the boundary edge')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
         !
         iret=nf90_def_var(ncid,'CycleBelong',NF90_INT,(/ nbEdgeBound_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'The cycle to which the boundary edge belongs')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
         !
         iret=nf90_def_var(ncid,'LenCycle',NF90_INT,(/ NbCycle_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Length of cycles')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
       END IF
       IF ((Oper == 2).and.(TheBound % nbEdgeBound.gt.0)) THEN
         iret=nf90_inq_varid(ncid, "ListVertBound", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % ListVertBound, start = (/1/), count = (/ TheBound % nbVertBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
         !
         iret=nf90_inq_varid(ncid, "ListBoundEdge", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % ListBoundEdge, start = (/1, 1/), count = (/ 2, TheBound % nbEdgeBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
         !
         iret=nf90_inq_varid(ncid, "AdjacencyEdgeBound", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % AdjacencyEdgeBound, start = (/1, 1/), count = (/ 2, TheBound % nbEdgeBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
         !
         iret=nf90_inq_varid(ncid, "NEIGHBORedge", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 25, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % NEIGHBORedge, start = (/1/), count = (/ TheBound % nbEdgeBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 26, iret)
         !
         iret=nf90_inq_varid(ncid, "CorrespVertex", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % CorrespVertex, start = (/1/), count = (/ TheBound % nbEdgeBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 28, iret)
         !
         iret=nf90_inq_varid(ncid, "CycleBelong", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 29, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % TheCycleBelong, start = (/1/), count = (/ TheBound % nbEdgeBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 30, iret)
         !
         iret=nf90_inq_varid(ncid, "lencycle", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
         iret=nf90_put_var(ncid,var_id,TheBound % LenCycle, start = (/1/), count = (/ TheBound % NbCycle/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
       END IF
       CALL DeallocateBoundaryInfo(TheBound)
       END SUBROUTINE
