@@ -296,135 +296,444 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SERIAL_GET_BOUNDARY_NEXTGENERATION(IOBP, NEIGHBOR)
+      SUBROUTINE SERIAL_GET_BOUNDARY_NEXTGENERATION(TheBound)
       USE DATAPOOL
-
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBP, NEIGHBOR)
-      USE DATAPOOL, ONLY : DBG
       IMPLICIT NONE
-      INTEGER, INTENT(IN)             :: np_glob, ne_glob
-      INTEGER, INTENT(IN)             :: INEglob(3, ne_glob)
-      INTEGER, INTENT(INOUT)          :: IOBP(np_glob)
-      INTEGER, INTENT(INOUT)          :: NEIGHBOR(np_glob)
-
-      INTEGER :: STATUS(np_glob), COLLECTED(np_glob)
-      INTEGER :: NEXTVERT(np_glob), PREVVERT(np_glob), NBneighbor(np_glob)
-
-      INTEGER :: IE, I, IP, eIdx
-      INTEGER :: ISFINISHED, INEXT, IPREV, IPNEXT, IPPREV, ZNEXT
-      LOGICAL :: HaveError
-      NEIGHBOR=0
-      STATUS = 0
-      NEXTVERT = 0
-      PREVVERT = 0
-      DO IE=1,ne_glob
+      type(BoundaryInfo), intent(inout) :: TheBound
+      integer :: ContElements(np_total)
+      integer :: ListDegWork(np_total)
+      integer, allocatable :: ListAdjWithDupl(:,:)
+      integer, allocatable :: IEcontain(:,:)
+      integer, allocatable :: StatusAdj(:)
+      integer IE, I, IP, INEXT, IPREV, IPadj
+      integer IP_N, IP_P, eDeg, nb1, nb2, nb, J
+      integer NumberAllTwo, NumberBoundary, NumberPathological
+      integer SatMaxDeg, pos, MaxIEcont, eDegVert
+      integer IsPointClassicalBoundary(np_total)
+      integer IsPointPathologicalBoundary(np_total)
+      integer NumberContainedEdges(np_total)
+      integer ListDegVertBound(np_total)
+      integer,allocatable :: ListDegEdgeBound(:)
+      integer idxEdgeBound, idx
+      integer NumberContainEdges
+      integer iEdgeBound, MaxNbContEdge
+      integer, allocatable :: MappingIP_iEdgeBound(:,:)
+      integer jEdgeBound, eRealDeg, eRealDegBound
+      integer, allocatable :: ListAdjVert(:), ListAdjVertBound(:), ListMatchVert(:)
+      integer idxDeg, idxDegBound, nbContIE, idxIE, jVertBound
+      real(rkind), allocatable :: ListAng(:)
+      logical WeDoOperation, WeWork
+      integer iVertBound, IP1, IP_C
+      real(rkind) DeltaX, DeltaY, eAng, eAngLargest, eAngSmallest, eDiffAng
+      integer idxLargest, idxSmallest, iEdgeBoundFound, IPwork1, IPwork2
+      integer, allocatable :: ListPrevVertBound(:), ListNextVertBound(:)
+      integer eDegEdgeBound, iEdge, jVertBoundFound, NbCycle
+      integer iEdgeBoundFirst, iEdgeBoundWork, IPfound, len
+      integer IP_prev, IP_next, IP2
+      integer, allocatable :: ListIedgeBound(:), LenCycle(:)
+      integer iEdgeBoundNext
+      ContElements=0
+      DO IE=1,NE_TOTAL
         DO I=1,3
-          IF (I.EQ.1) THEN
-            IPREV=3
-          ELSE
-            IPREV=I-1
-          END IF
-          IF (I.EQ.3) THEN
+          IP=INEtotal(I,IE)
+          ContElements(IP)=ContElements(IP)+1
+        END DO
+      END DO
+      MaxIEcont=maxval(ContElements)
+      SatMaxDeg=2*MaxIEcont
+      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL))
+      allocate(IEcontain(MaxIEcont,NP_TOTAL))
+      ListDegWork=0
+      DO IE=1,NE_TOTAL
+        DO I=1,3
+          IF (I.eq.3) THEN
             INEXT=1
           ELSE
             INEXT=I+1
           END IF
-          IP=INEglob(I,IE)
-          IPNEXT=INEglob(INEXT,IE)
-          IPPREV=INEglob(IPREV,IE)
-          IF (STATUS(IP).EQ.0) THEN
-            STATUS(IP)=1
-            PREVVERT(IP)=IPPREV
-            NEXTVERT(IP)=IPNEXT
+          IF (I.eq.1) THEN
+            IPREV=3
+          ELSE
+            IPREV=I-1
           END IF
+          IP=INEtotal(I,IE)
+          IP_N=INEtotal(INEXT,IE)
+          IP_P=INEtotal(IPREV,IE)
+          pos=ListDegWork(IP)
+          ListAdjWithDupl(2*pos+1,IP)=IP_N
+          ListAdjWithDupl(2*pos+2,IP)=IP_P
+          IF ((IP.eq.IP_N).or.(IP.eq.IP_P)) THEN
+            WRITE(DBG%FHNDL,*) 'IE=', IE
+            WRITE(DBG%FHNDL,*) 'I=', I, 'IP=', IP
+            WRITE(DBG%FHNDL,*) 'INEXT=', INEXT, ' IP_N=', IP_N
+            WRITE(DBG%FHNDL,*) 'IPREV=', IPREV, ' IP_P=', IP_P
+            CALL WWM_ABORT("logical error")
+          END IF
+          IEcontain(pos+1,IP)=IE
+          ListDegWork(IP)=pos+1
         END DO
       END DO
-      STATUS=0
-      DO
-        COLLECTED=0
-        DO IE=1,ne_glob
-          DO I=1,3
-            IF (I.EQ.1) THEN
-              IPREV=3
-            ELSE
-              IPREV=I-1
+      allocate(StatusAdj(SatMaxDeg))
+      NumberAllTwo=0
+      NumberBoundary=0
+      NumberPathological=0
+      TheBound % nbEdgeBound=0
+      DO IP=1,NP_TOTAL
+        eDeg=ListDegWork(IP)
+        StatusAdj=0
+        nb1=0
+        nb2=0
+        eDegVert=2*eDeg
+        DO I=1,eDegVert
+          IF (StatusAdj(I) .eq. 0) THEN
+            IPadj=ListAdjWithDupl(I,IP)
+            nb=0
+            DO J=I,eDegVert
+              IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
+                nb=nb+1
+                StatusAdj(J)=1
+              END IF
+            END DO
+            IF (nb .eq. 0) CALL WWM_ABORT("Clear bug in code")
+            IF (nb .gt. 2) THEN
+              WRITE(DBG%FHNDL,*) 'IP=', IP, 'IPadj=', IPadj
+              DO J=1,eDeg
+                IE=IEcontain(J,IP)
+                WRITE(DBG%FHNDL,*) 'IE=', IE
+                WRITE(DBG%FHNDL,*) 'INE=', INEtotal(1,IE), INEtotal(2,IE), INEtotal(3,IE)
+              END DO
+              CALL WWM_ABORT("Hopelessly pathological grid")
             END IF
-            IF (I.EQ.3) THEN
-              INEXT=1
-            ELSE
-              INEXT=I+1
+            IF (nb .eq. 1) nb1=nb1+1
+            IF (nb .eq. 2) nb2=nb2+1
+            IF ((nb .eq. 1).and.(IP .gt. IPadj)) TheBound % nbEdgeBound = TheBound % nbEdgeBound + 1
+          END IF
+        END DO
+        IF (nb1 .eq. 0) NumberAllTwo=NumberAllTwo + 1
+        IF (nb1 .eq. 1) CALL WWM_ABORT("Number 1 should not happen")
+        IF (nb1 .eq. 2) NumberBoundary=NumberBoundary + 1
+        IF (nb1 .gt. 2) NumberPathological=NumberPathological + 1
+      END DO
+      WRITE(STAT%FHNDL,*) 'NumberAllTwo      =', NumberAllTwo
+      WRITE(STAT%FHNDL,*) 'NumberBoundary    =', NumberBoundary
+      WRITE(STAT%FHNDL,*) 'NumberPathological=', NumberPathological
+      FLUSH(STAT%FHNDL)
+      allocate(TheBound % ListBoundEdge(2, TheBound % nbEdgeBound))
+      IsPointClassicalBoundary=0
+      IsPointPathologicalBoundary=0
+      idxEdgeBound=0
+      allocate(TheBound % IOBP(np_total))
+      TheBound % IOBP = 0
+      TheBound % nbVertBound=0
+      DO IP=1,NP_TOTAL
+        eDeg=ListDegWork(IP)
+        StatusAdj=0
+        nb1=0
+        nb2=0
+        eDegVert=2*eDeg
+        DO I=1,eDegVert
+          IF (StatusAdj(I) .eq. 0) THEN
+            IPadj=ListAdjWithDupl(I,IP)
+            nb=0
+            DO J=I,eDegVert
+              IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
+                nb=nb+1
+                StatusAdj(J)=1
+              END IF
+            END DO
+            IF ((nb .eq. 1).and.(IP .gt. IPadj)) THEN
+              idxEdgeBound=idxEdgeBound+1
+              TheBound % ListBoundEdge(1,idxEdgeBound)=IPadj
+              TheBound % ListBoundEdge(2,idxEdgeBound)=IP
             END IF
-            IP=INEglob(I,IE)
-            IPNEXT=INEglob(INEXT,IE)
-            IPPREV=INEglob(IPREV,IE)
-            IF (STATUS(IP).eq.0) THEN
-              ZNEXT=NEXTVERT(IP)
-              IF (ZNEXT.eq.IPPREV) THEN
-                COLLECTED(IP)=1
-                NEXTVERT(IP)=IPNEXT
-                IF (NEXTVERT(IP).eq.PREVVERT(IP)) THEN
-                  STATUS(IP)=1
+          END IF
+        END DO
+        IF (nb1 .eq. 2) IsPointClassicalBoundary(IP)=1
+        IF (nb1 .gt. 2) IsPointPathologicalBoundary(IP)=1
+        IF (nb1 .gt. 0) THEN
+          TheBound % IOBP(IP)=1
+          TheBound % nbVertBound=TheBound % nbVertBound+1
+        END IF
+      END DO
+      allocate(TheBound % ListVertBound(TheBound % nbVertBound))
+      idx=0
+      DO IP=1,np_total
+        IF (TheBound % IOBP(IP) .eq. 1) THEN
+          idx=idx+1
+          TheBound % ListVertBound(idx)=IP
+        END IF
+      END DO
+
+      NumberContainEdges=0
+      DO iEdgeBound=1,TheBound % nbEdgeBound
+        DO I=1,2
+          IP=TheBound % ListBoundEdge(I,iEdgeBound)
+          NumberContainedEdges(IP)=NumberContainedEdges(IP)+1
+        END DO
+      END DO
+      MaxNbContEdge=maxval(NumberContainedEdges)
+      ListDegVertBound=0
+      allocate(MappingIP_iEdgeBound(MaxNbContEdge,np_total))
+      DO iEdgeBound=1,TheBound % nbEdgeBound
+        DO I=1,2
+          IP=TheBound % ListBoundEdge(I,iEdgeBound)
+          eDeg=ListDegVertBound(IP)
+          MappingIP_iEdgeBound(eDeg+1,IP)=iEdgeBound
+          ListDegVertBound(IP)=eDeg+1
+        END DO
+      END DO
+      allocate(TheBound % AdjacencyEdgeBound(2,TheBound % nbEdgeBound))
+      allocate(ListDegEdgeBound(TheBound % nbEdgeBound))
+      ListDegEdgeBound=0
+      DO IP=1,np_total
+        IF (IsPointClassicalBoundary(IP) .eq. 1) THEN
+          iEdgeBound=MappingIP_iEdgeBound(1,IP)
+          jEdgeBound=MappingIP_iEdgeBound(2,IP)
+          !
+          eDeg=ListDegEdgeBound(iEdgeBound)
+          TheBound % AdjacencyEdgeBound(eDeg+1,iEdgeBound)=jEdgeBound
+          ListDegEdgeBound(iEdgeBound)=eDeg+1
+          !
+          eDeg=ListDegEdgeBound(jEdgeBound)
+          TheBound % AdjacencyEdgeBound(eDeg+1,jEdgeBound)=iEdgeBound
+          ListDegEdgeBound(jEdgeBound)=eDeg+1
+        END IF
+      END DO
+      DO IP=1,np_total
+        IF (IsPointPathologicalBoundary(IP) .eq. 1) THEN
+          eDeg=ListDegWork(IP)
+          eDegVert=2*eDeg
+          StatusAdj=0
+          nb1=0
+          nb2=0
+          eDegVert=2*eDeg
+          eRealDeg=0
+          eRealDegBound=0
+          DO I=1,eDegVert
+            IF (StatusAdj(I) .eq. 0) THEN
+              IPadj=ListAdjWithDupl(I,IP)
+              nb=0
+              DO J=I,eDegVert
+                IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
+                  nb=nb+1
+                  StatusAdj(J)=1
                 END IF
+              END DO
+              eRealDeg=eRealDeg+1
+              IF (nb .eq. 1) eRealDegBound=eRealDegBound+1
+            END IF
+          END DO
+          allocate(ListAdjVert(eRealDeg))
+          allocate(ListAdjVertBound(eRealDegBound))
+          idxDeg=0
+          idxDegBound=0
+          DO I=1,eDegVert
+            IF (StatusAdj(I) .eq. 0) THEN
+              IPadj=ListAdjWithDupl(I,IP)
+              nb=0
+              DO J=I,eDegVert
+                IF (ListAdjWithDupl(J,IP) .eq. IPadj) THEN
+                  nb=nb+1
+                  StatusAdj(J)=1
+                END IF
+              END DO
+              idxDeg=idxDeg+1
+              ListAdjVert(idxDeg)=IPadj
+              IF (nb .eq. 1) THEN
+                idxDegBound=idxDegBound+1
+                ListAdjVertBound(idxDegBound)=IPadj
               END IF
             END IF
           END DO
-        END DO
-        ISFINISHED=1
-        DO IP=1,np_glob
-          IF ((COLLECTED(IP).eq.0).and.(STATUS(IP).eq.0)) THEN
-            STATUS(IP)=-1
-            NEIGHBOR(IP)=NEXTVERT(IP)
-          END IF
-          IF (STATUS(IP).eq.0) THEN
-            ISFINISHED=0
-          END IF
-        END DO
-        IF (ISFINISHED.eq.1) THEN
-          EXIT
+          nbContIE=ListDegWork(IP)
+          allocate(ListMatchVert(eRealDegBound))
+          ListMatchVert=ListAdjVertBound
+          DO 
+            WeDoOperation=.false.
+            DO iVertBound=1,eRealDegBound
+              IP1=ListMatchVert(iVertBound)
+              DO idxIE=1,nbContIE
+                IE=IEcontain(idxIE,IP)
+                DO I=1,3
+                  IF (I.eq.3) THEN
+                    INEXT=1
+                  ELSE
+                    INEXT=I+1
+                  END IF
+                  IF (I.eq.1) THEN
+                    IPREV=3
+                  ELSE
+                    IPREV=I-1
+                  END IF
+                  IP_C=INEtotal(I,IE)
+                  IP_N=INEtotal(INEXT,IE)
+                  IP_P=INEtotal(IPREV,IE)
+                  IF ((IP_C.eq.IP).and.(IP_N.eq.IP1)) THEN
+                    WeDoOperation=.true.
+                    ListMatchVert(iVertBound)=IP_P
+                  END IF
+                END DO
+              END DO
+            END DO
+            IF (WeDoOperation .eqv. .false.) THEN
+              EXIT
+            END IF
+          END DO
+          allocate(ListAng(eRealDegBound))
+          DO iVertBound=1,eRealDegBound
+            IPadj=ListAdjVertBound(iVertBound)
+            DeltaX=XPtotal(IPadj) - XPtotal(IP)
+            DeltaY=YPtotal(IPadj) - YPtotal(IP)
+            eAng=ATAN2(DeltaY, DeltaX)
+            ListAng(iVertBound)=eAng
+          END DO
+          allocate(ListPrevVertBound(eRealDegBound), ListNextVertBound(eRealDegBound))
+          DO iVertBound=1,eRealDegBound
+            idxLargest=0
+            idxSmallest=0
+            eAngLargest=-1.0
+            eAngSmallest=400.0
+            DO jVertBound=1,eRealDegBound
+              eDiffAng=ListAng(jVertBound) - ListAng(iVertBound)
+              if (eDiffAng .lt. 0) eDiffAng = eDiffAng + PI2
+              IF (eDiffAng .gt. eAngLargest) THEN
+                eAngLargest=eDiffAng
+                idxLargest=jVertBound
+              END IF
+              IF (eDiffAng .lt. eAngSmallest) THEN
+                eAngSmallest=eDiffAng
+                idxSmallest=jVertBound
+              END IF
+            END DO
+            ListPrevVertBound(iVertBound)=ListAdjVertBound(idxSmallest)
+            ListNextVertBound(iVertBound)=ListAdjVertBound(idxLargest)
+          END DO
+          deallocate(ListAng)
+          allocate(ListIedgeBound(eRealDegBound))
+          DO iVertBound=1,eRealDegBound
+            IP1=ListAdjVertBound(iVertBound)
+            IF (IP .lt. IP1) THEN
+              IPwork1=IP
+              IPwork2=IP1
+            ELSE
+              IPwork1=IP1
+              IPwork2=IP
+            END IF
+            iEdgeBoundFound=-1
+            eDegEdgeBound=ListDegVertBound(IP)
+            DO iEdge=1,eDegEdgeBound
+              iEdgeBound=MappingIP_iEdgeBound(iEdge,IP)
+              IF ((TheBound % ListBoundEdge(1,iEdgeBound) .eq. IPwork1).and.(TheBound % ListBoundEdge(2,iEdgeBound).eq.IPwork2)) THEN
+                iEdgeBoundFound=iEdgeBound
+              END IF
+            END DO
+            IF (iEdgeBoundFound .eq. -1) CALL WWM_ABORT("Error in finding iEdgeBoundFound")
+            ListIedgeBound(iVertBound)=iEdgeBoundFound
+          END DO
+          DO iVertBound=1,eRealDegBound
+            IP1=ListAdjVertBound(iVertBound)
+            IP2=ListMatchVert(iVertBound)
+            IF (IP1 .ne. IP2) THEN
+              IP_prev=ListPrevVertBound(iVertBound)
+              IP_next=ListNextVertBound(iVertBound)
+              IPadj=0
+              IF (IP2 .eq. IP_prev) IPadj=IP_next
+              IF (IP2 .eq. IP_next) IPadj=IP_prev
+              IF (IPadj .eq. 0) CALL WWM_ABORT("Clear bug to solve")
+              jVertBoundFound=-1
+              DO jVertBound=1,eRealDegBound
+                IF (ListAdjVertBound(jVertBound) .eq. IPadj) jVertBoundFound=jVertBound
+              END DO
+              IF (jVertBoundFound .eq. -1) CALL WWM_ABORT("Another error")
+              iEdgeBound=ListIedgeBound(iVertBound)
+              jEdgeBound=ListIedgeBound(jVertBound)
+              !
+              eDeg=ListDegEdgeBound(iEdgeBound)
+              TheBound % AdjacencyEdgeBound(eDeg+1,iEdgeBound)=jEdgeBound
+              ListDegEdgeBound(iEdgeBound)=eDeg+1
+              !
+              eDeg=ListDegEdgeBound(jEdgeBound)
+              TheBound % AdjacencyEdgeBound(eDeg+1,jEdgeBound)=iEdgeBound
+              ListDegEdgeBound(jEdgeBound)=eDeg+1
+            END IF
+          END DO
+          deallocate(ListIedgeBound)
+          deallocate(ListMatchVert)
+          deallocate(ListPrevVertBound, ListNextVertBound)
+          deallocate(ListAdjVert, ListAdjVertBound)
         END IF
       END DO
-      IOBP=0
-      DO IP=1,np_glob
-        IF (STATUS(IP).eq.-1) THEN
-          IOBP(IP)=1
+      DO iEdgeBound=1,TheBound % nbEdgeBound
+        IF (ListDegEdgeBound(iEdgeBound) .ne. 2) CALL WWM_ABORT("Degree error")
+      END DO
+      allocate(TheBound % NEIGHBORedge(TheBound % nbEdgeBound))
+      allocate(TheBound % CorrespVertex(TheBound % nbEdgeBound))
+      TheBound % NEIGHBORedge=0
+      allocate(LenCycle(TheBound % nbEdgeBound))
+      allocate(TheBound % TheCycleBelong(TheBound % nbEdgeBound))
+      LenCycle=0
+      NbCycle=0
+      DO iEdgeBound=1,TheBound % nbEdgeBound
+        IF (TheBound % NEIGHBORedge(iEdgeBound) .eq. 0) THEN
+          NbCycle = NbCycle + 1
+          iEdgeBoundFirst=iEdgeBound
+          iEdgeBoundWork=iEdgeBound 
+          iEdgeBoundNext=TheBound % AdjacencyEdgeBound(1,iEdgeBound)
+          len=0
+          DO
+            TheBound % NEIGHBORedge(iEdgeBoundWork)=iEdgeBoundNext
+            IPfound=-1
+            DO I=1,2
+              IP=TheBound % ListBoundEdge(I,iEdgeBoundWork)
+              DO J=1,2
+                IP2=TheBound % ListBoundEdge(J,iEdgeBoundNext)
+                IF (IP2 .eq. IP) THEN
+                  IPfound=IP
+                END IF
+              END DO
+            END DO
+            IF (IPfound .eq. -1) CALL WWM_ABORT("Error in looking for IPfound")
+            TheBound % CorrespVertex(iEdgeBoundWork)=IPfound
+            TheBound % TheCycleBelong(iEdgeBoundWork)=NbCycle
+            len=len+1 
+            WeWork=.false.
+            DO I=1,2
+              IF (Wework .eqv. .false.) THEN
+                jEdgeBound=TheBound % AdjacencyEdgeBound(I,iEdgeBoundNext)
+                IF (jEdgeBound .ne. iEdgeBoundWork) THEN
+                  WeWork=.true.
+                  iEdgeBoundWork=iEdgeBoundNext
+                  iEdgeBoundNext=jEdgeBound
+                END IF
+              END IF
+            END DO
+            if (iEdgeBoundNext .eq. iEdgeBoundFirst) EXIT
+          END DO
+          LenCycle(NbCycle)=len
         END IF
       END DO
-      NBneighbor=0
-      DO IP=1,np_glob
-        eIdx=NEIGHBOR(IP)
-        IF (eIdx.gt.0) THEN
-          NBneighbor(eIdx)=NBneighbor(eIdx)+1
-        END IF
+      TheBound % NbCycle=NbCycle
+      allocate(TheBound % LenCycle(NbCycle))
+      DO i=1,NbCycle
+        TheBound % LenCycle(i)=LenCycle(i)
       END DO
-      HaveError=.FALSE.
-      DO IP=1,np_glob
-        IF (NBneighbor(IP).gt.1) THEN
-          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
-          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' is ', NBneighbor(IP), ' times neighbor'
-          HaveError=.TRUE.
-        END IF
-        IF ((NBneighbor(IP).eq.1).and.(NEIGHBOR(IP).eq.0)) THEN
-          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
-          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' is a neighbor'
-          WRITE(DBG%FHNDL,*) '  but has no neighbor!'
-          HaveError=.TRUE.
-        END IF
-        IF ((NBneighbor(IP).eq.0).and.(NEIGHBOR(IP).gt.0)) THEN
-          WRITE(DBG%FHNDL,*) 'Inconsistency in the output'
-          WRITE(DBG%FHNDL,*) '  Vertex ', IP, ' has a neighbor'
-          WRITE(DBG%FHNDL,*) '  but is not a neighbor!'
-          HaveError=.TRUE.
-        END IF
-      END DO
-      IF (HaveError) THEN
-        WRITE(DBG%FHNDL,*) 'Find some errors in the output'
-        WRITE(DBG%FHNDL,*) 'Please check for node contained in several boundaries'
-        CALL WWM_ABORT('Please debug the boundary code')
-      END IF
+      deallocate(StatusAdj, ListAdjWithDupl)
+      deallocate(MappingIP_iEdgeBound, ListDegEdgeBound)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DeallocateBoundaryInfo(TheBound)
+      USE DATAPOOL
+      IMPLICIT NONE
+      type(BoundaryInfo), intent(inout) :: TheBound
+      deallocate(TheBound % ListVertBound)
+      deallocate(TheBound % ListBoundEdge)
+      deallocate(TheBound % AdjacencyEdgeBound)
+      deallocate(TheBound % NEIGHBORedge)
+      deallocate(TheBound % CorrespVertex)
+      deallocate(TheBound % TheCycleBelong)
+      deallocate(TheBound % LenCycle)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -436,116 +745,96 @@
       integer, intent(in) :: ncid, Oper
       integer, intent(in) :: np_glob, ne_glob
       integer, intent(in) :: INEglob(ne_glob,3)
-      integer :: STATUS(np_glob)
-      integer :: IOBPglob(np_glob)
-      integer :: NEIGHBOR(np_glob)
-      integer LenBound, IP, NbCycle
-      integer IPfirst, IPwork, iCycle, TheLength
-      integer, allocatable :: ListSequence(:)
-      integer, allocatable :: SequenceNumber(:)
-      integer, allocatable :: LengthCycle(:)
-      integer iret, lenbound_dims, nbbound_dims, var_id
+      integer iret, var_id, two_dims
+      integer nbVertBound_dims, nbEdgeBound_dims, NbCycle_dims
       integer idx
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
-      STATUS = 0
-      CALL SERIAL_GET_BOUNDARY(np_glob, INEglob, ne_glob, IOBPglob, NEIGHBOR)
-
-      LenBound=0
-      DO IP=1,np_glob
-        IF (IOBPglob(IP).eq.1) THEN
-          LenBound=LenBound+1
-          STATUS(IP)=1
-        END IF
-      END DO
-      ALLOCATE(ListSequence(LenBound), SequenceNumber(LenBound), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 5')
-      NbCycle=0
-      DO IP=1,np_glob
-        IF (STATUS(IP).eq.1) THEN
-          NbCycle=NbCycle+1
-          IPfirst=IP
-          IPwork=IP
-          DO
-            IF (IPwork == 0) EXIT
-            STATUS(IPwork)=0
-            IPwork=NEIGHBOR(IPwork)
-            IF (IPwork.eq.IPfirst) THEN
-              EXIT
-            END IF
-          END DO
-        END IF
-      END DO
-      DO IP=1,np_glob
-        IF (IOBPglob(IP).eq.1) THEN
-          STATUS(IP)=1
-        END IF
-      END DO
-      allocate(LengthCycle(NbCycle), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 6')
-      iCycle=0
-      idx=0
-      DO IP=1,np_glob
-        IF (STATUS(IP).eq.1) THEN
-          iCycle=iCycle+1
-          IPfirst=IP
-          IPwork=IP
-          TheLength=0
-          DO
-            IF (IPwork == 0) EXIT
-            STATUS(IPwork)=0
-            TheLength=TheLength+1
-            idx=idx+1
-            ListSequence(idx)=IPwork
-            SequenceNumber(idx)=iCycle
-            IPwork=NEIGHBOR(IPwork)
-            IF (IPwork.eq.IPfirst) THEN
-              EXIT
-            END IF
-          END DO
-          LengthCycle(iCycle)=TheLength
-        END IF
-      END DO
-      !
-      IF ((Oper == 1).and.(LenBound.gt.0)) THEN
-        iret = nf90_def_dim(ncid, 'lenbound', LenBound, lenbound_dims)
+      type(BoundaryInfo) TheBound
+      CALL SERIAL_GET_BOUNDARY_NEXTGENERATION(TheBound)
+      IF ((Oper == 1).and.(TheBound % nbEdgeBound.gt.0)) THEN
+        iret=nf90_inq_dimid(ncid, 'two', two_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
-        iret = nf90_def_dim(ncid, 'nbbound', NbCycle, nbbound_dims)
+        !
+        iret = nf90_def_dim(ncid, 'nbEdgeBound', TheBound % nbEdgeBound, nbEdgeBound_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+        iret = nf90_def_dim(ncid, 'nbVertBound', TheBound % nbVertBound, nbVertBound_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        iret = nf90_def_dim(ncid, 'NbCycle', TheBound % NbCycle, NbCycle_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         !
-        iret=nf90_def_var(ncid,'inode',NF90_INT,(/ lenbound_dims/),var_id)
+        iret=nf90_def_var(ncid,'ListVertBound',NF90_INT,(/ nbVertBound_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'IP of boundary element')
         CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
         !
-        iret=nf90_def_var(ncid,'icycle',NF90_INT,(/ lenbound_dims/),var_id)
+        iret=nf90_def_var(ncid,'ListBoundEdge',NF90_INT,(/ two_dims, nbVertBound_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'boundary edges')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_def_var(ncid,'AdjacencyEdgeBound',NF90_INT,(/ two_dims, nbEdgeBound_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'boundary edges')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_def_var(ncid,'NEIGHBORedge',NF90_INT,(/ nbEdgeBound_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-        iret=nf90_put_att(ncid,var_id,FULLNAME,'index of corresponding cycle')
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'next boundary edge in the cycle')
         CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         !
-        iret=nf90_def_var(ncid,'lencycle',NF90_INT,(/ nbbound_dims/),var_id)
+        iret=nf90_def_var(ncid,'CorrespVertex',NF90_INT,(/ nbEdgeBound_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'Corresponding vertex to the boundary edge')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        !
+        iret=nf90_def_var(ncid,'CycleBelong',NF90_INT,(/ nbEdgeBound_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        iret=nf90_put_att(ncid,var_id,FULLNAME,'The cycle to which the boundary edge belongs')
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        !
+        iret=nf90_def_var(ncid,'LenCycle',NF90_INT,(/ NbCycle_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Length of cycles')
         CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
       END IF
-      IF ((Oper == 2).and.(LenBound.gt.0)) THEN
-        iret=nf90_inq_varid(ncid, "inode", var_id)
+      IF ((Oper == 2).and.(TheBound % nbEdgeBound.gt.0)) THEN
+        iret=nf90_inq_varid(ncid, "ListVertBound", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
-        iret=nf90_put_var(ncid,var_id,ListSequence, start = (/1/), count = (/ LenBound/))
+        iret=nf90_put_var(ncid,var_id,TheBound % ListVertBound, start = (/1/), count = (/ TheBound % nbVertBound/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
-        iret=nf90_inq_varid(ncid, "icycle", var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
-        iret=nf90_put_var(ncid,var_id,SequenceNumber, start = (/1/), count = (/ LenBound/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        iret=nf90_inq_varid(ncid, "ListBoundEdge", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        iret=nf90_put_var(ncid,var_id,TheBound % ListBoundEdge, start = (/1, 1/), count = (/ 2, TheBound % nbEdgeBound/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        !
+        iret=nf90_inq_varid(ncid, "AdjacencyEdgeBound", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        iret=nf90_put_var(ncid,var_id,TheBound % AdjacencyEdgeBound, start = (/1, 1/), count = (/ 2, TheBound % nbEdgeBound/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        !
+        iret=nf90_inq_varid(ncid, "NEIGHBORedge", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        iret=nf90_put_var(ncid,var_id,TheBound % NEIGHBORedge, start = (/1/), count = (/ TheBound % nbEdgeBound/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        !
+        iret=nf90_inq_varid(ncid, "CorrespVertex", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        iret=nf90_put_var(ncid,var_id,TheBound % CorrespVertex, start = (/1/), count = (/ TheBound % nbEdgeBound/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        !
+        iret=nf90_inq_varid(ncid, "CycleBelong", var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        iret=nf90_put_var(ncid,var_id,TheBound % TheCycleBelong, start = (/1/), count = (/ TheBound % nbEdgeBound/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
         iret=nf90_inq_varid(ncid, "lencycle", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
-        iret=nf90_put_var(ncid,var_id,LengthCycle, start = (/1/), count = (/ NbCycle/))
+        iret=nf90_put_var(ncid,var_id,TheBound % LenCycle, start = (/1/), count = (/ TheBound % NbCycle/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
       END IF
-      !
-      deallocate(LengthCycle, ListSequence, SequenceNumber)
+      CALL DeallocateBoundaryInfo(TheBound)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
