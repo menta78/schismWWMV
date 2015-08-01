@@ -345,6 +345,22 @@
             integer, dimension(:,:), pointer :: ListEdge
          END TYPE Graph
 
+         TYPE BoundaryInfo
+            integer nbEdgeBound
+            integer nbVertBound
+            integer NbCycle
+            integer, dimension(:), pointer :: ListVertBound
+            integer, dimension(:,:), pointer :: ListBoundEdge
+            integer, dimension(:,:), pointer :: AdjacencyEdgeBound
+            integer, dimension(:), pointer :: NEIGHBORedge
+            integer, dimension(:), pointer :: CorrespVertex
+            integer, dimension(:), pointer :: TheCycleBelong
+            integer, dimension(:), pointer :: LenCycle
+            ! maybe not needed
+            integer, dimension(:), pointer :: IOBP
+         END TYPE BoundaryInfo
+         
+         
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
          LOGICAL :: LEXPORT_GRID_WW3 = .FALSE.
