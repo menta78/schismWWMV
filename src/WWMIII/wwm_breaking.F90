@@ -90,7 +90,6 @@
      IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
-        BETA2 = BETA*BETA
         AUX   = EXP((QQ-1.0d0)/BETA2)
         QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
       ELSE
@@ -113,6 +112,7 @@
       IF (ICOMP .GE. 2) THEN
         SURFA0 = 0.
         SURFA1 = 0.
+        !IF (ETOT .GT. THR) WRITE(*,'(I10, 5F20.10)') IP, ALPBJ, SME, QB, BETA2, HMAX(IP)
         IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
           IF ( BETA2 .LT. ONE - 10.E-10) THEN
             WS  = ( ALPBJ / PI) *  QB * SME / BETA2
@@ -144,8 +144,8 @@
           IF (ICOMP .GE. 2 ) THEN
             DSSBR(IS,ID)  = SURFA1
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
-            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
+            IMATDA(IS,ID) = 0.!IMATDA(IS,ID) + SURFA1
+            IMATRA(IS,ID) = 0.!IMATRA(IS,ID) + SSBR(IS,ID)
           ELSE IF (ICOMP .LT. 2 ) THEN
             IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
