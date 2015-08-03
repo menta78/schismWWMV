@@ -2043,6 +2043,7 @@
       ! Now the Gauss Seidel iterations
       !
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      WRITE(*,*) MAXVAL(CG), MINVAL(CG)
       !
       nbIter=0
       DO
@@ -2310,6 +2311,7 @@
 !              DiffOld=abs(Sum_prev - Sum_new)
 !              p_is_converged = DiffOld/Sum_new
               p_is_converged = DiffNew/Sum_new
+              !write(*,'(5F15.7)') p_is_converged, DiffNew, Sum_new, sum(ACLOC), sum(esum)
             else
               p_is_converged = zero
             endif

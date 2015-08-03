@@ -139,13 +139,16 @@
         END IF
       END IF
 
+      IMATRA = 0.
+      IMATDA = 0.
+!AR: make sure everything is zero
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2 ) THEN
-            DSSBR(IS,ID)  = SURFA1
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = 0.!IMATDA(IS,ID) + SURFA1
-            IMATRA(IS,ID) = 0.!IMATRA(IS,ID) + SSBR(IS,ID)
+            DSSBR(IS,ID)  = 1.!SURFA1
+            SSBR(IS,ID)   = -1 * ACLOC(IS,ID)
+            !IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
+            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
           ELSE IF (ICOMP .LT. 2 ) THEN
             IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
