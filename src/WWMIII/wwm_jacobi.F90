@@ -2043,7 +2043,6 @@
       ! Now the Gauss Seidel iterations
       !
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
-      WRITE(*,*) MAXVAL(CG), MINVAL(CG)
       !
       nbIter=0
       DO
