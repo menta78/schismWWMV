@@ -151,6 +151,14 @@
         !if (surfa0 .lt. zero) write(*,*) ip, SURFA0
       END DO 
 
+      IF (ABS(SURFA0) .GT. 0. .OR. ABS(SURFA1) .GT. 0.) THEN
+        WRITE(*,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME, ETOT, HM
+        WRITE(*,'(110F20.10)') ALPBJ, GAMMA_WB, WNMEAN, DEP(IP)
+        WRITE(*,*) ICOMP, BETA2 .GT. THR  .AND. ABS(BETA2 - QB) .GT. THR, BETA2 .LT. 1.d0-THR
+        !PAUSE
+      ENDIF
+
+
 #ifdef SELFE
       DO IS=1,MSC
         DO ID=1,MDC
