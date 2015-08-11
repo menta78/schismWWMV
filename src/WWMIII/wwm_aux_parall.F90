@@ -419,28 +419,103 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE AC_COHERENCY(AC, string)
+      SUBROUTINE TOTAL_SUMMATION_SCALAR(F, eSum)
       USE DATAPOOL
       IMPLICIT NONE
-      character(*), intent(in) :: string
-      REAL(rkind), intent(in) :: AC(MNP,MSC,MDC)
-      REAL(rkind) :: ACwork(MSC,MDC,MNP)
-      REAL(rkind) :: Lerror
-      INTEGER IP
+      real(rkind), intent(in) :: F(MNP)
+      real(rkind), intent(out) :: eSum
+      real(rkind) eField(1), Lsum(1)
+      integer IP, iProc
+      eSum=ZERO
       DO IP=1,MNP
-        ACwork(:,:,IP)=AC(IP,:,:)
+        IF (IPstatus(IP) .eq. 1) THEN
+          eSum = eSum + F(IP)
+        END IF
       END DO
-      CALL I5B_TOTAL_COHERENCY_ERROR(MSC, ACwork, Lerror)
-      WRITE(STAT%FHNDL,*) 'coherency error between domains'
-      WRITE(STAT%FHNDL,*) 'Lerror=', Lerror, ' mesg=', TRIM(string)
+!      WRITE(STAT%FHNDL,*) 'sum(AC)=', sum(AC)
+!      WRITE(STAT%FHNDL,*) 'After summation, sum(Lsum)=', sum(Lsum)
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(eField,1,rtype, iProc-1, 43, comm, istatus, ierr)
+          eSum=eSum + eField(1)
+        END DO
+        Lsum(1)=eSum
+        DO iProc=2,nproc
+          CALL MPI_SEND(Lsum,1,rtype, iProc-1, 13, comm, ierr)
+        END DO
+      ELSE
+        Lsum(1)=eSum
+        CALL MPI_SEND(Lsum,1,rtype, 0, 43, comm, ierr)
+        CALL MPI_RECV(Lsum,1,rtype, 0, 13, comm, istatus, ierr)
+        eSum=Lsum(1)
+      END IF
+#endif
+!      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TOTAL_SUMMATION_AC(AC, Lsum)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      real(rkind), intent(out) :: Lsum(MSC, MDC)
+      real(rkind) eField(MSC, MDC)
+      integer IP, iProc
+      Lsum=ZERO
+      DO IP=1,MNP
+        IF (IPstatus(IP) .eq. 1) THEN
+          Lsum = Lsum + AC(:,:,IP)
+        END IF
+      END DO
+!      WRITE(STAT%FHNDL,*) 'sum(AC)=', sum(AC)
+!      WRITE(STAT%FHNDL,*) 'After summation, sum(Lsum)=', sum(Lsum)
+#ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+        DO iProc=2,nproc
+          CALL MPI_RECV(eField,MSC*MDC,rtype, iProc-1, 43, comm, istatus, ierr)
+          Lsum=Lsum + eField
+        END DO
+        DO iProc=2,nproc
+          CALL MPI_SEND(Lsum,MSC*MDC,rtype, iProc-1, 13, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_SEND(Lsum,MSC*MDC,rtype, 0, 43, comm, ierr)
+        CALL MPI_RECV(Lsum,MSC*MDC,rtype, 0, 13, comm, istatus, ierr)
+      END IF
+#endif     
+!      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE Print_SumAC2(string)
+      USE DATAPOOL
+      implicit NONE
+      character(len=*), intent(in) :: string
+      real(rkind) :: Lsum(MSC,MDC)
+!      WRITE(STAT%FHNDL,*) 'Direct sum(AC2)=', sum(AC2)
+      CALL TOTAL_SUMMATION_AC(AC2, Lsum)
+      WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE Print_SumScalar(F, string)
+      USE DATAPOOL
+      implicit NONE
+      real(rkind), intent(in) :: F(MNP)
+      character(len=*) :: string
+      real(rkind) :: eSum
+      CALL TOTAL_SUMMATION_SCALAR(F, eSum)
+      WRITE(STAT%FHNDL,*) 'sum(F)=', eSum,' mesg:', TRIM(string)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
-      USE DATAPOOL, only : MNP, MDC, rkind
-      USE DATAPOOL, only : ListIPLG, ListMNP
-      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
@@ -452,7 +527,6 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer MNPloc
-      integer istat
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
@@ -504,9 +578,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR_NPRES(MSCeffect, ACw, Lerror)
-      USE DATAPOOL, only : MNP, MDC, NP_RES, rkind
-      USE DATAPOOL, only : ListIPLG, ListMNP, ListNP_RES
-      USE datapool, only : istatus, ierr, comm, rtype, myrank, nproc, iplg, np_global
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: MSCeffect
       real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
@@ -518,7 +590,6 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer NP_RESloc
-      integer istat
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
@@ -729,7 +800,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SYMM_GRAPH_BUILD_ADJ(AdjGraph)
-      USE DATAPOOL, only : wwm_nnbr, wwm_ListNeigh, myrank, Graph
+      USE DATAPOOL
       implicit none
       type(Graph), intent(inout) :: AdjGraph
       CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, wwm_nnbr, wwm_ListNeigh)
@@ -872,7 +943,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GRAPH_TEST_CONNECT(AdjGraph, result)
-      USE DATAPOOL, only : Graph
+      USE DATAPOOL
       implicit none
       type(Graph), intent(in) :: AdjGraph
       integer, intent(out) :: result
@@ -1208,10 +1279,10 @@
       integer iProc, IP, idx_proc
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
-        SPPARM_GL=SPPARM
+        WBAC_GL=WBAC
       ELSE
         DO IP=1,IWBMNPGL
-          SPPARM_GL(:,IP)=SPPARM(:,1)
+          WBAC_GL(:,IP)=WBAC(:,1)
         END DO
       ENDIF
 #else

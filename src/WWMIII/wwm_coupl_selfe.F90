@@ -1,12 +1,12 @@
 #include "wwm_functions.h"
-#ifdef SELFE
+#ifdef SCHISM
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
+      SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
 
-        use elfe_glbl, only: iplg,errmsg,hmin_radstress
-        USE elfe_msgp
+        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        USE schism_msgp
 
         USE DATAPOOL
         implicit none
@@ -56,7 +56,7 @@
             DO IL = KBP(IP), NVRT
               ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
               eFrac=ZZETA/eDep
-! Need some better understanding of vertical levels in SELFE
+! Need some better understanding of vertical levels in SCHISM  
 ! for putting those correction terms.
 !              eHeight=z_w_loc(k)-z_w_loc(k-1)
 !              eFracB=eHeight/eDep
@@ -76,14 +76,14 @@
           JPRESS(IP)=eJPress_loc
         ENDDO ! IP
 
-      END SUBROUTINE STOKES_STRESS_INTEGRAL_SELFE
+      END SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE RADIATION_STRESS_SELFE
 
-        use elfe_glbl, only: iplg,errmsg,hmin_radstress
-        USE elfe_msgp !, only : myrank,parallel_abort
+        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        USE schism_msgp !, only : myrank,parallel_abort
 
         USE DATAPOOL
         IMPLICIT NONE
@@ -327,7 +327,7 @@
         enddo !IS
 
       END SUBROUTINE RADIATION_STRESS_SELFE
-#endif /*SELFE*/
+#endif /*SCHISM*/
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

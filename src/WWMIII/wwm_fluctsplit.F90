@@ -1,5 +1,6 @@
 #include "wwm_functions.h"
-#define positivity 
+#undef positivity
+#undef DEBUG_COHERENCY_FLUCT
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -301,6 +302,7 @@
          REAL(rkind)  :: CBAR_1_1(2), CBAR_1_2(2)
          REAL(rkind)  :: CBAR_2_1(2), CBAR_2_2(2)
          REAL(rkind)  :: CBAR_3_1(2), CBAR_3_2(2)
+         REAL(rkind)  :: Ftest(MNP)
 !
 ! local parameter
 !
@@ -440,8 +442,24 @@
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
 
-         U(:) = AC2(IS,ID,:)
-
+         U = AC2(IS,ID,:)
+#ifdef DEBUG_COHERENCY_FLUCT
+         WRITE(STAT%FHNDL,*) 'IS=', IS, ' ID=', ID
+         CALL Print_SumScalar(SI, "SI at start of EXPLICIT_N_SCHEME")
+         CALL Print_SumScalar(DTSI, "DTSI at start of EXPLICIT_N_SCHEME")
+         CALL Print_SumScalar(U, "U at start of EXPLICIT_N_SCHEME")
+         Ftest=MyREAL(IOBWB)
+         CALL Print_SumScalar(Ftest, "IOBWB at start of EXPLICIT_N_SCHEME")
+         Ftest=MyREAL(IOBPD(ID,:))
+         CALL Print_SumScalar(Ftest, "IOBPD at start of EXPLICIT_N_SCHEME")
+         Ftest=MyREAL(IOBDP)
+         CALL Print_SumScalar(Ftest, "IOBDP at start of EXPLICIT_N_SCHEME")
+         Ftest=C(1,:)
+         CALL Print_SumScalar(Ftest, "C(1,:) at start of EXPLICIT_N_SCHEME")
+         Ftest=C(2,:)
+         CALL Print_SumScalar(Ftest, "C(2,:) at start of EXPLICIT_N_SCHEME")
+#endif
+         
          IF (LADVTEST) THEN
            CALL CHECKCONS(U,SUMAC1)
          END IF
@@ -453,6 +471,9 @@
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
            DO IT = 1, ITER_EXP(IS,ID)
+#ifdef DEBUG_COHERENCY_FLUCT
+             WRITE(STAT%FHNDL,*) 'IT=', IT
+#endif
              ST = ZERO ! Init. ... only used over the residual nodes see IP loop
              DO IE = 1, MNE
 !               IF (IE_IS_STEADY(IE) .GT. 2) THEN
@@ -463,23 +484,35 @@
                U3     = U(NI)
                UTILDE = N(IE) * (DOT_PRODUCT(FLALL(:,IE),U3)) !* IOBED(ID,IE)
                ST(NI) = ST(NI) + KELEM(:,IE) * (U3 - UTILDE) ! the 2nd term are the theta values of each node ...
-             END DO
+            END DO
+#ifdef DEBUG_COHERENCY_FLUCT
+# ifdef MPI_PARALL_GRID
+             CALL EXCHANGE_P2D(ST) ! Simply for debugging purposes
+# endif
+             CALL Print_SumScalar(ST, "ST used in update of U")
+#endif
              DO IP = 1, MNP
 !               IF (IP_IS_STEADY(IP) .GT. 2) THEN
 !                 WRITE(DBG%FHNDL,*) '1st IP LOOP CYCLE', IT, IP, IP_IS_STEADY(IP)
 !                  CYCLE
 !               ENDIF
 !               IF (IOBP(IP) .NE. 0 .AND. CCON(IP) .GT. 3) THEN
-                 TESTMIN = U(IP)-DTSI(IP)*ST(IP) 
-                 IF (TESTMIN .LT. ZERO) WRITE(99999,*) TESTMIN
+!                 TESTMIN = U(IP)-DTSI(IP)*ST(IP) 
+!                 IF (TESTMIN .LT. ZERO) WRITE(99999,*) TESTMIN
                  U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
 !               ELSE IF (IOBP(IP) .EQ. 0) THEN
 !                 U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP) 
 !               ENDIF
              ENDDO
 !             WRITE(*,'(2I10,F20.10,2I20,F20.10)') ID, IS, U(IP_TEST), IOBPD(ID,IP_TEST), IOBDP(IP_TEST), DEP(IP_TEST)
+#ifdef DEBUG_COHERENCY_FLUCT
+             CALL Print_SumScalar(U, "U after the iteration")
+#endif
 #ifdef MPI_PARALL_GRID
              CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
+#endif
+#ifdef DEBUG_COHERENCY_FLUCT
+             CALL Print_SumScalar(U, "U after the exchange")
 #endif
            END DO  ! ----> End Iteration
          ELSE IF (IMETHOD == 2) THEN
@@ -2165,7 +2198,7 @@
       CALL EXCHANGE_P2D(SI)
 #endif
 
-! We don't need MAXMNECON from selfe/pdlib if we compute CCON itself
+! We don't need MAXMNECON from SCHISM/pdlib if we compute CCON itself
 ! #ifdef MPI_PARALL_GRID
 !       MAXMNECON  = MNEI
 ! #else
@@ -2173,12 +2206,12 @@
 ! #endif
       MAXMNECON  = MAXVAL(CCON)
 
-! check agains selfe to make sure that there is no problem
+! check agains SCHISM to make sure that there is no problem
 #ifdef MPI_PARALL_GRID
 # ifndef PDLIB
       IF (MAXMNECON /= MNEI) THEN
         write(DBG%FHNDL,*) "WARNING", __FILE__ , "Line", __LINE__
-        write(DBG%FHNDL,*) "MAXMNECON from selfe does not match self calc value. This could be problems", MAXMNECON, MNEI
+        write(DBG%FHNDL,*) "MAXMNECON from SCHISM does not match self calc value. This could be problems", MAXMNECON, MNEI
       END IF
 # endif
 #endif

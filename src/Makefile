@@ -136,7 +136,7 @@ ifdef USE_TIMER
 endif
 
 ifdef USE_TIMOR_FLMUD
-  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR_FLMUD
   OBJS := $(OBJS) flmud_input.o flmud_main.o flmud_pool.o
 endif
 
@@ -144,7 +144,7 @@ ifdef USE_TIMOR
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
   OBJS := $(OBJS) timor_datapl.o timor_main.o timor_init.o timor_sedisub.o timor_fluc.o  \
        timor_d.o timor_c.o timor_b.o timor_a_up.o timor_a0.o \
-       timor_a_blub.o timor_upw_ups.o timor_hydro2d.o timor_hydro_Anlagen.o
+       timor_a_blub.o timor_upw_ups.o timor_hydro_Anlagen.o
 endif
 
 ifdef USE_GOTM
@@ -251,7 +251,7 @@ LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
 
 # Allow for the override of executable name by the user
 ifeq ($(EXEC),)
-    EXEC := pschism.$(config).ex
+    EXEC := /home/zanke/pschism.$(config).ex
 endif
 
 
@@ -373,7 +373,6 @@ o/$(config)/%.o : %.f90 o/$(config)/.dummy  ../bin/.dummy
 
 
 
-
 #################################################################################
 
 # This file exists solely to force creation of the subdirectories that
@@ -416,6 +415,6 @@ clean:
 	$(QUIET)rm -rf o/*
 	$(QUIET)rm -rf ../bin/*
 ###	$(QUIET)rm -rf $(PARMETISDIR)/*.a
-	(cd $(PARMETISDIR)/METISLib ; make realclean )
-	(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
+	#(cd $(PARMETISDIR)/METISLib ; make realclean )
+	#(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
 

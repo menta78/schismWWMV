@@ -57,7 +57,6 @@
       real(rkind) :: iupwind_e(ne) !to mark upwind prisms when TVD is used
       real(rkind), allocatable :: trel_tmp(:,:,:) !tracer @ elements and half levels
       real(rkind), allocatable :: flux_adv_hface(:,:) ! original horizontal flux (the local x-driection) 
-!      real(rkind), allocatable :: flux_adv_vface(:,:) ! original vertical flux (positive upward) 
       real(rkind), allocatable :: flux_mod_hface(:,:,:) !limited advective fluxes on horizontal faces
       real(rkind), allocatable :: flux_mod_vface(:,:,:) !limited advective fluxes on vertical faces
       real(rkind), allocatable :: up_rat_hface(:,:,:) !upwind ratios for horizontal faces
@@ -178,7 +177,9 @@
 
       do i=1,ntr
         flux_mod_hface(i,1:nvrt,1:ns)=flux_adv_hface(1:nvrt,1:ns)
-        flux_mod_vface(i,1:nvrt,1:ne)=flux_adv_vface(1:nvrt,1:ne)
+        !flux_adv_vface from step routine. This routine cannot handle
+        !settling vel. and assumes flux_adv_vface is same across all tracers
+        flux_mod_vface(i,1:nvrt,1:ne)=flux_adv_vface(1:nvrt,1,1:ne)
       enddo !i
 
 !     Debug
@@ -186,7 +187,7 @@
 !        if(idry_e(i)==1) cycle
 !        do k=kbe(i)+1,nvrt
 !          if(flux_mod_vert(1,k,i)<-1.d33) then
-!            write(errmsg,*)'Vertical flux: out of bound',ielg(i),k,flux_mod(1,k,2,i),flux_adv_vface(k,i)
+!            write(errmsg,*)'Vertical flux: out of bound',ielg(i),k,flux_mod(1,k,2,i),flux_adv_vface(k,1,i)
 !            call parallel_abort(errmsg)
 !          endif
 !        enddo !k
@@ -216,11 +217,11 @@
 
           up_rat_vface(:,:,i)=-1.d0 !initialize upwind ratio for abnormal cases; \phi=0 when r=-1
           do k=kbe(i)+1,nvrt-1 !bottom and surface flux unchanged at -1
-            if(flux_adv_vface(k,i)<-1.d33) then
+            if(flux_adv_vface(k,1,i)<-1.d33) then
               write(errmsg,*)'Transport: Left out vertical flux (3):',i,k
               call parallel_abort(errmsg)
             endif
-            if(flux_adv_vface(k,i)>0) then
+            if(flux_adv_vface(k,1,i)>0) then
               kup=k !upwind prism
               kdo=k+1 !downwind prism
             else
@@ -231,18 +232,18 @@
             psum=0 !sum of original fluxes
             psumtr(1:ntr)=0 !sum of products (|Q|*(T-T))
 #ifdef DEBUG
-            if(flux_adv_vface(kup,i)<-1.d33.or.flux_adv_vface(kup-1,i)<-1.d33) then
+            if(flux_adv_vface(kup,1,i)<-1.d33.or.flux_adv_vface(kup-1,1,i)<-1.d33) then
               write(errmsg,*)'Left out vertical flux (4):',i,kup
               call parallel_abort(errmsg)
             endif
 #endif
-            if(flux_adv_vface(kup,i)<0.and.kup/=nvrt) then
-              psum=psum+abs(flux_adv_vface(kup,i))
-              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup,i))*(tr_el(1:ntr,kup+1,i)-tr_el(1:ntr,kup,i))
+            if(flux_adv_vface(kup,1,i)<0.and.kup/=nvrt) then
+              psum=psum+abs(flux_adv_vface(kup,1,i))
+              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup,1,i))*(tr_el(1:ntr,kup+1,i)-tr_el(1:ntr,kup,i))
             endif
-            if(flux_adv_vface(kup-1,i)>0.and.kup/=kbe(i)+1) then
-              psum=psum+abs(flux_adv_vface(kup-1,i))
-              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup-1,i))*(tr_el(1:ntr,kup-1,i)-tr_el(1:ntr,kup,i))
+            if(flux_adv_vface(kup-1,1,i)>0.and.kup/=kbe(i)+1) then
+              psum=psum+abs(flux_adv_vface(kup-1,1,i))
+              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(kup-1,1,i))*(tr_el(1:ntr,kup-1,i)-tr_el(1:ntr,kup,i))
             endif
             do j=1,i34(i)
               jsj=elside(j,i)
@@ -261,7 +262,7 @@
 
 ! This is the clculation of the TVD stability/variation. Selection is a performance killer.
             do j=1,ntr
-              tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*abs(flux_adv_vface(k,i))
+              tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*abs(flux_adv_vface(k,1,i))
               if(abs(tmp)>1.e-20) up_rat_vface(j,k,i)=psumtr(j)/tmp !otherwise it remains at -1
             enddo !j
 
@@ -306,17 +307,17 @@
 
             psum=0
             psumtr(1:ntr)=0
-            if(flux_adv_vface(k,iup)<-1.d33.or.flux_adv_vface(k-1,iup)<-1.d33) then
-              write(errmsg,*)'Left out vertical flux (6):',iup,k,flux_adv_vface(k,iup), flux_adv_vface(k-1,iup)
+            if(flux_adv_vface(k,1,iup)<-1.d33.or.flux_adv_vface(k-1,1,iup)<-1.d33) then
+              write(errmsg,*)'Left out vertical flux (6):',iup,k,flux_adv_vface(k,1,iup), flux_adv_vface(k-1,1,iup)
               call parallel_abort(errmsg)
             endif
-            if(flux_adv_vface(k,iup)<0.and.k/=nvrt) then
-              psum=psum+abs(flux_adv_vface(k,iup))
-              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(k,iup))*(tr_el(1:ntr,k+1,iup)-tr_el(1:ntr,k,iup))
+            if(flux_adv_vface(k,1,iup)<0.and.k/=nvrt) then
+              psum=psum+abs(flux_adv_vface(k,1,iup))
+              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(k,1,iup))*(tr_el(1:ntr,k+1,iup)-tr_el(1:ntr,k,iup))
             endif
-            if(flux_adv_vface(k-1,iup)>0.and.k>kbe(iup)+1) then
-              psum=psum+abs(flux_adv_vface(k-1,iup))
-              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(k-1,iup))*(tr_el(1:ntr,k-1,iup)-tr_el(1:ntr,k,iup))
+            if(flux_adv_vface(k-1,1,iup)>0.and.k>kbe(iup)+1) then
+              psum=psum+abs(flux_adv_vface(k-1,1,iup))
+              psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_vface(k-1,1,iup))*(tr_el(1:ntr,k-1,iup)-tr_el(1:ntr,k,iup))
             endif
 
             do j=1,i34(iup)
@@ -431,7 +432,7 @@
 
           do k=kbe(i)+1,nvrt-1 !leave out the bnd
 !           Compute \delta_i
-            if(flux_adv_vface(k,i)>0) then
+            if(flux_adv_vface(k,1,i)>0) then
               kup=k !upwind prism
             else
               kup=k+1
@@ -439,7 +440,7 @@
 
             delta_tr(1:ntr)=0.d0
             do l=0,1 !two vertical faces of upwind prism
-              if(flux_adv_vface(kup-l,i)*(1-2*l)>0) then !outflow
+              if(flux_adv_vface(kup-l,1,i)*(1-2*l)>0) then !outflow
                 do j=1,ntr
                   rat=up_rat_vface(j,kup-l,i)
 #ifdef DEBUG
@@ -452,7 +453,7 @@
                     tmp=flux_lim(rat)/rat/2.d0
 #ifdef DEBUG
                     if(tmp<0.or.tmp>1) then
-                      write(errmsg,*)'Flux limiting failed (1):',tmp,rat,flux_adv_vface(kup-l,i),l,kup
+                      write(errmsg,*)'Flux limiting failed (1):',tmp,rat,flux_adv_vface(kup-l,1,i),l,kup
                       call parallel_abort(errmsg)
                     endif 
 #endif
@@ -489,7 +490,7 @@
             enddo !j
 
             do j=1,ntr
-              flux_mod_vface(j,k,i)=flux_adv_vface(k,i)*(1.d0- &
+              flux_mod_vface(j,k,i)=flux_adv_vface(k,1,i)*(1.d0- &
      &flux_lim(up_rat_vface(j,k,i))/2.d0+delta_tr(j))
             enddo !j
           enddo !k=kbe(i)+1,nvrt-1  
@@ -510,7 +511,7 @@
  
             delta_tr(1:ntr)=0
             do l=0,1 !two vertical faces of upwind prism
-              if(flux_adv_vface(k-l,iup)*(1-2*l)>0) then !outflow
+              if(flux_adv_vface(k-l,1,iup)*(1-2*l)>0) then !outflow
                 do j=1,ntr
                   rat=up_rat_vface(j,k-l,iup)
 #ifdef DEBUG
@@ -588,12 +589,12 @@
               if(k/=nvrt.and.flux_mod_vface(1,k,i)<0) then !flux_mod and flux_adv same sign
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_mod_vface(1:ntr,k,i))
 !               Debug
-!                  if(it==46.and.it_sub==1.and.i==58422) write(99,*)k,flux_adv_vface(k,i)
+!                  if(it==46.and.it_sub==1.and.i==58422) write(99,*)k,flux_adv_vface(k,1,i)
               endif
               if(k-1/=kbe(i).and.flux_mod_vface(1,k-1,i)>0) then
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_mod_vface(1:ntr,k-1,i))
 !               Debug
-!                  if(it==46.and.it_sub==1.and.i==58422) write(99,*)k,flux_adv_vface(k-1,i)
+!                  if(it==46.and.it_sub==1.and.i==58422) write(99,*)k,flux_adv_vface(k-1,1,i)
               endif
             endif !TVD
 
@@ -764,7 +765,7 @@
             if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k,i))
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k+1,i)-trel_tmp(jj,k,i))
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,1,i))*(trel_tmp(jj,k+1,i)-trel_tmp(jj,k,i))
               enddo !jj
             else !upwind
               tmp=abs(flux_mod_vface(1,k,i))*dtb_by_bigv !flux_mod(:) all same for upwind
@@ -776,7 +777,7 @@
             if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
                 psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k-1,i))
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k-1,i)-trel_tmp(jj,k,i))
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,1,i))*(trel_tmp(jj,k-1,i)-trel_tmp(jj,k,i))
               enddo !jj
             else !upwind
               tmp=abs(flux_mod_vface(1,k-1,i))*dtb_by_bigv
@@ -789,13 +790,13 @@
           if(ltvd) then !for upwind prism, up_rat_vface=0
             if(k/=nvrt) then
               do jj=1,ntr
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,i))*(trel_tmp(jj,k,i)- &
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,1,i))*(trel_tmp(jj,k,i)- &
      &trel_tmp(jj,k+1,i))*flux_lim(up_rat_vface(jj,k,i))/2.d0
               enddo !jj
             endif
             if(k-1/=kbe(i)) then
               do jj=1,ntr
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,i))*(trel_tmp(jj,k,i)- &
+                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,1,i))*(trel_tmp(jj,k,i)- &
      &trel_tmp(jj,k-1,i))*flux_lim(up_rat_vface(jj,k-1,i))/2.d0
               enddo !jj
             endif

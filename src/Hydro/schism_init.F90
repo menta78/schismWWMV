@@ -95,9 +95,9 @@
       integer, allocatable :: ipiv(:)
       integer, allocatable :: nwild(:),nwild2(:),ibuf1(:,:),ibuf2(:,:)
       real(rkind), allocatable :: akr(:,:),akrp(:),work4(:),z_r2(:),xy_kr(:,:)
-      real(rkind), allocatable :: swild(:),swild2(:,:)
+      real(rkind), allocatable :: swild(:),swild2(:,:),swild10(:,:)
       real(rkind), allocatable :: swild3(:),rwild(:,:)
-      real(rkind), allocatable :: swild4(:,:),swild10(:,:) !double precision for hotstart.in
+      real(rkind), allocatable :: swild4(:,:) !double precision for hotstart.in (only)
       real(rkind), allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange etc (deallocate immediately afterwards)
 !      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
       real(4), allocatable :: swild8(:,:),swild9(:,:) !used in ST & tracer nudging
@@ -202,7 +202,7 @@
 !      endif
 !     Check modules for 2D model
 !      if(lm2d) then
-!#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD || defined USE_TIMOR_FLMUD
+!#if defined USE_ECO || defined USE_ICM || defined USE_SED || defined PREC_EVAP || defined USE_GOTM || defined USE_NAPZD 
 !        write(errmsg,*)'2D model cannot have certain modules!'
 !        call parallel_abort(errmsg)
 !#endif
@@ -229,7 +229,7 @@
       endif
 
 !'    Some modules are not available in lon/lat mode yet
-#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR_FLMUD
+#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR || defined USE_TIMOR_FLMUD
       if(ics==2) then      
         write(errmsg,*)'Some models cannot be run on lon/lat!'
         call parallel_abort(errmsg)
@@ -348,11 +348,9 @@
       call get_param('param.in','h0',2,itmp,h0,stringvalue)
       if(h0<=0) call parallel_abort('h0 must be positive')
 
-!...  Bottom friction 
+!...  Bottom friction. nchi=-1 uses Manning's formulation (even for 3D prisms)
       call get_param('param.in','bfric',1,nchi,tmp,stringvalue)
-      if(nchi/=0.and.nchi/=1) call parallel_abort('INIT: unknown nchi')
-!      if(lm2d.and.nchi/=-1) call parallel_abort('INIT: 2D requires nchi=-1')
-!      if(.not.lm2d.and.nchi==-1) call parallel_abort('INIT: 3D requires nchi/=-1')
+      if(iabs(nchi)>1) call parallel_abort('INIT: unknown nchi')
       
       if(nchi==1) then
 !       dzb_min: min. bottom boundary layer thickness [m]
@@ -360,11 +358,11 @@
         call get_param('param.in','dzb_decay',2,itmp,dzb_decay,stringvalue)
         if(dzb_min<=0.or.dzb_decay>0) call parallel_abort('INIT: dzb_min<=0 or dzb_decay>0')
       endif
-!      if(nchi==-1) then
-!!       Min depth used in Manning formulation
-!        call get_param('param.in','hmin_man',2,itmp,hmin_man,stringvalue)
-!        if(hmin_man<=0) call parallel_abort('INIT: hmin wrong in Manning')
-!      endif
+      if(nchi==-1) then
+!       Min depth used in Manning formulation
+        call get_param('param.in','hmin_man',2,itmp,hmin_man,stringvalue)
+        if(hmin_man<=0) call parallel_abort('INIT: hmin wrong in Manning')
+      endif
 
 !     Coriolis options (must be 1 if ics=2)
       call get_param('param.in','ncor',1,ncor,tmp,stringvalue)
@@ -456,9 +454,11 @@
           call parallel_abort(errmsg)
         endif
       else if(itur==3) then
-!         Closure name and stability function
-          call get_param('param.in','turb_met',0,itmp,tmp,mid)
-          call get_param('param.in','turb_stab',0,itmp,tmp,stab)
+!       Closure name and stability function
+        call get_param('param.in','turb_met',0,itmp,tmp,mid)
+        call get_param('param.in','turb_stab',0,itmp,tmp,stab)
+        !scale for surface & bottom mixing length (>0)
+        call get_param('param.in','xlsc0',2,itmp,xlsc0,stringvalue)
       endif !itur
       
 !...  Count # of tracer models and tracers
@@ -513,9 +513,6 @@
 !#ifdef USE_NAPZD
 !#endif
 
-!#ifdef USE_TIMOR_FLMUD
-!#endif
-    
       !Total # of tracers (including T,S)
       !The big tracer arrays are: tr_el(ntracers,nvrt,nea2),tr_nd0(ntracers,nvrt,npa)
       !The order of each tracer modules can be seen above
@@ -588,8 +585,19 @@
       if(itr_met>=2) then !TVD
         call get_param('param.in','h_tvd',2,itmp,h_tvd,stringvalue)
       endif
+   
+      !For implicit transport, read in tolerances for convergence
+      if(itr_met==3) then
+        call get_param('param.in','eps1_tvd_imp',2,itmp,eps1_tvd_imp,stringvalue)
+        call get_param('param.in','eps2_tvd_imp',2,itmp,eps2_tvd_imp,stringvalue)
+      endif
 
-!...  Nudging for each tracer model
+!...  Explicit transport solver cannot handle settling vel. yet
+#if defined USE_SED  || defined USE_TIMOR_FLMUD
+      if(itr_met<=2) call parallel_abort('Some transport solver cannot handle settling vel.')
+#endif
+
+!'..  Nudging for each tracer model
       do i=1,natrm
         if(ntrs(i)<=0) cycle
 
@@ -709,7 +717,7 @@
 #ifdef USE_SED
       indx_out(3,1)=noutput+1
       ! depth, d50, taub, z0, qbdl(), bedfrac()
-      noutput=noutput+4+3*ntrs(5)-1 !ntracers
+      noutput=noutput+4+3*ntrs(5) !ntracers
       indx_out(3,2)=noutput
       do i=1,ntrs(5)
         write(ifile_char,'(i03)')i
@@ -753,7 +761,7 @@
       variable_nm(indx_out(3,1)+3*ntrs(5)+2)='bottom shear stress (N.m-2)'
       variable_dim(indx_out(3,1)+3*ntrs(5)+2)='2D scalar'
 
-      outfile()='SED_brough.61'
+      outfile(indx_out(3,1)+3*ntrs(5)+3)='SED_brough.61'
       variable_nm(indx_out(3,1)+3*ntrs(5)+3)='bottom roughness lenght z0 (m)'
       variable_dim(indx_out(3,1)+3*ntrs(5)+3)='2D scalar'
 #endif /*USE_SED*/
@@ -1249,7 +1257,7 @@
       endif
 
       if(irouse_test==1) then
-#if defined USE_TIMOR_FLMUD || defined USE_SED
+#if defined USE_SED || USE_TIMOR_FLMUD
 #else
         call parallel_abort('Rouse test needs USE_TIMOR_FLMUD or USE_SED')
 #endif
@@ -1370,6 +1378,16 @@
         call get_param('param.in','nramp_ss',1,nramp_ss,tmp,stringvalue)
         call get_param('param.in','dramp_ss',2,itmp,dramp_ss,stringvalue)
         if(dramp_ss<=0) call parallel_abort('INIT: wrong dramp_ss')
+      endif
+
+!'    Eq. of State type
+!     0: UNICEF (nonlinear); 1: linear function of T ONLY,
+!     i.e.\rho=eos_b+eos_a*T, where eos_a<=0 in kg/m^3/C
+      call get_param('param.in','ieos_type',1,ieos_type,tmp,stringvalue)
+      if(ieos_type==1) then
+        !Constants for linear EOS
+        call get_param('param.in','eos_a',2,itmp,eos_a,stringvalue)
+        call get_param('param.in','eos_b',2,itmp,eos_b,stringvalue)
       endif
 
 !...  Check parameter read in from param.in
@@ -1521,7 +1539,7 @@
           & prho(nvrt,npa),q2(nvrt,npa),xl(nvrt,npa),xlmin2(npa), &
           & uu2(nvrt,npa),vv2(nvrt,npa),ww2(nvrt,npa),bdef(npa),bdef1(npa),bdef2(npa),dfh(nvrt,npa), &
           & bdy_frc(ntracers,nvrt,nea),flx_sf(ntracers,nea),flx_bt(ntracers,nea), &
-          & xlon_el(nea),ylat_el(nea),albedo(npa),flux_adv_vface(nvrt,nea),stat=istat)
+          & xlon_el(nea),ylat_el(nea),albedo(npa),flux_adv_vface(nvrt,ntracers,nea),wsett(ntracers),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: dynamical arrays allocation failure')
 !'
 
@@ -1556,7 +1574,7 @@
          &  diffmax(npa),diffmin(npa),dfq1(nvrt,npa),dfq2(nvrt,npa), & 
 !          Note: swild, swild2, swild10 will be re-dimensioned (larger dimension) later
          &  nwild(nea+12+natrm),nwild2(ne_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
-         &  swild3(50+ntracers),swild4(nvrt,3+2*ntracers),swild8(nvrt,2),&
+         &  swild3(50+ntracers),swild4(nvrt,1+ntracers),swild8(nvrt,2),&
          &  iwater_type(npa),rho_mean(nvrt,nea),erho(nvrt,nea),& 
          &  PSQ(nea),PSK(nea),surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
@@ -1590,10 +1608,6 @@
       wwave_force=0; out_wwm=0; out_wwm_windpar=0
       stokes_vel=0; jpress=0; sbr=0; sbf=0 
 #endif
-
-#ifdef USE_TIMOR_FLMUD
-!     Allocate TIMOR arrays
-#endif 
 
 #ifdef USE_ICM
       call icm_init
@@ -1650,6 +1664,7 @@
 !      tsel=0; trel=0
       tr_el=0
       timer_ns=0
+      wsett=0 !settling vel.
 
 !     for output
       airt1=0; shum1=0;  airt2=0; shum2=0; srad=0; fluxsu=0; fluxlu=0
@@ -2358,25 +2373,35 @@
 !        th_time2(2,4)=th_dt2(4)
 !      endif !nsatype2
   
+!     All tracer models share time step etc
+      icount=0
+      th_dt2(5)=0 !init
       do i=1,natrm
         if(ntrs(i)>0.and.nnode_tr2(i)>0) then
+          icount=icount+1
           open(68+i,file=tr_mname(i)//'_3D.th',access='direct',recl=nrecl_tr2(i),status='old')
           read(68+i,rec=1) floatout,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),1,5)
           read(68+i,rec=2) floatout2,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),2,5)
           if(abs(floatout)>1.e-6.or.floatout2<dt) call parallel_abort('SCHISM_INIT: tr3D.th start wrong')
-          th_dt2(5)=floatout2
-          th_time2(1,5)=0
-          th_time2(2,5)=th_dt2(5)
+          if(icount==1) then
+            th_dt2(5)=floatout2
+          else if(abs(th_dt2(5)-floatout2)>1.e-4) then
+            write(errmsg,*)'INIT: tracer models must share dt for tr3D.th:',i,th_dt2(5),floatout2
+            call parallel_abort(errmsg)
+          endif
         endif !ntrs
       enddo !i
 
-      !'Update record #
+      !Update record # and time stamps (meaningless if none of the
+      !models are invoked)
+      th_time2(1,5)=0
+      th_time2(2,5)=th_dt2(5)
       irec_th(1:5)=2
 
 !...  Read in hydraulics.in
       if(ihydraulics/=0) then
         !Non-hydro model not working yet
-        if(nonhydro/=0) call parallel_abort('MAIN: Non-hydro model cannot be used with hydraulics option')
+        if(nonhydro/=0) call parallel_abort('INIT: Non-hydro model cannot be used with hydraulics option')
 !'
         !Specify blocks for hydraulic transfer structures (where fluxes are specified,
         !and tracers are conserved)
@@ -2777,22 +2802,22 @@
       endif
 
 !...  Bottom friction
-!      if(nchi==-1) then !read in Manning's n for 2D model
-!        open(32,file='manning.gr3',status='old')
-!        read(32,*)
-!        read(32,*) itmp1,itmp2
-!        if(itmp1/=ne_global.or.itmp2/=np_global) &
-!     &call parallel_abort('Check manning.gr3')
-!        do i=1,np_global
-!          read(32,*)j,xtmp,ytmp,tmp
-!          if(tmp<0) then
-!            write(errmsg,*)'Negative Manning',tmp
-!            call parallel_abort(errmsg)
-!          endif
-!          if(ipgl(i)%rank==myrank) rmanning(ipgl(i)%id)=tmp
-!        enddo
-!        close(32)
-      if(nchi==0) then !read in drag coefficients for 3D model
+      if(nchi==-1) then !read in Manning's n for 2D model
+        open(32,file='manning.gr3',status='old')
+        read(32,*)
+        read(32,*) itmp1,itmp2
+        if(itmp1/=ne_global.or.itmp2/=np_global) &
+     &call parallel_abort('Check manning.gr3')
+        do i=1,np_global
+          read(32,*)j,xtmp,ytmp,tmp
+          if(tmp<0) then
+            write(errmsg,*)'Negative Manning',tmp
+            call parallel_abort(errmsg)
+          endif
+          if(ipgl(i)%rank==myrank) rmanning(ipgl(i)%id)=tmp
+        enddo
+        close(32)
+      else if(nchi==0) then !read in drag coefficients for 3D model
         open(32,file='drag.gr3',status='old')
         read(32,*)
         read(32,*) itmp1,itmp2
@@ -4157,10 +4182,10 @@
               trnd_nu2(itmp1:itmp2,:,ipgl(i)%id)=swild9(itmp1:itmp2,1:nvrt)
             endif
           enddo !i
-          irec_nu_tr=2
-          time_nu_tr=step_nu_tr
         endif !inu_tr(k)
       enddo !k
+      !Shared variables among all tracer models (not used if none of inu_tr=2)
+      time_nu_tr=step_nu_tr
 
 #ifdef USE_HA
 !...
@@ -4216,15 +4241,12 @@
       if(ics==2) call parallel_abort('MAIN: Sediment model cannot be used with lat/long coordinates (ics=2)')
       if(imm/=0) call parallel_abort('MAIN: imm and sediment model cannot be used at same time')
 !' * FG. - Moving most of sediment initializations within sed_init.F90
-      !Reads sediment model inputs (sediment.in file)
+      !Reads sediment model inputs (sediment.in file) and update
+      !settling vel. wsett()
       CALL read_sed_input
 !     Allocation of sediment arrays
       CALL sed_alloc
 #endif /*USE_SED*/
-
-#ifdef TIMOR
-      CALL INIT_TIMOR 
-#endif 
 
 #ifdef USE_ECO
       ! EcoSim
@@ -4402,12 +4424,6 @@
       if(myrank==0) write(16,*)'done reading ICM parameters'
 #endif /*USE_ICM*/
 
-#ifdef USE_TIMOR_FLMUD
-      !TIMOR
-      !Init. TIMOR (tr_nd)
-      call init_flmud
-#endif /*USE_TIMOR_FLMUD*/
-
 !     Tracer i.c. @ nodes and prisms (T,S already done)
       do mm=3,natrm
         if(ntrs(mm)<=0) cycle
@@ -4502,7 +4518,7 @@
 !       Initialize tracer @prisms
 !        ltmp=.false.
 !        if(flag_ic(mm)/=0) ltmp=.true.
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
 !        ltmp=.true.
 !#endif
 !        if(ltmp)then
@@ -4554,6 +4570,17 @@
 #endif 
 #endif /*USE_SED2D*/
 
+#ifdef USE_TIMOR
+#ifdef INCLUDE_TIMING
+      cwtmp2=mpi_wtime() !start of timer
+#endif
+      call init_timor
+#ifdef INCLUDE_TIMING
+      timer_ns(2)=timer_ns(2)+mpi_wtime()-cwtmp2 !end timing this section
+#endif 
+#endif /*USE_TIMOR*/
+
+
       if(myrank==0) write(16,*)'done initializing cold start'
       
 !-------------------------------------------------------------------------------
@@ -4575,7 +4602,7 @@
             idry_e(ie)=itmp1
             we(:,ie)=swild4(:,1)
             do j=1,ntracers
-              tr_el(j,:,ie)=swild4(:,j+1) !2:ntracers+1)
+              tr_el(j,:,ie)=swild4(:,j+1)
             enddo !j
 !            tr_el(2,:,ie)=swild4(:,3)
 !            do l=3,ntracers
@@ -4588,44 +4615,49 @@
         enddo !i=1,ne_global
 
         ! Side data
+        deallocate(swild4)
+        allocate(swild4(nvrt,4))
+
         do i=1,ns_global
-          read(36) isgb,itmp1,((swild10(j,l),l=1,4),j=1,nvrt)
+          read(36) isgb,itmp1,((swild4(j,l),l=1,4),j=1,nvrt)
           if(isgl(isgb)%rank==myrank) then
             iside=isgl(isgb)%id
             idry_s(iside)=itmp1
-            su2(:,iside)=swild10(:,1)
-            sv2(:,iside)=swild10(:,2)
-            !tsd(:,iside)=swild10(:,3)
-            !ssd(:,iside)=swild10(:,4)
+            su2(:,iside)=swild4(:,1)
+            sv2(:,iside)=swild4(:,2)
+            !tsd(:,iside)=swild4(:,3)
+            !ssd(:,iside)=swild4(:,4)
           endif
         enddo !i=1,ns_global
 
         ! Node data (include non-hydrostatic pressure even for hydrostatic model for convenience)
+        deallocate(swild4)
+        allocate(swild4(nvrt,2*ntracers+7))
         do i=1,np_global
-          !read(36) ipgb,double1,itmp,((swild10(j,l),l=1,11),j=1,nvrt)
-          read(36) ipgb,double1,itmp,((swild10(j,l),l=1,2*ntracers+7),j=1,nvrt)
+          !read(36) ipgb,double1,itmp,((swild4(j,l),l=1,11),j=1,nvrt)
+          read(36) ipgb,double1,itmp,((swild4(j,l),l=1,2*ntracers+7),j=1,nvrt)
           if(ipgl(ipgb)%rank==myrank) then
             ip=ipgl(ipgb)%id
             eta2(ip)=double1
             idry(ip)=itmp
-            !tnd(:,ip)=swild10(1:nvrt,1)
-            !snd(:,ip)=swild10(1:nvrt,2)
+            !tnd(:,ip)=swild4(1:nvrt,1)
+            !snd(:,ip)=swild4(1:nvrt,2)
             do j=1,ntracers
-              tr_nd(j,:,ip)=swild10(1:nvrt,j)
+              tr_nd(j,:,ip)=swild4(1:nvrt,j)
             enddo !j
             do j=1,ntracers
-              tr_nd0(j,:,ip)=swild10(1:nvrt,j+ntracers)
+              tr_nd0(j,:,ip)=swild4(1:nvrt,j+ntracers)
             enddo !j
 
-            !tem0(:,ip)=swild10(:,3)
-            !sal0(:,ip)=swild10(:,4)
-            q2(:,ip)=swild10(:,2*ntracers+1)
-            xl(:,ip)=swild10(:,2*ntracers+2)
-            dfv(:,ip)=swild10(:,2*ntracers+3)
-            dfh(:,ip)=swild10(:,2*ntracers+4)
-            dfq1(:,ip)=swild10(:,2*ntracers+5)
-            dfq2(:,ip)=swild10(:,2*ntracers+6)
-            qnon(:,ip)=swild10(:,2*ntracers+7)
+            !tem0(:,ip)=swild4(:,3)
+            !sal0(:,ip)=swild4(:,4)
+            q2(:,ip)=swild4(:,2*ntracers+1)
+            xl(:,ip)=swild4(:,2*ntracers+2)
+            dfv(:,ip)=swild4(:,2*ntracers+3)
+            dfh(:,ip)=swild4(:,2*ntracers+4)
+            dfq1(:,ip)=swild4(:,2*ntracers+5)
+            dfq2(:,ip)=swild4(:,2*ntracers+6)
+            qnon(:,ip)=swild4(:,2*ntracers+7)
           endif
         enddo !i=1,np_global
 
@@ -5026,28 +5058,27 @@
 !          irec_nu=irec_nu+1
 !        endif !inu_st
 
+        !Shared variables for inu_tr=2
+        ntmp=time/step_nu_tr+1
+        time_nu_tr=ntmp*step_nu_tr
         do k=1,natrm 
           if(ntrs(k)<=0) cycle
 
           if(inu_tr(k)==2) then
-            irec_nu_tr=time/step_nu_tr+1
-            time_nu_tr=irec_nu_tr*step_nu_tr
-            
             itmp1=irange_tr(1,k) 
             itmp2=irange_tr(2,k) 
-            do it=1,irec_nu_tr+1
+            do it=1,ntmp+1
               read(84+k)floatout
               do i=1,np_global
                 read(84+k)swild9(itmp1:itmp2,:)
-                if(it==irec_nu_tr.and.ipgl(i)%rank==myrank) then
+                if(it==ntmp.and.ipgl(i)%rank==myrank) then
                   trnd_nu1(itmp1:itmp2,:,ipgl(i)%id)=swild9(itmp1:itmp2,:)
                 endif
-                if(it==irec_nu_tr+1.and.ipgl(i)%rank==myrank) then
+                if(it==ntmp+1.and.ipgl(i)%rank==myrank) then
                   trnd_nu2(itmp1:itmp2,:,ipgl(i)%id)=swild9(itmp1:itmp2,:)
                 endif
               enddo !i
             enddo !it
-            irec_nu_tr=irec_nu_tr+1
           endif !inu_tr(k)
         enddo !k
 
@@ -5149,12 +5180,12 @@
 
         do i=1,natrm
           if(ntrs(i)>0.and.nnode_tr2(i)>0) then
-            ninv=time/th_dt2(5)
+            ninv=time/th_dt2(5) !same among all tracers
             th_time2(1,5)=ninv*th_dt2(5)
             th_time2(2,5)=th_time2(1,5)+th_dt2(5)
             read(68+i,rec=ninv+1)floatout,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),1,5)
             read(68+i,rec=ninv+2)floatout,ath2(irange_tr(1,i):irange_tr(2,i),1:nvrt,1:nnode_tr2(i),2,5)
-            irec_th(5)=ninv+2
+            irec_th(5)=ninv+2 !same among all tracers
           endif !ntrs
         enddo !i
 
@@ -5347,9 +5378,6 @@
       enddo !i
       do i=1,nea
         dpe(i)=minval(dp(elnode(1:i34(i),i))) !1.e10
-!        do j=1,3
-!          if(dpe(i)>dp(elnode(j,i))) dpe(i)=dp(elnode(j,i))
-!        enddo !j
       enddo !i=1,ne
 
 !...  Compute initial vgrid
@@ -5371,9 +5399,9 @@
         if(idry(i)==1) cycle
         do k=1,nvrt
           kl=max(k,kbp(i))
-          prho(k,i)=eqstate(1,tr_nd(1,k,i),tr_nd(2,k,i)            &
+          prho(k,i)=eqstate(1,iplg(i),tr_nd(1,k,i),tr_nd(2,k,i)            &
 #ifdef USE_SED
-     &                      ,tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:) &
+     &                     ,ntrs(5),tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:) &
 #endif /*USE_SED*/
 #ifdef USE_TIMOR_FLMUD
 !     &                      ,tr_nd(irange_tr(1,5):,kl,i),rhomud(1:ntracers,kl,i),laddmud_d &
@@ -5393,10 +5421,10 @@
 !            swild(m)=sum(rhomud(m,kl,elnode(1:3,i)))/3
 !          enddo !m
 #endif
-          erho(k,i)=eqstate(2,tr_el(1,k,i),tr_el(2,k,i)      &
+          erho(k,i)=eqstate(2,ielg(i),tr_el(1,k,i),tr_el(2,k,i)      &
 !LLP
 #ifdef USE_SED
-     &                        ,tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)         &
+     &                    ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)         &
 #endif /*USE_SED*/
 #ifdef USE_TIMOR_FLMUD
 !     &                        ,tr_el(:,k,i),swild(1:ntracers),laddmud_d &

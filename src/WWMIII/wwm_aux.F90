@@ -14,7 +14,7 @@
 
             CASE (1)
 #ifdef MPI_PARALL_GRID
-               call parallel_abort('WWM - 1d mode cannot work with SELFE ')
+               call parallel_abort('WWM - 1d mode cannot work with SCHISM ')
 #endif
                CALL DIFFERENTIATE_XDIR(DEP,DDEP(:,1))
 
@@ -1150,7 +1150,7 @@
          HEADSP = 0.0
 
 #ifdef MPI_PARALL_GRID
-         CALL WWM_ABORT('ERG2WWM CANNOT BE CALLED FROM SELFE')
+         CALL WWM_ABORT('ERG2WWM CANNOT BE CALLED FROM SCHISM')
 #endif
 
          ALLOCATE (QU(MNP), QV(MNP), UP(MNP), VP(MNP), HP(MNP), stat=istat)

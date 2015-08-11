@@ -5,20 +5,20 @@
 !*                                                                    *
 !**********************************************************************
       MODULE DATAPOOL
-#if defined SELFE && defined WWM_MPI
-#error "The combination of define SELFE and define MPI is illegal"
+#if defined SCHISM && defined WWM_MPI
+#error "The combination of define SCHISM and define MPI is illegal"
 #endif
 
-#if defined PETSC && !defined PDLIB && !defined WWM_MPI && !defined SELFE
+#if defined PETSC && !defined PDLIB && !defined WWM_MPI && !defined SCHISM
 #error "For PETSC, you need one parallelization scheme"
 #endif
 
 #ifdef PDLIB
       use wwm_pdlib
 #else
-# if defined(SELFE) || defined(WWM_MPI)
-      use elfe_msgp ! , only: comm,             & ! MPI communicator
-      use elfe_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
+# if defined(SCHISM) || defined(WWM_MPI)
+      use schism_msgp ! , only: comm,             & ! MPI communicator
+      use schism_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
      &                         np,               &
@@ -42,15 +42,15 @@
 #  endif
      
 # endif
-# ifdef SELFE
-         use elfe_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
-     &                         DMIN_SELFE => h0,             & ! Dmin
+# ifdef SCHISM
+         use schism_glbl, only : NE_RES => ne,                 & ! Local number of resident elements
+     &                         DMIN_SCHISM => h0,             & ! Dmin
      &                         NNE => nne,                   & !
      &                         ISELF => iself,               & !
      &                         NVRT => nvrt,                 & ! Max. Number of vertical Layers ...
      &                         KBP  => KBP,                  & ! Bottom index
      &                         IDRY => IDRY,                 & ! Dry/Wet flag
-     &                         ZETA => znl,                  & ! Z-Levels of SELFE
+     &                         ZETA => znl,                  & ! Z-Levels of SCHISM
      &                         ibnd_ext_int => ibnd_ext_int, & ! bounday flag ...
      &                         nsa,                          & ! Sides in the augmented domain
      &                         NS_RES => ns,                 & ! Local number of resident sides
@@ -62,8 +62,8 @@
      &                         SIGMACOR=>SIGMA,              & !sigma coord.
      &                         WINDX0=>WINDX,                & !x-wind
      &                         WINDY0=>WINDY,                & !x-wind
-     &                         MSC_SELFE => MSC2,            & !msc2 from selfe ...
-     &                         MDC_SELFE => MDC2,            & !mdc2 from selfe ...
+     &                         MSC_SCHISM => MSC2,            & !msc2 from SCHISM ...
+     &                         MDC_SCHISM => MDC2,            & !mdc2 from SCHISM ...
      &                         WWAVE_FORCE=>wwave_force,     & !wave-induced force
      &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
@@ -85,7 +85,7 @@
         INTEGER :: NP_RES
 #endif
 
-#ifndef SELFE
+#ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
          integer,parameter :: rkind = 4
@@ -125,6 +125,7 @@
          REAL(rkind),  PARAMETER            :: ONEHALF  = ONE/TWO
 
          REAL(rkind), PARAMETER             :: PI        = 3.141592653589793_rkind
+         REAL(rkind), PARAMETER             :: PIHALF    = PI*ONEHALF
          REAL(rkind), PARAMETER             :: PI2       = TWO*PI
          REAL(rkind), PARAMETER             :: INVPI     = ONE/PI
          REAL(rkind), PARAMETER             :: INVPI2    = ONE/PI2
@@ -187,6 +188,7 @@
          INTEGER    :: MNP_WIND
          REAL(rkind), allocatable :: XP_WIND(:), YP_WIND(:)
          REAL(rkind)       :: WINDFAC    = 1.0
+         REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
          REAL(rkind)       ::  CURFAC    = 1.0
 
@@ -203,7 +205,6 @@
          LOGICAL           :: IOBPD_HISTORY = .FALSE.
          LOGICAL           :: DOPEAK_BOUNDARY = .TRUE.
          LOGICAL           :: DOPEAK_GLOBAL = .TRUE.
-
 
          LOGICAL :: FREQ_SHIFT_IMPL
          LOGICAL :: REFRACTION_IMPL
@@ -344,7 +345,42 @@
             integer, dimension(:,:), pointer :: ListEdge
          END TYPE Graph
 
+         TYPE BoundaryInfo
+            integer nbEdgeBound
+            integer nbVertBound
+            integer NbCycle
+            integer, dimension(:), pointer :: ListVertBound
+            integer, dimension(:,:), pointer :: ListBoundEdge
+            integer, dimension(:,:), pointer :: AdjacencyEdgeBound
+            integer, dimension(:), pointer :: NEIGHBORedge
+            integer, dimension(:), pointer :: CorrespVertex
+            integer, dimension(:), pointer :: TheCycleBelong
+            integer, dimension(:), pointer :: LenCycle
+            ! maybe not needed
+            integer, dimension(:), pointer :: IOBP
+         END TYPE BoundaryInfo
+         
+         
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
+
+         LOGICAL :: LEXPORT_GRID_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_BOUC_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_CURR_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_WALV_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_WIND_WW3 = .FALSE.
+         REAL(rkind) :: EXPORT_BOUC_DELTC
+         REAL(rkind) :: EXPORT_CURR_DELTC
+         REAL(rkind) :: EXPORT_WALV_DELTC
+         REAL(rkind) :: EXPORT_WIND_DELTC
+         TYPE (TIMEDEF)        :: OUT_BOUC_WW3, OUT_WIND_WW3, OUT_CURR_WW3, OUT_WALV_WW3
+         INTEGER :: FHNDL_EXPORT_GRID_WW3
+         INTEGER :: FHNDL_EXPORT_BOUC_WW3
+         INTEGER :: FHNDL_EXPORT_WIND_WW3
+         INTEGER :: FHNDL_EXPORT_CURR_WW3
+         INTEGER :: FHNDL_EXPORT_WALV_WW3
+         
+         
+
 
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
@@ -368,8 +404,8 @@
          INTEGER                :: NDYNITER_SNL3= 10
          INTEGER                :: NDYNITER_SBF = 10
 
-#ifdef SELFE
-         REAL(rkind)            :: DT_SELFE, DT_WWM
+#ifdef SCHISM
+         REAL(rkind)            :: DT_SCHISM, DT_WWM
 #endif
 !
 ! ... file control ...
@@ -429,14 +465,24 @@
          REAL(rkind)      :: SFAC
          REAL(rkind)      :: FRATIO
          REAL(rkind)      :: FRINTH
-         REAL(rkind)      :: XIS
+         REAL(rkind)      :: XIS, XISLN
          REAL(rkind)      :: DDIR
          REAL(rkind)      :: DELTH ! PI2/MDC
          REAL(rkind)      :: FDIR
          REAL(rkind)      :: MINDIR
          REAL(rkind)      :: MAXDIR
          REAL(rkind)      :: FREQEXP
-
+!
+! Triads
+!
+         REAL(rkind)      :: TRI_WISM, TRI_WISM1
+         REAL(rkind)      :: TRI_WISP, TRI_WISP1
+         integer          :: TRI_ISP, TRI_ISP1
+         integer          :: TRI_ISM, TRI_ISM1
+         integer          :: TRI_ISBEGIN
+!
+! spectra
+!
          INTEGER   :: ISBIN
 
          
@@ -458,7 +504,7 @@
          REAL(rkind), ALLOCATABLE      :: CG(:,:), DCGDX(:,:), DCGDY(:,:)
          REAL(rkind), ALLOCATABLE      :: WC(:,:)
 
-#ifdef SELFE
+#ifdef SCHISM
 !         REAL(rkind), ALLOCATABLE    :: CGX(:,:,:)
 !         REAL(rkind), ALLOCATABLE    :: CGY(:,:,:)
 #endif
@@ -577,7 +623,7 @@
          INTEGER, ALLOCATABLE     :: IOBWB(:)
          INTEGER, ALLOCATABLE     :: IOBP(:)
 !
-! ... Selfe boundary stuff
+! ... SCHISM boundary stuff
 !
          INTEGER, ALLOCATABLE     :: IWBNDGL(:)
          INTEGER, ALLOCATABLE     :: IWBNDLC(:)
@@ -794,11 +840,11 @@
          REAL(rkind)             :: WISPTR, WISP1TR, WISMTR, WISM1TR
 
          REAL(rkind)                   :: PGIVE(8), PWIND(31), PQUAD(6), PWCAP(12)
-         REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5)
+         REAL(rkind)                   :: PTAIL(8), PSHAP(6), PBOTF(6), PTRIAD(5), TRI_ARR(5)
          REAL(rkind)                   :: PSURF(6)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
-#ifndef SELFE
+#ifndef SCHISM
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
 #endif
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)

@@ -64,7 +64,6 @@
 
          USE DATAPOOL
          use petscpool
-         !use elfe_msgp
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: ISS,IDD

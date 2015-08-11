@@ -24,7 +24,7 @@
 
       INTEGER :: IS, ID
 
-#ifdef SELFE
+#ifdef SCHISM
       SBR(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
@@ -86,26 +86,33 @@
       ELSE
         QB = ONE - 10.E-10
       END IF
-#elif SWAN_QB
-      IF (BETA .LT. 0.2D0) THEN
+# elif SWAN_QB
+     IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
-        BETA2 = BETA*BETA
         AUX   = EXP((QQ-1.0d0)/BETA2)
         QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
       ELSE
         QB = 1.0D0
       END IF
-#else
-      QB = ZERO
+# else
+      IF ( BETA .LT. 0.2_rkind ) THEN
+        QB     = ZERO
+      ELSE IF ( BETA .LT. ONE ) THEN
+        ARG    = EXP  (( QQ - 1. ) / BETA2 )
+        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+        DO IS = 1, 3
+          QB     = EXP((QB-1.)/BETA2)
+        END DO
+      ELSE
+        QB = ONE - 10.E-10
+      END IF
 #endif
       QBLOCAL(IP) = QB
-
-      !IF (QB .GT. 0.1) WRITE(*,'(7F15.4)') HMAX(IP), BETA, QB, KME, HS
-
-      IF (ICOMP .GE. 2) THEN ! linearized source terms ...
+      IF (ICOMP .GE. 2) THEN
         SURFA0 = 0.
         SURFA1 = 0.
+        !IF (ETOT .GT. THR) WRITE(*,'(I10, 5F20.10)') IP, ALPBJ, SME, QB, BETA2, HMAX(IP)
         IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
           IF ( BETA2 .LT. ONE - 10.E-10) THEN
             WS  = ( ALPBJ / PI) *  QB * SME / BETA2
@@ -124,46 +131,41 @@
         IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
           IF ( BETA2 .LT. ONE - 10.E-10) THEN
             SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
-            !rite(*,'(5F15.10)') ALPBJ * QB * SME / BETA2, ALPBJ, QB, SME, BETA2
           ELSE
-            SURFA0  = -(ALPBJ/PI)*SME 
+            SURFA0  = - ( ALPBJ / PI ) * SME 
           END IF
         ELSE
           SURFA0 = 0.
         END IF
       END IF
 
+      IMATRA = 0.
+      IMATDA = 0.
       DO IS = 1, MSC
         DO ID = 1, MDC
-          IF (ICOMP .GE. 2 ) THEN
+          IF (ICOMP .GE. 2) THEN
+            DSSBR(IS,ID)  = SURFA1
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
             IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
-            DSSBR(IS,ID) = SURFA1
-            SSBR(IS,ID)  = SURFA0 * ACLOC(IS,ID)
             IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-            !if (abs(surfa0) .gt. zero) write(*,*) surfa0, surfa1
-          ELSE IF (ICOMP .LT. 2 ) THEN
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID) 
+          ELSE IF (ICOMP .LT. 2) THEN
             DSSBR(IS,ID)  = SURFA0
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
             IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
           END IF
         END DO
-        !if (surfa0 .lt. zero) write(*,*) ip, SURFA0
       END DO 
 
-#ifdef SELFE
+#ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
-          COST = COSTH(ID)!COS(SPDIR(ID))
-          SINT = SINTH(ID)!SIN(SPDIR(ID))
-!          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-!          SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-          SBR(1,IP)=SBR(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-          SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-        ENDDO
+          COST = COSTH(ID)
+          SINT = SINTH(ID)
+          SBR(1,IP)=SBR(1,IP)+G9*COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)  ! m.s-2 * (m-1/s-1) * m^2.s * s-1 * s-1 =>  m^2.s-2
+          SBR(2,IP)=SBR(2,IP)+G9*SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)   
+       ENDDO
       ENDDO
-      !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
-      !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'THE NORMS OF SBR', TMP_X, TMP_Y

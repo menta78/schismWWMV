@@ -26,7 +26,7 @@
         PBOTF(5) = FRICC
       END IF
 
-#ifdef SELFE
+#ifdef SCHISM
       SBF(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
@@ -63,7 +63,6 @@
       DO IS = 1, MSC
         KDEP = WK(IS,IP)*DEP(IP)
         DSSBF(IS,:) = CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
-        !WRITE(*,'(2I10,10F20.10)') IP, IS, KDEP, DEP(IP), CFBOT, SUM(SSBF(IS,:)), (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2 
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
             IMATDA(IS,ID) = IMATDA(IS,ID) + DSSBF(IS,ID)
@@ -76,19 +75,15 @@
         END DO
       END DO
 
-#ifdef SELFE
+#ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
-          COST = COSTH(ID)!COS(SPDIR(ID))
-          SINT = SINTH(ID)!SIN(SPDIR(ID))
-!          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-!          SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+          COST = COSTH(ID)
+          SINT = SINTH(ID)
           SBF(1,IP)=SBF(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBF(IS,ID)*DS_INCR(IS)*DDIR
           SBF(2,IP)=SBF(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBF(IS,ID)*DS_INCR(IS)*DDIR
         ENDDO
       ENDDO
-      !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
-      !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'THE NORMS OF FRICTION', TMP_X, TMP_Y

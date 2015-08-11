@@ -2842,17 +2842,17 @@
 	                100.d0)+salt(i)*(0.023517-0.00023656*(temp(i)+273.15)+&
 			0.00000047036*(temp(i)+273.15)**2))
 
-	    solubCO2(i)=solubCO2(i)*eqstate(temp(i),salt(i))/1000.d0
+	    solubCO2(i)=solubCO2(i)*eqstate(7,temp(i),salt(i))/1000.d0
 	    
 	    kdiss1(i)=exp(-2307.1266/(temp(i)+273.15)+2.83655-1.5529413*log(temp(i)+273.15)+&
 	              ((-4.0484/(temp(i)+273.15))-0.20760841)*salt(i)**0.5+0.08468345*salt(i)-&
 		      0.00654208*salt(i)**(3.d0/2.d0)+log(1-0.001005*salt(i)))*&
-                      eqstate(temp(i),salt(i))/1000.d0
+                      eqstate(8,temp(i),salt(i))/1000.d0
 			
 	    kdiss2(i)=exp(-3351.6106/(temp(i)+273.15)-9.226508-0.2005743*log(temp(i)+273.15)+&
 	              ((-23.9722/(temp(i)+273.15))-0.106901773)*salt(i)**0.5+0.1130822*salt(i)-&
 		      0.00846934*salt(i)**(3.d0/2.d0)+log(1-0.001005*salt(i)))*&
-                      eqstate(temp(i),salt(i))/1000.d0
+                      eqstate(9,temp(i),salt(i))/1000.d0
 	    
 	    Hconc=10.d0**(-pH)
 	    

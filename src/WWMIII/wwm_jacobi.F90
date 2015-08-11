@@ -2005,10 +2005,13 @@
       REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew, DiffOld
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ, JDX
+
+      WRITE(*,*) SUM(AC2), 'BEFORE'
+
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
-
+      p_is_converged=0
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
@@ -2307,6 +2310,7 @@
 !              DiffOld=abs(Sum_prev - Sum_new)
 !              p_is_converged = DiffOld/Sum_new
               p_is_converged = DiffNew/Sum_new
+              !write(*,'(5F15.7)') p_is_converged, DiffNew, Sum_new, sum(ACLOC), sum(esum)
             else
               p_is_converged = zero
             endif
@@ -2355,6 +2359,7 @@
         ! Check via number of converged points
         !
         IF (LCHKCONV) THEN
+          write(*,*) p_is_converged, nbIter, is_converged
           IF (p_is_converged .le. pmin) EXIT
         ENDIF
         !
@@ -2558,4 +2563,5 @@
       ENDIF
 # endif
 #endif
+      WRITE(*,*) SUM(AC2), 'AFTER'
       END SUBROUTINE

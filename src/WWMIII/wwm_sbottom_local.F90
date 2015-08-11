@@ -63,9 +63,6 @@
 
 !      REAL ZHOOK_HANDLE
 
-! ----------------------------------------------------------------------
-      !IF (LHOOK) CALL DR_HOOK('SBOTTOM',0,ZHOOK_HANDLE)
-
       DO M=1,NFRE
         IF(DEP(IPP).LT.999) THEN
           ARG = 2.* DEP(IPP)*WK(M,IPP)!TFAK(INDEP(IJ),M)
@@ -83,8 +80,4 @@
           ENDIF
         ENDDO
       ENDDO
-
-      !IF (LHOOK) CALL DR_HOOK('SBOTTOM',1,ZHOOK_HANDLE)
-
-      RETURN
       END SUBROUTINE SBOTTOM_LOCAL

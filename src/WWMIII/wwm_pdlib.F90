@@ -113,6 +113,7 @@ implicit none
     use yowpd,only: nTasks, ipgl1=>ipgl, npa, ne, np, ng, x, y, z, INE, abort
     implicit  none
     integer :: istat
+    integer :: ip
 
     nproc = nTasks
     MNP = npa
@@ -129,6 +130,7 @@ implicit none
 
     INETMP => INE
 
+    
     if(allocated(ipgl)) deallocate(ipgl)
     allocate(ipgl(np_global), stat=istat)
     if(istat/=0) ABORT("allocate")

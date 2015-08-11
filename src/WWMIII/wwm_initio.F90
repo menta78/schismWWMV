@@ -38,7 +38,7 @@
 # ifdef PDLIB
        INE(:,:) = INETMP(:,:)
 # else
-       INE = INETMP
+       INE = INETMP(1:3,:)
 # endif
 #endif
 !
@@ -244,14 +244,14 @@
        RSYY = zero
        FORCEXY = zero
 
-#ifdef SELFE
+#ifdef SCHISM
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
        SXX3D = zero
        SXY3D = zero
        SYY3D = zero
 #endif
-#ifndef SELFE
+#ifndef SCHISM
        IF (LCPL) THEN
          IF (LTIMOR.or.LSHYFEM) THEN
            ALLOCATE( SXX3D(NLVT,MNP), SXY3D(NLVT,MNP), SYY3D(NLVT,MNP), stat=istat)
@@ -337,7 +337,7 @@
          CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
       ENDIF ! IPHYS
 
-      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READ SPATIAL GRID'
+      WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -429,10 +429,10 @@
       DEALLOCATE( TAUW, TAUTOT, TAUWX, TAUWY, TAUHF)
       DEALLOCATE( Z0, CD, USTDIR)
       DEALLOCATE( RSXX, RSXY, RSYY)
-#ifdef SELFE
+#ifdef SCHISM
       DEALLOCATE( SXX3D, SXY3D, SYY3D)
 #endif
-#ifndef SELFE
+#ifndef SCHISM
       IF (LCPL) THEN
         IF (LTIMOR.or.LSHYFEM) THEN
           DEALLOCATE( SXX3D, SXY3D, SYY3D)
@@ -461,7 +461,7 @@
       USE yowpd, only : initFromGridDim
 #endif
 #if !defined PDLIB && defined MPI_PARALL_GRID
-      USE ELFE_GLBL, only : ics
+      USE schism_glbl, only : ics
 #endif
 #ifdef PETSC
       USE PETSC_CONTROLLER, ONLY : PETSC_INIT
@@ -483,7 +483,7 @@
      
       CALL SET_WWMINPULNML 
 
-! variable nx1 should be initialized in selfe code, not here!
+! variable nx1 should be initialized in SCHISM code, not here!
 #if defined MPI_PARALL_GRID && !defined PDLIB
       do i=1,3
         do j=1,2
@@ -514,7 +514,6 @@
       YP=YPtotal
       DEP=DEPtotal
       INE=INEtotal
-      WLDEP=DEP
 #else
 # ifdef PDLIB
       IF (IGRIDTYPE .eq. 2) THEN
@@ -533,16 +532,16 @@
       DEP=DEP8
       INETMP=INE
 # else
-# ifndef SELFE
+#  ifndef SCHISM
       call partition_hgrid
       call aquire_hgrid(.true.)
       call msgp_tables
       call msgp_init
       call parallel_barrier
-# endif
+#  endif
       CALL INIT_ARRAYS
+
       DEP  = DEP8
-      WLDEP  = DEP
       IF (ics .eq. 2) THEN
         XP = XLON*RADDEG
         YP = YLAT*RADDEG
@@ -554,6 +553,7 @@
       CALL COLLECT_ALL_IPLG
       CALL SETUP_ONED_SCATTER_ARRAY
 #endif
+      WLDEP=DEP
       IF (CART2LATLON) THEN
         XP = XP / 111111.
         YP = YP / 111111.
@@ -574,7 +574,6 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT DISLIN                '
       FLUSH(STAT%FHNDL)
 #endif
-
 
       CALL CHECK_LOGICS
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'CHECK LOGICS                '
@@ -605,9 +604,9 @@
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 1/2'
       FLUSH(STAT%FHNDL)
-#if defined SELFE 
+#if defined SCHISM
 !AR: let dmin free ...
-!      DMIN = DMIN_SELFE
+!      DMIN = DMIN_SCHISM
 #endif
       CALL SET_IOBP_NEXTGENERATION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INITIALIZE BOUNDARY POINTER 2/2'
@@ -677,25 +676,29 @@
         CALL PREPARE_ARDHUIN
 #endif
       ENDIF
-
+      
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
       FLUSH(STAT%FHNDL)
       CALL INIT_WAVE_BOUNDARY_CONDITION
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
       FLUSH(STAT%FHNDL)
       CALL INITIAL_CONDITION
+!      CALL Print_SumAC2("After INITIAL_CONDITION")
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
       FLUSH(STAT%FHNDL)
       CALL INIT_STATION_OUTPUT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'WRITING INITIAL TIME STEP'
       FLUSH(STAT%FHNDL)
+#ifdef MPI_PARALL_GRID
+      CALL EXCHANGE_P4D_WWM(AC2)
+#endif
       CALL WWM_OUTPUT(ZERO,.TRUE.)
       IF (LWXFN) THEN
         CALL WRINPGRD_XFN
       ELSE IF(LWSHP) THEN
         CALL WRINPGRD_SHP
       END IF
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined SCHISM && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
       IF (LCPL) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'OPEN PIPES FOR COUPLING'
         FLUSH(STAT%FHNDL)
@@ -729,11 +732,11 @@
       CALL WAV_MY_WTIME(TIME2)
 #endif
 
-#if defined SELFE
-      IF (MSC_SELFE .NE. MSC .OR. MDC_SELFE .NE. MDC) THEN
-        WRITE(DBG%FHNDL,*) 'MSC_SELFE', MSC_SELFE
+#if defined SCHISM
+      IF (MSC_SCHISM .NE. MSC .OR. MDC_SCHISM .NE. MDC) THEN
+        WRITE(DBG%FHNDL,*) 'MSC_SCHISM', MSC_SCHISM
         WRITE(DBG%FHNDL,*) 'MSC', MSC
-        WRITE(DBG%FHNDL,*) 'MDC_SELFE', MDC_SELFE
+        WRITE(DBG%FHNDL,*) 'MDC_SCHISM', MDC_SELFE
         WRITE(DBG%FHNDL,*) 'MDC', MDC
         FLUSH(DBG%FHNDL)
         CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
@@ -745,9 +748,7 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'CPU Time for the preprocessing', TIME2-TIME1
 #endif
       FLUSH(STAT%FHNDL)
-
       AC1 = AC2
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -794,7 +795,7 @@
        CALL CLOSE_IOBP
        CALL TERMINATE_STATION_OUTPUT
 
-#if !defined SELFE && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
+#if !defined SCHISM && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV
        IF (LCPL) THEN
          IF (LTIMOR) THEN
            CALL TERMINATE_PIPES_TIMOR()
@@ -1216,7 +1217,7 @@
          open(WINDBG%FHNDL,file='windbg.out',status='unknown') !non-fatal errors
          open(SRCDBG%FHNDL,file='srcdbg.out',status='unknown') !non-fatal errors
 #else
-# ifdef SELFE
+# ifdef SCHISM
          FDB  ='wwmdbg_0000'
          LFDB =len_trim(FDB)
          write(FDB(LFDB-3:LFDB),'(i4.4)') MYRANK
@@ -1278,8 +1279,15 @@
          OUTPARM%FHNDL = STARTHNDL + 22 
          OUTSP2D%FHNDL = STARTHNDL + 23 
 
-         OUT%FHNDL     = STARTHNDL + 24 
+         OUT%FHNDL     = STARTHNDL + 24
+         
+       FHNDL_EXPORT_BOUC_WW3 = STARTHNDL + 25
+       FHNDL_EXPORT_WIND_WW3 = STARTHNDL + 26
+       FHNDL_EXPORT_CURR_WW3 = STARTHNDL + 27
+       FHNDL_EXPORT_WALV_WW3 = STARTHNDL + 28
+       FHNDL_EXPORT_GRID_WW3 = STARTHNDL + 29
 
+         
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1539,7 +1547,7 @@
 #endif
       IMPLICIT NONE
       INTEGER nbArg
-#ifdef SELFE
+#ifdef SCHISM
       INP%FNAME  = 'wwminput.nml'
 #else
 # if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV

@@ -1956,8 +1956,8 @@
         eStrU='Uwind'
         eStrV='Vwind'
       ELSE
-        eStrU='Ucurr'
-        eStrV='Vcurr'
+        eStrU='UsurfCurr'
+        eStrV='VsurfCurr'
       END IF
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
@@ -2005,8 +2005,6 @@
 # endif
       WRITE(WINDBG%FHNDL,*) 'READ_DIRECT_NETCDF_CF'
       WRITE(WINDBG%FHNDL,*) 'RECORD_IN=', RECORD_IN
-      WRITE(WINDBG%FHNDL,*) 'UWIND_FD, min/max=', minval(UWIND_FD), maxval(UWIND_FD)
-      WRITE(WINDBG%FHNDL,*) 'VWIND_FD, min/max=', minval(VWIND_FD), maxval(VWIND_FD)
       WRITE(WINDBG%FHNDL,*) 'UWIND_FE, min/max=', minval(outwind(:,1)), maxval(outwind(:,1))
       WRITE(WINDBG%FHNDL,*) 'VWIND_FE, min/max=', minval(outwind(:,2)), maxval(outwind(:,2))
       FLUSH(WINDBG%FHNDL)
@@ -2080,7 +2078,7 @@
       TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
       logical, intent(in) :: MULTIPLE_IN
       character(len=100), intent(in) :: eFileName
-      character(len=100), intent(in) :: eString
+      character(len=*), intent(in) :: eString
 !      
       INTEGER           :: fid, varid
       INTEGER           :: dimidsB(2), dimids(2)
@@ -2100,11 +2098,13 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
-        ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
+        ISTAT = nf90_open(TRIM(eFileName), nf90_nowrite, fid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
 
         ! Reading wind attributes
 
+!        Print *, 'eString=', TRIM(eString)
+!        Print *, 'FNAME=', TRIM(eFileName)
         ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
 
@@ -2243,7 +2243,7 @@
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         OPEN(WIN%FHNDL,FILE=WIN%FNAME,STATUS='OLD',IOSTAT = ISTAT)
-        NUM_NETCDF_FILES = 0
+        NUM_GRIB_FILES = 0
         DO
           READ( WIN%FHNDL, *, IOSTAT = ISTAT )
           IF ( ISTAT /= 0 ) EXIT
