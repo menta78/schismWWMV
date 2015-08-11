@@ -164,6 +164,8 @@
 #if defined ST41 || defined ST42
          LFIRSTSOURCE = .FALSE.
 #endif
+
+         PAUSE
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
