@@ -649,7 +649,7 @@
             IF (iEdgeBoundFound .eq. -1) CALL WWM_ABORT("Error in finding iEdgeBoundFound")
             ListIedgeBound(iVertBound)=iEdgeBoundFound
           END DO
-          Print *, 'eRealDegBound=', eRealDegBound
+!          Print *, 'eRealDegBound=', eRealDegBound
           DO iVertBound=1,eRealDegBound
             IP1=ListAdjVertBound(iVertBound)
             IP2=ListMatchVert(iVertBound)
@@ -749,7 +749,6 @@
       END DO
       deallocate(StatusAdj, ListAdjWithDupl)
       deallocate(MappingIP_iEdgeBound, ListDegEdgeBound)
-      Print *, 'LEaving subroutine'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -783,9 +782,9 @@
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
       type(BoundaryInfo) TheBound
-      Print *, 'Entering SERIAL_WRITE_BOUNDARY'
+!      Print *, 'Entering SERIAL_WRITE_BOUNDARY'
       CALL SERIAL_GET_BOUNDARY_NEXTGENERATION(TheBound)
-      Print *, 'After SERIAL_GET_BOUNDARY_NEXTGEN, Oper=', Oper
+!      Print *, 'After SERIAL_GET_BOUNDARY_NEXTGEN, Oper=', Oper
       IF ((Oper == 1).and.(TheBound % nbEdgeBound.gt.0)) THEN
         iret=nf90_inq_dimid(ncid, 'two', two_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
@@ -832,8 +831,8 @@
         iret=nf90_put_att(ncid,var_id,FULLNAME,'Length of cycles')
         CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
       END IF
-      Print *, 'After Oper=1'
-      Print *, 'TheBound % nbEdgeBound=', TheBound % nbEdgeBound
+!      Print *, 'After Oper=1'
+!      Print *, 'TheBound % nbEdgeBound=', TheBound % nbEdgeBound
       IF ((Oper == 2).and.(TheBound % nbEdgeBound.gt.0)) THEN
         iret=nf90_inq_varid(ncid, "ListVertBound", var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
@@ -870,9 +869,9 @@
         iret=nf90_put_var(ncid,var_id,TheBound % LenCycle, start = (/1/), count = (/ TheBound % NbCycle/))
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
       END IF
-      Print *, 'After Oper=2'
+!      Print *, 'After Oper=2'
       CALL DeallocateBoundaryInfo(TheBound)
-      Print *, 'After deallocate'
+!      Print *, 'After deallocate'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
