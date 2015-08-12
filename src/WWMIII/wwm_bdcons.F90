@@ -393,8 +393,8 @@
       END DO
       MaxIEcont=maxval(ContElements)
       SatMaxDeg=2*MaxIEcont
-      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL))
-      allocate(IEcontain(MaxIEcont,NP_TOTAL))
+      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL), stat=istat)
+      allocate(IEcontain(MaxIEcont,NP_TOTAL), stat=istat)
       ListDegWork=0
       DO IE=1,NE_TOTAL
         DO I=1,3
@@ -425,7 +425,7 @@
           ListDegWork(IP)=pos+1
         END DO
       END DO
-      allocate(StatusAdj(SatMaxDeg))
+      allocate(StatusAdj(SatMaxDeg), stat=istat)
       NumberAllTwo=0
       NumberBoundary=0
       NumberPathological=0
@@ -1621,6 +1621,7 @@
       IMPLICIT NONE
       REAL(rkind)            :: DTMP
       INTEGER                :: ITMP
+      LOGICAL                :: DoAllocate
 !TODO: Makes sure initial condition work also when no wave boundary is set ...
       IF (IBOUNDFORMAT == 3) THEN
         IF (LBCSP) THEN ! Spectrum is prescribed
@@ -1640,6 +1641,29 @@
 #else
         CALL WWM_ABORT('Compile with netcdf for IBOUNDFORMAT=4')
 #endif
+        DoAllocate=.TRUE.
+#ifdef MPI_PARALL_GRID
+        IF (myrank .eq. rank_boundary) THEN
+          DoAllocate=.TRUE.
+        ELSE
+          DoAllocate=.FALSE.
+        END IF
+#else
+        DoAllocate=.TRUE.
+#endif
+        IF (DoAllocate) THEN
+          IF (LBCWA) THEN
+            IF (.NOT. ALLOCATED(SPPARM_GL)) THEN
+              allocate(SPPARM_GL(8,IWBMNPGL), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
+            END IF
+          ELSE
+            IF (.NOT. ALLOCATED(SPPARM_GL)) THEN
+              allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
+            END IF
+          END IF
+        END IF
       END IF
       CALL WAVE_BOUNDARY_CONDITION(WBAC)
       IF (LBINTER) WBACOLD = WBAC
@@ -3046,11 +3070,13 @@
 # ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN
 # endif
-          IF (BOUC_NETCDF_OUT_PARAM) THEN
+          IF (BOUC_NETCDF_OUT_PARAM .and. (.NOT. allocated(SPPARM_GL))) THEN
             allocate(SPPARM_GL(8,IWBMNPGL), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
           END IF
-          IF (BOUC_NETCDF_OUT_SPECTRA) THEN
+          IF (BOUC_NETCDF_OUT_SPECTRA .and. (.NOT. allocated(WBAC_GL))) THEN
             allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
           END IF
 # ifdef MPI_PARALL_GRID
         END IF
@@ -3221,14 +3247,25 @@
       integer, intent(in) :: IFILE, IT
       character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_SPPARM_SINGLE"
       integer ncid, var_id
+      Print *, 'IWBMNPGL=', IWBMNPGL
+      Print *, 'IT=', IT
       ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
+      Print *, 'step 1'
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      Print *, 'step 1'
       ISTAT = nf90_inq_varid(ncid, 'SPPARM', var_id)
+      Print *, 'step 2'
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      Print *, 'step 3'
+      Print *, 'allocated(SPPARM_GL)=', allocated(SPPARM_GL)
       ISTAT = NF90_GET_VAR(ncid, var_id, SPPARM_GL, start=(/1,1,IT/), count = (/8, IWBMNPGL,1/))
+      Print *, 'step 4'
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      Print *, 'step 5'
       ISTAT = NF90_CLOSE(ncid)
+      Print *, 'step 6'
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      Print *, 'step 7'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
