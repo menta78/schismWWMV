@@ -1446,7 +1446,7 @@
         END IF
 !        Print *, 'End ICURRFORMAT = 2'
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with netcdf for ICURRFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE
@@ -1491,7 +1491,7 @@
         REC2_curr_old = REC2_curr_new
 !        Print *, 'End ICURRFORMAT = 2'
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for ICURRFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with netcdf for ICURRFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE
@@ -1562,7 +1562,7 @@
         END IF
 !        Print *, 'End IWATLVFORMAT = 2'
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with netcdf for IWATLVFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE
@@ -1622,7 +1622,7 @@
         TimeWAT_old = TimeWAT_new
 !        Print *, 'End IWATLVFORMAT = 2'
 #else
-        CALL WWM_ABORT('Need to compile with NCDF for IWATLVFORMAT = 2')
+        CALL WWM_ABORT('Need to compile with netcdf for IWATLVFORMAT = 2')
 #endif
       END IF
       END SUBROUTINE

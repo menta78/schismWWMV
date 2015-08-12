@@ -74,12 +74,20 @@
       eMin(2:2)   = eTimeStr(13:13)
       eSec(1:1)   = eTimeStr(14:14)
       eSec(2:2)   = eTimeStr(15:15)
+!      Print *, 'eYear=', eYear
       read(eYear , '(i10)' ) year
+!      Print *, 'After 1'
       read(eMonth, '(i10)' ) month
+!      Print *, 'After 2'
+!      Print *, 'eDay=', eDay
       read(eDay  , '(i10)' ) day
+!      Print *, 'After 3'
       read(eHour , '(i10)' ) hour
+!      Print *, 'After 4'
       read(eMin  , '(i10)' ) min
+!      Print *, 'After 5'
       read(eSec  , '(i10)' ) sec
+!      Print *, 'After 6'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

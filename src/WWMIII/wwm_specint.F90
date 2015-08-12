@@ -165,7 +165,7 @@
          LFIRSTSOURCE = .FALSE.
 #endif
 
-         PAUSE
+!         PAUSE
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

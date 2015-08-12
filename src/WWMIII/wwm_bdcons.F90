@@ -1485,7 +1485,7 @@
 #ifdef NCDF
               CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=3')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
               IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
@@ -1493,7 +1493,7 @@
 #ifdef NCDF
               CALL READ_NETCDF_BOUNDARY_SPPARM
 #else
-              CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=4')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=4')
 #endif
             END IF
           ELSE  ! Steady ...
@@ -1507,7 +1507,7 @@
 #ifdef NCDF
               CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with DNCDF PPFLAG')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
             END IF
@@ -1558,7 +1558,7 @@
 #ifdef NCDF
             CALL READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
 #else
-            CALL WWM_ABORT('compile with -DNCDF for IBOUNDFORMAT=4')
+            CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=4')
 #endif
           END IF
         ELSE ! The boundary conditions is homogeneous in space !
@@ -1629,7 +1629,7 @@
 #ifdef NCDF
           CALL INIT_NETCDF_WW3_WAVEPARAMETER
 #else
-          CALL WWM_ABORT('Compile with -NCDF For WW3 bdcons')
+          CALL WWM_ABORT('Compile with netcdf For WW3 bdcons')
 #endif
         END IF
       END IF
@@ -1637,7 +1637,7 @@
 #ifdef NCDF
         CALL INIT_NETCDF_BOUNDARY_WWM
 #else
-        CALL WWM_ABORT('Compile with -NCDF for IBOUNDFORMAT=4')
+        CALL WWM_ABORT('Compile with netcdf for IBOUNDFORMAT=4')
 #endif
       END IF
       CALL WAVE_BOUNDARY_CONDITION(WBAC)
