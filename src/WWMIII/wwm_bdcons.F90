@@ -1490,7 +1490,7 @@
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
               IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
             ELSE IF (IBOUNDFORMAT == 4) THEN ! WWM SPPARM netcdf file
-              Print *, 'Before READ_NETCDF_BOUNDARY_SPPARM'
+!              Print *, 'Before READ_NETCDF_BOUNDARY_SPPARM'
 #ifdef NCDF
               CALL READ_NETCDF_BOUNDARY_SPPARM
 #else
@@ -3248,25 +3248,25 @@
       integer, intent(in) :: IFILE, IT
       character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_SPPARM_SINGLE"
       integer ncid, var_id
-      Print *, 'IWBMNPGL=', IWBMNPGL
-      Print *, 'IT=', IT
+!      Print *, 'IWBMNPGL=', IWBMNPGL
+!      Print *, 'IT=', IT
       ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
-      Print *, 'step 1'
+!      Print *, 'step 1'
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
-      Print *, 'step 1'
+!      Print *, 'step 1'
       ISTAT = nf90_inq_varid(ncid, 'SPPARM', var_id)
-      Print *, 'step 2'
+!      Print *, 'step 2'
       CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
-      Print *, 'step 3'
-      Print *, 'allocated(SPPARM_GL)=', allocated(SPPARM_GL)
+!      Print *, 'step 3'
+!      Print *, 'allocated(SPPARM_GL)=', allocated(SPPARM_GL)
       ISTAT = NF90_GET_VAR(ncid, var_id, SPPARM_GL, start=(/1,1,IT/), count = (/8, IWBMNPGL,1/))
-      Print *, 'step 4'
+!      Print *, 'step 4'
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
-      Print *, 'step 5'
+!      Print *, 'step 5'
       ISTAT = NF90_CLOSE(ncid)
-      Print *, 'step 6'
+!      Print *, 'step 6'
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
-      Print *, 'step 7'
+!      Print *, 'step 7'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
