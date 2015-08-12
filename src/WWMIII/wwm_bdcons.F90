@@ -1641,6 +1641,7 @@
 #else
         CALL WWM_ABORT('Compile with netcdf for IBOUNDFORMAT=4')
 #endif
+        CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
         DoAllocate=.TRUE.
 #ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN

@@ -1077,12 +1077,17 @@
       SUBROUTINE SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
       USE DATAPOOL
       IMPLICIT NONE
+      logical, SAVE ::IsSetupBoundaryScatterReduceArrayDone = .FALSE.
       integer :: ListFirst(nproc)
       integer MNPloc, iProc, IP, IP_glob
       integer, allocatable :: dspl_spparm(:), Indexes(:)
       integer, allocatable :: dspl_wbac(:)
       integer :: NbSend(nproc)
       integer irank, eSend, idx, idx_nbproc, eIdx
+      IF (IsSetupBoundaryScatterReduceArrayDone .eqv. .TRUE.) THEN
+        RETURN
+      END IF
+      IsSetupBoundaryScatterReduceArrayDone=.TRUE.
       ListFirst=0
       DO iProc=2,nproc
         ListFirst(iProc)=ListFirst(iProc-1) + ListMNP(iProc-1)
