@@ -171,7 +171,7 @@
          REAL(rkind), INTENT(IN)    :: BETA
          REAL(rkind)                :: VART(MNP)
          REAL(rkind)                :: SW, SWQ, DISX, DISY, DIST, DIS
-         INTEGER                    :: I, J, IP
+         INTEGER                    :: I, J
          
          DO I = 1, MNP
             SW = ZERO
@@ -341,7 +341,7 @@
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)  :: VAR(MNP)
       REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
-      INTEGER       :: IE, IP, IADJ, IP_ADJ
+      INTEGER       :: IP, IADJ, IP_ADJ
       REAL(rkind)   :: xpdiff, ypdiff, dist, eSum
       REAL(rkind)   :: XPcomp, YPcomp, eXP, eYP, eCoeff
       DO IP=1,NP_RES
@@ -437,8 +437,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WAVEKCG(DEP, SIGIN, WN, WVC, WVK, WVCG2)
-         USE DATAPOOL, ONLY : G9, DMIN, VERYSMALL, RKIND
-         USE DATAPOOL, ONLY : ONE, TWO, KDMAX
+         USE DATAPOOL
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)  :: DEP, SIGIN
          REAL(rkind), INTENT(OUT) :: WVC, WVK, WVCG2, WN
@@ -1476,11 +1475,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_SHP()
-#ifdef MPI_PARALL_GRID
-         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, MNE, XP, YP, DEP, INE
-#else
-         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
-#endif
+         USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: I
 
