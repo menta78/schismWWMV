@@ -436,10 +436,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WAVEKCG(DEP, SIGIN, WN, WVC, WVK, WVCG2)
+      SUBROUTINE WAVEKCG(DEPLOC, SIGIN, WN, WVC, WVK, WVCG2)
          USE DATAPOOL
          IMPLICIT NONE
-         REAL(rkind), INTENT(IN)  :: DEP, SIGIN
+         REAL(rkind), INTENT(IN)  :: DEPLOC, SIGIN
          REAL(rkind), INTENT(OUT) :: WVC, WVK, WVCG2, WN
          REAL(rkind) :: SGDLS , AUX1, AUX2
          REAL(rkind) :: WKDEP
@@ -456,13 +456,13 @@
             RETURN
          END IF
 
-         IF (DEP .GT. DMIN) THEN
-            SGDLS = SIGIN*SIGIN*DEP/G9
+         IF (DEPLOC .GT. DMIN) THEN
+            SGDLS = SIGIN*SIGIN*DEPLOC/G9
             AUX1 = 1.0+0.6522*SGDLS+0.4622*(SGDLS**2.0)+0.0864*(SGDLS**4.0)+0.0675*(SGDLS**5.0)
             AUX2 = 1.0/(SGDLS+1.0/AUX1)
-            WVC = SQRT(AUX2*G9*DEP)
+            WVC = SQRT(AUX2*G9*DEPLOC)
             WVK = SIGIN/WVC
-            WKDEP = WVK*DEP
+            WKDEP = WVK*DEPLOC
             IF (WKDEP > 13.0_rkind) THEN
                WN = 0.5_rkind
             ELSE
