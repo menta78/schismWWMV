@@ -1730,7 +1730,12 @@
           FLUSH(STAT%FHNDL)
           CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
           ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+          IF (ISTAT /= 0) THEN
+            Print *, 'Error while trying to open netcdf file'
+            Print *, 'FILE=', TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+            Print *, 'One possible error is that the file is NC4 but you linked to NC3'
+            CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+          END IF
 
           ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
           CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
