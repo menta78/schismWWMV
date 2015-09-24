@@ -142,9 +142,16 @@ endif
 
 ifdef USE_TIMOR
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_TIMOR
-  OBJS := $(OBJS) timor_datapl.o timor_main.o timor_init.o timor_sedisub.o timor_fluc.o  \
-       timor_d.o timor_c.o timor_b.o timor_a_up.o timor_a0.o \
-       timor_a_blub.o timor_upw_ups.o timor_hydro_Anlagen.o
+  OBJS := $(OBJS) timor_datapl.o\
+       timor_3D_Boden.o timor_area.o timor_Bank.Avala.o  timor_bed.o \
+       timor_Bilanzen.o timor_cr_w.o timor_dredge.o timor_fluc.o \
+       timor_GravTrans.o timor_hydro_Anlagen.o\
+       timor_init.o timor_Q3D.o timor_ReadWrite.o timor_schub.o\
+       timor_sukzession.o timor_SusTrans.o timor_timeloop.o \
+       timor_upw_ups.o timor_waves.o
+#timor_datapl.o timor_init.o timor_sedisub.o timor_fluc.o  \
+#       timor_d.o timor_sus.o timor_bed.o timor_a_up.o timor_a0.o \
+#       timor_timeloop.o timor_upw_ups.o timor_hydro_Anlagen.o
 endif
 
 ifdef USE_GOTM
