@@ -2243,6 +2243,8 @@
       REAL(rkind), allocatable :: wind_time_mjd(:)
       REAL cf_scale_factor, cf_add_offset
       REAL(rkind), allocatable :: LON_serial(:), LAT_serial(:), DATA_Serial(:)
+      WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
+      WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
@@ -2270,7 +2272,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
         DO IT=1, nbTime_mjd
           WRITE(WINDBG%FHNDL, *) '---------------------------------------'
-          WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+          WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
           CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
           call grib_count_in_file(ifile,n)
@@ -2325,6 +2327,7 @@
         allocate(igrib(n))
         WeFound=0;
         DO i=1,n
+          WRITE(WINDBG%FHNDL, *) 'i=', i, '/', n
           call grib_new_from_file(ifile, igrib(i))
           call grib_get(igrib(i), 'shortName', eShortName)
           IF ((TRIM(eShortName) .eq. '10u').and.(WeFound .eq. 0)) THEN
@@ -2364,8 +2367,8 @@
               FLUSH(WINDBG%FHNDL)
             END IF
             IF (GRIB_FILE_TYPE .eq. 2) THEN
-               Print *, 'Need to write the code for COSMO case'
-               STOP
+              Print *, 'Need to write the code for COSMO case'
+              CALL WWM_ABORT("Missing code")
             END IF
             IF (GRIB_FILE_TYPE .eq. 3) THEN
               call grib_get(igrib(i),"Nx", NDX_WIND_FD)
@@ -2389,11 +2392,18 @@
               DEALLOCATE(LON_serial, LAT_serial, DATA_serial)
             END IF
             !
+            WRITE(WINDBG%FHNDL, *) 'Before call to COMPUTE_CF_COEFFICIENTS'
             CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, GRIB_LON, GRIB_LAT)
+            WRITE(WINDBG%FHNDL, *) 'After call to COMPUTE_CF_COEFFICIENTS'
             DEALLOCATE(GRIB_LON, GRIB_LAT)
             WeFound=1
           END IF
         END DO
+        IF (WeFound .eq. 0) THEN
+          Print *, 'Failed to find the wind variable in the grib file'
+          CALL WWM_ABORT("Wind has not been found in grib file")          
+        END IF
+        WRITE(WINDBG%FHNDL, *) 'WeFound=', WeFound
         deallocate(igrib)
         CALL GRIB_CLOSE_FILE(ifile)
 # ifdef MPI_PARALL_GRID
@@ -2447,7 +2457,7 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
-        WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+        WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
         CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
         CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
         call grib_count_in_file(ifile,n)
