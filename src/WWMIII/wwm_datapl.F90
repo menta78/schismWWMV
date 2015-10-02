@@ -665,7 +665,7 @@
 
 
          INTEGER                         :: NUM_GRIB_FILES
-         CHARACTER(LEN=40), ALLOCATABLE  :: GRIB_FILE_NAMES(:)
+         CHARACTER(LEN=140), ALLOCATABLE :: GRIB_FILE_NAMES(:)
 
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES(:)
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES_BND(:,:)
@@ -723,6 +723,7 @@
          INTEGER                         :: IBOUNDFORMAT = 1
          INTEGER                         :: ICURRFORMAT  = 1
          INTEGER                         :: IWATLVFORMAT = 1
+         INTEGER                         :: GRIB_FILE_TYPE = 1
 
          INTEGER                         :: NDX_BND, NDY_BND
          INTEGER                         :: NDT_BND_ALL_FILES
