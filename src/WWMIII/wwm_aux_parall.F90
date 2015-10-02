@@ -415,7 +415,6 @@
       deallocate(INDX_IE, IE_LocalGlobal, StatusNeed, CCON_total, INDXextent_IE, IEneighbor_V1)
 #endif
       END SUBROUTINE
-#ifdef MPI_PARALL_GRID
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -527,6 +526,7 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer MNPloc
+#ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
@@ -573,6 +573,9 @@
         CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
         Lerror=rbuf_real(1)
       END IF
+#else
+      Lerror=0 ! in serial the coherency error is zero
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -590,6 +593,7 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer NP_RESloc
+#ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
@@ -640,10 +644,14 @@
         CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
         Lerror=rbuf_real(1)
       END IF
+#else
+      Lerror=0 ! in serial the coherency error is zero
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE COLLECT_ALL_IPLG
       USE DATAPOOL
       implicit none
@@ -701,9 +709,11 @@
         CALL MPI_RECV(ListIPLG,sumMNP,itype, 0, 271, comm, istatus, ierr)
       END IF
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE COLLECT_ALL_IA_JA
       USE DATAPOOL
       implicit none
@@ -796,18 +806,22 @@
         CALL MPI_RECV(ListJA,sumNNZ,itype, 0, 467, comm, istatus, ierr)
       END IF
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE SYMM_GRAPH_BUILD_ADJ(AdjGraph)
       USE DATAPOOL
       implicit none
       type(Graph), intent(inout) :: AdjGraph
       CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, wwm_nnbr, wwm_ListNeigh)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE GRAPH_BUILD_ADJ(AdjGraph)
       USE datapool, only : nnbr_p, nbrrank_p, Graph
       implicit none
@@ -819,9 +833,11 @@
       END DO
       CALL KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nnbr_p, ListNe)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE KERNEL_GRAPH_BUILD_ADJ(AdjGraph, nb, ListNe)
       USE DATAPOOL
       implicit none
@@ -939,6 +955,7 @@
       ENDIF
       AdjGraph % MaxDeg=maxval(AdjGraph % ListDegree)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -992,6 +1009,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE SETUP_ONED_SCATTER_ARRAY
       USE DATAPOOL
       IMPLICIT NONE
@@ -1025,15 +1043,17 @@
         FLUSH(STAT%FHNDL)
       END IF
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SCATTER_ONED_ARRAY(Vtotal, Vlocal)
       USE DATAPOOL
       IMPLICIT NONE
-      real(rkind) :: Vtotal(np_total)
-      real(rkind) :: Vlocal(MNP)
+      real(rkind), intent(in) :: Vtotal(np_total)
+      real(rkind), intent(out) :: Vlocal(MNP)
       integer iProc, IP
+#ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
         DO iProc=2,nproc
           CALL mpi_isend(Vtotal, 1, oned_send_type(iProc-1), iProc-1, 2030, comm, oned_send_rqst(iProc-1), ierr)
@@ -1047,6 +1067,9 @@
       ELSE
         CALL MPI_RECV(Vlocal, MNP, rtype, 0, 2030, comm, istatus, ierr)
       END IF
+#else
+      Vlocal = Vtotal
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1054,8 +1077,9 @@
       SUBROUTINE SCATTER_TWOD_ARRAY(Vtotal, Vlocal)
       USE DATAPOOL
       IMPLICIT NONE
-      real(rkind) :: Vtotal(2,np_total)
-      real(rkind) :: Vlocal(2,MNP)
+      real(rkind), intent(in) :: Vtotal(2,np_total)
+      real(rkind), intent(out) :: Vlocal(2,MNP)
+#ifdef MPI_PARALL_GRID
       integer iProc, IP
       IF (myrank .eq. 0) THEN
         DO iProc=2,nproc
@@ -1070,10 +1094,14 @@
       ELSE
         CALL MPI_RECV(Vlocal, 2*MNP, rtype, 0, 2068, comm, istatus, ierr)
       END IF
+#else
+      Vlocal = Vtotal
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
       SUBROUTINE SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
       USE DATAPOOL
       IMPLICIT NONE
@@ -1176,6 +1204,7 @@
         deallocate(Indexes)
       END IF
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -1186,6 +1215,7 @@
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
+#ifdef MPI_PARALL_GRID
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
           CALL mpi_isend(SPPARM_GL, 1, spparm_type(irank), bound_listproc(irank), 2072, comm, spparm_rqst(irank), ierr)
@@ -1199,6 +1229,9 @@
       ELSE
         CALL MPI_RECV(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2072, comm, istatus, ierr)
       END IF
+#else
+      SPPARM = SPPARM_GL
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1211,6 +1244,7 @@
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
+#ifdef MPI_PARALL_GRID
       IF (myrank .eq. rank_boundary) THEN
         DO irank=1,bound_nbproc
           CALL mpi_isend(WBAC_GL, 1, spparm_type(irank), bound_listproc(irank), 2096, comm, spparm_rqst(irank), ierr)
@@ -1224,6 +1258,9 @@
       ELSE
         CALL MPI_RECV(WBACOUT, MSC*MDC*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
       END IF
+#else
+      WBACOUT = WBAC_GL
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1287,7 +1324,7 @@
         WBAC_GL=WBAC
       ELSE
         DO IP=1,IWBMNPGL
-          WBAC_GL(:,IP)=WBAC(:,1)
+          WBAC_GL(:,:,IP)=WBAC(:,:,1)
         END DO
       ENDIF
 #else
@@ -1354,7 +1391,8 @@
       SUBROUTINE TRIG_SYNCHRONIZATION(V)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: V(MNEextent)
+      REAL(rkind), intent(inout) :: V(MNEextent)
+#ifdef MPI_PARALL_GRID
       integer iNeigh, iRank
       DO iNeigh=1,ie_nnbr_send
         iRank=ListNeigh_ie_send(iNeigh)
@@ -1370,10 +1408,12 @@
       IF (ie_nnbr_recv > 0) THEN
         call mpi_waitall(ie_nnbr_recv, ie_recv_rqst, ie_recv_stat,ierr)
       END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef MPI_PARALL_GRID
 # if defined NETCDF && defined DEBUG
       SUBROUTINE NETCDF_WRITE_MATRIX(LocalColor, ASPAR)
       USE DATAPOOL

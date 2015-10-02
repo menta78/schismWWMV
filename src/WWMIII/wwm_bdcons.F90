@@ -1641,7 +1641,9 @@
 #else
         CALL WWM_ABORT('Compile with netcdf for IBOUNDFORMAT=4')
 #endif
+#ifdef MPI_PARALL_GRID
         CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
+#endif
         DoAllocate=.TRUE.
 #ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN
@@ -1866,10 +1868,10 @@
           END DO
           CLOSE(3010)
         END IF
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-#ifdef MPI_PARALL_GRID
+# endif
+# ifdef MPI_PARALL_GRID
       IF (.NOT. MULTIPLE_IN_BOUND) THEN
         IF (myrank.eq.0) THEN
           iVect(1)=NUM_NETCDF_FILES_BND
@@ -1909,7 +1911,7 @@
           CALL MPI_RECV(BND_TIME_ALL_FILES,eSize,rtype, 0, 813, comm, istatus, ierr)
         END IF
       END IF
-#endif
+# endif
       SEBO%DELT = (BND_TIME_ALL_FILES(1,2) - BND_TIME_ALL_FILES(1,1)) * DAY2SEC
       write(STAT%FHNDL,*) SEBO%DELT, BND_TIME_ALL_FILES(1,2), BND_TIME_ALL_FILES(1,1)
       ALLOCATE (HS_WW3(NDX_BND,NDY_BND), FP_WW3(NDX_BND,NDY_BND), T02_WW3(NDX_BND,NDY_BND), DSPR_WW3(NDX_BND,NDY_BND), DIR_WW3(NDX_BND,NDY_BND), stat=istat)
@@ -1920,9 +1922,11 @@
       DSPR_WW3 = 0.
       DIR_WW3 = 0.
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF
       SUBROUTINE READ_NETCDF_WW3_IVAR(IFILE, IT, IVAR, VAR_READ)
       USE DATAPOOL
       USE NETCDF
@@ -1966,9 +1970,11 @@
       ISTAT = nf90_close(ncid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF
       SUBROUTINE READ_NETCDF_WW3_SINGLE(IFILE,IT)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1979,9 +1985,11 @@
       CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 4, DSPR_WW3)
       CALL READ_NETCDF_WW3_IVAR(IFILE, IT, 1, DIR_WW3)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF
       SUBROUTINE READ_NETCDF_WW3_PARAM
       USE DATAPOOL
       IMPLICIT NONE
@@ -1993,7 +2001,7 @@
       REAL(rkind), ALLOCATABLE :: ARR_send_recv(:)
       integer, allocatable :: bnd_rqst(:), bnd_stat(:,:)
       CALL COMPUTE_IFILE_IT(IFILE, IT)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_BOUND) THEN
         CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
       ELSE
@@ -2044,9 +2052,9 @@
           END DO
         END IF
       END IF
-#else
+# else
       CALL READ_NETCDF_WW3_SINGLE(IFILE,IT)
-#endif
+# endif
       IF (LWRITE_WW3_RESULTS) THEN
         OPEN(3012, FILE  = 'ergwiii.bin', FORM = 'UNFORMATTED')
         ALLOCATE(U(NDX_BND*NDY_BND), V(NDX_BND*NDY_BND), H(NDX_BND*NDY_BND), stat=istat)
@@ -2203,10 +2211,10 @@
       IMPLICIT NONE
  
       INTEGER         :: IP
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       REAL(rkind)     :: RTMP
       INTEGER         :: IPP
-#endif
+# endif
 !     SPPARM(1): Hs, sign. wave height
 !     SPPARM(2): Wave period given by user (either peak or mean)
 !     SPPARM(3): average direction
@@ -2232,7 +2240,7 @@
         READ(WAV%FHNDL,*)
       END IF
 
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IPP = 0
       IF (LINHOM) THEN
         DO IP = 1, IWBMNPGL
@@ -2249,7 +2257,7 @@
           SPPARM(1:3,IP) = SPPARM(1:3,1)
         END DO
       END IF
-#else
+# else
       IF (LINHOM) THEN
         DO IP = 1, IWBMNP
           READ (WAV%FHNDL, *) SPPARM(1,IP), SPPARM(2,IP), SPPARM(3,IP)
@@ -2260,7 +2268,7 @@
           SPPARM(1:3,IP) = SPPARM(1:3,1)
         END DO
       END IF
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2268,7 +2276,6 @@
       SUBROUTINE READSPEC1D(LFIRST)
       USE DATAPOOL
       IMPLICIT NONE
-
       INTEGER              :: IP, IS
       LOGICAL, INTENT(IN)  :: LFIRST
 !
@@ -2287,7 +2294,6 @@
           READ (WAV%FHNDL,*) SFRQ(IS,1)
         END DO
       END IF
-
       IF (LINHOM) THEN
         DO IP = 1, IWBMNP
           DO IS = 1, WBMSC
@@ -2564,9 +2570,9 @@
       integer, allocatable :: send_rqst(:)
       integer, allocatable :: send_stat(:,:)
       integer siz, iProc
-#ifndef MPI_PARALL_GRID
+# ifndef MPI_PARALL_GRID
       CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
-#else
+# else
       IF (MULTIPLE_IN_BOUND) THEN
         CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
       ELSE
@@ -2586,7 +2592,7 @@
           CALL MPI_RECV(SPECOUT, siz, rtype, 0, 2034, comm, istatus, ierr)
         END IF
       END IF
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !* GETWW3SPECTRA
@@ -2603,9 +2609,9 @@
       USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
       USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
       USE DATAPOOL, ONLY: MDC_WW3
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       USE DATAPOOL, ONLY: XLON, YLAT
-#endif
+# endif
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
       INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
@@ -2662,13 +2668,13 @@
       IF(LINHOM) THEN !nearest-neighbour interpolation
         DO IB=1,IWBMNP
           IPGL = IWBNDLC(IB)
-#ifdef SCHISM
+# ifdef SCHISM
           XP_WWM=XLON(IPGL)! * RADDEG 
           YP_WWM=YLAT(IPGL)! * RADDEG 
-#else
+# else
           XP_WWM = XP(IPGL)
           YP_WWM = YP(IPGL)
-#endif
+# endif
           IF (NP_WW3 .GT. 1) THEN
             DO IBWW3=1,NP_WW3
               DIST(IBWW3)=SQRT((XP_WWM-XP_WW3(IBWW3))**2+(YP_WWM-YP_WW3(IBWW3))**2)
@@ -2903,10 +2909,10 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER         :: IP
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       INTEGER         :: IPP
       REAL(rkind)     :: RTMP
-#endif
+# endif
 
 !     SPPARM(1): Hs, sign. wave height
 !     SPPARM(2): Wave period given by user (either peak or mean)
@@ -2933,7 +2939,7 @@
         READ(WAV%FHNDL,*)
       END IF
 
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IPP = 0
       IF (LINHOM) THEN
         DO IP = 1, IWBMNPGL
@@ -2950,7 +2956,7 @@
           SPPARM(1:3,IP) = SPPARM(1:3,1)
         END DO
       END IF
-#else
+# else
       IF (LINHOM) THEN
         DO IP = 1, IWBMNP
           READ (WAV%FHNDL, *) SPPARM(1,IP), SPPARM(2,IP), SPPARM(3,IP)
@@ -2961,7 +2967,7 @@
           SPPARM(1:3,IP) = SPPARM(1:3,1)
         END DO
       END IF
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3421,6 +3427,7 @@
       RETURN
   10  FORMAT (a,'_',i4.4)
       END SUBROUTINE
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -3499,9 +3506,9 @@
       RDBPI(:,1)   = 1
       RDBPI(:,2:4) = 0
       CALL REDUCE_BOUNDARY_ARRAY_WBAC
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
-#endif
+# endif
          TheOut = FHNDL_EXPORT_BOUC_WW3
          IF (IsFirst .eqv. .TRUE.) THEN
            OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='new', action='write')
@@ -3543,11 +3550,10 @@
          END DO
          deallocate(ABPIO)
          CLOSE(TheOut)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#endif
