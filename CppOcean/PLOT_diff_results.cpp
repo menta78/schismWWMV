@@ -1,100 +1,67 @@
-/* ------------------------------ */
 #include <ctype.h>
 #include <malloc.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <chrono>
 #include <ctime>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <math.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <string>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <exception>
 #include <vector>
 #include <list>
 #include <set>
 #include <map>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
+#include <functional>
+#include <algorithm>
+
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
-#include <bitset>
-#include <boost/dynamic_bitset.hpp>
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-#include "tbb/tbb.h"
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-typedef boost::dynamic_bitset<> Face;
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 //{
 //  boost::filesystem::create_directories(eDir.c_str() );
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <netcdf>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include "grib_api.h"
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <Eigen/LU>
+#include <unsupported/Eigen/CXX11/Tensor>
 template <typename T> using MyVector=Eigen::Matrix<T,Eigen::Dynamic,1>;
 template <typename T> using MyMatrix=Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>;
 template <typename T> using MySparseMatrix=Eigen::SparseMatrix<T,Eigen::ColMajor>;
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-/* ------------------------------ */
 
 
 /* ------------------------------ */
@@ -126,6 +93,50 @@ void PrintMMA_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::stri
       }
   double eMean=sum/double(nb);
   std::cerr << "  " << VarName << " min=" << minval << " max=" << maxval << " avg=" << eMean << "\n";
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void LocateMM_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
+{
+  int eta=F.rows();
+  int xi=F.cols();
+  double minval, maxval;
+  int nb=0;
+  bool IsFirst=true;
+  int iMax=-1;
+  int jMax=-1;
+  int iMin=-1;
+  int jMin=-1;
+  for (int i=0; i<eta; i++)
+    for (int j=0; j<xi; j++)
+      if (MSK(i,j) == 1) {
+	double eVal=F(i,j);
+	nb++;
+	if (IsFirst) {
+	  IsFirst=false;
+	  maxval=eVal;
+	  minval=eVal;
+	  iMax=i;
+	  jMax=j;
+	  iMin=i;
+	  jMin=j;
+	}
+	else {
+	  if (eVal > maxval) {
+	    maxval=eVal;
+	    iMax=i;
+	    jMax=j;
+	  }
+	  if (eVal < minval) {
+	    minval=eVal;
+	    iMin=i;
+	    jMin=j;
+	  }
+	}
+      }
+  std::cerr << "  " << VarName << " min(p,i,j)=(" << minval << "," << iMin << "," << jMin << ") max(p,i,j)=(" << maxval << "," << iMax << "," << jMax << ")\n";
 }
 /* ------------------------------ */
 
@@ -400,14 +411,6 @@ void NAMELIST_WriteNamelistFile(std::ostream &os, FullNamelist const& eFullNamel
 
 
 /* ------------------------------ */
-std::vector<std::string> GetAllNamesOfSatelliteAltimeter()
-{
-  return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2", "CRYOSAT", "SARAL"};
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 std::vector<std::string> GetAllPossibleModels()
 {
   std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO"};
@@ -495,7 +498,7 @@ MyMatrix<double> FreqPeriodChange(MyMatrix<double> const& F)
 /* ------------------------------ */
 std::vector<std::string> GetAllPossibleVariables()
 {
-  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR"};
+  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR", "BreakingFraction", "ZetaSetup"};
   return ListVarOut;
 }
 /* ------------------------------ */
@@ -530,32 +533,6 @@ struct AnnotationRec {
 
 
 /* ------------------------------ */
-struct PairLL {
-  double eLon;
-  double eLat;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct SeqLineSegment {
-  std::vector<PairLL> ListPairLL;
-  bool IsClosed;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct QuadArray {
-  double MinLon;
-  double MaxLon;
-  double MinLat;
-  double MaxLat;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 void ADD_ANNOTATION_TEXT(std::ofstream & os, AnnotationRec const& TheAnnot)
 {
   if (TheAnnot.DrawAnnotation) {
@@ -568,6 +545,115 @@ void ADD_ANNOTATION_TEXT(std::ofstream & os, AnnotationRec const& TheAnnot)
     os << "  text = gsn_add_text(wks,plot,label, Xpos, Ypos, txres)\n";
   }
 }
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void PrintMyScriptSubtitle(std::ostream &os)
+{
+  os << "procedure subtitles(wks:graphic,plot:graphic,lstr:string,cstr:string, \\\n";
+  os << "                    rstr:string,tres)\n";
+  os << "local txres, font_height, amres\n";
+  os << "begin\n";
+  os << "  if(tres) then\n";
+  os << "    txres = tres     ; Copy resources\n";
+  os << "  else\n";
+  os << "    txres = True\n";
+  os << "  end if\n";
+  os << ";\n";
+  os << "; Retrieve font height of left axis string and use to\n";
+  os << "; calculate size of subtitles.\n";
+  os << ";\n";
+  os << "  if(.not.isatt(txres,\"txFontHeightF\")) then\n";
+  os << "    getvalues plot\n";
+  os << "      \"tiXAxisFontHeightF\" : font_height\n";
+  os << "    end getvalues\n";
+  os << "    txres@txFontHeightF = font_height*0.9\n";
+  os << "  end if\n";
+  os << ";\n";
+  os << "; Set some some annotation resources.\n";
+  os << ";\n";
+  os << "  amres                  = True\n";
+  os << "  if(.not.isatt(txres,\"amOrthogonalPosF\")) then\n";
+  os << "    amres@amOrthogonalPosF = -0.53   ; Top of plot plus a little extra\n";
+  os << "                                     ; to stay out of the tickmarks.\n";
+  os << "  else\n";
+  os << "    amres@amOrthogonalPosF = txres@amOrthogonalPosF\n";
+  os << "  end if\n";
+  os << ";\n";
+  os << "; Create three strings to put at the top, using a slightly\n";
+  os << "; smaller font height than the axis titles.\n";
+  os << ";\n";
+  os << "  if(lstr.ne.\"\") then\n";
+  os << "    txidl = gsn_create_text(wks, lstr, txres)\n";
+  os << "    amres@amJust           = \"BottomLeft\"\n";
+  os << "    amres@amParallelPosF   = -0.5   ; Left-justified\n";
+  os << "    annoidl = gsn_add_annotation(plot, txidl, amres)\n";
+  os << "  end if\n";
+  os << "  if(cstr.ne.\"\") then\n";
+  os << "    txidc = gsn_create_text(wks, cstr, txres)\n";
+  os << "    amres@amJust           = \"BottomCenter\"\n";
+  os << "    amres@amParallelPosF   = 0.0   ; Centered\n";
+  os << "    annoidc = gsn_add_annotation(plot, txidc, amres)\n";
+  os << "  end if\n";
+  os << "  if(rstr.ne.\"\") then\n";
+  os << "    txidr = gsn_create_text(wks, rstr, txres)\n";
+  os << "    amres@amJust           = \"BottomRight\"\n";
+  os << "    amres@amParallelPosF   = 0.5   ; Right-justifed\n";
+  os << "    annoidr = gsn_add_annotation(plot, txidr, amres)\n";
+  os << "  end if\n";
+  os << "end\n";
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <typename T>
+struct is_ring_field {
+  static const bool value = false;
+};
+ 
+template <>
+struct is_ring_field<short> {
+  static const bool value = false;
+};
+ 
+template <>
+struct is_ring_field<long> {
+  static const bool value = false;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<int> {
+  static const bool value = false;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<long long> {
+  static const bool value = false;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<double> {
+  static const bool value = true;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<float> {
+  static const bool value = true;
+};
 /* ------------------------------ */
 
 
@@ -624,18 +710,27 @@ T T_min(T const& eVal1, T const& eVal2)
 std::string random_string( size_t length )
 {
   srand ( time(NULL) );
-  auto randchar = []() -> char
-    {
-      const char charset[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-      const size_t max_index = (sizeof(charset) - 1);
-      return charset[ rand() % max_index ];
-    };
+  auto randchar = []() -> char {
+    const char charset[] =
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
+    const size_t max_index = (sizeof(charset) - 1);
+    return charset[ rand() % max_index ];
+  };
   std::string str(length,0);
   std::generate_n( str.begin(), length, randchar );
   return str;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void WriteStdVector(std::ostream& os, std::vector<T> const& V)
+{
+  for (auto & eVal : V)
+    os << " " << eVal;
 }
 /* ------------------------------ */
 
@@ -657,7 +752,7 @@ CollectedResult<T> Collected(std::vector<T> const& eVect)
   for (auto & eVal : eVect)
     SetVal.insert(eVal);
   std::vector<T> LVal;
-  for (auto & eVal : eVect)
+  for (auto & eVal : SetVal)
     LVal.push_back(eVal);
   int eSize=LVal.size();
   std::vector<int> LMult(eSize,0);
@@ -670,6 +765,8 @@ CollectedResult<T> Collected(std::vector<T> const& eVect)
     std::cerr << "Should never reach that stage\n";
     exit(1);
   };
+  for (auto & eVal : eVect)
+    UpPosition(eVal);
   return {LVal, LMult};
 }
 /* ------------------------------ */
@@ -908,7 +1005,7 @@ std::string FILE_GetAbsoluteDirectory(std::string const& ePrefix)
 /* ------------------------------ */
 void CreateDirectory(std::string const& eDir)
 {
-  std::cerr << "eDir=" << eDir << "\n";
+  //  std::cerr << "eDir=" << eDir << "\n";
   const char *dir=eDir.c_str();
   char tmp[256];
   char *p = NULL;
@@ -1798,6 +1895,65 @@ MyMatrix<double> GRIB_Read2DVariable(std::vector<std::string> const& ListFileNam
 
 
 /* ------------------------------ */
+struct Point {
+  double eLon;
+  double eLat;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+bool IsPointInside_Point(Point const& ePt, std::vector<Point> const& ListPt)
+{
+  int nvert=ListPt.size();
+  int i, j;
+  bool c=false;
+  for (i = 0, j = nvert-1; i < nvert; j = i++) {
+    if ( ((ListPt[i].eLat > ePt.eLat) != (ListPt[j].eLat > ePt.eLat)) &&
+         (ePt.eLon < (ListPt[j].eLon-ListPt[i].eLon) * (ePt.eLat-ListPt[i].eLat) / (ListPt[j].eLat-ListPt[i].eLat ) + ListPt[i].eLon) )
+      c = !c;
+  }
+  return c;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<Point> GetGridBoundary(MyMatrix<double> const& LON, MyMatrix<double> const& LAT, int const& iStart, int const& iEnd, int const& jStart, int const& jEnd)
+{
+  int len=2*(iEnd - iStart) + 2*(jEnd - jStart);
+  std::vector<Point> ListPt(len);
+  int idx=0;
+  for (int iEta=iStart; iEta<=iEnd-1; iEta++) {
+    int iXi=jStart;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iXi=jStart; iXi<=jEnd-1; iXi++) {
+    int iEta=iEnd;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iEta=iEnd; iEta>=iStart+1; iEta--) {
+    int iXi=jEnd;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iXi=jEnd; iXi>=jStart+1; iXi--) {
+    int iEta=iStart;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  return ListPt;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 double GeodesicDistance(double const& LonDeg1, double const& LatDeg1, double const& LonDeg2, double const& LatDeg2)
 {
   double pi=3.141592653589792;
@@ -1827,14 +1983,6 @@ double GeodesicDistanceKM(double const& LonDeg1, double const& LatDeg1, double c
   double EarthRadius=6370;
   return EarthRadius*GeodesicDistance(LonDeg1, LatDeg1, LonDeg2, LatDeg2);
 }
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct Point {
-  double eLon;
-  double eLat;
-};
 /* ------------------------------ */
 
 
@@ -2311,6 +2459,129 @@ MyMatrix<int> GetEdgeSet(MyMatrix<int> const& INE, int nbNode)
 
 
 /* ------------------------------ */
+struct PairLL {
+  double eLon;
+  double eLat;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct RecVar {
+  double eTimeDay;
+  int iTime;
+  std::string strPres;
+  std::string strFile;
+  std::string strAll;
+  //
+  std::string VarName1;
+  std::string VarName2;
+  double minval;
+  double maxval;
+  double mindiff;
+  double maxdiff;
+  std::string Unit;
+  MyMatrix<double> U;
+  MyMatrix<double> V;
+  MyMatrix<double> F;
+  std::string VarNature;
+  std::string nameU, nameV;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct CoordGridArrayFD {
+  int eta, xi;
+  MyMatrix<int> MSK;
+  MyMatrix<double> LON, LAT, DEP, ANG;
+  int nbWet;
+  bool HaveDEP;
+  std::vector<int> Idx, Jdx;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct GridArray {
+  std::string ModelName;
+  int IsFE;
+  bool IsSpherical;
+  CoordGridArrayFD GrdArrRho, GrdArrU, GrdArrV, GrdArrPsi;
+  MyMatrix<int> INE;
+  bool L_IndexSelect;
+  std::vector<int> I_IndexSelect;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct ArrayHistory {
+  std::string KindArchive;
+  int nbFile, nbTime;
+  double FirstTime, LastTime;
+  std::string FirstTimeStr, LastTimeStr;
+  std::vector<std::string> ListFileNames;
+  std::vector<std::vector<std::string> > ListListFileNames;
+  std::vector<int> ListIFile;
+  std::vector<int> ListIRec;
+  std::vector<double> ListTime;
+  bool AppendVarName;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct TotalArrGetData {
+  GridArray GrdArr;
+  ArrayHistory eArr;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct VarQuery {
+  double eTimeDay;
+  int iTime;
+  std::string NatureQuery; // Can be "instant", "average", "swathMax", "swathMin"
+  std::string NaturePlot; // Can be "single" or "diff"
+  double TimeFrameDay;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct PlotBound {
+  bool VariableRange;
+  std::vector<std::string> BoundSingle_var;
+  std::vector<double> BoundSingle_min;
+  std::vector<double> BoundSingle_max;
+  std::vector<std::string> BoundDiff_var;
+  std::vector<double> BoundDiff_min;
+  std::vector<double> BoundDiff_max;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct PairRecVar {
+  RecVar RecVar1;
+  RecVar RecVar2;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct QuadArray {
+  double MinLon;
+  double MaxLon;
+  double MinLat;
+  double MaxLat;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 struct T_stat {
   int nbMeas;
   double MaxMeas;
@@ -2463,131 +2734,37 @@ T_stat ComputeStatistics_MyVector(MyVector<double> const& ListMeas, MyVector<dou
 
 /* ------------------------------ */
 template<typename T>
-struct ThreeDimArray {
-public:
-
-  ThreeDimArray()
-  {
-    n1=0;
-    n2=0;
-    n3=0;
-    ListElt=NULL;
+MyMatrix<T> DimensionExtraction(Eigen::Tensor<T, 3> const& eT, size_t const& iDim, int const& eDim)
+{
+  int n1=eT.dimension(0);
+  int n2=eT.dimension(1);
+  int n3=eT.dimension(2);
+  if (iDim == 0) {
+    MyMatrix<T> eMat(n2, n3);
+    for (int i2=0; i2<n2; i2++)
+      for (int i3=0; i3<n3; i3++)
+	eMat(i2,i3)=eT(eDim,i2,i3);
+    return eMat;
   }
-  ThreeDimArray(size_t p1, size_t p2, size_t p3)
-  {
-    if (p1 < 0 || p2 < 0 || p3 < 0)
-      {
-	std::cerr << "p123=" << p1 << "," << p2 << "," << p3 << "\n";
-	std::cerr <<"(zero dimension allowed for things like nullspace)\n";
-	exit(1);
-      }
-    n1=p1;
-    n2=p2;
-    n3=p3;
-    ListElt=new T[n1*n2*n3];
+  if (iDim == 1) {
+    MyMatrix<T> eMat(n1, n3);
+    for (int i1=0; i1<n1; i1++)
+      for (int i3=0; i3<n3; i3++)
+	eMat(i1,i3)=eT(i1,eDim,i3);
+    return eMat;
   }
-  ThreeDimArray(ThreeDimArray<T> const& eArr)
-  {
-    std::vector<size_t> LDim=eArr.GetDims();
-    n1=LDim[0];
-    n2=LDim[1];
-    n3=LDim[2];
-    size_t len=n1*n2*n3;
-    ListElt=new T[n1*n2*n3];
-    for (size_t ielt=0; ielt<len; ielt++) {
-      T eVal=eArr.getelt(ielt);
-      ListElt[ielt]=eVal;
-    }
+  if (iDim == 2) {
+    MyMatrix<T> eMat(n1, n2);
+    for (int i1=0; i1<n1; i1++)
+      for (int i2=0; i2<n2; i2++)
+	eMat(i1,i2)=eT(i1,i2,eDim);
+    return eMat;
   }
-  T getelt(size_t idx) const
-  {
-    return ListElt[idx];
-  }
-  ThreeDimArray<T> operator=(ThreeDimArray<T> const& eArr)
-  {
-    std::vector<size_t> LDim=eArr.GetDims();
-    n1=LDim[0];
-    n2=LDim[1];
-    n3=LDim[2];
-    size_t len=n1*n2*n3;
-    ListElt=new T[n1*n2*n3];
-    for (size_t ielt=0; ielt<len; ielt++) {
-      T eVal=eArr.getelt(ielt);
-      ListElt[ielt]=eVal;
-    }
-    return *this;
-  }
-
-  ~ThreeDimArray()
-  {
-    delete [] ListElt;
-  }
-  // easier parts of the job
-  std::vector<size_t> GetDims(void) const
-  {
-    std::vector<size_t> eRet={n1, n2, n3};
-    return eRet;
-  }
-  void assign(size_t i1, size_t i2, size_t i3, T const& eVal)
-  {
-    size_t idx=i1 + n1*i2 + n1*n2*i3;
-    ListElt[idx]=eVal;
-  }
-  T get(size_t i1, size_t i2, size_t i3) const
-  {
-    size_t idx=i1 + n1*i2 + n1*n2*i3;
-    if (i1 > n1-1 || i1 < 0 ) {
-      std::cerr << "i1=" << i1 << " n1=" << n1 << "\n";
-      exit(1);
-    }
-    if (i2 > n2-1 || i2 < 0 ) {
-      std::cerr << "i2=" << i2 << " n2=" << n2 << "\n";
-      exit(1);
-    }
-    if (i3 > n3-1 || i3 < 0 ) {
-      std::cerr << "i3=" << i3 << " n3=" << n3 << "\n";
-      exit(1);
-    }
-    return ListElt[idx];
-  }
-  MyMatrix<T> DimensionExtraction(size_t const& iDim, size_t const& eDim) const
-  {
-    if (iDim == 0) {
-      MyMatrix<T> eMat(n2, n3);
-      for (size_t i2=0; i2<n2; i2++)
-	for (size_t i3=0; i3<n3; i3++) {
-	  size_t idx=eDim + n1*i2 + n1*n2*i3;
-	  eMat(i2, i3)=ListElt[idx];
-	}
-      return eMat;
-    }
-    if (iDim == 1) {
-      MyMatrix<T> eMat(n1, n3);
-      for (size_t i1=0; i1<n1; i1++)
-	for (size_t i3=0; i3<n3; i3++) {
-	  size_t idx=i1 + n1*eDim + n1*n2*i3;
-	  eMat(i1, i3)=ListElt[idx];
-	}
-      return eMat;
-    }
-    if (iDim == 2) {
-      MyMatrix<T> eMat(n1, n2);
-      for (size_t i1=0; i1<n1; i1++)
-	for (size_t i2=0; i2<n2; i2++) {
-	  size_t idx=i1 + n1*i2 + n1*n2*eDim;
-	  eMat(i1, i1)=ListElt[idx];
-	}
-      return eMat;
-    }
-    std::cerr << "Wrong input in ThreeDimArray\n";
-    std::cerr << "iDim=" << iDim << "\n";
-    std::cerr << "Allowed values: 0, 1, 2\n";
-    exit(1);
-  }
-private:
-  size_t n1, n2, n3;
-  T *ListElt;
-};
+  std::cerr << "Wrong input in ThreeDimArray\n";
+  std::cerr << "iDim=" << iDim << "\n";
+  std::cerr << "Allowed values: 0, 1, 2\n";
+  exit(1);
+}
 /* ------------------------------ */
 
 
@@ -2722,6 +2899,28 @@ MyMatrix<T> TransposedMat(MyMatrix<T> const&TheMat)
       TheTrans(iCol, iRow)=eVal;
     }
   return TheTrans;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyVector<T> ProductVectorMatrix(MyVector<T> const& X, MyMatrix<T> const& M)
+{
+  int nbCol=M.cols();
+  int nbRow=M.rows();
+  if (X.size() != nbRow) {
+    std::cerr << "Error in the product X A\n";
+    exit(1);
+  }
+  MyVector<T> Vret(nbCol);
+  for (int iCol=0; iCol<nbCol; iCol++) {
+    T sum=0;
+    for (int iRow=0; iRow<nbRow; iRow++)
+      sum += M(iRow,iCol)*X(iRow);
+    Vret(iCol)=sum;
+  }
+  return Vret;
 }
 /* ------------------------------ */
 
@@ -3044,26 +3243,6 @@ MyMatrix<T> SelectRow(MyMatrix<T> const&TheMat, std::vector<int> const& eList)
 
 /* ------------------------------ */
 template<typename T>
-MyMatrix<T> SelectRow(MyMatrix<T> const&TheMat, Face const& eList)
-{
-  int nbRowRed=eList.count();
-  int nbCol=TheMat.cols();
-  MyMatrix<T> TheProv(nbRowRed, nbCol);
-  int jRow=eList.find_first();
-  for (int iRow=0; iRow<nbRowRed; iRow++) {
-    for (int iCol=0; iCol<nbCol; iCol++) {
-      T eVal=TheMat(jRow, iCol);
-      TheProv(iRow, iCol)=eVal;
-    }
-    jRow=eList.find_next(jRow);
-  }
-  return TheProv;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
 MyMatrix<T> SelectColumn(MyMatrix<T> const& TheMat, std::vector<int> const& eList)
 {
   int nbRow=TheMat.rows();
@@ -3104,17 +3283,43 @@ struct SolMatResult {
 
 
 /* ------------------------------ */
-template<typename T>
-void WriteStdVector(std::ostream &os, std::vector<T> const & TheVec)
+template<typename T1, typename T2>
+MyMatrix<T2> ConvertMatrix(MyMatrix<T1> const& M, std::function<T2(T1)> const& f)
 {
-  T eVal;
-  int i, n;
-  n=TheVec.size();
-  for (i=0; i<n; i++) {
-    eVal=TheVec[i];
-    os << " " << eVal;
+  int eta_rho=M.rows();
+  int xi_rho=M.cols();
+  MyMatrix<T2> eRet(eta_rho, xi_rho);
+  for (int i=0; i<eta_rho; i++)
+    for (int j=0; j<xi_rho; j++) {
+      T1 eVal1=M(i,j);
+      T2 eVal2=f(eVal1);
+      eRet(i,j)=eVal2;
   }
-  os << "\n";
+  return eRet;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void WriteMatrixGAP(std::ostream &os, MyMatrix<T> const&TheMat)
+{
+  long nbRow=TheMat.rows();
+  long nbCol=TheMat.cols();
+  os << "[ ";
+  for (long iRow=0; iRow<nbRow; iRow++) {
+    if (iRow > 0)
+      os << ",\n";
+    os << "[";
+    for (long iCol=0; iCol<nbCol; iCol++) {
+      T eVal=TheMat(iRow, iCol);
+      if (iCol > 0)
+	os << ",";
+      os << " " << eVal;
+    }
+    os << " ]";
+  }
+  os << " ]\n";
 }
 /* ------------------------------ */
 
@@ -3537,7 +3742,7 @@ struct InterpInfo {
 InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double const& eTimeDay)
 {
   InterpInfo eInterpInfo;
-  double tolDay=double(1)/double(100000);
+  double tolDay=double(1)/double(1000000);
   int nbTime=LTime.size();
   for (int iTime=0; iTime<nbTime; iTime++) {
     double eDist=fabs(LTime[iTime] - eTimeDay);
@@ -3590,7 +3795,7 @@ InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double con
 /* ------------------------------ */
 std::vector<int> GetIntervalListITime(std::vector<double> const& LTime, double const& eTimeDay, double const& TimeFrameDay)
 {
-  double epsilon=0.0001;
+  double epsilon=0.0000001;
   std::vector<int> ListRelITime;
   double eTimeLow=eTimeDay - epsilon;
   double eTimeUpp=eTimeDay + TimeFrameDay - epsilon;
@@ -3670,107 +3875,29 @@ PermanentInfoDrawing GET_PERMANENT_INFO(FullNamelist const& eFull)
 
 
 /* ------------------------------ */
-struct RecVar {
-  double eTimeDay;
-  int iTime;
-  std::string strPres;
-  std::string strFile;
-  std::string strAll;
-  //
-  std::string VarName1;
-  std::string VarName2;
-  double minval;
-  double maxval;
-  double mindiff;
-  double maxdiff;
-  std::string Unit;
-  MyMatrix<double> U;
-  MyMatrix<double> V;
-  MyMatrix<double> F;
-  std::string VarNature;
-  std::string nameU, nameV;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct CoordGridArrayFD {
-  int eta, xi;
-  MyMatrix<int> MSK;
-  MyMatrix<double> LON, LAT, DEP, ANG;
-  int nbWet;
-  bool HaveDEP;
-  std::vector<int> Idx, Jdx;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct GridArray {
-  std::string ModelName;
-  int IsFE;
-  int IsLonLat;
-  CoordGridArrayFD GrdArrRho, GrdArrU, GrdArrV, GrdArrPsi;
-  MyMatrix<int> INE;
-  bool L_IndexSelect;
-  std::vector<int> I_IndexSelect;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct ArrayHistory {
-  std::string KindArchive;
-  int nbFile, nbTime;
-  double FirstTime, LastTime;
-  std::string FirstTimeStr, LastTimeStr;
-  std::vector<std::string> ListFileNames;
-  std::vector<std::vector<std::string> > ListListFileNames;
-  std::vector<int> ListIFile;
-  std::vector<int> ListIRec;
-  std::vector<double> ListTime;
-  bool AppendVarName;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct TotalArrGetData {
-  GridArray GrdArr;
-  ArrayHistory eArr;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct VarQuery {
-  double eTimeDay;
-  int iTime;
-  std::string NatureQuery; // Can be "instant", "average", "swathMax", "swathMin"
-  std::string NaturePlot; // Can be "single" or "diff"
-  double TimeFrameDay;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct PlotBound {
-  bool VariableColormap;
-  std::vector<std::string> BoundSingle_var;
-  std::vector<double> BoundSingle_min;
-  std::vector<double> BoundSingle_max;
-  std::vector<std::string> BoundDiff_var;
-  std::vector<double> BoundDiff_min;
-  std::vector<double> BoundDiff_max;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct PairRecVar {
-  RecVar RecVar1;
-  RecVar RecVar2;
-};
+PlotBound ReadPlotBound(FullNamelist const& eFull)
+{
+  SingleBlock eBlPLOT=eFull.ListBlock.at("PLOT");
+  bool VariableRange=eBlPLOT.ListBoolValues.at("VariableRange");
+  std::vector<std::string> BoundSingle_var=eBlPLOT.ListListStringValues.at("BoundSingle_var");
+  std::vector<double> BoundSingle_min=eBlPLOT.ListListDoubleValues.at("BoundSingle_min");
+  std::vector<double> BoundSingle_max=eBlPLOT.ListListDoubleValues.at("BoundSingle_max");
+  PlotBound eRecPlot;
+  eRecPlot.VariableRange=VariableRange;
+  eRecPlot.BoundSingle_var=BoundSingle_var;
+  eRecPlot.BoundSingle_min=BoundSingle_min;
+  eRecPlot.BoundSingle_max=BoundSingle_max;
+  auto search=eBlPLOT.ListListStringValues.find("BoundDiff_var");
+  if (search != eBlPLOT.ListListStringValues.end() ) {
+    std::vector<std::string> BoundDiff_var=eBlPLOT.ListListStringValues.at("BoundDiff_var");
+    std::vector<double> BoundDiff_min=eBlPLOT.ListListDoubleValues.at("BoundDiff_min");
+    std::vector<double> BoundDiff_max=eBlPLOT.ListListDoubleValues.at("BoundDiff_max");
+    eRecPlot.BoundDiff_var=BoundDiff_var;
+    eRecPlot.BoundDiff_min=BoundDiff_min;
+    eRecPlot.BoundDiff_max=BoundDiff_max;
+  }
+  return eRecPlot;
+}
 /* ------------------------------ */
 
 
@@ -3876,60 +4003,131 @@ private:
 
 
 /* ------------------------------ */
-QuadArray GetQuadArray(GridArray const& GrdArr)
+FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
 {
-  double MinLon=0, MaxLon=0, MinLat=0, MaxLat=0;
-  if (GrdArr.IsFE == 1) {
-    MinLon=GrdArr.GrdArrRho.LON.minCoeff();
-    MaxLon=GrdArr.GrdArrRho.LON.maxCoeff();
-    MinLat=GrdArr.GrdArrRho.LAT.minCoeff();
-    MaxLat=GrdArr.GrdArrRho.LAT.maxCoeff();
-  }
-  else {
-    bool IsFirst=true;
-    int eta_rho=GrdArr.GrdArrRho.LON.rows();
-    int xi_rho =GrdArr.GrdArrRho.LON.cols();
-    for (int i=0; i<eta_rho; i++)
-      for (int j=0; j<xi_rho; j++)
-	if (GrdArr.GrdArrRho.MSK(i,j) == 1) {
-	  double eLon=GrdArr.GrdArrRho.LON(i,j);
-	  double eLat=GrdArr.GrdArrRho.LAT(i,j);
-	  if (IsFirst == true) {
-	    MinLon=eLon;
-	    MaxLon=eLon;
-	    MinLat=eLat;
-	    MaxLat=eLat;
-	    IsFirst=false;
-	  }
-	  else {
-	    if (eLon < MinLon)
-	      MinLon=eLon;
-	    if (eLon > MaxLon)
-	      MaxLon=eLon;
-	    if (eLat < MinLat)
-	      MinLat=eLat;
-	    if (eLat > MaxLat)
-	      MaxLat=eLat;
-	  }
-	}
-  }
-  return {MinLon, MaxLon, MinLat, MaxLat};
+  std::map<std::string, SingleBlock> ListBlock;
+  // PROC
+  std::string BlockName1="PROC";
+  std::map<std::string, int> ListIntValues1;
+  std::map<std::string, bool> ListBoolValues1;
+  std::map<std::string, double> ListDoubleValues1;
+  std::map<std::string, std::string> ListStringValues1;
+  std::map<std::string, std::vector<std::string> > ListListStringValues1;
+  ListStringValues1["MODELNAME"]="COSMO or WAM, ROMS, ROMS_IVICA, WWM, WW3, GRIB_DWD, GRIB_ECMWF, GRIB_GFS, GRIB_COSMO";
+  ListStringValues1["BEGTC"]="20110915.000000";
+  ListStringValues1["ENDTC"]="20110925.000000";
+  ListDoubleValues1["DELTC"]=600;
+  ListStringValues1["UNITC"]="SEC";
+  ListStringValues1["GridFile"]="roms_grid.nc";
+  ListBoolValues1["CutWorldMap"]=false;
+  ListBoolValues1["HigherLatitudeCut"]=false;
+  ListDoubleValues1["MinLatCut"]=-80;
+  ListDoubleValues1["MaxLatCut"]=80;
+  ListStringValues1["PicPrefix"]="Pictures/DIR_plot/";
+  ListStringValues1["Extension"]="png";
+  ListListStringValues1["ListNatureQuery"]={"instant"}; // By default instantaneous values
+  ListDoubleValues1["TimeFrameDay"]=1;
+  ListBoolValues1["FirstCleanDirectory"]=true;
+  ListBoolValues1["KeepNC_NCL"]=false;
+  ListIntValues1["NPROC"]=1;
+  SingleBlock BlockPROC;
+  BlockPROC.ListIntValues=ListIntValues1;
+  BlockPROC.ListBoolValues=ListBoolValues1;
+  BlockPROC.ListDoubleValues=ListDoubleValues1;
+  BlockPROC.ListStringValues=ListStringValues1;
+  BlockPROC.ListListStringValues=ListListStringValues1;
+  BlockPROC.BlockName=BlockName1;
+  ListBlock["PROC"]=BlockPROC;
+  // PLOT
+  std::string BlockName2="PLOT";
+  std::map<std::string, int> ListIntValues2;
+  std::map<std::string, bool> ListBoolValues2;
+  std::map<std::string, double> ListDoubleValues2;
+  std::map<std::string, std::string> ListStringValues2;
+  std::map<std::string, std::vector<double> > ListListDoubleValues2;
+  std::map<std::string, std::vector<std::string> > ListListStringValues2;
+  ListStringValues2["ColorMap"]="BlAqGrYeOrReVi200";
+  ListStringValues2["ColorMapDiff"]="BlWhRe";
+  ListStringValues2["cnFillMode"]="RasterFill";
+  ListBoolValues2["DoColorBar"]=true;
+  ListBoolValues2["cnSmoothingOn"]=true;
+  ListIntValues2["nbLevelSpa"]=50;
+  ListIntValues2["nbLabelStride"]=10;
+  ListBoolValues2["UseNativeGrid"]=true;
+  ListBoolValues2["DoTitle"]=true;
+  ListStringValues2["GridResolution"]="HighRes";
+  ListBoolValues2["DrawRiver"]=false;
+  ListBoolValues2["PrintMMA"]=false;
+  ListBoolValues2["LocateMM"]=false;
+  ListBoolValues2["DoMain"]=true;
+  ListBoolValues2["DoTransect"]=false;
+  ListBoolValues2["DrawContourBathy"]=false;
+  ListBoolValues2["DrawAnnotation"]=false;
+  ListDoubleValues2["AnnotationLon"]=0;
+  ListDoubleValues2["AnnotationLat"]=0;
+  ListStringValues2["AnnotationText"]="something to write";
+  ListListStringValues2["BoundSingle_var"]={};
+  ListListDoubleValues2["BoundSingle_min"]={};
+  ListListDoubleValues2["BoundSingle_max"]={};
+  ListListStringValues2["BoundDiff_var"]={};
+  ListListDoubleValues2["BoundDiff_min"]={};
+  ListListDoubleValues2["BoundDiff_max"]={};
+  ListBoolValues2["VariableRange"]=false;
+  ListBoolValues2["FillLand"]=true;
+  SingleBlock BlockPLOT;
+  BlockPLOT.ListIntValues=ListIntValues2;
+  BlockPLOT.ListBoolValues=ListBoolValues2;
+  BlockPLOT.ListDoubleValues=ListDoubleValues2;
+  BlockPLOT.ListStringValues=ListStringValues2;
+  BlockPLOT.ListListStringValues=ListListStringValues2;
+  BlockPLOT.ListListDoubleValues=ListListDoubleValues2;
+  BlockPLOT.BlockName=BlockName2;
+  ListBlock["PLOT"]=BlockPLOT;
+  // VARS
+  std::string BlockName3="VARS";
+  std::map<std::string, int> ListIntValues3;
+  std::map<std::string, bool> ListBoolValues3;
+  std::map<std::string, double> ListDoubleValues3;
+  std::map<std::string, std::string> ListStringValues3;
+  std::map<std::string, std::vector<std::string> > ListListStringValues3;
+  std::vector<std::string> ListVarOut=GetAllPossibleVariables();
+  for (auto& eVal : ListVarOut)
+    ListBoolValues3[eVal]=false;
+  SingleBlock BlockVARS;
+  BlockVARS.ListIntValues=ListIntValues3;
+  BlockVARS.ListBoolValues=ListBoolValues3;
+  BlockVARS.ListDoubleValues=ListDoubleValues3;
+  BlockVARS.ListStringValues=ListStringValues3;
+  BlockVARS.ListListStringValues=ListListStringValues3;
+  BlockVARS.BlockName=BlockName3;
+  ListBlock["VARS"]=BlockVARS;
+  // Final part
+  FullNamelist eFullNamelist;
+  eFullNamelist.ListBlock=ListBlock;
+  eFullNamelist.FileName="undefined";
+  return eFullNamelist;
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-PlotBound ReadPlotBound(FullNamelist const& eFull)
+FullNamelist NAMELIST_GetStandard_PlotRoutine_pair()
 {
-  SingleBlock eBlPLOT=eFull.ListBlock.at("PLOT");
-  bool VariableColormap=eBlPLOT.ListBoolValues.at("VariableColormap");
-  std::vector<std::string> BoundSingle_var=eBlPLOT.ListListStringValues.at("BoundSingle_var");
-  std::vector<double> BoundSingle_min=eBlPLOT.ListListDoubleValues.at("BoundSingle_min");
-  std::vector<double> BoundSingle_max=eBlPLOT.ListListDoubleValues.at("BoundSingle_max");
-  std::vector<std::string> BoundDiff_var=eBlPLOT.ListListStringValues.at("BoundDiff_var");
-  std::vector<double> BoundDiff_min=eBlPLOT.ListListDoubleValues.at("BoundDiff_min");
-  std::vector<double> BoundDiff_max=eBlPLOT.ListListDoubleValues.at("BoundDiff_max");
-  return {VariableColormap, BoundSingle_var, BoundSingle_min, BoundSingle_max, BoundDiff_var, BoundDiff_min, BoundDiff_max};
+  FullNamelist eFull=NAMELIST_GetStandard_PlotRoutine_common();
+  eFull.ListBlock["PROC"].ListStringValues["__NaturePlot"]="PAIR";
+  eFull.ListBlock["PROC"].ListStringValues["HisPrefix1"]="COSMO_output_ or WAM_output_ or ROMS_output_";
+  eFull.ListBlock["PROC"].ListStringValues["HisPrefix2"]="COSMO_output_ or WAM_output_ or ROMS_output_";
+  eFull.ListBlock["PROC"].ListStringValues["Name1"]="Say for example coupled";
+  eFull.ListBlock["PROC"].ListStringValues["Name2"]="Say for example uncoupled";
+  return eFull;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<std::string> GetAllNamesOfSatelliteAltimeter()
+{
+  return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2", "CRYOSAT", "SARAL"};
 }
 /* ------------------------------ */
 
@@ -4157,120 +4355,44 @@ void NAMELIST_ReadNamelistFile(std::string const& eFileName, FullNamelist &eFull
 
 
 /* ------------------------------ */
-FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
+QuadArray GetQuadArray(GridArray const& GrdArr)
 {
-  std::map<std::string, SingleBlock> ListBlock;
-  // PROC
-  std::string BlockName1="PROC";
-  std::map<std::string, int> ListIntValues1;
-  std::map<std::string, bool> ListBoolValues1;
-  std::map<std::string, double> ListDoubleValues1;
-  std::map<std::string, std::string> ListStringValues1;
-  std::map<std::string, std::vector<std::string> > ListListStringValues1;
-  ListStringValues1["MODELNAME"]="COSMO or WAM, ROMS, ROMS_IVICA, WWM, WW3, GRIB_DWD, GRIB_ECMWF, GRIB_GFS, GRIB_COSMO";
-  ListStringValues1["BEGTC"]="20110915.000000";
-  ListStringValues1["ENDTC"]="20110925.000000";
-  ListDoubleValues1["DELTC"]=600;
-  ListStringValues1["UNITC"]="SEC";
-  ListStringValues1["GridFile"]="roms_grid.nc";
-  ListBoolValues1["CutWorldMap"]=false;
-  ListBoolValues1["HigherLatitudeCut"]=false;
-  ListDoubleValues1["MinLatCut"]=-80;
-  ListDoubleValues1["MaxLatCut"]=80;
-  ListStringValues1["PicPrefix"]="Pictures/DIR_plot/";
-  ListStringValues1["Extension"]="png";
-  ListListStringValues1["ListNatureQuery"]={"instant"}; // By default instantaneous values
-  ListDoubleValues1["TimeFrameDay"]=1;
-  ListBoolValues1["FirstCleanDirectory"]=true;
-  ListBoolValues1["KeepNC_NCL"]=false;
-  ListIntValues1["NPROC"]=1;
-  SingleBlock BlockPROC;
-  BlockPROC.ListIntValues=ListIntValues1;
-  BlockPROC.ListBoolValues=ListBoolValues1;
-  BlockPROC.ListDoubleValues=ListDoubleValues1;
-  BlockPROC.ListStringValues=ListStringValues1;
-  BlockPROC.ListListStringValues=ListListStringValues1;
-  BlockPROC.BlockName=BlockName1;
-  ListBlock["PROC"]=BlockPROC;
-  // PLOT
-  std::string BlockName2="PLOT";
-  std::map<std::string, int> ListIntValues2;
-  std::map<std::string, bool> ListBoolValues2;
-  std::map<std::string, double> ListDoubleValues2;
-  std::map<std::string, std::string> ListStringValues2;
-  std::map<std::string, std::vector<double> > ListListDoubleValues2;
-  std::map<std::string, std::vector<std::string> > ListListStringValues2;
-  ListStringValues2["ColorMap"]="BlAqGrYeOrReVi200";
-  ListStringValues2["ColorMapDiff"]="BlWhRe";
-  ListStringValues2["cnFillMode"]="RasterFill";
-  ListBoolValues2["DoColorBar"]=true;
-  ListBoolValues2["cnSmoothingOn"]=true;
-  ListIntValues2["nbLevelSpa"]=50;
-  ListIntValues2["nbLabelStride"]=10;
-  ListBoolValues2["UseNativeGrid"]=true;
-  ListBoolValues2["DoTitle"]=true;
-  ListStringValues2["GridResolution"]="HighRes";
-  ListBoolValues2["DrawRiver"]=false;
-  ListBoolValues2["PrintMMA"]=false;
-  ListBoolValues2["DrawContourBathy"]=false;
-  ListBoolValues2["DrawAnnotation"]=false;
-  ListDoubleValues2["AnnotationLon"]=0;
-  ListDoubleValues2["AnnotationLat"]=0;
-  ListStringValues2["AnnotationText"]="something to write";
-  ListListStringValues2["BoundSingle_var"]={};
-  ListListDoubleValues2["BoundSingle_min"]={};
-  ListListDoubleValues2["BoundSingle_max"]={};
-  ListListStringValues2["BoundDiff_var"]={};
-  ListListDoubleValues2["BoundDiff_min"]={};
-  ListListDoubleValues2["BoundDiff_max"]={};
-  ListBoolValues2["VariableColormap"]=false;
-  ListBoolValues2["FillLand"]=true;
-  SingleBlock BlockPLOT;
-  BlockPLOT.ListIntValues=ListIntValues2;
-  BlockPLOT.ListBoolValues=ListBoolValues2;
-  BlockPLOT.ListDoubleValues=ListDoubleValues2;
-  BlockPLOT.ListStringValues=ListStringValues2;
-  BlockPLOT.ListListStringValues=ListListStringValues2;
-  BlockPLOT.ListListDoubleValues=ListListDoubleValues2;
-  BlockPLOT.BlockName=BlockName2;
-  ListBlock["PLOT"]=BlockPLOT;
-  // VARS
-  std::string BlockName3="VARS";
-  std::map<std::string, int> ListIntValues3;
-  std::map<std::string, bool> ListBoolValues3;
-  std::map<std::string, double> ListDoubleValues3;
-  std::map<std::string, std::string> ListStringValues3;
-  std::map<std::string, std::vector<std::string> > ListListStringValues3;
-  std::vector<std::string> ListVarOut=GetAllPossibleVariables();
-  for (auto& eVal : ListVarOut)
-    ListBoolValues3[eVal]=false;
-  SingleBlock BlockVARS;
-  BlockVARS.ListIntValues=ListIntValues3;
-  BlockVARS.ListBoolValues=ListBoolValues3;
-  BlockVARS.ListDoubleValues=ListDoubleValues3;
-  BlockVARS.ListStringValues=ListStringValues3;
-  BlockVARS.ListListStringValues=ListListStringValues3;
-  BlockVARS.BlockName=BlockName3;
-  ListBlock["VARS"]=BlockVARS;
-  // Final part
-  FullNamelist eFullNamelist;
-  eFullNamelist.ListBlock=ListBlock;
-  eFullNamelist.FileName="undefined";
-  return eFullNamelist;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-FullNamelist NAMELIST_GetStandard_PlotRoutine_pair()
-{
-  FullNamelist eFull=NAMELIST_GetStandard_PlotRoutine_common();
-  eFull.ListBlock["PROC"].ListStringValues["__NaturePlot"]="PAIR";
-  eFull.ListBlock["PROC"].ListStringValues["HisPrefix1"]="COSMO_output_ or WAM_output_ or ROMS_output_";
-  eFull.ListBlock["PROC"].ListStringValues["HisPrefix2"]="COSMO_output_ or WAM_output_ or ROMS_output_";
-  eFull.ListBlock["PROC"].ListStringValues["Name1"]="Say for example coupled";
-  eFull.ListBlock["PROC"].ListStringValues["Name2"]="Say for example uncoupled";
-  return eFull;
+  double MinLon=0, MaxLon=0, MinLat=0, MaxLat=0;
+  if (GrdArr.IsFE == 1) {
+    MinLon=GrdArr.GrdArrRho.LON.minCoeff();
+    MaxLon=GrdArr.GrdArrRho.LON.maxCoeff();
+    MinLat=GrdArr.GrdArrRho.LAT.minCoeff();
+    MaxLat=GrdArr.GrdArrRho.LAT.maxCoeff();
+  }
+  else {
+    bool IsFirst=true;
+    int eta_rho=GrdArr.GrdArrRho.LON.rows();
+    int xi_rho =GrdArr.GrdArrRho.LON.cols();
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	if (GrdArr.GrdArrRho.MSK(i,j) == 1) {
+	  double eLon=GrdArr.GrdArrRho.LON(i,j);
+	  double eLat=GrdArr.GrdArrRho.LAT(i,j);
+	  if (IsFirst == true) {
+	    MinLon=eLon;
+	    MaxLon=eLon;
+	    MinLat=eLat;
+	    MaxLat=eLat;
+	    IsFirst=false;
+	  }
+	  else {
+	    if (eLon < MinLon)
+	      MinLon=eLon;
+	    if (eLon > MaxLon)
+	      MaxLon=eLon;
+	    if (eLat < MinLat)
+	      MinLat=eLat;
+	    if (eLat > MaxLat)
+	      MaxLat=eLat;
+	  }
+	}
+  }
+  return {MinLon, MaxLon, MinLat, MaxLat};
 }
 /* ------------------------------ */
 
@@ -4296,10 +4418,13 @@ void InitializeIdxJdxWet(CoordGridArrayFD & eCoordGrdArr)
 /* ------------------------------ */
 GridArray NC_ReadRomsGridFile(std::string const& eFile)
 {
+  std::function<int(double)> fConv=[](double const& x) -> int {
+    return int(x);
+  };
   GridArray eRomsGridArray;
   eRomsGridArray.ModelName="ROMS";
   eRomsGridArray.IsFE=0;
-  eRomsGridArray.IsLonLat=1;
+  eRomsGridArray.IsSpherical=true;
   // Rho part of the arrays
   eRomsGridArray.GrdArrRho.LON=NC_Read2Dvariable(eFile, "lon_rho");
   eRomsGridArray.GrdArrRho.LAT=NC_Read2Dvariable(eFile, "lat_rho");
@@ -4311,11 +4436,7 @@ GridArray NC_ReadRomsGridFile(std::string const& eFile)
   eRomsGridArray.GrdArrRho.eta=eta_rho;
   eRomsGridArray.GrdArrRho.xi =xi_rho;
   MyMatrix<double> eMSK_rho_double=NC_Read2Dvariable(eFile, "mask_rho");
-  MyMatrix<int> eMSK_rho(eta_rho, xi_rho);
-  for (int i=0; i<eta_rho; i++)
-    for (int j=0; j<xi_rho; j++)
-      eMSK_rho(i, j)=int(eMSK_rho_double(i, j));
-  eRomsGridArray.GrdArrRho.MSK=eMSK_rho;
+  eRomsGridArray.GrdArrRho.MSK=ConvertMatrix(eMSK_rho_double, fConv);
   InitializeIdxJdxWet(eRomsGridArray.GrdArrRho);
   // U
   eRomsGridArray.GrdArrU.LON=NC_Read2Dvariable(eFile, "lon_u");
@@ -4421,7 +4542,7 @@ GridArray NC_ReadCosmoWamStructGridFile(std::string const& eFile, std::string co
     eCosmoWamGridArray.ModelName="WAM";
   }
   eCosmoWamGridArray.IsFE=0;
-  eCosmoWamGridArray.IsLonLat=1;
+  eCosmoWamGridArray.IsSpherical=true;
   // Rho part of the arrays
   std::string LONstr="LON_" + postfix;
   //  std::cerr << "Before reading " << LONstr << "\n";
@@ -4481,7 +4602,28 @@ void CHECK_UnstructuredGrid(GridArray const& GrdArr)
 {
   int mnp=GrdArr.GrdArrRho.LON.rows();
   int mne=GrdArr.INE.rows();
-  for (int ie=0; ie<mne; ie++)
+  std::cerr << "mne=" << mne << "\n";
+  int nbPlus=0;
+  int nbMinus=0;
+  for (int ie=0; ie<mne; ie++) {
+    int i1=GrdArr.INE(ie,0);
+    int i2=GrdArr.INE(ie,1);
+    int i3=GrdArr.INE(ie,2);
+    if (i1 == i2 || i1 == i3 || i2 == i3) {
+      std::cerr << "For ie=" << ie << "\n";
+      std::cerr << "We have i123=" << i1 << "," << i2 << "," << i3 << "\n";
+    }
+    double xi = GrdArr.GrdArrRho.LON(i1);
+    double yi = GrdArr.GrdArrRho.LAT(i1);
+    double xj = GrdArr.GrdArrRho.LON(i2);
+    double yj = GrdArr.GrdArrRho.LAT(i2);
+    double xk = GrdArr.GrdArrRho.LON(i3);
+    double yk = GrdArr.GrdArrRho.LAT(i3);
+    double area=xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj);
+    if (area > 0)
+      nbPlus++;
+    if (area < 0)
+      nbMinus++;
     for (int i=0; i<3; i++) {
       int IP=GrdArr.INE(ie,i);
       if (IP < 0 || IP >= mnp) {
@@ -4492,6 +4634,12 @@ void CHECK_UnstructuredGrid(GridArray const& GrdArr)
 	exit(1);
       }
     }
+  }
+  if (nbPlus > 0 && nbMinus > 0) {
+    std::cerr << "The grid is incorrectly oriented\n";
+    std::cerr << "nbPlus=" << nbPlus << "  nbMinus=" << nbMinus << "\n";
+    exit(1);
+  }
   MyVector<int> Status=GetBoundaryStatus(GrdArr.INE, mnp);
   int nbStatusNormal=0;
   int nbStatusBound=0;
@@ -4634,7 +4782,7 @@ GridArray NC_ReadWamGridFile(std::string const& eFile)
     return NC_ReadCosmoWamStructGridFile(eFile, "wav");
   GridArray eGridArray;
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   eGridArray.INE=NC_ReadElements(eFile, "ele");
@@ -4679,7 +4827,6 @@ GridArray WWM_ReadGridFile_netcdf(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -4698,10 +4845,12 @@ GridArray WWM_ReadGridFile_netcdf(std::string const& GridFile)
   if (LSPHE == 1) {
     Xname="lon";
     Yname="lat";
+    eGridArray.IsSpherical=true;
   }
   else {
     Xname="x";
     Yname="y";
+    eGridArray.IsSpherical=false;
   }
   //  std::cerr << "WWM_ReadGridFile_netcdf, step 4\n";
   MyVector<double> LON=NC_Read1Dvariable(GridFile, Xname);
@@ -4740,7 +4889,7 @@ GridArray WWM_ReadGridFile_gr3(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -4797,7 +4946,7 @@ GridArray WWM_ReadGridFile_xfn(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -4858,7 +5007,7 @@ GridArray NC_ReadWW3_GridFile(std::string const& eFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   eGridArray.INE=NC_ReadElements(eFile, "tri");
@@ -5209,7 +5358,7 @@ void ApplyPlotBound(TotalArrGetData const& TotalArr, RecVar & eRecVar, std::stri
       eRecVar.maxdiff=ePlotBound.BoundDiff_max[iD];
     }
   int eSize=eRecVar.F.size();
-  if (ePlotBound.VariableColormap == true && eSize > 0) {
+  if (ePlotBound.VariableRange == true && eSize > 0) {
     PairMinMax ePair=ComputeMinMax(TotalArr.GrdArr, eRecVar.F);
     eRecVar.mindiff=ePair.TheMin;
     eRecVar.maxdiff=ePair.TheMax;
@@ -5241,6 +5390,14 @@ std::string GetStrAllOfPlot(VarQuery const& eQuery)
     strAll=strAll + "_" + eQuery.NatureQuery;
   return strAll;
 }
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct SeqLineSegment {
+  std::vector<PairLL> ListPairLL;
+  bool IsClosed;
+};
 /* ------------------------------ */
 
 
@@ -6020,6 +6177,7 @@ void PLOT_FD_PCOLOR(std::string const& FileName,
 		       eDrawArr.DrawContourBathy,
 		       eDrawArr.ListLineSegment);
   int IsFE=GrdArr.IsFE;
+  bool IsSpherical=GrdArr.IsSpherical;
   //
   std::ofstream OUTncl;
   OUTncl.open(eFileNCL);
@@ -6057,21 +6215,25 @@ void PLOT_FD_PCOLOR(std::string const& FileName,
   OUTncl << "  ;\n";
   OUTncl << "  ; General frame information\n";
   OUTncl << "  ;\n";
-  OUTncl << "  res2@mpProjection = \"Mercator\"\n";
-  OUTncl << "  res2@mpLimitMode         = \"Corners\"             ; choose range of map\n";
-  OUTncl << "  res2@mpLeftCornerLatF    = " << eDrawArr.eQuadFrame.MinLat << "\n";
-  OUTncl << "  res2@mpLeftCornerLonF    = " << eDrawArr.eQuadFrame.MinLon << "\n";
-  OUTncl << "  res2@mpRightCornerLatF   = " << eDrawArr.eQuadFrame.MaxLat << "\n";
-  OUTncl << "  res2@mpRightCornerLonF   = " << eDrawArr.eQuadFrame.MaxLon << "\n";
-  OUTncl << "  res2@pmTickMarkDisplayMode  = \"Always\"           ; turn on tickmarks\n";
-  if (eDrawArr.FillLand) {
-    OUTncl << "  res2@mpFillOn      = True\n";
-    OUTncl << "  res2@mpDataBaseVersion      = \"" << eDrawArr.GridResolution << "\"          ; use high resolution coast\n";
-    OUTncl << "  res2@mpLandFillColor      = \"LightGrey\"\n";
-    OUTncl << "  res2@mpLandFillColor       = \"gray\"            ; set land to be gray\n";
+  if (IsSpherical) {
+    OUTncl << "  res2@mpProjection = \"Mercator\"\n";
+    OUTncl << "  res2@mpLimitMode         = \"Corners\"             ; choose range of map\n";
+    OUTncl << "  res2@mpLeftCornerLatF    = " << eDrawArr.eQuadFrame.MinLat << "\n";
+    OUTncl << "  res2@mpLeftCornerLonF    = " << eDrawArr.eQuadFrame.MinLon << "\n";
+    OUTncl << "  res2@mpRightCornerLatF   = " << eDrawArr.eQuadFrame.MaxLat << "\n";
+    OUTncl << "  res2@mpRightCornerLonF   = " << eDrawArr.eQuadFrame.MaxLon << "\n";
   }
-  else {
-    OUTncl << "  res2@mpFillOn      = False\n";
+  OUTncl << "  res2@pmTickMarkDisplayMode  = \"Always\"           ; turn on tickmarks\n";
+  if (IsSpherical) {
+    if (eDrawArr.FillLand) {
+      OUTncl << "  res2@mpFillOn      = True\n";
+      OUTncl << "  res2@mpDataBaseVersion      = \"" << eDrawArr.GridResolution << "\"          ; use high resolution coast\n";
+      OUTncl << "  res2@mpLandFillColor      = \"LightGrey\"\n";
+      OUTncl << "  res2@mpLandFillColor       = \"gray\"            ; set land to be gray\n";
+    }
+    else {
+      OUTncl << "  res2@mpFillOn      = False\n";
+    }
   }
   OUTncl << "  ;\n";
   OUTncl << "  ; Contour map information\n";
@@ -6109,7 +6271,7 @@ void PLOT_FD_PCOLOR(std::string const& FileName,
   OUTncl << "  ;\n";
   OUTncl << "  ; Label bar plotting\n";
   OUTncl << "  ;\n";
-  if (eDrawArr.DoColorBar == true) {
+  if (eDrawArr.DoColorBar == true && IsSpherical == true) {
     OUTncl << "  res2@lbLabelBarOn = True\n";
   }
   else {
@@ -6127,7 +6289,9 @@ void PLOT_FD_PCOLOR(std::string const& FileName,
   OUTncl << "  res2@pmLabelBarDisplayMode = \"Always\"          ; Turn on a label bar.\n";
   OUTncl << "  res2@lbPerimOn             = False             ; no box around it\n";
   OUTncl << "  res2@lbBoxLinesOn         = False               ; Yes/No labelbar box lines\n";
-  OUTncl << "  res2@pmLabelBarWidthF = 0.03\n";
+  if (IsSpherical == true) {
+    OUTncl << "  res2@pmLabelBarWidthF = 0.03\n";
+  }
   OUTncl << "  ; res2@gsnRightString  = \"Sea surface elevation\"\n";
   OUTncl << "  ; res2@gsnLeftString    = \"Difference\"\n";
   OUTncl << "  ; res2@gsnRightString  = \"\"\n";
@@ -6156,7 +6320,12 @@ void PLOT_FD_PCOLOR(std::string const& FileName,
     OUTncl << "  eVarF@lat2d=lat\n";
     OUTncl << "  eVarF@lon2d=lon\n";
   }
-  OUTncl << "  plot = gsn_csm_contour_map(wks,eVarF,res2)\n";
+  if (IsSpherical) {
+    OUTncl << "  plot = gsn_csm_contour_map(wks,eVarF,res2)\n";
+  }
+  else {
+    OUTncl << "  plot = gsn_csm_contour(wks,eVarF,res2)\n";
+  }
   int nbLineSeq=eDrawArr.ListLineSegment.size();
   if (nbLineSeq > 0) {
     OUTncl << "  ListLon = f->ListLon\n";
@@ -6734,10 +6903,10 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 {
   ArrayHistory eArr=TotalArr.eArr;
   GridArray GrdArr=TotalArr.GrdArr;
-  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
-  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
-  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
-  std::cerr << "eTimeDay=" << eTimeDay << "\n";
+  //  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
+  //  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
+  //  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
+  //  std::cerr << "eTimeDay=" << eTimeDay << "\n";
   InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
   if (eInterpInfo.UseSingleEntry) {
     int iTime=eInterpInfo.iTimeLow;
@@ -6789,7 +6958,7 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (IsExistingFile(eFile) == false) {
     std::cerr << "Get3DvariableSpecEntry_FD\n";
@@ -6828,7 +6997,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
     std::vector<size_t> start{size_t(iRec), 0, 0, 0};
     std::vector<size_t> count{1, size_t(s_vert), size_t(eta), size_t(xi)};
     std::vector<double> eVal(s_vert*eta*xi);
-    ThreeDimArray<double> eArr(s_vert, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_vert, eta, xi);
     netCDF::NcType eType=data.getType();
     bool IsDone=false;
     if (eType == netCDF::NcType::nc_DOUBLE) {
@@ -6857,7 +7026,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
     for (int k=0; k<s_vert; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++) {
-	  eArr.assign(k, i, j, eVal[idx]);
+	  eArr(k, i, j)=eVal[idx];
 	  idx++;
 	}
     return eArr;  
@@ -6902,17 +7071,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrRho.nbWet) {
     int eta=GrdArr.GrdArrRho.eta;
     int xi=GrdArr.GrdArrRho.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrRho.nbWet; iWet++) {
 	int i=GrdArr.GrdArrRho.Idx[iWet];
 	int j=GrdArr.GrdArrRho.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -6921,17 +7090,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrU.nbWet) {
     int eta=GrdArr.GrdArrU.eta;
     int xi=GrdArr.GrdArrU.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrU.nbWet; iWet++) {
 	int i=GrdArr.GrdArrU.Idx[iWet];
 	int j=GrdArr.GrdArrU.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -6940,17 +7109,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrV.nbWet) {
     int eta=GrdArr.GrdArrV.eta;
     int xi=GrdArr.GrdArrV.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrV.nbWet; iWet++) {
 	int i=GrdArr.GrdArrV.Idx[iWet];
 	int j=GrdArr.GrdArrV.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -6970,7 +7139,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (GrdArr.IsFE == 1) {
     std::cerr << "You need to program this part of the program\n";
@@ -6982,7 +7151,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry(std::string const& eFile, GridArray
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
+Eigen::Tensor<double,3> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
 {
   ArrayHistory eArr=TotalArr.eArr;
   GridArray GrdArr=TotalArr.GrdArr;
@@ -7009,19 +7178,18 @@ ThreeDimArray<double> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std
   int iRecUpp=eArr.ListIRec[iTimeUpp];
   std::string HisFileLow=eArr.ListFileNames[iFileLow];
   std::string HisFileUpp=eArr.ListFileNames[iFileUpp];
-  ThreeDimArray<double> eVarLow=Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
-  ThreeDimArray<double> eVarUpp=Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
-  std::vector<size_t> LDim=eVarLow.GetDims();
+  Eigen::Tensor<double,3> eVarLow=Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
+  Eigen::Tensor<double,3> eVarUpp=Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
+  auto LDim=eVarLow.dimensions();
   int s_vert=LDim[0];
   int eta=LDim[1];
   int xi=LDim[2];
-  ThreeDimArray<double> RetVar(s_vert, eta, xi);
+  //  Eigen::Tensor<double,3> RetVar=alphaLow*eVarLow + alphaUpp*eVarUpp;
+  Eigen::Tensor<double,3> RetVar(s_vert, eta, xi);
   for (int k=0; k<s_vert; k++)
     for (int i=0; i<eta; i++)
-      for (int j=0; j<xi; j++) {
-	double eVal=alphaLow*eVarLow.get(k, i, j) + alphaUpp*eVarUpp.get(k, i, j);
-	RetVar.assign(k, i, j, eVal);
-      }
+      for (int j=0; j<xi; j++)
+	RetVar(k, i, j)=alphaLow*eVarLow(k, i, j) + alphaUpp*eVarUpp(k, i, j);
   return RetVar;
 }
 /* ------------------------------ */
@@ -7406,9 +7574,6 @@ DrawArr CommonAssignation_DrawArr(FullNamelist const& eFull, GridArray const& Gr
     if (res == 0)
       nbLevelSpa++;
       }*/
-
-
-  
   eDrawArr.nbLevelSpa=nbLevelSpa;
   int nbLabelStride=eBlPLOT.ListIntValues.at("nbLabelStride");
   eDrawArr.nbLabelStride=nbLabelStride;
@@ -7457,6 +7622,10 @@ void PLOT_DIFF_FD_RHO_PCOLOR(GridArray const& GrdArr,
   bool PrintMMA=eFull.ListBlock.at("PLOT").ListBoolValues.at("PrintMMA");
   if (PrintMMA) {
     PrintMMA_FCT(eDiff, GrdArr.GrdArrRho.MSK, eRecVar1.VarName1);
+  }
+  bool LocateMM=eFull.ListBlock.at("PLOT").ListBoolValues.at("LocateMM");
+  if (LocateMM) {
+    LocateMM_FCT(eDiff, GrdArr.GrdArrRho.MSK, eRecVar1.VarName1);
   }
   std::string TitleStr="diff. " + eRecVar1.VarName2 + " (" + Name1 + "-" + Name2 + ")";
   TitleStr=TitleStr + " at " + eRecVar1.strPres;
@@ -7712,13 +7881,17 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
     std::vector<double> LTime=NC_ReadTimeFromFile(HisPrefix, StringTime);
     ListFileNames.push_back(HisPrefix);
     int siz=LTime.size();
+    std::cerr << "siz=" << siz << "\n";
     for (int i=0; i<siz; i++) {
       ListIFile.push_back(0);
       ListIRec.push_back(i);
       ListTime.push_back(LTime[i]);
+      //      std::cerr << "i=" << i << " eTime=" << LTime[i] << "\n";
     }
     FirstTime=ListTime[0];
     LastTime=ListTime[siz-1];
+    std::cerr << "FirstTime=" << FirstTime << "  LastTime=" << LastTime << "\n";
+    std::cerr << "Last - FirstTime=" << LastTime - FirstTime << "\n";
   }
   else {
     int iFileBegin=0;
@@ -7866,6 +8039,7 @@ GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
   std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 1\n";
   std::string eModelName=eTriple.ModelName;
+  CHECK_Model_Allowedness(eModelName);
   std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 2\n";
   std::string GridFile=GET_GRID_FILE(eTriple);
   std::cerr << "eModelName=" << eModelName << "\n";
@@ -8099,6 +8273,7 @@ ArrayHistory ReadArrayHistory(TripleModelDesc const& eTriple)
     eArr=GRIB_ReadArrayHistory(HisPrefix);
   }
   else {
+    std::cerr << "Before call to NC_ReadArrayHistory\n";
     eArr=NC_ReadArrayHistory(eTriple);
   }
   return eArr;
@@ -8110,7 +8285,7 @@ ArrayHistory ReadArrayHistory(TripleModelDesc const& eTriple)
 MyMatrix<double> Get2DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& VarName, double const& eTimeDay)
 {
   if (TotalArr.eArr.KindArchive == "NETCDF") {
-    std::cerr << "Before call to NETCDF_Get2DvariableSpecTime\n";
+    //    std::cerr << "Before call to NETCDF_Get2DvariableSpecTime\n";
     return NETCDF_Get2DvariableSpecTime(TotalArr, VarName, eTimeDay);
   }
   if (TotalArr.eArr.KindArchive == "GRIB") {
@@ -8128,6 +8303,8 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
 {
   std::string eModelName=TotalArr.GrdArr.ModelName;
   RecVar eRecVar;
+  int eta_rho=TotalArr.GrdArr.GrdArrRho.LON.rows();
+  int xi_rho=TotalArr.GrdArr.GrdArrRho.LON.cols();
   std::string strPres=DATE_ConvertMjd2mystringPres(eTimeDay);
   std::string strFile=DATE_ConvertMjd2mystringFile(eTimeDay);
   eRecVar.eTimeDay=eTimeDay;
@@ -8140,6 +8317,33 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   MyMatrix<double> V;
   eRecVar.VarName1=eVarName;
   eRecVar.VarName2="unset";
+  if (eVarName == "ZetaSetup") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "ZETA_SETUP", eTimeDay);
+    eRecVar.VarName2="free surface setup";
+    eRecVar.minval=0;
+    eRecVar.maxval=0.76;
+    eRecVar.mindiff=-0.1;
+    eRecVar.maxdiff=0.1;
+    eRecVar.Unit="m";
+  }
+  if (eVarName == "BreakingFraction") {
+    MyMatrix<double> Fhs, Fzeta;
+    if (eModelName == "WWM")
+      Fhs=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
+    if (eModelName == "WWM")
+      Fzeta=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
+    F=MyMatrix<double>(eta_rho, xi_rho);
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	F(i,j)=Fhs(i,j) / (Fzeta(i,j) + TotalArr.GrdArr.GrdArrRho.DEP(i,j));
+    eRecVar.VarName2="Breaking fraction";
+    eRecVar.minval=0;
+    eRecVar.maxval=0.76;
+    eRecVar.mindiff=-0.1;
+    eRecVar.maxdiff=0.1;
+    eRecVar.Unit="nondimensional";
+  }
   if (eVarName == "WIND10") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA" || eModelName == "WWM") {
       U=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
@@ -8166,11 +8370,11 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "SurfCurr") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> Utot=Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
-      ThreeDimArray<double> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
-      int s_rho=Utot.GetDims()[0];
-      MyMatrix<double> Usurf=Utot.DimensionExtraction(0, s_rho-1);
-      MyMatrix<double> Vsurf=Vtot.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> Utot=Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
+      Eigen::Tensor<double,3> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
+      int s_rho=Utot.dimension(0);
+      MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
+      MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
       U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrRho.MSK);
       V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrRho.MSK);
     }
@@ -8237,9 +8441,9 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "TempSurf") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> TheTemp=Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
-      int s_rho=TheTemp.GetDims()[0];
-      F=TheTemp.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> TheTemp=Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
+      int s_rho=TheTemp.dimension(0);
+      F=DimensionExtraction(TheTemp, 0, s_rho-1);
     }
     if (eModelName == "COSMO") {
       F=Get2DvariableSpecTime(TotalArr, "t_s", eTimeDay);
@@ -8256,9 +8460,9 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "SaltSurf") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> TheSalt=Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
-      int s_rho=TheSalt.GetDims()[0];
-      F=TheSalt.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> TheSalt=Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
+      int s_rho=TheSalt.dimension(0);
+      F=DimensionExtraction(TheSalt, 0, s_rho-1);
     }
     eRecVar.VarName2="sea surface salinity";
     eRecVar.minval=30;
@@ -8349,7 +8553,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "TM02") {
     if (eModelName == "WWM")
-      F=Get2DvariableSpecTime(TotalArr, "T02", eTimeDay);
+      F=Get2DvariableSpecTime(TotalArr, "TM02", eTimeDay);
     eRecVar.VarName2="zero crossing wave period";
     eRecVar.minval=2;
     eRecVar.maxval=10;
@@ -8741,15 +8945,10 @@ PairRecVar ModelPairSpecificVarSpecificTimeGeneral(TotalArrGetData const& TotalA
 void PAIR_Plotting_Function(FullNamelist const& eFull)
 {
   //
-  // Basic checks
-  // 
-  std::map<std::string, SingleBlock> ListBlock=eFull.ListBlock;
-  SingleBlock eBlPROC=ListBlock.at("PROC");
-  std::string eModelName=eBlPROC.ListStringValues.at("MODELNAME");
-  CHECK_Model_Allowedness(eModelName);
-  //
   // Retrieving the grid array and other arrays
   //
+  SingleBlock eBlPROC=eFull.ListBlock.at("PROC");
+  std::string eModelName=eBlPROC.ListStringValues.at("MODELNAME");
   std::string GridFile=eBlPROC.ListStringValues.at("GridFile");
   std::string HisPrefix1=eBlPROC.ListStringValues.at("HisPrefix1");
   std::string HisPrefix2=eBlPROC.ListStringValues.at("HisPrefix2");
@@ -8767,7 +8966,7 @@ void PAIR_Plotting_Function(FullNamelist const& eFull)
 					   eBlPROC.ListStringValues.at("UNITC"));
   int nbTime=ListTime.size();
   std::cerr << "nbTime=" << nbTime << "\n";
-  SingleBlock eBlockVAR=ListBlock.at("VARS");
+  SingleBlock eBlockVAR=eFull.ListBlock.at("VARS");
   //
   // Setting up DrawArr
   // It contains the permanent feature of plots that will not change from variable

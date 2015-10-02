@@ -2266,6 +2266,7 @@
         DO IT=1, nbTime_mjd
           WRITE(WINDBG%FHNDL, *) '---------------------------------------'
           WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
           CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
           call grib_count_in_file(ifile,n)
           allocate(igrib(n))
@@ -2313,6 +2314,7 @@
         ! Now the longitude/latitude to read.
         !
         IT=1
+        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
         call grib_count_in_file(ifile,n)
         allocate(igrib(n))
@@ -2415,6 +2417,7 @@
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  GRIB_FILE_NAMES(IT)
+        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
         CALL GRIB_OPEN_FILE(ifile, GRIB_FILE_NAMES(IT), 'r')
         call grib_count_in_file(ifile,n)
         WRITE(WINDBG%FHNDL,*) 'n=', n

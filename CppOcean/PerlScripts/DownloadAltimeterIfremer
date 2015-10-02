@@ -295,4 +295,4 @@ for ($eDayMJD=$BeginTimeMJD; $eDayMJD<=$EndTimeMJD; $eDayMJD++)
 	print $order."\n";
     }
 }
-print "File downloaded in ALTIMETRY_DIRECTORY=".$TheStorPrefix."\n";
+print "File downloaded in ALTIMETRY_DIRECTORY = ".$TheStorPrefix."\n";

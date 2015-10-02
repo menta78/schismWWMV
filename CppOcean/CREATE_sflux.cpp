@@ -1,92 +1,399 @@
-/* ------------------------------ */
 #include <netcdf>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
+#include "grib_api.h"
+
+
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <Eigen/LU>
+#include <unsupported/Eigen/CXX11/Tensor>
+template <typename T> using MyVector=Eigen::Matrix<T,Eigen::Dynamic,1>;
+template <typename T> using MyMatrix=Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>;
+template <typename T> using MySparseMatrix=Eigen::SparseMatrix<T,Eigen::ColMajor>;
+
+
 #include <ctype.h>
 #include <malloc.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <chrono>
 #include <ctime>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <math.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <string>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 #include <exception>
 #include <vector>
 #include <list>
 #include <set>
 #include <map>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
+#include <functional>
+#include <algorithm>
+
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
-#include <bitset>
-#include <boost/dynamic_bitset.hpp>
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-#include "tbb/tbb.h"
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-typedef boost::dynamic_bitset<> Face;
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
-/* ------------------------------ */
 
 
-/* ------------------------------ */
 //{
 //  boost::filesystem::create_directories(eDir.c_str() );
+
+
+/* ------------------------------ */
+std::vector<std::string> GetAllNamesOfSatelliteAltimeter()
+{
+  return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2", "CRYOSAT", "SARAL"};
+}
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-#include "grib_api.h"
+std::vector<std::string> GetAllPossibleModels()
+{
+  std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO"};
+  return vec;
+}
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
-#include <Eigen/LU>
-template <typename T> using MyVector=Eigen::Matrix<T,Eigen::Dynamic,1>;
-template <typename T> using MyMatrix=Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>;
-template <typename T> using MySparseMatrix=Eigen::SparseMatrix<T,Eigen::ColMajor>;
+void CHECK_Model_Allowedness(std::string const& eModelName)
+{
+  std::vector<std::string> vec=GetAllPossibleModels();
+  bool isPresent = (std::find(vec.begin(), vec.end(), eModelName) != vec.end());
+  if (isPresent == false) {
+    std::cerr << "We did not find the MODEL NAME\n";
+    std::cerr << "MODELNAME = " << eModelName << "\n";
+    std::cerr << "List of allowed models\n";
+    for (int iModel=0; iModel<int(vec.size()); iModel++) {
+      std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
+    }
+    exit(1);
+  }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double TheSignFct(double const& eVal)
+{
+  if (eVal > 0)
+    return 1;
+  if (eVal < 0)
+    return -1;
+  return 0;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void DifferenceLonRenormalize(double & Lon)
+{
+  if (Lon > 180)
+    Lon=Lon - 360;
+  if (Lon < -180)
+    Lon=Lon + 360;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_rho)
+{
+  int eta_rho=MSK_rho.rows();
+  int xi_rho=MSK_rho.cols();
+  int eta_u=eVar_u.rows();
+  int xi_u=eVar_u.cols();
+  if (eta_u != eta_rho || xi_u != xi_rho-1) {
+    std::cerr << "Dimension error in My_u2rho\n";
+    exit(1);
+  }
+  MyMatrix<double> eVar_rho(eta_rho, xi_rho);
+  for (int i=0; i<eta_rho; i++)
+    for (int j=0; j<xi_rho; j++) {
+      int eSumMsk=0;
+      double eSumVal=0;
+      if (MSK_rho(i,j) == 1) {
+	eSumMsk++;
+	eSumVal=eSumVal + eVar_u(i,j);
+      }
+      if (j < xi_u) {
+	if (MSK_rho(i,j+1) == 1) {
+	  eSumMsk++;
+	  eSumVal=eSumVal + eVar_u(i,j+1);
+	}
+      }
+      if (eSumMsk == 0) {
+	eVar_rho(i,j)=0;
+      }
+      else {
+	double eVal=eSumVal/double(eSumMsk);
+	eVar_rho(i,j)=eVal;
+      }
+    }
+  return eVar_rho;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_rho)
+{
+  int eta_rho=MSK_rho.rows();
+  int xi_rho=MSK_rho.cols();
+  int eta_v=eVar_v.rows();
+  int xi_v=eVar_v.cols();
+  if (eta_v != eta_rho-1 || xi_v != xi_rho) {
+    std::cerr << "Dimension error in My_v2rho\n";
+    exit(1);
+  }
+  MyMatrix<double> eVar_rho(eta_rho, xi_rho);
+  for (int i=0; i<eta_rho; i++)
+    for (int j=0; j<xi_rho; j++) {
+      int eSumMsk=0;
+      double eSumVal=0;
+      if (MSK_rho(i,j) == 1) {
+	eSumMsk++;
+	eSumVal=eSumVal + eVar_v(i,j);
+      }
+      if (i < eta_v) {
+	if (MSK_rho(i+1,j) == 1) {
+	  eSumMsk++;
+	  eSumVal=eSumVal + eVar_v(i+1,j);
+	}
+      }
+      if (eSumMsk == 0) {
+	eVar_rho(i,j)=0;
+      }
+      else {
+	double eVal=eSumVal/double(eSumMsk);
+	eVar_rho(i,j)=eVal;
+      }
+    }
+  return eVar_rho;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct SinglePartInterp {
+  int eEta, eXi;
+  double eCoeff;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct SingleRecInterp {
+  bool status;
+  std::vector<SinglePartInterp> LPart;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct QuadCoordinate {
+  double MinLon;
+  double MaxLon;
+  double MinLat;
+  double MaxLat;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<double> DetermineCoefficient(std::vector<double> const& X, std::vector<double> const& Y, double const& eX, double const& eY)
+{
+  MyMatrix<double> A(3,3);
+  for (int i=0; i<3; i++) {
+    A(0,i)=1;
+    A(1,i)=X[i];
+    A(2,i)=Y[i];
+  }
+  MyVector<double> V(3);
+  V(0)=1;
+  V(1)=eX;
+  V(2)=eY;
+  MyMatrix<double> eInv=A.inverse().eval();
+  MyVector<double> eProduct=eInv*V;
+  std::vector<double> LCoeff(3);
+  for (int i=0; i<3; i++) {
+    LCoeff[i]=eProduct(i);
+    //    std::cerr << "i=" << i << " eC=" << LCoeff[i] << "\n";
+  }
+  /*
+  double deltaX=eX;
+  double deltaY=eY;
+  for (int i=0; i<3; i++) {
+    deltaX=deltaX - LCoeff[i]*X[i];
+    deltaY=deltaY - LCoeff[i]*Y[i];
+  }
+//  std::cerr << "deltaX=" << deltaX << " deltaY=" << deltaY << "\n"; */
+  return LCoeff;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
+{
+  //  std::cerr << "eLon=" << eLon << " eLat=" << eLat << "\n";
+  //  std::cerr << "LON(min/max)=" << eQuad.MinLon << " / " << eQuad.MaxLon << "\n";
+  //  std::cerr << "LAT(min/max)=" << eQuad.MinLat << " / " << eQuad.MaxLat << "\n";
+  if (eLon > eQuad.MinLon && eLon < eQuad.MaxLon && eLat > eQuad.MinLat && eLat < eQuad.MaxLat)
+    return true;
+  return false;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<SingleRecInterp> TRIG_FIND_ELE(MyMatrix<int> const& Lelem, MyMatrix<double> const& X, MyMatrix<double> const& Y, QuadCoordinate const& eQuad, MyMatrix<double> const& ListXY)
+{
+  double THR=1e-10;
+  //  int mnp=X.rows();
+  //  for (int i=0; i<mnp; i++)
+  //    std::cerr << "i=" << i << " x=" << X(i) << " y=" << Y(i) << "\n";
+  std::function<bool(int,double,double)> IsCorrect=[&](int const& ie, double const& Xp, double const& Yp) -> bool {
+    int ki = Lelem(ie,0);
+    int kj = Lelem(ie,1);
+    int kk = Lelem(ie,2);
+    double xi = X(ki);
+    double yi = Y(ki);
+    double xj = X(kj);
+    double yj = Y(kj);
+    double xk = X(kk);
+    double yk = Y(kk);
+    /*
+    double area=xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj);
+    std::cerr << "-------------------------------------\n";
+    std::cerr << "ie=" << ie << " area=" << area << "\n";
+    std::cerr << "kijk=" << ki << "," << kj << "," << kk << "\n";
+    std::cerr << "x(ijk)=" << xi << "," << xj << "," << xk << "\n";
+    std::cerr << "y(ijk)=" << yi << "," << yj << "," << yk << "\n";
+    std::cerr << "-------------------------------------\n";*/
+    double f1, f2, f3;
+    f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
+    f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
+    f3 = xk*(yi-Yp) + xi*(Yp-yk) + Xp*(yk-yi);
+    //    double sumF=f1 + f2 + f3;
+    //    std::cerr << "sumF=" << sumF << "\n";
+    if (f1 > -THR) {
+      if (f2 > -THR) {
+	if (f3 > -THR) {
+	  return true;
+	}
+      }
+    }
+    return false;
+  };
+  double dx=0;
+  double dy=0;
+  int nbEle=Lelem.rows();
+  for (int ie=0; ie<nbEle; ie++) {
+    int ki = Lelem(ie,0);
+    int kj = Lelem(ie,1);
+    int kk = Lelem(ie,2);
+    double xi = X(ki);
+    double yi = Y(ki);
+    double xj = X(kj);
+    double yj = Y(kj);
+    double xk = X(kk);
+    double yk = Y(kk);
+    dx=std::max(dx, std::abs(xi - xj));
+    dx=std::max(dx, std::abs(xi - xk));
+    dx=std::max(dx, std::abs(xj - xk));
+    dy=std::max(dy, std::abs(yi - yj));
+    dy=std::max(dy, std::abs(yi - yk));
+    dy=std::max(dy, std::abs(yj - yk));
+  }
+  std::function<int(double, double)> SearchElement=[&](double const& eX, double const& eY) -> int {
+    for (int iele=0; iele<nbEle; iele++) {
+      if (IsCorrect(iele, eX, eY)) {
+	return iele;
+      }
+    }
+    return -1;
+  };
+  int nbPoint=ListXY.cols();
+  int ielePrev=0;
+  int eElt;
+  std::vector<SingleRecInterp> LRec(nbPoint);
+  for (int iPoint=0; iPoint<nbPoint; iPoint++) {
+    double Xp=ListXY(0,iPoint);
+    double Yp=ListXY(1,iPoint);
+    bool test=false;
+    if (ielePrev >= 0) {
+      if (IsCorrect(ielePrev, Xp, Yp)) {
+	eElt=ielePrev;
+	test=true;
+      }
+    }
+    if (test == false) {
+      eElt=SearchElement(Xp, Yp);
+    }
+    ielePrev=eElt;
+    SingleRecInterp eRec;
+    if (eElt == -1) {
+      eRec={false, {}};
+    }
+    else {
+      std::vector<int> LEta(3);
+      std::vector<double> Xcall(3), Ycall(3);
+      for (int i=0; i<3; i++) {
+	int IP=Lelem(eElt,i);
+	LEta[i]=IP;
+	Xcall[i]=X(IP);
+	Ycall[i]=Y(IP);
+      }
+      std::vector<double> LCoeff=DetermineCoefficient(Xcall, Ycall, Xp, Yp);
+      std::vector<SinglePartInterp> LPart(3);
+      for (int i=0; i<3; i++) {
+	LPart[i]={LEta[i], 0, LCoeff[i]};
+      }
+      eRec={true, LPart};
+    };
+    LRec[iPoint]=eRec;
+  }
+  return LRec;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<int> GetDirection()
+{
+  MyMatrix<int> eMat(2,4);
+  eMat(0,0)=0;
+  eMat(1,0)=0;
+  eMat(0,1)=1;
+  eMat(1,1)=0;
+  eMat(0,2)=0;
+  eMat(1,2)=1;
+  eMat(0,3)=1;
+  eMat(1,3)=1;
+  return eMat;
+}
 /* ------------------------------ */
 
 
@@ -360,86 +667,660 @@ void NAMELIST_WriteNamelistFile(std::ostream &os, FullNamelist const& eFullNamel
 
 
 /* ------------------------------ */
-std::vector<std::string> GetAllNamesOfSatelliteAltimeter()
+MyMatrix<double> COMPUTE_NORM(MyMatrix<double> const& U, MyMatrix<double> const& V)
 {
-  return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2", "CRYOSAT", "SARAL"};
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-FullNamelist NAMELIST_GetStandard_CREATE_sflux()
-{
-  std::map<std::string, SingleBlock> ListBlock;
-  // PROC
-  std::string BlockName1="PROC";
-  std::map<std::string, int> ListIntValues1;
-  std::map<std::string, bool> ListBoolValues1;
-  std::map<std::string, double> ListDoubleValues1;
-  std::map<std::string, std::string> ListStringValues1;
-  std::map<std::string, std::vector<std::string> > ListListStringValues1;
-  ListStringValues1["MODELNAME"]="COSMO or WAM, ROMS, ROMS_IVICA, WWM, WW3, GRIB_DWD, GRIB_ECMWF, GRIB_GFS, GRIB_COSMO";
-  ListStringValues1["GridFile"]="roms_grid.nc";
-  ListStringValues1["HisPrefix"]="unset_";
-  ListStringValues1["BEGTC"]="20110915.000000";
-  ListDoubleValues1["DELTC"]=600;
-  ListStringValues1["UNITC"]="SEC";
-  ListStringValues1["ENDTC"]="20110925.000000";
-  ListStringValues1["OutPrefix"]="Pictures/DIR_plot/";
-  ListBoolValues1["AnalyticWind"]=false;
-  ListBoolValues1["AnalyticPRMSL"]=true;
-  ListBoolValues1["AnalyticSPFH"]=true;
-  ListBoolValues1["AnalyticSTMP"]=true;
-  SingleBlock BlockPROC;
-  BlockPROC.ListIntValues=ListIntValues1;
-  BlockPROC.ListBoolValues=ListBoolValues1;
-  BlockPROC.ListDoubleValues=ListDoubleValues1;
-  BlockPROC.ListStringValues=ListStringValues1;
-  BlockPROC.ListListStringValues=ListListStringValues1;
-  BlockPROC.BlockName=BlockName1;
-  ListBlock["PROC"]=BlockPROC;
-  // Merging all data
-  FullNamelist eFullNamelist;
-  eFullNamelist.ListBlock=ListBlock;
-  eFullNamelist.FileName="undefined";
-  return eFullNamelist;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<std::string> GetAllPossibleModels()
-{
-  std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO"};
-  return vec;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-void CHECK_Model_Allowedness(std::string const& eModelName)
-{
-  std::vector<std::string> vec=GetAllPossibleModels();
-  bool isPresent = (std::find(vec.begin(), vec.end(), eModelName) != vec.end());
-  if (isPresent == false) {
-    std::cerr << "We did not find the MODEL NAME\n";
-    std::cerr << "MODELNAME = " << eModelName << "\n";
-    std::cerr << "List of allowed models\n";
-    for (int iModel=0; iModel<int(vec.size()); iModel++) {
-      std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
+  int eta=U.rows();
+  int xi=U.cols();
+  MyMatrix<double> WINDMAG(eta, xi);
+  for (int i=0; i<eta; i++)
+    for (int j=0; j<xi; j++) {
+      double eU=U(i,j);
+      double eV=V(i,j);
+      WINDMAG(i,j)=sqrt(eU*eU + eV*eV);
     }
+  return WINDMAG;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<double> FreqPeriodChange(MyMatrix<double> const& F)
+{
+  int eta=F.rows();
+  int xi=F.cols();
+  MyMatrix<double> Fret(eta, xi);
+  double pi=3.1415926535;
+  for (int i=0; i<eta; i++)
+    for (int j=0; j<xi; j++) {
+      double eVal=F(i,j);
+      double NewVal=2*pi/eVal;
+      Fret(i,j)=NewVal;
+    }
+  return Fret;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<std::string> GetAllPossibleVariables()
+{
+  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR", "BreakingFraction", "ZetaSetup"};
+  return ListVarOut;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct PairMinMax {
+  double TheMin;
+  double TheMax;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct CosmoGridInfo {
+  double latitudeOfSouthernPoleInDegrees;
+  double longitudeOfSouthernPoleInDegrees;
+  double angleOfRotationInDegrees;
+  //
+  double longitudeOfFirstGridPointInDegrees;
+  double latitudeOfFirstGridPointInDegrees;
+  double longitudeOfLastGridPointInDegrees;
+  double latitudeOfLastGridPointInDegrees;
+  //
+  double iDirectionIncrementInDegrees;
+  double jDirectionIncrementInDegrees;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double phirot2phi(double const& phirot, double const& rlarot, double const& polphi, double const& pollam, double const& polgam)
+{
+  double pi=3.1415926535;
+  double eMult=pi/double(180);
+  double eMultInv=double(180)/pi;
+  double zsinpol = sin(eMult * polphi);
+  double zcospol = cos(eMult * polphi);
+  double zphis  = eMult * phirot;
+  double zrlas;
+  if (rlarot > double(180)) {
+    zrlas = rlarot - double(360);
+  }
+  else {
+    zrlas = rlarot;
+  }
+  zrlas = eMult * zrlas;
+  double zarg;
+  if (fabs(polgam) > 0) {
+    double zgam  = eMult * polgam;
+    zarg = zsinpol*sin(zphis) + zcospol*cos(zphis) * ( cos(zrlas)*cos(zgam) - sin(zgam)*sin(zrlas));
+  }
+  else {
+    zarg = zcospol * cos(zphis) * cos(zrlas) + zsinpol * sin(zphis);
+  }
+  double phirot2phi  = eMultInv * asin(zarg);
+  return phirot2phi;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double rlarot2rla(double const& phirot, double const& rlarot, double const& polphi, double const& pollam, double const& polgam)
+{
+  double pi=3.1415926535;
+  double eMult=pi/double(180);
+  double eMultInv=double(180)/pi;
+  double zsinpol = sin(eMult * polphi);
+  double zcospol = cos(eMult * polphi);
+  double zphis  = eMult * phirot;
+  double zrlas;
+  if (rlarot > double(180)) {
+    zrlas = rlarot - double(360);
+  }
+  else {
+    zrlas = rlarot;
+  }
+  zrlas = eMult * zrlas;
+  double zlampol = eMult * pollam;
+  double zarg1, zarg2;
+  if (fabs(polgam) > 0) {
+    double zgam    = eMult * polgam;
+    zarg1   = sin (zlampol) *                                            
+      (- zsinpol*cos(zphis) * (cos(zrlas)*cos(zgam) - sin(zrlas)*sin(zgam)) 
+       + zcospol * sin(zphis))                                              
+      - cos (zlampol)*cos(zphis) * (sin(zrlas)*cos(zgam) + cos(zrlas)*sin(zgam));
+    zarg2   = cos (zlampol) *                                               
+      (- zsinpol*cos(zphis) * (cos(zrlas)*cos(zgam) - sin(zrlas)*sin(zgam))  
+       + zcospol * sin(zphis))                                               
+      + sin (zlampol)*cos(zphis) * (sin(zrlas)*cos(zgam) + cos(zrlas)*sin(zgam));
+  }
+  else {
+    zarg1   = sin (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis)  +    
+			       zcospol *              sin(zphis)) -    
+      cos (zlampol) *             sin(zrlas) * cos(zphis);
+    zarg2   = cos (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis)  +    
+			       zcospol *              sin(zphis)) +   
+      sin (zlampol) *             sin(zrlas) * cos(zphis);
+  }
+  if (zarg2 == 0) zarg2=1.0e-20;
+  double rlarot2rla = eMultInv * atan2(zarg1,zarg2);
+  return rlarot2rla;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void Apply_COSMO_Transformation(MyMatrix<double> & LON, MyMatrix<double> & LAT, CosmoGridInfo const& eCosmoGrid)
+{
+  double pollat_sp=eCosmoGrid.latitudeOfSouthernPoleInDegrees;
+  double pollon_sp=eCosmoGrid.longitudeOfSouthernPoleInDegrees;
+  double polgam=eCosmoGrid.angleOfRotationInDegrees;
+  double zstartlon_tot=eCosmoGrid.longitudeOfFirstGridPointInDegrees;
+  double zstartlat_tot=eCosmoGrid.latitudeOfFirstGridPointInDegrees;
+  double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
+  double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
+  double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
+  double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
+  if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
+    std::cerr << "Error of consistency in zstartlat / zendlat\n";
     exit(1);
+  }
+  //
+  int eta_rho=LON.rows();
+  int xi_rho=LON.cols();
+  double pollat= - pollat_sp;
+  double pollon= pollon_sp - double(180);
+  double startlon_tot=zstartlon_tot; // This part is quite unsure. Maybe there is a shift
+  double startlat_tot=zstartlat_tot; // same remark
+  for (int i=0; i<eta_rho; i++)
+    for (int j=0; j<xi_rho; j++) {
+      double eLonR=startlon_tot + double(i-1)*dlon;
+      double eLatR=startlat_tot + double(j-1)*dlat;
+      double eLat=phirot2phi(eLatR, eLonR, pollat, pollon, polgam);
+      double eLon=rlarot2rla(eLatR, eLonR, pollat, pollon, polgam);
+      LON(i,j)=eLon;
+      LAT(i,j)=eLat;
+    }
+  std::cerr << "After LON min=" << LON.minCoeff() << " max=" << LON.maxCoeff() << "\n";
+  std::cerr << "After LAT min=" << LAT.minCoeff() << " max=" << LAT.maxCoeff() << "\n";
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct GRIB_MessageInfo {
+  std::string shortName;
+  std::string name;
+  int idx;
+  double time;
+  double timeStart;
+  int stepRange;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<double> GRIB_Read2DVariable(std::vector<std::string> const& ListFileName, std::string const& VarName)
+{
+  for (auto & eFileName : ListFileName) {
+    grib_handle *h = NULL;
+    int err;
+    FILE* in = NULL;
+    in = fopen(eFileName.c_str(),"r");
+    unsigned long key_iterator_filter_flags=GRIB_KEYS_ITERATOR_ALL_KEYS;
+    while ((h = grib_handle_new_from_file(0,in,&err)) != NULL ) { 
+      //    std::cerr << "err=" << err << "\n";
+      if (err != GRIB_SUCCESS)
+	GRIB_CHECK(err,0);
+      //
+      char name_space[3]="ls";
+      grib_keys_iterator* kiter=NULL;
+      kiter=grib_keys_iterator_new(h,key_iterator_filter_flags,name_space);
+      if (!kiter) {
+	printf("ERROR: Unable to create keys iterator\n");
+	exit(1);
+      }
+      std::string ShortNameValue;
+      while(grib_keys_iterator_next(kiter)) {
+	int MAX_VAL_LEN=1024;
+	char value[MAX_VAL_LEN];
+	size_t vlen=MAX_VAL_LEN;
+	const char* name = grib_keys_iterator_get_name(kiter);
+	vlen=MAX_VAL_LEN;
+	bzero(value,vlen);
+	GRIB_CHECK(grib_get_string(h,name,value,&vlen),name);
+	std::string nameStr=name;
+	std::string valueStr=value;
+	if (nameStr == "shortName") {
+	  ShortNameValue=valueStr;
+	}
+	//	std::cerr << "name=" << nameStr << " value=" << valueStr << "\n";
+	//printf("%s = %s\n",name,value);
+      }
+      grib_keys_iterator_delete(kiter);
+      //      std::cerr << "ShortNameValue=" << ShortNameValue << "\n";
+      //
+      if (ShortNameValue == VarName) {
+	long Ni, Nj, numberOfDataPoints;
+	GRIB_CHECK(grib_get_long(h,"Ni",&Ni),0);
+	//	std::cerr << "Ni=" << Ni << "\n";
+	GRIB_CHECK(grib_get_long(h,"Nj",&Nj),0);
+	//	std::cerr << "Nj=" << Nj << "\n";
+	GRIB_CHECK(grib_get_long(h,"numberOfDataPoints",&numberOfDataPoints),0);
+	//	std::cerr << "NumberOfDataPoints=" << numberOfDataPoints << "\n";
+	double *lats, *lons, *values;
+	size_t size=numberOfDataPoints;
+	size_t* sizePtr=&size;
+	lats=(double*)malloc(size*sizeof(double));
+	lons=(double*)malloc(size*sizeof(double));
+	values=(double*)malloc(size*sizeof(double));
+	err=grib_get_data(h, lats, lons, values, sizePtr);
+	grib_handle_delete(h);
+	if (err != GRIB_SUCCESS)
+	  GRIB_CHECK(err,0);
+	int eta_rho=Ni;
+	int xi_rho=Nj;
+	MyMatrix<double> VAL(eta_rho, xi_rho);
+	//	std::cerr << "eta_rho=" << eta_rho << " xi_rho=" << xi_rho << "\n";
+	int idx=0;
+	for (int j=0; j<xi_rho; j++)
+	  for (int i=0; i<eta_rho; i++) {
+	    VAL(i,j)=values[idx];
+	    idx++;
+	  }
+	free(lats);
+	free(lons);
+	free(values);
+	fclose(in);
+	return VAL;
+      }
+      grib_handle_delete(h);
+    }
+    fclose(in);
+  }
+  std::cerr << "Error in GRIB_Read2DVariable\n";
+  std::cerr << "Failed to find the variable =" << VarName << "\n";
+  std::cerr << "Exiting\n";
+  exit(1);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct Point {
+  double eLon;
+  double eLat;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+bool IsPointInside_Point(Point const& ePt, std::vector<Point> const& ListPt)
+{
+  int nvert=ListPt.size();
+  int i, j;
+  bool c=false;
+  for (i = 0, j = nvert-1; i < nvert; j = i++) {
+    if ( ((ListPt[i].eLat > ePt.eLat) != (ListPt[j].eLat > ePt.eLat)) &&
+         (ePt.eLon < (ListPt[j].eLon-ListPt[i].eLon) * (ePt.eLat-ListPt[i].eLat) / (ListPt[j].eLat-ListPt[i].eLat ) + ListPt[i].eLon) )
+      c = !c;
+  }
+  return c;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<Point> GetGridBoundary(MyMatrix<double> const& LON, MyMatrix<double> const& LAT, int const& iStart, int const& iEnd, int const& jStart, int const& jEnd)
+{
+  int len=2*(iEnd - iStart) + 2*(jEnd - jStart);
+  std::vector<Point> ListPt(len);
+  int idx=0;
+  for (int iEta=iStart; iEta<=iEnd-1; iEta++) {
+    int iXi=jStart;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iXi=jStart; iXi<=jEnd-1; iXi++) {
+    int iEta=iEnd;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iEta=iEnd; iEta>=iStart+1; iEta--) {
+    int iXi=jEnd;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  for (int iXi=jEnd; iXi>=jStart+1; iXi--) {
+    int iEta=iStart;
+    Point ePt{LON(iEta, iXi), LAT(iEta, iXi)};
+    ListPt[idx]=ePt;
+    idx++;
+  }
+  return ListPt;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double GeodesicDistance(double const& LonDeg1, double const& LatDeg1, double const& LonDeg2, double const& LatDeg2)
+{
+  double pi=3.141592653589792;
+  double lon1=pi*LonDeg1/double(180);
+  double lat1=pi*LatDeg1/double(180);
+  double x1=cos(lon1)*cos(lat1);
+  double y1=sin(lon1)*cos(lat1);
+  double z1=sin(lat1);
+
+  double lon2=pi*LonDeg2/double(180);
+  double lat2=pi*LatDeg2/double(180);
+  double x2=cos(lon2)*cos(lat2);
+  double y2=sin(lon2)*cos(lat2);
+  double z2=sin(lat2);
+  double scalprod=x1*x2+y1*y2+z1*z2;
+  if (scalprod > 1)
+    return 0;
+  else
+    return acos(scalprod);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double GeodesicDistanceKM(double const& LonDeg1, double const& LatDeg1, double const& LonDeg2, double const& LatDeg2)
+{
+  double EarthRadius=6370;
+  return EarthRadius*GeodesicDistance(LonDeg1, LatDeg1, LonDeg2, LatDeg2);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct DiscInfo {
+  Point eSample;
+  Point avgPoint;
+  double SpreadLon;
+  double SpreadLat;
+  double MaxSpread;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct KTreeElt {
+  std::vector<Point> ListPt;
+  DiscInfo eDisc;
+  //
+  bool IsSplit;
+  int iSub1;
+  int iSub2;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+DiscInfo KTree_ComputeDisc(std::vector<Point> const& ListPt)
+{
+  double MinLon=ListPt[0].eLon;
+  double MaxLon=ListPt[0].eLon;
+  double MinLat=ListPt[0].eLat;
+  double MaxLat=ListPt[0].eLat;
+  int siz=ListPt.size();
+  double SumLon=0;
+  double SumLat=0;
+  for (int i=0; i<siz; i++) {
+    double eLon=ListPt[i].eLon;
+    double eLat=ListPt[i].eLat;
+    SumLon += eLon;
+    SumLat += eLat;
+    if (eLon < MinLon)
+      MinLon=eLon;
+    if (eLon > MaxLon)
+      MaxLon=eLon;
+    if (eLat < MinLat)
+      MinLat=eLat;
+    if (eLat > MaxLat)
+      MaxLat=eLat;
+  }
+  double avgLon=SumLon/double(siz);
+  double avgLat=SumLat/double(siz);
+  double dist12=GeodesicDistanceKM(MinLon, MinLat, MinLon, MaxLat);
+  double dist23=GeodesicDistanceKM(MinLon, MaxLat, MaxLon, MaxLat);
+  double dist34=GeodesicDistanceKM(MaxLon, MaxLat, MaxLon, MinLat);
+  double dist41=GeodesicDistanceKM(MaxLon, MinLat, MinLon, MinLat);
+  //
+  double SpreadLat=(dist12 + dist34)/double(2);
+  double SpreadLon=(dist23 + dist41)/double(2);
+  double MinDistKM=20000;
+  int idxMin=-1;
+  for (int i=0; i<siz; i++) {
+    double eLon=ListPt[i].eLon;
+    double eLat=ListPt[i].eLat;
+    double dist=GeodesicDistanceKM(eLon, eLat, avgLon, avgLat);
+    if (dist < MinDistKM) {
+      MinDistKM=dist;
+      idxMin=i;
+    }
+  }
+  Point eSample=ListPt[idxMin];
+  double eSampleLon=eSample.eLon;
+  double eSampleLat=eSample.eLat;
+  double MaxSpread=0;
+  for (int i=0; i<siz; i++) {
+    double eLon=ListPt[i].eLon;
+    double eLat=ListPt[i].eLat;
+    double dist=GeodesicDistanceKM(eLon, eLat, eSampleLon, eSampleLat);
+    if (dist > MaxSpread)
+      MaxSpread=dist;
+  }
+  Point avgPoint{avgLon, avgLat};
+  return {eSample, avgPoint, SpreadLon, SpreadLat, MaxSpread};
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<KTreeElt> SplitKTreeElt(KTreeElt const& eKD)
+{
+  std::vector<Point> NewListPt1;
+  std::vector<Point> NewListPt2;
+  if (eKD.eDisc.SpreadLon > eKD.eDisc.SpreadLat) {
+    for (auto & ePt : eKD.ListPt) {
+      if (ePt.eLon < eKD.eDisc.avgPoint.eLon)
+	NewListPt1.push_back(ePt);
+      else
+	NewListPt2.push_back(ePt);
+    }
+  }
+  else {
+    for (auto & ePt : eKD.ListPt) {
+      if (ePt.eLat < eKD.eDisc.avgPoint.eLat)
+	NewListPt1.push_back(ePt);
+      else
+	NewListPt2.push_back(ePt);
+    }
+  }
+  //
+  KTreeElt eKD1{{}, eKD.eDisc, true, -2, -2};
+  KTreeElt eKD2{NewListPt1, KTree_ComputeDisc(NewListPt1), false, -1, -1};
+  KTreeElt eKD3{NewListPt2, KTree_ComputeDisc(NewListPt2), false, -1, -1};
+  return {eKD1, eKD2, eKD3};
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<KTreeElt> KTree_GetDecomposition(std::vector<Point> const& ListPtCoast)
+{
+  std::vector<KTreeElt> TList;
+  std::vector<int> IsTreated;
+  int MaxNumberPerCell=100;
+  std::function<void(int)> SplitComponent=[&](int const& iComp) -> void {
+    int len=TList.size();
+    std::vector<KTreeElt> NList=SplitKTreeElt(TList[iComp]);
+    TList[iComp]=NList[0];
+    TList[iComp].iSub1=len;
+    TList[iComp].iSub2=len+1;
+    TList.push_back(NList[1]);
+    TList.push_back(NList[2]);
+    IsTreated.push_back(0);
+    IsTreated.push_back(0);
+  };
+  KTreeElt eElt{ListPtCoast, KTree_ComputeDisc(ListPtCoast), false, -1, -1};
+  TList.push_back(eElt);
+  IsTreated.push_back(0);
+  while(true) {
+    int siz=TList.size();
+    //    std::cerr << "siz=" << siz << "\n";
+    bool IsFinished=true;
+    for (int i=0; i<siz; i++)
+      if (IsTreated[i] == 0) {
+	IsTreated[i]=1;
+	IsFinished=false;
+	int len=TList[i].ListPt.size();
+	if (len > MaxNumberPerCell)
+	  SplitComponent(i);
+      }
+    if (IsFinished)
+      break;
+  }
+  //  for (int i=0; i<siz; i++) {
+  //    std::cerr << "i=" << i << " split=" << TList[i].IsSplit << " |ListPt|=" << TList[i].ListPt.size() << " MaxSpread=" << TList[i].eDisc.MaxSpread << "\n";
+  //  }
+  return TList;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double ShortestDistance(std::vector<KTreeElt> const& ListKT, Point const& ePt, double & UpperEstimate)
+{
+  double TheDist=UpperEstimate;
+  double eLon=ePt.eLon;
+  double eLat=ePt.eLat;
+  //  std::cerr << "|ListKT|=" << ListKT.size() << "\n";
+  std::vector<int> ListIdx{0};
+  while(true) {
+    if (ListIdx.size() == 0)
+      break;
+    //    std::cerr << "Before creating NewListIdx\n";
+    std::vector<int> NewListIdx;
+    for (int & eVal : ListIdx) {
+      if (ListKT[eVal].IsSplit == false) {
+	int len=ListKT[eVal].ListPt.size();
+	for (int i=0; i<len; i++) {
+	  double nLon=ListKT[eVal].ListPt[i].eLon;
+	  double nLat=ListKT[eVal].ListPt[i].eLat;
+	  double nDist=GeodesicDistanceKM(nLon, nLat, eLon, eLat);
+	  if (nDist < TheDist)
+	    TheDist=nDist;
+	}
+      }
+      else {
+	double SampleLon=ListKT[eVal].eDisc.eSample.eLon;
+	double SampleLat=ListKT[eVal].eDisc.eSample.eLat;
+	double nDist=GeodesicDistanceKM(SampleLon, SampleLat, eLon, eLat);
+	double LowerBound=nDist - ListKT[eVal].eDisc.MaxSpread;
+	if (LowerBound < TheDist) {
+	  NewListIdx.push_back(ListKT[eVal].iSub1);
+	  NewListIdx.push_back(ListKT[eVal].iSub2);
+	}
+      }
+    }
+    ListIdx=NewListIdx;
+  }
+  return TheDist;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<double> GetUpperEstimateMinDist(std::vector<Point> const& ListPt1, std::vector<Point> const& ListPt2)
+{
+  int nbPt2=ListPt2.size();
+  int nbPt1=ListPt1.size();
+  if (nbPt1 == 0) {
+    std::cerr << "The list ListPt1 should not be empty\n";
+    std::cerr << "nbPt1=" << nbPt1 << "\n";
+    exit(1);
+  }
+  //  std::cerr << "nbPt1=" << nbPt1 << " nbPt2=" << nbPt2 << "\n";
+  std::function<double(int,int)> fDist=[&](int const& i1, int const& i2) -> double {
+    double eLon1=ListPt1[i1].eLon;
+    double eLat1=ListPt1[i1].eLat;
+    double eLon2=ListPt2[i2].eLon;
+    double eLat2=ListPt2[i2].eLat;
+    return GeodesicDistanceKM(eLon1, eLat1, eLon2, eLat2);
+  };
+  int i1=0;
+  std::vector<double> ListUpperEst(nbPt2);
+  for (int i2=0; i2<nbPt2; i2++) {
+    double eDist=fDist(i1, i2);
+    //    std::cerr << "i2=" << i2 << "\n";
+    for (int iter=0; iter<4; iter++) {
+      int i1New =rand() % nbPt1;
+      double nDist=fDist(i1New, i2);
+      if (nDist < eDist) {
+	eDist=nDist;
+	i1=i1New;
+	//	std::cerr << "  i1New=" << i1 << " eDist=" << eDist << "\n";
+      }
+    }
+    while(true) {
+      bool DoSomething=false;
+      //      std::cerr << "  i1=" << i1 << " eDist=" << eDist << "\n";
+      if (i1>0) {
+	double nDist=fDist(i1-1,i2);
+	if (nDist < eDist) {
+	  eDist=nDist;
+	  i1=i1 - 1;
+	  DoSomething=true;
+	}
+      }
+      if (i1 < nbPt1-1) {
+	double nDist=fDist(i1+1,i2);
+	if (nDist < eDist) {
+	  eDist=nDist;
+	  i1=i1 + 1;
+	  DoSomething=true;
+	}
+      }
+      if (DoSomething == false)
+	break;
+    }
+    ListUpperEst[i2]=eDist;
+  }
+  //  std::cerr << "Now leaving returning ListUpperEst\n";
+  return ListUpperEst;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void TwoPiNormalization(double & TheAng)
+{
+  double ThePi=3.141592653589792;
+  if (TheAng < -ThePi) {
+    TheAng += double(2)*ThePi;
+  }
+  if (TheAng > ThePi) {
+    TheAng -= double(2)*ThePi;
   }
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-double TheSignFct(double const& eVal)
+int MySign(double & TheVal)
 {
-  if (eVal > 0)
+  if (TheVal > 0)
     return 1;
-  if (eVal < 0)
+  if (TheVal < 0)
     return -1;
   return 0;
 }
@@ -447,279 +1328,721 @@ double TheSignFct(double const& eVal)
 
 
 /* ------------------------------ */
-void DifferenceLonRenormalize(double & Lon)
+MyMatrix<double> CreateAngleMatrix(MyMatrix<double> const& LON_rho, MyMatrix<double> const& LAT_rho)
 {
-  if (Lon > 180)
-    Lon=Lon - 360;
-  if (Lon < -180)
-    Lon=Lon + 360;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_rho)
-{
-  int eta_rho=MSK_rho.rows();
-  int xi_rho=MSK_rho.cols();
-  int eta_u=eVar_u.rows();
-  int xi_u=eVar_u.cols();
-  if (eta_u != eta_rho || xi_u != xi_rho-1) {
-    std::cerr << "Dimension error in My_u2rho\n";
-    exit(1);
-  }
-  MyMatrix<double> eVar_rho(eta_rho, xi_rho);
-  for (int i=0; i<eta_rho; i++)
-    for (int j=0; j<xi_rho; j++) {
-      int eSumMsk=0;
-      double eSumVal=0;
-      if (MSK_rho(i,j) == 1) {
-	eSumMsk++;
-	eSumVal=eSumVal + eVar_u(i,j);
-      }
-      if (j < xi_u) {
-	if (MSK_rho(i,j+1) == 1) {
-	  eSumMsk++;
-	  eSumVal=eSumVal + eVar_u(i,j+1);
-	}
-      }
-      if (eSumMsk == 0) {
-	eVar_rho(i,j)=0;
+  int eta_rho=LON_rho.rows();
+  int xi_rho=LON_rho.cols();
+  int eta_v=eta_rho-1;
+  int xi_v=xi_rho;
+  MyMatrix<double> LONrad_v(eta_v,xi_v);
+  MyMatrix<double> LATrad_v(eta_v,xi_v);
+  MyMatrix<double> azim(eta_v-1,xi_v);
+  double ThePi=3.141592653589792;
+  double DegTwoRad=ThePi/double(180);
+  for (int iEta=0; iEta<eta_v; iEta++)
+    for (int iXi=0; iXi<xi_v; iXi++) {
+      double eLon=(LON_rho(iEta,iXi)+LON_rho(iEta+1,iXi))/double(2);
+      double eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta+1,iXi))/double(2);
+      LONrad_v(iEta,iXi)=eLon*DegTwoRad;
+      LATrad_v(iEta,iXi)=eLat*DegTwoRad;
+    }
+  for (int iEta=1; iEta<eta_v-1; iEta++)
+    for (int iXi=0; iXi<xi_v; iXi++) {
+      double phi1=LATrad_v(iEta,iXi);
+      double xlam1=LONrad_v(iEta,iXi);
+      double phi2=LATrad_v(iEta+1,iXi);
+      double xlam2=LONrad_v(iEta+1,iXi);
+      double TPSI2=tan(phi2);
+      double dlam=xlam2-xlam1;
+      TwoPiNormalization(dlam);
+      double cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam);
+      double eAzim=atan(double(1)/cta12);
+      int signAzim=MySign(eAzim);
+      int signDlam=MySign(dlam);
+      int eFact2;
+      if (signDlam != signAzim) {
+	eFact2=1;
       }
       else {
-	double eVal=eSumVal/double(eSumMsk);
-	eVar_rho(i,j)=eVal;
+	eFact2=0;
       }
+      int eFact1=-signAzim;
+      double fAzim=eAzim+ThePi*eFact1*eFact2;
+      azim(iEta,iXi)=fAzim;
     }
-  return eVar_rho;
+  MyMatrix<double> ANG_rho(eta_rho, xi_rho);
+  for (int iEta=1; iEta<eta_v; iEta++)
+    for (int iXi=0; iXi<xi_v; iXi++)
+      ANG_rho(iEta,iXi)=ThePi/double(2) - azim(iEta-1,iXi);
+  for (int iXi=0; iXi<xi_v; iXi++) {
+    ANG_rho(0,iXi)=ANG_rho(1,iXi);
+    ANG_rho(eta_rho-1,iXi)=ANG_rho(eta_rho-2,iXi);
+  }
+  return ANG_rho;
+}     
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> DimensionExtraction(Eigen::Tensor<T, 3> const& eT, size_t const& iDim, int const& eDim)
+{
+  int n1=eT.dimension(0);
+  int n2=eT.dimension(1);
+  int n3=eT.dimension(2);
+  if (iDim == 0) {
+    MyMatrix<T> eMat(n2, n3);
+    for (int i2=0; i2<n2; i2++)
+      for (int i3=0; i3<n3; i3++)
+	eMat(i2,i3)=eT(eDim,i2,i3);
+    return eMat;
+  }
+  if (iDim == 1) {
+    MyMatrix<T> eMat(n1, n3);
+    for (int i1=0; i1<n1; i1++)
+      for (int i3=0; i3<n3; i3++)
+	eMat(i1,i3)=eT(i1,eDim,i3);
+    return eMat;
+  }
+  if (iDim == 2) {
+    MyMatrix<T> eMat(n1, n2);
+    for (int i1=0; i1<n1; i1++)
+      for (int i2=0; i2<n2; i2++)
+	eMat(i1,i2)=eT(i1,i2,eDim);
+    return eMat;
+  }
+  std::cerr << "Wrong input in ThreeDimArray\n";
+  std::cerr << "iDim=" << iDim << "\n";
+  std::cerr << "Allowed values: 0, 1, 2\n";
+  exit(1);
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_rho)
+template<typename T>
+T VectorMin(MyVector<T> const& eVect)
 {
-  int eta_rho=MSK_rho.rows();
-  int xi_rho=MSK_rho.cols();
-  int eta_v=eVar_v.rows();
-  int xi_v=eVar_v.cols();
-  if (eta_v != eta_rho-1 || xi_v != xi_rho) {
-    std::cerr << "Dimension error in My_v2rho\n";
+  T eMin=eVect[0];
+  int siz=eVect.size();
+  for (int i=1; i<siz; i++) {
+    T eVal=eVect(i);
+    if (eVal < eMin)
+      eMin=eVal;
+  }
+  return eMin;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+T VectorMax(MyVector<T> const& eVect)
+{
+  T eMax=eVect[0];
+  int siz=eVect.size();
+  for (int i=1; i<siz; i++) {
+    T eVal=eVect(i);
+    if (eVal > eMax)
+      eMax=eVal;
+  }
+  return eMax;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+T ScalarProduct(MyVector<T> const& V1, MyVector<T> const & V2)
+{
+  if (V1.size() != V2.size()) {
+    std::cerr << "Vectors of wrong sizes\n";
     exit(1);
   }
-  MyMatrix<double> eVar_rho(eta_rho, xi_rho);
-  for (int i=0; i<eta_rho; i++)
-    for (int j=0; j<xi_rho; j++) {
-      int eSumMsk=0;
-      double eSumVal=0;
-      if (MSK_rho(i,j) == 1) {
-	eSumMsk++;
-	eSumVal=eSumVal + eVar_v(i,j);
+  size_t siz=V1.size();
+  T eSum=0;
+  for (size_t i=0; i<siz; i++) {
+    T eVal1=V1(i);
+    T eVal2=V2(i);
+    eSum += eVal1*eVal2;
+  }
+  return eSum;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> ZeroMatrix(int const& nbRow, int const& nbCol)
+{
+  MyMatrix<T> retMat(nbRow, nbCol);
+  T eZero;
+  eZero=0;
+  for (int iRow=0; iRow<nbRow; iRow++)
+    for (int iCol=0; iCol<nbCol; iCol++)
+      retMat(iRow, iCol)=eZero;
+  return retMat;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyVector<T> ZeroVector(int const& nbRow)
+{
+  MyVector<T> retVect(nbRow);
+  T eZero;
+  eZero=0;
+  for (int iRow=0; iRow<nbRow; iRow++)
+    retVect(iRow)=eZero;
+  return retVect;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void TMat_Copy(MyMatrix<T> const&eMatI, MyMatrix<T> &eMatO)
+{
+  int nbRowI, nbColI, nbRowO, nbColO;
+  nbRowI=eMatI.rows();
+  nbRowO=eMatO.rows();
+  nbColI=eMatI.cols();
+  nbColO=eMatO.cols();
+  if (nbRowI != nbRowO || nbColI != nbColO) {
+    std::cerr << "Error in the input\n";
+    exit(1);
+  }
+  for (int iRow=0; iRow<nbRowI; iRow++)
+    for (int iCol=0; iCol<nbColI; iCol++) {
+      T eVal=eMatI(iRow, iCol);
+      eMatO(iRow, iCol)=eVal;
+    }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void ZeroAssignation(MyMatrix<T> &TheMat)
+{
+  int nbRow=TheMat.rows();
+  int nbCol=TheMat.cols();
+  T eVal;
+  eVal=0;
+  for (int iRow=0; iRow<nbRow; iRow++)
+    for (int iCol=0; iCol<nbCol; iCol++)
+      TheMat(iRow, iCol)=eVal;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> TransposedMat(MyMatrix<T> const&TheMat)
+{
+  int nbCol=TheMat.cols();
+  int nbRow=TheMat.rows();
+  MyMatrix<T> TheTrans(nbCol, nbRow);
+  for (int iCol=0; iCol<nbCol; iCol++)
+    for (int iRow=0; iRow<nbRow; iRow++) {
+      T eVal=TheMat(iRow, iCol);
+      TheTrans(iCol, iRow)=eVal;
+    }
+  return TheTrans;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyVector<T> ProductVectorMatrix(MyVector<T> const& X, MyMatrix<T> const& M)
+{
+  int nbCol=M.cols();
+  int nbRow=M.rows();
+  if (X.size() != nbRow) {
+    std::cerr << "Error in the product X A\n";
+    exit(1);
+  }
+  MyVector<T> Vret(nbCol);
+  for (int iCol=0; iCol<nbCol; iCol++) {
+    T sum=0;
+    for (int iRow=0; iRow<nbRow; iRow++)
+      sum += M(iRow,iCol)*X(iRow);
+    Vret(iCol)=sum;
+  }
+  return Vret;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyVector<T> VectorMatrix(MyVector<T> const& eVect, MyMatrix<T> const& eMat)
+{
+  int nbCol=eMat.cols();
+  int nbRow=eMat.rows();
+  int n=eVect.size();
+  if (n != nbRow) {
+    std::cerr << "n should be equal to nbRow\n";
+    exit(1);
+  }
+  MyVector<T> rVect(nbCol);
+  for (int iCol=0; iCol<nbCol; iCol++) {
+    T eSum=0;
+    for (int iRow=0; iRow<nbRow; iRow++) {
+      T eVal=eMat(iRow, iCol);
+      T fVal=eVect(iRow);
+      eSum += eVal*fVal;
+    }
+    rVect(iCol)=eSum;
+  }
+  return rVect;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void SwapValues(T& val1, T& val2)
+{
+  T prov;
+  prov=val1;
+  val1=val2;
+  val2=prov;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+struct Inverse_exception {
+  std::string errmsg;
+  T pivot;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void TMat_Inverse_destroy(MyMatrix<T> &Input, MyMatrix<T> &Output)
+{
+  int nbRow, nbCol;
+  int iCol, iRow, WeFound;
+  int iRowFound;
+  int iColB;
+  nbRow=Input.rows();
+  nbCol=Input.cols();
+  T prov1, prov2, eVal;
+  if (nbRow != nbCol) {
+    std::cerr << "Error on nbRow, nbCol in TMat_Inverse_destroy";
+    exit(1);
+  }
+  for (iRow=0; iRow<nbRow; iRow++)
+    for (iCol=0; iCol<nbRow; iCol++)
+      {
+	if (iRow == iCol)
+	  prov1=1;
+	else
+	  prov1=0;
+	Output(iRow,iCol)=prov1;
       }
-      if (i < eta_v) {
-	if (MSK_rho(i+1,j) == 1) {
-	  eSumMsk++;
-	  eSumVal=eSumVal + eVar_v(i+1,j);
+  iRowFound=-400;
+  for (iCol=0; iCol<nbCol; iCol++)
+    {
+      WeFound=0;
+      for (iRow=iCol; iRow<nbRow; iRow++)
+	if (WeFound == 0)
+	  {
+	    eVal=Input(iRow,iCol);
+	    if (eVal != 0)
+	      {
+		WeFound=1;
+		iRowFound=iRow;
+		prov1=1/eVal;
+	      }
+	  }
+      if (WeFound == 0) {
+	Inverse_exception<T> eExcept;
+	eExcept.errmsg="Error in matrix inversion";
+	eExcept.pivot=0;
+	throw eExcept;
+      }
+      for (iColB=0; iColB<nbCol; iColB++)
+	{
+	  eVal=prov1*Input(iRowFound,iColB);
+	  Input(iRowFound,iColB)=eVal;
+	  eVal=prov1*Output(iRowFound,iColB);
+	  Output(iRowFound,iColB)=eVal;
+	}
+      for (iRow=0; iRow<nbRow; iRow++)
+	if (iRow != iRowFound) {
+	  prov2=Input(iRow, iCol);
+	  for (iColB=0; iColB<nbCol; iColB++) {
+	    prov1=prov2*Input(iRowFound,iColB);
+	    eVal=Input(iRow,iColB) - prov1;
+	    Input(iRow, iColB)=eVal;
+	    //
+	    prov1=prov2*Output(iRowFound,iColB);
+	    eVal=Output(iRow,iColB) - prov1;
+	    Output(iRow,iColB)=eVal;
+	  }
+	}
+      if (iRowFound != iCol) {
+	for (iColB=0; iColB<nbCol; iColB++) {
+	  prov1=Input(iRowFound, iColB);
+	  prov2=Input(iCol, iColB);
+	  SwapValues(prov1, prov2);
+	  Input(iRowFound, iColB)=prov1;
+	  Input(iCol     , iColB)=prov2;
+	  //
+	  prov1=Output(iRowFound, iColB);
+	  prov2=Output(iCol, iColB);
+	  SwapValues(prov1, prov2);
+	  Output(iRowFound, iColB)=prov1;
+	  Output(iCol     , iColB)=prov2;
 	}
       }
-      if (eSumMsk == 0) {
-	eVar_rho(i,j)=0;
-      }
-      else {
-	double eVal=eSumVal/double(eSumMsk);
-	eVar_rho(i,j)=eVal;
+    }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> Inverse(MyMatrix<T> const&Input)
+{
+  int nbRow, nbCol;
+  nbRow=Input.rows();
+  nbCol=Input.cols();
+  MyMatrix<T> provMat(nbRow, nbCol);
+  TMat_Copy(Input, provMat);
+  MyMatrix<T> Output(nbRow, nbRow);
+  TMat_Inverse_destroy(provMat, Output);
+  return Output;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+/* This function is for rank calculation.
+   Of course, it can be used for many other purpose:
+   1> Selecting specific sets of rows and columns for reduction 
+   2> Computing a set of generators of the zero set.
+   Initial matrix is of the form
+   Input (nbRow, nbCol)
+   The zero matrix is of the form
+   NSP (dimKer, nbCol)
+*/
+template<typename T>
+struct SelectionRowCol {
+  int TheRank;
+  MyMatrix<T> NSP;
+  std::vector<int> ListColSelect;
+  std::vector<int> ListRowSelect;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+SelectionRowCol<T> TMat_SelectRowCol(MyMatrix<T> const&Input)
+{
+  int nbRow, nbCol;
+  T eVal, eVal1, eVal2, eVal3;
+  int iRank;
+  int sizMat, nbVect, iRow, iCol;
+  int eCol, IsFinished;
+  int nbVectZero, maxRank, eRank, FirstNonZeroCol;
+  nbRow=Input.rows();
+  nbCol=Input.cols();
+  maxRank=nbRow;
+  if (nbCol < maxRank)
+    maxRank=nbCol;
+  sizMat=maxRank+1;
+  MyMatrix<T> provMat(sizMat, nbCol);
+  std::vector<int> ListColSelect;
+  std::vector<int> ListRowSelect;
+  std::vector<int> ListColSelect01(nbCol);
+  for (iCol=0; iCol<nbCol; iCol++)
+    ListColSelect01[iCol]=0;
+  eRank=0;
+  for (iRow=0; iRow<nbRow; iRow++) {
+    for (iCol=0; iCol<nbCol; iCol++) {
+      eVal=Input(iRow, iCol);
+      provMat(eRank, iCol)=eVal;
+    }
+    for (iRank=0; iRank<eRank; iRank++) {
+      eCol=ListColSelect[iRank];
+      eVal1=provMat(eRank, eCol);
+      for (iCol=0; iCol<nbCol; iCol++) {
+	eVal2=provMat(iRank, iCol);
+	eVal3=provMat(eRank, iCol);
+	eVal=eVal1*eVal2;
+	eVal3=eVal3 - eVal;
+	  provMat(eRank, iCol)=eVal3;
       }
     }
-  return eVar_rho;
+    IsFinished=1;
+    FirstNonZeroCol=-1;
+    for (iCol=0; iCol<nbCol; iCol++)
+      if (IsFinished == 1) {
+	eVal=provMat(eRank, iCol);
+	if (eVal != 0) {
+	  FirstNonZeroCol=iCol;
+	  IsFinished=0;
+	}
+      }
+    if (IsFinished == 0) {
+      ListColSelect.push_back(FirstNonZeroCol);
+      ListRowSelect.push_back(iRow);
+      ListColSelect01[FirstNonZeroCol]=1;
+      eVal=provMat(eRank, FirstNonZeroCol);
+      eVal2=1/eVal;
+      for (iCol=0; iCol<nbCol; iCol++) {
+	eVal=provMat(eRank, iCol);
+	eVal=eVal*eVal2;
+	provMat(eRank, iCol)=eVal;
+      }
+      for (iRank=0; iRank<eRank; iRank++) {
+	eVal1=provMat(iRank, FirstNonZeroCol);
+	for (iCol=0; iCol<nbCol; iCol++) {
+	  eVal2=provMat(iRank, iCol);
+	  eVal3=provMat(eRank, iCol);
+	  eVal=eVal1*eVal3;
+	  eVal2=eVal2 - eVal;
+	  provMat(iRank, iCol)=eVal2;
+	}
+      }
+      eRank++;
+    }
+  }
+  nbVectZero=nbCol-eRank;
+  MyMatrix<T> NSP(nbVectZero, nbCol);
+  //  std::cerr << "nbVectZero=" << nbVectZero << " nbCol=" << nbCol << "\n";
+  ZeroAssignation(NSP);
+  nbVect=0;
+  for (iCol=0; iCol<nbCol; iCol++)
+    if (ListColSelect01[iCol] == 0)
+      {
+	eVal=1;
+	NSP(nbVect, iCol)=eVal;
+	for (iRank=0; iRank<eRank; iRank++)
+	  {
+	    eCol=ListColSelect[iRank];
+	    eVal=provMat(iRank, iCol);
+	    eVal=-eVal;
+	    NSP(nbVect, eCol)=eVal;
+	  }
+	nbVect++;
+      }
+  SelectionRowCol<T> retSelect{eRank, NSP, ListColSelect, ListRowSelect};
+  return retSelect;
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-struct SinglePartInterp {
-  int eEta, eXi;
-  double eCoeff;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct SingleRecInterp {
-  int status;
-  std::vector<SinglePartInterp> LPart;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct QuadCoordinate {
-  double MinLon;
-  double MaxLon;
-  double MinLat;
-  double MaxLat;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<double> DetermineCoefficient(std::vector<double> const& X, std::vector<double> const& Y, double const& eX, double const& eY)
+template<typename T>
+MyVector<T> TVec_AplusBC(MyVector<T> const& V1, MyVector<T> const& V2, T const& alpha)
 {
-  MyMatrix<double> A(3,3);
-  for (int i=0; i<3; i++) {
-    A(0,i)=1;
-    A(1,i)=X[i];
-    A(2,i)=Y[i];
-  }
-  MyVector<double> V(3);
-  V(0)=1;
-  V(1)=eX;
-  V(2)=eY;
-  MyMatrix<double> eInv=A.inverse().eval();
-  MyVector<double> eProduct=eInv*V;
-  std::vector<double> LCoeff(3);
-  for (int i=0; i<3; i++) {
-    LCoeff[i]=eProduct(i);
-    //    std::cerr << "i=" << i << " eC=" << LCoeff[i] << "\n";
-  }
-  /*
-  double deltaX=eX;
-  double deltaY=eY;
-  for (int i=0; i<3; i++) {
-    deltaX=deltaX - LCoeff[i]*X[i];
-    deltaY=deltaY - LCoeff[i]*Y[i];
-  }
-//  std::cerr << "deltaX=" << deltaX << " deltaY=" << deltaY << "\n"; */
-  return LCoeff;
+  int n=V1.size();
+  MyVector<T> VRet=MyVector<T>(n);
+  for (int i=0; i<n; i++)
+    {
+      T eVal=V1(i) + alpha*V2(i);
+      VRet(i)=eVal;
+    }
+  return VRet;
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
+template<typename T>
+void TVec_AddBCtoA(MyVector<T> &V1, MyVector<T> const& V2, T const& alpha)
 {
-  //  std::cerr << "eLon=" << eLon << " eLat=" << eLat << "\n";
-  //  std::cerr << "LON(min/max)=" << eQuad.MinLon << " / " << eQuad.MaxLon << "\n";
-  //  std::cerr << "LAT(min/max)=" << eQuad.MinLat << " / " << eQuad.MaxLat << "\n";
-  if (eLon > eQuad.MinLon && eLon < eQuad.MaxLon && eLat > eQuad.MinLat && eLat < eQuad.MaxLat)
-    return true;
+  T eVal;
+  int n=V1.size();
+  for (int i=0; i<n; i++)
+    {
+      eVal=V1(i) + alpha*V2(i);
+      V1(i)=eVal;
+    }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> SelectRow(MyMatrix<T> const&TheMat, std::vector<int> const& eList)
+{
+  int nbRowRed=eList.size();
+  int nbCol=TheMat.cols();
+  MyMatrix<T> TheProv(nbRowRed, nbCol);
+  for (int iRow=0; iRow<nbRowRed; iRow++) {
+    int jRow=eList[iRow];
+    for (int iCol=0; iCol<nbCol; iCol++) {
+      T eVal=TheMat(jRow, iCol);
+      TheProv(iRow, iCol)=eVal;
+    }
+  }
+  return TheProv;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyMatrix<T> SelectColumn(MyMatrix<T> const& TheMat, std::vector<int> const& eList)
+{
+  int nbRow=TheMat.rows();
+  int nbColRed=eList.size();
+  MyMatrix<T> TheProv(nbRow, nbColRed);
+  for (int iCol=0; iCol<nbColRed; iCol++) {
+    int jCol=eList[iCol];
+    for (int iRow=0; iRow<nbRow; iRow++)
+      TheProv(iRow, iCol)=TheMat(iRow, jCol);
+  }
+  return TheProv;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+MyVector<T> SelectColumnVector(MyVector<T> const& TheV, std::vector<int> const& eList)
+{
+  int nbColRed=eList.size();
+  MyVector<T> TheProv(nbColRed);
+  for (int iCol=0; iCol<nbColRed; iCol++) {
+    int jCol=eList[iCol];
+    TheProv(iCol)=TheV(jCol);
+  }
+  return TheProv;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+struct SolMatResult {
+  bool result;
+  MyVector<T> eSol;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T1, typename T2>
+MyMatrix<T2> ConvertMatrix(MyMatrix<T1> const& M, std::function<T2(T1)> const& f)
+{
+  int eta_rho=M.rows();
+  int xi_rho=M.cols();
+  MyMatrix<T2> eRet(eta_rho, xi_rho);
+  for (int i=0; i<eta_rho; i++)
+    for (int j=0; j<xi_rho; j++) {
+      T1 eVal1=M(i,j);
+      T2 eVal2=f(eVal1);
+      eRet(i,j)=eVal2;
+  }
+  return eRet;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void WriteMatrixGAP(std::ostream &os, MyMatrix<T> const&TheMat)
+{
+  long nbRow=TheMat.rows();
+  long nbCol=TheMat.cols();
+  os << "[ ";
+  for (long iRow=0; iRow<nbRow; iRow++) {
+    if (iRow > 0)
+      os << ",\n";
+    os << "[";
+    for (long iCol=0; iCol<nbCol; iCol++) {
+      T eVal=TheMat(iRow, iCol);
+      if (iCol > 0)
+	os << ",";
+      os << " " << eVal;
+    }
+    os << " ]";
+  }
+  os << " ]\n";
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+/* return true if V1 < V2 according to lexicographic order */
+template<typename T>
+bool IsLower(MyVector<T> const& V1, MyVector<T> const& V2)
+{
+  int n=V1.size();
+  for (int i=0; i<n; i++) {
+    if (V1(i) != V2(i)) {
+      if (V1(i) < V2(i)) {
+	return true;
+      }
+      else {
+	return false;
+      }
+    }
+  }
   return false;
 }
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-std::vector<SingleRecInterp> TRIG_FIND_ELE(MyMatrix<int> const& Lelem, MyMatrix<double> const& X, MyMatrix<double> const& Y, QuadCoordinate const& eQuad, MyMatrix<double> const& ListXY)
-{
-  double THR=1e-10;
-  std::function<bool(int,double,double)> IsCorrect=[&](int const& ie, double const& Xp, double const& Yp) -> bool {
-    int ki = Lelem(0,ie);
-    int kj = Lelem(1,ie);
-    int kk = Lelem(2,ie);
-    double xi = X(ki);
-    double yi = Y(ki);
-    double xj = X(kj);
-    double yj = Y(kj);
-    double xk = X(kk);
-    double yk = Y(kk);
-    double f = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
-    if (f > THR) {
-      f = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
-      if (f > THR) {
-	f = xk*(yi-Yp) + xi*(Yp-yk) + Xp*(yk-yi);
-	if (f > THR) {
-	  return true;
-	}
-      }
-    }
-    return false;
-  };
-  double dx=0;
-  double dy=0;
-  int nbEle=Lelem.cols();
-  for (int ie=0; ie<nbEle; ie++) {
-    int ki = Lelem(0,ie);
-    int kj = Lelem(1,ie);
-    int kk = Lelem(2,ie);
-    double xi = X(ki);
-    double yi = Y(ki);
-    double xj = X(kj);
-    double yj = Y(kj);
-    double xk = X(kk);
-    double yk = Y(kk);
-    dx=std::max(dx, std::abs(xi - xj));
-    dx=std::max(dx, std::abs(xi - xk));
-    dx=std::max(dx, std::abs(xj - xk));
-    dy=std::max(dy, std::abs(yi - yj));
-    dy=std::max(dy, std::abs(yi - yk));
-    dy=std::max(dy, std::abs(yj - yk));
-  }
-  std::function<int(double, double)> SearchElement=[&](double const& eX, double const& eY) -> int {
-    for (int iele=0; iele<nbEle; iele++) {
-      if (IsCorrect(iele, eX, eY)) {
-	return iele;
-      }
-    }
-    return -1;
-  };
-  int nbPoint=ListXY.cols();
-  int ielePrev=0;
-  int eElt;
-  std::vector<SingleRecInterp> LRec(nbPoint);
-  for (int iPoint=0; iPoint<nbPoint; iPoint++) {
-    double Xp=ListXY(0,iPoint);
-    double Yp=ListXY(1,iPoint);
-    bool test=false;
-    if (ielePrev >= 0) {
-      if (IsCorrect(ielePrev, Xp, Yp)) {
-	eElt=ielePrev;
-	test=true;
-      }
-    }
-    if (test == false) {
-      eElt=SearchElement(Xp, Yp);
-    }
-    ielePrev=eElt;
-    SingleRecInterp eRec;
-    if (eElt == -1) {
-      eRec={0, {}};
-    }
-    else {
-      std::vector<int> LEta(3);
-      std::vector<double> Xcall(3), Ycall(3);
-      for (int i=0; i<3; i++) {
-	int IP=Lelem(i,eElt);
-	LEta[i]=IP;
-	Xcall[i]=X(IP);
-	Ycall[i]=Y(IP);
-      }
-      std::vector<double> LCoeff=DetermineCoefficient(Xcall, Ycall, Xp, Yp);
-      std::vector<SinglePartInterp> LPart(3);
-      for (int i=0; i<3; i++) {
-	LPart[i]={LEta[i], 0, LCoeff[i]};
-      }
-      eRec={1, LPart};
-    };
-    LRec[iPoint]=eRec;
-  }
-  return LRec;
-}
+template <typename T>
+struct is_ring_field {
+  static const bool value = false;
+};
+ 
+template <>
+struct is_ring_field<short> {
+  static const bool value = false;
+};
+ 
+template <>
+struct is_ring_field<long> {
+  static const bool value = false;
+};
 /* ------------------------------ */
 
 
 /* ------------------------------ */
-MyMatrix<int> GetDirection()
-{
-  MyMatrix<int> eMat(2,4);
-  eMat(0,0)=0;
-  eMat(1,0)=0;
-  eMat(0,1)=1;
-  eMat(1,1)=0;
-  eMat(0,2)=0;
-  eMat(1,2)=1;
-  eMat(0,3)=1;
-  eMat(1,3)=1;
-  return eMat;
-}
+template <>
+struct is_ring_field<int> {
+  static const bool value = false;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<long long> {
+  static const bool value = false;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<double> {
+  static const bool value = true;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template <>
+struct is_ring_field<float> {
+  static const bool value = true;
+};
 /* ------------------------------ */
 
 
@@ -776,18 +2099,27 @@ T T_min(T const& eVal1, T const& eVal2)
 std::string random_string( size_t length )
 {
   srand ( time(NULL) );
-  auto randchar = []() -> char
-    {
-      const char charset[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-      const size_t max_index = (sizeof(charset) - 1);
-      return charset[ rand() % max_index ];
-    };
+  auto randchar = []() -> char {
+    const char charset[] =
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
+    const size_t max_index = (sizeof(charset) - 1);
+    return charset[ rand() % max_index ];
+  };
   std::string str(length,0);
   std::generate_n( str.begin(), length, randchar );
   return str;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+template<typename T>
+void WriteStdVector(std::ostream& os, std::vector<T> const& V)
+{
+  for (auto & eVal : V)
+    os << " " << eVal;
 }
 /* ------------------------------ */
 
@@ -809,7 +2141,7 @@ CollectedResult<T> Collected(std::vector<T> const& eVect)
   for (auto & eVal : eVect)
     SetVal.insert(eVal);
   std::vector<T> LVal;
-  for (auto & eVal : eVect)
+  for (auto & eVal : SetVal)
     LVal.push_back(eVal);
   int eSize=LVal.size();
   std::vector<int> LMult(eSize,0);
@@ -822,6 +2154,8 @@ CollectedResult<T> Collected(std::vector<T> const& eVect)
     std::cerr << "Should never reach that stage\n";
     exit(1);
   };
+  for (auto & eVal : eVect)
+    UpPosition(eVal);
   return {LVal, LMult};
 }
 /* ------------------------------ */
@@ -844,6 +2178,113 @@ int PrevIdx(int const& len,int const& i)
     return len-1;
   return i-1;
 }
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct RecVar {
+  double eTimeDay;
+  int iTime;
+  std::string strPres;
+  std::string strFile;
+  std::string strAll;
+  //
+  std::string VarName1;
+  std::string VarName2;
+  double minval;
+  double maxval;
+  double mindiff;
+  double maxdiff;
+  std::string Unit;
+  MyMatrix<double> U;
+  MyMatrix<double> V;
+  MyMatrix<double> F;
+  std::string VarNature;
+  std::string nameU, nameV;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct CoordGridArrayFD {
+  int eta, xi;
+  MyMatrix<int> MSK;
+  MyMatrix<double> LON, LAT, DEP, ANG;
+  int nbWet;
+  bool HaveDEP;
+  std::vector<int> Idx, Jdx;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct GridArray {
+  std::string ModelName;
+  int IsFE;
+  bool IsSpherical;
+  CoordGridArrayFD GrdArrRho, GrdArrU, GrdArrV, GrdArrPsi;
+  MyMatrix<int> INE;
+  bool L_IndexSelect;
+  std::vector<int> I_IndexSelect;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct ArrayHistory {
+  std::string KindArchive;
+  int nbFile, nbTime;
+  double FirstTime, LastTime;
+  std::string FirstTimeStr, LastTimeStr;
+  std::vector<std::string> ListFileNames;
+  std::vector<std::vector<std::string> > ListListFileNames;
+  std::vector<int> ListIFile;
+  std::vector<int> ListIRec;
+  std::vector<double> ListTime;
+  bool AppendVarName;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct TotalArrGetData {
+  GridArray GrdArr;
+  ArrayHistory eArr;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct VarQuery {
+  double eTimeDay;
+  int iTime;
+  std::string NatureQuery; // Can be "instant", "average", "swathMax", "swathMin"
+  std::string NaturePlot; // Can be "single" or "diff"
+  double TimeFrameDay;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct PlotBound {
+  bool VariableRange;
+  std::vector<std::string> BoundSingle_var;
+  std::vector<double> BoundSingle_min;
+  std::vector<double> BoundSingle_max;
+  std::vector<std::string> BoundDiff_var;
+  std::vector<double> BoundDiff_min;
+  std::vector<double> BoundDiff_max;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+struct QuadArray {
+  double MinLon;
+  double MaxLon;
+  double MinLat;
+  double MaxLat;
+};
 /* ------------------------------ */
 
 
@@ -1213,1500 +2654,6 @@ std::string FILE_GetExtension(std::string const& eFile)
   std::vector<std::string> LBlck=STRING_Split(eFile, ".");
   return LBlck[LBlck.size()-1];
 }
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-MyMatrix<double> COMPUTE_NORM(MyMatrix<double> const& U, MyMatrix<double> const& V)
-{
-  int eta=U.rows();
-  int xi=U.cols();
-  MyMatrix<double> WINDMAG(eta, xi);
-  for (int i=0; i<eta; i++)
-    for (int j=0; j<xi; j++) {
-      double eU=U(i,j);
-      double eV=V(i,j);
-      WINDMAG(i,j)=sqrt(eU*eU + eV*eV);
-    }
-  return WINDMAG;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-MyMatrix<double> FreqPeriodChange(MyMatrix<double> const& F)
-{
-  int eta=F.rows();
-  int xi=F.cols();
-  MyMatrix<double> Fret(eta, xi);
-  double pi=3.1415926535;
-  for (int i=0; i<eta; i++)
-    for (int j=0; j<xi; j++) {
-      double eVal=F(i,j);
-      double NewVal=2*pi/eVal;
-      Fret(i,j)=NewVal;
-    }
-  return Fret;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<std::string> GetAllPossibleVariables()
-{
-  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR"};
-  return ListVarOut;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct PairMinMax {
-  double TheMin;
-  double TheMax;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<std::string> GRIB_GetAllFilesInDirectory(std::string const& ePrefix)
-{
-  std::vector<std::string> ListFile=FILE_GetDirectoryFilesRecursively(ePrefix);
-  std::vector<std::string> RetListFile;
-  for (auto & eFile : ListFile) {
-    int len=eFile.size();
-    if (len > 3) {
-      std::string eEnd=eFile.substr(len-3,3);
-      if (eEnd == "grb")
-	RetListFile.push_back(eFile);
-    }
-  }
-  return RetListFile;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct CosmoGridInfo {
-  double latitudeOfSouthernPoleInDegrees;
-  double longitudeOfSouthernPoleInDegrees;
-  double angleOfRotationInDegrees;
-  //
-  double longitudeOfFirstGridPointInDegrees;
-  double latitudeOfFirstGridPointInDegrees;
-  double longitudeOfLastGridPointInDegrees;
-  double latitudeOfLastGridPointInDegrees;
-  //
-  double iDirectionIncrementInDegrees;
-  double jDirectionIncrementInDegrees;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-double phirot2phi(double const& phirot, double const& rlarot, double const& polphi, double const& pollam, double const& polgam)
-{
-  double pi=3.1415926535;
-  double eMult=pi/double(180);
-  double eMultInv=double(180)/pi;
-  double zsinpol = sin(eMult * polphi);
-  double zcospol = cos(eMult * polphi);
-  double zphis  = eMult * phirot;
-  double zrlas;
-  if (rlarot > double(180)) {
-    zrlas = rlarot - double(360);
-  }
-  else {
-    zrlas = rlarot;
-  }
-  zrlas = eMult * zrlas;
-  double zarg;
-  if (fabs(polgam) > 0) {
-    double zgam  = eMult * polgam;
-    zarg = zsinpol*sin(zphis) + zcospol*cos(zphis) * ( cos(zrlas)*cos(zgam) - sin(zgam)*sin(zrlas));
-  }
-  else {
-    zarg = zcospol * cos(zphis) * cos(zrlas) + zsinpol * sin(zphis);
-  }
-  double phirot2phi  = eMultInv * asin(zarg);
-  return phirot2phi;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-double rlarot2rla(double const& phirot, double const& rlarot, double const& polphi, double const& pollam, double const& polgam)
-{
-  double pi=3.1415926535;
-  double eMult=pi/double(180);
-  double eMultInv=double(180)/pi;
-  double zsinpol = sin(eMult * polphi);
-  double zcospol = cos(eMult * polphi);
-  double zphis  = eMult * phirot;
-  double zrlas;
-  if (rlarot > double(180)) {
-    zrlas = rlarot - double(360);
-  }
-  else {
-    zrlas = rlarot;
-  }
-  zrlas = eMult * zrlas;
-  double zlampol = eMult * pollam;
-  double zarg1, zarg2;
-  if (fabs(polgam) > 0) {
-    double zgam    = eMult * polgam;
-    zarg1   = sin (zlampol) *                                            
-      (- zsinpol*cos(zphis) * (cos(zrlas)*cos(zgam) - sin(zrlas)*sin(zgam)) 
-       + zcospol * sin(zphis))                                              
-      - cos (zlampol)*cos(zphis) * (sin(zrlas)*cos(zgam) + cos(zrlas)*sin(zgam));
-    zarg2   = cos (zlampol) *                                               
-      (- zsinpol*cos(zphis) * (cos(zrlas)*cos(zgam) - sin(zrlas)*sin(zgam))  
-       + zcospol * sin(zphis))                                               
-      + sin (zlampol)*cos(zphis) * (sin(zrlas)*cos(zgam) + cos(zrlas)*sin(zgam));
-  }
-  else {
-    zarg1   = sin (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis)  +    
-			       zcospol *              sin(zphis)) -    
-      cos (zlampol) *             sin(zrlas) * cos(zphis);
-    zarg2   = cos (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis)  +    
-			       zcospol *              sin(zphis)) +   
-      sin (zlampol) *             sin(zrlas) * cos(zphis);
-  }
-  if (zarg2 == 0) zarg2=1.0e-20;
-  double rlarot2rla = eMultInv * atan2(zarg1,zarg2);
-  return rlarot2rla;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-void Apply_COSMO_Transformation(MyMatrix<double> & LON, MyMatrix<double> & LAT, CosmoGridInfo const& eCosmoGrid)
-{
-  double pollat_sp=eCosmoGrid.latitudeOfSouthernPoleInDegrees;
-  double pollon_sp=eCosmoGrid.longitudeOfSouthernPoleInDegrees;
-  double polgam=eCosmoGrid.angleOfRotationInDegrees;
-  double zstartlon_tot=eCosmoGrid.longitudeOfFirstGridPointInDegrees;
-  double zstartlat_tot=eCosmoGrid.latitudeOfFirstGridPointInDegrees;
-  double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
-  double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
-  double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
-  double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
-  if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
-    std::cerr << "Error of consistency in zstartlat / zendlat\n";
-    exit(1);
-  }
-  //
-  int eta_rho=LON.rows();
-  int xi_rho=LON.cols();
-  double pollat= - pollat_sp;
-  double pollon= pollon_sp - double(180);
-  double startlon_tot=zstartlon_tot; // This part is quite unsure. Maybe there is a shift
-  double startlat_tot=zstartlat_tot; // same remark
-  for (int i=0; i<eta_rho; i++)
-    for (int j=0; j<xi_rho; j++) {
-      double eLonR=startlon_tot + double(i-1)*dlon;
-      double eLatR=startlat_tot + double(j-1)*dlat;
-      double eLat=phirot2phi(eLatR, eLonR, pollat, pollon, polgam);
-      double eLon=rlarot2rla(eLatR, eLonR, pollat, pollon, polgam);
-      LON(i,j)=eLon;
-      LAT(i,j)=eLat;
-    }
-  std::cerr << "After LON min=" << LON.minCoeff() << " max=" << LON.maxCoeff() << "\n";
-  std::cerr << "After LAT min=" << LAT.minCoeff() << " max=" << LAT.maxCoeff() << "\n";
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct GRIB_MessageInfo {
-  std::string shortName;
-  std::string name;
-  int idx;
-  double time;
-  double timeStart;
-  int stepRange;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-MyMatrix<double> GRIB_Read2DVariable(std::vector<std::string> const& ListFileName, std::string const& VarName)
-{
-  for (auto & eFileName : ListFileName) {
-    grib_handle *h = NULL;
-    int err;
-    FILE* in = NULL;
-    in = fopen(eFileName.c_str(),"r");
-    unsigned long key_iterator_filter_flags=GRIB_KEYS_ITERATOR_ALL_KEYS;
-    while ((h = grib_handle_new_from_file(0,in,&err)) != NULL ) { 
-      //    std::cerr << "err=" << err << "\n";
-      if (err != GRIB_SUCCESS)
-	GRIB_CHECK(err,0);
-      //
-      char name_space[3]="ls";
-      grib_keys_iterator* kiter=NULL;
-      kiter=grib_keys_iterator_new(h,key_iterator_filter_flags,name_space);
-      if (!kiter) {
-	printf("ERROR: Unable to create keys iterator\n");
-	exit(1);
-      }
-      std::string ShortNameValue;
-      while(grib_keys_iterator_next(kiter)) {
-	int MAX_VAL_LEN=1024;
-	char value[MAX_VAL_LEN];
-	size_t vlen=MAX_VAL_LEN;
-	const char* name = grib_keys_iterator_get_name(kiter);
-	vlen=MAX_VAL_LEN;
-	bzero(value,vlen);
-	GRIB_CHECK(grib_get_string(h,name,value,&vlen),name);
-	std::string nameStr=name;
-	std::string valueStr=value;
-	if (nameStr == "shortName") {
-	  ShortNameValue=valueStr;
-	}
-	//	std::cerr << "name=" << nameStr << " value=" << valueStr << "\n";
-	//printf("%s = %s\n",name,value);
-      }
-      grib_keys_iterator_delete(kiter);
-      //      std::cerr << "ShortNameValue=" << ShortNameValue << "\n";
-      //
-      if (ShortNameValue == VarName) {
-	long Ni, Nj, numberOfDataPoints;
-	GRIB_CHECK(grib_get_long(h,"Ni",&Ni),0);
-	//	std::cerr << "Ni=" << Ni << "\n";
-	GRIB_CHECK(grib_get_long(h,"Nj",&Nj),0);
-	//	std::cerr << "Nj=" << Nj << "\n";
-	GRIB_CHECK(grib_get_long(h,"numberOfDataPoints",&numberOfDataPoints),0);
-	//	std::cerr << "NumberOfDataPoints=" << numberOfDataPoints << "\n";
-	double *lats, *lons, *values;
-	size_t size=numberOfDataPoints;
-	size_t* sizePtr=&size;
-	lats=(double*)malloc(size*sizeof(double));
-	lons=(double*)malloc(size*sizeof(double));
-	values=(double*)malloc(size*sizeof(double));
-	err=grib_get_data(h, lats, lons, values, sizePtr);
-	grib_handle_delete(h);
-	if (err != GRIB_SUCCESS)
-	  GRIB_CHECK(err,0);
-	int eta_rho=Ni;
-	int xi_rho=Nj;
-	MyMatrix<double> VAL(eta_rho, xi_rho);
-	//	std::cerr << "eta_rho=" << eta_rho << " xi_rho=" << xi_rho << "\n";
-	int idx=0;
-	for (int j=0; j<xi_rho; j++)
-	  for (int i=0; i<eta_rho; i++) {
-	    VAL(i,j)=values[idx];
-	    idx++;
-	  }
-	free(lats);
-	free(lons);
-	free(values);
-	fclose(in);
-	return VAL;
-      }
-      grib_handle_delete(h);
-    }
-    fclose(in);
-  }
-  std::cerr << "Error in GRIB_Read2DVariable\n";
-  std::cerr << "Failed to find the variable =" << VarName << "\n";
-  std::cerr << "Exiting\n";
-  exit(1);
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-double GeodesicDistance(double const& LonDeg1, double const& LatDeg1, double const& LonDeg2, double const& LatDeg2)
-{
-  double pi=3.141592653589792;
-  double lon1=pi*LonDeg1/double(180);
-  double lat1=pi*LatDeg1/double(180);
-  double x1=cos(lon1)*cos(lat1);
-  double y1=sin(lon1)*cos(lat1);
-  double z1=sin(lat1);
-
-  double lon2=pi*LonDeg2/double(180);
-  double lat2=pi*LatDeg2/double(180);
-  double x2=cos(lon2)*cos(lat2);
-  double y2=sin(lon2)*cos(lat2);
-  double z2=sin(lat2);
-  double scalprod=x1*x2+y1*y2+z1*z2;
-  if (scalprod > 1)
-    return 0;
-  else
-    return acos(scalprod);
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-double GeodesicDistanceKM(double const& LonDeg1, double const& LatDeg1, double const& LonDeg2, double const& LatDeg2)
-{
-  double EarthRadius=6370;
-  return EarthRadius*GeodesicDistance(LonDeg1, LatDeg1, LonDeg2, LatDeg2);
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct Point {
-  double eLon;
-  double eLat;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct DiscInfo {
-  Point eSample;
-  Point avgPoint;
-  double SpreadLon;
-  double SpreadLat;
-  double MaxSpread;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct KTreeElt {
-  std::vector<Point> ListPt;
-  DiscInfo eDisc;
-  //
-  bool IsSplit;
-  int iSub1;
-  int iSub2;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-DiscInfo KTree_ComputeDisc(std::vector<Point> const& ListPt)
-{
-  double MinLon=ListPt[0].eLon;
-  double MaxLon=ListPt[0].eLon;
-  double MinLat=ListPt[0].eLat;
-  double MaxLat=ListPt[0].eLat;
-  int siz=ListPt.size();
-  double SumLon=0;
-  double SumLat=0;
-  for (int i=0; i<siz; i++) {
-    double eLon=ListPt[i].eLon;
-    double eLat=ListPt[i].eLat;
-    SumLon += eLon;
-    SumLat += eLat;
-    if (eLon < MinLon)
-      MinLon=eLon;
-    if (eLon > MaxLon)
-      MaxLon=eLon;
-    if (eLat < MinLat)
-      MinLat=eLat;
-    if (eLat > MaxLat)
-      MaxLat=eLat;
-  }
-  double avgLon=SumLon/double(siz);
-  double avgLat=SumLat/double(siz);
-  double dist12=GeodesicDistanceKM(MinLon, MinLat, MinLon, MaxLat);
-  double dist23=GeodesicDistanceKM(MinLon, MaxLat, MaxLon, MaxLat);
-  double dist34=GeodesicDistanceKM(MaxLon, MaxLat, MaxLon, MinLat);
-  double dist41=GeodesicDistanceKM(MaxLon, MinLat, MinLon, MinLat);
-  //
-  double SpreadLat=(dist12 + dist34)/double(2);
-  double SpreadLon=(dist23 + dist41)/double(2);
-  double MinDistKM=20000;
-  int idxMin=-1;
-  for (int i=0; i<siz; i++) {
-    double eLon=ListPt[i].eLon;
-    double eLat=ListPt[i].eLat;
-    double dist=GeodesicDistanceKM(eLon, eLat, avgLon, avgLat);
-    if (dist < MinDistKM) {
-      MinDistKM=dist;
-      idxMin=i;
-    }
-  }
-  Point eSample=ListPt[idxMin];
-  double eSampleLon=eSample.eLon;
-  double eSampleLat=eSample.eLat;
-  double MaxSpread=0;
-  for (int i=0; i<siz; i++) {
-    double eLon=ListPt[i].eLon;
-    double eLat=ListPt[i].eLat;
-    double dist=GeodesicDistanceKM(eLon, eLat, eSampleLon, eSampleLat);
-    if (dist > MaxSpread)
-      MaxSpread=dist;
-  }
-  Point avgPoint{avgLon, avgLat};
-  return {eSample, avgPoint, SpreadLon, SpreadLat, MaxSpread};
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<KTreeElt> SplitKTreeElt(KTreeElt const& eKD)
-{
-  std::vector<Point> NewListPt1;
-  std::vector<Point> NewListPt2;
-  if (eKD.eDisc.SpreadLon > eKD.eDisc.SpreadLat) {
-    for (auto & ePt : eKD.ListPt) {
-      if (ePt.eLon < eKD.eDisc.avgPoint.eLon)
-	NewListPt1.push_back(ePt);
-      else
-	NewListPt2.push_back(ePt);
-    }
-  }
-  else {
-    for (auto & ePt : eKD.ListPt) {
-      if (ePt.eLat < eKD.eDisc.avgPoint.eLat)
-	NewListPt1.push_back(ePt);
-      else
-	NewListPt2.push_back(ePt);
-    }
-  }
-  //
-  KTreeElt eKD1{{}, eKD.eDisc, true, -2, -2};
-  KTreeElt eKD2{NewListPt1, KTree_ComputeDisc(NewListPt1), false, -1, -1};
-  KTreeElt eKD3{NewListPt2, KTree_ComputeDisc(NewListPt2), false, -1, -1};
-  return {eKD1, eKD2, eKD3};
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<KTreeElt> KTree_GetDecomposition(std::vector<Point> const& ListPtCoast)
-{
-  std::vector<KTreeElt> TList;
-  std::vector<int> IsTreated;
-  int MaxNumberPerCell=100;
-  std::function<void(int)> SplitComponent=[&](int const& iComp) -> void {
-    int len=TList.size();
-    std::vector<KTreeElt> NList=SplitKTreeElt(TList[iComp]);
-    TList[iComp]=NList[0];
-    TList[iComp].iSub1=len;
-    TList[iComp].iSub2=len+1;
-    TList.push_back(NList[1]);
-    TList.push_back(NList[2]);
-    IsTreated.push_back(0);
-    IsTreated.push_back(0);
-  };
-  KTreeElt eElt{ListPtCoast, KTree_ComputeDisc(ListPtCoast), false, -1, -1};
-  TList.push_back(eElt);
-  IsTreated.push_back(0);
-  while(true) {
-    int siz=TList.size();
-    //    std::cerr << "siz=" << siz << "\n";
-    bool IsFinished=true;
-    for (int i=0; i<siz; i++)
-      if (IsTreated[i] == 0) {
-	IsTreated[i]=1;
-	IsFinished=false;
-	int len=TList[i].ListPt.size();
-	if (len > MaxNumberPerCell)
-	  SplitComponent(i);
-      }
-    if (IsFinished)
-      break;
-  }
-  //  for (int i=0; i<siz; i++) {
-  //    std::cerr << "i=" << i << " split=" << TList[i].IsSplit << " |ListPt|=" << TList[i].ListPt.size() << " MaxSpread=" << TList[i].eDisc.MaxSpread << "\n";
-  //  }
-  return TList;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-double ShortestDistance(std::vector<KTreeElt> const& ListKT, Point const& ePt, double & UpperEstimate)
-{
-  double TheDist=UpperEstimate;
-  double eLon=ePt.eLon;
-  double eLat=ePt.eLat;
-  //  std::cerr << "|ListKT|=" << ListKT.size() << "\n";
-  std::vector<int> ListIdx{0};
-  while(true) {
-    if (ListIdx.size() == 0)
-      break;
-    //    std::cerr << "Before creating NewListIdx\n";
-    std::vector<int> NewListIdx;
-    for (int & eVal : ListIdx) {
-      if (ListKT[eVal].IsSplit == false) {
-	int len=ListKT[eVal].ListPt.size();
-	for (int i=0; i<len; i++) {
-	  double nLon=ListKT[eVal].ListPt[i].eLon;
-	  double nLat=ListKT[eVal].ListPt[i].eLat;
-	  double nDist=GeodesicDistanceKM(nLon, nLat, eLon, eLat);
-	  if (nDist < TheDist)
-	    TheDist=nDist;
-	}
-      }
-      else {
-	double SampleLon=ListKT[eVal].eDisc.eSample.eLon;
-	double SampleLat=ListKT[eVal].eDisc.eSample.eLat;
-	double nDist=GeodesicDistanceKM(SampleLon, SampleLat, eLon, eLat);
-	double LowerBound=nDist - ListKT[eVal].eDisc.MaxSpread;
-	if (LowerBound < TheDist) {
-	  NewListIdx.push_back(ListKT[eVal].iSub1);
-	  NewListIdx.push_back(ListKT[eVal].iSub2);
-	}
-      }
-    }
-    ListIdx=NewListIdx;
-  }
-  return TheDist;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<double> GetUpperEstimateMinDist(std::vector<Point> const& ListPt1, std::vector<Point> const& ListPt2)
-{
-  int nbPt2=ListPt2.size();
-  int nbPt1=ListPt1.size();
-  if (nbPt1 == 0) {
-    std::cerr << "The list ListPt1 should not be empty\n";
-    std::cerr << "nbPt1=" << nbPt1 << "\n";
-    exit(1);
-  }
-  //  std::cerr << "nbPt1=" << nbPt1 << " nbPt2=" << nbPt2 << "\n";
-  std::function<double(int,int)> fDist=[&](int const& i1, int const& i2) -> double {
-    double eLon1=ListPt1[i1].eLon;
-    double eLat1=ListPt1[i1].eLat;
-    double eLon2=ListPt2[i2].eLon;
-    double eLat2=ListPt2[i2].eLat;
-    return GeodesicDistanceKM(eLon1, eLat1, eLon2, eLat2);
-  };
-  int i1=0;
-  std::vector<double> ListUpperEst(nbPt2);
-  for (int i2=0; i2<nbPt2; i2++) {
-    double eDist=fDist(i1, i2);
-    //    std::cerr << "i2=" << i2 << "\n";
-    for (int iter=0; iter<4; iter++) {
-      int i1New =rand() % nbPt1;
-      double nDist=fDist(i1New, i2);
-      if (nDist < eDist) {
-	eDist=nDist;
-	i1=i1New;
-	//	std::cerr << "  i1New=" << i1 << " eDist=" << eDist << "\n";
-      }
-    }
-    while(true) {
-      bool DoSomething=false;
-      //      std::cerr << "  i1=" << i1 << " eDist=" << eDist << "\n";
-      if (i1>0) {
-	double nDist=fDist(i1-1,i2);
-	if (nDist < eDist) {
-	  eDist=nDist;
-	  i1=i1 - 1;
-	  DoSomething=true;
-	}
-      }
-      if (i1 < nbPt1-1) {
-	double nDist=fDist(i1+1,i2);
-	if (nDist < eDist) {
-	  eDist=nDist;
-	  i1=i1 + 1;
-	  DoSomething=true;
-	}
-      }
-      if (DoSomething == false)
-	break;
-    }
-    ListUpperEst[i2]=eDist;
-  }
-  //  std::cerr << "Now leaving returning ListUpperEst\n";
-  return ListUpperEst;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-void TwoPiNormalization(double & TheAng)
-{
-  double ThePi=3.141592653589792;
-  if (TheAng < -ThePi) {
-    TheAng += double(2)*ThePi;
-  }
-  if (TheAng > ThePi) {
-    TheAng -= double(2)*ThePi;
-  }
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-int MySign(double & TheVal)
-{
-  if (TheVal > 0)
-    return 1;
-  if (TheVal < 0)
-    return -1;
-  return 0;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-MyMatrix<double> CreateAngleMatrix(MyMatrix<double> const& LON_rho, MyMatrix<double> const& LAT_rho)
-{
-  int eta_rho=LON_rho.rows();
-  int xi_rho=LON_rho.cols();
-  int eta_v=eta_rho-1;
-  int xi_v=xi_rho;
-  MyMatrix<double> LONrad_v(eta_v,xi_v);
-  MyMatrix<double> LATrad_v(eta_v,xi_v);
-  MyMatrix<double> azim(eta_v-1,xi_v);
-  double ThePi=3.141592653589792;
-  double DegTwoRad=ThePi/double(180);
-  for (int iEta=0; iEta<eta_v; iEta++)
-    for (int iXi=0; iXi<xi_v; iXi++) {
-      double eLon=(LON_rho(iEta,iXi)+LON_rho(iEta+1,iXi))/double(2);
-      double eLat=(LAT_rho(iEta,iXi)+LAT_rho(iEta+1,iXi))/double(2);
-      LONrad_v(iEta,iXi)=eLon*DegTwoRad;
-      LATrad_v(iEta,iXi)=eLat*DegTwoRad;
-    }
-  for (int iEta=1; iEta<eta_v-1; iEta++)
-    for (int iXi=0; iXi<xi_v; iXi++) {
-      double phi1=LATrad_v(iEta,iXi);
-      double xlam1=LONrad_v(iEta,iXi);
-      double phi2=LATrad_v(iEta+1,iXi);
-      double xlam2=LONrad_v(iEta+1,iXi);
-      double TPSI2=tan(phi2);
-      double dlam=xlam2-xlam1;
-      TwoPiNormalization(dlam);
-      double cta12=(cos(phi1)*TPSI2 - sin(phi1)*cos(dlam))/sin(dlam);
-      double eAzim=atan(double(1)/cta12);
-      int signAzim=MySign(eAzim);
-      int signDlam=MySign(dlam);
-      int eFact2;
-      if (signDlam != signAzim) {
-	eFact2=1;
-      }
-      else {
-	eFact2=0;
-      }
-      int eFact1=-signAzim;
-      double fAzim=eAzim+ThePi*eFact1*eFact2;
-      azim(iEta,iXi)=fAzim;
-    }
-  MyMatrix<double> ANG_rho(eta_rho, xi_rho);
-  for (int iEta=1; iEta<eta_v; iEta++)
-    for (int iXi=0; iXi<xi_v; iXi++)
-      ANG_rho(iEta,iXi)=ThePi/double(2) - azim(iEta-1,iXi);
-  for (int iXi=0; iXi<xi_v; iXi++) {
-    ANG_rho(0,iXi)=ANG_rho(1,iXi);
-    ANG_rho(eta_rho-1,iXi)=ANG_rho(eta_rho-2,iXi);
-  }
-  return ANG_rho;
-}     
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-struct ThreeDimArray {
-public:
-
-  ThreeDimArray()
-  {
-    n1=0;
-    n2=0;
-    n3=0;
-    ListElt=NULL;
-  }
-  ThreeDimArray(size_t p1, size_t p2, size_t p3)
-  {
-    if (p1 < 0 || p2 < 0 || p3 < 0)
-      {
-	std::cerr << "p123=" << p1 << "," << p2 << "," << p3 << "\n";
-	std::cerr <<"(zero dimension allowed for things like nullspace)\n";
-	exit(1);
-      }
-    n1=p1;
-    n2=p2;
-    n3=p3;
-    ListElt=new T[n1*n2*n3];
-  }
-  ThreeDimArray(ThreeDimArray<T> const& eArr)
-  {
-    std::vector<size_t> LDim=eArr.GetDims();
-    n1=LDim[0];
-    n2=LDim[1];
-    n3=LDim[2];
-    size_t len=n1*n2*n3;
-    ListElt=new T[n1*n2*n3];
-    for (size_t ielt=0; ielt<len; ielt++) {
-      T eVal=eArr.getelt(ielt);
-      ListElt[ielt]=eVal;
-    }
-  }
-  T getelt(size_t idx) const
-  {
-    return ListElt[idx];
-  }
-  ThreeDimArray<T> operator=(ThreeDimArray<T> const& eArr)
-  {
-    std::vector<size_t> LDim=eArr.GetDims();
-    n1=LDim[0];
-    n2=LDim[1];
-    n3=LDim[2];
-    size_t len=n1*n2*n3;
-    ListElt=new T[n1*n2*n3];
-    for (size_t ielt=0; ielt<len; ielt++) {
-      T eVal=eArr.getelt(ielt);
-      ListElt[ielt]=eVal;
-    }
-    return *this;
-  }
-
-  ~ThreeDimArray()
-  {
-    delete [] ListElt;
-  }
-  // easier parts of the job
-  std::vector<size_t> GetDims(void) const
-  {
-    std::vector<size_t> eRet={n1, n2, n3};
-    return eRet;
-  }
-  void assign(size_t i1, size_t i2, size_t i3, T const& eVal)
-  {
-    size_t idx=i1 + n1*i2 + n1*n2*i3;
-    ListElt[idx]=eVal;
-  }
-  T get(size_t i1, size_t i2, size_t i3) const
-  {
-    size_t idx=i1 + n1*i2 + n1*n2*i3;
-    if (i1 > n1-1 || i1 < 0 ) {
-      std::cerr << "i1=" << i1 << " n1=" << n1 << "\n";
-      exit(1);
-    }
-    if (i2 > n2-1 || i2 < 0 ) {
-      std::cerr << "i2=" << i2 << " n2=" << n2 << "\n";
-      exit(1);
-    }
-    if (i3 > n3-1 || i3 < 0 ) {
-      std::cerr << "i3=" << i3 << " n3=" << n3 << "\n";
-      exit(1);
-    }
-    return ListElt[idx];
-  }
-  MyMatrix<T> DimensionExtraction(size_t const& iDim, size_t const& eDim) const
-  {
-    if (iDim == 0) {
-      MyMatrix<T> eMat(n2, n3);
-      for (size_t i2=0; i2<n2; i2++)
-	for (size_t i3=0; i3<n3; i3++) {
-	  size_t idx=eDim + n1*i2 + n1*n2*i3;
-	  eMat(i2, i3)=ListElt[idx];
-	}
-      return eMat;
-    }
-    if (iDim == 1) {
-      MyMatrix<T> eMat(n1, n3);
-      for (size_t i1=0; i1<n1; i1++)
-	for (size_t i3=0; i3<n3; i3++) {
-	  size_t idx=i1 + n1*eDim + n1*n2*i3;
-	  eMat(i1, i3)=ListElt[idx];
-	}
-      return eMat;
-    }
-    if (iDim == 2) {
-      MyMatrix<T> eMat(n1, n2);
-      for (size_t i1=0; i1<n1; i1++)
-	for (size_t i2=0; i2<n2; i2++) {
-	  size_t idx=i1 + n1*i2 + n1*n2*eDim;
-	  eMat(i1, i1)=ListElt[idx];
-	}
-      return eMat;
-    }
-    std::cerr << "Wrong input in ThreeDimArray\n";
-    std::cerr << "iDim=" << iDim << "\n";
-    std::cerr << "Allowed values: 0, 1, 2\n";
-    exit(1);
-  }
-private:
-  size_t n1, n2, n3;
-  T *ListElt;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-T VectorMin(MyVector<T> const& eVect)
-{
-  T eMin=eVect[0];
-  int siz=eVect.size();
-  for (int i=1; i<siz; i++) {
-    T eVal=eVect(i);
-    if (eVal < eMin)
-      eMin=eVal;
-  }
-  return eMin;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-T VectorMax(MyVector<T> const& eVect)
-{
-  T eMax=eVect[0];
-  int siz=eVect.size();
-  for (int i=1; i<siz; i++) {
-    T eVal=eVect(i);
-    if (eVal > eMax)
-      eMax=eVal;
-  }
-  return eMax;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-T ScalarProduct(MyVector<T> const& V1, MyVector<T> const & V2)
-{
-  if (V1.size() != V2.size()) {
-    std::cerr << "Vectors of wrong sizes\n";
-    exit(1);
-  }
-  size_t siz=V1.size();
-  T eSum=0;
-  for (size_t i=0; i<siz; i++) {
-    T eVal1=V1(i);
-    T eVal2=V2(i);
-    eSum += eVal1*eVal2;
-  }
-  return eSum;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> ZeroMatrix(int const& nbRow, int const& nbCol)
-{
-  MyMatrix<T> retMat(nbRow, nbCol);
-  T eZero;
-  eZero=0;
-  for (int iRow=0; iRow<nbRow; iRow++)
-    for (int iCol=0; iCol<nbCol; iCol++)
-      retMat(iRow, iCol)=eZero;
-  return retMat;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> ZeroVector(int const& nbRow)
-{
-  MyVector<T> retVect(nbRow);
-  T eZero;
-  eZero=0;
-  for (int iRow=0; iRow<nbRow; iRow++)
-    retVect(iRow)=eZero;
-  return retVect;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void TMat_Copy(MyMatrix<T> const&eMatI, MyMatrix<T> &eMatO)
-{
-  int nbRowI, nbColI, nbRowO, nbColO;
-  nbRowI=eMatI.rows();
-  nbRowO=eMatO.rows();
-  nbColI=eMatI.cols();
-  nbColO=eMatO.cols();
-  if (nbRowI != nbRowO || nbColI != nbColO) {
-    std::cerr << "Error in the input\n";
-    exit(1);
-  }
-  for (int iRow=0; iRow<nbRowI; iRow++)
-    for (int iCol=0; iCol<nbColI; iCol++) {
-      T eVal=eMatI(iRow, iCol);
-      eMatO(iRow, iCol)=eVal;
-    }
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void ZeroAssignation(MyMatrix<T> &TheMat)
-{
-  int nbRow=TheMat.rows();
-  int nbCol=TheMat.cols();
-  T eVal;
-  eVal=0;
-  for (int iRow=0; iRow<nbRow; iRow++)
-    for (int iCol=0; iCol<nbCol; iCol++)
-      TheMat(iRow, iCol)=eVal;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> TransposedMat(MyMatrix<T> const&TheMat)
-{
-  int nbCol=TheMat.cols();
-  int nbRow=TheMat.rows();
-  MyMatrix<T> TheTrans(nbCol, nbRow);
-  for (int iCol=0; iCol<nbCol; iCol++)
-    for (int iRow=0; iRow<nbRow; iRow++) {
-      T eVal=TheMat(iRow, iCol);
-      TheTrans(iCol, iRow)=eVal;
-    }
-  return TheTrans;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> VectorMatrix(MyVector<T> const& eVect, MyMatrix<T> const& eMat)
-{
-  int nbCol=eMat.cols();
-  int nbRow=eMat.rows();
-  int n=eVect.size();
-  if (n != nbRow) {
-    std::cerr << "n should be equal to nbRow\n";
-    exit(1);
-  }
-  MyVector<T> rVect(nbCol);
-  for (int iCol=0; iCol<nbCol; iCol++) {
-    T eSum=0;
-    for (int iRow=0; iRow<nbRow; iRow++) {
-      T eVal=eMat(iRow, iCol);
-      T fVal=eVect(iRow);
-      eSum += eVal*fVal;
-    }
-    rVect(iCol)=eSum;
-  }
-  return rVect;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void SwapValues(T& val1, T& val2)
-{
-  T prov;
-  prov=val1;
-  val1=val2;
-  val2=prov;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-struct Inverse_exception {
-  std::string errmsg;
-  T pivot;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void TMat_Inverse_destroy(MyMatrix<T> &Input, MyMatrix<T> &Output)
-{
-  int nbRow, nbCol;
-  int iCol, iRow, WeFound;
-  int iRowFound;
-  int iColB;
-  nbRow=Input.rows();
-  nbCol=Input.cols();
-  T prov1, prov2, eVal;
-  if (nbRow != nbCol) {
-    std::cerr << "Error on nbRow, nbCol in TMat_Inverse_destroy";
-    exit(1);
-  }
-  for (iRow=0; iRow<nbRow; iRow++)
-    for (iCol=0; iCol<nbRow; iCol++)
-      {
-	if (iRow == iCol)
-	  prov1=1;
-	else
-	  prov1=0;
-	Output(iRow,iCol)=prov1;
-      }
-  iRowFound=-400;
-  for (iCol=0; iCol<nbCol; iCol++)
-    {
-      WeFound=0;
-      for (iRow=iCol; iRow<nbRow; iRow++)
-	if (WeFound == 0)
-	  {
-	    eVal=Input(iRow,iCol);
-	    if (eVal != 0)
-	      {
-		WeFound=1;
-		iRowFound=iRow;
-		prov1=1/eVal;
-	      }
-	  }
-      if (WeFound == 0) {
-	Inverse_exception<T> eExcept;
-	eExcept.errmsg="Error in matrix inversion";
-	eExcept.pivot=0;
-	throw eExcept;
-      }
-      for (iColB=0; iColB<nbCol; iColB++)
-	{
-	  eVal=prov1*Input(iRowFound,iColB);
-	  Input(iRowFound,iColB)=eVal;
-	  eVal=prov1*Output(iRowFound,iColB);
-	  Output(iRowFound,iColB)=eVal;
-	}
-      for (iRow=0; iRow<nbRow; iRow++)
-	if (iRow != iRowFound) {
-	  prov2=Input(iRow, iCol);
-	  for (iColB=0; iColB<nbCol; iColB++) {
-	    prov1=prov2*Input(iRowFound,iColB);
-	    eVal=Input(iRow,iColB) - prov1;
-	    Input(iRow, iColB)=eVal;
-	    //
-	    prov1=prov2*Output(iRowFound,iColB);
-	    eVal=Output(iRow,iColB) - prov1;
-	    Output(iRow,iColB)=eVal;
-	  }
-	}
-      if (iRowFound != iCol) {
-	for (iColB=0; iColB<nbCol; iColB++) {
-	  prov1=Input(iRowFound, iColB);
-	  prov2=Input(iCol, iColB);
-	  SwapValues(prov1, prov2);
-	  Input(iRowFound, iColB)=prov1;
-	  Input(iCol     , iColB)=prov2;
-	  //
-	  prov1=Output(iRowFound, iColB);
-	  prov2=Output(iCol, iColB);
-	  SwapValues(prov1, prov2);
-	  Output(iRowFound, iColB)=prov1;
-	  Output(iCol     , iColB)=prov2;
-	}
-      }
-    }
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> Inverse(MyMatrix<T> const&Input)
-{
-  int nbRow, nbCol;
-  nbRow=Input.rows();
-  nbCol=Input.cols();
-  MyMatrix<T> provMat(nbRow, nbCol);
-  TMat_Copy(Input, provMat);
-  MyMatrix<T> Output(nbRow, nbRow);
-  TMat_Inverse_destroy(provMat, Output);
-  return Output;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-/* This function is for rank calculation.
-   Of course, it can be used for many other purpose:
-   1> Selecting specific sets of rows and columns for reduction 
-   2> Computing a set of generators of the zero set.
-   Initial matrix is of the form
-   Input (nbRow, nbCol)
-   The zero matrix is of the form
-   NSP (dimKer, nbCol)
-*/
-template<typename T>
-struct SelectionRowCol {
-  int TheRank;
-  MyMatrix<T> NSP;
-  std::vector<int> ListColSelect;
-  std::vector<int> ListRowSelect;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-SelectionRowCol<T> TMat_SelectRowCol(MyMatrix<T> const&Input)
-{
-  int nbRow, nbCol;
-  T eVal, eVal1, eVal2, eVal3;
-  int iRank;
-  int sizMat, nbVect, iRow, iCol;
-  int eCol, IsFinished;
-  int nbVectZero, maxRank, eRank, FirstNonZeroCol;
-  nbRow=Input.rows();
-  nbCol=Input.cols();
-  maxRank=nbRow;
-  if (nbCol < maxRank)
-    maxRank=nbCol;
-  sizMat=maxRank+1;
-  MyMatrix<T> provMat(sizMat, nbCol);
-  std::vector<int> ListColSelect;
-  std::vector<int> ListRowSelect;
-  std::vector<int> ListColSelect01(nbCol);
-  for (iCol=0; iCol<nbCol; iCol++)
-    ListColSelect01[iCol]=0;
-  eRank=0;
-  for (iRow=0; iRow<nbRow; iRow++) {
-    for (iCol=0; iCol<nbCol; iCol++) {
-      eVal=Input(iRow, iCol);
-      provMat(eRank, iCol)=eVal;
-    }
-    for (iRank=0; iRank<eRank; iRank++) {
-      eCol=ListColSelect[iRank];
-      eVal1=provMat(eRank, eCol);
-      for (iCol=0; iCol<nbCol; iCol++) {
-	eVal2=provMat(iRank, iCol);
-	eVal3=provMat(eRank, iCol);
-	eVal=eVal1*eVal2;
-	eVal3=eVal3 - eVal;
-	  provMat(eRank, iCol)=eVal3;
-      }
-    }
-    IsFinished=1;
-    FirstNonZeroCol=-1;
-    for (iCol=0; iCol<nbCol; iCol++)
-      if (IsFinished == 1) {
-	eVal=provMat(eRank, iCol);
-	if (eVal != 0) {
-	  FirstNonZeroCol=iCol;
-	  IsFinished=0;
-	}
-      }
-    if (IsFinished == 0) {
-      ListColSelect.push_back(FirstNonZeroCol);
-      ListRowSelect.push_back(iRow);
-      ListColSelect01[FirstNonZeroCol]=1;
-      eVal=provMat(eRank, FirstNonZeroCol);
-      eVal2=1/eVal;
-      for (iCol=0; iCol<nbCol; iCol++) {
-	eVal=provMat(eRank, iCol);
-	eVal=eVal*eVal2;
-	provMat(eRank, iCol)=eVal;
-      }
-      for (iRank=0; iRank<eRank; iRank++) {
-	eVal1=provMat(iRank, FirstNonZeroCol);
-	for (iCol=0; iCol<nbCol; iCol++) {
-	  eVal2=provMat(iRank, iCol);
-	  eVal3=provMat(eRank, iCol);
-	  eVal=eVal1*eVal3;
-	  eVal2=eVal2 - eVal;
-	  provMat(iRank, iCol)=eVal2;
-	}
-      }
-      eRank++;
-    }
-  }
-  nbVectZero=nbCol-eRank;
-  MyMatrix<T> NSP(nbVectZero, nbCol);
-  //  std::cerr << "nbVectZero=" << nbVectZero << " nbCol=" << nbCol << "\n";
-  ZeroAssignation(NSP);
-  nbVect=0;
-  for (iCol=0; iCol<nbCol; iCol++)
-    if (ListColSelect01[iCol] == 0)
-      {
-	eVal=1;
-	NSP(nbVect, iCol)=eVal;
-	for (iRank=0; iRank<eRank; iRank++)
-	  {
-	    eCol=ListColSelect[iRank];
-	    eVal=provMat(iRank, iCol);
-	    eVal=-eVal;
-	    NSP(nbVect, eCol)=eVal;
-	  }
-	nbVect++;
-      }
-  SelectionRowCol<T> retSelect{eRank, NSP, ListColSelect, ListRowSelect};
-  return retSelect;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> TVec_AplusBC(MyVector<T> const& V1, MyVector<T> const& V2, T const& alpha)
-{
-  int n=V1.size();
-  MyVector<T> VRet=MyVector<T>(n);
-  for (int i=0; i<n; i++)
-    {
-      T eVal=V1(i) + alpha*V2(i);
-      VRet(i)=eVal;
-    }
-  return VRet;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void TVec_AddBCtoA(MyVector<T> &V1, MyVector<T> const& V2, T const& alpha)
-{
-  T eVal;
-  int n=V1.size();
-  for (int i=0; i<n; i++)
-    {
-      eVal=V1(i) + alpha*V2(i);
-      V1(i)=eVal;
-    }
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> SelectRow(MyMatrix<T> const&TheMat, std::vector<int> const& eList)
-{
-  int nbRowRed=eList.size();
-  int nbCol=TheMat.cols();
-  MyMatrix<T> TheProv(nbRowRed, nbCol);
-  for (int iRow=0; iRow<nbRowRed; iRow++) {
-    int jRow=eList[iRow];
-    for (int iCol=0; iCol<nbCol; iCol++) {
-      T eVal=TheMat(jRow, iCol);
-      TheProv(iRow, iCol)=eVal;
-    }
-  }
-  return TheProv;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> SelectRow(MyMatrix<T> const&TheMat, Face const& eList)
-{
-  int nbRowRed=eList.count();
-  int nbCol=TheMat.cols();
-  MyMatrix<T> TheProv(nbRowRed, nbCol);
-  int jRow=eList.find_first();
-  for (int iRow=0; iRow<nbRowRed; iRow++) {
-    for (int iCol=0; iCol<nbCol; iCol++) {
-      T eVal=TheMat(jRow, iCol);
-      TheProv(iRow, iCol)=eVal;
-    }
-    jRow=eList.find_next(jRow);
-  }
-  return TheProv;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyMatrix<T> SelectColumn(MyMatrix<T> const& TheMat, std::vector<int> const& eList)
-{
-  int nbRow=TheMat.rows();
-  int nbColRed=eList.size();
-  MyMatrix<T> TheProv(nbRow, nbColRed);
-  for (int iCol=0; iCol<nbColRed; iCol++) {
-    int jCol=eList[iCol];
-    for (int iRow=0; iRow<nbRow; iRow++)
-      TheProv(iRow, iCol)=TheMat(iRow, jCol);
-  }
-  return TheProv;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> SelectColumnVector(MyVector<T> const& TheV, std::vector<int> const& eList)
-{
-  int nbColRed=eList.size();
-  MyVector<T> TheProv(nbColRed);
-  for (int iCol=0; iCol<nbColRed; iCol++) {
-    int jCol=eList[iCol];
-    TheProv(iCol)=TheV(jCol);
-  }
-  return TheProv;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-struct SolMatResult {
-  bool result;
-  MyVector<T> eSol;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void WriteStdVector(std::ostream &os, std::vector<T> const & TheVec)
-{
-  T eVal;
-  int i, n;
-  n=TheVec.size();
-  for (i=0; i<n; i++) {
-    eVal=TheVec[i];
-    os << " " << eVal;
-  }
-  os << "\n";
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> CanonicalizeVector(MyVector<T> const& V)
-{
-  int n=V.size();
-  T TheMin=0;
-  int iSelect=-1;
-  for (int i=0; i<n; i++) {
-    T eVal=V(i);
-    if (eVal != 0) {
-      if (iSelect == -1) {
-	TheMin=T_abs(eVal);
-	iSelect=i;
-      }
-      else {
-	T eAbs=T_abs(eVal);
-	if (eAbs < TheMin) {
-	  TheMin=eAbs;
-	  iSelect=i;
-	}
-      }
-    }
-  }
-  if (iSelect == -1)
-    return V;
-  MyVector<T> Vret(n);
-  T eQuot=1/V(iSelect);
-  for (int i=0; i<n; i++)
-    Vret(i)=V(i)*eQuot;
-  return Vret;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-/* return true if V1 < V2 according to lexicographic order */
-template<typename T>
-bool IsLower(MyVector<T> const& V1, MyVector<T> const& V2)
-{
-  int n=V1.size();
-  for (int i=0; i<n; i++) {
-    if (V1(i) != V2(i)) {
-      if (V1(i) < V2(i)) {
-	return true;
-      }
-      else {
-	return false;
-      }
-    }
-  }
-  return false;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct RecVar {
-  double eTimeDay;
-  int iTime;
-  std::string strPres;
-  std::string strFile;
-  std::string strAll;
-  //
-  std::string VarName1;
-  std::string VarName2;
-  double minval;
-  double maxval;
-  double mindiff;
-  double maxdiff;
-  std::string Unit;
-  MyMatrix<double> U;
-  MyMatrix<double> V;
-  MyMatrix<double> F;
-  std::string VarNature;
-  std::string nameU, nameV;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct CoordGridArrayFD {
-  int eta, xi;
-  MyMatrix<int> MSK;
-  MyMatrix<double> LON, LAT, DEP, ANG;
-  int nbWet;
-  bool HaveDEP;
-  std::vector<int> Idx, Jdx;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct GridArray {
-  std::string ModelName;
-  int IsFE;
-  int IsLonLat;
-  CoordGridArrayFD GrdArrRho, GrdArrU, GrdArrV, GrdArrPsi;
-  MyMatrix<int> INE;
-  bool L_IndexSelect;
-  std::vector<int> I_IndexSelect;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct ArrayHistory {
-  std::string KindArchive;
-  int nbFile, nbTime;
-  double FirstTime, LastTime;
-  std::string FirstTimeStr, LastTimeStr;
-  std::vector<std::string> ListFileNames;
-  std::vector<std::vector<std::string> > ListListFileNames;
-  std::vector<int> ListIFile;
-  std::vector<int> ListIRec;
-  std::vector<double> ListTime;
-  bool AppendVarName;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct TotalArrGetData {
-  GridArray GrdArr;
-  ArrayHistory eArr;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct VarQuery {
-  double eTimeDay;
-  int iTime;
-  std::string NatureQuery; // Can be "instant", "average", "swathMax", "swathMin"
-  std::string NaturePlot; // Can be "single" or "diff"
-  double TimeFrameDay;
-};
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-struct PlotBound {
-  bool VariableColormap;
-  std::vector<std::string> BoundSingle_var;
-  std::vector<double> BoundSingle_min;
-  std::vector<double> BoundSingle_max;
-  std::vector<std::string> BoundDiff_var;
-  std::vector<double> BoundDiff_min;
-  std::vector<double> BoundDiff_max;
-};
 /* ------------------------------ */
 
 
@@ -3084,7 +3031,7 @@ struct InterpInfo {
 InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double const& eTimeDay)
 {
   InterpInfo eInterpInfo;
-  double tolDay=double(1)/double(100000);
+  double tolDay=double(1)/double(1000000);
   int nbTime=LTime.size();
   for (int iTime=0; iTime<nbTime; iTime++) {
     double eDist=fabs(LTime[iTime] - eTimeDay);
@@ -3137,7 +3084,7 @@ InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double con
 /* ------------------------------ */
 std::vector<int> GetIntervalListITime(std::vector<double> const& LTime, double const& eTimeDay, double const& TimeFrameDay)
 {
-  double epsilon=0.0001;
+  double epsilon=0.0000001;
   std::vector<int> ListRelITime;
   double eTimeLow=eTimeDay - epsilon;
   double eTimeUpp=eTimeDay + TimeFrameDay - epsilon;
@@ -3298,7 +3245,7 @@ RecVar INTERPOL_SingleRecVarInterpolation(SingleArrayInterpolation const& eSingA
     double eF=0;
     double eU=0;
     double eV=0;
-    if (eSingArr.LSingle[iEnt].status == 1) {
+    if (eSingArr.LSingle[iEnt].status == true) {
       int eEta=eSingArr.LEta[iEnt];
       int eXi=eSingArr.LXi[iEnt];
       for (auto & ePart : eSingArr.LSingle[iEnt].LPart) {
@@ -3342,7 +3289,7 @@ MyMatrix<int> ComputeInsideMask(SingleArrayInterpolation const& eSingArr)
   MyMatrix<int> F=ZeroMatrix<int>(eta_rho, xi_rho);
   int nbEnt=eSingArr.LEta.size();
   for (int iEnt=0; iEnt<nbEnt; iEnt++)
-    if (eSingArr.LSingle[iEnt].status == 1) {
+    if (eSingArr.LSingle[iEnt].status == true) {
       int eEta=eSingArr.LEta[iEnt];
       int eXi=eSingArr.LXi[iEnt];
       F(eEta, eXi)=1;
@@ -3536,228 +3483,6 @@ void INTERPOL_NetcdfAppendVarName(std::string const& eFileNC, GridArray const& G
 
 
 /* ------------------------------ */
-std::string NAMELIST_ClearEndOfLine(std::string const& eStr)
-{
-  std::string eCharCommentB="!";
-  std::string eStr3=NAMELIST_RemoveAfterLastChar(eStr, eCharCommentB);
-  //
-  int iPos=-1;
-  int len=eStr3.size();
-  std::string eLastChar=",";
-  for (int i=0; i<len; i++) {
-    int j=len-1-i;
-    if (iPos == -1) {
-      std::string eChar=eStr3.substr(j,1);
-      if (eChar == eLastChar)
-	iPos=j;
-    }
-  }
-  if (iPos == -1)
-    return eStr3;
-  std::string eStrPrior=eStr3.substr(0, iPos);
-  std::string eStrPosterior=eStr3.substr(iPos+1, len-iPos-1);
-  bool test=STRING_IsStringReduceToSpace(eStrPosterior);
-  if (test) {
-    return eStrPrior;
-  }
-  else {
-    return eStr3;
-  }
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<double> NAMELIST_ConvertFortranStringListDoubleToCppVectorDouble(std::string const& eVarValue)
-{
-  //  std::cerr << "eVarValue=" << eVarValue << "\n";
-  std::string eSepChar=",";
-  std::vector<std::string> ListStr=STRING_Split(eVarValue, eSepChar);
-  std::vector<double> eListRetDouble;
-  int siz=ListStr.size();
-  for (int i=0; i<siz; i++) {
-    std::string eStr1=ListStr[i];
-    std::string eStr2=STRING_RemoveSpacesBeginningEnd(eStr1);
-    double eVal;
-    std::istringstream(eStr2) >> eVal;
-    eListRetDouble.push_back(eVal);
-  }
-  //  std::cerr << "eListRetDouble=";
-  //  for (auto& eVal : eListRetDouble)
-  //    std::cerr << " " << eVal;
-  //  std::cerr << "\n";
-  return eListRetDouble;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<int> NAMELIST_ConvertFortranStringListIntToCppVectorInt(std::string const& eVarValue)
-{
-  //  std::cerr << "eVarValue=" << eVarValue << "\n";
-  std::string eSepChar=",";
-  std::vector<std::string> ListStr=STRING_Split(eVarValue, eSepChar);
-  std::vector<int> eListRetInt;
-  int siz=ListStr.size();
-  for (int i=0; i<siz; i++) {
-    std::string eStr1=ListStr[i];
-    std::string eStr2=STRING_RemoveSpacesBeginningEnd(eStr1);
-    int eVal;
-    std::istringstream(eStr2) >> eVal;
-    eListRetInt.push_back(eVal);
-  }
-  //  std::cerr << "eListRetDouble=";
-  //  for (auto& eVal : eListRetDouble)
-  //    std::cerr << " " << eVal;
-  //  std::cerr << "\n";
-  return eListRetInt;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-void NAMELIST_ReadNamelistFile(std::string const& eFileName, FullNamelist &eFullNamelist)
-{
-  if (IsExistingFile(eFileName) == false) {
-    std::cerr << "The following namelist file is missing\n";
-    std::cerr << "eFileName = " << eFileName << "\n";
-    exit(1);
-  }
-  std::ifstream INfs;
-  INfs.open(eFileName);
-  int InBlock=0;
-  std::string eBlockName;
-  int iLine=0;
-  while(!INfs.eof()) {
-    std::string Ampersand="&";
-    std::string strTab="\t";
-    int siz=1024;
-    char eLine[siz];
-    INfs.getline(eLine, siz);
-    std::string PreStr=eLine;
-    //    std::cerr << "iLine=" << iLine << "\n";
-    //    std::cerr << "PreStr=" << PreStr << "\n";
-    std::string eCharComment="!";
-    std::string PreStrB=NAMELIST_RemoveAfterCommentChar(PreStr, eCharComment);
-    //    std::cerr << "PreStrB=" << PreStrB << "\n";
-    std::string eStr=STRING_RemoveSpacesBeginningEnd(PreStrB);
-    //    std::cerr << "eStr=" << eStr << "\n";
-    int len=eStr.length();
-    if (eStr.find(strTab) != std::string::npos) {
-      std::cerr << "Tabs are not allowed\n";
-      std::cerr << "LINE=" << eStr << "\n";
-      exit(1);
-    }
-    if (len> 0) {
-      if (eStr.find(Ampersand) != std::string::npos) {
-	std::string eFirstChar=eStr.substr(0,1);
-	if (eFirstChar != "&") {
-	  std::cerr << "Error while reading namelist file = " << eFileName << "\n";
-	  std::cerr << "Error, Ampersand (&) should be only in the first character\n";
-	  std::cerr << "LINE=" << eStr << "\n";
-	  exit(1);
-	}
-	std::string strRed=eStr.substr(1, len-1);
-	if (InBlock == 0) {
-	  eBlockName=strRed;
-          auto search=eFullNamelist.ListBlock.find(eBlockName);
-          if (search == eFullNamelist.ListBlock.end() ) {
-	    std::cerr << "Find BlockName = " << eBlockName << "\n";
-	    std::cerr << "which is not in the authorized list\n";
-	    std::cerr << "LINE=" << eStr << "\n";
-	    std::cerr << "List of authorized block names:\n";
-            for (auto & eBlock : eFullNamelist.ListBlock) {
-	      std::cerr << "Block name=" << eBlock.first << "\n";
-	    }
-	    exit(1);
-	  }
-	  InBlock=1;
-	}
-	else {
-	  if (strRed != "END") {
-	    std::cerr << "Ampersand detected. We should leave with a END\n";
-	    std::cerr << "LINE=" << eStr << "\n";
-	    exit(1);
-	  }
-	  InBlock=0;
-	}
-      }
-      else {
-	if (eStr != "/") {
-	  std::string eStr3=NAMELIST_ClearEndOfLine(eStr);
-	  //	  std::cerr << "eStr3=" << eStr3 << "\n";
-	  std::string strEqual="=";
-	  int posEqual=STRING_GetCharPositionInString(eStr3, strEqual);
-	  if (posEqual != -1) {
-	    int len3=eStr3.length();
-	    //	    std::cerr << "eStr=" << eStr << "\n";
-	    //	    std::cerr << "eStr3=" << eStr3 << "\n";
-	    //	    std::cerr << "posEqual=" << posEqual << " len3=" << len3 << "\n";
-	    std::string eStrPrior=eStr3.substr(0, posEqual);
-	    std::string eStrPosterior=eStr3.substr(posEqual+1, len3-posEqual-1);
-	    //	    std::cerr << "eStrPrior=" << eStrPrior << "\n";
-	    //	    std::cerr << "eStrPosterior=" << eStrPosterior << "\n";
-	    std::string eVarName=STRING_RemoveSpacesBeginningEnd(eStrPrior);
-	    std::string eVarValue=STRING_RemoveSpacesBeginningEnd(eStrPosterior);
-	    //	    std::cerr << "eVarName=" << eVarName << "\n";
-	    //	    std::cerr << "eVarValue=" << eVarValue << "\n";
-	    std::string eVarNature=NAMELIST_FindPositionVariableInBlock(
-		      eVarName, eFullNamelist.ListBlock[eBlockName]);
-	    if (eVarNature == "not found") {
-	      //	      NAMELIST_WriteNamelistFile(std::cerr, eFullNamelist);
-	      NAMELIST_WriteBlock(std::cerr, eBlockName, eFullNamelist.ListBlock[eBlockName]);
-	      std::cerr << "Error in reading the NAMELIST file. See above allowed entries\n";
-	      std::cerr << "The variable " << eVarName << "\n";
-	      std::cerr << "is in block " << eBlockName << "\n";
-	      std::cerr << "of the file " << eFileName << "\n";
-	      std::cerr << "but it is not allowed for the chosen application\n";
-	      exit(1);
-	    }
-	    if (eVarNature == "int") {
-	      int eVal;
-	      std::istringstream(eVarValue) >> eVal;
-	      eFullNamelist.ListBlock[eBlockName].ListIntValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "bool") {
-	      bool eVal=NAMELIST_ReadBoolValue(eVarValue);
-	      eFullNamelist.ListBlock[eBlockName].ListBoolValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "double") {
-	      double eVal;
-	      std::istringstream(eVarValue) >> eVal;
-	      eFullNamelist.ListBlock[eBlockName].ListDoubleValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "string") {
-	      std::string eVal=NAMELIST_ConvertFortranStringToCppString(eVarValue);
-	      eFullNamelist.ListBlock[eBlockName].ListStringValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "listdouble") {
-	      std::vector<double> eVal=NAMELIST_ConvertFortranStringListDoubleToCppVectorDouble(eVarValue);
-	      eFullNamelist.ListBlock[eBlockName].ListListDoubleValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "listint") {
-	      std::vector<int> eVal=NAMELIST_ConvertFortranStringListIntToCppVectorInt(eVarValue);
-	      eFullNamelist.ListBlock[eBlockName].ListListIntValues[eVarName]=eVal;
-	    }
-	    if (eVarNature == "liststring") {
-	      std::vector<std::string> eVal=NAMELIST_ConvertFortranListStringToCppListString(eVarValue);
-	      eFullNamelist.ListBlock[eBlockName].ListListStringValues[eVarName]=eVal;
-	    }
-	  }
-	}
-	else {
-	  InBlock=0;	  
-	}
-      }
-    }
-    iLine++;
-  }
-  INfs.close();
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
 {
   std::map<std::string, SingleBlock> ListBlock;
@@ -3813,6 +3538,9 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   ListStringValues2["GridResolution"]="HighRes";
   ListBoolValues2["DrawRiver"]=false;
   ListBoolValues2["PrintMMA"]=false;
+  ListBoolValues2["LocateMM"]=false;
+  ListBoolValues2["DoMain"]=true;
+  ListBoolValues2["DoTransect"]=false;
   ListBoolValues2["DrawContourBathy"]=false;
   ListBoolValues2["DrawAnnotation"]=false;
   ListDoubleValues2["AnnotationLon"]=0;
@@ -3824,7 +3552,7 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   ListListStringValues2["BoundDiff_var"]={};
   ListListDoubleValues2["BoundDiff_min"]={};
   ListListDoubleValues2["BoundDiff_max"]={};
-  ListBoolValues2["VariableColormap"]=false;
+  ListBoolValues2["VariableRange"]=false;
   ListBoolValues2["FillLand"]=true;
   SingleBlock BlockPLOT;
   BlockPLOT.ListIntValues=ListIntValues2;
@@ -3858,6 +3586,89 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   eFullNamelist.ListBlock=ListBlock;
   eFullNamelist.FileName="undefined";
   return eFullNamelist;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+FullNamelist NAMELIST_GetStandard_CREATE_sflux()
+{
+  std::map<std::string, SingleBlock> ListBlock;
+  // PROC
+  std::string BlockName1="PROC";
+  std::map<std::string, int> ListIntValues1;
+  std::map<std::string, bool> ListBoolValues1;
+  std::map<std::string, double> ListDoubleValues1;
+  std::map<std::string, std::string> ListStringValues1;
+  std::map<std::string, std::vector<std::string> > ListListStringValues1;
+  ListStringValues1["MODELNAME"]="COSMO or WAM, ROMS, ROMS_IVICA, WWM, WW3, GRIB_DWD, GRIB_ECMWF, GRIB_GFS, GRIB_COSMO";
+  ListStringValues1["GridFile"]="roms_grid.nc";
+  ListStringValues1["HisPrefix"]="unset_";
+  ListStringValues1["BEGTC"]="20110915.000000";
+  ListDoubleValues1["DELTC"]=600;
+  ListStringValues1["UNITC"]="SEC";
+  ListStringValues1["ENDTC"]="20110925.000000";
+  ListStringValues1["OutPrefix"]="Pictures/DIR_plot/";
+  ListBoolValues1["AnalyticWind"]=false;
+  ListBoolValues1["AnalyticPRMSL"]=true;
+  ListBoolValues1["AnalyticSPFH"]=true;
+  ListBoolValues1["AnalyticSTMP"]=true;
+  SingleBlock BlockPROC;
+  BlockPROC.ListIntValues=ListIntValues1;
+  BlockPROC.ListBoolValues=ListBoolValues1;
+  BlockPROC.ListDoubleValues=ListDoubleValues1;
+  BlockPROC.ListStringValues=ListStringValues1;
+  BlockPROC.ListListStringValues=ListListStringValues1;
+  BlockPROC.BlockName=BlockName1;
+  ListBlock["PROC"]=BlockPROC;
+  // Merging all data
+  FullNamelist eFullNamelist;
+  eFullNamelist.ListBlock=ListBlock;
+  eFullNamelist.FileName="undefined";
+  return eFullNamelist;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+QuadArray GetQuadArray(GridArray const& GrdArr)
+{
+  double MinLon=0, MaxLon=0, MinLat=0, MaxLat=0;
+  if (GrdArr.IsFE == 1) {
+    MinLon=GrdArr.GrdArrRho.LON.minCoeff();
+    MaxLon=GrdArr.GrdArrRho.LON.maxCoeff();
+    MinLat=GrdArr.GrdArrRho.LAT.minCoeff();
+    MaxLat=GrdArr.GrdArrRho.LAT.maxCoeff();
+  }
+  else {
+    bool IsFirst=true;
+    int eta_rho=GrdArr.GrdArrRho.LON.rows();
+    int xi_rho =GrdArr.GrdArrRho.LON.cols();
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	if (GrdArr.GrdArrRho.MSK(i,j) == 1) {
+	  double eLon=GrdArr.GrdArrRho.LON(i,j);
+	  double eLat=GrdArr.GrdArrRho.LAT(i,j);
+	  if (IsFirst == true) {
+	    MinLon=eLon;
+	    MaxLon=eLon;
+	    MinLat=eLat;
+	    MaxLat=eLat;
+	    IsFirst=false;
+	  }
+	  else {
+	    if (eLon < MinLon)
+	      MinLon=eLon;
+	    if (eLon > MaxLon)
+	      MaxLon=eLon;
+	    if (eLat < MinLat)
+	      MinLat=eLat;
+	    if (eLat > MaxLat)
+	      MaxLat=eLat;
+	  }
+	}
+  }
+  return {MinLon, MaxLon, MinLat, MaxLat};
 }
 /* ------------------------------ */
 
@@ -4189,41 +4000,6 @@ struct TripleModelDesc {
   double MinLatCut;
   double MaxLatCut;
 };
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::string GET_GRID_FILE(TripleModelDesc const& eTriple)
-{
-  std::string eModelName=eTriple.ModelName;
-  std::string HisPrefix=eTriple.HisPrefix;
-  if (eModelName == "COSMO")
-    return HisPrefix + "0001.nc";
-  if (eModelName == "WAM")
-    return HisPrefix + "0001.nc";
-  if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
-    return eTriple.GridFile;
-  if (eModelName == "WWM")
-    return eTriple.GridFile;
-  if (eModelName == "WW3") {
-    std::string ThePrefix=HisPrefix + "*";
-    std::vector<std::string> ListFile=ls_operation(ThePrefix);
-    return ListFile[0];
-  }
-  if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_COSMO") {
-    std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
-    if (ListFile.size() == 0) {
-      std::cerr << "The list of files is empty\n";
-      std::cerr << "Error happened in GRIB_GetAllFilesInDirectory\n";
-      exit(1);
-    }
-    return ListFile[0];
-  }
-  std::cerr << "Error in GET_GRID_FILE\n";
-  std::cerr << "Did not find the matching model for the grid\n";
-  std::cerr << "Please correct\n";
-  exit(1);
-}
 /* ------------------------------ */
 
 
@@ -5030,10 +4806,10 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 {
   ArrayHistory eArr=TotalArr.eArr;
   GridArray GrdArr=TotalArr.GrdArr;
-  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
-  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
-  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
-  std::cerr << "eTimeDay=" << eTimeDay << "\n";
+  //  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
+  //  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
+  //  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
+  //  std::cerr << "eTimeDay=" << eTimeDay << "\n";
   InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
   if (eInterpInfo.UseSingleEntry) {
     int iTime=eInterpInfo.iTimeLow;
@@ -5085,7 +4861,7 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (IsExistingFile(eFile) == false) {
     std::cerr << "Get3DvariableSpecEntry_FD\n";
@@ -5124,7 +4900,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
     std::vector<size_t> start{size_t(iRec), 0, 0, 0};
     std::vector<size_t> count{1, size_t(s_vert), size_t(eta), size_t(xi)};
     std::vector<double> eVal(s_vert*eta*xi);
-    ThreeDimArray<double> eArr(s_vert, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_vert, eta, xi);
     netCDF::NcType eType=data.getType();
     bool IsDone=false;
     if (eType == netCDF::NcType::nc_DOUBLE) {
@@ -5153,7 +4929,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
     for (int k=0; k<s_vert; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++) {
-	  eArr.assign(k, i, j, eVal[idx]);
+	  eArr(k, i, j)=eVal[idx];
 	  idx++;
 	}
     return eArr;  
@@ -5198,17 +4974,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrRho.nbWet) {
     int eta=GrdArr.GrdArrRho.eta;
     int xi=GrdArr.GrdArrRho.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrRho.nbWet; iWet++) {
 	int i=GrdArr.GrdArrRho.Idx[iWet];
 	int j=GrdArr.GrdArrRho.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -5217,17 +4993,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrU.nbWet) {
     int eta=GrdArr.GrdArrU.eta;
     int xi=GrdArr.GrdArrU.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrU.nbWet; iWet++) {
 	int i=GrdArr.GrdArrU.Idx[iWet];
 	int j=GrdArr.GrdArrU.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -5236,17 +5012,17 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
   if (nbWet == s_rho*GrdArr.GrdArrV.nbWet) {
     int eta=GrdArr.GrdArrV.eta;
     int xi=GrdArr.GrdArrV.xi;
-    ThreeDimArray<double> eArr(s_rho, eta, xi);
+    Eigen::Tensor<double,3> eArr(s_rho, eta, xi);
     for (int k=0; k<s_rho; k++)
       for (int i=0; i<eta; i++)
 	for (int j=0; j<xi; j++)
-	  eArr.assign(k, i, j, 0);
+	  eArr(k, i, j)=0;
     int idx=0;
     for (int k=0; k<s_rho; k++) {
       for (int iWet=0; iWet<GrdArr.GrdArrV.nbWet; iWet++) {
 	int i=GrdArr.GrdArrV.Idx[iWet];
 	int j=GrdArr.GrdArrV.Jdx[iWet];
-	eArr.assign(k, i, j, eVal[idx]);
+	eArr(k, i, j)=eVal[idx];
 	idx++;
       }
     }
@@ -5266,7 +5042,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry_FD(std::string const& eFile, GridAr
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (GrdArr.IsFE == 1) {
     std::cerr << "You need to program this part of the program\n";
@@ -5278,7 +5054,7 @@ ThreeDimArray<double> Get3DvariableSpecEntry(std::string const& eFile, GridArray
 
 
 /* ------------------------------ */
-ThreeDimArray<double> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
+Eigen::Tensor<double,3> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
 {
   ArrayHistory eArr=TotalArr.eArr;
   GridArray GrdArr=TotalArr.GrdArr;
@@ -5305,19 +5081,18 @@ ThreeDimArray<double> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std
   int iRecUpp=eArr.ListIRec[iTimeUpp];
   std::string HisFileLow=eArr.ListFileNames[iFileLow];
   std::string HisFileUpp=eArr.ListFileNames[iFileUpp];
-  ThreeDimArray<double> eVarLow=Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
-  ThreeDimArray<double> eVarUpp=Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
-  std::vector<size_t> LDim=eVarLow.GetDims();
+  Eigen::Tensor<double,3> eVarLow=Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
+  Eigen::Tensor<double,3> eVarUpp=Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
+  auto LDim=eVarLow.dimensions();
   int s_vert=LDim[0];
   int eta=LDim[1];
   int xi=LDim[2];
-  ThreeDimArray<double> RetVar(s_vert, eta, xi);
+  //  Eigen::Tensor<double,3> RetVar=alphaLow*eVarLow + alphaUpp*eVarUpp;
+  Eigen::Tensor<double,3> RetVar(s_vert, eta, xi);
   for (int k=0; k<s_vert; k++)
     for (int i=0; i<eta; i++)
-      for (int j=0; j<xi; j++) {
-	double eVal=alphaLow*eVarLow.get(k, i, j) + alphaUpp*eVarUpp.get(k, i, j);
-	RetVar.assign(k, i, j, eVal);
-      }
+      for (int j=0; j<xi; j++)
+	RetVar(k, i, j)=alphaLow*eVarLow(k, i, j) + alphaUpp*eVarUpp(k, i, j);
   return RetVar;
 }
 /* ------------------------------ */
@@ -5386,7 +5161,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
     int siz=0;
     bool testQuad=TestFeasibilityByQuad(eQuad, eX, eY);
     if (testQuad == false) {
-      return {0, {}};
+      return {false, {}};
     }
     //    std::cerr << "eX=" << eX << " eY=" << eY << "\n";
     while(1) {
@@ -5411,7 +5186,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
       }
       size_t nbEnt=ListCases.size();
       if (nbEnt == 0) {
-	return {0, {}};
+	return {false, {}};
       }
       for (std::vector<int> &fPair : ListCases) {
 	int fEta=fPair[0];
@@ -5430,7 +5205,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
 	    LPart[i]=ePart;
 	  }
 	  //	  std::cerr << "deltaX=" << deltaX << " deltaY=" << deltaY << "\n";
-	  return {1, LPart};
+	  return {true, LPart};
 	}
       }
       siz++;
@@ -5447,7 +5222,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
     SingleRecInterp eEnt=FindRecord(iEtaPrev, iXiPrev, Xp, Yp);
     LRec.push_back(eEnt);
     std::cerr << "iPoint=" << iPoint << " / " << nbPoint << " status=" << eEnt.status << "\n";
-    if (eEnt.status == 1) {
+    if (eEnt.status == true) {
       iEtaPrev=eEnt.LPart[0].eEta;
       iXiPrev=eEnt.LPart[0].eXi;
     }
@@ -5462,11 +5237,13 @@ void Print_InterpolationError(std::vector<SingleRecInterp> const& LRec, GridArra
 {
   int nbPoint=LRec.size();
   double TotalErr=0;
+  int nbPointInside=0;
   for (int iPoint=0; iPoint<nbPoint; iPoint++) {
     double deltaX=ListXY(0, iPoint);
     double deltaY=ListXY(1, iPoint);
     SingleRecInterp eSing=LRec[iPoint];
-    if (eSing.status == 1) {
+    if (eSing.status == true) {
+      nbPointInside++;
       for (auto& ePart : eSing.LPart) {
 	int eEta=ePart.eEta;
 	int eXi=ePart.eXi;
@@ -5480,7 +5257,7 @@ void Print_InterpolationError(std::vector<SingleRecInterp> const& LRec, GridArra
     }
   }
   std::cerr << "Total Interpolation error = " << TotalErr << "\n";
-
+  std::cerr << "nbPoint=" << nbPoint << " nbPointInside=" << nbPointInside << "\n";
 }
 /* ------------------------------ */
 
@@ -5530,11 +5307,12 @@ std::vector<SingleRecInterp> General_FindInterpolationWeight(GridArray const& Gr
 {
   std::vector<SingleRecInterp> LRec;
   QuadCoordinate eQuad=Get_QuadCoordinate(GrdArr);
-
   if (GrdArr.IsFE == 0) {
+    std::cerr << "Before FD_FIND_ELE\n";
     LRec=FD_FIND_ELE(GrdArr.GrdArrRho, eQuad, ListXY);
   }
   else {
+    std::cerr << "Before TRIG_FIND_ELE\n";
     LRec=TRIG_FIND_ELE(GrdArr.INE, GrdArr.GrdArrRho.LON, GrdArr.GrdArrRho.LAT, eQuad, ListXY);
   }
   Print_InterpolationError(LRec, GrdArr, ListXY);
@@ -5680,6 +5458,228 @@ GraphSparseImmutable GetUnstructuredVertexAdjInfo(MyMatrix<int> const& INE, int 
 
 
 /* ------------------------------ */
+std::string NAMELIST_ClearEndOfLine(std::string const& eStr)
+{
+  std::string eCharCommentB="!";
+  std::string eStr3=NAMELIST_RemoveAfterLastChar(eStr, eCharCommentB);
+  //
+  int iPos=-1;
+  int len=eStr3.size();
+  std::string eLastChar=",";
+  for (int i=0; i<len; i++) {
+    int j=len-1-i;
+    if (iPos == -1) {
+      std::string eChar=eStr3.substr(j,1);
+      if (eChar == eLastChar)
+	iPos=j;
+    }
+  }
+  if (iPos == -1)
+    return eStr3;
+  std::string eStrPrior=eStr3.substr(0, iPos);
+  std::string eStrPosterior=eStr3.substr(iPos+1, len-iPos-1);
+  bool test=STRING_IsStringReduceToSpace(eStrPosterior);
+  if (test) {
+    return eStrPrior;
+  }
+  else {
+    return eStr3;
+  }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<double> NAMELIST_ConvertFortranStringListDoubleToCppVectorDouble(std::string const& eVarValue)
+{
+  //  std::cerr << "eVarValue=" << eVarValue << "\n";
+  std::string eSepChar=",";
+  std::vector<std::string> ListStr=STRING_Split(eVarValue, eSepChar);
+  std::vector<double> eListRetDouble;
+  int siz=ListStr.size();
+  for (int i=0; i<siz; i++) {
+    std::string eStr1=ListStr[i];
+    std::string eStr2=STRING_RemoveSpacesBeginningEnd(eStr1);
+    double eVal;
+    std::istringstream(eStr2) >> eVal;
+    eListRetDouble.push_back(eVal);
+  }
+  //  std::cerr << "eListRetDouble=";
+  //  for (auto& eVal : eListRetDouble)
+  //    std::cerr << " " << eVal;
+  //  std::cerr << "\n";
+  return eListRetDouble;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<int> NAMELIST_ConvertFortranStringListIntToCppVectorInt(std::string const& eVarValue)
+{
+  //  std::cerr << "eVarValue=" << eVarValue << "\n";
+  std::string eSepChar=",";
+  std::vector<std::string> ListStr=STRING_Split(eVarValue, eSepChar);
+  std::vector<int> eListRetInt;
+  int siz=ListStr.size();
+  for (int i=0; i<siz; i++) {
+    std::string eStr1=ListStr[i];
+    std::string eStr2=STRING_RemoveSpacesBeginningEnd(eStr1);
+    int eVal;
+    std::istringstream(eStr2) >> eVal;
+    eListRetInt.push_back(eVal);
+  }
+  //  std::cerr << "eListRetDouble=";
+  //  for (auto& eVal : eListRetDouble)
+  //    std::cerr << " " << eVal;
+  //  std::cerr << "\n";
+  return eListRetInt;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+void NAMELIST_ReadNamelistFile(std::string const& eFileName, FullNamelist &eFullNamelist)
+{
+  if (IsExistingFile(eFileName) == false) {
+    std::cerr << "The following namelist file is missing\n";
+    std::cerr << "eFileName = " << eFileName << "\n";
+    exit(1);
+  }
+  std::ifstream INfs;
+  INfs.open(eFileName);
+  int InBlock=0;
+  std::string eBlockName;
+  int iLine=0;
+  while(!INfs.eof()) {
+    std::string Ampersand="&";
+    std::string strTab="\t";
+    int siz=1024;
+    char eLine[siz];
+    INfs.getline(eLine, siz);
+    std::string PreStr=eLine;
+    //    std::cerr << "iLine=" << iLine << "\n";
+    //    std::cerr << "PreStr=" << PreStr << "\n";
+    std::string eCharComment="!";
+    std::string PreStrB=NAMELIST_RemoveAfterCommentChar(PreStr, eCharComment);
+    //    std::cerr << "PreStrB=" << PreStrB << "\n";
+    std::string eStr=STRING_RemoveSpacesBeginningEnd(PreStrB);
+    //    std::cerr << "eStr=" << eStr << "\n";
+    int len=eStr.length();
+    if (eStr.find(strTab) != std::string::npos) {
+      std::cerr << "Tabs are not allowed\n";
+      std::cerr << "LINE=" << eStr << "\n";
+      exit(1);
+    }
+    if (len> 0) {
+      if (eStr.find(Ampersand) != std::string::npos) {
+	std::string eFirstChar=eStr.substr(0,1);
+	if (eFirstChar != "&") {
+	  std::cerr << "Error while reading namelist file = " << eFileName << "\n";
+	  std::cerr << "Error, Ampersand (&) should be only in the first character\n";
+	  std::cerr << "LINE=" << eStr << "\n";
+	  exit(1);
+	}
+	std::string strRed=eStr.substr(1, len-1);
+	if (InBlock == 0) {
+	  eBlockName=strRed;
+          auto search=eFullNamelist.ListBlock.find(eBlockName);
+          if (search == eFullNamelist.ListBlock.end() ) {
+	    std::cerr << "Find BlockName = " << eBlockName << "\n";
+	    std::cerr << "which is not in the authorized list\n";
+	    std::cerr << "LINE=" << eStr << "\n";
+	    std::cerr << "List of authorized block names:\n";
+            for (auto & eBlock : eFullNamelist.ListBlock) {
+	      std::cerr << "Block name=" << eBlock.first << "\n";
+	    }
+	    exit(1);
+	  }
+	  InBlock=1;
+	}
+	else {
+	  if (strRed != "END") {
+	    std::cerr << "Ampersand detected. We should leave with a END\n";
+	    std::cerr << "LINE=" << eStr << "\n";
+	    exit(1);
+	  }
+	  InBlock=0;
+	}
+      }
+      else {
+	if (eStr != "/") {
+	  std::string eStr3=NAMELIST_ClearEndOfLine(eStr);
+	  //	  std::cerr << "eStr3=" << eStr3 << "\n";
+	  std::string strEqual="=";
+	  int posEqual=STRING_GetCharPositionInString(eStr3, strEqual);
+	  if (posEqual != -1) {
+	    int len3=eStr3.length();
+	    //	    std::cerr << "eStr=" << eStr << "\n";
+	    //	    std::cerr << "eStr3=" << eStr3 << "\n";
+	    //	    std::cerr << "posEqual=" << posEqual << " len3=" << len3 << "\n";
+	    std::string eStrPrior=eStr3.substr(0, posEqual);
+	    std::string eStrPosterior=eStr3.substr(posEqual+1, len3-posEqual-1);
+	    //	    std::cerr << "eStrPrior=" << eStrPrior << "\n";
+	    //	    std::cerr << "eStrPosterior=" << eStrPosterior << "\n";
+	    std::string eVarName=STRING_RemoveSpacesBeginningEnd(eStrPrior);
+	    std::string eVarValue=STRING_RemoveSpacesBeginningEnd(eStrPosterior);
+	    //	    std::cerr << "eVarName=" << eVarName << "\n";
+	    //	    std::cerr << "eVarValue=" << eVarValue << "\n";
+	    std::string eVarNature=NAMELIST_FindPositionVariableInBlock(
+		      eVarName, eFullNamelist.ListBlock[eBlockName]);
+	    if (eVarNature == "not found") {
+	      //	      NAMELIST_WriteNamelistFile(std::cerr, eFullNamelist);
+	      NAMELIST_WriteBlock(std::cerr, eBlockName, eFullNamelist.ListBlock[eBlockName]);
+	      std::cerr << "Error in reading the NAMELIST file. See above allowed entries\n";
+	      std::cerr << "The variable " << eVarName << "\n";
+	      std::cerr << "is in block " << eBlockName << "\n";
+	      std::cerr << "of the file " << eFileName << "\n";
+	      std::cerr << "but it is not allowed for the chosen application\n";
+	      exit(1);
+	    }
+	    if (eVarNature == "int") {
+	      int eVal;
+	      std::istringstream(eVarValue) >> eVal;
+	      eFullNamelist.ListBlock[eBlockName].ListIntValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "bool") {
+	      bool eVal=NAMELIST_ReadBoolValue(eVarValue);
+	      eFullNamelist.ListBlock[eBlockName].ListBoolValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "double") {
+	      double eVal;
+	      std::istringstream(eVarValue) >> eVal;
+	      eFullNamelist.ListBlock[eBlockName].ListDoubleValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "string") {
+	      std::string eVal=NAMELIST_ConvertFortranStringToCppString(eVarValue);
+	      eFullNamelist.ListBlock[eBlockName].ListStringValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "listdouble") {
+	      std::vector<double> eVal=NAMELIST_ConvertFortranStringListDoubleToCppVectorDouble(eVarValue);
+	      eFullNamelist.ListBlock[eBlockName].ListListDoubleValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "listint") {
+	      std::vector<int> eVal=NAMELIST_ConvertFortranStringListIntToCppVectorInt(eVarValue);
+	      eFullNamelist.ListBlock[eBlockName].ListListIntValues[eVarName]=eVal;
+	    }
+	    if (eVarNature == "liststring") {
+	      std::vector<std::string> eVal=NAMELIST_ConvertFortranListStringToCppListString(eVarValue);
+	      eFullNamelist.ListBlock[eBlockName].ListListStringValues[eVarName]=eVal;
+	    }
+	  }
+	}
+	else {
+	  InBlock=0;	  
+	}
+      }
+    }
+    iLine++;
+  }
+  INfs.close();
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 PairMinMax ComputeMinMax(GridArray const& GrdArr, MyMatrix<double> const& F)
 {
   bool IsFirst=true;
@@ -5755,7 +5755,7 @@ void ApplyPlotBound(TotalArrGetData const& TotalArr, RecVar & eRecVar, std::stri
       eRecVar.maxdiff=ePlotBound.BoundDiff_max[iD];
     }
   int eSize=eRecVar.F.size();
-  if (ePlotBound.VariableColormap == true && eSize > 0) {
+  if (ePlotBound.VariableRange == true && eSize > 0) {
     PairMinMax ePair=ComputeMinMax(TotalArr.GrdArr, eRecVar.F);
     eRecVar.mindiff=ePair.TheMin;
     eRecVar.maxdiff=ePair.TheMax;
@@ -5786,6 +5786,24 @@ std::string GetStrAllOfPlot(VarQuery const& eQuery)
   if (eQuery.NatureQuery != "instant")
     strAll=strAll + "_" + eQuery.NatureQuery;
   return strAll;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<std::string> GRIB_GetAllFilesInDirectory(std::string const& ePrefix)
+{
+  std::vector<std::string> ListFile=FILE_GetDirectoryFilesRecursively(ePrefix);
+  std::vector<std::string> RetListFile;
+  for (auto & eFile : ListFile) {
+    int len=eFile.size();
+    if (len > 3) {
+      std::string eEnd=eFile.substr(len-3,3);
+      if (eEnd == "grb")
+	RetListFile.push_back(eFile);
+    }
+  }
+  return RetListFile;
 }
 /* ------------------------------ */
 
@@ -6155,6 +6173,40 @@ MyMatrix<double> GRIB_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, std
 
 
 /* ------------------------------ */
+template<typename T>
+MyVector<T> CanonicalizeVector(MyVector<T> const& V)
+{
+  int n=V.size();
+  T TheMin=0;
+  int iSelect=-1;
+  for (int i=0; i<n; i++) {
+    T eVal=V(i);
+    if (eVal != 0) {
+      if (iSelect == -1) {
+	TheMin=T_abs(eVal);
+	iSelect=i;
+      }
+      else {
+	T eAbs=T_abs(eVal);
+	if (eAbs < TheMin) {
+	  TheMin=eAbs;
+	  iSelect=i;
+	}
+      }
+    }
+  }
+  if (iSelect == -1)
+    return V;
+  MyVector<T> Vret(n);
+  T eQuot=1/V(iSelect);
+  for (int i=0; i<n; i++)
+    Vret(i)=V(i)*eQuot;
+  return Vret;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 SingleArrayInterpolation INTERPOL_CreateSingleRecVarInterpol(GridArray const& GrdArrOut, GridArray const& GrdArrIn)
 {
   if (GrdArrOut.IsFE == 1) {
@@ -6268,10 +6320,13 @@ TotalArrayInterpolation INTERPOL_ConstructTotalArray(std::vector<TotalArrGetData
 /* ------------------------------ */
 GridArray NC_ReadRomsGridFile(std::string const& eFile)
 {
+  std::function<int(double)> fConv=[](double const& x) -> int {
+    return int(x);
+  };
   GridArray eRomsGridArray;
   eRomsGridArray.ModelName="ROMS";
   eRomsGridArray.IsFE=0;
-  eRomsGridArray.IsLonLat=1;
+  eRomsGridArray.IsSpherical=true;
   // Rho part of the arrays
   eRomsGridArray.GrdArrRho.LON=NC_Read2Dvariable(eFile, "lon_rho");
   eRomsGridArray.GrdArrRho.LAT=NC_Read2Dvariable(eFile, "lat_rho");
@@ -6283,11 +6338,7 @@ GridArray NC_ReadRomsGridFile(std::string const& eFile)
   eRomsGridArray.GrdArrRho.eta=eta_rho;
   eRomsGridArray.GrdArrRho.xi =xi_rho;
   MyMatrix<double> eMSK_rho_double=NC_Read2Dvariable(eFile, "mask_rho");
-  MyMatrix<int> eMSK_rho(eta_rho, xi_rho);
-  for (int i=0; i<eta_rho; i++)
-    for (int j=0; j<xi_rho; j++)
-      eMSK_rho(i, j)=int(eMSK_rho_double(i, j));
-  eRomsGridArray.GrdArrRho.MSK=eMSK_rho;
+  eRomsGridArray.GrdArrRho.MSK=ConvertMatrix(eMSK_rho_double, fConv);
   InitializeIdxJdxWet(eRomsGridArray.GrdArrRho);
   // U
   eRomsGridArray.GrdArrU.LON=NC_Read2Dvariable(eFile, "lon_u");
@@ -6393,7 +6444,7 @@ GridArray NC_ReadCosmoWamStructGridFile(std::string const& eFile, std::string co
     eCosmoWamGridArray.ModelName="WAM";
   }
   eCosmoWamGridArray.IsFE=0;
-  eCosmoWamGridArray.IsLonLat=1;
+  eCosmoWamGridArray.IsSpherical=true;
   // Rho part of the arrays
   std::string LONstr="LON_" + postfix;
   //  std::cerr << "Before reading " << LONstr << "\n";
@@ -6453,7 +6504,28 @@ void CHECK_UnstructuredGrid(GridArray const& GrdArr)
 {
   int mnp=GrdArr.GrdArrRho.LON.rows();
   int mne=GrdArr.INE.rows();
-  for (int ie=0; ie<mne; ie++)
+  std::cerr << "mne=" << mne << "\n";
+  int nbPlus=0;
+  int nbMinus=0;
+  for (int ie=0; ie<mne; ie++) {
+    int i1=GrdArr.INE(ie,0);
+    int i2=GrdArr.INE(ie,1);
+    int i3=GrdArr.INE(ie,2);
+    if (i1 == i2 || i1 == i3 || i2 == i3) {
+      std::cerr << "For ie=" << ie << "\n";
+      std::cerr << "We have i123=" << i1 << "," << i2 << "," << i3 << "\n";
+    }
+    double xi = GrdArr.GrdArrRho.LON(i1);
+    double yi = GrdArr.GrdArrRho.LAT(i1);
+    double xj = GrdArr.GrdArrRho.LON(i2);
+    double yj = GrdArr.GrdArrRho.LAT(i2);
+    double xk = GrdArr.GrdArrRho.LON(i3);
+    double yk = GrdArr.GrdArrRho.LAT(i3);
+    double area=xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj);
+    if (area > 0)
+      nbPlus++;
+    if (area < 0)
+      nbMinus++;
     for (int i=0; i<3; i++) {
       int IP=GrdArr.INE(ie,i);
       if (IP < 0 || IP >= mnp) {
@@ -6464,6 +6536,12 @@ void CHECK_UnstructuredGrid(GridArray const& GrdArr)
 	exit(1);
       }
     }
+  }
+  if (nbPlus > 0 && nbMinus > 0) {
+    std::cerr << "The grid is incorrectly oriented\n";
+    std::cerr << "nbPlus=" << nbPlus << "  nbMinus=" << nbMinus << "\n";
+    exit(1);
+  }
   MyVector<int> Status=GetBoundaryStatus(GrdArr.INE, mnp);
   int nbStatusNormal=0;
   int nbStatusBound=0;
@@ -6504,7 +6582,7 @@ GridArray NC_ReadWamGridFile(std::string const& eFile)
     return NC_ReadCosmoWamStructGridFile(eFile, "wav");
   GridArray eGridArray;
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   eGridArray.INE=NC_ReadElements(eFile, "ele");
@@ -6549,7 +6627,6 @@ GridArray WWM_ReadGridFile_netcdf(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -6568,10 +6645,12 @@ GridArray WWM_ReadGridFile_netcdf(std::string const& GridFile)
   if (LSPHE == 1) {
     Xname="lon";
     Yname="lat";
+    eGridArray.IsSpherical=true;
   }
   else {
     Xname="x";
     Yname="y";
+    eGridArray.IsSpherical=false;
   }
   //  std::cerr << "WWM_ReadGridFile_netcdf, step 4\n";
   MyVector<double> LON=NC_Read1Dvariable(GridFile, Xname);
@@ -6610,7 +6689,7 @@ GridArray WWM_ReadGridFile_gr3(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -6667,7 +6746,7 @@ GridArray WWM_ReadGridFile_xfn(std::string const& GridFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   if (IsExistingFile(GridFile) == false) {
@@ -6728,7 +6807,7 @@ GridArray NC_ReadWW3_GridFile(std::string const& eFile)
   GridArray eGridArray;
   eGridArray.ModelName="WWM";
   eGridArray.IsFE=1;
-  eGridArray.IsLonLat=1;
+  eGridArray.IsSpherical=true;
   eGridArray.L_IndexSelect=false;
   //
   eGridArray.INE=NC_ReadElements(eFile, "tri");
@@ -6851,13 +6930,17 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
     std::vector<double> LTime=NC_ReadTimeFromFile(HisPrefix, StringTime);
     ListFileNames.push_back(HisPrefix);
     int siz=LTime.size();
+    std::cerr << "siz=" << siz << "\n";
     for (int i=0; i<siz; i++) {
       ListIFile.push_back(0);
       ListIRec.push_back(i);
       ListTime.push_back(LTime[i]);
+      //      std::cerr << "i=" << i << " eTime=" << LTime[i] << "\n";
     }
     FirstTime=ListTime[0];
     LastTime=ListTime[siz-1];
+    std::cerr << "FirstTime=" << FirstTime << "  LastTime=" << LastTime << "\n";
+    std::cerr << "Last - FirstTime=" << LastTime - FirstTime << "\n";
   }
   else {
     int iFileBegin=0;
@@ -7001,10 +7084,46 @@ ArrayHistory WW3_ReadArrayHistory(std::string const& HisFile, std::string const&
 
 
 /* ------------------------------ */
+std::string GET_GRID_FILE(TripleModelDesc const& eTriple)
+{
+  std::string eModelName=eTriple.ModelName;
+  std::string HisPrefix=eTriple.HisPrefix;
+  if (eModelName == "COSMO")
+    return HisPrefix + "0001.nc";
+  if (eModelName == "WAM")
+    return HisPrefix + "0001.nc";
+  if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+    return eTriple.GridFile;
+  if (eModelName == "WWM")
+    return eTriple.GridFile;
+  if (eModelName == "WW3") {
+    std::string ThePrefix=HisPrefix + "*";
+    std::vector<std::string> ListFile=ls_operation(ThePrefix);
+    return ListFile[0];
+  }
+  if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_COSMO") {
+    std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
+    if (ListFile.size() == 0) {
+      std::cerr << "The list of files is empty\n";
+      std::cerr << "Error happened in GRIB_GetAllFilesInDirectory\n";
+      exit(1);
+    }
+    return ListFile[0];
+  }
+  std::cerr << "Error in GET_GRID_FILE\n";
+  std::cerr << "Did not find the matching model for the grid\n";
+  std::cerr << "Please correct\n";
+  exit(1);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
   std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 1\n";
   std::string eModelName=eTriple.ModelName;
+  CHECK_Model_Allowedness(eModelName);
   std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 2\n";
   std::string GridFile=GET_GRID_FILE(eTriple);
   std::cerr << "eModelName=" << eModelName << "\n";
@@ -7238,6 +7357,7 @@ ArrayHistory ReadArrayHistory(TripleModelDesc const& eTriple)
     eArr=GRIB_ReadArrayHistory(HisPrefix);
   }
   else {
+    std::cerr << "Before call to NC_ReadArrayHistory\n";
     eArr=NC_ReadArrayHistory(eTriple);
   }
   return eArr;
@@ -7249,7 +7369,7 @@ ArrayHistory ReadArrayHistory(TripleModelDesc const& eTriple)
 MyMatrix<double> Get2DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& VarName, double const& eTimeDay)
 {
   if (TotalArr.eArr.KindArchive == "NETCDF") {
-    std::cerr << "Before call to NETCDF_Get2DvariableSpecTime\n";
+    //    std::cerr << "Before call to NETCDF_Get2DvariableSpecTime\n";
     return NETCDF_Get2DvariableSpecTime(TotalArr, VarName, eTimeDay);
   }
   if (TotalArr.eArr.KindArchive == "GRIB") {
@@ -7267,6 +7387,8 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
 {
   std::string eModelName=TotalArr.GrdArr.ModelName;
   RecVar eRecVar;
+  int eta_rho=TotalArr.GrdArr.GrdArrRho.LON.rows();
+  int xi_rho=TotalArr.GrdArr.GrdArrRho.LON.cols();
   std::string strPres=DATE_ConvertMjd2mystringPres(eTimeDay);
   std::string strFile=DATE_ConvertMjd2mystringFile(eTimeDay);
   eRecVar.eTimeDay=eTimeDay;
@@ -7279,6 +7401,33 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   MyMatrix<double> V;
   eRecVar.VarName1=eVarName;
   eRecVar.VarName2="unset";
+  if (eVarName == "ZetaSetup") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "ZETA_SETUP", eTimeDay);
+    eRecVar.VarName2="free surface setup";
+    eRecVar.minval=0;
+    eRecVar.maxval=0.76;
+    eRecVar.mindiff=-0.1;
+    eRecVar.maxdiff=0.1;
+    eRecVar.Unit="m";
+  }
+  if (eVarName == "BreakingFraction") {
+    MyMatrix<double> Fhs, Fzeta;
+    if (eModelName == "WWM")
+      Fhs=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
+    if (eModelName == "WWM")
+      Fzeta=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
+    F=MyMatrix<double>(eta_rho, xi_rho);
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	F(i,j)=Fhs(i,j) / (Fzeta(i,j) + TotalArr.GrdArr.GrdArrRho.DEP(i,j));
+    eRecVar.VarName2="Breaking fraction";
+    eRecVar.minval=0;
+    eRecVar.maxval=0.76;
+    eRecVar.mindiff=-0.1;
+    eRecVar.maxdiff=0.1;
+    eRecVar.Unit="nondimensional";
+  }
   if (eVarName == "WIND10") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA" || eModelName == "WWM") {
       U=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
@@ -7305,11 +7454,11 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "SurfCurr") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> Utot=Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
-      ThreeDimArray<double> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
-      int s_rho=Utot.GetDims()[0];
-      MyMatrix<double> Usurf=Utot.DimensionExtraction(0, s_rho-1);
-      MyMatrix<double> Vsurf=Vtot.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> Utot=Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
+      Eigen::Tensor<double,3> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
+      int s_rho=Utot.dimension(0);
+      MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
+      MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
       U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrRho.MSK);
       V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrRho.MSK);
     }
@@ -7376,9 +7525,9 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "TempSurf") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> TheTemp=Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
-      int s_rho=TheTemp.GetDims()[0];
-      F=TheTemp.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> TheTemp=Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
+      int s_rho=TheTemp.dimension(0);
+      F=DimensionExtraction(TheTemp, 0, s_rho-1);
     }
     if (eModelName == "COSMO") {
       F=Get2DvariableSpecTime(TotalArr, "t_s", eTimeDay);
@@ -7395,9 +7544,9 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "SaltSurf") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-      ThreeDimArray<double> TheSalt=Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
-      int s_rho=TheSalt.GetDims()[0];
-      F=TheSalt.DimensionExtraction(0, s_rho-1);
+      Eigen::Tensor<double,3> TheSalt=Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
+      int s_rho=TheSalt.dimension(0);
+      F=DimensionExtraction(TheSalt, 0, s_rho-1);
     }
     eRecVar.VarName2="sea surface salinity";
     eRecVar.minval=30;
@@ -7488,7 +7637,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   }
   if (eVarName == "TM02") {
     if (eModelName == "WWM")
-      F=Get2DvariableSpecTime(TotalArr, "T02", eTimeDay);
+      F=Get2DvariableSpecTime(TotalArr, "TM02", eTimeDay);
     eRecVar.VarName2="zero crossing wave period";
     eRecVar.minval=2;
     eRecVar.maxval=10;
