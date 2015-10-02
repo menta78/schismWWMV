@@ -544,13 +544,17 @@
               WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
               WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
               FLUSH(WINDBG%FHNDL)
-              CALL WWM_ABORT('Incorrect CF wind input')
+              CALL WWM_ABORT('We find a model point outside of the available forcing grid')
             END IF
             aShift=aShift + 1
           END DO  
         END DO
       ELSE
         ALLOCATE(cf_c11(MNP_WIND,2), cf_c12(MNP_WIND,2), cf_c21(MNP_WIND,2), cf_c22(MNP_WIND,2), stat=istat)
+        cf_c11=0
+        cf_c12=0
+        cf_c21=0
+        cf_c22=0
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 49')
         ALLOCATE(cf_a(MNP_WIND), cf_b(MNP_WIND), cf_c(MNP_WIND), cf_d(MNP_WIND), cf_J(MNP_WIND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 50')
@@ -605,6 +609,9 @@
           j12=cf_c12(I,2)
           i21=cf_c21(I,1)
           j21=cf_c21(I,2)
+          IF ((i11.eq.0).or.(j11.eq.0).or.(i12.eq.0).or.(j12.eq.0).or.(i21.eq.0).or.(j21.eq.0)) THEN
+            CALL WWM_ABORT("Find a model grid point outside of the forcing grid")
+          END IF
           cf_J(I)=1.0/( (lon(i21,j21)-lon(i11,j11))*(lat(i12,j12)-lat(i11,j11)) )
           cf_a(I) = lon(i21,j21) - XP_WIND(I) ! x2-x
           cf_b(I) = XP_WIND(I) - lon(i11,j11) ! x-x1
@@ -2330,6 +2337,7 @@
           WRITE(WINDBG%FHNDL, *) 'i=', i, '/', n
           call grib_new_from_file(ifile, igrib(i))
           call grib_get(igrib(i), 'shortName', eShortName)
+          WRITE(WINDBG%FHNDL, *) 'eShortName=', TRIM(eShortName)
           IF ((TRIM(eShortName) .eq. '10u').and.(WeFound .eq. 0)) THEN
             IF (GRIB_FILE_TYPE .eq. 1) THEN
               call grib_get(igrib(i),"numberOfPointsAlongAParallel", NDX_WIND_FD)
@@ -2392,9 +2400,7 @@
               DEALLOCATE(LON_serial, LAT_serial, DATA_serial)
             END IF
             !
-            WRITE(WINDBG%FHNDL, *) 'Before call to COMPUTE_CF_COEFFICIENTS'
             CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, GRIB_LON, GRIB_LAT)
-            WRITE(WINDBG%FHNDL, *) 'After call to COMPUTE_CF_COEFFICIENTS'
             DEALLOCATE(GRIB_LON, GRIB_LAT)
             WeFound=1
           END IF
