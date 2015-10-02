@@ -5899,7 +5899,7 @@
       cwtmp2=mpi_wtime() !start of timer
 #endif
       !write(*,*) 'STARTING TIME LOOP TIMOR' 
-      call timor_timeloop(dt)
+      call timor_timeloop
 #ifdef INCLUDE_TIMING
       timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 

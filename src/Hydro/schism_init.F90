@@ -4574,7 +4574,9 @@
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime() !start of timer
 #endif
-      call init_timor
+     write(*,*) dt
+pause 'selfe_init: call init_timor'
+      call init_timor(dt)
 #ifdef INCLUDE_TIMING
       timer_ns(2)=timer_ns(2)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 
