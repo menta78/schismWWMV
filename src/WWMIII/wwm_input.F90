@@ -681,7 +681,7 @@
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
-     &      GRIB_FILE_TYPE,                                             &
+     &      GRIB_FILE_TYPE, EXTRAPOLATION_ALLOWED,                      &
      &      MULTIPLE_IN, LEXPORT_WIND_WW3, EXPORT_WIND_DELTC
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &

@@ -720,6 +720,7 @@
          REAL(rkind)                     :: DX_BND, DY_BND
 
          INTEGER                         :: IWINDFORMAT  = 1
+         LOGICAL                         :: EXTRAPOLATION_ALLOWED = .FALSE.
          INTEGER                         :: IBOUNDFORMAT = 1
          INTEGER                         :: ICURRFORMAT  = 1
          INTEGER                         :: IWATLVFORMAT = 1

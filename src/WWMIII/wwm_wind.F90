@@ -436,6 +436,7 @@
       real(rkind) d_lon, d_lat
       integer i11, j11, i12, j12, i21, j21
       integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
+      integer :: nbExtrapolation = 0
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
       StatusUse=0
       IF (METHOD1 .eqv. .FALSE.) THEN
@@ -540,14 +541,25 @@
               EXIT
             END IF
             IF ((IXmin .eq. 1).and.(IYmin .eq. 1).and.(IXmax .eq. NDX_WIND_FD-1).and.(IYmax .eq. NDY_WIND_FD-1)) THEN
+              EXIT
+            END IF
+            aShift=aShift + 1
+          END DO
+          IF (WeFind .eq. 0) THEN
+            IF (EXTRAPOLATION_ALLOWED .eqv. .FALSE.) THEN
               WRITE(WINDBG%FHNDL,*) 'aShift=', aShift
               WRITE(WINDBG%FHNDL,*) 'outside node IP=', I
               WRITE(WINDBG%FHNDL,*) 'eX=', eX, 'eY=', eY
               FLUSH(WINDBG%FHNDL)
               CALL WWM_ABORT('We find a model point outside of the available forcing grid')
+            ELSE
+              CF_IX(I)=IXs
+              CF_IY(I)=IYs
+              nbExtrapolation = nbExtrapolation + 1
+              WRITE(WINDBG%FHNDL,*) 'Point ', I, ' outside grid'
+              WRITE(WINDBG%FHNDL,*) 'MinDist=', MinDist
             END IF
-            aShift=aShift + 1
-          END DO  
+          END IF
         END DO
       ELSE
         ALLOCATE(cf_c11(MNP_WIND,2), cf_c12(MNP_WIND,2), cf_c21(MNP_WIND,2), cf_c22(MNP_WIND,2), stat=istat)
@@ -621,6 +633,7 @@
         DEALLOCATE(dist)
       END IF
       WRITE(WINDBG%FHNDL,*) ' sum(StatusUse)=', sum(StatusUse)
+      WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
       END SUBROUTINE
 !**********************************************************************
