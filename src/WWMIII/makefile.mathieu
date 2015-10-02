@@ -27,7 +27,7 @@ PDLIB =
 #F90 = gfortran
 #F90 = mpif90
 #F90 = mpif90-vt
-F90 = ifort
+F90 = $(WWM_COMPILER)
 #F90 = $(FLINKER)
 #F90 = pgf90
 #F90 = pathf95
@@ -40,7 +40,7 @@ F90 = ifort
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 
 #normal optimization
-F90OPTI =  -O1
+#F90OPTI =  -O1
 #F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI = -ip -O2
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fp-model precise
@@ -73,7 +73,7 @@ F90OPTI =  -O1
 
 
 #GFORTRAN
-#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
+F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
