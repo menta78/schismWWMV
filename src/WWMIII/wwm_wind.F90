@@ -437,6 +437,7 @@
       integer i11, j11, i12, j12, i21, j21
       integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
       integer :: nbExtrapolation = 0
+      real(rkind) :: MaxMinDist = 0
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
       StatusUse=0
       IF (METHOD1 .eqv. .FALSE.) THEN
@@ -558,6 +559,9 @@
               nbExtrapolation = nbExtrapolation + 1
               WRITE(WINDBG%FHNDL,*) 'Point ', I, ' outside grid'
               WRITE(WINDBG%FHNDL,*) 'MinDist=', MinDist
+              IF (MinDist .gt. MaxMinDist) THEN
+                MaxMinDist=MinDist
+              END IF
             END IF
           END IF
         END DO
@@ -633,7 +637,10 @@
         DEALLOCATE(dist)
       END IF
       WRITE(WINDBG%FHNDL,*) ' sum(StatusUse)=', sum(StatusUse)
-      WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
+      IF (EXTRAPOLATION_ALLOWED .eqv. .TRUE.) THEN
+        WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
+        WRITE(WINDBG%FHNDL,*) ' MaxMinDist=', sqrt(MaxMinDist)
+      END IF
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
       END SUBROUTINE
 !**********************************************************************
@@ -2255,7 +2262,6 @@
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer IPROC, eInt(1)
       integer iX, iY
-      LOGICAL :: USE_STEPRANGE = .TRUE.
       LOGICAL :: USE_DATATIME = .TRUE.
       integer nbtime_mjd
       integer eProd
