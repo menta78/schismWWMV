@@ -202,36 +202,62 @@ If True, then it can be
 
 
 \subsection{Section {\tt GRID}}
+This section describe the spectral and spatial grid that are used by the wave model.
+The choice made there directly affects the running time of the model.
 
 \begin{verbatim}
 &GRID
- LCIRD          = T                  ! Full circle in directional space
- LSTAG          = F                  ! Stagger directional bins with a half Dtheta; may use T only for regular grid to avoid char. line aligning with grid line
- MINDIR         = 340.               ! Minimum direction for simulation (unit: degrees; nautical convention; 0: from N; 90: from E); not used if LCIRD = .T.
- MAXDIR         = 7.5                ! Maximum direction for simulation (unit: degrees); may be < MINDIR; not used if LCIRD = .T.
- MDC            = 36                 ! Number of directional bins
- FRLOW          = 0.04               ! Low frequency limit of the discrete wave period (Hz; 1/period)
- FRHIGH         = 1.                 ! High frequency limit of the discrete wave period.
- MSC            = 21                 ! Number of frequency bins
- IGRIDTYPE      = 3                  ! Gridtype used.
-                                     ! 1 ~ XFN system.dat
-                                     ! 2 ~ WWM-PERIODIC
-                                     ! 3 ~ SELFE
-                                     ! 4 ~ old WWM type 
-                                     ! 5 ~ Netcdf format of grid
- FILEGRID       = 'hgrid.gr3'        ! Name of the grid file. hgrid.gr3 or hgrid.ll if IGRIDTYPE = 3 (SELFE)
- LSLOP          = F                  ! Bottom Slope limiter (default=F)
- SLMAX          = 0.2                ! Maximum Slope (Default 0.2)
- LVAR1D         = F                  ! For 1d-mode if variable dx is used
- LOPTSIG        = F                  ! Use optimal distributions of freq. in spectral space ... fi+1 = fi * 1.1. Take care what you high freq. limit is!
+ LCIRD          = T                 
+ LSTAG          = F                 
+ MINDIR         = 340.              
+ MAXDIR         = 7.5               
+ MDC            = 36                
+ FRLOW          = 0.04              
+ FRHIGH         = 1.                
+ MSC            = 21                
+ IGRIDTYPE      = 3                 
+ FILEGRID       = 'hgrid.gr3'
+ LSLOP          = F          
+ SLMAX          = 0.2        
+ LVAR1D         = F          
+ LOPTSIG        = F          
 /
 \end{verbatim}
+The meaning of the options is following:
+\begin{enumerate}
+\item {\tt LCIRCD} (logical): Whether the directional grid go over the full circle or not. Default is true.
+\item {\tt LSTAG} (logical): Whether the directional grid is staggered or not. Default is False.
+\item {\tt MINDIR} (float): minimal direction. It only makes sense if LCIRCD=T. Default is 0.
+\item {\tt MAXDIR} (float): maximal direction. It only makes sense if LCIRCD=T. Default is 360.
+\item {\tt MDC} (integer): number of directions.
+\item {\tt FRLOW} (float): lowest frequency (in Hz)
+\item {\tt FRHIGH} (float): highest frequency (in Hz)
+\item {\tt MSC} (integer): number of frequency
+\item {\tt IGRIDTYPE} (integer): index describing the file format of the grid used.
+\item {\tt FILEGRID} (string): The filename of the grid file.
+\item {\tt LSLOP} (logical): bottom slope limiter. Default is false.
+\item {\tt SLMAX} (float): maximum slope.
+\item {\tt LVAR1D} (logical): This is for 1-dimensional mode only.
+\item {\tt LOPTSIG} (logical): use optimal frequency bins.
+\end{enumerate}
+For real applications, one should work with {\tt LCIRCD=T}. The choice {\tt LCIRCD=F} makes sense for laboratory experiments when the wave directions are in a specific quadrant.
+
+The frequencies of the model are put in an exponential grid {\tt FR(1:MSC)} with {\tt FR(1)=FRLOW}, {\tt FR(MSC)=FRHIGH}, and {\tt FR(i+1) = XFR FR(i)}. The value of {\tt XFR} should be around 1.1
+
+The {\tt IGRIDTYPE} value has following possibilities:
+\begin{enumerate}
+\item {\tt IGRIDTYPE=1}: This is the XFN {\tt system.dat} file format.
+\item {\tt IGRIDTYPE=2}: This is a special format for periodic grids, which are of interest for laboratory or idealized case simulations.
+\item {\tt IGRIDTYPE=3}: This is the SELFE format. Filename is typically {\tt hgrid.gr3}
+\item {\tt IGRIDTYPE=4}: This is an old WWM grid format that should no longer be used.
+\item {\tt IGRIDTYPE=5}: This is a netcdf grid format. It is produced for example by history files of WWM.
+\end{enumerate}
 
 
 
 
 \subsection{Section {\tt INIT}}
-
+This is to specify how the initial condition is set up
 \begin{verbatim}
 &INIT
  LHOTR          = F                  ! Use hotstart file (default F)
@@ -240,7 +266,19 @@ If True, then it can be
  INITSTYLE      = 1                  ! 1 - Parametric Jonswap, 2 - Read from Global NETCDF files, work only if IBOUNDFORMAT=3
 /
 \end{verbatim}
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LHOTR} (logical): specifies whether we use hotfile. By default set to false.
+\item {\tt LINID} (logical): It should be set to {\tt .NOT. LHOTR}.
+\item {\tt INITSTYLE} (integer): it specifies the kind of initial case:
+  \begin{enumerate}
+  \item if {\tt INITSTYLE=1} then the spectra is computed from JONSWAP spectrum using the initial wind.
+  \item if {\tt INITSTYLE=2 and IBOUNDFORMAT=3} then the spectra is computed from the WW3 forecasts according to the IFREMER format
+  \item if {\tt INITSTYLE=3} then the spectrum is the one obtained from the {\tt fort.10003} file (works only in serial mode.
+  \end{enumerate}
 
+  
+\end{enumerate}
 
 
 
