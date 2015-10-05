@@ -239,6 +239,9 @@ The meaning of the options is following:
 \item {\tt SLMAX} (float): maximum slope.
 \item {\tt LVAR1D} (logical): This is for 1-dimensional mode only.
 \item {\tt LOPTSIG} (logical): use optimal frequency bins.
+\item {\tt APPLY\_DXP\_CORR} (logical): If true we try to resolve the -180 / 180 problem in global grids. Default is false.
+\item {\tt USE\_EXACT\_FORMULA\_SPHERICAL\_AREA} (logical): Use exact formula for computing spherical triangle area. Needed if the grid contains the North or South pole. Default is false.
+\item {\tt LEXPORT\_GRID\_WW3} (logical): If true the grid of WWM is exported to a WaveWatch III readable format. Default is false.
 \end{enumerate}
 For real applications, one should work with {\tt LCIRCD=T}. The choice {\tt LCIRCD=F} makes sense for laboratory experiments when the wave directions are in a specific quadrant.
 
@@ -260,10 +263,9 @@ The {\tt IGRIDTYPE} value has following possibilities:
 This is to specify how the initial condition is set up
 \begin{verbatim}
 &INIT
- LHOTR          = F                  ! Use hotstart file (default F)
- LINID          = F                  ! Initial condition (default F)
-                                     ! T for using WW3 as initial condition
- INITSTYLE      = 1                  ! 1 - Parametric Jonswap, 2 - Read from Global NETCDF files, work only if IBOUNDFORMAT=3
+ LHOTR          = F   
+ LINID          = F   
+ INITSTYLE      = 1   
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -297,55 +299,39 @@ Other important thing to decide is the origin of the spectrum. If it is time spa
 
 \begin{verbatim}
 &BOUC
- LBCSE          = F                  ! The wave boundary data is time dependent (default F)
- LBCWA          = F                  ! Parametric Wave Spectra (default F)
- LBCSP          = F                  ! Specify (non-parametric) wave spectra, specified in 'FILEWAVE' below
- LINHOM         = F                  ! homogeneity of b.c (default F)
-                                     ! T is space dependent b.c
-                                     ! F is homogoneous b.c.
- LBSP1D         = F                  ! 1D (freq. space only) format for FILEWAVE if LBCSP=T and LINHOM=F
- LBSP2D         = F                  ! not functional (freq. + directional space)
- LBINTER        = F                  ! Do interpolation in time if LBCSE=T (not available for quasi-steady mode within the subtime steps)
- LINDSPRDEG     = T                  ! If 1-d wave spectra are read this flag defines whether the input for the directional spreading is in degrees (true) or exponent (false)
- LPARMDIR       = F                  ! If LPARMDIR is true than directional spreading is read from WBDS and must be in exponential format at this time, only valid for 1d Spectra
- FILEWAVE       = 'wave.bcd'         ! Boundary file including discrete wave spectra
- BEGTC          = '20071101.000000'  ! Begin time of the wave boundary file (FILEWAVE)
- DELTC          = 1                  ! Time step in FILEWAVE
- UNITC          = 'HR'               ! Unit
- ENDTC          = '20071102.000000'  ! End time
- FILEBOUND      = 'wwmbnd.gr3'       ! Boundary file defining boundary and Neumann nodes.
-                                     ! Flag 0: not on bnd; 3: Neumann (0 gradient);
-                                     ! 2: active bnd (Direchlet). Bnd flags imported from SELFE:
-                                     ! 1: exterior bnd; -1: interior (islands)
- IBOUNDFORMAT   = 1                  ! 1 ~ WWM, 2 ~ FVCOM: 3 ~ WW3. FVCOM and WW3 works only with LBCWA=T.
-                                     ! For WW3 boundary input also set LINHOM=T, LBCSE=T and this works only for spherical coordinates
-                                     ! LMONO_IN = F ! incident wave is defined as monochromatic wave height, which is Hmono = sqrt(2) * Hs
-                                     ! The following are needed only if LBCWA=T and LINHOM=F
- WBHS           = 0.181              ! Hs at the boundary for parametric spectra
- WBSS           = 3.                 ! 1 or -1: Pierson-Moskowitz
-                                     ! 2 or -2: JONSWAP
-                                     ! 3 or -3: all in one BIN,
-                                     ! 4: Gauss.
-                                     ! The sign decides whether WBTP below 
-                                     ! is peak (+) or mean period (-)
- WBTP           = 1.50               ! Tp at the boundary (sec); mean or peak depending on the sign of WBSS
- WBDM           = 90.0               ! Avg. Wave Direction at the boundary
- WBDSMS         = 1.                 ! Directional spreading value in degrees (1) or as exponent (2)
- WBDS           = 10.                ! Directioanl spreading at the boundary (degrees/exponent)
- WBGAUSS        = 0.1                ! factor for gaussian distribution if WBSS=1
-                                     ! End section for LBCWA=T and LINHOM=F
- WBPKEN         = 3.3                ! Peak enhancement factor for Jonswap Spectra if WBSS=2
- NCDF_HS_NAME   = 'hs'               ! NETCDF var. name for the significant wave height (normally it is just 'hs')
- NCDF_DIR_NAME  = 'dir'              ! NETCDF var. name for the mean wave direction (normally it is just 'dir')
- NCDF_SPR_NAME  = 'spr'              ! NETCDF var. name for the mean directional spreading (normally it is just 'spr')
- NCDF_FP_NAME   = 'fp'               ! NETCDF var. name for the peak freq. (normally it is just 'fp')
- NCDF_F02_NAME  = 't02'              ! NETCDF var. name for the zero down crossing freq. (normally it is just 't02')
- NETCDF_OUT_PARAM = F    ! netcdf output of boundary parameters (default F)
- NETCDF_OUT_SPECTRA = F  ! netcdf output of boundary spectra (default F)
- NETCDF_OUT_FILE         ! file name for netcdf boundary output
-                         ! default "boundary_out_spec.nc"
- USE_SINGLE_OUT = T      ! use single precision in netcdf boundary
-                         ! output (default T)
+ LBCSE          = F  
+ LBCWA          = F  
+ LBCSP          = F  
+ LINHOM         = F  
+ LBSP1D         = F   
+ LBSP2D         = F   
+ LBINTER        = F   
+ LINDSPRDEG     = T   
+ LPARMDIR       = F   
+ FILEWAVE       = 'wave.bcd'        
+ BEGTC          = '20071101.000000' 
+ DELTC          = 1                 
+ UNITC          = 'HR'              
+ ENDTC          = '20071102.000000'
+ FILEBOUND      = 'wwmbnd.gr3'  
+ IBOUNDFORMAT   = 1     
+ WBHS           = 0.181         
+ WBSS           = 3.            
+ WBTP           = 1.50         
+ WBDM           = 90.0         
+ WBDSMS         = 1.           
+ WBDS           = 10.          
+ WBGAUSS        = 0.1          
+ WBPKEN         = 3.3        
+ NCDF_HS_NAME   = 'hs'       
+ NCDF_DIR_NAME  = 'dir'      
+ NCDF_SPR_NAME  = 'spr'      
+ NCDF_FP_NAME   = 'fp'       
+ NCDF_F02_NAME  = 't02'      
+ NETCDF_OUT_PARAM = F   
+ NETCDF_OUT_SPECTRA = F 
+ NETCDF_OUT_FILE        
+ USE_SINGLE_OUT = T  
  /
 \end{verbatim}
 The meaning of the options is the following:
@@ -426,8 +412,11 @@ The meaning of the options is the following:
 
 
 \subsection{Section {\tt WIND}}
+The wind section specifies how the wind, is provided to the WWM model. It is the most essential
+
+
 \begin{verbatim}
-&WIND ! THIS IS NOW USED IN SELFE
+&WIND
  LWINDFROMWWM   = F                  ! wind is coming from WWM (true) or from SELFE(false). This is under developement. If F, the following parameters in this section are ignored. For SELFE users, use F.
  LSEWD          = F                  ! Time dependend wind input
  BEGTC          = '20030101.000000'  ! Begin time
@@ -462,6 +451,16 @@ The meaning of the options is the following:
                                      ! then spread to other nodes.
 /
 \end{verbatim}
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LWINDFROMWWM} (logical): Whether wind should come from WWM. Default is True, but SELFE users may use False in which case the wind comes from SELFE.
+\item {\tt LSEWD} (logical): time dependent wind file
+
+  
+\end{enumerate}
+
+
+
 
 
 

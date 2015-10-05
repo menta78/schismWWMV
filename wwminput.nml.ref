@@ -73,6 +73,10 @@
  SLMAX          = 0.2                ! Maximum Slope (Default 0.2)
  LVAR1D         = F                  ! For 1d-mode if variable dx is used
  LOPTSIG        = F                  ! Use optimal distributions of freq. in spectral space ... fi+1 = fi * 1.1. Take care what you high freq. limit is!
+ APPLY_DXP_CORR = F                    ! for global grid. In order to resolve the -180/180 problem.
+ USE_EXACT_FORMULA_SPHERICAL_AREA = F  ! Use exact formula for triangle area. Needed if the grid
+                                       ! North/South pole.
+ LEXPORT_GRID_WW3 = F                  ! export the grid to wavewatch III
 /
 
 &INIT
