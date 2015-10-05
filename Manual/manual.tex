@@ -276,19 +276,24 @@ The meaning of the options is the following:
   \item if {\tt INITSTYLE=2 and IBOUNDFORMAT=3} then the spectra is computed from the WW3 forecasts according to the IFREMER format
   \item if {\tt INITSTYLE=3} then the spectrum is the one obtained from the {\tt fort.10003} file (works only in serial mode.
   \end{enumerate}
-
-  
 \end{enumerate}
+The details of the hotfile initial are to be found in the {\tt HOTFILE} section of the input file.
 
 
-
-
+TODO: The LINID option possibly needs to be eliminated.
 
 
 
 
 
 \subsection{Section {\tt BOUC}}
+The construction of the boundary condition used in the model. The complex nature of this section is to take into account whether the spectrum is
+\begin{enumerate}
+\item time dependent (realistic case typically) or not.
+\item spatially dependent (realistic case typically) or not
+\item In parametric form (that is dependent on a few parameters) or not.
+\end{enumerate}
+Other important thing to decide is the origin of the spectrum. If it is time spatially dependent and/or time dependent then it has to come from another data source. This can be IFREMER wave forecasts. This can also be netcdf wave boundary which may be parametric or not.
 
 \begin{verbatim}
 &BOUC
@@ -343,6 +348,80 @@ The meaning of the options is the following:
                          ! output (default T)
  /
 \end{verbatim}
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LBCSE} (logical): If true the boundary condition is time dependent. Default is false.
+\item {\tt LBCWA} (logical): If true the boundary condition is parametric. Default is false.
+\item {\tt LBCSP} (logical): If true the (non-parametric) wave spectra is prescribed. Default is false.
+\item {\tt LINHOM} (logical): If true the wave spectra is spatially non-homogeneous. Default is false.
+\item {\tt LBSP1D} (logical): The input spectrum is 1-dimensional. Default is false.
+\item {\tt LBSP2D} (logical): The input spectra is 2-dimensional. Default is false.
+\item {\tt LBINTER} (logical): Time interpolation of spectrum between two times in which the spectrum is available. Default is true.
+\item {\tt LINDSPRDEG} (logical): If 1-d wave spectra are read this flag defines whether the input for the directional spreading is in degrees (true) or exponent (false).
+\item {\tt LPARMDIR} (logical): If LPARMDIR is true than directional spreading is read from WBDS and must be in exponential format at this time, only valid for 1d Spectra.
+\item {\tt FILEWAVE} (logical): File containing the boundary spectra. Related entries to {\tt FILEWAVE} are:
+  \begin{itemize}
+  \item {\tt BEGTC} (string): beginning time of data availability in FILEWAVE
+  \item {\tt DELTC} (float): unit of time step
+  \item {\tt UNITC} (string): unit of time
+  \item {\tt ENDTC} (string): end time of data availability in FILEWAVE
+  \end{itemize}
+  This concerns the option XXX.
+\item {\tt FILEBOUND} (string): the file containing the description of the boundary condition. The format depends on the {\tt IGRIDTYPE}. Possible values:
+  \begin{itemize}
+  \item {\tt -1}: island boundary point
+  \item {\tt 1}: exterior boundary point.
+  \item {\tt 0}: not on boundary.
+  \item {\tt 2}: active boundary point.
+  \item {\tt 3}: Neumann boundary point.
+  \end{itemize}
+\item {\tt IBOUNDFORMAT} (integer): this specifies the nature of boundary data. Possible values:
+  \begin{itemize}
+  \item {\tt 1}: This is parametric wave boundary condition with WWM format. (Use FILEWAVE?)
+  \item {\tt 2}: This is parametric wave boundary condition with FVCOM format. 
+  \item {\tt 3}: This is boundary condition using WW§ output from IFREMER.
+  \item {\tt 4}: This is boundary condition using netcdf output files.
+  \end{itemize}
+\item If {\tt LINHOM=F}, {\tt LBCWA=T} and {\tt LBCSE=T} then the spectra is determined by just a few parameters that are actually in the WWM input file:
+  \begin{itemize}
+  \item {\tt WBHS} (float): the significant wave height on the boundary.
+  \item {\tt WBTP} (float): the wave period used.
+  \item {\tt WBSS} (integer): the type of spectrum chosen on the boundary:
+    \begin{itemize}
+    \item $\pm 1$: Pierson-Moskowitz
+    \item $\pm 2$: JONSWAP
+    \item $\pm 3$: all in one bin
+    \item $4$: Gauss
+    \end{itemize}
+    The sign determine whether the {\tt WBTP} is peak period (+) or mean period (-).
+  \item {\tt WBDM} (float): the mean wave direction.
+  \item {\tt WBDSMS} (float): Directional spreading value in degrees (1) or as exponent (2).
+  \item {\tt WBDS} (float): directional spreading at the boundary.
+  \item {\tt WBGAUSS} (float): factor for Gauss distribution if {\tt WBSS=1}.
+  \item {\tt WBPKEN} (float):  Peak enhancement factor for Jonswap Spectra if {\tt WBSS=2}.
+  \end{itemize}
+\item When selecting {\tt IBOUNDFORMAT=3} 5 netcdf files are needed with the IFREMER. The relevant options with their default values are:
+  \begin{itemize}
+  \item {\tt NCDF\_HS\_NAME = 'hs'}
+  \item {\tt NCDF\_DIR\_NAME  = 'dir'}
+  \item {\tt NCDF\_SPR\_NAME  = 'spr'}
+  \item {\tt NCDF\_FP\_NAME   = 'fp'}
+  \item {\tt NCDF\_F02\_NAME  = 't02'}
+  \end{itemize}
+\item It is possible to output the boundary condition from an actual run and those boundary condition may later be used in another WWM run as forcing data. Relevant variables are:
+  \begin{itemize}
+  \item {\tt NETCDF\_OUT\_PARAM} (logical): whether to output the variable for parametric boundary condition-
+  \item {\tt NETCDF\_OUT\_SPECTRA} (logical): whether to output the spectra for the boundary condition
+  \item {\tt NETCDF\_OUT\_FILE} (string): the filename of the output.
+  \item {\tt USE\_SINGLE\_OUT} (logical): use single precision in the output file.
+  \end{itemize}
+  
+  
+
+\end{enumerate}
+
+
+
 
 
 
