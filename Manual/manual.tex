@@ -417,66 +417,83 @@ The wind section specifies how the wind, is provided to the WWM model. It is the
 
 \begin{verbatim}
 &WIND
- LWINDFROMWWM   = F                  ! wind is coming from WWM (true) or from SELFE(false). This is under developement. If F, the following parameters in this section are ignored. For SELFE users, use F.
- LSEWD          = F                  ! Time dependend wind input
- BEGTC          = '20030101.000000'  ! Begin time
- DELTC          = 60.0               ! Time step
- UNITC          = 'MIN'              ! Unit
- ENDTC          = '20030102.000000'  ! End time
- LINTERWD       = T                  ! Interpolate linear within the wind input time step
- LSTWD          = T                  ! Steady wind
- LCWIN          = T                  ! Constant wind
- LWDIR          = T                  ! Define wind using wind direction rather than vel. vectors
- WDIR           = 140.0              ! Wind direction if LWDIR=T
- WVEL           = 10.0               ! Wind velocity ...
- CWINDX         = 30.0               ! wind x-vec if LWDIR=F
- CWINDY         = 0.0                ! wind y-vec
- FILEWIND       = 'wind.dat'         ! wind input data file; input file format: write(*,*) curtx; write(*,*) curty
- SHIFT_WIND_TIME= 0.0                ! shift of wind time (in days)
-                                     ! (default 0)
- IWINDFORMAT    = 1                  ! kind of wind input
-                                     ! 1 - ASCII,
-                                     ! 2 - DWD_NETCDF
-                                     ! 3 - NOAA CFRS
-                                     ! 4 - NOAA NARR
-				     ! 5 - netCDF CF compilant wind (Uwind/Vwind)
-                                     ! 6 - Same as 1 but in netcdf
-                                     ! 7 - GRIB files
- GRIB_FILE_TYPE = 1                  ! the type of format of the grid
-                                     ! 1: ECMWF
-                                     ! 2: COSMO
-                                     ! 3: DHMZ
- MULTIPLE_IN   = T                   ! If T then all process are reading data
-                                     ! If F then only process 0 does it and
-                                     ! then spread to other nodes.
+ LWINDFROMWWM   = F      
+ LSEWD          = F      
+ LSTWD          = T      
+ LCWIN          = T      
+ LWDIR          = T      
+ WDIR           = 140.0  
+ WVEL           = 10.0   
+ CWINDX         = 30.0   
+ CWINDY         = 0.0    
+ BEGTC          = '20030101.000000'
+ DELTC          = 60.0             
+ UNITC          = 'MIN'            
+ ENDTC          = '20030102.000000'
+ LINTERWD       = T                
+ FILEWIND       = 'wind.dat'       
+ IWINDFORMAT    = 1                
+ GRIB_FILE_TYPE = 1   
+ MULTIPLE_IN   = T 
 /
 \end{verbatim}
 The meaning of the options is the following:
 \begin{enumerate}
 \item {\tt LWINDFROMWWM} (logical): Whether wind should come from WWM. Default is True, but SELFE users may use False in which case the wind comes from SELFE.
 \item {\tt LSEWD} (logical): time dependent wind file
-
+\item {\tt LCWIN} (logical): Constant wind in space. Default is false.
+\item If {\tt LCWIN=T} and {\tt LSEWD=T} then the wind is constant in time and space. Thus it can be describe by two numbers:
+  \begin{itemize}
+  \item If {\tt LWDIR=T} then those are {\tt CWINDX} and {\tt CWINDY}.
+  \item if {\tt LWDIR=F} then those are {\tt WDIR} and {\tt WVEL}.
+  \end{itemize}
+\item Otherwise, the wind is obtained by the selection of {\tt IWINDFORMAT}. Possible values are:
+  \begin{itemize}
+  \item {\tt 1}: ASCII file {\tt FILEWAVE} with the relevant entry
+    \begin{itemize}
+    \item {\tt BEGTC} (string): Beginning of the file.
+    \item {\tt DELTC} (float): the separation between different data in {\tt FILEWAVE}
+    \item {\tt UNITC} (string): the unit of time separation
+    \item {\tt ENDTC} (string): ending of time 
+    \end{itemize}
+  \item {\tt 2}: DWD grib file converted to netcdf. List of files is in {\tt FILEWAVE}
+  \item {\tt 3}: NOAA CFRS grib netcdf files. List of files is in {\tt FILEWAVE}
+  \item {\tt 4}: NOAA NARR grib netcdf files. List of files is in {\tt FILEWAVE}
+  \item {\tt 5}: NetCDF CF file {\tt FILEWAVE} with wind field in Uwind / Vwind in a finite difference grid.
+  \item {\tt 6}: NetCDF CF file {\tt FILEWAVE} with wind field in Uwind / Vwind with values at the model nodes.
+  \item {\tt 7}: Grib files from meteorological models. List of files is in {\tt FILEWAVE}
+  \end{itemize}
+\item If {\tt IWINDFORMAT=7} then the {\tt GRIB\_FILE\_TYPE} has to be selected. Possible options are:
+  \begin{itemize}
+  \item {\tt 1}: ECMWF (IFS) forecasts.
+  \item {\tt 2}: COSMO model outputs.
+  \item {\tt 3}: DHMZ (ALADIN) forecasts.
+  \end{itemize}
+\item {\tt MULTIPLE\_IN} (logical): If true all MPI nodes are reading data at the same time. If false, only one node is reading and sending data to others via MPI sends/recvs. Default is false.
+\item {\tt LINTERWD} (logical): If true interpolate between time steps. Default is true.
   
 \end{enumerate}
-
+TODO: Clear the LSTWD vs LSEWD issue.
 
 
 
 
 
 \subsection{Section {\tt CURR}}
+This is the section for currents in the model.
+
 \begin{verbatim}
 &CURR !NOT USED WITH SELFE
  LSECU          = F                  ! Time dependend currents
+ LSTCU          = F                  ! Steady current
+ LCCUR          = F                  ! Constant current
+ CCURTX         = 0.0                ! current x-vec
+ CCURTY         = 0.0                ! current y-vec
  BEGTC          = '20040901.030000'  ! Beginn time
  DELTC          = 1800               ! Time step
  UNITC          = 'SEC'              ! Unit
  ENDTC          = '20040904.180000'  ! End time
  LINTERCU       = F                  ! Interpolate linear within the wind input time step
- LSTCU          = F                  ! Steady current
- LCCUR          = F                  ! Constant current
- CCURTX         = 0.0                ! current x-vec
- CCURTY         = 0.0                ! current y-vec
  FILECUR        = 'current.dat'      ! Current file name; input file format: write(*,*) curtx; write(*,*) curty
  LERGINP        = F                  ! read timor file for input ... ergzus.bin
  CURFAC         = 1.000000
@@ -486,8 +503,14 @@ The meaning of the options is the following:
                                      ! then spread to other nodes.
 /
 \end{verbatim}
-
-
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LSECU} (logical): If selected we have time dependent currents. Default is false.
+\item {\tt LCCUR} (logical): If selected we have constant currents over the domain. Default is false.
+\item If {\tt LSECU=T} and {\tt LCCUR=T} then the current is described by two numbers, i.e. {\tt CCURTX} and {\tt CCURTY}.
+\item 
+\end{enumerate}
+TODO: clear the meaning with {\tt LSTCU}.
 
 
 \subsection{Section {\tt WALV}}
@@ -714,42 +737,23 @@ The meaning of the options is the following:
 /
 \end{verbatim}
 
-\subsection{Section {\tt ENGS}}
+\subsection{Section {\tt HISTORY}}
+This is the code for doing the history output, that is variable defined all over the domain.
 \begin{verbatim}
 &HISTORY
- BEGTC          = '20110222.000000'  ! Start output time, yyyymmdd. hhmmss;
-                                     ! must fit the simulation time otherwise no output.
-                                     ! Default is same as PROC%BEGTC
- DELTC          = 600                ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
- UNITC          = 'SEC'              ! Unit
- ENDTC          = '20110226.000000'  ! Stop time output, yyyymmdd. hhmmss
-                                     ! Default is same as PROC%ENDC
- DEFINETC       = 86400              ! Time for definition of history files
-                                     ! If unset or set to a negative value
-                                     ! then only one file is generated
-                                     ! otherwise, for example for 86400
-                                     ! daily output files are created.
- OUTSTYLE       = 'NC'               ! output option - use 'NO' for no output
-                                     ! 'NC' for netcdf output
-                                     ! 'XFN' for XFN output (default)
-                                     ! 'SHP' for DARKO SHP output
- MULTIPLEOUT      = 0                ! 0: output in a single netcdf file
-                                     !    MPI_reduce is used (default)
-                                     ! 1: output in separate netcdf files
-                                     !    each associated with one process
- USE_SINGLE_OUT  = T                 ! T: Use single precision in the
-                                     !    output of model variables (default)
- PARAMWRITE      = T                 ! T: Write the physical parametrization
-                                     !    and chosen numerical method
-                                     !    in the netcdf file (default T)
- GRIDWRITE       = T                 ! T/F: Write the grid in the netcdf history file (default T)
- IOBPD           = F                 ! T/F: Write IOBPD (default F)
- PRINTMMA       = F                  ! T/F: Print minimum, maximum and average
-                                     ! value of statistics during runtime
-                                     ! (Default F)
-                                     ! (Requires a MPI_REDUCE)
+ BEGTC          = '20110222.000000'
+ DELTC          = 600          
+ UNITC          = 'SEC'        
+ ENDTC          = '20110226.000000'
+ OUTSTYLE       = 'NC'       
+ DEFINETC       = 86400      
+ MULTIPLEOUT      = 0        
+ USE_SINGLE_OUT  = T         
+ PARAMWRITE      = T       
+ GRIDWRITE       = T       
+ IOBPD           = F       
+ PRINTMMA       = F        
  FILEOUT        = 'misc.dat'
-                                     ! Below is selection for all variables. Default is F for all variables.
  HS             = F                  ! 1: significant wave height
  TM01           = F                  ! 2: mean period
  TM02           = F                  ! 3: zero-crossing mean period
@@ -790,7 +794,7 @@ The meaning of the options is the following:
  WATLEVOLD      = F                  !38: water level at previous time step
  DEPDT          = F                  !39: change of water level in time
  DEP            = F                  !40: depth
- WINDMAG        = F                  !41: Windmagnitude
+ WINDMAG        = F                  !41: Wind magnitude
  TAUW           = F                  !42: surface stress from the wave
  TAUWX          = F                  !43: surface stress in X direction
  TAUWY          = F                  !44: surface stress in Y direction
@@ -811,39 +815,52 @@ The meaning of the options is the following:
  ZETA_SETUP     = F                  !59: wave induced setup.
 /
 \end{verbatim}
-
+The meaning of the input file is the following:
+\begin{enumerate}
+\item {\tt BEGTC} (string): Beginning time of history output.
+\item {\tt DELTC} (float): the time between history 
+\item {\tt UNITC} (string): unit of output for the history.
+\item {\tt ENDTC} (string): ending time of output.
+\item {\tt OUTSTYLE} (string): type of output used. Possible values:
+  \begin{itemize}
+  \item {\tt ``NO''}: No history output is done.
+  \item {\tt ``NC''}: netCDF style of data output.
+  \item {\tt ``XFN''}: data output for the XFN plotting software.
+  \item {\tt ``SHP''}: data output for the SHP software.
+  \end{itemize}
+\item {\tt PRINTMMA} (logical): print the minimum, maximum and average value of the variables that are in input. The output file is {\tt wwmstat\_0000}.
+\item {\tt FILEOUT} (string): the filename of the output. If netCDF then it is edited to have {\tt .nc} as suffix.  
+\end{enumerate}
+Following options are only for netCDF:
+\begin{enumerate}
+\item {\tt DEFINETC} (float): time in second contained in the data output.
+If set to a negative value then only one file is generated.
+If set to a value of 86400 daily output files are created.
+\item {\tt MULTIPLEOUT} (integer): if 0 then all MPI process write output into a single netCDF file. If not then each process does its own output into separate independent files.
+\item {\tt USE\_SINGLE\_OUT} (logical): if true then the output is in single precision even if the model runs in double precision.
+\item {\tt PARAMWRITE} (logical): write the physical parametrization used by the WWM model. This can avoid some errors. Default is true.
+\item {\tt GRIDWRITE} (logical): write the model grid in the netCDF into the output file. In turn this can be used as input grid file for WWM in the case {\tt IGRIDTYPE=5}. Default is T.
+\item {\tt IOBPD} (logical): write the {\tt IOBPD} variable in the output file.
+\end{enumerate}
+The name of the variable are mostly self-explanatory.
 
 
 
 
 
 \subsection{Section {\tt STATION}}
+This is the section for doing station output at predefined locations. Maximum number of output locations is 50.
 \begin{verbatim}
 &STATION
- BEGTC          = '20030101.000000'  ! Start simulation time, yyyymmdd. hhmmss; must fit the simulation time otherwise no output
-                                     ! Default is same as PROC%BEGTC
- DELTC          = 600                ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
- UNITC          = 'SEC'              ! Unit
- ENDTC          = '20030102.000000'  ! Stop time simulation, yyyymmdd. hhmmss
-                                     ! Default is same as PROC%ENDC
- DEFINETC       = 86400              ! Time for definition of station files
-                                     ! If unset or set to a negative value
-                                     ! then only one file is generated
-                                     ! otherwise, for example for 86400
-                                     ! daily output files are created.
- OUTSTYLE       = 'NO'               ! output option
-                                     ! 'NO' no output
-                                     ! 'STE' classic station output (default)
-                                     ! 'NC' for netcdf output
- MULTIPLEOUT      = 0                ! 0: output in a single netcdf file
-                                     !    MPI_reduce is used (default)
-                                     ! 1: output in separate netcdf files
-                                     !    each associated with one process
- USE_SINGLE_OUT  = T                 ! T: Use single precision in the
-                                     !    output of model variables (default)
- PARAMWRITE      = T                 ! T: Write the physical parametrization
-                                     !    and chosen numerical method
-                                     !    in the netcdf file (default T)
+ BEGTC          = '20030101.000000' 
+ DELTC          = 600           
+ UNITC          = 'SEC'         
+ ENDTC          = '20030102.000000' 
+ DEFINETC       = 86400     
+ OUTSTYLE       = 'NO'     
+ MULTIPLEOUT      = 0       
+ USE_SINGLE_OUT  = T       
+ PARAMWRITE      = T     
  FILEOUT        = 'misc.dat'
  LOUTITER       = F
  IOUTS          = 8                  ! Number of output stations
@@ -921,40 +938,72 @@ The meaning of the options is the following:
  ZETA_SETUP     = F                  !59: wave induced setup.
 /
 \end{verbatim}
-
+The measning of those options is the following:
+\begin{enumerate}
+\item {\tt BEGTC} (string): starting time of station output.
+\item {\tt DELTC} (float): unit of time between station output.
+\item {\tt UNITC} (string): unit of time between outputs.
+\item {\tt ENDTC} (string): end time of station output.
+\item {\tt OUTSTYLE} (string): type of output used. Possible values:
+  \begin{itemize}
+  \item {\tt ``NO''}: No history output is done.
+  \item {\tt ``NC''}: netCDF style of data output.
+  \item {\tt ``STE''}: ascii data output for text analysis.
+  \end{itemize}
+\end{enumerate}
+Following options are only for netCDF:
+\begin{enumerate}
+\item {\tt DEFINETC} (float): time in second contained in the data output.
+If set to a negative value then only one file is generated.
+If set to a value of 86400 daily output files are created.
+\item {\tt MULTIPLEOUT} (integer): if 0 then all MPI process write output into a single netCDF file. If not then each process does its own output into separate independent files.
+\item {\tt USE\_SINGLE\_OUT} (logical): if true then the output is in single precision even if the model runs in double precision.
+\item {\tt PARAMWRITE} (logical): write the physical parametrization used by the WWM model. This can avoid some errors. Default is true.
+\end{enumerate}
+The output data is then according to the options in a parallel way to section HISTORY.
 
 
 
 \subsection{Section {\tt HOTFILE}}
+This section specifies how the hotfile is written and read (but note that decision whether to use hotfile or not is done in the INIT section).
+
 \begin{verbatim}
 &HOTFILE
- LHOTF          = F ! Write hotfile
- BEGTC          = '20000101.000000'   ! Starting time of hotfile writing
- DELTC          = 1      ! time between hotfile writes
- UNITC          = 'SEC'  ! unit used above
- ENDTC          = '20000101.100000'  ! Ending time of hotfile writing
- LCYCLEHOT      = T ! Applies only to netcdf
-                    ! If T then hotfile contains 2 last records.
-                    ! If F then hotfile contains N record if N outputs
-                    ! have been done
-                    ! For binary only one record.
- HOTSTYLE_OUT   = 2  ! 1: binary hotfile of data as output
-                     ! 2: netcdf hotfile of data as output (default)
- MULTIPLEOUT    = 0  ! 0: hotfile in a single file (binary or netcdf)
-                     !    MPI_REDUCE is then used.
-                     ! 1: hotfiles in separate files, each associated
-                     !    with one process
+ LHOTF          = F
+ BEGTC          = '20000101.000000' 
+ DELTC          = 1     
+ UNITC          = 'SEC' 
+ ENDTC          = '20000101.100000' 
+ LCYCLEHOT      = T
+ HOTSTYLE_OUT   = 2
+ MULTIPLEOUT    = 0
  FILEHOT_OUT    = 'hotfile_out.dat' 
- HOTSTYLE_IN    = 2  ! 1: binary hotfile of data as input
-                     ! 2: netcdf hotfile of data as input (default)
- IHOTPOS_IN        = 1 ! Position in hotfile (only for netcdf)
-                       ! for reading
- MULTIPLEIN     = 0    ! 0: read hotfile from one single file
-                       ! 1: read hotfile from multiple files.
- FILEHOT_IN     = 'hotfile_in.dat' ! Hot file name for input
+ HOTSTYLE_IN    = 2 
+ IHOTPOS_IN        = 1
+ MULTIPLEIN     = 0 
+ FILEHOT_IN     = 'hotfile_in.dat'
 /
 \end{verbatim}
-
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LHOTF} (logical): Write hotfile. Default is false.
+\item {\tt BEGTC} (string): Beginning time of writing hotfile.
+\item {\tt DELTC} (float): separation between hotfile printing.
+\item {\tt UNITC} (string): unit of the separation time.
+\item {\tt ENDTC} (string): end time of writing hotfile.
+\item {\tt LCYCLEHOT} (logical): It is valid only if {\tt HOTFILE\_OUT=T}. If selected then we have in the netCDF file only the last two entries. Otherwise, the last N states are present.
+\item {\tt HOTSTYLE\_OUT} (integer): the kind of file format used for the hotfile output. Possible value:
+  \begin{itemize}
+  \item {\tt 1}: the file is binary.
+  \item {\tt 2}: the file is netCDF
+  \end{itemize}
+\item {\tt MULTIPLEOUT} (integer): If equal to zero there is a single hotfile. If 1 then each MPI process creates its own hotfile.
+\item {\tt FILEHOT\_OUT} (string): The name of the output file.
+\item {\tt HOTSTYLE\_IN} (integer): the kind of file format used for hotfile input. See {\tt HOTSTYLE\_OUT} for possible values.
+\item {\tt IHOTPOS\_IN} (integer): specific index of hotfile used (only for netCDF).
+\item {\tt MULTIPLEIN} (integer): Whether we read from a single file or several.
+\item {\tt FILEHOT\_IN} (string): the name of the hotfile used as input.
+\end{enumerate}
 
 
 

@@ -141,21 +141,19 @@
 &WIND ! THIS IS NOW USED IN SELFE
  LWINDFROMWWM   = F                  ! wind is coming from WWM (true) or from SELFE(false). This is under developement. If F, the following parameters in this section are ignored. For SELFE users, use F.
  LSEWD          = F                  ! Time dependend wind input
+ LSTWD          = T                  ! Steady wind
+ LCWIN          = T                  ! Constant wind
  BEGTC          = '20030101.000000'  ! Begin time
  DELTC          = 60.0               ! Time step
  UNITC          = 'MIN'              ! Unit
  ENDTC          = '20030102.000000'  ! End time
  LINTERWD       = T                  ! Interpolate linear within the wind input time step
- LSTWD          = T                  ! Steady wind
- LCWIN          = T                  ! Constant wind
  LWDIR          = T                  ! Define wind using wind direction rather than vel. vectors
  WDIR           = 140.0              ! Wind direction if LWDIR=T
  WVEL           = 10.0               ! Wind velocity ...
  CWINDX         = 30.0               ! wind x-vec if LWDIR=F
  CWINDY         = 0.0                ! wind y-vec
  FILEWIND       = 'wind.dat'         ! wind input data file; input file format: write(*,*) curtx; write(*,*) curty
- SHIFT_WIND_TIME= 0.0                ! shift of wind time (in days)
-                                     ! (default 0)
  IWINDFORMAT    = 1                  ! kind of wind input
                                      ! 1 - ASCII,
                                      ! 2 - DWD_NETCDF
