@@ -615,6 +615,8 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
 
 
 \subsection{Section {\tt NUMS}}
+This is the section about numerics of the WWM model.
+
 \begin{verbatim}
 &NUMS ! Numerical methods
  ICOMP          = 0
@@ -1063,48 +1065,50 @@ The meaning of the options is the following:
 
 
 \subsection{Section {\tt PETScOptions}}
+In this section, we detail the options relevant to PETSC\footnote{For software availability and more details, see \url{http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html}}, which are actually very rarely used.
 \begin{verbatim}
 &PETScOptions
-                                     ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
  KSPTYPE       = 'LGMRES'
-                                     ! This parameter controls which solver is used. This is the same as petsc command line parameter -ksp_type.
-                                     ! KSPTYPE = 'GMRES'
-                                     ! Implements the Generalized Minimal Residual method. (Saad and Schultz, 1986) with restart
-                                     ! KSPTYPE = 'LGMRES'
-                                     ! Augments the standard GMRES approximation space with approximations to the error from previous restart cycles.
-                                     ! KSPTYPE = 'DGMRES'
-                                     ! In this implementation, the adaptive strategy allows to switch to the deflated GMRES when the stagnation occurs.
-                                     ! KSPTYPE = 'PGMRES'
-                                     ! Implements the Pipelined Generalized Minimal Residual method. Only PETSc 3.3
-                                     ! KSPTYPE = 'KSPBCGSL'
-                                     ! Implements a slight variant of the Enhanced BiCGStab(L) algorithm
-
- RTOL          = 1.E-20              ! the relative convergence tolerance (relative decrease in the residual norm)
- ABSTOL        = 1.E-20              ! the absolute convergence tolerance (absolute size of the residual norm)
- DTOL          = 10000.              ! the divergence tolerance
- MAXITS        = 1000                ! maximum number of iterations to use
-
- INITIALGUESSNONZERO = F             ! Tells the iterative solver that the initial guess is nonzero; otherwise KSP assumes the initial guess is to be zero
- GMRESPREALLOCATE    = T             ! Causes GMRES and FGMRES to preallocate all its needed work vectors at initial setup rather than the default, which is to allocate them in chunks when needed.
- SAMEPRECONDITIONER  = T             ! the preconditioner matrix is identical to that of the previous linear solve
-
-
+ RTOL          = 1.E-20    
+ ABSTOL        = 1.E-20    
+ DTOL          = 10000.    
+ MAXITS        = 1000        
+ INITIALGUESSNONZERO = F     
+ GMRESPREALLOCATE    = T     
+ SAMEPRECONDITIONER  = T     
  PCTYPE        = 'SOR'
-                                     ! This parameter controls which  preconditioner is used. This is the same as petsc command line parameter -pc_type
-                                     ! PCTYPE = 'SOR'
-                                     ! (S)SOR (successive over relaxation, Gauss-Seidel) preconditioning
-                                     ! PCTYPE = 'ASM'
-                                     ! Use the (restricted) additive Schwarz method, each block is (approximately) solved with its own KSP object.
-                                     ! PCTYPE = 'HYPRE'
-                                     ! Allows you to use the matrix element based preconditioners in the LLNL package hypre
-                                     ! PCTYPE = 'SPAI'
-                                     ! Use the Sparse Approximate Inverse method of Grote and Barnard as a preconditioner
-                                     ! PCTYPE = 'NONE'
-                                     ! This is used when you wish to employ a nonpreconditioned Krylov method.
-
 /
 \end{verbatim}
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt KSPTYPE} (string): the iterative solution algorithm used. Possible values are:
+  \begin{itemize}
+  \item {\tt ``GMRES''}: Generalized Minimal Residual method (Saad and Schultz, 1986) with restart
+  \item {\tt ``LGMRES''}: Augments the standard GMRES approximation space with approximations to the error from previous restart cycles.
+  \item {\tt ``DGMRES''}: In this implementation, the adaptive strategy allows to switch to the deflated GMRES when the stagnation occurs.
+  \item {\tt ``PGMRES''}: Pipelined Generalized Minimal Residual method.
+  \item {\tt ``KSPBCGSL''}: Implements a slight variant of the Enhanced BiCGStab(L) algorithm
+  \end{itemize}
+\item {\tt RTOL}: the relative convergence tolerance (relative decrease in the residual norm)
+\item {\tt ABSTOL}:the absolute convergence tolerance (absolute size of the residual norm)
+\item {\tt DTOL}: The divergence tolerance
+\item {\tt MAXITS} (integer): maximum number of iterations to use
+\item {\tt INITIALGUESSNONZERO} (logical): Tells the iterative solver that the initial guess is nonzero; otherwise KSP assumes the initial guess is to be zero
+\item {\tt GMRESPREALLOCATE} (logical): Causes GMRES and FGMRES to preallocate all its needed work vectors at initial setup rather than the default, which is to allocate them in chunks when needed.
+\item {\tt SAMEPRECONDITIONER} (logical): the preconditioner matrix is identical to that of the previous linear solve
+\item {\tt PCTYPE} (string): controls which preconditioner is to be used.
+  \begin{itemize}
+  \item {\tt ``NONE''}: No preconditioner is used.
+  \item {\tt ``SOR''}: Successive Over Relaxation Gauss Seidel preconditioner
+  \item {\tt ``ASM''}: Additive Schwartz Method
+  \item {\tt ``HYPRE''}: preconditioner based on LLNL hypre package
+  \item {\tt ``SPAI''}: Sparse Approximate Inverse method of Grote and Barnard as a preconditioner
+  \end{itemize}
 
+    
+
+  
+\end{enumerate}
 
 
 
