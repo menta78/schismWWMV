@@ -1038,6 +1038,7 @@
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
+         REAL(rkind)            :: JGS_SOLVERTHR = 1.e-10_rkind
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          INTEGER                :: ASPAR_LOCAL_LEVEL = 0
                              ! value 0 CAD_THE, CAS_THE and ASPAR_JAC used

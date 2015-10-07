@@ -1981,7 +1981,7 @@
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind) :: MaxNorm, p_is_converged
+      REAL(rkind) :: MaxNorm, SumNorm, p_is_converged
       REAL(rkind) :: eSum(MSC,MDC)
       REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
@@ -2532,10 +2532,15 @@
 #ifdef MPI_PARALL_GRID
           CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
           CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
-          MaxNorm=maxval(Norm_L2_gl)
+          MaxNorm = maxval(Norm_L2_gl)
+          SumNorm = sum(Norm_L2_gl)
 #else
-          MaxNorm=maxval(Norm_L2)
+          MaxNorm = maxval(Norm_L2)
+          SumNorm = sum(Norm_L2)
 #endif
+          IF (sqrt(SumNorm) .le. JGS_SOLVERTHR) THEN
+            EXIT
+          END IF
         END IF
       END DO
 
