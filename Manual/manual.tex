@@ -535,27 +535,82 @@ TODO: clear the meaning with {\tt LSTCU}.
 
 
 \subsection{Section {\tt ENGS}}
+This section specifies the choices of physical parametrizations done in the WWM model.
 \begin{verbatim}
 &ENGS !SOURCE TERMS
- MESNL          = 1                  ! SNL4; MESNL = 0 , MESNL = 1, (Discrete Interaction approx.)
- MESIN          = 1                  ! Wind input: Ardhuin etal (1), Cycle 4 (2), Makin & Stam (3); Babanin et al. (4), Cycle 3 (5), no wind (0) (default = 1; all others are just for rearch and explicitly not supported at all!!!)
- IFRIC          = 1                  ! Formulation for atmospheric boundary layer, (IFRIC = 1 for MESIN = 1, IFRIC = 4 for MESIN=3); only used if MESIN .GT. 2
- MESBF          = 1                  ! Bottomg friction: JONSWAP(1) (Default at 1); 2 - Madsen
- FRICC          = 0.067              ! Cjon - Bottom friction coefficient (always positive)
- MESBR          = 1                  ! Shallow water wave breaking; 0: no; 1: BJ78 (Default at 1)
- ICRIT          = 1                  ! Wave breaking criterion: set as 1 - SWAN, 2 - Dingemans - default = 2
- ALPBJ          = 0.5                ! Dissipation proportionality coefficient (0.5 is default)
- BRHD           = 0.78               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
- LMAXETOT       = T                  ! Limit shallow water wave height by wave breaking limiter (default=T)
- MESDS          = 1                  ! Formulation for the whitecapping source function; usually same as MESIN
- MESTR          = 1                  ! Formulation for the triad 3 wave interactions (MESTR = 0 (off), MESTR = 1 (Lumped Triad Approx. (LTA) like SWAN) (Default at 1)
- TRICO          = 0.1                ! proportionality const. (\alpha_EB); default is 0.1
- TRIRA          = 5.                 ! ratio of max. freq. considered in triads over mean freq.; 2.5 is suggested
- TRIURS         = 0.1                ! critical Ursell number; if Ursell # < TRIURS; triads are not computed
+ MESNL          = 1      
+ MESIN          = 1      
+ IFRIC          = 1              
+ MESBF          = 1              
+ FRICC          = 0.067          
+ MESBR          = 1              
+ ICRIT          = 1              
+ ALPBJ          = 0.5            
+ BRHD           = 0.78           
+ LMAXETOT       = T              
+ MESDS          = 1              
+ MESTR          = 1          
+ TRICO          = 0.1        
+ TRIRA          = 5.       
+ TRIURS         = 0.1      
  LPRECOMPST4    = T                  ! Precompute the indices and weightings for the Ardhuin et al. formulation and save to disk, if it is .F. then the saved
                                      ! values are read from disk
 /
 \end{verbatim}
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt MESNL} (integer): this is the option for nonlinear interactions:
+  \begin{itemize}
+  \item {\tt 0}: no nonlinear interactions
+  \item {\tt 1}: nonlinear interactions computed according to DIA.
+  \end{itemize}
+\item {\tt MESIN} (integer): the input source term. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: no input source terms. 
+  \item {\tt 1}: The Ardhuin et al. (2010) formulation
+  \item {\tt 2}: The Cycle 4 formulation of Bidlot et al.
+  \item {\tt 3}: The Makin \& Stam formulation
+  \item {\tt 4}: The Donealan et al. formulation.
+  \item {\tt 5}: The Cycle 3 formulation
+  \end{itemize}
+Recommended option is {\tt MESIN=1}. Other options are for research purposes.
+\item {\tt MESDS} (integer): the whitecapping function. It is usually set to the same value as {\tt MESIN}.
+\item {\tt LPRECOMPST4} (logical): precompute ST4 data and save it to disk. This concerns only {\tt MESIN=1}. 
+\item {\tt IFRIC} (integer): atmospheric boundary layer formulation. Possible values:
+  \begin{itemize}
+  \item {\tt 1}: for {\tt MESIN=1}
+  \item {\tt 4}: for {\tt MESIN=3}
+  \end{itemize}
+\item {\tt MESBF} (integer): bottom friction. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: nothing
+  \item {\tt 1}: JONSWAP (default)
+  \item {\tt 4}: Madsen formulation
+  \end{itemize}
+\item {\tt FRICC} (float): bottom friction coefficient (always positive).
+\item {\tt MESBR} (float): Shallow water wave breaking. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: nothing
+  \item {\tt 1}: NF78
+  \end{itemize}
+\item {\tt ICRIT} (integer): wave breaking criterion. Set up:
+  \begin{itemize}
+  \item {\tt 1}: SWAN
+  \item {\tt 2}: Dingemans
+  \end{itemize}
+\item {\tt ALPBJ} (float): dissipation proportionality coefficient. Recommended value is 0.5
+\item {\tt BRHD} (float): Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
+\item {\tt LMAXETOT} (logical): Limit shallow water wave height by wave breaking limiter. default is true.
+\item {\tt MESTR} (integer): formulation for the triad formulation. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: nothing
+  \item {\tt 1}: Lumped Triad Approximation.
+  \end{itemize}
+\item {\tt TRICO} (float): Triad proportionality constant $\alpha_{EB}$. Default is $0.1$.
+\item {\tt TRIRA} (float): ratio of max. freq. considered in triads over mean freq.; 2.5 is suggested
+\item {\tt TRIURS} (float): Critical Ursell number; if Ursell < TRIURS; triads are not computed.
+\end{enumerate}
+
 
 
 
