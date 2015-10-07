@@ -2306,7 +2306,7 @@
           ELSE
             U_JACOBI(:,:,IP)=eSum
           END IF
-          IF (LCHKCONV) THEN
+          IF (JGS_CHKCONV) THEN
             Sum_new = sum(eSum)
             if (Sum_new .gt. thr8) then
               DiffNew=sum(abs(ACLOC - eSum))
@@ -2328,7 +2328,7 @@
 !          ENDIF
 
         END DO
-        IF (LCHKCONV) THEN
+        IF (JGS_CHKCONV) THEN
 #ifdef MPI_PARALL_GRID
           CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
@@ -2361,8 +2361,8 @@
         !
         ! Check via number of converged points
         !
-        IF (LCHKCONV) THEN
-          write(*,*) p_is_converged, nbIter, is_converged
+        IF (JGS_CHKCONV) THEN
+!          write(*,*) p_is_converged, nbIter, is_converged
           IF (p_is_converged .le. pmin) EXIT
         ENDIF
         !

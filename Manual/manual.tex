@@ -621,6 +621,10 @@ This is the section about numerics of the WWM model.
 &NUMS ! Numerical methods
  ICOMP          = 0
  AMETHOD        = 1
+   L_SOLVER_NORM = F   
+   JGS_SOLVERTHR = 1.e-10
+   ASPAR_LOCAL_LEVEL =        0
+   BLOCK_GAUSS_SEIDEL  = T,
  SMETHOD        = 1
                                      ! This switch controls the way the source terms are integrated. 0: no source terms;
                                      ! 1: splitting using RK-3 and SI for fast and slow modes 2: semi-implicit;
@@ -729,17 +733,7 @@ This is the section about numerics of the WWM model.
  LSOURCESWAM     = T,                     ! Use ECMWF WAM formualtion for deep water physics 
  PMIN    =  0.000000000000000E+000,       ! Max. percentage of non-converged grid points 
  LSOURCESWWIII   = F,                     ! WW3 Ardhuin et al. sources, not working yet in this code use MESIN = 1 
- BLOCK_GAUSS_SEIDEL  = T,
  LNONL   = F                              ! Solve the nonlinear system using simpler algorithm (Patankar) 
- ASPAR_LOCAL_LEVEL =                      ! Aspar locality level
-                                          ! 0 ASPAR_JAC(MSC,MDC,MNP),
-                                          ! CAD_THE(MSC,MDC,MNP), CAS_SIG(MSC,MDC,MNP)
-                                          ! are allocated
-                                          ! 1: only ASPAR_JAC
-                                          ! 2: only small local arrays.
- L_SOLVER_NORM = F                        ! Compute solver norm as termination
-                                          ! check of jacobi-Gauss-Seidel
-                                          ! solver
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -767,10 +761,20 @@ The meaning of the options is the following:
   \item {\tt BLOCK\_GAUSS\_SEIDEL} (logical): Under this option, the Gauss-Seidel method is used for the solutioning on each block. It decreases the memory expenses of the computation. Experimentally, it tends to decrease the number of iteration needed to solve the system but the result become dependent on the number of processors used for solving the system. Default is true.
   \item {\tt L\_SOLVER\_NORM} (logical): Under this option, we check for termination by the criterion
   \begin{equation*}
-  \Vert Ax - b\Vert \leq \eps
+  \Vert Ax - b\Vert_2 \leq \eps
   \end{equation*}
-  This doubles the runtime of the solver. Default is false.
-  \item {\tt JGS\_SOLVERTHR} (float): 
+  The norm is the $L^2$ norm. This doubles the runtime of the solver. Default is false.
+  \item {\tt JGS\_SOLVERTHR} (float): the value of $\eps$ in the above equation.
+  \item {\tt ASPAR\_LOCAL\_LEVEL} (integer): specifies the level of locality of the {\tt ASPAR} array. Essentially there is a balance between memory usage and computation. At highest level of locality less memory is used but things need to be recomputed at each step of the iteration. Default value is 0. Possible choices:
+    \begin{itemize}
+    \item {\tt 0}: the {\tt ASPAR\_JAC(MSC,MDC,NNZ)}, {\tt CAD\_THE(MSC,MDC,MNP)}, {\tt CAS\_SIG(MSC,MDC,MNP)} arrays are allocated.
+    \item {\tt 1}: only {\tt ASPAR\_JAC(MSC,MDC,NNZ)} is allocated.
+    \item {\tt 2} and above: smaller arrays are allocated.
+    \end{itemize}
+    \item 
+    
+    
+  
     
 
 
