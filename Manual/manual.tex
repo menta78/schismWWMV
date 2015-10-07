@@ -625,43 +625,18 @@ This is the section about numerics of the WWM model.
    JGS_SOLVERTHR = 1.e-10
    ASPAR_LOCAL_LEVEL =        0
    BLOCK_GAUSS_SEIDEL  = T,
+   JGS_DIFF_SOLVERTHR = 1.e-5
+   PMIN = 2,
  SMETHOD        = 1
-                                     ! This switch controls the way the source terms are integrated. 0: no source terms;
-                                     ! 1: splitting using RK-3 and SI for fast and slow modes 2: semi-implicit;
-                                     ! 3: R-K3 (if ICOMP=0 or 1) - slow; 4: Dynamic Splitting (experimental)
-
  DMETHOD        = 2
-                                     ! This switch controls the numerical method in directional space.
-                                     ! DMETHOD = 0
-                                     ! No advection in directional space
-                                     ! DMETHOD = 1
-                                     ! Crank-Nicholson (RTHETA = 0.5) or Euler Implicit scheme (RTHETA = 1.0)
-                                     ! DMEHOD = 2
-                                     ! Ultimate Quickest as in WW3 (usually best)
-                                     ! DMETHOD = 3
-                                     ! RK5-WENO
-                                     ! DMETHOD = 4
-                                     ! Explicit FVM Upwind scheme
-                                     ! DMETHOD = 5
-                                     ! Implicit FVM Upwind scheme
-
  RTHETA         = 0.5                ! Weighing factor for DMETHOD = 1, not really useful since Crank Nicholson integration can only be montotone for CFL .le. 2
+ FMETHOD        = 1
  LITERSPLIT     = F                  ! T: double Strang split; F: simple split (more efficienct). Default: F
 
  LFILTERTH      = F
                                      ! LFILTERTH: use a CFL filter to limit the advection vel. In directional space. This is similar to WW3.
                                      ! Mostly not used. WWMII is always stable.
  MAXCFLTH       = 1.0                ! Max Cfl in Theta space; used only if LFILTERTH=T
- FMETHOD        = 1
-                                     ! This switch controls the numerical method used in freq. space
-                                     ! = 0
-                                     ! No Advection in spectral space
-                                     ! = 1
-                                     ! Ultimate Quickest as in WW3 (best)
-                                     ! = 2
-                                     ! Explicit UPWIND 
-                                     ! = 3
-                                     ! Implicit UPWIND
  LFILTERSIG     = F                  ! Limit the advection velocitiy in freq. space (usually F)
  MAXCFLSIG      = 1.0                ! Max Cfl in freq. space; used only if LFILTERSIG=T
  LLIMT          = T                  ! Switch on/off Action limiter, Action limiter must mostly be turned on.
@@ -731,9 +706,7 @@ This is the section about numerics of the WWM model.
  LZETA_SETUP     = F,                     ! Compute wave setup 
  ZETA_METH       =           0,           ! Method for wave setup, Mathieu please explain!
  LSOURCESWAM     = T,                     ! Use ECMWF WAM formualtion for deep water physics 
- PMIN    =  0.000000000000000E+000,       ! Max. percentage of non-converged grid points 
  LSOURCESWWIII   = F,                     ! WW3 Ardhuin et al. sources, not working yet in this code use MESIN = 1 
- LNONL   = F                              ! Solve the nonlinear system using simpler algorithm (Patankar) 
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -761,28 +734,51 @@ The meaning of the options is the following:
   \item {\tt BLOCK\_GAUSS\_SEIDEL} (logical): Under this option, the Gauss-Seidel method is used for the solutioning on each block. It decreases the memory expenses of the computation. Experimentally, it tends to decrease the number of iteration needed to solve the system but the result become dependent on the number of processors used for solving the system. Default is true.
   \item {\tt L\_SOLVER\_NORM} (logical): Under this option, we check for termination by the criterion
   \begin{equation*}
-  \Vert Ax - b\Vert_2 \leq \eps
+  \Vert Ax - b \Vert_2 \leq \epsilon
   \end{equation*}
   The norm is the $L^2$ norm. This doubles the runtime of the solver. Default is false.
-  \item {\tt JGS\_SOLVERTHR} (float): the value of $\eps$ in the above equation.
+  \item {\tt JGS\_SOLVERTHR} (float): the value of $\epsilon$ in the above equation.
   \item {\tt ASPAR\_LOCAL\_LEVEL} (integer): specifies the level of locality of the {\tt ASPAR} array. Essentially there is a balance between memory usage and computation. At highest level of locality less memory is used but things need to be recomputed at each step of the iteration. Default value is 0. Possible choices:
     \begin{itemize}
     \item {\tt 0}: the {\tt ASPAR\_JAC(MSC,MDC,NNZ)}, {\tt CAD\_THE(MSC,MDC,MNP)}, {\tt CAS\_SIG(MSC,MDC,MNP)} arrays are allocated.
     \item {\tt 1}: only {\tt ASPAR\_JAC(MSC,MDC,NNZ)} is allocated.
     \item {\tt 2} and above: smaller arrays are allocated.
     \end{itemize}
-    \item 
-    
-    
-  
-    
-
-
+  \item {\tt LNONL} (logical): iteration also happens at the nonlinear level for the source terms. Default is false.
+  \item {\tt JGS\_CHKCONV} (logical): check from one step of the iteration to the next. Compute the number $n$ of grid points such that
+  \begin{equation*}
+  \sum \vert ACLOC_{it+1} - ACLOC_{it}\vert < \epsilon_2 \sum \vert ACLOC_{it+1}\vert
+  \end{equation*}
+  if at least $100 - PMIN$ points are converged according to this criteria then we terminate the iteration.
+  \item {\tt JGS\_DIFF\_SOLVERTHR} (float): the value of $\epsilon_2$ above. Default is $1e-5$.
+  \item {\tt PMIN} (float): the value of PMIN in above equation.
+  \end{itemize}
+\item {\tt SMETHOD} (integer): the choice of source term integration method. Possible choices:
+  \begin{itemize}
+  \item {\tt 0}: no source term integration.
+  \item {\tt 1}: splitting using RK-3 and SI for fast and slow modes. Default value.
+  \item {\tt 2}: semi-implicit;
+  \item {\tt 3}: R-K3 (if ICOMP=0 or 1) - slow;
+  \item {\tt 4}: Dynamic Splitting (experimental)
+  \end{itemize}
+\item {\tt DMETHOD} (integer): the choice of refraction method integration:
+  \begin{itemize}
+  \item {\tt 0}: no refraction
+  \item {\tt 1}: Crank-Nicholson (RTHETA = 0.5) or Euler Implicit scheme (RTHETA = 1.0)
+  \item {\tt 2}: Ultimate Quickest. Recommended default value.
+  \item {\tt 3}: RK5-WENO
+  \item {\tt 4}: Explicit FVM Upwind scheme
+  \item {\tt 5}: Implicit FVM Upwind scheme
+  \end{itemize}
+\item {\tt RTHETA} (float): value used in case {\tt DMETHOD=1}.
+\item {\tt FMETHOD} (integer): the choice of frequency-shifting integration method:
+  \begin{itemize}
+  \item {\tt 0}: no frequency shifting advection
+  \item {\tt 1}: Ultimate Quickest. Recommended default value.
+  \item {\tt 2}: Explicit Upwind scheme
+  \item {\tt 3}: Implicit Upwind scheme
   \end{itemize}
   
-
-
-
     
 \end{enumerate}
 

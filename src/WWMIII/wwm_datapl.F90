@@ -1040,6 +1040,7 @@
          LOGICAL                :: LNONL = .FALSE.
          REAL(rkind)            :: JGS_SOLVERTHR = 1.e-10_rkind
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
+         REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.
          INTEGER                :: ASPAR_LOCAL_LEVEL = 0
                              ! value 0 CAD_THE, CAS_THE and ASPAR_JAC used

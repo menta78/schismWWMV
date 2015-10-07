@@ -2318,7 +2318,7 @@
               p_is_converged = zero
             endif
             IF (IPstatus(IP) .eq. 1) THEN
-              IF (p_is_converged .lt. solverthr) is_converged=is_converged+1
+              IF (p_is_converged .lt. jgs_diff_solverthr) is_converged=is_converged+1
             ENDIF
           ENDIF
 
