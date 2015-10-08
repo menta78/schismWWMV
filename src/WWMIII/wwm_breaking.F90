@@ -86,8 +86,8 @@
       ELSE
         QB = ONE - 10.E-10
       END IF
-# elif SWAN_QB
-     IF (BETA .LT. 0.2D0) THEN
+#elif SWAN_QB
+      IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
         AUX   = EXP((QQ-1.0d0)/BETA2)
@@ -109,38 +109,55 @@
       END IF
 #endif
       QBLOCAL(IP) = QB
-      IF (ICOMP .GE. 2) THEN
-        SURFA0 = 0.
-        SURFA1 = 0.
-        !IF (ETOT .GT. THR) WRITE(*,'(I10, 5F20.10)') IP, ALPBJ, SME, QB, BETA2, HMAX(IP)
-        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-          IF ( BETA2 .LT. ONE - 10.E-10) THEN
-            WS  = ( ALPBJ / PI) *  QB * SME / BETA2
-            SbrD = WS * (ONE - QB) / (BETA2 - QB)
-          ELSE
-            WS  =  (ALPBJ/PI)*SME !( PSURF(1) / PI) * SMEBRK
-            SbrD = ZERO 
-          END IF
-          SURFA0 = SbrD
-          SURFA1 = WS + SbrD
-        ELSE
-          SURFA0 = ZERO 
-          SURFA1 = ZERO 
-        END IF
-      ELSE       ! not linearized ... 
-        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-          IF ( BETA2 .LT. ONE - 10.E-10) THEN
-            SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
-          ELSE
-            SURFA0  = - ( ALPBJ / PI ) * SME 
-          END IF
-        ELSE
-          SURFA0 = 0.
-        END IF
-      END IF
 
-      IMATRA = 0.
-      IMATDA = 0.
+      IF (IBREAK == 1) THEN ! Battjes & Janssen
+        IF (ICOMP .GE. 2) THEN ! linearized source terms ...
+          SURFA0 = 0.
+          SURFA1 = 0.
+          IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+            IF ( BETA2 .LT. ONE - 10.E-10) THEN
+              WS  = ( ALPBJ / PI) *  QB * SME / BETA2
+              SbrD = WS * (ONE - QB) / (BETA2 - QB)
+            ELSE
+              WS  =  (ALPBJ/PI)*SME !
+              SbrD = ZERO 
+            END IF
+            SURFA0 = SbrD
+            SURFA1 = WS + SbrD
+          ELSE
+            SURFA0 = ZERO 
+            SURFA1 = ZERO 
+          END IF
+        ELSE ! not linearized ... 
+          IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+            IF ( BETA2 .LT. ONE - 10.E-10) THEN
+              SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
+            ELSE
+              SURFA0  = - (ALPBJ/PI)*SME 
+            END IF
+          ELSE
+            SURFA0 = 0.
+          END IF
+        END IF
+      ELSEIF (IBREAK == 2) THEN
+         IF ( BB.GT.0D0 ) THEN
+            IF ( BB.LT.1D0 ) THEN
+               WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)*
+     &              BB**(0.5*(PSURF(5)+1))/DBLE(SQRT(PI))
+               SbrD = 5D-1*DBLE(3.+PSURF(5))*WS
+            ELSE
+               WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)/
+     &              DBLE(SQRT(PI))
+               SbrD = WS
+            ENDIF
+            SURFA0 = SbrD - WS
+            SURFA1 = SbrD
+         ELSE
+            SURFA0 = 0D0
+            SURFA1 = 0D0
+         ENDIF 
+      ENDIF
+
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
