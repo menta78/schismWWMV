@@ -828,6 +828,7 @@
          INTEGER                :: MESTR = 1
          INTEGER                :: MESCU = 0
          INTEGER                :: ICRIT = 1
+         INTEGER                :: IBREAK = 1
          INTEGER                :: IFRIC = 1
           
 

@@ -140,14 +140,12 @@
           END IF
         END IF
       ELSEIF (IBREAK == 2) THEN
-         IF ( BB.GT.0D0 ) THEN
-            IF ( BB.LT.1D0 ) THEN
-               WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)*
-     &              BB**(0.5*(PSURF(5)+1))/DBLE(SQRT(PI))
-               SbrD = 5D-1*DBLE(3.+PSURF(5))*WS
+         IF ( BETA2 .GT.0D0 ) THEN
+            IF ( BETA2.LT.1D0 ) THEN
+               WS   = 0.75_rkind*0.42_rkind*ALPBJ**3*SME*BETA2**(0.5_rkind*(4.0_rkind+1))/MySQRT(PI)
+               SbrD = 0.5_rkind*(3._rkind+4.0_rkind)*WS
             ELSE
-               WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)/
-     &              DBLE(SQRT(PI))
+               WS = 0.75_rkind*0.42_rkind*ALPBJ**3*SME/MySQRT(PI)
                SbrD = WS
             ENDIF
             SURFA0 = SbrD - WS
@@ -176,10 +174,8 @@
 
 
       !IF (ABS(SURFA0) .GT. 0. .OR. ABS(SURFA1) .GT. 0.) THEN
-        IF (DEP(IP) .LT. 0.21 .AND. DEP(IP) .GT. 0.19) WRITE(3333,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME/PI, KME, DEP(IP), ETOT, HMAX(IP)
+      !  IF (DEP(IP) .LT. 0.21 .AND. DEP(IP) .GT. 0.19) WRITE(3333,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME/PI, KME, DEP(IP), ETOT, HMAX(IP)
       !ENDIF
-          IF (DEP(IP) .EQ. 0.2) STOP
-
 
 #ifdef SCHISM
       DO IS=1,MSC
