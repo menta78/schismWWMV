@@ -226,7 +226,7 @@
  BRHD           = 0.78               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
  LMAXETOT       = T                  ! Limit shallow water wave height by wave breaking limiter (default=T)
  MESDS          = 1                  ! Formulation for the whitecapping source function; usually same as MESIN
- MESTR          = 1                  ! Formulation for the triad 3 wave interactions (MESTR = 0 (off), MESTR = 1 (Lumped Triad Approx. (LTA) like SWAN) (Default at 1)
+ MESTR          = 1                  ! Formulation for the triad 3 wave interactions (MESTR = 0 (off), MESTR = 1 (Lumped Triad Approx. (LTA) ) (Default at 1)
  TRICO          = 0.1                ! proportionality const. (\alpha_EB); default is 0.1
  TRIRA          = 5.                 ! ratio of max. freq. considered in triads over mean freq.; 2.5 is suggested
  TRIURS         = 0.1                ! critical Ursell number; if Ursell # < TRIURS; triads are not computed
@@ -247,7 +247,7 @@
     ! ICOMP = 2
     ! This means that the advection is done using implicit methods and that the
     ! source terms are integrated semi-implicit using Patankar rules and linearized
-    ! source terms as done in SWAN. Spectral part is still a fractional step
+    ! source terms. Spectral part is still a fractional step
     ! ICOMP = 3
     ! We use implicit method for advection, refraction, freq. shifting and source terms.
 
