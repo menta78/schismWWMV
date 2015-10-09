@@ -440,7 +440,7 @@
           WRITE(DBG%FHNDL,*) 'MSC AND MDC READ FROM FILE AND SET IN WWMINPUT.NML ARE NOT EQUAL -STOP-'
           WRITE(DBG%FHNDL,*) MSC_TEST, MSC
           WRITE(DBG%FHNDL,*) MDC_TEST, MDC 
-          CALL WWM_ABORT('THE fort.5002 file does not match your specifications')
+          CALL WWM_ABORT('THE fort.5002 file does not match your specifications. Remove and rerun')
         ENDIF
           
         END IF

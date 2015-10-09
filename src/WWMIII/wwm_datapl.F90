@@ -721,6 +721,7 @@
 
          INTEGER                         :: IWINDFORMAT  = 1
          LOGICAL                         :: EXTRAPOLATION_ALLOWED = .FALSE.
+         LOGICAL                         :: LSAVE_INTERP_ARRAY = .FALSE.
          LOGICAL                         :: USE_STEPRANGE = .TRUE.
          INTEGER                         :: IBOUNDFORMAT = 1
          INTEGER                         :: ICURRFORMAT  = 1

@@ -420,6 +420,231 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE LOAD_INTERP_ARRAY(FileSave, success)
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      logical, intent(out) :: success
+      character(len=256), intent(in) :: FileSave
+      character (len = *), parameter :: CallFct = "LOAD_INTERP_ARRAY"
+      integer, allocatable :: CF_IX_GLOBAL(:), CF_IY_GLOBAL(:)
+      real(rkind), allocatable :: CF_COEFF_GLOBAL(:,:)
+      integer, allocatable :: ListFirstMNP(:)
+      integer, allocatable :: CF_IX_loc(:), CF_IY_loc(:)
+      real(rkind), allocatable :: CF_COEFF_loc(:,:)
+      integer iret, ncid, varid
+      integer IP, IPglob, iPROC, NPloc, IPloc
+      INQUIRE(FILE=TRIM(FileSave), EXIST=LPRECOMP_EXIST)
+      IF (LPRECOMP_EXIST .eqv. .FALSE.) THEN
+        success=.FALSE.
+        RETURN
+      END IF
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+        !
+        iret=nf90_open(TRIM(FileSave), NF90_NOWRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+        !
+        iret=nf90_inq_varid(ncid, "CF_IX", varid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        iret=NF90_GET_VAR(ncid, varid, CF_IX_GLOBAL)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        !
+        iret=nf90_inq_varid(ncid, "CF_IY", varid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        iret=NF90_GET_VAR(ncid, varid, CF_IY_GLOBAL)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        !
+        iret=nf90_inq_varid(ncid, "CF_COEFF", varid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        iret=NF90_GET_VAR(ncid, varid, CF_COEFF_GLOBAL)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        !      
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        !
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      !
+#ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_WIND .eqv. .FALSE.) THEN
+        CF_IX=CF_IX_GLOBAL
+        CF_IY=CF_IY_GLOBAL
+        CF_COEFF=CF_COEFF_GLOBAL
+        deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
+      ELSE
+        IF (myrank .eq. 0) THEN
+          allocate(ListFirstMNP(nproc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+          DO iProc=2,nproc
+            ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+          END DO
+          DO IP=1,MNP
+            IPglob=iplg(IP)
+            CF_IX(IP)=CF_IX_GLOBAL(IPglob)
+            CF_IY(IP)=CF_IY_GLOBAL(IPglob)
+            CF_COEFF(:,IP)=CF_COEFF_GLOBAL(:,IPglob)
+          END DO
+          !
+          DO iPROC=2,nproc
+            NPloc=ListMNP(iPROC)
+            allocate(CF_IX_loc(NPloc), CF_IY_loc(NPloc), CF_COEFF_loc(4,NPloc), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+            DO IPloc=1,NPloc
+              IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+              CF_IX_loc(IPloc)=CF_IX_GLOBAL(IPglob)
+              CF_IY_loc(IPloc)=CF_IY_GLOBAL(IPglob)
+              CF_COEFF_loc(:, IPloc)=CF_COEFF_GLOBAL(:, IPglob)
+            END DO
+            CALL MPI_SEND(CF_IX_loc, NPloc, itype, iPROC-1, 711, comm, ierr)
+            CALL MPI_SEND(CF_IY_loc, NPloc, itype, iPROC-1, 712, comm, ierr)
+            CALL MPI_SEND(CF_COEFF_loc, 4*NPloc, rtype, iPROC-1, 713, comm, ierr)
+            deallocate(CF_IX_loc, CF_IY_loc, CF_COEFF_loc)
+          END DO
+          deallocate(ListFirstMNP)
+        ELSE
+          CALL MPI_RECV(CF_IX, MNP, itype, 0, 711, comm, istatus, ierr)
+          CALL MPI_RECV(CF_IY, MNP, itype, 0, 712, comm, istatus, ierr)
+          CALL MPI_RECV(CF_COEFF, 4*MNP, rtype, 0, 713, comm, istatus, ierr)
+        END IF
+        deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
+      END IF
+#else
+      CF_IX=CF_IX_GLOGAL
+      CF_IY=CF_IY_GLOBAL
+      CF_COEFF=CF_COEFF_GLOBAL
+      deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SAVE_INTERP_ARRAY(FileSave)
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      character(len=256), intent(in) :: FileSave
+      character (len = *), parameter :: CallFct = "SAVE_INTERP_ARRAY"
+      integer, allocatable :: CF_IX_GLOBAL(:), CF_IY_GLOBAL(:)
+      real(rkind), allocatable :: CF_COEFF_GLOBAL(:,:)
+      integer, allocatable :: CF_IX_loc(:), CF_IY_loc(:)
+      real(rkind), allocatable :: CF_COEFF_loc(:,:)
+      integer, allocatable :: ListFirstMNP(:)
+      integer ncid, iret, var_id
+      integer mnp_dims, four_dims
+      integer IP, IPglob, iPROC, NP_RESloc, IPloc
+#ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_WIND .eqv. .TRUE.) THEN
+        IF (myrank .eq. 0) THEN
+          allocate(ListFirstMNP(nproc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+          DO iProc=2,nproc
+            ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+          END DO
+          !
+          allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+          !
+          DO IP=1,NP_RES
+            IPglob=iplg(IP)
+            CF_IX_GLOBAL(IPglob)=CF_IX(IP)
+            CF_IY_GLOBAL(IPglob)=CF_IY(IP)
+            CF_COEFF_GLOBAL(:, IPglob)=CF_COEFF(:,IP)
+          END DO
+          DO iPROC=2,nproc
+            NP_RESloc=ListNP_RES(iPROC)
+            allocate(CF_IX_loc(NP_RESloc), CF_IY_loc(NP_RESloc), CF_COEFF_loc(4,NP_RESloc), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+            CALL MPI_RECV(CF_IX_loc, NP_RESloc, itype, iProc-1, 611, comm, istatus, ierr)
+            CALL MPI_RECV(CF_IY_loc, NP_RESloc, itype, iProc-1, 612, comm, istatus, ierr)
+            CALL MPI_RECV(CF_COEFF_loc, 4*NP_RESloc, rtype, iProc-1, 613, comm, istatus, ierr)
+            DO IPloc=1,NP_RES
+              IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+              CF_IX_GLOBAL(IPglob)=CF_IX_loc(IPloc)
+              CF_IY_GLOBAL(IPglob)=CF_IY_loc(IPloc)
+              CF_COEFF_GLOBAL(:, IPglob)=CF_COEFF_loc(:, IPloc)
+            END DO
+          END DO
+          deallocate(ListFirstMNP)
+        ELSE
+          CALL MPI_SEND(CF_IX, NP_RES, itype, 0, 611, comm, ierr)
+          CALL MPI_SEND(CF_IY, NP_RES, itype, 0, 612, comm, ierr)
+          CALL MPI_SEND(CF_COEFF_loc, 4*NP_RES, rtype, 0, 613, comm, ierr)
+        END IF
+      ELSE
+        allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+        CF_IX_GLOBAL=CF_IX
+        CF_IY_GLOBAL=CF_IY
+        CF_COEFF_GLOBAL=CF_COEFF
+      END IF
+#else
+      allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+      CF_IX_GLOBAL=CF_IX
+      CF_IY_GLOBAL=CF_IY
+      CF_COEFF_GLOBAL=CF_COEFF
+#endif
+      !
+      ! Now writing up
+      !
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        iret=nf90_create(TRIM(FileSave), nf90_CLOBBER, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        !
+        iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        !
+        iret = nf90_def_dim(ncid, 'four', 4, four_dims)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        !
+        iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        !
+        iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        !
+        iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL8,(/ mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        !
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        !
+        ! Now writing the data
+        !
+        iret=nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        !
+        iret=nf90_inq_varid(ncid,'CF_IX',var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        !
+        iret=nf90_put_var(ncid,var_id,CF_IX_GLOBAL,start = (/np_total/), count=(/1/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_put_var(ncid,var_id,CF_IY_GLOBAL,start = (/np_total/), count=(/1/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_put_var(ncid,var_id,CF_COEFF_GLOBAL,start = (/4, np_total/), count=(/1, 1/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        !
+        deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif      
+         
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE COMPUTE_CF_COEFFICIENTS(nx, ny, lon, lat)
       USE DATAPOOL
       IMPLICIT NONE
@@ -438,14 +663,14 @@
       integer :: StatusUse(NDX_WIND_FD, NDY_WIND_FD)
       integer :: nbExtrapolation = 0
       real(rkind) :: MaxMinDist = 0
+      character(len=256) :: FileSave = "wwm_filesave_interp_array.nc"
+      logical success
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
       StatusUse=0
+      
       IF (METHOD1 .eqv. .FALSE.) THEN
         allocate(CF_IX(MNP_WIND), CF_IY(MNP_WIND), SHIFTXY(4,2), CF_COEFF(4,MNP_WIND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-        cf_coeff=0
-        CF_IX=0
-        CF_IY=0
         SHIFTXY(1,1)=0
         SHIFTXY(1,2)=0
         SHIFTXY(2,1)=1
@@ -454,6 +679,13 @@
         SHIFTXY(3,2)=1
         SHIFTXY(4,1)=1
         SHIFTXY(4,2)=1
+        IF (LSAVE_INTERP_ARRAY) THEN
+          CALL LOAD_INTERP_ARRAY(FileSave, success)
+          IF (success .eqv. .TRUE.) RETURN
+        END IF
+        CF_IX=0
+        CF_IY=0
+        CF_COEFF=0
         WRITE(WINDBG%FHNDL,*) 'min(lon)=', minval(lon)
         WRITE(WINDBG%FHNDL,*) 'max(lon)=', maxval(lon)
         WRITE(WINDBG%FHNDL,*) 'min(lat)=', minval(lat)
@@ -565,6 +797,9 @@
             END IF
           END IF
         END DO
+        IF (LSAVE_INTERP_ARRAY) THEN
+          CALL SAVE_INTERP_ARRAY(FileSave)
+        END IF
       ELSE
         ALLOCATE(cf_c11(MNP_WIND,2), cf_c12(MNP_WIND,2), cf_c21(MNP_WIND,2), cf_c22(MNP_WIND,2), stat=istat)
         cf_c11=0
