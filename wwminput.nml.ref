@@ -169,6 +169,12 @@
  MULTIPLE_IN   = T                   ! If T then all process are reading data
                                      ! If F then only process 0 does it and
                                      ! then spread to other nodes.
+ EXTRAPOLATION_ALLOWED = F           ! Sometimes model grid is slightly larger
+                                     ! than the forcing grid. For points outside
+                                     ! one uses extrapolation. Default F.
+ USE_STEPRANGE = T                   ! The "steprange" variable in grib files
+                                     ! It is used to shift time by steprange/24 days
+                                     ! but sometimes it is wrongly set.
 /
 
 &CURR !NOT USED WITH SELFE

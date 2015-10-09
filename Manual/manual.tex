@@ -433,7 +433,9 @@ The wind section specifies how the wind, is provided to the WWM model. It is the
  LINTERWD       = T                
  FILEWIND       = 'wind.dat'       
  IWINDFORMAT    = 1                
- GRIB_FILE_TYPE = 1   
+ GRIB_FILE_TYPE = 1
+ EXTRAPOLATION_ALLOWED = T,
+ USE_STEPRANGE = T,
  MULTIPLE_IN   = T 
 /
 \end{verbatim}
@@ -463,16 +465,21 @@ The meaning of the options is the following:
   \item {\tt 6}: NetCDF CF file {\tt FILEWAVE} with wind field in Uwind / Vwind with values at the model nodes.
   \item {\tt 7}: Grib files from meteorological models. List of files is in {\tt FILEWAVE}
   \end{itemize}
-\item If {\tt IWINDFORMAT=7} then the {\tt GRIB\_FILE\_TYPE} has to be selected. Possible options are:
+\item {\tt MULTIPLE\_IN} (logical): If true all MPI nodes are reading data at the same time. If false, only one node is reading and sending data to others via MPI sends/recvs. Default is false.
+\item {\tt LINTERWD} (logical): If true interpolate between time steps. Default is true.
+\end{enumerate}
+Following options are specific to the GRIB input files (option {\tt IWINDFORMAT=7}):
+\begin{enumerate}
+\item {\tt GRIB\_FILE\_TYPE} has to be selected. Possible options are:
   \begin{itemize}
   \item {\tt 1}: ECMWF (IFS) forecasts.
   \item {\tt 2}: COSMO model outputs.
   \item {\tt 3}: DHMZ (ALADIN) forecasts.
   \end{itemize}
-\item {\tt MULTIPLE\_IN} (logical): If true all MPI nodes are reading data at the same time. If false, only one node is reading and sending data to others via MPI sends/recvs. Default is false.
-\item {\tt LINTERWD} (logical): If true interpolate between time steps. Default is true.
-  
+\item {\tt EXTRAPOLATION\_ALLOWED} (logical): Sometimes some model grid points are outside of the forcing file. If it is only a few such points, then it makes sense to use extrapolation for them. Default is false. This option should be used with caution.
+\item {\tt USE\_STEPRANGE} (logical): The grib forcing file have this entry which specifies how advanced in the simulation the file is. If selected time of grib file is increased by {\tt steprange/24} days. But sometime the steprange is mangled. Default is true.
 \end{enumerate}
+
 TODO: Clear the LSTWD vs LSEWD issue.
 
 
