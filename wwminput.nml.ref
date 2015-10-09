@@ -222,6 +222,7 @@
  FRICC          = 0.067              ! Cjon - Bottom friction coefficient (always positive)
  MESBR          = 1                  ! Shallow water wave breaking; 0: no; 1: BJ78 (Default at 1)
  ICRIT          = 1                  ! Wave breaking criterion: set as 1 - SWAN, 2 - Dingemans - default = 2
+ IBREAK         = 1                  ! Wave breaking function: 1 -  battjes & Janssen 2: Thornton & Guza
  ALPBJ          = 0.5                ! Dissipation proportionality coefficient (0.5 is default)
  BRHD           = 0.78               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
  LMAXETOT       = T                  ! Limit shallow water wave height by wave breaking limiter (default=T)

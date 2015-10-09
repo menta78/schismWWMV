@@ -552,6 +552,7 @@ This section specifies the choices of physical parametrizations done in the WWM 
  FRICC          = 0.067          
  MESBR          = 1              
  ICRIT          = 1              
+ IBREAK         = 1
  ALPBJ          = 0.5            
  BRHD           = 0.78           
  LMAXETOT       = T              
@@ -604,6 +605,11 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
   \begin{itemize}
   \item {\tt 1}: SWAN
   \item {\tt 2}: Dingemans
+  \end{itemize}
+\item {\tt IBREAK} (integer): wave breaking function. Possible values:
+  \begin{itemize}
+  \item {\tt 1}: battjes & Janssen
+  \item {\tt 2}: Thornton & Guza
   \end{itemize}
 \item {\tt ALPBJ} (float): dissipation proportionality coefficient. Recommended value is 0.5
 \item {\tt BRHD} (float): Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
