@@ -557,23 +557,33 @@
           END DO
           DO iPROC=2,nproc
             NP_RESloc=ListNP_RES(iPROC)
+            WRITE(STAT%FHNDL,*) ' iPROC=', iPROC, ' NP_RES_loc=', NP_RESloc 
             allocate(CF_IX_loc(NP_RESloc), CF_IY_loc(NP_RESloc), CF_COEFF_loc(4,NP_RESloc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+            WRITE(STAT%FHNDL,*) 'Step 1'
             CALL MPI_RECV(CF_IX_loc, NP_RESloc, itype, iProc-1, 611, comm, istatus, ierr)
+            WRITE(STAT%FHNDL,*) 'Step 2'
             CALL MPI_RECV(CF_IY_loc, NP_RESloc, itype, iProc-1, 612, comm, istatus, ierr)
+            WRITE(STAT%FHNDL,*) 'Step 3'
             CALL MPI_RECV(CF_COEFF_loc, 4*NP_RESloc, rtype, iProc-1, 613, comm, istatus, ierr)
+            WRITE(STAT%FHNDL,*) 'Step 4'
             DO IPloc=1,NP_RES
-              IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+              IPglob=ListIPLG(IP + ListFirstMNP(iProc))
               CF_IX_GLOBAL(IPglob)=CF_IX_loc(IPloc)
               CF_IY_GLOBAL(IPglob)=CF_IY_loc(IPloc)
               CF_COEFF_GLOBAL(:, IPglob)=CF_COEFF_loc(:, IPloc)
             END DO
+            deallocate(CF_IX_loc, CF_IY_loc, CF_COEFF_loc)
           END DO
           deallocate(ListFirstMNP)
         ELSE
+          WRITE(STAT%FHNDL,*) ' NP_RES=', NP_RES
           CALL MPI_SEND(CF_IX, NP_RES, itype, 0, 611, comm, ierr)
+          WRITE(STAT%FHNDL,*) 'Step 1'
           CALL MPI_SEND(CF_IY, NP_RES, itype, 0, 612, comm, ierr)
-          CALL MPI_SEND(CF_COEFF_loc, 4*NP_RES, rtype, 0, 613, comm, ierr)
+          WRITE(STAT%FHNDL,*) 'Step 2'
+          CALL MPI_SEND(CF_COEFF, 4*NP_RES, rtype, 0, 613, comm, ierr)
+          WRITE(STAT%FHNDL,*) 'Step 3'
         END IF
       ELSE
         allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
@@ -610,8 +620,13 @@
         iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         !
-        iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL8,(/ mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        IF (rkind .eq. 8) THEN
+          iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL8,(/ mnp_dims/),var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        ELSE
+          iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL4,(/ mnp_dims/),var_id)
+          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        END IF
         !
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
