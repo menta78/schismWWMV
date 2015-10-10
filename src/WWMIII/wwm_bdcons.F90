@@ -1668,6 +1668,8 @@
           END IF
         END IF
       END IF
+      WRITE(STAT%FHNDL, *) 'IWBMNP=', IWBMNP
+      WRITE(STAT%FHNDL, *) 'allocated(WBAC)=', allocated(WBAC)
       CALL WAVE_BOUNDARY_CONDITION(WBAC)
       IF (LBINTER) WBACOLD = WBAC
       END SUBROUTINE

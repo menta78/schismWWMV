@@ -496,7 +496,7 @@
             allocate(CF_IX_loc(NPloc), CF_IY_loc(NPloc), CF_COEFF_loc(4,NPloc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
             DO IPloc=1,NPloc
-              IPglob=ListIPLG(IP+ListFirstMNP(iProc))
+              IPglob=ListIPLG(IPloc + ListFirstMNP(iPROC))
               CF_IX_loc(IPloc)=CF_IX_GLOBAL(IPglob)
               CF_IY_loc(IPloc)=CF_IY_GLOBAL(IPglob)
               CF_COEFF_loc(:, IPloc)=CF_COEFF_GLOBAL(:, IPglob)
@@ -507,12 +507,12 @@
             deallocate(CF_IX_loc, CF_IY_loc, CF_COEFF_loc)
           END DO
           deallocate(ListFirstMNP)
+          deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
         ELSE
           CALL MPI_RECV(CF_IX, MNP, itype, 0, 711, comm, istatus, ierr)
           CALL MPI_RECV(CF_IY, MNP, itype, 0, 712, comm, istatus, ierr)
           CALL MPI_RECV(CF_COEFF, 4*MNP, rtype, 0, 713, comm, istatus, ierr)
         END IF
-        deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
       END IF
 #else
       CF_IX=CF_IX_GLOGAL
@@ -608,45 +608,51 @@
       IF (myrank .eq. 0) THEN
 #endif
         iret=nf90_create(TRIM(FileSave), nf90_CLOBBER, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
         !
         iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
         !
         iret = nf90_def_dim(ncid, 'four', 4, four_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
         !
         iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        !
+        iret=nf90_def_var(ncid,'CF_IY',NF90_INT,(/ mnp_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         !
-        iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-        !
-        iret=nf90_def_var(ncid,'CF_COEFF',NF90_RUNTYPE,(/ mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        iret=nf90_def_var(ncid,'CF_COEFF',NF90_RUNTYPE,(/ four_dims, mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         !
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
         !
         ! Now writing the data
         !
         iret=nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
         !
         iret=nf90_inq_varid(ncid,'CF_IX',var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
         !
-        iret=nf90_put_var(ncid,var_id,CF_IX_GLOBAL,start = (/np_total/), count=(/1/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        iret=nf90_put_var(ncid,var_id,CF_IX_GLOBAL,start = (/ 1 /), count=(/np_total/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
         !
-        iret=nf90_put_var(ncid,var_id,CF_IY_GLOBAL,start = (/np_total/), count=(/1/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        iret=nf90_inq_varid(ncid,'CF_IY',var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
         !
-        iret=nf90_put_var(ncid,var_id,CF_COEFF_GLOBAL,start = (/4, np_total/), count=(/1, 1/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        iret=nf90_put_var(ncid,var_id,CF_IY_GLOBAL,start = (/ 1 /), count=(/np_total/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        !
+        iret=nf90_inq_varid(ncid,'CF_COEFF',var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        !
+        iret=nf90_put_var(ncid,var_id,CF_COEFF_GLOBAL,start = (/ 1, 1 /), count=(/4, np_total/))
+        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
         !
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
         !
         deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
 #ifdef MPI_PARALL_GRID
