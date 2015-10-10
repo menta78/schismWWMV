@@ -505,7 +505,7 @@
               END DO
             ELSE
               IF (LNAUTIN) THEN
-                TMP = MAXDIR  ! SWAN
+                TMP = MAXDIR
                 MAXDIR = MINDIR 
                 MINDIR = TMP
               END IF 

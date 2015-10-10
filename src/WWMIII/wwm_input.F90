@@ -715,7 +715,7 @@
      &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
      &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
      &      EPSH5,                                                      &
-     &      LZETA_SETUP, ZETA_METH, SOLVERTHR,                          &
+     &      LZETA_SETUP, ZETA_METH, SOLVERTHR
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &

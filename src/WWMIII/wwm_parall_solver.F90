@@ -2826,7 +2826,9 @@
 ! The same for x, r
 ! 
       SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-      USE DATAPOOL
+      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, WAE_SOLVERTHR
+      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
+      USE DATAPOOL, only : PCmethod, STAT, myrank
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
