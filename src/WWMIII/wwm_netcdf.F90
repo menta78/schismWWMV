@@ -1298,7 +1298,7 @@
       integer, intent(in) :: np_write, ne_write
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, msc_dims, mdc_dims
+      integer mnp_dims, mne_dims, nfreq_dims, ndir_dims
 # ifdef MPI_PARALL_GRID
       integer np_global_dims, ne_global_dims
 # endif
@@ -1322,9 +1322,9 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
       iret = nf90_def_dim(ncid, 'mne', ne_write, mne_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
-      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
+      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT.eq.1) THEN
@@ -1425,7 +1425,7 @@
 # else
         p_dims=mnp_dims
 # endif
-        iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ mdc_dims, p_dims, ntime_dims/), var_id)
+        iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ ndir_dims, p_dims, ntime_dims/), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
       END IF
       END SUBROUTINE
@@ -1658,7 +1658,7 @@
       character (len = *), parameter :: FULLNAME = "full-name"
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
-      integer iret, ncid, nbstat_dims, ntime_dims, msc_dims, mdc_dims
+      integer iret, ncid, nbstat_dims, ntime_dims, nfreq_dims, ndir_dims
       integer one_dims, three_dims, var_id, I
       iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
       CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
@@ -1671,10 +1671,10 @@
       iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
 
-      iret=nf90_inq_dimid(ncid, 'msc', msc_dims)
+      iret=nf90_inq_dimid(ncid, 'nfreq', nfreq_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
 
-      iret=nf90_inq_dimid(ncid, 'mdc', mdc_dims)
+      iret=nf90_inq_dimid(ncid, 'ndir', ndir_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
 
       iret=nf90_inq_dimid(ncid, 'one', one_dims)
@@ -1684,7 +1684,7 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
 
       IF (VAROUT_STATION%AC) THEN
-        iret=nf90_def_var(ncid,'AC',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
+        iret=nf90_def_var(ncid,'AC',NF90_OUTTYPE_STAT,(/nbstat_dims, nfreq_dims, ndir_dims, ntime_dims /),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
 
         iret=nf90_put_att(ncid,var_id,UNITS,'unk')
@@ -1694,7 +1694,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
       END IF
       IF (VAROUT_STATION%WK) THEN
-        iret=nf90_def_var(ncid,'WK',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, ntime_dims /),var_id)
+        iret=nf90_def_var(ncid,'WK',NF90_OUTTYPE_STAT,(/nbstat_dims, nfreq_dims, ntime_dims /),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
 
         iret=nf90_put_att(ncid,var_id,UNITS,'unk')
@@ -1704,7 +1704,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
       END IF
       IF (VAROUT_STATION%ACOUT_1D) THEN
-        iret=nf90_def_var(ncid,'ACOUT_1D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, three_dims, ntime_dims /),var_id)
+        iret=nf90_def_var(ncid,'ACOUT_1D',NF90_OUTTYPE_STAT,(/nbstat_dims, nfreq_dims, three_dims, ntime_dims /),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
 
         iret=nf90_put_att(ncid,var_id,UNITS,'unk')
@@ -1714,7 +1714,7 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
       END IF
       IF (VAROUT_STATION%ACOUT_2D) THEN
-        iret=nf90_def_var(ncid,'ACOUT_2D',NF90_OUTTYPE_STAT,(/nbstat_dims, msc_dims, mdc_dims, ntime_dims /),var_id)
+        iret=nf90_def_var(ncid,'ACOUT_2D',NF90_OUTTYPE_STAT,(/nbstat_dims, nfreq_dims, ndir_dims, ntime_dims /),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
 
         iret=nf90_put_att(ncid,var_id,UNITS,'unk')
@@ -1757,7 +1757,7 @@
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_STAT_1"
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer msc_dims, mdc_dims
+      integer nfreq_dims, ndir_dims
       integer nbstat_dims
       integer iret, var_id
       integer ntime_dims
@@ -1771,9 +1771,9 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       iret = nf90_def_dim(ncid, 'nbstation', IOUTS, nbstat_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-      iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
+      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
       !
 # ifdef MPI_PARALL_GRID
@@ -1840,17 +1840,17 @@
         CALL GENERIC_NETCDF_ERROR(CallFct, 32, iret)
       END IF
 ! Isum
-      iret=nf90_def_var(ncid,'isum',NF90_INT,(/ nbstat_dims/),var_id)
+      iret=nf90_def_var(ncid, 'isum', NF90_INT,(/ nbstat_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 33, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 34, iret)
 ! SPSIG
-      iret=nf90_def_var(ncid,'spsig',NF90_RUNTYPE,(/ msc_dims/),var_id)
+      iret=nf90_def_var(ncid, 'spsig', NF90_RUNTYPE,(/ nfreq_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 35, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 36, iret)
 ! SPDIR
-      iret=nf90_def_var(ncid,'spdir',NF90_RUNTYPE,(/ mdc_dims/),var_id)
+      iret=nf90_def_var(ncid, 'spdir', NF90_RUNTYPE,(/ ndir_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR(CallFct, 31, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
       CALL GENERIC_NETCDF_ERROR(CallFct, 37, iret)

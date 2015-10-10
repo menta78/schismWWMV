@@ -2980,7 +2980,7 @@
       integer, intent(in) :: ncid, nbTime
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, msc_dims, mdc_dims, eight_dims
+      integer mnp_dims, mne_dims, nfreq_dims, ndir_dims, eight_dims
       integer iret, var_id
       integer ntime_dims, iwbmnpgl_dims
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
@@ -2994,9 +2994,9 @@
       CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
       iret = nf90_def_dim(ncid, 'np_total', np_total, mnp_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'msc', MSC, msc_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
-      iret = nf90_def_dim(ncid, 'mdc', MDC, mdc_dims)
+      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
       iret = nf90_def_dim(ncid, 'eight',   8, eight_dims)
       CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
@@ -3037,7 +3037,7 @@
       END IF
       !
       IF (BOUC_NETCDF_OUT_SPECTRA) THEN
-        iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ msc_dims, mdc_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
+        iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ nfreq_dims, ndir_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
         CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
@@ -3052,7 +3052,6 @@
       implicit none
       integer, intent(in) :: ncid
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, msc_dims, mdc_dims
       integer iret, var_id
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_2"
       !

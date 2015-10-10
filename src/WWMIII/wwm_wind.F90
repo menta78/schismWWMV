@@ -480,7 +480,7 @@
         IF (myrank .eq. 0) THEN
           allocate(ListFirstMNP(nproc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-          ListFirstMNP(1)=0
+          ListFirstMNP=0
           DO iProc=2,nproc
             ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
           END DO
@@ -569,7 +569,7 @@
             WRITE(STAT%FHNDL,*) 'Step 3'
             CALL MPI_RECV(CF_COEFF_loc, 4*NP_RESloc, rtype, iProc-1, 613, comm, istatus, ierr)
             WRITE(STAT%FHNDL,*) 'Step 4'
-            DO IPloc=1,NP_RES
+            DO IPloc=1,NP_RESloc
               IPglob=ListIPLG(IP + ListFirstMNP(iProc))
               CF_IX_GLOBAL(IPglob)=CF_IX_loc(IPloc)
               CF_IY_GLOBAL(IPglob)=CF_IY_loc(IPloc)
@@ -622,13 +622,8 @@
         iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         !
-        IF (rkind .eq. 8) THEN
-          iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL8,(/ mnp_dims/),var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-        ELSE
-          iret=nf90_def_var(ncid,'CF_COEFF',NF90_REAL4,(/ mnp_dims/),var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
-        END IF
+        iret=nf90_def_var(ncid,'CF_COEFF',NF90_RUNTYPE,(/ mnp_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
         !
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
