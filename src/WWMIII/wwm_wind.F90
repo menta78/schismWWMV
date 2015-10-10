@@ -543,6 +543,7 @@
         IF (myrank .eq. 0) THEN
           allocate(ListFirstMNP(nproc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+          ListFirstMNP=0
           DO iProc=2,nproc
             ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
           END DO

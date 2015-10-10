@@ -2826,9 +2826,7 @@
 ! The same for x, r
 ! 
       SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDat, nbIter, Norm_L2, Norm_LINF)
-      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, NNZ, AC2, SOLVERTHR
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-      USE DATAPOOL, only : PCmethod, STAT, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDat
@@ -2843,7 +2841,7 @@
       REAL(rkind) :: MaxError, CritVal
       integer :: MaxIter = 30
       integer IP
-      MaxError=SOLVERTHR
+      MaxError=WAE_SOLVERTHR
       CALL I5B_APPLY_FCT(LocalColor, SolDat,  AC2, SolDat % AC3)
       SolDat % AC1=0                               ! y
       SolDat % AC3=SolDat % B_block - SolDat % AC3 ! r residual

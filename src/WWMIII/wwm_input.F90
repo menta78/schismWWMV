@@ -703,17 +703,19 @@
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
      &      LLIMT, LIMFAK, MELIM, LDIFR, IDIFFR, LADVTEST, LSOUBOUND,   &
-     &      LCONV, LCFL, LCHKCONV, NQSITER, QSCONV1, QSCONV2,           &
-     &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
-     &      EPSH5, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR,           &
+     &      LCFL, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR,            &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
-     &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, SOLVERTHR, MAXITER,  &
-     &      LNANINFCHK, LZETA_SETUP, ZETA_METH, LSOURCESWAM, PMIN,      &
+     &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, MAXITER,             &
+     &      LNANINFCHK, LSOURCESWAM, PMIN,                              &
      &      LSOURCESWWIII, BLOCK_GAUSS_SEIDEL, LNONL,                   &
-     &      L_SOLVER_NORM, JGS_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
-     &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR
+     &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
+     &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
+     &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
+     &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
+     &      EPSH5,                                                      &
+     &      LZETA_SETUP, ZETA_METH, SOLVERTHR,                          &
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &

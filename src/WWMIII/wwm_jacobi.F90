@@ -2538,7 +2538,7 @@
           MaxNorm = maxval(Norm_L2)
           SumNorm = sum(Norm_L2)
 #endif
-          IF (sqrt(SumNorm) .le. JGS_SOLVERTHR) THEN
+          IF (sqrt(SumNorm) .le. WAE_SOLVERTHR) THEN
             EXIT
           END IF
         END IF

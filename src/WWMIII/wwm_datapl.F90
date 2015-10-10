@@ -1040,7 +1040,7 @@
          INTEGER                :: NB_BLOCK = 3 
          REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
-         REAL(rkind)            :: JGS_SOLVERTHR = 1.e-10_rkind
+         REAL(rkind)            :: WAE_SOLVERTHR = 1.e-10_rkind
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.
