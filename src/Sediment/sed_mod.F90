@@ -103,6 +103,7 @@
        INTEGER :: sed_debug  ! used for sediment model debugging, outputs lots of variables to mirror out
        INTEGER :: bedload                ! activation key for bedload transport
        INTEGER :: suspended_load         ! activation key for suspended load tranport
+       INTEGER :: ised_dump              !dumping option
        INTEGER :: slope_formulation      ! activation key for slope effects on beldload
 !       INTEGER :: bc_for_weno            ! activation of boundary condition for weno
        INTEGER :: sed_morph              ! activation key for morphodynamics
@@ -141,6 +142,7 @@
        REAL(rkind) :: bedmass_threshold       ! threshold for bedmass_filter
        REAL(rkind) :: sed_morph_time          ! active morpology is turned on after sed_morph_time (in days)
        REAL(rkind) :: depo_scale              !scale for depositional mass in 1 formulation
+       REAL(rkind) :: relath                  !relative height of reference point for calculating the beddeformation    
 
        REAL(rkind), ALLOCATABLE  :: bedthick_overall(:)        ! bed thickness; bedthick_overall(npa)
 !       REAL(rkind), ALLOCATABLE :: Csed(:)      ! initial concentration used during analytical initialization
@@ -203,7 +205,7 @@
        ! Variable shared by sed_friction subroutines
        REAL(rkind), ALLOCATABLE  :: bustr(:)       !Current-induced bottom stress in direction x (m^2/s/s)
        REAL(rkind), ALLOCATABLE  :: bvstr(:)       !Current-induced bottom stress in direction y (m^2/s/s)
-       REAL(rkind), ALLOCATABLE  :: tau_c(:)       !Current-induced bottom stres (m^2/s/s)
+       REAL(rkind), ALLOCATABLE  :: tau_c(:)       !Current-induced bottom stress (m^2/s/s) =|(bustr,bvstr)|
        REAL(rkind), ALLOCATABLE  :: tau_w(:)       !Wave-induced bottom stres (m^2/s/s)
        REAL(rkind), ALLOCATABLE  :: tau_wc(:)      !Wave-current mean bottom stress (m^2/s/s)
 

@@ -69,6 +69,11 @@ bedload == 1
 !------------------------------------------------------------------------------
 suspended_load == 1
 
+!- Dumping/dredging option
+!- 0: no; 1: needs input sed_dump.in
+------------------------------------------------------------------------------
+ised_dump == 0 
+
 !- SLOPE FORMULATION ----------------------------------------------------------
 !  Inactive at the moment
 !- 1 = Damgaard et al. (1997)
@@ -86,7 +91,12 @@ ised_bc_bot == 1
 !- Scaling for depositional flux, used only if ised_bc_bot=1
 !- Must >=0 and usually <=1
 !------------------------------------------------------------------------------
-depo_scale = 1.d0
+depo_scale == 1.d0
+
+!-Relative height of total depth where depositional flux is evaluated
+!-
+!------------------------------------------------------------------------------
+relath == 0.01d0 !suggested value: 0.01; it can be smaller
 
 !------------------------------------------------------------------------------
 !- MORPHOLOGY -----------------------------------------------------------------

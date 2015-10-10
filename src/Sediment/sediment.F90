@@ -70,7 +70,8 @@
 ! Author: Ligia Pinto                                                !
 ! Date: xx/08/2007                                                   !
 !                                                                    !
-! History: 2012/12 - F.Ganthy : form homogenisation of sediments     !
+! History: 2015 - Joseph Zhang: overhauled some parts
+!          2012/12 - F.Ganthy : form homogenisation of sediments     !
 !          routines                                                  !
 !          2012/12 - F.Ganthy : modifications for Bottom Composition !
 !                               Generation (BCG) purpose (added      !
@@ -171,6 +172,13 @@
       REAL(rkind) :: htot
       REAL(rkind) :: kpeak
 
+      !Dumping
+      INTEGER,save :: ne_dump
+      INTEGER, allocatable :: ie_dump(:)
+      REAL(rkind),save :: t_dump  !time in dumping option
+      REAL(rkind), allocatable :: vol_dump(:)
+    
+      logical, save :: first_call=.true.
 
 !- Start Statement --------------------------------------------------!
       allocate(dep_mass(nea,ntr_l),stat=i)
@@ -218,6 +226,59 @@
       ! RUNTIME
       time=dt*it
 
+!---------------------------------------------------------------------
+!     Dumping/dredging
+!---------------------------------------------------------------------
+      if(ised_dump/=0) then
+        !For 1st call (including hot), init. read
+        if(first_call) then
+          !!Time stamps in this file must be one of the time steps
+          open(18,file='sed_dump.in',status='old')
+          read(18,*)
+          do 
+            read(18,*,iostat=k)t_dump,ne_dump !time in sec
+            if(k/=0) then
+              ised_dump=0 !reset
+              exit
+            endif
+
+            if(t_dump>=time) exit
+
+            read(18,*) !vol
+          enddo
+        endif !first_call
+ 
+        if(ised_dump/=0.and.abs(t_dump-time)<1.e-4) then !in case end of file
+          allocate(ie_dump(ne_dump),vol_dump(ne_dump),stat=l)
+          if(l/=0) call parallel_abort('SED: alloc (9)')
+          read(18,*)(ie_dump(l),vol_dump(l),l=1,ne_dump)
+
+          !Modify depth, bed(), but not bottom()
+          do l=1,ne_dump
+            ie=ie_dump(l) !global index
+            if(iegl(ie)%rank==myrank) then
+              i=iegl(ie)%id !local index
+              cff=vol_dump(l)/area(i) !m
+              tmp=bed(top,i,1)+cff
+              if(tmp>0) then !enough sed on top
+                bed(top,i,ithck)=tmp
+              else !re-init.
+                tmp=sum(bedthick_overall(elnode(1:i34(i),i)))/i34(i)/Nbed
+                bed(:,i,ithck)=tmp
+              endif
+              do j=1,i34(i)
+                dp(elnode(j,i))=dp(elnode(j,i))-cff
+              enddo !j
+            endif !iegl
+          enddo !l
+
+          deallocate(ie_dump,vol_dump)
+
+          !Prep for next record
+          read(18,*,iostat=k)t_dump,ne_dump 
+          if(k/=0) ised_dump=0 !reset
+        endif !ised_dump/=0
+      endif !ised_dump/=0
 
 !---------------------------------------------------------------------
 ! - Get wave parameters (defined at nodes) and converte to element
@@ -226,15 +287,15 @@
 #ifdef USE_WWM
       DO i = 1,nea
         IF (idry_e(i).EQ.1) CYCLE
-        htot  = 0.0d0
+!        htot  = 0.0d0
         kpeak = 0.0d0
         DO j = 1,i34(i)
-          htot      = htot + (dp(elnode(j,i))+eta2(elnode(j,i)))/i34(i)
+!          htot      = htot + (dp(elnode(j,i))+eta2(elnode(j,i)))/i34(i)
           hs(i)     = hs(i) + out_wwm(elnode(j,i),1)/i34(i)
           tp(i)     = tp(i) + out_wwm(elnode(j,i),12)/i34(i)
           wlpeak(i) = wlpeak(i) + out_wwm(elnode(j,i),17)/i34(i) !Peak wave length
           uorb(i)   = uorb(i) + out_wwm(elnode(j,i),22)/i34(i) !orbital vel.
-        ENDDO ! End loop 3
+        ENDDO !j 
         ! * FG - Uorbp unused now
         !kpeak    = 2.0d0*pi/wlpeak(i)
         !uorbp(i) = pi*hs(i)/(tp(i)*DSINH(kpeak*htot))
@@ -262,7 +323,7 @@
       ! Compute some constant bed slope parameters.
       ! Friction angle = 33º
       ! sed_angle in rad van rijn 35�
-      sed_angle = DTAN(30.0_r8*pi/180.0_r8)
+      sed_angle = TAN(30.0_r8*pi/180.0_r8)
 
 
       ! Compute bedload boundary conditions
@@ -296,6 +357,7 @@
 !---------------------------------------------------------------------
       DO ised=1,ntr_l 
 
+        !Use in some routines
         smgd  = (Srho(ised)/rhom-1.0d0)*g*Sd50(ised)
         if(smgd<=0) call parallel_abort('SED3D: smgd<=0')
         osmgd = 1.0d0/smgd
@@ -340,13 +402,14 @@
             angleu = 0.d0
             anglev = 0.d0
           ELSE
-            angleu = bustr(i)/tau_c(i) !cos angle
-            anglev = bvstr(i)/tau_c(i) !sin angle
+            angleu = bustr(i)/tau_c(i) !direction of stress
+            anglev = bvstr(i)/tau_c(i) !
           ENDIF
 
 !---------------------------------------------------------------------
 ! - Computation of bedload
-!   returns FX_r amd FY_r
+!   returns FX_r and FY_r for class ised - each ised loop will
+!   overrwrite F[XY]_r (common via sed_mod)
 !---------------------------------------------------------------------
           
           IF (bedload == 1) THEN
@@ -379,7 +442,7 @@
 ! jl. Added bedload transport as implemented in ROMS 
 !---------------------------------------------------------------------
 
-          FX_r(i) = FX_r(i)*bedload_coeff
+          FX_r(i) = FX_r(i)*bedload_coeff ![m^2]
           FY_r(i) = FY_r(i)*bedload_coeff
 
 !---------------------------------------------------------------------
@@ -539,11 +602,24 @@
                 !Depositional mass (kg/m/m) in a time step; use
                 !semi-Lagrangian to calculate depo_mss=\int (D-w_s*c) dt
                 !depo_mss=dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i) !>=0; kg/m/m
-                if(we_fv(kbe(i)+1,i)>=Wsed(ised)) then !no depos.
+
+                cff=ze(nvrt,i)-ze(kbe(i),i) !total depth
+                cff1=ze(kbe(i)+1,i)-ze(kbe(i),i) !bottom depth
+
+                if(cff1.LE.0.d0) then
+                  WRITE(errmsg,*)'SED, wrong bottom layer0:',cff,ze(kbe(i)+1,i),ze(kbe(i),i)
+                  CALL parallel_abort(errmsg)
+                endif
+
+                !Limit ratio between reference depth and bottom depth
+                ta=min(0.5d0,relath*cff/cff1) !usually the relath is 0.01; for natural river, it should be even smaller
+
+                aref=ta*we_fv(kbe(i)+1,i) !w-vel. at ref. height                
+                if(aref>=Wsed(ised)) then !no depos.
                   depo_mss=0
-                else !we_fv(kbe(i)+1,i)<Wsed(ised)
+                else !ta*we_fv(kbe(i)+1,i)<Wsed(ised)
                   !Estimate the starting pt
-                  cff9=ze(kbe(i),i)+(Wsed(ised)-we_fv(kbe(i)+1,i))*dt !>ze(kbe(i),i); foot of char.
+                  cff9=ze(kbe(i),i)+(Wsed(ised)-aref)*dt !>ze(kbe(i),i); foot of char.
                   Ksed=nvrt+1 !init. for abnormal case
                   do k=kbe(i)+1,nvrt
                     if(cff9<=(ze(k,i)+ze(k-1,i))/2) then
@@ -592,7 +668,8 @@
                 depo_mss=depo_mss*depo_scale
 
 ! - Compute erosion, eros_mss (kg/m/m) following Ariathurai and 
-! Arulanandan (1978)
+! Arulanandan (1978) (original erosion flux is in kg/m/m/s; note dt
+! below)
                 cff1=(1.0d0-bed(top,i,iporo))*bed_frac(top,i,ised)
                 eros_mss=MAX(0.0d0,dt*Erate(ised)*cff1*(tau_wc(i)/tau_ce(ised)-1.0d0)) !kg/m/m
                 eros_mss=MIN(eros_mss,MIN(Srho(ised)*cff1*bottom(i,iactv),bed_mass(top,i,nnew,ised))+depo_mss) !>=0
@@ -1104,6 +1181,7 @@
       endif
 
       deallocate(dep_mass)
+      first_call=.false.
 
       end SUBROUTINE sediment
      

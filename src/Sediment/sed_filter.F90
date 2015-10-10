@@ -31,7 +31,7 @@
 ! method used here conserves the volume.                             !
 ! Adapted from filter.f (SAND2D, A. Fortunato)                       !
 !                                                                    !
-! Currently it does not take account for modification bed sediment   !
+! Currently it does not account for modification to bed sediment
 ! characteristics related to modification of bathymetry              !
 !                                                                    !
 ! Author: florian ganthy (fganthy@lnec.pt ; florian.ganthy@gmail.com)!
@@ -47,14 +47,16 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 ! Details of algorithm/eqs.
+! (0) split quads into pair of tri's
 ! (1) conservation of volume in an elem.
-! \sum(Ai*xi)=\sum(Ai*hi) : Ai area of nodal ball, hi is depth at node of elm
+! \sum(Ai*xi)=\sum(Ai*hi) : Ai area of dual graph, hi is depth at node of elem,
+!    and xi is the new hi;
 ! (2) Force slope to become slope_cr, and preserve the original direction
 ! \sum(xi*dldxy(,1:2,))=slope_cr*slope_[xy]/slope : slope_[xy] are \nabla h,
 ! and slope=|\nabla h|
 
       USE schism_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,xnd,ynd,    &
-     &                     errmsg,dp,np
+     &                     errmsg,dp,np,xel,yel,nxq
       USE schism_msgp, ONLY: comm,exchange_p2d,ierr,itype,myrank,      &
      &                     nproc,parallel_abort
       USE sed_mod,   ONLY: dry_slope_cr,wet_slope_cr,vc_area
@@ -63,13 +65,15 @@
 
       INCLUDE 'mpif.h'
 
+      REAL(rkind) :: signa
+
 !- Arguments --------------------------------------------------------!
       REAL(rkind), DIMENSION(npa), INTENT(inout) :: dhnd
 !- Local variables --------------------------------------------------!
-      INTEGER :: i,j,iter,iflag,iflag_gb,n1,n2,n3,ndry
+      INTEGER :: i,j,iter,iflag,iflag_gb,n1,n2,n3,ndry,m,jj,nwild(3),nwild2(3)
       REAL(rkind) :: slope_cr,slope,h1,h2,h3,vec1,vec2,vec3,         &
                      m11,m12,m13,m21,m22,m23,m31,m32,m33,det,        &
-                     h1p,h2p,h3p
+                     h1p,h2p,h3p,ar2,dldxy2(3,2)
       REAL(rkind), DIMENSION(:)   :: dp0(npa),dp1(npa),area2(npa),   &
                                      dph(npa)
       REAL(rkind), DIMENSION(:,:) :: dpdxy_el(nea,2)
@@ -87,8 +91,6 @@
       DO i=1,npa
         dp0(i) = dp(i)+dhnd(i)
       ENDDO
-!      CALL exchange_p2d(dp0)
-      !CALL exchange_p2d(dp1)
       dp1=dp0
 
 !--------------------------------------------------------------------!
@@ -106,15 +108,13 @@
 !--------------------------------------------------------------------!
 ! * Compute bed slope at element center
 !--------------------------------------------------------------------!
-          DO j=1,i34(i)
-            dpdxy_el(i,1) = dpdxy_el(i,1)+dp1(elnode(j,i))*dldxy(j,1,i)
-            dpdxy_el(i,2) = dpdxy_el(i,2)+dp1(elnode(j,i))*dldxy(j,2,i)
-          ENDDO
-          slope = dsqrt(dpdxy_el(i,1)*dpdxy_el(i,1)+                 &
-          &             dpdxy_el(i,2)*dpdxy_el(i,2))
+          vec1=dot_product(dp1(elnode(1:i34(i),i)),dldxy(1:i34(i),1,i)) !/dx
+          vec2=dot_product(dp1(elnode(1:i34(i),i)),dldxy(1:i34(i),2,i)) !/dy
+          vec3=sqrt(vec1*vec1+vec2*vec2) !slope
+
 !--------------------------------------------------------------------!
 ! * Testing for critical slope value (dry or wet)
-!   Here we consider that element is dry only if its three nodes are 
+!   Here we consider that element is dry only if all nodes are 
 !   dry. In the former version, the test was done over idry_e (=1), 
 !   but this potentially overestimated the slumping at the wet-dry
 !   limit
@@ -126,54 +126,88 @@
             slope_cr = wet_slope_cr
           ENDIF
 
-          IF(slope<=slope_cr+epsi) CYCLE
+          !IF(slope<=slope_cr+epsi) CYCLE
+          IF(vec3<=slope_cr+epsi) CYCLE
+
+!         Adjust depths
+          iflag = 1
+          do m=1,i34(i)-2 !split quads into 2 tri's
+            !Calc derivatives of shape function if quads
+            if(i34(i)==3) then
+              nwild(1:3)=(/1,2,3/) !local indices
+              nwild2(1:3)=elnode(nwild(1:3),i) !3 nodes
+              dldxy2(1:3,1:2)=dldxy(1:3,1:2,i)
+            else !quad
+              if(m==1) then !node 1,2,3
+                nwild(1:3)=(/1,2,3/) !local indices
+              else !1,3,4
+                nwild(1:3)=(/1,3,4/)
+              endif !m
+
+              nwild2(1:3)=elnode(nwild(1:3),i) !3 nodes of the tri
+              ar2=signa(xnd(nwild2(1)),xnd(nwild2(2)),xnd(nwild2(3)),ynd(nwild2(1)),ynd(nwild2(2)),ynd(nwild2(3)))
+              if(ar2<=0) call parallel_abort('SED_FILTER: ar2<=0')
+              do jj=1,3
+                !Elem. type is 3 not 4!!
+                dldxy2(jj,1)=(yel(nwild(nxq(1,jj,3)),i)-yel(nwild(nxq(2,jj,3)),i))/2/ar2 !dL/dx
+                dldxy2(jj,2)=(xel(nwild(nxq(2,jj,3)),i)-xel(nwild(nxq(1,jj,3)),i))/2/ar2 !dL/dy
+              enddo !jj
+            endif !i34
+
+            dpdxy_el(i,1)=dot_product(dp1(nwild2(1:3)),dldxy2(1:3,1)) !dh/dx
+            dpdxy_el(i,2)=dot_product(dp1(nwild2(1:3)),dldxy2(1:3,2))
+!            DO j=1,i34(i)
+!              dpdxy_el(i,1) = dpdxy_el(i,1)+dp1(elnode(j,i))*dldxy(j,1,i)
+!              dpdxy_el(i,2) = dpdxy_el(i,2)+dp1(elnode(j,i))*dldxy(j,2,i)
+!            ENDDO
+            slope=sqrt(dpdxy_el(i,1)*dpdxy_el(i,1)+dpdxy_el(i,2)*dpdxy_el(i,2))
 
 !--------------------------------------------------------------------!
 ! * Preparation of system equation
 !--------------------------------------------------------------------!
-!Error: YJZ - not working for quads
-          n1 = elnode(1,i)
-          n2 = elnode(2,i)
-          n3 = elnode(3,i)
-          h1 = dp1(n1)
-          h2 = dp1(n2)
-          h3 = dp1(n3)
-          m11 = vc_area(n1)
-          m12 = vc_area(n2)
-          m13 = vc_area(n3)
-          m21 = dldxy(1,1,i) !ynd(n2)-ynd(n3)
-          m22 = dldxy(2,1,i) !ynd(n3)-ynd(n1)
-          m23 = dldxy(3,1,i) !ynd(n1)-ynd(n2)
-          m31 = dldxy(1,2,i) !xnd(n3)-xnd(n2)
-          m32 = dldxy(2,2,i) !xnd(n1)-xnd(n3)
-          m33 = dldxy(3,2,i) !xnd(n2)-xnd(n1)
-          vec1 = h1*m11 + h2*m12 + h3*m13
-          !slope checked
-          !vec2 = slope_cr/slope * (h1*m21 + h2*m22 + h3*m23)
-          !vec3 = slope_cr/slope * (h1*m31 + h2*m32 + h3*m33)
-          vec2 = slope_cr*dpdxy_el(i,1)/slope
-          vec3 = slope_cr*dpdxy_el(i,2)/slope
+            n1 = nwild2(1)
+            n2 = nwild2(2)
+            n3 = nwild2(3)
+            h1 = dp1(n1)
+            h2 = dp1(n2)
+            h3 = dp1(n3)
+            !Matrix
+            m11 = vc_area(n1)
+            m12 = vc_area(n2)
+            m13 = vc_area(n3)
+            m21 = dldxy2(1,1) !dL_1/dx
+            m22 = dldxy2(2,1) 
+            m23 = dldxy2(3,1) 
+            m31 = dldxy2(1,2) 
+            m32 = dldxy2(2,2) 
+            m33 = dldxy2(3,2) 
+            vec1 = h1*m11 + h2*m12 + h3*m13 !RHS
+            !slope checked
+            !vec2 = slope_cr/slope * (h1*m21 + h2*m22 + h3*m23)
+            !vec3 = slope_cr/slope * (h1*m31 + h2*m32 + h3*m33)
+            vec2 = slope_cr*dpdxy_el(i,1)/slope
+            vec3 = slope_cr*dpdxy_el(i,2)/slope
 !--------------------------------------------------------------------!
 ! * Solving the system by Cramer's rule
 !--------------------------------------------------------------------!
-          det=m11*(m22*m33-m32*m23)-m12*(m21*m33-m31*m23)+m13*(m21*m32-m31*m22)
+            det=m11*(m22*m33-m32*m23)-m12*(m21*m33-m31*m23)+m13*(m21*m32-m31*m22)
 
-          IF(det==0.0d0) THEN
-            WRITE(errmsg,*)'SED_AVALANCHING: det=0.0'
-            CALL parallel_abort(errmsg)
-          ENDIF
+            IF(det==0.0d0) THEN
+              WRITE(errmsg,*)'SED_AVALANCHING: det=0.0'
+              CALL parallel_abort(errmsg)
+            ENDIF
 !--------------------------------------------------------------------!
 ! * Compute new depth at nodes
 !--------------------------------------------------------------------!
-          dp1(n1)=(vec1*(m22*m33-m32*m23)-m12*(vec2*m33-vec3*m23)+m13*(vec2*m32-vec3*m22))/det
-          dp1(n2)=(m11*(vec2*m33-vec3*m23)-vec1*(m21*m33-m31*m23)+m13*(m21*vec3-m31*vec2))/det
-          dp1(n3)=(m11*(m22*vec3-m32*vec2)-m12*(m21*vec3-m31*vec2)+vec1*(m21*m32-m31*m22))/det
-          
-          iflag = 1
+            dp1(n1)=(vec1*(m22*m33-m32*m23)-m12*(vec2*m33-vec3*m23)+m13*(vec2*m32-vec3*m22))/det
+            dp1(n2)=(m11*(vec2*m33-vec3*m23)-vec1*(m21*m33-m31*m23)+m13*(m21*vec3-m31*vec2))/det
+            dp1(n3)=(m11*(m22*vec3-m32*vec2)-m12*(m21*vec3-m31*vec2)+vec1*(m21*m32-m31*m22))/det
+          enddo !m=1,i34(i)-2
         ENDDO !i=1,nea
         CALL exchange_p2d(dp1)
         CALL mpi_allreduce(iflag,iflag_gb,1,itype,MPI_MAX,comm,ierr)
 
+        !No CPU dependency as _allreduce is a barrier
         IF(iter>=maxiter) THEN
           iflag_gb = 0 !reset flag for exit
           IF(myrank.EQ.0) WRITE(16,*)'Warning: max iterations     &

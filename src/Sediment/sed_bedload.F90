@@ -93,9 +93,8 @@
 ! Ucrw = 0.95*((s-1)*g)**0.57*d50**0.43*Tp**0.14 if 5e-4<= d50 <2e-3
 !---------------------------------------------------------------------
 
+      !dpe is the min of nodes
       htot = dpe(inea)+sum(eta2(elnode(1:i34(inea),inea)))/i34(inea) 
-!      &                 eta2(elnode(2,inea))+   &
-!      &                 eta2(elnode(3,inea)))/3.0d0
 
       IF (Sd50(ised)>5.0d-5.AND.Sd50(ised)<5.0d-4) THEN
 
@@ -122,7 +121,7 @@
 ! to compute Uorb peak
 !---------------------------------------------------------------------
       ueff = dave(inea) + gama*uorb(inea)
-      beta = dave(inea)/(dave(inea)+uorb(inea))
+      beta = dave(inea)/(dave(inea)+uorb(inea)) !denom /=0
       ucrt = beta*ucrc + (1.0d0-beta)*ucrw
 
 !---------------------------------------------------------------------
@@ -150,7 +149,7 @@
 !---------------------------------------------------------------------
       IF (ueff.GT.ucrt) THEN
         bedld = 0.015d0*dave(inea)*htot*(Sd50(ised)/htot)**1.2d0*    &
-        &       me**1.5d0
+        &       me**1.5d0 ![m^2/s]
       ENDIF
 
 !---------------------------------------------------------------------
@@ -175,21 +174,21 @@
       endif
 
 !---------------------------------------------------------------------
-! - Bed_slope effects
-! longitudinal bed slope
-! limit slope to 0.9*(sed_angle)
+! - Bed_slope effects (Lesser et al. 2004)
+! longitudinal bed slope \beta_s
+! limit slope to 0.9*(sed_angle) (repose angle)
 !---------------------------------------------------------------------
 
-      cff  = (dzdx*angleu+dzdy*anglev)
+      cff  = dzdx*angleu+dzdy*anglev !tan(\beta_s)
+      !sed_angle=TAN(\phi)
       cff1 = MIN(ABS(cff),0.9d0*sed_angle)*SIGN(1.0d0,cff)
-      cff2 = DATAN(cff1)
+      cff2 = ATAN(cff1) !\beta_s
       if(COS(cff2)==0.or.sed_angle-cff1==0) call parallel_abort('SED3D,sed_bedload_vr; div. by 0 (12)')
 !'
-      a_slopex = 1.0d0+alpha_bs*                                     &
-      &          ((sed_angle/(COS(cff2)*(sed_angle-cff1)))-1.0d0)
+      a_slopex = 1.0d0+alpha_bs*((sed_angle/(COS(cff2)*(sed_angle-cff1)))-1.0d0) !\alpha_s
 
 !---------------------------------------------------------------------
-! - Add contribution of longitudinal bed slope to bedload transport
+! - Modify bedload transport due to longitudinal bed slope 
 !---------------------------------------------------------------------
 
       FX_r(inea) = FX_r(inea)*a_slopex
@@ -199,7 +198,7 @@
 ! - Transverse bed slope
 !---------------------------------------------------------------------
 
-      cff = (-(dzdx*anglev)+dzdy*angleu)
+      cff = -dzdx*anglev+dzdy*angleu !tan(\beta_n)
       cff1 = ABS(bustr(inea))+ABS(bvstr(inea))
 
       ! - Test used to prevent Inf & NaNs with very small bustr/bvstr 
@@ -208,15 +207,17 @@
         a_slopey = 0.d0
       ELSE
         cff2 = SQRT(tau_ce(ised)/cff1)
-        a_slopey=alpha_bn*cff2*cff
+        a_slopey=alpha_bn*cff2*cff !\alpha_n
       ENDIF
 
 !---------------------------------------------------------------------
 ! - Add contribution of transverse to bed load 
 !---------------------------------------------------------------------
 
-      FX_r(inea) = FX_r(inea)-(FY_r(inea)*a_slopey)
-      FY_r(inea) = FY_r(inea)+(FX_r(inea)*a_slopey)
+      beta=FX_r(inea) !temp. save
+      FX_r(inea) = FX_r(inea)-FY_r(inea)*a_slopey
+      !FY_r(inea) = FY_r(inea)+FX_r(inea)*a_slopey
+      FY_r(inea) = FY_r(inea)+a_slopey*beta
 
 !---------------------------------------------------------------------
 ! - Sanity check
@@ -347,7 +348,7 @@
 
       USE sed_mod
       USE schism_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
-                            yctr,np,indel,errmsg,xnd,ynd
+     &yctr,np,indel,errmsg,xnd,ynd,elside,iself,nxq,xcj,ycj
       USE schism_msgp
       
       IMPLICIT NONE
@@ -359,62 +360,90 @@
       REAL(rkind),INTENT(IN) :: rtol     ! Relative tolerance
       REAL(rkind),DIMENSION(npa),INTENT(OUT) :: qsan,hbed,hbed_ised
 
-      INTEGER     :: i,j,nm1,nm2,nm3,ks,k
-      REAL(rkind) :: yp,xp,flux,cff,cff1
+      INTEGER     :: i,j,nm1,nm2,nm3,ks,k,ie,id,id1,id2,isd1,isd2
+      REAL(rkind) :: yp,xp,flux,cff,cff1,cff2,cff3
 
-      REAL(rkind),DIMENSION(npa) :: bed_poro !,qsan,hbed,hbed_ised  
+      REAL(rkind),DIMENSION(np) :: bed_poro 
       
 !- Start Statement --------------------------------------------------!
       
 !      IF(myrank.EQ.0) WRITE(16,*)'SED: Entering bedchange_bedload'
       
 !---------------------------------------------------------------------
-! -  qsan is overall sand flux at each node
+! -  Apply morphology factor to bedload transport
+!   This routine is called inside a ised-loop, and F[XY]_r will be
+!   overwritten for each ised-loop
+!---------------------------------------------------------------------
+      do i = 1,nea
+        IF(idry_e(i)==1) CYCLE
+        FX_r(i) = FX_r(i)*morph_fac(ised)*bed_frac(1,i,ised) !m^2
+        FY_r(i) = FY_r(i)*morph_fac(ised)*bed_frac(1,i,ised)
+      enddo !i
+
+!---------------------------------------------------------------------
+! -  qsan=\int q_n*dt d\Gamma (although dimensioned up to npa, only 1:np
+! are used)
 ! qsaxy is the sand flux at the element center integrated in time. Now 
 ! compute the line integral of qsaxy*normal along the control volume. 
 ! Add for each node in qsan. The unit normal is directed outward.
 !---------------------------------------------------------------------
-      qsan=0.0d0
+      qsan=0.0d0 ![m^3]
 
-!Error: YJZ - not working for quads
-      DO i = 1,nea
-        IF(idry_e(i)==1) CYCLE
-            
-!---------------------------------------------------------------------
-! -  Apply morphology factor to bedload transport
-!---------------------------------------------------------------------
-        FX_r(i) = FX_r(i)*morph_fac(ised)*bed_frac(1,i,ised)
-        FY_r(i) = FY_r(i)*morph_fac(ised)*bed_frac(1,i,ised)
+!      DO i = 1,nea
+!        IF(idry_e(i)==1) CYCLE
+!            
+!!---------------------------------------------------------------------
+!! -  Apply morphology factor to bedload transport
+!!---------------------------------------------------------------------
+!        FX_r(i) = FX_r(i)*morph_fac(ised)*bed_frac(1,i,ised) !m^2
+!        FY_r(i) = FY_r(i)*morph_fac(ised)*bed_frac(1,i,ised)
+!
+!        nm1 = elnode(1,i)
+!        nm2 = elnode(2,i)
+!        nm3 = elnode(3,i)
+!
+!!---------------------------------------------------------------------
+!! - Integrate bedload flux from element center to edge centers
+!! balance flux at neighbouring edges to obtain flux for nodes
+!! flux [m3], qsan [m3]
+!!---------------------------------------------------------------------
+!
+!        xp   = (xnd(nm2)+xnd(nm3))/2.d0
+!        yp   = (ynd(nm2)+ynd(nm3))/2.d0
+!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
+!        qsan(nm2) = qsan(nm2)-flux
+!        qsan(nm3) = qsan(nm3)+flux
+!
+!        xp   = (xnd(nm3)+xnd(nm1))/2.d0
+!        yp   = (ynd(nm3)+ynd(nm1))/2.d0
+!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
+!        qsan(nm3) = qsan(nm3)-flux
+!        qsan(nm1) = qsan(nm1)+flux
+!
+!        xp   = (xnd(nm1)+xnd(nm2))/2.d0
+!        yp   = (ynd(nm1)+ynd(nm2))/2.d0
+!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
+!        qsan(nm1) = qsan(nm1)-flux
+!        qsan(nm2) = qsan(nm2)+flux
+!
+!      ENDDO !End loop =1,nea
 
-        nm1 = elnode(1,i)
-        nm2 = elnode(2,i)
-        nm3 = elnode(3,i)
+      do i=1,np !resident only required
+        do j=1,nne(i)        
+          ie=indel(j,i)
+          id=iself(j,i)
+          if(idry_e(ie)==1) cycle
 
-!---------------------------------------------------------------------
-! - Integrate bedload flux from element center to edge centers
-! balance flux at neighbouring edges to obtain flux for nodes
-! flux [m3], qsan [m3]
-!---------------------------------------------------------------------
+          !Wet elem.
+!          id1=elnode(nxq(1,id,i34(ie)),ie)
+!          id2=elnode(nxq(i34(ie)-1,id,i34(ie)),ie)
+!          qsan(i)=qsan(i)+FX_r(ie)*(ynd(id2)-ynd(id1))/2+FY_r(ie)*(xnd(id1)-xnd(id2))/2 !m^3
 
-        xp   = (xnd(nm2)+xnd(nm3))/2.d0
-        yp   = (ynd(nm2)+ynd(nm3))/2.d0
-        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-        qsan(nm2) = qsan(nm2)-flux
-        qsan(nm3) = qsan(nm3)+flux
-
-        xp   = (xnd(nm3)+xnd(nm1))/2.d0
-        yp   = (ynd(nm3)+ynd(nm1))/2.d0
-        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-        qsan(nm3) = qsan(nm3)-flux
-        qsan(nm1) = qsan(nm1)+flux
-
-        xp   = (xnd(nm1)+xnd(nm2))/2.d0
-        yp   = (ynd(nm1)+ynd(nm2))/2.d0
-        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-        qsan(nm1) = qsan(nm1)-flux
-        qsan(nm2) = qsan(nm2)+flux
-
-      ENDDO !End loop =1,nea
+          isd1=elside(nxq(i34(ie)-2,id,i34(ie)),ie)
+          isd2=elside(nxq(i34(ie)-1,id,i34(ie)),ie)
+          qsan(i)=qsan(i)+FX_r(ie)*(ycj(isd1)-ycj(isd2))+FY_r(ie)*(xcj(isd2)-xcj(isd1)) !m^3
+        enddo !j
+      enddo !i=1,np
 
 !---------------------------------------------------------------------
 ! - Compute erosion rates
@@ -422,7 +451,6 @@
 ! initalize before adding
 !---------------------------------------------------------------------
       bed_poro = 0.0d0
-
       DO i=1,np
         IF(idry(i)==1) CYCLE
 
@@ -439,10 +467,7 @@
       ENDDO ! End loop np
 
       ! Exchange ghosts
-      call exchange_p2d(bed_poro(:))
-
-!...RHS
-!      call exchange_p2d(qsan)
+      !call exchange_p2d(bed_poro(:))
 
 !---------------------------------------------------------------------
 ! - Take porosity into account and adjust qsan accordingly
@@ -500,7 +525,8 @@
 !    have a lower bound of 0.
 !---------------------------------------------------------------------
 !YJZ: should be -cff1?
-        bed_mass(1,i,nnew,ised)=MAX(bed_mass(1,i,nstp,ised)+cff1,0.0d0)
+        !bed_mass(1,i,nnew,ised)=MAX(bed_mass(1,i,nstp,ised)+cff1,0.0d0)
+        bed_mass(1,i,nnew,ised)=MAX(bed_mass(1,i,nstp,ised)-cff1,0.0d0)
 
        !Jan what is this for?
        !Save bed mass for next step
@@ -511,10 +537,11 @@
         ENDIF
 
 !---------------------------------------------------------------------
-! - Update layer thickness according to bed change in [m]
+! - Update top layer thickness according to bed change in [m]
 !---------------------------------------------------------------------
 
-        bed(1,i,ithck) = MAX((bed(1,i,ithck)+cff),0.0d0)
+        !bed(1,i,ithck) = MAX((bed(1,i,ithck)+cff),0.0d0)
+        bed(1,i,ithck) = MAX(bed(1,i,ithck)-cff,0.0d0)
       ENDDO !i=1,nea
 
 

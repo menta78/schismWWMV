@@ -74,6 +74,7 @@
       !Init. new parameters to make sure they are read in
       ised_bc_bot=-100
       depo_scale=-100
+      ised_dump=-100
 
       OPEN(5,FILE='sediment.in',STATUS='old')
       IF(myrank==0) WRITE(16,*)'reading sediment.in'
@@ -227,7 +228,13 @@
             READ(line_str,*) var1, var2, bedmass_filter
 
           CASE('bedmass_threshold')
-            READ(line_str,*) var1, var2, bedmass_threshold
+            READ(line_str,*) var1, var2, bedmass_threshold  
+
+          CASE('relath')
+            READ(line_str,*) var1, var2, relath
+
+          CASE('ised_dump')
+            READ(line_str,*) var1, var2, ised_dump
 
         END SELECT
 
@@ -247,8 +254,8 @@
 !---------------------
 
 !     Catch unread parameters (for new additions only)
-      if(ised_bc_bot<0.or.depo_scale<0) then
-        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,depo_scale
+      if(ised_bc_bot<0.or.depo_scale<0.or.ised_dump<0) then
+        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,depo_scale,ised_dump
         call parallel_abort(errmsg)
       endif 
 
