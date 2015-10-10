@@ -332,6 +332,7 @@ Other important thing to decide is the origin of the spectrum. If it is time spa
  NETCDF_OUT_SPECTRA = F 
  NETCDF_OUT_FILE        
  USE_SINGLE_OUT = T  
+ HACK_HARD_SET_IOBP = F,
  /
 \end{verbatim}
 The meaning of the options is the following:
@@ -345,6 +346,7 @@ The meaning of the options is the following:
 \item {\tt LBINTER} (logical): Time interpolation of spectrum between two times in which the spectrum is available. Default is true.
 \item {\tt LINDSPRDEG} (logical): If 1-d wave spectra are read this flag defines whether the input for the directional spreading is in degrees (true) or exponent (false).
 \item {\tt LPARMDIR} (logical): If LPARMDIR is true than directional spreading is read from WBDS and must be in exponential format at this time, only valid for 1d Spectra.
+\item {\tt HACK\_HARD\_SET\_IOBP} (logical): with this option, the IOBP from the input file is not corrected. This is useful for example if one wants to have a wave source in the middle of the Ocean. Default is false of course as it is only for hackish purpose.
 \item {\tt FILEWAVE} (logical): File containing the boundary spectra. Related entries to {\tt FILEWAVE} are:
   \begin{itemize}
   \item {\tt BEGTC} (string): beginning time of data availability in FILEWAVE
@@ -401,8 +403,6 @@ The meaning of the options is the following:
   \item {\tt NETCDF\_OUT\_FILE} (string): the filename of the output.
   \item {\tt USE\_SINGLE\_OUT} (logical): use single precision in the output file.
   \end{itemize}
-  
-  
 
 \end{enumerate}
 

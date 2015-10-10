@@ -495,7 +495,7 @@
         END IF
       END IF
 #else
-       CALL SINGLE_READ_IOBP_TOTAL
+      CALL SINGLE_READ_IOBP_TOTAL
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -641,7 +641,6 @@
           DSPEC   = 0.
         ENDIF
       END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -661,11 +660,7 @@
       ENDIF
       IF (LBCWA .OR. LBCSP) THEN
         DEALLOCATE( WBAC)
-        IF (LBINTER) THEN
-          DEALLOCATE( WBACOLD)
-          DEALLOCATE( WBACNEW)
-          DEALLOCATE( DSPEC)
-        ENDIF
+        IF (LBINTER) DEALLOCATE( WBACOLD, WBACNEW, DSPEC)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1577,7 +1572,7 @@
             CALL SPECTRUM_INT(WBACOUT)
           END IF ! LBSP1D .OR. LBSP2D
         END IF ! LINHOM
-      ENDIF ! LBCWA .OR. LBCSP
+      ENDIF ! LBCSP
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1644,7 +1639,6 @@
 #ifdef MPI_PARALL_GRID
         CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
 #endif
-        DoAllocate=.TRUE.
 #ifdef MPI_PARALL_GRID
         IF (myrank .eq. rank_boundary) THEN
           DoAllocate=.TRUE.
@@ -1670,8 +1664,10 @@
       END IF
       WRITE(STAT%FHNDL, *) 'IWBMNP=', IWBMNP
       WRITE(STAT%FHNDL, *) 'allocated(WBAC)=', allocated(WBAC)
-      CALL WAVE_BOUNDARY_CONDITION(WBAC)
-      IF (LBINTER) WBACOLD = WBAC
+      IF (LBCWA .or. LBCSP) THEN
+        CALL WAVE_BOUNDARY_CONDITION(WBAC)
+        IF (LBINTER) WBACOLD = WBAC
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
