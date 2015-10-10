@@ -87,7 +87,7 @@
         QB = ONE - 10.E-10
       END IF
 #elif SWAN_QB
-      IF (BETA .LT. 0.2D0) THEN
+     IF (BETA .LT. 0.2D0) THEN
         QB = 0.0D0
       ELSE IF (BETA .LT. 1.0D0) THEN
         AUX   = EXP((QQ-1.0d0)/BETA2)
@@ -156,6 +156,8 @@
          ENDIF 
       ENDIF
 
+      IMATRA = 0.
+      IMATDA = 0.
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
@@ -180,12 +182,16 @@
 #ifdef SCHISM
       DO IS=1,MSC
         DO ID=1,MDC
-          COST = COSTH(ID)
-          SINT = SINTH(ID)
-          SBR(1,IP)=SBR(1,IP)+G9*COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)  ! m.s-2 * (m-1/s-1) * m^2.s * s-1 * s-1 =>  m^2.s-2
-          SBR(2,IP)=SBR(2,IP)+G9*SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR*SPSIG(IS)   
-       ENDDO
+          COST = COSTH(ID)!COS(SPDIR(ID))
+          SINT = SINTH(ID)!SIN(SPDIR(ID))
+!          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+!          SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+          SBR(1,IP)=SBR(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
+          SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
+        ENDDO
       ENDDO
+      !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
+      !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'THE NORMS OF SBR', TMP_X, TMP_Y
