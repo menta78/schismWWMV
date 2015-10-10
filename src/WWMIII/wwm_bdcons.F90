@@ -1116,17 +1116,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPECTRUM_INT(WBACOUT)
+      SUBROUTINE SPECTRUM_INT(ACLOC)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(INOUT) :: WBACOUT(MSC,MDC,*)
+      REAL(rkind), INTENT(OUT)   :: ACLOC(MSC,MDC)
       REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
       REAL(rkind)                :: INSPF(WBMSC)
       REAL(rkind)                :: INSPE(WBMSC)
       REAL(rkind)                :: INDIR(WBMSC)
       REAL(rkind)                :: INSPRD(WBMSC)
       REAL(rkind)                :: INMS(WBMSC)
-      REAL(rkind)                :: SPCDIR(MSC), ACLOC(MSC,MDC)
+      REAL(rkind)                :: SPCDIR(MSC)
       INTEGER                    :: IS, IS2, ID
       REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
       REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
@@ -1360,8 +1360,6 @@
         END DO
       END DO
 
-      WBACOUT(:,:,1) = ACLOC
-
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
       WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
 
@@ -1471,7 +1469,6 @@
         IF (LINHOM) THEN ! Inhomogenous in space
           IF (LBCSE) THEN ! Unsteady in time
             SPPARM = 0.
-            WBAC   = 0.
             IF (IBOUNDFORMAT == 1) THEN  ! WWM
               CALL READWAVEPARWWM
             ELSE IF (IBOUNDFORMAT == 2) THEN ! FVCOM ... THIS WILL BE REPLACED BY SWAN TYPE BOUNDARY!
@@ -1494,7 +1491,6 @@
             END IF
           ELSE  ! Steady ...
             SPPARM = 0.
-            WBAC   = 0.
             IF (IBOUNDFORMAT == 1) THEN
               CALL READWAVEPARWWM
             ELSE IF (IBOUNDFORMAT == 2) THEN
@@ -1522,7 +1518,6 @@
               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
             ELSE ! Steady in time ...
               SPPARM = 0.
-              WBAC   = 0.
               IF (LMONO_IN) THEN
                 SPPARM(1,1) = WBHS * SQRT(2.)
               ELSE
@@ -1561,7 +1556,7 @@
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
             WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
             CALL READSPEC1D(LFIRSTREAD)
-            CALL SPECTRUM_INT(WBACOUT)
+            CALL SPECTRUM_INT(WBACOUT(:,:,1))
           ELSE IF (LBSP2D) THEN ! 2-D Spectra is prescribed
             WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
             IF (IBOUNDFORMAT == 1) THEN
@@ -1569,7 +1564,7 @@
             ELSE IF (IBOUNDFORMAT == 3) THEN
               CALL GET_BINARY_WW3_SPECTRA(WBACOUT) 
             END IF
-            CALL SPECTRUM_INT(WBACOUT)
+            CALL SPECTRUM_INT(WBACOUT(:,:,1))
           END IF ! LBSP1D .OR. LBSP2D
         END IF ! LINHOM
       ENDIF ! LBCSP
