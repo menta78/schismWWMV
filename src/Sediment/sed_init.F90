@@ -303,19 +303,21 @@
       USE sed_mod
 
       USE schism_glbl, ONLY: nea,npa,mnei_p,ntrs,irange_tr,ipgl,ielg,i34,elnode,np_global,  &
-     &                     ifile_char,ifile_len,area,np,nne,indel,     &
-     &                     isbnd,rough_p,errmsg,ihot
+     &                     ifile_char,ifile_len,area,np,nne,indel,iself,nnp,indnd,nxq,     &
+     & isbnd,rough_p,errmsg,ihot,xnd,ynd,xcj,ycj,xctr,yctr,elside
       USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
 
       IMPLICIT NONE
 
+      real(rkind) :: signa
+
 !- Local variables --------------------------------------------------!
 
-      INTEGER :: i,j,k,ie
+      INTEGER :: i,j,k,ie,jj,id,id2,id3,nd,indx,m,nwild(3),nwild2(3)
       INTEGER :: ised,ic,itmp,istat
 
       REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5
-      REAL(rkind) :: bed_frac_sum
+      REAL(rkind) :: bed_frac_sum,ar1,ar2
 
       REAL(rkind),DIMENSION(npa) :: bdfc
 
@@ -342,31 +344,91 @@
 ! - Computes matrix coefficients for the JCG solver
 ! Used for the computation of depth variation induced by bedload
 !--------------------------------------------------------------------!
-!Error: YJZ - not working for quads
       mcoefd = 0
-      aux1 = 22.0d0/108.0d0
-      aux2 = 7.0d0/108.0d0
-      DO i = 1,np !residents
-        DO j = 1,nne(i)
-          ie = indel(j,i)
-          mcoefd(0,i) = mcoefd(0,i)+area(ie)*aux1 !diagonal
-          mcoefd(j,i) = mcoefd(j,i)+area(ie)*aux2
-          IF((isbnd(1,i).EQ.0).AND.(j.EQ.nne(i))) THEN !internal ball
-             mcoefd(1,i) = mcoefd(1,i)+area(ie)*aux2
-          ELSE
-             mcoefd(j+1,i) = mcoefd(j+1,i)+area(ie)*aux2
-          ENDIF
+      aux1=22.0d0/108.0d0
+      aux2=7.0d0/108.0d0
+      DO i=1,np !residents
+        DO j=1,nne(i)
+          ie=indel(j,i)
+          id=iself(j,i)
+          if(i34(ie)==3) then
+            mcoefd(0,i) = mcoefd(0,i)+area(ie)*aux1 !diagonal
+
+            !Other 2 nodes
+            do jj=1,2 !other 2 nodes
+              nd=elnode(nxq(jj,id,i34(ie)),ie)
+              indx=0
+              do m=1,nnp(i)
+                if(indnd(m,i)==nd) then
+                  indx=m; exit
+                endif
+              enddo !m
+              if(indx==0) call parallel_abort('SED_INIT: failed to find')
+            
+              mcoefd(indx,i)=mcoefd(indx,i)+area(ie)*aux2
+            enddo !jj
+!            IF(isbnd(1,i)==0.and.j==nne(i)) THEN !internal ball
+!               mcoefd(1,i) = mcoefd(1,i)+area(ie)*aux2
+!            ELSE
+!               mcoefd(j+1,i) = mcoefd(j+1,i)+area(ie)*aux2
+!            ENDIF
+          else !quad
+            id2=nxq(2,id,i34(ie))
+            id3=nxq(3,id,i34(ie))
+            ar1=signa(xnd(i),xcj(elside(id3,ie)),xctr(ie),ynd(i),ycj(elside(id3,ie)),yctr(ie)) 
+            ar2=signa(xnd(i),xctr(ie),xcj(elside(id2,ie)),ynd(i),yctr(ie),ycj(elside(id2,ie)))
+            if(ar1<=0.or.ar2<=0) call parallel_abort('SED_INIT:area<=0')
+            mcoefd(0,i)=mcoefd(0,i)+(ar1+ar2)*7./12 !diagonal
+
+            !Find indices
+            do jj=1,3
+              nd=elnode(nxq(jj,id,i34(ie)),ie)
+              indx=0
+              do m=1,nnp(i)
+                if(indnd(m,i)==nd) then
+                  indx=m; exit
+                endif
+              enddo !m
+              if(indx==0) call parallel_abort('SED_INIT: faile to find2')
+              nwild(jj)=indx
+            enddo !jj
+
+             mcoefd(nwild(1),i)=mcoefd(nwild(1),i)+ar1/4+ar2/12
+             mcoefd(nwild(3),i)=mcoefd(nwild(3),i)+ar1/12+ar2/4
+             mcoefd(nwild(2),i)=mcoefd(nwild(2),i)+ar1/12+ar2/12
+          endif !i34
         ENDDO ! END loop nne
       ENDDO ! END loop np
 
 !--------------------------------------------------------------------!
-! - Control volume at each node
+! - Control volume at each node used in filter
+!   Split quads into 2 tri's
 !--------------------------------------------------------------------!
-!Error: YJZ - not working for quads
       vc_area = 0.0d0
+      nwild2(1:3)=(/1,3,4/) !prep. indices for 2nd tri of quad
       DO i=1,nea
+        if(i34(i)==4) then !2 areas
+          nwild(1:3)=elnode(1:3,i)
+          ar1=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
+          nwild(2)=elnode(3,i)
+          nwild(3)=elnode(4,i)
+          ar2=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
+          if(ar1<=0.or.ar2<=0) call parallel_abort('SED_INIT:area2<=0')
+        endif
+
         DO j=1,3
-          vc_area(elnode(j,i)) = vc_area(elnode(j,i))+area(i)/3
+          if(i34(i)==3) then
+            nd=elnode(j,i)
+            vc_area(nd)=vc_area(nd)+area(i)/3
+          else !quad
+            !1st tri
+            nd=elnode(j,i)
+            vc_area(nd)=vc_area(nd)+ar1/3
+
+            !2nd tri
+            nd=elnode(nwild2(j),i)
+            vc_area(nd)=vc_area(nd)+ar2/3
+          endif !i34(i)
         ENDDO !j
       ENDDO ! i
       CALL exchange_p2d(vc_area)

@@ -41,7 +41,7 @@
 !**********************************************************************
 #ifdef SCHISM
  !!!     SUBROUTINE WWM_II(IT_SCHISM,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0)
-      SUBROUTINE WWM_II(IT_SCHISM,icou_elfe_wwm,DT_SELFE0,NSTEP_WWM0,RADFLAG2)
+      SUBROUTINE WWM_II(IT_SCHISM,icou_elfe_wwm,DT_SCHISM0,NSTEP_WWM0,RADFLAG2)
 
          USE DATAPOOL
          use  schism_msgp !, only : myrank,parallel_abort,itype,comm,ierr
@@ -80,7 +80,7 @@
 
          NSTEPWWM = NSTEP_WWM0
 
-         DT_SCHISM      = DT_SELFE0
+         DT_SCHISM      = DT_SCHISM0
          DELTAT_WATLEV = DT_SCHISM0
 
 #ifdef TIMINGS

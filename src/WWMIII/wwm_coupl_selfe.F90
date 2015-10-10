@@ -80,7 +80,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE RADIATION_STRESS_SELFE
+      SUBROUTINE RADIATION_STRESS_SCHISM
 
         use schism_glbl, only: iplg,errmsg,hmin_radstress
         USE schism_msgp !, only : myrank,parallel_abort
@@ -326,7 +326,7 @@
           endif
         enddo !IS
 
-      END SUBROUTINE RADIATION_STRESS_SELFE
+      END SUBROUTINE RADIATION_STRESS_SCHISM
 #endif /*SCHISM*/
 !**********************************************************************
 !*                                                                    *

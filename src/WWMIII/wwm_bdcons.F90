@@ -3525,7 +3525,7 @@
          ELSE
            OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
          END IF
-         CALL COMPUTE_TFN(TIME2)
+         CALL COMPUTE_tFN(TIME2)
          NSPEC_out = NK*NTH
          allocate(ABPIO(NSPEC_out), stat=istat)
          CALL WWM_ABORT('Error allocate ABPIO')
