@@ -17,8 +17,8 @@
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
       REAL(rkind) :: S0, AUX, TMP_X, TMP_Y
-      REAL(rkind) :: GAMMA_WB, SINT, COST
-      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
+      REAL(rkind) :: GAMMA_WB, SINT, COST, COEFF_A 
+      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
 
@@ -141,11 +141,13 @@
         END IF
       ELSEIF (IBREAK == 2) THEN
          IF ( BETA2 .GT.0D0 ) THEN
-            IF ( BETA2.LT.1D0 ) THEN
-               WS   = 0.75_rkind*0.42_rkind*ALPBJ**3*SME*BETA2**(0.5_rkind*(4.0_rkind+1))/MySQRT(PI)
-               SbrD = 0.5_rkind*(3._rkind+4.0_rkind)*WS
+            COEFF_A = 0.42_rkind
+            COEFF_B = 4.0_rkind
+            IF ( BETA2 .LT.1D0 ) THEN
+               WS   = 75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/DBLE(SQRT(PI))
+               SbrD = 5D-1*DBLE(3.+COEFF_B)*WS
             ELSE
-               WS = 0.75_rkind*0.42_rkind*ALPBJ**3*SME/MySQRT(PI)
+               WS   = 75D-2*COEFF_A*ALPBJ**3*SME/DBLE(SQRT(PI))
                SbrD = WS
             ENDIF
             SURFA0 = SbrD - WS

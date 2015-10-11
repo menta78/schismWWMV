@@ -2006,9 +2006,6 @@
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
       INTEGER :: I, K, IP_ADJ, IADJ, JDX
 
-      WRITE(*,*) SUM(AC2), 'BEFORE'
-      WRITE(*,*) 'SOURCE_IMPL=', SOURCE_IMPL
-
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
@@ -2026,8 +2023,7 @@
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
       END IF
-      WRITE(*,*) 'SUM(ABS(IMATRA))=', sum(abs(IMATRA))
-      WRITE(*,*) 'SUM(ABS(IMATDA))=', sum(abs(IMATDA))
+
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
           DO IP=1,NP_RES
@@ -2571,5 +2567,4 @@
       ENDIF
 # endif
 #endif
-      WRITE(*,*) SUM(AC2), 'AFTER'
       END SUBROUTINE
