@@ -439,6 +439,7 @@
         success=.FALSE.
         RETURN
       END IF
+      success=.TRUE.
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
@@ -697,8 +698,10 @@
         SHIFTXY(3,2)=1
         SHIFTXY(4,1)=1
         SHIFTXY(4,2)=1
+        WRITE(WINDBG%FHNDL,*) 'LSAVE_INTERP_ARRAY=', LSAVE_INTERP_ARRAY
         IF (LSAVE_INTERP_ARRAY) THEN
           CALL LOAD_INTERP_ARRAY(FileSave, success)
+          WRITE(WINDBG%FHNDL,*) 'success=', success
           IF (success .eqv. .TRUE.) RETURN
         END IF
         CF_IX=0

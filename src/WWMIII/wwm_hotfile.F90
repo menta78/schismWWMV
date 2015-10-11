@@ -653,7 +653,7 @@ MODULE wwm_hotfile_mod
       integer istat
       IF (MULTIPLEIN_HOT.eq.0) THEN
 # ifdef MPI_PARALL_GRID
-        iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
+        iret=nf90_open(TRIM(HOTIN%FNAME), nf90_nowrite, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
         iret=nf90_inq_varid(ncid, "ac", ac_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
@@ -667,12 +667,16 @@ MODULE wwm_hotfile_mod
           END IF
           AC2(:,:,IP)=ACLOC
           iret=nf90_get_var(ncid,var_oned_id,VARLOC, start=(/1,iplg(IP),IHOTPOS_IN/), count = (/nbOned, 1, 1 /))
+          IF (iret /= 0) THEN
+            Print *, 'Same story. Send direcly your bug to Mathieu.Dutour@gmail.com'
+            CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+          END IF
           VAR_ONED(:,IP)=VARLOC
         END DO
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
 # else
-        iret=nf90_open(HOTIN%FNAME, nf90_nowrite, ncid)
+        iret=nf90_open(TRIM(HOTIN%FNAME), nf90_nowrite, ncid)
         CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
         iret=nf90_inq_varid(ncid, "ac", ac_id)
         CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
@@ -742,7 +746,7 @@ MODULE wwm_hotfile_mod
 # endif
       character (len = *), parameter :: CallFct="OUTPUT_HOTFILE_NETCDF"
       INTEGER :: POS
-      integer :: iret, ncid, ntime_dims, mnp_dims, msc_dims, mdc_dims
+      integer :: iret, ncid, ntime_dims, mnp_dims, nfreq_dims, ndir_dims
       integer :: ac_id, nboned_dims, var_oned_id
       integer :: nbTime
       REAL(rkind)  :: eTimeDay
@@ -784,16 +788,16 @@ MODULE wwm_hotfile_mod
           iret=nf90_inq_dimid(ncid, "mnp", mnp_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
 
-          iret=nf90_inq_dimid(ncid, "msc", msc_dims)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+          iret=nf90_inq_dimid(ncid, "nfreq", nfreq_dims)
+          CALL GENERIC_NETCDF_ERROR_CLEAR(ncid, CallFct, 4, iret)
 
-          iret=nf90_inq_dimid(ncid, "mdc", mdc_dims)
+          iret=nf90_inq_dimid(ncid, "ndir", ndir_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
 
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
           CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
 
-          iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ msc_dims, mdc_dims, mnp_dims, ntime_dims/),ac_id)
+          iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ nfreq_dims, ndir_dims, mnp_dims, ntime_dims/),ac_id)
           CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
 
           iret=nf90_def_var(ncid,"var_oned",NF90_RUNTYPE,(/ nboned_dims, mnp_dims, ntime_dims/),ac_id)
