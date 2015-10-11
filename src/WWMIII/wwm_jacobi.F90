@@ -2,6 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#undef DEBUG_ITERATION_LOOP
+#define DEBUG_ITERATION_LOOP
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1994,6 +1996,9 @@
       REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
       REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
       REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+#ifdef DEBUG_ITERATION_LOOP
+      integer, save :: iPass = 0
+#endif
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
@@ -2571,5 +2576,5 @@
       ENDIF
 # endif
 #endif
-      WRITE(*,*) SUM(AC2), 'AFTER'
+      WRITE(*,*) SUM(AC2), 'AFTER EIMPS_TOTAL_JACOBI_ITERATION subroutine'
       END SUBROUTINE
