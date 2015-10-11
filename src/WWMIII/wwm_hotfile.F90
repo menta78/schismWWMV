@@ -789,11 +789,7 @@ MODULE wwm_hotfile_mod
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
 
           iret=nf90_inq_dimid(ncid, "nfreq", nfreq_dims)
-<<<<<<< HEAD
-          CALL GENERIC_NETCDF_ERROR_WWM(ncid, CallFct, 4, iret)
-=======
           CALL GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, 4, iret)
->>>>>>> f7fcbb6dc7a11a8c686b97999ec8ff1a227221fd
 
           iret=nf90_inq_dimid(ncid, "ndir", ndir_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)

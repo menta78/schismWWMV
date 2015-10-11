@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#undef DEBUG_ITERATION_LOOP
 #define DEBUG_ITERATION_LOOP
+#undef DEBUG_ITERATION_LOOP
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1980,6 +1980,101 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+      USE DATAPOOL
+      USE NETCDF  
+      IMPLICIT NONE
+      INTEGER, intent(in) :: iPass, iIter
+      REAL(rkind), intent(in) :: FieldOut1(MNP)
+      character (len = *), parameter :: CallFct="DEBUG_EIMPS_TOTAL_JACOBI"
+      REAL(rkind) :: FieldOutTotal1(np_total)
+      REAL(rkind), allocatable :: ARRAY_loc(:)
+      character(len=256) :: FileSave, StrPass, StrIter
+      REAL(rkind) eTimeDay
+      integer ncid, iret, nbTime, mnp_dims, ntime_dims, var_id
+      integer IP, IPloc, IPglob, NP_RESloc
+      integer iProc
+      integer, allocatable :: ListFirstMNP(:)
+      WRITE(FileSave, 10) 'DebugJacobi', iPass
+10    FORMAT(a, '_', i4.4,'.nc')
+      
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+        allocate(ListFirstMNP(nproc), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+        ListFirstMNP=0
+        DO iProc=2,nproc
+          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+        END DO
+        DO IP=1,NP_RES
+          IPglob=iplg(IP)
+          FieldOutTotal1(IPglob)=FieldOut1(IP)
+        END DO
+        DO iPROC=2,nproc
+          NP_RESloc=ListNP_RES(iPROC)
+          allocate(ARRAY_loc(NP_RESloc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
+          !
+          CALL MPI_RECV(ARRAY_loc, NP_RESloc, rtype, iProc-1, 511, comm, istatus, ierr)
+          DO IPloc=1,NP_RESloc
+            IPglob=ListIPLG(IPloc + ListFirstMNP(iProc))
+            FieldOutTotal1(IPglob)=ARRAY_loc(IPloc)
+          END DO
+          deallocate(ARRAY_loc)
+        END DO
+        deallocate(ListFirstMNP)
+      ELSE
+        CALL MPI_SEND(FieldOut1, NP_RES, rtype, 0, 511, comm, ierr)
+      END IF
+#else
+      FieldOutTotal1 = FieldOut1
+#endif
+      !
+      ! Now writing to netcdf file
+      ! 
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (iIter .eq. 1) THEN
+          iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+          !
+          nbTime=0
+          CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
+          !
+          iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+          !
+          iret=nf90_def_var(ncid,"FieldOut1",NF90_RUNTYPE,(/ mnp_dims, ntime_dims/),var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+          !
+          iret = nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+          !
+          ! Writing data
+          !
+          iret = nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+          !
+          eTimeDay = MAIN%BMJD + (iIter-1)*3600
+          CALL WRITE_NETCDF_TIME(ncid, iIter, eTimeDay)
+          !
+          iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+          !
+          iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
+          !
+          iret = nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -1998,6 +2093,7 @@
       REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 #ifdef DEBUG_ITERATION_LOOP
       integer, save :: iPass = 0
+      REAL(rkind) :: FieldOut1(MNP)
 #endif
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
@@ -2052,6 +2148,9 @@
       DO
         is_converged = 0
         JDX=0
+#ifdef DEBUG_ITERATION_LOOP
+        FieldOut1 = 0
+#endif
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
@@ -2318,6 +2417,9 @@
             else
               p_is_converged = zero
             endif
+#ifdef DEBUG_ITERATION_LOOP
+            FieldOut1(IP)=p_is_converged
+#endif
             IF (IPstatus(IP) .eq. 1) THEN
               IF (p_is_converged .lt. jgs_diff_solverthr) is_converged=is_converged+1
             ENDIF
@@ -2348,6 +2450,11 @@
         IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
           AC2 = U_JACOBI
         ENDIF
+#ifdef DEBUG_ITERATION_LOOP
+        CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+        iPass=iPass+1
+#endif
+
 !
 ! The termination criterions several can be chosen
 !
