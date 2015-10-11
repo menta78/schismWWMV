@@ -149,9 +149,6 @@ ifdef USE_TIMOR
        timor_init.o timor_Q3D.o timor_ReadWrite.o timor_schub.o\
        timor_sukzession.o timor_SusTrans.o timor_timeloop.o \
        timor_upw_ups.o timor_waves.o
-#timor_datapl.o timor_init.o timor_sedisub.o timor_fluc.o  \
-#       timor_d.o timor_sus.o timor_bed.o timor_a_up.o timor_a0.o \
-#       timor_timeloop.o timor_upw_ups.o timor_hydro_Anlagen.o
 endif
 
 ifdef USE_GOTM

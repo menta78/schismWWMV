@@ -308,16 +308,16 @@
 #ifdef NCDF
       ELSE IF (IGRIDTYPE.eq.5) THEN ! netcdf boundary format
         ISTAT = NF90_OPEN(BND%FNAME, NF90_NOWRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(ncid, 'IOBP', var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = nf90_get_var(ncid, var_id, IOBPtotal)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = NF90_CLOSE(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 #endif
       END IF
       DO IP = 1, NP_TOTAL
@@ -1729,17 +1729,17 @@
             Print *, 'Error while trying to open netcdf file'
             Print *, 'FILE=', TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
             Print *, 'One possible error is that the file is NC4 but you linked to NC3'
-            CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
           END IF
 
           ISTAT = nf90_inq_varid(BND_NCID, 'time', ITIME_ID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
           ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ITIME_ID, dimids = dimids)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
           ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDT_BND_FILE(IFILE))
-          CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
           WRITE(STAT%FHNDL,*) IFILE, NDT_BND_FILE(IFILE)
         END DO
@@ -1747,22 +1747,22 @@
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(BND_NCID, 'longitude', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDX_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inq_varid(BND_NCID, 'latitude', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(BND_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
 
@@ -1772,10 +1772,10 @@
 ! read coordinates from files ....
 !
         ISTAT = NF90_GET_VAR(BND_NCID, ILON_ID, COORD_BND_X)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = NF90_GET_VAR(BND_NCID, ILAT_ID, COORD_BND_Y)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
@@ -1790,7 +1790,7 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(BND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1813,14 +1813,14 @@
         DO IFILE = 1, NUM_NETCDF_FILES_BND
           CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
           ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 13')
           BND_TIME = ZERO
 ! MDS: It looks dangerous to use previous id.
           ISTAT = NF90_GET_VAR(BND_NCID,ITIME_ID,BND_TIME)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 
           DO IT = 1, NDT_BND_FILE(IFILE)
             BND_TIME_ALL_FILES(IFILE,IT) = BND_TIME(IT)
@@ -1948,20 +1948,20 @@
 
       CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,IVAR)))
       ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,IVAR),NF90_NOWRITE,ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
       ISTAT = nf90_inq_varid(ncid, TRIM(EVAR), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
       ISTAT = nf90_get_att(ncid, var_id, 'scale_factor', scale_factor)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
       ISTAT = NF90_GET_VAR(ncid, var_id, ITMP,  start = (/ 1, 1, IT /), count = (/ NDX_BND, NDY_BND, 1/))
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
       VAR_READ = MyREAL(ITMP) * scale_factor
 
       ISTAT = nf90_close(ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -2978,62 +2978,62 @@
       integer ntime_dims, iwbmnpgl_dims
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
       iret = nf90_def_dim(ncid, 'one', 1, one_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
       iret = nf90_def_dim(ncid, 'two', 2, two_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
       iret = nf90_def_dim(ncid, 'three', 3, three_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
       iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
       iret = nf90_def_dim(ncid, 'np_total', np_total, mnp_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
       iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
       iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
       iret = nf90_def_dim(ncid, 'eight',   8, eight_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
       iret = nf90_def_dim(ncid, 'IWBMNPGL', IWBMNPGL, iwbmnpgl_dims)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
       !
       CALL WRITE_PARAM_1(ncid, one_dims)
       !
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
       iret=nf90_def_var(ncid,'IOBP',NF90_INT,(/ mnp_dims /), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
       iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
       iret=nf90_put_att(ncid,var_id,'description','boundary status of nodes')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
       iret=nf90_put_att(ncid,var_id,'case 0','interior point')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       iret=nf90_put_att(ncid,var_id,'case 1','island')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
       iret=nf90_put_att(ncid,var_id,'case 2','dirichlet condition')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 16, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
       iret=nf90_put_att(ncid,var_id,'case 3','neumann condition')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 17, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
       iret=nf90_put_att(ncid,var_id,'case 4','unknown')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 18, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, iret)
       !
       iret=nf90_def_var(ncid,'IWBNDGL',NF90_INT,(/ iwbmnpgl_dims /), var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 19, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 19, iret)
       iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
-      CALL GENERIC_NETCDF_ERROR(CallFct, 20, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       !
       IF (BOUC_NETCDF_OUT_PARAM) THEN
         iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 21, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 21, iret)
         iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 22, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 22, iret)
       END IF
       !
       IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ nfreq_dims, ndir_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 23, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 23, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
-        CALL GENERIC_NETCDF_ERROR(CallFct, 24, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 24, iret)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -3051,14 +3051,14 @@
       CALL WRITE_PARAM_2(ncid)
       !
       iret=nf90_inq_varid(ncid, "IOBP", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
       iret=nf90_put_var(ncid,var_id,IOBPtotal, start=(/1/), count =(/np_total/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
       !
       iret=nf90_inq_varid(ncid, "IWBNDGL", var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
       iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3118,18 +3118,18 @@
         nbTime=-1
         IF (myrank == 0) THEN
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           !
           CALL WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
           iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
           !
           iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
           !
           CALL WRITE_NETCDF_BOUND_HEADERS_2(ncid)
           iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
         END IF
       END IF
       !
@@ -3153,22 +3153,22 @@
       IF (myrank .eq. rank_boundary) THEN
         eTimeDay=MAIN%TMJD
         iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
         iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
         iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         recs_his=recs_his+1
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
         IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
           iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
             iret=nf90_put_var(ncid,var_id,SPPARM_GL, start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(SPPARM_GL), start=(/1,1,recs_his/), count = (/8, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
           ENDIF
         END IF
         IF (BOUC_NETCDF_OUT_SPECTRA) THEN
@@ -3177,17 +3177,17 @@
           FLUSH(STAT%FHNDL)
           !
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
             iret=nf90_put_var(ncid,var_id,WBAC_GL, start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           ELSE
             iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
-            CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
           ENDIF
         END IF
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       END IF
       IF (OUT_BOUC % IDEF.gt.0) THEN
         IF (recs_his .eq. OUT_BOUC % IDEF) THEN
@@ -3207,13 +3207,13 @@
       character (len = *), parameter :: CallFct="READ_NETCDF_BOUNDARY_WBAC_SINGLE"
       integer ncid, var_id
       ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
       ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
       ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/MSC,MDC, IWBMNPGL,1/))
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
       ISTAT = NF90_CLOSE(ncid)
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -3256,20 +3256,20 @@
 !      Print *, 'IT=', IT
       ISTAT = NF90_OPEN(BOUC_NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, ncid)
 !      Print *, 'step 1'
-      CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 !      Print *, 'step 1'
       ISTAT = nf90_inq_varid(ncid, 'SPPARM', var_id)
 !      Print *, 'step 2'
-      CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 !      Print *, 'step 3'
 !      Print *, 'allocated(SPPARM_GL)=', allocated(SPPARM_GL)
       ISTAT = NF90_GET_VAR(ncid, var_id, SPPARM_GL, start=(/1,1,IT/), count = (/8, IWBMNPGL,1/))
 !      Print *, 'step 4'
-      CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 !      Print *, 'step 5'
       ISTAT = NF90_CLOSE(ncid)
 !      Print *, 'step 6'
-      CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 !      Print *, 'step 7'
       END SUBROUTINE
 !**********************************************************************
@@ -3359,19 +3359,19 @@
       BOUND_NB_TIME=0
       DO iFile=1,NUMBER_BOUC_NETCDF_FILE
         ISTAT = nf90_open(TRIM(BOUC_NETCDF_FILE_NAMES(iFile)), nf90_nowrite, fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(fid, "ocean_time", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_close(fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
         BOUND_NB_TIME = BOUND_NB_TIME + nbtime_mjd
       END DO
 
@@ -3380,28 +3380,28 @@
       idx=0
       DO iFile=1,NUMBER_BOUC_NETCDF_FILE
         ISTAT = nf90_open(TRIM(BOUC_NETCDF_FILE_NAMES(iFile)), nf90_nowrite, fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(fid, "ocean_time", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
         CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
         allocate(ListTime_mjd(nbtime_mjd), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
 
         ISTAT = nf90_get_var(fid, varid, ListTime_mjd)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_close(fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         DO iTime=1,nbtime_mjd
           idx=idx+1

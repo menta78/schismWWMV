@@ -77,7 +77,7 @@
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF CF_COMPLIANT STATIONARY FIELD 
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             FLUSH(WINDBG%FHNDL)
-            CALL INIT_NETCDF_CF(eVAR_WIND)
+            CALL INIT_NETCDF_CF_WWM(eVAR_WIND)
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
@@ -160,7 +160,7 @@
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED CF NETCDF'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             FLUSH(WINDBG%FHNDL)
-            CALL INIT_NETCDF_CF(eVAR_WIND)
+            CALL INIT_NETCDF_CF_WWM(eVAR_WIND)
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
@@ -447,25 +447,25 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
         !
         iret=nf90_open(TRIM(FileSave), NF90_NOWRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
         !
         iret=nf90_inq_varid(ncid, "CF_IX", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
         iret=NF90_GET_VAR(ncid, varid, CF_IX_GLOBAL)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
         !
         iret=nf90_inq_varid(ncid, "CF_IY", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
         iret=NF90_GET_VAR(ncid, varid, CF_IY_GLOBAL)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
         !
         iret=nf90_inq_varid(ncid, "CF_COEFF", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
         iret=NF90_GET_VAR(ncid, varid, CF_COEFF_GLOBAL)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
         !      
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 27, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 27, iret)
         !
 #ifdef MPI_PARALL_GRID
       END IF
@@ -613,25 +613,25 @@
       IF (myrank .eq. 0) THEN
 #endif
         iret=nf90_create(TRIM(FileSave), nf90_CLOBBER, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
         !
         iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
         !
         iret = nf90_def_dim(ncid, 'four', 4, four_dims)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
         !
         iret=nf90_def_var(ncid,'CF_IX',NF90_INT,(/ mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
         !
         iret=nf90_def_var(ncid,'CF_IY',NF90_INT,(/ mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
         !
         iret=nf90_def_var(ncid,'CF_COEFF',NF90_RUNTYPE,(/ four_dims, mnp_dims/),var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
         !
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         !
         ! Now writing the data
         !
@@ -640,28 +640,28 @@
         WRITE(STAT%FHNDL,*) 'minval(CF_COEFF_GLOBAL)=', minval(CF_COEFF_GLOBAL)
         !
         iret=nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
         !
         iret=nf90_inq_varid(ncid,'CF_IX',var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
         !
         iret=nf90_put_var(ncid,var_id,CF_IX_GLOBAL,start = (/ 1 /), count=(/np_total/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
         !
         iret=nf90_inq_varid(ncid,'CF_IY',var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
         !
         iret=nf90_put_var(ncid,var_id,CF_IY_GLOBAL,start = (/ 1 /), count=(/np_total/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
         !
         iret=nf90_inq_varid(ncid,'CF_COEFF',var_id)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
         !
         iret=nf90_put_var(ncid,var_id,CF_COEFF_GLOBAL,start = (/ 1, 1 /), count=(/4, np_total/))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
         !
         iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
         !
         deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
 #ifdef MPI_PARALL_GRID
@@ -1018,36 +1018,36 @@
 !
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'initial_time0_encoded', ITIME_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ITIME_ID, dimids = dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDT_WIND_FILE)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 !
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(WIND_NCID, 'g0_lon_2', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDX_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'g0_lat_1', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDY_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ALLOCATE (COORD_WIND_X(NDX_WIND), COORD_WIND_Y(NDY_WIND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 4')
@@ -1055,10 +1055,10 @@
 ! read coordinates from files ....
 !
         ISTAT = NF90_GET_VAR(WIND_NCID, ILON_ID, COORD_WIND_X)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = NF90_GET_VAR(WIND_NCID, ILAT_ID, COORD_WIND_Y)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 !
 ! estimate offset ...
 !
@@ -1073,7 +1073,7 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1087,10 +1087,10 @@
         DO IFILE = 1, NUM_NETCDF_FILES
           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
           ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 
           DO IT = 1, NDT_WIND_FILE
             WRITE (3001, *) WIND_TIME(IT)
@@ -1171,43 +1171,43 @@
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'V_GDS0_HTGL_13', DWIND_X_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_X_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'U_GDS0_HTGL_13', DWIND_Y_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_Y_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X,    start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_Y_ID, WIND_Y,    start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 
         IF (LINVERTY) THEN
           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
@@ -1249,7 +1249,7 @@
           DEALLOCATE(U,V,H)
         END IF
         ISTAT = NF90_CLOSE(WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_Y,Vtotal2)
@@ -1333,19 +1333,19 @@
 !
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(1), NF90_NOWRITE, WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'time', ITIME_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ITIME_ID, dimids = dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDT_WIND_FILE)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = nf90_get_att(WIND_NCID, ITIME_ID, 'units', beginn_time)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         CHRDATE(1:4) = beginn_time(13:17)
         CHRDATE(5:6) = beginn_time(18:19)
@@ -1357,22 +1357,22 @@
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(WIND_NCID, 'lon', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDX_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, 'lat', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = NDY_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ALLOCATE (DCOORD_WIND_X(NDX_WIND), DCOORD_WIND_Y(NDY_WIND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 19')
@@ -1380,10 +1380,10 @@
 ! read cooridantes from files ....
 !
         ISTAT = NF90_GET_VAR(WIND_NCID, ILON_ID, DCOORD_WIND_X)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 
         ISTAT = NF90_GET_VAR(WIND_NCID, ILAT_ID, DCOORD_WIND_Y)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 
         DCOORD_WIND_Y = DCOORD_WIND_Y !+ 90.0_rkind
 
@@ -1404,7 +1404,7 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1423,10 +1423,10 @@
         DO IFILE = 1, NUM_NETCDF_FILES
           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 
           ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME_NETCDF)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, ISTAT)
 
           WRITE(WINDBG%FHNDL,*) 'IFILE=', IFILE
           DO IT = 1, NDT_WIND_FILE
@@ -1446,10 +1446,10 @@
         DO IFILE = 1, NUM_NETCDF_FILES
           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
 
           ISTAT = NF90_GET_VAR(WIND_NCID, ITIME_ID, WIND_TIME_NETCDF)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, ISTAT)
 
           WRITE(WINDBG%FHNDL,*) 'IFILE=', IFILE
           DO IT = 1, NDT_WIND_FILE
@@ -1567,48 +1567,48 @@
 !
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(1)))
         ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(1)), NF90_NOWRITE, WINDX_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WINDX_NCID, 'time', ITIME_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, ITIME_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = NDT_WIND_FILE)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         WRITE(WINDBG%FHNDL,*) 'NDT_WIND_FILE=', NDT_WIND_FILE
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2)))
         ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2)), NF90_NOWRITE, WINDY_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 !
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
         ISTAT = nf90_inq_varid(WINDX_NCID, 'lon', ILON_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, ILON_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = NDX_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(2), len = NDY_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inq_varid(WINDY_NCID, 'lat', ILAT_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WINDY_NCID, ILAT_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(1), len = NDX_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(2), len = NDY_WIND)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 
         ALLOCATE (DCOORD_WIND_X2(NDX_WIND,NDY_WIND), DCOORD_WIND_Y2(NDX_WIND,NDY_WIND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 23')
@@ -1616,10 +1616,10 @@
 ! read coordinates from files ....
 !
         ISTAT = NF90_GET_VAR(WINDX_NCID, ILON_ID, DCOORD_WIND_X2)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
         ISTAT = NF90_GET_VAR(WINDY_NCID, ILAT_ID, DCOORD_WIND_Y2)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 !
 ! estimate offset ...
 !
@@ -1631,10 +1631,10 @@
 ! close netcdf file ...
 !
         ISTAT = NF90_CLOSE(WINDX_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, ISTAT)
 
         ISTAT = NF90_CLOSE(WINDY_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
 !
 ! total number of time steps ... in all files
 !
@@ -1649,13 +1649,13 @@
         DO IFILE = 1, NUM_NETCDF_FILES, 2
           CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
           ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WINDX_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 18, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, ISTAT)
 
           ISTAT = NF90_GET_VAR(WINDX_NCID, ITIME_ID, WIND_TIME_NETCDF)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 19, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 19, ISTAT)
 
           ISTAT = NF90_CLOSE(WINDX_NCID)
-          CALL GENERIC_NETCDF_ERROR(CallFct, 20, ISTAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, ISTAT)
 
           WIND_TIME_NETCDF = WIND_TIME_NETCDF/24 ! Transform to days ...
           OFFSET_TIME = MINVAL(WIND_TIME_NETCDF) - START_TIME  ! in this dataset the time start at 1800 in WWM it start at 1900
@@ -1795,53 +1795,53 @@
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(IFILE), NF90_NOWRITE, WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, '10u', DWIND_X_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_X_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numHeights)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inq_varid(WIND_NCID, '10v', DWIND_Y_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WIND_NCID, DWIND_Y_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(3), len = numHeights)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 13, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
 
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_Y_ID, WIND_Y, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 
         ISTAT = NF90_CLOSE(WIND_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, ISTAT)
 
         CALL INTER_STRUCT_DATA(NDX_WIND,NDY_WIND,DX_WIND,DY_WIND,OFFSET_X_WIND,OFFSET_Y_WIND,WIND_X,Vtotal1)
 
@@ -1899,50 +1899,50 @@
         END IF
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2*IFILE-1)))
         ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES(2*IFILE-1)), NF90_NOWRITE, WINDX_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(WINDX_NCID, 'uwnd', DWIND_X_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WINDX_NCID, DWIND_X_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDX_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_get_att(WINDX_NCID, DWIND_X_ID, 'scale_factor', scale_factor)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(NETCDF_FILE_NAMES(2*IFILE)))
         ISTAT = NF90_OPEN(NETCDF_FILE_NAMES(2*IFILE), NF90_NOWRITE, WINDY_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inq_varid(WINDY_NCID, 'vwnd', DWIND_Y_ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         ISTAT = NF90_INQUIRE_VARIABLE(WINDY_NCID, DWIND_Y_ID, dimids = dimIDs)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(1), len = numLons)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = nf90_inquire_dimension(WINDY_NCID, dimIDs(2), len = numLats)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
 
         ISTAT = NF90_GET_VAR(WINDX_NCID, DWIND_X_ID, WIND_X4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 14, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
         ISTAT = NF90_GET_VAR(WINDY_NCID, DWIND_Y_ID, WIND_Y4, start = (/ 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 15, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
 
         ISTAT = NF90_CLOSE(WINDX_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 16, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, ISTAT)
 
         ISTAT = NF90_CLOSE(WINDY_NCID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 17, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
 
         IF (.FALSE.) THEN
           ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
@@ -2090,7 +2090,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_INTERP_NETCDF_CF(RECORD_IN, outwind)
+      SUBROUTINE READ_INTERP_NETCDF_CF_WWM(RECORD_IN, outwind)
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
@@ -2104,22 +2104,22 @@
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing wind file : ", TRIM(WIN%FNAME))
         ISTAT = NF90_OPEN(WIN%FNAME, NF90_NOWRITE, FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = NF90_inq_varid(FID, 'Uwind', ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_GET_VAR(FID, ID, UWIND_FD, start = (/ 1, 1, RECORD_IN /), count = (/ NDX_WIND_FD, NDY_WIND_FD, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = NF90_inq_varid(FID, 'Vwind', ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = NF90_GET_VAR(FID, ID, VWIND_FD, start = (/ 1, 1, RECORD_IN /), count = (/ NDX_WIND_FD, NDY_WIND_FD, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = NF90_CLOSE(FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
         CALL KERNEL_INTERP_UV_WINDFD(varTotal)
 # ifdef MPI_PARALL_GRID
       END IF
@@ -2147,7 +2147,7 @@
 !* http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.pdf *
 !*  for details                                                             *
 !****************************************************************************
-      SUBROUTINE INIT_NETCDF_CF(eVAR)
+      SUBROUTINE INIT_NETCDF_CF_WWM(eVAR)
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
@@ -2168,13 +2168,13 @@
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         ISTAT = nf90_open(WIN%FNAME, nf90_nowrite, fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(fid, "Uwind", varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = nf90_get_att(fid, varid, "coordinates", CoordString)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
         alen=LEN_TRIM(CoordString)
         posBlank=INDEX(CoordString(1:alen), ' ')
         Xname=CoordString(1:posBlank-1)
@@ -2186,16 +2186,16 @@
         ! Reading lontitude/latitude array
 
         ISTAT = nf90_inq_varid(fid, Xname, varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_WIND_FD)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_WIND_FD)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         WRITE(WINDBG%FHNDL,*) 'NDX_WIND_FD=', NDX_WIND_FD
         WRITE(WINDBG%FHNDL,*) 'NYX_WIND_FD=', NDY_WIND_FD
@@ -2205,13 +2205,13 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
 
         ISTAT = nf90_get_var(fid, varid, CF_LON)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_inq_varid(fid, Yname, varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         ISTAT = nf90_get_var(fid, varid, CF_LAT)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 12, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
         CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, CF_LON, CF_LAT)
         DEALLOCATE(CF_LON, CF_LAT)
 # ifdef MPI_PARALL_GRID
@@ -2256,22 +2256,22 @@
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = NF90_inq_varid(FID, TRIM(eStrU), ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_GET_VAR(FID, ID, U_tot, start = (/ 1, RECORD_IN /), count = (/ np_total, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = NF90_inq_varid(FID, TRIM(eStrV), ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
 
         ISTAT = NF90_GET_VAR(FID, ID, V_tot, start = (/ 1, RECORD_IN /), count = (/ np_total, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = NF90_CLOSE(FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         Vtotal1 = cf_add_offset + cf_scale_factor*U_tot
         Vtotal2 = cf_add_offset + cf_scale_factor*V_tot
@@ -2328,16 +2328,16 @@
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = NF90_inq_varid(FID, TRIM(eVAR % eString), ID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = NF90_GET_VAR(FID, ID, VAR_tot, start = (/ 1, RECORD_IN /), count = (/ np_total, 1 /))
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = NF90_CLOSE(FID)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         Vtotal = cf_add_offset + cf_scale_factor*VAR_tot
 # ifdef MPI_PARALL_GRID
@@ -2391,20 +2391,20 @@
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
         ISTAT = nf90_open(TRIM(eFileName), nf90_nowrite, fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 1, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ! Reading wind attributes
 
 !        Print *, 'eString=', TRIM(eString)
 !        Print *, 'FNAME=', TRIM(eFileName)
         ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 2, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 3, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 4, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
         WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(WindTimeStr)
         FLUSH(WINDBG%FHNDL)
 
@@ -2429,31 +2429,31 @@
         ! Reading time
        
         ISTAT = nf90_inq_varid(fid, WindTimeStr, varid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 5, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 6, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
         ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 7, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
         CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
         WRITE(WINDBG%FHNDL,*) 'eTimeStart=', eTimeStart
         FLUSH(WINDBG%FHNDL)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 8, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
         ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 9, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
         allocate(wind_time_mjd(nbtime_mjd), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
 
         ISTAT = nf90_get_var(fid, varid, wind_time_mjd)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 10, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
         ISTAT = nf90_close(fid)
-        CALL GENERIC_NETCDF_ERROR(CallFct, 11, ISTAT)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
 
         wind_time_mjd(:) = wind_time_mjd(:)*ConvertToDay + eTimeStart
         CALL CHECK_WIND_TIME(nbtime_mjd, WIND_TIME_MJD)
