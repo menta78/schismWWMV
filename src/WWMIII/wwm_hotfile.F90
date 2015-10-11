@@ -655,6 +655,10 @@ MODULE wwm_hotfile_mod
 # ifdef MPI_PARALL_GRID
         iret=nf90_open(TRIM(HOTIN%FNAME), nf90_nowrite, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+<<<<<<< HEAD
+=======
+
+>>>>>>> f7fcbb6dc7a11a8c686b97999ec8ff1a227221fd
         iret=nf90_inq_varid(ncid, "ac", ac_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
         iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
@@ -789,7 +793,11 @@ MODULE wwm_hotfile_mod
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
 
           iret=nf90_inq_dimid(ncid, "nfreq", nfreq_dims)
+<<<<<<< HEAD
           CALL GENERIC_NETCDF_ERROR_WWM(ncid, CallFct, 4, iret)
+=======
+          CALL GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, 4, iret)
+>>>>>>> f7fcbb6dc7a11a8c686b97999ec8ff1a227221fd
 
           iret=nf90_inq_dimid(ncid, "ndir", ndir_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)

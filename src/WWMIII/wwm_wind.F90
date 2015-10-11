@@ -539,6 +539,9 @@
       integer ncid, iret, var_id
       integer mnp_dims, four_dims
       integer IP, IPglob, iPROC, NP_RESloc, IPloc
+      WRITE(STAT%FHNDL,*) 'minval(CF_IX)=', minval(CF_IX)
+      WRITE(STAT%FHNDL,*) 'minval(CF_IY)=', minval(CF_IY)
+      WRITE(STAT%FHNDL,*) 'minval(CF_COEFF)=', minval(CF_COEFF)
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .eqv. .TRUE.) THEN
         IF (myrank .eq. 0) THEN
@@ -571,7 +574,7 @@
             CALL MPI_RECV(CF_COEFF_loc, 4*NP_RESloc, rtype, iProc-1, 613, comm, istatus, ierr)
             WRITE(STAT%FHNDL,*) 'Step 4'
             DO IPloc=1,NP_RESloc
-              IPglob=ListIPLG(IP + ListFirstMNP(iProc))
+              IPglob=ListIPLG(IPloc + ListFirstMNP(iProc))
               CF_IX_GLOBAL(IPglob)=CF_IX_loc(IPloc)
               CF_IY_GLOBAL(IPglob)=CF_IY_loc(IPloc)
               CF_COEFF_GLOBAL(:, IPglob)=CF_COEFF_loc(:, IPloc)
@@ -602,6 +605,7 @@
       CF_IY_GLOBAL=CF_IY
       CF_COEFF_GLOBAL=CF_COEFF
 #endif
+      
       !
       ! Now writing up
       !
@@ -630,6 +634,10 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         !
         ! Now writing the data
+        !
+        WRITE(STAT%FHNDL,*) 'minval(CF_IX_GLOBAL)=', minval(CF_IX_GLOBAL)
+        WRITE(STAT%FHNDL,*) 'minval(CF_IY_GLOBAL)=', minval(CF_IY_GLOBAL)
+        WRITE(STAT%FHNDL,*) 'minval(CF_COEFF_GLOBAL)=', minval(CF_COEFF_GLOBAL)
         !
         iret=nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
@@ -755,10 +763,10 @@
                     CF_IY(I)=IY
                     a=WI(2)
                     b=WI(3)
-                    cf_coeff(1, I)=(1-a)*(1-b)
-                    cf_coeff(2, I)=a*(1-b)
-                    cf_coeff(3, I)=(1-a)*b
-                    cf_coeff(4, I)=a*b
+                    CF_COEFF(1, I)=(1-a)*(1-b)
+                    CF_COEFF(2, I)=a*(1-b)
+                    CF_COEFF(3, I)=(1-a)*b
+                    CF_COEFF(4, I)=a*b
                     StatusUse(IX  ,IY  )=1
                     StatusUse(IX+1,IY  )=1
                     StatusUse(IX  ,IY+1)=1
@@ -779,10 +787,10 @@
                     CF_IY(I)=IY
                     a=1 - WI(3)
                     b=1 - WI(2)
-                    cf_coeff(1, I)=(1-a)*(1-b)
-                    cf_coeff(2, I)=a*(1-b)
-                    cf_coeff(3, I)=(1-a)*b
-                    cf_coeff(4, I)=a*b
+                    CF_COEFF(1, I)=(1-a)*(1-b)
+                    CF_COEFF(2, I)=a*(1-b)
+                    CF_COEFF(3, I)=(1-a)*b
+                    CF_COEFF(4, I)=a*b
                     StatusUse(IX  ,IY  )=1
                     StatusUse(IX+1,IY  )=1
                     StatusUse(IX  ,IY+1)=1
@@ -809,6 +817,7 @@
             ELSE
               CF_IX(I)=IXs
               CF_IY(I)=IYs
+              CF_COEFF(1,I)=1
               nbExtrapolation = nbExtrapolation + 1
               WRITE(WINDBG%FHNDL,*) 'Point ', I, ' outside grid'
               WRITE(WINDBG%FHNDL,*) 'MinDist=', MinDist
