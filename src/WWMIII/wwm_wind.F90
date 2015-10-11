@@ -81,9 +81,9 @@
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
-            CALL READ_INTERP_NETCDF_CF(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL READ_INTERP_NETCDF_CF(REC2_wind_new,tmp_wind2)
+              CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -164,9 +164,9 @@
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
-            CALL READ_INTERP_NETCDF_CF(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL READ_INTERP_NETCDF_CF(REC2_wind_new,tmp_wind2)
+              CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -254,10 +254,10 @@
           END IF
           CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
           IF (REC1_wind_new.NE.REC1_wind_old) THEN
-            CALL READ_INTERP_NETCDF_CF(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
           END IF
           IF (REC2_wind_new.NE.REC2_wind_old) THEN
-            CALL READ_INTERP_NETCDF_CF(REC2_wind_new,tmp_wind2)
+            CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
           END IF
           IF (cf_w1.NE.1) THEN
             WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
@@ -2097,7 +2097,7 @@
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
       REAL(rkind) :: varTotal(MNP_WIND,2), Vtotal(MNP_WIND), Vlocal(MNP)
-      character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF"
+      character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF_WWM"
       INTEGER                            :: FID, ID
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN

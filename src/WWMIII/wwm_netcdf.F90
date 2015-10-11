@@ -902,7 +902,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GENERIC_NETCDF_ERROR_CLEAR(ncid, CallFct, idx, iret)
+      SUBROUTINE GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, idx, iret)
       USE NETCDF
       USE DATAPOOL, only : wwmerr
       implicit none
@@ -921,7 +921,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GENERIC_NETCDF_ERROR(CallFct, idx, iret)
+      SUBROUTINE GENERIC_NETCDF_ERROR_WWM(CallFct, idx, iret)
       USE NETCDF
       USE DATAPOOL, only : wwmerr
       implicit none
