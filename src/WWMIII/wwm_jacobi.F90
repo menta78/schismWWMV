@@ -2572,8 +2572,5 @@
       ENDIF
 # endif
 #endif
-<<<<<<< HEAD
       WRITE(*,*) SUM(AC2), 'AFTER EIMPS_TOTAL_JACOBI_ITERATION subroutine'
-=======
->>>>>>> 333268d6e53cd8b0692189490322af46b4714f96
       END SUBROUTINE
