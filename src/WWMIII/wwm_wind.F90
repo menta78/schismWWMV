@@ -2504,6 +2504,65 @@
 #endif
 #ifdef GRIB_API_ECMWF
 !****************************************************************************
+!* Reading time from a GRIB file                                            *
+!****************************************************************************
+      SUBROUTINE READ_TIME_OF_GRIB_FILE(eTimeOut, eFile, STEPRANGE_IN)
+      USE DATAPOOL
+      USE GRIB_API
+      IMPLICIT NONE
+      REAL(rkind), intent(out) :: eTimeOut
+      CHARACTER(len=140), intent(in) :: eFile
+      LOGICAL, intent(in) :: STEPRANGE_IN
+      LOGICAL :: USE_DATATIME = .TRUE.
+      INTEGER :: FHNDL
+      integer eYear, eMonth, eDay, resYear, resMonth
+      integer eHour, eMin, eSec, resHour, resMin
+      integer ifile, i, n
+      REAL(rkind) :: eTimeBase
+      character (len=15) :: eStrTime
+      integer, allocatable :: igrib(:)
+      integer dataDate, stepRange, dataTime
+      FHNDL = WINDBG % FHNDL
+      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
+      CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+      call grib_count_in_file(ifile,n)
+      allocate(igrib(n))
+      i=1
+      call grib_new_from_file(ifile, igrib(i))
+      call grib_get(igrib(i), 'dataDate', dataDate)
+      WRITE(FHNDL, *) 'dataDate=', dataDate
+      eYear=(dataDate - mod(dataDate,10000))/10000
+      resYear=dataDate - 10000*eYear
+      eMonth=(resYear - mod(resYear,100))/100
+      resMonth=resYear - 100*eMonth;
+      eDay=resMonth
+      IF (STEPRANGE_IN) THEN
+        call grib_get(igrib(i), 'stepRange', stepRange)
+      ELSE
+        stepRange=0
+      END IF
+      WRITE(FHNDL, *) 'stepRange=', stepRange
+      IF (USE_DATATIME) THEN
+        call grib_get(igrib(i), 'dataTime', dataTime)
+        WRITE(FHNDL, *) 'dataTime=', dataTime
+        eHour=(dataTime - mod(dataTime,100))/100
+        eMin=dataTime - 100*eHour
+        eSec=0
+      ELSE
+        eHour=0
+        eMin=0
+        eSec=0
+      END IF
+      WRITE(FHNDL, *) 'Year/m/d=', eYear, eMonth, eDay
+      WRITE(FHNDL, *) 'Hour/m/s=', eHour, eMin, eSec
+      WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
+ 10   FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+      CALL CT2MJD(eStrTime, eTimeBase)
+      eTimeOut=eTimeBase + DBLE(stepRange)/24.0_rkind
+      CALL GRIB_CLOSE_FILE(ifile)
+      deallocate(igrib)
+      END SUBROUTINE
+!****************************************************************************
 !* This is functionality for reading GRIB file wind input                   *
 !* Specific supported cases (or wished): ECMWF (IFS), COSMO, DHMZ (ALADIN)  *
 !****************************************************************************
@@ -2514,20 +2573,15 @@
       INTEGER IT
       INTEGER ifile, i, n
       integer, allocatable :: igrib(:)
-      integer dataDate, stepRange, dataTime
       character(len=100) eShortName
-      integer eYear, eMonth, eDay, resYear, resMonth
-      integer eHour, eMin, eSec, resHour, resMin
       integer WeFound
       REAL(rkind), ALLOCATABLE :: GRIB_LON(:,:), GRIB_LAT(:,:)
-      character (len=15) :: eStrTime
-      REAL(rkind) :: eTimeBase, eTimeMjd
+      REAL(rkind) :: eTimeMjd
       REAL(rkind) ::longitudeOfFirstPointInDegrees, latitudeOfFirstPointInDegrees, longitudeOfLastPointInDegrees, latitudeOfLastPointInDegrees
       REAL(rkind) :: deltaLAT, deltaLON
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer IPROC, eInt(1)
       integer iX, iY
-      LOGICAL :: USE_DATATIME = .TRUE.
       integer nbtime_mjd
       integer eProd
       integer status, idx
@@ -2564,46 +2618,8 @@
         DO IT=1, nbTime_mjd
           WRITE(WINDBG%FHNDL, *) '---------------------------------------'
           WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
-          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
-          CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
-          call grib_count_in_file(ifile,n)
-          allocate(igrib(n))
-          i=1
-          call grib_new_from_file(ifile, igrib(i))
-          call grib_get(igrib(i), 'dataDate', dataDate)
-          WRITE(WINDBG%FHNDL, *) 'dataDate=', dataDate
-          eYear=(dataDate - mod(dataDate,10000))/10000
-          resYear=dataDate - 10000*eYear
-          eMonth=(resYear - mod(resYear,100))/100
-          resMonth=resYear - 100*eMonth;
-          eDay=resMonth
-          IF (USE_STEPRANGE) THEN
-            call grib_get(igrib(i), 'stepRange', stepRange)
-          ELSE
-            stepRange=0
-          END IF
-          WRITE(WINDBG%FHNDL, *) 'stepRange=', stepRange
-          IF (USE_DATATIME) THEN
-            call grib_get(igrib(i), 'dataTime', dataTime)
-            WRITE(WINDBG%FHNDL, *) 'dataTime=', dataTime
-            eHour=(dataTime - mod(dataTime,100))/100
-            eMin=dataTime - 100*eHour
-            eSec=0
-          ELSE
-            eHour=0
-            eMin=0
-            eSec=0
-          END IF
-          WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Year/m/d=', eYear, eMonth, eDay
-          WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'Hour/m/s=', eHour, eMin, eSec
-          WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
- 10       FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
-          CALL CT2MJD(eStrTime, eTimeBase)
-          eTimeMjd=eTimeBase + DBLE(stepRange)/24.0_rkind
-          WRITE(WINDBG%FHNDL, *) 'eTimeMjd=', eTimeMjd
+          CALL READ_TIME_OF_GRIB_FILE(eTimeMjd, TRIM(GRIB_FILE_NAMES(IT)), USE_STEPRANGE)
           wind_time_mjd(IT)=eTimeMjd
-          CALL GRIB_CLOSE_FILE(ifile)
-          deallocate(igrib)
         END DO
         FLUSH(WINDBG%FHNDL)
         cf_scale_factor=ONE
