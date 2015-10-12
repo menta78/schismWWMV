@@ -577,10 +577,27 @@
            real(rkind), allocatable :: ListTime(:)
          END TYPE
          TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
-
-
 ! END CF comppliant wind PART I.J.
 
+
+         !
+         ! Nesting part of the code
+         !
+         LOGICAL                          :: L_WRITE = .FALSE.
+         INTEGER                          :: NB_GRID = 0
+         integer, parameter               :: MaxNbNest = 20
+         character(len=20)                :: ListBEGTC(MaxNbNest)
+         REAL(rkind)                      :: ListDELTC(MaxNbNest)
+         character(len=20)                :: ListUNITC(MaxNbNest)
+         character(len=20)                :: ListENDTC(MaxNbNest)
+         INTEGER                          :: ListIGRIDTYPE(MaxNbNest)
+         character(len=40)                :: ListFILEGRID(MaxNbNest)
+         character(len=40)                :: ListFILEBOUND(MaxNbNest)
+         LOGICAL                          :: L_HOTFILE = .FALSE.
+         LOGICAL                          :: L_BOUC_PARAM = .FALSE.
+         LOGICAL                          :: L_BOUC_SPEC = .FALSE.
+
+         
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
          REAL(rkind), ALLOCATABLE         :: DX1(:)
@@ -1038,7 +1055,7 @@
          LOGICAL                :: BLOCK_GAUSS_SEIDEL = .TRUE.
          LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER                :: NB_BLOCK = 3 
-         REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
+         REAL(rkind)            :: STP_SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          REAL(rkind)            :: WAE_SOLVERTHR = 1.e-10_rkind
          LOGICAL                :: L_SOLVER_NORM = .FALSE.

@@ -715,12 +715,17 @@
      &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
      &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
      &      EPSH5,                                                      &
-     &      LZETA_SETUP, ZETA_METH, SOLVERTHR
+     &      LZETA_SETUP, ZETA_METH, STP_SOLVERTHR
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
      &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
 
+         NAMELIST /NESTING/ L_WRITE, NB_GRID,                           &
+     &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
+     &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
+     &      L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
+     
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
          FLUSH(CHK%FHNDL)
@@ -1057,7 +1062,8 @@
          END IF
 !
 !     **** HOTFILE section
-
+!
+         
 #ifdef NCDF
          IF (rkind == 4) THEN
            NF90_RUNTYPE=NF90_REAL
@@ -1127,6 +1133,13 @@
          HOTF%ISTP = NINT( HOTF%TOTL / HOTF%DELT ) + 1
          HOTF%TMJD = HOTF%BMJD
 
+!
+! NESTING section
+!
+         READ(INP%FHNDL, NML = NESTING)
+         wwm_print_namelist(NESTING)
+         FLUSH(CHK%FHNDL)
+         
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
