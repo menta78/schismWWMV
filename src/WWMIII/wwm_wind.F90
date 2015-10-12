@@ -2563,6 +2563,116 @@
       deallocate(igrib)
       END SUBROUTINE
 !****************************************************************************
+!* Reading grid information from a GRIB file                                *
+!****************************************************************************
+      SUBROUTINE READ_GRID_INFO_FROM_GRIB(TheInfo, TheFile, shortName, GRIB_TYPE)
+      USE DATAPOOL
+      USE GRIB_API
+      IMPLICIT NONE
+      type(FD_FORCING_GRID), intent(out) :: TheInfo
+      character(len=300), intent(in) :: TheFile
+      character(len=100), intent(in) :: shortName
+      integer, intent(in) :: GRIB_TYPE
+      !
+      integer ifile, i, n
+      logical WeFound
+      integer, allocatable :: igrib(:)
+      REAL(rkind), allocatable :: LON_serial(:), LAT_serial(:), DATA_Serial(:)
+      character(len=100) eShortName
+      integer eProd
+      REAL(rkind) ::longitudeOfFirstPointInDegrees, latitudeOfFirstPointInDegrees, longitudeOfLastPointInDegrees, latitudeOfLastPointInDegrees
+      REAL(rkind) :: deltaLAT, deltaLON
+      REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
+      integer status, idx
+      integer iX, iY
+      !
+      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
+      CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
+      call grib_count_in_file(ifile,n)
+      allocate(igrib(n))
+      !
+      WeFound=.FALSE.;
+      DO i=1,n
+        WRITE(STAT%FHNDL, *) 'i=', i, '/', n
+        call grib_new_from_file(ifile, igrib(i))
+        call grib_get(igrib(i), 'shortName', eShortName)
+        WRITE(STAT%FHNDL, *) 'eShortName=', TRIM(eShortName)
+        IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
+          IF (GRIB_FILE_TYPE .eq. 1) THEN
+            call grib_get(igrib(i),"numberOfPointsAlongAParallel", NDX_WIND_FD)
+            call grib_get(igrib(i),"numberOfPointsAlongAMeridian", NDY_WIND_FD)
+            WRITE(STAT%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
+            WRITE(STAT%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
+            TheInfo % nx_dim = NDX_WIND_FD
+            TheInfo % ny_dim = NDY_WIND_FD
+            allocate(TheInfo % LON(NDX_WIND_FD, NDY_WIND_FD), TheInfo % LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
+            call grib_get(igrib(i), 'longitudeOfFirstGridPointInDegrees', longitudeOfFirstPointInDegrees)
+            call grib_get(igrib(i), 'latitudeOfFirstGridPointInDegrees', latitudeOfFirstPointInDegrees)
+            call grib_get(igrib(i), 'longitudeOfLastGridPointInDegrees', longitudeOfLastPointInDegrees)
+            call grib_get(igrib(i), 'latitudeOfLastGridPointInDegrees', latitudeOfLastPointInDegrees)
+
+            call grib_get(igrib(i), 'iDirectionIncrementInDegrees', iDirectionIncrement)
+            call grib_get(igrib(i), 'jDirectionIncrementInDegrees', jDirectionIncrement)
+
+            WRITE(STAT%FHNDL, *) 'LONGITUDE'
+            WRITE(STAT%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
+            WRITE(STAT%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
+            WRITE(STAT%FHNDL, *) 'LATITUDE'
+            WRITE(STAT%FHNDL, *) 'latitudeOfFirstGridPointInDegrees=', latitudeOfFirstPointInDegrees
+            WRITE(STAT%FHNDL, *) 'latitudeOfLastGridPointInDegrees=', latitudeOfLastPointInDegrees
+
+            WRITE(STAT%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
+            WRITE(STAT%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
+            deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(NDX_WIND_FD - 1)
+            deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(NDY_WIND_FD - 1)
+            DO iX=1,NDX_WIND_FD
+              DO iY=1,NDY_WIND_FD
+                TheInfo % LON(iX,iY)=longitudeOfFirstPointInDegrees + (iX-1)*deltaLON
+                TheInfo % LAT(iX,iY)=latitudeOfFirstPointInDegrees + (iY-1)*deltaLAT
+              END DO
+            END DO
+          END IF
+          IF (GRIB_FILE_TYPE .eq. 2) THEN
+            Print *, 'Need to write the code for COSMO case'
+            CALL WWM_ABORT("Missing code")
+          END IF
+          IF (GRIB_FILE_TYPE .eq. 3) THEN
+            call grib_get(igrib(i),"Nx", NDX_WIND_FD)
+            call grib_get(igrib(i),"Ny", NDY_WIND_FD)
+            WRITE(STAT%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
+            WRITE(STAT%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
+            TheInfo % nx_dim = NDX_WIND_FD
+            TheInfo % ny_dim = NDY_WIND_FD
+            allocate(TheInfo % LON(NDX_WIND_FD, NDY_WIND_FD), TheInfo % LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
+            eProd=NDX_WIND_FD*NDY_WIND_FD
+            allocate(LON_serial(eProd), LAT_serial(eProd), DATA_serial(eProd), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+            call grib_get_data(igrib(i), LAT_serial, LON_serial, DATA_serial, status)
+            idx=0
+            DO iY=1,NDY_WIND_FD
+              DO iX=1,NDX_WIND_FD
+                idx=idx+1
+                TheInfo % LON(iX,iY)=LON_serial(idx)
+                TheInfo % LAT(iX,iY)=LAT_serial(idx)
+              END DO
+            END DO
+            DEALLOCATE(LON_serial, LAT_serial, DATA_serial)
+          END IF
+          !
+          WeFound=.TRUE.
+        END IF
+      END DO
+      IF (WeFound .eqv. .FALSE.) THEN
+        Print *, 'Failed to find the wind variable in the grib file'
+        CALL WWM_ABORT("Wind has not been found in grib file")          
+      END IF
+      WRITE(STAT%FHNDL, *) 'WeFound=', WeFound
+      CALL GRIB_CLOSE_FILE(ifile)
+      deallocate(igrib)
+      END SUBROUTINE
+!****************************************************************************
 !* This is functionality for reading GRIB file wind input                   *
 !* Specific supported cases (or wished): ECMWF (IFS), COSMO, DHMZ (ALADIN)  *
 !****************************************************************************
@@ -2573,21 +2683,18 @@
       INTEGER IT
       INTEGER ifile, i, n
       integer, allocatable :: igrib(:)
-      character(len=100) eShortName
       integer WeFound
       REAL(rkind), ALLOCATABLE :: GRIB_LON(:,:), GRIB_LAT(:,:)
       REAL(rkind) :: eTimeMjd
-      REAL(rkind) ::longitudeOfFirstPointInDegrees, latitudeOfFirstPointInDegrees, longitudeOfLastPointInDegrees, latitudeOfLastPointInDegrees
-      REAL(rkind) :: deltaLAT, deltaLON
-      REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer IPROC, eInt(1)
       integer iX, iY
       integer nbtime_mjd
       integer eProd
-      integer status, idx
+      character(len=20) shortName
       REAL(rkind), allocatable :: wind_time_mjd(:)
       REAL cf_scale_factor, cf_add_offset
-      REAL(rkind), allocatable :: LON_serial(:), LAT_serial(:), DATA_Serial(:)
+      TYPE(FD_FORCING_GRID) :: TheInfo
+      integer GRIB_TYPE
       WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
       WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 # ifdef MPI_PARALL_GRID
@@ -2627,91 +2734,20 @@
         !
         ! Now the longitude/latitude to read.
         !
-        IT=1
-        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
-        CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
-        call grib_count_in_file(ifile,n)
-        allocate(igrib(n))
-        WeFound=0;
-        DO i=1,n
-          WRITE(WINDBG%FHNDL, *) 'i=', i, '/', n
-          call grib_new_from_file(ifile, igrib(i))
-          call grib_get(igrib(i), 'shortName', eShortName)
-          WRITE(WINDBG%FHNDL, *) 'eShortName=', TRIM(eShortName)
-          IF ((TRIM(eShortName) .eq. '10u').and.(WeFound .eq. 0)) THEN
-            IF (GRIB_FILE_TYPE .eq. 1) THEN
-              call grib_get(igrib(i),"numberOfPointsAlongAParallel", NDX_WIND_FD)
-              call grib_get(igrib(i),"numberOfPointsAlongAMeridian", NDY_WIND_FD)
-              WRITE(WINDBG%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
-              WRITE(WINDBG%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
-
-              allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), GRIB_LON(NDX_WIND_FD, NDY_WIND_FD), GRIB_LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
-              call grib_get(igrib(i), 'longitudeOfFirstGridPointInDegrees', longitudeOfFirstPointInDegrees)
-              call grib_get(igrib(i), 'latitudeOfFirstGridPointInDegrees', latitudeOfFirstPointInDegrees)
-              call grib_get(igrib(i), 'longitudeOfLastGridPointInDegrees', longitudeOfLastPointInDegrees)
-              call grib_get(igrib(i), 'latitudeOfLastGridPointInDegrees', latitudeOfLastPointInDegrees)
-
-              call grib_get(igrib(i), 'iDirectionIncrementInDegrees', iDirectionIncrement)
-              call grib_get(igrib(i), 'jDirectionIncrementInDegrees', jDirectionIncrement)
-
-              WRITE(WINDBG%FHNDL, *) 'LONGITUDE'
-              WRITE(WINDBG%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
-              WRITE(WINDBG%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
-              WRITE(WINDBG%FHNDL, *) 'LATITUDE'
-              WRITE(WINDBG%FHNDL, *) 'latitudeOfFirstGridPointInDegrees=', latitudeOfFirstPointInDegrees
-              WRITE(WINDBG%FHNDL, *) 'latitudeOfLastGridPointInDegrees=', latitudeOfLastPointInDegrees
-
-              WRITE(WINDBG%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
-              WRITE(WINDBG%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
-              deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(NDX_WIND_FD - 1)
-              deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(NDY_WIND_FD - 1)
-              DO iX=1,NDX_WIND_FD
-                DO iY=1,NDY_WIND_FD
-                  GRIB_LON(iX,iY)=longitudeOfFirstPointInDegrees + (iX-1)*deltaLON
-                  GRIB_LAT(iX,iY)=latitudeOfFirstPointInDegrees + (iY-1)*deltaLAT
-                END DO
-              END DO
-              FLUSH(WINDBG%FHNDL)
-            END IF
-            IF (GRIB_FILE_TYPE .eq. 2) THEN
-              Print *, 'Need to write the code for COSMO case'
-              CALL WWM_ABORT("Missing code")
-            END IF
-            IF (GRIB_FILE_TYPE .eq. 3) THEN
-              call grib_get(igrib(i),"Nx", NDX_WIND_FD)
-              call grib_get(igrib(i),"Ny", NDY_WIND_FD)
-              WRITE(WINDBG%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
-              WRITE(WINDBG%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
-              allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), GRIB_LON(NDX_WIND_FD, NDY_WIND_FD), GRIB_LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
-              eProd=NDX_WIND_FD*NDY_WIND_FD
-              allocate(LON_serial(eProd), LAT_serial(eProd), DATA_serial(eProd), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
-              call grib_get_data(igrib(i), LAT_serial, LON_serial, DATA_serial, status)
-              idx=0
-              DO iY=1,NDY_WIND_FD
-                DO iX=1,NDX_WIND_FD
-                  idx=idx+1
-                  GRIB_LON(iX,iY)=LON_serial(idx)
-                  GRIB_LAT(iX,iY)=LAT_serial(idx)
-                END DO
-              END DO
-              DEALLOCATE(LON_serial, LAT_serial, DATA_serial)
-            END IF
-            !
-            CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, GRIB_LON, GRIB_LAT)
-            DEALLOCATE(GRIB_LON, GRIB_LAT)
-            WeFound=1
-          END IF
+        shortName='10u'
+        GRIB_TYPE = GRIB_FILE_TYPE
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(GRIB_FILE_NAMES(IT)), shortName, GRIB_TYPE)
+        NDX_WIND_FD = TheInfo % nx_dim
+        NDY_WIND_FD = TheInfo % ny_dim
+        allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), GRIB_LON(NDX_WIND_FD, NDY_WIND_FD), GRIB_LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+        DO ix=1,TheInfo % nx_dim
+          DO iy=1,TheInfo % ny_dim
+            GRIB_LON(ix,iy) = TheInfo % LON(ix,iy)
+            GRIB_LAT(ix,iy) = TheInfo % LAT(ix,iy)
+          END DO
         END DO
-        IF (WeFound .eq. 0) THEN
-          Print *, 'Failed to find the wind variable in the grib file'
-          CALL WWM_ABORT("Wind has not been found in grib file")          
-        END IF
-        WRITE(WINDBG%FHNDL, *) 'WeFound=', WeFound
-        deallocate(igrib)
-        CALL GRIB_CLOSE_FILE(ifile)
+        CALL COMPUTE_CF_COEFFICIENTS(NDX_WIND_FD, NDY_WIND_FD, GRIB_LON, GRIB_LAT)
+        DEALLOCATE(TheInfo % LON, TheInfo % LAT)
 # ifdef MPI_PARALL_GRID
       END IF
 # endif

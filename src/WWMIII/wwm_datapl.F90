@@ -317,7 +317,8 @@
 !
 ! variables for the WAM
 !
-         INTEGER                :: NUM_WAM_FILES
+         INTEGER                :: NUM_WAM_SPEC_FILES
+         real(rkind), allocatable :: WAM_SPEC_ListTime(:)
          character(len=20), allocatable :: WAM_SPEC_FILE_NAMES_BND(:)
 
 !
@@ -351,6 +352,12 @@
             integer, dimension(:,:), pointer :: ListEdge
          END TYPE Graph
 
+         TYPE FD_FORCING_GRID
+            integer nx_dim, ny_dim
+            real, dimension(:,:), pointer :: LON
+            real, dimension(:,:), pointer :: LAT
+         END TYPE FD_FORCING_GRID
+         
          TYPE BoundaryInfo
             integer nbEdgeBound
             integer nbVertBound
