@@ -208,7 +208,6 @@
  NDYNITER_SNL3   =           1,
  NDYNITER_SBF    =           1,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.000000000000000E-200,
  MAXITER =          100000,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
@@ -457,4 +456,8 @@
  IHOTPOS_IN      =           1,
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
+ /
+
+&NESTING
+  L_WRITE = F,
  /

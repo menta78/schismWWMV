@@ -226,7 +226,6 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.000000000000000E-010,
  LNANINFCHK      = F,
  LZETA_SETUP     = T,
  ZETA_METH       = 0,
@@ -481,6 +480,10 @@
  FILEHOT_IN      = wwm_hotfile_in.nc                                                                                                 
                            
  /
+
+&NESTING
+ L_WRITE = F,
+/
 
 ! only used with AMETHOD 4 or 5
 &PETScOptions
