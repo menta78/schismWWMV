@@ -315,6 +315,12 @@
          INTEGER                :: IITERSPLIT = 1
          REAL(rkind)            :: DELTAT_WATLEV
 !
+! variables for the WAM
+!
+         INTEGER                :: NUM_WAM_FILES
+         character(len=20), allocatable :: WAM_SPEC_FILE_NAMES_BND(:)
+
+!
 ! ... time control
 ! ... type timedef konsequent implementieren andere types ableiten
 !
