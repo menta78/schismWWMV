@@ -457,6 +457,9 @@
       USE pgmcl_lib_WWM, only : WAV_common_initialize
 #endif
       USE DATAPOOL
+#ifdef SCHISM
+      use schism_glbl, only: xlon,ylat
+#endif
 #ifdef PDLIB
       USE yowpd, only : initFromGridDim
 #endif

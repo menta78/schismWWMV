@@ -1564,6 +1564,7 @@
       REAL(rkind)     :: RTMP
       INTEGER         :: IPP
 # endif
+      logical :: LOPEN2
 !     SPPARM(1): Hs, sign. wave height
 !     SPPARM(2): Wave period given by user (either peak or mean)
 !     SPPARM(3): average direction
@@ -1586,7 +1587,10 @@
       SPPARM(8,:) = 3.3
 
       IF (LINHOM) THEN
-        READ(WAV%FHNDL,*)
+         inquire(WAV%FHNDL,opened=LOPEN2)
+         if(.not.LOPEN2) open(WAV%FHNDL,file=WAV%FNAME,status='old')
+         !write(12,*)'WWM:',WAV%FHNDL,WAV%FNAME
+         READ(WAV%FHNDL,*)
       END IF
 
 # ifdef MPI_PARALL_GRID
