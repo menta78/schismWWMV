@@ -86,8 +86,6 @@
 # endif
          
       CALL COMPUTE_BND_INTERPOLATION_ARRAY(TheInfo)
-
-
       
       END SUBROUTINE
 !**********************************************************************
@@ -97,6 +95,9 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+
+      
+
       
       END SUBROUTINE
 #endif

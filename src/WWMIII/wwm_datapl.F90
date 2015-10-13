@@ -616,7 +616,14 @@
          LOGICAL                          :: L_HOTFILE = .FALSE.
          LOGICAL                          :: L_BOUC_PARAM = .FALSE.
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
-
+         TYPE NESTING_INFORMATION
+           integer MNP
+           integer IWBMNPGL
+           integer, dimension(:), pointer :: HOT_IE
+           integer, dimension(:,:), pointer :: HOT_W
+           integer, dimension(:), pointer :: BOUC_IE
+           integer, dimension(:,:), pointer :: BOUC_W
+         END TYPE NESTING_INFORMATION
          
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
@@ -953,6 +960,15 @@
          REAL(rkind), allocatable :: DX1total(:), DX2total(:)
          integer,     allocatable :: IOBPtotal(:)
          integer, allocatable :: INEtotal(:,:)
+         TYPE GridInformation
+           integer np_total
+           integer ne_total
+           REAL(rkind), dimension(:), pointer :: XPtotal, YPtotal, DEPtotal
+           integer, dimension(:,:), pointer :: INEtotal
+           REAL(rkind), dimension(:,:), pointer :: IENtotal
+           REAL(rkind), dimension(:), pointer :: TRIAtotal
+           REAL(rkind), dimension(:), pointer :: DX1total, DX2total
+         END TYPE GridInformation
          !
          INTEGER        :: MULTIPLEOUT_HOT
          INTEGER        :: MULTIPLEIN_HOT
