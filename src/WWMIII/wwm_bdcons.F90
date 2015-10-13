@@ -2326,26 +2326,31 @@
 !*                                                                    *
 !**********************************************************************
 #ifdef NCDF
-      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
+      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_1(FILE_NAME, nbTime, np_write, nbBound, BOUC_PARAM, BOUC_SPEC)
       USE DATAPOOL
       USE NETCDF
       implicit none
-      integer, intent(in) :: ncid, nbTime
+      character(len=140), intent(in) :: FILE_NAME
+      integer, intent(in) :: nbTime, np_write, nbBound
+      logical, intent(in) :: BOUC_PARAM, BOUC_SPEC
+      !
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
       integer mnp_dims, mne_dims, nfreq_dims, ndir_dims, eight_dims
-      integer iret, var_id
+      integer iret, var_id, ncid
       integer ntime_dims, iwbmnpgl_dims
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
-      iret = nf90_def_dim(ncid, 'one', 1, one_dims)
+      iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-      iret = nf90_def_dim(ncid, 'two', 2, two_dims)
+      iret = nf90_def_dim(ncid, 'one', 1, one_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
-      iret = nf90_def_dim(ncid, 'three', 3, three_dims)
+      iret = nf90_def_dim(ncid, 'two', 2, two_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-      iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
+      iret = nf90_def_dim(ncid, 'three', 3, three_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
-      iret = nf90_def_dim(ncid, 'np_total', np_total, mnp_dims)
+      iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+      iret = nf90_def_dim(ncid, 'np_total', np_write, mnp_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
       iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
@@ -2353,7 +2358,7 @@
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
       iret = nf90_def_dim(ncid, 'eight',   8, eight_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-      iret = nf90_def_dim(ncid, 'IWBMNPGL', IWBMNPGL, iwbmnpgl_dims)
+      iret = nf90_def_dim(ncid, 'IWBMNPGL', nbBound, iwbmnpgl_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
       !
       CALL WRITE_PARAM_1(ncid, one_dims)
@@ -2395,30 +2400,43 @@
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 24, iret)
       END IF
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 25, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_2(ncid)
+      SUBROUTINE WRITE_NETCDF_BOUND_HEADERS_2(FILE_NAME, np_write, IOBPwrite, nbBound, ListBound)
       USE DATAPOOL
       USE NETCDF
       implicit none
-      integer, intent(in) :: ncid
+      character(len=140), intent(in) :: FILE_NAME
+      integer, intent(in) :: np_write
+      integer, intent(in) :: IOBPwrite(np_write)
+      integer, intent(in) :: nbBound
+      integer, intent(in) :: ListBound(nbBound)
+      !
+      integer ncid
       integer one_dims, two_dims, three_dims, fifteen_dims
       integer iret, var_id
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_2"
       !
+      iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+      !
       CALL WRITE_PARAM_2(ncid)
       !
       iret=nf90_inq_varid(ncid, "IOBP", var_id)
-      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-      iret=nf90_put_var(ncid,var_id,IOBPtotal, start=(/1/), count =(/np_total/) )
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+      iret=nf90_put_var(ncid, var_id, IOBPwrite, start=(/1/), count =(/np_write/) )
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
       !
       iret=nf90_inq_varid(ncid, "IWBNDGL", var_id)
-      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-      iret=nf90_put_var(ncid,var_id,IWBNDGL, start=(/1/), count =(/IWBMNPGL/) )
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
+      iret=nf90_put_var(ncid, var_id, ListBound, start=(/1/), count =(/nbBound/) )
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2477,20 +2495,9 @@
         IsInitDone=.TRUE.
         nbTime=-1
         IF (myrank == 0) THEN
-          iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-          !
-          CALL WRITE_NETCDF_BOUND_HEADERS_1(ncid, nbTime)
-          iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
-          !
-          iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-          !
-          CALL WRITE_NETCDF_BOUND_HEADERS_2(ncid)
-          iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
-        END IF
+          CALL WRITE_NETCDF_BOUND_HEADERS_1(FILE_NAME, nbTime, np_total, IWBMNPGL, BOUC_NETCDF_OUT_PARAM, BOUC_NETCDF_OUT_SPECTRA)
+          CALL WRITE_NETCDF_BOUND_HEADERS_2(FILE_NAME, np_total, IOBPtotal, IWBMNPGL, IWBNDGL)
+       END IF
       END IF
       !
       ! Getting the needed global arrays 
