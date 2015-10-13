@@ -580,6 +580,9 @@
          INTEGER                    :: REC1_curr_new, REC2_curr_new
          INTEGER                    :: REC1_watlev_old, REC2_watlev_old
          INTEGER                    :: REC1_watlev_new, REC2_watlev_new
+!
+! This is the variable type for the direct 
+!
          TYPE VAR_NETCDF_CF
            character(len=100) :: eFileName
            character(len=100) :: eString
