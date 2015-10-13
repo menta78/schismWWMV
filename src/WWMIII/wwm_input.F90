@@ -723,7 +723,7 @@
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
      &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
 
-         NAMELIST /NESTING/ L_WRITE, NB_GRID,                           &
+         NAMELIST /NESTING/ L_NESTING, NB_GRID_NEST,                    &
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
      &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
      &      L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC

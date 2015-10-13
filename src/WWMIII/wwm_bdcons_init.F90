@@ -227,12 +227,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SINGLE_READ_IOBP_TOTAL
-      USE DATAPOOL
+      SUBROUTINE SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, eBND, np_total)
+      USE DATAPOOL, only : rkind, FILEDEF, istat, STAT, wwmerr
 #ifdef NCDF
       USE NETCDF
 #endif
       IMPLICIT NONE
+      INTEGER, intent(out) :: IOBPtotal(np_total)
+      INTEGER, intent(in) :: IGRIDTYPE
+      type(FILEDEF), intent(in) :: eBND
+      integer, intent(in) :: np_total
+      !
       INTEGER I, IP, IFSTAT
       REAL(rkind)       :: ATMP, BTMP, BNDTMP
       INTEGER ITMP
@@ -241,73 +246,73 @@
       INTEGER ncid, var_id
       character (len = *), parameter :: CallFct="SINGLE_READ_IOBP_TOTAL"
 #endif
-      CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(BND%FNAME))
+      CALL TEST_FILE_EXIST_DIE('Missing boundary file : ', TRIM(eBND%FNAME))
       IOBPtotal = 0
 !
 ! Reading of raw boundary file
 !
       IF (IGRIDTYPE.eq.1) THEN ! XFN 
-        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
+        OPEN(eBND%FHNDL, FILE = eBND%FNAME, STATUS = 'OLD')
         DO I = 1, 2
-          READ(BND%FHNDL,*)
+          READ(eBND%FHNDL,*)
         END DO
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
+        READ(eBND%FHNDL,*)
+        READ(eBND%FHNDL,*)
+        READ(eBND%FHNDL,*)
         DO I = 1, 7
-          READ(BND%FHNDL,*)
+          READ(eBND%FHNDL,*)
         END DO
         DO IP = 1, NP_TOTAL
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
             CALL WWM_ABORT('error in the bnd file 2')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
         END DO
-        CLOSE(BND%FHNDL)
+        CLOSE(eBND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.2) THEN ! Periodic  
-        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
+        OPEN(eBND%FHNDL, FILE = eBND%FNAME, STATUS = 'OLD')
+        READ(eBND%FHNDL,*)
+        READ(eBND%FHNDL,*)
         DO IP = 1, NP_TOTAL
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
             CALL WWM_ABORT('error in the bnd file 2')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
         END DO
-        CLOSE(BND%FHNDL)
+        CLOSE(eBND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.3) THEN ! SCHISM 
-        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
+        OPEN(eBND%FHNDL, FILE = eBND%FNAME, STATUS = 'OLD')
+        READ(eBND%FHNDL,*)
+        READ(eBND%FHNDL,*)
         DO IP = 1, NP_TOTAL
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+          READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
             CALL WWM_ABORT('error in the bnd file 2')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
         END DO
-        CLOSE(BND%FHNDL)
+        CLOSE(eBND%FHNDL)
       ELSE IF (IGRIDTYPE.eq.4) THEN ! WWMOLD 
-        OPEN(BND%FHNDL, FILE = BND%FNAME, STATUS = 'OLD')
-        READ(BND%FHNDL,*)
-        READ(BND%FHNDL,*)
+        OPEN(eBND%FHNDL, FILE = eBND%FNAME, STATUS = 'OLD')
+        READ(eBND%FHNDL,*)
+        READ(eBND%FHNDL,*)
         DO IP = 1, NP_TOTAL
-          READ(BND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
+          READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
             CALL WWM_ABORT('error in the bnd file 2')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
         END DO
-        CLOSE(BND%FHNDL)
+        CLOSE(eBND%FHNDL)
 #ifdef NCDF
       ELSE IF (IGRIDTYPE.eq.5) THEN ! netcdf boundary format
-        ISTAT = NF90_OPEN(BND%FNAME, NF90_NOWRITE, ncid)
+        ISTAT = NF90_OPEN(eBND%FNAME, NF90_NOWRITE, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
         ISTAT = nf90_inq_varid(ncid, 'IOBP', var_id)
@@ -367,7 +372,32 @@
       WRITE(STAT%FHNDL,*) 'Number of 3 in IOBPtotal=', nb3
       WRITE(STAT%FHNDL,*) 'Number of 4 in IOBPtotal=', nb4
       FLUSH(STAT%FHNDL)
-      CALL PRINT_STATISTICS_IOBP_TOTAL
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_IOBP_TOTAL
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer iProc
+      allocate(IOBPtotal(np_total), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
+#ifdef MPI_PARALL_GRID
+      IF (MULTIPLE_IN_BOUND) THEN
+        CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
+      ELSE
+        IF (myrank .eq. 0) THEN
+          CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
+          DO iProc=2,nproc
+            CALL MPI_SEND(IOBPtotal,np_total,itype, iProc-1, 30, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_RECV(IOBPtotal,np_total,itype, 0, 30, comm, istatus, ierr)
+        END IF
+      END IF
+#else
+      CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -475,32 +505,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_IOBP_TOTAL
-      USE DATAPOOL
-      IMPLICIT NONE
-      integer iProc
-      allocate(IOBPtotal(np_total), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
-#ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_BOUND) THEN
-        CALL SINGLE_READ_IOBP_TOTAL
-      ELSE
-        IF (myrank .eq. 0) THEN
-          CALL SINGLE_READ_IOBP_TOTAL
-          DO iProc=2,nproc
-            CALL MPI_SEND(IOBPtotal,np_total,itype, iProc-1, 30, comm, ierr)
-          END DO
-        ELSE
-          CALL MPI_RECV(IOBPtotal,np_total,itype, 0, 30, comm, istatus, ierr)
-        END IF
-      END IF
-#else
-      CALL SINGLE_READ_IOBP_TOTAL
-#endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE SET_IOBP_NEXTGENERATION
       USE DATAPOOL
       IMPLICIT NONE
@@ -510,6 +514,7 @@
       INTEGER     :: idx, PosWBAC
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
+      CALL PRINT_STATISTICS_IOBP_TOTAL
       IOBP    = 0
       DO IP = 1, NP_TOTAL
 #ifdef MPI_PARALL_GRID

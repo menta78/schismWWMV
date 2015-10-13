@@ -599,12 +599,21 @@
          TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
 ! END CF comppliant wind PART I.J.
 
+         TYPE GridInformation
+           integer np_total
+           integer ne_total
+           REAL(rkind), dimension(:), pointer :: XPtotal, YPtotal, DEPtotal
+           integer, dimension(:,:), pointer :: INEtotal
+           REAL(rkind), dimension(:,:), pointer :: IENtotal
+           REAL(rkind), dimension(:), pointer :: TRIAtotal
+           REAL(rkind), dimension(:), pointer :: DX1total, DX2total
+         END TYPE GridInformation
 
          !
          ! Nesting part of the code
          !
-         LOGICAL                          :: L_WRITE = .FALSE.
-         INTEGER                          :: NB_GRID = 0
+         LOGICAL                          :: L_NESTING = .FALSE.
+         INTEGER                          :: NB_GRID_NEST = 0
          integer, parameter               :: MaxNbNest = 20
          character(len=20)                :: ListBEGTC(MaxNbNest)
          REAL(rkind)                      :: ListDELTC(MaxNbNest)
@@ -617,13 +626,17 @@
          LOGICAL                          :: L_BOUC_PARAM = .FALSE.
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
          TYPE NESTING_INFORMATION
-           integer MNP
-           integer IWBMNPGL
+           integer np_total
+           integer IWBMNP
+           integer, dimension(:), pointer :: IOBPtotal
+           integer, dimension(:), pointer :: IWBNDLC
+           type(GridInformation) :: eGrid
            integer, dimension(:), pointer :: HOT_IE
            integer, dimension(:,:), pointer :: HOT_W
            integer, dimension(:), pointer :: BOUC_IE
            integer, dimension(:,:), pointer :: BOUC_W
          END TYPE NESTING_INFORMATION
+         type(NESTING_INFORMATION), allocatable :: ListNestInfo(:)
          
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
@@ -960,15 +973,6 @@
          REAL(rkind), allocatable :: DX1total(:), DX2total(:)
          integer,     allocatable :: IOBPtotal(:)
          integer, allocatable :: INEtotal(:,:)
-         TYPE GridInformation
-           integer np_total
-           integer ne_total
-           REAL(rkind), dimension(:), pointer :: XPtotal, YPtotal, DEPtotal
-           integer, dimension(:,:), pointer :: INEtotal
-           REAL(rkind), dimension(:,:), pointer :: IENtotal
-           REAL(rkind), dimension(:), pointer :: TRIAtotal
-           REAL(rkind), dimension(:), pointer :: DX1total, DX2total
-         END TYPE GridInformation
          !
          INTEGER        :: MULTIPLEOUT_HOT
          INTEGER        :: MULTIPLEIN_HOT
