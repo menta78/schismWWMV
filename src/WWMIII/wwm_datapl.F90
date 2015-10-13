@@ -620,13 +620,13 @@
          character(len=20)                :: ListUNITC(MaxNbNest)
          character(len=20)                :: ListENDTC(MaxNbNest)
          INTEGER                          :: ListIGRIDTYPE(MaxNbNest)
-         character(len=40)                :: ListFILEGRID(MaxNbNest)
-         character(len=40)                :: ListFILEBOUND(MaxNbNest)
+         character(len=140)               :: ListFILEGRID(MaxNbNest)
+         character(len=140)               :: ListFILEBOUND(MaxNbNest)
+         character(len=140)               :: ListPrefix(MaxNbNest)
          LOGICAL                          :: L_HOTFILE = .FALSE.
          LOGICAL                          :: L_BOUC_PARAM = .FALSE.
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
          TYPE NESTING_INFORMATION
-           integer np_total
            integer IWBMNP
            TYPE(TIMEDEF), allocatable     :: eTime
            integer, dimension(:), pointer :: IOBPtotal

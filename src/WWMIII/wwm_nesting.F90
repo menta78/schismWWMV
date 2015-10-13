@@ -120,10 +120,152 @@
 !**********************************************************************
       SUBROUTINE NESTING_OUTPUT_HOTFILE(iGrid)
       USE DATAPOOL
+      USE WWM_HOTFILE_MOD
       IMPLICIT NONE
       integer, intent(in) :: iGrid
+      character(len=140) FILERET
+      real(rkind), allocatable :: ACwrite(:,:,:), VAR_ONEDwrite(:,:)
+      real(rkind), allocatable :: ACsend(:,:,:), VAR_ONEDsend(:,:)
+      integer, allocatable :: ListStatus(:)
+      real(rkind) :: eVect(nbOned)
       !
-      
+      integer eInt(1)
+      integer np_write, ne_write
+      integer MULTIPLEOUT_W
+      logical GRIDWRITE_W, IOBPD_HISTORY_W, WriteOutputProcess
+      integer nbMatch, nbTime
+      integer IP, IE, I, idx, IP2, iProc, nbMatchLoc
+      real(rkind) eW
+      integer, allocatable :: ListMatch(:)
+      real(rkind) eTimeDay
+      integer POS
+      np_write=ListNestInfo(iGrid) % eGrid % np_total
+      ne_write=ListNestInfo(iGrid) % eGrid % ne_total
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        FILERET = ListPrefix(iGrid) // '_hotfile.nc'
+        MULTIPLEOUT_W = .FALSE.
+        GRIDWRITE_W = .FALSE.
+        IOBPD_HISTORY_W = .FALSE.
+        WriteOutputProcess = .TRUE.
+        nbTime=-1
+        CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+        CALL WRITE_NETCDF_HEADERS_2(FILERET, MULTIPLEOUT_W, WriteOutputProcess, GRIDWRITE_W, np_write, ne_write)
+        allocate(ACwrite(MSC,MDC,np_write), VAR_ONEDwrite(nbOned, np_write), ListStatus(np_write), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        ListStatus=0
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      nbMatch=0
+      DO IP=1,np_write
+        IE=ListNestInfo(iGrid) % HOT_IE(IP)
+        IF (IE .gt. 0) THEN
+          nbMatch = nbMatch + 1
+        END IF
+      END DO
+      allocate(Listmatch(nbMatch), ACsend(MSC,MDC,nbMatch), VAR_ONEDsend(nbOned, nbMatch), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+      ACsend=0
+      VAR_ONEDsend=0
+      idx=0
+      DO IP=1,np_write
+        IE=ListNestInfo(iGrid) % HOT_IE(IP)
+        IF (IE .gt. 0) THEN
+          idx=idx+1
+          ListMatch(idx)=IP
+          DO I=1,3
+            eW=ListNestInfo(iGrid) % HOT_W(I,IP)
+            IP2=INE(I,IE)
+            eVect(1)=WINDXY(IP2,1)
+            eVect(2)=WINDXY(IP2,2)
+            eVect(3)=PRESSURE(IP2)
+            eVect(4)=DVWIND(IP2,1)
+            eVect(5)=DVWIND(IP2,2)
+            eVect(6)=CURTXY(IP2,1)
+            eVect(7)=CURTXY(IP2,2)
+            eVect(8)=DVCURT(IP2,1)
+            eVect(9)=DVCURT(IP2,2)
+            eVect(10)=DDEP(IP2,1)
+            eVect(11)=DDEP(IP2,2)
+            eVect(12)=DCUX(IP2,1)
+            eVect(13)=DCUX(IP2,2)
+            eVect(14)=DCUY(IP2,1)
+            eVect(15)=DCUY(IP2,2)
+            eVect(16)=WATLEV(IP2)
+            eVect(17)=WATLEVOLD(IP2)
+            eVect(18)=DVWALV(IP2)
+            eVect(19)=WLDEP(IP2)
+            eVect(20)=DEPDT(IP2)
+            eVect(21)=QBLOCAL(IP2)
+            eVect(22)=DISSIPATION(IP2)
+            eVect(23)=AIRMOMENTUM(IP2)
+            eVect(24)=UFRIC(IP2)
+            eVect(25)=ALPHA_CH(IP2)
+            eVect(26)=TAUW(IP2)
+            eVect(27)=TAUTOT(IP2)
+            eVect(28)=TAUWX(IP2)
+            eVect(29)=TAUWY(IP2)
+            eVect(30)=TAUHF(IP2)
+            eVect(31)=Z0(IP2)
+            eVect(32)=CD(IP2)
+            eVect(33)=USTDIR(IP2)
+            eVect(34)=RSXX(IP2)
+            eVect(35)=RSXY(IP2)
+            eVect(36)=RSYY(IP2)
+            eVect(37)=FORCEXY(IP2,1)
+            eVect(38)=FORCEXY(IP2,2)
+            ACsend(:,:,idx) = ACsend(:,:,idx) + eW * AC2(:,:,IP2)
+            VAR_ONEDsend(:,idx) = VAR_ONEDsend(:,idx) + eW * eVect
+          END DO
+        END IF
+      END DO
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+        DO idx=1,nbMatch
+          IP=ListMatch(idx)
+          ACwrite(:,:,IP)     = ACsend(:,:,idx)
+          VAR_ONEDwrite(:,IP) = VAR_ONEDsend(:,idx)
+          ListStatus(IP)=1
+        END DO
+        deallocate(ACsend, VAR_ONEDsend, ListMatch)
+        DO iProc=2,nproc
+          CALL MPI_RECV(eInt, 1, itype, iProc-1, 2401, comm, istatus, ierr)
+          nbMatchLoc=eInt(1)
+          allocate(ListMatch(nbMatchLoc), ACsend(MSC,MDC,nbMatchLoc), VAR_ONEDsend(nbOned, nbMatchLoc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+          CALL MPI_RECV(ListMatch, nbMatchLoc, itype, iProc-1, 2402, comm, istatus, ierr)
+          CALL MPI_RECV(ACsend, MSC*MDC*nbMatchLoc, itype, iProc-1, 2403, comm, istatus, ierr)
+          CALL MPI_RECV(VAR_ONEDsend, nbOned*nbMatchLoc, itype, iProc-1, 2404, comm, istatus, ierr)
+          DO idx=1,nbMatchLoc
+            IP=ListMatch(idx)
+            ACwrite(:,:,IP) = ACsend(:,:,idx)
+            VAR_ONEDwrite(:,IP) = VAR_ONEDsend(:,idx)
+            ListStatus(IP)=1
+          END DO
+          deallocate(ListMatch, ACsend, VAR_ONEDsend)
+        END DO
+      ELSE
+        eInt(1)=nbMatch
+        CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
+        CALL MPI_SEND(ListMatch, nbMatch, itype, 0, 2402, comm, ierr)
+        CALL MPI_SEND(ACsend, MSC*MDC*nbMatch, rtype, 0, 2403, comm, ierr)
+        CALL MPI_SEND(VAR_ONEDsend, nbOned*nbMatch, rtype, 0, 2404, comm, ierr)
+      END IF
+#else
+      ACwrite = ACsend
+      VAR_ONEDwrite = VAR_ONEDsend
+#endif      
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        eTimeDay=ListNestInfo(iGrid) % eTime % BMJD
+        POS=1
+        CALL WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, np_write, ACwrite, VAR_ONEDwrite)
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

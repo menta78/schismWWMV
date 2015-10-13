@@ -787,6 +787,33 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, np_write, ACwrite, VAR_ONEDwrite)
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+      character(len=140), intent(in) :: FILERET
+      real(rkind), intent(in) :: eTimeDay
+      integer, intent(in) :: POS, np_write
+      real(rkind), intent(in) :: ACwrite(MSC,MDC,np_write), VAR_ONEDwrite(nbOned, np_write)
+      character (len = *), parameter :: CallFct="WRITE_HOTFILE_PART_2"
+      integer iret, ncid, var_oned_id, ac_id
+      iret=nf90_open(FILERET, nf90_write, ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+      CALL WRITE_NETCDF_TIME(ncid, POS, eTimeDay)
+      iret=nf90_inq_varid(ncid, "ac", ac_id)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+      iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
+      iret=nf90_put_var(ncid,ac_id,ACwrite,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, np_write, 1 /))
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
+      iret=nf90_put_var(ncid,var_oned_id,VAR_ONEDwrite,start=(/1, 1, POS/), count=(/ nbOned, np_write, 1 /))
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_NETCDF
       USE DATAPOOL
       USE NETCDF
@@ -839,33 +866,15 @@ MODULE wwm_hotfile_mod
         END IF
         eTimeDay=MAIN%TMJD
         !
-        iret=nf90_open(FILERET, nf90_write, ncid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
-        CALL WRITE_NETCDF_TIME(ncid, POS, eTimeDay)
-        iret=nf90_inq_varid(ncid, "ac", ac_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
-        iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT_HOT.eq.0) THEN
-          iret=nf90_put_var(ncid,ac_id,ACreturn,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, np_global, 1 /))
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
-          iret=nf90_put_var(ncid,var_oned_id,VAR_ONEDreturn,start=(/1, 1, POS/), count=(/ nbOned, np_global, 1 /))
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
+          CALL WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, np_global, ACreturn, VAR_ONEDreturn)
         ELSE
-          iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, MNP, 1 /))
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, iret)
-          iret=nf90_put_var(ncid,var_oned_id,VAR_ONED,start=(/1, 1, POS/), count=(/ nbOned, MNP, 1 /))
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 19, iret)
+          CALL WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, MNP, AC2, VAR_ONED)
         ENDIF
 # else
-        iret=nf90_put_var(ncid,ac_id,AC2,start=(/1, 1, 1, POS/), count=(/ MSC, MDC, MNP, 1 /))
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
-        iret=nf90_put_var(ncid,var_oned_id,VAR_ONED,start=(/1, 1, POS/), count=(/ nbOned, MNP, 1 /))
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 21, iret)
+        CALL WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, MNP, AC2, VAR_ONED)
 # endif
-        iret=nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 22, iret)
       ENDIF
       IDXHOTOUT=IDXHOTOUT+1
       END SUBROUTINE
