@@ -2494,10 +2494,14 @@
       IF (IsInitDone .eqv. .FALSE.) THEN
         IsInitDone=.TRUE.
         nbTime=-1
+#ifdef MPI_PARALL_GRID        
         IF (myrank == 0) THEN
+#endif
           CALL WRITE_NETCDF_BOUND_HEADERS_1(FILE_NAME, nbTime, np_total, IWBMNPGL, BOUC_NETCDF_OUT_PARAM, BOUC_NETCDF_OUT_SPECTRA)
           CALL WRITE_NETCDF_BOUND_HEADERS_2(FILE_NAME, np_total, IOBPtotal, IWBMNPGL, IWBNDGL)
+#ifdef MPI_PARALL_GRID        
        END IF
+#endif
       END IF
       !
       ! Getting the needed global arrays 

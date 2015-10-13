@@ -274,6 +274,94 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer, intent(in) :: iGrid
+      real(rkind), allocatable :: WBACwrite(:,:,:), SPPARMwrite(:,:)
+      real(rkind), allocatable :: WBACsend(:,:,:), SPPARMsend(:,:)
+      integer, allocatable :: ListStatus(:)
+      REAL(rkind) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC), ACLOC(MSC,MDC)
+      real(rkind) :: eVect(8)
+      real(rkind) :: WVK,WVCG,WVKDEP,WVN,WVC
+      integer IE, nbTime, IP, idx
+      integer nbMatch, np_write, nbBound
+      integer, allocatable :: ListMatch(:)
+      integer IP2, I, IS
+      real(rkind) eW
+      character(len=140) FILERET
+      np_write=ListNestInfo(iGrid) % eGrid % np_total
+      nbBound=ListNestInfo(iGrid) % IWBMNP
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        FILERET = ListPrefix(iGrid) // '_boundary.nc'
+        nbTime=-1 
+        CALL WRITE_NETCDF_BOUND_HEADERS_1(FILERET, nbTime, np_write, nbBound, L_BOUC_PARAM, L_BOUC_SPEC)
+        CALL WRITE_NETCDF_BOUND_HEADERS_2(FILERET, np_write, ListNestInfo(iGrid) % IOBPtotal, nbBound, ListNestInfo(iGrid) % IWBNDLC)
+        IF (L_BOUC_PARAM) THEN
+          allocate(SPPARMwrite(8,nbBound), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        END IF
+        IF (L_BOUC_SPEC) THEN
+          allocate(WBACwrite(MSC,MDC,nbBound), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        END IF
+        allocate(ListStatus(nbBound), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        ListStatus=0
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      nbMatch=0
+      DO IP=1,nbBound
+        IE=ListNestInfo(iGrid) % BOUC_IE(IP)
+        IF (IE .gt. 0) THEN
+          nbMatch = nbMatch + 1
+        END IF
+      END DO
+      IF (L_BOUC_PARAM) THEN
+        allocate(SPPARMsend(8,nbMatch), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        SPPARMsend=0
+      END IF
+      IF (L_BOUC_SPEC) THEN
+        allocate(WBACsend(MSC,MDC,nbMatch), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        WBACsend=0
+      END IF
+      allocate(Listmatch(nbMatch), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+      idx=0
+      DO IP=1,nbBound
+        IE=ListNestInfo(iGrid) % BOUC_IE(IP)
+        IF (IE .gt. 0) THEN
+          idx=idx+1
+          ListMatch(idx)=IP
+          ACLOC=0
+          DEPLOC=0
+          DO I=1,3
+            eW=ListNestInfo(iGrid) % HOT_W(I,IP)
+            IP2=INE(I,IE)
+            ACLOC = ACLOC + eW * AC2(:,:,IP2)
+            IF (L_BOUC_PARAM) THEN
+              DEPLOC = DEPLOC + eW * DEP(IP2)
+              CURTXYLOC = CURTXYLOC + eW * CURTXY(IP2,:)
+              WATLEVLOC = WATLEVLOC + eW * WATLEV(IP2)
+            END IF
+          END DO
+          IF (L_BOUC_SPEC) THEN
+            WBACsend(:,:,IP) = ACLOC
+          END IF
+          IF (L_BOUC_PARAM) THEN
+            DO IS = 1, MSC
+              CALL ALL_FROM_TABLE(SPSIG(IS),DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+              WKLOC(IS) = WVK
+            END DO
+          END IF
+        END IF
+      END DO
+
+
+
+      
+      
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
