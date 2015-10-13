@@ -2,6 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SAVE_BOUNDARY_INTERPOLATION_ARRAY
+      USE DATAPOOL
+      IMPLICIT NONE
+      
+      END SUBROUTINE 
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 #ifdef GRIB_API_ECMWF
       SUBROUTINE INIT_GRIB_WAM_BOUNDARY
       USE DATAPOOL
@@ -10,6 +18,8 @@
       REAL(rkind) :: eTimeMjd
       LOGICAL STEPRANGE_IN
       type(FD_FORCING_GRID) :: TheInfo
+      character(len=20) shortName
+      integer GRIB_TYPE
       OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
       WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
 # ifdef MPI_PARALL_GRID
@@ -42,7 +52,12 @@
         !
         ! reading the grid
         !
-                
+        shortName='2dfd'
+        GRIB_TYPE=1 ! 1 for ECMWF
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(WAM_SPEC_FILE_NAMES_BND(1)), shortName, GRIB_TYPE)
+        
+
+        
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
