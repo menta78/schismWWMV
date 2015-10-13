@@ -91,15 +91,27 @@
       !
       ! The boundary output
       !
-#ifdef NCDF
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
+#ifdef NCDF
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD)) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           CALL WRITE_NETCDF_BOUNDARY
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
         END IF
-      END IF
+#else
+        CALL WWM_ABORT('Need netcdf for the boundary output')
 #endif
+      END IF
+      !
+      ! The nesting
+      !
+      IF (L_NESTING) THEN
+#ifdef NCDF
+        CALL DO_NESTING_OPERATION
+#else
+        CALL WWM_ABORT('Need netcdf for the nesting output')
+#endif
+      END IF
       !
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
       FLUSH(STAT%FHNDL)

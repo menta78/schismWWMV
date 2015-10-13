@@ -14,10 +14,6 @@
       REAL(rkind) eX, eY
       integer eElt, NI(3), eIdx
       !
-      IF (L_NESTING .eqv. .FALSE.) THEN
-        RETURN
-      END IF
-      !
       ! First reading the grids
       !
       ALLOCATE(ListNestInfo(NB_GRID_NEST), stat=istat)
@@ -272,8 +268,10 @@
 !**********************************************************************
       SUBROUTINE NESTING_BOUNDARY_CONDITION(iGrid)
       USE DATAPOOL
+      USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: iGrid
+      character (len = *), parameter :: CallFct = "NESTING_BOUNDARY_CONDITION"
       real(rkind), allocatable :: WBACwrite(:,:,:), SPPARMwrite(:,:)
       real(rkind), allocatable :: WBACsend(:,:,:), SPPARMsend(:,:)
       integer, allocatable :: ListStatus(:)
@@ -285,11 +283,13 @@
       integer, allocatable :: ListMatch(:)
       integer IP2, I, IS
       integer ISMAX, nbMatchLoc
+      integer recs_his, irec_dim, var_id
       real(rkind) HS, TM01, TM10, TM02, KLM, WLM
       real(rkind) ETOTS, ETOTC, DM, DSPR
       real(rkind) eW
       integer eInt(1), iProc
-      
+      integer iret, ncid
+      real(rkind) eTimeDay
       character(len=140) FILERET
       np_write=ListNestInfo(iGrid) % eGrid % np_total
       nbBound=ListNestInfo(iGrid) % IWBMNP
@@ -438,11 +438,52 @@
       WBACwrite = WBACsend
       SPPARMwrite = SPPARMsend
 #endif      
-
-
-
-      
-      
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        eTimeDay = ListNestInfo(iGrid) % eTime % TMJD
+        iret=nf90_open(TRIM(FILERET), NF90_WRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+        iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+        iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+        recs_his=recs_his+1
+        CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
+        IF (L_BOUC_PARAM) THEN
+          iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
+          IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
+            iret=nf90_put_var(ncid,var_id,SPPARMwrite, start=(/1,1,recs_his/), count = (/8, nbBound,1/))
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
+          ELSE
+            iret=nf90_put_var(ncid,var_id,SNGL(SPPARMwrite), start=(/1,1,recs_his/), count = (/8, nbBound,1/))
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
+          ENDIF
+        END IF
+        IF (L_BOUC_SPEC) THEN
+          !
+          iret=nf90_inq_varid(ncid, 'WBAC', var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
+          IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
+            iret=nf90_put_var(ncid,var_id,WBACwrite, start=(/1,1,1,recs_his/), count = (/MSC,MDC, nbBound,1/))
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
+          ELSE
+            iret=nf90_put_var(ncid,var_id,SNGL(WBACwrite), start=(/1,1,1,recs_his/), count = (/MSC,MDC, nbBound,1/))
+            CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
+          ENDIF
+        END IF
+        iret=nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
+        IF (L_BOUC_PARAM) THEN
+          deallocate(SPPARMwrite)
+        END IF
+        IF (L_BOUC_SPEC) THEN
+          deallocate(WBACwrite)
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
