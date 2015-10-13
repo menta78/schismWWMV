@@ -294,6 +294,10 @@
          LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 
 ! Entries needed for output of spectra
+         LOGICAL    :: EXTRAPOLATION_ALLOWED_BOUC = .FALSE.
+         integer, allocatable :: CF_IX_BOUC(:)
+         integer, allocatable :: CF_IY_BOUC(:)
+         real(rkind), allocatable :: CF_COEFF_BOUC(:,:)
          LOGICAL    :: BOUC_NETCDF_OUT_SPECTRA = .FALSE.
          LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
@@ -753,7 +757,7 @@
          REAL(rkind)                     :: DX_BND, DY_BND
 
          INTEGER                         :: IWINDFORMAT  = 1
-         LOGICAL                         :: EXTRAPOLATION_ALLOWED = .FALSE.
+         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .FALSE.
          LOGICAL                         :: LSAVE_INTERP_ARRAY = .FALSE.
          LOGICAL                         :: USE_STEPRANGE = .TRUE.
          INTEGER                         :: IBOUNDFORMAT = 1

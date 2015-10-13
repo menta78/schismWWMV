@@ -2,11 +2,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SAVE_BOUNDARY_INTERPOLATION_ARRAY
+      SUBROUTINE COMPUTE_BND_INTERPOLATION_ARRAY(TheInfo)
       USE DATAPOOL
       IMPLICIT NONE
+      type(FD_FORCING_GRID), intent(in) :: TheInfo
+      integer IP, eIDX
+      real(rkind) eX, eY
+      integer eCF_IX, eCF_IY
+      real(rkind) eCF_COEFF(4)
+      LOGICAL EXTRAPO_OUT
+      integer nbExtrapolation
+      allocate(CF_IX_BOUC(IWBMNP), CF_IY_BOUC(IWBMNP), CF_COEFF_BOUC(4,IWBMNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       
-      END SUBROUTINE 
+      nbExtrapolation = 0
+      DO IP=1,IWBMNP
+        eIdx = IWBNDLC(IP)
+        eX=XP(eIDX)
+        eY=YP(eIDX)
+        CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED_BOUC, eX, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
+        CF_IX_BOUC(IP) = eCF_IX
+        CF_IY_BOUC(IP) = eCF_IY
+        CF_COEFF_BOUC(:,IP) = eCF_COEFF
+        IF (EXTRAPO_OUT .eqv. .TRUE.) THEN
+          nbExtrapolation=nbExtrapolation + 1
+        END IF
+      END DO
+      WRITE(STAT % FHNDL, *) 'Computing extrapolation array for boundary'
+      WRITE(STAT % FHNDL, *) 'nbExtrapolation=', nbExtrapolation
+      END SUBROUTINE COMPUTE_BND_INTERPOLATION_ARRAY
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -56,12 +80,12 @@
         GRIB_TYPE=1 ! 1 for ECMWF
         CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(WAM_SPEC_FILE_NAMES_BND(1)), shortName, GRIB_TYPE)
         
-
         
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
          
+      CALL COMPUTE_BND_INTERPOLATION_ARRAY(TheInfo)
 
 
       

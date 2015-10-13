@@ -818,7 +818,7 @@
         END IF
         eX=XP_WIND(I)
         eY=YP_WIND(I)
-        CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
+        CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED_WIND, eX, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
         CF_IX(I) = eCF_IX
         CF_IY(I) = eCF_IY
         CF_COEFF(:,I) = eCF_COEFF
@@ -829,7 +829,7 @@
       IF (LSAVE_INTERP_ARRAY) THEN
         CALL SAVE_INTERP_ARRAY(FileSave)
       END IF
-      IF (EXTRAPOLATION_ALLOWED .eqv. .TRUE.) THEN
+      IF (EXTRAPOLATION_ALLOWED_WIND .eqv. .TRUE.) THEN
         WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
         WRITE(WINDBG%FHNDL,*) ' MaxMinDist=', sqrt(MaxMinDist)
       END IF
