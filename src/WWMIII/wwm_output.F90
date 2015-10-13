@@ -807,7 +807,7 @@
           IELOC=STATION(I)%ELEMENT
           ISMAX=STATION(I)%ISMAX
           WI=STATION(I)%WI(3)
-          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
+          CALL PAR_COMPLETE_LOC(ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
           IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
             CALL CLSPEC(WKLOC,DEPLOC,CURTXYLOC,ACLOC,ACOUT_1D,ACOUT_2D)
           END IF
@@ -1463,10 +1463,10 @@
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************
-      SUBROUTINE PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI, WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR) 
+      SUBROUTINE PAR_COMPLETE_LOC(ISMAX, IELOC, WI, WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR) 
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER, INTENT(IN)    :: ISMAX, I
+      INTEGER, INTENT(IN)    :: ISMAX
       INTEGER, intent(in)    :: IELOC
       REAL(rkind), intent(in)  :: WI(3)
       REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC), WKLOC(MSC), DEPLOC, CURTXYLOC(2)

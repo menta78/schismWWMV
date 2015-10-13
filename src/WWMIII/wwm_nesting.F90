@@ -236,8 +236,8 @@
           allocate(ListMatch(nbMatchLoc), ACsend(MSC,MDC,nbMatchLoc), VAR_ONEDsend(nbOned, nbMatchLoc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
           CALL MPI_RECV(ListMatch, nbMatchLoc, itype, iProc-1, 2402, comm, istatus, ierr)
-          CALL MPI_RECV(ACsend, MSC*MDC*nbMatchLoc, itype, iProc-1, 2403, comm, istatus, ierr)
-          CALL MPI_RECV(VAR_ONEDsend, nbOned*nbMatchLoc, itype, iProc-1, 2404, comm, istatus, ierr)
+          CALL MPI_RECV(ACsend, MSC*MDC*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
+          CALL MPI_RECV(VAR_ONEDsend, nbOned*nbMatchLoc, rtype, iProc-1, 2404, comm, istatus, ierr)
           DO idx=1,nbMatchLoc
             IP=ListMatch(idx)
             ACwrite(:,:,IP) = ACsend(:,:,idx)
@@ -284,7 +284,12 @@
       integer nbMatch, np_write, nbBound
       integer, allocatable :: ListMatch(:)
       integer IP2, I, IS
+      integer ISMAX, nbMatchLoc
+      real(rkind) HS, TM01, TM10, TM02, KLM, WLM
+      real(rkind) ETOTS, ETOTC, DM, DSPR
       real(rkind) eW
+      integer eInt(1), iProc
+      
       character(len=140) FILERET
       np_write=ListNestInfo(iGrid) % eGrid % np_total
       nbBound=ListNestInfo(iGrid) % IWBMNP
@@ -347,16 +352,92 @@
             END IF
           END DO
           IF (L_BOUC_SPEC) THEN
-            WBACsend(:,:,IP) = ACLOC
+            WBACsend(:,:,idx) = ACLOC
           END IF
           IF (L_BOUC_PARAM) THEN
             DO IS = 1, MSC
               CALL ALL_FROM_TABLE(SPSIG(IS),DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
               WKLOC(IS) = WVK
             END DO
+            ISMAX=MSC
+            CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+            CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+            eVect(1) = HS
+            eVect(2) = TM01
+            eVect(3) = DM
+            eVect(4) = DSPR
+            eVect(5) = 2  ! JONSWAP
+            eVect(6) = 2 ! directional spreading in degrees
+            eVect(7) = 0.1 ! not used
+            eVect(8) = 3.3 ! peak enhancement factor of JONSWAP
+            SPPARMsend(:,idx) = eVect
           END IF
         END IF
       END DO
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+        DO idx=1,nbMatch
+          IP=ListMatch(idx)
+          IF (L_BOUC_SPEC) THEN
+            WBACwrite(:,:,IP) = WBACsend(:,:,idx)
+          END IF
+          IF (L_BOUC_PARAM) THEN
+            SPPARMwrite(:,IP) = SPPARMsend(:,idx)
+          END IF
+          ListStatus(IP)=1
+        END DO
+        IF (L_BOUC_SPEC) THEN
+          deallocate(WBACsend)
+        END IF
+        IF (L_BOUC_PARAM) THEN
+          deallocate(SPPARMsend)
+        END IF
+        deallocate(ListMatch)
+        DO iProc=2,nproc
+          CALL MPI_RECV(eInt, 1, itype, iProc-1, 2401, comm, istatus, ierr)
+          nbMatchLoc=eInt(1)
+          allocate(ListMatch(nbMatchLoc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+          CALL MPI_RECV(ListMatch, nbMatchLoc, itype, iProc-1, 2402, comm, istatus, ierr)
+          IF (L_BOUC_SPEC) THEN
+            allocate(WBACsend(MSC,MDC,nbMatchLoc), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+            CALL MPI_RECV(WBACsend, MSC*MDC*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
+            DO idx=1,nbMatchLoc
+              IP=ListMatch(idx)
+              WBACwrite(:,:,IP) = WBACsend(:,:,idx)
+              ListStatus(IP)=1
+            END DO
+            deallocate(WBACsend)
+          END IF
+          IF (L_BOUC_PARAM) THEN
+            allocate(SPPARMsend(8, nbMatchLoc), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+            CALL MPI_RECV(SPPARMsend, 8*nbMatchLoc, rtype, iProc-1, 2404, comm, istatus, ierr)
+            DO idx=1,nbMatchLoc
+              IP=ListMatch(idx)
+              SPPARMwrite(:,IP) = SPPARMsend(:,idx)
+              ListStatus(IP)=1
+            END DO
+            deallocate(SPPARMsend)
+          END IF
+          deallocate(ListMatch)
+        END DO
+      ELSE
+        eInt(1)=nbMatch
+        CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
+        CALL MPI_SEND(ListMatch, nbMatch, itype, 0, 2402, comm, ierr)
+        IF (L_BOUC_SPEC) THEN
+          CALL MPI_SEND(WBACsend, MSC*MDC*nbMatch, rtype, 0, 2403, comm, ierr)
+        END IF
+        IF (L_BOUC_PARAM) THEN
+          CALL MPI_SEND(SPPARMsend, 8*nbMatch, rtype, 0, 2404, comm, ierr)
+        END IF
+      END IF
+#else
+      WBACwrite = WBACsend
+      SPPARMwrite = SPPARMsend
+#endif      
 
 
 
