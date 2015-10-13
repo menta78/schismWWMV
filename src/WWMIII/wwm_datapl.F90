@@ -628,6 +628,7 @@
          TYPE NESTING_INFORMATION
            integer np_total
            integer IWBMNP
+           TYPE(TIMEDEF), allocatable     :: eTime
            integer, dimension(:), pointer :: IOBPtotal
            integer, dimension(:), pointer :: IWBNDLC
            type(GridInformation) :: eGrid

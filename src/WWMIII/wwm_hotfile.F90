@@ -738,19 +738,68 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_HOTFILE_NETCDF
+      SUBROUTINE WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+      USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-# ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-# endif
+      character(len=140), intent(in) :: FILERET
+      integer, intent(in) :: nbTime, MULTIPLEOUT_W
+      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W
+      integer, intent(in) :: np_write, ne_write
+      !
+      character (len = *), parameter :: CallFct="WRITE_HOTFILE_PART_1"
+      character (len = *), parameter :: UNITS = "units"
+      integer iret, ncid
+      integer nboned_dims, nfreq_dims, ndir_dims, ntime_dims, mnp_dims
+      integer ac_id
+      iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+
+      CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+
+      iret=nf90_def_dim(ncid, "nboned", nbOned, nboned_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+
+      iret=nf90_inq_dimid(ncid, "mnp", mnp_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
+
+      iret=nf90_inq_dimid(ncid, "nfreq", nfreq_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, 4, iret)
+
+      iret=nf90_inq_dimid(ncid, "ndir", ndir_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+
+      iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+
+      iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ nfreq_dims, ndir_dims, mnp_dims, ntime_dims/),ac_id)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+
+      iret=nf90_def_var(ncid,"var_oned",NF90_RUNTYPE,(/ nboned_dims, mnp_dims, ntime_dims/),ac_id)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
+
+      iret=nf90_put_att(ncid,ac_id,UNITS,'unknown')
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
+
+      iret=nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE OUTPUT_HOTFILE_NETCDF
+      USE DATAPOOL
+      USE NETCDF
+      IMPLICIT NONE
+!# ifdef MPI_PARALL_GRID
+!      include 'mpif.h'
+!# endif
       character (len = *), parameter :: CallFct="OUTPUT_HOTFILE_NETCDF"
       INTEGER :: POS
       integer :: iret, ncid, ntime_dims, mnp_dims, nfreq_dims, ndir_dims
       integer :: ac_id, nboned_dims, var_oned_id
       integer :: nbTime
       REAL(rkind)  :: eTimeDay
-      character (len = *), parameter :: UNITS = "units"
       character(len=140) :: FILERET
       integer np_write, ne_write
 # ifdef MPI_PARALL_GRID
@@ -777,46 +826,9 @@ MODULE wwm_hotfile_mod
           nbTime=-1
         END IF
         IF (WriteOutputProcess_hot) THEN
-          iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-
-          CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_HOT, np_write, ne_write)
-
-          iret=nf90_def_dim(ncid, "nboned", nbOned, nboned_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
-
-          iret=nf90_inq_dimid(ncid, "mnp", mnp_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-
-          iret=nf90_inq_dimid(ncid, "nfreq", nfreq_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, 4, iret)
-
-          iret=nf90_inq_dimid(ncid, "ndir", ndir_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
-
-          iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-
-          iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ nfreq_dims, ndir_dims, mnp_dims, ntime_dims/),ac_id)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-
-          iret=nf90_def_var(ncid,"var_oned",NF90_RUNTYPE,(/ nboned_dims, mnp_dims, ntime_dims/),ac_id)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
-
-          iret=nf90_put_att(ncid,ac_id,UNITS,'unknown')
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-
-          iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
-          !
-          iret = nf90_open(FILERET, nf90_write, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
+          CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_HOT, GRIDWRITE, IOBPD_HISTORY, np_write, ne_write)
         END IF
-        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HOT, WriteOutputProcess_hot, np_write, ne_write)
-        IF (WriteOutputProcess_hot) THEN
-          iret = nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
-        END IF
+        CALL WRITE_NETCDF_HEADERS_2(FILERET, MULTIPLEOUT_HOT, WriteOutputProcess_hot, GRIDWRITE, np_write, ne_write)
 !$OMP END MASTER
       END IF
       IF (WriteOutputProcess_hot) THEN

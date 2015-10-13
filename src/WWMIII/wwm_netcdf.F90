@@ -1309,12 +1309,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, np_write, ne_write)
+      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
       implicit none
       integer, intent(in) :: ncid, nbTime, MULTIPLEOUT
       integer, intent(in) :: np_write, ne_write
+      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W
+      !
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
       integer mnp_dims, mne_dims, nfreq_dims, ndir_dims
@@ -1355,13 +1357,13 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
         iret = nf90_put_att(ncid,var_id,'description','local to global indexes')
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
+        iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
+        iret=nf90_put_att(ncid,var_id,UNITS,'integer')
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
+        iret=nf90_put_att(ncid,var_id,'description','number of processors')
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       END IF
-      iret=nf90_def_var(ncid,'nproc',NF90_INT,(/one_dims/),var_id)
-      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
-      iret=nf90_put_att(ncid,var_id,UNITS,'integer')
-      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
-      iret=nf90_put_att(ncid,var_id,'description','number of processors')
-      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       !
       iret=nf90_def_var(ncid,'MULTIPLEOUT',NF90_INT,(/one_dims/),var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
@@ -1377,7 +1379,7 @@
       !
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
-      IF (GRIDWRITE) THEN
+      IF (GRIDWRITE_W) THEN
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT.eq.1) THEN
           e_dims=ne_global_dims
@@ -1434,7 +1436,7 @@
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
         !
       END IF
-      IF (IOBPD_HISTORY) THEN
+      IF (IOBPD_HISTORY_W) THEN
 # ifdef MPI_PARALL_GRID
         IF (MULTIPLEOUT.eq.1) THEN
           p_dims=np_global_dims
@@ -1451,82 +1453,93 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT, WriteOutputProcess, np_write, ne_write)
+      SUBROUTINE WRITE_NETCDF_HEADERS_2(FILERET, MULTIPLEOUT, WriteOutputProcess, GRIDWRITE_W, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
       implicit none
-      integer, intent(in) :: ncid, MULTIPLEOUT
-      logical, intent(in) :: WriteOutputProcess
+      character(len=140), intent(in) :: FILERET
+      integer, intent(in) :: MULTIPLEOUT
+      logical, intent(in) :: WriteOutputProcess, GRIDWRITE_W
       integer, intent(in) :: np_write, ne_write
-      integer var_id, iret
+      integer var_id, iret, ncid
       character (len = *), parameter :: CallFct="WRITE_NETCDF_HEADERS_2"
       integer Oper
 #ifdef MPI_PARALL_GRID
       integer eInt(1)
 #endif
-# ifdef MPI_PARALL_GRID
+      IF (WriteOutputProcess) THEN
+        iret = nf90_open(FILERET, nf90_write, ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+      END IF
+#ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT.eq.1) THEN
         iret=nf90_inq_varid(ncid, 'iplg', var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-        iret=nf90_put_var(ncid,var_id,iplg,start=(/1/), count = (/ np_write /))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+        iret=nf90_put_var(ncid,var_id,iplg,start=(/1/), count = (/ np_write /))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
       END IF
       !
       IF (WriteOutputProcess) THEN
-        iret=nf90_inq_varid(ncid,'nproc',var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-        eInt(1)=nproc
-        iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
+        IF (MULTIPLEOUT.eq.1) THEN
+          iret=nf90_inq_varid(ncid,'nproc',var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
+          eInt(1)=nproc
+          iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+        END IF
         !
         iret=nf90_inq_varid(ncid,'MULTIPLEOUT',var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
         eInt(1)=MULTIPLEOUT
         iret=nf90_put_var(ncid,var_id,eInt,start = (/1/), count=(/1/))
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
       END IF
-# endif
+#endif
       IF (PARAMWRITE_HIS.and.WriteOutputProcess) THEN
         CALL WRITE_PARAM_2(ncid)
       END IF
-      IF (GRIDWRITE.and.WriteOutputProcess) THEN
+      IF (GRIDWRITE_W.and.WriteOutputProcess) THEN
         !
         iret=nf90_inq_varid(ncid, "ele", var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-        iret=nf90_put_var(ncid,var_id,INEtotal, start = (/1,1/), count = (/ 3, ne_total/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
+        iret=nf90_put_var(ncid,var_id,INEtotal, start = (/1,1/), count = (/ 3, ne_total/))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
         !
         IF (LSPHE) THEN
           iret=nf90_inq_varid(ncid, "lon", var_id)
         ELSE
           iret=nf90_inq_varid(ncid, "x", var_id)
         ENDIF
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-        iret=nf90_put_var(ncid,var_id,XPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
+        iret=nf90_put_var(ncid,var_id,XPtotal, start = (/1/), count = (/ np_total/))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
         !
         IF (LSPHE) THEN
           iret=nf90_inq_varid(ncid, "lat", var_id)
         ELSE
           iret=nf90_inq_varid(ncid, "y", var_id)
         ENDIF
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
-        iret=nf90_put_var(ncid,var_id,YPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
+        iret=nf90_put_var(ncid,var_id,YPtotal, start = (/1/), count = (/ np_total/))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
         !
         iret=nf90_inq_varid(ncid, "IOBP", var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
-        iret=nf90_put_var(ncid,var_id,IOBPtotal, start = (/1/), count = (/ np_total/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
+        iret=nf90_put_var(ncid,var_id,IOBPtotal, start = (/1/), count = (/ np_total/))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
         !
         iret=nf90_inq_varid(ncid, "depth", var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
-        iret=nf90_put_var(ncid,var_id,DEPtotal, start = (/1/), count = (/ np_write/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
+        iret=nf90_put_var(ncid,var_id,DEPtotal, start = (/1/), count = (/ np_write/))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
         !
         Oper=2
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
       ENDIF
+      IF (WriteOutputProcess) THEN
+        iret = nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, iret)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

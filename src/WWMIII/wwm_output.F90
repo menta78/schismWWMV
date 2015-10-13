@@ -2014,7 +2014,7 @@
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           nbTime=-1
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
@@ -2038,15 +2038,8 @@
           END DO
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-          !
-          iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
         ENDIF
-        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
-        IF (WriteOutputProcess_his) THEN
-          iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-        ENDIF
+        CALL WRITE_NETCDF_HEADERS_2(FILE_NAME, MULTIPLEOUT_HIS, WriteOutputProcess_his, GRIDWRITE, np_write, ne_write)
 !$OMP END MASTER
       END IF
 !

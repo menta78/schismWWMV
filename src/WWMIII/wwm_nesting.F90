@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#ifdef NCDF
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -97,6 +98,40 @@
           END DO
         END IF
       END DO
+      !
+      ! Now we timings needed by the model
+      !
+      DO iGRid=1,NB_GRID_NEST
+        ListNestInfo(iGrid) % eTime % BEGT = ListBEGTC(iGrid)
+        ListNestInfo(iGrid) % eTime % DELT = ListDELTC(iGrid)
+        ListNestInfo(iGrid) % eTime % UNIT = ListUNITC(iGrid)
+        ListNestInfo(iGrid) % eTime % ENDT = ListENDTC(iGrid)
+        CALL CT2MJD(ListNestInfo(iGrid) % eTime % BEGT, ListNestInfo(iGrid) % eTime % BMJD)
+        CALL CT2MJD(ListNestInfo(iGrid) % eTime % ENDT, ListNestInfo(iGrid) % eTime % EMJD)
+        CALL CU2SEC(ListNestInfo(iGrid) % eTime % UNIT, ListNestInfo(iGrid) % eTime % DELT)
+
+        ListNestInfo(iGrid) % eTime % TOTL = (ListNestInfo(iGrid) % eTime % EMJD - ListNestInfo(iGrid) % eTime % BMJD) * DAY2SEC
+        ListNestInfo(iGrid) % eTime % ISTP = NINT(ListNestInfo(iGrid) % eTime % TOTL / ListNestInfo(iGrid) % eTime % DELT) + 1
+        ListNestInfo(iGrid) % eTime % TMJD = ListNestInfo(iGrid) % eTime % BMJD
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE NESTING_OUTPUT_HOTFILE(iGrid)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: iGrid
+      !
+      
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE NESTING_BOUNDARY_CONDITION(iGrid)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: iGrid
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -105,11 +140,32 @@
       USE DATAPOOL
       IMPLICIT NONE
       LOGICAL, SAVE :: INITDONE = .FALSE.
+      integer iGrid
+      real(rkind) DeltaTimeDiff
+      !
+      ! First the init
+      !
       IF (INITDONE .eqv. .FALSE.) THEN
         CALL INIT_NESTING
       END IF
       INITDONE = .TRUE.
+      !
+      ! Then the HOTFILE
+      !
+      DO iGrid=1,NB_GRID_NEST
+        IF ((MAIN%TMJD .GE. ListNestInfo(iGrid) % eTime % TMJD - 1.E-8) .AND. (MAIN%TMJD .LE. ListNestInfo(iGrid) % eTime % EMJD)) THEN
+          DeltaTimeDiff = abs(MAIN % TMJD - ListNestInfo(iGrid) % eTime % BMJD)
+          IF (L_HOTFILE .and. DeltaTimeDiff .le. 1.e-8) THEN
+            CALL NESTING_OUTPUT_HOTFILE(iGrid)
+          END IF
+          IF (L_BOUC_PARAM .or. L_BOUC_SPEC) THEN
+            CALL NESTING_BOUNDARY_CONDITION(iGrid)
+          END IF
+          ListNestInfo(iGrid) % eTime % TMJD = ListNestInfo(iGrid) % eTime % TMJD + ListNestInfo(iGrid) % eTime % DELT*SEC2DAY
+        END IF
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#endif
