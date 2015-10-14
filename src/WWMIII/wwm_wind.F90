@@ -77,7 +77,7 @@
           ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF CF_COMPLIANT STATIONARY FIELD 
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             FLUSH(WINDBG%FHNDL)
-            CALL INIT_NETCDF_CF_WWM(eVAR_WIND)
+            CALL INIT_NETCDF_CF_WWM_WIND(eVAR_WIND)
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
@@ -160,7 +160,7 @@
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'SPATIAL/TEMPORAL VARIABLE WIND FIELD IS USED CF NETCDF'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
             FLUSH(WINDBG%FHNDL)
-            CALL INIT_NETCDF_CF_WWM(eVAR_WIND)
+            CALL INIT_NETCDF_CF_WWM_WIND(eVAR_WIND)
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
@@ -777,7 +777,7 @@
       real(rkind) d_lon, d_lat
       integer i11, j11, i12, j12, i21, j21
       integer eCF_IX, eCF_IY
-      real(rkind) eCF_COEFF
+      real(rkind) eCF_COEFF(4)
       integer :: nbExtrapolation = 0
       real(rkind) :: MaxMinDist = 0
       character(len=256) :: FileSave = "wwm_filesave_interp_array.nc"
@@ -2074,7 +2074,7 @@
 !* http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.pdf *
 !*  for details                                                             *
 !****************************************************************************
-      SUBROUTINE INIT_NETCDF_CF_WWM(eVAR)
+      SUBROUTINE INIT_NETCDF_CF_WWM_WIND(eVAR)
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
@@ -2443,6 +2443,50 @@
 #endif
 #ifdef GRIB_API_ECMWF
 !****************************************************************************
+!* Raw reading of time entry for GRIB                                       *
+!****************************************************************************
+      SUBROUTINE RAW_READ_TIME_OF_GRIB_FILE(ifile, eGrib, STEPRANGE_IN, eTimeOut)
+      USE DATAPOOL
+      USE GRIB_API
+      IMPLICIT NONE
+      integer, intent(in) :: ifile
+      integer, intent(in) :: eGrib
+      LOGICAL, intent(in) :: STEPRANGE_IN
+      real(rkind), intent(out) :: eTimeOut
+      !
+      LOGICAL :: USE_DATATIME = .TRUE.
+      integer eYear, eMonth, eDay, resYear, resMonth
+      integer eHour, eMin, eSec, resHour, resMin
+      integer dataDate, stepRange, dataTime
+      character (len=15) :: eStrTime
+      REAL(rkind) :: eTimeBase
+      call grib_get(eGrib, 'dataDate', dataDate)
+      eYear=(dataDate - mod(dataDate,10000))/10000
+      resYear=dataDate - 10000*eYear
+      eMonth=(resYear - mod(resYear,100))/100
+      resMonth=resYear - 100*eMonth;
+      eDay=resMonth
+      IF (STEPRANGE_IN) THEN
+        call grib_get(eGrib, 'stepRange', stepRange)
+      ELSE
+        stepRange=0
+      END IF
+      IF (USE_DATATIME) THEN
+        call grib_get(eGrib, 'dataTime', dataTime)
+        eHour=(dataTime - mod(dataTime,100))/100
+        eMin=dataTime - 100*eHour
+        eSec=0
+      ELSE
+        eHour=0
+        eMin=0
+        eSec=0
+      END IF
+      WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
+ 10   FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
+      CALL CT2MJD(eStrTime, eTimeBase)
+      eTimeOut=eTimeBase + DBLE(stepRange)/24.0_rkind
+      END SUBROUTINE
+!****************************************************************************
 !* Reading time from a GRIB file                                            *
 !****************************************************************************
       SUBROUTINE READ_TIME_OF_GRIB_FILE(eTimeOut, eFile, STEPRANGE_IN)
@@ -2452,52 +2496,15 @@
       REAL(rkind), intent(out) :: eTimeOut
       CHARACTER(len=140), intent(in) :: eFile
       LOGICAL, intent(in) :: STEPRANGE_IN
-      LOGICAL :: USE_DATATIME = .TRUE.
-      INTEGER :: FHNDL
-      integer eYear, eMonth, eDay, resYear, resMonth
-      integer eHour, eMin, eSec, resHour, resMin
       integer ifile, i, n
-      REAL(rkind) :: eTimeBase
-      character (len=15) :: eStrTime
       integer, allocatable :: igrib(:)
-      integer dataDate, stepRange, dataTime
-      FHNDL = WINDBG % FHNDL
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
       CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
       i=1
       call grib_new_from_file(ifile, igrib(i))
-      call grib_get(igrib(i), 'dataDate', dataDate)
-      WRITE(FHNDL, *) 'dataDate=', dataDate
-      eYear=(dataDate - mod(dataDate,10000))/10000
-      resYear=dataDate - 10000*eYear
-      eMonth=(resYear - mod(resYear,100))/100
-      resMonth=resYear - 100*eMonth;
-      eDay=resMonth
-      IF (STEPRANGE_IN) THEN
-        call grib_get(igrib(i), 'stepRange', stepRange)
-      ELSE
-        stepRange=0
-      END IF
-      WRITE(FHNDL, *) 'stepRange=', stepRange
-      IF (USE_DATATIME) THEN
-        call grib_get(igrib(i), 'dataTime', dataTime)
-        WRITE(FHNDL, *) 'dataTime=', dataTime
-        eHour=(dataTime - mod(dataTime,100))/100
-        eMin=dataTime - 100*eHour
-        eSec=0
-      ELSE
-        eHour=0
-        eMin=0
-        eSec=0
-      END IF
-      WRITE(FHNDL, *) 'Year/m/d=', eYear, eMonth, eDay
-      WRITE(FHNDL, *) 'Hour/m/s=', eHour, eMin, eSec
-      WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
- 10   FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
-      CALL CT2MJD(eStrTime, eTimeBase)
-      eTimeOut=eTimeBase + DBLE(stepRange)/24.0_rkind
+      CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
       CALL GRIB_CLOSE_FILE(ifile)
       deallocate(igrib)
       END SUBROUTINE
@@ -2510,7 +2517,7 @@
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
       character(len=300), intent(in) :: TheFile
-      character(len=100), intent(in) :: shortName
+      character(len=20), intent(in) :: shortName
       integer, intent(in) :: GRIB_TYPE
       !
       integer ifile, i, n

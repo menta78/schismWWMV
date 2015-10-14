@@ -170,6 +170,18 @@
          REAL(rkind), PARAMETER             :: DEPFAC   = 6.d0
          REAL(rkind)                        :: DSIGTAB
 !
+! Fundamental data types 
+!
+         TYPE VAR_NETCDF_CF
+           character(len=100) :: eFileName
+           character(len=100) :: eString
+           real(rkind) :: cf_scale_factor
+           real(rkind) :: cf_add_offset
+           integer nbTime
+           integer idVar
+           real(rkind), allocatable :: ListTime(:)
+         END TYPE VAR_NETCDF_CF
+!
 ! ... logicals ... wwmDlogic.mod
 !
          INTEGER    :: INITSTYLE  = 1
@@ -298,6 +310,13 @@
          integer, allocatable :: CF_IX_BOUC(:)
          integer, allocatable :: CF_IY_BOUC(:)
          real(rkind), allocatable :: CF_COEFF_BOUC(:,:)
+         TYPE(VAR_NETCDF_CF) :: eVAR_BOUC_WAM
+         integer nbdir_wam, nbfreq_wam, nx_wam, ny_wam
+         integer, allocatable :: ListIFileWAM(:)
+         real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
+         integer, allocatable :: WAM_ID1(:), WAM_ID2(:), WAM_IS1(:), WAM_IS2(:)
+         real(rkind), allocatable :: WAM_WD1(:), WAM_WD2(:), WAM_WS1(:), WAM_WS2(:)
+         real(rkind), allocatable :: tmp_WBAC1(:,:), tmp_WBAC2(:,:)
          LOGICAL    :: BOUC_NETCDF_OUT_SPECTRA = .FALSE.
          LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
@@ -587,15 +606,6 @@
 !
 ! This is the variable type for the direct 
 !
-         TYPE VAR_NETCDF_CF
-           character(len=100) :: eFileName
-           character(len=100) :: eString
-           real(rkind) :: cf_scale_factor
-           real(rkind) :: cf_add_offset
-           integer nbTime
-           integer idVar
-           real(rkind), allocatable :: ListTime(:)
-         END TYPE
          TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
 ! END CF comppliant wind PART I.J.
 
