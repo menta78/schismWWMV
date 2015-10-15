@@ -256,14 +256,16 @@
  ZETA_METH       =           0,
  WAE_SOLVERTHR       =  1.000000000000000E-010
  /
+
+
  &HISTORY
  BEGTC   = 20000101.000000     ,
  DELTC   =   5.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 20000101.003000    
  DEFINETC        =  0.000000000000000E+000,
- OUTSTYLE        = XFN                 ,
- FILEOUT = field.dat                               ,
+ OUTSTYLE        = NC                 ,
+ FILEOUT = "WW3_output.nc"   ,
  LOUTITER        = F,
  IOBPD   = F,
  LENERGY = F,
@@ -274,8 +276,8 @@
  USE_SINGLE_OUT  = T,
  PRINTMMA        = F,
  HS      = T,
- TM01    = F,
- TM02    = F,
+ TM01    = T,
+ TM02    = T,
  TM10    = F,
  KLM     = F,
  WLM     = F,
