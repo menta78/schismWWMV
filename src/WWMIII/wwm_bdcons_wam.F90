@@ -117,7 +117,7 @@
                 ListDir_wam(idir) = DBLE(ListDir_i(idir)) / DBLE(dirScal)
               END DO
               DO ifreq=1,nbfreq_wam
-                eDir = DBLE(ListFreq_i(idir)) / DBLE(freqScal)
+                eDir = DBLE(ListFreq_i(ifreq)) / DBLE(freqScal)
                 eDir = 270 - eDir
                 IF (eDir .le. ZERO) THEN
                   eDir = eDir+ 360
@@ -125,7 +125,7 @@
                 IF (eDir .ge. 360) THEN
                   eDir = eDir - 360
                 END IF
-                ListFreq_wam(idir) = eDir
+                ListFreq_wam(ifreq) = eDir
               END DO
               deallocate(ListDir_i, ListFreq_i)
             ELSE
@@ -146,6 +146,7 @@
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
           eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
+          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
           CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
           call grib_count_in_file(ifile,n)
@@ -154,7 +155,8 @@
             call grib_new_from_file(ifile, igrib(i))
             call grib_get(igrib(i), 'directionNumber', idir)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
-            IF ((idir .eq. 1).or.(ifreq .eq. 1)) THEN
+            IF ((idir .eq. 1).and.(ifreq .eq. 1)) THEN
+              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
               CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
               !
               idx=idx+1
@@ -169,7 +171,10 @@
         !
         shortName='2dfd'
         GRIB_TYPE=1 ! 1 for ECMWF
-        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(WAM_SPEC_FILE_NAMES_BND(1)), shortName, GRIB_TYPE)
+        IFILE_IN = 1
+        Print *, 'Before READ_GRID_INFO_FROM_GRIB'
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, WAM_SPEC_FILE_NAMES_BND(IFILE_IN), shortName, GRIB_TYPE)
+        Print *, 'After READ_GRID_INFO_FROM_GRIB'
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
@@ -278,6 +283,7 @@
       real(rkind) eTimeOut
       character(len=140) eShortName
       integer iX, iY, ifile
+      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       DirFreqStatus=0
       eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
@@ -310,6 +316,7 @@
       if (eDiff .ne. 0) THEN
         CALL WWM_ABORT('Error reading WAM file. Some direction/frequencies not assigned')
       END IF
+      Print *, 'End READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

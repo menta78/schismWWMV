@@ -342,7 +342,7 @@
 !
          INTEGER                :: NUM_WAM_SPEC_FILES
          real(rkind), allocatable :: WAM_SPEC_ListTime(:)
-         character(len=20), allocatable :: WAM_SPEC_FILE_NAMES_BND(:)
+         character(len=140), allocatable :: WAM_SPEC_FILE_NAMES_BND(:)
 
 !
 ! ... time control
