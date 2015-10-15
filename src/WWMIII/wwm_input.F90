@@ -653,6 +653,7 @@
          LOGICAL :: NETCDF_OUT_PARAM, NETCDF_OUT_SPECTRA
          REAL(rkind) :: DEFINETC
          LOGICAL     :: USE_SINGLE_OUT
+         LOGICAL     :: EXTRAPOLATION_ALLOWED
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO
@@ -675,6 +676,7 @@
      &      NCDF_F02_NAME, MULTIPLE_IN, NETCDF_OUT_PARAM,               &
      &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT,        &
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
+     &      EXTRAPOLATION_ALLOWED,                                      &
      &      HACK_HARD_SET_IOBP,                                         &
      &      NETCDF_IN_FILE, LEXPORT_BOUC_WW3, EXPORT_BOUC_DELTC
 
@@ -715,12 +717,17 @@
      &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
      &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
      &      EPSH5,                                                      &
-     &      LZETA_SETUP, ZETA_METH, SOLVERTHR
+     &      LZETA_SETUP, ZETA_METH, STP_SOLVERTHR
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
      &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
 
+         NAMELIST /NESTING/ L_NESTING, NB_GRID_NEST,                    &
+     &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
+     &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
+     &      L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
+     
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
          FLUSH(CHK%FHNDL)
@@ -848,10 +855,12 @@
          NETCDF_OUT_SPECTRA=BOUC_NETCDF_OUT_SPECTRA
          NETCDF_OUT_FILE=BOUC_NETCDF_OUT_FILE
 #endif
+         EXTRAPOLATION_ALLOWED = EXTRAPOLATION_ALLOWED_BOUC
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
          FLUSH(CHK%FHNDL)
          MULTIPLE_IN_BOUND=MULTIPLE_IN
+         EXTRAPOLATION_ALLOWED_BOUC = EXTRAPOLATION_ALLOWED_WIND
 #ifdef NCDF
          BOUC_NETCDF_OUT_PARAM  =NETCDF_OUT_PARAM
          BOUC_NETCDF_OUT_SPECTRA=NETCDF_OUT_SPECTRA
@@ -916,10 +925,12 @@
 !     *** WIND section
 !
          MULTIPLE_IN=MULTIPLE_IN_WIND
+         EXTRAPOLATION_ALLOWED = EXTRAPOLATION_ALLOWED_WIND
          READ(INP%FHNDL, NML = WIND)
          wwm_print_namelist(WIND)
          FLUSH(CHK%FHNDL)
          MULTIPLE_IN_WIND=MULTIPLE_IN
+         EXTRAPOLATION_ALLOWED_WIND = EXTRAPOLATION_ALLOWED
 
          WIN%FNAME = TRIM(FILEWIND)
          IF (LWINDFROMWWM .and. (LCWIN .eqv. .FALSE.)) THEN
@@ -1057,7 +1068,8 @@
          END IF
 !
 !     **** HOTFILE section
-
+!
+         
 #ifdef NCDF
          IF (rkind == 4) THEN
            NF90_RUNTYPE=NF90_REAL
@@ -1127,6 +1139,13 @@
          HOTF%ISTP = NINT( HOTF%TOTL / HOTF%DELT ) + 1
          HOTF%TMJD = HOTF%BMJD
 
+!
+! NESTING section
+!
+         READ(INP%FHNDL, NML = NESTING)
+         wwm_print_namelist(NESTING)
+         FLUSH(CHK%FHNDL)
+         
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

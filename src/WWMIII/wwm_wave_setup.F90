@@ -390,7 +390,7 @@
         WRITE(200+myrank,*) 'nbIter=', nbIter, 'eNorm=', eNorm
         FLUSH(200+myrank)
 #endif
-        IF (eNorm .le. SOLVERTHR) THEN
+        IF (eNorm .le. STP_SOLVERTHR) THEN
           EXIT
         END IF
         !

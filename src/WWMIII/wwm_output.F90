@@ -91,15 +91,27 @@
       !
       ! The boundary output
       !
-#ifdef NCDF
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
+#ifdef NCDF
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD)) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           CALL WRITE_NETCDF_BOUNDARY
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
         END IF
-      END IF
+#else
+        CALL WWM_ABORT('Need netcdf for the boundary output')
 #endif
+      END IF
+      !
+      ! The nesting
+      !
+      IF (L_NESTING) THEN
+#ifdef NCDF
+        CALL DO_NESTING_OPERATION
+#else
+        CALL WWM_ABORT('Need netcdf for the nesting output')
+#endif
+      END IF
       !
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
       FLUSH(STAT%FHNDL)
@@ -807,7 +819,7 @@
           IELOC=STATION(I)%ELEMENT
           ISMAX=STATION(I)%ISMAX
           WI=STATION(I)%WI(3)
-          CALL PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
+          CALL PAR_COMPLETE_LOC(ISMAX, IELOC, WI,WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR)
           IF (VAROUT_STATION%ACOUT_1D.or.VAROUT_STATION%ACOUT_2D) THEN
             CALL CLSPEC(WKLOC,DEPLOC,CURTXYLOC,ACLOC,ACOUT_1D,ACOUT_2D)
           END IF
@@ -1463,10 +1475,10 @@
 !**********************************************************************
 !*                                                                     *
 !**********************************************************************
-      SUBROUTINE PAR_COMPLETE_LOC(I, ISMAX, IELOC, WI, WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR) 
+      SUBROUTINE PAR_COMPLETE_LOC(ISMAX, IELOC, WI, WKLOC, DEPLOC, CURTXYLOC, ACLOC, OUTPAR) 
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER, INTENT(IN)    :: ISMAX, I
+      INTEGER, INTENT(IN)    :: ISMAX
       INTEGER, intent(in)    :: IELOC
       REAL(rkind), intent(in)  :: WI(3)
       REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC), WKLOC(MSC), DEPLOC, CURTXYLOC(2)
@@ -2014,7 +2026,7 @@
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           nbTime=-1
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
@@ -2038,15 +2050,8 @@
           END DO
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-          !
-          iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
         ENDIF
-        CALL WRITE_NETCDF_HEADERS_2(ncid, MULTIPLEOUT_HIS, WriteOutputProcess_his, np_write, ne_write)
-        IF (WriteOutputProcess_his) THEN
-          iret=nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-        ENDIF
+        CALL WRITE_NETCDF_HEADERS_2(FILE_NAME, MULTIPLEOUT_HIS, WriteOutputProcess_his, GRIDWRITE, np_write, ne_write)
 !$OMP END MASTER
       END IF
 !

@@ -1539,10 +1539,10 @@
       REAL(rkind) :: X(MNP), B(MNP), U(MNP)
       REAL(rkind) :: eSum, eSqrNorm
       INTEGER :: IP, idx, J, nbIter
-      
+      REAL(rkind) :: LOCAL_SOLVERTHR
       X(:) = AC2(IS,ID,:)
       CALL EIMPS_ASPAR_B_SOURCES_LOCAL( IS, ID, ASPAR, B, X)
-      SOLVERTHR=10E-10
+      LOCAL_SOLVERTHR=10E-10
       nbIter=0
       DO
         DO IP=1,NP_RES
@@ -1573,7 +1573,7 @@
 #endif
         CALL SQUARE_NORM(U, B, eSqrNorm)
         nbIter=nbIter+1
-        IF (eSqrNorm .lt. SOLVERTHR) THEN
+        IF (eSqrNorm .lt. LOCAL_SOLVERTHR) THEN
           EXIT
         END IF
       END DO

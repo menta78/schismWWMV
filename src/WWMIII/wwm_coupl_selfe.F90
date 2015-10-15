@@ -4,11 +4,11 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
+        USE DATAPOOL
 
         use schism_glbl, only: iplg,errmsg,hmin_radstress
         USE schism_msgp
 
-        USE DATAPOOL
         implicit none
         integer     :: IP, k, ID, IS, IL
         real(rkind) :: eF1, eF2, eDelta, TheInt, eDep, eHeight
@@ -81,11 +81,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE RADIATION_STRESS_SCHISM
-
+        USE DATAPOOL
         use schism_glbl, only: iplg,errmsg,hmin_radstress
         USE schism_msgp !, only : myrank,parallel_abort
-
-        USE DATAPOOL
         IMPLICIT NONE
 
         INTEGER :: IP,IL,IS,ID

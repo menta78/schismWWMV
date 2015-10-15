@@ -211,7 +211,6 @@
  NDYNITER_SNL3  = 10,                
  NDYNITER_SBF   = 10,                
  NB_BLOCK       = 3,                 
- SOLVERTHR      = 1.E-5,             
  MAXITER        = 300,               
  LNANINFCHK     = .F.,               
  LZETA_SETUP    = .F.,               
@@ -401,6 +400,11 @@
  IHOTPOS_IN     = 1,                 
  FILEHOT_IN     = 'hotfile_in.dat',  
 /
+
+&NESTING
+ L_WRITE = F,
+/
+
 
 &PETSCOPTIONS  
  Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html = ,                  

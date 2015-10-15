@@ -170,6 +170,18 @@
          REAL(rkind), PARAMETER             :: DEPFAC   = 6.d0
          REAL(rkind)                        :: DSIGTAB
 !
+! Fundamental data types 
+!
+         TYPE VAR_NETCDF_CF
+           character(len=100) :: eFileName
+           character(len=100) :: eString
+           real(rkind) :: cf_scale_factor
+           real(rkind) :: cf_add_offset
+           integer nbTime
+           integer idVar
+           real(rkind), allocatable :: ListTime(:)
+         END TYPE VAR_NETCDF_CF
+!
 ! ... logicals ... wwmDlogic.mod
 !
          INTEGER    :: INITSTYLE  = 1
@@ -294,6 +306,17 @@
          LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 
 ! Entries needed for output of spectra
+         LOGICAL    :: EXTRAPOLATION_ALLOWED_BOUC = .FALSE.
+         integer, allocatable :: CF_IX_BOUC(:)
+         integer, allocatable :: CF_IY_BOUC(:)
+         real(rkind), allocatable :: CF_COEFF_BOUC(:,:)
+         TYPE(VAR_NETCDF_CF) :: eVAR_BOUC_WAM
+         integer nbdir_wam, nbfreq_wam, nx_wam, ny_wam
+         integer, allocatable :: ListIFileWAM(:)
+         real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
+         integer, allocatable :: WAM_ID1(:), WAM_ID2(:), WAM_IS1(:), WAM_IS2(:)
+         real(rkind), allocatable :: WAM_WD1(:), WAM_WD2(:), WAM_WS1(:), WAM_WS2(:)
+         real(rkind), allocatable :: tmp_WBAC1(:,:), tmp_WBAC2(:,:)
          LOGICAL    :: BOUC_NETCDF_OUT_SPECTRA = .FALSE.
          LOGICAL    :: BOUC_NETCDF_OUT_PARAM = .FALSE.
          CHARACTER(LEN=140) :: BOUC_NETCDF_OUT_FILE = "boundary_out_spec.nc"
@@ -301,7 +324,7 @@
          INTEGER    :: NUMBER_BOUC_NETCDF_FILE
          LOGICAL    :: HACK_HARD_SET_IOBP = .FALSE.
 ! Entries needed for input of spectra WWM style
-         CHARACTER(LEN=140) :: NETCDF_IN_FILE
+         CHARACTER(LEN=140) :: NETCDF_IN_FILE = "unset"
          CHARACTER(LEN=140), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
          integer, allocatable :: BOUND_LIST_IFILE(:)
          integer, allocatable :: BOUND_LIST_IT(:)
@@ -314,6 +337,13 @@
          INTEGER                :: IGRIDTYPE  = 1
          INTEGER                :: IITERSPLIT = 1
          REAL(rkind)            :: DELTAT_WATLEV
+!
+! variables for the WAM
+!
+         INTEGER                :: NUM_WAM_SPEC_FILES
+         real(rkind), allocatable :: WAM_SPEC_ListTime(:)
+         character(len=140), allocatable :: WAM_SPEC_FILE_NAMES_BND(:)
+
 !
 ! ... time control
 ! ... type timedef konsequent implementieren andere types ableiten
@@ -345,6 +375,12 @@
             integer, dimension(:,:), pointer :: ListEdge
          END TYPE Graph
 
+         TYPE FD_FORCING_GRID
+            integer nx_dim, ny_dim
+            real, dimension(:,:), pointer :: LON
+            real, dimension(:,:), pointer :: LAT
+         END TYPE FD_FORCING_GRID
+         
          TYPE BoundaryInfo
             integer nbEdgeBound
             integer nbVertBound
@@ -567,20 +603,52 @@
          INTEGER                    :: REC1_curr_new, REC2_curr_new
          INTEGER                    :: REC1_watlev_old, REC2_watlev_old
          INTEGER                    :: REC1_watlev_new, REC2_watlev_new
-         TYPE VAR_NETCDF_CF
-           character(len=100) :: eFileName
-           character(len=100) :: eString
-           real(rkind) :: cf_scale_factor
-           real(rkind) :: cf_add_offset
-           integer nbTime
-           integer idVar
-           real(rkind), allocatable :: ListTime(:)
-         END TYPE
+!
+! This is the variable type for the direct 
+!
          TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
-
-
 ! END CF comppliant wind PART I.J.
 
+         TYPE GridInformation
+           integer np_total
+           integer ne_total
+           REAL(rkind), dimension(:), pointer :: XPtotal, YPtotal, DEPtotal
+           integer, dimension(:,:), pointer :: INEtotal
+           REAL(rkind), dimension(:,:), pointer :: IENtotal
+           REAL(rkind), dimension(:), pointer :: TRIAtotal
+           REAL(rkind), dimension(:), pointer :: DX1total, DX2total
+         END TYPE GridInformation
+
+         !
+         ! Nesting part of the code
+         !
+         LOGICAL                          :: L_NESTING = .FALSE.
+         INTEGER                          :: NB_GRID_NEST = 0
+         integer, parameter               :: MaxNbNest = 20
+         character(len=20)                :: ListBEGTC(MaxNbNest)
+         REAL(rkind)                      :: ListDELTC(MaxNbNest)
+         character(len=20)                :: ListUNITC(MaxNbNest)
+         character(len=20)                :: ListENDTC(MaxNbNest)
+         INTEGER                          :: ListIGRIDTYPE(MaxNbNest)
+         character(len=140)               :: ListFILEGRID(MaxNbNest)
+         character(len=140)               :: ListFILEBOUND(MaxNbNest)
+         character(len=140)               :: ListPrefix(MaxNbNest)
+         LOGICAL                          :: L_HOTFILE = .FALSE.
+         LOGICAL                          :: L_BOUC_PARAM = .FALSE.
+         LOGICAL                          :: L_BOUC_SPEC = .FALSE.
+         TYPE NESTING_INFORMATION
+           integer IWBMNP
+           TYPE(TIMEDEF), allocatable     :: eTime
+           integer, dimension(:), pointer :: IOBPtotal
+           integer, dimension(:), pointer :: IWBNDLC
+           type(GridInformation) :: eGrid
+           integer, dimension(:), pointer :: HOT_IE
+           integer, dimension(:,:), pointer :: HOT_W
+           integer, dimension(:), pointer :: BOUC_IE
+           integer, dimension(:,:), pointer :: BOUC_W
+         END TYPE NESTING_INFORMATION
+         type(NESTING_INFORMATION), allocatable :: ListNestInfo(:)
+         
          REAL(rkind), ALLOCATABLE         :: TRIA(:)
 
          REAL(rkind), ALLOCATABLE         :: DX1(:)
@@ -720,7 +788,7 @@
          REAL(rkind)                     :: DX_BND, DY_BND
 
          INTEGER                         :: IWINDFORMAT  = 1
-         LOGICAL                         :: EXTRAPOLATION_ALLOWED = .FALSE.
+         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .FALSE.
          LOGICAL                         :: LSAVE_INTERP_ARRAY = .FALSE.
          LOGICAL                         :: USE_STEPRANGE = .TRUE.
          INTEGER                         :: IBOUNDFORMAT = 1
@@ -1038,7 +1106,7 @@
          LOGICAL                :: BLOCK_GAUSS_SEIDEL = .TRUE.
          LOGICAL                :: LCHKCONV = .TRUE.
          INTEGER                :: NB_BLOCK = 3 
-         REAL(rkind)            :: SOLVERTHR = 1.E-10_rkind
+         REAL(rkind)            :: STP_SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          REAL(rkind)            :: WAE_SOLVERTHR = 1.e-10_rkind
          LOGICAL                :: L_SOLVER_NORM = .FALSE.

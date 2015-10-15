@@ -209,7 +209,6 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- SOLVERTHR       =  1.000000000000000E-04,
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       = 0,
@@ -455,6 +454,11 @@
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
  /
+
+&NESTING
+ L_WRITE = F
+/
+
 &PETScOptions
                                      ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html
  KSPTYPE       = 'BCGSL'
