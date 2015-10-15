@@ -2850,16 +2850,17 @@
         END IF
       END DO
       IF ((nbNeumann .gt. 0).or.(nbUnknown .gt. 0)) THEN
-         Print *, 'nbDirichlet=', nbDirichlet
-         Print *, 'nbNeumann=', nbNeumann
-         Print *, 'nbUnknown=', nbUnknown
-         Print *, 'Those points will be put to 0'
+        IF (IsFirst .eqv. .TRUE.) THEN
+          Print *, 'nbDirichlet=', nbDirichlet
+          Print *, 'nbNeumann=', nbNeumann
+          Print *, 'nbUnknown=', nbUnknown
+          Print *, 'Those points will be put to 0'
+        END IF
       END IF
       NBI = nbDirichlet
       IF (NBI .ne. IWBMNPGL) THEN
         CALL WWM_ABORT('Code inconsistency error')
       END IF
-      Print *, 'NBI=', NBI
       allocate(XBPI(NBI), YBPI(NBI), IPBPI(NBI,4), RDBPI(NBI,4), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('Error allocate XBPI/YBPI')
       idx=0
@@ -2881,20 +2882,24 @@
       IF (myrank == 0) THEN
 # endif
          TheOut = FHNDL_EXPORT_BOUC_WW3
+!         Print *, 'IsFirst=', IsFirst
+         NK    = MSC
+         NTH   = MDC
+         XFR   = MySNGL(SFAC)
+         FREQ1 = MySNGL(FR(1))
+         eTH   = MySNGL(SPDIR(1))
          IF (IsFirst .eqv. .TRUE.) THEN
+!           Print *, 'Before open, case 1'
            OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='new', action='write')
-           NK    = MSC
-           NTH   = MDC
-           XFR   = MySNGL(SFAC)
-           FREQ1 = MySNGL(FR(1))
-           eTH   = MySNGL(SPDIR(1))
            WRITE(TheOut) IDSTRBC, VERBPTBC, NK, NTH, XFR, FREQ1, eTH, NBI
            WRITE(TheOut) (XBPI(I),I=1,NBI), (YBPI(I),I=1,NBI),                   &
                          ((IPBPI(I,J),I=1,NBI),J=1,4),                           &
                          ((RDBPI(I,J),I=1,NBI),J=1,4)
          ELSE
+!           Print *, 'Before open, case 2'
            OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
          END IF
+         IsFirst=.FALSE.
          CALL COMPUTE_tFN(TIME2)
          NSPEC_out = NK*NTH
          allocate(ABPIO(NSPEC_out), stat=istat)

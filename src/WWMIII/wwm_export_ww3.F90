@@ -36,6 +36,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
+      GTYPE=UNGTYPE
       CALL COMPUTE_TFN(TFN)
       allocate(Vwr(NX,NY), Uwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, current part')
@@ -101,6 +102,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
+      GTYPE=UNGTYPE
       CALL COMPUTE_TFN(TFN)
       allocate(Vwr(NX,NY), Uwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, current part')
@@ -165,6 +167,7 @@
       FILLER(:)=0
       NX=np_total
       NY=1
+      GTYPE=UNGTYPE
       CALL COMPUTE_TFN(TFN)
       allocate(LEVwr(NX,NY), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_export_ww3, WALV part 1')
