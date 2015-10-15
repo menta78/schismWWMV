@@ -138,6 +138,7 @@
             IsFirst=.FALSE.
           END DO
           deallocate(igrib)
+          CALL GRIB_CLOSE_FILE(ifile)
           nbTotalNumberEntry = nbTotalNumberEntry + n / (nbdir_wam * nbfreq_wam)
         END DO
         ALLOCATE(eVAR_BOUC_WAM % ListTime(nbTotalNumberEntry), ListIFileWAM(nbTotalNumberEntry), stat=istat)
@@ -165,6 +166,7 @@
             END IF
           END DO
           deallocate(igrib)
+          CALL GRIB_CLOSE_FILE(ifile)
         END DO
         !
         ! reading the grid
@@ -182,6 +184,7 @@
       deallocate(TheInfo % LON, TheInfo % LAT)
       nx_wam = TheInfo % nx_dim
       ny_wam = TheInfo % ny_dim
+      Print *, 'After COMPUTE_BND_INTERPOLATION_ARRAY'
       !
       ! Now the spectral interpolation arrays
       !
@@ -259,6 +262,7 @@
           END IF
         END DO
       END DO
+      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -312,6 +316,7 @@
         END IF
       END DO
       deallocate(igrib)
+      CALL GRIB_CLOSE_FILE(ifile)
       eDiff= sum(DirFreqStatus) - nbdir_wam * nbfreq_wam
       if (eDiff .ne. 0) THEN
         CALL WWM_ABORT('Error reading WAM file. Some direction/frequencies not assigned')
