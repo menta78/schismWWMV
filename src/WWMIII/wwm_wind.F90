@@ -81,9 +81,9 @@
             ALLOCATE(tmp_wind1(MNP,2),tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 1')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
-            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC1_wind_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
+              CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC2_wind_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -164,9 +164,9 @@
             ALLOCATE(tmp_wind1(MNP,2), tmp_wind2(MNP,2), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 2')
             CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
-            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC1_wind_new,tmp_wind1)
             IF (cf_w1.NE.1) THEN
-              CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
+              CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC2_wind_new,tmp_wind2)
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
             ELSE
               WINDXY(:,:) = cf_w1*tmp_wind1(:,:)
@@ -254,10 +254,10 @@
           END IF
           CALL GET_CF_TIME_INDEX(eVAR_WIND, REC1_wind_new,REC2_wind_new,cf_w1,cf_w2)
           IF (REC1_wind_new.NE.REC1_wind_old) THEN
-            CALL READ_INTERP_NETCDF_CF_WWM(REC1_wind_new,tmp_wind1)
+            CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC1_wind_new,tmp_wind1)
           END IF
           IF (REC2_wind_new.NE.REC2_wind_old) THEN
-            CALL READ_INTERP_NETCDF_CF_WWM(REC2_wind_new,tmp_wind2)
+            CALL READ_INTERP_NETCDF_CF_WWM_WIND(REC2_wind_new,tmp_wind2)
           END IF
           IF (cf_w1.NE.1) THEN
             WINDXY(:,:) = cf_w1*tmp_wind1(:,:)+cf_w2*tmp_wind2(:,:)
@@ -2017,14 +2017,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_INTERP_NETCDF_CF_WWM(RECORD_IN, outwind)
+      SUBROUTINE READ_INTERP_NETCDF_CF_WWM_WIND(RECORD_IN, outwind)
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
       REAL(rkind) :: varTotal(MNP_WIND,2), Vtotal(MNP_WIND), Vlocal(MNP)
-      character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF_WWM"
+      character (len = *), parameter :: CallFct="READ_INTERP_NETCDF_CF_WWM_WIND"
       INTEGER                            :: FID, ID
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
@@ -2531,6 +2531,7 @@
       REAL(rkind) :: iDirectionIncrement, jDirectionIncrement
       integer status, idx
       integer iX, iY
+      integer nx_dim, ny_dim
       !
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
       CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
@@ -2545,13 +2546,13 @@
         WRITE(STAT%FHNDL, *) 'eShortName=', TRIM(eShortName)
         IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
           IF (GRIB_FILE_TYPE .eq. 1) THEN
-            call grib_get(igrib(i),"numberOfPointsAlongAParallel", NDX_WIND_FD)
-            call grib_get(igrib(i),"numberOfPointsAlongAMeridian", NDY_WIND_FD)
-            WRITE(STAT%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
-            WRITE(STAT%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
-            TheInfo % nx_dim = NDX_WIND_FD
-            TheInfo % ny_dim = NDY_WIND_FD
-            allocate(TheInfo % LON(NDX_WIND_FD, NDY_WIND_FD), TheInfo % LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+            call grib_get(igrib(i),"numberOfPointsAlongAParallel", nx_dim)
+            call grib_get(igrib(i),"numberOfPointsAlongAMeridian", ny_dim)
+            WRITE(STAT%FHNDL, *) 'nx_dim=', nx_dim
+            WRITE(STAT%FHNDL, *) 'ny_dim=', ny_dim
+            TheInfo % nx_dim = nx_dim
+            TheInfo % ny_dim = ny_dim
+            allocate(TheInfo % LON(nx_dim, ny_dim), TheInfo % LAT(nx_dim, ny_dim), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
             call grib_get(igrib(i), 'longitudeOfFirstGridPointInDegrees', longitudeOfFirstPointInDegrees)
             call grib_get(igrib(i), 'latitudeOfFirstGridPointInDegrees', latitudeOfFirstPointInDegrees)
@@ -2570,10 +2571,10 @@
 
             WRITE(STAT%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
             WRITE(STAT%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
-            deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(NDX_WIND_FD - 1)
-            deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(NDY_WIND_FD - 1)
-            DO iX=1,NDX_WIND_FD
-              DO iY=1,NDY_WIND_FD
+            deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(nx_dim - 1)
+            deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(ny_dim - 1)
+            DO iX=1,nx_dim
+              DO iY=1,ny_dim
                 TheInfo % LON(iX,iY)=longitudeOfFirstPointInDegrees + (iX-1)*deltaLON
                 TheInfo % LAT(iX,iY)=latitudeOfFirstPointInDegrees + (iY-1)*deltaLAT
               END DO
@@ -2584,21 +2585,21 @@
             CALL WWM_ABORT("Missing code")
           END IF
           IF (GRIB_FILE_TYPE .eq. 3) THEN
-            call grib_get(igrib(i),"Nx", NDX_WIND_FD)
-            call grib_get(igrib(i),"Ny", NDY_WIND_FD)
-            WRITE(STAT%FHNDL, *) 'NDX_WIND_FD=', NDX_WIND_FD
-            WRITE(STAT%FHNDL, *) 'NDY_WIND_FD=', NDY_WIND_FD
-            TheInfo % nx_dim = NDX_WIND_FD
-            TheInfo % ny_dim = NDY_WIND_FD
-            allocate(TheInfo % LON(NDX_WIND_FD, NDY_WIND_FD), TheInfo % LAT(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
+            call grib_get(igrib(i),"Nx", nx_dim)
+            call grib_get(igrib(i),"Ny", ny_dim)
+            WRITE(STAT%FHNDL, *) 'nx_dim = ', nx_dim
+            WRITE(STAT%FHNDL, *) 'ny_dim = ', ny_dim
+            TheInfo % nx_dim = nx_dim
+            TheInfo % ny_dim = ny_dim
+            allocate(TheInfo % LON(nx_dim, ny_dim), TheInfo % LAT(nx_dim, ny_dim), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
-            eProd=NDX_WIND_FD*NDY_WIND_FD
+            eProd=nx_dim*ny_dim
             allocate(LON_serial(eProd), LAT_serial(eProd), DATA_serial(eProd), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
             call grib_get_data(igrib(i), LAT_serial, LON_serial, DATA_serial, status)
             idx=0
-            DO iY=1,NDY_WIND_FD
-              DO iX=1,NDX_WIND_FD
+            DO iY=1,ny_dim
+              DO iX=1,nx_dim
                 idx=idx+1
                 TheInfo % LON(iX,iY)=LON_serial(idx)
                 TheInfo % LAT(iX,iY)=LAT_serial(idx)
@@ -2640,6 +2641,7 @@
       REAL cf_scale_factor, cf_add_offset
       TYPE(FD_FORCING_GRID) :: TheInfo
       integer GRIB_TYPE
+      PRint *, 'Begin of INIT_GRIB_WIND'
       WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
       WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 # ifdef MPI_PARALL_GRID
@@ -2715,6 +2717,7 @@
       eVAR_WIND % nbTime= nbtime_mjd
       allocate(eVAR_WIND % ListTime(nbtime_mjd))
       eVAR_WIND % ListTime = WIND_TIME_MJD
+      PRint *, 'End of INIT_GRIB_WIND'
       END SUBROUTINE
 !****************************************************************************
 !* The read subroutine                                                      *
@@ -2735,11 +2738,15 @@
       character(len=100) eShortName
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
+      Print *, 'NDX_WIND_FD=', NDX_WIND_FD
+      Print *, 'NDY_WIND_FD=', NDY_WIND_FD
       !
+      Print *, 'Begin of READ_GRIB_WIND'
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
+        Print *, 'GRIB_FILE_NAMES(IT)=', TRIM(GRIB_FILE_NAMES(IT))
         CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
         CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
         call grib_count_in_file(ifile,n)
@@ -2749,14 +2756,21 @@
         WeFoundV=0
         DO irec=1,n
           call grib_new_from_file(ifile, igrib(irec), iret)
+          Print *, 'Step 1'
           call grib_get(igrib(irec), 'shortName', eShortName)
+          Print *, 'Step 2'
+          Print *, 'eShortName=', eShortName
           IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
             WeFoundU=1
+            Print *, 'Step 3'
             CALL grib_get(igrib(irec), 'values', valueU)
+            Print *, 'Step 4'
           END IF
           IF ((TRIM(eShortName) .eq. '10v').and.(WeFoundV .eq. 0)) THEN
             WeFoundV=1
+            Print *, 'Step 5'
             CALL grib_get(igrib(irec), 'values', valueV)
+            Print *, 'Step 6'
           END IF
         END DO
         idx=0
@@ -2787,5 +2801,6 @@
 # else
       outwind=outTotal
 # endif
+      Print *, 'End of READ_GRIB_WIND'
       END SUBROUTINE
 #endif
