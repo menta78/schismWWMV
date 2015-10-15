@@ -2516,7 +2516,7 @@
       USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
-      character(len=300), intent(in) :: TheFile
+      character(len=140), intent(in) :: TheFile
       character(len=20), intent(in) :: shortName
       integer, intent(in) :: GRIB_TYPE
       !
@@ -2670,7 +2670,7 @@
         DO IT=1, nbTime_mjd
           WRITE(WINDBG%FHNDL, *) '---------------------------------------'
           WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
-          CALL READ_TIME_OF_GRIB_FILE(eTimeMjd, TRIM(GRIB_FILE_NAMES(IT)), USE_STEPRANGE)
+          CALL READ_TIME_OF_GRIB_FILE(eTimeMjd, GRIB_FILE_NAMES(IT), USE_STEPRANGE)
           wind_time_mjd(IT)=eTimeMjd
         END DO
         FLUSH(WINDBG%FHNDL)
@@ -2681,7 +2681,8 @@
         !
         shortName='10u'
         GRIB_TYPE = GRIB_FILE_TYPE
-        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(GRIB_FILE_NAMES(IT)), shortName, GRIB_TYPE)
+        IT=1
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, GRIB_FILE_NAMES(IT), shortName, GRIB_TYPE)
         NDX_WIND_FD = TheInfo % nx_dim
         NDY_WIND_FD = TheInfo % ny_dim
         allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
