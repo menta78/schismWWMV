@@ -2689,6 +2689,9 @@
       character (len=100) :: eStrUnitTime
       integer idx
       character (len = *), parameter :: CallFct="INIT_NETCDF_BOUNDAY_WWM"
+      IF (TRIM(NETCDF_IN_FILE) .eq. "unset") THEN
+        CALL WWM_ABORT('NETCDF_IN_FILE must be set for running')
+      END IF
       INQUIRE( FILE = TRIM(NETCDF_IN_FILE), EXIST = LFLIVE )
       !
       ! First determination of the file names

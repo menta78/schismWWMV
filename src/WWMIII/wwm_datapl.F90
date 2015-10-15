@@ -324,7 +324,7 @@
          INTEGER    :: NUMBER_BOUC_NETCDF_FILE
          LOGICAL    :: HACK_HARD_SET_IOBP = .FALSE.
 ! Entries needed for input of spectra WWM style
-         CHARACTER(LEN=140) :: NETCDF_IN_FILE
+         CHARACTER(LEN=140) :: NETCDF_IN_FILE = "unset"
          CHARACTER(LEN=140), ALLOCATABLE  :: BOUC_NETCDF_FILE_NAMES(:)
          integer, allocatable :: BOUND_LIST_IFILE(:)
          integer, allocatable :: BOUND_LIST_IT(:)

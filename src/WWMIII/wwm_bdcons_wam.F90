@@ -61,6 +61,7 @@
       integer IS, ID, idx
       integer ID1, ID2
       real(rkind) eTimeOut
+      CALL TEST_FILE_EXIST_DIE("Missing list of WAM files: ", TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
       WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
       STEPRANGE_IN = .TRUE.
