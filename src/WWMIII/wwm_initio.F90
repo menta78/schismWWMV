@@ -201,7 +201,7 @@
 !
 !  new stuff not ready  
 !
-       IF (.false.) THEN
+       IF (LCONV) THEN ! more work needed ...
          ALLOCATE ( IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
          IP_IS_STEADY = 0
@@ -982,7 +982,7 @@
          USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
          USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
          USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
-         USE DATAPOOL, ONLY: IPHYS, MESIN
+         USE DATAPOOL, ONLY: IPHYS, MESIN, SMETHOD
 #ifdef MPI_PARALL_GRID
          USE DATAPOOL, ONLY: MYRANK,COMM
 #endif
@@ -1009,8 +1009,8 @@
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
          FLUSH(STAT%FHNDL)
 
-         IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
-           IF (MESNL .LT. 4) THEN
+         IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII) .AND. SMETHOD .GT. 0) THEN
+           IF (MESNL .LT. 5) THEN
              CALL PARAMETER4SNL
            ELSE IF (MESNL .EQ. 5) THEN
              IQGRID = 3

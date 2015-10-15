@@ -134,7 +134,7 @@
 !     *** Fill scaling array (f**11)                           ***
 !     *** compute the radian frequency**11 for IS=ISHGH, ISLOW ***
 !
-         IF (LTEST) THEN
+         IF (.true.)then!LTEST) THEN
             WRITE(STAT%FHNDL,*) 'PARAMETER 4 SNL'
             WRITE(STAT%FHNDL,*) IDP, IDP1, IDM, IDM1
             WRITE(STAT%FHNDL,*) ISP, ISP1, ISM, ISM1
@@ -147,6 +147,7 @@
 !
          IF (ALLOCATED (AF11)) DEALLOCATE (AF11)
 
+         WRITE(*,*) MSC4MI, MSC4MA
          ALLOCATE( AF11(MSC4MI:MSC4MA), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_snl4, allocate error 1')
 
