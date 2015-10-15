@@ -2854,9 +2854,9 @@
       IF (NBI .ne. IWBMNPGL) THEN
         CALL WWM_ABORT('Code inconsistency error')
       END IF
-
+      Print *, 'NBI=', NBI
       allocate(XBPI(NBI), YBPI(NBI), IPBPI(NBI,4), RDBPI(NBI,4), stat=istat)
-      CALL WWM_ABORT('Error allocate XBPI/YBPI')
+      IF (istat/=0) CALL WWM_ABORT('Error allocate XBPI/YBPI')
       idx=0
       DO IP=1,NP_TOTAL
         IF (IOBPtotal(IP) == 2) THEN
@@ -2893,7 +2893,7 @@
          CALL COMPUTE_tFN(TIME2)
          NSPEC_out = NK*NTH
          allocate(ABPIO(NSPEC_out), stat=istat)
-         CALL WWM_ABORT('Error allocate ABPIO')
+         IF (istat/=0) CALL WWM_ABORT('Error allocate ABPIO')
          WRITE(TheOut) TIME2, NBI
          DO IB=1,NBI
            IPglob=IWBNDGL(IB)
@@ -2919,6 +2919,7 @@
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
+      deallocate(XBPI, YBPI, IPBPI, RDBPI)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

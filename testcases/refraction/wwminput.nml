@@ -46,7 +46,7 @@
  LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
  USE_EXACT_FORMULA_SPHERICAL_AREA        = F,
- LEXPORT_GRID_WW3        = F
+ LEXPORT_GRID_WW3        = T
  /
  &INIT
  LHOTR   = F,
@@ -97,7 +97,7 @@
  ENDTC_OUT       = 20000101.003000     ,
  HACK_HARD_SET_IOBP      = F,
  NETCDF_IN_FILE  =         T, 
- LEXPORT_BOUC_WW3        = F,
+ LEXPORT_BOUC_WW3        = T,
  EXPORT_BOUC_DELTC       =  0.000000000000000E+000
  /
  &WIND
@@ -123,7 +123,7 @@
  EXTRAPOLATION_ALLOWED   = F,
  USE_STEPRANGE   = T,
  MULTIPLE_IN     = T,
- LEXPORT_WIND_WW3        = F,
+ LEXPORT_WIND_WW3        = T,
  EXPORT_WIND_DELTC       =  0.000000000000000E+000,
  LSAVE_INTERP_ARRAY      = F
  /
@@ -144,7 +144,7 @@
  CURFAC  =   1.00000000000000     ,
  ICURRFORMAT     =           1,
  MULTIPLE_IN     = T,
- LEXPORT_CURR_WW3        = F,
+ LEXPORT_CURR_WW3        = T,
  EXPORT_CURR_DELTC       =  0.000000000000000E+000
  /
  &WALV
@@ -163,7 +163,7 @@
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1,
  MULTIPLE_IN     = T,
- LEXPORT_WALV_WW3        = F,
+ LEXPORT_WALV_WW3        = T,
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
@@ -424,7 +424,7 @@
  DELTC   =   5.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 20000101.003000    
- LHOTF   = T,
+ LHOTF   = F,
  LCYCLEHOT       = F,
  FILEHOT_OUT     = hotfile_out.dat                                                                                                   
                            ,
