@@ -2850,12 +2850,18 @@
         END IF
       END DO
       IF ((nbNeumann .gt. 0).or.(nbUnknown .gt. 0)) THEN
-        IF (IsFirst .eqv. .TRUE.) THEN
-          Print *, 'nbDirichlet=', nbDirichlet
-          Print *, 'nbNeumann=', nbNeumann
-          Print *, 'nbUnknown=', nbUnknown
-          Print *, 'Those points will be put to 0'
+# ifdef MPI_PARALL_GRID
+        IF (myrank == 0) THEN
+# endif
+          IF (IsFirst .eqv. .TRUE.) THEN
+            Print *, 'nbDirichlet=', nbDirichlet
+            Print *, 'nbNeumann=', nbNeumann
+            Print *, 'nbUnknown=', nbUnknown
+            Print *, 'Those points will be put to 0'
+          END IF
+# ifdef MPI_PARALL_GRID
         END IF
+# endif
       END IF
       NBI = nbDirichlet
       IF (NBI .ne. IWBMNPGL) THEN
@@ -2867,8 +2873,8 @@
       DO IP=1,NP_TOTAL
         IF (IOBPtotal(IP) == 2) THEN
           idx=idx+1
-          XBPI(idx)=MySNGL(XP(IP))
-          YBPI(idx)=MySNGL(YP(IP))
+          XBPI(idx)=MySNGL(XPtotal(IP))
+          YBPI(idx)=MySNGL(YPtotal(IP))
         END IF
       END DO
       DO IB=1,NBI
@@ -2899,7 +2905,6 @@
 !           Print *, 'Before open, case 2'
            OPEN(TheOut, FILE='nest.ww3', FORM='UNFORMATTED', status='old', position='append', action='write')
          END IF
-         IsFirst=.FALSE.
          CALL COMPUTE_tFN(TIME2)
          NSPEC_out = NK*NTH
          allocate(ABPIO(NSPEC_out), stat=istat)
@@ -2930,6 +2935,7 @@
       END IF
 # endif
       deallocate(XBPI, YBPI, IPBPI, RDBPI)
+      IsFirst=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
