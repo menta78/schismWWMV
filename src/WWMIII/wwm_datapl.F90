@@ -313,7 +313,6 @@
          TYPE(VAR_NETCDF_CF) :: eVAR_BOUC_WAM
          integer nbdir_wam, nbfreq_wam, nx_wam, ny_wam
          integer, allocatable :: ListIFileWAM(:)
-         real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
          integer, allocatable :: WAM_ID1(:), WAM_ID2(:), WAM_IS1(:), WAM_IS2(:)
          real(rkind), allocatable :: WAM_WD1(:), WAM_WD2(:), WAM_WS1(:), WAM_WS2(:)
          real(rkind), allocatable :: tmp_WBAC1(:,:), tmp_WBAC2(:,:)

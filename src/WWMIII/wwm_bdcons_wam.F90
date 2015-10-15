@@ -46,6 +46,7 @@
       type(FD_FORCING_GRID) :: TheInfo
       character(len=20) shortName
       integer GRIB_TYPE
+      real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
       integer, allocatable :: ListDir_i(:), ListFreq_i(:)
       integer nbTotalNumberEntry
       LOGICAL IsFirst
@@ -54,13 +55,13 @@
       integer nbdir_wam_read, nbfreq_wam_read
       integer freqScal, dirScal
       integer, allocatable :: igrib(:)
-      real(rkind) eDIR, eFR
+      real(rkind) eDIR, eFR, eFreq
       real(rkind) eDiff, eDiff1, eDiff2
       real(rkind) eWD1, eWD2
       logical IsAssigned
       integer IS, ID, idx
       integer ID1, ID2
-      real(rkind) eTimeOut
+      real(rkind) eTimeOut, DeltaDiff
       CALL TEST_FILE_EXIST_DIE("Missing list of WAM files: ", TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
       WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
@@ -111,13 +112,10 @@
               call grib_get(igrib(i), 'frequencyScalingFactor', freqScal)
               allocate(ListDir_i(nbdir_wam), ListFreq_i(nbfreq_wam), stat=istat)
               call grib_get(igrib(i), 'scaledDirections', ListDir_i)
-              call grib_get(igrib(i), 'scaledDirections', ListDir_i)
+              call grib_get(igrib(i), 'scaledFrequencies', ListFreq_i)
               allocate(ListDir_wam(nbdir_wam), ListFreq_wam(nbfreq_wam), stat=istat)
               DO idir=1,nbdir_wam
-                ListDir_wam(idir) = DBLE(ListDir_i(idir)) / DBLE(dirScal)
-              END DO
-              DO ifreq=1,nbfreq_wam
-                eDir = DBLE(ListFreq_i(ifreq)) / DBLE(freqScal)
+                eDir = DBLE(ListDir_i(idir)) / DBLE(dirScal)
                 eDir = 270 - eDir
                 IF (eDir .le. ZERO) THEN
                   eDir = eDir+ 360
@@ -125,7 +123,13 @@
                 IF (eDir .ge. 360) THEN
                   eDir = eDir - 360
                 END IF
-                ListFreq_wam(ifreq) = eDir
+                ListDir_wam(idir) = eDir
+                WRITE(STAT%FHNDL,*) 'idir=', idir, ' eDir=', eDir
+              END DO
+              DO ifreq=1,nbfreq_wam
+                eFreq = DBLE(ListFreq_i(ifreq)) / DBLE(freqScal)
+                ListFreq_wam(ifreq) = eFreq
+                WRITE(STAT%FHNDL,*) 'ifreq=', ifreq, ' eFreq=', eFreq
               END DO
               deallocate(ListDir_i, ListFreq_i)
             ELSE
@@ -147,7 +151,7 @@
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
           eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
-          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
+!          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
           CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
           call grib_count_in_file(ifile,n)
@@ -157,7 +161,7 @@
             call grib_get(igrib(i), 'directionNumber', idir)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
             IF ((idir .eq. 1).and.(ifreq .eq. 1)) THEN
-              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
+!              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
               CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
               !
               idx=idx+1
@@ -174,9 +178,9 @@
         shortName='2dfd'
         GRIB_TYPE=1 ! 1 for ECMWF
         IFILE_IN = 1
-        Print *, 'Before READ_GRID_INFO_FROM_GRIB'
+!        Print *, 'Before READ_GRID_INFO_FROM_GRIB'
         CALL READ_GRID_INFO_FROM_GRIB(TheInfo, WAM_SPEC_FILE_NAMES_BND(IFILE_IN), shortName, GRIB_TYPE)
-        Print *, 'After READ_GRID_INFO_FROM_GRIB'
+!        Print *, 'After READ_GRID_INFO_FROM_GRIB'
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
@@ -184,14 +188,14 @@
       deallocate(TheInfo % LON, TheInfo % LAT)
       nx_wam = TheInfo % nx_dim
       ny_wam = TheInfo % ny_dim
-      Print *, 'After COMPUTE_BND_INTERPOLATION_ARRAY'
+!      Print *, 'After COMPUTE_BND_INTERPOLATION_ARRAY'
       !
       ! Now the spectral interpolation arrays
       !
       allocate(WAM_ID1(MDC), WAM_ID2(MDC), WAM_WD1(MDC), WAM_WD2(MDC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       DO ID=1,MDC
-        eDIR=SPDIR(ID)
+        eDIR=SPDIR(ID) * RADDEG
         IsAssigned=.false.
         DO ID1=1,nbdir_wam
           IF (ID1 .lt. nbdir_wam) THEN
@@ -223,7 +227,8 @@
             IF (eDiff2 .lt. -180) THEN
               eDiff2 = eDiff2 + 360.0
             END IF
-            IF ((eDiff1 .ge. 0).and.(eDiff2 .ge. 0)) THEN
+            DeltaDiff = abs(eDiff) - abs(eDiff1) - abs(eDiff2)
+            IF (abs(DeltaDiff) .le. 1.0) THEN
               eWD1 = eDiff2 / eDiff
               eWD2 = eDiff1 / eDiff
               IsAssigned=.TRUE.
@@ -237,6 +242,10 @@
         IF (IsAssigned .eqv. .FALSE.) THEN
           CALL WWM_ABORT('Error in the interpolation direction')
         END IF
+        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
+        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
+        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
+        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
       END DO
       allocate(WAM_IS1(MSC), WAM_IS2(MSC), WAM_WS1(MSC), WAM_WS2(MSC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
@@ -246,7 +255,7 @@
       WAM_ID2=0
       DO IS=1,MSC
         IsAssigned=.FALSE.
-        eFR=SPSIG(IS)
+        eFR=FR(IS)
         DO iFreq=1,nbfreq_wam-1
           IF (IsAssigned .eqv. .FALSE.) THEN
             eDiff=ListFreq_wam(iFreq+1) - ListFreq_wam(iFreq)
@@ -261,8 +270,12 @@
             END IF
           END IF
         END DO
+        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
+        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
+        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
-      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
+      deallocate(ListDir_wam, ListFreq_wam)
+!      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -287,7 +300,7 @@
       real(rkind) eTimeOut
       character(len=140) eShortName
       integer iX, iY, ifile
-      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
+!      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       DirFreqStatus=0
       eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
@@ -321,7 +334,7 @@
       if (eDiff .ne. 0) THEN
         CALL WWM_ABORT('Error reading WAM file. Some direction/frequencies not assigned')
       END IF
-      Print *, 'End READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
+!      Print *, 'End READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

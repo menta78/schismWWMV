@@ -2641,7 +2641,7 @@
       REAL cf_scale_factor, cf_add_offset
       TYPE(FD_FORCING_GRID) :: TheInfo
       integer GRIB_TYPE
-      PRint *, 'Begin of INIT_GRIB_WIND'
+!     PRint *, 'Begin of INIT_GRIB_WIND'
       WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
       WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 # ifdef MPI_PARALL_GRID
@@ -2717,7 +2717,7 @@
       eVAR_WIND % nbTime= nbtime_mjd
       allocate(eVAR_WIND % ListTime(nbtime_mjd))
       eVAR_WIND % ListTime = WIND_TIME_MJD
-      PRint *, 'End of INIT_GRIB_WIND'
+!     PRint *, 'End of INIT_GRIB_WIND'
       END SUBROUTINE
 !****************************************************************************
 !* The read subroutine                                                      *
@@ -2738,15 +2738,15 @@
       character(len=100) eShortName
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
-      Print *, 'NDX_WIND_FD=', NDX_WIND_FD
-      Print *, 'NDY_WIND_FD=', NDY_WIND_FD
+!     Print *, 'NDX_WIND_FD=', NDX_WIND_FD
+!     Print *, 'NDY_WIND_FD=', NDY_WIND_FD
       !
-      Print *, 'Begin of READ_GRIB_WIND'
+!     Print *, 'Begin of READ_GRIB_WIND'
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
         WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
-        Print *, 'GRIB_FILE_NAMES(IT)=', TRIM(GRIB_FILE_NAMES(IT))
+!       Print *, 'GRIB_FILE_NAMES(IT)=', TRIM(GRIB_FILE_NAMES(IT))
         CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
         CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
         call grib_count_in_file(ifile,n)
@@ -2756,21 +2756,21 @@
         WeFoundV=0
         DO irec=1,n
           call grib_new_from_file(ifile, igrib(irec), iret)
-          Print *, 'Step 1'
+!         Print *, 'Step 1'
           call grib_get(igrib(irec), 'shortName', eShortName)
-          Print *, 'Step 2'
-          Print *, 'eShortName=', eShortName
+!         Print *, 'Step 2'
+!         Print *, 'eShortName=', eShortName
           IF ((TRIM(eShortName) .eq. '10u').and.(WeFoundU .eq. 0)) THEN
             WeFoundU=1
-            Print *, 'Step 3'
+!           Print *, 'Step 3'
             CALL grib_get(igrib(irec), 'values', valueU)
-            Print *, 'Step 4'
+!           Print *, 'Step 4'
           END IF
           IF ((TRIM(eShortName) .eq. '10v').and.(WeFoundV .eq. 0)) THEN
             WeFoundV=1
-            Print *, 'Step 5'
+!           Print *, 'Step 5'
             CALL grib_get(igrib(irec), 'values', valueV)
-            Print *, 'Step 6'
+!           Print *, 'Step 6'
           END IF
         END DO
         idx=0
@@ -2801,6 +2801,6 @@
 # else
       outwind=outTotal
 # endif
-      Print *, 'End of READ_GRIB_WIND'
+!     Print *, 'End of READ_GRIB_WIND'
       END SUBROUTINE
 #endif
