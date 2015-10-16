@@ -575,9 +575,9 @@ The meaning of the options is the following:
 \item {\tt MESIN} (integer): the input source term. Possible values:
   \begin{itemize}
   \item {\tt 0}: no input source terms. 
-  \item {\tt 1}: The Ardhuin et al. (2010) formulation
+  \item {\tt 1}: The Ardhuin et al. (2010) formulation \cite{ArdhuinSurfaceStressFormulation}.
   \item {\tt 2}: The Cycle 4 formulation \cite{CycleIV}.
-  \item {\tt 3}: The Makin \& Stam formulation
+  \item {\tt 3}: The Makin \& Stam formulation \cite{MakinStam}.
   \item {\tt 4}: The Donealan et al. formulation.
   \item {\tt 5}: The Cycle 3 formulation
   \end{itemize}
@@ -608,8 +608,8 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
   \end{itemize}
 \item {\tt IBREAK} (integer): wave breaking function. Possible values:
   \begin{itemize}
-  \item {\tt 1}: battjes \& Janssen
-  \item {\tt 2}: Thornton \& Guza
+  \item {\tt 1}: Battjes \& Janssen \cite{BattjesJanssen}.
+  \item {\tt 2}: Thornton \& Guza \cite{ThorntonGuza}.
   \end{itemize}
 \item {\tt ALPBJ} (float): dissipation proportionality coefficient. Recommended value is 0.5
 \item {\tt BRHD} (float): Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
@@ -617,7 +617,7 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
 \item {\tt MESTR} (integer): formulation for the triad formulation. Possible values:
   \begin{itemize}
   \item {\tt 0}: nothing
-  \item {\tt 1}: Lumped Triad Approximation.
+  \item {\tt 1}: Lumped Triad Approximation \cite{LTA}.
   \end{itemize}
 \item {\tt TRICO} (float): Triad proportionality constant $\alpha_{EB}$. Default is $0.1$.
 \item {\tt TRIRA} (float): ratio of max. freq. considered in triads over mean freq.; 2.5 is suggested
@@ -791,7 +791,17 @@ The meaning of the options is the following:
   \item {\tt 2}: Explicit Upwind scheme
   \item {\tt 3}: Implicit Upwind scheme
   \end{itemize}
-  
+
+\item {\tt MELIM} (integer): limiter for the action. Possible choices:
+  \begin{itemize}
+  \item {\tt 1}: (default) Limiter according to the WAM group (1988) \cite{WAMDIgroup}.
+  \item {\tt 2}: Limiter according to Hersbach Janssen (1999) \cite{HersbachJanssen}.
+  \item {\tt 3}: ????
+  \end{itemize}
+For {\tt MESIN=1} and {\tt MESDS=1}, which represents Cycle 3 formulation or Ardhuin,
+or other formulations except Cycle4, use {\tt MELIM=1} and {\tt LIMFAK=0.1}.
+For {\tt MESIN=2} and {\tt MESDS=2}, which represents Cycle 4 formulation, use {\tt MELIM=2} and {\tt LIMFAK=0.6}
+For WAM we need {\tt MELIM=3}.
     
 \end{enumerate}
 
