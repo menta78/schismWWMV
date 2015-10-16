@@ -185,8 +185,8 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           0,
  DMETHOD =           2,
  LITERSPLIT      = F,
@@ -265,7 +265,7 @@
  ENDTC   = 20000101.003000    
  DEFINETC        =  0.000000000000000E+000,
  OUTSTYLE        = NC                 ,
- FILEOUT = "WW3_output.nc"   ,
+ FILEOUT = "WWM_output.nc"   ,
  LOUTITER        = F,
  IOBPD   = F,
  LENERGY = F,
