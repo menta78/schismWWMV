@@ -5,10 +5,8 @@
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
         USE DATAPOOL
-
         use schism_glbl, only: iplg,errmsg,hmin_radstress
         USE schism_msgp
-
         implicit none
         integer     :: IP, k, ID, IS, IL
         real(rkind) :: eF1, eF2, eDelta, TheInt, eDep, eHeight

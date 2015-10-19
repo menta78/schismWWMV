@@ -2070,7 +2070,9 @@
       itrtype(:,:)=-99 !init
       lflbc=.false. !flag to indicate existence of ifltype/=0
       do k=1,nope_global
+        WRITE(*,*) k, ntrmod, nope_global
         read(31,*) ntmp,iettype(k),ifltype(k),nwild(1:ntrmod) !itetype(k),isatype(k)
+        WRITE(*,*) ntmp,iettype(k),ifltype(k),nwild(1:ntrmod)
         lflbc= lflbc.or.ifltype(k)/=0
         if(ntmp/=nond_global(k)) then
           write(errmsg,*)'Inconsistent # of nodes at open boundary',k,ntmp,nond_global(k)

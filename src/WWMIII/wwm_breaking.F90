@@ -140,22 +140,36 @@
           END IF
         END IF
       ELSEIF (IBREAK == 2) THEN
-         IF ( BETA2 .GT.0D0 ) THEN
+        IF (ICOMP .GE. 2) THEN
+          IF ( BETA2 .GT.0D0 ) THEN
             COEFF_A = 0.42_rkind
             COEFF_B = 4.0_rkind
             IF ( BETA2 .LT.1D0 ) THEN
-               WS   = 75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/DBLE(SQRT(PI))
-               SbrD = 5D-1*DBLE(3.+COEFF_B)*WS
+              WS   = 75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/DBLE(SQRT(PI))
+              SbrD = 5D-1*DBLE(3.+COEFF_B)*WS
             ELSE
-               WS   = 75D-2*COEFF_A*ALPBJ**3*SME/DBLE(SQRT(PI))
-               SbrD = WS
+              WS   = 75D-2*COEFF_A*ALPBJ**3*SME/DBLE(SQRT(PI))
+              SbrD = WS
             ENDIF
             SURFA0 = SbrD - WS
             SURFA1 = SbrD
-         ELSE
+          ELSE
             SURFA0 = 0D0
             SURFA1 = 0D0
-         ENDIF 
+          ENDIF 
+        ELSE
+          IF ( BETA2 .GT.0D0 ) THEN
+            COEFF_A = 0.42_rkind
+            COEFF_B = 4.0_rkind
+            IF ( BETA2 .LT.1D0 ) THEN
+              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/DBLE(SQRT(PI))
+            ELSE
+              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME/DBLE(SQRT(PI))
+            ENDIF
+          ELSE
+            SURFA0 = 0D0
+          ENDIF
+        ENDIF
       ENDIF
 
       IMATRA = 0.
