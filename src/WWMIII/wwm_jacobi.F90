@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
+#define DEBUG_ITERATION_LOOP
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
@@ -2092,6 +2092,7 @@
       REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
       REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 #ifdef DEBUG_ITERATION_LOOP
+      integer iIter
       integer, save :: iPass = 0
       REAL(rkind) :: FieldOut1(MNP)
 #endif
@@ -2451,6 +2452,7 @@
           AC2 = U_JACOBI
         ENDIF
 #ifdef DEBUG_ITERATION_LOOP
+        iIter=nbIter + 1
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
         iPass=iPass+1
 #endif

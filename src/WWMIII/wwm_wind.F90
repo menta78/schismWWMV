@@ -2513,6 +2513,7 @@
 !****************************************************************************
       SUBROUTINE READ_GRID_INFO_FROM_GRIB_TYPE1(TheInfo, eGrib)
       USE DATAPOOL
+      USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
       integer, intent(in) :: eGrib
@@ -2554,7 +2555,7 @@
           TheInfo % LAT(iX,iY)=latitudeOfFirstPointInDegrees + (iY-1)*deltaLAT
         END DO
       END DO
-      END SUBROUTINE READ_GRID_INFO_FROM_GRIB_TYPE1
+      END SUBROUTINE
 !****************************************************************************
 !* Reading grid information from a GRIB file (case 2)                       *
 !****************************************************************************
@@ -2640,6 +2641,7 @@
 !****************************************************************************
       SUBROUTINE READ_GRID_INFO_FROM_GRIB_TYPE2(TheInfo, eGrib)
       USE DATAPOOL
+      USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
       integer, intent(in) :: eGrib
@@ -2705,6 +2707,7 @@
 !****************************************************************************
       SUBROUTINE READ_GRID_INFO_FROM_GRIB_TYPE3(TheInfo, eGrib)
       USE DATAPOOL
+      USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
       integer, intent(in) :: eGrib
