@@ -661,37 +661,21 @@
 !
 !      *** recalculate water level and current related values 
 !
-      Print *, 'LSEWL=', LSEWL
-      Print *, 'LSECU=', LSECU
-      Print *, 'LCPL=', LCPL
       IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
-        Print *, 'In the update of spectral data'
-        Print *, 'Update step 1'
         DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
-        Print *, 'Update step 2'
         CALL SETSHALLOW
-        Print *, 'Update step 3'
         CALL GRADDEP
-        Print *, 'Update step 4'
         IF (MESTR == 6) CALL GRAD_CG_K
-        Print *, 'Update step 5'
         CALL WAVE_K_C_CG
-        Print *, 'Update step 6'
         CALL GRADCURT
-        Print *, 'Update step 7'
         CALL SET_IOBPD
-        Print *, 'Update step 8'
         CALL SET_IOBPD_BY_DEP
-        Print *, 'Update step 9'
         IF (LCFL) THEN
           CFLCXY = ZERO
           CALL CFLSPEC
         ENDIF
-        Print *, 'Update step 10'
         IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
-        Print *, 'Update step 11'
       END IF
-      Print *, 'After the update'
 !
 !
 !
