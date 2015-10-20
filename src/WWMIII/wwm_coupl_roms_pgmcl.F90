@@ -735,7 +735,6 @@ MODULE WWMaOCN_PGMCL
       NbPoint=0
 # endif
       WATLEVOLD=WATLEV
-      DELTAT_WATLEV = MAIN%DTCOUP
       LCALC=.TRUE.
       DO IP=1,MNP
         u1=A_wav_uvz(1,IP)
@@ -758,6 +757,7 @@ MODULE WWMaOCN_PGMCL
         WINDXY(IP,2)=v2
         WATLEV(IP)=z1
       END DO
+      DEPDT = (WATLEV - WATLEVOLD) / MAIN%DTCOUP
 # ifdef DEBUG
       avgUwind=SumUwind/NbPoint
       avgVwind=SumVwind/NbPoint

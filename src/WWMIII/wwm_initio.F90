@@ -180,13 +180,13 @@
        DCUY = zero
        ALLOCATE( WATLEV(MNP), WATLEVOLD(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 22')
-       WATLEV = zero
+       WATLEV    = zero
        WATLEVOLD = zero
        ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
        DVWALV = zero
-       WLDEP = zero
-       DEPDT = zero
+       WLDEP  = zero
+       DEPDT  = zero
 !
 !  convergence analysis - shared
 !

@@ -1598,7 +1598,7 @@
       INTEGER, intent(in) :: K
       REAL(rkind) cf_w1, cf_w2
       REAL(rkind)  :: TMP_WAT(MNP)
-      REAL(rkind)  :: DeltaTime
+      REAL(rkind)  :: DeltaTimeSec, eTimeDay1, eTimeDay2
       IF (IWATLVFORMAT .eq. 1) THEN
         IF ( (MAIN%TMJD > SEWL%TMJD-1.E-8) .AND. (MAIN%TMJD < SEWL%EMJD)) THEN
           CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
@@ -1606,44 +1606,37 @@
           SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
           LCALC = .TRUE.
         END IF
-        DELTAT_WATLEV = MAIN%DELT
         WATLEVOLD = WATLEV
         WATLEV    = WATLEV + DVWALV
         DEPDT     = DVWALV / MAIN%DELT
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
-!        Print *, 'Begin IWATLVFORMAT = 2'
         IF (K.EQ.1) THEN
           REC1_watlev_old = 0
           REC2_watlev_old = 0
         END IF
         CALL GET_CF_TIME_INDEX(eVAR_WATLEV, REC1_watlev_new,REC2_watlev_new,cf_w1,cf_w2)
-        IF (REC1_watlev_new.NE.REC1_watlev_old) THEN
+        IF (REC1_watlev_new .NE. REC1_watlev_old) THEN
           CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC1_watlev_new,tmp_watlev1)
         END IF
-        IF (REC2_watlev_new.NE.REC2_watlev_old) THEN
+        IF (REC2_watlev_new .NE. REC2_watlev_old) THEN
           CALL READ_DIRECT_NETCDF_CF1(eVAR_WATLEV, REC2_watlev_new,tmp_watlev2)
         END IF
-        TimeWAT_new = MAIN % TMJD
+        IF ((REC2_watlev_new .NE. REC2_watlev_old).or.(REC1_watlev_new .NE. REC1_watlev_old)) THEN
+          eTimeDay1=eVAR_WATLEV % ListTime(REC1_watlev_new)
+          eTimeDay2=eVAR_WATLEV % ListTime(REC2_watlev_new)
+          DeltaTimeSec = (eTimeDay2 - eTimeDay1) * SEC2DAY
+          DEPDT = (tmp_watlev2 - tmp_watlev1) / DeltaTimeSec
+        END IF
         WATLEVOLD=WATLEV
         IF (cf_w1.NE.1) THEN
           WATLEV(:) = cf_w1*tmp_watlev1(:) + cf_w2*tmp_watlev2(:)
         ELSE
           WATLEV(:) = cf_w1*tmp_watlev1(:)
         END IF
-        IF (REC1_watlev_old .gt. 0) THEN
-          DeltaTime=(TimeWAT_new - TimeWAT_old)*MyREAL(86400)
-          DVWALV = (WATLEV - WATLEVOLD) / DeltaTime
-          DEPDT  = DVWALV / MAIN%DELT
-        ELSE
-          DVWALV = 0
-          DEPDT = 0
-        END IF
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
-        TimeWAT_old = TimeWAT_new
-!        Print *, 'End IWATLVFORMAT = 2'
 #else
         CALL WWM_ABORT('Need to compile with netcdf for IWATLVFORMAT = 2')
 #endif
