@@ -2765,10 +2765,8 @@
       !
       WeFound=.FALSE.;
       DO i=1,n
-        WRITE(STAT%FHNDL, *) 'i=', i, '/', n
         call grib_new_from_file(ifile, igrib(i))
         call grib_get(igrib(i), 'shortName', eShortName)
-        WRITE(STAT%FHNDL, *) 'eShortName=', TRIM(eShortName)
         IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
           IF (GRIB_FILE_TYPE .eq. 1) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE1(TheInfo, igrib(i))

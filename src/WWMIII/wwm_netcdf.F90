@@ -930,7 +930,7 @@
       character(len=500) :: CHRERR
       IF (iret .NE. nf90_noerr) THEN
         CHRERR = nf90_strerror(iret)
-        WRITE(wwmerr,*) TRIM(CallFct), ' -', idx, '-', CHRERR
+        WRITE(wwmerr,*) 'NETCDF error in routine', TRIM(CallFct), ' Error Message:', CHRERR, ' Position in the routine:', idx
         CALL WWM_ABORT(wwmerr)
       ENDIF
       END SUBROUTINE
