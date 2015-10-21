@@ -335,7 +335,6 @@
          CHARACTER(LEN=8)       :: PROCNAME  = 'DEFAULT'
          INTEGER                :: IGRIDTYPE  = 1
          INTEGER                :: IITERSPLIT = 1
-         REAL(rkind)            :: DELTAT_WATLEV
 !
 ! variables for the WAM
 !

@@ -50,7 +50,6 @@
         LCALC=.TRUE.
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
         WATLEVOLD=WATLEV
-        DELTAT_WATLEV = MAIN%DTCOUP
         LCALC=.TRUE.
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
         FLUSH(DBG%FHNDL)
@@ -103,6 +102,7 @@
         END DO
         deallocate(rbuf_real, WINDXY_TOT, CURTXY_TOT, WATLEV_TOT)
 # endif
+        DEPDT = (WATLEV - WATLEVOLD) / MAIN%DTCOUP
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
         FLUSH(DBG%FHNDL)
       END IF

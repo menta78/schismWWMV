@@ -96,7 +96,6 @@
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
         LCALC = .TRUE.
         WATLEVOLD=WATLEV
-        DELTAT_WATLEV = MAIN%DTCOUP
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'READING PIPE'
 #ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
@@ -161,6 +160,7 @@
         deallocate(VAR_REAL_TOT)
         deallocate(VAR_INT_TOT)
 #endif
+        DEPDT = (WATLEV - WATLEVOLD) / MAIN%DTCOUP
         WRITE(STAT%FHNDL,*) 'CHECK MAX UX,UY,H'
         WRITE(STAT%FHNDL,*) MAXVAL(CURTXY(:,1)), MAXVAL(CURTXY(:,2)), MAXVAL(WATLEV)
         WRITE(STAT%FHNDL,*) 'CHECK MIN UX,UY,H'

@@ -81,7 +81,6 @@
          NSTEPWWM = NSTEP_WWM0
 
          DT_SCHISM      = DT_SCHISM0
-         DELTAT_WATLEV = DT_SCHISM0
 
 #ifdef TIMINGS
          T1 = MyREAL(IT_SCHISM-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
@@ -221,6 +220,7 @@
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
          END IF
+         DEPDT = (WATLEV - WATLEVOLD) / DT_SCHISM0
 
          IF (LNANINFCHK) THEN
            CALL SCHISM_NANCHECK_INPUT_A
@@ -662,7 +662,6 @@
 !      *** recalculate water level and current related values 
 !
       IF (LSEWL .OR. LSECU .OR. LCPL) THEN ! LCPL makes sure that when the model is coupled it gets into this part for 100%
-        DEPDT(:) = ( WATLEV(:) - WATLEVOLD(:) ) / DELTAT_WATLEV
         DEP  = MAX(ZERO,WLDEP + WATLEV) ! d = a + h  if -h .gt. a set d to zero
         CALL SETSHALLOW
         CALL GRADDEP
