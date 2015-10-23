@@ -12,6 +12,9 @@
       real(rkind) eCF_COEFF(4)
       LOGICAL EXTRAPO_OUT
       integer nbExtrapolation
+      WRITE(STAT%FHNDL,*) 'Begin COMPUTE_BND_INTERPOLATION_ARRAY'
+      WRITE(STAT%FHNDL,*) 'EXTRAPOLATION_ALLOWED_BOUC=', EXTRAPOLATION_ALLOWED_BOUC
+      FLUSH(STAT%FHNDL)
       allocate(CF_IX_BOUC(IWBMNP), CF_IY_BOUC(IWBMNP), CF_COEFF_BOUC(4,IWBMNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       

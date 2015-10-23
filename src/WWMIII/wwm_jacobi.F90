@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#undef DEBUG_ITERATION_LOOP
 #define DEBUG_ITERATION_LOOP
+#undef DEBUG_ITERATION_LOOP
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
