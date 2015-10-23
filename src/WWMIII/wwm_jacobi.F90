@@ -1992,12 +1992,13 @@
       character(len=256) :: FileSave, StrPass, StrIter
       REAL(rkind) eTimeDay
       integer ncid, iret, nbTime, mnp_dims, ntime_dims, var_id
+      integer fifteen_dims
       integer IP, IPloc, IPglob, NP_RESloc
       integer iProc
       integer, allocatable :: ListFirstMNP(:)
       WRITE(FileSave, 10) 'DebugJacobi', iPass
 10    FORMAT(a, '_', i4.4,'.nc')
-      
+      Print *, 'Begin of DEBUG_EIMPS_TOTAL_JACOBI, iIter=', iIter
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
         allocate(ListFirstMNP(nproc), stat=istat)
@@ -2029,6 +2030,7 @@
 #else
       FieldOutTotal1 = FieldOut1
 #endif
+      Print *, 'After collection of all data'
       !
       ! Now writing to netcdf file
       ! 
@@ -2036,41 +2038,51 @@
       IF (myrank .eq. 0) THEN
 #endif
         IF (iIter .eq. 1) THEN
+          Print *, 'Before nf90_create FileSave=', TRIM(FileSave)
           iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           !
+          iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+          !
+          Print *, 'Before WRITE_NETCDF_TIME_HEADER'
           nbTime=0
           CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
           !
+          Print *, 'Before nf90_def_dim'
           iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
           !
           iret=nf90_def_var(ncid,"FieldOut1",NF90_RUNTYPE,(/ mnp_dims, ntime_dims/),var_id)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
           !
           iret = nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-          !
-          ! Writing data
-          !
-          iret = nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-          !
-          eTimeDay = MAIN%BMJD + (iIter-1)*3600
-          CALL WRITE_NETCDF_TIME(ncid, iIter, eTimeDay)
-          !
-          iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
-          !
-          iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
-          !
-          iret = nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
         END IF
+        !
+        ! Writing data
+        !
+        Print *, 'Before nf90_open FileSave=', TRIM(FileSave)
+        iret = nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+        !
+        eTimeDay = MAIN%BMJD + MyREAL(iIter-1)*MyREAL(3600)/MyREAL(86400)
+        CALL WRITE_NETCDF_TIME(ncid, iIter, eTimeDay)
+        !
+        iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+        !
+        Print *, 'Before write'
+        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
+        Print *, 'After write'
+        !
+        iret = nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
 #ifdef MPI_PARALL_GRID
       END IF
 #endif
+      Print *, 'After netcdf file writing'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2454,7 +2466,6 @@
 #ifdef DEBUG_ITERATION_LOOP
         iIter=nbIter + 1
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
-        iPass=iPass+1
 #endif
 
 !
@@ -2682,4 +2693,7 @@
 # endif
 #endif
       WRITE(*,*) SUM(AC2), 'AFTER EIMPS_TOTAL_JACOBI_ITERATION subroutine'
+#ifdef DEBUG_ITERATION_LOOP
+      iPass=iPass+1
+#endif
       END SUBROUTINE
