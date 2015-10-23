@@ -126,12 +126,16 @@
       END DO
       END SUBROUTINE
 !**********************************************************************
-!*                                                                    *
+!* Determine status of node points by purely combinatorial and fast   *
+!* return values:                                                     *
+!* ---  0: should not happen in return                                *
+!* ---  1: interior point of the grid.                                *
+!* --- -1: boundary node                                              *
 !**********************************************************************
       SUBROUTINE GET_BOUNDARY_STATUS(STATUS)
       USE DATAPOOL
       implicit none
-      integer, intent(inout) :: STATUS(MNP)
+      integer, intent(out) :: STATUS(MNP)
       INTEGER :: COLLECTED(MNP), NEXTVERT(MNP), PREVVERT(MNP)
       INTEGER          :: ISFINISHED, INEXT, IPREV
       INTEGER          :: IPNEXT, IPPREV, ZNEXT, IP, I, IE
