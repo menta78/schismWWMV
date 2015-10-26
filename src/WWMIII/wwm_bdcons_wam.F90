@@ -107,8 +107,14 @@
           allocate(igrib(n))
           DO i=1,n
             call grib_new_from_file(ifile, igrib(i))
+            WRITE(STAT%FHNDL,*) 'i=', i, ' n=', n
+            WRITE(STAT%FHNDL,*) 'Iter symbol, step 1'
+            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'numberOfDirections', nbdir_wam_read)
             call grib_get(igrib(i), 'numberOfFrequencies', nbfreq_wam_read)
+            WRITE(STAT%FHNDL,*) 'Iter symbol, step 2'
+            WRITE(STAT%FHNDL,*) 'IsFirst=', IsFirst
+            FLUSH(STAT%FHNDL)
             IF (IsFirst .eqv. .TRUE.) THEN
               nbdir_wam = nbdir_wam_read
               nbfreq_wam = nbfreq_wam_read
@@ -159,11 +165,14 @@
               END IF
             END IF
             IsFirst=.FALSE.
+            call grib_release(igrib(i))
           END DO
           deallocate(igrib)
           CALL GRIB_CLOSE_FILE(ifile)
           nbTotalNumberEntry = nbTotalNumberEntry + n / (nbdir_wam * nbfreq_wam)
         END DO
+        WRITE(STAT%FHNDL,*) 'First loop done nbTotalNumberEntry=', nbTotalNumberEntry
+        FLUSH(STAT%FHNDL)
         ALLOCATE(eVAR_BOUC_WAM % ListTime(nbTotalNumberEntry), ListIFileWAM(nbTotalNumberEntry), stat=istat)
         eVAR_BOUC_WAM % nbTime = nbTotalNumberEntry
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons_wam, allocate error 9')
@@ -187,10 +196,13 @@
               eVAR_BOUC_WAM % ListTime(idx) = eTimeOut
               ListIFileWAM(idx) = IFILE_IN
             END IF
+            call grib_release(igrib(i))
           END DO
           deallocate(igrib)
           CALL GRIB_CLOSE_FILE(ifile)
         END DO
+        WRITE(STAT%FHNDL,*) 'Second loop done'
+        FLUSH(STAT%FHNDL)
         !
         ! reading the grid
         !
@@ -268,6 +280,8 @@
         WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
         WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
       END DO
+      WRITE(STAT%FHNDL,*) 'Interpolation array for direction done'
+      FLUSH(STAT%FHNDL)
       allocate(WAM_IS1(MSC), WAM_IS2(MSC), WAM_WS1(MSC), WAM_WS2(MSC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       WAM_IS1=0
@@ -293,6 +307,8 @@
 !        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
 !        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
+      WRITE(STAT%FHNDL,*) 'Interpolation array for frequency done'
+      FLUSH(STAT%FHNDL)
 !      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
       END SUBROUTINE
 !**********************************************************************
@@ -353,6 +369,8 @@
         CALL WWM_ABORT('Error reading WAM file. Some direction/frequencies not assigned')
       END IF
       WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM)=', sum(WBAC_WAM)
+      WRITE(STAT%FHNDL,*) 'max(WBAC_WAM)=', maxval(WBAC_WAM)
+      WRITE(STAT%FHNDL,*) 'min(WBAC_WAM)=', minval(WBAC_WAM)
 !      Print *, 'End READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       END SUBROUTINE
 !**********************************************************************
@@ -423,7 +441,7 @@
             WS1=WAM_WS1(ID)
             WS2=WAM_WS2(ID)
             !
-            Print *, 'ID12=', ID1, ID2, ' IS12=', IS1, IS2
+!            Print *, 'ID12=', ID1, ID2, ' IS12=', IS1, IS2
             IF (IS1 .gt. 0) THEN
               eAC_1=WD1 * WBAC_WAM_LOC(ID1, IS1) + WD2 * WBAC_WAM_LOC(ID2, IS1)
               eAC_2=WD1 * WBAC_WAM_LOC(ID1, IS2) + WD2 * WBAC_WAM_LOC(ID2, IS2)

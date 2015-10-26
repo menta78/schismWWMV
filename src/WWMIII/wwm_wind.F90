@@ -2504,6 +2504,7 @@
       i=1
       call grib_new_from_file(ifile, igrib(i))
       CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
+      CALL grib_release(igrib(i))
       CALL GRIB_CLOSE_FILE(ifile)
       deallocate(igrib)
       END SUBROUTINE
@@ -2778,6 +2779,7 @@
           END IF
           WeFound=.TRUE.
         END IF
+        call grib_release(igrib(i))
       END DO
       IF (WeFound .eqv. .FALSE.) THEN
         Print *, 'Failed to find the wind variable in the grib file'
@@ -2940,6 +2942,7 @@
             CALL grib_get(igrib(irec), 'values', valueV)
 !           Print *, 'Step 6'
           END IF
+          call grib_release(igrib(irec))
         END DO
         idx=0
         DO J=1,NDY_WIND_FD
