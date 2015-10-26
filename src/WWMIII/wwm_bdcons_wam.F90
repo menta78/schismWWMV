@@ -213,6 +213,8 @@
       !
       allocate(WAM_ID1(MDC), WAM_ID2(MDC), WAM_WD1(MDC), WAM_WD2(MDC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
+      WAM_ID1=0
+      WAM_ID2=0
       DO ID=1,MDC
         eDIR=SPDIR(ID) * RADDEG
         IsAssigned=.false.
@@ -261,17 +263,15 @@
         IF (IsAssigned .eqv. .FALSE.) THEN
           CALL WWM_ABORT('Error in the interpolation direction')
         END IF
-!        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
-!        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
-!        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
-!        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
+        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
+        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
+        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
+        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
       END DO
       allocate(WAM_IS1(MSC), WAM_IS2(MSC), WAM_WS1(MSC), WAM_WS2(MSC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       WAM_IS1=0
       WAM_IS2=0
-      WAM_ID1=0
-      WAM_ID2=0
       DO IS=1,MSC
         IsAssigned=.FALSE.
         eFR=FR(IS)
@@ -387,6 +387,9 @@
         END DO
         !
         IF (DoHSchecks) THEN
+          DO J=1,4
+            WRITE(STAT%FHNDL,*) 'J=', J, ' eCF=', CF_COEFF_BOUC(J,IP)
+          END DO
           EM=0
           DO M=1,nbfreq_wam
             eSum=0
@@ -411,6 +414,7 @@
             WS1=WAM_WS1(ID)
             WS2=WAM_WS2(ID)
             !
+            Print *, 'ID12=', ID1, ID2, ' IS12=', IS1, IS2
             IF (IS1 .gt. 0) THEN
               eAC_1=WD1 * WBAC_WAM_LOC(ID1, IS1) + WD2 * WBAC_WAM_LOC(ID2, IS1)
               eAC_2=WD1 * WBAC_WAM_LOC(ID1, IS2) + WD2 * WBAC_WAM_LOC(ID2, IS2)
