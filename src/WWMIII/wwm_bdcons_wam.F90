@@ -365,7 +365,7 @@
       integer, intent(in) :: IFILE
       real(rkind), intent(in) :: eTimeSearch
       !
-      real(rkind) :: WBAC_WAM(nbdir_wam, nbfreq_wam, nx_wam, ny_wam)
+      real(rkind) :: WBAC_WAM    (nbdir_wam, nbfreq_wam, nx_wam, ny_wam)
       real(rkind) :: WBAC_WAM_LOC(nbdir_wam, nbfreq_wam)
       integer ID1, ID2, IS1, IS2
       integer ID, IS, J, IP
@@ -376,15 +376,19 @@
       real(rkind) EM, HS_WAM, eSum
       integer M, K
       LOGICAL :: DoHSchecks = .TRUE.
-      real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM
+      real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM, EMwork
       
       CALL READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED(WBAC_WAM, IFILE, eTimeSearch)
+      WRITE(STAT%FHNDL,*) 'RETURN: sum(WBAC_WAM)=', sum(WBAC_WAM)
+      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
       DO IP=1,IWBMNP
         IX=CF_IX_BOUC(IP)
         IY=CF_IY_BOUC(IP)
+        WBAC_WAM_LOC=0
         DO J=1,4
           WBAC_WAM_LOC(:,:) = WBAC_WAM_LOC(:,:) + CF_COEFF_BOUC(J,IP)*WBAC_WAM(:,:,IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
         END DO
+        WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM_LOC)=', sum(WBAC_WAM_LOC)
         !
         IF (DoHSchecks) THEN
           DO J=1,4
@@ -397,9 +401,14 @@
               eSum = eSum + WBAC_WAM_LOC(K,M)
             END DO
             EM = EM + DFIM_WAM(M)*eSum
+            Print *, 'M=', M, ' EM=', EM
           END DO
+          Print *, 'DELT25=', DELT25_WAM
           EM = EM + DELT25_WAM*eSum
-          HS_WAM = 4.*SQRT(EM)
+          Print *, 'EM=', EM
+          EMwork=MAX(ZERO, EM)
+          Print *, 'EMwork=', EMwork
+          HS_WAM = 4.*SQRT(EMwork)
         END IF
         ACLOC=0
         DO IS=1,MSC
@@ -436,10 +445,10 @@
           DS    = SPSIG(MSC) - SPSIG(MSC-1)
           ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
           ETOT  = ETOT + PTAIL(6) * ETAIL
-          HS_WWM = 4*SQRT(ETOT)
+          HS_WWM = 4*SQRT(MAX(0.0, ETOT))
           WRITE(STAT%FHNDL,*) 'BOUND IP=', IP, '/', IWBMNP
-          WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM_LOC)=', sum(WBAC_WAM_LOC)
-          WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM
+          WRITE(STAT%FHNDL,*) 'ETOT(WAM/WWM)=', EM, ETOT
+          WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM, ETOT
         END IF
         WBACOUT(:,:,IP)=ACLOC
       END DO
