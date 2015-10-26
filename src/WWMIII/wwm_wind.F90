@@ -589,7 +589,6 @@
       CF_IY_GLOBAL=CF_IY
       CF_COEFF_GLOBAL=CF_COEFF
 #endif
-      
       !
       ! Now writing up
       !

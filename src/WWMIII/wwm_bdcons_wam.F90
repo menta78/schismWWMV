@@ -49,7 +49,6 @@
       type(FD_FORCING_GRID) :: TheInfo
       character(len=20) shortName
       integer GRIB_TYPE
-      real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
       integer, allocatable :: ListDir_i(:), ListFreq_i(:)
       integer nbTotalNumberEntry
       LOGICAL IsFirst
@@ -65,6 +64,8 @@
       integer IS, ID, idx
       integer ID1, ID2
       real(rkind) eTimeOut, DeltaDiff
+      real(rkind) DELTH_WAM, CO1
+      integer M
       CALL TEST_FILE_EXIST_DIE("Missing list of WAM files: ", TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
       WRITE(STAT%FHNDL,*) WAV%FHNDL, WAV%FNAME, BND%FHNDL, BND%FNAME
@@ -113,10 +114,9 @@
               nbfreq_wam = nbfreq_wam_read
               call grib_get(igrib(i), 'directionScalingFactor', dirScal)
               call grib_get(igrib(i), 'frequencyScalingFactor', freqScal)
-              allocate(ListDir_i(nbdir_wam), ListFreq_i(nbfreq_wam), stat=istat)
+              allocate(ListDir_i(nbdir_wam), ListFreq_i(nbfreq_wam), ListDir_wam(nbdir_wam), ListFreq_wam(nbfreq_wam), DFIM(nbFreq_wam), stat=istat)
               call grib_get(igrib(i), 'scaledDirections', ListDir_i)
               call grib_get(igrib(i), 'scaledFrequencies', ListFreq_i)
-              allocate(ListDir_wam(nbdir_wam), ListFreq_wam(nbfreq_wam), stat=istat)
               DO idir=1,nbdir_wam
                 eDir = DBLE(ListDir_i(idir)) / DBLE(dirScal)
                 eDir = 270 - eDir
@@ -130,10 +130,18 @@
                 WRITE(STAT%FHNDL,*) 'idir=', idir, ' eDir=', eDir
               END DO
               DO ifreq=1,nbfreq_wam
-                eFreq = DBLE(ListFreq_i(ifreq)) / DBLE(freqScal)
+                eFreq = MyREAL(ListFreq_i(ifreq)) / MyREAL(freqScal)
                 ListFreq_wam(ifreq) = eFreq
                 WRITE(STAT%FHNDL,*) 'ifreq=', ifreq, ' eFreq=', eFreq
               END DO
+              FRATIO = ListFreq_wam(2) / ListFreq_wam(1)
+              DELTH_WAM = PI2 / MyREAL(nbdir_wam)
+              CO1 = 0.5*(FRATIO-1.)*DELTH_WAM
+              DFIM_wam(1) = CO1 * ListFreq_wam(1)
+              DO M=2,nbFreq_wam-1
+                 DFIM_wam(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
+              ENDDO
+              DFIM_wam(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
               deallocate(ListDir_i, ListFreq_i)
             ELSE
               IF ((nbdir_wam .ne. nbdir_wam_read).or.(nbfreq_wam .ne. nbfreq_wam_read)) THEN
@@ -277,7 +285,6 @@
         WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
         WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
-      deallocate(ListDir_wam, ListFreq_wam)
 !      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
       END SUBROUTINE
 !**********************************************************************
