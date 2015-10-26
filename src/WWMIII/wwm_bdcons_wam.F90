@@ -255,10 +255,10 @@
         IF (IsAssigned .eqv. .FALSE.) THEN
           CALL WWM_ABORT('Error in the interpolation direction')
         END IF
-        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
-        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
-        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
-        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
+!        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
+!        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
+!        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
+!        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
       END DO
       allocate(WAM_IS1(MSC), WAM_IS2(MSC), WAM_WS1(MSC), WAM_WS2(MSC), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
@@ -283,9 +283,9 @@
             END IF
           END IF
         END DO
-        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
-        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
-        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
+!        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
+!        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
+!        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
 !      Print *, 'Leaving INIT_GRIB_WAM_BOUNDARY'
       END SUBROUTINE
@@ -452,6 +452,10 @@
           RETURN
         END IF
       END DO
+      Print *, 'nbTime=', eVAR_BOUC_WAM % nbTime, ' eTimeSearch=', eTimeSearch
+      DO iTime=1, eVAR_BOUC_WAM % nbTime
+        Print *, 'iTime=', iTime, ' eTime=', eVAR_BOUC_WAM % ListTime(iTime)
+      END DO      
       CALL WWM_ABORT('Failed to find the right record in READ_GRIB_BOUNDARY_WBAC')
       END SUBROUTINE
 #endif

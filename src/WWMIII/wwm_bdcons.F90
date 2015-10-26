@@ -893,6 +893,7 @@
 #endif
           END IF
           IF (IBOUNDFORMAT == 5) THEN ! WWM WBAC netcdf
+            Print *, 'Before call to READ_GRIB_WAM_BOUNDARY_WBAC'
 #ifdef GRIB_API_ECMWF
             CALL READ_GRIB_WAM_BOUNDARY_WBAC(WBACOUT)
 #else
