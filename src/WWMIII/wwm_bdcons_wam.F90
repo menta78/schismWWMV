@@ -355,6 +355,9 @@
             call grib_get(igrib(i), 'directionNumber', idir)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
             CALL grib_get(igrib(i), 'values', values)
+            WRITE(STAT%FHNDL,*) 'idir=', idir, ' ifreq=', ifreq
+            WRITE(STAT%FHNDL,*) 'max(values)=', maxval(values)
+            WRITE(STAT%FHNDL,*) 'min(values)=', minval(values)
             DirFreqStatus(idir, ifreq) = 1
             idx=0
             DO iY=1,ny_wam
