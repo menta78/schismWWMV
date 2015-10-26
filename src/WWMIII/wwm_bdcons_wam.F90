@@ -179,12 +179,16 @@
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
           eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
+          WRITE(STAT%FHNDL,*) 'iFile=', iFile
+          FLUSH(STAT%FHNDL)
 !          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
           CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
           call grib_count_in_file(ifile,n)
           allocate(igrib(n))
           DO i=1,n
+            WRITE(STAT%FHNDL,*) 'i=', i
+            FLUSH(STAT%FHNDL)
             call grib_new_from_file(ifile, igrib(i))
             call grib_get(igrib(i), 'directionNumber', idir)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
@@ -361,6 +365,7 @@
             END DO  
           END IF
         END IF
+        CALL grib_release(igrib(i))
       END DO
       deallocate(igrib)
       CALL GRIB_CLOSE_FILE(ifile)
