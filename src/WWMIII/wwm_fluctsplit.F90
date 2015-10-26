@@ -543,7 +543,7 @@
                ST(NI) = ST(NI)*IOBPD(ID,NI)+KELEM(:,IE)*(U3 - UTILDE)
                !ST(NI) = ST(NI)+KELEM(:,IE)*(U3 - UTILDE)
              END DO
-             U = MAX(0.d0,U-DTSI*ST*DBLE(IOBWB))!*DBLE(IOBPD(ID,:))
+             U = MAX(0.d0,U-DTSI*ST*MyREAL(IOBWB))!*DBLE(IOBPD(ID,:))
 #ifdef MPI_PARALL_GRID
              CALL EXCHANGE_P2D(U)
 #endif
@@ -2523,10 +2523,10 @@
             ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             ASPAR_JAC = zero
-            TMP1 = DBLE(MSC)*DBLE(MDC)*DBLE(NNZ*8)
+            TMP1 = MyREAL(MSC)*MyREAL(MDC)*MyREAL(NNZ*8)
             TMP2 = 1024**2
             WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
-            TMP1 = TMP1 + DBLE(MSC) * DBLE(MDC) * DBLE(MNP) * 4 * 8
+            TMP1 = TMP1 + MyREAL(MSC) * MyREAL(MDC) * MyREAL(MNP) * 4 * 8
             WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
           END IF
           IF ((ASPAR_LOCAL_LEVEL .ge. 5).and.(ASPAR_LOCAL_LEVEL .le. 7)) THEN

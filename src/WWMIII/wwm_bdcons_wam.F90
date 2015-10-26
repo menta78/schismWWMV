@@ -118,7 +118,7 @@
               call grib_get(igrib(i), 'scaledDirections', ListDir_i)
               call grib_get(igrib(i), 'scaledFrequencies', ListFreq_i)
               DO idir=1,nbdir_wam
-                eDir = DBLE(ListDir_i(idir)) / DBLE(dirScal)
+                eDir = MyREAL(ListDir_i(idir)) / MyREAL(dirScal)
                 eDir = 270 - eDir
                 IF (eDir .le. ZERO) THEN
                   eDir = eDir+ 360
@@ -135,13 +135,19 @@
                 WRITE(STAT%FHNDL,*) 'ifreq=', ifreq, ' eFreq=', eFreq
               END DO
               FRATIO = ListFreq_wam(2) / ListFreq_wam(1)
+              WRITE(STAT%FHNDL,*) 'FRATIO=', FRATIO
               DELTH_WAM = PI2 / MyREAL(nbdir_wam)
+              WRITE(STAT%FHNDL,*) 'DELTH_WAM=', DELTH_WAM
               CO1 = 0.5*(FRATIO-1.)*DELTH_WAM
+              WRITE(STAT%FHNDL,*) 'CO1=', CO1
               DFIM_wam(1) = CO1 * ListFreq_wam(1)
               DO M=2,nbFreq_wam-1
                  DFIM_wam(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
               ENDDO
               DFIM_wam(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
+              DO M=1,nbFreq_wam
+                WRITE(STAT%FHNDL,*) 'M=', M, ' DFIM=', DFIM_wam(M)
+              END DO
               WETAIL_WAM = 0.25
               DELT25_WAM = WETAIL_WAM*ListFreq_wam(nbFreq_wam)*DELTH_WAM
               deallocate(ListDir_i, ListFreq_i)
@@ -346,6 +352,7 @@
       if (eDiff .ne. 0) THEN
         CALL WWM_ABORT('Error reading WAM file. Some direction/frequencies not assigned')
       END IF
+      WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM)=', sum(WBAC_WAM)
 !      Print *, 'End READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       END SUBROUTINE
 !**********************************************************************
@@ -427,6 +434,7 @@
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS_WWM = 4*SQRT(ETOT)
           WRITE(STAT%FHNDL,*) 'BOUND IP=', IP, '/', IWBMNP
+          WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM_LOC)=', sum(WBAC_WAM_LOC)
           WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM
         END IF
         WBACOUT(:,:,IP)=ACLOC
@@ -442,10 +450,14 @@
       !
       integer iTime
       real(rkind) DeltaDiff, eTimeSearch
+      real(rkind) eTimeDay
       integer iFile
+      CHARACTER(LEN=15) :: eTimeStr
+      
       eTimeSearch=MAIN % TMJD
       DO iTime=1, eVAR_BOUC_WAM % nbTime
-        DeltaDiff= abs(eVAR_BOUC_WAM % ListTime(iTime) - eTimeSearch)
+        eTimeDay=eVAR_BOUC_WAM % ListTime(iTime)
+        DeltaDiff= abs(eTimeDay - eTimeSearch)
         iFile=ListIFileWAM(iTime)
         IF (DeltaDiff .le. 1.0e-8) THEN
           CALL READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL(WBACOUT, iFile, eTimeSearch)
@@ -454,7 +466,9 @@
       END DO
       Print *, 'nbTime=', eVAR_BOUC_WAM % nbTime, ' eTimeSearch=', eTimeSearch
       DO iTime=1, eVAR_BOUC_WAM % nbTime
-        Print *, 'iTime=', iTime, ' eTime=', eVAR_BOUC_WAM % ListTime(iTime)
+        eTimeDay=eVAR_BOUC_WAM % ListTime(iTime)
+        CALL MJD2CT(eTimeDay,eTimeStr)
+        Print *, 'iTime=', iTime, ' eTime=', eTimeDay, ' date=', eTimeStr
       END DO      
       CALL WWM_ABORT('Failed to find the right record in READ_GRIB_BOUNDARY_WBAC')
       END SUBROUTINE

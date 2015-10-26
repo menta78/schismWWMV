@@ -164,7 +164,7 @@
       !
       ! Now renormalizing
       !
-      secNear=NINT(second - DBLE(60)*min)
+      secNear=NINT(second - MyREAL(60)*min)
       IF (secNear .eq. 60) THEN
         sec=0
         min=min+1

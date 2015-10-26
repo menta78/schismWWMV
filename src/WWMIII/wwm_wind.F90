@@ -2483,7 +2483,7 @@
       WRITE(eStrTime,10) eYear, eMonth, eDay, eHour, eMin, eSec
  10   FORMAT(i4.4,i2.2,i2.2,'.',i2.2,i2.2,i2.2)
       CALL CT2MJD(eStrTime, eTimeBase)
-      eTimeOut=eTimeBase + DBLE(stepRange)/24.0_rkind
+      eTimeOut=eTimeBase + MyREAL(stepRange)/24.0_rkind
       END SUBROUTINE
 !****************************************************************************
 !* Reading time from a GRIB file                                            *

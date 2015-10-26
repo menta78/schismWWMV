@@ -733,7 +733,7 @@
               PART1(IS)  = 0.
               PART2(IS)  = 0.
               DO J = 1, IS - 1
-                SUMAC   = DBLE(( ACLOC(J,ID) * CG(J,IP) - ACLOC(IS-J,ID) * CG(IS-J,IP) ))
+                SUMAC   = MyREAL(( ACLOC(J,ID) * CG(J,IP) - ACLOC(IS-J,ID) * CG(IS-J,IP) ))
                 KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -743,7 +743,7 @@
                 IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
               END DO
               DO J = IS+1, MSC
-                SUMAC   = DBLE(( ACLOC(J-IS,ID) * CG(J-IS,IP) - ACLOC(J,ID) * CG(J,IP) ))
+                SUMAC   = MyREAL(( ACLOC(J-IS,ID) * CG(J-IS,IP) - ACLOC(J,ID) * CG(J,IP) ))
                 KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -773,8 +773,8 @@
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = DBLE(ACLOC(J,ID)*CG(J,IP)*ACLOC(IS-J,ID)*CG(IS-J,IP))
-              TMP2    = DBLE(ACLOC(J,ID)*CG(J,IP)+ACLOC(IS-J,ID)*CG(IS-J,IP))
+              TMP1    = MyREAL(ACLOC(J,ID)*CG(J,IP)*ACLOC(IS-J,ID)*CG(IS-J,IP))
+              TMP2    = MyREAL(ACLOC(J,ID)*CG(J,IP)+ACLOC(IS-J,ID)*CG(IS-J,IP))
               TMP3    = (TMP1 - ACLOC(IS,ID)*CG(IS,IP)*TMP2)
               PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
@@ -786,8 +786,8 @@
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = DBLE(ACLOC(IS,ID)*CG(IS,IP)*ACLOC(J-IS,ID)*CG(J-IS,IP))
-              TMP2    = DBLE(ACLOC(IS,ID)*CG(IS,IP)+ACLOC(J-IS,ID)*CG(J-IS,IP))
+              TMP1    = MyREAL(ACLOC(IS,ID)*CG(IS,IP)*ACLOC(J-IS,ID)*CG(J-IS,IP))
+              TMP2    = MyREAL(ACLOC(IS,ID)*CG(IS,IP)+ACLOC(J-IS,ID)*CG(J-IS,IP))
               TMP3    = (TMP1 - ACLOC(J,ID)*CG(J,IP)*TMP2)
               PART2(IS) = PART2(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART2(IS) .NE. PART2(IS)) WRITE (*,*)'PART2', PART2(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
