@@ -314,6 +314,7 @@
          integer nbdir_wam, nbfreq_wam, nx_wam, ny_wam
          real(rkind), allocatable :: ListDir_wam(:), ListFreq_wam(:)
          real(rkind), allocatable :: DFIM_wam(:)
+         real(rkind) DELT25_WAM
          integer, allocatable :: ListIFileWAM(:)
          integer, allocatable :: WAM_ID1(:), WAM_ID2(:), WAM_IS1(:), WAM_IS2(:)
          real(rkind), allocatable :: WAM_WD1(:), WAM_WD2(:), WAM_WS1(:), WAM_WS2(:)

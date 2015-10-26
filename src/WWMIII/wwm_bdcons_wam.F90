@@ -64,7 +64,7 @@
       integer IS, ID, idx
       integer ID1, ID2
       real(rkind) eTimeOut, DeltaDiff
-      real(rkind) DELTH_WAM, CO1
+      real(rkind) DELTH_WAM, CO1, WETAIL_WAM
       integer M
       CALL TEST_FILE_EXIST_DIE("Missing list of WAM files: ", TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME,STATUS='OLD')
@@ -114,7 +114,7 @@
               nbfreq_wam = nbfreq_wam_read
               call grib_get(igrib(i), 'directionScalingFactor', dirScal)
               call grib_get(igrib(i), 'frequencyScalingFactor', freqScal)
-              allocate(ListDir_i(nbdir_wam), ListFreq_i(nbfreq_wam), ListDir_wam(nbdir_wam), ListFreq_wam(nbfreq_wam), DFIM(nbFreq_wam), stat=istat)
+              allocate(ListDir_i(nbdir_wam), ListFreq_i(nbfreq_wam), ListDir_wam(nbdir_wam), ListFreq_wam(nbfreq_wam), DFIM_wam(nbFreq_wam), stat=istat)
               call grib_get(igrib(i), 'scaledDirections', ListDir_i)
               call grib_get(igrib(i), 'scaledFrequencies', ListFreq_i)
               DO idir=1,nbdir_wam
@@ -142,6 +142,8 @@
                  DFIM_wam(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
               ENDDO
               DFIM_wam(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
+              WETAIL_WAM = 0.25
+              DELT25_WAM = WETAIL_WAM*ListFreq_wam(nbFreq_wam)*DELTH_WAM
               deallocate(ListDir_i, ListFreq_i)
             ELSE
               IF ((nbdir_wam .ne. nbdir_wam_read).or.(nbfreq_wam .ne. nbfreq_wam_read)) THEN
@@ -364,6 +366,11 @@
       real(rkind) ACLOC(MSC,MDC)
       integer IX, IY
       real(rkind) eAC_1, eAC_2, eAC
+      real(rkind) EM, HS_WAM, eSum
+      integer M, K
+      LOGICAL :: DoHSchecks = .TRUE.
+      real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM
+      
       CALL READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED(WBAC_WAM, IFILE, eTimeSearch)
       DO IP=1,IWBMNP
         IX=CF_IX_BOUC(IP)
@@ -372,6 +379,18 @@
           WBAC_WAM_LOC(:,:) = WBAC_WAM_LOC(:,:) + CF_COEFF_BOUC(J,IP)*WBAC_WAM(:,:,IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
         END DO
         !
+        IF (DoHSchecks) THEN
+          EM=0
+          DO M=1,nbfreq_wam
+            eSum=0
+            DO K=1,nbdir_wam
+              eSum = eSum + WBAC_WAM_LOC(K,M)
+            END DO
+            EM = EM + DFIM_WAM(M)*eSum
+          END DO
+          EM = EM + DELT25_WAM*eSum
+          HS_WAM = 4.*SQRT(EM)
+        END IF
         ACLOC=0
         DO IS=1,MSC
           DO ID=1,MDC
@@ -393,6 +412,23 @@
             END IF
           END DO
         END DO
+        IF (DoHSchecks) THEN
+          ETOT=0
+          DO ID=1,MDC
+            tmp(:) = acloc(:,id) * spsig
+            ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+            do is = 2, msc
+              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
+            end do
+            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+          END DO
+          DS    = SPSIG(MSC) - SPSIG(MSC-1)
+          ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+          ETOT  = ETOT + PTAIL(6) * ETAIL
+          HS_WWM = 4*SQRT(ETOT)
+          WRITE(STAT%FHNDL,*) 'BOUND IP=', IP, '/', IWBMNP
+          WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM
+        END IF
         WBACOUT(:,:,IP)=ACLOC
       END DO
       END SUBROUTINE
