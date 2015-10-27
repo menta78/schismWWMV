@@ -338,6 +338,7 @@
       real(rkind) eTimeOut
       character(len=140) eShortName
       integer iX, iY, ifile
+      real(rkind) eVal
 !      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       DirFreqStatus=0
       eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
@@ -345,6 +346,7 @@
       CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
+      WBAC_WAM=0
       DO i=1,n
         call grib_new_from_file(ifile, igrib(i))
         CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
@@ -363,9 +365,12 @@
             DO iY=1,ny_wam
               DO iX=1,nx_wam
                 idx=idx+1
-                WBAC_WAM(idir, ifreq, iX,iY) = values(idx)
+                IF (values(idx) .lt. MyREAL(9990)) THEN
+                  eVal=EXP(values(idx)*LOG(10.))
+                  WBAC_WAM(idir, ifreq, iX,iY) = eVal
+                ENDIF
               END DO
-            END DO  
+            END DO
           END IF
         END IF
         CALL grib_release(igrib(i))
@@ -414,7 +419,6 @@
         DO J=1,4
           WBAC_WAM_LOC(:,:) = WBAC_WAM_LOC(:,:) + CF_COEFF_BOUC(J,IP)*WBAC_WAM(:,:,IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
         END DO
-        WRITE(STAT%FHNDL,*) 'sum(WBAC_WAM_LOC)=', sum(WBAC_WAM_LOC)
         !
         IF (DoHSchecks) THEN
           DO J=1,4
