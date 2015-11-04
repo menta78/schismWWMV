@@ -828,7 +828,7 @@ MODULE wwm_hotfile_mod
       character(len=140) :: FILERET
       integer np_write, ne_write
 # ifdef MPI_PARALL_GRID
-      integer ID, IS, IP, ISTAT
+      integer ID, IS, IP
 # endif
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
