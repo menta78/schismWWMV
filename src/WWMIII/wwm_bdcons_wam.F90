@@ -146,13 +146,13 @@
               WRITE(STAT%FHNDL,*) 'DELTH_WAM=', DELTH_WAM
               CO1 = 0.5*(FRATIO-1.)*DELTH_WAM
               WRITE(STAT%FHNDL,*) 'CO1=', CO1
-              DFIM_wam(1) = CO1 * ListFreq_wam(1)
+              DFIM_WAM(1) = CO1 * ListFreq_wam(1)
               DO M=2,nbFreq_wam-1
-                 DFIM_wam(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
+                 DFIM_WAM(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
               ENDDO
-              DFIM_wam(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
+              DFIM_WAM(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
               DO M=1,nbFreq_wam
-                WRITE(STAT%FHNDL,*) 'M=', M, ' DFIM=', DFIM_wam(M)
+                WRITE(STAT%FHNDL,*) 'M=', M, ' DFIM=', DFIM_WAM(M)
               END DO
               WETAIL_WAM = 0.25
               DELT25_WAM = WETAIL_WAM*ListFreq_wam(nbFreq_wam)*DELTH_WAM
@@ -404,7 +404,7 @@
       real(rkind) ACLOC(MSC,MDC)
       integer IX, IY
       real(rkind) eAC_1, eAC_2, eAC
-      real(rkind) EM, HS_WAM, eSum
+      real(rkind) EM, HS_WAM, eSum, quot
       integer M, K
       LOGICAL :: DoHSchecks = .TRUE.
       real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM, EMwork
@@ -421,9 +421,9 @@
         END DO
         !
         IF (DoHSchecks) THEN
-          DO J=1,4
-            WRITE(STAT%FHNDL,*) 'J=', J, ' eCF=', CF_COEFF_BOUC(J,IP)
-          END DO
+!          DO J=1,4
+!            WRITE(STAT%FHNDL,*) 'J=', J, ' eCF=', CF_COEFF_BOUC(J,IP)
+!          END DO
           EM=0
           DO M=1,nbfreq_wam
             eSum=0
@@ -458,7 +458,7 @@
               eAC_1=WD1 * WBAC_WAM_LOC(ID1, IS1) + WD2 * WBAC_WAM_LOC(ID2, IS1)
               eAC_2=WD1 * WBAC_WAM_LOC(ID1, IS2) + WD2 * WBAC_WAM_LOC(ID2, IS2)
               eAC=WS1 * eAC_1 + WS2 * eAC_2
-              ACLOC(IS,ID)=eAC
+              ACLOC(IS,ID)=eAC / SPSIG(IS)
             END IF
           END DO
         END DO
@@ -476,8 +476,10 @@
           ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS_WWM = 4*SQRT(MAX(0.0, ETOT))
+          quot = EM/ETOT
           WRITE(STAT%FHNDL,*) 'BOUND IP=', IP, '/', IWBMNP
           WRITE(STAT%FHNDL,*) 'ETOT(WAM/WWM)=', EM, ETOT
+          WRITE(STAT%FHNDL,*) 'quot=', quot
           WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM, ETOT
         END IF
         WBACOUT(:,:,IP)=ACLOC
