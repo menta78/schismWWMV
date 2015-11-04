@@ -458,7 +458,7 @@
               eAC_1=WD1 * WBAC_WAM_LOC(ID1, IS1) + WD2 * WBAC_WAM_LOC(ID2, IS1)
               eAC_2=WD1 * WBAC_WAM_LOC(ID1, IS2) + WD2 * WBAC_WAM_LOC(ID2, IS2)
               eAC=WS1 * eAC_1 + WS2 * eAC_2
-              ACLOC(IS,ID)=eAC / SPSIG(IS)
+              ACLOC(IS,ID)=eAC / (SPSIG(IS) * PI2)
             END IF
           END DO
         END DO
