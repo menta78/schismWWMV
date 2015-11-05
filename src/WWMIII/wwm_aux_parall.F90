@@ -1240,7 +1240,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
-      integer iProc, IP, irank
+      integer IP, irank
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
@@ -1268,7 +1268,7 @@
       SUBROUTINE REDUCE_BOUNDARY_ARRAY_SPPARM
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, irank
+      integer IP, irank
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
         SPPARM_GL=SPPARM
@@ -1318,7 +1318,7 @@
       SUBROUTINE REDUCE_BOUNDARY_ARRAY_WBAC
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, idx_proc
+      integer IP, idx_proc
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
         WBAC_GL=WBAC

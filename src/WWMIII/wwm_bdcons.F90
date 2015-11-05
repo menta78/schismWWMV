@@ -1700,6 +1700,9 @@
       WRITE(STAT%FHNDL,*)'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
       WRITE(STAT%FHNDL,*)'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
       WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
+      IF ((MDC_WW3 .gt. 10000).or.(MSC_WW3 .gt. 10000)) THEN
+        CALL WWM_ABORT('MDC_WW3 or MSC_WW3 are too large to be reasonable')
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !* READSPEC2D_WW3INIT2

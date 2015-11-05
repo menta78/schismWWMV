@@ -1144,16 +1144,13 @@
          REAL(rkind)    :: HEADSP
          REAL(rkind), PARAMETER :: FRFAK = 0.9
          REAL(rkind)    :: VEC2RAD, ANG, VEL, WAVEL, DEPTH
-         REAL(rkind), ALLOCATABLE  :: HP(:), QU(:), QV(:), UP(:), VP(:)
+         REAL(rkind)    :: HP(MNP), QU(MNP), QV(MNP), UP(MNP), VP(MNP)
 
          HEADSP = 0.0
 
 #ifdef MPI_PARALL_GRID
          CALL WWM_ABORT('ERG2WWM CANNOT BE CALLED FROM SCHISM')
 #endif
-
-         ALLOCATE (QU(MNP), QV(MNP), UP(MNP), VP(MNP), HP(MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_aux, allocate error 1')
 
          QU = 0.
          QV = 0.
@@ -1195,8 +1192,6 @@
            WRITE (1250, 1200) HP(:)
 
          END DO
-
-         DEALLOCATE (QU,QV,HP,UP,VP)
 
 1200     FORMAT(8F9.4)
 
@@ -1442,11 +1437,7 @@
 !*                                                                    *
 !**********************************************************************
         SUBROUTINE WRINPGRD_XFN()
-#ifdef MPI_PARALL_GRID
-         USE DATAPOOL, ONLY : myrank, comm, ierr, MNP, XP, YP, DEP, MNE, INE
-#else
-         USE DATAPOOL, ONLY : MNP, XP, YP, DEP, MNE, INE
-#endif
+         USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: I
 
@@ -2585,6 +2576,7 @@
         CALL WWM_ABORT('GETSTRING - call with negative value')
       END IF
       ePower=1
+      iPower=-400
       WeFind=0
       DO I=1,ThePow
         ePower=ePower*10
@@ -2624,12 +2616,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE SPECSTAT(TIME)
+     SUBROUTINE SPECSTAT
 
          USE DATAPOOL
          IMPLICIT NONE
-
-         REAL, INTENT(IN)    :: TIME
 
          INTEGER             :: IS, ID, IP
          REAL(RKIND)         :: ETOT
@@ -2701,6 +2691,8 @@
            HX1 = WX1 + (WX4-WX1)/DX * DELTA_X
            HX2 = WX2 + (WX3-WX2)/DX * DELTA_X
          ELSE
+           HX1=LARGE
+           HX2=LARGE
            CALL WWM_ABORT('Write your HX1/HX2 code here')
          END IF
          VAL(IP) = HX1 + (HX2-HX1)/DY * DELTA_Y
@@ -2716,9 +2708,9 @@
       REAL*8, DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
       !
       integer eta_u, xi_u, iEta, iXi
-      real*8, allocatable :: LONrad_u(:,:)
-      real*8, allocatable :: LATrad_u(:,:)
-      real*8, allocatable :: azim(:,:)
+      real*8 :: LONrad_u(eta_rho,xi_rho-1)
+      real*8 :: LATrad_u(eta_rho,xi_rho-1)
+      real*8 :: azim(eta_rho,xi_rho-2)
       real*8 :: eAzim, fAzim, dlam, eFact1, eFact2
       real*8 :: signAzim, signDlam, ThePi, DegTwoRad
       real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
@@ -2726,7 +2718,6 @@
       integer istat
       eta_u=eta_rho
       xi_u=xi_rho-1
-      allocate(LONrad_u(eta_u,xi_u), LATrad_u(eta_u,xi_u), azim(eta_u,xi_u-1), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 33')
       ThePi=3.141592653589792
       DegTwoRad=ThePi/180
@@ -2770,7 +2761,6 @@
         ANG_rho(iEta,1)=ANG_rho(iEta,2)
         ANG_rho(iEta,xi_rho)=ANG_rho(iEta,xi_u)
       END DO
-      deallocate(LONrad_u, LATrad_u, azim)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2783,17 +2773,15 @@
       REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(out) :: ANG_rho
       !
       integer eta_v, xi_v, iEta, iXi
-      real(rkind), allocatable :: LONrad_v(:,:)
-      real(rkind), allocatable :: LATrad_v(:,:)
-      real(rkind), allocatable :: azim(:,:)
+      real(rkind) :: LONrad_v(eta_rho-1,xi_rho)
+      real(rkind) :: LATrad_v(eta_rho-1,xi_rho)
+      real(rkind) :: azim(eta_rho-2,xi_rho)
       real(rkind) :: eAzim, fAzim, dlam, eFact1, eFact2
       real(rkind) :: signAzim, signDlam, ThePi, DegTwoRad
       real(rkind) :: eLon, eLat, phi1, phi2, xlam1, xlam2
       real(rkind) :: TPSI2, cta12
       eta_v=eta_rho-1
       xi_v=xi_rho
-      allocate(LONrad_v(eta_v,xi_v), LATrad_v(eta_v,xi_v), azim(eta_v-1,xi_v), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 34')
 
       ThePi=3.141592653589792
       DegTwoRad=ThePi/180
@@ -2837,9 +2825,6 @@
         ANG_rho(1,iXi)=ANG_rho(2,iXi)
         ANG_rho(eta_rho,iXi)=ANG_rho(eta_v,iXi)
       END DO
-      deallocate(LONrad_v)
-      deallocate(LATrad_v)
-      deallocate(azim)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
