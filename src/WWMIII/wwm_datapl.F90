@@ -378,8 +378,8 @@
 
          TYPE FD_FORCING_GRID
             integer nx_dim, ny_dim
-            real, dimension(:,:), pointer :: LON
-            real, dimension(:,:), pointer :: LAT
+            real(rkind), dimension(:,:), pointer :: LON
+            real(rkind), dimension(:,:), pointer :: LAT
          END TYPE FD_FORCING_GRID
          
          TYPE BoundaryInfo

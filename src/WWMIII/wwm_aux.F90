@@ -2718,7 +2718,6 @@
       integer istat
       eta_u=eta_rho
       xi_u=xi_rho-1
-      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 33')
       ThePi=3.141592653589792
       DegTwoRad=ThePi/180
       DO iEta=1,eta_u

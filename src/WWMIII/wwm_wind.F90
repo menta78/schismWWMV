@@ -1084,7 +1084,7 @@
       REAL(rkind)                :: Vlocal(MNP)
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, numTime, iy, counter, ip, i, j
+      INTEGER             :: numLons, numLats, numTime, iy, j, counter, i, ip
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
       REAL(rkind), SAVE          :: TIME
@@ -1705,10 +1705,8 @@
       character (len = *), parameter :: CallFct="READ_NETCDF_CRFS"
 
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
+      INTEGER             :: numLons, numLats, numTime, numHeights, j
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
-      REAL(rkind), ALLOCATABLE   :: U(:), V(:)
-      REAL(rkind), SAVE          :: TIME
       REAL(rkind)                :: Vtotal1(MNP_WIND)
       REAL(rkind)                :: Vtotal2(MNP_WIND)
       REAL(rkind)                :: Vlocal(MNP)
@@ -1804,10 +1802,9 @@
       REAL(rkind), intent(out) :: eField(MNP,2)
 
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, counter, ip, i, j, ix
+      INTEGER             :: numLons, numLats, counter, ip, i, j
       character (len = *), parameter :: CallFct="READ_NETCDF_NARR"
 
-      REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind),SAVE           :: TIME
       REAL(rkind)                :: scale_factor
       REAL(rkind) :: sumWi, eF1, eF2
@@ -1869,46 +1866,6 @@
 
         ISTAT = NF90_CLOSE(WINDY_NCID)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
-
-        IF (.FALSE.) THEN
-          ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 43')
-          DO IX = 1, NDX_WIND
-            tmp(NDX_WIND-(IX-1),:) = wind_x4(IX,:)
-          END DO
-          wind_x4 = tmp
-          DO IX = 1, NDX_WIND
-            tmp(NDX_WIND-(IX-1),:) = wind_y4(IX,:)
-          END DO
-          wind_y4 = tmp
-!         DO IY = 1, NDY_WIND
-!           tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
-!         END DO
-!         atmo_press = tmp
-          DEALLOCATE(TMP)
-        END IF
-
-        IF (.FALSE.) THEN
-          ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 44')
-          DO IX = 1, NDX_WIND
-            IF (IX .GT. NDX_WIND/2) THEN
-              tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
-            ELSE
-              tmp(IX+NDX_WIND/2,:) = wind_x(IX,:)
-            END IF
-          END DO
-          wind_x = tmp
-          DO IX = 1, NDX_WIND
-            IF (IX .GT. NDX_WIND/2) THEN
-              tmp(IX-NDX_WIND/2,:) = wind_y(IX,:)
-            ELSE
-              tmp(IX+NDX_WIND/2,:) = wind_y(IX,:)
-            END IF
-          END DO
-          wind_y = tmp
-          DEALLOCATE(TMP)
-        END IF
 
         COUNTER = 0
         DO I = 1, NDX_WIND
@@ -2799,7 +2756,6 @@
       IMPLICIT NONE
       INTEGER IT
       INTEGER ifile, i, n
-      integer, allocatable :: igrib(:)
       integer WeFound
       REAL(rkind) :: eTimeMjd
       integer IPROC, eInt(1)
