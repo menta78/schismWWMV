@@ -542,7 +542,7 @@
 !/S      INTEGER, SAVE           :: IENT = 0
 
       REAL(rkind)  :: TAUW, EBAND, EMEANWS,                      &
-                                 UNZ, R1, EB(NK), EB2(NK), ALFA(NK)
+                                 UNZ, EB(NK), EB2(NK), ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -1169,11 +1169,11 @@
 !/ ------------------------------------------------------------------- /
 !/
       INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 , IS, IS2
-      INTEGER  IKL, ID, ICON, IKD, IKHS, IKH, TOTO, ISTAT
+      INTEGER  IKL, ID, IKD, IKHS, IKH, TOTO, ISTAT
       REAL(rkind) ::  C, C2
-      REAL(rkind) ::  DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG, PROF
+      REAL(rkind) ::  DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, CGG, PROF
       REAL(rkind) ::  KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
-      REAL(rkind) ::  DKD, H, IH, DH, KDD, CN, CC
+      REAL(rkind) ::  DKD, H, IH, KDD, CN, CC
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
@@ -1995,9 +1995,9 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IS2, IS0, IS20, IA, J, IKL, ID, NKL, IO
+      INTEGER                 :: IS, IS2, IS0, IA, J, IKL, ID, NKL, IO
 !/S      INTEGER, SAVE           :: IENT = 0
-      INTEGER                 :: IK, IK1, ITH, IK2, ITH2, L,       & 
+      INTEGER                 :: IK, IK1, ITH, IK2,       & 
                                  IKHS, IKD, SDSNTH, IT 
       INTEGER                 :: NSMOOTH(NK)
       REAL(rkind)                    :: COSWIND, ASUM, SDIAGISO
@@ -2006,7 +2006,7 @@
       REAL(rkind)                    :: FACTURB, DTURB, BREAKFRACTION
       REAL(rkind)                    :: RENEWALFREQ, EPSR
       REAL(rkind)                    :: NTIMES(NK), S1(NK), E1(NK)
-      REAL(rkind)                    :: GAM, XT, M1
+      REAL(rkind)                    :: GAM, XT
       REAL(rkind)                    :: DK(NK), HS(NK), KBAR(NK), DCK(NK)
       REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                 :: IKSUP(NK)
@@ -2016,11 +2016,11 @@
       REAL(rkind)                    :: BTH(NSPEC)   !saturation spectrum 
       REAL(rkind)                    :: BTH0S(NK)    !smoothed saturation spectrum 
       REAL(rkind)                    :: BTHS(NSPEC)  !smoothed saturation spectrum  
-      REAL(rkind)                    :: W, MICHE, X
+      REAL(rkind)                    :: MICHE, X
 !/T0      REAL                    :: DOUT(NK,NTH)
       REAL(rkind)                    :: QB(NK), S2(NK), KD
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
-      REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC), LAMBDA(NSPEC)
+      REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/

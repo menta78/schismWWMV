@@ -7,11 +7,6 @@
        SUBROUTINE INIT_ARRAYS
        USE DATAPOOL
        IMPLICIT NONE
-
-#ifdef MPI_PARALL_GRID
-       INTEGER :: IE
-#endif
-
        IF (DIMMODE .EQ. 1) THEN
          ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
@@ -477,7 +472,6 @@
 #endif
       IMPLICIT NONE
 !
-      INTEGER        :: i, j, IP
       REAL(rkind)    :: TIME1, TIME2
       
 #ifdef TIMINGS
@@ -982,19 +976,13 @@
 !*                                                                    *
 !**********************************************************************
        SUBROUTINE INITIATE_WAVE_PARAMETER
-         USE DATAPOOL, ONLY: STAT, LSTCU, LSECU, MESNL, SPSIG, SPDIR, MSC, MDC, DELALP
-         USE DATAPOOL, ONLY: G9, DEP, MNP, MESTR, LSOURCESWWIII, LSOURCESWAM, DELTAIL
-         USE DATAPOOL, ONLY: LPRECOMP_EXIST, TAUHFT, TAUHFT2, TAUT, DELU, DELTAUW, DELUST
-         USE DATAPOOL, ONLY: IPHYS, MESIN, SMETHOD
-#ifdef MPI_PARALL_GRID
-         USE DATAPOOL, ONLY: MYRANK,COMM
-#endif
+         USE DATAPOOL
          USE M_CONSTANTS
          USE M_XNLDATA
          USE M_FILEIO
 
          IMPLICIT NONE
-         INTEGER IQGRID, INODE, IERR
+         INTEGER IQGRID, INODE
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
          FLUSH(STAT%FHNDL)
@@ -1074,7 +1062,7 @@
        USE NETCDF
 #endif
        IMPLICIT NONE
-       INTEGER         :: IP, I, K, L, M, IS, ID
+       INTEGER         :: IP, K, M, IS, ID
        REAL(rkind)     :: SPPAR(8)
        REAL(rkind)     :: MS
        REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
@@ -1083,9 +1071,6 @@
        REAL(rkind)     :: ACLOC(MSC,MDC)
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
-#ifdef NCDF
-       CHARACTER(len=25) :: CALLFROM
-#endif
        TMPPAR = 0.
        IF (.NOT. LHOTR .AND. LINID) THEN
          IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN

@@ -256,7 +256,7 @@
       !
       integer :: rbuf_int(2)
       real(rkind), allocatable :: rbuf_real(:)
-      integer iProc, IP, IE, nb_real, idx
+      integer nb_real
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL SINGLE_READ_SPATIAL_GRID_TOTAL(eGrid, DimMode, LVAR1D, Lsphe, eGRD, iGridType)
@@ -436,8 +436,8 @@
         END IF
       END DO
       allocate(IPbound(nbDirichlet), IPisland(nbIsland), ACTIVE(nbDirichlet), stat=istat)
-      ACTIVE(:)=1    ! right now we are proceding this way. Maybe there is work here to improve
       IF (istat/=0) CALL WWM_ABORT('allocate error 17')
+      ACTIVE(:)=1    ! right now we are proceding this way. Maybe there is work here to improve
       idxDirichlet=0
       idxIsland=0
       DO IP=1,np_total
