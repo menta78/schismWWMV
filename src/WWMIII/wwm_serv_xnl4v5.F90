@@ -1,12 +1,13 @@
 module serv_xnl4v5
+  USE DATAPOOL, only : rkind, ONE
 contains
 SUBROUTINE y_gauleg(x1,x2,x,w,n)
 !-------------------------------------------------------------------
 INTEGER, intent(in) ::  n    ! Number of intervals
-real, intent(in)    ::  x1   ! lower limit of integration interval
-real, intent(in)    ::  x2   ! upper limit of integration interval
-real, intent(out)   ::  x(n) ! Positions for function evaluations
-real, intent(out)   ::  w(n) ! Weights
+real(rkind), intent(in)    ::  x1   ! lower limit of integration interval
+real(rkind), intent(in)    ::  x2   ! upper limit of integration interval
+real(rkind), intent(out)   ::  x(n) ! Positions for function evaluations
+real(rkind), intent(out)   ::  w(n) ! Weights
 !
 !-----------------------------------------------------------------------
 DOUBLE PRECISION EPS
@@ -72,14 +73,14 @@ implicit none
 !
 !Type   I/O           Name    Description
 !------------------------------------------------------------------------------
-real, intent(in)  :: sigma  !  radian frequency (rad)
-real, intent(in)  :: depth  !  water depth (m)
-real, intent(in)  :: grav   !  gravitational acceleration (m/s^2)
-real, intent(out) :: cg     !  group velocity (m/s)
+real(rkind), intent(in)  :: sigma  !  radian frequency (rad)
+real(rkind), intent(in)  :: depth  !  water depth (m)
+real(rkind), intent(in)  :: grav   !  gravitational acceleration (m/s^2)
+real(rkind), intent(out) :: cg     !  group velocity (m/s)
 !
-real k                      !  wave number
+real(rkind) k                      !  wave number
 !/A
-!!real z_wnumb                !  compute wave number
+!!real(rkind) z_wnumb                !  compute wave number
 !/Z
 !-----------------------------------------------------------------------------
 k = z_wnumb(sigma,depth,grav)
@@ -139,10 +140,10 @@ implicit none
 !
 integer, intent(in) ::  n1   !   number of data points in x1-y1 arrays
 integer, intent(in) ::  n2   !   number of data points in x2-y2 arrays
-real, intent(in) ::  x1(n1)  !   x-values of input data
-real, intent(in) ::  y1(n1)  !   y-values of input data
-real, intent(in) ::  x2(n2)  !   x-values of output data
-real, intent(out) :: y2(n2)  !   y-values of output data
+real(rkind), intent(in) ::  x1(n1)  !   x-values of input data
+real(rkind), intent(in) ::  y1(n1)  !   y-values of input data
+real(rkind), intent(in) ::  x2(n2)  !   x-values of output data
+real(rkind), intent(out) :: y2(n2)  !   y-values of output data
 integer, intent(out) :: ierr !   Error indicator
 !
 !  4. Subroutines used
@@ -178,13 +179,13 @@ integer, intent(out) :: ierr !   Error indicator
 !------------------------------------------------------------------------------
 integer i1,i2        ! counters
 !
-real ds            ! step size
-real fac           ! factor in linear interpolation
-real s1,s2         ! search values
-real xmin1,xmax1   ! minimum and maximum of x1-data
-real xmin2,xmax2   ! minimum and maximum of x2-data
+real(rkind) ds            ! step size
+real(rkind) fac           ! factor in linear interpolation
+real(rkind) s1,s2         ! search values
+real(rkind) xmin1,xmax1   ! minimum and maximum of x1-data
+real(rkind) xmin2,xmax2   ! minimum and maximum of x2-data
 !
-real, parameter :: eps=1.e-20
+real(rkind), parameter :: eps=1.e-20
 !------------------------------------------------------------------------------
 !   initialisation
 !
@@ -317,9 +318,9 @@ subroutine z_polyarea(xpol,ypol,npol,area)
 !     Name    I/O  Type  Description
 !
 integer, intent(in)  ::  npol       ! Number of points of polygon
-real, intent(in)     ::  xpol(npol) ! x-coodinates of polygon
-real, intent(in)     ::  ypol(npol) ! y-coordinates of polygon
-real, intent(out)    ::  area       ! area of polygon
+real(rkind), intent(in)     ::  xpol(npol) ! x-coodinates of polygon
+real(rkind), intent(in)     ::  ypol(npol) ! y-coordinates of polygon
+real(rkind), intent(out)    ::  area       ! area of polygon
 !
 !  4. Subroutines used
 !
@@ -328,11 +329,11 @@ real, intent(out)    ::  area       ! area of polygon
 !  6. Remarks
 !
 integer ipol,ipol1         ! counters
-real xmin,xmax,ymin,ymax   ! minima and maxima of polygon
-real xmean,ymean           ! mean values
-real xa,ya,xb,yb           ! temporary variables
-real sumx,sumy             ! sums
-real darea                 ! piece of area
+real(rkind) xmin,xmax,ymin,ymax   ! minima and maxima of polygon
+real(rkind) xmean,ymean           ! mean values
+real(rkind) xa,ya,xb,yb           ! temporary variables
+real(rkind) sumx,sumy             ! sums
+real(rkind) darea                 ! piece of area
 !-------------------------------------------------------------------------------
 if(npol<=1) then  ! check constants ... aaron
   crf  = 0.
@@ -402,8 +403,8 @@ subroutine z_steps(x,dx,nx)
 implicit none
 !
 integer, intent(in) :: nx     ! Number of elements in array
-real, intent(in)    :: x(nx)  ! Input data array with elements
-real, intent(out)   :: dx(nx) ! Output array with step sizes
+real(rkind), intent(in)    :: x(nx)  ! Input data array with elements
+real(rkind), intent(out)   :: dx(nx) ! Output array with step sizes
 !
 integer ix                    ! counter
 !------------------------------------------------------------------------------
@@ -429,7 +430,7 @@ end if
 return
 end subroutine
 !-----------------------------------------------------------------------------!
-real function z_root2(func,x1,x2,xacc,iprint,ierr)
+real(rkind) function z_root2(func,x1,x2,xacc,iprint,ierr)
 !-----------------------------------------------------------------------------!
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -466,7 +467,7 @@ real function z_root2(func,x1,x2,xacc,iprint,ierr)
 !
 !     Name    I/O  Type  Description
 !
-!     func     i    r    real function
+!     func     i    r    real(rkind) function
 !     x1       i    r    initial x-value on left/right side of zero-crossing
 !     x2       i    r    initial x-value on right/left side of zero-crossing
 !     xacc     i    r    accuracy, used as |x1(i)-x2(i)|< xacc
@@ -475,7 +476,7 @@ real function z_root2(func,x1,x2,xacc,iprint,ierr)
 !
 !  4. Subroutines used
 !
-!     Func      user supplied real function
+!     Func      user supplied real(rkind) function
 !
 !  5. Error messages
 !
@@ -497,16 +498,16 @@ real function z_root2(func,x1,x2,xacc,iprint,ierr)
 !
 implicit none
 !
-real func                         ! external function
-real, intent (in) :: x1           ! x-value at one side of interval
-real, intent (in) :: x2           ! x-value at other side of interval
-real, intent (in) :: xacc         ! requested accuracy
+real(rkind) func                         ! external function
+real(rkind), intent (in) :: x1           ! x-value at one side of interval
+real(rkind), intent (in) :: x2           ! x-value at other side of interval
+real(rkind), intent (in) :: xacc         ! requested accuracy
 integer, intent (in) :: iprint    ! number of output channel, only used when
 integer, intent (out) :: ierr     ! error indicator
 !
-real unused                       ! default value
-real zriddr                       ! intermediate function value
-real xx1,xx2,xx                   ! local boundaries during iteration
+real(rkind) unused                       ! default value
+real(rkind) zriddr                       ! intermediate function value
+real(rkind) xx1,xx2,xx                   ! local boundaries during iteration
 integer maxit                     ! maximum number of iteration
 integer luprint                   ! unit of test output
 logical lopen                     ! check if a file is opened
@@ -515,15 +516,15 @@ parameter (maxit = 20)
 external func
 !
 integer iter      ! counter for number of iterations
-real fh           ! function value FUNC(xh)
-real fl           ! function value FUNC(xl)
-real fm           ! function value FUNC(xm)
-real fnew         ! function value FUNC(xnew)
-real s            ! temp. function value, used for inverse quadratic interpolation
-real xh           ! upper (high) boundary of interval
-real xl           ! lower boundary of interval
-real xm           ! middle point of interval
-real xnew         ! new estimate according to Ridders method
+real(rkind) fh           ! function value FUNC(xh)
+real(rkind) fl           ! function value FUNC(xl)
+real(rkind) fm           ! function value FUNC(xm)
+real(rkind) fnew         ! function value FUNC(xnew)
+real(rkind) s            ! temp. function value, used for inverse quadratic interpolation
+real(rkind) xh           ! upper (high) boundary of interval
+real(rkind) xl           ! lower boundary of interval
+real(rkind) xm           ! middle point of interval
+real(rkind) xnew         ! new estimate according to Ridders method
 !
 ierr   = 0        ! set error level
 unused =-1.11e30  ! set start value
@@ -565,7 +566,7 @@ if((fl > 0. .and. fh < 0.) .or. (fl < 0. .and. fh > 0.))then
       fm = func(xm)
       s = sqrt(fm**2-fl*fh)
       if(s == 0.) goto 9000
-      xnew = xm+(xm-xl)*(sign(1.,fl-fh)*fm/s)
+      xnew = xm+(xm-xl)*(sign(ONE,fl-fh)*fm/s)
 !
 !      if(luprint>0) write(luprint,'(a,4e13.5)') &
 !&       'Z_ROOT2: xm,fm,s,xnew:',xm,fm,s,xnew
@@ -677,7 +678,7 @@ return
 end subroutine
 !
 !-----------------------------------------------------------------------------!
-real function z_wnumb(w,d,grav)
+real(rkind) function z_wnumb(w,d,grav)
 !-----------------------------------------------------------------------------!
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -707,9 +708,9 @@ implicit none
 !
 !Type   I/O           Name     Description
 !------------------------------------------------------------------------------
-real, intent(in)  ::  w      ! radian frequency (rad)
-real, intent(in)  ::  d      ! water depth (m)
-real, intent(in)  ::  grav   ! graviational acceleration (m/s^2)
+real(rkind), intent(in)  ::  w      ! radian frequency (rad)
+real(rkind), intent(in)  ::  d      ! water depth (m)
+real(rkind), intent(in)  ::  grav   ! graviational acceleration (m/s^2)
 !
 !  4. Subroutines used
 !
@@ -720,7 +721,7 @@ real, intent(in)  ::  grav   ! graviational acceleration (m/s^2)
 !     The Pade approximation has been described in Hunt, 198.
 !
 !
-real x,xx,y,omega
+real(rkind) x,xx,y,omega
 !
 if(d<=0 .or. w<= 0.) then
   z_wnumb = -10.

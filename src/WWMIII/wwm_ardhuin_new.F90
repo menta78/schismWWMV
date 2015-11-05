@@ -541,7 +541,7 @@
       INTEGER  :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
 
-      REAL(rkind)                    :: TAUW, EBAND, EMEANWS, RDCH, FXPMC,    &
+      REAL(rkind)  :: TAUW, EBAND, EMEANWS,                      &
                                  UNZ, R1, EB(NK), EB2(NK), ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
@@ -746,12 +746,11 @@
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
-      REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
 #ifdef STAB3
+      REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
       REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
 #endif
-      REAL(rkind)                    :: mu_janssen,    &
-                                 CM,UCN,ZCN, &
+      REAL(rkind)                    :: CM,UCN,ZCN, &
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT

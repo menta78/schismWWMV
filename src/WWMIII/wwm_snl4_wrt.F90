@@ -44,16 +44,16 @@ integer, intent(in) :: ndir     ! number of directions
 integer, intent(in) :: nsig     ! number of sigma values in array
 integer, intent(in) :: iquad    ! method of computing nonlinear quadruplet interactions
 !
-real, intent(in)    :: aquad(nsig,ndir)        ! action density spectrum as a function of (sigma,dir)
-real, intent(in)    :: sigma(nsig)             ! Intrinsic frequencies
-real, intent(in)    :: dir(ndir)               ! directions in radians 
-real, intent(in)    :: depth                   ! local depth 
+real(rkind), intent(in)    :: aquad(nsig,ndir)        ! action density spectrum as a function of (sigma,dir)
+real(rkind), intent(in)    :: sigma(nsig)             ! Intrinsic frequencies
+real(rkind), intent(in)    :: dir(ndir)               ! directions in radians 
+real(rkind), intent(in)    :: depth                   ! local depth 
 !
 !
 integer, intent(out):: ierr                    ! Error indicator. If no errors are detected IERR=0
 !
-real, intent(out)   :: xnl(nsig,ndir)          ! transfer rate dA/dt(sigma,dir)
-real, intent(out)   :: diag(nsig,ndir)         ! diagonal term (dXnl/dA)
+real(rkind), intent(out)   :: xnl(nsig,ndir)          ! transfer rate dA/dt(sigma,dir)
+real(rkind), intent(out)   :: diag(nsig,ndir)         ! diagonal term (dXnl/dA)
 !                                              ! a certain exact method (sigma,dir)
 !--------------------------------------------------------------------------------------------------
 !
@@ -126,5 +126,4 @@ iproc = 0
 !
 call xnl_main(aquad,sigma,dir,nsig,ndir,depth,iquad,xnl,diag,iproc,ierr)
 !
-return
 end subroutine

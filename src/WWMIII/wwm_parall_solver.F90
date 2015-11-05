@@ -2950,16 +2950,11 @@
       IMPLICIT NONE
       REAL(rkind), intent(out) :: B(MSC, MDC, MNP)
       REAL(rkind), intent(in)  :: U(MSC, MDC, MNP)
-
-      INTEGER :: IP, ID, IS
+      INTEGER :: IP, ID
       INTEGER :: IPGL1, IPREL
- 
-      REAL(rkind) :: TRIA03
-!
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
-
       DO IP=1,MNP
         DO ID=1,MDC
           B(:,ID,IP) = U(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
