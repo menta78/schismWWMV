@@ -138,15 +138,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P4D_WWM(LocalColor, AC)
-!      USE DATAPOOL, only : MSC, MDC, rkind, LocalColorInfo
-!      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-!      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
-!      USE DATAPOOL, only : wwmtot_p2dsend_type, wwmtot_p2drecv_type
-!      USE DATAPOOL, only : wwm_p2dsend_type, wwm_p2drecv_type
-!      USE DATAPOOL, only : wwm_p2dsend_rqst, wwm_p2drecv_rqst
-!      USE DATAPOOL, only : wwm_p2dsend_stat, wwm_p2drecv_stat
-!      USE DATAPOOL, only : ZERO, NP_RES, MNP
-!      USE datapool, only : comm, ierr, myrank
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -226,14 +217,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_SL_WWM(LocalColor, AC)
-!      USE DATAPOOL, only : MSC, MDC, rkind, LocalColorInfo
-!      USE DATAPOOL, only : wwm_nnbr_send_sl, wwm_nnbr_recv_sl
-!      USE DATAPOOL, only : wwm_ListNeigh_send_sl, wwm_ListNeigh_recv_sl, wwm_ListNeigh_send
-!      USE DATAPOOL, only : wwmsl_send_type, wwmsl_recv_type
-!      USE DATAPOOL, only : wwmsl_send_rqst, wwmsl_recv_rqst
-!      USE DATAPOOL, only : wwmsl_send_stat, wwmsl_recv_stat
-!      USE DATAPOOL, only : ZERO, NP_RES, MNP
-!      USE datapool, only : comm, ierr, myrank
       USE datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -258,10 +241,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_ASPAR(LocalColor, ASPAR_bl)
-!      USE DATAPOOL, only: comm, ierr, myrank, ierr, wwm_nnbr_m_send, wwm_ListNeigh_m_send
-!      use datapool, only: wwmmat_p2dsend_type, wwmmat_p2dsend_rqst, wwm_nnbr_m_recv, wwm_ListNeigh_m_recv
-!      use datapool, only: wwmmat_p2drecv_type, wwmmat_p2drecv_rqst, LocalColorInfo, rkind
-!      use datapool, only: wwmmat_p2drecv_stat, wwmmat_p2dsend_stat, MSC, MDC, NNZ
       use datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -849,7 +828,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE BUILD_MULTICOLORING(AdjGraph, ListColor)
-!      USE datapool, only : myrank, Graph
       USE datapool
       implicit none
       type(Graph), intent(in) :: AdjGraph
@@ -945,7 +923,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE DeallocateGraph(TheGraph)
-!      USE DATAPOOL, only : Graph
       USE DATAPOOL
       implicit none
       type(Graph), intent(inout) :: TheGraph
@@ -956,10 +933,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_BLOCK_FREQDIR(LocalColor, Nblock)
-!      USE DATAPOOL, only : MNP, MDC, MSC, LocalColorInfo, rkind, stat
-!      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-!      USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
-!      USE DATAPOOL, only : XP, YP, rtype, ierr, myrank, iplg
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1016,12 +989,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_BLK_L2U_ARRAY(LocalColor)
-!      USE DATAPOOL, only : MNP, MSC, MDC, LocalColorInfo, rkind, stat
-!      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-!      USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
-!      USE DATAPOOL, only : wwm_ListDspl_send, wwm_ListDspl_recv
-!      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
-!      USE DATAPOOL, only : XP, YP, rtype, ierr, myrank, iplg
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1145,9 +1112,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SYMM_INIT_COLORING(LocalColor, NbBlock)
-!      USE DATAPOOL, only : LocalColorInfo, MNP, rkind, XP, YP, stat
-!      USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
-!      USE datapool, only : myrank, nproc, iplg, Graph
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1232,15 +1196,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE INIT_LOW_2_UPP_ARRAYS(LocalColor, ListColor)
-!      USE DATAPOOL, only : LocalColorInfo, MNP, rkind, stat
-!      USE DATAPOOL, only : NNZ, IA, JA, NP_RES
-!      USE DATAPOOL, only : wwm_ListNbCommon_send, wwm_ListNbCommon_recv
-!      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-!      USE DATAPOOL, only : wwm_p2drecv_type, wwm_p2dsend_type
-!      USE DATAPOOL, only : wwm_ListNeigh_send, wwm_ListNeigh_recv
-!      USE DATAPOOL, only : wwm_ListDspl_recv
-!      USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
-!      USE datapool, only : MPI_STATUS_SIZE
       USE datapool
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1869,10 +1824,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE DETERMINE_JSTATUS_L_U(LocalColor)
-!      USE DATAPOOL, only : LocalColorInfo, MNP, rkind
-!      USE DATAPOOL, only : NNZ, IA, JA, NP_RES, I_DIAG
-!      USE DATAPOOL, only : wwm_nnbr_send, wwm_nnbr_recv
-!      USE datapool, only : myrank, nproc, comm, ierr, nbrrank_p
       USE datapool
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -1986,9 +1937,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5_RECV_ASPAR_PC(LocalColor, SolDatI)
-!      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-!      USE DATAPOOL, only : MNP, MSC, MDC, rkind
-!      USE datapool, only : ierr, comm, rtype, istatus, nbrrank_p
       USE datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2021,16 +1969,13 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5_SEND_ASPAR_PC(LocalColor, SolDatI)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MSC, MDC, rkind
-      USE datapool, only : ierr, comm, rtype, nbrrank_p
+      USE datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
       real(rkind), allocatable :: ASPAR_rs(:)
       integer idx, iNNZ, jNNZ, IS, ID, NNZ_l, siz
       integer iProc, iRank, i
-      integer istat
       DO iProc=1,LocalColor % nbUpp_send
         i=LocalColor % ListIdxUpper_send(iProc)
         iRank=nbrrank_p(i)
@@ -2059,8 +2004,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5_CREATE_PRECOND_ILU0(LocalColor, SolDatI)
-      USE DATAPOOL, only : MNP, NP_RES, LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MSC, MDC, IA, JA, I_DIAG, rkind
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
@@ -2109,8 +2053,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_CREATE_PRECOND_ILU0(LocalColor, SolDatI)
-      USE DATAPOOL, only : MNP, NP_RES, LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MSC, MDC, IA, JA, I_DIAG, rkind
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
@@ -2123,12 +2066,7 @@
 !**********************************************************************
 # ifndef SOR_DIRECT
       SUBROUTINE I5B_CREATE_PRECOND_SOR(LocalColor, SolDatI)
-      USE DATAPOOL, only : MNP, MDC, IA, JA, I_DIAG, NP_RES, rkind, ONE
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE datapool, only : exchange_p4d_wwm
-#  ifdef DEBUG
-      USE datapool, only : myrank
-#  endif
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
@@ -2191,8 +2129,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_CREATE_PRECOND(LocalColor, SolDatI, TheMethod)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, NP_RES, rkind
-      USE datapool, only : exchange_p4d_wwm, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
@@ -2234,8 +2171,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Send(LocalColor, AC, iBlock)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE datapool, only : comm, ierr, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
@@ -2265,8 +2201,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_LOW_2_UPP_Recv(LocalColor, AC, iBlock)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE datapool, only : comm, ierr, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(MSC, MDC, MNP)
@@ -2295,8 +2230,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Send(LocalColor, AC, iBlock)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE datapool, only : comm, ierr, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
@@ -2325,8 +2259,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EXCHANGE_P3_UPP_2_LOW_Recv(LocalColor, AC, iBlock)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE datapool, only : comm, ierr, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       REAL(rkind), intent(inout) :: AC(MSC, MDC, MNP)
@@ -2357,7 +2290,7 @@
 !**********************************************************************
 # ifdef DEBUG
       SUBROUTINE COMPUTE_TOTAL_INDEX_SHIFT(TheRes)
-      USE DATAPOOL, only : NP_RES, IA, JA
+      USE DATAPOOL
       implicit none
       integer, intent(out) :: TheRes
       integer :: IP, JP, J
@@ -2374,12 +2307,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_L(LocalColor, SolDatI, iBlock, ACret)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, I_DIAG, ONE
-      USE DATAPOOL, only : IA, JA, MSC, MDC, MNP, rkind, NP_RES, THR, THR8
-      USE datapool, only : myrank
-# ifdef DEBUG
-      USE datapool, only : iplg
-# endif
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
@@ -2458,9 +2386,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_PARTIAL_SOLVE_U(LocalColor, SolDatI, iBlock, ACret)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MNP, IA, JA, I_DIAG, MSC, MDC, rkind, NP_RES, ONE, THR
-      USE datapool, only : myrank, iplg
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
@@ -2544,8 +2470,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_SYNC_SENDRECV(LocalColor, AC)
-      USE DATAPOOL, only : LocalColorInfo, MNP, MSC, MDC, rkind
-      USE datapool, only : comm, ierr, myrank
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: AC(MSC, MDC, MNP)
@@ -2573,10 +2498,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_APPLY_PRECOND(LocalColor, SolDatI, ACret)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : MSC, MDC, MNP, rkind
-      USE datapool, only : myrank
-      USE DATAPOOL, only : DO_SYNC_UPP_2_LOW, DO_SYNC_LOW_2_UPP, DO_SYNC_FINAL
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
@@ -2608,9 +2530,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_APPLY_FCT(LocalColor, SolDatI,  ACin, ACret)
-      USE DATAPOOL, only : I5_SolutionData, IA, JA, NP_RES, MDC, MSC, MNP, rkind
-      USE DATAPOOL, only : LocalColorInfo
-      USE datapool, only : exchange_p4d_wwm, myrank
+      USE DATAPOOL
       implicit none
       integer IP, J, idx
       type(LocalColorInfo), intent(in) :: LocalColor
@@ -2665,7 +2585,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE REPLACE_NAN_ZERO(LocalColor, LScal)
-      USE DATAPOOL, only : rkind, MSC, MDC, LocalColorInfo
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       real(rkind), intent(inout) :: LScal(MSC,MDC)
@@ -2682,9 +2602,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_L2_LINF(ACw1, ACw2, Norm_L2, Norm_LINF)
-      USE DATAPOOL, only : rkind, MNP, MDC, MSC
-      USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
       real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
@@ -2726,9 +2644,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_SCALAR(ACw1, ACw2, LScal)
-      USE DATAPOOL, only : rkind, MNP, MDC, MSC
-      USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
       real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
@@ -2756,9 +2672,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_SUM_MAX(ACw, LSum, LMax)
-      USE DATAPOOL, only : rkind, MNP, MDC, MSC
-      USE DATAPOOL, only : nwild_loc_res, NP_RES
-      USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
       real(rkind), intent(inout) :: LSum(MSC, MDC)
@@ -2806,7 +2720,7 @@
 !*                                                                    *
 !**********************************************************************
       FUNCTION I5B_SUMTOT(ACw)
-      USE DATAPOOL, only : rkind, MNP, MDC, MSC
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
       real(rkind) :: LSum(MSC, MDC)
@@ -2825,9 +2739,6 @@
 ! The same for x, r
 ! 
       SUBROUTINE I5B_BCGS_REORG_SOLVER(LocalColor, SolDatI, nbIter, Norm_L2, Norm_LINF)
-!      USE DATAPOOL, only : MSC, MDC, MNP, NP_RES, AC2, WAE_SOLVERTHR
-!      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, rkind
-!      USE DATAPOOL, only : PCmethod, STAT, myrank
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
@@ -2948,10 +2859,9 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_ALLOCATE(SolDatI)
-      USE DATAPOOL, only : I5_SolutionData, MNP, MSC, MDC, NNZ
+      USE DATAPOOL
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDatI
-      integer istat
       allocate(SolDatI % AC1(MSC,MDC,MNP), SolDatI % AC3(MSC,MDC,MNP), SolDatI % AC4(MSC,MDC,MNP), SolDatI % AC5(MSC,MDC,MNP), SolDatI % AC6(MSC,MDC,MNP), SolDatI % AC7(MSC,MDC,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 75')
       allocate(SolDatI % ASPAR_block(MSC,MDC,NNZ), SolDatI % B_block(MSC,MDC, MNP), stat=istat)
@@ -2994,7 +2904,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_FREE(SolDatI)
-      USE DATAPOOL, only : I5_SolutionData
+      USE DATAPOOL
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDatI
       deallocate(SolDatI % AC1, SolDatI % AC3, SolDatI % AC4, SolDatI % AC5, SolDatI % AC6, SolDatI % AC7)
@@ -3004,7 +2914,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5_SUM(AC, eSum)
-      USE DATAPOOL, only : MNP, MSC, MDC, rkind, ZERO
+      USE DATAPOOL
       implicit none
       real(rkind), intent(in) :: AC(MNP,MSC,MDC)
       real(rkind), intent(out) :: eSum
@@ -3022,7 +2932,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WWM_SOLVER_EIMPS(LocalColor, SolDatI)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData, stat
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
@@ -3286,19 +3196,12 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE I5B_EIMPS(LocalColor, SolDatI)
-      USE DATAPOOL, only : LocalColorInfo, I5_SolutionData
-      USE DATAPOOL, only : rkind, MSC, MDC, AC2, MNP, NNZ
-      USE DATAPOOL, only : PCmethod, IOBPD, ZERO, STAT
-      USE datapool, only : exchange_p4d_wwm
-#ifdef DEBUG
-      USE datapool, only : myrank
-#endif
+      USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
       integer nbIter
       real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-!      real(rkind) :: Lerror
 # ifndef ASPAR_B_COMPUTE_BLOCK
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
 # endif
