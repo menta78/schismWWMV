@@ -341,7 +341,7 @@
       real(rkind), intent(in) :: B(MNP)
       real(rkind), intent(out) :: TheOut(MNP)
       real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
-      real(rkind) :: uO, uN, alphaV, h1, h2
+      real(rkind) :: uO, uN, alphaV, h2
       real(rkind) :: eNorm, beta
       integer IP, nbIter
       nbIter=0

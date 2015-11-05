@@ -923,8 +923,6 @@
       SUBROUTINE SET_WAVE_BOUNDARY_CONDITION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind)      :: DTMP
-      integer :: ITMP, IP, eIdx, bIdx
       CHARACTER(len=29) :: CHR
       IF (LNANINFCHK) THEN
         WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
@@ -957,8 +955,6 @@
       SUBROUTINE INIT_WAVE_BOUNDARY_CONDITION
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind)            :: DTMP
-      INTEGER                :: ITMP
       LOGICAL                :: DoAllocate
       WRITE(STAT%FHNDL, *) 'Begin of INIT_WAVE_BOUNDARY_CONDITION'
 !TODO: Makes sure initial condition work also when no wave boundary is set ...
@@ -1867,7 +1863,8 @@
       REAL :: FQ_WW3_SNGL(MSC_WW3), DR_WW3_SNGL(MDC_WW3)
       REAL :: XP_WW3_SGLE(NP_WW3), YP_WW3_SGLE(NP_WW3)
       REAL :: D(NP_WW3),UA(NP_WW3),UD(NP_WW3),CA(NP_WW3),CD2(NP_WW3)
-      REAL :: m0,m1,m2,df
+      REAL :: M0, M1, M2, DF
+      REAL :: eSPECmid
       INTEGER :: is,id
 
       CHARACTER(LEN=30) :: GNAME
@@ -1892,11 +1889,11 @@
             m0 = 0.; m1 = 0.; m2 = 0.
             DO ID = 1,MDC_WW3-1
               DO IS = 1,MSC_WW3-1
-                DF = FQ_WW3(IS+1)-FQ_WW3(IS)
-                M0 = M0+((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
-                M1 = M1+((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
-                M2 = M2+(((FQ_WW3(IS+1)-FQ_WW3(IS))/TWO)**TWO)*((SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/TWO)*DF*DDIR_WW3
-!                write(*,*) 4*sqrt(m0), m1, m2, df
+                DF = FQ_WW3_SNGL(IS+1)-FQ_WW3_SNGL(IS)
+                eSPECmid= (SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/2.
+                M0 = M0 + eSPECmid*DF*DDIR_WW3
+                M1 = M1 + (DF/2.)*eSPECmid*DF*DDIR_WW3
+                M2 = M2 + ((DF/2.)**TWO)*eSPECmid*DF*DDIR_WW3
               ENDDO
             ENDDO
           ENDDO ! IP
@@ -1971,7 +1968,7 @@
       USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
       USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
       USE DATAPOOL, ONLY: MDC_WW3
-# ifdef MPI_PARALL_GRID
+# ifdef SCHISM
       USE DATAPOOL, ONLY: XLON, YLAT
 # endif
       IMPLICIT NONE
@@ -1980,7 +1977,7 @@
       REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
       REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
       REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
-      REAL(rkind) :: JUNK(MDC_WW3),DR_WW3_UNSORT(MDC_WW3),DR_WW3_TMP(MDC_WW3)
+      REAL(rkind) :: JUNK(MDC_WW3), DR_WW3_TMP(MDC_WW3)
       REAL(rkind) :: XP_WWM,YP_WWM
       INTEGER     :: IFILE, IT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Begin GETWW3SPECTRA'
@@ -2083,7 +2080,7 @@
       REAL(rkind), INTENT(IN)  :: WEIGHT(NP), Z(D1,D2,NP)
       REAL(rkind), INTENT(OUT) :: ZINT(D1,D2)
       INTEGER                  :: IP
-      REAL                     :: SW
+      REAL(rkind)              :: SW
       SW=0
       ZINT=0
       DO IP=1,NP
@@ -2345,7 +2342,7 @@
       !
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
-      integer mnp_dims, mne_dims, nfreq_dims, ndir_dims, eight_dims
+      integer mnp_dims, nfreq_dims, ndir_dims, eight_dims
       integer iret, var_id, ncid
       integer ntime_dims, iwbmnpgl_dims
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_1"
@@ -2426,7 +2423,6 @@
       integer, intent(in) :: ListBound(nbBound)
       !
       integer ncid
-      integer one_dims, two_dims, three_dims, fifteen_dims
       integer iret, var_id
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUND_HEADERS_2"
       !
@@ -2832,11 +2828,11 @@
       REAL, allocatable :: XBPI(:), YBPI(:), RDBPI(:,:)
       INTEGER, allocatable :: IPBPI(:,:)
       REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
-      REAL, PARAMETER         :: DERA   = PI / 180.
       real, allocatable :: ABPIO(:)
       REAL(rkind) :: eCLATS, eCG, DEPLOC, eVal
-      REAL XFR, eTH, FREQ1, NK, NTH, IPglob
+      REAL XFR, eTH, FREQ1, IPglob
       INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISP
+      INTEGER NK, NTH
       INTEGER TheOut
       INTEGER TIME2(2)
       nbDirichlet=0
@@ -2918,7 +2914,7 @@
            IPglob=IWBNDGL(IB)
            DEPLOC = MAX(DMIN,DEPtotal(IPglob))
            IF (LSPHE) THEN
-             eCLATS = COS(DERA*YPtotal(IPglob))
+             eCLATS = COS(DEGRAD*YPtotal(IPglob))
            ELSE
              eCLATS = 1
            END IF

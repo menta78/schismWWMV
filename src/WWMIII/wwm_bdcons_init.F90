@@ -512,8 +512,7 @@
       SUBROUTINE SET_IOBP_NEXTGENERATION
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER     :: IP, IFSTAT, SPsize
-      REAL(rkind) :: BNDTMP
+      INTEGER     :: IP, SPsize
       INTEGER     :: STATUS(MNP)
       INTEGER     :: idx, PosWBAC
       IOBPD   = 0

@@ -3057,8 +3057,8 @@ elseif(ik3 > ik1 .and. it3 < it1)  then  ! Case 2
   t_ik2(1:nloc)  = kdif + r_ik2(1:nloc)
   t_ik4(1:nloc)  = kdif + r_ik4(1:nloc)
   ibeta          = int(q_ad(ia1)/q_deltad+0.01)
-  t_ia2(1:nloc)  = ibeta + 2.*iaref - r_ia2(1:nloc) -imirror
-  t_ia4(1:nloc)  = ibeta + 2.*iaref - r_ia4(1:nloc) -imirror
+  t_ia2(1:nloc)  = ibeta + 2*iaref - r_ia2(1:nloc) -imirror
+  t_ia4(1:nloc)  = ibeta + 2*iaref - r_ia4(1:nloc) -imirror
   t_w1k2(1:nloc)  = r_w3k2(1:nloc)
   t_w2k2(1:nloc)  = r_w4k2(1:nloc)
   t_w3k2(1:nloc)  = r_w1k2(1:nloc)
@@ -6844,8 +6844,8 @@ real(rkind) qn1,qn3          ! action densities in k1 and k3
 !
 !  testing of diagonal term on a low level
 !
-real(rkind) diagk1_0         ! saved value of diagk1
-real(rkind) diagk3_0         ! saved value of diagk3
+!real(rkind) diagk1_0         ! saved value of diagk1
+!real(rkind) diagk3_0         ! saved value of diagk3
 real(rkind) dq1              ! small change in action density of n1
 real(rkind) dq3              ! small change in action density of n3
 real(rkind) t13_0            ! Original estimated of diagonal term

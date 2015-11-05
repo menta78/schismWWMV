@@ -644,9 +644,9 @@
            integer, dimension(:), pointer :: IWBNDLC
            type(GridInformation) :: eGrid
            integer, dimension(:), pointer :: HOT_IE
-           integer, dimension(:,:), pointer :: HOT_W
+           real(rkind), dimension(:,:), pointer :: HOT_W
            integer, dimension(:), pointer :: BOUC_IE
-           integer, dimension(:,:), pointer :: BOUC_W
+           real(rkind), dimension(:,:), pointer :: BOUC_W
          END TYPE NESTING_INFORMATION
          type(NESTING_INFORMATION), allocatable :: ListNestInfo(:)
          

@@ -95,7 +95,8 @@
       INTEGER,    PARAMETER   :: NDTAB=2000 ! Max depth: convolution calculation in W3SDS4
       INTEGER,    PARAMETER   :: NKHS=2000, NKD=1300, NKHI=100
       REAL(rkind), PARAMETER         :: PI=3.14157, G=9.81
-      REAL(rkind),    PARAMETER      :: FAC_KD1=1.01, FAC_KD2=1000._rkind
+      REAL(rkind),    PARAMETER      :: FAC_KD1=1.01
+      integer, parameter      :: FAC_KD2=1000
       REAL(rkind),    PARAMETER      :: KHSMAX=2., KHMAX=2.
       REAL(rkind),    PARAMETER      ::KDMAX=200000._rkind
 ! variables for negative wind input (beta from ST2)
@@ -740,9 +741,9 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS,IK,ITH, ICL
+      INTEGER                 :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, OMA
+      REAL(rkind)                    :: FACLN1, FACLN2, OMA
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
@@ -754,7 +755,7 @@
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: HSBLOW, FACTOR
+      REAL(rkind)                   :: FACTOR
       REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
       REAL(rkind) :: XI,DELI1,DELI2
       REAL(rkind) :: XJ,DELJ1,DELJ2
@@ -1171,9 +1172,9 @@
       INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 , IS, IS2
       INTEGER  IKL, ID, IKD, IKHS, IKH, TOTO, ISTAT
       REAL(rkind) ::  C, C2
-      REAL(rkind) ::  DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, CGG, PROF
-      REAL(rkind) ::  KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
-      REAL(rkind) ::  DKD, H, IH, KDD, CN, CC
+      REAL(rkind) ::  DIFF1, DIFF2, BINF, BSUP, CGG, PROF
+      REAL(rkind) ::  KIK, DHS, KD, KHS, KH, XT, GAM, DKH, PR, W, EPS
+      REAL(rkind) ::  DKD, KDD, CN, CC
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
@@ -1995,7 +1996,7 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IS2, IS0, IA, J, IKL, ID, NKL, IO
+      INTEGER                 :: IS, IS2, IS0, IKL, ID, NKL
 !/S      INTEGER, SAVE           :: IENT = 0
       INTEGER                 :: IK, IK1, ITH, IK2,       & 
                                  IKHS, IKD, SDSNTH, IT 
@@ -2018,7 +2019,7 @@
       REAL(rkind)                    :: BTHS(NSPEC)  !smoothed saturation spectrum  
       REAL(rkind)                    :: MICHE, X
 !/T0      REAL                    :: DOUT(NK,NTH)
-      REAL(rkind)                    :: QB(NK), S2(NK), KD
+      REAL(rkind)                    :: QB(NK), S2(NK)
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
       REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC)
 !/
@@ -2257,8 +2258,8 @@
 !
 ! gets indices for tabulated dissipation DCKI and breaking probability QBI
 !
-            IKD = FAC_KD2+ANINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1))
-            IKHS= 1+ANINT(KBAR(IKL)*HS(IKL)/DKHS)
+            IKD = FAC_KD2 + NINT(LOG(KBAR(IKL)*DEPTH)/LOG(FAC_KD1))
+            IKHS= 1 + NINT(KBAR(IKL)*HS(IKL)/DKHS)
             IF (IKD > NKD) THEN    ! Deep water
               IKD = NKD
             ELSE IF (IKD < 1) THEN ! Shallow water

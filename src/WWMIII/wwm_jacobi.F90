@@ -390,7 +390,7 @@
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IP_fall, IPie, TheVal
       INTEGER     :: ID1, ID2, POS1, POS2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -563,7 +563,7 @@
       REAL(rkind) :: eF(MSC,MDC)
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal
       INTEGER     :: ID1, ID2, IP1, IP2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -725,7 +725,7 @@
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -1138,7 +1138,7 @@
       REAL(rkind) :: K(MSC,3), CRFS(MSC,3)
       REAL(rkind) :: DELTAL(MSC,3)
       REAL(rkind) :: KM(MSC,3), KP(MSC,3)
-      REAL(rkind) :: NM(MSC), K1(MSC)
+      REAL(rkind) :: NM(MSC)
       REAL(rkind) :: DTK(MSC), TMP3(MSC)
       REAL(rkind) :: eF(MSC)
       REAL(rkind) :: CAD(MSC,MDC)
@@ -1248,7 +1248,7 @@
       REAL(rkind) :: K(3), CRFS(3)
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KM(3), KP(3)
-      REAL(rkind) :: NM, K1, DWDH, WKDEP
+      REAL(rkind) :: NM, DWDH, WKDEP
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: CAD(MDC)
       REAL(rkind) :: CAS(MSC,MDC)
@@ -1382,7 +1382,7 @@
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -1576,7 +1576,7 @@
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -1771,7 +1771,7 @@
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -2092,11 +2092,11 @@
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact
+      REAL(rkind) :: eFact
       REAL(rkind) :: NEG_P(MSC,MDC)
       REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
       INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, is_converged, itmp
-      INTEGER :: I, K, IP_ADJ, IADJ, JDX
+      INTEGER :: IP_ADJ, IADJ, JDX
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)

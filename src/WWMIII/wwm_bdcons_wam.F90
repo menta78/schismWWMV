@@ -43,9 +43,7 @@
       USE GRIB_API
       IMPLICIT NONE
       INTEGER ifile, IFILE_IN
-      REAL(rkind) :: eTimeMjd
       LOGICAL STEPRANGE_IN
-      LOGICAL :: USE_DATATIME = .TRUE.
       type(FD_FORCING_GRID) :: TheInfo
       character(len=20) shortName
       integer GRIB_TYPE

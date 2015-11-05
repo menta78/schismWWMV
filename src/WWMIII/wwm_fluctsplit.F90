@@ -10,7 +10,6 @@
          IMPLICIT NONE
  
          INTEGER             :: IS, ID, IP
-         REAL(rkind)         :: DTMAX
  
 !$OMP PARALLEL
          IF (AMETHOD == 1) THEN
@@ -182,7 +181,6 @@
        IMPLICIT NONE
 
        INTEGER             :: IS, ID, IP
-       REAL(rkind)         :: DTMAX
 
         IF (AMETHOD .eq.5) THEN
 #ifdef PETSC
@@ -278,31 +276,27 @@
 ! local double
 !
          REAL(rkind)  :: UTILDE
-
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
-
 #ifdef MPI_PARALL_GRID
          REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
 #endif
-
          REAL(rkind)  :: REST, TESTMIN
-
          REAL(rkind)  :: LAMBDA(2), DT4AI
-
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
-
          REAL(rkind)  :: KTMP(3)
-
          REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3)
-
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
+#ifdef positivity         
          REAL(rkind)  :: CBAR_1_1(2), CBAR_1_2(2)
          REAL(rkind)  :: CBAR_2_1(2), CBAR_2_2(2)
          REAL(rkind)  :: CBAR_3_1(2), CBAR_3_2(2)
+#endif
+#ifdef DEBUG_COHERENCY_FLUCT
          REAL(rkind)  :: Ftest(MNP)
+#endif
 !
 ! local parameter
 !
@@ -1039,7 +1033,7 @@
 
          REAL(rkind) :: DTK, TMP3
 
-         REAL(rkind) :: LAMBDA(2), GTEMP1, GTEMP2, FLHAB
+         REAL(rkind) :: LAMBDA(2), GTEMP2, FLHAB
          REAL(rkind) :: FL11, FL12, FL21, FL22, FL31, FL32
          REAL(rkind):: CRFS(3), K1, KM(3), K(3), TRIA03, DELFL, USFM
 
@@ -1060,10 +1054,10 @@
          REAL(rkind)  :: WKSP( 20*MNP )
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
-         REAL(rkind) ::  ASPAR(NNZ), LIMFAC
+         REAL(rkind)  :: ASPAR(NNZ), LIMFAC
 
          REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
-         REAL(rkind)  :: TEMP, DELT, XIMP, DELT5
+         REAL(rkind)  :: TEMP
 
          INTEGER :: POS_TRICK(3,2)
 
@@ -1162,7 +1156,6 @@
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-!               GTEMP1 = MAX((1.-DT4A*IMATDAA(IS,ID,IP)),1.)
                GTEMP2 = IMATRAA(IS,ID,IP)/MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
                DELFL  = COFRM4(IS)*DT4S
                USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
@@ -1193,8 +1186,8 @@
          FPAR(11) = ZERO    ! clearing the FLOPS counter
 
          AU    = 0.
-         FLJAU = 0.
-         FLJU  = 0.
+         FLJAU = 0
+         FLJU  = 0
 
          CALL ILU0  (MNP, ASPAR, JA, IA, AU, FLJAU, FLJU, IWKSP, IERROR)
 
@@ -1439,8 +1432,8 @@
          FPAR(11) = ZERO    ! clearing the FLOPS counter
 
          AU    = 0.
-         FLJAU = 0.
-         FLJU  = 0.
+         FLJAU = 0
+         FLJU  = 0
 
 !         CALL ILU0(MNP, ASPAR, JA, IA, AU, FLJAU, FLJU, IWKSP, IERROR)
          CALL SOR(MNP, ASPAR, JA, IA, AU, FLJAU, FLJU, IWKSP, IERROR)
@@ -1492,7 +1485,7 @@
 !*
 !**********************************************************************
       SUBROUTINE SQUARE_NORM(eV1, eV2, eScal)
-      USE DATAPOOL, only : rkind, MNP, MDC, NP_RES
+      USE DATAPOOL, only : rkind, MNP, NP_RES
 #ifdef MPI_PARALL_GRID
       USE DATAPOOL, only : nwild_loc_res
       USE datapool, only : myrank, comm, ierr, nproc, istatus, rtype
@@ -2137,7 +2130,7 @@
       INTEGER :: CHILF(MNP), COUNT_MAX
       INTEGER :: ITMP(MNP)
       INTEGER :: POS_TRICK(3,2)
-      INTEGER :: IADJ, NB_ADJ
+      INTEGER :: IADJ
       INTEGER :: POS1, POS2, J1, J2
       INTEGER :: FPOS, EPOS, JP
       INTEGER, ALLOCATABLE :: REV_BOOK(:)
@@ -2320,7 +2313,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6')
 
         J = 0
-        PTABLE(:,:) = 0. ! Table storing some other values needed to design the sparse matrix pointers.
+        PTABLE(:,:) = 0 ! Table storing some other values needed to design the sparse matrix pointers.
 
         DO IP = 1, MNP
           DO I = 1, CCON(IP)

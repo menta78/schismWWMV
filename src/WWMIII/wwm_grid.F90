@@ -415,8 +415,8 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER nbDirichlet, nbIsland
-      INTEGER :: MapDirect(np_total)
-      INTEGER :: MapRevert(np_total)
+!      INTEGER :: MapDirect(np_total)
+!      INTEGER :: MapRevert(np_total)
       INTEGER, allocatable :: IPbound(:), IPisland(:), ACTIVE(:)
       INTEGER IP, IE2, eVal, IE, idxDirichlet, idxIsland
 #ifdef MPI_PARALL_GRID      
