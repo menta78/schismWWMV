@@ -646,7 +646,7 @@
         CALL PIPE_SHYFEM_IN(K)
 # endif
       ELSE IF (LCPL .AND. LROMS) THEN
-        CALL PIPE_ROMS_IN(K,IFILE,IT)
+        CALL PIPE_ROMS_IN(K)
       END IF
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING

@@ -1067,7 +1067,9 @@
       REAL(rkind), intent(inout) :: eField(MNP,2)
       REAL(rkind)                :: Vtotal1(MNP_WIND)
       REAL(rkind)                :: Vtotal2(MNP_WIND)
+#ifdef MPI_PARALL_GRID      
       REAL(rkind)                :: Vlocal(MNP)
+#endif
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
       INTEGER             :: numLons, numLats, numTime, iy, j, counter, i, ip
@@ -2024,7 +2026,7 @@
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
       character (len=200) :: CoordString
-      character (len=100) :: Xname, Yname, eStrUnitTime
+      character (len=100) :: Xname, Yname
       integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY

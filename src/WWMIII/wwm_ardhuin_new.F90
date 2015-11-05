@@ -542,8 +542,7 @@
 !/S      INTEGER, SAVE           :: IENT = 0
 
       REAL(rkind)                    :: TAUW, EBAND, EMEANWS, RDCH, FXPMC,    &
-                                 UNZ, FP,                         &
-                                 R1, CP, EB(NK),EB2(NK),ALFA(NK)
+                                 UNZ, R1, EB(NK), EB2(NK), ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -743,19 +742,20 @@
 !/
       INTEGER                 :: IS,IK,ITH, ICL
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, OMA, &
-                                 RD1, RD2, LAMBDA
+      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, OMA
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
       REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
+#ifdef STAB3
       REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
-      REAL(rkind)                    :: BETA, mu_janssen, omega_janssen,     &
+#endif
+      REAL(rkind)                    :: mu_janssen,    &
                                  CM,UCN,ZCN, &
                                  Z0VISC, Z0NOZ, EB,  &
-                                 EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2, &
+                                 EBX, EBY, AORB, AORB1, FW, UORB, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: HSBLOW, ABJSEA, FACTOR
+      REAL(rkind)                   :: HSBLOW, FACTOR
       REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
       REAL(rkind) :: XI,DELI1,DELI2
       REAL(rkind) :: XJ,DELJ1,DELJ2
@@ -1174,7 +1174,7 @@
       REAL(rkind) ::  C, C2
       REAL(rkind) ::  DIFF1, DIFF2, K_SUP(NK), BINF, BSUP, K(NK), CGG, PROF
       REAL(rkind) ::  KIK, DHS, KD, KHS, KH, B, XT, GAM, DKH, PR, W, EPS
-      REAL(rkind) ::  DKD, DELTAFIT, NHI, H, IH, DH, KDD, CN, CC
+      REAL(rkind) ::  DKD, H, IH, DH, KDD, CN, CC
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
 !/
@@ -1996,12 +1996,12 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IS2, IS0, IS20, IA, J, IKL, ITOT, NTOT, ID, NKL, IO
+      INTEGER                 :: IS, IS2, IS0, IS20, IA, J, IKL, ID, NKL, IO
 !/S      INTEGER, SAVE           :: IENT = 0
-      INTEGER                 :: IK, IK1, ITH, I_INT, IK2, ITH2, IKIND, L,       & 
+      INTEGER                 :: IK, IK1, ITH, IK2, ITH2, L,       & 
                                  IKHS, IKD, SDSNTH, IT 
       INTEGER                 :: NSMOOTH(NK)
-      REAL(rkind)                    :: FACTOR, COSWIND, ASUM, SDIAGISO
+      REAL(rkind)                    :: COSWIND, ASUM, SDIAGISO
       REAL(rkind)                    :: COEF1, COEF2, COEF3, COEF4(NK)
       REAL(rkind)                    :: MSSLONG(NK)
       REAL(rkind)                    :: FACTURB, DTURB, BREAKFRACTION
@@ -2011,7 +2011,6 @@
       REAL(rkind)                    :: DK(NK), HS(NK), KBAR(NK), DCK(NK)
       REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                 :: IKSUP(NK)
-      REAL(rkind)                    :: Q1(NK) 
       REAL(rkind)                    :: SSDS(NSPEC)
       REAL(rkind)                    :: FACSAT, DKHS, FACSTRAIN 
       REAL(rkind)                    :: BTH0(NK)     !saturation spectrum 
@@ -2023,7 +2022,6 @@
       REAL(rkind)                    :: QB(NK), S2(NK), KD
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
       REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC), LAMBDA(NSPEC)
-      LOGICAL                 :: MASK(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/

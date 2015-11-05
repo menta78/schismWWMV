@@ -600,14 +600,10 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_BINARY
       IMPLICIT NONE
-#ifdef MPI_PARALL_GRID
-      include 'mpif.h'
-#endif
+!#ifdef MPI_PARALL_GRID
+!      include 'mpif.h'
+!#endif
       CHARACTER(len=140) :: FILERET
-#ifdef MPI_PARALL_GRID
-      integer IP, IS, ID, istat
-      REAL(rkind), allocatable :: VALB(:), VALB_SUM(:)
-#endif
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
       OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET), STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED')
       WRITE(HOTOUT%FHNDL) NP_TOTAL, NE_TOTAL
@@ -636,7 +632,7 @@ MODULE wwm_hotfile_mod
       USE NETCDF
       IMPLICIT NONE
 # ifdef MPI_PARALL_GRID
-      INTEGER :: IP, ID
+      INTEGER :: IP
       REAL(rkind) :: ACLOC(MSC,MDC)
       REAL(rkind) :: VARLOC(nbOned)
 # endif
@@ -820,16 +816,9 @@ MODULE wwm_hotfile_mod
 !      include 'mpif.h'
 !# endif
       character (len = *), parameter :: CallFct="OUTPUT_HOTFILE_NETCDF"
-      INTEGER :: POS
-      integer :: iret, ncid, ntime_dims, mnp_dims, nfreq_dims, ndir_dims
-      integer :: ac_id, nboned_dims, var_oned_id
-      integer :: nbTime
+      INTEGER :: POS, nbTime, np_write, ne_write
       REAL(rkind)  :: eTimeDay
       character(len=140) :: FILERET
-      integer np_write, ne_write
-# ifdef MPI_PARALL_GRID
-      integer ID, IS, IP
-# endif
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         np_write=np_global
