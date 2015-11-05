@@ -2715,7 +2715,6 @@
       real*8 :: signAzim, signDlam, ThePi, DegTwoRad
       real*8 :: eLon, eLat, phi1, phi2, xlam1, xlam2
       real*8 :: TPSI2, cta12
-      integer istat
       eta_u=eta_rho
       xi_u=xi_rho-1
       ThePi=3.141592653589792
@@ -2765,7 +2764,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE CreateAngleMatrix_v(eta_rho,xi_rho,ANG_rho,LON_rho,LAT_rho)
-      USE DATAPOOL, only : rkind, istat
+      USE DATAPOOL, only : rkind
       implicit none
       integer, intent(in) :: eta_rho, xi_rho
       REAL(rkind), DIMENSION(eta_rho, xi_rho), intent(in) :: LON_rho, LAT_rho

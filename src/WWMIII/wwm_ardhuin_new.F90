@@ -105,8 +105,7 @@
       REAL(rkind), PARAMETER, PRIVATE    :: SIGAMX =   40._rkind
       REAL(rkind), PARAMETER, PRIVATE    :: DRAGMX =    1.E-2
 !
-      REAL(rkind), PRIVATE           :: DSIGA, DDRAG,                   &
-     &            BETATB(-NRSIGA:NRSIGA+1,NRDRAG+1)
+      REAL(rkind), PRIVATE           :: DSIGA
 !/
       LOGICAL, PRIVATE :: FIRST = .TRUE.
 !
@@ -520,7 +519,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY: SPSIG, INVPI2, PI2, RKIND, NSPEC
+      USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
       USE DATAPOOL, ONLY: ZERO, ONE
 !/T      USE W3ODATMD, ONLY: NDST
 !
@@ -543,7 +542,7 @@
 !/S      INTEGER, SAVE           :: IENT = 0
 
       REAL(rkind)                    :: TAUW, EBAND, EMEANWS, RDCH, FXPMC,    &
-                                 WNP, UNZ, FP,                         &
+                                 UNZ, FP,                         &
                                  R1, CP, EB(NK),EB2(NK),ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
@@ -720,8 +719,8 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, MSC, MDC,  &
-     &  MSC, MDC, TAUTOT, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, MSC, MDC,  &
+     &  MSC, MDC, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -742,17 +741,17 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS,IK,ITH, IOMA, ICL
+      INTEGER                 :: IS,IK,ITH, ICL
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, CLAM, OMA, &
-                                 RD1, RD2, LAMBDA, COSFAC 
+      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, OMA, &
+                                 RD1, RD2, LAMBDA
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
       REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
       REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
       REAL(rkind)                    :: BETA, mu_janssen, omega_janssen,     &
-                                 CM,ZCO,UCO,UCN,ZCN, &
+                                 CM,UCN,ZCN, &
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
@@ -1915,7 +1914,6 @@
         END IF
 !      write(DBG%FHNDL,*) z0, ustar, windspeed
 !
-      RETURN
       END SUBROUTINE CALC_USTAR
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SDS4(A, K, CG, USTAR, USDIR, DEPTH, S, D, BRLAMBDA, WHITECAP)
@@ -1982,7 +1980,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : ICOMP, INVPI2, G9, RHOW, RHOA, RADDEG,       &
+      USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG,       &
      &   PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8
 !
       IMPLICIT NONE
@@ -2005,8 +2003,8 @@
       INTEGER                 :: NSMOOTH(NK)
       REAL(rkind)                    :: FACTOR, COSWIND, ASUM, SDIAGISO
       REAL(rkind)                    :: COEF1, COEF2, COEF3, COEF4(NK)
-      REAL(rkind)                    :: ALFAMEAN, KB, MSSLONG(NK)
-      REAL(rkind)                    :: FACTURB, DTURB, DCUMULATIVE, BREAKFRACTION
+      REAL(rkind)                    :: MSSLONG(NK)
+      REAL(rkind)                    :: FACTURB, DTURB, BREAKFRACTION
       REAL(rkind)                    :: RENEWALFREQ, EPSR
       REAL(rkind)                    :: NTIMES(NK), S1(NK), E1(NK)
       REAL(rkind)                    :: GAM, XT, M1
@@ -2022,7 +2020,7 @@
       REAL(rkind)                    :: BTHS(NSPEC)  !smoothed saturation spectrum  
       REAL(rkind)                    :: W, MICHE, X
 !/T0      REAL                    :: DOUT(NK,NTH)
-      REAL(rkind)                    :: QB(NK), S2(NK), KD, DC(NK)
+      REAL(rkind)                    :: QB(NK), S2(NK), KD
       REAL(rkind)                    :: TSTR, TMAX, DT, T, MFT
       REAL(rkind)                    :: PB(NSPEC), PB2(NSPEC), LAMBDA(NSPEC)
       LOGICAL                 :: MASK(NSPEC)
