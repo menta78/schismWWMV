@@ -185,7 +185,7 @@
         real(rkind) eMult, kD
         real(rkind) eJPress
         real(rkind) eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        logical DoTail
+!        logical DoTail
         real(rkind) eWkReal
         real(rkind) eJPress_loc, eProd, eUint, eVint
         real(rkind) :: eUSTOKES_loc(NLVT)
@@ -194,8 +194,8 @@
 
         DO IP=1,MNP
           !eDep=SHYFZETA(NLEV(IP),MNP)
-          !eDep=SHYFZETA(NLEV(IP),IP)		!ccfwwmIII
-          eDep=DEP(IP)				!ccfwwmIII
+          !eDep=SHYFZETA(NLEV(IP),IP)	        !ccfwwmIII
+          eDep=DEP(IP)	                        !ccfwwmIII
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
@@ -251,7 +251,7 @@
       REAL(rkind)     :: ACLOC(MSC,MDC)
       REAL(rkind)     :: HS,WLM,LPP,KLM
       REAL(rkind)     :: TM01, TM02, TM10, UBOT
-      REAL(rkind)     :: TMBOT,ETOT, KPP,DM,DSPR,PEAKDSPR,PEAKDM
+      REAL(rkind)     :: TMBOT, KPP,DM,DSPR,PEAKDSPR,PEAKDM
       REAL(rkind)     :: ORBITAL
       REAL(rkind)     :: BOTEXPER, ETOTS, ETOTC, DPEAK
       REAL(rkind)     :: FPP, TPP, CPP, WNPP, CGPP, TPPD,KPPD,CGPD,CPPD 
