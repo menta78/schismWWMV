@@ -600,9 +600,6 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
       SUBROUTINE OUTPUT_HOTFILE_BINARY
       IMPLICIT NONE
-!#ifdef MPI_PARALL_GRID
-!      include 'mpif.h'
-!#endif
       CHARACTER(len=140) :: FILERET
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
       OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET), STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED')
@@ -812,9 +809,6 @@ MODULE wwm_hotfile_mod
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-!# ifdef MPI_PARALL_GRID
-!      include 'mpif.h'
-!# endif
       character (len = *), parameter :: CallFct="OUTPUT_HOTFILE_NETCDF"
       INTEGER :: POS, nbTime, np_write, ne_write
       REAL(rkind)  :: eTimeDay
