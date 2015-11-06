@@ -37,23 +37,23 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE PIPE_ROMS_IN(K,IFILE,IT)
+      SUBROUTINE PIPE_ROMS_IN(K)
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER, INTENT(IN)  :: K,IFILE,IT
+      INTEGER, INTENT(IN)  :: K
       INTEGER              :: IP
-# ifdef WWM_MPI
+# ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable :: WINDXY_TOT(:,:), CURTXY_TOT(:,:), WATLEV_TOT(:)
       real(rkind), allocatable :: rbuf_real(:)
       integer idx, iProc
 # endif
-        LCALC=.TRUE.
+      LCALC=.TRUE.
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
         WATLEVOLD=WATLEV
         LCALC=.TRUE.
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'READING PIPE'
         FLUSH(DBG%FHNDL)
-# ifndef WWM_MPI
+# ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
           READ(1000) WINDXY(IP,1), WINDXY(IP,2), CURTXY(IP,1), CURTXY(IP,2), WATLEV(IP)
         END DO
@@ -122,12 +122,12 @@
       REAL(rkind)          :: TMBOT, KPP,DM,DSPR,ORBITAL,ETOTS,ETOTC,WNPP,TPP,CGPP
       REAL(rkind)          :: PEAKDSPR, PEAKDM, HSWE, HSLIM, TM02, KLM, DPEAK
       REAL(rkind)          :: TPPD,KPPD,CGPD,CPPD
-# ifdef WWM_MPI
+# ifdef MPI_PARALL_GRID
       REAL(rkind), allocatable :: OUTT(:,:), OUTT_TOT(:,:)
       REAL(rkind)    :: TP
 # endif
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-# ifndef WWM_MPI
+# ifndef MPI_PARALL_GRID
         DO IP = 1, MNP
           ACLOC = AC2(:,:,IP)
           CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)

@@ -123,7 +123,7 @@
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: B_SIG(MSC)
-      INTEGER     :: ID1, ID2, IS, ID, IP
+      INTEGER     :: IS, ID, IP
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
           TheVal=1
@@ -139,14 +139,6 @@
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
           CAD_THE(:,:,IP)=CAD
-!          DO ID=1,MDC
-!            ID1 = ID - 1
-!            ID2 = ID + 1
-!            IF (ID .EQ. 1) ID1 = MDC
-!            IF (ID .EQ. MDC) ID2 = 1
-!            A_THE(:,ID,IP) = - eFact *  CP_THE(:,ID1)
-!            C_THE(:,ID,IP) =   eFact *  CM_THE(:,ID2)
-!          END DO
           ASPAR(:,:,I_DIAG(IP)) = ASPAR(:,:,I_DIAG(IP)) + eFact * (CP_THE(:,:) - CM_THE(:,:))
         END DO
       END IF
@@ -396,9 +388,9 @@
       REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
+      INTEGER     :: I, ICON
       INTEGER     :: IP_fall, IPie, TheVal
       INTEGER     :: ID1, ID2, POS1, POS2
       REAL(rkind) :: CAD(MSC,MDC)
@@ -569,12 +561,11 @@
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
       REAL(rkind) :: eF(MSC,MDC)
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal
-      INTEGER     :: ID1, ID2, POS1, POS2, IP1, IP2
-      INTEGER     :: IP_ADJ1, IP_ADJ2
+      INTEGER     :: I, ICON
+      INTEGER     :: IPie, TheVal
+      INTEGER     :: ID1, ID2, IP1, IP2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -724,7 +715,6 @@
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
-      REAL(rkind) :: DIFRU, USOC, WVC
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
       REAL(rkind) :: K_X(3), K_Y(3), CRFS_X(3), CRFS_Y(3)
@@ -733,11 +723,11 @@
       REAL(rkind) :: UV_CUR(3,2)
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
-      INTEGER     :: ID1, ID2, POS1, POS2
+      INTEGER     :: I, ICON
+      INTEGER     :: IPie, TheVal, IP1, IP2
+      INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -1148,7 +1138,7 @@
       REAL(rkind) :: K(MSC,3), CRFS(MSC,3)
       REAL(rkind) :: DELTAL(MSC,3)
       REAL(rkind) :: KM(MSC,3), KP(MSC,3)
-      REAL(rkind) :: NM(MSC), K1(MSC)
+      REAL(rkind) :: NM(MSC)
       REAL(rkind) :: DTK(MSC), TMP3(MSC)
       REAL(rkind) :: eF(MSC)
       REAL(rkind) :: CAD(MSC,MDC)
@@ -1258,7 +1248,7 @@
       REAL(rkind) :: K(3), CRFS(3)
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KM(3), KP(3)
-      REAL(rkind) :: NM, K1, DWDH, WKDEP
+      REAL(rkind) :: NM, DWDH, WKDEP
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: CAD(MDC)
       REAL(rkind) :: CAS(MSC,MDC)
@@ -1382,7 +1372,6 @@
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
-      REAL(rkind) :: DIFRU, USOC, WVC
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
       REAL(rkind) :: K_X(3), K_Y(3), CRFS_X(3), CRFS_Y(3)
@@ -1391,11 +1380,11 @@
       REAL(rkind) :: UV_CUR(3,2)
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
-      INTEGER     :: ID1, ID2, POS1, POS2
+      INTEGER     :: I, ICON
+      INTEGER     :: IPie, TheVal, IP1, IP2
+      INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -1577,7 +1566,6 @@
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
-      REAL(rkind) :: DIFRU, USOC, WVC
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
       REAL(rkind) :: K_X(3,MSC), K_Y(3,MSC), CRFS_X(3,MSC), CRFS_Y(3,MSC)
@@ -1586,11 +1574,11 @@
       REAL(rkind) :: UV_CUR(3,2)
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
-      INTEGER     :: ID1, ID2, POS1, POS2
+      INTEGER     :: I, ICON
+      INTEGER     :: IPie, TheVal, IP1, IP2
+      INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -1773,7 +1761,6 @@
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
-      REAL(rkind) :: DIFRU, USOC, WVC
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
       REAL(rkind) :: K_X(3,MSC), K_Y(3,MSC), CRFS_X(3,MSC), CRFS_Y(3,MSC)
@@ -1782,11 +1769,11 @@
       REAL(rkind) :: UV_CUR(3,2)
       REAL(rkind) :: DTK, TMP3
       REAL(rkind) :: LAMBDA_X, LAMBDA_Y
-      INTEGER     :: I1, I2, I3, NI(3)
+      INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, IPGL1, IPrel, ICON
-      INTEGER     :: IP_fall, IPie, TheVal, IP1, IP2
-      INTEGER     :: ID1, ID2, POS1, POS2
+      INTEGER     :: I, ICON
+      INTEGER     :: IPie, TheVal, IP1, IP2
+      INTEGER     :: ID1, ID2
       REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
@@ -1989,7 +1976,7 @@
       character (len = *), parameter :: CallFct="DEBUG_EIMPS_TOTAL_JACOBI"
       REAL(rkind) :: FieldOutTotal1(np_total)
       REAL(rkind), allocatable :: ARRAY_loc(:)
-      character(len=256) :: FileSave, StrPass, StrIter
+      character(len=256) :: FileSave
       REAL(rkind) eTimeDay
       integer ncid, iret, nbTime, mnp_dims, ntime_dims, var_id
       integer fifteen_dims
@@ -2105,11 +2092,11 @@
 #ifdef TIMINGS
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
-      REAL(rkind) :: B_SIG(MSC), eFact, lambda
+      REAL(rkind) :: eFact
       REAL(rkind) :: NEG_P(MSC,MDC)
-      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew, DiffOld
-      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, TheVal, is_converged, itmp
-      INTEGER :: I, K, IP_ADJ, IADJ, JDX
+      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
+      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, is_converged, itmp
+      INTEGER :: IP_ADJ, IADJ, JDX
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
@@ -2414,8 +2401,6 @@
             Sum_new = sum(eSum)
             if (Sum_new .gt. thr8) then
               DiffNew=sum(abs(ACLOC - eSum))
-!              DiffOld=abs(Sum_prev - Sum_new)
-!              p_is_converged = DiffOld/Sum_new
               p_is_converged = DiffNew/Sum_new
               !write(*,'(5F15.7)') p_is_converged, DiffNew, Sum_new, sum(ACLOC), sum(esum)
             else

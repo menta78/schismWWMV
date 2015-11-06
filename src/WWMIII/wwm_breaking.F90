@@ -16,8 +16,14 @@
       REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
-      REAL(rkind) :: S0, AUX, TMP_X, TMP_Y
-      REAL(rkind) :: GAMMA_WB, SINT, COST, COEFF_A 
+      REAL(rkind) :: S0, TMP_X, TMP_Y
+#ifdef WAN_QB
+      REAL(rkind) :: AUX
+#endif      
+#ifdef SCHISM
+      REAL(rkind) :: COST, SINT
+#endif
+      REAL(rkind) :: GAMMA_WB, COEFF_A 
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind

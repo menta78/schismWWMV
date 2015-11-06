@@ -675,6 +675,8 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+      IXs=-1
+      IYs=-1
       DO IX=1,nx-1
         DO IY=1,ny-1
           eDist=(eX-TheInfo % LON(IX,IY))**2 + (eY-TheInfo % LAT(IX,IY))**2
@@ -767,18 +769,10 @@
       USE DATAPOOL
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(in) :: TheInfo
-      integer I, IX, IY, IXs, IYs, IXmin, IYmin, IXmax, IYmax
-      integer aShift, WeFind
-      real(rkind) eDist, MinDist
-      real(rkind), allocatable :: dist(:,:)
-      real(rkind) closest_r(2)
-      integer     closest(2)
-      real(rkind) d_lon, d_lat
-      integer i11, j11, i12, j12, i21, j21
+      integer I
       integer eCF_IX, eCF_IY
       real(rkind) eCF_COEFF(4)
       integer :: nbExtrapolation = 0
-      real(rkind) :: MaxMinDist = 0
       character(len=256) :: FileSave = "wwm_filesave_interp_array.nc"
       logical success
       logical EXTRAPO_OUT
@@ -808,13 +802,6 @@
       WRITE(WINDBG%FHNDL,*) 'min(lat)=', minval(TheInfo % LAT)
       WRITE(WINDBG%FHNDL,*) 'max(lat)=', maxval(TheInfo % LAT)
       DO I = 1, MNP_WIND
-        IF (I .eq. 1) THEN
-          IXs=1
-          IYs=1
-        ELSE
-          IXs=CF_IX(I-1)
-          IYs=CF_IX(I-1)
-        END IF
         eX=XP_WIND(I)
         eY=YP_WIND(I)
         CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED_WIND, eX, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
@@ -830,7 +817,6 @@
       END IF
       IF (EXTRAPOLATION_ALLOWED_WIND .eqv. .TRUE.) THEN
         WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
-        WRITE(WINDBG%FHNDL,*) ' MaxMinDist=', sqrt(MaxMinDist)
       END IF
       WRITE(WINDBG%FHNDL,*) ' done interp calcs'
       END SUBROUTINE
@@ -1081,10 +1067,12 @@
       REAL(rkind), intent(inout) :: eField(MNP,2)
       REAL(rkind)                :: Vtotal1(MNP_WIND)
       REAL(rkind)                :: Vtotal2(MNP_WIND)
+#ifdef MPI_PARALL_GRID      
       REAL(rkind)                :: Vlocal(MNP)
+#endif
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, numTime, iy, counter, ip, i, j
+      INTEGER             :: numLons, numLats, numTime, iy, j, counter, i, ip
       REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind), ALLOCATABLE   :: U(:), V(:), H(:)
       REAL(rkind), SAVE          :: TIME
@@ -1604,7 +1592,7 @@
           CHRDATE(10:15)= '000000'
           CALL CT2MJD(CHRDATE,START_TIME)
           !WRITE(WINDBG%FHNDL,*) CHRDATE, START_TIME
-        END DO ! IFILE
+        END DO
         !
         ! Now the geographic interpolation
         !
@@ -1705,10 +1693,7 @@
       character (len = *), parameter :: CallFct="READ_NETCDF_CRFS"
 
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, numTime, numHeights, iy, counter, ip, i, j, ix
-      REAL(rkind),   ALLOCATABLE :: TMP(:,:)
-      REAL(rkind), ALLOCATABLE   :: U(:), V(:)
-      REAL(rkind), SAVE          :: TIME
+      INTEGER             :: numLons, numLats, numTime, numHeights
       REAL(rkind)                :: Vtotal1(MNP_WIND)
       REAL(rkind)                :: Vtotal2(MNP_WIND)
       REAL(rkind)                :: Vlocal(MNP)
@@ -1804,10 +1789,9 @@
       REAL(rkind), intent(out) :: eField(MNP,2)
 
       INTEGER             :: DWIND_X_ID, DWIND_Y_ID
-      INTEGER             :: numLons, numLats, counter, ip, i, j, ix
+      INTEGER             :: numLons, numLats, counter, ip, i, j
       character (len = *), parameter :: CallFct="READ_NETCDF_NARR"
 
-      REAL(rkind),   ALLOCATABLE :: TMP(:,:)
       REAL(rkind),SAVE           :: TIME
       REAL(rkind)                :: scale_factor
       REAL(rkind) :: sumWi, eF1, eF2
@@ -1869,46 +1853,6 @@
 
         ISTAT = NF90_CLOSE(WINDY_NCID)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
-
-        IF (.FALSE.) THEN
-          ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 43')
-          DO IX = 1, NDX_WIND
-            tmp(NDX_WIND-(IX-1),:) = wind_x4(IX,:)
-          END DO
-          wind_x4 = tmp
-          DO IX = 1, NDX_WIND
-            tmp(NDX_WIND-(IX-1),:) = wind_y4(IX,:)
-          END DO
-          wind_y4 = tmp
-!         DO IY = 1, NDY_WIND
-!           tmp(:,NDY_WIND-(IY-1)) = atmo_press(:,IY)
-!         END DO
-!         atmo_press = tmp
-          DEALLOCATE(TMP)
-        END IF
-
-        IF (.FALSE.) THEN
-          ALLOCATE(TMP(NDX_WIND,NDY_WIND), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 44')
-          DO IX = 1, NDX_WIND
-            IF (IX .GT. NDX_WIND/2) THEN
-              tmp(IX-NDX_WIND/2,:) = wind_x(IX,:)
-            ELSE
-              tmp(IX+NDX_WIND/2,:) = wind_x(IX,:)
-            END IF
-          END DO
-          wind_x = tmp
-          DO IX = 1, NDX_WIND
-            IF (IX .GT. NDX_WIND/2) THEN
-              tmp(IX-NDX_WIND/2,:) = wind_y(IX,:)
-            ELSE
-              tmp(IX+NDX_WIND/2,:) = wind_y(IX,:)
-            END IF
-          END DO
-          wind_y = tmp
-          DEALLOCATE(TMP)
-        END IF
 
         COUNTER = 0
         DO I = 1, NDX_WIND
@@ -2077,17 +2021,12 @@
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER           :: fid, varid, dimids(2), dimidsB(3)
-      integer nbChar
+      INTEGER           :: fid, varid, dimids(2)
       TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
       character (len=200) :: CoordString
-      character (len=100) :: Xname, Yname, eStrUnitTime
-      character (len=20) :: WindTimeStr
-      real(rkind) :: ConvertToDay
-      real(rkind) :: eTimeStart
-      character(len=100) :: CHRERR
+      character (len=100) :: Xname, Yname
       integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY
@@ -2259,7 +2198,6 @@
 # ifdef MPI_PARALL_GRID
       integer IP_glob, IP
 # endif
-      character(len=10) :: eStrU, eStrV
       cf_scale_factor = eVAR % cf_scale_factor
       cf_add_offset = eVAR % cf_add_offset
 # ifdef MPI_PARALL_GRID
@@ -2444,33 +2382,43 @@
 !****************************************************************************
 !* Raw reading of time entry for GRIB                                       *
 !****************************************************************************
-      SUBROUTINE RAW_READ_TIME_OF_GRIB_FILE(ifile, eGrib, STEPRANGE_IN, eTimeOut)
+      SUBROUTINE RAW_READ_TIME_OF_GRIB_FILE(eGrib, STEPRANGE_IN, eTimeOut)
       USE DATAPOOL
       USE GRIB_API
       IMPLICIT NONE
-      integer, intent(in) :: ifile
       integer, intent(in) :: eGrib
       LOGICAL, intent(in) :: STEPRANGE_IN
       real(rkind), intent(out) :: eTimeOut
       !
       LOGICAL :: USE_DATATIME = .TRUE.
       integer eYear, eMonth, eDay, resYear, resMonth
-      integer eHour, eMin, eSec, resHour, resMin
+      integer eHour, eMin, eSec
       integer dataDate, stepRange, dataTime
       character (len=15) :: eStrTime
       REAL(rkind) :: eTimeBase
+!      WRITE(STAT%FHNDL,*) 'Before Read dataDate'
+!      FLUSH(STAT%FHNDL)
       call grib_get(eGrib, 'dataDate', dataDate)
       eYear=(dataDate - mod(dataDate,10000))/10000
       resYear=dataDate - 10000*eYear
       eMonth=(resYear - mod(resYear,100))/100
       resMonth=resYear - 100*eMonth;
       eDay=resMonth
+      WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
+      FLUSH(STAT%FHNDL)
       IF (STEPRANGE_IN) THEN
+!        WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
+!        FLUSH(STAT%FHNDL)
+!        Print *, 'Before Read STEPRANGE'
         call grib_get(eGrib, 'stepRange', stepRange)
       ELSE
         stepRange=0
       END IF
+!      WRITE(STAT%FHNDL,*) 'USE_DATATIME=', USE_DATATIME
+!      FLUSH(STAT%FHNDL)
       IF (USE_DATATIME) THEN
+!        WRITE(STAT%FHNDL,*) 'Before Read dataTime'
+!        FLUSH(STAT%FHNDL)
         call grib_get(eGrib, 'dataTime', dataTime)
         eHour=(dataTime - mod(dataTime,100))/100
         eMin=dataTime - 100*eHour
@@ -2503,7 +2451,8 @@
       allocate(igrib(n))
       i=1
       call grib_new_from_file(ifile, igrib(i))
-      CALL RAW_READ_TIME_OF_GRIB_FILE(ifile, igrib(i), STEPRANGE_IN, eTimeOut)
+      CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
+      CALL grib_release(igrib(i))
       CALL GRIB_CLOSE_FILE(ifile)
       deallocate(igrib)
       END SUBROUTINE
@@ -2752,10 +2701,6 @@
       logical WeFound
       integer, allocatable :: igrib(:)
       character(len=100) eShortName
-      integer eProd
-      integer status, idx
-      integer iX, iY
-      integer nx_dim, ny_dim
       !
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
       CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
@@ -2767,17 +2712,18 @@
         call grib_new_from_file(ifile, igrib(i))
         call grib_get(igrib(i), 'shortName', eShortName)
         IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
-          IF (GRIB_FILE_TYPE .eq. 1) THEN
+          IF (GRIB_TYPE .eq. 1) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE1(TheInfo, igrib(i))
           END IF
-          IF (GRIB_FILE_TYPE .eq. 2) THEN
+          IF (GRIB_TYPE .eq. 2) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE2(TheInfo, igrib(i))
           END IF
-          IF (GRIB_FILE_TYPE .eq. 3) THEN
+          IF (GRIB_TYPE .eq. 3) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE3(TheInfo, igrib(i))
           END IF
           WeFound=.TRUE.
         END IF
+        call grib_release(igrib(i))
       END DO
       IF (WeFound .eqv. .FALSE.) THEN
         Print *, 'Failed to find the wind variable in the grib file'
@@ -2796,19 +2742,13 @@
       USE GRIB_API
       IMPLICIT NONE
       INTEGER IT
-      INTEGER ifile, i, n
-      integer, allocatable :: igrib(:)
-      integer WeFound
       REAL(rkind) :: eTimeMjd
       integer IPROC, eInt(1)
-      integer iX, iY
       integer nbtime_mjd
-      integer eProd
       character(len=20) shortName
       REAL(rkind), allocatable :: wind_time_mjd(:)
       REAL cf_scale_factor, cf_add_offset
       TYPE(FD_FORCING_GRID) :: TheInfo
-      integer GRIB_TYPE
 !     PRint *, 'Begin of INIT_GRIB_WIND'
       WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
       WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
@@ -2850,9 +2790,8 @@
         ! Now the longitude/latitude to read.
         !
         shortName='10u'
-        GRIB_TYPE = GRIB_FILE_TYPE
         IT=1
-        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, GRIB_FILE_NAMES(IT), shortName, GRIB_TYPE)
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, GRIB_FILE_NAMES(IT), shortName, GRIB_FILE_TYPE)
         NDX_WIND_FD = TheInfo % nx_dim
         NDY_WIND_FD = TheInfo % ny_dim
         allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
@@ -2940,6 +2879,7 @@
             CALL grib_get(igrib(irec), 'values', valueV)
 !           Print *, 'Step 6'
           END IF
+          call grib_release(igrib(irec))
         END DO
         idx=0
         DO J=1,NDY_WIND_FD

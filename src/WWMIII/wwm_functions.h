@@ -12,6 +12,8 @@
 # define MyCOS(xinp) COS(xinp)
 # define MyASIN(xinp) ASIN(xinp)
 # define MyACOS(xinp) ACOS(xinp)
+# define MyLOG(xinp) ALOG(xinp)
+# define MyLOG10(xinp) ALOG10(xinp)
 #else
 # define MySNGL(xinp) SNGL(xinp)
 # define MyREAL(xinp) DBLE(xinp)
@@ -26,6 +28,8 @@
 # define MyCOS(xinp) DCOS(xinp)
 # define MyASIN(xinp) DASIN(xinp)
 # define MyACOS(xinp) DACOS(xinp)
+# define MyLOG(xinp) DLOG(xinp)
+# define MyLOG10(xinp) DLOG10(xinp)
 #endif
 #if defined ST41 || defined ST42
 # define ST_DEF

@@ -3,7 +3,6 @@
       USE DATAPOOL
       implicit none
       real(rkind), intent(out) :: F_X(MNP), F_Y(MNP)
-      real(rkind) :: INPUT(MNP)
       real(rkind) :: U_X1(MNP), U_Y1(MNP)
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
       integer IP, ID, ISS
@@ -107,8 +106,8 @@
       real(rkind), intent(out) :: B(MNP)
       INTEGER :: POS_TRICK(3,2), POS_SHIFT(3,3)
       integer I1, I2, I3, IP1, IP2, IP3
-      integer IDX, IDX1, IDX2, IDX3
-      INTEGER IE, IP, I, J, K, IPp, JPp
+      integer IDX
+      INTEGER IE, I, J, K
       real(rkind) :: eDep, eFX, eFY, eScal, eFact, eArea
       real(rkind) :: UGRAD, VGRAD, UGRAD1, VGRAD1
       INTEGER LIDX(2), KIDX(2), jdx
@@ -342,7 +341,7 @@
       real(rkind), intent(in) :: B(MNP)
       real(rkind), intent(out) :: TheOut(MNP)
       real(rkind) :: V_X(MNP), V_R(MNP), V_Z(MNP), V_P(MNP), V_Y(MNP)
-      real(rkind) :: uO, uN, alphaV, h1, h2
+      real(rkind) :: uO, uN, alphaV, h2
       real(rkind) :: eNorm, beta
       integer IP, nbIter
       nbIter=0

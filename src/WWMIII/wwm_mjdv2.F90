@@ -48,7 +48,7 @@
 !      CALL DATE2JD(1968, 5, 23, 0, 0, 0, eJD2)
       CALL DATE2JD(1858, 11, 17, 0, 0, 0, eJD2)
       eMJD=eJD1-eJD2
-      WRITE(STAT%FHNDL, *) 'eMJD =', eMJD
+!      WRITE(STAT%FHNDL, *) 'eMJD =', eMJD
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -196,7 +196,6 @@
       CHARACTER(LEN=15), INTENT(IN) :: STIME
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
-      real(rkind) XMJD_1858
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
       CALL DATE_ConvertSix2mjd(year, month, day, hour, min, sec, XMJD)
       END SUBROUTINE

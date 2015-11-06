@@ -12,7 +12,10 @@
       REAL(rkind), INTENT(OUT)      :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
       REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       INTEGER                       :: IS, ID, J
-      REAL(rkind)                   :: KDEP, COST, SINT
+      REAL(rkind)                   :: KDEP
+#ifdef SCHISM
+      REAL(rkind)                   :: COST, SINT
+#endif
       REAL(rkind)                   :: AKN , CFBOT, XDUM, TMP_X, TMP_Y
       REAL(rkind)                   :: ADUM, CDUM, DDUM, FW
 

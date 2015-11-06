@@ -11,8 +11,8 @@
       real(rkind), intent(out)   :: ssnl3(msc,mdc), dssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-      integer i1, i2, id, is, ismax, ij1, ij2
-      real(rkind)    aux1, aux2, biph, c0, cm, dep_2, dep_3, e0
+      integer id, is, ismax
+      real(rkind)    aux1, aux2, biph, c0, cm, e0
       real(rkind)    em,ft, rint, sigpi, sinbph, stri
       real(rkind)    w0, wm, wn0, wnm, ursell, c1, c2, c3
       real(rkind)    eCont
@@ -435,8 +435,8 @@
       real(rkind), intent(out)   :: ssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-      INTEGER :: IS, ID, I1, I2
-      REAL(rkind)    :: BIPH, ASINB, XISTRI
+      INTEGER :: IS, ID
+      REAL(rkind)    :: BIPH, ASINB
       REAL(rkind)    :: ED(MSC)
       INTEGER :: IS1, IS2, ISMAX
       INTEGER :: IRES
@@ -512,13 +512,13 @@
       real(rkind), intent(out)   :: ssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-      INTEGER           :: I, J, I1, I2
+      INTEGER           :: I, J
       INTEGER           :: IRES, ISMAX
       INTEGER           :: IS, ID
       REAL(rkind)              :: PTTRIAD(5)
       REAL(rkind)              :: DEP_2, DEP_3, BB, BIPH
       REAL(rkind)              :: TMN, URS
-      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj,XISTRI
+      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj
       REAL(rkind)              :: ALPH, BETA, SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
       REAL(rkind)              :: E(MSC), URSELL
       LOGICAL  :: TRIEXP
@@ -618,7 +618,7 @@
       REAL(rkind)              :: PTTRIAD(5)
       REAL(rkind)              :: DEP_2, DEP_3, BIPH, RINT
       REAL(rkind)              :: AUX1, AUX2
-      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj,XISTRI,Ci,Cj
+      REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj, Ci,Cj
       REAL(rkind)              :: SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
       REAL(rkind)              :: E(MSC), URSELL
       LOGICAL  :: TRIEXP

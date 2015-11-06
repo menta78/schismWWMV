@@ -427,7 +427,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE UN_STEADY(K,CALLFROM)
+      SUBROUTINE UN_STEADY(K)
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -437,7 +437,7 @@
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
          REAL(rkind)    :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
 
-         CHARACTER(LEN=15)   :: CTIME,CALLFROM
+         CHARACTER(LEN=15)   :: CTIME
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
@@ -647,7 +647,7 @@
         CALL PIPE_SHYFEM_IN(K)
 # endif
       ELSE IF (LCPL .AND. LROMS) THEN
-        CALL PIPE_ROMS_IN(K,IFILE,IT)
+        CALL PIPE_ROMS_IN(K)
       END IF
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
@@ -769,17 +769,9 @@
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-
-      USE DATAPOOL, only: MAIN, SEBO,                                  &
-     &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
-     &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
-     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, WBAC,        &
-     &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
-     &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC, MNP
-
+      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND
 # ifdef MPI_PARALL_GRID
-      USE datapool, only: rkind, comm, myrank, ierr, nproc,            &
+      USE datapool, only: comm, myrank, ierr, nproc,            &
      &      parallel_finalize
 # endif
 
@@ -794,8 +786,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: i,j,k, IP
-      character(len=15) CALLFROM
+      integer :: j,k, IP
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
       FLUSH(740+MyRankGlobal)
@@ -838,9 +829,6 @@
 #  ifndef PDLIB 
       CALL SIMPLE_PRE_READ
 #  endif
-      CALLFROM='WWM_MPI'
-# else
-      CALLFROM='WWM'
 # endif
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_size/rank'
@@ -859,7 +847,7 @@
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
-          CALL UN_STEADY(K,CALLFROM)
+          CALL UN_STEADY(K)
         END IF
       END DO
 

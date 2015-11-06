@@ -34,22 +34,17 @@ F90 = $(WWM_COMPILER)
 
 #INTEL
 #debugging flags
-#F90OPTI = -fpp -traceback -g
-#F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fpe0
+#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
 
 #normal optimization
-#F90OPTI =  -O1
+F90OPTI =  -O1 -traceback
 #F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-#F90OPTI = -ip -O2
-#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all -fp-model precise
 #F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g
 #F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
-#extreme aggressive opti ...
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-openmp#-check all -warn all
 
 #aggressive opti
@@ -61,7 +56,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 #debug 2
 #F90OPTI =  -fpp -g -traceback -check all
 #aggresive debug openmp
-#F90OPTI = -fpp -g -traceback -check all -openmp
+#F90OPTI = -fpp -g -traceback -check all -openmp 
 
 
 
@@ -74,7 +69,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 
 #GFORTRAN
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
-
+#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o

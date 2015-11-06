@@ -166,7 +166,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE DETERMINE_NEEDED_COMPUTATION(eVar)
-      USE DATAPOOL, only : VAROUT, OUTVARS_COMPLETE
+      USE DATAPOOL, only : VAROUT, OUTVARS_COMPLETE, istat
       implicit none
       type(VAROUT), intent(inout) :: eVar
       LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,                  &
@@ -183,7 +183,6 @@
       LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
       LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
       integer iVar, idx, nbOutVarEff
-      integer istat
       HS           = eVar%LVAR( 1)
       TM01         = eVar%LVAR( 2)
       TM02         = eVar%LVAR( 3)
@@ -778,7 +777,6 @@
       integer, intent(in) :: INEglob(ne_glob,3)
       integer iret, var_id, two_dims
       integer nbVertBound_dims, nbEdgeBound_dims, NbCycle_dims
-      integer idx
       character (len = *), parameter :: CallFct="SERIAL_WRITE_BOUNDARY"
       character (len = *), parameter :: FULLNAME = "full-name"
       type(BoundaryInfo) TheBound
@@ -904,7 +902,7 @@
 !**********************************************************************
       SUBROUTINE GENERIC_NETCDF_ERROR_WWM_CLEAR(ncid, CallFct, idx, iret)
       USE NETCDF
-      USE DATAPOOL, only : wwmerr
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: iret, idx, ncid
       character(*), intent(in) :: CallFct
@@ -923,7 +921,7 @@
 !**********************************************************************
       SUBROUTINE GENERIC_NETCDF_ERROR_WWM(CallFct, idx, iret)
       USE NETCDF
-      USE DATAPOOL, only : wwmerr
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: iret, idx
       character(*), intent(in) :: CallFct
@@ -1225,7 +1223,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WRITE_NETCDF_TIME(ncid, idx, eTimeDay)
-      USE DATAPOOL, only : DAY2SEC,RKIND, wwmerr
+      USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: ncid, idx
@@ -1261,16 +1259,13 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
-      USE DATAPOOL, only : MDC, IOBPD, np_total, MULTIPLEOUT_HIS, MNP
-# ifdef MPI_PARALL_GRID
-      USE datapool, only : iplg, comm, nproc, istatus, ierr, myrank, itype
-# endif
+      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in)  :: np_write
       INTEGER, INTENT(OUT) :: IOBPDoutput(MDC, np_write)
 # ifdef MPI_PARALL_GRID
       integer, allocatable :: rIOBPD(:,:), rStatus(:), Status(:)
-      integer iProc, IP, istat
+      integer iProc, IP
       IF (MULTIPLEOUT_HIS .eq. 1) THEN
         IOBPDoutput=IOBPD
       ELSE
@@ -1546,7 +1541,7 @@
 !**********************************************************************
       SUBROUTINE WRITE_PARAM_1(ncid, one_dims)
       USE NETCDF
-      USE DATAPOOL, only : NF90_RUNTYPE
+      USE DATAPOOL
       implicit none
       integer, intent(in) :: ncid, one_dims
       integer :: iret, var_id
@@ -1603,8 +1598,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE WRITE_PARAM_2(ncid)
-      USE DATAPOOL, only : FRLOW, FRHIGH, ICOMP, AMETHOD, FMETHOD,        &
-     &    DMETHOD, SMETHOD, MESIN, MESBF, MESDS, MESNL, LSPHE
+      USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
       integer, intent(in) :: ncid

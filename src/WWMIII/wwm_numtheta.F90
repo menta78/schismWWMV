@@ -76,7 +76,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IP, IS, ID
+         INTEGER :: IP, IS
          INTEGER :: IT, ITER
 
          REAL(rkind)    :: CAD(MSC,MDC)
@@ -174,10 +174,10 @@
       USE DATAPOOL
       IMPLICIT NONE
 
-      INTEGER        :: IP, IS, ID, IT, ISTEP, ID1, ID2
+      INTEGER        :: IP, IS, ID, ID1, ID2
       REAL(rkind)    :: CAD(MSC,MDC)
       REAL(rkind)    :: TMP(MDC)
-      REAL(rkind)    :: LP(MDC), LM(MDC), CP(MDC), CM(MDC), U0(MDC)
+      REAL(rkind)    :: CP(MDC), CM(MDC), U0(MDC)
       REAL(rkind)    :: EMAT(MDC,MDC)
 
       DO IP = 1, MNP

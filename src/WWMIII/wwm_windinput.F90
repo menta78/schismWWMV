@@ -34,7 +34,6 @@
          REAL(rkind)   , INTENT(IN)  :: WIND10, WINDTH
          REAL(rkind)   , INTENT(OUT) :: FPM
 
-         REAL(rkind)                 :: WINDX, WINDY
          REAL(rkind)                 :: CDRAG
          REAL(rkind)                 :: VEC2RAD 
          REAL(rkind)                 :: EPS_D
@@ -233,7 +232,7 @@
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX1, AUX2, AUX3
-         REAL(rkind)                  :: SWINB, CINV, COSDIF, SFIE(MSC,MDC)
+         REAL(rkind)                  :: SWINB, CINV, COSDIF
 
          AUX1 = 0.25_rkind * RHOAW 
          AUX2 = 28._rkind * UFRIC(IP)
