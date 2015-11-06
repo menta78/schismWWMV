@@ -164,7 +164,7 @@
             IF ( BETA2 .LT.1D0 ) THEN
               SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
             ELSE
-              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME/DBLE(SQRT(PI))
+              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
             ENDIF
           ELSE
             SURFA0 = 0D0
