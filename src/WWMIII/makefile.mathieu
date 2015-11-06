@@ -35,10 +35,10 @@ F90 = $(WWM_COMPILER)
 #INTEL
 #debugging flags
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
+#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
 
 #normal optimization
-#F90OPTI =  -O1
+F90OPTI =  -O1
 #F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g

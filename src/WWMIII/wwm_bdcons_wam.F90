@@ -131,27 +131,27 @@
                   eDir = eDir - 360
                 END IF
                 ListDir_wam(idir) = eDir
-                WRITE(STAT%FHNDL,*) 'idir=', idir, ' eDir=', eDir
+!                WRITE(STAT%FHNDL,*) 'idir=', idir, ' eDir=', eDir
               END DO
               DO ifreq=1,nbfreq_wam
                 eFreq = MyREAL(ListFreq_i(ifreq)) / MyREAL(freqScal)
                 ListFreq_wam(ifreq) = eFreq
-                WRITE(STAT%FHNDL,*) 'ifreq=', ifreq, ' eFreq=', eFreq
+!                WRITE(STAT%FHNDL,*) 'ifreq=', ifreq, ' eFreq=', eFreq
               END DO
               FRATIO = ListFreq_wam(2) / ListFreq_wam(1)
-              WRITE(STAT%FHNDL,*) 'FRATIO=', FRATIO
+!              WRITE(STAT%FHNDL,*) 'FRATIO=', FRATIO
               DELTH_WAM = PI2 / MyREAL(nbdir_wam)
-              WRITE(STAT%FHNDL,*) 'DELTH_WAM=', DELTH_WAM
+!              WRITE(STAT%FHNDL,*) 'DELTH_WAM=', DELTH_WAM
               CO1 = 0.5*(FRATIO-1.)*DELTH_WAM
-              WRITE(STAT%FHNDL,*) 'CO1=', CO1
+!              WRITE(STAT%FHNDL,*) 'CO1=', CO1
               DFIM_WAM(1) = CO1 * ListFreq_wam(1)
               DO M=2,nbFreq_wam-1
                  DFIM_WAM(M) = CO1 * (ListFreq_wam(M) + ListFreq_wam(M-1))
               ENDDO
               DFIM_WAM(nbFreq_wam) = CO1 * ListFreq_wam(nbFreq_wam-1)
-              DO M=1,nbFreq_wam
-                WRITE(STAT%FHNDL,*) 'M=', M, ' DFIM=', DFIM_WAM(M)
-              END DO
+!              DO M=1,nbFreq_wam
+!                WRITE(STAT%FHNDL,*) 'M=', M, ' DFIM=', DFIM_WAM(M)
+!              END DO
               WETAIL_WAM = 0.25
               DELT25_WAM = WETAIL_WAM*ListFreq_wam(nbFreq_wam)*DELTH_WAM
               deallocate(ListDir_i, ListFreq_i)
@@ -177,33 +177,33 @@
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
           eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
-          WRITE(STAT%FHNDL,*) 'iFile=', iFile
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'iFile=', iFile
+!          FLUSH(STAT%FHNDL)
 !          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
-          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
+!          FLUSH(STAT%FHNDL)
           CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
-          WRITE(STAT%FHNDL,*) 'Debug GRID, step 2'
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 2'
+!          FLUSH(STAT%FHNDL)
           call grib_count_in_file(ifile,n)
-          WRITE(STAT%FHNDL,*) 'Debug GRID, step 3'
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 3'
+!          FLUSH(STAT%FHNDL)
           allocate(igrib(n))
           DO i=1,n
-            WRITE(STAT%FHNDL,*) 'i=', i
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) 'i=', i
+!            FLUSH(STAT%FHNDL)
             call grib_new_from_file(ifile, igrib(i))
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
+!            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'directionNumber', idir)
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
+!            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
+!            FLUSH(STAT%FHNDL)
             IF ((idir .eq. 1).and.(ifreq .eq. 1)) THEN
-              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
+!              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
               CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
               !
               idx=idx+1
@@ -211,8 +211,8 @@
               ListIFileWAM(idx) = IFILE_IN
             END IF
             call grib_release(igrib(i))
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
+!            FLUSH(STAT%FHNDL)
           END DO
           deallocate(igrib)
           CALL GRIB_CLOSE_FILE(ifile)
@@ -425,6 +425,7 @@
       WRITE(STAT%FHNDL,*) 'RETURN: sum(WBAC_WAM)=', sum(WBAC_WAM)
       WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
       DO IP=1,IWBMNP
+        WRITE(STAT%FHNDL,*) 'IP=', IP
         IX=CF_IX_BOUC(IP)
         IY=CF_IY_BOUC(IP)
         WBAC_WAM_LOC=0
@@ -496,6 +497,8 @@
         END IF
         WBACOUT(:,:,IP)=ACLOC
       END DO
+      WRITE(STAT%FHNDL,*) 'Leaving after interpolation of WBAC'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
