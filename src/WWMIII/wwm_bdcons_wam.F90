@@ -488,7 +488,11 @@
           ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS_WWM = 4*SQRT(MAX(0.0, ETOT))
-          quot = EM/ETOT
+          IF (ETOT .gt. 0) THEN
+            quot = EM/ETOT
+          ELSE
+            quot = -1
+          END IF
           WRITE(STAT%FHNDL,*) 'BOUND IP=', IP, '/', IWBMNP
           WRITE(STAT%FHNDL,*) 'ETOT(WAM/WWM)=', EM, ETOT
           WRITE(STAT%FHNDL,*) 'quot=', quot
