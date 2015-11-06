@@ -2396,18 +2396,29 @@
       integer dataDate, stepRange, dataTime
       character (len=15) :: eStrTime
       REAL(rkind) :: eTimeBase
+      WRITE(STAT%FHNDL,*) 'Before Read dataDate'
+      FLUSH(STAT%FHNDL)
       call grib_get(eGrib, 'dataDate', dataDate)
       eYear=(dataDate - mod(dataDate,10000))/10000
       resYear=dataDate - 10000*eYear
       eMonth=(resYear - mod(resYear,100))/100
       resMonth=resYear - 100*eMonth;
       eDay=resMonth
+      WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
+      FLUSH(STAT%FHNDL)
       IF (STEPRANGE_IN) THEN
+        WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
+        FLUSH(STAT%FHNDL)
+        Print *, 'Before Read STEPRANGE'
         call grib_get(eGrib, 'stepRange', stepRange)
       ELSE
         stepRange=0
       END IF
+      WRITE(STAT%FHNDL,*) 'USE_DATATIME=', USE_DATATIME
+      FLUSH(STAT%FHNDL)
       IF (USE_DATATIME) THEN
+        WRITE(STAT%FHNDL,*) 'Before Read dataTime'
+        FLUSH(STAT%FHNDL)
         call grib_get(eGrib, 'dataTime', dataTime)
         eHour=(dataTime - mod(dataTime,100))/100
         eMin=dataTime - 100*eHour
