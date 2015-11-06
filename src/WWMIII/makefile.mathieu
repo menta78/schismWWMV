@@ -71,6 +71,7 @@ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check a
 #F90OPTI  = -g -Mbounds -Mchkfpstk -Mchkptr -Mchkstk
 
 
+
 #GFORTRAN
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 

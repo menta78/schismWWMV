@@ -45,7 +45,7 @@
 
          USE DATAPOOL
          use  schism_msgp !, only : myrank,parallel_abort,itype,comm,ierr
-         use schism_glbl, only : iplg,ielg
+         use schism_glbl, only : iplg,ielg,wwave_force
 
          IMPLICIT NONE
 
@@ -220,6 +220,7 @@
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
          END IF
+
          DEPDT = (WATLEV - WATLEVOLD) / DT_SCHISM0
 
          IF (LNANINFCHK) THEN

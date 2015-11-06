@@ -895,7 +895,6 @@
          REAL(rkind)                :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
          REAL(rkind)                :: MAXDACOLD
 
-
          CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
          SND   = PI2*5.6*1.0E-3
 
