@@ -319,9 +319,9 @@
             END IF
           END IF
         END DO
-!        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
-!        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
-!        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
+        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
+        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
+        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
       WRITE(STAT%FHNDL,*) 'Interpolation array for frequency done'
       FLUSH(STAT%FHNDL)
@@ -426,12 +426,15 @@
       WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
       DO IP=1,IWBMNP
         WRITE(STAT%FHNDL,*) 'IP=', IP
+        FLUSH(STAT%FHNDL)
         IX=CF_IX_BOUC(IP)
         IY=CF_IY_BOUC(IP)
         WBAC_WAM_LOC=0
         DO J=1,4
           WBAC_WAM_LOC(:,:) = WBAC_WAM_LOC(:,:) + CF_COEFF_BOUC(J,IP)*WBAC_WAM(:,:,IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
         END DO
+        WRITE(STAT%FHNDL,*) '  step 1'
+        FLUSH(STAT%FHNDL)
         !
         IF (DoHSchecks) THEN
 !          DO J=1,4
@@ -453,6 +456,8 @@
           Print *, 'EMwork=', EMwork
           HS_WAM = 4.*SQRT(EMwork)
         END IF
+        WRITE(STAT%FHNDL,*) '  step 2'
+        FLUSH(STAT%FHNDL)
         ACLOC=0
         DO IS=1,MSC
           DO ID=1,MDC
@@ -461,20 +466,29 @@
             WD1=WAM_WD1(ID)
             WD2=WAM_WD2(ID)
             !
-            IS1=WAM_IS1(ID)
-            IS2=WAM_IS2(ID)
-            WS1=WAM_WS1(ID)
-            WS2=WAM_WS2(ID)
+            IS1=WAM_IS1(IS)
+            IS2=WAM_IS2(IS)
+            WS1=WAM_WS1(IS)
+            WS2=WAM_WS2(IS)
             !
-!            Print *, 'ID12=', ID1, ID2, ' IS12=', IS1, IS2
+            WRITE(STAT%FHNDL,*) 'ID12=', ID1, ID2, ' IS12=', IS1, IS2
+            FLUSH(STAT%FHNDL)
             IF (IS1 .gt. 0) THEN
               eAC_1=WD1 * WBAC_WAM_LOC(ID1, IS1) + WD2 * WBAC_WAM_LOC(ID2, IS1)
               eAC_2=WD1 * WBAC_WAM_LOC(ID1, IS2) + WD2 * WBAC_WAM_LOC(ID2, IS2)
+              WRITE(STAT%FHNDL,*) 'eAC_1/2=', eAC_1, eAC_2
+              FLUSH(STAT%FHNDL)
               eAC=WS1 * eAC_1 + WS2 * eAC_2
+              WRITE(STAT%FHNDL,*) 'eAC=', eAC
+              FLUSH(STAT%FHNDL)
               ACLOC(IS,ID)=eAC / (SPSIG(IS) * PI2)
+              WRITE(STAT%FHNDL,*) 'after write'
+              FLUSH(STAT%FHNDL)
             END IF
           END DO
         END DO
+        WRITE(STAT%FHNDL,*) '  step 3'
+        FLUSH(STAT%FHNDL)
         IF (DoHSchecks) THEN
           ETOT=0
           DO ID=1,MDC
@@ -495,7 +509,11 @@
           WRITE(STAT%FHNDL,*) 'quot=', quot
           WRITE(STAT%FHNDL,*) 'HS(WAM/WWM)=', HS_WAM, HS_WWM, ETOT
         END IF
+        WRITE(STAT%FHNDL,*) '  step 4'
+        FLUSH(STAT%FHNDL)
         WBACOUT(:,:,IP)=ACLOC
+        WRITE(STAT%FHNDL,*) '  step 5'
+        FLUSH(STAT%FHNDL)
       END DO
       WRITE(STAT%FHNDL,*) 'Leaving after interpolation of WBAC'
       FLUSH(STAT%FHNDL)
