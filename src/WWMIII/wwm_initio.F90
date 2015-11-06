@@ -210,15 +210,10 @@
        ALLOCATE( DVWALV(MNP), WLDEP(MNP), DEPDT(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 23')
        DVWALV = zero
-<<<<<<< HEAD
-       WLDEP = zero
-       DEPDT = zero
-=======
        WLDEP  = zero
        DEPDT  = zero
        WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 16'
        FLUSH(STAT%FHNDL)
->>>>>>> 5e19d125bc49ddab67ff24526dfe950d948596c8
 !
 !  convergence analysis - shared
 !
