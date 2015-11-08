@@ -12,7 +12,6 @@
       REAL(rkind) :: WDIRT
       REAL(rkind) :: cf_w1, cf_w2
 
-      WINDXY(:,:) = 0.0
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND) THEN
         MNP_WIND=MNP

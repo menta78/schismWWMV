@@ -444,13 +444,13 @@
               eSum = eSum + WBAC_WAM_LOC(K,M)
             END DO
             EM = EM + DFIM_WAM(M)*eSum
-            Print *, 'M=', M, ' EM=', EM
+!            Print *, 'M=', M, ' EM=', EM
           END DO
-          Print *, 'DELT25=', DELT25_WAM
+!          Print *, 'DELT25=', DELT25_WAM
           EM = EM + DELT25_WAM*eSum
-          Print *, 'EM=', EM
+!          Print *, 'EM=', EM
           EMwork=MAX(ZERO, EM)
-          Print *, 'EMwork=', EMwork
+!          Print *, 'EMwork=', EMwork
           HS_WAM = 4.*SQRT(EMwork)
         END IF
         ACLOC=0
