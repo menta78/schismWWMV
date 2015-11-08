@@ -106,7 +106,6 @@
         WRITE(DBG%FHNDL,'("+TRACE...",A)') 'END READING PIPE'
         FLUSH(DBG%FHNDL)
       END IF
-      IF (K == 1) CALL INITIAL_CONDITION
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
