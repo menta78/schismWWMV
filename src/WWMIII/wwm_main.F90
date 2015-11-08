@@ -106,6 +106,10 @@
          CALL FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
+         IF (.NOT. LWINDFROMWWM) THEN
+           WINDXY(:,1) = WINDX0
+           WINDXY(:,2) = WINDY0
+         END IF
 
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
            WLDEP       = DEP8
@@ -114,10 +118,6 @@
            DEP         = MAX(ZERO,WLDEP + WATLEV)
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = VV2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -128,10 +128,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = ZERO !REAL(rkind)(UU2(NVRT,:))
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE. 
@@ -142,10 +138,6 @@
            DEP         = MAX(ZERO, WLDEP + WATLEV)
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = VV2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -156,10 +148,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = ZERO !REAL(rkind)(UU2(NVRT,:))
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
@@ -170,10 +158,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = 0.!UU2(NVRT,:) 
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -184,24 +168,16 @@
            DEP         = WLDEP
            CURTXY(:,1) = 0.!UU2(NVRT,:) 
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in SCHISM  
            WLDEP       = DEP
-           WATLEV      = ZERO 
-           WATLEVOLD   = ZERO 
+           WATLEV      = ZERO
+           WATLEVOLD   = ZERO
            DEP         = WLDEP
-           CURTXY(:,1) = UU2(NVRT,:) 
-           CURTXY(:,2) = VV2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
+           CURTXY(:,1) = UU2(NVRT,:)
+           CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
@@ -212,10 +188,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = UU2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
