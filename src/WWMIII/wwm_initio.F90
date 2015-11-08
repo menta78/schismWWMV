@@ -692,6 +692,12 @@
         CALL INIT_WIND_INPUT
       END IF
 #endif
+#ifdef SCHISM
+      IF (.NOT. LWINDFROMWWM) THEN
+        WINDXY(:,1) = WINDX0
+        WINDXY(:,2) = WINDY0
+      END IF
+#endif
 #if !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_OCN_WAV
       IF (.NOT. LCPL) THEN
         CALL INIT_CURRENT_INPUT
