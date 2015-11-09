@@ -2669,7 +2669,6 @@
       ENDIF
 # endif
 #endif
-      WRITE(*,*) SUM(AC2), 'AFTER EIMPS_TOTAL_JACOBI_ITERATION subroutine'
 #ifdef DEBUG_ITERATION_LOOP
       iPass=iPass+1
 #endif
