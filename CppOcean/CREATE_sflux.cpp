@@ -8,9 +8,9 @@
 #include <Eigen/Sparse>
 #include <Eigen/LU>
 #include <unsupported/Eigen/CXX11/Tensor>
-template <typename T> using MyVector=Eigen::Matrix<T,Eigen::Dynamic,1>;
-template <typename T> using MyMatrix=Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>;
-template <typename T> using MySparseMatrix=Eigen::SparseMatrix<T,Eigen::ColMajor>;
+template <typename T> using MyVector = Eigen::Matrix<T,Eigen::Dynamic,1>;
+template <typename T> using MyMatrix = Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic>;
+template <typename T> using MySparseMatrix = Eigen::SparseMatrix<T,Eigen::ColMajor>;
 
 
 #include <ctype.h>
@@ -46,6 +46,10 @@ template <typename T> using MySparseMatrix=Eigen::SparseMatrix<T,Eigen::ColMajor
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
+
+typedef unsigned long ulong;
+typedef unsigned int uint;
 
 
 #include <errno.h>
@@ -268,119 +272,6 @@ bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, doub
 
 
 /* ------------------------------ */
-std::vector<SingleRecInterp> TRIG_FIND_ELE(MyMatrix<int> const& Lelem, MyMatrix<double> const& X, MyMatrix<double> const& Y, QuadCoordinate const& eQuad, MyMatrix<double> const& ListXY)
-{
-  double THR=1e-10;
-  //  int mnp=X.rows();
-  //  for (int i=0; i<mnp; i++)
-  //    std::cerr << "i=" << i << " x=" << X(i) << " y=" << Y(i) << "\n";
-  std::function<bool(int,double,double)> IsCorrect=[&](int const& ie, double const& Xp, double const& Yp) -> bool {
-    int ki = Lelem(ie,0);
-    int kj = Lelem(ie,1);
-    int kk = Lelem(ie,2);
-    double xi = X(ki);
-    double yi = Y(ki);
-    double xj = X(kj);
-    double yj = Y(kj);
-    double xk = X(kk);
-    double yk = Y(kk);
-    /*
-    double area=xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj);
-    std::cerr << "-------------------------------------\n";
-    std::cerr << "ie=" << ie << " area=" << area << "\n";
-    std::cerr << "kijk=" << ki << "," << kj << "," << kk << "\n";
-    std::cerr << "x(ijk)=" << xi << "," << xj << "," << xk << "\n";
-    std::cerr << "y(ijk)=" << yi << "," << yj << "," << yk << "\n";
-    std::cerr << "-------------------------------------\n";*/
-    double f1, f2, f3;
-    f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
-    f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
-    f3 = xk*(yi-Yp) + xi*(Yp-yk) + Xp*(yk-yi);
-    //    double sumF=f1 + f2 + f3;
-    //    std::cerr << "sumF=" << sumF << "\n";
-    if (f1 > -THR) {
-      if (f2 > -THR) {
-	if (f3 > -THR) {
-	  return true;
-	}
-      }
-    }
-    return false;
-  };
-  double dx=0;
-  double dy=0;
-  int nbEle=Lelem.rows();
-  for (int ie=0; ie<nbEle; ie++) {
-    int ki = Lelem(ie,0);
-    int kj = Lelem(ie,1);
-    int kk = Lelem(ie,2);
-    double xi = X(ki);
-    double yi = Y(ki);
-    double xj = X(kj);
-    double yj = Y(kj);
-    double xk = X(kk);
-    double yk = Y(kk);
-    dx=std::max(dx, std::abs(xi - xj));
-    dx=std::max(dx, std::abs(xi - xk));
-    dx=std::max(dx, std::abs(xj - xk));
-    dy=std::max(dy, std::abs(yi - yj));
-    dy=std::max(dy, std::abs(yi - yk));
-    dy=std::max(dy, std::abs(yj - yk));
-  }
-  std::function<int(double, double)> SearchElement=[&](double const& eX, double const& eY) -> int {
-    for (int iele=0; iele<nbEle; iele++) {
-      if (IsCorrect(iele, eX, eY)) {
-	return iele;
-      }
-    }
-    return -1;
-  };
-  int nbPoint=ListXY.cols();
-  int ielePrev=0;
-  int eElt;
-  std::vector<SingleRecInterp> LRec(nbPoint);
-  for (int iPoint=0; iPoint<nbPoint; iPoint++) {
-    double Xp=ListXY(0,iPoint);
-    double Yp=ListXY(1,iPoint);
-    bool test=false;
-    if (ielePrev >= 0) {
-      if (IsCorrect(ielePrev, Xp, Yp)) {
-	eElt=ielePrev;
-	test=true;
-      }
-    }
-    if (test == false) {
-      eElt=SearchElement(Xp, Yp);
-    }
-    ielePrev=eElt;
-    SingleRecInterp eRec;
-    if (eElt == -1) {
-      eRec={false, {}};
-    }
-    else {
-      std::vector<int> LEta(3);
-      std::vector<double> Xcall(3), Ycall(3);
-      for (int i=0; i<3; i++) {
-	int IP=Lelem(eElt,i);
-	LEta[i]=IP;
-	Xcall[i]=X(IP);
-	Ycall[i]=Y(IP);
-      }
-      std::vector<double> LCoeff=DetermineCoefficient(Xcall, Ycall, Xp, Yp);
-      std::vector<SinglePartInterp> LPart(3);
-      for (int i=0; i<3; i++) {
-	LPart[i]={LEta[i], 0, LCoeff[i]};
-      }
-      eRec={true, LPart};
-    };
-    LRec[iPoint]=eRec;
-  }
-  return LRec;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 MyMatrix<int> GetDirection()
 {
   MyMatrix<int> eMat(2,4);
@@ -393,6 +284,74 @@ MyMatrix<int> GetDirection()
   eMat(0,3)=1;
   eMat(1,3)=1;
   return eMat;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+MyMatrix<int> GetEdgeSet(MyMatrix<int> const& INE, int nbNode)
+{
+  std::vector<int> ListDegree(nbNode, 0);
+  int mne=INE.rows();
+  for (int ie=0; ie<mne; ie++)
+    for (int i=0; i<3; i++) {
+      int ip=INE(ie,i);
+      ListDegree[ip]+=2;
+    }
+  int MaxDeg=0;
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    int eDeg=ListDegree[iNode];
+    if (eDeg > MaxDeg)
+      MaxDeg=eDeg;
+  }
+  for (int iNode=0; iNode<nbNode; iNode++)
+    ListDegree[iNode]=0;
+  MyMatrix<int> ListAdjacency(nbNode, MaxDeg);
+  for (int ie=0; ie<mne; ie++) {
+    int i1=INE(ie,0);
+    int i2=INE(ie,1);
+    int i3=INE(ie,2);
+    int eDeg1=ListDegree[i1];
+    int eDeg2=ListDegree[i2];
+    int eDeg3=ListDegree[i3];
+    ListAdjacency(i1, eDeg1  )=i2;
+    ListAdjacency(i1, eDeg1+1)=i3;
+    ListAdjacency(i2, eDeg2  )=i1;
+    ListAdjacency(i2, eDeg2+1)=i3;
+    ListAdjacency(i3, eDeg3  )=i1;
+    ListAdjacency(i3, eDeg3+1)=i2;
+    ListDegree[i1] = eDeg1 + 2;
+    ListDegree[i2] = eDeg2 + 2;
+    ListDegree[i3] = eDeg3 + 2;
+  }
+  int nbEdge=0;
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    std::set<int> eSet;
+    int eDeg=ListDegree[iNode];
+    for (int iAdj=0; iAdj<eDeg; iAdj++) {
+      int eAdj=ListAdjacency(iNode, iAdj);
+      if (eAdj > iNode)
+	eSet.insert(eAdj);
+    }
+    nbEdge+=eSet.size();
+  }
+  MyMatrix<int> ListEdges(nbEdge,2);
+  int iEdge=0;
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    std::set<int> eSet;
+    int eDeg=ListDegree[iNode];
+    for (int iAdj=0; iAdj<eDeg; iAdj++) {
+      int eAdj=ListAdjacency(iNode, iAdj);
+      if (eAdj > iNode)
+	eSet.insert(eAdj);
+    }
+    for (auto eAdj : eSet) {
+      ListEdges(iEdge,0)=iNode;
+      ListEdges(iEdge,1)=eAdj;
+      iEdge++;
+    }
+  }
+  return ListEdges;
 }
 /* ------------------------------ */
 
@@ -704,7 +663,7 @@ MyMatrix<double> FreqPeriodChange(MyMatrix<double> const& F)
 /* ------------------------------ */
 std::vector<std::string> GetAllPossibleVariables()
 {
-  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR", "BreakingFraction", "ZetaSetup"};
+  std::vector<std::string> ListVarOut={"WIND10", "SurfCurr", "SurfCurrMag", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MwaveFreq", "PwaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MwavePer", "PwavePer", "SurfPres", "SstOcean", "TM02", "DW", "DSPR", "BreakingFraction", "ZetaSetup", "MeanWaveDir", "IOBP_WW3", "MAPSTA", "FieldOut1"};
   return ListVarOut;
 }
 /* ------------------------------ */
@@ -836,8 +795,8 @@ void Apply_COSMO_Transformation(MyMatrix<double> & LON, MyMatrix<double> & LAT, 
   double startlat_tot=zstartlat_tot; // same remark
   for (int i=0; i<eta_rho; i++)
     for (int j=0; j<xi_rho; j++) {
-      double eLonR=startlon_tot + double(i-1)*dlon;
-      double eLatR=startlat_tot + double(j-1)*dlat;
+      double eLonR=startlon_tot + double(i)*dlon;
+      double eLatR=startlat_tot + double(j)*dlat;
       double eLat=phirot2phi(eLatR, eLonR, pollat, pollon, polgam);
       double eLon=rlarot2rla(eLatR, eLonR, pollat, pollon, polgam);
       LON(i,j)=eLon;
@@ -973,6 +932,14 @@ bool IsPointInside_Point(Point const& ePt, std::vector<Point> const& ListPt)
 
 
 /* ------------------------------ */
+struct PairCoord {
+  int i;
+  int j;
+};
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 std::vector<Point> GetGridBoundary(MyMatrix<double> const& LON, MyMatrix<double> const& LAT, int const& iStart, int const& iEnd, int const& jStart, int const& jEnd)
 {
   int len=2*(iEnd - iStart) + 2*(jEnd - jStart);
@@ -1003,6 +970,54 @@ std::vector<Point> GetGridBoundary(MyMatrix<double> const& LON, MyMatrix<double>
     idx++;
   }
   return ListPt;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+PairCoord FindContaining(Point const& ePt, MyMatrix<double> const& LON, MyMatrix<double> const& LAT)
+{
+  int eta_rho=LON.rows();
+  int xi_rho=LON.cols();
+  int iStart, iEnd, jStart, jEnd;
+  iStart=0;
+  iEnd=eta_rho-1;
+  jStart=0;
+  jEnd=xi_rho-1;
+  while(1) {
+    std::vector<Point> ListPt1=GetGridBoundary(LON, LAT, iStart, iEnd, jStart, jEnd);
+    bool test1=IsPointInside_Point(ePt, ListPt1);
+    if (test1 == false)
+      return {-1, -1};
+    int iDiff=iEnd - iStart;
+    int jDiff=jEnd - jStart;
+    if (iDiff == 1 && jDiff == 1)
+      break;
+    if (iDiff > 1) {
+      int iMid=int(roundl((float(iStart) + float(iEnd))/double(2)));
+      std::vector<Point> ListPt2=GetGridBoundary(LON, LAT, iStart, iMid, jStart, jEnd);
+      bool test2=IsPointInside_Point(ePt, ListPt2);
+      if (test2 == true) {
+	iEnd=iMid;
+      }
+      else {
+	iStart=iMid;
+      }
+    }
+    if (jDiff > 1) {
+      int jMid=int(roundl((float(jStart) + float(jEnd))/double(2)));
+      std::vector<Point> ListPt3=GetGridBoundary(LON, LAT, iStart, iEnd, jStart, jMid);
+      bool test3=IsPointInside_Point(ePt, ListPt3);
+      if (test3 == true) {
+	jEnd=jMid;
+      }
+      else {
+	jStart=jMid;
+      }
+    }
+    
+  }
+  return {iStart, jStart};
 }
 /* ------------------------------ */
 
@@ -1160,7 +1175,7 @@ std::vector<KTreeElt> KTree_GetDecomposition(std::vector<Point> const& ListPtCoa
   std::vector<KTreeElt> TList;
   std::vector<int> IsTreated;
   int MaxNumberPerCell=100;
-  std::function<void(int)> SplitComponent=[&](int const& iComp) -> void {
+  auto SplitComponent=[&](int const& iComp) -> void {
     int len=TList.size();
     std::vector<KTreeElt> NList=SplitKTreeElt(TList[iComp]);
     TList[iComp]=NList[0];
@@ -1250,7 +1265,7 @@ std::vector<double> GetUpperEstimateMinDist(std::vector<Point> const& ListPt1, s
     exit(1);
   }
   //  std::cerr << "nbPt1=" << nbPt1 << " nbPt2=" << nbPt2 << "\n";
-  std::function<double(int,int)> fDist=[&](int const& i1, int const& i2) -> double {
+  auto fDist=[&](int const& i1, int const& i2) -> double {
     double eLon1=ListPt1[i1].eLon;
     double eLat1=ListPt1[i1].eLat;
     double eLon2=ListPt2[i2].eLon;
@@ -1728,7 +1743,7 @@ MyMatrix<T> Inverse(MyMatrix<T> const&Input)
 /* This function is for rank calculation.
    Of course, it can be used for many other purpose:
    1> Selecting specific sets of rows and columns for reduction 
-   2> Computing a set of generators of the zero set.
+   *   2> Computing a set of generators of the zero set.
    Initial matrix is of the form
    Input (nbRow, nbCol)
    The zero matrix is of the form
@@ -1763,9 +1778,7 @@ SelectionRowCol<T> TMat_SelectRowCol(MyMatrix<T> const&Input)
   MyMatrix<T> provMat(sizMat, nbCol);
   std::vector<int> ListColSelect;
   std::vector<int> ListRowSelect;
-  std::vector<int> ListColSelect01(nbCol);
-  for (iCol=0; iCol<nbCol; iCol++)
-    ListColSelect01[iCol]=0;
+  std::vector<int> ListColSelect01(nbCol,0);
   eRank=0;
   for (iRow=0; iRow<nbRow; iRow++) {
     for (iCol=0; iCol<nbCol; iCol++) {
@@ -1823,52 +1836,19 @@ SelectionRowCol<T> TMat_SelectRowCol(MyMatrix<T> const&Input)
   ZeroAssignation(NSP);
   nbVect=0;
   for (iCol=0; iCol<nbCol; iCol++)
-    if (ListColSelect01[iCol] == 0)
-      {
-	eVal=1;
-	NSP(nbVect, iCol)=eVal;
-	for (iRank=0; iRank<eRank; iRank++)
-	  {
-	    eCol=ListColSelect[iRank];
-	    eVal=provMat(iRank, iCol);
-	    eVal=-eVal;
-	    NSP(nbVect, eCol)=eVal;
-	  }
-	nbVect++;
+    if (ListColSelect01[iCol] == 0) {
+      eVal=1;
+      NSP(nbVect, iCol)=eVal;
+      for (iRank=0; iRank<eRank; iRank++) {
+	eCol=ListColSelect[iRank];
+	eVal=provMat(iRank, iCol);
+	eVal=-eVal;
+	NSP(nbVect, eCol)=eVal;
       }
+      nbVect++;
+    }
   SelectionRowCol<T> retSelect{eRank, NSP, ListColSelect, ListRowSelect};
   return retSelect;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-MyVector<T> TVec_AplusBC(MyVector<T> const& V1, MyVector<T> const& V2, T const& alpha)
-{
-  int n=V1.size();
-  MyVector<T> VRet=MyVector<T>(n);
-  for (int i=0; i<n; i++)
-    {
-      T eVal=V1(i) + alpha*V2(i);
-      VRet(i)=eVal;
-    }
-  return VRet;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-template<typename T>
-void TVec_AddBCtoA(MyVector<T> &V1, MyVector<T> const& V2, T const& alpha)
-{
-  T eVal;
-  int n=V1.size();
-  for (int i=0; i<n; i++)
-    {
-      eVal=V1(i) + alpha*V2(i);
-      V1(i)=eVal;
-    }
 }
 /* ------------------------------ */
 
@@ -1935,7 +1915,7 @@ struct SolMatResult {
 
 /* ------------------------------ */
 template<typename T1, typename T2>
-MyMatrix<T2> ConvertMatrix(MyMatrix<T1> const& M, std::function<T2(T1)> const& f)
+MyMatrix<T2> ConvertMatrix(MyMatrix<T1> const& M, std::function<T2(const T1&)> const& f)
 {
   int eta_rho=M.rows();
   int xi_rho=M.cols();
@@ -1970,7 +1950,7 @@ void WriteMatrixGAP(std::ostream &os, MyMatrix<T> const&TheMat)
     }
     os << " ]";
   }
-  os << " ]\n";
+  os << " ]";
 }
 /* ------------------------------ */
 
@@ -2121,6 +2101,19 @@ void WriteStdVector(std::ostream& os, std::vector<T> const& V)
   for (auto & eVal : V)
     os << " " << eVal;
 }
+template<typename T>
+void WriteStdVectorGAP(std::ostream& os, std::vector<T> const& V)
+{
+  os << "[";
+  bool IsFirst=true;
+  for (auto & eVal : V) {
+    if (IsFirst == false)
+      os << ",";
+    IsFirst=false;
+    os << eVal;
+  }
+  os << "]";
+}
 /* ------------------------------ */
 
 
@@ -2145,7 +2138,7 @@ CollectedResult<T> Collected(std::vector<T> const& eVect)
     LVal.push_back(eVal);
   int eSize=LVal.size();
   std::vector<int> LMult(eSize,0);
-  std::function<void(T)> UpPosition=[&](T const& eVal) -> void {
+  auto UpPosition=[&](T const& eVal) -> void {
     for (int i=0; i<eSize; i++)
       if (LVal[i] == eVal) {
 	LMult[i] += 1;
@@ -2224,6 +2217,7 @@ struct GridArray {
   bool IsSpherical;
   CoordGridArrayFD GrdArrRho, GrdArrU, GrdArrV, GrdArrPsi;
   MyMatrix<int> INE;
+  MyVector<int> IOBP;
   bool L_IndexSelect;
   std::vector<int> I_IndexSelect;
 };
@@ -2241,6 +2235,10 @@ struct ArrayHistory {
   std::vector<int> ListIFile;
   std::vector<int> ListIRec;
   std::vector<double> ListTime;
+  std::string TimeSteppingInfo;
+  double SeparationTime;
+  int nbRecBegin;
+  int nbRecMiddle;
   bool AppendVarName;
 };
 /* ------------------------------ */
@@ -2311,7 +2309,6 @@ std::vector<std::string> FILE_GetDirectoryListFile(std::string const& eDir)
     printf("Oh dear, something went wrong with ls! %s\n", strerror(errno));
     exit(1);
   }
-  std::cerr << "We have ListFile\n";
   return ListFile;
 }
 /* ------------------------------ */
@@ -2340,7 +2337,7 @@ bool FILE_IsRegularFile(std::string const& eFile)
 /* ------------------------------ */
 std::vector<std::string> FILE_GetDirectoryFilesRecursively(std::string const& eDir)
 {
-  std::cerr << "Beginning of FILE_GetDirectoryFilesRecursively\n";
+  //  std::cerr << "Beginning of FILE_GetDirectoryFilesRecursively\n";
   std::vector<std::string> ListDir={eDir};
   std::vector<std::string> ListFile;
   while(1) {
@@ -2362,7 +2359,7 @@ std::vector<std::string> FILE_GetDirectoryFilesRecursively(std::string const& eD
       break;
     ListDir=NewListDir;
   }
-  std::cerr << "Ending of FILE_GetDirectoryFilesRecursively\n";
+  //  std::cerr << "Ending of FILE_GetDirectoryFilesRecursively\n";
   return ListFile;
 }
 /* ------------------------------ */
@@ -3034,8 +3031,7 @@ InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double con
   double tolDay=double(1)/double(1000000);
   int nbTime=LTime.size();
   for (int iTime=0; iTime<nbTime; iTime++) {
-    double eDist=fabs(LTime[iTime] - eTimeDay);
-    if (eDist < tolDay) {
+    if (fabs(LTime[iTime] - eTimeDay) < tolDay) {
       //      std::cerr << "eDist=" << eDist << "\n";
       //      std::cerr << "eTimeDay=" << eTimeDay << "\n";
       //      std::cerr << "LTime[iTime]=" << LTime[iTime] << "\n";
@@ -3082,6 +3078,80 @@ InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double con
 
 
 /* ------------------------------ */
+InterpInfo GetTimeInterpolationInfo_infinite(double const& FirstTime, double const& TheSep, double const& eTimeDay)
+{
+  double tolDay=double(1)/double(1000000);
+  if (eTimeDay < FirstTime - tolDay) {
+    std::cerr << "Error in GetTimeInterpolationInfo_infinite\n";
+    std::cerr << "We have FirstTime = " << FirstTime << "\n";
+    std::cerr << "     and eTimeDay = " << eTimeDay << "\n";
+    std::cerr << "i.e. eTimeDay < FirstTime\n";
+    exit(1);
+  }
+  if (TheSep < 0) {
+    std::cerr << "We need TheSep > 0\n";
+    std::cerr << "But we have TheSep = " << TheSep << "\n";
+    exit(1);
+  }
+  InterpInfo eInterpInfo;
+  int iTime=1;
+  while(1) {
+    int iTimeUpp = iTime;
+    int iTimeLow = iTime-1;
+    double eTimeLow = FirstTime + double(iTimeLow)*TheSep;
+    double eTimeUpp = FirstTime + double(iTimeUpp)*TheSep;
+    if (fabs(eTimeLow - eTimeDay) < tolDay) {
+      eInterpInfo.UseSingleEntry=true;
+      eInterpInfo.iTimeLow=iTimeLow;
+      return eInterpInfo;
+    }
+    if (fabs(eTimeUpp - eTimeDay) < tolDay) {
+      eInterpInfo.UseSingleEntry=true;
+      eInterpInfo.iTimeLow=iTimeUpp;
+      return eInterpInfo;
+    }
+    double alphaLow=(eTimeDay - eTimeUpp)/(eTimeLow - eTimeUpp);
+    double alphaUpp=(eTimeLow - eTimeDay)/(eTimeLow - eTimeUpp);
+    if (alphaLow >= 0 && alphaUpp >= 0) {
+      eInterpInfo.iTimeLow = iTimeLow;
+      eInterpInfo.iTimeUpp = iTimeUpp;
+      eInterpInfo.alphaLow = alphaLow;
+      eInterpInfo.alphaUpp = alphaUpp;
+      return eInterpInfo;
+    }
+    iTime++;
+    if (iTime > 1000000) {
+      std::cerr << "iTime = " << iTime << "\n";
+      std::cerr << "Probably a bug in the infinite loop\n";
+      exit(1);
+    }
+  }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<int> GetIFileIRec(int const& nbRecBegin, int const& nbRecMiddle, int const& iTime)
+{
+  int iFile=0;
+  int iRec;
+  while(1) {
+    if (iTime < nbRecBegin + iFile*nbRecMiddle) {
+      if (iFile == 0) {
+	iRec=iTime;
+      }
+      else {
+	iRec = iTime - nbRecBegin - (iFile-1)*nbRecMiddle;
+      }
+      return {iFile, iRec};
+    }
+    iFile++;
+  }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 std::vector<int> GetIntervalListITime(std::vector<double> const& LTime, double const& eTimeDay, double const& TimeFrameDay)
 {
   double epsilon=0.0000001;
@@ -3095,6 +3165,26 @@ std::vector<int> GetIntervalListITime(std::vector<double> const& LTime, double c
       ListRelITime.push_back(iTime);
   }
   return ListRelITime;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+double GetListTimeSeparation(std::vector<double> const& ListTime)
+{
+  int nbTime=ListTime.size();
+  std::vector<double> ListDiff(nbTime-1);
+  for (int iTime=1; iTime<nbTime; iTime++)
+    ListDiff[iTime-1]=ListTime[iTime] - ListTime[iTime-1];
+  double eMin=VectorMin(ListDiff);
+  double eMax=VectorMax(ListDiff);
+  double eDiff=eMax - eMin;
+  if (eDiff < 1.0e-6) {
+    return eMax;
+  }
+  else {
+    return -1;
+  }
 }
 /* ------------------------------ */
 
@@ -3323,7 +3413,7 @@ MyMatrix<double> HatFunctionFromMask(MyMatrix<int> const& MSKinput, GridArray co
     int i;
     int j;
   };
-  std::function<std::vector<Pair>(int,int)> GetListAdjacent=[&](int const& i, int const& j) -> std::vector<Pair> {
+  auto GetListAdjacent=[&](int const& i, int const& j) -> std::vector<Pair> {
     std::vector<Pair> TheRet;
     if (GrdArr.IsFE == 0) {
       for (int inei=0; inei<4; inei++) {
@@ -3509,6 +3599,7 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   ListDoubleValues1["TimeFrameDay"]=1;
   ListBoolValues1["FirstCleanDirectory"]=true;
   ListBoolValues1["KeepNC_NCL"]=false;
+  ListBoolValues1["OverwritePrevious"]=false;
   ListIntValues1["NPROC"]=1;
   SingleBlock BlockPROC;
   BlockPROC.ListIntValues=ListIntValues1;
@@ -3540,7 +3631,8 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   ListBoolValues2["PrintMMA"]=false;
   ListBoolValues2["LocateMM"]=false;
   ListBoolValues2["DoMain"]=true;
-  ListBoolValues2["DoTransect"]=false;
+  ListBoolValues2["PlotDepth"]=true;
+  ListBoolValues2["PlotMesh"]=true;
   ListBoolValues2["DrawContourBathy"]=false;
   ListBoolValues2["DrawAnnotation"]=false;
   ListDoubleValues2["AnnotationLon"]=0;
@@ -3554,6 +3646,11 @@ FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
   ListListDoubleValues2["BoundDiff_max"]={};
   ListBoolValues2["VariableRange"]=false;
   ListBoolValues2["FillLand"]=true;
+  ListListDoubleValues2["ListFrameMinLon"]={};
+  ListListDoubleValues2["ListFrameMinLat"]={};
+  ListListDoubleValues2["ListFrameMaxLon"]={};
+  ListListDoubleValues2["ListFrameMaxLat"]={};
+  ListBoolValues2["DoMain"]=true;
   SingleBlock BlockPLOT;
   BlockPLOT.ListIntValues=ListIntValues2;
   BlockPLOT.ListBoolValues=ListBoolValues2;
@@ -3644,6 +3741,12 @@ QuadArray GetQuadArray(GridArray const& GrdArr)
     bool IsFirst=true;
     int eta_rho=GrdArr.GrdArrRho.LON.rows();
     int xi_rho =GrdArr.GrdArrRho.LON.cols();
+    int eta_rho_msk=GrdArr.GrdArrRho.MSK.rows();
+    int xi_rho_msk =GrdArr.GrdArrRho.MSK.cols();
+    if (eta_rho_msk != eta_rho || xi_rho_msk != xi_rho) {
+      std::cerr << "Dimension error in the arrays\n";
+      exit(1);
+    }
     for (int i=0; i<eta_rho; i++)
       for (int j=0; j<xi_rho; j++)
 	if (GrdArr.GrdArrRho.MSK(i,j) == 1) {
@@ -4034,7 +4137,7 @@ MyMatrix<double> NC_Read2Dvariable(std::string const& eFile, std::string const& 
   netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
   netCDF::NcVar data=dataFile.getVar(eVar);
   netCDF::NcType eType=data.getType();
-  if(data.isNull()) {
+  if (data.isNull()) {
     std::cerr << "Error in accessing to the file\n";
     std::cerr << "eFile=" << eFile << "\n";
     std::cerr << "eVar=" << eVar << "\n";
@@ -4456,7 +4559,7 @@ std::vector<double> NC_ReadTimeFromFile(std::string const& eFile, std::string co
     std::cerr << "eFile=" << eFile << "\n";
     exit(1);
   }
-  std::cerr << "eFile=" << eFile << "\n";
+  //  std::cerr << "eFile=" << eFile << "\n";
   netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
   netCDF::NcVar data=dataFile.getVar(StringTime);
   if(data.isNull()) {
@@ -4478,16 +4581,10 @@ std::vector<double> NC_ReadTimeFromFile(std::string const& eFile, std::string co
   data.getVar(eVal);
   netCDF::NcVarAtt eTimeAtt=data.getAtt("units");
   char eString[1024]="";
-  //  fprintf(stderr, "Before call to getValues\n");
   eTimeAtt.getValues(eString);
-  //  fprintf(stderr, "After call to getValues\n");
-  //  std::cerr << "eString=" << eString << "\n";
   std::string eStrUnitTime=eString;
-  //  std::cerr << "eStrUnitTime=" << eStrUnitTime << "\n";
-  //  fprintf(stderr, "After conversion to std::string\n");
   double ConvertToDay, eTimeStart;
   CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart);
-  //  fprintf(stderr, "After extraction of key variables from attribute\n");
   std::vector<double> LTime;
   double minTime=0, maxTime=0;
   for (int i=0; i<siz; i++) {
@@ -4536,10 +4633,10 @@ std::vector<double> NC_ReadTimeFromFile(std::string const& eFile, std::string co
 
 
 /* ------------------------------ */
-MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+MyMatrix<double> NETCDF_Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (IsExistingFile(eFile) == false) {
-    std::cerr << "Get2DvariableSpecEntry_FD\n";
+    std::cerr << "NETCDF_Get2DvariableSpecEntry_FD\n";
     std::cerr << "The file eFile=" << eFile << "\n";
     std::cerr << "does not exist\n";
     exit(1);
@@ -4547,10 +4644,9 @@ MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray c
   netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
   netCDF::NcVar data=dataFile.getVar(eVar);
   if(data.isNull()) {
-    std::cerr << "Error in accessing to the file\n";
+    std::cerr << "Error in accessing to variable eVar in eFile\n";
     std::cerr << "eFile=" << eFile << "\n";
     std::cerr << "eVar=" << eVar << "\n";
-    std::cerr << "iRec=" << iRec << "\n";
     exit(1);
   }
   int nbDim=data.getDimCount();
@@ -4561,6 +4657,7 @@ MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray c
     if (iRec >= nbRec) {
       std::cerr << "Error, iRec is too large\n";
       std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+      std::cerr << "We need C-convention iRec < nbRec\n";
       exit(1);
     }
     eDim=data.getDim(1);
@@ -4613,6 +4710,7 @@ MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray c
   if (iRec >= nbRec) {
     std::cerr << "Error, iRec is too large\n";
     std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+    std::cerr << "We need C-convention iRec < nbRec\n";
     exit(1);
   }
   eDim=data.getDim(1);
@@ -4685,9 +4783,8 @@ MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray c
       eArr(i, j)=eVal[iWet];
     }
     return eArr;
-  }
-  
-  std::cerr << "Routine is Get2DvariableSpecEntry\n";
+  }  
+  std::cerr << "Routine is NETCDF_Get2DvariableSpecEntry_FD\n";
   std::cerr << "eVar=" << eVar << "\n";
   std::cerr << "We did not find the size\n";
   exit(1);
@@ -4696,10 +4793,10 @@ MyMatrix<double> Get2DvariableSpecEntry_FD(std::string const& eFile, GridArray c
 
 
 /* ------------------------------ */
-MyMatrix<double> Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+MyMatrix<double> NETCDF_Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (IsExistingFile(eFile) == false) {
-    std::cerr << "Get2DvariableSpecEntry_FE\n";
+    std::cerr << "NETCDF_Get2DvariableSpecEntry_FE\n";
     std::cerr << "The file eFile=" << eFile << "\n";
     std::cerr << "does not exist\n";
     exit(1);
@@ -4707,7 +4804,7 @@ MyMatrix<double> Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray c
   netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
   netCDF::NcVar data=dataFile.getVar(eVar);
   if(data.isNull()) {
-    std::cerr << "Error in accessing to the file\n";
+    std::cerr << "Error in accessing eVar in eFile\n";
     std::cerr << "eFile=" << eFile << "\n";
     std::cerr << "eVar=" << eVar << "\n";
     std::cerr << "iRec=" << iRec << "\n";
@@ -4725,6 +4822,7 @@ MyMatrix<double> Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray c
   if (iRec >= nbRec) {
     std::cerr << "Error, iRec is too large\n";
     std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+    std::cerr << "We need C-convention iRec < nbRec\n";
     exit(1);
   }
   eDim=data.getDim(1);
@@ -4755,6 +4853,30 @@ MyMatrix<double> Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray c
     delete [] eVal;
     IsDone=true;
   }
+  if (eType == netCDF::NcType::nc_INT) {
+    int *eVal;
+    eVal=new int[mnp];
+    data.getVar(start, count, eVal);
+    for (size_t i=0; i<mnp; i++) {
+      int eValF=eVal[i];
+      double eValD=double(eValF);
+      eArr(i,0)=eValD;
+    }
+    delete [] eVal;
+    IsDone=true;
+  }
+  if (eType == netCDF::NcType::nc_UINT) {
+    unsigned int *eVal;
+    eVal=new unsigned int[mnp];
+    data.getVar(start, count, eVal);
+    for (size_t i=0; i<mnp; i++) {
+      unsigned int eValF=eVal[i];
+      double eValD=double(eValF);
+      eArr(i,0)=eValD;
+    }
+    delete [] eVal;
+    IsDone=true;
+  }
   if (IsDone == false) {
     std::cerr << "Data reading failed for 2D finite element\n";
     exit(1);
@@ -4774,12 +4896,12 @@ MyMatrix<double> Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray c
 
 
 /* ------------------------------ */
-MyMatrix<double> Get2DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+MyMatrix<double> NETCDF_Get2DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (GrdArr.IsFE == 1) {
-    return Get2DvariableSpecEntry_FE(eFile, GrdArr, eVar, iRec);
+    return NETCDF_Get2DvariableSpecEntry_FE(eFile, GrdArr, eVar, iRec);
   }
-  return Get2DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
+  return NETCDF_Get2DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
 }
 /* ------------------------------ */
 
@@ -4806,47 +4928,95 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 {
   ArrayHistory eArr=TotalArr.eArr;
   GridArray GrdArr=TotalArr.GrdArr;
-  //  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
-  //  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
-  //  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
-  //  std::cerr << "eTimeDay=" << eTimeDay << "\n";
-  InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
-  if (eInterpInfo.UseSingleEntry) {
-    int iTime=eInterpInfo.iTimeLow;
-    int iFile=eArr.ListIFile[iTime];
-    int iRec=eArr.ListIRec[iTime];
-    std::string HisFile;
+  auto GetHisFileName=[&](int const& iFile) -> std::string {
     if (eArr.AppendVarName) {
-      HisFile=eArr.ListFileNames[iFile] + eVar + ".nc";
+      return eArr.ListFileNames[iFile] + eVar + ".nc";
     }
     else {
-      HisFile=eArr.ListFileNames[iFile];
+      return eArr.ListFileNames[iFile];
     }
-    return Get2DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
-  }
-  double alphaLow=eInterpInfo.alphaLow;
-  int iTimeLow=eInterpInfo.iTimeLow;
-  int iFileLow=eArr.ListIFile[iTimeLow];
-  int iRecLow=eArr.ListIRec[iTimeLow];
-  double alphaUpp=eInterpInfo.alphaUpp;
-  int iTimeUpp=eInterpInfo.iTimeUpp;
-  int iFileUpp=eArr.ListIFile[iTimeUpp];
-  int iRecUpp=eArr.ListIRec[iTimeUpp];
+  };
   std::string HisFileLow, HisFileUpp;
-  if (eArr.AppendVarName) {
-    HisFileLow=eArr.ListFileNames[iFileLow] + eVar + ".nc";
+  int iRecLow, iRecUpp;
+  double alphaLow, alphaUpp;
+  std::cerr << "TimeSteppingInfo=" << eArr.TimeSteppingInfo << "\n";
+  bool IsDone=false;
+  if (eArr.TimeSteppingInfo == "classic") {
+    //  std::cerr << "|eArr.ListTime|=" << eArr.ListTime.size() << "\n";
+    //  std::cerr << "min(eArr.ListTime)=" << VectorMin(eArr.ListTime) << "\n";
+    //  std::cerr << "max(eArr.ListTime)=" << VectorMax(eArr.ListTime) << "\n";
+    //  std::cerr << "eTimeDay=" << eTimeDay << "\n";
+    InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
+    if (eInterpInfo.UseSingleEntry) {
+      int iTime=eInterpInfo.iTimeLow;
+      int iFile=eArr.ListIFile[iTime];
+      int iRec=eArr.ListIRec[iTime];
+      std::string HisFile=GetHisFileName(iFile);
+      return NETCDF_Get2DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
+    }
+    alphaLow=eInterpInfo.alphaLow;
+    alphaUpp=eInterpInfo.alphaUpp;
+    int iTimeLow=eInterpInfo.iTimeLow;
+    int iTimeUpp=eInterpInfo.iTimeUpp;
+    int iFileLow=eArr.ListIFile[iTimeLow];
+    int iFileUpp=eArr.ListIFile[iTimeUpp];
+    iRecLow=eArr.ListIRec[iTimeLow];
+    iRecUpp=eArr.ListIRec[iTimeUpp];
+    std::string HisFileLow=GetHisFileName(iFileLow);
+    std::string HisFileUpp=GetHisFileName(iFileUpp);
+    IsDone=true;
   }
-  else {
-    HisFileLow=eArr.ListFileNames[iFileLow];
+  if (eArr.TimeSteppingInfo == "singlefile") {
+    InterpInfo eInterpInfo=GetTimeInterpolationInfo_infinite(eArr.FirstTime, eArr.SeparationTime, eTimeDay);
+    if (eInterpInfo.UseSingleEntry) {
+      int iTime=eInterpInfo.iTimeLow;
+      int iFile=0;
+      int iRec=iTime;
+      std::string HisFile=GetHisFileName(iFile);
+      return NETCDF_Get2DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
+    }
+    alphaLow=eInterpInfo.alphaLow;
+    alphaUpp=eInterpInfo.alphaUpp;
+    int iTimeLow=eInterpInfo.iTimeLow;
+    int iTimeUpp=eInterpInfo.iTimeUpp;
+    int iFileLow=0;
+    int iFileUpp=0;
+    iRecLow=iTimeLow;
+    iRecUpp=iTimeUpp;
+    std::string HisFileLow=GetHisFileName(iFileLow);
+    std::string HisFileUpp=GetHisFileName(iFileUpp);
+    IsDone=true;
   }
-  if (eArr.AppendVarName) {
-    HisFileUpp=eArr.ListFileNames[iFileUpp] + eVar + ".nc";;
+  if (eArr.TimeSteppingInfo == "multiplenetcdf") {
+    InterpInfo eInterpInfo=GetTimeInterpolationInfo_infinite(eArr.FirstTime, eArr.SeparationTime, eTimeDay);
+    if (eInterpInfo.UseSingleEntry) {
+      int iTime=eInterpInfo.iTimeLow;
+      std::vector<int> eRec=GetIFileIRec(eArr.nbRecBegin, eArr.nbRecMiddle, iTime);
+      int iFile=eRec[0];
+      int iRec=eRec[1];
+      std::string HisFile=GetHisFileName(iFile);
+      return NETCDF_Get2DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
+    }
+    alphaLow=eInterpInfo.alphaLow;
+    alphaUpp=eInterpInfo.alphaUpp;
+    int iTimeLow=eInterpInfo.iTimeLow;
+    int iTimeUpp=eInterpInfo.iTimeUpp;
+    std::vector<int> eRecLow=GetIFileIRec(eArr.nbRecBegin, eArr.nbRecMiddle, iTimeLow);
+    std::vector<int> eRecUpp=GetIFileIRec(eArr.nbRecBegin, eArr.nbRecMiddle, iTimeUpp);
+    int iFileLow=eRecLow[0];
+    int iFileUpp=eRecUpp[0];
+    iRecLow=eRecLow[1];
+    iRecUpp=eRecUpp[1];
+    std::string HisFileLow=GetHisFileName(iFileLow);
+    std::string HisFileUpp=GetHisFileName(iFileUpp);
+    IsDone=true;
   }
-  else {
-    HisFileUpp=eArr.ListFileNames[iFileUpp];
+  if (IsDone == false) {
+    std::cerr << "Failed to find matching entry for TimeSteppingInfo = " << eArr.TimeSteppingInfo << "\n";
+    exit(1);
   }
-  MyMatrix<double> eVarLow=Get2DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
-  MyMatrix<double> eVarUpp=Get2DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
+  MyMatrix<double> eVarLow=NETCDF_Get2DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
+  MyMatrix<double> eVarUpp=NETCDF_Get2DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
   int eta=eVarLow.rows();
   int xi=eVarLow.cols();
   MyMatrix<double> RetVar(eta, xi);
@@ -4861,10 +5031,10 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 
 
 /* ------------------------------ */
-Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> NETCDF_Get3DvariableSpecEntry_FD(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (IsExistingFile(eFile) == false) {
-    std::cerr << "Get3DvariableSpecEntry_FD\n";
+    std::cerr << "NETCDF_Get3DvariableSpecEntry_FD\n";
     std::cerr << "The file eFile=" << eFile << "\n";
     std::cerr << "does not exist\n";
     exit(1);
@@ -4889,6 +5059,7 @@ Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, Grid
     if (iRec >= nbRec) {
       std::cerr << "Error, iRec is too large\n";
       std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+      std::cerr << "We need C-convention iRec < nbRec\n";
       exit(1);
     }
     eDim=data.getDim(1);
@@ -4940,6 +5111,7 @@ Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, Grid
   if (iRec >= nbRec) {
     std::cerr << "Error, iRec is too large\n";
     std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+    std::cerr << "We need C-convention iRec < nbRec\n";
     exit(1);
   }
   eDim=data.getDim(1);
@@ -5028,7 +5200,7 @@ Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, Grid
     }
     return eArr;
   }
-  std::cerr << "Routine is Get2DvariableSpecEntry\n";
+  std::cerr << "Routine is NETCDF_Get2DvariableSpecEntry\n";
   std::cerr << "eVar=" << eVar << "\n";
   std::cerr << "s_rho=" << s_rho << " s_w=" << s_w << "\n";
   std::cerr << "nbWet=" << nbWet << "\n";
@@ -5042,13 +5214,13 @@ Eigen::Tensor<double,3> Get3DvariableSpecEntry_FD(std::string const& eFile, Grid
 
 
 /* ------------------------------ */
-Eigen::Tensor<double,3> Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+Eigen::Tensor<double,3> NETCDF_Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
   if (GrdArr.IsFE == 1) {
     std::cerr << "You need to program this part of the program\n";
     exit(1);
   }
-  return Get3DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
+  return NETCDF_Get3DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
 }
 /* ------------------------------ */
 
@@ -5069,7 +5241,7 @@ Eigen::Tensor<double,3> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, s
     //    std::cerr << "HisFile=" << HisFile << "\n";
     //    std::cerr << "iTime=" << iTime << "\n";
     //    std::cerr << "iFile=" << iFile << " iRec=" << iRec << "\n";
-    return Get3DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
+    return NETCDF_Get3DvariableSpecEntry(HisFile, GrdArr, eVar, iRec);
   }
   double alphaLow=eInterpInfo.alphaLow;
   int iTimeLow=eInterpInfo.iTimeLow;
@@ -5081,8 +5253,8 @@ Eigen::Tensor<double,3> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, s
   int iRecUpp=eArr.ListIRec[iTimeUpp];
   std::string HisFileLow=eArr.ListFileNames[iFileLow];
   std::string HisFileUpp=eArr.ListFileNames[iFileUpp];
-  Eigen::Tensor<double,3> eVarLow=Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
-  Eigen::Tensor<double,3> eVarUpp=Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
+  Eigen::Tensor<double,3> eVarLow=NETCDF_Get3DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
+  Eigen::Tensor<double,3> eVarUpp=NETCDF_Get3DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
   auto LDim=eVarLow.dimensions();
   int s_vert=LDim[0];
   int eta=LDim[1];
@@ -5105,7 +5277,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
   //  std::cerr << "Before getting MatDir\n";
   MyMatrix<int> MatDir=GetDirection();
   //  std::cerr << "After getting MatDir\n";
-  std::function<std::vector<double>(int, int, double, double)> FindCoefficient=[&](int const& eEta, int const& eXi, double const& eX, double const& eY) -> std::vector<double> {
+  auto FindCoefficient=[&](int const& eEta, int const& eXi, double const& eX, double const& eY) -> std::vector<double> {
     std::vector<double> X, Y, LCoeff;
     double TheMin;
     X={CoordGridArr.LON(eEta, eXi), CoordGridArr.LON(eEta+1, eXi), CoordGridArr.LON(eEta, eXi+1)};
@@ -5127,7 +5299,9 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
       //      std::cerr << "LAT=" << CoordGridArr.LAT(eEta,eXi) << "," << CoordGridArr.LAT(eEta+1,eXi) << "," << CoordGridArr.LAT(eEta,eXi+1) << "," << CoordGridArr.LAT(eEta+1,eXi+1) << "\n";
 
       //      std::cerr << "1: eCoeff00=" << eCoeff00 << " 10=" << eCoeff10 << " 01=" << eCoeff01 << " 11=" << eCoeff11 << "\n";
-      return {eCoeff00, eCoeff10, eCoeff01, eCoeff11};
+      std::vector<double> LCoeff{eCoeff00, eCoeff10, eCoeff01, eCoeff11};
+      return LCoeff;
+      //
     }
     X={CoordGridArr.LON(eEta+1, eXi+1), CoordGridArr.LON(eEta+1, eXi), CoordGridArr.LON(eEta, eXi+1)};
     Y={CoordGridArr.LAT(eEta+1, eXi+1), CoordGridArr.LAT(eEta+1, eXi), CoordGridArr.LAT(eEta, eXi+1)};
@@ -5148,68 +5322,82 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
     }
     return {-1,-1,-1,-1};
   };
+  auto FindRecordArray=[&](int const& eEta, int const& eXi, double const& eX, double const& eY, SingleRecInterp& eRec) -> bool {
+    std::vector<double> LCoeff=FindCoefficient(eEta, eXi, eX, eY);
+    if (LCoeff[0] != -1) {
+      std::vector<SinglePartInterp> LPart(4);
+      double deltaX=eX;
+      double deltaY=eY;
+      for (int i=0; i<4; i++) {
+	int nEta=eEta + MatDir(0,i);
+	int nXi=eXi   + MatDir(1,i);
+	SinglePartInterp ePart={nEta, nXi, LCoeff[i]};
+	deltaX=deltaX - LCoeff[i]*CoordGridArr.LON(nEta, nXi);
+	deltaY=deltaY - LCoeff[i]*CoordGridArr.LAT(nEta, nXi);
+	LPart[i]=ePart;
+      }
+      eRec={true, LPart};
+      return true;
+    }
+    return false;
+  };
   int nbEta=CoordGridArr.LON.rows();
   int nbXi =CoordGridArr.LON.cols();
-  std::function<bool(std::vector<int>)> AdmissibleEtaXi=[&](std::vector<int> const& ePair) -> bool {
-    int eEta=ePair[0];
-    int eXi=ePair[1];
+  auto AdmissibleEtaXi=[&](int const& eEta, int const& eXi) -> bool {
     if (eEta >= 0 && eEta < nbEta-1 && eXi >= 0 && eXi < nbXi-1)
       return true;
     return false;
   };
-  std::function<SingleRecInterp(int, int, double, double)> FindRecord=[&](int const& eEta, int const& eXi, double const& eX, double const& eY) -> SingleRecInterp {
-    int siz=0;
+  auto FindRecord=[&](int const& eEta, int const& eXi, double const& eX, double const& eY) -> SingleRecInterp {
     bool testQuad=TestFeasibilityByQuad(eQuad, eX, eY);
     if (testQuad == false) {
       return {false, {}};
     }
     //    std::cerr << "eX=" << eX << " eY=" << eY << "\n";
-    while(1) {
-      //      std::cerr << "siz=" << siz << "\n";
-      std::vector<std::vector<int> > ListCases;
-      std::vector<int> ePair;
-      if (siz == 0)
-	ListCases.push_back({eEta, eXi});
-      for (int i=-siz; i<siz; i++) {
-	ePair={eEta - siz, eXi + i};
-	if (AdmissibleEtaXi(ePair))
-	  ListCases.push_back(ePair);
-	ePair={eEta + i, eXi + siz};
-	if (AdmissibleEtaXi(ePair))
-	  ListCases.push_back(ePair);
-	ePair={eEta + siz, eXi - i};
-	if (AdmissibleEtaXi(ePair))
-	  ListCases.push_back(ePair);
-	ePair={eEta - i, eXi - siz};
-	if (AdmissibleEtaXi(ePair))
-	  ListCases.push_back(ePair);
-      }
-      size_t nbEnt=ListCases.size();
-      if (nbEnt == 0) {
-	return {false, {}};
-      }
-      for (std::vector<int> &fPair : ListCases) {
-	int fEta=fPair[0];
-	int fXi=fPair[1];
-	std::vector<double> LCoeff=FindCoefficient(fEta, fXi, eX, eY);
-	if (LCoeff[0] > -1) {
-	  std::vector<SinglePartInterp> LPart(4);
-	  double deltaX=eX;
-	  double deltaY=eY;
-	  for (int i=0; i<4; i++) {
-	    int nEta=fEta + MatDir(0,i);
-	    int nXi=fXi   + MatDir(1,i);
-	    SinglePartInterp ePart={nEta, nXi, LCoeff[i]};
-	    deltaX=deltaX - LCoeff[i]*CoordGridArr.LON(fEta, fXi);
-	    deltaY=deltaY - LCoeff[i]*CoordGridArr.LAT(fEta, fXi);
-	    LPart[i]=ePart;
-	  }
-	  //	  std::cerr << "deltaX=" << deltaX << " deltaY=" << deltaY << "\n";
-	  return {true, LPart};
+    auto fEvaluateCorrectness=[&](int const& fEta, int const& fXi, bool& DoSomething, SingleRecInterp & eRec) -> bool {
+      if (AdmissibleEtaXi(fEta, fXi)) {
+	DoSomething=true;
+	bool test=FindRecordArray(fEta, fXi, eX, eY, eRec);
+	if (test == true) {
+	  return true;
 	}
       }
-      siz++;
+      return false;
+    };
+    SingleRecInterp eRec;
+    int siz=0;
+    int sizExp=3;
+    for (siz=0; siz<sizExp; siz++) {
+      std::cerr << "siz=" << siz << "\n";
+      std::vector<int> ePair;
+      bool DoSomething=false;
+      if (siz == 0) {
+	if (fEvaluateCorrectness(eEta, eXi, DoSomething, eRec))
+	  return eRec;
+      }
+      for (int i=-siz; i<siz; i++) {
+	if (fEvaluateCorrectness(eEta-siz, eXi+i  , DoSomething, eRec))
+	  return eRec;
+	if (fEvaluateCorrectness(eEta+i  , eXi+siz, DoSomething, eRec))
+	  return eRec;
+	if (fEvaluateCorrectness(eEta+siz  , eXi-i, DoSomething, eRec))
+	  return eRec;
+	if (fEvaluateCorrectness(eEta-i  , eXi-siz, DoSomething, eRec))
+	  return eRec;
+      }
+      if (DoSomething == false)
+	return {false, {}};
     }
+    Point ePt{eX, eY};
+    PairCoord ePair=FindContaining(ePt, CoordGridArr.LON, CoordGridArr.LAT);
+    if (ePair.i == -1)
+      return {false, {}};
+    bool test=FindRecordArray(ePair.i, ePair.j, eX, eY, eRec);
+    if (test == false) {
+      std::cerr << "Inconsistency in the computation\n";
+      exit(1);
+    }
+    return eRec;
   };
   int nbPoint=ListXY.cols();
   int iEtaPrev=0;
@@ -5221,7 +5409,7 @@ std::vector<SingleRecInterp> FD_FIND_ELE(CoordGridArrayFD const& CoordGridArr, Q
     double Yp=ListXY(1,iPoint);
     SingleRecInterp eEnt=FindRecord(iEtaPrev, iXiPrev, Xp, Yp);
     LRec.push_back(eEnt);
-    std::cerr << "iPoint=" << iPoint << " / " << nbPoint << " status=" << eEnt.status << "\n";
+    std::cerr << "iPoint=" << iPoint << " / " << nbPoint << " x/y=" << Xp << "/" << Yp << " status=" << eEnt.status << "\n";
     if (eEnt.status == true) {
       iEtaPrev=eEnt.LPart[0].eEta;
       iXiPrev=eEnt.LPart[0].eXi;
@@ -5298,25 +5486,6 @@ QuadCoordinate Get_QuadCoordinate(GridArray const& GrdArr)
   //  std::cerr << "LAT (min/max)=" << MinLat << " / " << MaxLat << "\n";
   //  exit(1);
   return {MinLon, MaxLon, MinLat, MaxLat};
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-std::vector<SingleRecInterp> General_FindInterpolationWeight(GridArray const& GrdArr, MyMatrix<double> const& ListXY)
-{
-  std::vector<SingleRecInterp> LRec;
-  QuadCoordinate eQuad=Get_QuadCoordinate(GrdArr);
-  if (GrdArr.IsFE == 0) {
-    std::cerr << "Before FD_FIND_ELE\n";
-    LRec=FD_FIND_ELE(GrdArr.GrdArrRho, eQuad, ListXY);
-  }
-  else {
-    std::cerr << "Before TRIG_FIND_ELE\n";
-    LRec=TRIG_FIND_ELE(GrdArr.INE, GrdArr.GrdArrRho.LON, GrdArr.GrdArrRho.LAT, eQuad, ListXY);
-  }
-  Print_InterpolationError(LRec, GrdArr, ListXY);
-  return LRec;
 }
 /* ------------------------------ */
 
@@ -5402,7 +5571,7 @@ GraphSparseImmutable GetUnstructuredVertexAdjInfo(MyMatrix<int> const& INE, int 
   std::vector<int> ListListAdj_unrefined(TotalSum_unrefined,-1);
   std::vector<int> ListIndexPos(nbNode,0);
   std::cerr << "GetUnstructuredVertexAdjInfo, step 2\n";
-  std::function<void(int,int)> fInsert=[&](int const& eVert, int const& eVertAdj) -> void {
+  auto fInsert=[&](int const& eVert, int const& eVertAdj) -> void {
     //    std::cerr << "eVert=" << eVert << " eVertAdj=" << eVertAdj << "\n";
     int eStart=ListStart_unrefined[eVert];
     //    std::cerr << "eStart=" << eStart << "\n";
@@ -5453,6 +5622,152 @@ GraphSparseImmutable GetUnstructuredVertexAdjInfo(MyMatrix<int> const& INE, int 
   }
   std::cerr << "GetUnstructuredVertexAdjInfo, step 7\n";
   return GraphSparseImmutable(nbNode, ListStart, ListListAdj);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<int> GetUnstructuredTriangleAdjInfo_vectint(MyMatrix<int> const& INE, int nbNode)
+{
+  int nbEle=INE.rows();
+  std::vector<int> ListDegree(nbNode, 0);
+  int mne=INE.rows();
+  for (int ie=0; ie<mne; ie++)
+    for (int i=0; i<3; i++) {
+      int ip=INE(ie,i);
+      ListDegree[ip]+=2;
+    }
+  int MaxDeg=0;
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    int eDeg=ListDegree[iNode];
+    if (eDeg > MaxDeg)
+      MaxDeg=eDeg;
+  }
+  for (int iNode=0; iNode<nbNode; iNode++)
+    ListDegree[iNode]=0;
+  //  std::cerr << "MaxDeg=" << MaxDeg << "\n";
+  //  std::cerr << "nbNode=" << nbNode << "\n";
+  MyMatrix<int> ListAdjacency(nbNode, MaxDeg);
+  for (int ie=0; ie<mne; ie++) {
+    //    std::cerr << "ie=" << ie << "\n";
+    for (int i=0; i<3; i++) {
+      int iNext=NextIdx(3,i);
+      int iPrev=PrevIdx(3,i);
+      //      std::cerr << "i/iNext/iPrev=" << i << "," << iNext << "," << iPrev << "\n";
+      int i1=INE(ie,i);
+      int i2=INE(ie,iNext);
+      int i3=INE(ie,iPrev);
+      //      std::cerr << "  i1=" << i1 << " i2=" << i2 << " i3=" << i3 << "\n";
+      int eDeg=ListDegree[i1];
+      ListAdjacency(i1, eDeg  )=i2;
+      ListAdjacency(i1, eDeg+1)=i3;
+      ListDegree[i1] = eDeg + 2;
+      //      std::cerr << "Now eDeg=" << eDeg << "\n";
+    }
+  }
+  int nbEdge=0;
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    std::set<int> eSet;
+    int eDeg=ListDegree[iNode];
+    for (int iAdj=0; iAdj<eDeg; iAdj++) {
+      //      std::cerr << "iNode=" << iNode << " iAdj=" << iAdj << "\n";
+      //      std::cerr << "ListAdjacency(rows/cols)=" << ListAdjacency.rows() << " / " << ListAdjacency.cols() << "\n";
+      int eAdj=ListAdjacency(iNode, iAdj);
+      //      std::cerr << "After access\n";
+      //      std::cerr << "eEdge=" << iNode << " - " << eAdj << "\n";
+      if (eAdj > iNode)
+	eSet.insert(eAdj);
+    }
+    nbEdge += eSet.size();
+  }
+  //  std::cerr << "Step 1\n";
+  MyMatrix<int> ListEdges(nbEdge,2);
+  int iEdge=0;
+  std::vector<int> IndexStart(nbNode);
+  std::vector<int> IndexEnd  (nbNode);
+  for (int iNode=0; iNode<nbNode; iNode++) {
+    std::set<int> eSet;
+    int eDeg=ListDegree[iNode];
+    for (int iAdj=0; iAdj<eDeg; iAdj++) {
+      //      std::cerr << "iNode=" << iNode << " iAdj=" << iAdj << "\n";
+      int eAdj=ListAdjacency(iNode, iAdj);
+      //      std::cerr << "After ListAdjacency call\n";
+      if (eAdj > iNode)
+	eSet.insert(eAdj);
+    }
+    IndexStart[iNode]=iEdge;
+    for (auto eAdj : eSet) {
+      ListEdges(iEdge,0)=iNode;
+      ListEdges(iEdge,1)=eAdj;
+      iEdge++;
+    }
+    IndexEnd  [iNode]=iEdge;
+  }
+  /*
+  for (int iEdge=0; iEdge<nbEdge; iEdge++) {
+    std::cerr << "iEdge=" << iEdge << " eEdge=" << ListEdges(iEdge,0) << " / " << ListEdges(iEdge,1) << "\n";
+    }
+    std::cerr << "Step 2\n";*/
+  auto GetIEdge=[&](int const& eVert1, int const& eVert2) -> int {
+    int idxStart=IndexStart[eVert1];
+    int idxEnd=IndexEnd[eVert1];
+    //    std::cerr << "idxStart=" << idxStart << " idxEnd=" << idxEnd << "\n";
+    for (int iEdge=idxStart; iEdge<idxEnd; iEdge++) {
+      if (ListEdges(iEdge,0) != eVert1) {
+	std::cerr << "Clear inconsistency in code\n";
+	exit(1);
+      }
+      if (ListEdges(iEdge,1) == eVert2)
+	return iEdge;
+    }
+    std::cerr << "Failed to find the correct indexes iEdge\n";
+    exit(1);
+  };
+  MyMatrix<int> LEdge=GetEdgeSet(INE, nbNode);
+  std::vector<int> NumberMatch(nbEdge, 0);
+  MyMatrix<int> IncidenceTrigEdge(nbEdge,2);
+  for (int iEle=0; iEle<nbEle; iEle++) {
+    //    std::cerr << "iEle=" << iEle << "\n";
+    //    std::cerr << "INE123=" << INE(iEle,0) << "," << INE(iEle,1) << "," << INE(iEle,2) << "\n";
+    for (int i=0; i<3; i++) {
+      int iNext=NextIdx(3,i);
+      //      std::cerr << "i=" << i << " iNext=" << iNext << "\n";
+      int eVert=INE(iEle, i);
+      int eNext=INE(iEle, iNext);
+      //      std::cerr << "eVert=" << eVert << " eNext=" << eNext << "\n";
+      int eVert1, eVert2;
+      if (eVert < eNext) {
+	eVert1=eVert;
+	eVert2=eNext;
+      }
+      else {
+	eVert1=eNext;
+	eVert2=eVert;
+      }
+      //      std::cerr << "eVert1=" << eVert1 << " eVert2=" << eVert2 << "\n";
+      int iEdge=GetIEdge(eVert1, eVert2);
+      //
+      int pos=NumberMatch[iEdge];
+      IncidenceTrigEdge(iEdge,pos)=iEle;
+      NumberMatch[iEdge]=pos+1;
+    }
+  }
+  //  std::cerr << "Step 3\n";
+  std::vector<int> ListAdj(3*nbEle,-1);
+  std::vector<int> DegreeTriangle(nbEle,0);
+  for (int iEdge=0; iEdge<nbEdge; iEdge++)
+    if (NumberMatch[iEdge] == 2) {
+      int iEle1=IncidenceTrigEdge(iEdge,0);
+      int iEle2=IncidenceTrigEdge(iEdge,1);
+      int pos1=DegreeTriangle[iEle1];
+      int pos2=DegreeTriangle[iEle2];
+      ListAdj[3*iEle1 + pos1] = iEle2;
+      ListAdj[3*iEle2 + pos2] = iEle1;
+      DegreeTriangle[iEle1]=pos1+1;
+      DegreeTriangle[iEle2]=pos2+1;
+    }
+  //  std::cerr << "Before return ListAdj\n";
+  return ListAdj;
 }
 /* ------------------------------ */
 
@@ -5682,9 +5997,18 @@ void NAMELIST_ReadNamelistFile(std::string const& eFileName, FullNamelist &eFull
 /* ------------------------------ */
 PairMinMax ComputeMinMax(GridArray const& GrdArr, MyMatrix<double> const& F)
 {
+  std::cerr << "Begin of ComputeMinMax\n";
   bool IsFirst=true;
-  int eta_rho=GrdArr.GrdArrRho.LON.rows();
-  int xi_rho=GrdArr.GrdArrRho.LON.cols();
+  int eta_rho=F.rows();
+  int xi_rho=F.cols();
+  int eta_rho_msk=GrdArr.GrdArrRho.MSK.rows();
+  int xi_rho_msk=GrdArr.GrdArrRho.MSK.cols();
+  if (eta_rho != eta_rho_msk || xi_rho != xi_rho_msk) {
+    std::cerr << "Inconsistency in dimension\n";
+    std::cerr << "  F: eta_rho=" << eta_rho     << " xi_rho=" << xi_rho     << "\n";
+    std::cerr << "MSK: eta_rho=" << eta_rho_msk << " xi_rho=" << xi_rho_msk << "\n";
+    exit(1);
+  }
   double TheMin=0;
   double TheMax=0;
   for (int i=0; i<eta_rho; i++)
@@ -5711,6 +6035,7 @@ PairMinMax ComputeMinMax(GridArray const& GrdArr, MyMatrix<double> const& F)
 	IsFirst=false;
       }
     }
+  std::cerr << "  End of ComputeMinMax\n";
   return {TheMin, TheMax};
 }
 /* ------------------------------ */
@@ -5821,36 +6146,10 @@ GridArray GRIB_ReadGridArray(std::string const& FileName, std::string const& eMo
   int nbMessage=0;
   while ((h = grib_handle_new_from_file(0,in,&err)) != NULL ) { 
     nbMessage++;
-    std::cerr << "nbMessage=" << nbMessage << "\n";
+    //    std::cerr << "nbMessage=" << nbMessage << "\n";
     //    std::cerr << "err=" << err << "\n";
     if (err != GRIB_SUCCESS)
       GRIB_CHECK(err,0);
-    //
-    /*
-    char* name_space="ls";
-    grib_keys_iterator* kiter=NULL;
-    kiter=grib_keys_iterator_new(h,key_iterator_filter_flags,name_space);
-    if (!kiter) {
-      printf("ERROR: Unable to create keys iterator\n");
-      exit(1);
-    }
-    std::string ShortNameValue;
-    while(grib_keys_iterator_next(kiter)) {
-      int MAX_VAL_LEN=1024;
-      char value[MAX_VAL_LEN];
-      size_t vlen=MAX_VAL_LEN;
-      const char* name = grib_keys_iterator_get_name(kiter);
-      vlen=MAX_VAL_LEN;
-      bzero(value,vlen);
-      GRIB_CHECK(grib_get_string(h,name,value,&vlen),name);
-      std::string nameStr=name;
-      std::string valueStr=value;
-      if (nameStr == "shortName") {
-	ShortNameValue=valueStr;
-      }
-      //printf("%s = %s\n",name,value);
-    }
-    grib_keys_iterator_delete(kiter); */
     //
     long Ni, Nj, numberOfDataPoints;
     GRIB_CHECK(grib_get_long(h,"Ni",&Ni),0);
@@ -5922,16 +6221,19 @@ GridArray GRIB_ReadGridArray(std::string const& FileName, std::string const& eMo
     int xi_rho=Nj;
     MyMatrix<double> LON(eta_rho, xi_rho);
     MyMatrix<double> LAT(eta_rho, xi_rho);
+    MyMatrix<int> MSK(eta_rho, xi_rho);
     int idx=0;
     for (int j=0; j<xi_rho; j++)
       for (int i=0; i<eta_rho; i++) {
 	LON(i,j)=lons[idx];
 	LAT(i,j)=lats[idx];
+	MSK(i,j)=1;
 	idx++;
       }
     if (eModelName == "GRIB_COSMO") {
       Apply_COSMO_Transformation(LON, LAT, eCosmoGrid);
     }
+    /*
     double MinLON=LON.minCoeff();
     double MaxLON=LON.maxCoeff();
     double MinLAT=LAT.minCoeff();
@@ -5942,12 +6244,14 @@ GridArray GRIB_ReadGridArray(std::string const& FileName, std::string const& eMo
     std::cerr << "[eta_rho,0]      lon=" << LON(eta_rho-1,0) << " lat=" << LAT(eta_rho-1,0) << "\n";
     std::cerr << "[eta_rho,xi_rho] lon=" << LON(eta_rho-1,xi_rho-1) << " lat=" << LAT(eta_rho-1,xi_rho-1) << "\n";
     std::cerr << "[0,xi_rho]       lon=" << LON(0,xi_rho-1) << " lat=" << LAT(0,xi_rho-1) << "\n";
+    */
     // need to assign ANG
     MyMatrix<double> ANG=CreateAngleMatrix(LON, LAT);
     GridArray eGridArrGRIB;
     eGridArrGRIB.IsFE=0;
     eGridArrGRIB.GrdArrRho.LON=LON;
     eGridArrGRIB.GrdArrRho.LAT=LAT;
+    eGridArrGRIB.GrdArrRho.MSK=MSK;
     eGridArrGRIB.GrdArrRho.ANG=ANG;
     eGridArrGRIB.GrdArrRho.HaveDEP=false;
     free(lats);
@@ -6182,12 +6486,12 @@ MyVector<T> CanonicalizeVector(MyVector<T> const& V)
   for (int i=0; i<n; i++) {
     T eVal=V(i);
     if (eVal != 0) {
+      T eAbs=T_abs(eVal);
       if (iSelect == -1) {
-	TheMin=T_abs(eVal);
+	TheMin=eAbs;
 	iSelect=i;
       }
       else {
-	T eAbs=T_abs(eVal);
 	if (eAbs < TheMin) {
 	  TheMin=eAbs;
 	  iSelect=i;
@@ -6198,55 +6502,10 @@ MyVector<T> CanonicalizeVector(MyVector<T> const& V)
   if (iSelect == -1)
     return V;
   MyVector<T> Vret(n);
-  T eQuot=1/V(iSelect);
+  T eQuot=1/T_abs(V(iSelect));
   for (int i=0; i<n; i++)
     Vret(i)=V(i)*eQuot;
   return Vret;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
-SingleArrayInterpolation INTERPOL_CreateSingleRecVarInterpol(GridArray const& GrdArrOut, GridArray const& GrdArrIn)
-{
-  if (GrdArrOut.IsFE == 1) {
-    int nbWet=GrdArrOut.GrdArrRho.LON.rows();
-    MyMatrix<double> ListXY(2,nbWet);
-    std::vector<int> LEta(nbWet), LXi(nbWet);
-    for (int i=0; i<nbWet; i++) {
-      LEta[i]=i;
-      LXi[i]=0;
-      ListXY(0,i)=GrdArrOut.GrdArrRho.LON(i,0);
-      ListXY(1,i)=GrdArrOut.GrdArrRho.LAT(i,0);
-    }
-    int eta_rho=nbWet;
-    int xi_rho=1;
-    std::vector<SingleRecInterp> LSingle=General_FindInterpolationWeight(GrdArrIn, ListXY);
-    return {eta_rho, xi_rho, LEta, LXi, LSingle};
-  }
-  else {
-    int eta_rho=GrdArrOut.GrdArrRho.LON.rows();
-    int xi_rho =GrdArrOut.GrdArrRho.LON.cols();
-    int nbWet=0;
-    for (int i=0; i<eta_rho; i++)
-      for (int j=0; j<xi_rho; j++)
-	if (GrdArrOut.GrdArrRho.MSK(i,j) == 1)
-	  nbWet++;
-    MyMatrix<double> ListXY(2, nbWet);
-    std::vector<int> LEta(nbWet), LXi(nbWet);
-    int idx=0;
-    for (int i=0; i<eta_rho; i++)
-      for (int j=0; j<xi_rho; j++)
-	if (GrdArrOut.GrdArrRho.MSK(i,j) == 1) {
-	  LEta[idx]=i;
-	  LXi[idx]=j;
-	  ListXY(0,idx)=GrdArrOut.GrdArrRho.LON(i,j);
-	  ListXY(1,idx)=GrdArrOut.GrdArrRho.LAT(i,j);
-	  idx++;
-	}
-    std::vector<SingleRecInterp> LSingle=General_FindInterpolationWeight(GrdArrIn, ListXY);
-    return {eta_rho, xi_rho, LEta, LXi, LSingle};
-  }
 }
 /* ------------------------------ */
 
@@ -6266,61 +6525,9 @@ GraphSparseImmutable GetGraphSparseVertexAdjacency(GridArray const& GrdArr)
 
 
 /* ------------------------------ */
-TotalArrayInterpolation INTERPOL_ConstructTotalArray(std::vector<TotalArrGetData> const& ListTotalArr, std::vector<int> const& ListSpongeSize, std::vector<int> const& ListFatherGrid, GridArray const& GrdArrOut)
-{
-  int eta_rho=GrdArrOut.GrdArrRho.LON.rows();
-  int xi_rho=GrdArrOut.GrdArrRho.LON.cols();
-  int nbGrid=ListTotalArr.size();
-  std::vector<SingleArrayInterpolation> ListSingleArrayInterpolation(nbGrid);
-  std::vector<MyMatrix<int> > ListInsideMask(nbGrid);
-  std::vector<MyMatrix<double> > ListHatFunction1(nbGrid);
-  GraphSparseImmutable eGR=GetGraphSparseVertexAdjacency(GrdArrOut);
-  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
-    ListSingleArrayInterpolation[iGrid]=INTERPOL_CreateSingleRecVarInterpol(GrdArrOut, ListTotalArr[iGrid].GrdArr);
-    MyMatrix<int> MSKinside=ComputeInsideMask(ListSingleArrayInterpolation[iGrid]);
-    ListHatFunction1[iGrid]=HatFunctionFromMask(MSKinside, GrdArrOut, eGR, ListSpongeSize[iGrid]);
-  }
-  std::vector<std::vector<int> > ListChildren(nbGrid);
-  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
-    int eFather=ListFatherGrid[iGrid];
-    if (eFather != -1)
-      ListChildren[eFather].push_back(iGrid);
-  }
-  MyMatrix<double> TotalSumHat=ZeroMatrix<double>(eta_rho, xi_rho);
-  std::vector<MyMatrix<double> > ListHatFunction2(nbGrid);
-  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
-    MyMatrix<double> TheHatSma=ListHatFunction1[iGrid];
-    for (auto & eGrid : ListChildren[iGrid])
-      for (int i=0; i<eta_rho; i++)
-	for (int j=0; j<xi_rho; j++)
-	  TheHatSma(i,j)=TheHatSma(i,j)*(double(1) - ListHatFunction1[eGrid](i,j));
-    ListHatFunction2[iGrid]=TheHatSma;
-    TotalSumHat += TheHatSma;
-  }
-  std::vector<MyMatrix<double> > ListHatFunction3(nbGrid);
-  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
-    MyMatrix<double> TheHatSma=ListHatFunction2[iGrid];
-    for (int i=0; i<eta_rho; i++)
-      for (int j=0; j<xi_rho; j++)
-	TheHatSma(i,j)=TheHatSma(i,j)/TotalSumHat(i,j);
-    ListHatFunction3[iGrid]=TheHatSma;
-  }
-  TotalArrayInterpolation TotalArr;
-  TotalArr.eta_rho=eta_rho;
-  TotalArr.xi_rho=xi_rho;
-  TotalArr.nbGrid=nbGrid;
-  TotalArr.ListHatFunction=ListHatFunction3;
-  TotalArr.ListSingleArrayInterpolation=ListSingleArrayInterpolation;
-  TotalArr.ListTotalArr=ListTotalArr;
-  return TotalArr;
-}
-/* ------------------------------ */
-
-
-/* ------------------------------ */
 GridArray NC_ReadRomsGridFile(std::string const& eFile)
 {
-  std::function<int(double)> fConv=[](double const& x) -> int {
+  std::function<int(double const&)> fConv=[](double const& x) -> int {
     return int(x);
   };
   GridArray eRomsGridArray;
@@ -6911,6 +7118,7 @@ ArrayHistory RomsIvica_ReadArrayHistory(std::string const& HisPrefix)
   eArr.ListTime=ListTime;
   eArr.AppendVarName=false;
   eArr.KindArchive="NETCDF";
+  eArr.TimeSteppingInfo="classic";
   std::cerr << "Array RomsIvica has been completed. Leaving\n";
   return eArr;
 }
@@ -6925,8 +7133,9 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
   std::vector<int> ListIFile;
   std::vector<int> ListIRec;
   std::vector<double> ListTime;
+  ArrayHistory eArr;
   if (IsExistingFile(HisPrefix)) {
-    ArrayHistory eArr;
+    std::cerr << "Case 1\n";
     std::vector<double> LTime=NC_ReadTimeFromFile(HisPrefix, StringTime);
     ListFileNames.push_back(HisPrefix);
     int siz=LTime.size();
@@ -6940,9 +7149,19 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
     FirstTime=ListTime[0];
     LastTime=ListTime[siz-1];
     std::cerr << "FirstTime=" << FirstTime << "  LastTime=" << LastTime << "\n";
-    std::cerr << "Last - FirstTime=" << LastTime - FirstTime << "\n";
+    std::cerr << "LastTime - FirstTime=" << LastTime - FirstTime << "\n";
+    double TheSep=GetListTimeSeparation(ListTime);
+    std::cerr << "TheSep=" << TheSep << "\n";
+    if (TheSep < 0) {
+      eArr.TimeSteppingInfo="classic";
+    }
+    else {
+      eArr.TimeSteppingInfo="singlefile";
+      eArr.SeparationTime=TheSep;
+    }
   }
   else {
+    std::cerr << "Case 2\n";
     int iFileBegin=0;
     while(1) {
       iFileBegin++;
@@ -7032,12 +7251,12 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
       }
     }
     LastTime=currentTime;
+    eArr.TimeSteppingInfo="multiplenetcdf";
+    eArr.nbRecBegin=nbRecBegin;
+    eArr.nbRecMiddle=nbRecMiddle;
   }
-  ArrayHistory eArr;
-  int nbFile=ListFileNames.size();
-  int nbTime=ListTime.size();
-  eArr.nbFile=nbFile;
-  eArr.nbTime=nbTime;
+  eArr.nbFile=ListFileNames.size();
+  eArr.nbTime=ListTime.size();
   eArr.FirstTime=FirstTime;
   eArr.LastTime=LastTime;
   eArr.ListFileNames=ListFileNames;
@@ -7046,6 +7265,8 @@ ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::strin
   eArr.ListTime=ListTime;
   eArr.AppendVarName=false;
   eArr.KindArchive="NETCDF";
+  std::cerr << "Leaving NC_ReadArrayHistory_Kernel\n";
+  std::cerr << "TimeSteppingInfo=" << eArr.TimeSteppingInfo << "\n";
   return eArr;
 }
 /* ------------------------------ */
@@ -7078,6 +7299,7 @@ ArrayHistory WW3_ReadArrayHistory(std::string const& HisFile, std::string const&
   eArr.ListTime=LTime;
   eArr.AppendVarName=true;
   eArr.KindArchive="NETCDF";
+  eArr.TimeSteppingInfo="classic";
   return eArr;
 }
 /* ------------------------------ */
@@ -7119,14 +7341,32 @@ std::string GET_GRID_FILE(TripleModelDesc const& eTriple)
 
 
 /* ------------------------------ */
+GridArray ReadUnstructuredGrid(std::string const& GridFile)
+{
+  std::string eExtension=FILE_GetExtension(GridFile);
+  //    std::cerr << "eExtension=" << eExtension << "\n";
+  if (eExtension == "gr3")
+    return WWM_ReadGridFile_gr3(GridFile);
+  if (eExtension == "dat")
+    return WWM_ReadGridFile_xfn(GridFile);
+  if (eExtension == "nc")
+    return WWM_ReadGridFile_netcdf(GridFile);
+  std::cerr << "Error in reading grid for WWM\n";
+  std::cerr << "We did not find the right kind\n";
+  exit(1);
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
-  std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 1\n";
+  //  std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 1\n";
   std::string eModelName=eTriple.ModelName;
   CHECK_Model_Allowedness(eModelName);
-  std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 2\n";
+  //  std::cerr << "PRE_RETRIEVE_GRID_ARRAY, step 2\n";
   std::string GridFile=GET_GRID_FILE(eTriple);
-  std::cerr << "eModelName=" << eModelName << "\n";
+  //  std::cerr << "eModelName=" << eModelName << "\n";
   if (eModelName == "COSMO") {
     return NC_ReadCosmoWamStructGridFile(GridFile, "atm");
   }
@@ -7137,17 +7377,7 @@ GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
     return NC_ReadRomsGridFile(GridFile);
   }
   if (eModelName == "WWM") {
-    std::string eExtension=FILE_GetExtension(GridFile);
-    std::cerr << "eExtension=" << eExtension << "\n";
-    if (eExtension == "gr3")
-      return WWM_ReadGridFile_gr3(GridFile);
-    if (eExtension == "dat")
-      return WWM_ReadGridFile_xfn(GridFile);
-    if (eExtension == "nc")
-      return WWM_ReadGridFile_netcdf(GridFile);
-    std::cerr << "Error in reading grid for WWM\n";
-    std::cerr << "We did not find the right kind\n";
-    exit(1);
+    return ReadUnstructuredGrid(GridFile);
   }
   if (eModelName == "WW3") {
     return NC_ReadWW3_GridFile(GridFile);
@@ -7176,20 +7406,20 @@ GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 /* ------------------------------ */
 GridArray RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
-  std::cerr << "Before PRE_RETRIEVE_GRID_ARRAY\n";
+  //  std::cerr << "Before PRE_RETRIEVE_GRID_ARRAY\n";
   GridArray GrdArr=PRE_RETRIEVE_GRID_ARRAY(eTriple);
-  std::cerr << "After PRE_RETRIEVE_GRID_ARRAY\n";
+  //  std::cerr << "After PRE_RETRIEVE_GRID_ARRAY\n";
   if (GrdArr.IsFE == 0)
     return GrdArr;
   if (eTriple.CutWorldMap)
     CutWorldMap(GrdArr);
-  std::cerr << "After CutWorldMap\n";
+  //  std::cerr << "After CutWorldMap\n";
   if (eTriple.HigherLatitudeCut) {
     double MinLatCut=eTriple.MinLatCut;
     double MaxLatCut=eTriple.MaxLatCut;
     CUT_HigherLatitude(GrdArr, MinLatCut, MaxLatCut);
   }
-  std::cerr << "After CUT_HigherLatitude\n";
+  //  std::cerr << "After CUT_HigherLatitude\n";
   CHECK_COORDINATE_ORIENTATION(GrdArr);
   return GrdArr;
 }
@@ -7218,10 +7448,10 @@ ArrayHistory NC_ReadArrayHistory(TripleModelDesc const& eTriple)
 /* ------------------------------ */
 ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
 {
-  std::cerr << "Beginning of GRIB_ReadArrayHistory\n";
+  //  std::cerr << "Beginning of GRIB_ReadArrayHistory\n";
   std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
   int nbFile=ListFile.size();
-  std::cerr << "nbFile=" << nbFile << "\n";
+  //  std::cerr << "nbFile=" << nbFile << "\n";
   std::vector<GRIB_MessageInfo> TotalListMessage;
   struct PairTime {
     double time;
@@ -7229,7 +7459,7 @@ ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
   };
   std::vector<PairTime> ListPairTime;
   double MaxErrorTime=0.01;
-  std::function<void(PairTime)> fInsert=[&](PairTime const& ePair) -> void {
+  auto fInsert=[&](PairTime const& ePair) -> void {
     int len=ListPairTime.size();
     //    std::cerr << "fInsert time=" << ePair.time << " timeStart=" << ePair.timeStart << "\n";
     for (int i=0; i<len; i++) {
@@ -7249,7 +7479,7 @@ ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
     //    std::cerr << "One insertion\n";
     ListPairTime.push_back(ePair);
   };
-  std::function<int(PairTime)> fPosition=[&](PairTime const& ePair) -> int {
+  auto fPosition=[&](PairTime const& ePair) -> int {
     int len=ListPairTime.size();
     for (int i=0; i<len; i++)
       if (fabs(ePair.time - ListPairTime[i].time) < MaxErrorTime && fabs(ePair.timeStart - ListPairTime[i].timeStart) < MaxErrorTime)
@@ -7339,6 +7569,7 @@ ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
   eArr.ListListFileNames=ListListFileNames;
   eArr.ListTime=ListTime;
   eArr.KindArchive="GRIB";
+  eArr.TimeSteppingInfo="classic";
   std::cerr << "Ending of GRIB_ReadArrayHistory\n";
   //  exit(1);
   return eArr;
@@ -7361,6 +7592,169 @@ ArrayHistory ReadArrayHistory(TripleModelDesc const& eTriple)
     eArr=NC_ReadArrayHistory(eTriple);
   }
   return eArr;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<SingleRecInterp> TRIG_FIND_ELE(MyMatrix<int> const& INE, MyMatrix<double> const& X, MyMatrix<double> const& Y, QuadCoordinate const& eQuad, MyMatrix<double> const& ListXY)
+{
+  double THR=1e-10;
+  int mnp=X.rows();
+  //  for (int i=0; i<mnp; i++)
+  //    std::cerr << "i=" << i << " x=" << X(i) << " y=" << Y(i) << "\n";
+  auto IsCorrect=[&](int const& ie, double const& Xp, double const& Yp) -> bool {
+    int ki = INE(ie,0);
+    int kj = INE(ie,1);
+    int kk = INE(ie,2);
+    double xi = X(ki);
+    double yi = Y(ki);
+    double xj = X(kj);
+    double yj = Y(kj);
+    double xk = X(kk);
+    double yk = Y(kk);
+    /*
+    double area=xi*(yj-yk) + xj*(yk-yi) + xk*(yi-yj);
+    std::cerr << "-------------------------------------\n";
+    std::cerr << "ie=" << ie << " area=" << area << "\n";
+    std::cerr << "kijk=" << ki << "," << kj << "," << kk << "\n";
+    std::cerr << "x(ijk)=" << xi << "," << xj << "," << xk << "\n";
+    std::cerr << "y(ijk)=" << yi << "," << yj << "," << yk << "\n";
+    std::cerr << "-------------------------------------\n";*/
+    double f1, f2, f3;
+    f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
+    f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
+    f3 = xk*(yi-Yp) + xi*(Yp-yk) + Xp*(yk-yi);
+    //    double sumF=f1 + f2 + f3;
+    //    std::cerr << "sumF=" << sumF << "\n";
+    if (f1 > -THR) {
+      if (f2 > -THR) {
+	if (f3 > -THR) {
+	  return true;
+	}
+      }
+    }
+    return false;
+  };
+  double dx=0;
+  double dy=0;
+  int nbEle=INE.rows();
+  for (int ie=0; ie<nbEle; ie++) {
+    int ki = INE(ie,0);
+    int kj = INE(ie,1);
+    int kk = INE(ie,2);
+    double xi = X(ki);
+    double yi = Y(ki);
+    double xj = X(kj);
+    double yj = Y(kj);
+    double xk = X(kk);
+    double yk = Y(kk);
+    dx=std::max(dx, std::abs(xi - xj));
+    dx=std::max(dx, std::abs(xi - xk));
+    dx=std::max(dx, std::abs(xj - xk));
+    dy=std::max(dy, std::abs(yi - yj));
+    dy=std::max(dy, std::abs(yi - yk));
+    dy=std::max(dy, std::abs(yj - yk));
+  }
+  std::vector<int> ListAdjTrig=GetUnstructuredTriangleAdjInfo_vectint(INE, mnp);
+  auto SearchElement_V1=[&](double const& eX, double const& eY) -> int {
+    for (int iele=0; iele<nbEle; iele++)
+      if (IsCorrect(iele, eX, eY))
+	return iele;
+    return -1;
+  };
+  auto DistCentTriangle=[&](double const& eX, double const& eY, int const& iEle) -> double {
+    int i1=INE(iEle,0);
+    int i2=INE(iEle,1);
+    int i3=INE(iEle,2);
+    double eXcent=(X(i1) + X(i2) + X(i3))/double(3);
+    double eYcent=(X(i1) + X(i2) + X(i3))/double(3);
+    double delX=eXcent - eX;
+    double delY=eYcent - eY;
+    return sqrt(delX*delX + delY*delY);
+  };
+  auto SearchElement=[&](double const& eX, double const& eY, int const& iEltStart) -> int {
+    if (IsCorrect(iEltStart, eX, eY))
+      return iEltStart;
+    int iEleWork=iEltStart;
+    double distCurr=DistCentTriangle(eX, eY, iEleWork);
+    std::cerr << "distCurr=" << distCurr << "\n";
+    int nbIter=0;
+    while(1) {
+      bool DoSomething=false;
+      nbIter++;
+      for (int i=0; i<3; i++) {
+	int iEleAdj=ListAdjTrig[3*iEleWork + i];
+	if (iEleAdj != -1 && DoSomething == false) {
+	  double eDist=DistCentTriangle(eX, eY, iEleAdj);
+	  if (eDist < distCurr) {
+	    iEleWork=iEleAdj;
+	    distCurr=eDist;
+	    std::cerr << "iEleWork=" << iEleWork << " distCurr=" << distCurr << "\n";
+	    DoSomething=true;
+	    if (IsCorrect(iEleWork, eX, eY)) {
+	      std::cerr << "Success of heuristic nbIter=" << nbIter << "\n";
+	      return iEleWork;
+	    }
+	  }
+	}
+      }
+      if (DoSomething == false)
+	break;
+    }
+    return SearchElement_V1(eX, eY);
+  };
+  int nbPoint=ListXY.cols();
+  int ielePrev=0;
+  std::vector<SingleRecInterp> LRec(nbPoint);
+  for (int iPoint=0; iPoint<nbPoint; iPoint++) {
+    double Xp=ListXY(0,iPoint);
+    double Yp=ListXY(1,iPoint);
+    int eElt=SearchElement(Xp, Yp, ielePrev);
+    if (eElt >= 0)
+      ielePrev=eElt;
+    SingleRecInterp eRec;
+    if (eElt == -1) {
+      eRec={false, {}};
+    }
+    else {
+      std::vector<int> LEta(3);
+      std::vector<double> Xcall(3), Ycall(3);
+      for (int i=0; i<3; i++) {
+	int IP=INE(eElt,i);
+	LEta[i]=IP;
+	Xcall[i]=X(IP);
+	Ycall[i]=Y(IP);
+      }
+      std::vector<double> LCoeff=DetermineCoefficient(Xcall, Ycall, Xp, Yp);
+      std::vector<SinglePartInterp> LPart(3);
+      for (int i=0; i<3; i++) {
+	LPart[i]={LEta[i], 0, LCoeff[i]};
+      }
+      eRec={true, LPart};
+    };
+    LRec[iPoint]=eRec;
+  }
+  return LRec;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+std::vector<SingleRecInterp> General_FindInterpolationWeight(GridArray const& GrdArr, MyMatrix<double> const& ListXY)
+{
+  std::vector<SingleRecInterp> LRec;
+  QuadCoordinate eQuad=Get_QuadCoordinate(GrdArr);
+  if (GrdArr.IsFE == 0) {
+    std::cerr << "Before FD_FIND_ELE\n";
+    LRec=FD_FIND_ELE(GrdArr.GrdArrRho, eQuad, ListXY);
+  }
+  else {
+    std::cerr << "Before TRIG_FIND_ELE\n";
+    LRec=TRIG_FIND_ELE(GrdArr.INE, GrdArr.GrdArrRho.LON, GrdArr.GrdArrRho.LAT, eQuad, ListXY);
+  }
+  Print_InterpolationError(LRec, GrdArr, ListXY);
+  return LRec;
 }
 /* ------------------------------ */
 
@@ -7401,6 +7795,46 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
   MyMatrix<double> V;
   eRecVar.VarName1=eVarName;
   eRecVar.VarName2="unset";
+  if (eVarName == "FieldOut1") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "FieldOut1", eTimeDay);
+    eRecVar.VarName2="Generic Field Out 1";
+    eRecVar.minval=0;
+    eRecVar.maxval=1;
+    eRecVar.mindiff=-1;
+    eRecVar.maxdiff=1;
+    eRecVar.Unit="unspecified";
+  }
+  if (eVarName == "MeanWaveDir") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "DM", eTimeDay);
+    eRecVar.VarName2="mean wave direction";
+    eRecVar.minval=0;
+    eRecVar.maxval=360;
+    eRecVar.mindiff=-30;
+    eRecVar.maxdiff=30;
+    eRecVar.Unit="deg";
+  }
+  if (eVarName == "IOBP_WW3") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "IOBP_WW3", eTimeDay);
+    eRecVar.VarName2="IOBP of wavewatchIII";
+    eRecVar.minval=0;
+    eRecVar.maxval=1;
+    eRecVar.mindiff=-1;
+    eRecVar.maxdiff=1;
+    eRecVar.Unit="nondim.";
+  }
+  if (eVarName == "MAPSTA") {
+    if (eModelName == "WWM")
+      F=Get2DvariableSpecTime(TotalArr, "MAPSTA", eTimeDay);
+    eRecVar.VarName2="MAPSTA of wavewatchIII";
+    eRecVar.minval=-2;
+    eRecVar.maxval=2;
+    eRecVar.mindiff=-1;
+    eRecVar.maxdiff=1;
+    eRecVar.Unit="nondim.";
+  }
   if (eVarName == "ZetaSetup") {
     if (eModelName == "WWM")
       F=Get2DvariableSpecTime(TotalArr, "ZETA_SETUP", eTimeDay);
@@ -7426,7 +7860,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
     eRecVar.maxval=0.76;
     eRecVar.mindiff=-0.1;
     eRecVar.maxdiff=0.1;
-    eRecVar.Unit="nondimensional";
+    eRecVar.Unit="nondim.";
   }
   if (eVarName == "WIND10") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA" || eModelName == "WWM") {
@@ -7481,6 +7915,16 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
     eRecVar.nameU="UsurfCurr";
     eRecVar.nameV="VsurfCurr";
   }
+  if (eVarName == "SurfCurrMag") {
+    RecVar RecVarWork=ModelSpecificVarSpecificTime(TotalArr, "SurfCurr", eTimeDay);
+    F=COMPUTE_NORM(RecVarWork.U, RecVarWork.V);
+    eRecVar.VarName2="surface current magnitude";
+    eRecVar.minval=0;
+    eRecVar.maxval=0.5;
+    eRecVar.mindiff=-0.1;
+    eRecVar.maxdiff=0.1;
+    eRecVar.Unit="m/s";
+  }
   if (eVarName == "Hwave") {
     if (eModelName == "WWM")
       F=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
@@ -7503,7 +7947,12 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
 	F=COMPUTE_NORM(Us, Vs);
       }
       else {
-	F=Get2DvariableSpecTime(TotalArr, "WNDMAG", eTimeDay);
+	if (eModelName == "WWM") {
+	  F=Get2DvariableSpecTime(TotalArr, "WINDMAG", eTimeDay);
+	}
+	else {
+	  F=Get2DvariableSpecTime(TotalArr, "WNDMAG", eTimeDay);
+	}	  
       }
     }
     if (eModelName == "COSMO" || eModelName == "WAM") {
@@ -7577,7 +8026,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
     eRecVar.maxval=100;
     eRecVar.mindiff=-20;
     eRecVar.maxdiff=20;
-    eRecVar.Unit="nondimensional";
+    eRecVar.Unit="nondim.";
   }
   if (eVarName == "ZetaOcean") {
     if (eModelName == "COSMO")
@@ -7683,7 +8132,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
     eRecVar.maxval=0.20;
     eRecVar.mindiff=-0.05;
     eRecVar.maxdiff=0.05;
-    eRecVar.Unit="nondimensional";
+    eRecVar.Unit="nondim.";
   }
   if (eVarName == "AlphaWave") {
     if (eModelName == "COSMO" || eModelName == "WAM")
@@ -7693,7 +8142,7 @@ RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string
     eRecVar.maxval=0.033;
     eRecVar.mindiff=-0.1;
     eRecVar.maxdiff=0.1;
-    eRecVar.Unit="nondimensional";
+    eRecVar.Unit="nondim.";
   }
   if (eVarName == "rain") {
     if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
@@ -8202,6 +8651,103 @@ void CREATE_sflux_files(FullNamelist const& eFull)
 
 
 /* ------------------------------ */
+SingleArrayInterpolation INTERPOL_CreateSingleRecVarInterpol(GridArray const& GrdArrOut, GridArray const& GrdArrIn)
+{
+  if (GrdArrOut.IsFE == 1) {
+    int nbWet=GrdArrOut.GrdArrRho.LON.rows();
+    MyMatrix<double> ListXY(2,nbWet);
+    std::vector<int> LEta(nbWet), LXi(nbWet);
+    for (int i=0; i<nbWet; i++) {
+      LEta[i]=i;
+      LXi[i]=0;
+      ListXY(0,i)=GrdArrOut.GrdArrRho.LON(i,0);
+      ListXY(1,i)=GrdArrOut.GrdArrRho.LAT(i,0);
+    }
+    int eta_rho=nbWet;
+    int xi_rho=1;
+    std::vector<SingleRecInterp> LSingle=General_FindInterpolationWeight(GrdArrIn, ListXY);
+    return {eta_rho, xi_rho, LEta, LXi, LSingle};
+  }
+  else {
+    int eta_rho=GrdArrOut.GrdArrRho.LON.rows();
+    int xi_rho =GrdArrOut.GrdArrRho.LON.cols();
+    int nbWet=0;
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	if (GrdArrOut.GrdArrRho.MSK(i,j) == 1)
+	  nbWet++;
+    MyMatrix<double> ListXY(2, nbWet);
+    std::vector<int> LEta(nbWet), LXi(nbWet);
+    int idx=0;
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	if (GrdArrOut.GrdArrRho.MSK(i,j) == 1) {
+	  LEta[idx]=i;
+	  LXi[idx]=j;
+	  ListXY(0,idx)=GrdArrOut.GrdArrRho.LON(i,j);
+	  ListXY(1,idx)=GrdArrOut.GrdArrRho.LAT(i,j);
+	  idx++;
+	}
+    std::vector<SingleRecInterp> LSingle=General_FindInterpolationWeight(GrdArrIn, ListXY);
+    return {eta_rho, xi_rho, LEta, LXi, LSingle};
+  }
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
+TotalArrayInterpolation INTERPOL_ConstructTotalArray(std::vector<TotalArrGetData> const& ListTotalArr, std::vector<int> const& ListSpongeSize, std::vector<int> const& ListFatherGrid, GridArray const& GrdArrOut)
+{
+  int eta_rho=GrdArrOut.GrdArrRho.LON.rows();
+  int xi_rho=GrdArrOut.GrdArrRho.LON.cols();
+  int nbGrid=ListTotalArr.size();
+  std::vector<SingleArrayInterpolation> ListSingleArrayInterpolation(nbGrid);
+  std::vector<MyMatrix<int> > ListInsideMask(nbGrid);
+  std::vector<MyMatrix<double> > ListHatFunction1(nbGrid);
+  GraphSparseImmutable eGR=GetGraphSparseVertexAdjacency(GrdArrOut);
+  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
+    ListSingleArrayInterpolation[iGrid]=INTERPOL_CreateSingleRecVarInterpol(GrdArrOut, ListTotalArr[iGrid].GrdArr);
+    MyMatrix<int> MSKinside=ComputeInsideMask(ListSingleArrayInterpolation[iGrid]);
+    ListHatFunction1[iGrid]=HatFunctionFromMask(MSKinside, GrdArrOut, eGR, ListSpongeSize[iGrid]);
+  }
+  std::vector<std::vector<int> > ListChildren(nbGrid);
+  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
+    int eFather=ListFatherGrid[iGrid];
+    if (eFather != -1)
+      ListChildren[eFather].push_back(iGrid);
+  }
+  MyMatrix<double> TotalSumHat=ZeroMatrix<double>(eta_rho, xi_rho);
+  std::vector<MyMatrix<double> > ListHatFunction2(nbGrid);
+  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
+    MyMatrix<double> TheHatSma=ListHatFunction1[iGrid];
+    for (auto & eGrid : ListChildren[iGrid])
+      for (int i=0; i<eta_rho; i++)
+	for (int j=0; j<xi_rho; j++)
+	  TheHatSma(i,j)=TheHatSma(i,j)*(double(1) - ListHatFunction1[eGrid](i,j));
+    ListHatFunction2[iGrid]=TheHatSma;
+    TotalSumHat += TheHatSma;
+  }
+  std::vector<MyMatrix<double> > ListHatFunction3(nbGrid);
+  for (int iGrid=0; iGrid<nbGrid; iGrid++) {
+    MyMatrix<double> TheHatSma=ListHatFunction2[iGrid];
+    for (int i=0; i<eta_rho; i++)
+      for (int j=0; j<xi_rho; j++)
+	TheHatSma(i,j)=TheHatSma(i,j)/TotalSumHat(i,j);
+    ListHatFunction3[iGrid]=TheHatSma;
+  }
+  TotalArrayInterpolation TotalArr;
+  TotalArr.eta_rho=eta_rho;
+  TotalArr.xi_rho=xi_rho;
+  TotalArr.nbGrid=nbGrid;
+  TotalArr.ListHatFunction=ListHatFunction3;
+  TotalArr.ListSingleArrayInterpolation=ListSingleArrayInterpolation;
+  TotalArr.ListTotalArr=ListTotalArr;
+  return TotalArr;
+}
+/* ------------------------------ */
+
+
+/* ------------------------------ */
 RecVar INTERPOL_MultipleRecVarInterpolation(TotalArrayInterpolation const& TotalArr, std::string const& eVarName, double const& eTimeDay)
 {
   RecVar eRecVar, fRecVar, gRecVar;
@@ -8367,9 +8913,9 @@ int main(int argc, char *argv[])
 {
   FullNamelist eFull=NAMELIST_GetStandard_CREATE_sflux();
   if (argc != 2) {
-    fprintf(stderr, "CREATE_sflux is used as\n");
-    fprintf(stderr, "CREATE_sflux [file.nml]\n");
-    fprintf(stderr, "with file.nml the file describing the choices made\n");
+    std::cerr << "CREATE_sflux is used as\n";
+    std::cerr << "CREATE_sflux [file.nml]\n";
+    std::cerr << "with file.nml the file describing the choices made\n";
     return -1;
   }
   std::string eFileName=argv[1];

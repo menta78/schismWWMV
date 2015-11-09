@@ -278,21 +278,29 @@ for ($eDayMJD=$BeginTimeMJD; $eDayMJD<=$EndTimeMJD; $eDayMJD++)
 	print "file ".$eFileStor." does not exists\n";
 	#
 	$order="mkdir -p ".$TheStorPrefix.$eYear;
-	system $order;
 	print $order."\n";
+	if (system($order) != 0) {
+	    die "Error in mkdir command\n";
+	}
 	#
 	$TheDest=$TheStorPrefix.$eYear."/".$strMonth;
 	$order="mkdir -p ".$TheDest;
-	system $order;
 	print $order."\n";
+	if (system($order) != 0) {
+	    die "Error in mkdir command\n";
+	}
 	#
 	$order="(cd ".$TheDest." && ncftpget ".$TheFile1.")";
-	system $order;
 	print $order."\n";
+	if (system($order) != 0) {
+	    die "Error in ncftpget command\n";
+	}
 	#
 	$order="(cd ".$TheDest." && bzip2 -d ".$eFileSbz.")";
-	system $order;
 	print $order."\n";
+	if (system($order) != 0) {
+	    die "Error in bzip2 command\n";
+	}
     }
 }
 print "File downloaded in ALTIMETRY_DIRECTORY = ".$TheStorPrefix."\n";
