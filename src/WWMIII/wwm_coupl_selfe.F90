@@ -5,7 +5,7 @@
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
         USE DATAPOOL
-        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp
         USE schism_msgp
         implicit none
         integer     :: IP, k, ID, IS, IL
@@ -80,7 +80,7 @@
 !**********************************************************************
       SUBROUTINE RADIATION_STRESS_SCHISM
         USE DATAPOOL
-        use schism_glbl, only: iplg,errmsg,hmin_radstress
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp,wwave_force,idry
         USE schism_msgp !, only : myrank,parallel_abort
         IMPLICIT NONE
 

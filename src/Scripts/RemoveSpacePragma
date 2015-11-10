@@ -1,0 +1,54 @@
+#!/usr/bin/perl -w
+
+$uu=scalar(@ARGV);
+if ($uu eq 0)
+{
+    print "Program is used as\n";
+    print "RemoveSpacePragma [file1] [file2] .... fileN\n\n";
+    die;
+}
+
+$nbFile=scalar(@ARGV);
+for ($iFile=1; $iFile<=$nbFile; $iFile++)
+{
+    $eFile=$ARGV[$iFile-1];
+    open(INFILE, $eFile) or die "impossible to open ".$eFile;
+    @B=<INFILE>;
+    close(INFILE);
+    #
+    $nbLine=scalar(@B);
+    @C=();
+    for ($iLine=0; $iLine<$nbLine; $iLine++)
+    {
+	$eLine=$B[$iLine];
+	@UV=split("", $eLine);
+	#
+	if ($UV[0] eq "#")
+	{
+	    $fLine="#";
+	    $nbChar=scalar(@UV);
+	    $WeAppend=0;
+	    for ($iChar=1; $iChar<$nbChar; $iChar++)
+	    {
+		$eChar=$UV[$iChar];
+		if ($eChar ne " ")
+		{
+		    $WeAppend=1;
+		}
+		if ($WeAppend == 1)
+		{
+		    $fLine=$fLine.$eChar;
+		}
+	    }
+	}
+	else
+	{
+	    $fLine=$eLine;
+	}
+	$C[$iLine]=$fLine;
+    }
+    #
+    open(OUT, "> ".$eFile);
+    print OUT @B;
+    close(OUT);
+}

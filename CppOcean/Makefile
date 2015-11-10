@@ -1,12 +1,13 @@
-PROGRAM		= PLOT_results \
-		  AltimeterComparison \
+PROGRAM		= AltimeterComparison \
+		  PLOT_diff_results \
 		  CREATE_sflux \
 		  MERGE_field \
-		  PLOT_diff_results
+		  PLOT_results
 
 OBJECTS		= $(PROGRAM:%=%.o)
 
-#CC              = clang++ -Weverything -std=c++11
+#CC		= icpc -std=c++11 -Wall -g -O2 
+#CC             = clang++ -Weverything -std=c++11
 CC		= g++ -std=c++11 -Wall -g -O2 
 
 NOLINKFLAG 	= -c

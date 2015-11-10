@@ -7,7 +7,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER :: IP, IS, ID, IT, ITER
+         INTEGER :: IP, ID, IT, ITER
          LOGICAL :: ISEQ0
 
          REAL(rkind)    :: CAS(MSC,MDC)
@@ -127,12 +127,11 @@
       SUBROUTINE COMPUTE_FREQUENCY_UPWIND_IMPLICIT
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER :: IP, IS, ID, IT, ITER
+      INTEGER :: IP, IS, ID
       REAL(rkind)    :: CAS(MSC,MDC)
       REAL(rkind)  :: ACQ (MSC)
       REAL(rkind)  :: TMP (MSC)
       REAL(rkind)  :: CASS(0:MSC+1), CP(0:MSC+1), CM(0:MSC+1)
-      REAL(rkind)  :: REST, CFLCAS
       REAL(rkind)  :: A(MSC), B(MSC), C(MSC)
       DO IP = 1, MNP
         IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) CYCLE

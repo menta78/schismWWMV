@@ -1,6 +1,7 @@
 #include "wwm_functions.h"
 !------------------------------------------------------------------------------
 module m_xnldata
+  USE DATAPOOL, only : rkind
 !------------------------------------------------------------------------------
 !  module for computing the quadruplet interaction
 !  Created by Gerbrant van Vledder
@@ -54,15 +55,15 @@ integer luq_t13  ! test of basis integration
 !------------------------------------------------------------------------------
 !  physical coefficients, to be obtained through interface XNL_INIT
 !------------------------------------------------------------------------------
-real q_grav     ! gravitational acceleration (Earth = 9.81 m/s^2)
-real qf_tail    ! power of spectral tail of E(f), e.g. -4,, -4.5, -5
+real(rkind) q_grav     ! gravitational acceleration (Earth = 9.81 m/s^2)
+real(rkind) qf_tail    ! power of spectral tail of E(f), e.g. -4,, -4.5, -5
 !               ! these values must be set in the interface routine
 !------------------------------------------------------------------------------
 !  filtering coefficients
 !------------------------------------------------------------------------------
-real qf_krat     ! maximum ratio of the interacting wave numbers k1 and k3
-real qf_dmax     ! maximum directional difference between k1 and k3
-real qf_frac     ! fraction of maximum action density to filter
+real(rkind) qf_krat     ! maximum ratio of the interacting wave numbers k1 and k3
+real(rkind) qf_dmax     ! maximum directional difference between k1 and k3
+real(rkind) qf_frac     ! fraction of maximum action density to filter
 !
 !  program switches, optionally to be reset in routine Q_SETCONFIG
 !
@@ -198,10 +199,10 @@ integer ncirc   ! number of angles on a full circle
 integer ia_k1,ik_k1 ! indices of main loop variables
 integer ia_k3,ik_k3 ! indices of main loop variables
 !
-real fqmin      ! lowest frequency in Hz
-real fqmax      ! highest frequency in Hz
-real q_sector   ! half plane width in degrees (for iq_grid=1,2)
-real q_dstep    ! step size for generating BQF files
+real(rkind) fqmin      ! lowest frequency in Hz
+real(rkind) fqmax      ! highest frequency in Hz
+real(rkind) q_sector   ! half plane width in degrees (for iq_grid=1,2)
+real(rkind) q_dstep    ! step size for generating BQF files
 !
 integer, parameter :: mq_stack=10 ! maximum number of elements in stack
 !
@@ -214,39 +215,39 @@ integer klocus   ! number of points on locus as stored in quadruplet database
 integer nlocus   ! number of points on locus, equal to klocus
 integer nlocusx  ! number of points on locus for use in computation (nlocusx <= nlocus)
 !
-real kqmin       ! lowest wave number
-real kqmax       ! highest wave number
-real wk_max      ! maximum weight for wave number interpolation, set in Q_INIT
+real(rkind) kqmin       ! lowest wave number
+real(rkind) kqmax       ! highest wave number
+real(rkind) wk_max      ! maximum weight for wave number interpolation, set in Q_INIT
 !
-real k0x,k0y,dk0 ! components of initial wave number of locus,
-real krefx,krefy ! components of reference wave number for quad-grid
-real k1x,k1y     ! components of k1 wave number
-real k2x,k2y     ! components of k2 wave number
-real k3x,k3y     ! components of k3 wave number
-real k4x,k4y     ! components of k4 wave number
-real px,py       ! components of difference k1-k3 wave number
-real pmag        ! magnitude of P-vector
-real pang        ! angle related of P-vector, Pang = atan2(py,px), (radians)
-real sang        ! angle of symmytry axis of locus, SANG = PANG +/ pi° (radians)
-real xang        ! angle of locus for the case that w1=w3, Xang=atan2(-px,py), (radians)
-real q           ! difference of radian frequencies, used in Resio-Tracy method
-real kmin_loc    ! minimum wave number of locus along symmetry axis
-real kmax_loc    ! maximum wave number of locus along symmetry axis
-real kmid        ! wave number at midpoint of locus along symmetry axis
-real kmidx       ! x-component of wave number at midpoint of locus along symmetry axis
-real kmidy       ! y-component of wave number at midpoint of locus along symmetry axis
-real loc_crf     ! circumference of locus in (kx,ky)-space
-real loc_area    ! area of locus, measured in (kx-ky)- space
-real loc_xz      ! x-coordinate of center of gravity of locus in (kx,ky)-space
-real loc_yz      ! y-coordinate of center of gravity of locus in (kx,ky)-space
+real(rkind) k0x,k0y,dk0 ! components of initial wave number of locus,
+real(rkind) krefx,krefy ! components of reference wave number for quad-grid
+real(rkind) k1x,k1y     ! components of k1 wave number
+real(rkind) k2x,k2y     ! components of k2 wave number
+real(rkind) k3x,k3y     ! components of k3 wave number
+real(rkind) k4x,k4y     ! components of k4 wave number
+real(rkind) px,py       ! components of difference k1-k3 wave number
+real(rkind) pmag        ! magnitude of P-vector
+real(rkind) pang        ! angle related of P-vector, Pang = atan2(py,px), (radians)
+real(rkind) sang        ! angle of symmytry axis of locus, SANG = PANG +/ pi° (radians)
+real(rkind) xang        ! angle of locus for the case that w1=w3, Xang=atan2(-px,py), (radians)
+real(rkind) q           ! difference of radian frequencies, used in Resio-Tracy method
+real(rkind) kmin_loc    ! minimum wave number of locus along symmetry axis
+real(rkind) kmax_loc    ! maximum wave number of locus along symmetry axis
+real(rkind) kmid        ! wave number at midpoint of locus along symmetry axis
+real(rkind) kmidx       ! x-component of wave number at midpoint of locus along symmetry axis
+real(rkind) kmidy       ! y-component of wave number at midpoint of locus along symmetry axis
+real(rkind) loc_crf     ! circumference of locus in (kx,ky)-space
+real(rkind) loc_area    ! area of locus, measured in (kx-ky)- space
+real(rkind) loc_xz      ! x-coordinate of center of gravity of locus in (kx,ky)-space
+real(rkind) loc_yz      ! y-coordinate of center of gravity of locus in (kx,ky)-space
 !
 !  data for extended input k-grid, necessary when input grid is smaller than
 !  internal k-grid.
 !
-! real fackx                            ! geometric spacing factor of input grid
+! real(rkind) fackx                            ! geometric spacing factor of input grid
 ! integer nkx                           ! new number of k-rings of extended input grid
-! real, allocatable :: kx(:)            ! extended k-grid
-! real, allocatable :: nspecx(:,:)      ! extended action density spectrum
+! real(rkind), allocatable :: kx(:)            ! extended k-grid
+! real(rkind), allocatable :: nspecx(:,:)      ! extended action density spectrum
 !
 !  information about pre_computed locus, only half the angles need to be saved
 !
@@ -256,85 +257,85 @@ integer, allocatable :: quad_ik2(:,:,:)  ! lower wave number index of k2
 integer, allocatable :: quad_ia2(:,:,:)  ! lower direction index of k2
 integer, allocatable :: quad_ik4(:,:,:)  ! lower wave number index of k4
 integer, allocatable :: quad_ia4(:,:,:)  ! lower direction index of k4
-real, allocatable :: quad_w1k2(:,:,:)    ! weight 1 of k2
-real, allocatable :: quad_w2k2(:,:,:)    ! weight 2 of k2
-real, allocatable :: quad_w3k2(:,:,:)    ! weight 3 of k2
-real, allocatable :: quad_w4k2(:,:,:)    ! weight 4 of k2
-real, allocatable :: quad_w1k4(:,:,:)    ! weight 1 of k4
-real, allocatable :: quad_w2k4(:,:,:)    ! weight 2 of k4
-real, allocatable :: quad_w3k4(:,:,:)    ! weight 3 of k4
-real, allocatable :: quad_w4k4(:,:,:)    ! weight 4 of k4
-real, allocatable :: quad_zz  (:,:,:)    ! compound product of cple*ds*sym/jac
-real, allocatable :: quad_t2(:,:,:)      ! tail factors for k2 wave number
-real, allocatable :: quad_t4(:,:,:)      ! tail factors for k4 wave number
-real, allocatable :: quad_sym(:,:,:)     ! symmetry factor btween k1-k3 and k1-k4
-real, allocatable :: quad_jac(:,:,:)     ! jacobian term
-real, allocatable :: quad_cple(:,:,:)    ! coupling coefficient
-real, allocatable :: quad_ws (:,:,:)     ! (weighted) step size
+real(rkind), allocatable :: quad_w1k2(:,:,:)    ! weight 1 of k2
+real(rkind), allocatable :: quad_w2k2(:,:,:)    ! weight 2 of k2
+real(rkind), allocatable :: quad_w3k2(:,:,:)    ! weight 3 of k2
+real(rkind), allocatable :: quad_w4k2(:,:,:)    ! weight 4 of k2
+real(rkind), allocatable :: quad_w1k4(:,:,:)    ! weight 1 of k4
+real(rkind), allocatable :: quad_w2k4(:,:,:)    ! weight 2 of k4
+real(rkind), allocatable :: quad_w3k4(:,:,:)    ! weight 3 of k4
+real(rkind), allocatable :: quad_w4k4(:,:,:)    ! weight 4 of k4
+real(rkind), allocatable :: quad_zz  (:,:,:)    ! compound product of cple*ds*sym/jac
+real(rkind), allocatable :: quad_t2(:,:,:)      ! tail factors for k2 wave number
+real(rkind), allocatable :: quad_t4(:,:,:)      ! tail factors for k4 wave number
+real(rkind), allocatable :: quad_sym(:,:,:)     ! symmetry factor btween k1-k3 and k1-k4
+real(rkind), allocatable :: quad_jac(:,:,:)     ! jacobian term
+real(rkind), allocatable :: quad_cple(:,:,:)    ! coupling coefficient
+real(rkind), allocatable :: quad_ws (:,:,:)     ! (weighted) step size
 !
 !  characteristic of computed locus
 !
-real, allocatable :: x2_loc(:)   ! k2x coordinates around locus
-real, allocatable :: y2_loc(:)   ! k2y coordinates around locus
-real, allocatable :: z_loc(:)    ! data value around locus
-real, allocatable :: s_loc(:)    ! coordinate along locus
-real, allocatable :: x4_loc(:)   ! k4x coordinates around locus
-real, allocatable :: y4_loc(:)   ! k4y coordinates around locus
-real, allocatable :: ds_loc(:)   ! step size around locus
-real, allocatable :: jac_loc(:)  ! jacobian term around locus
-real, allocatable :: cple_loc(:) ! coupling coefficient around locus
-real, allocatable :: sym_loc(:)  ! factor for symmetry between k3 and k4
+real(rkind), allocatable :: x2_loc(:)   ! k2x coordinates around locus
+real(rkind), allocatable :: y2_loc(:)   ! k2y coordinates around locus
+real(rkind), allocatable :: z_loc(:)    ! data value around locus
+real(rkind), allocatable :: s_loc(:)    ! coordinate along locus
+real(rkind), allocatable :: x4_loc(:)   ! k4x coordinates around locus
+real(rkind), allocatable :: y4_loc(:)   ! k4y coordinates around locus
+real(rkind), allocatable :: ds_loc(:)   ! step size around locus
+real(rkind), allocatable :: jac_loc(:)  ! jacobian term around locus
+real(rkind), allocatable :: cple_loc(:) ! coupling coefficient around locus
+real(rkind), allocatable :: sym_loc(:)  ! factor for symmetry between k3 and k4
 !
-real, allocatable :: k_pol(:)  ! wave numbers during polar generation of locus
-real, allocatable :: c_pol(:)  ! cosines during polar generation of locus
-real, allocatable :: a_pol(:)  ! angles of polar locus
+real(rkind), allocatable :: k_pol(:)  ! wave numbers during polar generation of locus
+real(rkind), allocatable :: c_pol(:)  ! cosines during polar generation of locus
+real(rkind), allocatable :: a_pol(:)  ! angles of polar locus
 !
 !  characteristics of modified locus, result
 !
-real, allocatable :: x2_mod(:)   ! k2x coordinates along locus
-real, allocatable :: y2_mod(:)   ! k2y coordinates along locus
-real, allocatable :: x4_mod(:)   ! k4x coordinates along locus
-real, allocatable :: y4_mod(:)   ! k4y coordinates along locus
-real, allocatable :: z_mod(:)    ! data value around locus
-real, allocatable :: s_mod(:)    ! coordinate along locus
-real, allocatable :: ds_mod(:)   ! step size around locus
-real, allocatable :: jac_mod(:)  ! jacobian term around locus
-real, allocatable :: cple_mod(:) ! coupling coefficient around locus
-real, allocatable :: sym_mod(:)  ! factor for symmetry between k3 and k4
+real(rkind), allocatable :: x2_mod(:)   ! k2x coordinates along locus
+real(rkind), allocatable :: y2_mod(:)   ! k2y coordinates along locus
+real(rkind), allocatable :: x4_mod(:)   ! k4x coordinates along locus
+real(rkind), allocatable :: y4_mod(:)   ! k4y coordinates along locus
+real(rkind), allocatable :: z_mod(:)    ! data value around locus
+real(rkind), allocatable :: s_mod(:)    ! coordinate along locus
+real(rkind), allocatable :: ds_mod(:)   ! step size around locus
+real(rkind), allocatable :: jac_mod(:)  ! jacobian term around locus
+real(rkind), allocatable :: cple_mod(:) ! coupling coefficient around locus
+real(rkind), allocatable :: sym_mod(:)  ! factor for symmetry between k3 and k4
 !
-real, allocatable :: k2m_mod(:) ! k2 magnitude around locus
-real, allocatable :: k2a_mod(:) ! k2 angle around locus
-real, allocatable :: k4m_mod(:) ! k4 magnitude around locus
-real, allocatable :: k4a_mod(:) ! k4 angle around locus
+real(rkind), allocatable :: k2m_mod(:) ! k2 magnitude around locus
+real(rkind), allocatable :: k2a_mod(:) ! k2 angle around locus
+real(rkind), allocatable :: k4m_mod(:) ! k4 magnitude around locus
+real(rkind), allocatable :: k4a_mod(:) ! k4 angle around locus
 !
 !   result of subroutine Q_weight
 !
-real, allocatable :: wk_k2(:)   ! position of k2 and k4 wave number
-real, allocatable :: wk_k4(:)   ! w.r.t. discrete k-grid
-real, allocatable :: wa_k2(:)   ! position of k2 and k4 wave number
-real, allocatable :: wa_k4(:)   ! w.r.t. discrete a-grid
-real, allocatable :: wt_k2(:)   ! weight factor in tail,
-real, allocatable :: wt_k4(:)   ! wt==1 for wave numbers inside k-grid
+real(rkind), allocatable :: wk_k2(:)   ! position of k2 and k4 wave number
+real(rkind), allocatable :: wk_k4(:)   ! w.r.t. discrete k-grid
+real(rkind), allocatable :: wa_k2(:)   ! position of k2 and k4 wave number
+real(rkind), allocatable :: wa_k4(:)   ! w.r.t. discrete a-grid
+real(rkind), allocatable :: wt_k2(:)   ! weight factor in tail,
+real(rkind), allocatable :: wt_k4(:)   ! wt==1 for wave numbers inside k-grid
 !
 integer, allocatable :: t_ik2(:)   ! transformed weight for k2-magnitude
 integer, allocatable :: t_ia2(:)   ! transformed direction for k2
 integer, allocatable :: t_ik4(:)   ! transformed tail factor for k2
 integer, allocatable :: t_ia4(:)   ! transformed weight for k4
-real, allocatable :: t_w1k2(:)  ! transformed weight 1 for k2
-real, allocatable :: t_w2k2(:)  ! transformed weight 2 for k2
-real, allocatable :: t_w3k2(:)  ! transformed weight 3 for k2
-real, allocatable :: t_w4k2(:)  ! transformed weight 4 for k2
-real, allocatable :: t_w1k4(:)  ! transformed weight 1 for k4
-real, allocatable :: t_w2k4(:)  ! transformed weight 2 for k4
-real, allocatable :: t_w3k4(:)  ! transformed weight 3 for k4
-real, allocatable :: t_w4k4(:)  ! transformed weight 4 for k4
-real, allocatable :: t_zz(:)    ! product term
-real, allocatable :: t_tail2(:) ! tail factor for k2
-real, allocatable :: t_tail4(:) ! tail factor for k4
-real, allocatable :: t_sym(:)   ! transformed symetry factor
-real, allocatable :: t_cple(:)  ! transformed coupling coefficient
-real, allocatable :: t_jac(:)   ! tranformed jacobian term
-real, allocatable :: t_ws(:)    ! transformed weighted/step size
+real(rkind), allocatable :: t_w1k2(:)  ! transformed weight 1 for k2
+real(rkind), allocatable :: t_w2k2(:)  ! transformed weight 2 for k2
+real(rkind), allocatable :: t_w3k2(:)  ! transformed weight 3 for k2
+real(rkind), allocatable :: t_w4k2(:)  ! transformed weight 4 for k2
+real(rkind), allocatable :: t_w1k4(:)  ! transformed weight 1 for k4
+real(rkind), allocatable :: t_w2k4(:)  ! transformed weight 2 for k4
+real(rkind), allocatable :: t_w3k4(:)  ! transformed weight 3 for k4
+real(rkind), allocatable :: t_w4k4(:)  ! transformed weight 4 for k4
+real(rkind), allocatable :: t_zz(:)    ! product term
+real(rkind), allocatable :: t_tail2(:) ! tail factor for k2
+real(rkind), allocatable :: t_tail4(:) ! tail factor for k4
+real(rkind), allocatable :: t_sym(:)   ! transformed symetry factor
+real(rkind), allocatable :: t_cple(:)  ! transformed coupling coefficient
+real(rkind), allocatable :: t_jac(:)   ! tranformed jacobian term
+real(rkind), allocatable :: t_ws(:)    ! transformed weighted/step size
 !
 !  corresponding declarations
 !
@@ -342,50 +343,50 @@ integer, allocatable :: r_ik2(:)
 integer, allocatable :: r_ia2(:)
 integer, allocatable :: r_ik4(:)
 integer, allocatable :: r_ia4(:)
-real, allocatable :: r_w1k2(:),r_w2k2(:),r_w3k2(:),r_w4k2(:)
-real, allocatable :: r_w1k4(:),r_w2k4(:),r_w3k4(:),r_w4k4(:)
-real, allocatable :: r_zz(:),r_jac(:),r_cple(:),r_sym(:),r_ws(:)
-real, allocatable :: r_tail2(:),r_tail4(:)
+real(rkind), allocatable :: r_w1k2(:),r_w2k2(:),r_w3k2(:),r_w4k2(:)
+real(rkind), allocatable :: r_w1k4(:),r_w2k4(:),r_w3k4(:),r_w4k4(:)
+real(rkind), allocatable :: r_zz(:),r_jac(:),r_cple(:),r_sym(:),r_ws(:)
+real(rkind), allocatable :: r_tail2(:),r_tail4(:)
 !
-real, allocatable :: dt13(:)    ! increment along locus
+real(rkind), allocatable :: dt13(:)    ! increment along locus
 !
-real, allocatable :: q_xk(:)    ! extended wave number array starting at index 0
-real, allocatable :: q_sk(:)    ! step size of extended wave number array
-real sk_max                     ! maximum wave number in extended array
+real(rkind), allocatable :: q_xk(:)    ! extended wave number array starting at index 0
+real(rkind), allocatable :: q_sk(:)    ! step size of extended wave number array
+real(rkind) sk_max                     ! maximum wave number in extended array
 !
-real, allocatable :: q_k(:)     !  wave number grid [1/m]
-real, allocatable :: q_dk(:)    !  width of wave number bins [1/m]
-real, allocatable :: q_kpow(:)  !  wave number to a certain power, used in filtering
-real, allocatable :: q_f(:)     !  frequencies accociated to wave number/depth
-real, allocatable :: q_df(:)    !  step size of frequency grid
-real, allocatable :: q_sig(:)   !  radian frequencies associated to wave number/depth
-real, allocatable :: q_dsig(:)  !  step size of radian frequency grid
-real, allocatable :: q_cg(:)    !  group velocity (m/s)
-real, allocatable :: q_a(:)     !  directions of quadruplet grid in radians
-real, allocatable :: q_ad(:)    !  directions of quadruplet grid in degrees
-real, allocatable :: a(:,:)     !  Action density on wave number grid A(sigma,theta)
-real, allocatable :: nspec(:,:) !  Action density on wave number grid N(kx,ky)
-real, allocatable :: nk1d(:)    !  Internal 1d action density spectrum N(k)
-real, allocatable :: qnl(:,:)   !  Nonlinear energy transfer Snl(k,theta)
+real(rkind), allocatable :: q_k(:)     !  wave number grid [1/m]
+real(rkind), allocatable :: q_dk(:)    !  width of wave number bins [1/m]
+real(rkind), allocatable :: q_kpow(:)  !  wave number to a certain power, used in filtering
+real(rkind), allocatable :: q_f(:)     !  frequencies accociated to wave number/depth
+real(rkind), allocatable :: q_df(:)    !  step size of frequency grid
+real(rkind), allocatable :: q_sig(:)   !  radian frequencies associated to wave number/depth
+real(rkind), allocatable :: q_dsig(:)  !  step size of radian frequency grid
+real(rkind), allocatable :: q_cg(:)    !  group velocity (m/s)
+real(rkind), allocatable :: q_a(:)     !  directions of quadruplet grid in radians
+real(rkind), allocatable :: q_ad(:)    !  directions of quadruplet grid in degrees
+real(rkind), allocatable :: a(:,:)     !  Action density on wave number grid A(sigma,theta)
+real(rkind), allocatable :: nspec(:,:) !  Action density on wave number grid N(kx,ky)
+real(rkind), allocatable :: nk1d(:)    !  Internal 1d action density spectrum N(k)
+real(rkind), allocatable :: qnl(:,:)   !  Nonlinear energy transfer Snl(k,theta)
 !
 integer id_facmax                   ! Factor for determining range of depth search (Q_SEARCHGRID)
-real q_dird1,q_dird2                ! first and last direction of host model (via XNL_INIT) degrees
-real q_depth                        ! local water depth in m
-real q_maxdepth                     ! maximum water depth, set in XNL_INIT, used in Q_CTRGRID
-real q_mindepth                     ! minimum water depth, set in XNL_INIT, used in Q_CTRGRID
-real q_lambda                       ! geometric scaling factor for 'deep' water loci
-real q_scale                        ! additional scale factor resulting from SEARCH for neasrest grid
+real(rkind) q_dird1,q_dird2                ! first and last direction of host model (via XNL_INIT) degrees
+real(rkind) q_depth                        ! local water depth in m
+real(rkind) q_maxdepth                     ! maximum water depth, set in XNL_INIT, used in Q_CTRGRID
+real(rkind) q_mindepth                     ! minimum water depth, set in XNL_INIT, used in Q_CTRGRID
+real(rkind) q_lambda                       ! geometric scaling factor for 'deep' water loci
+real(rkind) q_scale                        ! additional scale factor resulting from SEARCH for neasrest grid
 !
-real eps_q                          ! absolute accuracy for check of Q
-real eps_k                          ! absolute accuracy for equality check of k
-real rel_k                          ! relative accuracy for equality check of k
+real(rkind) eps_q                          ! absolute accuracy for check of Q
+real(rkind) eps_k                          ! absolute accuracy for equality check of k
+real(rkind) rel_k                          ! relative accuracy for equality check of k
 !
 integer iq_stack                    ! Sequence number of stack with subroutine calls
 character(len=21) cstack(mq_stack)  ! Stack with module names
 !
 !  characteristics of locus
 !
-real crf1     ! estimated circumference of locus
+real(rkind) crf1     ! estimated circumference of locus
 !---------------------------------------------------------------------------------
 !
 !  information about type of grid
@@ -394,22 +395,22 @@ integer iaref       !  index of first angle of reference wave numbers
 integer iamax       !  maximum difference in indices for sector grids
 integer iaq1,iaq2   !  indices of do-loop for directions
 integer iag1,iag2   !  range of directions for precomputed interaction grid
-real q_ang1,q_ang2  !  lower and upper angle of grid in degrees
-real q_delta        !  directional spacing of angular grid in radians
-real q_deltad       !  directional spacing of angular grid in degrees
+real(rkind) q_ang1,q_ang2  !  lower and upper angle of grid in degrees
+real(rkind) q_delta        !  directional spacing of angular grid in radians
+real(rkind) q_deltad       !  directional spacing of angular grid in degrees
 !
-real q_ffac         !  geometric factor between subsequent frequencies
-real q_kfac         !  geometric factor between subsequent wave numbers
+real(rkind) q_ffac         !  geometric factor between subsequent frequencies
+real(rkind) q_kfac         !  geometric factor between subsequent wave numbers
                     !  (only valid for IQ_IDISP==1)
-real qk_tail        ! power of spectral tail of N(k), computed from qf_tail
-real ff_tail        ! fraction of maximum frequency where parametric tail starts
+real(rkind) qk_tail        ! power of spectral tail of N(k), computed from qf_tail
+real(rkind) ff_tail        ! fraction of maximum frequency where parametric tail starts
 !
 !-----------------------------------------------------------------------------
 !
-!!/R real wq2(4)          ! interpolation weights for k2
-!!/R real wq4(4)          ! interpolation weights for k4
-!!/R real wqw             ! overall weight of contribution
-!!/R real wtriq(40)       ! triplet weights
+!!/R real(rkind) wq2(4)          ! interpolation weights for k2
+!!/R real(rkind) wq4(4)          ! interpolation weights for k4
+!!/R real(rkind) wqw             ! overall weight of contribution
+!!/R real(rkind) wtriq(40)       ! triplet weights
 !!/R integer ikq2(4)      ! wave number index for k2
 !!/R integer idq2(4)      ! angle index for k2
 !!/R integer ikq4(4)      ! wave number index for k4
@@ -508,11 +509,11 @@ implicit none
 integer, intent(in)  ::  nsigma        ! Number of sigma values
 integer, intent(in)  ::  ndir          ! Number of directions
 integer, intent(in)  ::  ndepth        ! Number of water depths
-real, intent(in)     ::  sigma(nsigma) ! Radian frequencies
-real, intent(in)     ::  dird(ndir)    ! Directions (degrees)
-real, intent(in)     ::  pftail        ! power of spectral tail, e.g. -4 or -5
-real, intent(in)     ::  depth(ndepth) ! depths for which integration space must be computed
-real, intent(in)     ::  x_grav        ! gravitational acceleration
+real(rkind), intent(in)     ::  sigma(nsigma) ! Radian frequencies
+real(rkind), intent(in)     ::  dird(ndir)    ! Directions (degrees)
+real(rkind), intent(in)     ::  pftail        ! power of spectral tail, e.g. -4 or -5
+real(rkind), intent(in)     ::  depth(ndepth) ! depths for which integration space must be computed
+real(rkind), intent(in)     ::  x_grav        ! gravitational acceleration
 integer, intent(in)  ::  iquad         ! Type of method for computing nonlinear interactions
 integer, intent(in)  ::  iqgrid        ! Type of grid for computing nonlinear interactions
 integer, intent(in)  ::  iproc         ! Processor number, controls output file for MPI
@@ -565,9 +566,9 @@ integer idepth    ! index over water depths
 integer igrid     ! status of quadruplet grid file
 integer ia,ik     ! counters
 !
-real depmin       ! minimum water depth
-real dstep        ! directional step
-real dgap         ! directional gap between first and last direction
+real(rkind) depmin       ! minimum water depth
+real(rkind) dstep        ! directional step
+real(rkind) dgap         ! directional gap between first and last direction
 !
 call q_setversion ! set version number
 !------------------------------------------------------------------------------
@@ -842,13 +843,13 @@ integer,intent(in)  :: ndir             ! number of directions
 integer,intent(in)  :: iquad            ! method of computing nonlinear quadruplet interactions
 integer, intent(in) :: iproc            ! MPI processor number
 !
-real,   intent(in)  :: aspec(nsig,ndir) ! Action density spectrum as a function of (sigma,theta)
-real,   intent(in)  :: sigma(nsig)      ! radian frequencies
-real,   intent(in)  :: angle(ndir)      ! directions in radians (sector or full circle)
-real,   intent(in)  :: depth            ! water depth in m
-real,   intent(out) :: xnl(nsig,ndir)   ! nonlinear quadruplet interaction computed with
+real(rkind),   intent(in)  :: aspec(nsig,ndir) ! Action density spectrum as a function of (sigma,theta)
+real(rkind),   intent(in)  :: sigma(nsig)      ! radian frequencies
+real(rkind),   intent(in)  :: angle(ndir)      ! directions in radians (sector or full circle)
+real(rkind),   intent(in)  :: depth            ! water depth in m
+real(rkind),   intent(out) :: xnl(nsig,ndir)   ! nonlinear quadruplet interaction computed with
 !                                         a certain exact method (k,theta)
-real,   intent(out) :: diag(nsig,ndir)  ! diagonal term for semi-implicit integration
+real(rkind),   intent(out) :: diag(nsig,ndir)  ! diagonal term for semi-implicit integration
 integer, intent(out) :: ierror          ! error indicator
 !
 !--------------------------------------------------------------------------------
@@ -881,12 +882,12 @@ integer i_qlast             ! value of iquad in last call
 !
 integer isig         ! counter for sigma values
 integer idir         ! counter of directions
-real q_dfac          ! depth scale factor for nonlinear transfer
+real(rkind) q_dfac          ! depth scale factor for nonlinear transfer
 !
-real sum_e           ! sum of energy
-real sum_a           ! sum of action
-real sum_mx          ! sum of momentum in x-direction
-real sum_my          ! sum of momentum in y-direction
+real(rkind) sum_e           ! sum of energy
+real(rkind) sum_a           ! sum of action
+real(rkind) sum_mx          ! sum of momentum in x-direction
+real(rkind) sum_my          ! sum of momentum in y-direction
 !
 data i_qmain /0/     ! keep track of number of calls of XNL_MAIN
 data i_qlast /0/     ! keep track of last call with IQUAD
@@ -1018,9 +1019,9 @@ implicit none
 !
 integer, intent(in) :: nsig          ! Number of wave numbers
 integer, intent(in) :: na            ! Number of directions
-real, intent(inout) :: xnl(nsig,na)  ! Non-linear transfer rate
-real, intent(inout) :: diag(nsig,na) ! Diagonal term
-real, intent(in)    :: pf_tail       ! power of tail of E(f)
+real(rkind), intent(inout) :: xnl(nsig,na)  ! Non-linear transfer rate
+real(rkind), intent(inout) :: diag(nsig,na) ! Diagonal term
+real(rkind), intent(in)    :: pf_tail       ! power of tail of E(f)
 !
 !
 !  4. Error messages
@@ -1045,11 +1046,11 @@ real, intent(in)    :: pf_tail       ! power of tail of E(f)
 integer ia,isig      ! counters for directions and wave numbers
 integer isig_tail    ! index of bin where tail starts
 !
-real xnl_tail(nsig)  ! tail factors for transfer rate
-real diag_tail(nsig) ! tail factors for diagonal term
-real x_tail          ! power in tail of nonlinear transfer rate
-real d_tail          ! power in tail of diagonal term
-real sig_tail        ! threshold sigma for start of parametric tail
+real(rkind) xnl_tail(nsig)  ! tail factors for transfer rate
+real(rkind) diag_tail(nsig) ! tail factors for diagonal term
+real(rkind) x_tail          ! power in tail of nonlinear transfer rate
+real(rkind) d_tail          ! power in tail of diagonal term
+real(rkind) sig_tail        ! threshold sigma for start of parametric tail
 !-----------------------------------------------------------------------------
 !
 call q_stack('+q_addtail')
@@ -1559,11 +1560,11 @@ implicit none
 !
 integer, intent(in) :: nk         ! number of wave numbers
 integer, intent(in) :: ndir       ! number of directions
-real, intent(in)  :: xnl(nk,ndir) ! transfer rate
-real, intent(out) :: sum_e        ! sum of wave energy
-real, intent(out) :: sum_a        ! sum of wave action
-real, intent(out) :: sum_mx       ! sum of momentum in x-direction
-real, intent(out) :: sum_my       ! sum of momentum in y-direction
+real(rkind), intent(in)  :: xnl(nk,ndir) ! transfer rate
+real(rkind), intent(out) :: sum_e        ! sum of wave energy
+real(rkind), intent(out) :: sum_a        ! sum of wave action
+real(rkind), intent(out) :: sum_mx       ! sum of momentum in x-direction
+real(rkind), intent(out) :: sum_my       ! sum of momentum in y-direction
 !
 !  4. Error messages
 !
@@ -1585,12 +1586,12 @@ real, intent(out) :: sum_my       ! sum of momentum in y-direction
 !------------------------------------------------------------------------------
 !     Local variables
 !
-real aa    ! action density
-real ee    ! energy density
-real kk    ! wave number
-real momx  ! momentum in x-direction
-real momy  ! momentum in y-direction
-real qq    ! bin size
+real(rkind) aa    ! action density
+real(rkind) ee    ! energy density
+real(rkind) kk    ! wave number
+real(rkind) momx  ! momentum in x-direction
+real(rkind) momy  ! momentum in y-direction
+real(rkind) qq    ! bin size
 !
 integer ia ! counter over directions
 integer ik ! counter over wave numbers
@@ -1665,18 +1666,18 @@ implicit none
 !
 ! Type    I/O          Name       Description
 !----------------------------------------------------------------------
-real, intent(in)  ::   k1x     !  x-component of wave number vector k1
-real, intent(in)  ::   k1y     !  y-component of wave number vector k1
-real, intent(in)  ::   k2x     !  x-component of wave number vector k2
-real, intent(in)  ::   k2y     !  y-component of wave number vector k2
-real, intent(in)  ::   k3x     !  x-component of wave number vector k3
-real, intent(in)  ::   k3y     !  y-component of wave number vector k3
-real, intent(in)  ::   k4x     !  x-component of wave number vector k4
-real, intent(in)  ::   k4y     !  y-component of wave number vector k4
-real, intent(in)  ::   dep     !  depth in m
-real, intent(out) ::   sum_kx  !  sum of x-components of quadruplet
-real, intent(out) ::   sum_ky  !  sum of y-components of quadruplet
-real, intent(out) ::   sum_w   !  sum of radian frequencies
+real(rkind), intent(in)  ::   k1x     !  x-component of wave number vector k1
+real(rkind), intent(in)  ::   k1y     !  y-component of wave number vector k1
+real(rkind), intent(in)  ::   k2x     !  x-component of wave number vector k2
+real(rkind), intent(in)  ::   k2y     !  y-component of wave number vector k2
+real(rkind), intent(in)  ::   k3x     !  x-component of wave number vector k3
+real(rkind), intent(in)  ::   k3y     !  y-component of wave number vector k3
+real(rkind), intent(in)  ::   k4x     !  x-component of wave number vector k4
+real(rkind), intent(in)  ::   k4y     !  y-component of wave number vector k4
+real(rkind), intent(in)  ::   dep     !  depth in m
+real(rkind), intent(out) ::   sum_kx  !  sum of x-components of quadruplet
+real(rkind), intent(out) ::   sum_ky  !  sum of y-components of quadruplet
+real(rkind), intent(out) ::   sum_w   !  sum of radian frequencies
 !
 !  4. Error messages
 !
@@ -1698,8 +1699,8 @@ real, intent(out) ::   sum_w   !  sum of radian frequencies
 !------------------------------------------------------------------------------
 !     Local variables
 !
-real w1,w2,w3,w4            ! radian frequecies of wave numbers
-!!real x_disper               ! dispersion relation
+real(rkind) w1,w2,w3,w4            ! radian frequecies of wave numbers
+!!real(rkind) x_disper               ! dispersion relation
 sum_kx = (k1x + k2x) - (k3x + k4x)
 sum_ky = (k1y + k2y) - (k3y + k4y)
 !
@@ -1758,10 +1759,10 @@ implicit none
 !
 !Type   I/O          Name          Description
 !----------!----------------------------------------------------------------------------
-real, intent(out) :: ka,kb       ! lowest and highest wave number magnitude of k2-locus
-real, intent(out) :: km          ! wave number magnitude at mid point
-real, intent(out) :: kw          ! half width of locus
-real, intent(out) :: loclen      ! estimated length of locus
+real(rkind), intent(out) :: ka,kb       ! lowest and highest wave number magnitude of k2-locus
+real(rkind), intent(out) :: km          ! wave number magnitude at mid point
+real(rkind), intent(out) :: kw          ! half width of locus
+real(rkind), intent(out) :: loclen      ! estimated length of locus
 !
 !  4. Error messages
 !
@@ -1785,24 +1786,24 @@ real, intent(out) :: loclen      ! estimated length of locus
 !-------------------------------------------------------------------------------
 !     Local variables
 !-------------------------------------------------------------------------------
-real k1m          ! magnitude of wave number k1
-real k3m          ! magnitude of wave number k3
-real pcos,psin    ! cosine and sine of normalize angle of P
-real klen         ! total length of line locus for case w1=w3
+real(rkind) k1m          ! magnitude of wave number k1
+real(rkind) k3m          ! magnitude of wave number k3
+real(rkind) pcos,psin    ! cosine and sine of normalize angle of P
+real(rkind) klen         ! total length of line locus for case w1=w3
 !
-real kx_beg       ! x-component at start point
-real ky_beg       ! y-component at start point
-real kx_end       ! x-component at end point
-real ky_end       ! y-component at end point
+real(rkind) kx_beg       ! x-component at start point
+real(rkind) ky_beg       ! y-component at start point
+real(rkind) kx_end       ! x-component at end point
+real(rkind) ky_end       ! y-component at end point
 !
-real dsp,dsm      ! distances in plus and minus direction
-real sum          ! total length of locus
+real(rkind) dsp,dsm      ! distances in plus and minus direction
+real(rkind) sum          ! total length of locus
 !
-real w1,w3        ! radian frequencies of wave numbers k1 and k3
-real eps          ! local accuracy for determination of roots
-real area1        ! area of locus as computed
-real area2        ! area of locus as based on LOCPOS and ellipse
-real ratio        ! maximum ratio between area1 and area2
+real(rkind) w1,w3        ! radian frequencies of wave numbers k1 and k3
+real(rkind) eps          ! local accuracy for determination of roots
+real(rkind) area1        ! area of locus as computed
+real(rkind) area2        ! area of locus as based on LOCPOS and ellipse
+real(rkind) ratio        ! maximum ratio between area1 and area2
 !
 integer ierr      ! local error level
 integer iloc,jloc ! counters along locus
@@ -1813,9 +1814,9 @@ integer jj        ! counter
 !------------------------------------------------------------------------------
 !  function declarations
 !
-!!real x_disper                 ! dispersion relation
-!!real x_cple                   ! coupling coefficient
-!!real x_jacobian               ! Jacobian term
+!!real(rkind) x_disper                 ! dispersion relation
+!!real(rkind) x_cple                   ! coupling coefficient
+!!real(rkind) x_jacobian               ! Jacobian term
 !------------------------------------------------------------------------------
 call q_stack('+q_cmplocus')
 !
@@ -2136,10 +2137,10 @@ integer nkz                            ! number of wave numbers in BQF file
 integer idep,jdep                      ! coding for depth in BQF file
 !
 logical lbqf                           ! flag for existence of BQF file
-real s_depth                           ! (stepped) depth
-real q_depth_saved                     ! save input water depth, needed after call to Q_MAKEGRID
-real z_depth                           ! water depth in BQF file
-real, allocatable :: z_ad(:),z_sig(:)  ! directions and radian frequencies of grid in BQF file
+real(rkind) s_depth                           ! (stepped) depth
+real(rkind) q_depth_saved                     ! save input water depth, needed after call to Q_MAKEGRID
+real(rkind) z_depth                           ! water depth in BQF file
+real(rkind), allocatable :: z_ad(:),z_sig(:)  ! directions and radian frequencies of grid in BQF file
 integer ierr,iuerr                     ! error variables
 !------------------------------------------------------------------------------
 !
@@ -2188,7 +2189,7 @@ elseif(iq_disp==2) then
   jdep = max(1,jdep)
   jdep = min(99999,jdep)
 !
-  s_depth = real(idep)*q_dstep
+  s_depth = MyREAL(idep)*q_dstep
 !
   if(iq_prt>=2) write(luq_prt,'(a,3f10.2,2i6)')   &
 & 'Q_CTRGRID: q_depth q_dstep s_depth idep jdep:',&
@@ -2509,12 +2510,12 @@ implicit none
 !-------------------------------------------------------------------------
 integer, intent (in) :: nsig          ! Number of sigma-values
 integer, intent (in) :: nang          ! Number of directions
-real, intent(in)     :: n(nsig,nang)  ! N(nsig,nang) Action density
-real, intent(in)     :: sigma(nsig)   ! sigma values
-real, intent(in)     :: angle(nang)   ! directions in (radians)
-real, intent(in)     :: depth         ! Depth (m)
-real, intent(in)     :: grav          ! Gravitational acceleration
-real, intent(out)    :: q_dfac        ! scale factor
+real(rkind), intent(in)     :: n(nsig,nang)  ! N(nsig,nang) Action density
+real(rkind), intent(in)     :: sigma(nsig)   ! sigma values
+real(rkind), intent(in)     :: angle(nang)   ! directions in (radians)
+real(rkind), intent(in)     :: depth         ! Depth (m)
+real(rkind), intent(in)     :: grav          ! Gravitational acceleration
+real(rkind), intent(out)    :: q_dfac        ! scale factor
 !
 !  4. Error messages
 !
@@ -2538,25 +2539,25 @@ real, intent(out)    :: q_dfac        ! scale factor
 !------------------------------------------------------------------------------
 !     local variables
 !
-real w          ! radian frequency
-real kk         ! local wave number
-real sqkk       ! square root of local wave number
-real dnn        ! summation quantity
-real kms        ! mean wave number
-real kd         ! depth*mean wave number product
-real sum0       ! summation variable for total energy
-real sumk       ! summation variable for wave number
-real delta      ! directional step, in radians
+real(rkind) w          ! radian frequency
+real(rkind) kk         ! local wave number
+real(rkind) sqkk       ! square root of local wave number
+real(rkind) dnn        ! summation quantity
+real(rkind) kms        ! mean wave number
+real(rkind) kd         ! depth*mean wave number product
+real(rkind) sum0       ! summation variable for total energy
+real(rkind) sumk       ! summation variable for wave number
+real(rkind) delta      ! directional step, in radians
 !
 integer isig    ! counter over sigma loop
 integer iang    ! counter over direction loop
 !
 ! functions
-!!!real z_wnumb    ! function to compute wave number
+!!!real(rkind) z_wnumb    ! function to compute wave number
 !
 ! temporary data
 !
-real dsigma(nsig) ! step size of sigma array, used for integration
+real(rkind) dsigma(nsig) ! step size of sigma array, used for integration
 !------------------------------------------------------------------------------
 !
 call q_stack('+q_dscale')
@@ -2880,16 +2881,16 @@ integer ierr
 integer kmem                 ! index for storing 2-d matrix in 1-d array
 integer amem                 ! index for storing direction of reference wave number k3
 !
-real lambda                  ! geometric scale factor
-real j_lambda                ! scale factor for Jacobian term
-real c_lambda                ! scale factor for coupling coefficient
-real zz_lambda               ! combined scale factor
+real(rkind) lambda                  ! geometric scale factor
+real(rkind) j_lambda                ! scale factor for Jacobian term
+real(rkind) c_lambda                ! scale factor for coupling coefficient
+real(rkind) zz_lambda               ! combined scale factor
 !
-real xt2(nlocus),yt2(nlocus) ! xy-components of test k2-locus
-real xt4(nlocus),yt4(nlocus) ! xy-components of test k4-locus
-real wk,wa,vk,va
+real(rkind) xt2(nlocus),yt2(nlocus) ! xy-components of test k2-locus
+real(rkind) xt4(nlocus),yt4(nlocus) ! xy-components of test k4-locus
+real(rkind) wk,wa,vk,va
 !! \A
-!! real x_kfunc                 ! real function to compute wave number
+!! real(rkind) x_kfunc                 ! real function to compute wave number
 !! \Z
 !
 integer ikmin,ja1,ja3,jk1,jk3,itmin
@@ -3056,8 +3057,8 @@ elseif(ik3 > ik1 .and. it3 < it1)  then  ! Case 2
   t_ik2(1:nloc)  = kdif + r_ik2(1:nloc)
   t_ik4(1:nloc)  = kdif + r_ik4(1:nloc)
   ibeta          = int(q_ad(ia1)/q_deltad+0.01)
-  t_ia2(1:nloc)  = ibeta + 2.*iaref - r_ia2(1:nloc) -imirror
-  t_ia4(1:nloc)  = ibeta + 2.*iaref - r_ia4(1:nloc) -imirror
+  t_ia2(1:nloc)  = ibeta + 2*iaref - r_ia2(1:nloc) -imirror
+  t_ia4(1:nloc)  = ibeta + 2*iaref - r_ia4(1:nloc) -imirror
   t_w1k2(1:nloc)  = r_w3k2(1:nloc)
   t_w2k2(1:nloc)  = r_w4k2(1:nloc)
   t_w3k2(1:nloc)  = r_w1k2(1:nloc)
@@ -3311,8 +3312,8 @@ implicit none
 !     Local variables
 !
 integer iaq,ikq    ! counters for loops over directions and wave numbers
-real ff            ! frequency
-!!!real z_wnumb       ! service function to compute wave number
+real(rkind) ff            ! frequency
+!!!real(rkind) z_wnumb       ! service function to compute wave number
 !
 integer iuerr      ! error indicator for i/o
 !------------------------------------------------------------------------------
@@ -3339,13 +3340,13 @@ eps_k   = 1.e-5           ! absolute accuracy for equality check of k
 rel_k   = 0.001           ! relative accuracy for equality check of k
 !
 sk_max = 500.             ! set maximum waver number
-wk_max = real(nkq+0.9999) ! set maximum wave number index
+wk_max = MyREAL(nkq+0.9999) ! set maximum wave number index
 !
 ! compute frequency and wave number grid
 ! assume that frequencies are always geometrically spaced,
 ! in the case of deep water this also holds for the wave numbers
 !
-q_ffac = (fqmax/fqmin)**real(1./(nkq-1.))         ! geometric spacing factor of frequencies
+q_ffac = (fqmax/fqmin)**MyREAL(1./(nkq-1.))         ! geometric spacing factor of frequencies
 !
 ff = fqmin                                        ! set minimum frequency
 !
@@ -3392,7 +3393,7 @@ end do
 !
 kqmin = q_k(1)
 kqmax = q_k(nkq)
-q_kfac = (kqmax/kqmin)**real(1./(nkq-1))  ! this value makes only sense in the
+q_kfac = (kqmax/kqmin)**MyREAL(1./(nkq-1))  ! this value makes only sense in the
                                           ! case of deep water, IQ_DISP==1
 !
 ! compute step size of frequency grids and wave number grid
@@ -3457,13 +3458,13 @@ if(iq_prt >= 2) write(luq_prt,'(a,2i4)') &
 q_sector = 0.5*(abs(q_dird1) + abs(q_dird2))
 !
 if(iq_grid==1 .or. iq_grid==2) then    ! define symmetric sector
-  q_deltad = 2.*q_sector/real(naq-1.)  ! delta in degrees
+  q_deltad = 2.*q_sector/MyREAL(naq-1.)  ! delta in degrees
   q_ang1 = -q_sector                   ! degrees
   q_ang2 =  q_sector                   ! degrees
   if(iq_prt>0) write(luq_prt,'(a)') 'Q_INIT: take care of q_dird1 and check if sector is OK'
 !
 elseif(iq_grid==3) then                ! full sector
-  q_deltad = 360./real(naq)            ! degrees
+  q_deltad = 360./MyREAL(naq)            ! degrees
   q_ang1 = 0                           ! degrees
   q_ang2 = 360.-q_delta                ! degrees
 end if
@@ -3558,11 +3559,11 @@ implicit none
 !
 !Type    I/O          Name     Description
 !-----------------------------------------------------------------
-real, intent (out) :: ka     ! minimum k along symmetry axis
-real, intent (out) :: kb     ! maximum k along symmetry axis
-real, intent (out) :: km     ! wave number at midpoint
-real, intent (out) :: kw     ! half width of locus at midpoint
-real, intent (out) :: loclen ! estimated length of locus
+real(rkind), intent (out) :: ka     ! minimum k along symmetry axis
+real(rkind), intent (out) :: kb     ! maximum k along symmetry axis
+real(rkind), intent (out) :: km     ! wave number at midpoint
+real(rkind), intent (out) :: kw     ! half width of locus at midpoint
+real(rkind), intent (out) :: loclen ! estimated length of locus
 !
 !  4. Error messages
 !
@@ -3590,30 +3591,30 @@ real, intent (out) :: loclen ! estimated length of locus
 !------------------------------------------------------------------------------
 !     Local variables
 !
-real kp           ! wave number at peak
-real kpx,kpy      ! wave number at peak maximum
-real zp           ! value of locus function at maximum
-real za,zb        ! (test) value of locus function at kmin & kmax
-real zz1,zz2      ! intermediate function values in interation process
-real kk1,kk2      ! start values for finding root of locus equation
-real kk1x,kk1y    ! wave number components at one side of root
-real kk2x,kk2y    ! wave number components at other side of root
-real beta1,beta2  ! parameters specifying cross component
-real betaw        ! parameter specifying iterated cross component
-real kwx,kwy      ! wave number at side of locus
-real zw           ! function value at (kwx,kwy)
-real a1,a2,b1,b2  ! constants in polynomial approximation of elliptic function
-real aa,bb,mm,mm1 ! semi-major exis of ellips and derived parameters
+real(rkind) kp           ! wave number at peak
+real(rkind) kpx,kpy      ! wave number at peak maximum
+real(rkind) zp           ! value of locus function at maximum
+real(rkind) za,zb        ! (test) value of locus function at kmin & kmax
+real(rkind) zz1,zz2      ! intermediate function values in interation process
+real(rkind) kk1,kk2      ! start values for finding root of locus equation
+real(rkind) kk1x,kk1y    ! wave number components at one side of root
+real(rkind) kk2x,kk2y    ! wave number components at other side of root
+real(rkind) beta1,beta2  ! parameters specifying cross component
+real(rkind) betaw        ! parameter specifying iterated cross component
+real(rkind) kwx,kwy      ! wave number at side of locus
+real(rkind) zw           ! function value at (kwx,kwy)
+real(rkind) a1,a2,b1,b2  ! constants in polynomial approximation of elliptic function
+real(rkind) aa,bb,mm,mm1 ! semi-major exis of ellips and derived parameters
 !
-real eps         ! local machine accuracy for determination of roots
-real bacc        ! accuracy for determination of beta
-real kacc        ! accuracy for determination of wave number roots
-real qs          ! (w1-w3)/sqrt(g)
-real qsq         ! gs^2
+real(rkind) eps         ! local machine accuracy for determination of roots
+real(rkind) bacc        ! accuracy for determination of beta
+real(rkind) kacc        ! accuracy for determination of wave number roots
+real(rkind) qs          ! (w1-w3)/sqrt(g)
+real(rkind) qsq         ! gs^2
 !
 ! Function declaration
 !
-!real z_root2     ! root finding using Ridders method
+!real(rkind) z_root2     ! root finding using Ridders method
 !
 integer ierr     ! local error indicator, used in function Z-ZERO1
 integer itest    ! local test level for test output
@@ -3622,8 +3623,8 @@ integer iter     ! local iteration number
 integer maxiter  ! maximum number of iteration for determining starting points
 !
 !  function declarations
-!!real, external :: x_locus2    ! locus function perpendicular to symmetry axis
-!!real x_flocus                 ! 2-d locus function
+!!real(rkind), external :: x_locus2    ! locus function perpendicular to symmetry axis
+!!real(rkind) x_flocus                 ! 2-d locus function
 !---------------------------------------------------------------------------------
 !  assign test options
 !
@@ -3988,28 +3989,28 @@ integer iaq,ikq              ! counters
 integer iaq3,ikq1,ikq3,nkq1  ! counters
 integer jaq1,jaq3            ! counters
 integer amem,kmem            ! index of angle and wave number in grid
-real aa1,aa3,kk1,kk3         ! temporary wave number variables
+real(rkind) aa1,aa3,kk1,kk3         ! temporary wave number variables
 !
 integer nzloc                ! counter for non-zero contributions along locus
 integer nztot1,nztot2        ! total number of zero and non-zero points on locus
 integer ik2,ia2              ! index of wave number k2
 integer ik4,ia4              ! index of wave number k4
 !
-real wk,wa                   ! weights
-real w1k2,w2k2,w3k2,w4k2     ! interpolation weights
-real w1k4,w2k4,w3k4,w4k4     ! interpolation weights
+real(rkind) wk,wa                   ! weights
+real(rkind) w1k2,w2k2,w3k2,w4k2     ! interpolation weights
+real(rkind) w1k4,w2k4,w3k4,w4k4     ! interpolation weights
 !
-real ka,kb       ! lower and higher wave number magnitude
-real km          ! wave number at mid point
-real kw          ! half width of locus
+real(rkind) ka,kb       ! lower and higher wave number magnitude
+real(rkind) km          ! wave number at mid point
+real(rkind) kw          ! half width of locus
 !
-real tfac        ! combined tail factor
+real(rkind) tfac        ! combined tail factor
 !
 logical lwrite   ! indicator if binary interaction grid has been written successfully
-real smax        ! maximum s-value
+real(rkind) smax        ! maximum s-value
 !
-real, allocatable :: xloc(:),yloc(:)
-real qq
+real(rkind), allocatable :: xloc(:),yloc(:)
+real(rkind) qq
 !-------------------------------------------------------------------------------
 call q_stack('+q_makegrid')
 !
@@ -4122,8 +4123,8 @@ loc:  do iloc = 1,nlocus
 !
         ik2  = floor(wk_k2(iloc))
         ia2  = floor(wa_k2(iloc))
-        wk   = wk_k2(iloc)-real(ik2)
-        wa   = wa_k2(iloc)-real(ia2)
+        wk   = wk_k2(iloc)-MyREAL(ik2)
+        wa   = wa_k2(iloc)-MyREAL(ia2)
         w1k2 = (1.-wk)*(1.-wa)
         w2k2 = wk*(1.-wa)
         w3k2 = (1.-wk)*wa
@@ -4131,8 +4132,8 @@ loc:  do iloc = 1,nlocus
 !
         ik4  = floor(wk_k4(iloc))
         ia4  = floor(wa_k4(iloc))
-        wk   = wk_k4(iloc)-real(ik4)
-        wa   = wa_k4(iloc)-real(ia4)
+        wk   = wk_k4(iloc)-MyREAL(ik4)
+        wa   = wa_k4(iloc)-MyREAL(ia4)
         w1k4 = (1.-wk)*(1.-wa)
         w2k4 = wk*(1.-wa)
         w3k4 = (1.-wk)*wa
@@ -4295,7 +4296,7 @@ if(iq_prt >=1) then
   write(luq_prt,'(a,i10)') 'Q_MAKEGRID: Total number of points on loci        :',nztot2
   write(luq_prt,'(a,i10)') 'Q_MAKEGRID: Total number of stored points on locus:',nztot1
   write(luq_prt,'(a,i10)') 'Q_MAKEGRID: Total number of zero points on locus  :',nztot2-nztot1
-  write(luq_prt,'(a,f8.2)') 'Q_MAKEGRID: Reduction factor (%):',real(nztot2-nztot1)/real(nztot2)*100.
+  write(luq_prt,'(a,f8.2)') 'Q_MAKEGRID: Reduction factor (%):',MyREAL(nztot2-nztot1)/MyREAL(nztot2)*100.
 end if
 !
 call q_stack('-q_makegrid')
@@ -4383,21 +4384,21 @@ integer iloc         ! counter for loop along locus
 integer jloc         ! counter for loop over lumped locus
 integer itest        ! local test level, by default equal to IQ_TEST
 !
-real k2a,k2m         ! angle (deg) and wave number magnitude of wave number k2
-real k4a,k4m         ! angle (deg) and wave number magnitude of wave number k4
-real w2,w4           ! radian frequencies of wave numbers
+real(rkind) k2a,k2m         ! angle (deg) and wave number magnitude of wave number k2
+real(rkind) k4a,k4m         ! angle (deg) and wave number magnitude of wave number k4
+real(rkind) w2,w4           ! radian frequencies of wave numbers
 !
 !
-real dk13,dk14       ! difference wave number
-real dsnew,slen      ! new step size and length of locus
-real zero            ! 0
-real q_eps           ! accuracy to distinguish special case, with q=0
-real diold           ! 'real' old number of indices between succeeding lumped bins
-real dinew           ! 'real' new number of indices between succeeding lumped bins
+real(rkind) dk13,dk14       ! difference wave number
+real(rkind) dsnew,slen      ! new step size and length of locus
+real(rkind) zero            ! 0
+real(rkind) q_eps           ! accuracy to distinguish special case, with q=0
+real(rkind) diold           ! 'real(rkind)' old number of indices between succeeding lumped bins
+real(rkind) dinew           ! 'real' new number of indices between succeeding lumped bins
 !
 !!real x_disper        ! evaluate dispersion relation
-real, allocatable :: sold(:)     ! old coordinate along locus
-real, allocatable :: snew(:)     ! new coordinate along locus
+real(rkind), allocatable :: sold(:)     ! old coordinate along locus
+real(rkind), allocatable :: snew(:)     ! new coordinate along locus
 !--------------------------------------------------------------------------
 call q_stack('+q_modify')
 !
@@ -4502,12 +4503,12 @@ else
     end if
   else
     if(abs(q)>q_eps) then
-      dsnew  = slen/real(nnew)
+      dsnew  = slen/MyREAL(nnew)
       do inew=1,nnew
         snew(inew) = (inew-1.)*dsnew
       end do
     else
-      dsnew  = slen/real(nnew-1.)
+      dsnew  = slen/MyREAL(nnew-1.)
       do inew=1,nnew
         snew(inew) = (inew-1)*dsnew
       end do
@@ -4558,8 +4559,8 @@ else
 ! ---  lumping along locus --------------------------------------------
 !
     if(iq_lump>0) then
-      diold  = slen/real(nold)
-      dinew  = slen/real(nnew)
+      diold  = slen/MyREAL(nold)
+      dinew  = slen/MyREAL(nnew)
       ds_mod = 0.
       call q_symmetry(k1x,k1y,k3x,k3y,x4_loc,y4_loc,sym_loc,nold)
 !
@@ -4622,8 +4623,8 @@ else
 !  ----- Lumping along locus -----------------------------------
 !
     if(iq_lump>0) then
-      diold  = slen/real(nold-1)
-      dinew  = slen/real(nnew)
+      diold  = slen/MyREAL(nold-1)
+      dinew  = slen/MyREAL(nnew)
       ds_mod = 0.
       call q_symmetry(k1x,k1y,k3x,k3y,x4_loc,y4_loc,sym_loc,nold)
 !
@@ -4778,10 +4779,10 @@ implicit none
 !-------------------------------------------------------
 integer, intent(inout)  ::   ik       !  Index of wave number
 integer, intent(inout)  ::   ia       !  index of angle
-real, intent(inout)     ::   w1       !  weight of first corner point
-real, intent(inout)     ::   w2       !  weight of second corner point
-real, intent(inout)     ::   w3       !  weight of third corner point
-real, intent(inout)     ::   w4       !  weight of fourth corner point
+real(rkind), intent(inout)     ::   w1       !  weight of first corner point
+real(rkind), intent(inout)     ::   w2       !  weight of second corner point
+real(rkind), intent(inout)     ::   w3       !  weight of third corner point
+real(rkind), intent(inout)     ::   w4       !  weight of fourth corner point
 !
 !  4. Error messages
 !
@@ -4804,7 +4805,7 @@ real, intent(inout)     ::   w4       !  weight of fourth corner point
 integer ik_max   ! k-index with maximum weight
 integer ia_max   ! theta index with maximum weight
 integer iw_max   ! index with highest weight
-real w_max       ! maximum weight
+real(rkind) w_max       ! maximum weight
 !------------------------------------------------------------------------------
 if(iq_test>=2) write(luq_tst,'(a,2i4,4f10.5)') 'Q_NEAREST-A:',ik,ia,w1,w2,w3,w4
 !
@@ -4908,13 +4909,13 @@ implicit none
 !
 !Type    I/O        Name             Description
 !------------------------------------------------------------------------------
-real, intent(in) :: kmin           ! minimum wave number on locus
-real, intent(in) :: kmax           ! maximum wave number on locus
-real, intent(in) :: kx_beg         ! x-coordinate of begin point
-real, intent(in) :: ky_beg         ! y-coordinate of begin point
-real, intent(in) :: kx_end         ! x-coordinate of end point
-real, intent(in) :: ky_end         ! y-coordinate of end point
-real, intent(in) :: loclen         ! estimated length of locus
+real(rkind), intent(in) :: kmin           ! minimum wave number on locus
+real(rkind), intent(in) :: kmax           ! maximum wave number on locus
+real(rkind), intent(in) :: kx_beg         ! x-coordinate of begin point
+real(rkind), intent(in) :: ky_beg         ! y-coordinate of begin point
+real(rkind), intent(in) :: kx_end         ! x-coordinate of end point
+real(rkind), intent(in) :: ky_end         ! y-coordinate of end point
+real(rkind), intent(in) :: loclen         ! estimated length of locus
 integer, intent (out)  :: ierr     ! error condition
 !
 !     Parameters with module
@@ -4958,29 +4959,29 @@ integer npol      ! number of points on locus
 integer npass     ! number of passes in iteration process
 integer mpol      ! maximum number of points on locus, related to MLOCUS
 !
-real kold         ! temporary wave number
-real knew         ! temporary wave number
-real cosold       ! 'old' cosine of angle
-real cosnew       ! 'new' cosine of angle
-real dkpol        ! step in wave number
-real dkold        ! 'old' step in wave number
-real ang1         ! 'old' angle
-real ang2         ! 'new' angle
-real kk1          ! 'old' wave number
-real kk2          ! 'new' wave number
-real kratio       ! ratio between succesive k-values when IQ_LOCUS=3
-real arg          ! argument
-real dk           ! step in wave number
-real dke          ! estimate of new dk
-real dsnew        ! new step size along locus
-real dsz          ! estimated step size along locus
+real(rkind) kold         ! temporary wave number
+real(rkind) knew         ! temporary wave number
+real(rkind) cosold       ! 'old' cosine of angle
+real(rkind) cosnew       ! 'new' cosine of angle
+real(rkind) dkpol        ! step in wave number
+real(rkind) dkold        ! 'old' step in wave number
+real(rkind) ang1         ! 'old' angle
+real(rkind) ang2         ! 'new' angle
+real(rkind) kk1          ! 'old' wave number
+real(rkind) kk2          ! 'new' wave number
+real(rkind) kratio       ! ratio between succesive k-values when IQ_LOCUS=3
+real(rkind) arg          ! argument
+real(rkind) dk           ! step in wave number
+real(rkind) dke          ! estimate of new dk
+real(rkind) dsnew        ! new step size along locus
+real(rkind) dsz          ! estimated step size along locus
 !
 integer itest    ! local test level
 integer lutest   ! unit number for test output in service routine
 !
 !  function declarations
-!!!real    z_wnumb  ! compute wave number, via module SERV_XNL4V4
-!!real    x_disper ! dispersion relation
+!!!real(rkind)    z_wnumb  ! compute wave number, via module SERV_XNL4V4
+!!real(rkind)    x_disper ! dispersion relation
 !
 !------------------------------------------------------------------------------
 ! initialisations
@@ -4999,7 +5000,7 @@ select case(iq_locus)
 !------------------------------------------------------------------------------
   case(1)
 !
-  dk = (kmax-kmin)/real(npol-1)
+  dk = (kmax-kmin)/MyREAL(npol-1)
   do ipol=1,npol
     k_pol(ipol) = kmin + (ipol-1)*dk
     c_pol(ipol) = x_cosk(k_pol(ipol))
@@ -5020,8 +5021,8 @@ select case(iq_locus)
 !
 ! compute initial step size of polar wave number
 !
-  dk0   = (kmax - kmin)/real(npol)      ! estimate of step size of equidistant radii
-  dsz   = loclen/real(nlocus0)          ! estimate of step size along locus
+  dk0   = (kmax - kmin)/MyREAL(npol)      ! estimate of step size of equidistant radii
+  dsz   = loclen/MyREAL(nlocus0)          ! estimate of step size along locus
   npass = 3                             ! set number of passes in iteration
   dk0   = dk0/2                         ! reduce initial step
   dk    = dk0
@@ -5216,7 +5217,7 @@ integer, intent(in) ::   iquad   ! Indicator for a specific choice of
 integer iend               ! indicator for end of file
 integer iuerr              ! error status of file io
 character(len=10) cpar     ! character parameter
-real rpar                  ! real parameter
+real(rkind) rpar                  ! real parameter
 !--------------------------------------------------------------------------------
 !
 call q_stack('+q_setconfig')
@@ -5424,7 +5425,7 @@ implicit none
 !
 !  3. Parameters used
 !
-real, intent(in)     :: depth  !  depth for which grid file must be found
+real(rkind), intent(in)     :: depth  !  depth for which grid file must be found
 integer, intent(out) :: igrid  !  status of grid checking
 !                                 ==0: a proper grid exists
 !                                 ==1: grid file does not exist
@@ -5459,13 +5460,13 @@ integer idepth    ! integer depth
 integer id_upper  ! upper limit of search
 integer id_lower  ! lower limit of depth search
 !
-real d_lower      ! lower valid depth
-real d_upper      ! upper valid depth
-real r_lower      ! ratio with lower valid depth
-real r_upper      ! ratio with upper valid depth
-real s_depth      ! target depth in m, saved in this variable
-real dfac1,dfac2  ! depth scale factors
-real eps          ! accuracy
+real(rkind) d_lower      ! lower valid depth
+real(rkind) d_upper      ! upper valid depth
+real(rkind) r_lower      ! ratio with lower valid depth
+real(rkind) r_upper      ! ratio with upper valid depth
+real(rkind) s_depth      ! target depth in m, saved in this variable
+real(rkind) dfac1,dfac2  ! depth scale factors
+real(rkind) eps          ! accuracy
 !------------------------------------------------------------------------------
 !
 call q_stack('+q_searchgrid')
@@ -5518,7 +5519,7 @@ if(iq_prt>=2) write(luq_prt,'(a,3i6)') 'Q_SEARCHGRID: idepth,id_lower/upper:',&
 !------------------------------------------------------------------------------
 !
 do id = idepth-1,id_lower,-1
-  q_depth = real(id)/10.+eps
+  q_depth = MyREAL(id)/10.+eps
   if(iq_prt>=2) write(luq_prt,'(a,i6,f8.1)') 'Q_SEARCHGRID: downwards  id q_depth:',id,q_depth
 
   call q_ctrgrid(1,igrid)
@@ -5537,7 +5538,7 @@ end do
 !------------------------------------------------------------------------------
 !
 do id = idepth+1,id_upper
-  q_depth = real(id)/10.+eps
+  q_depth = MyREAL(id)/10.+eps
 
   if(iq_prt>=2) write(luq_prt,'(a,i6,f8.1)') 'Q_SEARCHGRID: upwards  id q_depth:',id,q_depth
 
@@ -6000,13 +6001,13 @@ implicit none
 ! Type   i/o             Name           Description
 !----------------------------------------------------------------------------------
 integer, intent(in)   :: nloc         ! number of points in array with wave number
-real, intent(in)      :: k1x          ! x-component  of wave number k1
-real, intent(in)      :: k1y          ! y-component  of wave number k1
-real, intent(in)      :: k3x          ! x-component  of wave number k3
-real, intent(in)      :: k3y          ! y-component  of wave number k3
-real, intent(in)      :: k4x(nloc)    ! x-components of wave number k4
-real, intent(in)      :: k4y(nloc)    ! y-components of wave number k4
-real, intent(out)     :: symfac(nloc) ! symmetry factor
+real(rkind), intent(in)      :: k1x          ! x-component  of wave number k1
+real(rkind), intent(in)      :: k1y          ! y-component  of wave number k1
+real(rkind), intent(in)      :: k3x          ! x-component  of wave number k3
+real(rkind), intent(in)      :: k3y          ! y-component  of wave number k3
+real(rkind), intent(in)      :: k4x(nloc)    ! x-components of wave number k4
+real(rkind), intent(in)      :: k4y(nloc)    ! y-components of wave number k4
+real(rkind), intent(out)     :: symfac(nloc) ! symmetry factor
 !----------------------------------------------------------------------------------
 !  4. Error messages
 !
@@ -6027,8 +6028,8 @@ real, intent(out)     :: symfac(nloc) ! symmetry factor
 ! 10. Source code
 !------------------------------------------------------------------------------
 integer iloc      ! counter
-real dk13         ! distance between k1 and k3
-real dk14         ! distance between k1 and k4
+real(rkind) dk13         ! distance between k1 and k3
+real(rkind) dk14         ! distance between k1 and k4
 !------------------------------------------------------------------------------
 !
 call q_stack('+q_symmetry')
@@ -6104,9 +6105,9 @@ integer, intent(in) ::  ik1     !    Index of k-component of wave number k1
 integer, intent(in) ::  ia1     !    Index of a-component of wave number k1
 integer, intent(in) ::  ik3     !    Index of k-component of wave number k3
 integer, intent(in) ::  ia3     !    Index of a-component of wave number k3
-real, intent(out)   ::  t13     !    Value of line integral over a specific locus
-real, intent(out)   ::  diagk1  !    Contribution to diagonal term of k1
-real, intent(out)   ::  diagk3  !    Contribution to diagonal term of k3
+real(rkind), intent(out)   ::  t13     !    Value of line integral over a specific locus
+real(rkind), intent(out)   ::  diagk1  !    Contribution to diagonal term of k1
+real(rkind), intent(out)   ::  diagk3  !    Contribution to diagonal term of k3
 !
 !  4. Error messages
 !
@@ -6152,20 +6153,20 @@ integer ja4,ja4p      ! direction indices for interpolation of k4
 integer jk4,jk4p      ! wave number indices for interpolation of k4
 integer ikq,iaq       ! counters
 !
-real sumt13           ! sum along locus
-real qn1,qn2,qn3,qn4  ! action densities at wave numbers k1, k2, k3 and k4
-real nprod            ! wave number product
-real t2,t4            ! tail factors for k2 and k4
-real qd1,qd3          ! contribution to diagonal term
-real rterm            ! product term along locus
+real(rkind) sumt13           ! sum along locus
+real(rkind) qn1,qn2,qn3,qn4  ! action densities at wave numbers k1, k2, k3 and k4
+real(rkind) nprod            ! wave number product
+real(rkind) t2,t4            ! tail factors for k2 and k4
+real(rkind) qd1,qd3          ! contribution to diagonal term
+real(rkind) rterm            ! product term along locus
 !
-real qn13p            ! product of N1 and N3
-real qn13d            ! difference of N1 and N3
+real(rkind) qn13p            ! product of N1 and N3
+real(rkind) qn13d            ! difference of N1 and N3
 !
 integer jq_int    ! switch to activate test output
-real wk,wa        ! weight for interpolation
-real vk2,va2      ! wave number and direction for k2
-real vk4,va4      ! wave number and direction for k4
+real(rkind) wk,wa        ! weight for interpolation
+real(rkind) vk2,va2      ! wave number and direction for k2
+real(rkind) vk4,va4      ! wave number and direction for k4
 !
 !------------------------------------------------------------------------------
 call q_stack('+q_t13v4')
@@ -6467,11 +6468,11 @@ implicit none
 integer iloc      ! counter along locus loop
 integer jpos      ! index for interpolation and tracking of position in wave numebr array
 integer itest     ! local test level
-real k2a,k2m      ! angle (radians) and magnitude of wave number k2
-real k4a,k4m      ! angle (radians) and magnitude of wave number k2
-real dk           ! difference between two wave numbers
-real xtest        ! test value for checking computation of weights, by inversion test
-real ff,gg        ! variables in transformation of log-spacing to linear spacing
+real(rkind) k2a,k2m      ! angle (radians) and magnitude of wave number k2
+real(rkind) k4a,k4m      ! angle (radians) and magnitude of wave number k2
+real(rkind) dk           ! difference between two wave numbers
+real(rkind) xtest        ! test value for checking computation of weights, by inversion test
+real(rkind) ff,gg        ! variables in transformation of log-spacing to linear spacing
 !
 ! functions used
 !
@@ -6503,9 +6504,9 @@ do iloc=1,nlocus
 !-----------------------------------------------------------------------------
   if(iq_disp==1.and. iq_geom==1) then    ! deep water is assumed and loci have geometric scaling
 !
-    wk_k2(iloc) = 1.+alog(k2m/kqmin)/alog(q_kfac)
+    wk_k2(iloc) = 1.+MyLOG(k2m/kqmin)/MyLOG(q_kfac)
     wt_k2(iloc) = 1.
-    wk_k4(iloc) = 1.+alog(k4m/kqmin)/alog(q_kfac)
+    wk_k4(iloc) = 1.+MyLOG(k4m/kqmin)/MyLOG(q_kfac)
     wt_k4(iloc) = 1.
 !
 !  Replace log-spacing by linear spacing
@@ -6540,10 +6541,10 @@ do iloc=1,nlocus
       wt_k2(iloc) = 0.
     elseif(k2m < q_k(nkq) .and. k2m > q_k(1)) then
       dk          = q_k(jpos)-q_k(jpos-1)
-      wk_k2(iloc) = real(jpos-1) + (k2m-q_k(jpos-1))/dk
+      wk_k2(iloc) = MyREAL(jpos-1) + (k2m-q_k(jpos-1))/dk
       wt_k2(iloc) = 1.
     elseif(k2m >= q_k(nkq)) then
-      wk_k2(iloc) = min(wk_max,real(nkq) + (k2m-q_k(nkq))/q_sk(nkq))
+      wk_k2(iloc) = min(wk_max,MyREAL(nkq) + (k2m-q_k(nkq))/q_sk(nkq))
       wt_k2(iloc) = (k2m/q_k(nkq))**(qk_tail-1.)
 !
 ! minus 1 to account for Jacobian from kx,ky to polar k-grid
@@ -6564,10 +6565,10 @@ do iloc=1,nlocus
       wt_k4(iloc) = 0.
     elseif(k4m < q_k(nkq) .and. k4m > q_k(1)) then
       dk   = q_k(jpos)-q_k(jpos-1)
-      wk_k4(iloc) = real(jpos-1) + (k4m-q_k(jpos-1))/dk
+      wk_k4(iloc) = MyREAL(jpos-1) + (k4m-q_k(jpos-1))/dk
       wt_k4(iloc) = 1.
     elseif(k4m >= q_k(nkq)) then
-      wk_k4(iloc) = min(wk_max,real(nkq) + (k4m-q_k(nkq))/q_sk(nkq))
+      wk_k4(iloc) = min(wk_max,MyREAL(nkq) + (k4m-q_k(nkq))/q_sk(nkq))
       wt_k4(iloc) = (k4m/q_k(nkq))**(qk_tail-1.)
     end if
 !
@@ -6617,16 +6618,16 @@ implicit none
 !  3. Parameter used:
 !
 integer, intent(in) :: npts      ! Number of points
-real, intent(in)    :: k1x       ! x-component of wave number k1
-real, intent(in)    :: k1y       ! y-component of wave number k1
-real, intent(in)    :: k3x       ! x-component of wave number k3
-real, intent(in)    :: k3y       ! y-component of wave number k3
+real(rkind), intent(in)    :: k1x       ! x-component of wave number k1
+real(rkind), intent(in)    :: k1y       ! y-component of wave number k1
+real(rkind), intent(in)    :: k3x       ! x-component of wave number k3
+real(rkind), intent(in)    :: k3y       ! y-component of wave number k3
 !
-real, intent(out)   :: k2x(npts) ! x-component of wave number k2
-real, intent(out)   :: k2y(npts) ! y-component of wave number k2
-real, intent(out)   :: k4x(npts) ! x-component of wave number k4
-real, intent(out)   :: k4y(npts) ! y-component of wave number k4
-real, intent(out)   :: s(npts)   ! distance along locus
+real(rkind), intent(out)   :: k2x(npts) ! x-component of wave number k2
+real(rkind), intent(out)   :: k2y(npts) ! y-component of wave number k2
+real(rkind), intent(out)   :: k4x(npts) ! x-component of wave number k4
+real(rkind), intent(out)   :: k4y(npts) ! y-component of wave number k4
+real(rkind), intent(out)   :: s(npts)   ! distance along locus
 !
 !  4. Error messages
 !
@@ -6659,16 +6660,16 @@ real, intent(out)   :: s(npts)   ! distance along locus
 !
 integer ipt   ! counter of points along locus
 !
-real dirs     ! angle of symmetry axis
-real dir1     ! direction of wave number k1
-real dir3     ! direction of wave number k3
-real dk0      ! step size along locus
-real xk0      ! x-component
-real yk0      ! y-component
-real w2       ! radian frequency
-real xx2,yy2  ! values along k2-locus
-real xx4,yy4  ! values along k4-locus
-real k1m      ! magnitude of wave number k1
+real(rkind) dirs     ! angle of symmetry axis
+real(rkind) dir1     ! direction of wave number k1
+real(rkind) dir3     ! direction of wave number k3
+real(rkind) dk0      ! step size along locus
+real(rkind) xk0      ! x-component
+real(rkind) yk0      ! y-component
+real(rkind) w2       ! radian frequency
+real(rkind) xx2,yy2  ! values along k2-locus
+real(rkind) xx4,yy4  ! values along k4-locus
+real(rkind) k1m      ! magnitude of wave number k1
 !------------------------------------------------------------------------------
 !
 !    dirs is the angle of rotation from the x-axis to the "bisecting" angle
@@ -6688,7 +6689,7 @@ yk0 = k1m * sin(dirs)
 !
 !! dk0 = 0.11    ! Removed on 11/6/2003, this value is used in original WRT code
 !! dk0 = kqmax/real(npts-1.)             this value depends on actual grid
-dk0 = 3./real(npts-1.)                 !  this is test value
+dk0 = 3./MyREAL(npts-1.)                 !  this is test value
 !
 !  modify rotation angle
 !
@@ -6698,9 +6699,9 @@ dirs = dirs + dir1
 !  rotate lines over modified angle DIRS
 !
 do ipt=1,npts
-!  w2       = real(ipt-1.)*dk0         ! removed on Aug. 27 2002
+!  w2       = MyREAL(ipt-1.)*dk0         ! removed on Aug. 27 2002
 !
-  w2       = 2.*real(ipt-npts/2)*dk0   ! create line on both sides of origin
+  w2       = 2.*MyREAL(ipt-npts/2)*dk0   ! create line on both sides of origin
   xx2      = w2*xk0
   yy2      = yk0
   k2x(ipt) = xx2*cos(dirs) - yy2*sin(dirs)
@@ -6709,7 +6710,7 @@ do ipt=1,npts
   yy4      = -yy2
   k4x(ipt) = xx4*cos(dirs) - yy4*sin(dirs)
   k4y(ipt) = yy4*cos(dirs) + xx4*sin(dirs)
-  s(ipt)   = real(ipt-1)*dk0*xk0
+  s(ipt)   = MyREAL(ipt-1)*dk0*xk0
 end do
 !
 return
@@ -6771,13 +6772,13 @@ implicit none
 !------------------------------------------------------------------------------
 integer,intent(in)  :: nsig             ! number of radian frequencies
 integer,intent(in)  :: nang             ! number of directions
-real,   intent(in)  :: aspec(nsig,nang) ! Action density spectrum as a function of (sigma,theta)
-real,   intent(in)  :: sigma(nsig)      ! radian frequencies
-real,   intent(in)  :: angle(nang)      ! directions in radians (sector or full circle)
-real,   intent(in)  :: depth            ! water depth in m
-real,   intent(out) :: xnl(nsig,nang)   ! nonlinear quadruplet interaction computed with
+real(rkind),   intent(in)  :: aspec(nsig,nang) ! Action density spectrum as a function of (sigma,theta)
+real(rkind),   intent(in)  :: sigma(nsig)      ! radian frequencies
+real(rkind),   intent(in)  :: angle(nang)      ! directions in radians (sector or full circle)
+real(rkind),   intent(in)  :: depth            ! water depth in m
+real(rkind),   intent(out) :: xnl(nsig,nang)   ! nonlinear quadruplet interaction computed with
 !                                         a certain exact method (k,theta)
-real,   intent(out) :: diag(nsig,nang)  ! Diagonal term for WAM based implicit integration scheme
+real(rkind),   intent(out) :: diag(nsig,nang)  ! Diagonal term for WAM based implicit integration scheme
 integer, intent(out) :: ierror          ! error indicator
 !
 !  4. Error messages
@@ -6820,14 +6821,14 @@ integer ia       ! counter for directions
 integer ik       ! counter for wave numbers
 integer idir1    ! direction in degrees of k1 (for integration test)
 integer idir3    ! direction in degrees of k3 (for integration test)
-real period      ! periodicity for direction, used in conversion of 2-spectra
-real diagk1      ! diagonal term for k1
-real diagk3      ! diagonal term for k3
+real(rkind) period      ! periodicity for direction, used in conversion of 2-spectra
+real(rkind) diagk1      ! diagonal term for k1
+real(rkind) diagk3      ! diagonal term for k3
 !
-real qn_max      ! maximum action density
-real qn_min      ! minimum action density
+real(rkind) qn_max      ! maximum action density
+real(rkind) qn_min      ! minimum action density
 !
-real cg(nsig)         ! group velocity for conversion of spectrum and transfer
+real(rkind) cg(nsig)         ! group velocity for conversion of spectrum and transfer
 !
 integer ia1,ia3,ja3   ! limits for directional loops
 integer jk3           ! start of k3 loop
@@ -6835,20 +6836,20 @@ integer ik1,ik3       ! counters for wave number loop
 integer nloc          ! number of points on locus
 !
 integer igrid         ! status of grid file
-real t13              ! value of sub-integral
-real k_rat            ! local ratio of wave numbers
-real a_dif            ! directional difference
-real jacobian         ! Jacobian
-real qn1,qn3          ! action densities in k1 and k3
+real(rkind) t13              ! value of sub-integral
+real(rkind) k_rat            ! local ratio of wave numbers
+real(rkind) a_dif            ! directional difference
+real(rkind) jacobian         ! Jacobian
+real(rkind) qn1,qn3          ! action densities in k1 and k3
 !
 !  testing of diagonal term on a low level
 !
-real diagk1_0         ! saved value of diagk1
-real diagk3_0         ! saved value of diagk3
-real dq1              ! small change in action density of n1
-real dq3              ! small change in action density of n3
-real t13_0            ! Original estimated of diagonal term
-real t13_1,t13_3      ! perturbed estimated of diagonal term
+!real(rkind) diagk1_0         ! saved value of diagk1
+!real(rkind) diagk3_0         ! saved value of diagk3
+real(rkind) dq1              ! small change in action density of n1
+real(rkind) dq3              ! small change in action density of n3
+real(rkind) t13_0            ! Original estimated of diagonal term
+real(rkind) t13_1,t13_3      ! perturbed estimated of diagonal term
 !
 integer ifil_dir      ! indicator for filtering of directional criterion
 integer ifil_krat     ! indicator for filtering of wave number ratio criterion
@@ -6862,7 +6863,7 @@ integer ntot_conf     ! total number of configurations
 integer ntot_filt     ! total number of filtered configurations
 !
 integer icx1,icx3     ! test output for T13 test
-real xt13             ! modified contribution of T13
+real(rkind) xt13             ! modified contribution of T13
 !
 !------------------------------------------------------------------------------
 call q_stack('+q_xnl4v4')
@@ -7056,7 +7057,7 @@ do ik1 = 1,nkq
             if (idir3>180) idir3 = idir3-360
             icx1 = (idir1/15-1)*20+ik1
             icx3 = (idir3/15-1)*20+ik3
-            xt13 = alog10(max(1.e-20,abs(t13)))
+            xt13 = MyLOG10(max(1.e-20,abs(t13)))
             if(xt13<-19.99) xt13=0
             write(luq_t13,'(4i6,e13.5,2i6,f10.4)') ik1,idir1,ik3,idir3,t13,icx1,icx3,xt13
          end if
@@ -7147,7 +7148,7 @@ call q_stack('-q_xnl4v4')
 return
 end subroutine
 !------------------------------------------------------------------------------
-real function x_cosk(k)
+real(rkind) function x_cosk(k)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7179,7 +7180,7 @@ implicit none
 !
 !  3. Parameters used:
 !
-real, intent(in) :: k  ! wave number along symmetry axis of locus
+real(rkind), intent(in) :: k  ! wave number along symmetry axis of locus
 !
 !  4. Error messages
 !
@@ -7205,9 +7206,9 @@ real, intent(in) :: k  ! wave number along symmetry axis of locus
 !------------------------------------------------------------------------------
 !     Local variables
 !
-real qq    ! constant in direct polar method qq=q/sqrt(g)
-real wk    ! intemediate radian frequency
-real kz    ! intermediate wave number
+real(rkind) qq    ! constant in direct polar method qq=q/sqrt(g)
+real(rkind) wk    ! intemediate radian frequency
+real(rkind) kz    ! intermediate wave number
 !------------------------------------------------------------------------------
 select case(iq_disp)
 !
@@ -7229,7 +7230,7 @@ x_cosk = min( 1.,x_cosk)
 !
 end function x_cosk
 !------------------------------------------------------------------------------
-real function x_cple(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,iq_cple,depth,grav)
+real(rkind) function x_cple(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,iq_cple,depth,grav)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7263,17 +7264,17 @@ implicit none
 !
 !Type    I/O              Name      Description
 !-----------------------------------------------------------------------------
-real, intent(in) ::       k1x     !  x-component of wave number k1
-real, intent(in) ::       k1y     !  y-component of wave number k1
-real, intent(in) ::       k2x     !  x-component of wave number k2
-real, intent(in) ::       k2y     !  y-component of wave number k2
-real, intent(in) ::       k3x     !  x-component of wave number k3
-real, intent(in) ::       k3y     !  y-component of wave number k3
-real, intent(in) ::       k4x     !  x-component of wave number k4
-real, intent(in) ::       k4y     !  y-component of wave number k4
+real(rkind), intent(in) ::       k1x     !  x-component of wave number k1
+real(rkind), intent(in) ::       k1y     !  y-component of wave number k1
+real(rkind), intent(in) ::       k2x     !  x-component of wave number k2
+real(rkind), intent(in) ::       k2y     !  y-component of wave number k2
+real(rkind), intent(in) ::       k3x     !  x-component of wave number k3
+real(rkind), intent(in) ::       k3y     !  y-component of wave number k3
+real(rkind), intent(in) ::       k4x     !  x-component of wave number k4
+real(rkind), intent(in) ::       k4y     !  y-component of wave number k4
 integer, intent(in) ::    iq_cple !  Type of coupling coefficient
-real, intent(in) ::       depth   !  Water depth in meters
-real, intent(in) ::       grav    !  Gravitational acceleration
+real(rkind), intent(in) ::       depth   !  Water depth in meters
+real(rkind), intent(in) ::       grav    !  Gravitational acceleration
 !
 !  4. Error messages
 !
@@ -7295,9 +7296,9 @@ real, intent(in) ::       grav    !  Gravitational acceleration
 ! 10. Source code:
 !-------------------------------------------------------------------------------
 !     Local variables
-!                        ! real functions to compute coupling coefficient
-!!real xc_webb             ! Webb, deep water
-!!real xc_hh               ! Herterich and Hasselmann, finite depth
+!                        ! real(rkind) functions to compute coupling coefficient
+!!real(rkind) xc_webb             ! Webb, deep water
+!!real(rkind) xc_hh               ! Herterich and Hasselmann, finite depth
 !------------------------------------------------------------------------------
 if (iq_cple < 1 .or. iq_cple > 4) then
   x_cple = 0.
@@ -7326,7 +7327,7 @@ end select
 return
 end function
 !------------------------------------------------------------------------------
-real function x_flocus(kxx,kyy)
+real(rkind) function x_flocus(kxx,kyy)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7361,8 +7362,8 @@ implicit none
 !
 !Type    I/O         Name       Description
 !-----------------------------------------------------------
-real, intent(in) ::  kxx      !  x-component of wave number
-real, intent(in) ::  kyy      !  y-component of wave number
+real(rkind), intent(in) ::  kxx      !  x-component of wave number
+real(rkind), intent(in) ::  kyy      !  y-component of wave number
 !
 !  4. Error messages
 !
@@ -7387,10 +7388,10 @@ real, intent(in) ::  kyy      !  y-component of wave number
 !-------------------------------------------------------------------------------
 !     Local variables
 !
-real z               ! diferrence
-real k2m,k4m         ! wave number magnitudes
-real (kind=8) w2,w4  ! radian frequencies
-!!real x_disper
+real(rkind) z               ! diferrence
+real(rkind) k2m,k4m         ! wave number magnitudes
+real(rkind) w2,w4  ! radian frequencies
+!!real(rkind) x_disper
 !------------------------------------------------------------------------------
 !call q_stack('+x_flocus')
 !
@@ -7418,7 +7419,7 @@ x_flocus = z
 return
 end function
 !------------------------------------------------------------------------------
-real function x_jacobian(x2,y2,x4,y4)
+real(rkind) function x_jacobian(x2,y2,x4,y4)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7459,10 +7460,10 @@ implicit none
 !
 ! Type    I/O        Name    Description
 !--------------------------------------------------------------------
-real, intent(in) ::  x2   !  x-component of wave number k2
-real, intent(in) ::  y2   !  y-component of wave number k2
-real, intent(in) ::  x4   !  x-component of wave number k4
-real, intent(in) ::  y4   !  y-component of wave number k4
+real(rkind), intent(in) ::  x2   !  x-component of wave number k2
+real(rkind), intent(in) ::  y2   !  y-component of wave number k2
+real(rkind), intent(in) ::  x4   !  x-component of wave number k4
+real(rkind), intent(in) ::  y4   !  y-component of wave number k4
 !
 !  4. Error messages
 !
@@ -7482,11 +7483,11 @@ real, intent(in) ::  y4   !  y-component of wave number k4
 !------------------------------------------------------------------------------
 ! local variables
 !
-real k2m,k4m    ! wave number magnitudes
-real k2md,k4md  ! k*d values
-real ang2,ang4  ! directions
-real cg2,cg4    ! group velocities
-real sig2,sig4  ! radian frequencies
+real(rkind) k2m,k4m    ! wave number magnitudes
+real(rkind) k2md,k4md  ! k*d values
+real(rkind) ang2,ang4  ! directions
+real(rkind) cg2,cg4    ! group velocities
+real(rkind) sig2,sig4  ! radian frequencies
 !------------------------------------------------------------------------------
 k2m = sqrt(x2**2 + y2**2)
 k4m = sqrt(x4**2 + y4**2)
@@ -7517,7 +7518,7 @@ x_jacobian = sqrt(cg2**2+cg4**2-2*cg2*cg4*cos(ang2-ang4))
 return
 end function
 !------------------------------------------------------------------------------
-real function x_disper(k,d)
+real(rkind) function x_disper(k,d)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7552,8 +7553,8 @@ implicit none
 !
 ! Type    I/O          Name       Description
 !----------------------------------------------------------------------
-real, intent(in)   ::   k   !   wave number
-real, intent(in)   ::   d   !   water depth in m
+real(rkind), intent(in)   ::   k   !   wave number
+real(rkind), intent(in)   ::   d   !   water depth in m
 !
 !  4. Error messages
 !
@@ -7582,7 +7583,7 @@ real, intent(in)   ::   d   !   water depth in m
 !     Local variables
 !
 integer id   ! copy of iq_type
-real kd      ! k*d
+real(rkind) kd      ! k*d
 !
 kd = k * d
 id = iq_disp
@@ -7601,7 +7602,7 @@ end select
 return
 end function
 !------------------------------------------------------------------------------
-real function x_locus1(k2)
+real(rkind) function x_locus1(k2)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7634,7 +7635,7 @@ implicit none
 !
 !Type   I/O         name    Description
 !-------------------------------------------------------
-real, intent(in) :: k2   !  Magnitude of wave number k2
+real(rkind), intent(in) :: k2   !  Magnitude of wave number k2
 !
 !  4. Error messages
 !
@@ -7659,11 +7660,11 @@ real, intent(in) :: k2   !  Magnitude of wave number k2
 !------------------------------------------------------------------------------
 !     Local variables
 !
-real k4       ! wave number magnitudes of k4
-real w2,w4    ! radian frequencies of wave numbers k2 and k4
-real z        ! function value
+real(rkind) k4       ! wave number magnitudes of k4
+real(rkind) w2,w4    ! radian frequencies of wave numbers k2 and k4
+real(rkind) z        ! function value
 !
-!!real x_disper
+!!real(rkind) x_disper
 !
 select case(iq_disp)
   case (1)
@@ -7686,7 +7687,7 @@ x_locus1 = z
 return
 end function
 !------------------------------------------------------------------------------
-real function x_locus2(lambda)
+real(rkind) function x_locus2(lambda)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -7719,7 +7720,7 @@ implicit none
 !
 !     Name    I/O  Type  Description
 !
-real, intent(in) ::  lambda
+real(rkind), intent(in) ::  lambda
 !
 !  4. Error messages
 !
@@ -7744,11 +7745,11 @@ real, intent(in) ::  lambda
 !------------------------------------------------------------------------------
 !     local variables
 !
-real kk2x,kk2y,kk2m  ! wave number components and magnitude for k2
-real kk4x,kk4y,kk4m  ! wave number components and magnitude for k4
-real w2,w4           ! radian frequencies of wave numbers k2 and k4
-real z               ! function value
-!!real x_disper
+real(rkind) kk2x,kk2y,kk2m  ! wave number components and magnitude for k2
+real(rkind) kk4x,kk4y,kk4m  ! wave number components and magnitude for k4
+real(rkind) w2,w4           ! radian frequencies of wave numbers k2 and k4
+real(rkind) z               ! function value
+!!real(rkind) x_disper
 kk2x = kmidx - lambda*py
 kk2y = kmidy + lambda*px
 kk2m = sqrt(kk2x**2 + kk2y**2)
@@ -7778,31 +7779,31 @@ x_locus2 = z
 return
 end function
 !------------------------------------------------------------------------------
-real function xc_hh(w1x0,w1y0,w2x0,w2y0,w3x0,w3y0,z4x,z4y,h)
+real(rkind) function xc_hh(w1x0,w1y0,w2x0,w2y0,w3x0,w3y0,z4x,z4y,h)
 !------------------------------------------------------------------------------
 !
 !  factor EPS included
 !
 implicit none
 !
-real z4x,z4y  ! dummy arguments
+real(rkind) z4x,z4y  ! dummy arguments
 !
-real w1x0,w1y0,w2x0,w2y0,w3x0,w3y0,h,dsq
-real om1,om2,om3,om4,scpl1,scpl2,scpl3,stot
-real t1,t2,t3,t4,t5,tot1,tot2,tot3,tot4,tot5
-real som1,som2,som3
-real s1,s2,s3,z1,z2,z3,z4,z5
-real p1,p2,p3,p4,di,tnz1,tnz2,tnz3,tnz23
-real csz1,csz2,csz3,csz23
-real e,g,gsq,omsq23,pi4
-real dot123,dot23
-!!real cosz,tanz
+real(rkind) w1x0,w1y0,w2x0,w2y0,w3x0,w3y0,h,dsq
+real(rkind) om1,om2,om3,om4,scpl1,scpl2,scpl3,stot
+real(rkind) t1,t2,t3,t4,t5,tot1,tot2,tot3,tot4,tot5
+real(rkind) som1,som2,som3
+real(rkind) s1,s2,s3,z1,z2,z3,z4,z5
+real(rkind) p1,p2,p3,p4,di,tnz1,tnz2,tnz3,tnz23
+real(rkind) csz1,csz2,csz3,csz23
+real(rkind) e,g,gsq,omsq23,pi4
+real(rkind) dot123,dot23
+!!real(rkind) cosz,tanz
 !
-real eps
+real(rkind) eps
 !
 
 !     calculates coupling coefficient in shallow water given k1,k2,k3
-      real k1,k2,k3,k1x,k2x,k3x,k1y,k2y,k3y,k23x,k23y,k23,k1x0,k1y0,   &
+      real(rkind) k1,k2,k3,k1x,k2x,k3x,k1y,k2y,k3y,k23x,k23y,k23,k1x0,k1y0,   &
      &     k2x0,k2y0,k3x0,k3y0,k1zx,k1zy
       data pi4/0.785398163/
 !
@@ -8085,8 +8086,8 @@ g = 9.81
       RETURN
       end  function
 
-      real function tanz(x)
-      real x
+      real(rkind) function tanz(x)
+      real(rkind) x
 !      print *,'inside tanz '
       if (x.gt.20.) x=25.
       tanz=TANH(x)
@@ -8094,8 +8095,8 @@ g = 9.81
       return
       end  function
 
-      real function cosz(x)
-      real x
+      real(rkind) function cosz(x)
+      real(rkind) x
       if (x.gt.20.) x=25.
       cosz=cosh(x)
       return
@@ -8103,7 +8104,7 @@ g = 9.81
 
 
 !------------------------------------------------------------------------------
-real function xc_webb(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,grav)
+real(rkind) function xc_webb(k1x,k1y,k2x,k2y,k3x,k3y,k4x,k4y,grav)
 !------------------------------------------------------------------------------
 !
 !   +-------+    ALKYON Hydraulic Consultancy & Research
@@ -8134,15 +8135,15 @@ implicit none
 !
 ! Type    I/O        Name    Description
 !--------------------------------------------------------------------
-real, intent(in) ::  k1x   !  x-component of wave number k1
-real, intent(in) ::  k1y   !  y-component of wave number k1
-real, intent(in) ::  k2x   !  x-component of wave number k2
-real, intent(in) ::  k2y   !  y-component of wave number k2
-real, intent(in) ::  k3x   !  x-component of wave number k3
-real, intent(in) ::  k3y   !  y-component of wave number k3
-real, intent(in) ::  k4x   !  x-component of wave number k4
-real, intent(in) ::  k4y   !  y-component of wave number k4
-real, intent(in) ::  grav  !  gravitational acceleration m/s^2
+real(rkind), intent(in) ::  k1x   !  x-component of wave number k1
+real(rkind), intent(in) ::  k1y   !  y-component of wave number k1
+real(rkind), intent(in) ::  k2x   !  x-component of wave number k2
+real(rkind), intent(in) ::  k2y   !  y-component of wave number k2
+real(rkind), intent(in) ::  k3x   !  x-component of wave number k3
+real(rkind), intent(in) ::  k3y   !  y-component of wave number k3
+real(rkind), intent(in) ::  k4x   !  x-component of wave number k4
+real(rkind), intent(in) ::  k4y   !  y-component of wave number k4
+real(rkind), intent(in) ::  grav  !  gravitational acceleration m/s^2
 !
 !  4. Error messages
 !
@@ -8169,20 +8170,20 @@ double precision wsq13          ! derived variable
 double precision wsqm14         ! derived variable
 double precision wsq14          ! derived variable
 double precision wsq12          ! derived variable
-real z,z12,z13,z14              ! derived variables
-real dwebb                      ! final coefficient
-real p1,p2,p3,p4,p5,p6,p7,p8,p9 ! partial summations
-real w1,w2,w3,w4                ! radian frequencies
-real k1,k2,k3,k4                ! wave number magnitudes
-real dot12                      ! k1*k2
-real dot13                      ! k1*k3
-real dot14                      ! k1*k4
-real dot23                      ! k2*k3
-real dot24                      ! k2*k4
-real dot34                      ! k3*k4
-real pi                         ! pi
-real pi4                        ! pi/4
-real eps                        ! internal accuracy
+real(rkind) z,z12,z13,z14              ! derived variables
+real(rkind) dwebb                      ! final coefficient
+real(rkind) p1,p2,p3,p4,p5,p6,p7,p8,p9 ! partial summations
+real(rkind) w1,w2,w3,w4                ! radian frequencies
+real(rkind) k1,k2,k3,k4                ! wave number magnitudes
+real(rkind) dot12                      ! k1*k2
+real(rkind) dot13                      ! k1*k3
+real(rkind) dot14                      ! k1*k4
+real(rkind) dot23                      ! k2*k3
+real(rkind) dot24                      ! k2*k4
+real(rkind) dot34                      ! k3*k4
+real(rkind) pi                         ! pi
+real(rkind) pi4                        ! pi/4
+real(rkind) eps                        ! internal accuracy
 !---------------------------------------------------------------------
 ! initialisations
 !---------------------------------------------------------------------

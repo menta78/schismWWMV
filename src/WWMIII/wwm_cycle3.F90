@@ -23,7 +23,7 @@
          REAL(rkind)                :: SSBRL(MSC,MDC),DSSBRL(MSC,MDC)
          REAL(rkind)                :: SSLIM(MSC,MDC), DSSLIM(MSC,MDC)
          REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
-         REAL(rkind)                :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,MAXDAC,FPM,WINDTH
+         REAL(rkind)                :: EFTAIL,EMAX,NEWDAC,MAXDAC,FPM,WINDTH
          REAL(rkind)                :: RATIO,LIMFAC,LIMDAC
 
          NEWAC = ZERO
@@ -123,7 +123,7 @@
          REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind)   , INTENT(OUT)   :: SSDS(MSC,MDC), DSSDS(MSC,MDC)
 
-         INTEGER       :: IS, ID
+         INTEGER       :: IS
 
          REAL(rkind)    :: CDS, ALPHA_PM, FAC
          REAL(rkind)    :: STP_OV, STP_PM, N2
@@ -194,7 +194,7 @@
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX1, AUX2, AUX3
-         REAL(rkind)                  :: SWINB, CINV, COSDIF, SFIE(MSC,MDC)
+         REAL(rkind)                  :: SWINB, CINV, COSDIF
 
          AUX1 = 0.25_rkind * RHOAW
          AUX2 = 28._rkind * UFRIC(IP)
@@ -223,7 +223,7 @@
          REAL(rkind), INTENT(INOUT) :: ACOLD(MSC,MDC), ACLOC(MSC,MDC)
 
          REAL(rkind)             :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
-         REAL(rkind)             :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
+         REAL(rkind)             :: MAXDAC, CONST, SND, DELT5
 
 
          IF (DEP(IP) .LT. DMIN .OR. IOBP(IP) .EQ. 2) RETURN

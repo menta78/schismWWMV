@@ -45,7 +45,7 @@
 
          USE DATAPOOL
          use  schism_msgp !, only : myrank,parallel_abort,itype,comm,ierr
-         use schism_glbl, only : iplg,ielg
+         use schism_glbl, only : iplg,ielg,wwave_force
 
          IMPLICIT NONE
 
@@ -106,6 +106,10 @@
          CALL FLUSH(STAT%FHNDL)
 
          SIMUTIME = SIMUTIME + MAIN%DELT
+         IF (.NOT. LWINDFROMWWM) THEN
+           WINDXY(:,1) = WINDX0
+           WINDXY(:,2) = WINDY0
+         END IF
 
          IF (icou_elfe_wwm == 1) THEN ! Full coupling 
            WLDEP       = DEP8
@@ -114,10 +118,6 @@
            DEP         = MAX(ZERO,WLDEP + WATLEV)
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = VV2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -128,10 +128,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = ZERO !REAL(rkind)(UU2(NVRT,:))
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE. 
@@ -142,10 +138,6 @@
            DEP         = MAX(ZERO, WLDEP + WATLEV)
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = VV2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -156,10 +148,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = ZERO !REAL(rkind)(UU2(NVRT,:))
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
@@ -170,10 +158,6 @@
            DEP         = WLDEP
            CURTXY(:,1) = 0.!UU2(NVRT,:) 
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
@@ -184,24 +168,16 @@
            DEP         = WLDEP
            CURTXY(:,1) = 0.!UU2(NVRT,:) 
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
            LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in SCHISM  
            WLDEP       = DEP
-           WATLEV      = ZERO 
-           WATLEVOLD   = ZERO 
+           WATLEV      = ZERO
+           WATLEVOLD   = ZERO
            DEP         = WLDEP
-           CURTXY(:,1) = UU2(NVRT,:) 
-           CURTXY(:,2) = VV2(NVRT,:) 
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
+           CURTXY(:,1) = UU2(NVRT,:)
+           CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
@@ -212,14 +188,11 @@
            DEP         = WLDEP
            CURTXY(:,1) = UU2(NVRT,:)
            CURTXY(:,2) = UU2(NVRT,:)
-           IF (.NOT. LWINDFROMWWM) THEN
-             WINDXY(:,1) = WINDX0
-             WINDXY(:,2) = WINDY0
-           END IF
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
            LCALC       = .TRUE.
          END IF
+
          DEPDT = (WATLEV - WATLEVOLD) / DT_SCHISM0
 
          IF (LNANINFCHK) THEN
@@ -426,7 +399,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE UN_STEADY(K,CALLFROM)
+      SUBROUTINE UN_STEADY(K)
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -436,7 +409,7 @@
          REAL(rkind)    :: CONV1, CONV2, CONV3, CONV4, CONV5
          REAL(rkind)    :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6
 
-         CHARACTER(LEN=15)   :: CTIME,CALLFROM
+         CHARACTER(LEN=15)   :: CTIME
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
@@ -646,7 +619,7 @@
         CALL PIPE_SHYFEM_IN(K)
 # endif
       ELSE IF (LCPL .AND. LROMS) THEN
-        CALL PIPE_ROMS_IN(K,IFILE,IT)
+        CALL PIPE_ROMS_IN(K)
       END IF
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
@@ -768,17 +741,9 @@
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-
-      USE DATAPOOL, only: MAIN, SEBO,                                  &
-     &      NDT_BND_FILE, IWBNDLC, AC2, WBAC, STAT, RTIME,             &
-     &      bnd_time_all_files, LSPHE, WLDEP, DEP, SMALL, KKK,         &
-     &      WATLEV, LBCSE, LBCWA, LBCSP, IWBMNP, IWBNDLC, WBAC,        &
-     &      WBACOLD, WBACNEW, DSPEC, LBINTER, LFIRSTSTEP, LQSTEA,      &
-     &      LINHOM, IBOUNDFORMAT, DAY2SEC, SEC2DAY,                    &
-     &      NUM_NETCDF_FILES_BND, LSECU, RKIND, MDC, MSC, MNP
-
+      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND
 # ifdef MPI_PARALL_GRID
-      USE datapool, only: rkind, comm, myrank, ierr, nproc,            &
+      USE datapool, only: comm, myrank, ierr, nproc,            &
      &      parallel_finalize
 # endif
 
@@ -793,8 +758,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: i,j,k, IP
-      character(len=15) CALLFROM
+      integer :: j,k, IP
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
       FLUSH(740+MyRankGlobal)
@@ -837,9 +801,6 @@
 #  ifndef PDLIB 
       CALL SIMPLE_PRE_READ
 #  endif
-      CALLFROM='WWM_MPI'
-# else
-      CALLFROM='WWM'
 # endif
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_comm_size/rank'
@@ -858,7 +819,7 @@
         IF (LQSTEA) THEN
           CALL QUASI_STEADY(K)
         ELSE
-          CALL UN_STEADY(K,CALLFROM)
+          CALL UN_STEADY(K)
         END IF
       END DO
 

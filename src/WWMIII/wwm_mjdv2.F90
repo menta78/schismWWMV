@@ -196,7 +196,6 @@
       CHARACTER(LEN=15), INTENT(IN) :: STIME
       real(rkind), INTENT(OUT) :: XMJD
       integer year, month, day, hour, min, sec
-      real(rkind) XMJD_1858
       CALL DATE_ConvertString2six(year, month, day, hour, min, sec, STIME)
       CALL DATE_ConvertSix2mjd(year, month, day, hour, min, sec, XMJD)
       END SUBROUTINE

@@ -278,6 +278,34 @@ If you want a colorbar that varies from one time to the next then use {\tt Varia
 
 
 
+\subsubsection{Miscelaneous options}
+
+Following options are available in the {\tt PLOT} section:
+\begin{enumerate}
+\item {\tt DoTitle} (logical): draw the title of the figures. Default is true.
+\item {\tt PlotDepth} (logical): draw the bathymetry of the domain if available. Default is true.
+\item {\tt PrintMMA} (logical): Print the minimum / maximum / average of the fields considered. Default is false
+\item {\tt LocateMM} (logical): locate the position of maximum and minimum values. Default is false.
+\item {\tt FillLand} (logical): Fill the land by using the geographic database of NCL.
+\item {\tt cnFillMode} (string): Method used for drawing. Available methods are:
+  \begin{enumerate}
+  \item ``RasterFill'': It plots values of the cell corresponding to the field considered.
+  \item ``AreaFill'': It plots smoothed values of the fields
+  \item ``CellFill'': It is a smoothed field (only for finite difference)
+  \end{enumerate}
+  Defaut is RasterFill.
+\end{enumerate}
+
+It is also possible to plot values of field in a fixed LON/LAT ranges. Relevant options are the following:
+\begin{enumerate}
+\item {\tt DoMain} (logical): draw the grid of the model. Default is true.
+\item {\tt ListFrameMinLon / ListFrameMinLat / ListFrameMaxLon / ListFrameMaxLat}: The list of values of the fields considered.
+\end{enumerate}
+
+
+
+
+
 
 
 

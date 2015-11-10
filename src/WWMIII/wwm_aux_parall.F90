@@ -37,12 +37,12 @@
       integer :: ListCommon_recv(nproc)
       integer :: ListCommon_send(nproc)
 #endif
-      integer :: IEfound, IE2, IE, J, IP
+      integer :: IEfound, IE2, IE, J
       integer :: IPglob, I, MAXMNECCON_TOTAL, idx
       integer :: iProc, MNE_loc, MNEextent_loc
       integer :: nbCommon_send, nbCommon_recv
       integer :: idx_send, idx_recv, iNeigh
-      integer :: nbCommon, IPloc, IE_glob, IEloc
+      integer :: nbCommon, IE_glob, IEloc
       integer :: IP1, IP2, IP3
       integer :: IPglob1, IPglob2, IPglob3
       integer :: iRank, sumExtent, IEadj, eVal
@@ -1211,7 +1211,7 @@
       SUBROUTINE SCATTER_BOUNDARY_ARRAY_SPPARM
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, irank
+      integer IP, irank
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
@@ -1240,7 +1240,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
-      integer iProc, IP, irank
+      integer IP, irank
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
@@ -1268,7 +1268,7 @@
       SUBROUTINE REDUCE_BOUNDARY_ARRAY_SPPARM
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, irank
+      integer IP, irank
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
         SPPARM_GL=SPPARM
@@ -1318,7 +1318,7 @@
       SUBROUTINE REDUCE_BOUNDARY_ARRAY_WBAC
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP, idx_proc
+      integer IP, idx_proc
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
         WBAC_GL=WBAC

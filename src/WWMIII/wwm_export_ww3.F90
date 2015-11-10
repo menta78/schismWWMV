@@ -21,7 +21,7 @@
       SUBROUTINE EXPORT_WIND_WW3_FORMAT
       USE DATAPOOL
       IMPLICIT NONE
-      CHARACTER(LEN=13) :: TSSTR, IDSTR = 'WAVEWATCH III'
+      CHARACTER(LEN=13) :: IDSTR = 'WAVEWATCH III'
       INTEGER, PARAMETER :: UNGTYPE = 3
       LOGICAL, SAVE :: IsFirst = .TRUE.
       INTEGER :: GTYPE, NX, NY, IX, IY
@@ -50,8 +50,8 @@
       call mpi_reduce(Vwr,Vwr_glob,NP_GLOBAL,MPI_REAL, MPI_SUM,0,comm,ierr)
       IF (myrank == 0) THEN
         DO IP=1,np_total
-          Uwr(IP,1)=Uwr_glob(IP,1)*nwild_gb(IP)
-          Vwr(IP,1)=Vwr_glob(IP,1)*nwild_gb(IP)
+          Uwr(IP,1)=Uwr_glob(IP,1)*MySNGL(nwild_gb(IP))
+          Vwr(IP,1)=Vwr_glob(IP,1)*MySNGL(nwild_gb(IP))
         END DO
       END IF
       deallocate(Vwr_glob, Uwr_glob)
@@ -87,7 +87,7 @@
       SUBROUTINE EXPORT_CURR_WW3_FORMAT
       USE DATAPOOL
       IMPLICIT NONE
-      CHARACTER(LEN=13) :: TSSTR, IDSTR = 'WAVEWATCH III'
+      CHARACTER(LEN=13) :: IDSTR = 'WAVEWATCH III'
       INTEGER, PARAMETER :: UNGTYPE = 3
       LOGICAL, SAVE :: IsFirst = .TRUE.
       INTEGER :: GTYPE, NX, NY, IX, IY
@@ -116,8 +116,8 @@
       call mpi_reduce(Vwr,Vwr_glob,NP_GLOBAL,MPI_REAL, MPI_SUM,0,comm,ierr)
       IF (myrank == 0) THEN
         DO IP=1,np_total
-          Uwr(IP,1)=Uwr_glob(IP,1)*nwild_gb(IP)
-          Vwr(IP,1)=Vwr_glob(IP,1)*nwild_gb(IP)
+          Uwr(IP,1)=Uwr_glob(IP,1)*MySNGL(nwild_gb(IP))
+          Vwr(IP,1)=Vwr_glob(IP,1)*MySNGL(nwild_gb(IP))
         END DO
       END IF
       deallocate(Vwr_glob, Uwr_glob)
@@ -153,7 +153,7 @@
       SUBROUTINE EXPORT_WALV_WW3_FORMAT
       USE DATAPOOL
       IMPLICIT NONE
-      CHARACTER(LEN=13) :: TSSTR, IDSTR = 'WAVEWATCH III'
+      CHARACTER(LEN=13) :: IDSTR = 'WAVEWATCH III'
       INTEGER, PARAMETER :: UNGTYPE = 3
       LOGICAL, SAVE :: IsFirst = .TRUE.
       INTEGER :: GTYPE, NX, NY, IX, IY
@@ -180,7 +180,7 @@
       call mpi_reduce(LEVwr,LEVwr_glob,NP_GLOBAL,MPI_REAL, MPI_SUM,0,comm,ierr)
       IF (myrank == 0) THEN
         DO IP=1,np_total
-          LEVwr(IP,1)=LEVwr_glob(IP,1)*nwild_gb(IP)
+          LEVwr(IP,1)=LEVwr_glob(IP,1)*MySNGL(nwild_gb(IP))
         END DO
       END IF
       deallocate(LEVwr_glob)
