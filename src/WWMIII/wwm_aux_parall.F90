@@ -1190,8 +1190,6 @@
                 eIdx=Indexes(IP_glob)
                 dspl_spparm(idx)=8*(eIdx-1)
                 dspl_wbac(idx)=MSC*MDC*(eIdx-1)
-                WRITE(STAT%FHNDL,*) 'idx=', idx, 'eIdx=', eIdx
-                FLUSH(STAT%FHNDL)
               END IF
             END DO
             call mpi_type_create_indexed_block(eSend,8,dspl_spparm,rtype,spparm_type(idx_nbproc), ierr)

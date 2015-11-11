@@ -2403,8 +2403,8 @@
       eMonth=(resYear - mod(resYear,100))/100
       resMonth=resYear - 100*eMonth;
       eDay=resMonth
-      WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
+!      FLUSH(STAT%FHNDL)
       IF (STEPRANGE_IN) THEN
 !        WRITE(STAT%FHNDL,*) 'STEPRANGE_IN=', STEPRANGE_IN
 !        FLUSH(STAT%FHNDL)
@@ -2485,15 +2485,14 @@
       call grib_get(eGrib, 'iDirectionIncrementInDegrees', iDirectionIncrement)
       call grib_get(eGrib, 'jDirectionIncrementInDegrees', jDirectionIncrement)
 
-      WRITE(STAT%FHNDL, *) 'LONGITUDE'
-      WRITE(STAT%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
-      WRITE(STAT%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
-      WRITE(STAT%FHNDL, *) 'LATITUDE'
-      WRITE(STAT%FHNDL, *) 'latitudeOfFirstGridPointInDegrees=', latitudeOfFirstPointInDegrees
-      WRITE(STAT%FHNDL, *) 'latitudeOfLastGridPointInDegrees=', latitudeOfLastPointInDegrees
-
-      WRITE(STAT%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
-      WRITE(STAT%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
+!      WRITE(STAT%FHNDL, *) 'LONGITUDE'
+!      WRITE(STAT%FHNDL, *) 'longitudeOfFirstGridPointInDegrees=', longitudeOfFirstPointInDegrees
+!      WRITE(STAT%FHNDL, *) 'longitudeOfLastGridPointInDegrees=', longitudeOfLastPointInDegrees
+!      WRITE(STAT%FHNDL, *) 'LATITUDE'
+!      WRITE(STAT%FHNDL, *) 'latitudeOfFirstGridPointInDegrees=', latitudeOfFirstPointInDegrees
+!      WRITE(STAT%FHNDL, *) 'latitudeOfLastGridPointInDegrees=', latitudeOfLastPointInDegrees
+!      WRITE(STAT%FHNDL, *) 'iDirectionIncrement=', iDirectionIncrement
+!      WRITE(STAT%FHNDL, *) 'jDirectionIncrement=', jDirectionIncrement
       deltaLON=(longitudeOfLastPointInDegrees - longitudeOfFirstPointInDegrees)/(nx_dim - 1)
       deltaLAT=(latitudeOfLastPointInDegrees - latitudeOfFirstPointInDegrees)/(ny_dim - 1)
       DO iX=1,nx_dim
@@ -2627,8 +2626,8 @@
       !
       call grib_get(eGrib,"Nx", nx_dim)
       call grib_get(eGrib,"Ny", ny_dim)
-      WRITE(STAT%FHNDL, *) 'nx_dim = ', nx_dim
-      WRITE(STAT%FHNDL, *) 'ny_dim = ', ny_dim
+!      WRITE(STAT%FHNDL, *) 'nx_dim = ', nx_dim
+!      WRITE(STAT%FHNDL, *) 'ny_dim = ', ny_dim
       TheInfo % nx_dim = nx_dim
       TheInfo % ny_dim = ny_dim
       pollat= - pollat_sp

@@ -13,22 +13,22 @@
          DX1 = zero
          DX2 = zero 
        ENDIF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 1'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 1'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
        XP  = zero
        YP  = zero
        DEP = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 2'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 2'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
        INVSPHTRANS = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 3'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 3'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
@@ -42,8 +42,8 @@
        INE = INETMP(1:3,:)
 # endif
 #endif
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 4'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 4'
+!       FLUSH(STAT%FHNDL)
 !
 ! spectral grid - shared
 !
@@ -56,22 +56,22 @@
        ALLOCATE (AC2(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
        AC2 = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 5'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 5'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE (AC1(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
        AC1 = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 6'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 6'
+!       FLUSH(STAT%FHNDL)
 
        IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
          ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9a')
          U_JACOBI = zero
        END IF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 7'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 7'
+!       FLUSH(STAT%FHNDL)
 
        IF (ICOMP .GE. 2) THEN
          ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
@@ -79,8 +79,8 @@
          IMATRAA = zero
          IMATDAA = zero
        END IF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
+!       FLUSH(STAT%FHNDL)
 
 !       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
 !       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
@@ -102,8 +102,8 @@
          DAC_SIG = zero
          DAC_SOU = zero
        END IF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 9'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 9'
+!       FLUSH(STAT%FHNDL)
 
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER
@@ -119,8 +119,8 @@
          CALL WWM_ABORT('Needs WWM_SOLVER for JACOBI_ITERATION (AMETHOD 7)')
 #endif
        END IF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 10'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 10'
+!       FLUSH(STAT%FHNDL)
 
 #ifdef SHYFEM_COUPLING
        IF (LSHYFEM) THEN
@@ -133,8 +133,8 @@
          STOKES_X = ZERO; STOKES_Y = ZERO; JPRESS = ZERO
        END IF
 #endif
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 11'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 11'
+!       FLUSH(STAT%FHNDL)
 !
 ! Boundary conditions - shared
 !
@@ -144,8 +144,8 @@
        IOBPD  = 0
        IOBP   = 0
        IOBWB  = 1
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 12'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 12'
+!       FLUSH(STAT%FHNDL)
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
@@ -154,8 +154,8 @@
        WK = ZERO 
        CG = ZERO 
        WC = ZERO
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 13'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 13'
+!       FLUSH(STAT%FHNDL)
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
@@ -167,15 +167,15 @@
          DWKDY = ZERO
          DCGDY = ZERO
        ENDIF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 14'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 14'
+!       FLUSH(STAT%FHNDL)
 !
        ALLOCATE( TABK (0:IDISPTAB), TABCG(0:IDISPTAB), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 17')
        TABK  = zero
        TABCG = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 15'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 15'
+!       FLUSH(STAT%FHNDL)
 !
 ! diffraction parameter - shared
 !
@@ -212,8 +212,8 @@
        DVWALV = zero
        WLDEP  = zero
        DEPDT  = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 16'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 16'
+!       FLUSH(STAT%FHNDL)
 !
 !  convergence analysis - shared
 !
@@ -235,8 +235,8 @@
          IE_IS_STEADY = 0
          STAT2D = ZERO
        END IF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 17'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 17'
+!       FLUSH(STAT%FHNDL)
 !
 !  output - shared
 !
@@ -250,8 +250,8 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
        UFRIC = zero
        ALPHA_CH = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 18'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 18'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,MSC), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
@@ -267,8 +267,8 @@
        Z0 = zero
        CD = zero
        USTDIR = zero
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 19'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 19'
+!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( RSXX(MNP), RSXY(MNP), RSYY(MNP), FORCEXY(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 29')
@@ -279,15 +279,7 @@
 
        IF (LCFL) THEN
          ALLOCATE (CFLCXY(3,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-         CFLCXY(1,:) = ZERO
-         CFLCXY(2,:) = ZERO
-         CFLCXY(3,:) = LARGE
-       END IF
-
-       IF (LCFL) THEN
-         ALLOCATE (CFLCXY(3,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
          CFLCXY(1,:) = ZERO
          CFLCXY(2,:) = ZERO
          CFLCXY(3,:) = LARGE
@@ -295,12 +287,12 @@
 
        IF (LCFL_CASD) THEN
          ALLOCATE(CFL_CASD(4,MNP), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 4')
+         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 31')
        END IF
 
 #ifdef SCHISM
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
-       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
+       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        SXX3D = zero
        SXY3D = zero
        SYY3D = zero
@@ -320,8 +312,8 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
        ISHALLOW = 0
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 20'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 20'
+!       FLUSH(STAT%FHNDL)
 
        IF (LSOURCESWAM .OR. MESIN == 2) THEN
          ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
@@ -356,8 +348,8 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32e')
          FCONST = 1
        ENDIF
-       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 21'
-       FLUSH(STAT%FHNDL)
+!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 21'
+!       FLUSH(STAT%FHNDL)
 !
 !      init source term parameter 
 !      
