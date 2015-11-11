@@ -187,83 +187,102 @@
 
        INTEGER             :: IS, ID, IP
 
-        IF (AMETHOD .eq.5) THEN
+       IF (AMETHOD .eq.5) THEN
 #ifdef PETSC
-          CALL EIMPS_PETSC_BLOCK
+         CALL EIMPS_PETSC_BLOCK
 #endif
-        ELSE IF (AMETHOD .eq. 7) THEN
+       ELSE IF (AMETHOD .eq. 7) THEN
 #ifdef WWM_SOLVER
-          CALL EIMPS_TOTAL_JACOBI_ITERATION
+         CALL EIMPS_TOTAL_JACOBI_ITERATION
 #endif
-        END IF
+       END IF
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE FLUCTCFL(IS, ID, DTMAX)
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         REAL(rkind)  :: K(3,MNE)
-         REAL(rkind), INTENT(OUT) :: DTMAX
-
-         INTEGER :: IS, ID
-         INTEGER :: I, J, I1, I2, I3
-         INTEGER :: IP, IE, POS
-
-         REAL(rkind)  :: KSUM, KMAX, LAMBDA(2)
-         REAL(rkind)  :: DTMAX_EXP, DTMAX_GLOBAL_EXP
-         REAL(rkind)  :: REST, C(2,MNP)
-
-         DTMAX_GLOBAL_EXP = 10.D14
-
-         CALL CADVXY(IS,ID,C)
-
-         DO IE = 1, MNE
-           I1 = INE(1,IE)
-           I2 = INE(2,IE)
-           I3 = INE(3,IE)
-           LAMBDA(1) = ONESIXTH * (C(1,I1)+C(1,I2)+C(1,I3))
-           LAMBDA(2) = ONESIXTH * (C(2,I1)+C(2,I2)+C(2,I3))
-           K(1,IE)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
-           K(2,IE)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
-           K(3,IE)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+       SUBROUTINE CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
+       USE DATAPOOL
+       IMPLICIT NONE
+       INTEGER, INTENT(IN)        :: IS,ID
+       REAL(rkind), INTENT(IN)    :: KELEM(3,MNE)
+       REAL(rkind), INTENT(IN)    :: C(2,MNP)
+       REAL(rkind) :: CFLXY, REST
+       REAL(rkind) :: KKSUM(MNP)
+       REAL(rkind) :: CXnorm
+       integer :: J, IP, I, IE, POS
+       REAL(rkind) :: DTMAX_GLOBAL_EXP
+       REAL(rkind) :: DTMAX_GLOBAL_EXP_LOC
+       REAL(rkind) :: DTMAX_EXP
+!           KKSUM = ZERO
+!           DO IE = 1, MNE
+!             IF (IE_IS_STEADY(IE) .GT. 2) THEN
+!               CYCLE
+!             ENDIF
+!             NI = INE(:,IE)
+!             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
+!           END DO
+!AR: Experimental ... improves speed by 20% but maybe unstable in
+!certain situations ... must be checked thoroughly
+!       KKMAX = ZERO
+       KKSUM = ZERO
+       J    = 0
+       DO IP = 1, MNP
+         DO I = 1, CCON(IP)
+           J = J + 1
+           IE    = IE_CELL(J)
+           POS   = POS_CELL(J)
+           KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
+!           IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
          END DO
+       END DO
 
-         J = 0
-         DO IP = 1, MNP
-           KSUM = ZERO
-           KMAX = ZERO
-           DO I = 1, CCON(IP)
-             J = J + 1
-             IE    = IE_CELL(J)
-             POS   = POS_CELL(J)
-             KSUM  = KSUM + MAX(K(POS,IE),ZERO)
-             IF ( ABS(K(POS,IE)) > KMAX ) KMAX = ABS(K(POS,IE))
-           END DO
-           IF (KSUM > ZERO) THEN
-             DTMAX_EXP = SI(IP)/KSUM
-           ELSE
-             DTMAX_EXP = 10.d14
-           END IF
-!           IF (KMAX > ZERO) THEN
-!             DTMAX_EXP =  SI(IP)/KMAX ! Somewhat smaller due to the CRD approach ...
-!           ELSE
-!             DTMAX_EXP = 10E14
-!           END IF
-           IF (DTMAX_GLOBAL_EXP > DTMAX_EXP) DTMAX_GLOBAL_EXP  = DTMAX_EXP
-         END DO
-
-         REST  = ABS(MOD(DT4A/DTMAX_GLOBAL_EXP,ONE))
-         IF (REST > THR .AND. REST < ONEHALF) THEN
-           ITER_EXP(IS,ID) = ABS(NINT(DT4A/DTMAX_GLOBAL_EXP)) + 1
-         ELSE
-           ITER_EXP(IS,ID) = ABS(NINT(DT4A/DTMAX_GLOBAL_EXP))
+#ifdef MPI_PARALL_GRID
+       DTMAX_GLOBAL_EXP = VERYLARGE
+       DTMAX_GLOBAL_EXP_LOC = VERYLARGE
+       DO IP = 1, NP_RES
+!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
+!              CYCLE
+!            ENDIF
+         DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
+         IF (LCFL) THEN
+           CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+           CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+           CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+           CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
          END IF
-
-         DTMAX = DTMAX_GLOBAL_EXP
-
-      END SUBROUTINE
+         DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
+       END DO
+       CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
+#else
+       DTMAX_GLOBAL_EXP = VERYLARGE
+       DO IP = 1, MNP
+         IF (IOBP(IP) .NE. 0) CYCLE 
+!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
+!              CYCLE
+!            ENDIF
+         DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
+         !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
+         IF (LCFL) THEN
+           CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+           CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+           CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+           CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
+         END IF
+         DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
+       END DO
+#endif
+       CFLXY = DT4A/DTMAX_GLOBAL_EXP
+       REST  = ABS(MOD(CFLXY,ONE))
+       IF (REST .LT. THR) THEN
+         ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) 
+       ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
+         ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
+       ELSE
+         ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
+       END IF
+       ITER_EXP(IS,ID) = MAX(1,ITER_EXP(IS,ID))
+       
+       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -281,10 +300,6 @@
 ! local double
 !
          REAL(rkind)  :: UTILDE
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
-#endif
          REAL(rkind)  :: REST, TESTMIN
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
@@ -365,80 +380,9 @@
          END DO
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
+         WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
          IF (LCALC) THEN
-!           KKSUM = ZERO
-!           DO IE = 1, MNE
-!             IF (IE_IS_STEADY(IE) .GT. 2) THEN
-!               CYCLE
-!             ENDIF
-!             NI = INE(:,IE)
-!             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
-!           END DO
-!AR: Experimental ... improves speed by 20% but maybe unstable in
-!certain situations ... must be checked thoroughly
-           KKMAX = ZERO
-           KKSUM = ZERO
-           J    = 0
-           DO IP = 1, MNP
-             DO I = 1, CCON(IP)
-               J = J + 1
-               IE    = IE_CELL(J)
-               POS   = POS_CELL(J)
-               KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
-!               IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
-             END DO
-           END DO
-
-#ifdef MPI_PARALL_GRID
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DTMAX_GLOBAL_EXP_LOC = VERYLARGE
-           DO IP = 1, NP_RES
-!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
-!              CYCLE
-!            ENDIF
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             !WRITE(DBG%FHNDL,'(I10,3F15.6)') IP, SI(IP), KKSUM(IP), DEPTH(IP), DTMAX_EXP
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
-           END DO
-           CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
-           !WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP
-#else
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DO IP = 1, MNP
-             IF (IOBP(IP) .NE. 0) CYCLE 
-!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
-!              CYCLE
-!            ENDIF
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
-             !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
-             !WRITE(22227,*) IP, CCON(IP), SI(IP)
-             !IF (IP == 24227 .AND. IS == 1) WRITE(DBG%FHNDL,'(2I10,6F20.8)') IP, ID, XP(IP), YP(IP), SI(IP), KKSUM(IP), DEP(IP), CFLCXY(3,IP) 
-           END DO
-           !WRITE(STAT%FHNDL,'(2I10,2F15.4)') IS, ID, DTMAX_GLOBAL_EXP, DT4A/DTMAX_GLOBAL_EXP !AR: Makes very strange error in the code ...
-#endif
-           CFLXY = DT4A/DTMAX_GLOBAL_EXP
-           REST  = ABS(MOD(CFLXY,ONE))
-           IF (REST .LT. THR) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) 
-           ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
-           ELSE
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-           END IF
-
+           CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
          END IF
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
@@ -585,13 +529,6 @@
 !
          REAL(rkind)  :: FT
          REAL(rkind)  :: UTILDE
-
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
-
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
-#endif
-
          REAL(rkind)  :: REST
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
@@ -654,57 +591,7 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-           KKSUM = ZERO
-           DO IE = 1, MNE
-             NI = INE(:,IE)
-             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
-           END DO
-!
-#ifdef MPI_PARALL_GRID
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DTMAX_GLOBAL_EXP_LOC = VERYLARGE
-           DO IP = 1, NP_RES
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP_LOC=MIN(DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
-           END DO
-           CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,    &
-     &                        1,rtype,MPI_MIN,comm,ierr)
-#else
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DO IP = 1, MNP
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
-           END DO
-#endif
-!
-! ITER_EXP(IS,ID) is the number of sub time step in order to fullfill
-!  the CFL number .LT. 1 for the certain wave component ...
-!
-           CFLXY = DT4A/DTMAX_GLOBAL_EXP
-           REST  = ABS(MOD(CFLXY,ONE))
-
-           IF (REST .LT. THR) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-           ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
-           ELSE
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-           END IF
-
-           ITER_EXP(IS,ID) = MAX(1,ITER_EXP(IS,ID))
-
+           CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
          END IF
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
@@ -785,8 +672,6 @@
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
-
          REAL(rkind)  :: REST
          REAL(rkind)  :: TMP(3), TMP1
 
@@ -806,9 +691,6 @@
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
          REAL(rkind)  :: CXnorm
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
-#endif
 !
 ! local parameter
 !
@@ -849,49 +731,8 @@
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
-           KKSUM = ZERO
-           DO IE = 1, MNE
-             NI = INE(:,IE)
-             KKSUM(NI) = KKSUM(NI) + MAX(ZERO,KELEM(:,IE))
-           END DO
-#ifdef MPI_PARALL_GRID
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DTMAX_GLOBAL_EXP_LOC = VERYLARGE
-           DO IP = 1, NP_RES
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-!             DTMAX_EXP = MAX( ABS(IOBP(IP)*VERYLARGE), SI(IP)/MAX(THR,KKSUM(IP)*IOBPD(ID,IP)) )
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP_LOC=MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
-           END DO
-           CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP, 1,rtype,MPI_MIN,comm,ierr)
-#else
-           DTMAX_GLOBAL_EXP = VERYLARGE
-           DO IP = 1, MNP
-             DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-             IF (LCFL) THEN
-               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
-               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-             END IF
-             DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
-           END DO
-#endif
-           CFLXY = DT4A/DTMAX_GLOBAL_EXP
-           REST  = ABS(MOD(CFLXY,1._rkind))
-           IF (REST .LT. THR) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-           ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY)) + 1
-           ELSE
-             ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
-           END IF
-         END IF ! LCALC
+           CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
+         END IF
 
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
@@ -2085,6 +1926,9 @@
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+           CFLCXY(1,:) = ZERO
+           CFLCXY(2,:) = ZERO
+           CFLCXY(3,:) = LARGE 
          END IF
 
       END SUBROUTINE
