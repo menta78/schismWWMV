@@ -254,6 +254,7 @@
          LOGICAL    :: LCONV       = .FALSE.
          LOGICAL    :: LLIMT       = .TRUE.
          LOGICAL    :: LCFL        = .FALSE.
+         LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
          LOGICAL    :: LJASN       = .TRUE.
          LOGICAL    :: LMAXETOT    = .TRUE.
@@ -941,7 +942,7 @@
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 59
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 63
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.
@@ -1153,6 +1154,7 @@
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
 
          REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
+         REAL(rkind), ALLOCATABLE    :: CFL_CASD(:,:)
 
          INTEGER, ALLOCATABLE        :: COUNTGROUP(:,:)
 !

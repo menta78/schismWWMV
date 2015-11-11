@@ -753,7 +753,7 @@
 !* The netcdf output outs the most variables and is the most          *
 !* parametrizable. In order to add some new variables in output, one  *
 !* needs to:                                                          *
-!* ---update OUTVAR_COMPLETE (wwm_datapl.F90)                         *
+!* ---update OUTVARS_COMPLETE (wwm_datapl.F90)                        *
 !* ---update the reading of output parameter in                       *
 !*    READ_HISTORY_STATION_NAMELIST (wwm_input.F90)                   *
 !* ---add full name and unit in NAMEVARIABLE (wwm_netcdf.F90)         *
@@ -1471,6 +1471,12 @@
         OUTPAR(59) = ZETA_SETUP(IP)
       END IF
 #endif
+      IF (LCFL_CASD) THEN
+        OUTPAR(60) = CFL_CASD(1,IP)
+        OUTPAR(61) = CFL_CASD(2,IP)
+        OUTPAR(62) = CFL_CASD(3,IP)
+        OUTPAR(63) = CFL_CASD(4,IP)
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1575,6 +1581,12 @@
           OUTPAR(59) = OUTPAR(59) + WI(J)*ZETA_SETUP(IP)
         END IF
 #endif
+        IF (LCFL_CASD) THEN
+          OUTPAR(60) = OUTPAR(60) + WI(J)*CFL_CASD(1,IP)
+          OUTPAR(61) = OUTPAR(61) + WI(J)*CFL_CASD(2,IP)
+          OUTPAR(62) = OUTPAR(62) + WI(J)*CFL_CASD(3,IP)
+          OUTPAR(63) = OUTPAR(63) + WI(J)*CFL_CASD(4,IP)
+        ENDIF
       END DO
       IF (VAROUT_STATION%ComputeStokes) THEN
         CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)

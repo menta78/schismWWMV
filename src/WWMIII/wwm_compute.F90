@@ -356,7 +356,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CFLSPEC()
+      SUBROUTINE CFLSPEC
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -392,6 +392,10 @@
              TMPCFLCAS(IP) = 0.
              TMPCAS(IP)    = 0.
            END IF
+           CFL_CASD(1,IP)=TMPCAS(IP)
+           CFL_CASD(2,IP)=TMPCAD(IP)
+           CFL_CASD(3,IP)=TMPCFLCAS(IP)
+           CFL_CASD(4,IP)=TMPCFLCAD(IP)
          END DO
 
          MAXCFLCAD = MAXVAL(TMPCAD)
@@ -401,6 +405,7 @@
          WRITE (310) (SNGL(TMPCAD(IP)), SNGL(TMPCAD(IP)), SNGL(TMPCFLCAD(IP)), IP = 1, MNP)
          WRITE (311) SNGL(RTIME)
          WRITE (311) (SNGL(TMPCAS(IP)), SNGL(TMPCAS(IP)), SNGL(TMPCFLCAS(IP)), IP = 1, MNP)
+         
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

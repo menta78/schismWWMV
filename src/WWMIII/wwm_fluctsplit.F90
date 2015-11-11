@@ -1938,14 +1938,6 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
          I_DIAG = 0
 
-         IF (LCFL) THEN
-           ALLOCATE (CFLCXY(3,MNP), stat=istat)
-           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-           CFLCXY(1,:) = ZERO
-           CFLCXY(2,:) = ZERO
-           CFLCXY(3,:) = LARGE 
-         END IF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

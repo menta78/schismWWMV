@@ -277,6 +277,27 @@
        RSYY = zero
        FORCEXY = zero
 
+       IF (LCFL) THEN
+         ALLOCATE (CFLCXY(3,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+         CFLCXY(1,:) = ZERO
+         CFLCXY(2,:) = ZERO
+         CFLCXY(3,:) = LARGE
+       END IF
+
+       IF (LCFL) THEN
+         ALLOCATE (CFLCXY(3,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+         CFLCXY(1,:) = ZERO
+         CFLCXY(2,:) = ZERO
+         CFLCXY(3,:) = LARGE
+       END IF
+
+       IF (LCFL_CASD) THEN
+         ALLOCATE(CFL_CASD(4,MNP), stat=istat)
+         IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 4')
+       END IF
+
 #ifdef SCHISM
        ALLOCATE( SXX3D(NVRT,MNP), SXY3D(NVRT,MNP), SYY3D(NVRT,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
