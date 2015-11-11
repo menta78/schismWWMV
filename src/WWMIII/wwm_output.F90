@@ -1939,9 +1939,6 @@
       WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
 # endif
 110     FORMAT (a8, ' : min=', F11.5, ' max=', F11.5, ' avg=', F11.5)
-
-!        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH HISTORY_NC_PRINTMMA'
-!        FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

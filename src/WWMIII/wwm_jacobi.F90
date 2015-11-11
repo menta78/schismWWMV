@@ -21,6 +21,7 @@
 
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: CXnorm
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -30,6 +31,11 @@
 !
 !     Calculate countour integral quantities ...
 !
+      IF (LCFL) THEN
+        CFLCXY(1,:) = ZERO
+        CFLCXY(2,:) = ZERO
+        CFLCXY(3,:) = LARGE
+      END IF
       ASPAR = 0.0_rkind ! Mass matrix ...
       DO IE = 1, MNE
         DO I=1,3
@@ -61,6 +67,10 @@
                   CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IP,1)
                   CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IP,2)
                 END IF
+              END IF
+              IF (LCFL) THEN
+                CXnorm=SQRT(CXY(1,IS,ID,I)**2 + CXY(2,IS,ID,I)**2)
+                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
               END IF
             END DO
           END DO

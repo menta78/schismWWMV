@@ -10,6 +10,11 @@
          IMPLICIT NONE
  
          INTEGER             :: IS, ID, IP
+         IF (LCFL) THEN
+           CFLCXY(1,:) = ZERO
+           CFLCXY(2,:) = ZERO
+           CFLCXY(3,:) = LARGE 
+         END IF
  
 !$OMP PARALLEL
          IF (AMETHOD == 1) THEN
@@ -289,6 +294,7 @@
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
+         REAL(rkind)  :: CXnorm
 #ifdef positivity         
          REAL(rkind)  :: CBAR_1_1(2), CBAR_1_2(2)
          REAL(rkind)  :: CBAR_2_1(2), CBAR_2_2(2)
@@ -393,9 +399,10 @@
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              !WRITE(DBG%FHNDL,'(I10,3F15.6)') IP, SI(IP), KKSUM(IP), DEPTH(IP), DTMAX_EXP
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = DTMAX_EXP/DT4A 
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
            END DO
@@ -411,9 +418,10 @@
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
              !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = KKSUM(IP) 
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
              !WRITE(22227,*) IP, CCON(IP), SI(IP)
@@ -600,6 +608,7 @@
          REAL(rkind)  :: FLALL(3,MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
+         REAL(rkind)  :: CXnorm
 !
 ! local parameter
 !
@@ -657,9 +666,10 @@
            DO IP = 1, NP_RES
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN(DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
@@ -670,9 +680,10 @@
            DO IP = 1, MNP
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -794,6 +805,7 @@
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY, N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
+         REAL(rkind)  :: CXnorm
 #ifdef MPI_PARALL_GRID
          REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC
 #endif
@@ -849,9 +861,10 @@
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
 !             DTMAX_EXP = MAX( ABS(IOBP(IP)*VERYLARGE), SI(IP)/MAX(THR,KKSUM(IP)*IOBPD(ID,IP)) )
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP_LOC=MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
            END DO
@@ -861,9 +874,10 @@
            DO IP = 1, MNP
              DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
              IF (LCFL) THEN
-               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), C(1,IP))
-               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), C(2,IP))
-               CFLCXY(3,IP) = MAX(CFLCXY(3,IP), DTMAX_EXP)
+               CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
+               CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
+               CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+               CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
              END IF
              DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
            END DO
@@ -1996,7 +2010,7 @@
                C(1,IP) = C(1,IP) + DIFRU*CURTXY(IP,1)
                C(2,IP) = C(2,IP) + DIFRU*CURTXY(IP,2)
              END IF
-           END IF ! LDIFR
+           END IF
          END DO
        END IF
 
@@ -2071,9 +2085,6 @@
          IF (LCFL) THEN
            ALLOCATE (CFLCXY(3,MNP), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
-           CFLCXY(1,:) = ZERO
-           CFLCXY(2,:) = ZERO
-           CFLCXY(3,:) = LARGE 
          END IF
 
       END SUBROUTINE
