@@ -644,7 +644,6 @@
         CALL SET_IOBPD
         CALL SET_IOBPD_BY_DEP
         IF (LCFL) THEN
-          CFLCXY = ZERO
           CALL CFLSPEC
         ENDIF
         IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX

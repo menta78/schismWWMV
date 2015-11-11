@@ -253,6 +253,9 @@
          DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
        END DO
        CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
+       IF (LCFL) THEN
+         CALL PARALLEL_SYNCHRONIZE_CFL
+       END IF
 #else
        DTMAX_GLOBAL_EXP = VERYLARGE
        DO IP = 1, MNP
@@ -281,7 +284,19 @@
          ITER_EXP(IS,ID) = ABS(NINT(CFLXY))
        END IF
        ITER_EXP(IS,ID) = MAX(1,ITER_EXP(IS,ID))
-       
+#ifdef MPI_PARALL_GRID       
+       CONTAINS
+       SUBROUTINE PARALLEL_SYNCHRONIZE_CFL
+       USE DATAPOOL
+       IMPLICIT NONE
+       REAL(rkind) :: Field(MNP)
+       DO I=1,3
+         Field=CFLCXY(I,:)
+         CALL EXCHANGE_P2D(Field)
+         CFLCXY(I,:)=Field
+       END DO
+       END SUBROUTINE    
+#endif
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
