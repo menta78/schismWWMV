@@ -432,7 +432,6 @@ MODULE wwm_hotfile_mod
 #if defined NCDF && defined MPI_PARALL_GRID
       integer iProc, IP, IPglob
       IF (myrank .eq. 0) THEN
-        WRITE(STAT%FHNDL, *) 'Before allocation of ACreturn'
         allocate(ACreturn(MSC,MDC,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
@@ -449,9 +448,6 @@ MODULE wwm_hotfile_mod
         CALL MPI_SEND(AC2, MSC*MDC*NP_RES, rtype, 0, 8123, comm, ierr)
       END IF
       IF (myrank .eq. 0) THEN
-        WRITE(STAT%FHNDL, *) 'Before allocation of VAR_ONEDreturnn'
-        WRITE(STAT%FHNDL, *) 'nbOned=', nbOned, ' np_global=', np_global
-        FLUSH(STAT%FHNDL)
         allocate(VAR_ONEDreturn(nbOned,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
@@ -537,25 +533,12 @@ MODULE wwm_hotfile_mod
         CALL WWM_ABORT('Wrong choice of HOTSTYLE_OUT')
       END IF
 #ifdef MPI_PARALL_GRID
-      WRITE(STAT%FHNDL, *) 'MULTIPLEOUT_HOT=', MULTIPLEOUT_HOT
-      FLUSH(STAT%FHNDL)
       IF ((MULTIPLEOUT_HOT.eq.0).and.(myrank.eq.0)) THEN
-        WRITE(STAT%FHNDL, *) 'Before deallocation of ACreturn'
-        FLUSH(STAT%FHNDL)
         deallocate(ACreturn)
-        WRITE(STAT%FHNDL, *) 'allocated(VAR_ONEDreturn)=', allocated(VAR_ONEDreturn)
-        WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONEDreturn'
-        FLUSH(STAT%FHNDL)
         deallocate(VAR_ONEDreturn)
-        WRITE(STAT%FHNDL, *) 'After deallocation'
-        FLUSH(STAT%FHNDL)
       END IF
 #endif
-      WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONED'
-      FLUSH(STAT%FHNDL)
       deallocate(VAR_ONED)
-      WRITE(STAT%FHNDL, *) 'Leaving OUTPUT_HOTFILE'
-      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

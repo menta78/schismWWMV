@@ -254,9 +254,7 @@
        END DO
        CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
        IF (LCFL) THEN
-         WRITE(STAT%FHNDL,*) 'Before call to PARALLEL_SYNCHRONIZE_CFL'
          CALL PARALLEL_SYNCHRONIZE_CFL
-         WRITE(STAT%FHNDL,*) 'After call to PARALLEL_SYNCHRONIZE_CFL'
        END IF
 #else
        DTMAX_GLOBAL_EXP = VERYLARGE
@@ -397,7 +395,6 @@
          END DO
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
-         WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
          IF (LCALC) THEN
            CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
          END IF
