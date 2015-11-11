@@ -644,6 +644,21 @@
  FILEHOT_IN     = 'hotfile_in.dat' ! Hot file name for input
 /
 
+&NESTING
+ L_NESTING = F,      ! whether to produce nesting data or not
+ L_HOTFILE = F       ! whether to produce an hotfile as output
+ L_BOUC_PARAM = F    ! whether to produce a parametric boundary condition to be used by the nested grids
+ L_BOUC_SPEC = F     ! whether to produce a spectral   boundary condition to be used by the nested grids
+ NB_GRID_NEST = 0    ! number of nested grids. All lines below must contain NB_GRID_NEST entries.
+ ListIGRIDTYPE =     ! list of integers giving the type of nested grid
+ ListFILEGRID =      ! list of strings for the grid file names.
+ ListFILEBOUND =     ! list of boundary file names to be used
+ ListBEGTC = ....    ! list of beginning time of the runs (used for hotfile and boundary)
+ ListDELTC =         ! list of DELTC of the boundary output
+ ListUNITC =         ! list of UNITS of the boundary output
+ ListENDTC =         ! list of ENDTC of the boundary output
+/
+
 
 ! only used with AMETHOD 4 or 5
 &PETScOptions
