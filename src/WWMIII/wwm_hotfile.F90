@@ -525,22 +525,35 @@ MODULE wwm_hotfile_mod
 #endif
       IF (HOTSTYLE_OUT == 1) THEN
         CALL OUTPUT_HOTFILE_BINARY
-#ifdef NCDF
       ELSE IF (HOTSTYLE_OUT == 2) THEN
+#ifdef NCDF
         CALL OUTPUT_HOTFILE_NETCDF
+#else
+        CALL WWM_ABORT('Select NetCDF for HOTSTYLE_OUT = 2')
 #endif
       ELSE
         CALL WWM_ABORT('Wrong choice of HOTSTYLE_OUT')
       END IF
 #ifdef MPI_PARALL_GRID
+      WRITE(STAT%FHNDL, *) 'MULTIPLEOUT_HOT=', MULTIPLEOUT_HOT
+      FLUSH(STAT%FHNDL)
       IF ((MULTIPLEOUT_HOT.eq.0).and.(myrank.eq.0)) THEN
         WRITE(STAT%FHNDL, *) 'Before deallocation of ACreturn'
+        FLUSH(STAT%FHNDL)
         deallocate(ACreturn)
+        WRITE(STAT%FHNDL, *) 'allocated(VAR_ONEDreturn)=', allocated(VAR_ONEDreturn)
         WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONEDreturn'
+        FLUSH(STAT%FHNDL)
         deallocate(VAR_ONEDreturn)
+        WRITE(STAT%FHNDL, *) 'After deallocation'
+        FLUSH(STAT%FHNDL)
       END IF
 #endif
+      WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONED'
+      FLUSH(STAT%FHNDL)
       deallocate(VAR_ONED)
+      WRITE(STAT%FHNDL, *) 'Leaving OUTPUT_HOTFILE'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -254,7 +254,9 @@
        END DO
        CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
        IF (LCFL) THEN
+         WRITE(STAT%FHNDL,*) 'Before call to PARALLEL_SYNCHRONIZE_CFL'
          CALL PARALLEL_SYNCHRONIZE_CFL
+         WRITE(STAT%FHNDL,*) 'After call to PARALLEL_SYNCHRONIZE_CFL'
        END IF
 #else
        DTMAX_GLOBAL_EXP = VERYLARGE
@@ -287,13 +289,13 @@
 #ifdef MPI_PARALL_GRID       
        CONTAINS
        SUBROUTINE PARALLEL_SYNCHRONIZE_CFL
-       USE DATAPOOL
        IMPLICIT NONE
        REAL(rkind) :: Field(MNP)
-       DO I=1,3
-         Field=CFLCXY(I,:)
+       integer IDIM
+       DO IDIM=1,3
+         Field=CFLCXY(IDIM,:)
          CALL EXCHANGE_P2D(Field)
-         CFLCXY(I,:)=Field
+         CFLCXY(IDIM,:)=Field
        END DO
        END SUBROUTINE    
 #endif

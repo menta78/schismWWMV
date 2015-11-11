@@ -1994,7 +1994,6 @@
         WRITE(STAT%FHNDL,*) 'max(CFLCXY(1,:))=', maxval(CFLCXY(1,:))
         WRITE(STAT%FHNDL,*) 'max(CFLCXY(2,:))=', maxval(CFLCXY(2,:))
         WRITE(STAT%FHNDL,*) 'max(CFLCXY(3,:))=', maxval(CFLCXY(3,:))
-        WRITE(STAT%FHNDL,*) 'max(CFLCXY(4,:))=', maxval(CFLCXY(4,:))
       END IF
       eTimeDay=MAIN%TMJD
 # ifdef MPI_PARALL_GRID

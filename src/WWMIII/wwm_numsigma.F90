@@ -33,7 +33,7 @@
            DO ID = 1, MDC
              ACQ(1:MSC)  = AC2(:,ID,IP)
              CASS(1:MSC) = CAS(:,ID)
-             CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND)
+             CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND(1:MSC))
              REST    = ABS(MOD(CFLCAS,ONE))
              IF (ISEQ0(CFLCAS)) CYCLE
              REST  = ABS(MOD(CFLCAS,ONE))
@@ -95,7 +95,7 @@
 
           CP = MAX(ZERO,CASS)
           CM = MIN(ZERO,CASS)
-          CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND)
+          CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND(1:MSC))
           REST    = ABS(MOD(CFLCAS,ONE))
           IF (ISEQ0(CFLCAS)) CYCLE
           REST  = ABS(MOD(CFLCAS,ONE))
