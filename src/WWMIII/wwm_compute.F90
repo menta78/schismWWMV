@@ -7,14 +7,14 @@
         IMPLICIT NONE
 
         INTEGER           :: IS, ID, IP
-        REAL(rkind)       :: VEC2RAD, DEG, ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+        REAL(rkind)       :: VEC2RAD, DEG
         REAL(rkind)       :: SSIN(MDC,MSC), DSSIN(MDC,MSC), SSNL4(MDC,MSC), DSSNL4(MDC,MSC), SSDS(MDC,MSC), DSSDS(MDC,MSC)
-        REAL(rkind)       :: SC, LIMFAC, MAXDAC, NEWDAC, ETOT, SME01, SME10, KMWAM, KMWAM2, HS, KME01
-        REAL(rkind)       :: DSSNL3(MSC,MDC), SSNL3(MSC,MDC), SSBR(MSC,MDC), DSSBR(MSC,MDC), SSBF(MSC,MDC), DSSBF(MSC,MDC) 
+        REAL(rkind)       :: SC, MAXDAC, NEWDAC
+        REAL(rkind)       :: SSNL3(MSC,MDC)
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
+        REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
@@ -231,8 +231,8 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, GTEMP1, GTEMP2
-        INTEGER          :: IP, IT, IS, ID
+        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, GTEMP1, GTEMP2
+        INTEGER          :: IT
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SEMI_IMPLICIT'
@@ -418,7 +418,7 @@
         IMPLICIT NONE
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
+        REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
         INTEGER :: IP
 

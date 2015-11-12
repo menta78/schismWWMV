@@ -1059,6 +1059,9 @@
          integer, dimension(:), pointer :: var_oned_hot_rqst
          integer, dimension(:,:), pointer :: var_oned_hot_stat
          integer, dimension(:), pointer :: var_oned_hot_type
+         integer, dimension(:), pointer :: netcdf_his_rqst
+         integer, dimension(:,:), pointer :: netcdf_his_stat
+         integer, dimension(:), pointer :: netcdf_his_type
 #endif
          TYPE LINEOUTS
             CHARACTER(LEN=20) :: NAME
