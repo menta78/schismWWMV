@@ -435,6 +435,7 @@
 
          SPSIG = FR * PI2 
 
+         WRITE(STAT%FHNDL,*) 'SFAC=', SFAC
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'REL. FREQ. Distribution is =', FRINTF 
 
          IF ( ABS(FRINTF - .1)/FRINTF * 100. .GT. 1. ) THEN

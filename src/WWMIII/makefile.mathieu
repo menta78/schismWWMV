@@ -38,7 +38,7 @@ F90 = $(WWM_COMPILER)
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
 
 #normal optimization
-#F90OPTI =  -O1
+F90OPTI =  -O2
 #F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g
@@ -69,7 +69,7 @@ F90 = $(WWM_COMPILER)
 
 #GFORTRAN
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
-F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
+#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
