@@ -1,3 +1,4 @@
+#include "wwm_functions.h"
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -245,7 +246,11 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID_TOTAL_KERNEL(eGrid, DimMode, LVAR1D, Lsphe, eGRD, iGridType)
-      USE DATAPOOL, only : rkind, istat, GridInformation, FILEDEF
+      USE DATAPOOL, only : INEtotal, rkind, istat, GridInformation, FILEDEF, np_total
+      USE DATAPOOL, only : MULTIPLE_IN_GRID
+#ifdef MPI_PARALL_GRID
+      USE DATAPOOL, only : ierr, itype, rtype, istatus, myrank, comm, nproc
+#endif
       IMPLICIT NONE
       type(GridInformation), intent(out) :: eGrid
       integer, intent(in) :: DimMode
@@ -257,6 +262,7 @@
       integer :: rbuf_int(2)
       real(rkind), allocatable :: rbuf_real(:)
       integer nb_real
+      integer idx, ie, IP, iProc
 #ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_GRID) THEN
         CALL SINGLE_READ_SPATIAL_GRID_TOTAL(eGrid, DimMode, LVAR1D, Lsphe, eGRD, iGridType)

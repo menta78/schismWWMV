@@ -10,7 +10,7 @@
          IMPLICIT NONE
  
          INTEGER             :: IS, ID, IP
-         IF (LCFL) THEN
+         IF (LCFL .and. LCALC) THEN
            CFLCXY(1,:) = ZERO
            CFLCXY(2,:) = ZERO
            CFLCXY(3,:) = LARGE 
