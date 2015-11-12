@@ -1139,8 +1139,6 @@
           END IF
         END IF
         NbSend(iProc)=eSend
-        WRITE(STAT%FHNDL,*) 'iProc=', iProc, ' eSend=', eSend
-        FLUSH(STAT%FHNDL)
       END DO
       IF (myrank .eq. rank_boundary) THEN
         WRITE(STAT%FHNDL,*) 'bound_nbproc=', bound_nbproc
