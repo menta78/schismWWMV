@@ -713,13 +713,10 @@
       REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind) :: ACLOC(msc,mdc)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      LOGICAL     :: test
       REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
-      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
 #ifdef DEBUG_ITERATION_LOOP
       integer iIter
       integer, save :: iPass = 0
@@ -729,7 +726,6 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: eFact
-      REAL(rkind) :: NEG_P(MSC,MDC)
       REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
       INTEGER :: IP, J, idx, nbIter, is_converged, itmp
       INTEGER :: JDX
@@ -791,7 +787,16 @@
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
-          IF ((WAE_JGS_CFL_LIM .eqv. .FALSE.).or.(NumberOperationJGS(IP) .lt. CFLadvgeoI(IP))) THEN
+          IF (WAE_JGS_CFL_LIM .eqv. .FALSE.) THEN
+            test=.TRUE.
+          ELSE
+            IF (NumberOperationJGS(IP) .lt. CFLadvgeoI(IP)) THEN
+              test=.TRUE.
+            ELSE
+              test=.FALSE.
+            END IF
+          END IF
+          IF (test) THEN
             CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
             eSum=eSum/ASPAR_DIAG
             IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
@@ -822,7 +827,9 @@
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .lt. jgs_diff_solverthr) THEN
                   is_converged=is_converged+1
-                  NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
+                  IF (WAE_JGS_CFL_LIM) THEN
+                    NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
+                  END IF
                 END IF
               ENDIF
             ENDIF
@@ -918,6 +925,11 @@
       REAL(rkind), intent(in) :: ACLOC(MSC,MDC)
       REAL(rkind), intent(out) :: eSum(MSC,MDC), ASPAR_DIAG(MSC,MDC)
       integer ID1, ID2, ID, IS, IP_ADJ, IADJ
+      REAL(rkind) :: NEG_P(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
+      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
         IF (SOURCE_IMPL) THEN
@@ -1173,7 +1185,10 @@
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
+      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
+      REAL(rkind) :: NEG_P(MSC,MDC)
       Norm_L2=0
       Norm_LINF=0
       DO IP=1,NP_RES
