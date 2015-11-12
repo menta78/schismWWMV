@@ -573,14 +573,21 @@
       IF (IGRIDTYPE .eq. 2) THEN
         CALL WWM_ABORT('Not yet support for PDLIB and IGRIDTYPE=2')
       END IF
-      write(DBG%FHNDL,*) 'sum(XPtotal)=', sum(XPtotal)
-      write(DBG%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
-      write(DBG%FHNDL,*) 'sum(DEPtotal)=', sum(DEPtotal)
-      write(DBG%FHNDL,*) 'sum(INEtotal)=', sum(INEtotal)
-      write(DBG%FHNDL,*) NP_TOTAL, NE_TOTAL, MDC, MSC
+      write(STAT%FHNDL,*) 'sum(XPtotal)=', sum(XPtotal)
+      write(STAT%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
+      write(STAT%FHNDL,*) 'sum(DEPtotal)=', sum(DEPtotal)
+      write(STAT%FHNDL,*) 'sum(INEtotal)=', sum(INEtotal)
+      write(STAT%FHNDL,*) NP_TOTAL, NE_TOTAL, MDC, MSC
+      FLUSH(STAT%FHNDL)
       CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
+      write(STAT%FHNDL,*) 'After initFromGridDim'
+      FLUSH(STAT%FHNDL)
       call fillPublicVars
+      write(STAT%FHNDL,*) 'After fillPublicVars'
+      FLUSH(STAT%FHNDL)
       CALL INIT_ARRAYS
+      write(STAT%FHNDL,*) 'After INIT_ARRAYS'
+      FLUSH(STAT%FHNDL)
       XP = XPTMP
       YP = YPTMP
       DEP=DEP8
@@ -588,12 +595,22 @@
 # else
 #  ifndef SCHISM
       call partition_hgrid
+      write(STAT%FHNDL,*) 'After partition_hgrid'
+      FLUSH(STAT%FHNDL)
       call aquire_hgrid(.true.)
+      write(STAT%FHNDL,*) 'After aquire_hgrid'
+      FLUSH(STAT%FHNDL)
       call msgp_tables
+      write(STAT%FHNDL,*) 'After msgp_tables'
+      FLUSH(STAT%FHNDL)
       call msgp_init
+      write(STAT%FHNDL,*) 'After msgp_init'
+      FLUSH(STAT%FHNDL)
       call parallel_barrier
 #  endif
       CALL INIT_ARRAYS
+      write(STAT%FHNDL,*) 'After INIT_ARRAYS'
+      FLUSH(STAT%FHNDL)
 
       DEP  = DEP8
       IF (ics .eq. 2) THEN
@@ -605,7 +622,11 @@
       END IF
 # endif
       CALL COLLECT_ALL_IPLG
+      write(STAT%FHNDL,*) 'After COLLECT_ALL_IPLG'
+      FLUSH(STAT%FHNDL)
       CALL SETUP_ONED_SCATTER_ARRAY
+      write(STAT%FHNDL,*) 'After SETUP_ONED_SCATTER_ARRAY'
+      FLUSH(STAT%FHNDL)
 #endif
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE PARALLEL INITIALIZATION'
       FLUSH(STAT%FHNDL)
