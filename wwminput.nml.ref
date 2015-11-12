@@ -335,6 +335,8 @@
                                      ! For MESIN = 1 and MESDS = 1, which represents Cycle 3 formulation or Ardhuin, or other formulations except Cycle4, use MELIM = 1 and LIMFAK = 0.1
                                      ! For MESIN = 2 and MESDS = 2, which represents Cycle 4 formulation, use MELIM = 2 and LIMFAK = 0.6
                                      ! For WAM we need MELIM = 3
+ WAE_JGS_CFL_LIM = T                 ! limitation of iteration by the CFL number for the jacobi-Gauss-Seidel
+                                     ! solver.
  LIMFAK         = 0.6                ! Proportionality coefficient for the action limiter MAX_DAC_DT = Limfak * Limiter; see notes above for value
  LDIFR          = T                  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
  IDIFFR         = 1                  ! Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)
@@ -384,8 +386,8 @@
  LZETA_SETUP    = F,                 ! T/F, whether to compute the wave setup.
  ZETA_METH      = 0,                 ! 0: use a simple conjugate gradient
                                      !    preconditioner
-                                     ! 1: use PETSC
- SOLVERTHR       =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
+ STP_SOLVERTHR   =  1.0000000000E-5       !Solver thr for the wave setup
+ WAE_SOLVERTHR   =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
  MAXITER =         100,                   ! Max. number of iterations 
  LNANINFCHK      = T,                     ! Check for NaN and INF
  LZETA_SETUP     = F,                     ! Compute wave setup 

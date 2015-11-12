@@ -751,7 +751,6 @@
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: FACTOR
       REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
       REAL(rkind) :: XI,DELI1,DELI2
       REAL(rkind) :: XJ,DELJ1,DELJ2

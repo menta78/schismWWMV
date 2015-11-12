@@ -732,6 +732,7 @@
      &      LNANINFCHK, LSOURCESWAM, PMIN,                              &
      &      LSOURCESWWIII, BLOCK_GAUSS_SEIDEL, LNONL,                   &
      &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
+     &      WAE_JGS_CFL_LIM,                                            &
      &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
      &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
      &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &

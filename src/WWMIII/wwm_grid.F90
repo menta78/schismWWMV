@@ -35,7 +35,7 @@
            !
           OPEN(eGRD % FHNDL, FILE = eGRD % FNAME, STATUS = 'OLD')
           allocate(eGrid % XPtotal(eGrid % np_total), eGrid % DEPtotal(eGrid % np_total), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 1')
           DO IP = 1, eGrid % NP_TOTAL
             READ(eGRD % FHNDL, *, IOSTAT = ISTAT) eGrid % XPtotal(IP), eGrid % DEPtotal(IP)
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('error in the grid configuration file')
@@ -69,7 +69,7 @@
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=1 error in read mnp/mne')
             EGRID%NP_TOTAL = ITMP + JTMP
             allocate(eGrid % XPtotal(eGrid%np_total), eGrid % YPtotal(eGrid%np_total), eGrid % DEPtotal(eGrid%np_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 2')
             DO I = 1, 7
               READ(eGRD % FHNDL, '(A)') RHEADER
             END DO
@@ -85,7 +85,7 @@
             END DO
             READ(eGRD % FHNDL, *, IOSTAT = ISTAT) eGrid % NE_TOTAL
             allocate(eGrid % INEtotal(3, eGrid%ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 3')
             DO I = 1, 3
               READ(eGRD % FHNDL, '(A)') RHEADER
             END DO
@@ -101,13 +101,13 @@
             OPEN(eGRD%FHNDL, FILE = eGRD%FNAME, STATUS = 'OLD')
             READ(eGRD%FHNDL,*) EGRID%NE_TOTAL, EGRID%NP_TOTAL
             allocate(eGrid % DEPtotal(EGRID%NP_TOTAL), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
             DO IP = 1, EGRID%NP_TOTAL
               READ(eGRD%FHNDL, *, IOSTAT = ISTAT) eGrid % DEPtotal(IP)
               IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=2 error in grid read 1')
             END DO
             allocate(eGrid%TRIAtotal(EGRID%NE_TOTAL), eGrid % INEtotal(3,eGrid%ne_total), eGrid % IENtotal(6,eGrid%ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 5')
             DO IE = 1, EGRID%NE_TOTAL
               READ(eGRD%FHNDL, *, IOSTAT = ISTAT) eGrid % TRIAtotal(IE)
               IF ( ISTAT /= 0 )  CALL WWM_ABORT('IGRIDTYPE=2 error in grid read 2')
@@ -131,7 +131,7 @@
             READ(eGRD%FHNDL,*, IOSTAT = ISTAT) EGRID%NE_TOTAL, EGRID%NP_TOTAL
             IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=3 error in read mnp/mne')
             allocate(eGrid % XPtotal(eGrid%np_total), eGrid % YPtotal(eGrid%np_total), eGrid % DEPtotal(eGrid%np_total), eGrid % INEtotal(3, eGrid%ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
             DO IP=1,EGRID%NP_TOTAL
               READ(eGRD%FHNDL, *, IOSTAT = ISTAT) KTMP, XPDTMP, YPDTMP, ZPDTMP
               eGrid % XPtotal(IP)  = XPDTMP
@@ -149,7 +149,7 @@
             READ(eGRD%FHNDL, *, IOSTAT = ISTAT) EGRID%NE_TOTAL 
             READ(eGRD%FHNDL, *, IOSTAT = ISTAT) EGRID%NP_TOTAL 
             allocate(eGrid % XPtotal(eGrid%np_total), eGrid % YPtotal(eGrid%np_total), eGrid % DEPtotal(eGrid%np_total), eGrid%INEtotal(3, eGrid%ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 9')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 7')
             DO IP=1,EGRID%NP_TOTAL
               READ(eGRD%FHNDL, *, IOSTAT = ISTAT) eGrid % XPtotal(IP), eGrid % YPtotal(IP), eGrid % DEPtotal(IP)
               IF ( ISTAT /= 0 ) CALL WWM_ABORT('IGRIDTYPE=4 error in grid read 1')
@@ -189,7 +189,7 @@
             FLUSH(DBG%FHNDL)
 
             allocate(eGrid % XPtotal(eGrid%np_total), eGrid % YPtotal(eGrid%np_total), eGrid % DEPtotal(eGrid%np_total), eGrid%INEtotal(3, eGrid%ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 9')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 8')
 
             ISTAT = nf90_inq_varid(ncid, 'depth', var_id)
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
@@ -283,7 +283,7 @@
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=eGrid % np_total + 7*eGrid % ne_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 10')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 9')
             idx=0
             DO IP=1,NP_TOTAL
               idx=idx+1
@@ -302,7 +302,7 @@
           ELSE
             nb_real=3*eGrid % np_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 11')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 10')
             idx=0
             DO IP=1,NP_TOTAL
               rbuf_real(idx+1)=eGrid % XPtotal(IP)
@@ -320,15 +320,15 @@
           eGrid % np_total=rbuf_int(1)
           eGrid % ne_total=rbuf_int(2)
           allocate(eGrid % INEtotal(3,eGrid % ne_total), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('allocate error 12')
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 11')
           CALL MPI_RECV(eGrid % INEtotal,3*eGrid % ne_total,itype, 0, 32, comm, istatus, ierr)
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=eGrid % np_total + 7*eGrid % ne_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 13')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 12')
             CALL MPI_RECV(rbuf_real,nb_real,rtype, 0, 34, comm, istatus, ierr)
             allocate(eGrid % DEPtotal(eGrid % np_total), eGrid % TRIAtotal(eGrid % ne_total), eGrid % IENtotal(6,eGrid % ne_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 14')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 13')
             idx=0
             DO IP=1,eGrid % NP_TOTAL
               idx=idx+1
@@ -347,9 +347,9 @@
           ELSE
             nb_real=3*np_total
             allocate(rbuf_real(nb_real), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 15')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 14')
             allocate(eGrid % DEPtotal(np_total), eGrid % XPtotal(np_total), eGrid % YPtotal(np_total), stat=istat)
-            IF (istat/=0) CALL WWM_ABORT('allocate error 16')
+            IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 15')
             CALL MPI_RECV(rbuf_real,nb_real,rtype, 0, 34, comm, istatus, ierr)
             idx=0
             DO IP=1,NP_TOTAL
@@ -379,7 +379,7 @@
       ne_total = eGrid % ne_total
       IF (DIMMODE .eq. 1) THEN
         allocate(XPtotal(np_total), DEPtotal(np_total), DX1total(0:np_total+1), DX2total(0:np_total+1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('allocate error')
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
         DO IP=1,np_total
           XPtotal(IP)  = eGrid % XPtotal(IP)
           DEPtotal(IP) = eGrid % DEPtotal(IP)
@@ -391,7 +391,7 @@
       ELSE
         IF (IGRIDTYPE .eq. 2) THEN
           allocate(DEPtotal(NP_TOTAL), TRIAtotal(NE_TOTAL), INEtotal(3,ne_total), IENtotal(6,ne_total), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 6')
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 17')
           DO IP=1,np_total
             DEPtotal(IP) = eGrid % DEPtotal(IP)
           END DO
@@ -402,7 +402,7 @@
           END DO
         ELSE
           allocate(XPtotal(np_total), YPtotal(np_total), DEPtotal(np_total), INEtotal(3, eGrid%ne_total), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 4')
+          IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 18')
           DO IP=1,np_total
             XPtotal(IP) = eGrid % XPtotal(IP)
             YPtotal(IP) = eGrid % YPtotal(IP)
@@ -442,7 +442,7 @@
         END IF
       END DO
       allocate(IPbound(nbDirichlet), IPisland(nbIsland), ACTIVE(nbDirichlet), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('allocate error 17')
+      IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 19')
       ACTIVE(:)=1    ! right now we are proceding this way. Maybe there is work here to improve
       idxDirichlet=0
       idxIsland=0

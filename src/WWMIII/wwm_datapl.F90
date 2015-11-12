@@ -1114,6 +1114,9 @@
          REAL(rkind)            :: STP_SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          REAL(rkind)            :: WAE_SOLVERTHR = 1.e-10_rkind
+         LOGICAL                :: WAE_JGS_CFL_LIM = .FALSE.
+         integer, allocatable   :: CFLadvgeoI(:)
+         integer, allocatable   :: NumberOperationJGS(:)
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.

@@ -9,10 +9,10 @@
          USE DATAPOOL
          IMPLICIT NONE
  
-         INTEGER             :: IS, ID, IP
+         INTEGER             :: IS, ID
          IF (LCFL .and. LCALC) THEN
            CFLCXY(1,:) = ZERO
-           CFLCXY(2,:) = ZERO
+           CFLCXY(2,:) = LARGE
            CFLCXY(3,:) = LARGE 
          END IF
  
@@ -53,7 +53,7 @@
 #endif
        IMPLICIT NONE
  
-       INTEGER             :: IS, ID, IP
+       INTEGER             :: IS, ID
        REAL(rkind)         :: DTMAX
  
 #ifdef PETSC
@@ -115,7 +115,7 @@
 #endif
        IMPLICIT NONE
  
-       INTEGER             :: IS, ID, IP
+       INTEGER             :: IS, ID
        REAL(rkind)         :: DTMAX
 
 !2DO MATHIEU: Please clean this ... and please check this  
@@ -184,9 +184,6 @@
        use petsc_block,    only: EIMPS_PETSC_BLOCK
 #endif
        IMPLICIT NONE
-
-       INTEGER             :: IS, ID, IP
-
        IF (AMETHOD .eq.5) THEN
 #ifdef PETSC
          CALL EIMPS_PETSC_BLOCK
@@ -247,7 +244,7 @@
          IF (LCFL) THEN
            CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
            CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-           CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+           CFLCXY(2,IP) = MIN(CFLCXY(2,IP), DTMAX_EXP)
            CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
          END IF
          DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
@@ -268,7 +265,7 @@
          IF (LCFL) THEN
            CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
            CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-           CFLCXY(2,IP) = MAX(CFLCXY(2,IP), DTMAX_EXP)
+           CFLCXY(2,IP) = MIN(CFLCXY(2,IP), DTMAX_EXP)
            CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
          END IF
          DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
@@ -310,21 +307,20 @@
 !
          INTEGER :: IP, IE, IT, IP_TEST
          INTEGER :: I1, I2, I3, I, J, IMETHOD, IPOS
-         INTEGER :: NI(3), POS
+         INTEGER :: NI(3)
 !
 ! local double
 !
          REAL(rkind)  :: UTILDE
-         REAL(rkind)  :: REST, TESTMIN
+         REAL(rkind)  :: TESTMIN
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
          REAL(rkind)  :: KTMP(3)
-         REAL(rkind)  :: KKSUM(MNP), KKMAX(MNP), ST(MNP), N(MNE), U3(3)
-         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
+         REAL(rkind)  :: ST(MNP), N(MNE), U3(3)
+         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP)
          REAL(rkind)  :: FLALL(3,MNE), UTILDEE(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
-         REAL(rkind)  :: CXnorm
 #ifdef positivity         
          REAL(rkind)  :: CBAR_1_1(2), CBAR_1_2(2)
          REAL(rkind)  :: CBAR_2_1(2), CBAR_2_2(2)
@@ -536,14 +532,13 @@
 ! local integer
 !
          INTEGER :: IP, IE, IT
-         INTEGER :: I1, I2, I3, K
+         INTEGER :: I1, I2, I3
          INTEGER :: NI(3)
 !
 ! local double
 !
          REAL(rkind)  :: FT
          REAL(rkind)  :: UTILDE
-         REAL(rkind)  :: REST
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
 
@@ -553,13 +548,12 @@
          REAL(rkind)  :: KTMP(3)
          REAL(rkind)  :: BET1(3), BETAHAT(3)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), N(MNE)
+         REAL(rkind)  :: ST(MNP), N(MNE)
 
-         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY
+         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP)
          REAL(rkind)  :: FLALL(3,MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE)
-         REAL(rkind)  :: CXnorm
 !
 ! local parameter
 !
@@ -686,7 +680,6 @@
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: REST
          REAL(rkind)  :: TMP(3), TMP1
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
@@ -698,13 +691,12 @@
          REAL(rkind)  :: UTMP(3)
          REAL(rkind)  :: WII(2,MNP), UL(MNP), USTARI(2,MNP)
 
-         REAL(rkind)  :: KKSUM(MNP), ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
+         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
          REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP)
 
-         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), CFLXY, N(MNE)
+         REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
-         REAL(rkind)  :: CXnorm
 !
 ! local parameter
 !
@@ -923,10 +915,11 @@
          REAL(rkind)  :: WKSP( 20*MNP )
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
-         REAL(rkind)  :: ASPAR(NNZ), LIMFAC
+         REAL(rkind)  :: ASPAR(NNZ)
 
-         REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
-         REAL(rkind)  :: TEMP
+#ifdef TIMINGS
+         REAL(rkind)  :: TIME1, TIME4
+#endif
 
          INTEGER :: POS_TRICK(3,2)
 
@@ -934,7 +927,7 @@
          external gmres
 
 #ifdef TIMINGS
-!         CALL WAV_MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif
 
          IWKSP = 0
@@ -3017,7 +3010,9 @@
       REAL(rkind)  :: FL311(MSC,MDC), FL312(MSC,MDC)
       REAL(rkind)  :: UTILDE3(MSC,MDC)
       REAL(rkind)  :: KSUM(MSC,MDC), KMAX(MSC,MDC)
-      REAL(rkind)  :: TIME1, TIME2
+#ifdef TIMINGS
+      REAL(rkind)  :: TIME1
+#endif
 !
 ! local parameter
 !
@@ -3180,7 +3175,9 @@
          REAL(rkind)   :: KELEM(3,MNE), KKELEM(3) ! 3 * 20000 / 1024**2
          REAL(rkind)   :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)   :: UTILDE3(MNE) ! 20000 * 8 / 1024**2.
-         REAL(rkind)   :: TIME1, TIME2
+#ifdef TIMINGS
+         REAL(rkind)   :: TIME1
+#endif
 !
 !        Calculate K-Values and contour based quantities ...
 !
