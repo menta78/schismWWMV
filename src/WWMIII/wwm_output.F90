@@ -2187,7 +2187,7 @@
             OUTT(:,IPglob) = OUTPAR(VAROUT_HISTORY % ListIdxEff)
           END DO
           IF (nproc > 1) THEN
-            call mpi_waitall(nproc-1,var_oned_hot_rqst,var_oned_hot_stat,ierr)
+            call mpi_waitall(nproc-1,netcdf_his_rqst,netcdf_his_stat,ierr)
           END IF
         ELSE
           ALLOCATE(OUTT_LOC(nbVar,NP_RES), stat=istat)
