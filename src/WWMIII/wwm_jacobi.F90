@@ -831,8 +831,12 @@
                     NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
                   END IF
                 END IF
-              ENDIF
-            ENDIF
+              END IF
+            END IF
+          ELSE
+            IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
+              is_converged = is_converged + 1
+            END IF
           END IF
         END DO
         IF (JGS_CHKCONV) THEN
