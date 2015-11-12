@@ -730,6 +730,10 @@
       INTEGER :: IP, J, idx, nbIter, is_converged, itmp
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
+      integer nbPassive
+      WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
+      WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
+      WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
       IF (WAE_JGS_CFL_LIM) THEN
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
@@ -784,6 +788,7 @@
 #ifdef DEBUG_ITERATION_LOOP
         FieldOut1 = 0
 #endif
+        nbPassive = 0
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
           Sum_prev = sum(ACLOC)
@@ -817,7 +822,6 @@
               if (Sum_new .gt. thr8) then
                 DiffNew=sum(abs(ACLOC - eSum))
                 p_is_converged = DiffNew/Sum_new
-                !write(*,'(5F15.7)') p_is_converged, DiffNew, Sum_new, sum(ACLOC), sum(esum)
               else
                 p_is_converged = zero
               endif
@@ -834,6 +838,7 @@
               END IF
             END IF
           ELSE
+            nbPassive = nbPassive + 1
             IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
               is_converged = is_converged + 1
             END IF
@@ -865,7 +870,7 @@
 !
 ! The termination criterions several can be chosen
 !
-        WRITE(STAT%FHNDL,'(A10,3I10,E30.20,F10.5)') 'solver', nbiter, is_converged, np_total-is_converged, p_is_converged, pmin
+        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged, np_total-is_converged, p_is_converged, pmin
         !
         ! Number of iterations. If too large the exit.
         !
