@@ -107,10 +107,17 @@
                                      ! Flag 0: not on bnd; 3: Neumann (0 gradient);
                                      ! 2: active bnd (Direchlet). Bnd flags imported from SELFE:
                                      ! 1: exterior bnd; -1: interior (islands)
- IBOUNDFORMAT   = 1                  ! 1 ~ WWM, 2 ~ FVCOM: 3 ~ WW3. FVCOM and WW3 works only with LBCWA=T.
+ IBOUNDFORMAT   = 1                  ! 1: WWM,
+                                     ! 2: FVCOM (only with LBCWA = T)
+                                     ! 3: WW3. FVCOM and WW3 works only with LBCWA=T.
+                                     ! 4: NetCDF boundary condition (parametric or boundary)
+                                     ! 5: WAM style boundary condition.
                                      ! For WW3 boundary input also set LINHOM=T, LBCSE=T and this works only for spherical coordinates
                                      ! LMONO_IN = F ! incident wave is defined as monochromatic wave height, which is Hmono = sqrt(2) * Hs
                                      ! The following are needed only if LBCWA=T and LINHOM=F
+ EXTRAPOLATION_ALLOWED = F           ! Sometimes model grid is slightly larger
+                                     ! than the forcing grid. For points outside
+                                     ! one uses extrapolation. Default F.
  WBHS           = 0.181              ! Hs at the boundary for parametric spectra
  WBSS           = 3.                 ! 1 or -1: Pierson-Moskowitz
                                      ! 2 or -2: JONSWAP
@@ -659,6 +666,7 @@
  ListDELTC =         ! list of DELTC of the boundary output
  ListUNITC =         ! list of UNITS of the boundary output
  ListENDTC =         ! list of ENDTC of the boundary output
+ ListPrefix =        ! list of prefix used for the output variable
 /
 
 

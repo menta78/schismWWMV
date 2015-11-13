@@ -86,7 +86,7 @@ The WWM model can be run in serial mode, with MPI (Message Passing Interface) an
 
 
 
-\section{Description of input file}
+\section{Description of input file format}
 The input file is typically named {\tt wwminput.nml} and the program reads it as default by 
 \begin{verbatim}
 [mathieu@neptun ~]$ wwmadv
@@ -99,14 +99,17 @@ The input file is using a standard NAMELIST type:
 \begin{enumerate}
 \item Variables can be strings, logical, integers, floating point or list of those.
 \item Logical tests are indicated as {\bf F/T}.
-\item 
 \item Optional items are set to a default value.
 \item Some systems are very strict with the input that they accept. All strings should be delimited by '   '. Final comma at the end 
 \end{enumerate}
-We will see below all aspects of it and look at each section in turn.
-The file {\tt wwminput.nml.ref} contains all the options and a short description of them
+All sections need to be present and the order need to be the one specified below. But the section can be empty in which case default values are used.
 
 
+
+
+\section{Description of all options}
+Below is an exhaustive list of all options of WWM.
+Another parallel description is in {\tt wwminput.nml.ref} file.
 
 \subsection{Section {\tt PROC}}
 This is the main section of the input file. It chooses the kind of grid used (spherical or not) the time stepping and other setting.
@@ -328,6 +331,7 @@ Other important thing to decide is the origin of the spectrum. If it is time spa
  NCDF_SPR_NAME  = 'spr'      
  NCDF_FP_NAME   = 'fp'       
  NCDF_F02_NAME  = 't02'      
+ EXTRAPOLATION_ALLOWED = F
  NETCDF_OUT_PARAM = F   
  NETCDF_OUT_SPECTRA = F 
  NETCDF_OUT_FILE        
@@ -365,10 +369,11 @@ The meaning of the options is the following:
   \end{itemize}
 \item {\tt IBOUNDFORMAT} (integer): this specifies the nature of boundary data. Possible values:
   \begin{itemize}
-  \item {\tt 1}: This is parametric wave boundary condition with WWM format. (Use FILEWAVE?)
+  \item {\tt 1}: This is parametric wave boundary condition with WWM format. (Use FILEWAVE)
   \item {\tt 2}: This is parametric wave boundary condition with FVCOM format. 
-  \item {\tt 3}: This is boundary condition using WW§ output from IFREMER.
+  \item {\tt 3}: This is boundary condition using WW3 output from IFREMER.
   \item {\tt 4}: This is boundary condition using netcdf output files.
+  \item {\tt 5}: This is boundary condition using grib 2DFD output from WAM at ECMWF
   \end{itemize}
 \item If {\tt LINHOM=F}, {\tt LBCWA=T} and {\tt LBCSE=T} then the spectra is determined by just a few parameters that are actually in the WWM input file:
   \begin{itemize}
@@ -388,6 +393,13 @@ The meaning of the options is the following:
   \item {\tt WBGAUSS} (float): factor for Gauss distribution if {\tt WBSS=1}.
   \item {\tt WBPKEN} (float):  Peak enhancement factor for Jonswap Spectra if {\tt WBSS=2}.
   \end{itemize}
+\item It is possible to output the boundary condition from an actual run and those boundary condition may later be used in another WWM run as forcing data. Relevant variables are:
+  \begin{itemize}
+  \item {\tt NETCDF\_OUT\_PARAM} (logical): whether to output the variable for parametric boundary condition-
+  \item {\tt NETCDF\_OUT\_SPECTRA} (logical): whether to output the spectra for the boundary condition
+  \item {\tt NETCDF\_OUT\_FILE} (string): the filename of the output.
+  \item {\tt USE\_SINGLE\_OUT} (logical): use single precision in the output file.
+  \end{itemize}
 \item When selecting {\tt IBOUNDFORMAT=3} 5 netcdf files are needed with the IFREMER. The relevant options with their default values are:
   \begin{itemize}
   \item {\tt NCDF\_HS\_NAME = 'hs'}
@@ -396,12 +408,11 @@ The meaning of the options is the following:
   \item {\tt NCDF\_FP\_NAME   = 'fp'}
   \item {\tt NCDF\_F02\_NAME  = 't02'}
   \end{itemize}
-\item It is possible to output the boundary condition from an actual run and those boundary condition may later be used in another WWM run as forcing data. Relevant variables are:
+  All the files are contained in {\tt FILEWAVE}
+\item When selecting {\tt IBOUNDFORMAT=4} the boundary condition is obtained from a netCDF boundary file (created either by WWM, ww3ifr or any other method). The filename is {\tt FILEWAVE}. The data can be spectral or parametric.
+\item If {\tt IBOUNDFORMAT=5} then the boundary condition is taken from 2DFD wave spectra obtained from ECMWF are used. The list of files is contained in {\tt FILEWAVE}. It is allowed to have several wave spectrum per files. Following option is specific to this code:
   \begin{itemize}
-  \item {\tt NETCDF\_OUT\_PARAM} (logical): whether to output the variable for parametric boundary condition-
-  \item {\tt NETCDF\_OUT\_SPECTRA} (logical): whether to output the spectra for the boundary condition
-  \item {\tt NETCDF\_OUT\_FILE} (string): the filename of the output.
-  \item {\tt USE\_SINGLE\_OUT} (logical): use single precision in the output file.
+  \item {\tt EXTRAPOLATION\_ALLOWED} (logical): sometimes the grid of origin is too small for effective runs. The idea is then to do extrapolation for the point outside. Default is false.
   \end{itemize}
 
 \end{enumerate}
@@ -412,9 +423,7 @@ The meaning of the options is the following:
 
 
 \subsection{Section {\tt WIND}}
-The wind section specifies how the wind, is provided to the WWM model. It is the most essential
-
-
+The wind section specifies how the wind, is provided to the WWM model. It is the most essential forcing parameter.
 \begin{verbatim}
 &WIND
  LWINDFROMWWM   = F      
@@ -742,6 +751,7 @@ The meaning of the options is the following:
   \item {\tt 6}: Like {\tt AMETHOD=5} but using our own SOR based solver for the solutioning.
   \item {\tt 7}: Like {\tt AMETHOD=7} but using our own Jacobi iteration for the solutioning.
   \end{itemize}
+\item It is generally not a good idea to use {\tt AMETHOD} with a value of $4$, $5$ or $6$ as those methods are now obsoletes.
 \item The following options are specific to the option {\tt AMETHOD=7}:
   \begin{itemize}
   \item {\tt BLOCK\_GAUSS\_SEIDEL} (logical): Under this option, the Gauss-Seidel method is used for the solutioning on each block. It decreases the memory expenses of the computation. Experimentally, it tends to decrease the number of iteration needed to solve the system but the result become dependent on the number of processors used for solving the system. Default is true.
@@ -750,7 +760,7 @@ The meaning of the options is the following:
   \Vert Ax - b \Vert_2 \leq \epsilon
   \end{equation*}
   The norm is the $L^2$ norm. This doubles the runtime of the solver. Default is false.
-  \item {\tt JGS\_SOLVERTHR} (float): the value of $\epsilon$ in the above equation.
+  \item {\tt WAE\_SOLVERTHR} (float): the value of $\epsilon$ in the above equation.
   \item {\tt ASPAR\_LOCAL\_LEVEL} (integer): specifies the level of locality of the {\tt ASPAR} array. Essentially there is a balance between memory usage and computation. At highest level of locality less memory is used but things need to be recomputed at each step of the iteration. Default value is 0. Possible choices:
     \begin{itemize}
     \item {\tt 0}: the {\tt ASPAR\_JAC(MSC,MDC,NNZ)}, {\tt CAD\_THE(MSC,MDC,MNP)}, {\tt CAS\_SIG(MSC,MDC,MNP)} arrays are allocated.
@@ -758,6 +768,7 @@ The meaning of the options is the following:
     \item {\tt 2} and above: smaller arrays are allocated.
     \end{itemize}
   \item {\tt LNONL} (logical): iteration also happens at the nonlinear level for the source terms. Default is false.
+  \item {\tt WAE\_JGS\_CFL\_LIM} (logical): provides a speed up in the solutioning by discarding points which have a stable solution for more than CFL time steps. Experimental code. Default is false.
   \item {\tt JGS\_CHKCONV} (logical): check from one step of the iteration to the next. Compute the number $n$ of grid points such that
   \begin{equation*}
   \sum \vert ACLOC_{it+1} - ACLOC_{it}\vert < \epsilon_2 \sum \vert ACLOC_{it+1}\vert
@@ -791,7 +802,6 @@ The meaning of the options is the following:
   \item {\tt 2}: Explicit Upwind scheme
   \item {\tt 3}: Implicit Upwind scheme
   \end{itemize}
-
 \item {\tt MELIM} (integer): limiter for the action. Possible choices:
   \begin{itemize}
   \item {\tt 1}: (default) Limiter according to the WAM group (1988) \cite{WAMDIgroup}.
@@ -1075,6 +1085,68 @@ The meaning of the options is the following:
 \item {\tt MULTIPLEIN} (integer): Whether we read from a single file or several.
 \item {\tt FILEHOT\_IN} (string): the name of the hotfile used as input.
 \end{enumerate}
+
+
+
+\subsection{Section {\tt NESTING}}
+This section specifies how to do nesting of another grid in WWM. The nesting if offline and 1-way.
+One first runs the coarse grid model which output relevant NetCDF hotfiles and NetCDF boundary conditions to be
+used by fine grids.
+
+If one does not wish to have nesting then simply put
+\begin{verbatim}
+&NESTING
+/
+\end{verbatim}
+in your input file.
+
+The fullset of options is:
+\begin{verbatim}
+&NESTING
+ L_NESTING = F,      ! whether to produce nesting data or not
+ L_HOTFILE = F       ! whether to produce an hotfile as output
+ L_BOUC_PARAM = F    ! whether to produce a parametric boundary condition to be used by the nested grids
+ L_BOUC_SPEC = F     ! whether to produce a spectral   boundary condition to be used by the nested grids
+ NB_GRID_NEST = 0    ! number of nested grids. All lines below must contain NB_GRID_NEST entries.
+ ListIGRIDTYPE =     ! list of integers giving the type of nested grid
+ ListFILEGRID =      ! list of strings for the grid file names.
+ ListFILEBOUND =     ! list of boundary file names to be used
+ ListBEGTC = ....    ! list of beginning time of the runs (used for hotfile and boundary)
+ ListDELTC =         ! list of DELTC of the boundary output
+ ListUNITC =         ! list of UNITS of the boundary output
+ ListENDTC =         ! list of ENDTC of the boundary output
+ ListPrefix =        ! list of prefixes used for the data output.
+/
+\end{verbatim}
+The meaning of the options is as follows:
+\begin{enumerate}
+\item {\tt L\_NESTING} (logical): specifies whether we use nesting functionality or not.
+\item {\tt L\_HOTFILE} (logical): specifies whether we output hotfile to be used by the nested grids.
+\item {\tt L\_BOUC\_PARAM} (logical): specifies whether we output parametric boundary condition for the nested grids.
+\item {\tt L\_BOUC\_SPEC} (logical): specifies whether we output spectral boundary conditions
+\item {\tt NB\_GRID\_NEST} (integer): number of nested grids used.
+\end{enumerate}
+Below we give a list of entries. For each line item the number of entry should be equal to {\tt NB\_GRID\_NEST}.
+\begin{enumerate}
+\item {\tt ListIGRIDTYPE} (list of integers): list of grid file types
+\item {\tt ListFILEGRID} (list of strings): list of grid file names.
+\item {\tt ListFILEBOUND} (list of strings): list of grid file boundary.
+\item {\tt ListBEGTC} (list of strings): list beginning time of the runs.
+\item {\tt ListDELTC} (list of integer): list of separating times
+\item {\tt ListUNITC} (list of strings): list of UNITC
+\item {\tt ListENDTC} (list of strings): list of ENDTC
+\item {\tt ListPrefix} (list of strings): list of prefixes used for the output.
+\end{enumerate}
+If {\tt L\_HOTFILE} is true then the hotfile for the boundary is created at exactly time BEGTC.
+If {\tt L\_BOUC\_PARAM} and/or {\tt L\_BOUC\_SPEC} is true then the boundary output is done from time BEGTC to ENDTC with separating time interval specified by {\tt DELTC} and {\tt UNITC}.
+
+The files created are determined by {\tt ListPrefix}. For example if boundary and hotfiles are asked for
+\begin{verbatim}
+ ListPrefix = fine01, fine02
+\end{verbatim}
+then the files {\tt fine01\_hotfile.nc}, {\tt fine01\_boundary.nc}, {\tt fine02\_hotfile.nc}, {\tt fine02\_boundary.nc} are created.
+
+
 
 
 

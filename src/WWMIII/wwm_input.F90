@@ -746,7 +746,7 @@
          NAMELIST /NESTING/ L_NESTING, NB_GRID_NEST,                    &
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
      &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
-     &      L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
+     &      ListPrefix, L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
      
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
