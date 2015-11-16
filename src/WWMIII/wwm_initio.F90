@@ -528,7 +528,10 @@
       IMPLICIT NONE
 !
       REAL(rkind)    :: TIME1, TIME2
-      
+#if defined MPI_PARALL_GRID && !defined PDLIB
+      integer i,j
+#endif
+
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
