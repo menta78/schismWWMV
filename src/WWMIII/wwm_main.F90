@@ -232,7 +232,7 @@
          IF (LQSTEA) THEN
            CALL QUASI_STEADY(KKK)
          ELSE
-           CALL UN_STEADY(KKK,CALLFROM)
+           CALL UN_STEADY(KKK)
          END IF
 
          IF (LNANINFCHK) THEN
