@@ -10,9 +10,9 @@
       real(rkind), intent(out) :: eJD
       real(rkind) :: eJDbase, eFracDay
       integer a, y, m
-      a = floor((MyREAL(14) - MyREAL(month))/MyREAL(12));
-      y = year + 4800 - a;
-      m = month + 12*a - 3;
+      a = floor((MyREAL(14) - MyREAL(month))/MyREAL(12))
+      y = year + 4800 - a
+      m = month + 12*a - 3
       ! For a date in the Gregorian calendar:
       eJDbase = MyREAL(day)                                            &
      & + MyREAL(floor((MyREAL(153)*MyREAL(m) + MyREAL(2))/MyREAL(5)))  &
@@ -143,15 +143,15 @@
       real(rkind) :: fjd, second
       ijd = floor(eJD + 0.5_rkind)
       !
-      a = ijd + 32044;
+      a = ijd + 32044
       b = floor((MyREAL(4)*MyREAL(a) + MyREAL(3)) / MyREAL(146097))
-      c = a - floor((MyREAL(b) * MyREAL(146097)) / MyREAL(4));
+      c = a - floor((MyREAL(b) * MyREAL(146097)) / MyREAL(4))
       !
       d = floor((MyREAL(4)*MyREAL(c) + MyREAL(3)) / MyREAL(1461))
-      e = c - floor((MyREAL(1461)*MyREAL(d)) / MyREAL(4));
+      e = c - floor((MyREAL(1461)*MyREAL(d)) / MyREAL(4))
       m = floor((MyREAL(5) * MyREAL(e) + MyREAL(2)) / MyREAL(153))
       !
-      day   = e - floor((MyREAL(153) * MyREAL(m) + MyREAL(2)) / MyREAL(5)) + 1;
+      day   = e - floor((MyREAL(153) * MyREAL(m) + MyREAL(2)) / MyREAL(5)) + 1
       month = m + 3 - 12 * floor(MyREAL(m) / MyREAL(10))
       year  = b * 100 + d - 4800 + floor(MyREAL(m) / MyREAL(10))
       !
