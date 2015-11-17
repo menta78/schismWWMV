@@ -2162,8 +2162,8 @@
 !**********************************************************************
       SUBROUTINE COLLECT_OUTT_ARRAY
       IMPLICIT NONE
-      REAL(rkind), allocatable  :: OUTT_LOC(:,:)
-      REAL(rkind)               :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
+      REAL(rkind), allocatable :: OUTT_LOC(:,:)
+      REAL(rkind)              :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
 # ifdef MPI_PARALL_GRID
       logical, save :: IsMPIarrayInitialized = .FALSE.
       integer iProc, IPglob
@@ -2201,7 +2201,6 @@
           deallocate(OUTT_LOC)
         END IF
       ELSE
-        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 9')
 !$OMP PARALLEL DEFAULT(NONE) SHARED(AC2,OUTT,FRHIGH,MNP,MSC) PRIVATE(ACLOC,OUTPAR,IP)
 !$OMP DO
         DO IP = 1, NP_RES
