@@ -709,7 +709,7 @@
          IP_TEST = 20710 
          DFAK    = 100.
          NGSE    = 3
-         ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
+         ALPHA_GSE(1) = 0.33; ALPHA_GSE(2) = 0.33; ALPHA_GSE(3) = 0.33
          
 !         WRITE(*,*) IEND
 !
@@ -729,9 +729,9 @@
            !AC1(1,IDD,IP_TEST) = 1.
            DO ip = 1, mnp
              IF (IOBP(IP) .NE. 2) THEN
-               UL(IP,IGSE) = ALPHA_GSE(IGSE) * (AC1(IS,IDD,IP) + AC1(IS,ID,IP)) * 0.5 
+               UL(IP,IGSE) = ALPHA_GSE(IGSE) * AC1(IS,ID,IP) 
              ELSE 
-               UL(IP,IGSE) = ALPHA_GSE(IGSE) * (WBAC(IS,IDD,1) +  WBAC(IS,ID,1)) * 0.5 
+               UL(IP,IGSE) = ALPHA_GSE(IGSE) * WBAC(IS,ID,1) 
              ENDIF 
            ENDDO
 
