@@ -35,7 +35,7 @@
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
-               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
+               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          END IF
@@ -338,7 +338,9 @@
 !
          CALL CADVXY(IS,ID,C)
         
-         IP_TEST = 180 
+         IP_TEST = 20710 
+
+         AC2(1,ID,IP_TEST) = 1. 
 !
 !        Calculate K-Values and contour based quantities ...
 !
@@ -533,7 +535,7 @@
 !
          INTEGER :: IP, IE, IT
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3)
+         INTEGER :: NI(3), IP_TEST
 !
 ! local double
 !
@@ -558,6 +560,10 @@
 ! local parameter
 !
          REAL(rkind) :: TMP
+
+         IP_TEST = 20710 
+
+         AC2(1,IS,IP_TEST) = 1. 
 
          U(:) = AC2(IS,ID,:)
 !
@@ -637,7 +643,7 @@
 ! the 2nd term are the theta values of each node ...
              ST(NI) = ST(NI) + THETA_L
            END DO
-           U = MAX(ZERO,U-DTSI*ST*IOBWB)*IOBPD(ID,:)
+
            DO IP = 1, MNP
              U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
            END DO
@@ -664,6 +670,191 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+       SUBROUTINE EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER, INTENT(IN)    :: IS,ID
+!
+! local integer
+!
+         INTEGER :: IP, IE, IT, I, J, IDD
+         INTEGER :: I1, I2, I3, IGSE, NGSE
+         INTEGER :: NI(3), IP_TEST
+!
+! local double
+!
+         REAL(rkind) :: FT
+         REAL(rkind)  :: UTILDE
+
+         REAL(rkind)  :: TMP(3), TMP1, DFAK
+
+         REAL(rkind)  :: LAMBDA(2), DT4AI
+         REAL(rkind)  :: BET1(3), BETAHAT(3), BL
+
+         REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
+
+         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE)
+         REAL(rkind)  :: UTMP(3)
+         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP)
+
+         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3), UDTDX(MNP)
+
+         REAL(rkind)  :: C(2,MNP), C_GSE(2,MNP), U(MNP), DTSI(MNP), N(MNE)
+         REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
+         REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
+!
+! local parameter
+!
+         IP_TEST = 20710 
+         DFAK    = 100.
+         NGSE    = 3
+         ALPHA_GSE(1) = 0.33; ALPHA_GSE(2) = 0.33; ALPHA_GSE(3) = 0.33
+         
+!         WRITE(*,*) IEND
+!
+         BL = ZERO
+!
+!        Calculate phase speeds for the certain spectral component ...
+!
+         DO IGSE = 1, NGSE 
+
+           IDD = ID + IGSE - NGSE + 1 
+           IF (IDD == 0) THEN
+             IDD = MDC
+           ELSE IF (IDD == MDC + 1) THEN
+             IDD = 1
+           ENDIF
+
+           !AC1(1,IDD,IP_TEST) = 1.
+           do ip = 1, mnp
+             !IF (IOBP(IP) .NE. 2) THEN
+               U(IP) = ALPHA_GSE(IGSE) * AC1(IS,IDD,IP)
+             !ELSE
+             !  U(IP) = AC1(IS,IDD,IP)
+             !ENDIF
+             UL(IP,IGSE) = U(IP)
+           enddo
+
+           CALL CADVXY(IS,ID,C)
+           CALL CADVXY(IS,IDD,C_GSE)
+!
+!        Calculate K-Values and contour based quantities ...
+!
+         DO IE = 1, MNE
+            I1 = INE(1,IE)
+            I2 = INE(2,IE)
+            I3 = INE(3,IE)
+            C(1,I1) = 0.5*(C(1,I1) + C_GSE(1,I1))
+            C(1,I2) = 0.5*(C(1,I2) + C_GSE(1,I2))
+            C(1,I3) = 0.5*(C(1,I3) + C_GSE(1,I3))
+            C(2,I1) = 0.5*(C(2,I1) + C_GSE(2,I1))
+            C(2,I2) = 0.5*(C(2,I2) + C_GSE(2,I2))
+            C(2,I3) = 0.5*(C(2,I3) + C_GSE(2,I3))
+            LAMBDA(1) = ONESIXTH *(C(1,I1)+C(1,I2)+C(1,I3))
+            LAMBDA(2) = ONESIXTH *(C(2,I1)+C(2,I2)+C(2,I3))
+            KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
+            KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+            KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+            N(IE) = - ONE/MIN(-THR,SUM(MIN(ZERO,KELEM(:,IE))))
+            FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
+            FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
+            FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
+            FL22  = C(1,I1) * IEN(3,IE) + C(2,I1) * IEN(4,IE)
+            FL31  = C(1,I1) * IEN(5,IE) + C(2,I1) * IEN(6,IE)
+            FL32  = C(1,I2) * IEN(5,IE) + C(2,I2) * IEN(6,IE)
+            FL111 = 2*FL11+FL12
+            FL112 = 2*FL12+FL11
+            FL211 = 2*FL21+FL22
+            FL212 = 2*FL22+FL21
+            FL311 = 2*FL31+FL32
+            FL312 = 2*FL32+FL31
+            FLALL(1,IE) = FL311 + FL212
+            FLALL(2,IE) = FL111 + FL312
+            FLALL(3,IE) = FL211 + FL112
+         END DO
+! If the current field or water level changes estimate the iteration
+! number based on the new flow field and the CFL number of the scheme
+         IF (LCALC) THEN
+           CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
+         END IF
+
+         DT4AI    = DT4A/ITER_EXP(IS,ID)
+         DTSI(:)  = DT4AI/SI(:)
+
+#ifdef MPI_PARALL_GRID
+         CALL EXCHANGE_P2D(U)
+!         CALL EXCHANGE_P2D(UL)
+#endif
+!
+!  Loop over all sub time steps, all quantities in this loop depend
+!  on the solution U itself !!!
+!
+         DO IT = 1, ITER_EXP(IS,ID)
+!
+! Element loop
+!
+           ST = ZERO
+           PM = ZERO
+           PP = ZERO
+           DO IE = 1, MNE
+              NI      = INE(:,IE)
+              UTMP    = UL(NI,IGSE)
+              FT      =  -ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
+              TMP     =  MAX(ZERO,KELEM(:,IE))
+              UTILDE  =  N(IE) * ( DOT_PRODUCT(TMP,UTMP) - FT )
+              THETA_L(:,IE) =  TMP * ( UTMP - UTILDE )
+              IF (ABS(FT) .GT. ZERO) THEN
+                BET1(:) = THETA_L(:,IE)/FT
+                IF (ANY( BET1 .LT. ZERO) ) THEN
+                  BETAHAT(1)    = BET1(1) + ONEHALF * BET1(2)
+                  BETAHAT(2)    = BET1(2) + ONEHALF * BET1(3)
+                  BETAHAT(3)    = BET1(3) + ONEHALF * BET1(1)
+                  BET1(1)       = MAX(ZERO,MIN(BETAHAT(1),ONE-BETAHAT(2),ONE))
+                  BET1(2)       = MAX(ZERO,MIN(BETAHAT(2),ONE-BETAHAT(3),ONE))
+                  BET1(3)       = MAX(ZERO,MIN(BETAHAT(3),ONE-BETAHAT(1),ONE))
+                  THETA_L(:,IE) = FT * BET1
+                END IF
+              ELSE
+                THETA_L(:,IE) = ZERO
+              END IF
+              ST(NI)          = ST(NI) + THETA_L(:,IE)
+              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) * KELEM(:,IE) ) * FT ! LAX
+!              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(ZERO,KELEM(:,IE))))*FT  ! CENTRAL
+              THETA_ACE(:,IE) = THETA_H-THETA_L(:,IE)
+              PP(NI) =  PP(NI) + MAX(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
+              PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
+            END DO
+
+            DO IP = 1, MNP
+              UL(IP,IGSE) = MAX(ZERO,UL(IP,IGSE)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+            ENDDO
+
+#ifdef MPI_PARALL_GRID
+            CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
+#endif
+           END DO  ! ----> End Iteration
+
+         END DO  ! ..... END GSE Loop
+
+         AC2(IS,ID,:) = UL(:,1) + UL(:,2) + UL(:,3)
+
+         IF (LADVTEST) THEN
+           WRITE(4001)  SNGL(RTIME)
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
+     &                  IP = 1, MNP)
+           CALL CHECKCONS(U,SUMAC2)
+           IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
+           WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
+     &       SUMAC1, SUMAC2, MINTEST
+           WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
+     &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
+     &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
+         END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
        SUBROUTINE EXPLICIT_LFPSI_SCHEME(IS,ID)
          USE DATAPOOL
          IMPLICIT NONE
@@ -673,14 +864,14 @@
 !
          INTEGER :: IP, IE, IT, I, J
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3)
+         INTEGER :: NI(3), IP_TEST
 !
 ! local double
 !
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: TMP(3), TMP1
+         REAL(rkind)  :: TMP(3), TMP1, DFAK
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
@@ -692,13 +883,20 @@
          REAL(rkind)  :: WII(2,MNP), UL(MNP), USTARI(2,MNP)
 
          REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
-         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
 !
 ! local parameter
+!
+         IP_TEST = 20710 
+         DFAK    = 100.
+         
+!         WRITE(*,*) IEND
+!
+         !AC2(1,:,IP_TEST) = 0.1
 !
          BL = ZERO
 !
@@ -743,7 +941,7 @@
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
 
-         U(:) = AC2(IS,ID,:)
+         U = AC2(IS,ID,:)
          UL = U
 
 #ifdef MPI_PARALL_GRID
@@ -832,6 +1030,8 @@
                I1 = INE(1,IE)
                I2 = INE(2,IE)
                I3 = INE(3,IE)
+               NI = INE(:,IE)
+               U3 = U(NI) 
                IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE
@@ -851,6 +1051,14 @@
                ST(I1) = ST(I1) + THETA_ACE(1,IE) * TMP1! * (ONE - BL) + BL * THETA_L(1,IE)
                ST(I2) = ST(I2) + THETA_ACE(2,IE) * TMP1! * (ONE - BL) + BL * THETA_L(2,IE)
                ST(I3) = ST(I3) + THETA_ACE(3,IE) * TMP1! * (ONE - BL) + BL * THETA_L(3,IE)
+               IF (LGSE .AND. .FALSE.) THEN
+!                 ST(I1) = ST(I1) + DIFRM(I1)*DOT_PRODUCT(U3,IEND(:,1,IE))
+!                 ST(I2) = ST(I2) + DIFRM(I2)*DOT_PRODUCT(U3,IEND(:,2,IE))
+!                 ST(I3) = ST(I3) + DIFRM(I3)*DOT_PRODUCT(U3,IEND(:,3,IE))
+                 ST(I1) = ST(I1) + 0.005*DOT_PRODUCT(U3,IEND(:,1,IE))
+                 ST(I2) = ST(I2) + 0.005*DOT_PRODUCT(U3,IEND(:,2,IE))
+                 ST(I3) = ST(I3) + 0.005*DOT_PRODUCT(U3,IEND(:,3,IE))
+               ENDIF
             END DO
 
             !U = MAX(ZERO,UL-DTSI*ST*IOBWB)*IOBPD(ID,:)
@@ -862,7 +1070,7 @@
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(IS,ID,:) = UL(:)
+         AC2(IS,ID,:) = U(:)
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
@@ -876,7 +1084,7 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-      END SUBROUTINE
+      END SUBROUTINE      
 !**********************************************************************
 !*
 !**********************************************************************
