@@ -124,18 +124,18 @@
 +TRACE...FINISHED WITH OUTPUT_HISTORY STATION
 +TRACE...FINISHED WITH WWM OUTPUT
 +TRACE...INITIALIZE_WWM
-+TRACE...CPU Time for the preprocessing         0.3539
++TRACE...CPU Time for the preprocessing         0.4728
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000008
-+TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.982715
++TRACE...DIFFRACTION                             0.000006
++TRACE...SOURCES                                 0.000001
++TRACE...CPU TIMINGS ADVEKTION                   0.000005
++TRACE...CPU TIMINGS THETA SPACE                 3.029410
 +TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
-+TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.982723
++TRACE...CPU MICHE LIMITER                       0.000001
++TRACE...CPU TIMINGS TOTAL TIME                  3.029422
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0069     52892.0069     52892.0069     52892.0833    T
@@ -149,25 +149,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.006944     20030910.001000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000242
-+TRACE...INTEGRATION                             1.985542
++TRACE...PREPROCESSING                           0.000282
++TRACE...INTEGRATION                             3.032881
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.055674
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              2.041458
++TRACE...POSTPROCESSING                          0.073093
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              3.106257
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000001
-+TRACE...SOURCES                                 0.000001
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.836384
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
-+TRACE...CPU MICHE LIMITER                       0.000001
-+TRACE...CPU TIMINGS TOTAL TIME                  1.836386
++TRACE...DIFFRACTION                             0.000000
++TRACE...SOURCES                                 0.000000
++TRACE...CPU TIMINGS ADVEKTION                   0.000002
++TRACE...CPU TIMINGS THETA SPACE                 2.750983
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
++TRACE...CPU MICHE LIMITER                       0.000000
++TRACE...CPU TIMINGS TOTAL TIME                  2.750986
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0139     52892.0139     52892.0139     52892.0833    T
@@ -181,25 +181,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.013889     20030910.002000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000179
-+TRACE...INTEGRATION                             1.838967
++TRACE...PREPROCESSING                           0.000286
++TRACE...INTEGRATION                             2.754851
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.056254
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.895400
++TRACE...POSTPROCESSING                          0.072681
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.827819
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000000
++TRACE...DIFFRACTION                             0.000001
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.837836
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.825129
 +TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.837836
++TRACE...CPU TIMINGS TOTAL TIME                  2.825131
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0208     52892.0208     52892.0208     52892.0833    T
@@ -213,12 +213,12 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.020833     20030910.003000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000180
-+TRACE...INTEGRATION                             1.840325
++TRACE...PREPROCESSING                           0.000319
++TRACE...INTEGRATION                             2.828738
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.056845
++TRACE...POSTPROCESSING                          0.072907
 +TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.897350
++TRACE...TOTAL TIME                              2.901964
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
@@ -228,10 +228,10 @@
 +TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
 +TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.762039
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.715002
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.762040
++TRACE...CPU TIMINGS TOTAL TIME                  2.715002
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0278     52892.0278     52892.0278     52892.0833    T
@@ -245,25 +245,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.027778     20030910.004000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000178
-+TRACE...INTEGRATION                             1.764676
-+TRACE...WAVE SETUP                              0.000001
-+TRACE...POSTPROCESSING                          0.054493
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.819348
++TRACE...PREPROCESSING                           0.000288
++TRACE...INTEGRATION                             2.718725
++TRACE...WAVE SETUP                              0.000000
++TRACE...POSTPROCESSING                          0.070961
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.789975
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000000
++TRACE...DIFFRACTION                             0.000001
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.809619
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.868251
 +TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.809619
++TRACE...CPU TIMINGS TOTAL TIME                  2.868253
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0347     52892.0347     52892.0347     52892.0833    T
@@ -277,25 +277,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.034722     20030910.005000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000176
-+TRACE...INTEGRATION                             1.812255
++TRACE...PREPROCESSING                           0.000273
++TRACE...INTEGRATION                             2.872062
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.055810
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.868241
++TRACE...POSTPROCESSING                          0.073560
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.945896
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000001
++TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.851543
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.851643
 +TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.851544
++TRACE...CPU TIMINGS TOTAL TIME                  2.851644
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0417     52892.0417     52892.0417     52892.0833    T
@@ -309,25 +309,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.041667     20030910.010000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000176
-+TRACE...INTEGRATION                             1.854161
-+TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.057359
++TRACE...PREPROCESSING                           0.000317
++TRACE...INTEGRATION                             2.855565
++TRACE...WAVE SETUP                              0.000001
++TRACE...POSTPROCESSING                          0.072674
 +TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.911696
++TRACE...TOTAL TIME                              2.928557
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000001
++TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
 +TRACE...CPU TIMINGS ADVEKTION                   0.000001
-+TRACE...CPU TIMINGS THETA SPACE                 1.883305
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
++TRACE...CPU TIMINGS THETA SPACE                 2.732581
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000010
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.883307
++TRACE...CPU TIMINGS TOTAL TIME                  2.732592
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0486     52892.0486     52892.0486     52892.0833    T
@@ -341,12 +341,12 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.048611     20030910.011000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000177
-+TRACE...INTEGRATION                             1.886119
-+TRACE...WAVE SETUP                              0.000001
-+TRACE...POSTPROCESSING                          0.057035
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.943332
++TRACE...PREPROCESSING                           0.000304
++TRACE...INTEGRATION                             2.736013
++TRACE...WAVE SETUP                              0.000000
++TRACE...POSTPROCESSING                          0.075228
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.811546
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
@@ -355,11 +355,11 @@
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
 +TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.879290
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.894540
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.879291
++TRACE...CPU TIMINGS TOTAL TIME                  2.894541
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0556     52892.0556     52892.0556     52892.0833    T
@@ -373,25 +373,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.055556     20030910.012000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000191
-+TRACE...INTEGRATION                             1.882172
++TRACE...PREPROCESSING                           0.000292
++TRACE...INTEGRATION                             2.898286
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.059128
++TRACE...POSTPROCESSING                          0.076763
 +TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.941491
++TRACE...TOTAL TIME                              2.975341
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000001
++TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000001
-+TRACE...CPU TIMINGS THETA SPACE                 1.866622
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
++TRACE...CPU TIMINGS ADVEKTION                   0.000004
++TRACE...CPU TIMINGS THETA SPACE                 2.847372
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.866624
++TRACE...CPU TIMINGS TOTAL TIME                  2.847377
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0625     52892.0625     52892.0625     52892.0833    T
@@ -405,25 +405,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.062500     20030910.013000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000184
-+TRACE...INTEGRATION                             1.869315
-+TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.058340
++TRACE...PREPROCESSING                           0.000283
++TRACE...INTEGRATION                             2.851214
++TRACE...WAVE SETUP                              0.000001
++TRACE...POSTPROCESSING                          0.074086
 +TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.927839
++TRACE...TOTAL TIME                              2.925584
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000001
++TRACE...DIFFRACTION                             0.000000
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.851015
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.748663
 +TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.851016
++TRACE...CPU TIMINGS TOTAL TIME                  2.748664
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0694     52892.0694     52892.0694     52892.0833    T
@@ -437,25 +437,25 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.069444     20030910.014000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000178
-+TRACE...INTEGRATION                             1.853646
++TRACE...PREPROCESSING                           0.000240
++TRACE...INTEGRATION                             2.752166
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.059139
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.912963
++TRACE...POSTPROCESSING                          0.072659
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.825066
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
 +TRACE...FINISHED COMPUTE_SPATIAL
 +TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000000
++TRACE...DIFFRACTION                             0.000001
 +TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000000
-+TRACE...CPU TIMINGS THETA SPACE                 1.872903
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
++TRACE...CPU TIMINGS ADVEKTION                   0.000001
++TRACE...CPU TIMINGS THETA SPACE                 2.749259
++TRACE...CPU TIMINGS SIGMA SPACE                 0.000000
 +TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.872904
++TRACE...CPU TIMINGS TOTAL TIME                  2.749261
 +TRACE...-------------TIMINGS-------------
 +TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...WRITING OUTPUT INTERNAL TIME         0.0764     52892.0764     52892.0764     52892.0833    T
@@ -469,44 +469,13 @@
 +TRACE...FINISHED WITH GENERAL_OUTPUT
 +TRACE...-----SIMULATION TIME-----           52892.076389     20030910.015000
 +TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000182
-+TRACE...INTEGRATION                             1.875403
++TRACE...PREPROCESSING                           0.000247
++TRACE...INTEGRATION                             2.753295
 +TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.078201
-+TRACE...CHECK STEADY                            0.000000
-+TRACE...TOTAL TIME                              1.953786
++TRACE...POSTPROCESSING                          0.077622
++TRACE...CHECK STEADY                            0.000001
++TRACE...TOTAL TIME                              2.831165
 +TRACE...-------------TIMINGS-------------
 +TRACE......LEAVING UN_STEADY
 +TRACE...START COMPUTE COMPUTE_SIMPLE_EXPLICIT
 +TRACE...ENTERING COMPUTE COMPUTE_SPATIAL
-+TRACE...FINISHED COMPUTE_SPATIAL
-+TRACE...-----SIMPLE SPLITTING SCHEME-----
-+TRACE...DIFFRACTION                             0.000000
-+TRACE...SOURCES                                 0.000000
-+TRACE...CPU TIMINGS ADVEKTION                   0.000001
-+TRACE...CPU TIMINGS THETA SPACE                 1.995154
-+TRACE...CPU TIMINGS SIGMA SPACE                 0.000001
-+TRACE...CPU MICHE LIMITER                       0.000000
-+TRACE...CPU TIMINGS TOTAL TIME                  1.995156
-+TRACE...-------------TIMINGS-------------
-+TRACE...FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT
-+TRACE...WRITING OUTPUT INTERNAL TIME         0.0833     52892.0833     52892.0833     52892.0833    T
-+TRACE...WRITING OUTPUT INTERNAL TIME         0.0833     52892.0833     52892.0833     52892.0833
-+TRACE...FINISHED WITH XFN_HISTORY
-+TRACE...FINISHED WITH OUTPUT_HISTORY
-+TRACE...WRITING OUTPUT INTERNAL TIME         0.0833     52892.0833     52892.0833     52892.0833
- WRITING STATION OUTPUT
-+TRACE...FINISHED WITH OUTPUT_STE
-+TRACE...FINISHED WITH OUTPUT_HISTORY STATION
-+TRACE...FINISHED WITH GENERAL_OUTPUT
-+TRACE...-----SIMULATION TIME-----           52892.083333     20030910.020000
-+TRACE...-----TOTAL RUN TIMES-----        
-+TRACE...PREPROCESSING                           0.000306
-+TRACE...INTEGRATION                             2.000157
-+TRACE...WAVE SETUP                              0.000000
-+TRACE...POSTPROCESSING                          0.068019
-+TRACE...CHECK STEADY                            0.000001
-+TRACE...TOTAL TIME                              2.068483
-+TRACE...-------------TIMINGS-------------
-+TRACE......LEAVING UN_STEADY
-+TRACE...-----TOTAL TIME IN PROG-----      23.538398

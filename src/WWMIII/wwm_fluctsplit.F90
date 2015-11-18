@@ -700,7 +700,7 @@
          REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
          REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3), UDTDX(MNP)
 
-         REAL(rkind)  :: C(2,MNP), C_GSE(2,MNP), U(MNP), DTSI(MNP), N(MNE)
+         REAL(rkind)  :: C(2,MNP), C_GSE1(2,MNP), C_GSE2(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
 !
@@ -709,7 +709,7 @@
          IP_TEST = 20710 
          DFAK    = 100.
          NGSE    = 3
-         ALPHA_GSE(1) = 0.33; ALPHA_GSE(2) = 0.33; ALPHA_GSE(3) = 0.33
+         ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
          
 !         WRITE(*,*) IEND
 !
@@ -727,17 +727,16 @@
            ENDIF
 
            !AC1(1,IDD,IP_TEST) = 1.
-           do ip = 1, mnp
-             !IF (IOBP(IP) .NE. 2) THEN
-               U(IP) = ALPHA_GSE(IGSE) * AC1(IS,IDD,IP)
-             !ELSE
-             !  U(IP) = AC1(IS,IDD,IP)
-             !ENDIF
-             UL(IP,IGSE) = U(IP)
-           enddo
+           DO ip = 1, mnp
+             IF (IOBP(IP) .NE. 2) THEN
+               UL(IP,IGSE) = ALPHA_GSE(IGSE) * (AC1(IS,IDD,IP) + AC1(IS,ID,IP)) * 0.5 
+             ELSE 
+               UL(IP,IGSE) = ALPHA_GSE(IGSE) * (WBAC(IS,IDD,1) +  WBAC(IS,ID,1)) * 0.5 
+             ENDIF 
+           ENDDO
 
-           CALL CADVXY(IS,ID,C)
-           CALL CADVXY(IS,IDD,C_GSE)
+           CALL CADVXY(IS,ID,C_GSE1)
+           CALL CADVXY(IS,IDD,C_GSE2)
 !
 !        Calculate K-Values and contour based quantities ...
 !
@@ -745,12 +744,12 @@
             I1 = INE(1,IE)
             I2 = INE(2,IE)
             I3 = INE(3,IE)
-            C(1,I1) = 0.5*(C(1,I1) + C_GSE(1,I1))
-            C(1,I2) = 0.5*(C(1,I2) + C_GSE(1,I2))
-            C(1,I3) = 0.5*(C(1,I3) + C_GSE(1,I3))
-            C(2,I1) = 0.5*(C(2,I1) + C_GSE(2,I1))
-            C(2,I2) = 0.5*(C(2,I2) + C_GSE(2,I2))
-            C(2,I3) = 0.5*(C(2,I3) + C_GSE(2,I3))
+            C(1,I1) = 0.5*(C_GSE1(1,I1) + C_GSE2(1,I1))
+            C(1,I2) = 0.5*(C_GSE1(1,I2) + C_GSE2(1,I2))
+            C(1,I3) = 0.5*(C_GSE1(1,I3) + C_GSE2(1,I3))
+            C(2,I1) = 0.5*(C_GSE1(2,I1) + C_GSE2(2,I1))
+            C(2,I2) = 0.5*(C_GSE1(2,I2) + C_GSE2(2,I2))
+            C(2,I3) = 0.5*(C_GSE1(2,I3) + C_GSE2(2,I3))
             LAMBDA(1) = ONESIXTH *(C(1,I1)+C(1,I2)+C(1,I3))
             LAMBDA(2) = ONESIXTH *(C(2,I1)+C(2,I2)+C(2,I3))
             KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
@@ -783,7 +782,7 @@
          DTSI(:)  = DT4AI/SI(:)
 
 #ifdef MPI_PARALL_GRID
-         CALL EXCHANGE_P2D(U)
+         CALL EXCHANGE_P2D(UL(:,IGSE))
 !         CALL EXCHANGE_P2D(UL)
 #endif
 !
@@ -831,13 +830,19 @@
             ENDDO
 
 #ifdef MPI_PARALL_GRID
-            CALL EXCHANGE_P2D(U) ! Exchange after each update of the res. domain
+            CALL EXCHANGE_P2D(UL(:,IGSE)) ! Exchange after each update of the res. domain
 #endif
            END DO  ! ----> End Iteration
 
          END DO  ! ..... END GSE Loop
 
-         AC2(IS,ID,:) = UL(:,1) + UL(:,2) + UL(:,3)
+         DO IP = 1, MNP
+           !IF (IOBP(IP) .NE. 2) THEN
+             AC2(IS,ID,IP) = UL(IP,1) + UL(IP,2) + UL(IP,3)
+           !ELSE
+           !  AC2(IS,ID,IP) = WBAC(IS,ID,1) 
+           !ENDIF
+         END DO
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
