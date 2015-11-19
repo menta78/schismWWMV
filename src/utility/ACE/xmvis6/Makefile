@@ -32,7 +32,7 @@ INSTALLDIR = /usr/local/ace
 #LIBS = -L/usr/local/ace/lib -L/usr/local/lib -lgd -lfpp ../elio/libelio.a -L/usr/X11R6/lib64   -lXm -lXp -lXt -lXext -lXpm -lX11 -lICE -lSM -lm
 LIBS = -L../lib -lgd -lfpp -lelio -L/usr/X11R6/lib64 -lXm -lXp -lXt -lXext -lXpm -lX11 -lICE -lSM -lm
 #Chaged to local include
-INCLUDES = -I/usr/X11R6/include -I../include #-I/usr/local/include
+INCLUDES = -I/usr/X11R6/include -I/usr/include -I../include #-I/usr/include
 
 # for Linux on Alpha for reading binary date written on Intel
 CFLAGS = -g -O $(INCLUDES) -mieee

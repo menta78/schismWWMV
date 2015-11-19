@@ -199,23 +199,24 @@ void main(int argc, char *argv[])
 		    exit(0);
 		}
 		if (argmatch(argv[i], "-debug", 6)) {
-#ifdef LOCAL
-#define YYDEBUG
-#endif
 
-#ifdef YYDEBUG
-		    extern int yydebug;
+// YYDEBUG broken shit main.c:219: undefined reference to `yydebug'			
+//#ifdef LOCAL
+//#define YYDEBUG
+//#endif
 
-#endif
+//#ifdef YYDEBUG
+//		    extern int yydebug;
+//#endif
 
 		    i++;
 		    debuglevel = atoi(argv[i]);
 		    if (debuglevel == 4) {	/* turn on debugging in
 						 * pars.y */
 
-#ifdef YYDEBUG
-			yydebug = 1;
-#endif
+//#ifdef YYDEBUG
+//			yydebug = 1;
+//#endif
 
 		    }
 		} else if (argmatch(argv[i], "-autoscale", 2)) {
