@@ -20,8 +20,8 @@ set year = $start_year
 
 while ($year <= $stop_year)
 
-  set start_month = 1
-  set stop_month = 12
+  set start_month = 2
+  set stop_month = 5
 
   set month = $start_month
   while ($month <= $stop_month)
@@ -32,7 +32,8 @@ while ($year <= $stop_year)
       set date = $year'0'$month
     endif
 
-    set url = 'http://dss.ucar.edu/download/Yinglong/'$date'.tar'
+####    set url = 'http://dss.ucar.edu/download/Yinglong/'$date'.tar'
+    set url = 'http://rda.ucar.edu/download/chifan/PaulT/'$date'.tar'
     echo $date $url
     wget $url
 

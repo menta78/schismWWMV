@@ -10,12 +10,17 @@
 !
 ! ifort -O3 -Bstatic -o analyze_ncom2 analyze_ncom2.f90 -Vaxlib  -I/usr/local/netcdf/include/ -L/usr/local/netcdf/lib -lnetcdf
 !
+
+! Typhoon:
+! pgf90 -O2 -Bstatic -mcmodel=medium -o analyze_ncom2 analyze_ncom2.f90 -I/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/include/ -L/usr/local/amd64a/opteron/pgi/netcdf-3.6.2/lib -lnetcdf
+
 !   Input: 
-!     (0) NCOM files;
-!     (1) station.bp: x,y are lon., lat in degrees;
-!     (2) date.in: 1st line: year, month, day, starting CORIE day, # of days; 2nd line: ifiletype (1: T,S; 2: UV).
+!     (0) need to update ncomdir below;
+!     (1) station.bp: x,y are lon., lat in degrees; z not used
+!     (2) date.in: 1st line: year, month, day, starting CORIE day (0 if not sure), # of days; 2nd line: ifiletype (1: T,S; 2: UV).
 !   Output: (1) fort.18 (S or u), fort.19 (T or v).
 !           (2) fort.11: fatal and non-fatal errors;
+!           Output time in PST
 
       program readNCOM
 !     netcdf modules from symlinks
@@ -56,6 +61,7 @@
       character(len=4) :: iyear_char
       character(len=1) :: char1,char2
       character(len=2) :: char3,char4
+      character(len=200) :: ncomdir
 !     external function for number of command line arguments
       integer :: iargc
 
@@ -64,12 +70,16 @@
       integer :: ixlen, iylen, ilen ! sampled lengths in each coordinate direction
 !     integer :: i,j,k,i1,i2,i3,j1,j2,j3
 
-      dimension xl(mnp),yl(mnp),nm(mne,4),dp(mnp),i34(mne)
+      dimension xl(mnp),yl(mnp),dp(mnp),i34(mne)
       dimension ixy(mnp,2),arco(4)
       dimension wild(100),wild2(100,2),month_day(12)
       allocatable :: tempout(:,:), saltout(:,:), zout(:,:)
 
 !     First statement
+      ncomdir='/sciclone/vims20/yinglong/NCOM/' !NCOM parent dir
+      ncomdir=adjustl(ncomdir)
+      len_ncomdir=len_trim(ncomdir)
+
       open(10,file='date.in',status='old')
       read(10,*) iyear,month0,iday0,corieday,ndays
       read(10,*) ifiletype
@@ -86,17 +96,16 @@
       endif
       do i=1,np
         read(14,*)j,xl(i),yl(i) !,dp(i)
-!        if(dp(i)<0) stop 'Depth must be non-negative' 
       enddo !i
       close(14)
 
 !     Read NCOM results
 ! geometry files - should never change.
 !
-      hnc = '/home/workspace/ccalmr6/nrldata/model_h.nc'
-      latnc = '/home/workspace/ccalmr6/nrldata/model_lat.nc'
-      lonnc = '/home/workspace/ccalmr6/nrldata/model_lon.nc'
-      zmnc = '/home/workspace/ccalmr6/nrldata/model_zm.nc'
+      hnc = ncomdir(1:len_ncomdir)//'model_h.nc'
+      latnc = ncomdir(1:len_ncomdir)//'model_lat.nc'
+      lonnc = ncomdir(1:len_ncomdir)//'model_lon.nc'
+      zmnc = ncomdir(1:len_ncomdir)//'/model_zm.nc'
   
       write(iyear_char,'(i4)') iyear
       yr=iyear_char
@@ -148,20 +157,21 @@
 
 !     Create salt and temp file names for this date.
       if(ifiletype==1) then !T,S
-        sfile='/home/workspace/ccalmr6/nrldata/'//trim(yr)//'/s3d/s3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
-        tfile='/home/workspace/ccalmr6/nrldata/'//trim(yr)//'/t3d/t3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        sfile=ncomdir(1:len_ncomdir)//trim(yr)//'/s3d/s3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        tfile=ncomdir(1:len_ncomdir)//trim(yr)//'/t3d/t3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
       else !UV
-        sfile='/home/workspace/ccalmr6/nrldata/'//trim(yr)//'/u3d/u3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
-        tfile='/home/workspace/ccalmr6/nrldata/'//trim(yr)//'/v3d/v3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        sfile=ncomdir(1:len_ncomdir)//trim(yr)//'/u3d/u3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        tfile=ncomdir(1:len_ncomdir)//trim(yr)//'/v3d/v3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
       endif
+
+      print*, 'opening file 1:',trim(sfile)
+      print*, 'opening file 2:',trim(tfile)
 
 !     Open files for salinity and temperature.
       status = nf90_open(trim(sfile), nf90_nowrite, sid)
       call check(status)
-      if(status /= nf90_noerr) cycle
       status = nf90_open(trim(tfile), nf90_nowrite, tid)
       call check(status)
-      if(status /= nf90_noerr) cycle
 
 !     Get index information for sampled grid, assumed the same for temperature.
 !     These will index into the static lat, lon, bathymetry, and zm files.
@@ -512,6 +522,7 @@
     
       if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
+        stop
       end if
       end subroutine check  
 
@@ -584,10 +595,10 @@
 
       end program readNCOM
 
-      function signa(x1,x2,x3,y1,y2,y3)
-
-      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
-
-      return
-      end
+!      function signa(x1,x2,x3,y1,y2,y3)
+!
+!      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
+!
+!      return
+!      end
 

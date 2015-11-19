@@ -88,13 +88,14 @@
       integer :: ixlen1, iylen1,ixlen2, iylen2 !reduced indices for CORIE grid to speed up interpolation
 !     integer :: i,j,k,i1,i2,i3,j1,j2,j3
       character(len=1) :: imodel
-
-      dimension xl(mnp),yl(mnp),nm(mne,4),dp(mnp),i34(mne),kbp2(mnp)
+      integer :: elnode(4,mne),ic3(4,mne),elside(4,mne)
+      integer :: isdel(2,mns)
+      dimension xl(mnp),yl(mnp),dp(mnp),i34(mne),kbp2(mnp)
       dimension ztot(0:mnv),sigma(mnv),cs(mnv),z(mnp,mnv),iest(mnp),ixy(mnp,2),arco(3)
       dimension wild(100),wild2(100,2),swild(mnv,2),swild2(mnv),zs(mnv),ze(mnv)
       dimension tempout(mnp,mnv), saltout(mnp,mnv),month_day(12)
       dimension tsd(mns,mnv),ssd(mns,mnv),tsel(mnv,mne,2)
-      dimension nne(mnp),ine(mnp,mnei),ic3(mne,4),nx(4,4,3),js(mne,4),is(mns,2),isidenode(mns,2)
+      dimension nne(mnp),indel(mnei,mnp),nx(4,4,3),isidenode(2,mns)
       dimension xcj(mns),ycj(mns),nond(mnope),iond(mnope,mnond),iob(mnope),iond2(mnope*mnond)
       allocatable :: z_r(:),temp_bar(:),salt_bar(:),indx_var(:),cspline_ypp(:,:)
 
@@ -168,7 +169,7 @@
         stop
       endif
       do i=1,ne
-        read(14,*)j,i34(i),(nm(i,l),l=1,i34(i))
+        read(14,*)j,i34(i),(elnode(l,i),l=1,i34(i))
       enddo !i
 !     Open bnds
       read(14,*) nope
@@ -370,25 +371,25 @@
 
       do i=1,ne
         do j=1,i34(i)
-          nd=nm(i,j)
+          nd=elnode(j,i)
           nne(nd)=nne(nd)+1
           if(nne(nd)>mnei) then
             write(11,*)'Too many neighbors',nd
             stop
           endif
-          ine(nd,nne(nd))=i
+          indel(nne(nd),nd)=i
         enddo
       enddo
 
 !     Compute ball info; this won't be affected by re-arrangement below
       do i=1,ne
         do j=1,i34(i)
-          ic3(i,j)=0 !index for bnd sides
-          nd1=nm(i,nx(i34(i),j,1))
-          nd2=nm(i,nx(i34(i),j,2))
+          ic3(j,i)=0 !index for bnd sides
+          nd1=elnode(nx(i34(i),j,1),i)
+          nd2=elnode(nx(i34(i),j,2),i)
           do k=1,nne(nd1)
-            ie=ine(nd1,k)
-            if(ie/=i.and.(nm(ie,1)==nd2.or.nm(ie,2)==nd2.or.nm(ie,3)==nd2.or.(i34(ie)==4.and.nm(ie,4)==nd2))) ic3(i,j)=ie
+            ie=indel(k,nd1)
+            if(ie/=i.and.(elnode(1,ie)==nd2.or.elnode(2,ie)==nd2.or.elnode(3,ie)==nd2.or.(i34(ie)==4.and.elnode(4,ie)==nd2))) ic3(j,i)=ie
           enddo !k
         enddo !j
       enddo !i
@@ -396,18 +397,18 @@
       ns=0 !# of sides
       do i=1,ne
         do j=1,i34(i)
-          nd1=nm(i,nx(i34(i),j,1))
-          nd2=nm(i,nx(i34(i),j,2))
-          if(ic3(i,j)==0.or.i<ic3(i,j)) then !new sides
+          nd1=elnode(nx(i34(i),j,1),i)
+          nd2=elnode(nx(i34(i),j,2),i)
+          if(ic3(j,i)==0.or.i<ic3(j,i)) then !new sides
             ns=ns+1
             if(ns>mns) then
               write(11,*)'Too many sides'
               stop
             endif
-            js(i,j)=ns
-            is(ns,1)=i
-            isidenode(ns,1)=nd1
-            isidenode(ns,2)=nd2
+            elside(j,i)=ns
+            isdel(1,ns)=i
+            isidenode(1,ns)=nd1
+            isidenode(2,ns)=nd2
             xcj(ns)=(xl(nd1)+xl(nd2))/2
             ycj(ns)=(yl(nd1)+yl(nd2))/2
 !            dps(ns)=(dp(nd1)+dp(nd2))/2
@@ -420,10 +421,10 @@
 !            snx(ns)=dcos(thetan)
 !            sny(ns)=dsin(thetan)
 
-            is(ns,2)=ic3(i,j) !bnd element => bnd side
-!           Corresponding side in element ic3(i,j)
-            if(ic3(i,j)/=0) then !old internal side
-              iel=ic3(i,j)
+            isdel(2,ns)=ic3(j,i) !bnd element => bnd side
+!           Corresponding side in element ic3(j,i)
+            if(ic3(j,i)/=0) then !old internal side
+              iel=ic3(j,i)
               index=0
               do k=1,i34(iel)
                 if(ic3(iel,k)==i) then
@@ -435,9 +436,9 @@
                 write(11,*)'Wrong ball info',i,j
                 stop
               endif
-              js(iel,index)=ns
-            endif !ic3(i,j).ne.0
-          endif !ic3(i,j)==0.or.i<ic3(i,j)
+              elside(index,iel)=ns
+            endif !ic3(j,i).ne.0
+          endif !ic3(j,i)==0.or.i<ic3(j,i)
         enddo !j=1,i34
       enddo !i=1,ne
 
@@ -1056,8 +1057,8 @@
 !             I didn't do the same for them in this code; as long as 
 !             the order of writing is correct in hotstart.in, it does not matter
         do i=1,ns
-          n1=isidenode(i,1)
-          n2=isidenode(i,2)
+          n1=isidenode(1,i)
+          n2=isidenode(2,i)
           do k=1,nvrt
             tsd(i,k)=(tempout(n1,k)+tempout(n2,k))/2
             ssd(i,k)=(saltout(n1,k)+saltout(n2,k))/2
@@ -1066,9 +1067,9 @@
         enddo !i
 
         do i=1,ne
-          n1=nm(i,1)
-          n2=nm(i,2)
-          n3=nm(i,3)
+          n1=elnode(1,i)
+          n2=elnode(2,i)
+          n3=elnode(3,i)
           do k=2,nvrt
             tsel(k,i,1)=(tempout(n1,k)+tempout(n2,k)+tempout(n3,k)+tempout(n1,k-1)+tempout(n2,k-1)+tempout(n3,k-1))/6
             tsel(k,i,2)=(saltout(n1,k)+saltout(n2,k)+saltout(n3,k)+saltout(n1,k-1)+saltout(n2,k-1)+saltout(n3,k-1))/6
@@ -1119,7 +1120,7 @@
 
 !         T,S @ sides 
           do i=1,ns
-            n1=isidenode(i,1); n2=isidenode(i,2)
+            n1=isidenode(1,i); n2=isidenode(2,i)
             dps=(dp(n1)+dp(n2))/2
             if(dps>=h_mean) then
               kbs=max(kbp2(n1),kbp2(n2))
@@ -1149,9 +1150,9 @@
 
 !         T,S @ elements
           do i=1,ne
-            n1=nm(i,1)
-            n2=nm(i,2)
-            n3=nm(i,3)
+            n1=elnode(1,i)
+            n2=elnode(2,i)
+            n3=elnode(3,i)
             dpe=(dp(n1)+dp(n2)+dp(n3))/3
             if(dpe>=h_mean) then
               kbe=max(kbp2(n1),kbp2(n2),kbp2(n3))
@@ -1337,12 +1338,12 @@
 
       end program readNCOM
 
-      function signa(x1,x2,x3,y1,y2,y3)
-
-      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
-
-      return
-      end
+!      function signa(x1,x2,x3,y1,y2,y3)
+!
+!      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
+!
+!      return
+!      end
 
 !     Inefficient bubble sort routine for sorting into ascending or descending order
 !     If there are equal entries in the list the sorted indices (indx_var)

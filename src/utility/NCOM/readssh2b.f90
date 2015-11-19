@@ -79,12 +79,14 @@
       integer :: ixlen1, iylen1,ixlen2, iylen2 !reduced indices for CORIE grid to speed up interpolation
 !     integer :: i,j,k,i1,i2,i3,j1,j2,j3
 
-      dimension xl(mnp),yl(mnp),nm(mne,3),dp(mnp),xcor(mnp),ycor(mnp)
+      integer :: elnode(3,mne),ic3(3,mne),elside(3,mne)
+      integer :: isdel(2,mns)
+      dimension xl(mnp),yl(mnp),dp(mnp),xcor(mnp),ycor(mnp)
 !      dimension ztot(mnv),sigma(mnv),cs(mnv),z(mnp,mnv),iest(mnp)
       dimension wild(100),wild2(100,2),ixy(mnp,2),arco(3)
       dimension etaout(mnp),month_day(12)
 !      dimension tsd(mns,mnv),ssd(mns,mnv)
-      dimension nne(mnp),ine(mnp,mnei),ic3(mne,3),nx(3,2),js(mne,3),is(mns,2),isidenode(mns,2)
+      dimension nne(mnp),indel(mnei,mnp),nx(3,2),isidenode(2,mns)
       dimension xcj(mns),ycj(mns)
       dimension nond(mnope),iond(mnope,mnond),isbnd(mnp),iob(mnope),z0_out(2,mnope,mnond)
       dimension ival(mnp),ival_out(2,mnope,mnond)
@@ -108,7 +110,7 @@
         read(16,*)j,xl(i),yl(i) !,dp(i)
       enddo !i
       do i=1,ne
-        read(14,*)j,k,(nm(i,l),l=1,3)
+        read(14,*)j,k,(elnode(l,i),l=1,3)
       enddo !i
 
 !     Open bnds
@@ -158,25 +160,25 @@
 
       do i=1,ne
         do j=1,3
-          nd=nm(i,j)
+          nd=elnode(j,i)
           nne(nd)=nne(nd)+1
           if(nne(nd)>mnei) then
             write(11,*)'Too many neighbors',nd
             stop
           endif
-          ine(nd,nne(nd))=i
+          indel(nne(nd),nd)=i
         enddo
       enddo
 
 !     Compute ball info; this won't be affected by re-arrangement below
       do i=1,ne
         do j=1,3
-          ic3(i,j)=0 !index for bnd sides
-          nd1=nm(i,nx(j,1))
-          nd2=nm(i,nx(j,2))
+          ic3(j,i)=0 !index for bnd sides
+          nd1=elnode(nx(j,1),i)
+          nd2=elnode(nx(j,2),i)
           do k=1,nne(nd1)
-            ie=ine(nd1,k)
-            if(ie/=i.and.(nm(ie,1)==nd2.or.nm(ie,2)==nd2.or.nm(ie,3)==nd2)) ic3(i,j)=ie
+            ie=indel(k,nd1)
+            if(ie/=i.and.(elnode(1,ie)==nd2.or.elnode(2,ie)==nd2.or.elnode(3,ie)==nd2)) ic3(j,i)=ie
           enddo !k
         enddo !j
       enddo !i
@@ -184,18 +186,18 @@
       ns=0 !# of sides
       do i=1,ne
         do j=1,3
-          nd1=nm(i,nx(j,1))
-          nd2=nm(i,nx(j,2))
-          if(ic3(i,j)==0.or.i<ic3(i,j)) then !new sides
+          nd1=elnode(nx(j,1),i)
+          nd2=elnode(nx(j,2),i)
+          if(ic3(j,i)==0.or.i<ic3(j,i)) then !new sides
             ns=ns+1
             if(ns>mns) then
               write(11,*)'Too many sides'
               stop
             endif
-            js(i,j)=ns
-            is(ns,1)=i
-            isidenode(ns,1)=nd1
-            isidenode(ns,2)=nd2
+            elside(j,i)=ns
+            isdel(1,ns)=i
+            isidenode(1,ns)=nd1
+            isidenode(2,ns)=nd2
             xcj(ns)=(xl(nd1)+xl(nd2))/2
             ycj(ns)=(yl(nd1)+yl(nd2))/2
 !            dps(ns)=(dp(nd1)+dp(nd2))/2
@@ -208,13 +210,13 @@
 !            snx(ns)=dcos(thetan)
 !            sny(ns)=dsin(thetan)
 
-            is(ns,2)=ic3(i,j) !bnd element => bnd side
-!           Corresponding side in element ic3(i,j)
-            if(ic3(i,j)/=0) then !old internal side
-              iel=ic3(i,j)
+            isdel(2,ns)=ic3(j,i) !bnd element => bnd side
+!           Corresponding side in element ic3(j,i)
+            if(ic3(j,i)/=0) then !old internal side
+              iel=ic3(j,i)
               index=0
               do k=1,3
-                if(ic3(iel,k)==i) then
+                if(ic3(k,iel)==i) then
                   index=k
                   exit
                 endif
@@ -223,9 +225,9 @@
                 write(11,*)'Wrong ball info',i,j
                 stop
               endif
-              js(iel,index)=ns
-            endif !ic3(i,j).ne.0
-          endif !ic3(i,j)==0.or.i<ic3(i,j)
+              elside(index,iel)=ns
+            endif !ic3(j,i).ne.0
+          endif !ic3(j,i)==0.or.i<ic3(j,i)
         enddo !j=1,3
       enddo !i=1,ne
 
@@ -617,7 +619,7 @@
 !        write(20,*)i,xl(i),yl(i),etaout(i)
 !      enddo !i
 !      do i=1,ne
-!        write(20,*)i,3,(nm(i,l),l=1,3)
+!        write(20,*)i,3,(elnode(l,i),l=1,3)
 !      enddo !i
 !      write(20,*)'+++++++++++++++++++++++++'
 !-----------------------------------------------------------------------------------------------------------
@@ -723,10 +725,10 @@
 
       end program readNCOM
 
-      function signa(x1,x2,x3,y1,y2,y3)
-
-      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
-
-      return
-      end
+!      function signa(x1,x2,x3,y1,y2,y3)
+!
+!      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
+!
+!      return
+!      end
 
