@@ -198,7 +198,7 @@
  LLIMT   = F,
  LIMFAK  =  0.100000000000000     ,
  MELIM   =           3,
- LDIFR   = F,
+ LDIFR   = T,
  LGSE    = T,
  IDIFFR  =           1,
  LADVTEST        = F,
