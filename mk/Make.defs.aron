@@ -150,8 +150,11 @@ endif
 # USE_SED2D = yes
 # EXEC := $(EXEC)_SED2D
 
-#########  Compiler configuration related flags
+# Oil spill model (not active)
+# USE_OIL = yes
+# EXEC := $(EXEC)_OIL
 
+#########  Compiler configuration related flags
 # Include a timer
 # USE_TIMER = yes
 # EXEC := $(EXEC)_TIMER

@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -67,20 +67,20 @@ MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf 
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
 CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pelfe_$(ENV)
+EXEC   := ~/bin/pschism_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSELFE is always on and is defined elsewhere
+# -DSCHISM is always on and is defined elsewhere
 
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
@@ -92,9 +92,10 @@ EXEC   := ~/bin/pelfe_$(ENV)
 # PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
 
-# TVD flag (turn off for performance)
-# CHOOSE_TVD = yes
-# EXEC := $(EXEC)_CHOOSE_TVD
+# TVD limiter options (set as one of these: SB, VL, OS, MM)
+# No default and so these 2 lines should NOT be commented out!
+ TVD_LIM = SB
+ EXEC := $(EXEC)_$(TVD_LIM)
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
@@ -110,13 +111,10 @@ else
 endif
 
 # Wind wave model WWM
- USE_WWM = yes
- EXEC := $(EXEC)_WWM
-# Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
-# EXEC := $(EXEC)_PETSC
+# USE_WWM = yes
+# EXEC := $(EXEC)_WWM
 
-# TIMOR 
+# TIMOR (not active)
 # USE_TIMOR = yes
 # EXEC := $(EXEC)_TIMOR
 
@@ -124,33 +122,35 @@ endif
 # USE_HA = yes
 # EXEC := $(EXEC)_HA
 
-##### Select only _one_ model from below
+#Tracer models
+# Generic (user defined) tracer model
+# USE_GEN = yes
+# EXEC := $(EXEC)_GEN
 
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
+# Age
+# USE_AGE = yes
+# EXEC := $(EXEC)_AGE
 
-# Or:
+# Sediment model (3D)
+# USE_SED = yes
+# EXEC := $(EXEC)_SED
 # Ecological model (EcoSim)
 # USE_ECO = yes
 # EXEC := $(EXEC)_ECO
 
-# Or:
 # CE-QUAL-ICM
 # USE_ICM = yes
 # EXEC := $(EXEC)_ICM
 
-# Or:
-# Sediment model 
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
+# Oil spill model (not active)
+# USE_OIL = yes
+# EXEC := $(EXEC)_OIL
+####End of tracer models
 
-#Or:
 # Sediment model (2D)
 # USE_SED2D = yes
 # EXEC := $(EXEC)_SED2D
 
-# Or:
 # Oil spill model (not active)
 # USE_OIL = yes
 # EXEC := $(EXEC)_OIL
@@ -170,9 +170,6 @@ endif
 
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-# USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
