@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 ! Read in *.gr3-like (rank-specific) outputs from SELFE and combine them into one global output
 ! e.g. maxelev.gr3; may have multiple scalar fields
@@ -19,7 +33,7 @@ program combine_gr3
 
   implicit real(8)(a-h,o-z),integer(i-n)
   character(36) :: fdb,filenm 
-  integer :: lfdb,lfilenm
+  integer :: lfdb,lfilenm,nm(4)
   allocatable x(:),y(:),elevmax(:,:)
       
 !-------------------------------------------------------------------------------
@@ -64,8 +78,8 @@ program combine_gr3
     write(13,'(i10,100(1x,e22.11))')i,xtmp,ytmp,elevmax(:,i)
   enddo !i
   do i=1,ne
-    read(14,*)j,k,n1,n2,n3
-    write(13,*)j,k,n1,n2,n3
+    read(14,*)j,k,nm(1:k)
+    write(13,*)j,k,nm(1:k)
   enddo !i
 
 end program combine_gr3

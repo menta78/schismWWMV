@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 ! Read in binary outputs (rank-specific) from parallel code and combine them into
 ! one global output in v5.0 format or netcdf format. Works for partial outputs.
@@ -6,22 +20,22 @@
 ! can be found.
 
 ! Inputs:
-!        rank-specific binary files (from SELFE outputs); 
-!        local_to_global_* (from SELFE outputs);
+!        rank-specific binary files (from SCHISM outputs); 
+!        local_to_global_* (from SCHISM outputs);
 !        combine_output.in (1st line: elev.61 etc; 2nd line: start and end file indices;
 !                          3rd line: inc (1 for netcdf option)); 
-! Output: combined binary file (for nc file: e.g. *_salt.nc).
+! Output: combined binary file (for nc file: e.g. *_salt.nc; not working for non-standard outputs!).
 !
-!  Compile on canopus01:
-!  ifort -Bstatic -O3 -assume byterecl -o combine_output5_canopus combine_output5.f90 -Vaxlib -I/usr/local/include/ -L/usr/local/lib -lnetcdf
+!  Compile on canopus01/sirius01:
+!  ifort -Bstatic -O3 -assume byterecl -o combine_output5 combine_output5.f90 schism_geometry.f90 -Vaxlib -I/usr/local/include/ -L/usr/local/lib -lnetcdf
 
 !  Compile on amb6402:
-!  ifort -Bstatic -O3 -assume byterecl -o combine_output5_canopus combine_output5.f90 -Vaxlib -I/usr/local/netcdf/include/ -L/usr/local/netcdf/lib -lnetcdf
+!  ifort -Bstatic -O3 -assume byterecl -o combine_output5 combine_output5.f90 schism_geometry.f90 -Vaxlib -I/usr/local/netcdf/include/ -L/usr/local/netcdf/lib -lnetcdf
 !
 !  On Ranger:
-!  pgf90 -O2 -mcmodel=medium  -Bstatic -o combine_output5_canopus combine_output5.f90 .....
+!  pgf90 -O2 -mcmodel=medium  -Bstatic -o combine_output5 combine_output5.f90 schism_geometry.f90 .....
 
-!  History: (1) added netcdf option.
+!  History: (1) added netcdf option; (2) added non-standard outputs (not for nc).
 !===============================================================================
 
 program read_iwrite1
@@ -39,11 +53,14 @@ program read_iwrite1
   character(72) :: fgb,fgb2,fdb  ! Processor specific global output file name
   integer :: lfgb,lfdb       ! Length of processor specific global output file name
   character(len= 4) :: a_4
-  allocatable ne(:),np(:),nsproc(:),ihot_len(:)
-  allocatable ztot(:),sigma(:),cs(:),outb(:,:,:),eta2(:)
-  allocatable i34(:),nm(:,:),nm2(:,:),js(:,:),xctr(:),yctr(:),dpe(:)
+  integer,allocatable :: elnode(:,:)
+  integer,allocatable :: elside(:,:)
+  integer,allocatable :: isdel(:,:)
+  allocatable ne(:),np(:),ns(:),ihot_len(:)
+  allocatable ztot(:),sigma(:),cs(:),outb(:,:,:),eta2(:),outeb(:,:,:),outsb(:,:,:)
+  allocatable i34(:),nm2(:,:),xctr(:),yctr(:),dpe(:)
   allocatable x(:),y(:),dp(:),kbp00(:),iplg(:,:),ielg(:,:),kbp01(:,:)
-  allocatable xcj(:),ycj(:),dps(:)
+  allocatable islg(:,:),kbs(:),kbe(:),xcj(:),ycj(:),dps(:),ic3(:,:),isidenode(:,:)
 
   !netcdf variables
   character(len=50) fname
@@ -65,13 +82,16 @@ program read_iwrite1
   read(10,*)ne_global,np_global,nvrt,nproc,ntracers
   close(10)
 
-  allocate(x(np_global),y(np_global),dp(np_global),kbp00(np_global), &
-           np(0:nproc-1),ne(0:nproc-1),nm(ne_global,3),nm2(ne_global,3),eta2(np_global), &
-           ztot(nvrt),sigma(nvrt),cs(nvrt),outb(np_global,nvrt,2),ihot_len(0:nproc-1),stat=istat)
+  allocate(x(np_global),y(np_global),dp(np_global),kbp00(np_global),kbe(ne_global), &
+           np(0:nproc-1),ns(0:nproc-1),ne(0:nproc-1),elnode(3,ne_global), &
+           nm2(ne_global,3),eta2(np_global), &
+           ztot(nvrt),sigma(nvrt),cs(nvrt),outb(np_global,nvrt,2),ihot_len(0:nproc-1), &
+           outeb(ne_global,nvrt,2),dpe(ne_global),xctr(ne_global),yctr(ne_global),stat=istat)
   if(istat/=0) stop 'Allocation error: x,y'
 
 ! Initialize outb for ivalid pts (below bottom etc)
   outb=-9999.
+  outeb=-9999.
 
 !-------------------------------------------------------------------------------
 ! Read rank-specific local_to_global*
@@ -80,17 +100,25 @@ program read_iwrite1
   ! Compute ivs and i23d
   file63=adjustl(file63)
   lfile63=len_trim(file63)
-  if(file63((lfile63-1):lfile63).eq.'61'.or.file63((lfile63-1):lfile63).eq.'63') then
+  if(file63((lfile63-1):lfile63).eq.'61'.or.file63((lfile63-1):lfile63).eq.'63'.or. &
+     &file63((lfile63-1):lfile63).eq.'66'.or.file63((lfile63-1):lfile63).eq.'67') then
     ivs=1
-  else if(file63((lfile63-1):lfile63).eq.'62'.or.file63((lfile63-1):lfile63).eq.'64') then
+  else if(file63((lfile63-1):lfile63).eq.'62'.or.file63((lfile63-1):lfile63).eq.'64'.or. &
+     &file63((lfile63-1):lfile63).eq.'65') then
     ivs=2
-  else
-    print*, 'Unknown file type:',file63
+  else 
+    stop 'Unknown ivs'
   endif
   if(file63((lfile63-1):lfile63).eq.'61'.or.file63((lfile63-1):lfile63).eq.'62') then
     i23d=2
-  else
+  else if(file63((lfile63-1):lfile63).eq.'63'.or.file63((lfile63-1):lfile63).eq.'64') then
     i23d=3
+  else if(file63((lfile63-1):lfile63).eq.'65') then
+    i23d=4 !3D side and whole level
+  else if(file63((lfile63-1):lfile63).eq.'66') then
+    i23d=5 !3D element and whole level
+  else if(file63((lfile63-1):lfile63).eq.'67') then
+    i23d=6 !3D element and half level
   endif
    
   ! Read in local-global mappings from all ranks
@@ -98,7 +126,6 @@ program read_iwrite1
   lfdb=len_trim(fdb)
 
   !Find max. for dimensioning
-  np_max=0; ne_max=0
   do irank=0,nproc-1
     write(fdb(lfdb-3:lfdb),'(i4.4)') irank
     open(10,file=fdb,status='old')
@@ -109,16 +136,22 @@ program read_iwrite1
       read(10,*)!j,ielg(irank,i)
     enddo !i
     read(10,*)np(irank)
+    do i=1,np(irank)
+      read(10,*)
+    enddo !i
+    read(10,*)ns(irank)
     close(10)
-    np_max=max(np_max,np(irank))
-    ne_max=max(ne_max,ne(irank))
   enddo !irank
+  np_max=maxval(np(:))
+  ns_max=maxval(ns(:))
+  ne_max=maxval(ne(:))
 
   allocate(iplg(0:nproc-1,np_max),kbp01(0:nproc-1,np_max), &
-     &ielg(0:nproc-1,ne_max),stat=istat)
+     &ielg(0:nproc-1,ne_max),islg(0:nproc-1,ns_max),stat=istat)
   if(istat/=0) stop 'Allocation error (2)'
 
   !Re-read
+  ns_global=0
   do irank=0,nproc-1
     write(fdb(lfdb-3:lfdb),'(i4.4)') irank
     open(10,file=fdb,status='old')
@@ -134,11 +167,11 @@ program read_iwrite1
     do i=1,np(irank)
       read(10,*)j,iplg(irank,i)
     enddo
-    read(10,*)itmp !sides
-    do i=1,itmp
-      read(10,*)
+    read(10,*)ns(irank) !sides
+    do i=1,ns(irank)
+      read(10,*)j,islg(irank,i)
+      if(ns_global<islg(irank,i)) ns_global=islg(irank,i)
     enddo
-!    print*, 'Mapping:',irank,ielg(irank,ne(irank))
 
     read(10,*) !'Header:'
     read(10,'(a)')data_format,version,start_time
@@ -156,7 +189,7 @@ program read_iwrite1
      &theta_b*(tanh(theta_f*(sigma(k)+0.5))-tanh(theta_f*0.5))/2/tanh(theta_f*0.5)
     enddo !klev
 
-!   Compute kbp00 (to avoid mismatch of indices)
+!   Compute kbp00 (to avoid mismatch of indices) - larger rank prevails
     do m=1,np(irank)
       ipgb=iplg(irank,m)
       kbp00(ipgb)=kbp01(irank,m)
@@ -172,17 +205,45 @@ program read_iwrite1
           write(*,*)'Overflow:',m,mm,itmp
           stop
         endif
-        nm(iegb,mm)=iplg(irank,itmp)
+        elnode(mm,iegb)=iplg(irank,itmp)
       enddo !mm
     enddo !m
   enddo !irank=0,nproc-1
 
+! Compute geometry
+  call compute_nside(np_global,ne_global,elnode,ns2)
+  allocate(ic3(3,ne_global),elside(3,ne_global),isdel(2,ns2),isidenode(2,ns2),xcj(ns2),ycj(ns2),stat=istat)
+  if(istat/=0) stop 'Allocation error: side(0)'
+  call schism_geometry(np_global,ne_global,ns2,x,y,elnode,ic3,elside,isdel,isidenode,xcj,ycj)
+
+  if(ns2/=ns_global) then
+    write(*,*)'Mismatch in side:',ns,ns_global
+    stop
+  endif
+
+! Allocate side arrays
+  allocate(dps(ns_global),kbs(ns_global),outsb(ns_global,nvrt,2),stat=istat)
+  if(istat/=0) stop 'Allocation error: side'
+  outsb=-9999.
+
+! Compute side/element bottom index
+  do i=1,ne_global
+    kbe(i)=maxval(kbp00(elnode(1:3,i)))
+    dpe(i)=sum(dp(elnode(1:3,i)))/3
+    xctr(i)=sum(x(elnode(1:3,i)))/3
+    yctr(i)=sum(y(elnode(1:3,i)))/3
+  enddo !i
+  do i=1,ns_global
+    kbs(i)=maxval(kbp00(isidenode(1:2,i)))
+    dps(i)=sum(dp(isidenode(1:2,i)))/2
+  enddo !i
+
 ! Compute record length for each rank-specific binary output per time step
   do irank=0,nproc-1
-    ihot_len(irank)=nbyte*(2+np(irank))
+    ihot_len(irank)=nbyte*(2+np(irank)) !time,it,eta
     if(i23d==2) then
       ihot_len(irank)=ihot_len(irank)+nbyte*ivs*np(irank)
-    else
+    else if(i23d==3) then
       do i=1,np(irank)
         do k=max0(1,kbp01(irank,i)),nvrt
           do m=1,ivs
@@ -190,6 +251,10 @@ program read_iwrite1
           enddo !m
         enddo !k
       enddo !i
+    else if(i23d==4) then !3D side and whole level
+      ihot_len(irank)=ihot_len(irank)+nbyte*ns(irank)*nvrt*ivs
+    else !3D element and whole/half level 
+      ihot_len(irank)=ihot_len(irank)+nbyte*ne(irank)*nvrt*ivs
     endif
   enddo !irank
 
@@ -264,7 +329,6 @@ program read_iwrite1
       write(65,'(a4)',advance="no") a_4
       a_4 = transfer(source=ne_global,mold=a_4)
       write(65,'(a4)',advance="no") a_4
-
       do m=1,np_global
         a_4 = transfer(source=x(m),mold=a_4)
         write(65,'(a4)',advance="no") a_4
@@ -275,11 +339,41 @@ program read_iwrite1
         a_4 = transfer(source=kbp00(m),mold=a_4)
         write(65,'(a4)',advance="no") a_4
       enddo !m=1,np
+
+      !Additional info for non-standard
+      if(i23d==4) then
+        a_4 = transfer(source=ns_global,mold=a_4)
+        write(65,'(a4)',advance="no") a_4
+        do m=1,ns_global
+          a_4 = transfer(source=xcj(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=ycj(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=dps(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=kbs(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+        enddo !m
+      else if(i23d>4) then
+        a_4 = transfer(source=ne_global,mold=a_4)
+        write(65,'(a4)',advance="no") a_4
+        do m=1,ne_global
+          a_4 = transfer(source=xctr(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=yctr(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=dpe(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+          a_4 = transfer(source=kbe(m),mold=a_4)
+          write(65,'(a4)',advance="no") a_4
+        enddo !m
+      endif !i23d
+
       do m=1,ne_global
         a_4 = transfer(source=3,mold=a_4)
         write(65,'(a4)',advance="no") a_4
         do mm=1,3
-          a_4 = transfer(source=nm(m,mm),mold=a_4)
+          a_4 = transfer(source=elnode(mm,m),mold=a_4)
           write(65,'(a4)',advance="no") a_4
         enddo !mm
       enddo !m
@@ -374,7 +468,7 @@ program read_iwrite1
 !     Write mode (header part only)
       data_start_2d(1:2)=1
       data_count_2d(1)=ne_global; data_count_2d(2)=3
-      iret=nf_put_vara_int(ncid,iele_id,data_start_2d,data_count_2d,nm)
+      iret=nf_put_vara_int(ncid,iele_id,data_start_2d,data_count_2d,elnode)
       iret=nf_put_vara_real(ncid,ix_id,1,np_global,x)
       iret=nf_put_vara_real(ncid,iy_id,1,np_global,y)
       iret=nf_put_vara_real(ncid,idepth_id,1,np_global,dp)
@@ -383,7 +477,7 @@ program read_iwrite1
       if(kz/=1) iret=nf_put_vara_real(ncid,iz_id,1,kz-1,ztot)
     endif !inc
  
-    !print*, 'Last element:',nm(ne_global,1:3)
+    !print*, 'Last element:',elnode(1:3,ne_global)
     !end output header
 
     ! Loop over output spools in file
@@ -399,9 +493,15 @@ program read_iwrite1
  
         if(i23d==2) then
           read(63,rec=ispool)time,it,(eta2(iplg(irank,i)),i=1,np(irank)),((outb(iplg(irank,i),1,m),m=1,ivs),i=1,np(irank))
-        else !3D
+        else if(i23d==3) then !3D
           read(63,rec=ispool)time,it,(eta2(iplg(irank,i)),i=1,np(irank)), &
      &                       (((outb(iplg(irank,i),k,m),m=1,ivs),k=max0(1,kbp01(irank,i)),nvrt),i=1,np(irank))
+        else if(i23d==4) then !3D side and whole level
+          read(63,rec=ispool)time,it,(eta2(iplg(irank,i)),i=1,np(irank)), &
+     &                       (((outsb(islg(irank,i),k,m),m=1,ivs),k=1,nvrt),i=1,ns(irank))
+        else !3D element at whole/half levels
+          read(63,rec=ispool)time,it,(eta2(iplg(irank,i)),i=1,np(irank)), &
+     &                       (((outeb(ielg(irank,i),k,m),m=1,ivs),k=1,nvrt),i=1,ne(irank))
         endif
         ! Close input file
         close(63)
@@ -427,7 +527,7 @@ program read_iwrite1
               a_4 = transfer(source=outb(i,1,m),mold=a_4)
               write(65,"(a4)",advance="no") a_4
             enddo !m
-          else !i23d=3 
+          else if(i23d==3) then
             do k=max0(1,kbp00(i)),nvrt
               do m=1,ivs
                 a_4 = transfer(source=outb(i,k,m),mold=a_4)
@@ -436,6 +536,29 @@ program read_iwrite1
             enddo !k
           endif !i23d
         enddo !i
+
+        !non-standard
+        if(i23d==4) then !3D side and whole level
+          do i=1,ns_global
+            do k=max0(1,kbs(i)),nvrt
+              do m=1,ivs
+                a_4 = transfer(source=outsb(i,k,m),mold=a_4)
+                write(65,"(a4)",advance="no") a_4
+              enddo !m
+            enddo !k 
+          enddo !i
+        endif !i23d==4
+
+        if(i23d>4) then !3D element and whole/half level
+          do i=1,ne_global
+            do k=max0(1,kbe(i)),nvrt
+              do m=1,ivs
+                a_4 = transfer(source=outeb(i,k,m),mold=a_4)
+                write(65,"(a4)",advance="no") a_4
+              enddo !m
+            enddo !k 
+          enddo !i
+        endif !i23d==3
       else !netcdf
         iret=nf_put_vara_real(ncid,itime_id,ispool,1,time)
         if(i23d==2) then
@@ -456,12 +579,10 @@ program read_iwrite1
       endif !inc
 
     enddo !ispool=1,nrec
+    iret = nf_close(ncid)
   enddo !iinput=1,ninput_files
 
 ! Close output file
   close(65)
-
-  iret = nf_close(ncid)
-
   stop
 end program read_iwrite1

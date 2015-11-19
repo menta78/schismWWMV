@@ -104,10 +104,11 @@ for day=1:366 %2003
   % Re-enter define mode.
   netcdf.reDef(ncid2);
   % Create an attribute associated with the variable.
-  netcdf.putAtt(ncid2,timeid,'units','days since 2003-01-01');
+  netcdf.putAtt(ncid2,timeid,'units','days since 2003-01-01'); %This is not needed really
   netcdf.putAtt(ncid2,timeid,'base_date',int32([2003 1 1 0])); %must use int32
   netcdf.endDef(ncid2)
 
+  %Good idea to add a check to make sure the quad is counter-clockwise
   netcdf.putVar(ncid2,latid,lat);
   netcdf.putVar(ncid2,lonid,lon);
   netcdf.putVar(ncid2,uid,uwind(:,:,hours+1));
