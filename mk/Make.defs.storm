@@ -32,33 +32,37 @@
 ################################################################################
 
 ################################################################################
-## Environment for Franzius cluster (Hannover, Germany)
+## Environment for STORM cluster of College of William and Mary
 #################################################################################
-ENV = ws15
-SVN-VERSION = `svnversion`
+ENV = STORM
+
+################################################################################
+# Environment 
+################################################################################
+
+FCP = mpif90
+FCS = pgf90
+FLD = $(FCP)
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+
+#Check bound
+#FCPFLAGS = $(PPFLAGS) -fast -tp nehalem -m64 -Mbounds -Bstatic -g # full optimization w/ vectorization
+#FLDFLAGS= -O2 -Mcache_align -tp nehalem -m64 # basic optimization
+
+FCPFLAGS = $(PPFLAGS) -fast -m64 -tp istanbul -Bstatic  # full optimization w/ vectorization
+FLDFLAGS = -O2 -Mcache_align -m64 -tp istanbul #for final linking of object files
+
+  #####Libraries
+MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L/usr/local/amd64/shanghai/pgi/netcdf-3.6.3/lib -lnetcdf
+CDFMOD = -I/usr/local/amd64/shanghai/pgi/netcdf-3.6.3/include # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
+EXEC   := pschism_$(ENV)
 
-EXEC   := pschism_$(ENV)_revision_$(SVN-VERSION)
-
-################################################################################
-# Environment
-################################################################################
-
-#FCP = mpif90 -ccl ifort -heap-arrays 64
-FCP = mpif90
-FLD = $(FCP)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
-FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
-FLDFLAGS = -O2
-#####Libraries
-#MTSLIBS = -L/home/jan/ParMetis-3.1-64bit -lparmetis -lmetis
-MTSLIBS     = -L./ParMetis-3.1-Sep2010  -lparmetis -lmetis
-CDFLIBS = -L/home/jan/netcdf//lib/ -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
-CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
-  
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
@@ -67,11 +71,11 @@ CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
 # -DSCHISM is always on and is defined elsewhere
 
 # Precip/evaporation model
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
+# USE_PREC_EVAP = yes
 # EXEC := $(EXEC)_EVAP
 
 # MM5 in heat exchange model
-# PPFLAGS := $(PPFLAGS) -DMM5
+# USE_MM5 = yes
 # EXEC := $(EXEC)_MM5
 
 # TVD limiter options (set as one of these: SB, VL, OS, MM)
@@ -81,72 +85,85 @@ CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
+# EXEC := $(EXEC)_GOTM
 
 # Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
 ifdef USE_GOTM
-   GTMMOD =  -I
-   GTMLIBS = -L
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
+
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
 else
-   GTMMOD =
-   GTMLIBS =
+  GTMMOD =
+  GTMLIBS =
 endif
 
 # Wind wave model WWM
 # USE_WWM = yes
-
-# TIMOR 
-# USE_TIMOR = yes
+# EXEC := $(EXEC)_WWM
 
 # Harmonic analysis tool
 # USE_HA = yes
+# EXEC := $(EXEC)_HA
 
-##### Select only _one_ model from below
+#####Tracer models
+# Generic (user defined) tracer model
+# USE_GEN = yes
+# EXEC := $(EXEC)_GEN
 
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
+# Age
+# USE_AGE = yes
+# EXEC := $(EXEC)_AGE
 
-# Or:
+# Sediment model (3D)
+# USE_SED = yes
+# EXEC := $(EXEC)_SED
+
 # Ecological model (EcoSim)
 # USE_ECO = yes
+# EXEC := $(EXEC)_ECO
 
-# Or:
 # CE-QUAL-ICM
 # USE_ICM = yes
+# EXEC := $(EXEC)_ICM
 
-# Or:
-# Sediment model 
-# USE_SED = yes
-
-#Or:
-# Sediment model (2D)
-# #  USE_SED2D = yes
-
-# Or:
 # Oil spill model (not active)
 # USE_OIL = yes
+# EXEC := $(EXEC)_OIL
+
+# Ecological model - NAPZD Spitz (unavailable)
+# USE_NAPZD = yes
+# EXEC := $(EXEC)_NAPZD
+
+# TIMOR (not active yet)
+# USE_TIMOR = yes
+# EXEC := $(EXEC)_TIMOR
+
+####End of tracer models
+
+# Sediment model (2D)
+# USE_SED2D = yes
+# EXEC := $(EXEC)_SED2D
 
 #########  Compiler configuration related flags
 
 # Include a timer
 # USE_TIMER = yes
+# EXEC := $(EXEC)_TIMER
 
 # Debug mode (more time consuming)
 # USE_DEBUG = yes
+# EXEC := $(EXEC)_DEBUG
 
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-#USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#############################################################################################
-# append executable name with suffix corresponding to additional features
-ifdef USE_SED
-  EXEC := $(EXEC)_sediment
-endif

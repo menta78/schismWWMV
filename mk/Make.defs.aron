@@ -67,7 +67,7 @@ MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis
 #From Harry's dir
 #MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
+CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf 
 CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 
 ################################################################################
@@ -109,7 +109,7 @@ else
 endif
 
 # Wind wave model WWM
-# USE_WWM = yes
+ USE_WWM = yes
 # EXEC := $(EXEC)_WWM
 
 # TIMOR (not active)
@@ -150,11 +150,8 @@ endif
 # USE_SED2D = yes
 # EXEC := $(EXEC)_SED2D
 
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
 #########  Compiler configuration related flags
+
 # Include a timer
 # USE_TIMER = yes
 # EXEC := $(EXEC)_TIMER

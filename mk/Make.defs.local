@@ -29,36 +29,56 @@
 #
 # Libraries (needed for parallel code)
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#            these are just for testing)
+#
+#
+#
 ################################################################################
 
+
+ENV = ubuntu.gnu.ompi
+
 ################################################################################
-## Environment for Franzius cluster (Hannover, Germany)
-#################################################################################
-ENV = ws15
-SVN-VERSION = `svnversion`
+# Environment for Ubuntu with GNU compilers and mpich
+# Packages requirement: gfortran, gcc, libnetcdf-dev, libopenmpi-dev, libcr-dev
+# which can be installed with the command below:
+# "sudo apt-get install gfortran gcc libnetcdf-dev mpich2 libcr-dev"
+# Tests are passed on Ubuntu 12.04 64bit and Ubuntu 14.04 64bit
+# Note: use /usr/bin/mpirun.openmpi to run compiled SCHISM executable
+################################################################################
+
+#  USE_WRAP = yes
+FCS = gfortran
+FCP = /usr/bin/mpif90.openmpi -ffree-line-length-none
+FLD = $(FCP)
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+OPTFLAGS = -O2
+FCPFLAGS = $(PPFLAGS) $(OPTFLAGS) -static -static-libgfortran #-g -fbacktrace #-finit-real=nan -fbounds-check #MPI code
+FLDFLAGS = $(OPTFLAGS) #for final linking of object files
+
+  #####Libraries
+MTSLIBS = -L./ParMetis-3.1-Sep2010/ -lparmetis -lmetis
+CDFLIBS = -L/usr/lib/ -lnetcdf -lnetcdff
+CDFMOD = -I/usr/include/ # modules for netcdf
+ifdef USE_GOTM
+   GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+   GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+else
+   GTMMOD =
+   GTMLIBS =
+endif
+
+
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
 
-EXEC   := pschism_$(ENV)_revision_$(SVN-VERSION)
+#EXEC   := othername.ex
 
-################################################################################
-# Environment
-################################################################################
 
-#FCP = mpif90 -ccl ifort -heap-arrays 64
-FCP = mpif90
-FLD = $(FCP)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
-FCPFLAGS = $(PPFLAGS) -O2 -assume byterecl #MPI code
-FLDFLAGS = -O2
-#####Libraries
-#MTSLIBS = -L/home/jan/ParMetis-3.1-64bit -lparmetis -lmetis
-MTSLIBS     = -L./ParMetis-3.1-Sep2010  -lparmetis -lmetis
-CDFLIBS = -L/home/jan/netcdf//lib/ -lnetcdf #-L/opt/intel/fce/10.1.015/lib/ -lirc
-CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
-  
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
@@ -68,11 +88,9 @@ CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
 
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
 
 # MM5 in heat exchange model
 # PPFLAGS := $(PPFLAGS) -DMM5
-# EXEC := $(EXEC)_MM5
 
 # TVD limiter options (set as one of these: SB, VL, OS, MM)
 # No default and so these 2 lines should NOT be commented out!
@@ -82,17 +100,9 @@ CDFMOD = -I/home/jan/netcdf//include/ # modules for netcdf
 # GOTM turbulence closure model
 # USE_GOTM = yes
 
-# Don't comment out the follow ifdef
-ifdef USE_GOTM
-   GTMMOD =  -I
-   GTMLIBS = -L
-else
-   GTMMOD =
-   GTMLIBS =
-endif
-
 # Wind wave model WWM
 # USE_WWM = yes
+
 
 # TIMOR 
 # USE_TIMOR = yes
@@ -117,36 +127,67 @@ endif
 # Sediment model 
 # USE_SED = yes
 
-#Or:
+# If you choose SED you should set the following algorithmic preferences
+
+  ##Bedload 
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
+
+  ##Bedload - MPM model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
+
+  ##slope formulation
+#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
+#  PPFLAGS := $(PPFLAGS) -DDELFT
+#  PPFLAGS := $(PPFLAGS) -DCARMO
+
+  ##Bedload - VR model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
+
+  ##Suspended load
+#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
+
+  ##boundary conditions for WENO
+  ## default strictly monotonic
+#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
+#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
+
+  ## Morphology
+#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
+
+  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
+#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
+
+  ##sediment density in eqstate
+#   PPFLAGS:= $(PPFLAGS) -DDENSED
+
+# Or:
 # Sediment model (2D)
-# #  USE_SED2D = yes
+# USE_SED2D = yes
 
 # Or:
 # Oil spill model (not active)
 # USE_OIL = yes
 
+
 #########  Compiler configuration related flags
 
 # Include a timer
-# USE_TIMER = yes
+# TIMER = yes
 
 # Debug mode (more time consuming)
 # USE_DEBUG = yes
 
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-#USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
+
+
 #############################################################################################
-# append executable name with suffix corresponding to additional features
-ifdef USE_SED
-  EXEC := $(EXEC)_sediment
-endif
+
