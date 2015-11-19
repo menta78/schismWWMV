@@ -7,14 +7,14 @@
         IMPLICIT NONE
 
         INTEGER           :: IS, ID, IP
-        REAL(rkind)       :: VEC2RAD, DEG, ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+        REAL(rkind)       :: VEC2RAD, DEG
         REAL(rkind)       :: SSIN(MDC,MSC), DSSIN(MDC,MSC), SSNL4(MDC,MSC), DSSNL4(MDC,MSC), SSDS(MDC,MSC), DSSDS(MDC,MSC)
-        REAL(rkind)       :: SC, LIMFAC, MAXDAC, NEWDAC, ETOT, SME01, SME10, KMWAM, KMWAM2, HS, KME01
-        REAL(rkind)       :: DSSNL3(MSC,MDC), SSNL3(MSC,MDC), SSBR(MSC,MDC), DSSBR(MSC,MDC), SSBF(MSC,MDC), DSSBF(MSC,MDC) 
+        REAL(rkind)       :: SC, MAXDAC, NEWDAC
+        REAL(rkind)       :: SSNL3(MSC,MDC)
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
+        REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
@@ -66,13 +66,11 @@
 #ifdef TIMINGS
          CALL WAV_MY_WTIME(TIME3)
 #endif
-         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
-!         CALL Print_SumAC2("After COMPUTE_FREQUENCY 2")
-         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
-!         CALL Print_SumAC2("After COMPUTE_DIRECTION 2")
+         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
+!         CALL Print_SumAC2("After COMPUTE_SPATIAL")
 
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -2- ',  SUM(AC2)
+           WRITE(DBG%FHNDL,*) ' AFTER SPATIAL ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 3') 
            IF (MINVAL(AC2) .LT. ZERO) CALL WWM_ABORT(' NEGATIVE IN COMPUTE 3')
          ENDIF
@@ -80,11 +78,13 @@
 #ifdef TIMINGS
          CALL WAV_MY_WTIME(TIME4)
 #endif
-         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-!         CALL Print_SumAC2("After COMPUTE_SPATIAL")
+         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
+!         CALL Print_SumAC2("After COMPUTE_FREQUENCY 2")
+         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
+!         CALL Print_SumAC2("After COMPUTE_DIRECTION 2")
 
          IF (LNANINFCHK) THEN
-           WRITE(DBG%FHNDL,*) ' AFTER SPATIAL ',  SUM(AC2)
+           WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -2-  ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
            IF (MINVAL(AC2) .LT. ZERO) CALL WWM_ABORT(' NEGATIVE IN COMPUTE 4')
          ENDIF
@@ -231,8 +231,8 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, GTEMP1, GTEMP2
-        INTEGER          :: IP, IT, IS, ID
+        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, GTEMP1, GTEMP2
+        INTEGER          :: IT
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SEMI_IMPLICIT'
@@ -356,7 +356,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CFLSPEC()
+      SUBROUTINE CFLSPEC
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -392,6 +392,10 @@
              TMPCFLCAS(IP) = 0.
              TMPCAS(IP)    = 0.
            END IF
+           CFL_CASD(1,IP)=TMPCAS(IP)
+           CFL_CASD(2,IP)=TMPCAD(IP)
+           CFL_CASD(3,IP)=TMPCFLCAS(IP)
+           CFL_CASD(4,IP)=TMPCFLCAD(IP)
          END DO
 
          MAXCFLCAD = MAXVAL(TMPCAD)
@@ -401,6 +405,7 @@
          WRITE (310) (SNGL(TMPCAD(IP)), SNGL(TMPCAD(IP)), SNGL(TMPCFLCAD(IP)), IP = 1, MNP)
          WRITE (311) SNGL(RTIME)
          WRITE (311) (SNGL(TMPCAS(IP)), SNGL(TMPCAS(IP)), SNGL(TMPCFLCAS(IP)), IP = 1, MNP)
+         
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -413,7 +418,7 @@
         IMPLICIT NONE
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind)       :: TIME6, TIME7, TIME8, TIME9, TIME10, TIME11, TIME12, TIME13
+        REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
         INTEGER :: IP
 

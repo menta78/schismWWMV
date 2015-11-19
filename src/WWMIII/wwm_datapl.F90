@@ -205,6 +205,7 @@
          REAL(rkind)       ::  CURFAC    = 1.0
 
          REAL(rkind)       :: SLMAX      = 0.2
+         REAL(rkind)       :: ALPHA_GSE(3) 
          REAL(rkind)       :: MAXCFLSIG  = 1.0
          REAL(rkind)       :: MAXCFLTH   = 1.0
          REAL(rkind)       :: MAXCFLCXY  = 1.0
@@ -254,6 +255,7 @@
          LOGICAL    :: LCONV       = .FALSE.
          LOGICAL    :: LLIMT       = .TRUE.
          LOGICAL    :: LCFL        = .FALSE.
+         LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
          LOGICAL    :: LJASN       = .TRUE.
          LOGICAL    :: LMAXETOT    = .TRUE.
@@ -288,6 +290,7 @@
          LOGICAL    :: LSOURCESWWIII = .FALSE. 
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  
+         LOGICAL    :: LGSE        = .TRUE.
 
 
          integer :: idxWind
@@ -941,7 +944,7 @@
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 59
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 63
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.
@@ -1058,6 +1061,9 @@
          integer, dimension(:), pointer :: var_oned_hot_rqst
          integer, dimension(:,:), pointer :: var_oned_hot_stat
          integer, dimension(:), pointer :: var_oned_hot_type
+         integer, dimension(:), pointer :: netcdf_his_rqst
+         integer, dimension(:,:), pointer :: netcdf_his_stat
+         integer, dimension(:), pointer :: netcdf_his_type
 #endif
          TYPE LINEOUTS
             CHARACTER(LEN=20) :: NAME
@@ -1110,6 +1116,9 @@
          REAL(rkind)            :: STP_SOLVERTHR = 1.E-10_rkind
          LOGICAL                :: LNONL = .FALSE.
          REAL(rkind)            :: WAE_SOLVERTHR = 1.e-10_rkind
+         LOGICAL                :: WAE_JGS_CFL_LIM = .FALSE.
+         integer, allocatable   :: CFLadvgeoI(:)
+         integer, allocatable   :: NumberOperationJGS(:)
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.
@@ -1150,9 +1159,10 @@
          INTEGER, ALLOCATABLE   :: ITER_EXPD(:)
          INTEGER                :: ITER_MAX
          REAL(rkind),  ALLOCATABLE   :: SI(:)
-         REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
+         REAL(rkind),  ALLOCATABLE   :: IEN(:,:), IEND(:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
+         REAL(rkind), ALLOCATABLE    :: CFL_CASD(:,:)
 
          INTEGER, ALLOCATABLE        :: COUNTGROUP(:,:)
 !

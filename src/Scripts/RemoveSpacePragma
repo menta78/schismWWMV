@@ -23,8 +23,10 @@ for ($iFile=1; $iFile<=$nbFile; $iFile++)
 	$eLine=$B[$iLine];
 	@UV=split("", $eLine);
 	#
+#	print "eLine=".$eLine."\n";
 	if ($UV[0] eq "#")
 	{
+#	    print "We are in that case\n";
 	    $fLine="#";
 	    $nbChar=scalar(@UV);
 	    $WeAppend=0;
@@ -46,9 +48,10 @@ for ($iFile=1; $iFile<=$nbFile; $iFile++)
 	    $fLine=$eLine;
 	}
 	$C[$iLine]=$fLine;
+#	print "fLine=".$fLine;
     }
     #
     open(OUT, "> ".$eFile);
-    print OUT @B;
+    print OUT @C;
     close(OUT);
 }

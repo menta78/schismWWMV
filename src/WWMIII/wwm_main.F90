@@ -232,7 +232,7 @@
          IF (LQSTEA) THEN
            CALL QUASI_STEADY(KKK)
          ELSE
-           CALL UN_STEADY(KKK,CALLFROM)
+           CALL UN_STEADY(KKK)
          END IF
 
          IF (LNANINFCHK) THEN
@@ -512,7 +512,7 @@
 
       CALL IO_1(K)
 
-      IF (LCFL) CALL CFLSPEC()
+      IF (LCFL_CASD) CALL CFLSPEC()
 
       IF (LCHKCONV) IP_IS_STEADY = 0 ! Reset local convergence indicators ...
       IF (LCHKCONV) IE_IS_STEADY = 0
@@ -643,15 +643,11 @@
         CALL GRADCURT
         CALL SET_IOBPD
         CALL SET_IOBPD_BY_DEP
-        IF (LCFL) THEN
-          CFLCXY = ZERO
+        IF (LCFL_CASD) THEN
           CALL CFLSPEC
         ENDIF
         IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
       END IF
-!
-!
-!
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

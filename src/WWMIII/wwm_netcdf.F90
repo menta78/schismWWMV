@@ -183,6 +183,7 @@
       LOGICAL :: ComputeMean, ComputeDirSpread, ComputePeak
       LOGICAL :: ComputeCurr, ComputeUrsell, ComputeStokes
       integer iVar, idx, nbOutVarEff
+      logical CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
       HS           = eVar%LVAR( 1)
       TM01         = eVar%LVAR( 2)
       TM02         = eVar%LVAR( 3)
@@ -242,6 +243,10 @@
       CFL2         = eVar%LVAR(57)
       CFL3         = eVar%LVAR(58)
       ZETA_SETUP   = eVar%LVAR(59)
+      CFL_CASD1    = eVar%LVAR(60)
+      CFL_CASD2    = eVar%LVAR(61)
+      CFL_CASD3    = eVar%LVAR(62)
+      CFL_CASD4    = eVar%LVAR(63)
       ComputeMean=.FALSE.
       ComputeDirSpread=.FALSE.
       ComputePeak=.FALSE.
@@ -1177,6 +1182,22 @@
         eStr="ZETA_SETUP"
         eStrFullName="Free-surface elevation induced setup"
         eStrUnit="m"
+      ELSE IF (IDX.eq.60) THEN
+        eStr="CFL_CASD1"
+        eStrFullName="maximum value of CAS"
+        eStrUnit="unknown"
+      ELSE IF (IDX.eq.61) THEN
+        eStr="CFL_CASD2"
+        eStrFullName="maximum value of CAD"
+        eStrUnit="unknown"
+      ELSE IF (IDX.eq.62) THEN
+        eStr="CFL_CASD3"
+        eStrFullName="CFL value for CAS"
+        eStrUnit="unknown"
+      ELSE IF (IDX.eq.63) THEN
+        eStr="CFL_CASD4"
+        eStrFullName="CFL value for CAD"
+        eStrUnit="unknown"
       ELSE
         CALL WWM_ABORT('Wrong Number')
       END IF

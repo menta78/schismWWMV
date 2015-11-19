@@ -432,7 +432,6 @@ MODULE wwm_hotfile_mod
 #if defined NCDF && defined MPI_PARALL_GRID
       integer iProc, IP, IPglob
       IF (myrank .eq. 0) THEN
-        WRITE(STAT%FHNDL, *) 'Before allocation of ACreturn'
         allocate(ACreturn(MSC,MDC,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
@@ -449,11 +448,10 @@ MODULE wwm_hotfile_mod
         CALL MPI_SEND(AC2, MSC*MDC*NP_RES, rtype, 0, 8123, comm, ierr)
       END IF
       IF (myrank .eq. 0) THEN
-        WRITE(STAT%FHNDL, *) 'Before allocation of VAR_ONEDreturnn'
         allocate(VAR_ONEDreturn(nbOned,np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 16')
         DO iProc=2,nproc
-          call mpi_irecv(ACreturn,1,var_oned_hot_type(iProc-1),iProc-1,8124,comm,var_oned_hot_rqst(iProc-1),ierr)
+          call mpi_irecv(VAR_ONEDreturn,1,var_oned_hot_type(iProc-1),iProc-1,8124,comm,var_oned_hot_rqst(iProc-1),ierr)
         END DO
         DO IP=1,NP_RES
           IPglob=iplg(IP)
@@ -525,18 +523,18 @@ MODULE wwm_hotfile_mod
 #endif
       IF (HOTSTYLE_OUT == 1) THEN
         CALL OUTPUT_HOTFILE_BINARY
-#ifdef NCDF
       ELSE IF (HOTSTYLE_OUT == 2) THEN
+#ifdef NCDF
         CALL OUTPUT_HOTFILE_NETCDF
+#else
+        CALL WWM_ABORT('Select NetCDF for HOTSTYLE_OUT = 2')
 #endif
       ELSE
         CALL WWM_ABORT('Wrong choice of HOTSTYLE_OUT')
       END IF
 #ifdef MPI_PARALL_GRID
       IF ((MULTIPLEOUT_HOT.eq.0).and.(myrank.eq.0)) THEN
-        WRITE(STAT%FHNDL, *) 'Before deallocation of ACreturn'
         deallocate(ACreturn)
-        WRITE(STAT%FHNDL, *) 'Before deallocation of VAR_ONEDreturn'
         deallocate(VAR_ONEDreturn)
       END IF
 #endif

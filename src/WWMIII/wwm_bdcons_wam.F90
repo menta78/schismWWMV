@@ -291,10 +291,10 @@
         IF (IsAssigned .eqv. .FALSE.) THEN
           CALL WWM_ABORT('Error in the interpolation direction')
         END IF
-        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
-        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
-        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
-        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
+!        WRITE(STAT%FHNDL,*) 'ID=', ID, 'eDir=', eDIR
+!        WRITE(STAT%FHNDL,*) 'WAM_ID12=', WAM_ID1(ID), WAM_ID2(ID)
+!        WRITE(STAT%FHNDL,*) 'WAM_WD12=', WAM_WD1(ID), WAM_WD2(ID)
+!        WRITE(STAT%FHNDL,*) 'WAM_eD12=', ListDir_wam(WAM_ID1(ID)), ListDir_wam(WAM_ID2(ID))
       END DO
       WRITE(STAT%FHNDL,*) 'Interpolation array for direction done'
       FLUSH(STAT%FHNDL)
@@ -319,9 +319,9 @@
             END IF
           END IF
         END DO
-        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
-        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
-        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
+!        WRITE(STAT%FHNDL,*) 'IS=', IS, 'eFR=', eFR
+!        WRITE(STAT%FHNDL,*) 'WAM_IS12=', WAM_IS1(IS), WAM_IS2(IS)
+!        WRITE(STAT%FHNDL,*) 'WAM_WS12=', WAM_WS1(IS), WAM_WS2(IS)
       END DO
       WRITE(STAT%FHNDL,*) 'Interpolation array for frequency done'
       FLUSH(STAT%FHNDL)
@@ -369,9 +369,9 @@
             call grib_get(igrib(i), 'directionNumber', idir)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
             CALL grib_get(igrib(i), 'values', values)
-            WRITE(STAT%FHNDL,*) 'idir=', idir, ' ifreq=', ifreq
-            WRITE(STAT%FHNDL,*) 'max(values)=', maxval(values)
-            WRITE(STAT%FHNDL,*) 'min(values)=', minval(values)
+!            WRITE(STAT%FHNDL,*) 'idir=', idir, ' ifreq=', ifreq
+!            WRITE(STAT%FHNDL,*) 'max(values)=', maxval(values)
+!            WRITE(STAT%FHNDL,*) 'min(values)=', minval(values)
             DirFreqStatus(idir, ifreq) = 1
             idx=0
             DO iY=1,ny_wam

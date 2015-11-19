@@ -107,10 +107,17 @@
                                      ! Flag 0: not on bnd; 3: Neumann (0 gradient);
                                      ! 2: active bnd (Direchlet). Bnd flags imported from SELFE:
                                      ! 1: exterior bnd; -1: interior (islands)
- IBOUNDFORMAT   = 1                  ! 1 ~ WWM, 2 ~ FVCOM: 3 ~ WW3. FVCOM and WW3 works only with LBCWA=T.
+ IBOUNDFORMAT   = 1                  ! 1: WWM,
+                                     ! 2: FVCOM (only with LBCWA = T)
+                                     ! 3: WW3. FVCOM and WW3 works only with LBCWA=T.
+                                     ! 4: NetCDF boundary condition (parametric or boundary)
+                                     ! 5: WAM style boundary condition.
                                      ! For WW3 boundary input also set LINHOM=T, LBCSE=T and this works only for spherical coordinates
                                      ! LMONO_IN = F ! incident wave is defined as monochromatic wave height, which is Hmono = sqrt(2) * Hs
                                      ! The following are needed only if LBCWA=T and LINHOM=F
+ EXTRAPOLATION_ALLOWED = F           ! Sometimes model grid is slightly larger
+                                     ! than the forcing grid. For points outside
+                                     ! one uses extrapolation. Default F.
  WBHS           = 0.181              ! Hs at the boundary for parametric spectra
  WBSS           = 3.                 ! 1 or -1: Pierson-Moskowitz
                                      ! 2 or -2: JONSWAP
@@ -335,6 +342,8 @@
                                      ! For MESIN = 1 and MESDS = 1, which represents Cycle 3 formulation or Ardhuin, or other formulations except Cycle4, use MELIM = 1 and LIMFAK = 0.1
                                      ! For MESIN = 2 and MESDS = 2, which represents Cycle 4 formulation, use MELIM = 2 and LIMFAK = 0.6
                                      ! For WAM we need MELIM = 3
+ WAE_JGS_CFL_LIM = T                 ! limitation of iteration by the CFL number for the jacobi-Gauss-Seidel
+                                     ! solver.
  LIMFAK         = 0.6                ! Proportionality coefficient for the action limiter MAX_DAC_DT = Limfak * Limiter; see notes above for value
  LDIFR          = T                  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
  IDIFFR         = 1                  ! Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)
@@ -384,8 +393,8 @@
  LZETA_SETUP    = F,                 ! T/F, whether to compute the wave setup.
  ZETA_METH      = 0,                 ! 0: use a simple conjugate gradient
                                      !    preconditioner
-                                     ! 1: use PETSC
- SOLVERTHR       =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
+ STP_SOLVERTHR   =  1.0000000000E-5       !Solver thr for the wave setup
+ WAE_SOLVERTHR   =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
  MAXITER =         100,                   ! Max. number of iterations 
  LNANINFCHK      = T,                     ! Check for NaN and INF
  LZETA_SETUP     = F,                     ! Compute wave setup 
@@ -505,6 +514,10 @@
  CFL2           = F                  !57: CFL number 2
  CFL3           = F                  !58: CFL number 3
  ZETA_SETUP     = F                  !59: wave induced setup.
+ CFL_CASD1      = F                  !60: CFL dir/freq 1
+ CFL_CASD2      = F                  !61: CFL dir/freq 2
+ CFL_CASD3      = F                  !62: CFL dir/freq 3
+ CFL_CASD4      = F                  !63: CFL dir/freq 4
 /
 
 &STATION
@@ -607,6 +620,10 @@
  CFL2           = F                  !57: CFL number 2
  CFL3           = F                  !58: CFL number 3
  ZETA_SETUP     = F                  !59: wave induced setup.
+ CFL_CASD1      = F                  !60: CFL dir/freq 1
+ CFL_CASD2      = F                  !61: CFL dir/freq 2
+ CFL_CASD3      = F                  !62: CFL dir/freq 3
+ CFL_CASD4      = F                  !63: CFL dir/freq 4
 /
 
 &HOTFILE
@@ -634,6 +651,22 @@
  MULTIPLEIN     = 0    ! 0: read hotfile from one single file
                        ! 1: read hotfile from multiple files.
  FILEHOT_IN     = 'hotfile_in.dat' ! Hot file name for input
+/
+
+&NESTING
+ L_NESTING = F,      ! whether to produce nesting data or not
+ L_HOTFILE = F       ! whether to produce an hotfile as output
+ L_BOUC_PARAM = F    ! whether to produce a parametric boundary condition to be used by the nested grids
+ L_BOUC_SPEC = F     ! whether to produce a spectral   boundary condition to be used by the nested grids
+ NB_GRID_NEST = 0    ! number of nested grids. All lines below must contain NB_GRID_NEST entries.
+ ListIGRIDTYPE =     ! list of integers giving the type of nested grid
+ ListFILEGRID =      ! list of strings for the grid file names.
+ ListFILEBOUND =     ! list of boundary file names to be used
+ ListBEGTC = ....    ! list of beginning time of the runs (used for hotfile and boundary)
+ ListDELTC =         ! list of DELTC of the boundary output
+ ListUNITC =         ! list of UNITS of the boundary output
+ ListENDTC =         ! list of ENDTC of the boundary output
+ ListPrefix =        ! list of prefix used for the output variable
 /
 
 

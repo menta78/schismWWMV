@@ -52,7 +52,8 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
@@ -68,7 +69,8 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -83,7 +85,8 @@
      &      CURRTX, CURRTY, WATLEV, WATLEVOLD, DEPDT, DEP,              &
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
-     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP
+     &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
 
          XOUTS = 0.
          YOUTS = 0.
@@ -161,6 +164,10 @@
          CFL2=.FALSE.
          CFL3=.FALSE.
          ZETA_SETUP=.FALSE.
+         CFL_CASD1=.FALSE.
+         CFL_CASD2=.FALSE.
+         CFL_CASD3=.FALSE.
+         CFL_CASD4=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
@@ -313,6 +320,10 @@
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
          LVAR_READ(59)=ZETA_SETUP
+         LVAR_READ(60)=CFL_CASD1
+         LVAR_READ(61)=CFL_CASD2
+         LVAR_READ(62)=CFL_CASD3
+         LVAR_READ(63)=CFL_CASD4
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -392,6 +403,10 @@
          CFL2=.FALSE.
          CFL3=.FALSE.
          ZETA_SETUP=.FALSE.
+         CFL_CASD1=.FALSE.
+         CFL_CASD2=.FALSE.
+         CFL_CASD3=.FALSE.
+         CFL_CASD4=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
@@ -549,6 +564,10 @@
          LVAR_READ(57)=CFL2
          LVAR_READ(58)=CFL3
          LVAR_READ(59)=ZETA_SETUP
+         LVAR_READ(60)=CFL_CASD1
+         LVAR_READ(61)=CFL_CASD2
+         LVAR_READ(62)=CFL_CASD3
+         LVAR_READ(63)=CFL_CASD4
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN
@@ -705,7 +724,7 @@
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
      &      LLIMT, LIMFAK, MELIM, LDIFR, IDIFFR, LADVTEST, LSOUBOUND,   &
-     &      LCFL, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR,            &
+     &      LCFL, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, LGSE,      &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
@@ -713,6 +732,7 @@
      &      LNANINFCHK, LSOURCESWAM, PMIN,                              &
      &      LSOURCESWWIII, BLOCK_GAUSS_SEIDEL, LNONL,                   &
      &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
+     &      WAE_JGS_CFL_LIM,                                            &
      &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
      &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
      &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
@@ -726,7 +746,7 @@
          NAMELIST /NESTING/ L_NESTING, NB_GRID_NEST,                    &
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
      &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
-     &      L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
+     &      ListPrefix, L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
      
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
@@ -1326,13 +1346,13 @@
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SWTICHES FOR THE LIMTER'
-         WRITE(STAT%FHNDL,*) 'LLIMT', LLIMT
+!         WRITE(STAT%FHNDL,*) 'LLIMT', LLIMT
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ACTIVATED SOURCE TERMS'
-         WRITE(STAT%FHNDL,*) 'MESIN', MESIN
-         WRITE(STAT%FHNDL,*) 'MESNL', MESNL
-         WRITE(STAT%FHNDL,*) 'MESBR', MESBR
-         WRITE(STAT%FHNDL,*) 'MESDS', MESDS
-         WRITE(STAT%FHNDL,*) 'MESTR', MESTR
+!         WRITE(STAT%FHNDL,*) 'MESIN', MESIN
+!         WRITE(STAT%FHNDL,*) 'MESNL', MESNL
+!         WRITE(STAT%FHNDL,*) 'MESBR', MESBR
+!         WRITE(STAT%FHNDL,*) 'MESDS', MESDS
+!         WRITE(STAT%FHNDL,*) 'MESTR', MESTR
 
          IF (LSEWD .AND. LSTWD) THEN
            WRITE(DBG%FHNDL,*) 'YOU MUST USE EITHER UNSTEADY OR STEADY WIND'

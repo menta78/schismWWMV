@@ -4,6 +4,58 @@
 !**********************************************************************
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
+      SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer,intent(out) :: CFLadvgeoOutI(MNP)
+      REAL(rkind) C(2,MNP), KELEM(3,MNE)
+      REAL(rkind) KKSUM(MNP)
+      REAL(rkind) LAMBDA(2), KTMP(3)
+      integer I1, I2, I3
+      real(rkind) DTMAX_EXP
+      integer IE, IP, I, J, POS
+      integer IS, ID
+      REAL(rkind) :: CFLadvgeoOut(MNP)
+      CFLadvgeoOut=0
+      DO IS=1,MSC
+        DO ID=1,MDC
+          CALL CADVXY(IS,ID,C)
+          DO IE = 1, MNE
+            I1 = INE(1,IE)
+            I2 = INE(2,IE)
+            I3 = INE(3,IE)
+            LAMBDA(1) = ONESIXTH *(C(1,I1)+C(1,I2)+C(1,I3))
+            LAMBDA(2) = ONESIXTH *(C(2,I1)+C(2,I2)+C(2,I3))
+            KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
+            KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+            KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+            KTMP  = KELEM(:,IE)
+            KELEM(:,IE) = MAX(ZERO,KTMP)
+          END DO
+          KKSUM = ZERO
+          J    = 0
+          DO IP = 1, MNP
+            DO I = 1, CCON(IP)
+              J = J + 1
+              IE    = IE_CELL(J)
+              POS   = POS_CELL(J)
+              KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
+            END DO
+          END DO
+          DO IP=1,MNP
+            DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
+            CFLadvgeoOut(IP) = MAX(CFLadvgeoOut(IP), DT4A / DTMAX_EXP)
+          END DO
+        END DO
+      END DO
+      CALL EXCHANGE_P2D(CFLadvgeoOut)
+      DO IP=1,MNP
+        CFLadvgeoOutI(IP) = NINT(CFLadvgeoOut(IP))
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
@@ -21,6 +73,7 @@
 
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: CXnorm
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -30,6 +83,11 @@
 !
 !     Calculate countour integral quantities ...
 !
+      IF (LCFL) THEN
+        CFLCXY(1,:) = ZERO
+        CFLCXY(2,:) = ZERO
+        CFLCXY(3,:) = LARGE
+      END IF
       ASPAR = 0.0_rkind ! Mass matrix ...
       DO IE = 1, MNE
         DO I=1,3
@@ -61,6 +119,10 @@
                   CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IP,1)
                   CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IP,2)
                 END IF
+              END IF
+              IF (LCFL) THEN
+                CXnorm=SQRT(CXY(1,IS,ID,I)**2 + CXY(2,IS,ID,I)**2)
+                CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
               END IF
             END DO
           END DO
@@ -541,6 +603,771 @@
         A_SIG=ZERO
         C_SIG=ZERO
       END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+      USE DATAPOOL
+      USE NETCDF  
+      IMPLICIT NONE
+      INTEGER, intent(in) :: iPass, iIter
+      REAL(rkind), intent(in) :: FieldOut1(MNP)
+      character (len = *), parameter :: CallFct="DEBUG_EIMPS_TOTAL_JACOBI"
+      REAL(rkind) :: FieldOutTotal1(np_total)
+      REAL(rkind), allocatable :: ARRAY_loc(:)
+      character(len=256) :: FileSave
+      REAL(rkind) eTimeDay
+      integer ncid, iret, nbTime, mnp_dims, ntime_dims, var_id
+      integer fifteen_dims
+      integer IP, IPloc, IPglob, NP_RESloc
+      integer iProc
+      integer, allocatable :: ListFirstMNP(:)
+      WRITE(FileSave, 10) 'DebugJacobi', iPass
+10    FORMAT(a, '_', i4.4,'.nc')
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+        allocate(ListFirstMNP(nproc), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 1')
+        ListFirstMNP=0
+        DO iProc=2,nproc
+          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
+        END DO
+        DO IP=1,NP_RES
+          IPglob=iplg(IP)
+          FieldOutTotal1(IPglob)=FieldOut1(IP)
+        END DO
+        DO iPROC=2,nproc
+          NP_RESloc=ListNP_RES(iPROC)
+          allocate(ARRAY_loc(NP_RESloc), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 2')
+          !
+          CALL MPI_RECV(ARRAY_loc, NP_RESloc, rtype, iProc-1, 511, comm, istatus, ierr)
+          DO IPloc=1,NP_RESloc
+            IPglob=ListIPLG(IPloc + ListFirstMNP(iProc))
+            FieldOutTotal1(IPglob)=ARRAY_loc(IPloc)
+          END DO
+          deallocate(ARRAY_loc)
+        END DO
+        deallocate(ListFirstMNP)
+      ELSE
+        CALL MPI_SEND(FieldOut1, NP_RES, rtype, 0, 511, comm, ierr)
+      END IF
+#else
+      FieldOutTotal1 = FieldOut1
+#endif
+      !
+      ! Now writing to netcdf file
+      ! 
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (iIter .eq. 1) THEN
+          iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
+          !
+          iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
+          !
+          nbTime=0
+          CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
+          !
+          iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
+          !
+          iret=nf90_def_var(ncid,"FieldOut1",NF90_RUNTYPE,(/ mnp_dims, ntime_dims/),var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
+          !
+          iret = nf90_close(ncid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+        END IF
+        !
+        ! Writing data
+        !
+        iret = nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
+        !
+        eTimeDay = MAIN%BMJD + MyREAL(iIter-1)*MyREAL(3600)/MyREAL(86400)
+        CALL WRITE_NETCDF_TIME(ncid, iIter, eTimeDay)
+        !
+        iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
+        !
+        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
+        !
+        iret = nf90_close(ncid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) :: MaxNorm, SumNorm, p_is_converged
+      REAL(rkind) :: eSum(MSC,MDC)
+      REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      REAL(rkind) :: ACLOC(msc,mdc)
+      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
+      REAL(rkind) :: BLOC(MSC,MDC)
+      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      LOGICAL     :: test
+      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
+#ifdef DEBUG_ITERATION_LOOP
+      integer iIter
+      integer, save :: iPass = 0
+      REAL(rkind) :: FieldOut1(MNP)
+#endif
+#ifdef TIMINGS
+      REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
+#endif
+      REAL(rkind) :: eFact
+      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
+      INTEGER :: IP, J, idx, nbIter, is_converged, itmp
+      INTEGER :: JDX
+      LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
+      integer nbPassive
+      WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
+      WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
+      WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
+      IF (WAE_JGS_CFL_LIM) THEN
+        IF (InitCFLadvgeo .eqv. .FALSE.) THEN
+          allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 3')
+          CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
+        END IF
+        InitCFLadvgeo=.TRUE.
+        NumberOperationJGS = 0
+      END IF
+
+#ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME1)
+#endif
+      p_is_converged=0
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
+        CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
+      END IF
+      IF ((ASPAR_LOCAL_LEVEL .ge. 5).and.(ASPAR_LOCAL_LEVEL .le. 7)) THEN
+        CALL COMPUTE_K_CRFS_XYU
+      END IF
+#ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME2)
+#endif
+      !
+      IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
+        CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
+      END IF
+
+      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
+        IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
+          DO IP=1,NP_RES
+            CALL GET_BLOCAL(IP, BLOC)
+            CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
+            B_JAC(:,:,IP)             = BLOC + IMATRA
+          END DO
+        END IF
+      END IF
+
+#ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME3)
+#endif
+      !
+      ! Now the Gauss Seidel iterations
+      !
+      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      !
+      nbIter=0
+      DO
+        is_converged = 0
+        JDX=0
+#ifdef DEBUG_ITERATION_LOOP
+        FieldOut1 = 0
+#endif
+        nbPassive = 0
+        DO IP=1,NP_RES
+          ACLOC = AC2(:,:,IP)
+          Sum_prev = sum(ACLOC)
+          IF (WAE_JGS_CFL_LIM .eqv. .FALSE.) THEN
+            test=.TRUE.
+          ELSE
+            IF (NumberOperationJGS(IP) .lt. CFLadvgeoI(IP)) THEN
+              test=.TRUE.
+            ELSE
+              test=.FALSE.
+            END IF
+          END IF
+          IF (test) THEN
+            CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
+            eSum=eSum/ASPAR_DIAG
+            IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
+            !eSum=max(zero,eSum)
+            IF (BLOCK_GAUSS_SEIDEL) THEN
+              AC2(:,:,IP)=eSum
+              IF (LNANINFCHK) THEN
+                IF (SUM(eSum) .ne. SUM(esum)) THEN
+                  WRITE(DBG%FHNDL,*) IP, SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
+                  CALL WWM_ABORT('NAN IN SOLVER')
+                ENDIF
+              ENDIF
+            ELSE
+              U_JACOBI(:,:,IP)=eSum
+            END IF
+            IF (JGS_CHKCONV) THEN
+              Sum_new = sum(eSum)
+              if (Sum_new .gt. thr8) then
+                DiffNew=sum(abs(ACLOC - eSum))
+                p_is_converged = DiffNew/Sum_new
+              else
+                p_is_converged = zero
+              endif
+#ifdef DEBUG_ITERATION_LOOP
+              FieldOut1(IP)=p_is_converged
+#endif
+              IF (IPstatus(IP) .eq. 1) THEN
+                IF (p_is_converged .lt. jgs_diff_solverthr) THEN
+                  is_converged=is_converged+1
+                  IF (WAE_JGS_CFL_LIM) THEN
+                    NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
+                  END IF
+                END IF
+              END IF
+            END IF
+          ELSE
+            nbPassive = nbPassive + 1
+            IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
+              is_converged = is_converged + 1
+            END IF
+          END IF
+        END DO
+        IF (JGS_CHKCONV) THEN
+#ifdef MPI_PARALL_GRID
+          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
+          is_converged = itmp
+#endif
+          p_is_converged = (real(np_total) - real(is_converged))/real(np_total) * 100.
+        ENDIF 
+
+#ifdef MPI_PARALL_GRID
+        IF (BLOCK_GAUSS_SEIDEL) THEN
+          CALL EXCHANGE_P4D_WWM(AC2)
+        ELSE
+          CALL EXCHANGE_P4D_WWM(U_JACOBI)
+        END IF
+#endif
+        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
+          AC2 = U_JACOBI
+        ENDIF
+#ifdef DEBUG_ITERATION_LOOP
+        iIter=nbIter + 1
+        CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+#endif
+
+!
+! The termination criterions several can be chosen
+!
+        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged, np_total-is_converged, p_is_converged, pmin
+        !
+        ! Number of iterations. If too large the exit.
+        !
+        nbIter=nbIter+1
+        IF (nbiter .eq. maxiter) THEN
+          EXIT
+        ENDIF
+        !
+        ! Check via number of converged points
+        !
+        IF (JGS_CHKCONV) THEN
+          IF (p_is_converged .le. pmin) EXIT
+        ENDIF
+        !
+        ! Check via the norm
+        !
+        IF (L_SOLVER_NORM) THEN
+          CALL COMPUTE_JACOBI_SOLVER_ERROR(MaxNorm, SumNorm)
+          IF (sqrt(SumNorm) .le. WAE_SOLVERTHR) THEN
+            EXIT
+          END IF
+        END IF
+      END DO
+      WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
+
+#ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME4)
+#endif
+!
+      DO IP = 1, MNP
+        AC2(:,:,IP) = MAX(ZERO,AC2(:,:,IP))
+      END DO
+
+#ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME5)
+#endif
+
+#ifdef TIMINGS
+# ifdef MPI_PARALL_GRID
+      IF (myrank == 0) THEN
+# endif
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING SOURCES AND ADVECTION  ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING REFRACTION             ', TIME3-TIME2
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ITERATION                            ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'STORE RESULT                         ', TIME5-TIME4
+        FLUSH(STAT%FHNDL)
+# ifdef MPI_PARALL_GRID
+      ENDIF
+# endif
+#endif
+#ifdef DEBUG_ITERATION_LOOP
+      iPass=iPass+1
+#endif
+      CONTAINS
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
+      IMPLICIT NONE
+      integer, intent(inout) :: JDX
+      REAL(rkind), intent(in) :: ACLOC(MSC,MDC)
+      REAL(rkind), intent(out) :: eSum(MSC,MDC), ASPAR_DIAG(MSC,MDC)
+      integer ID1, ID2, ID, IS, IP_ADJ, IADJ
+      REAL(rkind) :: NEG_P(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
+      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
+        ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_BLOCAL(IP, BLOC)
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            ASPAR_DIAG = ASPAR_DIAG + IMATDA
+            eSum = BLOC + IMATRA
+          ELSE
+            eSum = B_JAC(:,:,IP)
+          END IF
+        ELSE
+          CALL GET_BLOCAL(IP, eSum)
+        END IF
+        DO J=IA(IP),IA(IP+1)-1 
+          IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
+        END DO
+        IF (REFRACTION_IMPL) THEN
+          CAD=CAD_THE(:,:,IP)
+          CP_THE = MAX(ZERO,CAD)
+          CM_THE = MIN(ZERO,CAD)
+          eFact=(DT4D/DDIR)*SI(IP)
+          DO ID=1,MDC
+            ID1 = ID_PREV(ID)
+            ID2 = ID_NEXT(ID)
+            eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*ACLOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*ACLOC(:,ID2)
+          END DO
+        END IF
+        IF (FREQ_SHIFT_IMPL) THEN
+          CAS=CAS_SIG(:,:,IP)
+          CP_SIG = MAX(ZERO,CAS)
+          CM_SIG = MIN(ZERO,CAS)
+          eFact=DT4F*SI(IP)
+          DO ID=1,MDC
+            DO IS=2,MSC
+              eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*ACLOC(IS-1,ID)
+            END DO
+            DO IS=1,MSC-1
+              eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*ACLOC(IS+1,ID)
+            END DO
+          END DO
+        END IF
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
+        ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_BLOCAL(IP, BLOC)
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            ASPAR_DIAG = ASPAR_DIAG + IMATDA
+            eSum = BLOC + IMATRA
+          ELSE
+            eSum = B_JAC(:,:,IP)
+          END IF
+        ELSE
+          CALL GET_BLOCAL(IP, eSum)
+        END IF
+        CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+        DO J=IA(IP),IA(IP+1)-1 
+          IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
+        END DO
+        IF (REFRACTION_IMPL) THEN
+          DO ID=1,MDC
+            ID1 = ID_PREV(ID)
+            ID2 = ID_NEXT(ID)
+            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+          END DO
+        END IF
+        IF (FREQ_SHIFT_IMPL) THEN
+          DO ID=1,MDC
+            DO IS=2,MSC
+              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+            END DO
+            DO IS=1,MSC-1
+              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+            END DO
+          END DO
+        END IF
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+        CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        DO IADJ=1,VERT_DEG(IP)
+          IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+          eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
+        END DO
+        IF (REFRACTION_IMPL) THEN
+          DO ID=1,MDC
+            ID1 = ID_PREV(ID)
+            ID2 = ID_NEXT(ID)
+            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+          END DO
+        END IF
+        IF (FREQ_SHIFT_IMPL) THEN
+          DO ID=1,MDC
+            DO IS=2,MSC
+              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+            END DO
+            DO IS=1,MSC-1
+              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+            END DO
+          END DO
+        END IF
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
+        CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
+        CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
+        CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 6) THEN
+        CALL NEGATIVE_PART_D(JDX, IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 7) THEN
+        CALL NEGATIVE_PART_E(JDX, IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 8) THEN
+        CALL NEGATIVE_PART_F(IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 9) THEN
+        CALL NEGATIVE_PART_G(IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE IF (ASPAR_LOCAL_LEVEL .eq. 10) THEN
+        CALL NEGATIVE_PART_H(IP, NEG_P, ASPAR_DIAG)
+        CALL GET_BLOCAL(IP, eSum)
+        IF (SOURCE_IMPL) THEN
+          IF (LNONL) THEN
+            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+          ELSE
+            eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+            IMATRA = IMATRAA(:,:,IP) * eVal
+            IMATDA = IMATDAA(:,:,IP) * eVal
+          END IF
+          ASPAR_DIAG = ASPAR_DIAG + IMATDA
+          eSum = eSum + IMATRA
+        END IF
+        eSum=eSum - NEG_P
+      ELSE
+        CALL WWM_ABORT('Not defined')
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_JACOBI_SOLVER_ERROR(MaxNorm, SumNorm)
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), intent(out) :: MaxNorm, SumNorm
+      integer IP
+      integer ID1, ID2, ID, IS, IP_ADJ, IADJ
+#ifdef MPI_PARALL_GRID
+      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
+#endif
+      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
+      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      REAL(rkind) :: BLOC(MSC,MDC)
+      REAL(rkind) :: NEG_P(MSC,MDC)
+      Norm_L2=0
+      Norm_LINF=0
+      DO IP=1,NP_RES
+        IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
+          ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
+          IF (SOURCE_IMPL) THEN
+            IF (LNONL) THEN
+              CALL GET_BLOCAL(IP, BLOC)
+              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = BLOC + IMATRA
+            ELSE
+              eSum = B_JAC(:,:,IP)
+            END IF
+          ELSE
+            CALL GET_BLOCAL(IP, eSum)
+          END IF
+          DO J=IA(IP),IA(IP+1)-1
+            idx=JA(J)
+            IF (J .eq. I_DIAG(IP)) THEN
+              eSum=eSum - ASPAR_DIAG*AC2(:,:,idx)
+            ELSE
+              eSum=eSum - ASPAR_JAC(:,:,J)*AC2(:,:,idx)
+            END IF
+          END DO
+          IF (REFRACTION_IMPL) THEN
+            CAD=CAD_THE(:,:,IP)
+            CP_THE = MAX(ZERO,CAD)
+            CM_THE = MIN(ZERO,CAD)
+            eFact=(DT4D/DDIR)*SI(IP)
+            DO ID=1,MDC
+              ID1 = ID_PREV(ID)
+              ID2 = ID_NEXT(ID)
+              eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
+              eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            CAS=CAS_SIG(:,:,IP)
+            CP_SIG = MAX(ZERO,CAS)
+            CM_SIG = MIN(ZERO,CAS)
+            eFact=DT4F*SI(IP)
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
+              END DO
+            END DO
+          END IF
+        ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
+          ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
+          IF (SOURCE_IMPL) THEN
+            IF (LNONL) THEN
+              CALL GET_BLOCAL(IP, BLOC)
+              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              ASPAR_DIAG = ASPAR_DIAG + IMATDA
+              eSum = BLOC + IMATRA
+            ELSE
+              eSum = B_JAC(:,:,IP)
+            END IF
+          ELSE
+            CALL GET_BLOCAL(IP, eSum)
+          END IF
+          CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+          DO J=IA(IP),IA(IP+1)-1
+            idx=JA(J)
+            IF (J .eq. I_DIAG(IP)) THEN
+              eSum=eSum - ASPAR_DIAG*AC2(:,:,idx)
+            ELSE
+              eSum=eSum - ASPAR_JAC(:,:,J)*AC2(:,:,idx)
+            END IF
+          END DO
+          IF (REFRACTION_IMPL) THEN
+            DO ID=1,MDC
+              ID1 = ID_PREV(ID)
+              ID2 = ID_NEXT(ID)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+              END DO
+            END DO
+          END IF
+        ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+          CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+          CALL GET_BLOCAL(IP, eSum)
+          IF (SOURCE_IMPL) THEN
+            IF (LNONL) THEN
+              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            ELSE
+              CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+            END IF
+            ASPAR_DIAG = ASPAR_DIAG + IMATDA
+            eSum = eSum + IMATRA
+          END IF
+          DO IADJ=1,VERT_DEG(IP)
+            IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
+            eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
+          END DO
+          eSum=eSum - ASPAR_DIAG*AC2(:,:,IP)
+          IF (REFRACTION_IMPL) THEN
+            DO ID=1,MDC
+              ID1 = ID_PREV(ID)
+              ID2 = ID_NEXT(ID)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+            END DO
+          END IF
+          IF (FREQ_SHIFT_IMPL) THEN
+            DO ID=1,MDC
+              DO IS=2,MSC
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+              END DO
+              DO IS=1,MSC-1
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+              END DO
+            END DO
+          END IF
+        ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
+          CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
+          CALL GET_BLOCAL(IP, eSum)
+          IF (SOURCE_IMPL) THEN
+            IF (LNONL) THEN
+              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            ELSE
+              CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+            END IF
+            ASPAR_DIAG = ASPAR_DIAG + IMATDA
+            eSum = eSum + IMATRA
+          END IF
+          eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
+        ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
+          CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
+          CALL GET_BLOCAL(IP, eSum)
+          IF (SOURCE_IMPL) THEN
+            IF (LNONL) THEN
+              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            ELSE
+              CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
+            END IF
+            ASPAR_DIAG = ASPAR_DIAG + IMATDA
+            eSum = eSum + IMATRA
+          END IF
+          eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
+        ELSE
+          CALL WWM_ABORT('Wrong selection')
+        END IF
+        IF (IPstatus(IP) .eq. 1) THEN
+          Norm_L2 = Norm_L2 + (eSum**2)
+        END IF
+        Norm_LINF = max(Norm_LINF, abs(eSum))
+      END DO
+#ifdef MPI_PARALL_GRID
+      CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
+      CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+      MaxNorm = maxval(Norm_L2_gl)
+      SumNorm = sum(Norm_L2_gl)
+#else
+      MaxNorm = maxval(Norm_L2)
+      SumNorm = sum(Norm_L2)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1774,9 +2601,7 @@
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
-      REAL(rkind) :: CAD(MSC,MDC)
       REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
       REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
       REAL(rkind) :: eFact, eCAD, eCP_THE, eCM_THE
@@ -1964,712 +2789,5 @@
         END IF
       END IF
       END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
-      USE DATAPOOL
-      USE NETCDF  
-      IMPLICIT NONE
-      INTEGER, intent(in) :: iPass, iIter
-      REAL(rkind), intent(in) :: FieldOut1(MNP)
-      character (len = *), parameter :: CallFct="DEBUG_EIMPS_TOTAL_JACOBI"
-      REAL(rkind) :: FieldOutTotal1(np_total)
-      REAL(rkind), allocatable :: ARRAY_loc(:)
-      character(len=256) :: FileSave
-      REAL(rkind) eTimeDay
-      integer ncid, iret, nbTime, mnp_dims, ntime_dims, var_id
-      integer fifteen_dims
-      integer IP, IPloc, IPglob, NP_RESloc
-      integer iProc
-      integer, allocatable :: ListFirstMNP(:)
-      WRITE(FileSave, 10) 'DebugJacobi', iPass
-10    FORMAT(a, '_', i4.4,'.nc')
-#ifdef MPI_PARALL_GRID
-      IF (myrank .eq. 0) THEN
-        allocate(ListFirstMNP(nproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-        ListFirstMNP=0
-        DO iProc=2,nproc
-          ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
-        END DO
-        DO IP=1,NP_RES
-          IPglob=iplg(IP)
-          FieldOutTotal1(IPglob)=FieldOut1(IP)
-        END DO
-        DO iPROC=2,nproc
-          NP_RESloc=ListNP_RES(iPROC)
-          allocate(ARRAY_loc(NP_RESloc), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-          !
-          CALL MPI_RECV(ARRAY_loc, NP_RESloc, rtype, iProc-1, 511, comm, istatus, ierr)
-          DO IPloc=1,NP_RESloc
-            IPglob=ListIPLG(IPloc + ListFirstMNP(iProc))
-            FieldOutTotal1(IPglob)=ARRAY_loc(IPloc)
-          END DO
-          deallocate(ARRAY_loc)
-        END DO
-        deallocate(ListFirstMNP)
-      ELSE
-        CALL MPI_SEND(FieldOut1, NP_RES, rtype, 0, 511, comm, ierr)
-      END IF
-#else
-      FieldOutTotal1 = FieldOut1
-#endif
-      !
-      ! Now writing to netcdf file
-      ! 
-#ifdef MPI_PARALL_GRID
-      IF (myrank .eq. 0) THEN
-#endif
-        IF (iIter .eq. 1) THEN
-          iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-          !
-          iret = nf90_def_dim(ncid, 'fifteen', 15, fifteen_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
-          !
-          nbTime=0
-          CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
-          !
-          iret = nf90_def_dim(ncid, 'mnp', np_total, mnp_dims)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-          !
-          iret=nf90_def_var(ncid,"FieldOut1",NF90_RUNTYPE,(/ mnp_dims, ntime_dims/),var_id)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
-          !
-          iret = nf90_close(ncid)
-          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
-        END IF
-        !
-        ! Writing data
-        !
-        iret = nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-        !
-        eTimeDay = MAIN%BMJD + MyREAL(iIter-1)*MyREAL(3600)/MyREAL(86400)
-        CALL WRITE_NETCDF_TIME(ncid, iIter, eTimeDay)
-        !
-        iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-        !
-        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
-        !
-        iret = nf90_close(ncid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-#ifdef MPI_PARALL_GRID
-      END IF
-#endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE EIMPS_TOTAL_JACOBI_ITERATION
-      USE DATAPOOL
-      IMPLICIT NONE
-      REAL(rkind) :: MaxNorm, SumNorm, p_is_converged
-      REAL(rkind) :: eSum(MSC,MDC)
-      REAL(rkind) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: ACLOC(msc,mdc)
-      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
-      REAL(rkind) :: BLOC(MSC,MDC)
-      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
-      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
-#ifdef DEBUG_ITERATION_LOOP
-      integer iIter
-      integer, save :: iPass = 0
-      REAL(rkind) :: FieldOut1(MNP)
-#endif
-#ifdef MPI_PARALL_GRID
-      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
-#endif
-#ifdef TIMINGS
-      REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
-#endif
-      REAL(rkind) :: eFact
-      REAL(rkind) :: NEG_P(MSC,MDC)
-      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
-      INTEGER :: IS, ID, ID1, ID2, IP, J, idx, nbITer, is_converged, itmp
-      INTEGER :: IP_ADJ, IADJ, JDX
-
-#ifdef TIMINGS
-      CALL WAV_MY_WTIME(TIME1)
-#endif
-      p_is_converged=0
-      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
-        CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
-      END IF
-      IF ((ASPAR_LOCAL_LEVEL .ge. 5).and.(ASPAR_LOCAL_LEVEL .le. 7)) THEN
-        CALL COMPUTE_K_CRFS_XYU
-      END IF
-#ifdef TIMINGS
-      CALL WAV_MY_WTIME(TIME2)
-#endif
-      !
-      IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
-        CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
-      END IF
-
-      IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
-        IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
-          DO IP=1,NP_RES
-            CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
-            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + IMATDA
-            B_JAC(:,:,IP)             = BLOC + IMATRA
-          END DO
-        END IF
-      END IF
-
-#ifdef TIMINGS
-      CALL WAV_MY_WTIME(TIME3)
-#endif
-      !
-      ! Now the Gauss Seidel iterations
-      !
-      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
-      !
-      nbIter=0
-      DO
-        is_converged = 0
-        JDX=0
-#ifdef DEBUG_ITERATION_LOOP
-        FieldOut1 = 0
-#endif
-        DO IP=1,NP_RES
-          ACLOC = AC2(:,:,IP)
-          Sum_prev = sum(ACLOC)
-          IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
-            ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_BLOCAL(IP, BLOC)
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
-              ELSE
-                eSum = B_JAC(:,:,IP)
-              END IF
-            ELSE
-              CALL GET_BLOCAL(IP, eSum)
-            END IF
-            DO J=IA(IP),IA(IP+1)-1 
-              IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
-            END DO
-            IF (REFRACTION_IMPL) THEN
-              CAD=CAD_THE(:,:,IP)
-              CP_THE = MAX(ZERO,CAD)
-              CM_THE = MIN(ZERO,CAD)
-              eFact=(DT4D/DDIR)*SI(IP)
-              DO ID=1,MDC
-                ID1 = ID_PREV(ID)
-                ID2 = ID_NEXT(ID)
-                eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*ACLOC(:,ID1)
-                eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*ACLOC(:,ID2)
-              END DO
-            END IF
-            IF (FREQ_SHIFT_IMPL) THEN
-              CAS=CAS_SIG(:,:,IP)
-              CP_SIG = MAX(ZERO,CAS)
-              CM_SIG = MIN(ZERO,CAS)
-              eFact=DT4F*SI(IP)
-              DO ID=1,MDC
-                DO IS=2,MSC
-                  eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*ACLOC(IS-1,ID)
-                END DO
-                DO IS=1,MSC-1
-                  eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*ACLOC(IS+1,ID)
-                END DO
-              END DO
-            END IF
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
-            ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_BLOCAL(IP, BLOC)
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = BLOC + IMATRA
-              ELSE
-                eSum = B_JAC(:,:,IP)
-              END IF
-            ELSE
-              CALL GET_BLOCAL(IP, eSum)
-            END IF
-            CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-            DO J=IA(IP),IA(IP+1)-1 
-              IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
-            END DO
-            IF (REFRACTION_IMPL) THEN
-              DO ID=1,MDC
-                ID1 = ID_PREV(ID)
-                ID2 = ID_NEXT(ID)
-                eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-                eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
-              END DO
-            END IF
-            IF (FREQ_SHIFT_IMPL) THEN
-              DO ID=1,MDC
-                DO IS=2,MSC
-                  eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
-                END DO
-                DO IS=1,MSC-1
-                  eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
-                END DO
-              END DO
-            END IF
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
-            CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            DO IADJ=1,VERT_DEG(IP)
-              IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
-              eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
-            END DO
-            IF (REFRACTION_IMPL) THEN
-              DO ID=1,MDC
-                ID1 = ID_PREV(ID)
-                ID2 = ID_NEXT(ID)
-                eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-                eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
-              END DO
-            END IF
-            IF (FREQ_SHIFT_IMPL) THEN
-              DO ID=1,MDC
-                DO IS=2,MSC
-                  eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
-                END DO
-                DO IS=1,MSC-1
-                  eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
-                END DO
-              END DO
-            END IF
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
-            CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
-            CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
-            CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 6) THEN
-            CALL NEGATIVE_PART_D(JDX, IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 7) THEN
-            CALL NEGATIVE_PART_E(JDX, IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 8) THEN
-            CALL NEGATIVE_PART_F(IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 9) THEN
-            CALL NEGATIVE_PART_G(IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE IF (ASPAR_LOCAL_LEVEL .eq. 10) THEN
-            CALL NEGATIVE_PART_H(IP, NEG_P, ASPAR_DIAG)
-            CALL GET_BLOCAL(IP, eSum)
-            IF (SOURCE_IMPL) THEN
-              IF (LNONL) THEN
-                CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-              ELSE
-                eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-                IMATRA = IMATRAA(:,:,IP) * eVal
-                IMATDA = IMATDAA(:,:,IP) * eVal
-              END IF
-              ASPAR_DIAG = ASPAR_DIAG + IMATDA
-              eSum = eSum + IMATRA
-            END IF
-            eSum=eSum - NEG_P
-          ELSE
-            CALL WWM_ABORT('Not defined')
-          END IF
-          eSum=eSum/ASPAR_DIAG
-          IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
-          !eSum=max(zero,eSum)
-          IF (BLOCK_GAUSS_SEIDEL) THEN
-            AC2(:,:,IP)=eSum
-            IF (LNANINFCHK) THEN
-              IF (SUM(eSum) .ne. SUM(esum)) THEN
-                WRITE(DBG%FHNDL,*) IP, SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
-                CALL WWM_ABORT('NAN IN SOLVER')
-              ENDIF
-            ENDIF
-          ELSE
-            U_JACOBI(:,:,IP)=eSum
-          END IF
-          IF (JGS_CHKCONV) THEN
-            Sum_new = sum(eSum)
-            if (Sum_new .gt. thr8) then
-              DiffNew=sum(abs(ACLOC - eSum))
-              p_is_converged = DiffNew/Sum_new
-              !write(*,'(5F15.7)') p_is_converged, DiffNew, Sum_new, sum(ACLOC), sum(esum)
-            else
-              p_is_converged = zero
-            endif
-#ifdef DEBUG_ITERATION_LOOP
-            FieldOut1(IP)=p_is_converged
-#endif
-            IF (IPstatus(IP) .eq. 1) THEN
-              IF (p_is_converged .lt. jgs_diff_solverthr) is_converged=is_converged+1
-            ENDIF
-          ENDIF
-
-!          IF (nbiter .eq. maxiter-1 .and. p_is_converged .ge. solverthr) THEN
-!             WRITE(850+myrank,'(3I10,2F20.17,L10)') NBITER, IP, IPLG(IP), p_is_converged, solverthr, p_is_converged .lt. solverthr
-!             FLUSH(850+myrank)
-!          ENDIF
-
-        END DO
-        IF (JGS_CHKCONV) THEN
-#ifdef MPI_PARALL_GRID
-          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
-          is_converged = itmp
-#endif
-          p_is_converged = (real(np_total) - real(is_converged))/real(np_total) * 100.
-          !if (myrank == 0) write(*,*) nbiter, is_converged, np_total, p_is_converged, solverthr
-        ENDIF 
-
-#ifdef MPI_PARALL_GRID
-        IF (BLOCK_GAUSS_SEIDEL) THEN
-          CALL EXCHANGE_P4D_WWM(AC2)
-        ELSE
-          CALL EXCHANGE_P4D_WWM(U_JACOBI)
-        END IF
-#endif
-        IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
-          AC2 = U_JACOBI
-        ENDIF
-#ifdef DEBUG_ITERATION_LOOP
-        iIter=nbIter + 1
-        CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
-#endif
-
-!
-! The termination criterions several can be chosen
-!
-        WRITE(STAT%FHNDL,'(A10,3I10,E30.20,F10.5)') 'solver', nbiter, is_converged, np_total-is_converged, p_is_converged, pmin
-        !
-        ! Number of iterations. If too large the exit.
-        !
-        nbIter=nbIter+1
-        IF (nbiter .eq. maxiter) THEN
-          EXIT
-        ENDIF
-        !
-        ! Check via number of converged points
-        !
-        IF (JGS_CHKCONV) THEN
-!          write(*,*) p_is_converged, nbIter, is_converged
-          IF (p_is_converged .le. pmin) EXIT
-        ENDIF
-        !
-        ! Check via the norm
-        !
-        IF (L_SOLVER_NORM) THEN
-          Norm_L2=0
-          DO IP=1,NP_RES
-            IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
-              ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
-              IF (SOURCE_IMPL) THEN
-                IF (LNONL) THEN
-                  CALL GET_BLOCAL(IP, BLOC)
-                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                  ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                  eSum = BLOC + IMATRA
-                ELSE
-                  eSum = B_JAC(:,:,IP)
-                END IF
-              ELSE
-                CALL GET_BLOCAL(IP, eSum)
-              END IF
-              DO J=IA(IP),IA(IP+1)-1
-                idx=JA(J)
-                IF (J .eq. I_DIAG(IP)) THEN
-                  eSum=eSum - ASPAR_DIAG*AC2(:,:,idx)
-                ELSE
-                  eSum=eSum - ASPAR_JAC(:,:,J)*AC2(:,:,idx)
-                END IF
-              END DO
-              IF (REFRACTION_IMPL) THEN
-                CAD=CAD_THE(:,:,IP)
-                CP_THE = MAX(ZERO,CAD)
-                CM_THE = MIN(ZERO,CAD)
-                eFact=(DT4D/DDIR)*SI(IP)
-                DO ID=1,MDC
-                  ID1 = ID_PREV(ID)
-                  ID2 = ID_NEXT(ID)
-                  eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
-                  eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
-                END DO
-              END IF
-              IF (FREQ_SHIFT_IMPL) THEN
-                CAS=CAS_SIG(:,:,IP)
-                CP_SIG = MAX(ZERO,CAS)
-                CM_SIG = MIN(ZERO,CAS)
-                eFact=DT4F*SI(IP)
-                DO ID=1,MDC
-                  DO IS=2,MSC
-                    eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
-                  END DO
-                  DO IS=1,MSC-1
-                    eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
-                  END DO
-                END DO
-              END IF
-            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 1) THEN
-              ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
-              IF (SOURCE_IMPL) THEN
-                IF (LNONL) THEN
-                  CALL GET_BLOCAL(IP, BLOC)
-                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                  ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                  eSum = BLOC + IMATRA
-                ELSE
-                  eSum = B_JAC(:,:,IP)
-                END IF
-              ELSE
-                CALL GET_BLOCAL(IP, eSum)
-              END IF
-              CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-              DO J=IA(IP),IA(IP+1)-1
-                idx=JA(J)
-                IF (J .eq. I_DIAG(IP)) THEN
-                  eSum=eSum - ASPAR_DIAG*AC2(:,:,idx)
-                ELSE
-                  eSum=eSum - ASPAR_JAC(:,:,J)*AC2(:,:,idx)
-                END IF
-              END DO
-              IF (REFRACTION_IMPL) THEN
-                DO ID=1,MDC
-                  ID1 = ID_PREV(ID)
-                  ID2 = ID_NEXT(ID)
-                  eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-                  eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
-                END DO
-              END IF
-              IF (FREQ_SHIFT_IMPL) THEN
-                DO ID=1,MDC
-                  DO IS=2,MSC
-                    eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
-                  END DO
-                  DO IS=1,MSC-1
-                    eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
-                  END DO
-                END DO
-              END IF
-            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
-              CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-              CALL GET_BLOCAL(IP, eSum)
-              IF (SOURCE_IMPL) THEN
-                IF (LNONL) THEN
-                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                ELSE
-                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
-                END IF
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = eSum + IMATRA
-              END IF
-              DO IADJ=1,VERT_DEG(IP)
-                IP_ADJ=LIST_ADJ_VERT(IADJ,IP)
-                eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
-              END DO
-              eSum=eSum - ASPAR_DIAG*AC2(:,:,IP)
-              IF (REFRACTION_IMPL) THEN
-                DO ID=1,MDC
-                  ID1 = ID_PREV(ID)
-                  ID2 = ID_NEXT(ID)
-                  eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-                  eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
-                END DO
-              END IF
-              IF (FREQ_SHIFT_IMPL) THEN
-                DO ID=1,MDC
-                  DO IS=2,MSC
-                    eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
-                  END DO
-                  DO IS=1,MSC-1
-                    eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
-                  END DO
-                END DO
-              END IF
-            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
-              CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
-              CALL GET_BLOCAL(IP, eSum)
-              IF (SOURCE_IMPL) THEN
-                IF (LNONL) THEN
-                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                ELSE
-                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
-                END IF
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = eSum + IMATRA
-              END IF
-              eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
-            ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
-              CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
-              CALL GET_BLOCAL(IP, eSum)
-              IF (SOURCE_IMPL) THEN
-                IF (LNONL) THEN
-                  CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
-                ELSE
-                  CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
-                END IF
-                ASPAR_DIAG = ASPAR_DIAG + IMATDA
-                eSum = eSum + IMATRA
-              END IF
-              eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
-            ELSE
-              CALL WWM_ABORT('Wrong selection')
-            END IF
-            IF (IPstatus(IP) .eq. 1) THEN
-              Norm_L2 = Norm_L2 + (eSum**2)
-            END IF
-            Norm_LINF = max(Norm_LINF, abs(eSum))
-          END DO
-#ifdef MPI_PARALL_GRID
-          CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
-          CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
-          MaxNorm = maxval(Norm_L2_gl)
-          SumNorm = sum(Norm_L2_gl)
-#else
-          MaxNorm = maxval(Norm_L2)
-          SumNorm = sum(Norm_L2)
-#endif
-          IF (sqrt(SumNorm) .le. WAE_SOLVERTHR) THEN
-            EXIT
-          END IF
-        END IF
-      END DO
-      WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
-
-#ifdef TIMINGS
-      CALL WAV_MY_WTIME(TIME4)
-#endif
-!
-      DO IP = 1, MNP
-        DO ID=1,MDC
-          AC2(:,ID,IP) = MAX(ZERO,AC2(:,ID,IP)) !* MyREAL(IOBPD(ID,IP))
-        END DO
-      END DO
-
-#ifdef TIMINGS
-      CALL WAV_MY_WTIME(TIME5)
-#endif
-
-#ifdef TIMINGS
-# ifdef MPI_PARALL_GRID
-      IF (myrank == 0) THEN
-# endif
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING SOURCES AND ADVECTION  ', TIME2-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING REFRACTION             ', TIME3-TIME2
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ITERATION                            ', TIME4-TIME3
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'STORE RESULT                         ', TIME5-TIME4
-        FLUSH(STAT%FHNDL)
-# ifdef MPI_PARALL_GRID
-      ENDIF
-# endif
-#endif
-#ifdef DEBUG_ITERATION_LOOP
-      iPass=iPass+1
-#endif
+      
       END SUBROUTINE

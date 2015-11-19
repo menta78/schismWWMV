@@ -8,7 +8,7 @@
       IMPLICIT NONE
       integer IP
       allocate(IPstatus(MNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('BUILD_IPSTATUS, step 1')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 1')
 #ifndef MPI_PARALL_GRID
       IPstatus=1
 #else
@@ -297,7 +297,6 @@
 #else
       IEstatus=1      
 #endif
-      WRITE(STAT%FHNDL,*) 'sum(IEstatus)=', sum(IEstatus)
 #ifdef MPI_PARALL_GRID
       !
       ! Now building synchronization arrays
@@ -350,7 +349,7 @@
       ! Building list of neighbors
       !
       allocate(ListNeigh_ie_send(ie_nnbr_send), ListNeigh_ie_recv(ie_nnbr_recv), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 27')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 2')
       idx_send=0
       idx_recv=0
       DO iProc=1,nproc
@@ -367,7 +366,7 @@
       ! Building MPI arrays
       !
       allocate(ie_send_rqst(ie_nnbr_send), ie_recv_rqst(ie_nnbr_recv), ie_send_stat(MPI_STATUS_SIZE,ie_nnbr_send), ie_recv_stat(MPI_STATUS_SIZE,ie_nnbr_recv), ie_send_type(ie_nnbr_send), ie_recv_type(ie_nnbr_recv), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 38')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 3')
       DO iNeigh=1,ie_nnbr_send
         iProc=ListNeigh_ie_send(iNeigh)+1
         nbCommon=ListCommon_send(iProc)
@@ -378,7 +377,7 @@
           ListMappedB(IE_glob)=IE
         END DO
         allocate(dspl_send(nbCommon), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 40')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 4')
         idx=0
         DO IE=1,MNE
           IE_glob=INDXextent_IE(IE)
@@ -398,7 +397,7 @@
         MNEextent_loc=ListMNEextent(iProc)
         nbCommon=ListCommon_recv(iProc)
         allocate(dspl_recv(nbCommon), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 42')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 5')
         idx=0
         DO IE=1,MNE_loc
           IE_glob=ListINDXextent_IE(IE+ListFirst(iProc))
@@ -530,14 +529,14 @@
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 69')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 6')
         ListFirstMNP=0
         eStatus=0
         DO iProc=2,nproc
           ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
         END DO
         allocate(ACtotal(MSCeffect, MDC, np_global), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 70')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 7')
         DO IP=1,MNP
           IPglob=iplg(IP)
           ACtotal(:,:,IPglob)=ACw(:,:,IP)
@@ -546,7 +545,7 @@
         DO iProc=2,nproc
           MNPloc=ListMNP(iProc)
           allocate(ACloc(MSCeffect, MDC, MNPloc), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 71')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 8')
           CALL MPI_RECV(ACloc,MNPloc*MSCeffect*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
           DO IP=1,MNPloc
             IPglob=ListIPLG(IP+ListFirstMNP(iProc))
@@ -597,7 +596,7 @@
       IF (myrank == 0) THEN
         Lerror=0
         allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 72')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 9')
         ListFirstMNP=0
         eStatus=0
         DO iProc=2,nproc
@@ -611,7 +610,7 @@
         DO iProc=2,nproc
           NP_RESloc=ListNP_RES(iProc)
           allocate(ACloc(MSCeffect, MDC, NP_RESloc), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 73')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 10')
           CALL MPI_RECV(ACloc,MSCeffect*MDC*NP_RESloc,rtype, iProc-1, 53, comm, istatus, ierr)
           DO IP=1,NP_RESloc
             IPglob=ListIPLG(IP+ListFirstMNP(iProc))
@@ -635,7 +634,7 @@
         END DO
       ELSE
         allocate(ACloc(MSCeffect, MDC, NP_RES), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 74')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 11')
         DO IP=1,NP_RES
           ACloc(:,:,IP)=ACw(:,:,IP)
         END DO
@@ -658,7 +657,7 @@
       integer, allocatable :: rbuf_int(:)
       integer len, iProc, IP, idx, sumMNP
       allocate(ListMNP(nproc), ListNP_RES(nproc), rbuf_int(2), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 15')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 12')
       IF (myrank == 0) THEN
         ListMNP(1)=MNP
         ListNP_RES(1)=NP_RES
@@ -683,7 +682,7 @@
       deallocate(rbuf_int)
       sumMNP=sum(ListMNP)
       allocate(ListIPLG(sumMNP), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 16')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 13')
       IF (myrank == 0) THEN
         idx=0
         DO IP=1,MNP
@@ -693,7 +692,7 @@
         DO iProc=2,nproc
           len=ListMNP(iProc)
           allocate(rbuf_int(len), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 17')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 14')
           CALL MPI_RECV(rbuf_int,len,itype, iProc-1, 269, comm, istatus, ierr)
           DO IP=1,len
             idx=idx+1
@@ -721,14 +720,14 @@
       integer len, iProc, IP, idx
       integer sumIAsiz, sumNNZ
       allocate(ListNNZ(nproc), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 20')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 15')
       !
       ! Collecting NNZ
       !
       IF (myrank == 0) THEN
         ListNNZ(1)=NNZ
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 21')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 16')
         DO iProc=2,nproc
           CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 257, comm, istatus, ierr)
           ListNNZ(iProc)=rbuf_int(1)
@@ -739,7 +738,7 @@
         END DO
       ELSE
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 22')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 17')
         rbuf_int(1)=NNZ
         CALL MPI_SEND(rbuf_int,1,itype, 0, 257, comm, ierr)
         deallocate(rbuf_int)
@@ -750,7 +749,7 @@
       !
       sumIAsiz=sum(ListMNP) + nproc
       allocate(ListIA(sumIAsiz), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 23')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 18')
       IF (myrank == 0) THEN
         idx=0
         DO IP=1,MNP+1
@@ -760,7 +759,7 @@
         DO iProc=2,nproc
           len=ListMNP(iProc)+1
           allocate(rbuf_int(len), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 24')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 19')
           CALL MPI_RECV(rbuf_int,len,itype, iProc-1, 269, comm, istatus, ierr)
           DO IP=1,len
             idx=idx+1
@@ -780,7 +779,7 @@
       !
       sumNNZ=sum(ListNNZ)
       allocate(ListJA(sumNNZ), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 25')
+      IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 20')
       IF (myrank == 0) THEN
         idx=0
         DO IP=1,NNZ
@@ -790,7 +789,7 @@
         DO iProc=2,nproc
           len=ListNNZ(iProc)
           allocate(rbuf_int(len), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 26')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 21')
           CALL MPI_RECV(rbuf_int,len,itype, iProc-1, 569, comm, istatus, ierr)
           DO IP=1,len
             idx=idx+1
@@ -850,10 +849,10 @@
       AdjGraph % nbVert=nproc
       IF (myrank.eq.0) THEN
         allocate(AdjGraph % ListDegree(nproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 1')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 22')
         AdjGraph % ListDegree(1)=nb
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 2')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 23')
         DO iProc=2,nproc
           CALL MPI_RECV(rbuf_int,1,itype, iProc-1, 19, comm, istatus, ierr)
           AdjGraph % ListDegree(iProc)=rbuf_int(1)
@@ -865,7 +864,7 @@
         END DO
         AdjGraph % nbEdge=nbEdge
         allocate(AdjGraph % ListEdge(nbEdge,2), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 3')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 24')
         idx=0
         eDeg=AdjGraph % ListDegree(1)
         DO I=1,eDeg
@@ -876,7 +875,7 @@
         DO iProc=2,nproc
           eDeg=AdjGraph % ListDegree(iProc)
           allocate(rbuf_int(eDeg), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 4')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 25')
           CALL MPI_RECV(rbuf_int,eDeg,itype, iProc-1, 24, comm, istatus, ierr)
           DO I=1,eDeg
             idx=idx+1
@@ -886,7 +885,7 @@
           deallocate(rbuf_int)
         END DO
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 5')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 26')
         rbuf_int(1)=nbEdge
         DO iProc=2,nproc
           CALL MPI_SEND(rbuf_int,1,itype, iProc-1, 30, comm, ierr)
@@ -894,7 +893,7 @@
         deallocate(rbuf_int)
         !
         allocate(rbuf_int(nproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 6')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 27')
         DO iProc=1,nproc
           rbuf_int(iProc)=AdjGraph % ListDegree(iProc)
         END DO
@@ -904,7 +903,7 @@
         deallocate(rbuf_int)
         !
         allocate(rbuf_int(nbEdge*2), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 7')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 28')
         DO iEdge=1,nbEdge
           rbuf_int(2*(iEdge-1)+1)=AdjGraph % ListEdge(iEdge,1)
           rbuf_int(2*(iEdge-1)+2)=AdjGraph % ListEdge(iEdge,2)
@@ -914,13 +913,13 @@
         END DO
       ELSE
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 8')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 29')
         rbuf_int(1)=nb
         CALL MPI_SEND(rbuf_int,1,itype, 0, 19, comm, ierr)
         deallocate(rbuf_int)
         !
         allocate(rbuf_int(nb), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 9')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 30')
         DO I=1,nb
           rbuf_int(I)=ListNe(I)
         END DO
@@ -928,25 +927,25 @@
         deallocate(rbuf_int)
         !
         allocate(rbuf_int(1), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 10')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 31')
         CALL MPI_RECV(rbuf_int,1,itype, 0, 30, comm, istatus, ierr)
         nbEdge=rbuf_int(1)
         deallocate(rbuf_int)
         AdjGraph % nbEdge=nbEdge
         !
         allocate(rbuf_int(nproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 11')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 32')
         CALL MPI_RECV(rbuf_int,nproc,itype, 0, 32, comm, istatus, ierr)
         allocate(AdjGraph % ListDegree(nproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 12')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 33')
         AdjGraph % ListDegree=rbuf_int
         deallocate(rbuf_int)
         !
         allocate(rbuf_int(2*nbEdge), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 13')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 34')
         CALL MPI_RECV(rbuf_int,2*nbEdge,itype, 0, 34, comm, istatus, ierr)
         allocate(AdjGraph % ListEdge(nbEdge,2), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 14')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 35')
         DO iEdge=1,nbEdge
           AdjGraph % ListEdge(iEdge,1)=rbuf_int(2*(iEdge-1)+1)
           AdjGraph % ListEdge(iEdge,2)=rbuf_int(2*(iEdge-1)+2)
@@ -1026,7 +1025,6 @@
         IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
         DO iProc=2,nproc
           MNPloc=ListMNP(iProc)
-          WRITE(STAT%FHNDL,*) 'iProc, MNPloc=', iProc, MNPloc
           allocate(dspl_oned(MNPloc), dspl_twod(MNPloc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
           DO IP=1,MNPloc
@@ -1139,20 +1137,18 @@
           END IF
         END IF
         NbSend(iProc)=eSend
-        WRITE(STAT%FHNDL,*) 'iProc=', iProc, ' eSend=', eSend
-        FLUSH(STAT%FHNDL)
       END DO
       IF (myrank .eq. rank_boundary) THEN
-        WRITE(STAT%FHNDL,*) 'bound_nbproc=', bound_nbproc
-        FLUSH(STAT%FHNDL)
+!        WRITE(STAT%FHNDL,*) 'bound_nbproc=', bound_nbproc
+!        FLUSH(STAT%FHNDL)
         allocate(bound_listproc(bound_nbproc), Indexes(np_total), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('allocate error')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 36')
         !
         allocate(spparm_rqst(bound_nbproc), spparm_stat(MPI_STATUS_SIZE,bound_nbproc), spparm_type(bound_nbproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 37')
         !
         allocate(wbac_rqst(bound_nbproc), wbac_stat(MPI_STATUS_SIZE,bound_nbproc), wbac_type(bound_nbproc), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+        IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 38')
         !
         idx=0
         DO IP_glob=1,np_total
@@ -1161,12 +1157,10 @@
             Indexes(IP_glob)=idx
           END IF
         END DO
-        WRITE(STAT%FHNDL,*) 'idx=', idx
-        FLUSH(STAT%FHNDL)
 
         IF (IWBMNP .gt. 0) THEN
           allocate(Indexes_boundary(IWBMNP), stat=istat)
-          IF (istat/=0) CALL WWM_ABORT('error in IOBPtotal allocate')
+          IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 38')
           DO IP=1,IWBMNP
             IP_glob=iplg(IWBNDLC(IP))
             Indexes_boundary(IP)=Indexes(IP_glob)
@@ -1190,8 +1184,6 @@
                 eIdx=Indexes(IP_glob)
                 dspl_spparm(idx)=8*(eIdx-1)
                 dspl_wbac(idx)=MSC*MDC*(eIdx-1)
-                WRITE(STAT%FHNDL,*) 'idx=', idx, 'eIdx=', eIdx
-                FLUSH(STAT%FHNDL)
               END IF
             END DO
             call mpi_type_create_indexed_block(eSend,8,dspl_spparm,rtype,spparm_type(idx_nbproc), ierr)
@@ -1333,40 +1325,40 @@
       END IF
       IF (LINHOM) THEN
         IF (myrank .eq. rank_boundary) THEN
-          WRITE(STAT%FHNDL,*) 'Before data receiving'
-          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
-          WRITE(STAT%FHNDL,*) 'MSC/MDC=', MSC,MDC
-          WRITE(STAT%FHNDL,*) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
-          WRITE(STAT%FHNDL,*) 'size(WBAC_GL)=', size(WBAC_GL)
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'Before data receiving'
+!          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
+!          WRITE(STAT%FHNDL,*) 'MSC/MDC=', MSC,MDC
+!          WRITE(STAT%FHNDL,*) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
+!          WRITE(STAT%FHNDL,*) 'size(WBAC_GL)=', size(WBAC_GL)
+!          FLUSH(STAT%FHNDL)
           WBAC_GL=0
           DO idx_proc=1,bound_nbproc
-            WRITE(STAT%FHNDL,*) 'idx_proc/eProc=', idx_proc, bound_listproc(idx_proc)
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) 'idx_proc/eProc=', idx_proc, bound_listproc(idx_proc)
+!            FLUSH(STAT%FHNDL)
             CALL mpi_irecv(WBAC_GL, 1, wbac_type(idx_proc), bound_listproc(idx_proc), 2040, comm, wbac_rqst(idx_proc), ierr)
-            WRITE(STAT%FHNDL,*) 'MPI_IRECV ierr=', ierr
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) 'MPI_IRECV ierr=', ierr
+!            FLUSH(STAT%FHNDL)
           END DO
-          WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
-          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
+!          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
+!          FLUSH(STAT%FHNDL)
           DO IP=1,IWBMNP
             WBAC_GL(:,:,Indexes_boundary(IP))=WBAC(:,:,IP)
           END DO
           IF (bound_nbproc > 0) THEN
             CALL MPI_WAITALL(bound_nbproc, wbac_rqst, wbac_stat, ierr)
-            WRITE(STAT%FHNDL,*) 'MPI_WAITALL ierr=', ierr
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) 'MPI_WAITALL ierr=', ierr
+!            FLUSH(STAT%FHNDL)
           END IF
-          WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'sum(WBAC_GL)=', sum(WBAC_GL)
+!          FLUSH(STAT%FHNDL)
         ELSE
-          WRITE(STAT%FHNDL,*) 'Before data sending IWBMNP=', IWBMNP
-          WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'Before data sending IWBMNP=', IWBMNP
+!          WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
+!          FLUSH(STAT%FHNDL)
           CALL MPI_SEND(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2040, comm, ierr)
-          WRITE(STAT%FHNDL,*) 'MPI_SEND ierr=', ierr
-          FLUSH(STAT%FHNDL)
+!          WRITE(STAT%FHNDL,*) 'MPI_SEND ierr=', ierr
+!          FLUSH(STAT%FHNDL)
         END IF
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN

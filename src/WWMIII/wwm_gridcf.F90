@@ -195,6 +195,7 @@
                       IEN(1,IE) = PROV2
                       IEN(3,IE) = PROV1
                       IEN(5,IE) = PROV3
+
                       LWRONG = .TRUE.
                       IEWRONG = IE
                       IEWRONGSUM = IEWRONGSUM + 1
@@ -238,6 +239,20 @@
 
                    AVETA = AVETA+TRIA(IE)
                 END DO
+
+                IF (LGSE) THEN
+                  DO IE = 1, MNE
+                    IEND(1,1,IE) = DOT_PRODUCT(IEN(1:2,IE),IEN(1:2,IE))
+                    IEND(1,2,IE) = DOT_PRODUCT(IEN(1:2,IE),IEN(3:4,IE))
+                    IEND(1,3,IE) = DOT_PRODUCT(IEN(1:2,IE),IEN(5:6,IE))
+                    IEND(2,1,IE) = DOT_PRODUCT(IEN(3:4,IE),IEN(1:2,IE))
+                    IEND(2,2,IE) = DOT_PRODUCT(IEN(3:4,IE),IEN(3:4,IE))
+                    IEND(2,3,IE) = DOT_PRODUCT(IEN(3:4,IE),IEN(5:6,IE))
+                    IEND(3,1,IE) = DOT_PRODUCT(IEN(5:6,IE),IEN(1:2,IE))
+                    IEND(3,2,IE) = DOT_PRODUCT(IEN(5:6,IE),IEN(3:4,IE))
+                    IEND(3,3,IE) = DOT_PRODUCT(IEN(5:6,IE),IEN(5:6,IE))
+                  END DO
+                ENDIF
 
 #ifdef MPI_PARALL_GRID
                 CALL MPI_ALLREDUCE(TLMIN,TLMIN_GL,1,rtype,MPI_MIN,comm,ierr)
@@ -320,6 +335,8 @@
                CASE DEFAULT
             END SELECT
          END IF
+
+
 
          RETURN
 
@@ -435,6 +452,7 @@
 
          SPSIG = FR * PI2 
 
+         WRITE(STAT%FHNDL,*) 'SFAC=', SFAC
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'REL. FREQ. Distribution is =', FRINTF 
 
          IF ( ABS(FRINTF - .1)/FRINTF * 100. .GT. 1. ) THEN
