@@ -44,17 +44,17 @@ ENV = ARON
 FCP = mpif90 #MPI compiler
 FLD = $(FCP)
 # MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 -ffree-line-length-none
 ##########################################################################################
 ############################ DEBUG + DEVELOPEMENT
 ##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fbacktrace  -fcheck=all -Wall  
+#  FLDFLAGS = -O1 -g -fbacktrace -fcheck=all -Wall  
 ##########################################################################################
 ############################ PERFORMANCE SAVE OPTIMIZATION
 ##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -assume byterecl
+  FCPFLAGS = $(PPFLAGS) -O1 -g -fbacktrace 
+  FLDFLAGS = -O1 -g -fbacktrace 
 ##########################################################################################
 ############################ AGGRESSIVE OPTIMIZATION
 ##########################################################################################
