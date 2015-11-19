@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -73,28 +73,27 @@ CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := pelfe_$(ENV)
+EXEC   := pschism_$(ENV)
 
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSELFE is always on and is defined elsewhere
+# -DSCHISM is always on and is defined elsewhere
 
 # Precip/evaporation model
 # USE_PREC_EVAP = yes
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
 # EXEC := $(EXEC)_EVAP
 
 # MM5 in heat exchange model
 # USE_MM5 = yes
-# PPFLAGS := $(PPFLAGS) -DMM5
 # EXEC := $(EXEC)_MM5
 
-# TVD flag (turn off for performance)
-#  CHOOSE_TVD = yes
-#   EXEC := $(EXEC)_CHOOSE_TVD
+# TVD limiter options (set as one of these: SB, VL, OS, MM)
+# No default and so these 2 lines should NOT be commented out!
+ TVD_LIM = SB
+ EXEC := $(EXEC)_$(TVD_LIM)
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
@@ -112,9 +111,6 @@ endif
 # Wind wave model WWM
 # USE_WWM = yes
 # EXEC := $(EXEC)_WWM
-# Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
-# EXEC := $(EXEC)_PETSC
 
 # TIMOR 
 # USE_TIMOR = yes

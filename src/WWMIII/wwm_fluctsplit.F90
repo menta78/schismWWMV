@@ -708,7 +708,7 @@
 !
          IP_TEST = 20710 
          DFAK    = 100.
-         NGSE    = 3
+         NGSE    = 3 
          ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
          
 !         WRITE(*,*) IEND
@@ -728,9 +728,11 @@
 
            DO ip = 1, mnp
              IF (IOBP(IP) .NE. 2) THEN
-               UL(IP,IGSE) = 0.5*(AC1(IS,ID,IP)+AC1(IS,IDD,IP))/NGSE
+               !UL(IP,IGSE) = 0.5*(AC1(IS,ID,IP)+AC1(IS,IDD,IP))/NGSE
+               UL(IP,IGSE) = AC1(IS,ID,IP)/NGSE
              ELSE 
-               UL(IP,IGSE) = 0.5*(WBAC(IS,ID,1)+WBAC(IS,IDD,1))/NGSE
+               !UL(IP,IGSE) = 0.5*(WBAC(IS,ID,1)+WBAC(IS,IDD,1))/NGSE
+               UL(IP,IGSE) = WBAC(IS,ID,1)/NGSE
              ENDIF 
            ENDDO
            AC1(1,ID,IP_TEST) = 1.
@@ -744,18 +746,18 @@
             I1 = INE(1,IE)
             I2 = INE(2,IE)
             I3 = INE(3,IE)
-            C(1,I1) = .5*(C_GSE1(1,I1)+C_GSE2(1,I1))
-            C(1,I2) = .5*(C_GSE1(1,I2)+C_GSE2(1,I2))
-            C(1,I3) = .5*(C_GSE1(1,I3)+C_GSE2(1,I3))
-            C(2,I1) = .5*(C_GSE1(2,I1)+C_GSE2(2,I1))
-            C(2,I2) = .5*(C_GSE1(2,I2)+C_GSE2(2,I2))
-            C(2,I3) = .5*(C_GSE1(2,I3)+C_GSE2(2,I3))
-            !C(1,I1) = C_GSE2(1,I1)
-            !C(1,I2) = C_GSE2(1,I2)
-            !C(1,I3) = C_GSE2(1,I3)
-            !C(2,I1) = C_GSE2(2,I1)
-            !C(2,I2) = C_GSE2(2,I2)
-            !C(2,I3) = C_GSE2(2,I3)
+            !C(1,I1) = .5*(C_GSE1(1,I1)+C_GSE2(1,I1))
+            !C(1,I2) = .5*(C_GSE1(1,I2)+C_GSE2(1,I2))
+            !C(1,I3) = .5*(C_GSE1(1,I3)+C_GSE2(1,I3))
+            !C(2,I1) = .5*(C_GSE1(2,I1)+C_GSE2(2,I1))
+            !C(2,I2) = .5*(C_GSE1(2,I2)+C_GSE2(2,I2))
+            !C(2,I3) = .5*(C_GSE1(2,I3)+C_GSE2(2,I3))
+            C(1,I1) = C_GSE2(1,I1)
+            C(1,I2) = C_GSE2(1,I2)
+            C(1,I3) = C_GSE2(1,I3)
+            C(2,I1) = C_GSE2(2,I1)
+            C(2,I2) = C_GSE2(2,I2)
+            C(2,I3) = C_GSE2(2,I3)
             LAMBDA(1) = ONESIXTH *(C(1,I1)+C(1,I2)+C(1,I3))
             LAMBDA(2) = ONESIXTH *(C(2,I1)+C(2,I2)+C(2,I3))
             KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
@@ -840,9 +842,15 @@
 #endif
            END DO  ! ----> End Iteration
 
-           AC2(IS,ID,:) = AC2(IS,ID,:) + UL(:,IGSE) 
-
          END DO  ! ..... END GSE Loop
+
+         DO IP = 1, MNP
+           !IF (IOBP(IP) .NE. 2) THEN
+             AC2(IS,ID,IP) = UL(IP,1) + UL(IP,2) + UL(IP,3)
+           !ELSE
+           !  AC2(IS,ID,IP) = WBAC(IS,ID,1) 
+           !ENDIF
+         END DO
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
