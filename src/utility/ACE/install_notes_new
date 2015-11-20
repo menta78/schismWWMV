@@ -20,11 +20,12 @@
     xmgr5
 
 (2) needs libs: 
-    X11 pixmap library               libxpm-dev
-    X11 client-side library          libx11-6
-    Motif - X/Motif shared library:  libxm4
-    Motif - development files        libmotif-dev
-    GD Graphics Library version 2:   libgd-dev. Don't use the version in lib/graphics its too old
+    X11 pixmap library                libxpm-dev
+    X11 client-side library           libx11-6
+    Motif - X/Motif shared library:   libxm4
+    X11 miscellaneous utility library libxmu-dev
+    Motif - development files         libmotif-dev
+    GD Graphics Library version 2:    libgd-dev. Don't use the version in lib/graphics its too old
 
     xmgr5 may also need postgres, netcdf (comment out in Makefile if not needed)
 
