@@ -285,7 +285,7 @@ lint:
 	lint  $(INCLUDES) $(SRCS)
 
 clean: 
-	/bin/rm xmgr5 $(OBJS)
+	/bin/rm -f xmgr5 $(OBJS)
 
 distrib:
 	/bin/rm -rf $(DISTDIR)
