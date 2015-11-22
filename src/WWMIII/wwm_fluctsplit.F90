@@ -677,9 +677,9 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, I, J, IDD
-         INTEGER :: I1, I2, I3, IGSE, NGSE
-         INTEGER :: NI(3), IP_TEST
+         INTEGER :: IP, IE, IT, I, J, IDD, ICON
+         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS
+         INTEGER :: NI(3), IP_TEST, GSE_SCHEME
 !
 ! local double
 !
@@ -694,7 +694,7 @@
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
 
          REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE)
-         REAL(rkind)  :: UTMP(3)
+         REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio
          REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP)
 
          REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
@@ -707,6 +707,11 @@
 ! local parameter
 !
          IP_TEST = 20710 
+         GSE_SCHEME = 2
+
+
+         IF (GSE_SCHEME == 1) THEN
+
          DFAK    = 100.
          NGSE    = 3 
          ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
@@ -851,6 +856,33 @@
            !  AC2(IS,ID,IP) = WBAC(IS,ID,1) 
            !ENDIF
          END DO
+
+         ELSE IF (GSE_SCHEME == 2) THEN
+
+           CALL CADVXY(IS,ID,C)
+           a_s = 0.5
+           a_n = 0.5
+
+           DO IP = 1, MNP
+! Compute extent of the averaging region 
+             cct   = sqrt(c(1,ip)**2+c(2,ip)**2)
+             nn    = a_s * (ONE+FRINTF-ONE/(ONE+FRINTF)) * CCT * DT4A
+             ss    = a_n * DDIR * CCT * DT4A 
+             ratio = nn/ss
+             avg_area = nn * ss 
+             write(*,'(I10,7F20.10)') ip, cct, nn, ss, ratio, avg_area, si(ip), avg_area/si(ip)
+             DO ICON = 1, CCON(IP)
+!  Interpolate Wave Action on the corners of the averaging region
+               IE     = IE_CELL2(IP,ICON)
+               IPOS   = POS_CELL2(IP,ICON)
+               I1     = INE(1,IE)
+               I2     = INE(2,IE)
+               I3     = INE(3,IE)
+             END DO 
+! Compute Average Wave Action for Local grid point
+           ENDDO
+
+         END IF
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
