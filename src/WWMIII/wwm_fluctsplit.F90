@@ -29,12 +29,14 @@
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL EXPLICIT_PSI_SCHEME(IS,ID)
+               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          ELSE IF (AMETHOD == 3) THEN
 !$OMP DO PRIVATE (ID,IS)
            DO ID = 1, MDC
              DO IS = 1, MSC
+               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
                CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
@@ -677,45 +679,47 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, I, J, IDD, ICON
-         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS
-         INTEGER :: NI(3), IP_TEST, GSE_SCHEME
+         INTEGER :: IP, IE, IT, I, J, IDD, ICON, II, IP_CONN(20)
+         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS, NIOLD(3)
+         INTEGER :: NI(3), IP_TEST, GSE_SCHEME, IELEM
 !
 ! local double
 !
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: TMP(3), TMP1, DFAK
+         REAL(rkind)  :: TMP(3), TMP1, DFAK, GAM, DXX, DIFFA
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
 
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
+         REAL(rkind)  :: XYTMP(2,MNP), fnew
 
-         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE)
-         REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio
-         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP)
+         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE), r0(2)
+         REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio, rrac(3)
+         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP), RR(4,2), WI(3), ZI
 
-         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
+         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE), SSS(2), NNN(2)
          REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3), UDTDX(MNP)
 
          REAL(rkind)  :: C(2,MNP), C_GSE1(2,MNP), C_GSE2(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
-         REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
+         REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE), DIFFNN, DIFFSS
+ 
+         LOGICAL      :: LSAME
 !
 ! local parameter
 !
          IP_TEST = 20710 
          GSE_SCHEME = 2
 
-
          IF (GSE_SCHEME == 1) THEN
 
          DFAK    = 100.
          NGSE    = 3 
          ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
-         
+ 
 !         WRITE(*,*) IEND
 !
          BL = ZERO
@@ -859,35 +863,95 @@
 
          ELSE IF (GSE_SCHEME == 2) THEN
 
+           XYTMP(:,1) = XP
+           XYTMP(:,2) = YP
+
            CALL CADVXY(IS,ID,C)
            a_s = 0.5
            a_n = 0.5
 
            DO IP = 1, MNP
+             IF (IOBP(IP) .NE. 0) CYCLE
+             r0(1) = xp(ip)
+             r0(2) = yp(ip)
 ! Compute extent of the averaging region 
              cct   = sqrt(c(1,ip)**2+c(2,ip)**2)
-             nn    = a_s * (ONE+FRINTF-ONE/(ONE+FRINTF)) * CCT * DT4A
+             dxx   = sqrt(si(ip))
+             gam   = ONE + FRINTF 
+             nn    = a_s * (GAM-ONE/GAM) * CCT * DT4A
              ss    = a_n * DDIR * CCT * DT4A 
-             ratio = nn/ss
-             avg_area = nn * ss 
-             write(*,'(I10,7F20.10)') ip, cct, nn, ss, ratio, avg_area, si(ip), avg_area/si(ip)
-             DO ICON = 1, CCON(IP)
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
+             rr(1,:) =  sss + nnn + r0
+             rr(2,:) = -sss + nnn + r0
+             rr(3,:) = -sss - nnn + r0
+             rr(4,:) =  sss - nnn + r0
+             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
+!             avg_area = nn * ss
+             if (ip == 10001 .and. .false.) then
+               write(100001,'(A)') 'C -------------------------'
+               write(*,*) 'sss and nnn', GAM-ONE/GAM, ss, nn, DT4A
+               write(*,*) sss
+               write(*,*) nnn
+               write(*,*) 'rrrs'
+               write(*,*) rr(1,:)
+               write(*,*) rr(2,:)
+               write(*,*) rr(3,:)
+               write(*,*) rr(4,:)
+               do ii = 1, 4
+                 write(100001,'(I10,3F15.6)') ii,rr(ii,1),rr(ii,2),0.
+                 !write(*,*) maxval(xp), minval(xp), maxval(yp), minval(yp) 
+                 !CALL FIND_ELE(MNE, MNP, INE, XYTMP, rr(ii,1), rr(ii,2), IELEM)
+                 !write(*,*) ielem
+               enddo
+               write(100001,'(I10,3F15.6)') ii,rr(1,1),rr(1,2),0.
+               write(100001,'(A)') '-1'
+               call flush(100001)
+               write(*,'(I10,8F20.10)') ip, cct, nn, ss, ratio, avg_area, DT4A
+               write(*,*) size(si), si(ip)
+             endif
+             DO II = 1, 4 
+               DO ICON = 1, CCON(IP)
 !  Interpolate Wave Action on the corners of the averaging region
-               IE     = IE_CELL2(IP,ICON)
-               IPOS   = POS_CELL2(IP,ICON)
-               I1     = INE(1,IE)
-               I2     = INE(2,IE)
-               I3     = INE(3,IE)
-             END DO 
-! Compute Average Wave Action for Local grid point
-           ENDDO
+                 IE     = IE_CELL2(IP,ICON)
+                 IPOS   = POS_CELL2(IP,ICON)
+                 NI     = INE(:,IE)
+                 LSAME  = .FALSE. 
+                 CALL INTELEMENT_COEF(XP(NI),YP(NI),RR(ii,1),RR(ii,2),Wi)
+                 IF (.NOT. ANY(WI .LE. 0._rkind)) THEN
+                   RRAC(II) = dot_product(wi,ac2(is,id,ni))
+                   !WRITE(*,*) 'TEST TEST TEST'
+                   !WRITE(*,'(10I10)') IP, IE, II, IS, ID, ICON, IOBP(IP) 
+                   !WRITE(*,*) XP(NI)
+                   !WRITE(*,*) YP(NI)
+                   !WRITE(*,*) WI, IPOS
+                   !WRITE(*,*) RR(II,:)
+                   !WRITE(*,*) RRAC(II)
+                   !WRITE(*,*) 'TEST TEST TEST'
+                 END IF 
+               END DO ! ICON
+             ENDDO ! II
 
+             FNEW  = 1._rkind/6._rkind * sum(RRAC) + 1._rkind/3._rkind * AC2(is,id,ip)
+             DIFFA = FNEW - AC2(is,id,ip) 
+             DIFFNN = RATIO * DIFFA
+             DIFFSS = (1._rkind - RATIO) * DIFFA
+             !IF (FNEW .GT. -THR8) THEN
+             !  WRITE(*,'(2I10,5F22.12)') IP, ID, DIFFA, DIFFNN, DIFFSS, AC2(is,id,ip),  RATIO
+             !ELSE
+             !  WRITE(*,*) FNEW, RRAC, IP, IOBP(IP)
+             !  STOP 'NEGATIVE ENERGY' 
+             !ENDIF
+             IF (IS == 1 .and. ip == 10000) WRITE(*,*) IS, ID, COSTH(ID), SINTH(ID)
+             !IF (IS == 1 .AND. IP == 10000) WRITE(*,*) DIFFA, COSTH(ID), SINTH(ID)
+           END DO 
          END IF
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
-           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),      &
-     &                  IP = 1, MNP)
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),  IP = 1, MNP)
            CALL CHECKCONS(U,SUMAC2)
            IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
            WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
@@ -2233,7 +2297,7 @@
 
       INTEGER :: I, J, K
       INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-      INTEGER :: I1, I2, I3
+      INTEGER :: I1, I2, I3, IPPOS, NI(3), NIOLD(3), IPOS
       INTEGER :: CHILF(MNP), COUNT_MAX
       INTEGER :: ITMP(MNP)
       INTEGER :: POS_TRICK(3,2)
@@ -2349,7 +2413,7 @@
         CALL WWM_ABORT('Do Not Sleep Before solving the problem')
       ENDIF
 
-      ALLOCATE(IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
+      ALLOCATE(IE_CELL(COUNT_MAX), IP_CON(MAXMNECON+1,MNP), CON_IP(MNP), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
 ! order of the occurence in the loop during runtime
@@ -2369,6 +2433,27 @@
         END DO
       END DO
       DEALLOCATE(CELLVERTEX)
+
+      IP_CON = 0 
+      CON_IP = 0
+      DO IP = 1, MNP
+        J = 0 
+        DO I = 1, CCON(IP)
+          IE = IE_CELL2(IP,I)  
+          NI = INE(:,IE)
+          DO K = 1, 3
+            IF (NI(K) .NE. IP) THEN
+              IF (ANY(IP_CON(:,IP) .EQ. NI(K))) THEN
+                CYCLE
+              ELSE
+                J = J + 1
+                IP_CON(J,IP) = NI(K)
+              ENDIF
+            ENDIF
+          END DO 
+        END DO
+        CON_IP(IP) = J 
+      END DO
 
       CHECK_COMBIN_ORIENT=.TRUE.
       IF (CHECK_COMBIN_ORIENT) THEN

@@ -1148,6 +1148,8 @@
          INTEGER, ALLOCATABLE   :: POS_IP_ADJ(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
+         INTEGER, ALLOCATABLE   :: IP_CON(:,:)
+         INTEGER, ALLOCATABLE   :: CON_IP(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)
          INTEGER, ALLOCATABLE   :: IE_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: POS_CELL2(:,:)
