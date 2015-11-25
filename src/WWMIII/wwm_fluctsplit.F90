@@ -562,9 +562,8 @@
 !
          REAL(rkind) :: TMP
 
-         IP_TEST = 20710 
-
-         AC2(1,IS,IP_TEST) = 1. 
+!         IP_TEST = 20710 
+!         AC2(1,IS,IP_TEST) = 1. 
 
          U(:) = AC2(IS,ID,:)
 !
@@ -710,7 +709,7 @@
 !
 ! local parameter
 !
-         IP_TEST = 20710 
+!         IP_TEST = 20710 
          GSE_SCHEME = 3 
 
          IF (GSE_SCHEME == 1) THEN
@@ -743,7 +742,7 @@
                UL(IP,IGSE) = WBAC(IS,ID,1)/NGSE
              ENDIF 
            ENDDO
-           AC1(1,ID,IP_TEST) = 1.
+!           AC1(1,ID,IP_TEST) = 1.
 
            CALL CADVXY(IS,ID ,C_GSE1)
            CALL CADVXY(IS,IDD,C_GSE2)
@@ -1013,8 +1012,8 @@
 !
 ! local parameter
 !
-         IP_TEST = 20710 
-         DFAK    = 100.
+!         IP_TEST = 20710 
+!         DFAK    = 100.
          
 !         WRITE(*,*) IEND
 !
