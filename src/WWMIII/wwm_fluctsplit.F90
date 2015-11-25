@@ -340,9 +340,8 @@
 !
          CALL CADVXY(IS,ID,C)
         
-         IP_TEST = 20710 
-
-         AC2(1,ID,IP_TEST) = 1. 
+!         IP_TEST = 20710 
+!         AC2(1,ID,IP_TEST) = 1. 
 !
 !        Calculate K-Values and contour based quantities ...
 !
