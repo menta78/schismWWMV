@@ -690,13 +690,13 @@
 
          REAL(rkind)  :: TMP(3), TMP1, DFAK, GAM, DXX, DIFFA
 
-         REAL(rkind)  :: LAMBDA(2), DT4AI
+         REAL(rkind)  :: LAMBDA(2), DT4AI, BBB, AAA
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
 
          REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
          REAL(rkind)  :: XYTMP(2,MNP), fnew
 
-         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE), r0(2)
+         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE), r0(2), DTHV(2)
          REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio, rrac(3)
          REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP), RR(4,2), WI(3), ZI
 
