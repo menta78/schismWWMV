@@ -29,7 +29,7 @@
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL EXPLICIT_PSI_SCHEME(IS,ID)
-               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          ELSE IF (AMETHOD == 3) THEN
@@ -37,7 +37,7 @@
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          END IF
@@ -712,7 +712,7 @@
 ! local parameter
 !
          IP_TEST = 20710 
-         GSE_SCHEME = 2
+         GSE_SCHEME = 3 
 
          IF (GSE_SCHEME == 1) THEN
 
@@ -947,7 +947,21 @@
              IF (IS == 1 .and. ip == 10000) WRITE(*,*) IS, ID, COSTH(ID), SINTH(ID)
              !IF (IS == 1 .AND. IP == 10000) WRITE(*,*) DIFFA, COSTH(ID), SINTH(ID)
            END DO 
-         END IF
+         ELSE IF (GSE_SCHEME == 3) THEN
+           DO IP = 1, MNP
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
+             aaa    = sqrt(nnn(1)**2+nnn(2)**2)
+             bbb    = sqrt(sss(1)**2+sss(2)**2)
+             DO I = 1, CON_IP(IP)
+               WRITE(*,*) IP, I, CON_IP(IP), IP_CON(I,IP), XP(I), YP(I)
+               DTHV(1) = XP(I)-XP(IP)
+               DTHV(2) = YP(I)-YP(IP)
+             END DO
+           ENDDO
+         ENDIF 
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)

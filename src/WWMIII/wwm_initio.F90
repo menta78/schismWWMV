@@ -527,11 +527,8 @@
       USE W3SRC4MD
 #endif
       IMPLICIT NONE
-!
       REAL(rkind)    :: TIME1, TIME2
-#if defined MPI_PARALL_GRID && !defined PDLIB
-      integer i,j
-#endif
+      integer        :: i,j
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
