@@ -269,7 +269,10 @@
         DO IP = 1, NP_TOTAL
           READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
-            CALL WWM_ABORT('error in the bnd file 2')
+            Print *, 'eBND%FNAME=', eBND%FNAME
+            Print *, 'ITMP=', ITMP, 'BNDTMP=', BNDTMP
+            Print *, 'IP=', IP, 'NP_TOTAL=', NP_TOTAL
+            CALL WWM_ABORT('error in the bnd file 1')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
@@ -282,6 +285,9 @@
         DO IP = 1, NP_TOTAL
           READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
+            Print *, 'eBND%FNAME=', eBND%FNAME
+            Print *, 'ITMP=', ITMP, 'BNDTMP=', BNDTMP
+            Print *, 'IP=', IP, 'NP_TOTAL=', NP_TOTAL
             CALL WWM_ABORT('error in the bnd file 2')
           END IF
           ITMP=INT(BNDTMP)
@@ -295,7 +301,10 @@
         DO IP = 1, NP_TOTAL
           READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
-            CALL WWM_ABORT('error in the bnd file 2')
+            Print *, 'eBND%FNAME=', eBND%FNAME
+            Print *, 'ITMP=', ITMP, 'BNDTMP=', BNDTMP
+            Print *, 'IP=', IP, 'NP_TOTAL=', NP_TOTAL
+            CALL WWM_ABORT('error in the bnd file 3')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP
@@ -308,7 +317,10 @@
         DO IP = 1, NP_TOTAL
           READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ATMP, BTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
-            CALL WWM_ABORT('error in the bnd file 2')
+            Print *, 'eBND%FNAME=', eBND%FNAME
+            Print *, 'ITMP=', ITMP, 'BNDTMP=', BNDTMP
+            Print *, 'IP=', IP, 'NP_TOTAL=', NP_TOTAL
+            CALL WWM_ABORT('error in the bnd file 4')
           END IF
           ITMP=INT(BNDTMP)
           IOBPtotal(IP) = ITMP

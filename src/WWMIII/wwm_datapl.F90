@@ -640,7 +640,7 @@
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
          TYPE NESTING_INFORMATION
            integer IWBMNP
-           TYPE(TIMEDEF), allocatable     :: eTime
+           TYPE(TIMEDEF)                  :: eTime
            integer, dimension(:), pointer :: IOBPtotal
            integer, dimension(:), pointer :: IWBNDLC
            type(GridInformation) :: eGrid

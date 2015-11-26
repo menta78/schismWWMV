@@ -13,6 +13,7 @@
       integer IP, idx
       REAL(rkind) eX, eY
       integer eElt, NI(3), eIdx
+      integer eIOBP
       !
       ! First reading the grids
       !
@@ -24,19 +25,18 @@
         eGRD % FHNDL = 24037
         CALL READ_SPATIAL_GRID_TOTAL_KERNEL(ListNestInfo(iGrid) % eGrid, DIMMODE, LVAR1D, LSPHE, eGRD, IGRIDTYPE)
         !
-!        np_total_loc = ListNestInfo(iGrid) % eGrid % np_total
-!        allocate(ListNestInfo(iGrid) % NodeBelonging(np_total_loc), stat=istat)
-!        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 2')
+        np_total_loc = ListNestInfo(iGrid) % eGrid % np_total
         !
         allocate(ListNestInfo(iGrid) % IOBPtotal(np_total_loc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 3')
         eBND % FNAME = ListFILEBOUND(iGrid)
         eBND % FHNDL = 24977
-        CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, eBND, np_total_loc)
+        CALL SINGLE_READ_IOBP_TOTAL(ListNestInfo(iGrid) % IOBPtotal, IGRIDTYPE, eBND, np_total_loc)
         !
         IWBMNP_loc=0
         DO IP=1,np_total_loc
-          IF ((IOBPtotal(IP) .eq. 2) .or. (IOBPtotal(IP) .eq. 3)) THEN
+          eIOBP=ListNestInfo(iGrid) % IOBPtotal(IP)
+          IF ((eIOBP .eq. 2) .or. (eIOBP .eq. 3)) THEN
             IWBMNP_loc = IWBMNP_loc + 1
           END IF
         END DO
@@ -46,7 +46,8 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 2')
         idx=0
         DO IP=1,np_total_loc
-          IF ((IOBPtotal(IP) .eq. 2) .or. (IOBPtotal(IP) .eq. 3)) THEN
+          eIOBP=ListNestInfo(iGrid) % IOBPtotal(IP)
+          IF ((eIOBP .eq. 2) .or. (eIOBP .eq. 3)) THEN
             idx=idx+1
             ListNestInfo(iGrid) % IWBNDLC(idx) = IP
           END IF
@@ -85,11 +86,11 @@
             eX=ListNestInfo(iGrid) % eGrid % XPtotal(IP)
             eY=ListNestInfo(iGrid) % eGrid % YPtotal(IP)
             CALL FIND_ELE(MNE, MNP, INE, XYTMP, eX, eY, eElt)
-            ListNestInfo(iGrid) % BOUC_IE(IP) = eElt
+            ListNestInfo(iGrid) % BOUC_IE(eIdx) = eElt
             IF (eElt .gt. 0) THEN
               NI                 = INE(:,eElt)
               CALL INTELEMENT_COEF(XP(NI),YP(NI), eX, eY, eWI)
-              ListNestInfo(iGrid) % BOUC_W(:, IP) = eWI
+              ListNestInfo(iGrid) % BOUC_W(:, eIdx) = eWI
             END IF
           END DO
         END IF
@@ -98,6 +99,7 @@
       ! Now we timings needed by the model
       !
       DO iGRid=1,NB_GRID_NEST
+        Print *, 'iGrid=', iGrid, ' NB_GRID_NEST=', NB_GRID_NEST
         ListNestInfo(iGrid) % eTime % BEGT = ListBEGTC(iGrid)
         ListNestInfo(iGrid) % eTime % DELT = ListDELTC(iGrid)
         ListNestInfo(iGrid) % eTime % UNIT = ListUNITC(iGrid)
