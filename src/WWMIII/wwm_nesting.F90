@@ -58,8 +58,6 @@
             ListNestInfo(iGrid) % IWBNDLC(idx) = IP
           END IF
         END DO
-        !
-        
       END DO
       !
       ! Now we find the IE and weights for interpolation
@@ -132,7 +130,7 @@
           CALL WRITE_NETCDF_BOUND_HEADERS_2(FILERET, np_write, ListNestInfo(iGrid) % IOBPtotal, nbBound, ListNestInfo(iGrid) % IWBNDLC)
         END IF
         IF (L_HOTFILE) THEN
-          FILERET = ListPrefix(iGrid) // '_hotfile.nc'
+          FILERET = TRIM(ListPrefix(iGrid)) // '_hotfile.nc'
           MULTIPLEOUT_W = .FALSE.
           GRIDWRITE_W = .FALSE.
           IOBPD_HISTORY_W = .FALSE.
@@ -166,7 +164,6 @@
       real(rkind) eTimeDay
       integer POS
       np_write=ListNestInfo(iGrid) % eGrid % np_total
-      FILERET = ListPrefix(iGrid) // '_hotfile.nc'
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
@@ -276,6 +273,7 @@
 #endif
         eTimeDay=ListNestInfo(iGrid) % eTime % BMJD
         POS=1
+        FILERET = TRIM(ListPrefix(iGrid)) // '_hotfile.nc'
         CALL WRITE_HOTFILE_PART_2(FILERET, eTimeDay, POS, np_write, ACwrite, VAR_ONEDwrite)
         deallocate(ACwrite, VAR_ONEDwrite)
 #ifdef MPI_PARALL_GRID
@@ -311,7 +309,6 @@
       character(len=140) FILERET
       np_write=ListNestInfo(iGrid) % eGrid % np_total
       nbBound=ListNestInfo(iGrid) % IWBMNP
-      FILERET = TRIM(ListPrefix(iGrid)) // '_boundary.nc'
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
@@ -336,12 +333,10 @@
       IF (L_BOUC_PARAM) THEN
         allocate(SPPARMsend(8,nbMatch), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
-        SPPARMsend=0
       END IF
       IF (L_BOUC_SPEC) THEN
         allocate(WBACsend(MSC,MDC,nbMatch), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
-        WBACsend=0
       END IF
       allocate(Listmatch(nbMatch), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
@@ -352,7 +347,11 @@
           idx=idx+1
           ListMatch(idx)=IP
           ACLOC=0
-          DEPLOC=0
+          IF (L_BOUC_PARAM) THEN
+            DEPLOC=0
+            CURTXYLOC=0
+            WATLEVLOC=0
+          END IF
           DO I=1,3
             eW=ListNestInfo(iGrid) % HOT_W(I,IP)
             IP2=INE(I,IE)
@@ -450,6 +449,7 @@
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
+        FILERET = TRIM(ListPrefix(iGrid)) // '_boundary.nc'
         eTimeDay = ListNestInfo(iGrid) % eTime % TMJD
         iret=nf90_open(TRIM(FILERET), NF90_WRITE, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
@@ -521,6 +521,8 @@
           DeltaTimeDiff = abs(MAIN % TMJD - ListNestInfo(iGrid) % eTime % BMJD)
           Print *, 'L_HOTFILE=', L_HOTFILE
           Print *, 'DeltaTimeDiff=', DeltaTimeDiff
+          Print *, 'MAIN % TMJD = ', MAIN%TMJD
+          Print *, 'ListNestInfo(iGrid) % eTime % BMJD = ', ListNestInfo(iGrid) % eTime % BMJD
           IF (L_HOTFILE .and. DeltaTimeDiff .le. 1.e-8) THEN
             Print *, 'Before call to NESTING_OUTPUT_HOTFILE'
             CALL NESTING_OUTPUT_HOTFILE(iGrid)

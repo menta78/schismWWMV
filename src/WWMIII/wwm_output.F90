@@ -2,17 +2,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GENERAL_OUTPUT
+      SUBROUTINE GENERAL_OUTPUT(TIME)
       USE WWM_HOTFILE_MOD
       USE DATAPOOL
       IMPLICIT NONE
+      REAL(rkind), INTENT(IN) :: TIME
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4,L5)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD, (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)
       !
       ! The history output
       !
       IF ( (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD
-        CALL OUTPUT_HISTORY(RTIME*DAY2SEC,.FALSE.)
+        CALL OUTPUT_HISTORY( TIME )
         OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
       END IF
       !
@@ -20,7 +21,7 @@
       !
       IF ( (MAIN%TMJD .GE. OUT_STATION%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_STATION%EMJD)) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
-        CALL OUTPUT_STATION(.FALSE.)
+        CALL OUTPUT_STATION
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
       END IF
       !
@@ -119,32 +120,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WWM_OUTPUT( TIME, LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_HISTORY( TIME )
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)    :: TIME
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
-      CALL OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-      CALL OUTPUT_STATION( LINIT_OUTPUT )
-      OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
-      OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
-
-      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
-      FLUSH(STAT%FHNDL)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-      USE DATAPOOL
-      IMPLICIT NONE
-      REAL(rkind), INTENT(IN)    :: TIME
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
       SELECT CASE (VAROUT_HISTORY%IOUTP)
         CASE (0)
           ! Do nothing ...
         CASE (1)
-          CALL OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
+          CALL OUTPUT_HISTORY_XFN( TIME )
         CASE (2)
 #ifdef NCDF
           CALL OUTPUT_HISTORY_NC
@@ -165,10 +149,9 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_STATION( LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_STATION
       USE DATAPOOL
       IMPLICIT NONE
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
       CHARACTER(LEN=15)   :: CTIME
       CALL MJD2CT(MAIN%TMJD, CTIME)
       IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
@@ -177,7 +160,7 @@
           CASE (0)
             ! Do nothing ...
           CASE (1)
-            CALL OUTPUT_STE(CTIME, LINIT_OUTPUT)
+            CALL OUTPUT_STE(CTIME)
           CASE (2)
 #ifdef NCDF
             CALL OUTPUT_STATION_NC
@@ -194,7 +177,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_HISTORY_XFN( TIME )
 !
 !     XFN TYPE OUTPUT
 !
@@ -202,8 +185,7 @@
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
-         LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
-
+         LOGICAL, SAVE             :: LINIT_OUTPUT = .TRUE.
          INTEGER                   :: IP
          LOGICAL                   :: DoAirSea
 #ifdef MPI_PARALL_GRID
@@ -425,6 +407,7 @@
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
         FLUSH(STAT%FHNDL)
+        LINIT_OUTPUT=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -469,12 +452,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
+      SUBROUTINE OUTPUT_STE(CTIME)
       USE DATAPOOL
       IMPLICIT NONE
 
       CHARACTER(LEN=15), INTENT(IN) :: CTIME
-      LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
       REAL(rkind) :: ACLOC(MSC,MDC), ACOUT_1D(MSC,3), ACOUT_2D(MSC*MDC)
 
@@ -484,6 +466,7 @@
       INTEGER           :: I, NI(3), IS
       LOGICAL           :: ALIVE, LSAME
       REAL(rkind)       :: WI(3)
+      LOGICAL, SAVE     :: LINIT_OUTPUT = .TRUE.
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: TheIsumR
 #endif
@@ -744,6 +727,7 @@
 #endif
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
       FLUSH(STAT%FHNDL)
+      LINIT_OUTPUT=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !* The netcdf output outs the most variables and is the most          *
