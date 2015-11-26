@@ -103,7 +103,7 @@
       ! Now we timings needed by the model
       !
       DO iGRid=1,NB_GRID_NEST
-        Print *, 'iGrid=', iGrid, ' NB_GRID_NEST=', NB_GRID_NEST
+!        Print *, 'iGrid=', iGrid, ' NB_GRID_NEST=', NB_GRID_NEST
         ListNestInfo(iGrid) % eTime % BEGT = ListBEGTC(iGrid)
         ListNestInfo(iGrid) % eTime % DELT = ListDELTC(iGrid)
         ListNestInfo(iGrid) % eTime % UNIT = ListUNITC(iGrid)
@@ -160,9 +160,10 @@
       integer nbMatch, nbTime
       integer IP, IE, I, idx, IP2, iProc, nbMatchLoc
       real(rkind) eW
-      integer, allocatable :: ListMatch(:)
+      integer, allocatable :: ListMatch(:), ListStatus(:)
       real(rkind) eTimeDay
       integer POS
+      integer nbMissHotfile
       np_write=ListNestInfo(iGrid) % eGrid % np_total
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
@@ -236,8 +237,12 @@
       END DO
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
+        allocate(ListStatus(np_write), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        ListStatus=0
         DO idx=1,nbMatch
           IP=ListMatch(idx)
+          ListStatus(IP)=1
           ACwrite(:,:,IP)     = ACsend(:,:,idx)
           VAR_ONEDwrite(:,IP) = VAR_ONEDsend(:,idx)
         END DO
@@ -252,11 +257,14 @@
           CALL MPI_RECV(VAR_ONEDsend, nbOned*nbMatchLoc, rtype, iProc-1, 2404, comm, istatus, ierr)
           DO idx=1,nbMatchLoc
             IP=ListMatch(idx)
+            ListStatus(IP)=1
             ACwrite(:,:,IP) = ACsend(:,:,idx)
             VAR_ONEDwrite(:,IP) = VAR_ONEDsend(:,idx)
           END DO
           deallocate(ListMatch, ACsend, VAR_ONEDsend)
         END DO
+        nbMissHotfile = np_write - sum(ListStatus)
+        deallocate(ListStatus)
       ELSE
         eInt(1)=nbMatch
         CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
@@ -265,12 +273,14 @@
         CALL MPI_SEND(VAR_ONEDsend, nbOned*nbMatch, rtype, 0, 2404, comm, ierr)
       END IF
 #else
+      nbMissHotfile = np_write - nbMatch
       ACwrite = ACsend
       VAR_ONEDwrite = VAR_ONEDsend
 #endif      
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
+        WRITE(STAT%FHNDL,*) 'nbMissHotfile=', nbMissHotfile
         eTimeDay=ListNestInfo(iGrid) % eTime % BMJD
         POS=1
         FILERET = TRIM(ListPrefix(iGrid)) // '_hotfile.nc'
@@ -307,6 +317,8 @@
       integer iret, ncid
       real(rkind) eTimeDay
       character(len=140) FILERET
+      integer, allocatable :: ListStatus(:)
+      integer nbMissBound
       np_write=ListNestInfo(iGrid) % eGrid % np_total
       nbBound=ListNestInfo(iGrid) % IWBMNP
 #ifdef MPI_PARALL_GRID
@@ -315,10 +327,12 @@
         IF (L_BOUC_PARAM) THEN
           allocate(SPPARMwrite(8,nbBound), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+          SPPARMwrite = 0
         END IF
         IF (L_BOUC_SPEC) THEN
           allocate(WBACwrite(MSC,MDC,nbBound), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+          WBACwrite = 0
         END IF
 #ifdef MPI_PARALL_GRID
       END IF
@@ -387,8 +401,12 @@
       END DO
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
+        allocate(ListStatus(nbBound), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
+        ListStatus=0
         DO idx=1,nbMatch
           IP=ListMatch(idx)
+          ListStatus(IP)=1
           IF (L_BOUC_SPEC) THEN
             WBACwrite(:,:,IP) = WBACsend(:,:,idx)
           END IF
@@ -415,6 +433,7 @@
             CALL MPI_RECV(WBACsend, MSC*MDC*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
             DO idx=1,nbMatchLoc
               IP=ListMatch(idx)
+              ListStatus(IP)=1
               WBACwrite(:,:,IP) = WBACsend(:,:,idx)
             END DO
             deallocate(WBACsend)
@@ -425,12 +444,15 @@
             CALL MPI_RECV(SPPARMsend, 8*nbMatchLoc, rtype, iProc-1, 2404, comm, istatus, ierr)
             DO idx=1,nbMatchLoc
               IP=ListMatch(idx)
+              ListStatus(IP)=1
               SPPARMwrite(:,IP) = SPPARMsend(:,idx)
             END DO
             deallocate(SPPARMsend)
           END IF
           deallocate(ListMatch)
         END DO
+        nbMissBound = nbBound - sum(ListStatus)
+        deallocate(ListStatus)
       ELSE
         eInt(1)=nbMatch
         CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
@@ -443,12 +465,14 @@
         END IF
       END IF
 #else
+      nbMissBound = nbBound - nbMatch
       WBACwrite = WBACsend
       SPPARMwrite = SPPARMsend
-#endif      
+#endif
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
+        WRITE(STAT%FHNDL,*) 'nbMissBound=', nbMissBound
         FILERET = TRIM(ListPrefix(iGrid)) // '_boundary.nc'
         eTimeDay = ListNestInfo(iGrid) % eTime % TMJD
         iret=nf90_open(TRIM(FILERET), NF90_WRITE, ncid)
@@ -458,9 +482,9 @@
         iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         recs_his=recs_his+1
-        Print *, 'recs_his=', recs_his
-        Print *, 'eTimeDay=', eTimeDay
-        Print *, 'Before call to WRITE_NETCDF_TIME'
+!        Print *, 'recs_his=', recs_his
+!        Print *, 'eTimeDay=', eTimeDay
+!        Print *, 'Before call to WRITE_NETCDF_TIME'
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
         IF (L_BOUC_PARAM) THEN
           iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
@@ -519,16 +543,16 @@
       DO iGrid=1,NB_GRID_NEST
         IF ((MAIN%TMJD .GE. ListNestInfo(iGrid) % eTime % TMJD - 1.E-8) .AND. (MAIN%TMJD .LE. ListNestInfo(iGrid) % eTime % EMJD)) THEN
           DeltaTimeDiff = abs(MAIN % TMJD - ListNestInfo(iGrid) % eTime % BMJD)
-          Print *, 'L_HOTFILE=', L_HOTFILE
-          Print *, 'DeltaTimeDiff=', DeltaTimeDiff
-          Print *, 'MAIN % TMJD = ', MAIN%TMJD
-          Print *, 'ListNestInfo(iGrid) % eTime % BMJD = ', ListNestInfo(iGrid) % eTime % BMJD
+!          Print *, 'L_HOTFILE=', L_HOTFILE
+!          Print *, 'DeltaTimeDiff=', DeltaTimeDiff
+!          Print *, 'MAIN % TMJD = ', MAIN%TMJD
+!          Print *, 'ListNestInfo(iGrid) % eTime % BMJD = ', ListNestInfo(iGrid) % eTime % BMJD
           IF (L_HOTFILE .and. DeltaTimeDiff .le. 1.e-8) THEN
-            Print *, 'Before call to NESTING_OUTPUT_HOTFILE'
+!            Print *, 'Before call to NESTING_OUTPUT_HOTFILE'
             CALL NESTING_OUTPUT_HOTFILE(iGrid)
           END IF
           IF (L_BOUC_PARAM .or. L_BOUC_SPEC) THEN
-            Print *, 'Before call to NESTING_BOUNDARY_CONDITION'
+!            Print *, 'Before call to NESTING_BOUNDARY_CONDITION'
             CALL NESTING_BOUNDARY_CONDITION(iGrid)
           END IF
           ListNestInfo(iGrid) % eTime % TMJD = ListNestInfo(iGrid) % eTime % TMJD + ListNestInfo(iGrid) % eTime % DELT*SEC2DAY
