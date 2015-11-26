@@ -21,6 +21,7 @@
       IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
       DO iGrid=1,NB_GRID_NEST
         IGRIDTYPE = ListIGRIDTYPE(iGrid)
+        ListNestInfo(iGrid) % recs_his = 0
         eGRD % FNAME = ListFILEGRID(iGrid)
         eGRD % FHNDL = 24037
         CALL READ_SPATIAL_GRID_TOTAL_KERNEL(ListNestInfo(iGrid) % eGrid, DIMMODE, LVAR1D, LSPHE, eGRD, IGRIDTYPE)
@@ -298,10 +299,7 @@
       IF (myrank .eq. 0) THEN
 #endif
         FILERET = TRIM(ListPrefix(iGrid)) // '_boundary.nc'
-        Print *, 'FILERET=', TRIM(FILERET)
         nbTime=-1
-        Print *, 'L_BOUC_PARAM=', L_BOUC_PARAM
-        Print *, 'L_BOUC_SPEC=', L_BOUC_SPEC
         CALL WRITE_NETCDF_BOUND_HEADERS_1(FILERET, nbTime, np_write, nbBound, L_BOUC_PARAM, L_BOUC_SPEC)
         CALL WRITE_NETCDF_BOUND_HEADERS_2(FILERET, np_write, ListNestInfo(iGrid) % IOBPtotal, nbBound, ListNestInfo(iGrid) % IWBNDLC)
         IF (L_BOUC_PARAM) THEN
@@ -450,9 +448,9 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
         iret=nf90_inquire(ncid, unlimitedDimId = irec_dim)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-        iret=nf90_inquire_dimension(ncid, irec_dim,len = recs_his)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-        recs_his=recs_his+1
+        ListNestInfo(iGrid) % recs_his = ListNestInfo(iGrid) % recs_his + 1
+        recs_his = ListNestInfo(iGrid) % recs_his
+        Print *, 'recs_his=', recs_his
         CALL WRITE_NETCDF_TIME(ncid, recs_his, eTimeDay)
         IF (L_BOUC_PARAM) THEN
           iret=nf90_inq_varid(ncid, 'SPPARM', var_id)
@@ -511,10 +509,14 @@
       DO iGrid=1,NB_GRID_NEST
         IF ((MAIN%TMJD .GE. ListNestInfo(iGrid) % eTime % TMJD - 1.E-8) .AND. (MAIN%TMJD .LE. ListNestInfo(iGrid) % eTime % EMJD)) THEN
           DeltaTimeDiff = abs(MAIN % TMJD - ListNestInfo(iGrid) % eTime % BMJD)
+          Print *, 'L_HOTFILE=', L_HOTFILE
+          Print *, 'DeltaTimeDiff=', DeltaTimeDiff
           IF (L_HOTFILE .and. DeltaTimeDiff .le. 1.e-8) THEN
+            Print *, 'Before call to NESTING_OUTPUT_HOTFILE'
             CALL NESTING_OUTPUT_HOTFILE(iGrid)
           END IF
           IF (L_BOUC_PARAM .or. L_BOUC_SPEC) THEN
+            Print *, 'Before call to NESTING_BOUNDARY_CONDITION'
             CALL NESTING_BOUNDARY_CONDITION(iGrid)
           END IF
           ListNestInfo(iGrid) % eTime % TMJD = ListNestInfo(iGrid) % eTime % TMJD + ListNestInfo(iGrid) % eTime % DELT*SEC2DAY
