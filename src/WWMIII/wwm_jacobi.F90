@@ -48,7 +48,9 @@
           END DO
         END DO
       END DO
+#ifdef MPI_PARALL_GRID     
       CALL EXCHANGE_P2D(CFLadvgeoOut)
+#endif
       DO IP=1,MNP
         CFLadvgeoOutI(IP) = NINT(CFLadvgeoOut(IP))
       END DO
