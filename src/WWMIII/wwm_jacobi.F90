@@ -607,6 +607,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF      
       SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
       USE DATAPOOL
       USE NETCDF  
@@ -625,7 +626,7 @@
       integer, allocatable :: ListFirstMNP(:)
       WRITE(FileSave, 10) 'DebugJacobi', iPass
 10    FORMAT(a, '_', i4.4,'.nc')
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
         allocate(ListFirstMNP(nproc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 1')
@@ -653,15 +654,15 @@
       ELSE
         CALL MPI_SEND(FieldOut1, NP_RES, rtype, 0, 511, comm, ierr)
       END IF
-#else
+# else
       FieldOutTotal1 = FieldOut1
-#endif
+# endif
       !
       ! Now writing to netcdf file
       ! 
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
-#endif
+# endif
         IF (iIter .eq. 1) THEN
           iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
@@ -698,10 +699,11 @@
         !
         iret = nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-      END SUBROUTINE
+# endif
+      END SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI
+#endif    
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -864,7 +866,9 @@
         ENDIF
 #ifdef DEBUG_ITERATION_LOOP
         iIter=nbIter + 1
+# ifdef NCDF        
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+# endif        
 #endif
 
 !
