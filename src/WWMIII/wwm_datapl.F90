@@ -205,6 +205,7 @@
          REAL(rkind)       ::  CURFAC    = 1.0
 
          REAL(rkind)       :: SLMAX      = 0.2
+         REAL(rkind)       :: ALPHA_GSE(3) 
          REAL(rkind)       :: MAXCFLSIG  = 1.0
          REAL(rkind)       :: MAXCFLTH   = 1.0
          REAL(rkind)       :: MAXCFLCXY  = 1.0
@@ -289,6 +290,7 @@
          LOGICAL    :: LSOURCESWWIII = .FALSE. 
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  
+         LOGICAL    :: LGSE        = .TRUE.
 
 
          integer :: idxWind
@@ -1146,6 +1148,8 @@
          INTEGER, ALLOCATABLE   :: POS_IP_ADJ(:,:,:)
          INTEGER, ALLOCATABLE   :: CCON(:)
          INTEGER, ALLOCATABLE   :: IE_CELL(:)
+         INTEGER, ALLOCATABLE   :: IP_CON(:,:)
+         INTEGER, ALLOCATABLE   :: CON_IP(:)
          INTEGER, ALLOCATABLE   :: POS_CELL(:)
          INTEGER, ALLOCATABLE   :: IE_CELL2(:,:)
          INTEGER, ALLOCATABLE   :: POS_CELL2(:,:)
@@ -1157,7 +1161,7 @@
          INTEGER, ALLOCATABLE   :: ITER_EXPD(:)
          INTEGER                :: ITER_MAX
          REAL(rkind),  ALLOCATABLE   :: SI(:)
-         REAL(rkind),  ALLOCATABLE   :: IEN(:,:)
+         REAL(rkind),  ALLOCATABLE   :: IEN(:,:), IEND(:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
          REAL(rkind), ALLOCATABLE    :: CFL_CASD(:,:)

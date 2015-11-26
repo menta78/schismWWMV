@@ -29,6 +29,7 @@
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL EXPLICIT_PSI_SCHEME(IS,ID)
+!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          ELSE IF (AMETHOD == 3) THEN
@@ -36,6 +37,7 @@
            DO ID = 1, MDC
              DO IS = 1, MSC
                CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
+!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
              END DO
            END DO
          END IF
@@ -338,7 +340,8 @@
 !
          CALL CADVXY(IS,ID,C)
         
-         IP_TEST = 180 
+!         IP_TEST = 20710 
+!         AC2(1,ID,IP_TEST) = 1. 
 !
 !        Calculate K-Values and contour based quantities ...
 !
@@ -533,7 +536,7 @@
 !
          INTEGER :: IP, IE, IT
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3)
+         INTEGER :: NI(3), IP_TEST
 !
 ! local double
 !
@@ -558,6 +561,9 @@
 ! local parameter
 !
          REAL(rkind) :: TMP
+
+!         IP_TEST = 20710 
+!         AC2(1,IS,IP_TEST) = 1. 
 
          U(:) = AC2(IS,ID,:)
 !
@@ -637,7 +643,7 @@
 ! the 2nd term are the theta values of each node ...
              ST(NI) = ST(NI) + THETA_L
            END DO
-           U = MAX(ZERO,U-DTSI*ST*IOBWB)*IOBPD(ID,:)
+
            DO IP = 1, MNP
              U(IP) = MAX(ZERO,U(IP)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
            END DO
@@ -664,6 +670,312 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+       SUBROUTINE EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER, INTENT(IN)    :: IS,ID
+!
+! local integer
+!
+         INTEGER :: IP, IE, IT, I, J, IDD, ICON, II, IP_CONN(20)
+         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS, NIOLD(3)
+         INTEGER :: NI(3), IP_TEST, GSE_SCHEME, IELEM
+!
+! local double
+!
+         REAL(rkind) :: FT
+         REAL(rkind)  :: UTILDE
+
+         REAL(rkind)  :: TMP(3), TMP1, DFAK, GAM, DXX, DIFFA
+
+         REAL(rkind)  :: LAMBDA(2), DT4AI, BBB, AAA
+         REAL(rkind)  :: BET1(3), BETAHAT(3), BL
+
+         REAL(rkind)  :: FL11,FL12,FL21,FL22,FL31,FL32
+         REAL(rkind)  :: XYTMP(2,MNP), fnew
+
+         REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE), r0(2), DTHV(2)
+         REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio, rrac(3)
+         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP), RR(4,2), WI(3), ZI
+
+         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE), SSS(2), NNN(2)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3), UDTDX(MNP)
+
+         REAL(rkind)  :: C(2,MNP), C_GSE1(2,MNP), C_GSE2(2,MNP), U(MNP), DTSI(MNP), N(MNE)
+         REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
+         REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE), DIFFNN, DIFFSS
+ 
+         LOGICAL      :: LSAME
+!
+! local parameter
+!
+!         IP_TEST = 20710 
+         GSE_SCHEME = 3 
+
+         IF (GSE_SCHEME == 1) THEN
+
+         DFAK    = 100.
+         NGSE    = 3 
+         ALPHA_GSE(1) = 0.25; ALPHA_GSE(2) = 0.5; ALPHA_GSE(3) = 0.25
+ 
+!         WRITE(*,*) IEND
+!
+         BL = ZERO
+!
+!        Calculate phase speeds for the certain spectral component ...
+!
+         DO IGSE = 1, NGSE 
+
+           IDD = ID + IGSE - NGSE + 1 
+           IF (IDD == 0) THEN
+             IDD = MDC
+           ELSE IF (IDD == MDC + 1) THEN
+             IDD = 1
+           ENDIF
+
+           DO ip = 1, mnp
+             IF (IOBP(IP) .NE. 2) THEN
+               !UL(IP,IGSE) = 0.5*(AC1(IS,ID,IP)+AC1(IS,IDD,IP))/NGSE
+               UL(IP,IGSE) = AC1(IS,ID,IP)/NGSE
+             ELSE 
+               !UL(IP,IGSE) = 0.5*(WBAC(IS,ID,1)+WBAC(IS,IDD,1))/NGSE
+               UL(IP,IGSE) = WBAC(IS,ID,1)/NGSE
+             ENDIF 
+           ENDDO
+!           AC1(1,ID,IP_TEST) = 1.
+
+           CALL CADVXY(IS,ID ,C_GSE1)
+           CALL CADVXY(IS,IDD,C_GSE2)
+!
+!        Calculate K-Values and contour based quantities ...
+!
+         DO IE = 1, MNE
+            I1 = INE(1,IE)
+            I2 = INE(2,IE)
+            I3 = INE(3,IE)
+            !C(1,I1) = .5*(C_GSE1(1,I1)+C_GSE2(1,I1))
+            !C(1,I2) = .5*(C_GSE1(1,I2)+C_GSE2(1,I2))
+            !C(1,I3) = .5*(C_GSE1(1,I3)+C_GSE2(1,I3))
+            !C(2,I1) = .5*(C_GSE1(2,I1)+C_GSE2(2,I1))
+            !C(2,I2) = .5*(C_GSE1(2,I2)+C_GSE2(2,I2))
+            !C(2,I3) = .5*(C_GSE1(2,I3)+C_GSE2(2,I3))
+            C(1,I1) = C_GSE2(1,I1)
+            C(1,I2) = C_GSE2(1,I2)
+            C(1,I3) = C_GSE2(1,I3)
+            C(2,I1) = C_GSE2(2,I1)
+            C(2,I2) = C_GSE2(2,I2)
+            C(2,I3) = C_GSE2(2,I3)
+            LAMBDA(1) = ONESIXTH *(C(1,I1)+C(1,I2)+C(1,I3))
+            LAMBDA(2) = ONESIXTH *(C(2,I1)+C(2,I2)+C(2,I3))
+            KELEM(1,IE) = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE)
+            KELEM(2,IE) = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+            KELEM(3,IE) = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+            N(IE) = - ONE/MIN(-THR,SUM(MIN(ZERO,KELEM(:,IE))))
+            FL11  = C(1,I2) * IEN(1,IE) + C(2,I2) * IEN(2,IE)
+            FL12  = C(1,I3) * IEN(1,IE) + C(2,I3) * IEN(2,IE)
+            FL21  = C(1,I3) * IEN(3,IE) + C(2,I3) * IEN(4,IE)
+            FL22  = C(1,I1) * IEN(3,IE) + C(2,I1) * IEN(4,IE)
+            FL31  = C(1,I1) * IEN(5,IE) + C(2,I1) * IEN(6,IE)
+            FL32  = C(1,I2) * IEN(5,IE) + C(2,I2) * IEN(6,IE)
+            FL111 = 2*FL11+FL12
+            FL112 = 2*FL12+FL11
+            FL211 = 2*FL21+FL22
+            FL212 = 2*FL22+FL21
+            FL311 = 2*FL31+FL32
+            FL312 = 2*FL32+FL31
+            FLALL(1,IE) = FL311 + FL212
+            FLALL(2,IE) = FL111 + FL312
+            FLALL(3,IE) = FL211 + FL112
+         END DO
+! If the current field or water level changes estimate the iteration
+! number based on the new flow field and the CFL number of the scheme
+         IF (LCALC) THEN
+           CALL CFL_COMPUTATION_BIN(IS, ID, KELEM, C)
+         END IF
+
+         DT4AI    = DT4A/ITER_EXP(IS,ID)
+         DTSI(:)  = DT4AI/SI(:)
+
+#ifdef MPI_PARALL_GRID
+         CALL EXCHANGE_P2D(UL(:,IGSE))
+!         CALL EXCHANGE_P2D(UL)
+#endif
+!
+!  Loop over all sub time steps, all quantities in this loop depend
+!  on the solution U itself !!!
+!
+         DO IT = 1, ITER_EXP(IS,ID)
+!
+! Element loop
+!
+           ST = ZERO
+           PM = ZERO
+           PP = ZERO
+           DO IE = 1, MNE
+              NI      = INE(:,IE)
+              UTMP    = UL(NI,IGSE)
+              FT      =  -ONESIXTH*DOT_PRODUCT(UTMP,FLALL(:,IE))
+              TMP     =  MAX(ZERO,KELEM(:,IE))
+              UTILDE  =  N(IE) * ( DOT_PRODUCT(TMP,UTMP) - FT )
+              THETA_L(:,IE) =  TMP * ( UTMP - UTILDE )
+              IF (ABS(FT) .GT. ZERO) THEN
+                BET1(:) = THETA_L(:,IE)/FT
+                IF (ANY( BET1 .LT. ZERO) ) THEN
+                  BETAHAT(1)    = BET1(1) + ONEHALF * BET1(2)
+                  BETAHAT(2)    = BET1(2) + ONEHALF * BET1(3)
+                  BETAHAT(3)    = BET1(3) + ONEHALF * BET1(1)
+                  BET1(1)       = MAX(ZERO,MIN(BETAHAT(1),ONE-BETAHAT(2),ONE))
+                  BET1(2)       = MAX(ZERO,MIN(BETAHAT(2),ONE-BETAHAT(3),ONE))
+                  BET1(3)       = MAX(ZERO,MIN(BETAHAT(3),ONE-BETAHAT(1),ONE))
+                  THETA_L(:,IE) = FT * BET1
+                END IF
+              ELSE
+                THETA_L(:,IE) = ZERO
+              END IF
+              ST(NI)          = ST(NI) + THETA_L(:,IE)
+              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) * KELEM(:,IE) ) * FT ! LAX
+!              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(ZERO,KELEM(:,IE))))*FT  ! CENTRAL
+              THETA_ACE(:,IE) = THETA_H-THETA_L(:,IE)
+              PP(NI) =  PP(NI) + MAX(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
+              PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
+            END DO
+
+            DO IP = 1, MNP
+              UL(IP,IGSE) = MAX(ZERO,UL(IP,IGSE)-DTSI(IP)*ST(IP)*IOBWB(IP))*IOBPD(ID,IP)*IOBDP(IP)
+            ENDDO
+
+#ifdef MPI_PARALL_GRID
+            CALL EXCHANGE_P2D(UL(:,IGSE)) ! Exchange after each update of the res. domain
+#endif
+           END DO  ! ----> End Iteration
+
+         END DO  ! ..... END GSE Loop
+
+         DO IP = 1, MNP
+           !IF (IOBP(IP) .NE. 2) THEN
+             AC2(IS,ID,IP) = UL(IP,1) + UL(IP,2) + UL(IP,3)
+           !ELSE
+           !  AC2(IS,ID,IP) = WBAC(IS,ID,1) 
+           !ENDIF
+         END DO
+
+         ELSE IF (GSE_SCHEME == 2) THEN
+
+           XYTMP(:,1) = XP
+           XYTMP(:,2) = YP
+
+           CALL CADVXY(IS,ID,C)
+           a_s = 0.5
+           a_n = 0.5
+
+           DO IP = 1, MNP
+             IF (IOBP(IP) .NE. 0) CYCLE
+             r0(1) = xp(ip)
+             r0(2) = yp(ip)
+! Compute extent of the averaging region 
+             cct   = sqrt(c(1,ip)**2+c(2,ip)**2)
+             dxx   = sqrt(si(ip))
+             gam   = ONE + FRINTF 
+             nn    = a_s * (GAM-ONE/GAM) * CCT * DT4A
+             ss    = a_n * DDIR * CCT * DT4A 
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
+             rr(1,:) =  sss + nnn + r0
+             rr(2,:) = -sss + nnn + r0
+             rr(3,:) = -sss - nnn + r0
+             rr(4,:) =  sss - nnn + r0
+             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
+!             avg_area = nn * ss
+             if (ip == 10001 .and. .false.) then
+               write(100001,'(A)') 'C -------------------------'
+               write(*,*) 'sss and nnn', GAM-ONE/GAM, ss, nn, DT4A
+               write(*,*) sss
+               write(*,*) nnn
+               write(*,*) 'rrrs'
+               write(*,*) rr(1,:)
+               write(*,*) rr(2,:)
+               write(*,*) rr(3,:)
+               write(*,*) rr(4,:)
+               do ii = 1, 4
+                 write(100001,'(I10,3F15.6)') ii,rr(ii,1),rr(ii,2),0.
+                 !write(*,*) maxval(xp), minval(xp), maxval(yp), minval(yp) 
+                 !CALL FIND_ELE(MNE, MNP, INE, XYTMP, rr(ii,1), rr(ii,2), IELEM)
+                 !write(*,*) ielem
+               enddo
+               write(100001,'(I10,3F15.6)') ii,rr(1,1),rr(1,2),0.
+               write(100001,'(A)') '-1'
+               call flush(100001)
+               write(*,'(I10,8F20.10)') ip, cct, nn, ss, ratio, avg_area, DT4A
+               write(*,*) size(si), si(ip)
+             endif
+             DO II = 1, 4 
+               DO ICON = 1, CCON(IP)
+!  Interpolate Wave Action on the corners of the averaging region
+                 IE     = IE_CELL2(IP,ICON)
+                 IPOS   = POS_CELL2(IP,ICON)
+                 NI     = INE(:,IE)
+                 LSAME  = .FALSE. 
+                 CALL INTELEMENT_COEF(XP(NI),YP(NI),RR(ii,1),RR(ii,2),Wi)
+                 IF (.NOT. ANY(WI .LE. 0._rkind)) THEN
+                   RRAC(II) = dot_product(wi,ac2(is,id,ni))
+                   !WRITE(*,*) 'TEST TEST TEST'
+                   !WRITE(*,'(10I10)') IP, IE, II, IS, ID, ICON, IOBP(IP) 
+                   !WRITE(*,*) XP(NI)
+                   !WRITE(*,*) YP(NI)
+                   !WRITE(*,*) WI, IPOS
+                   !WRITE(*,*) RR(II,:)
+                   !WRITE(*,*) RRAC(II)
+                   !WRITE(*,*) 'TEST TEST TEST'
+                 END IF 
+               END DO ! ICON
+             ENDDO ! II
+
+             FNEW  = 1._rkind/6._rkind * sum(RRAC) + 1._rkind/3._rkind * AC2(is,id,ip)
+             DIFFA = FNEW - AC2(is,id,ip) 
+             DIFFNN = RATIO * DIFFA
+             DIFFSS = (1._rkind - RATIO) * DIFFA
+             !IF (FNEW .GT. -THR8) THEN
+             !  WRITE(*,'(2I10,5F22.12)') IP, ID, DIFFA, DIFFNN, DIFFSS, AC2(is,id,ip),  RATIO
+             !ELSE
+             !  WRITE(*,*) FNEW, RRAC, IP, IOBP(IP)
+             !  STOP 'NEGATIVE ENERGY' 
+             !ENDIF
+             IF (IS == 1 .and. ip == 10000) WRITE(*,*) IS, ID, COSTH(ID), SINTH(ID)
+             !IF (IS == 1 .AND. IP == 10000) WRITE(*,*) DIFFA, COSTH(ID), SINTH(ID)
+           END DO 
+         ELSE IF (GSE_SCHEME == 3) THEN
+           DO IP = 1, MNP
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
+             aaa    = sqrt(nnn(1)**2+nnn(2)**2)
+             bbb    = sqrt(sss(1)**2+sss(2)**2)
+             DO I = 1, CON_IP(IP)
+               WRITE(*,*) IP, I, CON_IP(IP), IP_CON(I,IP), XP(I), YP(I)
+               DTHV(1) = XP(I)-XP(IP)
+               DTHV(2) = YP(I)-YP(IP)
+             END DO
+           ENDDO
+         ENDIF 
+
+         IF (LADVTEST) THEN
+           WRITE(4001)  SNGL(RTIME)
+           WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),  IP = 1, MNP)
+           CALL CHECKCONS(U,SUMAC2)
+           IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
+           WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
+     &       SUMAC1, SUMAC2, MINTEST
+           WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
+     &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
+     &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
+         END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
        SUBROUTINE EXPLICIT_LFPSI_SCHEME(IS,ID)
          USE DATAPOOL
          IMPLICIT NONE
@@ -673,14 +985,14 @@
 !
          INTEGER :: IP, IE, IT, I, J
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3)
+         INTEGER :: NI(3), IP_TEST
 !
 ! local double
 !
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: TMP(3), TMP1
+         REAL(rkind)  :: TMP(3), TMP1, DFAK
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
@@ -692,13 +1004,20 @@
          REAL(rkind)  :: WII(2,MNP), UL(MNP), USTARI(2,MNP)
 
          REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE)
-         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP)
+         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3)
 
          REAL(rkind)  :: C(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
          REAL(rkind)  :: KELEM(3,MNE), FLALL(3,MNE)
 !
 ! local parameter
+!
+!         IP_TEST = 20710 
+!         DFAK    = 100.
+         
+!         WRITE(*,*) IEND
+!
+         !AC2(1,:,IP_TEST) = 0.1
 !
          BL = ZERO
 !
@@ -743,7 +1062,7 @@
          DT4AI    = DT4A/ITER_EXP(IS,ID)
          DTSI(:)  = DT4AI/SI(:)
 
-         U(:) = AC2(IS,ID,:)
+         U = AC2(IS,ID,:)
          UL = U
 
 #ifdef MPI_PARALL_GRID
@@ -832,6 +1151,8 @@
                I1 = INE(1,IE)
                I2 = INE(2,IE)
                I3 = INE(3,IE)
+               NI = INE(:,IE)
+               U3 = U(NI) 
                IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE
@@ -851,6 +1172,14 @@
                ST(I1) = ST(I1) + THETA_ACE(1,IE) * TMP1! * (ONE - BL) + BL * THETA_L(1,IE)
                ST(I2) = ST(I2) + THETA_ACE(2,IE) * TMP1! * (ONE - BL) + BL * THETA_L(2,IE)
                ST(I3) = ST(I3) + THETA_ACE(3,IE) * TMP1! * (ONE - BL) + BL * THETA_L(3,IE)
+               IF (LGSE .AND. .FALSE.) THEN
+!                 ST(I1) = ST(I1) + DIFRM(I1)*DOT_PRODUCT(U3,IEND(:,1,IE))
+!                 ST(I2) = ST(I2) + DIFRM(I2)*DOT_PRODUCT(U3,IEND(:,2,IE))
+!                 ST(I3) = ST(I3) + DIFRM(I3)*DOT_PRODUCT(U3,IEND(:,3,IE))
+                 ST(I1) = ST(I1) + 0.005*DOT_PRODUCT(U3,IEND(:,1,IE))
+                 ST(I2) = ST(I2) + 0.005*DOT_PRODUCT(U3,IEND(:,2,IE))
+                 ST(I3) = ST(I3) + 0.005*DOT_PRODUCT(U3,IEND(:,3,IE))
+               ENDIF
             END DO
 
             !U = MAX(ZERO,UL-DTSI*ST*IOBWB)*IOBPD(ID,:)
@@ -862,7 +1191,7 @@
 #endif
          END DO  ! ----> End Iteration
 
-         AC2(IS,ID,:) = UL(:)
+         AC2(IS,ID,:) = U(:)
 
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
@@ -876,7 +1205,7 @@
      &       100.0_rkind-((SUMACt0-SUMAC2)/SUMACt0)*100.0_rkind,        &
      &       100.0_rkind-  ((SUMAC1-SUMAC2)/SUMAC1)*100.0_rkind
          END IF
-      END SUBROUTINE
+      END SUBROUTINE      
 !**********************************************************************
 !*
 !**********************************************************************
@@ -1980,7 +2309,7 @@
 
       INTEGER :: I, J, K
       INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-      INTEGER :: I1, I2, I3
+      INTEGER :: I1, I2, I3, IPPOS, NI(3), NIOLD(3), IPOS
       INTEGER :: CHILF(MNP), COUNT_MAX
       INTEGER :: ITMP(MNP)
       INTEGER :: POS_TRICK(3,2)
@@ -2096,7 +2425,7 @@
         CALL WWM_ABORT('Do Not Sleep Before solving the problem')
       ENDIF
 
-      ALLOCATE(IE_CELL(COUNT_MAX), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
+      ALLOCATE(IE_CELL(COUNT_MAX), IP_CON(MAXMNECON+1,MNP), CON_IP(MNP), POS_CELL(COUNT_MAX), IE_CELL2(MNP,MAXMNECON), POS_CELL2(MNP,MAXMNECON), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 5')
 ! Just a remapping from CELLVERTEX ... Element number in the
 ! order of the occurence in the loop during runtime
@@ -2116,6 +2445,27 @@
         END DO
       END DO
       DEALLOCATE(CELLVERTEX)
+
+      IP_CON = 0 
+      CON_IP = 0
+      DO IP = 1, MNP
+        J = 0 
+        DO I = 1, CCON(IP)
+          IE = IE_CELL2(IP,I)  
+          NI = INE(:,IE)
+          DO K = 1, 3
+            IF (NI(K) .NE. IP) THEN
+              IF (ANY(IP_CON(:,IP) .EQ. NI(K))) THEN
+                CYCLE
+              ELSE
+                J = J + 1
+                IP_CON(J,IP) = NI(K)
+              ENDIF
+            ENDIF
+          END DO 
+        END DO
+        CON_IP(IP) = J 
+      END DO
 
       CHECK_COMBIN_ORIENT=.TRUE.
       IF (CHECK_COMBIN_ORIENT) THEN

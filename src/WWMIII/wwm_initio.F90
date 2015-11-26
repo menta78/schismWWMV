@@ -30,10 +30,11 @@
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 3'
 !       FLUSH(STAT%FHNDL)
 
-       ALLOCATE( INE(3,MNE), IEN(6,MNE), TRIA(MNE), stat=istat)
+       ALLOCATE( INE(3,MNE), IEN(6,MNE), IEND(3,3,MNE), TRIA(MNE), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
        INE = 0
        IEN = zero
+       IEND = zero
        TRIA = zero
 #ifdef MPI_PARALL_GRID
 # ifdef PDLIB
@@ -526,11 +527,8 @@
       USE W3SRC4MD
 #endif
       IMPLICIT NONE
-!
       REAL(rkind)    :: TIME1, TIME2
-#if defined MPI_PARALL_GRID && !defined PDLIB
-      integer i,j
-#endif
+      integer        :: i,j
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)

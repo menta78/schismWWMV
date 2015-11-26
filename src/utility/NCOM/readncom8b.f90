@@ -1,16 +1,12 @@
 ! Read NRL/NCOM netcdf files
 !
 ! pturner 12-2004
-!
+! Added ivcor=1 by Joseph Z. (Dec 2013)
 ! X = longitude dimension is sampled in the salt and temp data files.
 ! Y = latitude dimension is sampled in the salt and temp data files.
 ! The level dimensions goes from 1 = surface, 40 = bottom.
 !
-! Compilation on amb1004 or amb6402:
-! ifort -g -O3 -Bstatic -o readncom8b_intel readncom8b.f90 -Vaxlib -I/usr/local/netcdf/include -L/usr/local/netcdf/lib -lnetcdf
-!
-! Compilation on canopus01:
-! ifort -g -O3 -Bstatic -o readncom8b_canopus readncom8b.f90 -Vaxlib -I/usr/local/include -L/usr/local/lib -lnetcdf
+! ifort -g -O3 -Bstatic -o readncom8b readncom8b.f90 -Vaxlib -I/usr/local/netcdf/include -L/usr/local/netcdf/lib -lnetcdf
 
 !zyl
 !   Input: 
@@ -84,14 +80,16 @@
       integer :: ixlen1, iylen1,ixlen2, iylen2 !reduced indices for CORIE grid to speed up interpolation
 !     integer :: i,j,k,i1,i2,i3,j1,j2,j3
       character(len=1) :: imodel
-
-      dimension xl(mnp),yl(mnp),nm(mne,4),dp(mnp),i34(mne)
+      integer :: elnode(4,mne),elside(4,mne)
+      integer :: isdel(2,mns)
+      dimension xl(mnp),yl(mnp),dp(mnp),i34(mne)
       dimension ztot(0:mnv),sigma(mnv),cs(mnv),z(mnp,mnv),iest(mnp),ixy(mnp,2),arco(3)
       dimension wild(100),wild2(100,2)
       dimension tempout(mnp,mnv), saltout(mnp,mnv),month_day(12)
       dimension tsd(mns,mnv),ssd(mns,mnv),tsel(mnv,mne,2)
-      dimension nne(mnp),ine(mnp,mnei),ic3(mne,4),nx(4,4,3),js(mne,4),is(mns,2),isidenode(mns,2)
+      dimension nne(mnp),indel(mnei,mnp),ic3(4,mne),nx(4,4,3),isidenode(2,mns)
       dimension xcj(mns),ycj(mns),nond(mnope),iond(mnope,mnond),iob(mnope),iond2(mnope*mnond)
+      allocatable :: sigma_lcl(:,:),kbp2(:)
 
 !     First statement
       itur=3 !for ELCIRC only
@@ -162,7 +160,7 @@
         stop
       endif
       do i=1,ne
-        read(14,*)j,i34(i),(nm(i,l),l=1,i34(i))
+        read(14,*)j,i34(i),(elnode(l,i),l=1,i34(i))
       enddo !i
 !     Open bnds
       read(14,*) nope
@@ -199,87 +197,106 @@
 
 !     V-grid
       if(imodel.eq."S") then !SELFE
-        read(19,*) nvrt,kz,h_s !kz>=1
-        if(nvrt>mnv.or.nvrt<3) then
-          write(11,*)'nvrt > mnv or nvrt<4'
-          stop
-        endif
-        if(kz<1.or.kz>nvrt-2) then
-          write(11,*)'Wrong kz:',kz
-          stop
-        endif
-        if(h_s<10) then
-          write(11,*)'h_s needs to be larger:',h_s
-          stop
-        endif
-
-!       # of z-levels excluding "bottom" at h_s
-        read(19,*) !for adding comment "Z levels"
-        do k=1,kz-1
-          read(19,*)j,ztot(k)
-          if(k>1.and.ztot(k)<=ztot(k-1).or.ztot(k)>=-h_s) then
-            write(11,*)'z-level inverted:',k
+        read(19,*) ivcor
+        if(ivcor==2) then !SZ
+          read(19,*) nvrt,kz,h_s !kz>=1
+          if(nvrt>mnv.or.nvrt<3) then
+            write(11,*)'nvrt > mnv or nvrt<4'
             stop
           endif
-        enddo !k
-        read(19,*) !level kz       
-!       In case kz=1, there is only 1 ztot(1)=-h_s
-        ztot(kz)=-h_s
-
-        nsig=nvrt-kz+1 !# of S levels (including "bottom" & f.s.)
-        read(19,*) !for adding comment "S levels"
-        read(19,*)h_c,theta_b,theta_f
-        if(h_c<5) then !large h_c to avoid 2nd type abnormaty
-          write(11,*)'h_c needs to be larger:',h_c
-          stop
-        endif
-        if(theta_b<0.or.theta_b>1) then
-          write(11,*)'Wrong theta_b:',theta_b
-          stop
-        endif
-        if(theta_f<=0) then 
-          write(11,*)'Wrong theta_f:',theta_f 
-          stop
-        endif
-!       Pre-compute constants
-        s_con1=sinh(theta_f)
-
-        sigma(1)=-1 !bottom
-        sigma(nsig)=0 !surface
-        read(19,*) !level kz
-        do k=kz+1,nvrt-1
-          kin=k-kz+1
-          read(19,*) j,sigma(kin)
-          if(sigma(kin)<=sigma(kin-1).or.sigma(kin)>=0) then
-            write(11,*)'Check sigma levels at:',k,sigma(kin),sigma(kin-1)
+          if(kz<1.or.kz>nvrt-2) then
+            write(11,*)'Wrong kz:',kz
             stop
           endif
-        enddo
-        read(19,*) !level nvrt
-        close(19)
+          if(h_s<10) then
+            write(11,*)'h_s needs to be larger:',h_s
+            stop
+          endif
 
-!       Compute C(s) and C'(s)
-        do k=1,nsig
-          cs(k)=(1-theta_b)*sinh(theta_f*sigma(k))/sinh(theta_f)+ &
-     &theta_b*(tanh(theta_f*(sigma(k)+0.5))-tanh(theta_f*0.5))/2/tanh(theta_f*0.5)
-        enddo !k=1,nvrt
-
-        do i=1,np
-          do k=kz,nvrt
-            kin=k-kz+1
-            hmod2=max(0.1,min(dp(i),h_s))
-            if(hmod2<=h_c) then
-              z(i,k)=sigma(kin)*hmod2
-            else
-              z(i,k)=h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
+!         # of z-levels excluding "bottom" at h_s
+          read(19,*) !for adding comment "Z levels"
+          do k=1,kz-1
+            read(19,*)j,ztot(k)
+            if(k>1.and.ztot(k)<=ztot(k-1).or.ztot(k)>=-h_s) then
+              write(11,*)'z-level inverted:',k
+              stop
             endif
           enddo !k
+          read(19,*) !level kz       
+!         In case kz=1, there is only 1 ztot(1)=-h_s
+          ztot(kz)=-h_s
 
-!         Z-levels; shallow pts have junk values
-          do k=1,kz-1
-            z(i,k)=ztot(k)
-          enddo !k
-        enddo !i
+          nsig=nvrt-kz+1 !# of S levels (including "bottom" & f.s.)
+          read(19,*) !for adding comment "S levels"
+          read(19,*)h_c,theta_b,theta_f
+          if(h_c<5) then !large h_c to avoid 2nd type abnormaty
+            write(11,*)'h_c needs to be larger:',h_c
+            stop
+          endif
+          if(theta_b<0.or.theta_b>1) then
+            write(11,*)'Wrong theta_b:',theta_b
+            stop
+          endif
+          if(theta_f<=0) then 
+            write(11,*)'Wrong theta_f:',theta_f 
+            stop
+          endif
+!         Pre-compute constants
+          s_con1=sinh(theta_f)
+
+          sigma(1)=-1 !bottom
+          sigma(nsig)=0 !surface
+          read(19,*) !level kz
+          do k=kz+1,nvrt-1
+            kin=k-kz+1
+            read(19,*) j,sigma(kin)
+            if(sigma(kin)<=sigma(kin-1).or.sigma(kin)>=0) then
+              write(11,*)'Check sigma levels at:',k,sigma(kin),sigma(kin-1)
+              stop
+            endif
+          enddo
+          read(19,*) !level nvrt
+          close(19)
+
+!         Compute C(s) and C'(s)
+          do k=1,nsig
+            cs(k)=(1-theta_b)*sinh(theta_f*sigma(k))/sinh(theta_f)+ &
+     &theta_b*(tanh(theta_f*(sigma(k)+0.5))-tanh(theta_f*0.5))/2/tanh(theta_f*0.5)
+          enddo !k=1,nvrt
+
+          do i=1,np
+            do k=kz,nvrt
+              kin=k-kz+1
+              hmod2=max(0.1,min(dp(i),h_s))
+              if(hmod2<=h_c) then
+                z(i,k)=sigma(kin)*hmod2
+              else
+                z(i,k)=h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
+              endif
+            enddo !k
+
+!           Z-levels; shallow pts have junk values
+            do k=1,kz-1
+              z(i,k)=ztot(k)
+            enddo !k
+          enddo !i
+        else if(ivcor==1) then !localized
+          read(19,*)nvrt
+          allocate(sigma_lcl(nvrt,np),kbp2(np))
+          do i=1,np
+            read(19,*)j,kbp2(i),sigma_lcl(kbp2(i):nvrt,i)
+          enddo !i
+
+          !z-coord.
+          do i=1,np
+            do k=kbp2(i),nvrt
+              z(i,k)=sigma_lcl(k,i)*max(0.1,dp(i))
+            enddo !k
+            z(i,1:kbp2(i)-1)=z(i,kbp2(i))
+          enddo !i
+        else
+          stop 'Unknow ivcor'
+        endif !ivcor
       else !ELCIRC
         read(19,*) nvrt,zmsl
         ztot(0)=-zmsl
@@ -342,25 +359,26 @@
 
       do i=1,ne
         do j=1,i34(i)
-          nd=nm(i,j)
+          nd=elnode(j,i)
           nne(nd)=nne(nd)+1
           if(nne(nd)>mnei) then
             write(11,*)'Too many neighbors',nd
             stop
           endif
-          ine(nd,nne(nd))=i
+          indel(nne(nd),nd)=i
         enddo
       enddo
 
 !     Compute ball info; this won't be affected by re-arrangement below
       do i=1,ne
         do j=1,i34(i)
-          ic3(i,j)=0 !index for bnd sides
-          nd1=nm(i,nx(i34(i),j,1))
-          nd2=nm(i,nx(i34(i),j,2))
+          ic3(j,i)=0 !index for bnd sides
+          nd1=elnode(nx(i34(i),j,1),i)
+          nd2=elnode(nx(i34(i),j,2),i)
           do k=1,nne(nd1)
-            ie=ine(nd1,k)
-            if(ie/=i.and.(nm(ie,1)==nd2.or.nm(ie,2)==nd2.or.nm(ie,3)==nd2.or.(i34(ie)==4.and.nm(ie,4)==nd2))) ic3(i,j)=ie
+            ie=indel(k,nd1)
+            if(ie/=i.and.(elnode(1,ie)==nd2.or.elnode(2,ie)==nd2.or.elnode(3,ie)==nd2.or.&
+     &        (i34(ie)==4.and.elnode(4,ie)==nd2))) ic3(j,i)=ie
           enddo !k
         enddo !j
       enddo !i
@@ -368,18 +386,18 @@
       ns=0 !# of sides
       do i=1,ne
         do j=1,i34(i)
-          nd1=nm(i,nx(i34(i),j,1))
-          nd2=nm(i,nx(i34(i),j,2))
-          if(ic3(i,j)==0.or.i<ic3(i,j)) then !new sides
+          nd1=elnode(nx(i34(i),j,1),i)
+          nd2=elnode(nx(i34(i),j,2),i)
+          if(ic3(j,i)==0.or.i<ic3(j,i)) then !new sides
             ns=ns+1
             if(ns>mns) then
               write(11,*)'Too many sides'
               stop
             endif
-            js(i,j)=ns
-            is(ns,1)=i
-            isidenode(ns,1)=nd1
-            isidenode(ns,2)=nd2
+            elside(j,i)=ns
+            isdel(1,ns)=i
+            isidenode(1,ns)=nd1
+            isidenode(2,ns)=nd2
             xcj(ns)=(xl(nd1)+xl(nd2))/2
             ycj(ns)=(yl(nd1)+yl(nd2))/2
 !            dps(ns)=(dp(nd1)+dp(nd2))/2
@@ -392,13 +410,13 @@
 !            snx(ns)=dcos(thetan)
 !            sny(ns)=dsin(thetan)
 
-            is(ns,2)=ic3(i,j) !bnd element => bnd side
-!           Corresponding side in element ic3(i,j)
-            if(ic3(i,j)/=0) then !old internal side
-              iel=ic3(i,j)
+            isdel(2,ns)=ic3(j,i) !bnd element => bnd side
+!           Corresponding side in element ic3(j,i)
+            if(ic3(j,i)/=0) then !old internal side
+              iel=ic3(j,i)
               index=0
               do k=1,i34(iel)
-                if(ic3(iel,k)==i) then
+                if(ic3(k,iel)==i) then
                   index=k
                   exit
                 endif
@@ -407,9 +425,9 @@
                 write(11,*)'Wrong ball info',i,j
                 stop
               endif
-              js(iel,index)=ns
-            endif !ic3(i,j).ne.0
-          endif !ic3(i,j)==0.or.i<ic3(i,j)
+              elside(index,iel)=ns
+            endif !ic3(j,i).ne.0
+          endif !ic3(j,i)==0.or.i<ic3(j,i)
         enddo !j=1,i34
       enddo !i=1,ne
 
@@ -520,11 +538,11 @@
 !      tfile = '/home/workspace/ccalmr6/nrldata/'//trim(yr)//'/t3d/t3d.glb8_2f_' // trim(yr) // trim(md) // '00.nc'
 
       if(ivartype==1) then !T,S
-        sfile='/home/workspace/ccalmr/nrldata_links/'//trim(yr)//'/s3d/s3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
-        tfile='/home/workspace/ccalmr/nrldata_links/'//trim(yr)//'/t3d/t3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        sfile='/sciclone/vims20/yinglong/NCOM/'//trim(yr)//'/s3d/s3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        tfile='/sciclone/vims20/yinglong/NCOM/'//trim(yr)//'/t3d/t3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
       else !U,V
-        sfile='/home/workspace/ccalmr/nrldata_links/'//trim(yr)//'/u3d/u3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
-        tfile='/home/workspace/ccalmr/nrldata_links/'//trim(yr)//'/v3d/v3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        sfile='/sciclone/vims20/yinglong/NCOM/'//trim(yr)//'/u3d/u3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
+        tfile='/sciclone/vims20/yinglong/NCOM/'//trim(yr)//'/v3d/v3d.glb8_2f_'//trim(yr)//trim(md)//'00.nc'
       endif
 
       print*, 'Trying to open nc files:',trim(sfile),trim(tfile)      
@@ -980,8 +998,8 @@
 !             I didn't do the same for them in this code; as long as 
 !             the order of writing is correct in hotstart.in, it does not matter
         do i=1,ns
-          n1=isidenode(i,1)
-          n2=isidenode(i,2)
+          n1=isidenode(1,i)
+          n2=isidenode(2,i)
           do k=1,nvrt
             tsd(i,k)=(tempout(n1,k)+tempout(n2,k))/2
             ssd(i,k)=(saltout(n1,k)+saltout(n2,k))/2
@@ -990,9 +1008,9 @@
         enddo !i
 
         do i=1,ne
-          n1=nm(i,1)
-          n2=nm(i,2)
-          n3=nm(i,3)
+          n1=elnode(1,i)
+          n2=elnode(2,i)
+          n3=elnode(3,i)
           do k=2,nvrt
             tsel(k,i,1)=(tempout(n1,k)+tempout(n2,k)+tempout(n3,k)+tempout(n1,k-1)+tempout(n2,k-1)+tempout(n3,k-1))/6
             tsel(k,i,2)=(saltout(n1,k)+saltout(n2,k)+saltout(n3,k)+saltout(n1,k-1)+saltout(n2,k-1)+saltout(n3,k-1))/6
@@ -1158,10 +1176,10 @@
 
       end program readNCOM
 
-      function signa(x1,x2,x3,y1,y2,y3)
-
-      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
-
-      return
-      end
+!      function signa(x1,x2,x3,y1,y2,y3)
+!
+!      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
+!
+!      return
+!      end
 

@@ -77,7 +77,8 @@
 
       character(len=48) :: start_time,version,data_format
       character(len=48) :: variable_nm,variable_dim
-      dimension xout(mnp),yout(mnp),nm(mne,4),dp(mnp),i34(mne),kbp00(mnp)
+      integer :: elnode(4,mne)
+      dimension xout(mnp),yout(mnp),dp(mnp),i34(mne),kbp00(mnp)
       dimension xl(mnp),yl(mnp)
       dimension ztot(0:mnv),sigma(mnv),cs(mnv),z(mnp,mnv)
       dimension vel(mnp,mnv,2)
@@ -434,12 +435,12 @@
             n4=n1+1
             if(n3>np) stop 'Overflow 1'
             if(2*ibox>ne) stop 'Overflow 2'
-            nm(2*ibox-1,1)=n1
-            nm(2*ibox-1,2)=n2
-            nm(2*ibox-1,3)=n3
-            nm(2*ibox,1)=n1
-            nm(2*ibox,2)=n3
-            nm(2*ibox,3)=n4
+            elnode(1,2*ibox-1)=n1
+            elnode(2,2*ibox-1)=n2
+            elnode(3,2*ibox-1)=n3
+            elnode(1,2*ibox)=n1
+            elnode(2,2*ibox)=n3
+            elnode(3,2*ibox)=n4
           enddo !j
         enddo !i
 !       Output hgrid.gr3 and hgrid.ll
@@ -454,8 +455,8 @@
           write(14,*)i,xout(i),yout(i),dp(i)
         enddo !i
         do i=1,ne
-          write(13,*)i,3,(nm(i,l),l=1,3)
-          write(14,*)i,3,(nm(i,l),l=1,3)
+          write(13,*)i,3,(elnode(l,i),l=1,3)
+          write(14,*)i,3,(elnode(l,i),l=1,3)
         enddo !i
         close(13)
         close(14)
@@ -560,7 +561,7 @@
           write(63,rec=irec+1)3
           irec=irec+1
           do mm=1,3
-            write(63,rec=irec+1)nm(m,mm)
+            write(63,rec=irec+1)elnode(mm,m)
             irec=irec+1
           enddo !mm
         enddo !m
@@ -690,12 +691,12 @@
 
       end program readNCOM
 
-      function signa(x1,x2,x3,y1,y2,y3)
-
-      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
-
-      return
-      end
+!      function signa(x1,x2,x3,y1,y2,y3)
+!
+!      signa=((x1-x3)*(y2-y3)-(x2-x3)*(y1-y3))/2
+!
+!      return
+!      end
 
       subroutine cpp(x,y,rlambda,phi,rlambda0,phi0)
 !      implicit real(kind=dbl_kind1)(a-h,o-z), integer(i-n)

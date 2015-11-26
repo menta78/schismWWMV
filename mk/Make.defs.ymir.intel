@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -77,7 +77,7 @@ endif
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSELFE is always on and is defined elsewhere
+# -DSCHISM is always on and is defined elsewhere
 
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -85,18 +85,16 @@ endif
 # MM5 in heat exchange model
 # PPFLAGS := $(PPFLAGS) -DMM5
 
-# TVD flag (turn off for performance)
-#  CHOOSE_TVD = yes
-#   EXEC := $(EXEC)_CHOOSE_TVD
+# TVD limiter options (set as one of these: SB, VL, OS, MM)
+# No default and so these 2 lines should NOT be commented out!
+ TVD_LIM = SB
+ EXEC := $(EXEC)_$(TVD_LIM)
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
 
 # Wind wave model WWM
 # USE_WWM = yes
-
-# Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
 
 # TIMOR 
 # USE_TIMOR = yes
@@ -175,12 +173,8 @@ endif
 
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 

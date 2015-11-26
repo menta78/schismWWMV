@@ -1,3 +1,17 @@
+!   Copyright 2014 College of William and Mary
+!
+!   Licensed under the Apache License, Version 2.0 (the "License");
+!   you may not use this file except in compliance with the License.
+!   You may obtain a copy of the License at
+!
+!     http://www.apache.org/licenses/LICENSE-2.0
+!
+!   Unless required by applicable law or agreed to in writing, software
+!   distributed under the License is distributed on an "AS IS" BASIS,
+!   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!   See the License for the specific language governing permissions and
+!   limitations under the License.
+
 !===============================================================================
 ! Read in binary outputs (rank-specific) from parallel code and combine them into
 ! one global output in v5.0 format. Works for partial outputs.
@@ -29,9 +43,10 @@ program read_iwrite1
   character(72) :: fgb,fgb2,fdb  ! Processor specific global output file name
   integer :: lfgb,lfdb       ! Length of processor specific global output file name
   character(len= 4) :: a_4
+  integer,allocatable :: elnode(:,:)
   allocatable ne(:),np(:),nsproc(:),ihot_len(:)
   allocatable ztot(:),sigma(:),outb(:,:,:),eta2(:)
-  allocatable i34(:),nm(:,:),nm2(:,:),js(:,:),xctr(:),yctr(:),dpe(:)
+  allocatable i34(:),nm2(:,:),xctr(:),yctr(:),dpe(:)
   allocatable x(:),y(:),dp(:),kbp00(:),iplg(:,:),ielg(:,:),kbp01(:,:)
   allocatable xcj(:),ycj(:),dps(:)
 !-------------------------------------------------------------------------------
@@ -51,7 +66,7 @@ program read_iwrite1
   close(10)
 
   allocate(x(np_global),y(np_global),dp(np_global),kbp00(np_global), &
-           np(0:nproc-1),ne(0:nproc-1),nm(ne_global,3),nm2(ne_global,3),eta2(np_global), &
+           np(0:nproc-1),ne(0:nproc-1),elnode(3,ne_global),nm2(ne_global,3),eta2(np_global), &
            ztot(nvrt),sigma(nvrt),outb(np_global,nvrt,2),ihot_len(0:nproc-1),stat=istat)
   if(istat/=0) stop 'Allocation error: x,y'
 
@@ -146,7 +161,7 @@ program read_iwrite1
           write(*,*)'Overflow:',m,mm,itmp
           stop
         endif
-        nm(iegb,mm)=iplg(irank,itmp)
+        elnode(mm,iegb)=iplg(irank,itmp)
       enddo !mm
     enddo !m
   enddo !irank=0,nproc-1
@@ -252,12 +267,12 @@ program read_iwrite1
       a_4 = transfer(source=3,mold=a_4)
       write(65,'(a4)',advance="no") a_4
       do mm=1,3
-        a_4 = transfer(source=nm(m,mm),mold=a_4)
+        a_4 = transfer(source=elnode(mm,m),mold=a_4)
         write(65,'(a4)',advance="no") a_4
       enddo !mm
     enddo !m
 
-    !print*, 'Last element:',nm(ne_global,1:3)
+    !print*, 'Last element:',elnode(1:3,ne_global)
     !end output header
 
     ! Loop over output spools in file

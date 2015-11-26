@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -77,7 +77,7 @@ endif
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSELFE is always on and is defined elsewhere
+# -DSCHISM is always on and is defined elsewhere
 
 # Precip/evaporation model
 # PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
@@ -85,85 +85,61 @@ endif
 # MM5 in heat exchange model
 # PPFLAGS := $(PPFLAGS) -DMM5
 
-# TVD flag (turn off for performance)
-#  CHOOSE_TVD = yes
-#   EXEC := $(EXEC)_CHOOSE_TVD
+# TVD limiter options (set as one of these: SB, VL, OS, MM)
+# No default and so these 2 lines should NOT be commented out!
+ TVD_LIM = SB
+ EXEC := $(EXEC)_$(TVD_LIM)
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
+# EXEC := $(EXEC)_GOTM
 
 # Wind wave model WWM
 # USE_WWM = yes
-
-# Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
-
-# TIMOR 
-# USE_TIMOR = yes
+# EXEC := $(EXEC)_WWM
 
 # Harmonic analysis tool
- USE_HA = yes
+# USE_HA = yes
+# EXEC := $(EXEC)_HA
 
-##### Select only _one_ model from below
+#####Tracer models
+# Generic (user defined) tracer model
+# USE_GEN = yes
+# EXEC := $(EXEC)_GEN
 
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
+# Age
+# USE_AGE = yes
+# EXEC := $(EXEC)_AGE
 
-# Or:
+# Sediment model (3D)
+# USE_SED = yes
+# EXEC := $(EXEC)_SED
+
 # Ecological model (EcoSim)
 # USE_ECO = yes
+# EXEC := $(EXEC)_ECO
 
-# Or:
 # CE-QUAL-ICM
 # USE_ICM = yes
+# EXEC := $(EXEC)_ICM
 
-# Or:
-# Sediment model 
-# USE_SED = yes
-
-# If you choose SED you should set the following algorithmic preferences
-
-  ##Bedload 
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
-
-  ##Bedload - MPM model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
-
-  ##slope formulation
-#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
-#  PPFLAGS := $(PPFLAGS) -DDELFT
-#  PPFLAGS := $(PPFLAGS) -DCARMO
-
-  ##Bedload - VR model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
-
-  ##Suspended load
-#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
-
-  ##boundary conditions for WENO
-  ## default strictly monotonic
-#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
-#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
-
-  ## Morphology
-#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
-
-  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
-#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
-
-  ##sediment density in eqstate
-#   PPFLAGS:= $(PPFLAGS) -DDENSED
-
-# Or:
-# Sediment model (2D)
-# #  USE_SED2D = yes
-
-# Or:
 # Oil spill model (not active)
 # USE_OIL = yes
+# EXEC := $(EXEC)_OIL
 
+# Ecological model - NAPZD Spitz (unavailable)
+# USE_NAPZD = yes
+# EXEC := $(EXEC)_NAPZD
+
+# TIMOR (not active yet)
+# USE_TIMOR = yes
+# EXEC := $(EXEC)_TIMOR
+
+####End of tracer models
+
+# Sediment model (2D)
+# USE_SED2D = yes
+# EXEC := $(EXEC)_SED2D
 
 #########  Compiler configuration related flags
 
@@ -175,12 +151,8 @@ endif
 
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 

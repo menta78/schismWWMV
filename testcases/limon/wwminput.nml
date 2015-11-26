@@ -72,7 +72,7 @@
  WBHS           = 4.00000000000000,  
  WBTP           = 8.00000000000000,  
  WBDM           = 90.0000000000000,  
- WBDS           = 20.0000000000000,  
+ WBDS           = 5.0000000000000,  
  WBSS           = 2.00000000000000,  
  WBDSMS         = 1.00000000000000,  
  WBGAUSS        = 0.100000000000000, 
@@ -161,7 +161,7 @@
  ICOMP          = 0,                 
  AMETHOD        = 1,                 
  SMETHOD        = 1,                 
- DMETHOD        = 0,                 
+ DMETHOD        = 2,                 
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
  MAXCFLTH       = 1.00000000000000,  
@@ -405,7 +405,6 @@
 /
 
 &NESTING
-L_WRITE = F,
 /
 
 &PETSCOPTIONS  

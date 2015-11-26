@@ -305,9 +305,19 @@ endif
 #o/$(config)/%.o: Hydro/%.F90 o/$(config)/.dummy o/$(config)/.depend
 #	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $< -o $@
 
-o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend	
-	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod, %.o, $@)
-	@touch $(patsubst %.o, %.mod, $@)
+# for some reason make version >= 3.81 create some cyclic dependency if a mod file depends on an object file
+# in the .depend list and one rule have multiple targets. plus the builtin  rule .mod.o:
+# workaround: split the multiple target rule into two rules
+
+#o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
+o/$(config)/%.o: %.F90 o/$(config)/.dummy o/$(config)/.depend
+	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod,%.o,$@)
+	@touch $(patsubst %.o,%.mod,$@)
+
+o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
+	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod,%.o,$@)
+	@touch $(patsubst %.o,%.mod,$@)
+
 
 
 
