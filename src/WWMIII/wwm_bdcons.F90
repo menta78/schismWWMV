@@ -2476,7 +2476,7 @@
       USE NETCDF
       implicit none
       logical, save :: IsInitDone = .FALSE.
-      character(len =256) :: FILE_NAME, PRE_FILE_NAME
+      character(len = 256) :: FILE_NAME, PRE_FILE_NAME
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUNDARY"
       integer iret, ncid, irec_dim, recs_his, var_id
       integer, save ::  ifile = 1

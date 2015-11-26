@@ -650,7 +650,6 @@
            real(rkind), dimension(:,:), pointer :: HOT_W
            integer, dimension(:), pointer :: BOUC_IE
            real(rkind), dimension(:,:), pointer :: BOUC_W
-           integer recs_his
          END TYPE NESTING_INFORMATION
          type(NESTING_INFORMATION), allocatable :: ListNestInfo(:)
          

@@ -1250,7 +1250,7 @@
       integer, intent(in) :: ncid, idx
       REAL(rkind), intent(IN) :: eTimeDay
       character (len = *), parameter :: CallFct="WRITE_NETCDF_TIME"
-      integer oceantimeday_id, oceantimestr_id, oceantime_id
+      integer var_id
       integer iret, I
       CHARACTER          :: eChar
       REAL(rkind) eTimeSec
@@ -1258,21 +1258,21 @@
       !
       CALL MJD2CT(eTimeDay,eTimeStr)
       eTimeSec=eTimeDay*DAY2SEC
-      iret=nf90_inq_varid(ncid, 'ocean_time', oceantime_id)
+      iret=nf90_inq_varid(ncid, 'ocean_time', var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
-      iret=nf90_put_var(ncid,oceantime_id,eTimeSec,start=(/idx/) )
+      iret=nf90_put_var(ncid,var_id,eTimeSec,start=(/idx/) )
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
       !
-      iret=nf90_inq_varid(ncid, 'ocean_time_day', oceantimeday_id)
+      iret=nf90_inq_varid(ncid, 'ocean_time_day', var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
-      iret=nf90_put_var(ncid,oceantimeday_id,eTimeDay,start=(/idx/) )
+      iret=nf90_put_var(ncid, var_id,eTimeDay,start=(/idx/) )
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
       !
-      iret=nf90_inq_varid(ncid, 'ocean_time_str', oceantimestr_id)
+      iret=nf90_inq_varid(ncid, 'ocean_time_str', var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
       DO i=1,15
         eChar=eTimeStr(i:i)
-        iret=nf90_put_var(ncid,oceantimestr_id,eChar,start=(/i, idx/) )
+        iret=nf90_put_var(ncid, var_id,eChar,start=(/i, idx/) )
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
       END DO
       END SUBROUTINE
