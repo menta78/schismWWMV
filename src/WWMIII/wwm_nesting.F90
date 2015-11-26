@@ -297,8 +297,11 @@
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
-        FILERET = ListPrefix(iGrid) // '_boundary.nc'
-        nbTime=-1 
+        FILERET = TRIM(ListPrefix(iGrid)) // '_boundary.nc'
+        Print *, 'FILERET=', TRIM(FILERET)
+        nbTime=-1
+        Print *, 'L_BOUC_PARAM=', L_BOUC_PARAM
+        Print *, 'L_BOUC_SPEC=', L_BOUC_SPEC
         CALL WRITE_NETCDF_BOUND_HEADERS_1(FILERET, nbTime, np_write, nbBound, L_BOUC_PARAM, L_BOUC_SPEC)
         CALL WRITE_NETCDF_BOUND_HEADERS_2(FILERET, np_write, ListNestInfo(iGrid) % IOBPtotal, nbBound, ListNestInfo(iGrid) % IWBNDLC)
         IF (L_BOUC_PARAM) THEN

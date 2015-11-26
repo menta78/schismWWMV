@@ -2390,14 +2390,14 @@
       iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       !
-      IF (BOUC_NETCDF_OUT_PARAM) THEN
+      IF (BOUC_PARAM) THEN
         iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 21, iret)
         iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 22, iret)
       END IF
       !
-      IF (BOUC_NETCDF_OUT_SPECTRA) THEN
+      IF (BOUC_SPEC) THEN
         iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ nfreq_dims, ndir_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 23, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
