@@ -735,6 +735,7 @@
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
       integer nbPassive
+      WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
       WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
       WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
       WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
@@ -742,10 +743,12 @@
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 3')
-          CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
         END IF
         InitCFLadvgeo=.TRUE.
         NumberOperationJGS = 0
+        IF (LCALC) THEN
+          CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
+        END IF
       END IF
 
 #ifdef TIMINGS
