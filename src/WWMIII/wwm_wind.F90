@@ -675,6 +675,7 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+
       IXs=-1
       IYs=-1
       DO IX=1,nx-1
@@ -688,6 +689,7 @@
         END DO
       END DO
       aShift=1
+
       DO
         IXmin=max(1, IXs - aShift)
         IYmin=max(1, IYs - aShift)
@@ -745,22 +747,28 @@
         END IF
         aShift=aShift + 1
       END DO
-      IF (EXTRAPO_IN .eqv. .FALSE.) THEN
-        WRITE(STAT % FHNDL,*) 'aShift=', aShift
-        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
-        FLUSH(STAT % FHNDL)
-        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
-      ELSE
-        eCF_IX = IXs
-        eCF_IY = IYs
-        eCF_COEFF(1)=1
-        eCF_COEFF(2)=0
-        eCF_COEFF(3)=0
-        eCF_COEFF(4)=0
-        EXTRAPO_OUT=.TRUE.
-        WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
-        WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
-      END IF
+
+      IF (EXTRAPO_IN) THEN
+        IF (EXTRAPO_OUT) THEN
+          eCF_IX = IXs
+          eCF_IY = IYs
+          eCF_COEFF(1)=1
+          eCF_COEFF(2)=0
+          eCF_COEFF(3)=0
+          eCF_COEFF(4)=0
+          EXTRAPO_OUT=.TRUE.
+          WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
+          WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
+        ENDIF 
+      ELSE 
+        IF (EXTRAPO_OUT) THEN
+          WRITE(STAT % FHNDL,*) 'aShift=', aShift
+          WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
+          FLUSH(STAT % FHNDL)
+          CALL WWM_ABORT('We find a model point outside of the available forcing grid')
+        ENDIF
+      ENDIF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
