@@ -739,6 +739,7 @@
               eCF_COEFF(2)=a*(1-b)
               eCF_COEFF(3)=(1-a)*b
               eCF_COEFF(4)=a*b
+              RETURN
             END IF
           END DO
         END DO
@@ -749,26 +750,21 @@
       END DO
 
       IF (EXTRAPO_IN) THEN
-        IF (EXTRAPO_OUT) THEN
-          eCF_IX = IXs
-          eCF_IY = IYs
-          eCF_COEFF(1)=1
-          eCF_COEFF(2)=0
-          eCF_COEFF(3)=0
-          eCF_COEFF(4)=0
-          EXTRAPO_OUT=.TRUE.
-          WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
-          WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
-        ENDIF 
+        EXTRAPO_OUT=.TRUE.
+        eCF_IX = IXs
+        eCF_IY = IYs
+        eCF_COEFF(1)=1
+        eCF_COEFF(2)=0
+        eCF_COEFF(3)=0
+        eCF_COEFF(4)=0
+        WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
+        WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
       ELSE 
-        IF (EXTRAPO_OUT) THEN
-          WRITE(STAT % FHNDL,*) 'aShift=', aShift
-          WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
-          FLUSH(STAT % FHNDL)
-          CALL WWM_ABORT('We find a model point outside of the available forcing grid')
-        ENDIF
+        WRITE(STAT % FHNDL,*) 'aShift=', aShift
+        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
+        FLUSH(STAT % FHNDL)
+        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
       ENDIF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
