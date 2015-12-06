@@ -982,7 +982,7 @@
         CALL WWM_ABORT('Compile with GRIB_API for IBOUNDFORMAT=5')
 #endif
       END IF
-      IF ((IBOUNDFORMAT .eq. 4).or.(IBOUNDFORMAT .eq. 5).or.LEXPORT_BOUC_WW3.or.BOUC_NETCDF_OUT_PARAM.or.BOUC_NETCDF_OUT_SPECTRA) THEN
+      IF ((IBOUNDFORMAT .eq. 4).or.(IBOUNDFORMAT .eq. 5).or.LEXPORT_BOUC_MOD_OUT.or.BOUC_NETCDF_OUT_PARAM.or.BOUC_NETCDF_OUT_SPECTRA) THEN
 #ifdef MPI_PARALL_GRID
         CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
 #endif
@@ -1002,7 +1002,7 @@
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
             END IF
           END IF 
-          IF (LBCSP .or. LEXPORT_BOUC_WW3 .or. BOUC_NETCDF_OUT_SPECTRA) THEN
+          IF (LBCSP .or. LEXPORT_BOUC_MOD_OUT .or. BOUC_NETCDF_OUT_SPECTRA) THEN
             IF (.NOT. ALLOCATED(WBAC_GL)) THEN
               allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
@@ -1010,7 +1010,7 @@
           END IF
         END IF
       END IF
-!      WRITE(STAT%FHNDL, *) 'LEXPORT_BOUC_WW3=', LEXPORT_BOUC_WW3
+!      WRITE(STAT%FHNDL, *) 'LEXPORT_BOUC_MOD_OUT=', LEXPORT_BOUC_MOD_OUT
 !      WRITE(STAT%FHNDL, *) 'IWBMNP=', IWBMNP
 !      WRITE(STAT%FHNDL, *) 'allocated(WBAC)=', allocated(WBAC)
 !      WRITE(STAT%FHNDL, *) 'allocated(WBAC_GL)=', allocated(WBAC_GL)

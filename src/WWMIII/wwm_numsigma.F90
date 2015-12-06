@@ -32,24 +32,23 @@
            CALL PROPSIGMA(IP,CAS)
            DO ID = 1, MDC
              ACQ(1:MSC)  = AC2(:,ID,IP)
-             CASS(1:MSC) = CAS(:,ID)
              CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND(1:MSC))
-             REST    = ABS(MOD(CFLCAS,ONE))
              IF (ISEQ0(CFLCAS)) CYCLE
-             REST  = ABS(MOD(CFLCAS,ONE))
+             REST    = ABS(MOD(CFLCAS,ONE))
              IF (REST .GT. THR .AND. REST .LT. 0.5) THEN
                ITER = ABS(NINT(CFLCAS)) + 1
              ELSE
                ITER = ABS(NINT(CFLCAS))
              END IF
              DT4FI = DT4F / MyREAL(ITER)
+             CASS(1:MSC) = CAS(:,ID)
+             CASS(0)     = 0.!MIN(0._rkind,CASS(1))
+             CASS(MSC+1) = CASS(MSC) ! spectral tail to define gradient for the outgoing flux
              DO IT = 1, ITER ! Iteration
                ACQ(0)      = ACQ(1)
-               CASS(0)     = 0.!MIN(0._rkind,CASS(1))
 ! Flux at the lower boundary ... no incoming flux.
 ! zero gradient outgoing flux....
                ACQ(MSC+1)  = ACQ(MSC) * PTAIL(5)
-               CASS(MSC+1) = CASS(MSC) ! spectral tail to define gradient for the outgoing flux
                CALL QUICKEST_FREQ(MSC,ACQ,CASS,DT4FI,DS_BAND,DS_INCR)
              END DO ! end Interation
 !             IF (LITERSPLIT) THEN
@@ -89,22 +88,20 @@
         CALL PROPSIGMA(IP,CAS)
         DO ID = 1, MDC
           ACQ(1:MSC)  = AC2(:,ID,IP)
-          CASS(1:MSC) = CAS(:,ID)
-          CASS(0)     = 0.
-          CASS(MSC+1) = CASS(MSC)
-
-          CP = MAX(ZERO,CASS)
-          CM = MIN(ZERO,CASS)
           CFLCAS  = MAXVAL(ABS(CAS(:,ID))*DT4F/DS_BAND(1:MSC))
-          REST    = ABS(MOD(CFLCAS,ONE))
           IF (ISEQ0(CFLCAS)) CYCLE
-          REST  = ABS(MOD(CFLCAS,ONE))
+          REST    = ABS(MOD(CFLCAS,ONE))
           IF (REST .GT. THR .AND. REST .LT. 0.5) THEN
             ITER = ABS(NINT(CFLCAS)) + 1
           ELSE
             ITER = ABS(NINT(CFLCAS))
           END IF
           DT4FI = DT4F / MyREAL(ITER)
+          CASS(1:MSC) = CAS(:,ID)
+          CASS(0)     = 0.
+          CASS(MSC+1) = CASS(MSC)
+          CP = MAX(ZERO,CASS)
+          CM = MIN(ZERO,CASS)
           DO IT = 1, ITER
             ACQ(0)      = ACQ(1)
             ACQ(MSC+1)  = ACQ(MSC) * PTAIL(5)
