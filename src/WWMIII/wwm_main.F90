@@ -58,7 +58,7 @@
          REAL(rkind)        :: T1, T2
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 
-         INTEGER     :: I, IP, IT_SCHISM, K, IFILE, IT
+         INTEGER     :: I, IP, IT_SCHISM, K
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
@@ -192,8 +192,6 @@
            CALL SCHISM_NANCHECK_INPUT_A
          END IF
 
-         IFILE = 1
-         IT    = 1
          IF (LBCSE) THEN
            CALL SET_WAVE_BOUNDARY_CONDITION
          END IF
@@ -319,7 +317,6 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
-
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
          CALL FLUSH(STAT%FHNDL)
 #endif
@@ -613,7 +610,7 @@
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-        CALL WAV_ocnAwav_import(K,IFILE,IT)
+        CALL WAV_ocnAwav_import(K)
       END IF
       IF (K == 1) CALL INITIAL_CONDITION
 #endif
@@ -743,7 +740,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: j,k, IP
+      integer :: j,k
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
       FLUSH(740+MyRankGlobal)
