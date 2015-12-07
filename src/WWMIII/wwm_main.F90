@@ -444,11 +444,11 @@
       RTIME = MAIN%TMJD - MAIN%BMJD
 
 #ifndef SCHISM
-#if defined WWM_MPI
+# if defined WWM_MPI
       IF (myrank.eq.0) WRITE(*,101)  K, MAIN%ISTP, RTIME
-#else
+# else
       WRITE(*,101)  K, MAIN%ISTP, RTIME
-#endif 
+# endif 
 #endif
       CALL IO_2(K)
 !      CALL Print_SumAC2("After IO_2")
@@ -464,8 +464,6 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME6)
 #endif
-
-      IF (.NOT. LDIFR) LCALC = .FALSE.
 
       CALL MJD2CT(MAIN%TMJD, CTIME)
 
@@ -565,8 +563,6 @@
 #endif
       FLUSH(STAT%FHNDL)
       CALL IO_2(K)
-      IF (.NOT. LDIFR) LCALC = .FALSE.
-
 101   FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
       END SUBROUTINE
 !**********************************************************************
@@ -730,7 +726,7 @@
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND
+      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND, LCALC
 # ifdef MPI_PARALL_GRID
       USE datapool, only: comm, myrank, ierr, nproc,            &
      &      parallel_finalize
@@ -810,6 +806,7 @@
         ELSE
           CALL UN_STEADY(K)
         END IF
+        LCALC=.FALSE.
       END DO
 
 #ifdef TIMINGS

@@ -219,9 +219,6 @@
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
-
-        IF (.NOT. LDIFR) LCALC = .FALSE.
-
 !        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,AC2(137,:,:),10,MSC,MDC,'BEFORE ANY CALL')
       END SUBROUTINE
 !**********************************************************************

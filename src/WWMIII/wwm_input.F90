@@ -1508,13 +1508,12 @@
           CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR, MULTIPLE_IN_CURR)
           DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
           SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
-          LCALC = .TRUE.
         END IF
         CURTXY = CURTXY + DVCURT
+        LCALC = .TRUE.
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
 #ifdef NCDF
-!        Print *, 'Begin ICURRFORMAT = 2'
         IF (K.EQ.1) THEN
           REC1_curr_old = 0
           REC2_curr_old = 0
@@ -1533,7 +1532,7 @@
         END IF
         REC1_curr_old = REC1_curr_new
         REC2_curr_old = REC2_curr_new
-!        Print *, 'End ICURRFORMAT = 2'
+        LCALC = .TRUE.
 #else
         CALL WWM_ABORT('Need to compile with netcdf for ICURRFORMAT = 2')
 #endif
@@ -1625,11 +1624,11 @@
           CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
           DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
           SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-          LCALC = .TRUE.
         END IF
         WATLEVOLD = WATLEV
         WATLEV    = WATLEV + DVWALV
         DEPDT     = DVWALV / MAIN%DELT
+        LCALC = .TRUE.
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
@@ -1658,6 +1657,7 @@
         END IF
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
+        LCALC = .TRUE.
 #else
         CALL WWM_ABORT('Need to compile with netcdf for IWATLVFORMAT = 2')
 #endif
