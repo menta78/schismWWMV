@@ -120,7 +120,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 0) THEN ! No interaction at all 
            WLDEP       = DEP8
            WATLEV      = ZERO 
@@ -130,7 +129,6 @@
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE. 
          ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -140,7 +138,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ZERO
@@ -150,7 +147,6 @@
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -160,7 +156,6 @@
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ETA2
@@ -170,7 +165,6 @@
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -180,7 +174,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -190,8 +183,8 @@
            CURTXY(:,2) = UU2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          END IF
+         LCALC       = .TRUE.
 
          DEPDT = (WATLEV - WATLEVOLD) / DT_SCHISM0
 
