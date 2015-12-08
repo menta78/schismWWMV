@@ -700,7 +700,7 @@ MODULE WWMaOCN_PGMCL
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WAV_ocnAwav_import(K,IFILE,IT)
+      SUBROUTINE WAV_ocnAwav_import(K)
       USE pgmcl_library
       USE datapool
 #  ifdef ROMS_WWM_PGMCL_COUPLING
@@ -710,7 +710,7 @@ MODULE WWMaOCN_PGMCL
       USE coupling_var
 #  endif
       implicit none
-      INTEGER, INTENT(IN) :: K,IFILE,IT
+      INTEGER, INTENT(IN) :: K
       integer IP, kLev, i, idx
       real(rkind) u1, v1, u2, v2, z1
 # ifdef DEBUG

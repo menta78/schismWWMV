@@ -675,7 +675,8 @@
          LOGICAL     :: EXTRAPOLATION_ALLOWED
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
-     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO
+     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO,        &
+     &      MODEL_OUT_TYPE
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
      &      LETOT, NLVT, DTCOUP, IMET_DRY
@@ -683,7 +684,7 @@
          NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
      &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
      &      LOPTSIG, CART2LATLON, LATLON2CART, APPLY_DXP_CORR,          &
-     &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_WW3
+     &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_MOD_OUT
 
          NAMELIST /INIT/ LHOTR, LINID, INITSTYLE
 
@@ -697,23 +698,23 @@
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
      &      EXTRAPOLATION_ALLOWED,                                      &
      &      HACK_HARD_SET_IOBP,                                         &
-     &      NETCDF_IN_FILE, LEXPORT_BOUC_WW3, EXPORT_BOUC_DELTC
+     &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
      &      GRIB_FILE_TYPE, EXTRAPOLATION_ALLOWED, USE_STEPRANGE,       &
-     &      MULTIPLE_IN, LEXPORT_WIND_WW3, EXPORT_WIND_DELTC,           &
+     &      MULTIPLE_IN, LEXPORT_WIND_MOD_OUT, EXPORT_WIND_DELTC,       &
      &      LSAVE_INTERP_ARRAY
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
      &      LERGINP, CURFAC, ICURRFORMAT, MULTIPLE_IN,                  &
-     &      LEXPORT_CURR_WW3, EXPORT_CURR_DELTC
+     &      LEXPORT_CURR_MOD_OUT, EXPORT_CURR_DELTC
 
          NAMELIST /WALV/ LSEWL, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERWL, LSTWL, LCWLV, CWATLV, FILEWATL, LERGINP,          &
-     &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN, LEXPORT_WALV_WW3,       &
+     &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN, LEXPORT_WALV_MOD_OUT,   &
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
@@ -1507,13 +1508,12 @@
           CALL CSEVAL( CUR%FHNDL, CUR%FNAME, .TRUE., 2, TMP_CUR, MULTIPLE_IN_CURR)
           DVCURT=(TMP_CUR - CURTXY)/SECU%DELT*MAIN%DELT
           SECU%TMJD = SECU%TMJD + SECU%DELT*SEC2DAY
-          LCALC = .TRUE.
         END IF
         CURTXY = CURTXY + DVCURT
+        LCALC = .TRUE.
       END IF
       IF (ICURRFORMAT .eq. 2) THEN
 #ifdef NCDF
-!        Print *, 'Begin ICURRFORMAT = 2'
         IF (K.EQ.1) THEN
           REC1_curr_old = 0
           REC2_curr_old = 0
@@ -1532,7 +1532,7 @@
         END IF
         REC1_curr_old = REC1_curr_new
         REC2_curr_old = REC2_curr_new
-!        Print *, 'End ICURRFORMAT = 2'
+        LCALC = .TRUE.
 #else
         CALL WWM_ABORT('Need to compile with netcdf for ICURRFORMAT = 2')
 #endif
@@ -1624,11 +1624,11 @@
           CALL CSEVAL( WAT%FHNDL, WAT%FNAME, .TRUE., 1, TMP_WAT, MULTIPLE_IN_WATLEV)
           DVWALV=(TMP_WAT - WATLEV)/SEWL%DELT*MAIN%DELT
           SEWL%TMJD = SEWL%TMJD + SEWL%DELT*SEC2DAY
-          LCALC = .TRUE.
         END IF
         WATLEVOLD = WATLEV
         WATLEV    = WATLEV + DVWALV
         DEPDT     = DVWALV / MAIN%DELT
+        LCALC = .TRUE.
       END IF
       IF (IWATLVFORMAT .eq. 2) THEN
 #ifdef NCDF
@@ -1657,6 +1657,7 @@
         END IF
         REC1_watlev_old = REC1_watlev_new
         REC2_watlev_old = REC2_watlev_new
+        LCALC = .TRUE.
 #else
         CALL WWM_ABORT('Need to compile with netcdf for IWATLVFORMAT = 2')
 #endif

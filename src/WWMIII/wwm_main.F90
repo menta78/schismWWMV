@@ -58,7 +58,7 @@
          REAL(rkind)        :: T1, T2
          REAL(rkind)        :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7
 
-         INTEGER     :: I, IP, IT_SCHISM, K, IFILE, IT
+         INTEGER     :: I, IP, IT_SCHISM, K
          REAL(rkind) :: DT_PROVIDED
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
          character(LEN=15) :: CALLFROM
@@ -120,7 +120,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 0) THEN ! No interaction at all 
            WLDEP       = DEP8
            WATLEV      = ZERO 
@@ -130,7 +129,6 @@
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE. 
          ELSE IF (icou_elfe_wwm == 2) THEN ! Currents and water levels in wwm but no radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -140,7 +138,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 3) THEN ! No current and no water levels in wwm but radiation stress in SCHISM
            WLDEP       = DEP8
            WATLEV      = ZERO
@@ -150,7 +147,6 @@
            CURTXY(:,2) = ZERO !REAL(rkind)(VV2(NVRT,:))
            LSECU       = .FALSE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 4) THEN ! No current but water levels in wwm and radiation stresss in SCHISM
            WLDEP       = DEP8
            WATLEV      = ETA2
@@ -160,7 +156,6 @@
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 5) THEN ! No current but water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ETA2
@@ -170,7 +165,6 @@
            CURTXY(:,2) = 0.!UU2(NVRT,:) 
            LSECU       = .FALSE.
            LSEWL       = .TRUE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 6) THEN ! Currents but no water levels in wwm and radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -180,7 +174,6 @@
            CURTXY(:,2) = VV2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          ELSE IF (icou_elfe_wwm == 7) THEN ! Currents but no water levels in wwm and no radiation stress in SCHISM  
            WLDEP       = DEP
            WATLEV      = ZERO
@@ -190,8 +183,8 @@
            CURTXY(:,2) = UU2(NVRT,:)
            LSECU       = .TRUE.
            LSEWL       = .FALSE.
-           LCALC       = .TRUE.
          END IF
+         LCALC       = .TRUE.
 
          DEPDT = (WATLEV - WATLEVOLD) / DT_SCHISM0
 
@@ -199,8 +192,6 @@
            CALL SCHISM_NANCHECK_INPUT_A
          END IF
 
-         IFILE = 1
-         IT    = 1
          IF (LBCSE) THEN
            CALL SET_WAVE_BOUNDARY_CONDITION
          END IF
@@ -326,7 +317,6 @@
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
-
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
          CALL FLUSH(STAT%FHNDL)
 #endif
@@ -451,11 +441,11 @@
       RTIME = MAIN%TMJD - MAIN%BMJD
 
 #ifndef SCHISM
-#if defined WWM_MPI
+# if defined WWM_MPI
       IF (myrank.eq.0) WRITE(*,101)  K, MAIN%ISTP, RTIME
-#else
+# else
       WRITE(*,101)  K, MAIN%ISTP, RTIME
-#endif 
+# endif 
 #endif
       CALL IO_2(K)
 !      CALL Print_SumAC2("After IO_2")
@@ -471,8 +461,6 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME6)
 #endif
-
-      IF (.NOT. LDIFR) LCALC = .FALSE.
 
       CALL MJD2CT(MAIN%TMJD, CTIME)
 
@@ -572,8 +560,6 @@
 #endif
       FLUSH(STAT%FHNDL)
       CALL IO_2(K)
-      IF (.NOT. LDIFR) LCALC = .FALSE.
-
 101   FORMAT ('+STEP = ',I5,'/',I5,' ( TIME = ',F15.4,'HR )')
       END SUBROUTINE
 !**********************************************************************
@@ -624,7 +610,7 @@
 #endif
 #ifdef ROMS_WWM_PGMCL_COUPLING
       IF ( K-INT(K/MAIN%ICPLT)*MAIN%ICPLT .EQ. 0 ) THEN
-        CALL WAV_ocnAwav_import(K,IFILE,IT)
+        CALL WAV_ocnAwav_import(K)
       END IF
       IF (K == 1) CALL INITIAL_CONDITION
 #endif
@@ -737,7 +723,7 @@
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND
+      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND, LCALC
 # ifdef MPI_PARALL_GRID
       USE datapool, only: comm, myrank, ierr, nproc,            &
      &      parallel_finalize
@@ -754,7 +740,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: j,k, IP
+      integer :: j,k
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
       FLUSH(740+MyRankGlobal)
@@ -817,6 +803,7 @@
         ELSE
           CALL UN_STEADY(K)
         END IF
+        LCALC=.FALSE.
       END DO
 
 #ifdef TIMINGS
