@@ -696,7 +696,7 @@
         iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         !
-        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
+        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_total, 1 /))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
         !
         iret = nf90_close(ncid)
