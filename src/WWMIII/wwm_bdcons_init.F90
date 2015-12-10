@@ -392,7 +392,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE EXPORT_GRID_ROUTINE
+      SUBROUTINE EXPORT_BOUNDARY_POINT
       USE DATAPOOL
       IMPLICIT NONE
       character(len=100), parameter :: eFileWAM = "system_bnd_wam.dat"
@@ -407,7 +407,7 @@
 #ifdef MPI_PARALL_GRID
       END IF
 #endif
-      END SUBROUTINE EXPORT_GRID_ROUTINE
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -433,7 +433,7 @@
 #else
       CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
 #endif
-      CALL EXPORT_GRID_ROUTINE
+      CALL EXPORT_BOUNDARY_POINT
       END SUBROUTINE READ_IOBP_TOTAL
 !**********************************************************************
 !*                                                                    *
