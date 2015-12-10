@@ -369,10 +369,37 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GRID_EXPORT_WAM(eFileOut, FieldExport)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=100), intent(in) :: eFileOut
+      real(rkind), intent(in) :: FieldExport(np_total)
+      real(rkind), allocatable :: XPout(:), YPout(:)
+      logical LFLIVE
+      CHARACTER(LEN=512) :: ErrMsg
+      INQUIRE( FILE = TRIM(eFileOut), EXIST = LFLIVE )
+      IF (LFLIVE) THEN
+         WRITE(ErrMsg,10) TRIM(eFileOut)
+10       FORMAT('GRID_EXPORT_WAM: Please remove file before overwrite file = ', a)
+         CALL WWM_ABORT(ErrMsg)
+      END IF
+      IF (LSPHE) THEN
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPtotal, YPtotal, FieldExport, INEtotal)
+      ELSE
+        allocate(XPout(np_total), YPout(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+        XPout = XPtotal / 111111.
+        YPout = YPtotal / 111111.
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPout, YPout, FieldExport, INEtotal)
+        deallocate(XPout, YPout)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE GRID_EXPORT_FUNCTION
       USE DATAPOOL
       IMPLICIT NONE
-      real(rkind), allocatable :: XPout(:), YPout(:)
       character(len=*), parameter :: eFile = "system_wam.dat"
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
@@ -382,15 +409,7 @@
             CALL EXPORT_GRID_WW3_FORMAT
           END IF
           IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
-            IF (LSPHE) THEN
-              CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, np_total, ne_total, XPtotal, YPtotal, DEPtotal, INEtotal)
-            ELSE
-              allocate(XPout(np_total), YPout(np_total), stat=istat)
-              IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
-              XPout = XPtotal / 111111.
-              YPout = YPtotal / 111111.
-              CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, np_total, ne_total, XPout, YPout, DEPtotal, INEtotal)
-            END IF
+            CALL GRID_EXPORT_WAM(eFile, DEPtotal)
           END IF
         END IF
 #ifdef MPI_PARALL_GRID

@@ -392,6 +392,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE EXPORT_GRID_ROUTINE
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=100), parameter :: eFileWAM = "system_bnd_wam.dat"
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (LEXPORT_GRID_MOD_OUT) THEN
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
+            CALL GRID_EXPORT_WAM(eFileWAM, IOBPtotal)
+          END IF
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE EXPORT_GRID_ROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_IOBP_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
@@ -414,7 +433,8 @@
 #else
       CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
 #endif
-      END SUBROUTINE
+      CALL EXPORT_GRID_ROUTINE
+      END SUBROUTINE READ_IOBP_TOTAL
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
