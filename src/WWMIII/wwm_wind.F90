@@ -500,7 +500,7 @@
         END IF
       END IF
 # else
-      CF_IX=CF_IX_GLOGAL
+      CF_IX=CF_IX_GLOBAL
       CF_IY=CF_IY_GLOBAL
       CF_COEFF=CF_COEFF_GLOBAL
       deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)

@@ -1445,9 +1445,9 @@
       REAL(rkind) :: HS,TM01,TM02,KLM,WLM,TM10
       REAL(rkind) :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
       REAL(rkind) :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
-      REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
-      REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
-      REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+      REAL(rkind) :: STOKESSURFX,STOKESSURFY
+      REAL(rkind) :: STOKESBAROX,STOKESBAROY
+      REAL(rkind) :: STOKESBOTTX,STOKESBOTTY
       REAL(rkind) :: eWindMag
       OUTPAR    = ZERO
 
@@ -2119,9 +2119,11 @@
 !*  Init the MPI arrays                                               *
 !**********************************************************************
       SUBROUTINE COLLECT_OUTT_ARRAY
+      USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), allocatable :: OUTT_LOC(:,:)
       REAL(rkind)              :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
+      integer IP
 # ifdef MPI_PARALL_GRID
       logical, save :: IsMPIarrayInitialized = .FALSE.
       integer iProc, IPglob
