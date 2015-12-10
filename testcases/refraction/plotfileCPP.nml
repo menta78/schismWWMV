@@ -4,11 +4,11 @@
  DELTC = 5,
  UNITC = "SEC", 
  ENDTC = "20000101.003000", 
- GridFile = "WW3_output.nc", 
- HisPrefix = "WW3_output.nc", 
- PicPrefix = "WW3_plot/"
+ GridFile = "WWM_output.nc", 
+ HisPrefix = "WWM_output.nc", 
+ PicPrefix = "WWM_plot/"
  Extension="png",
- KeepNC_NCL = T,
+ KeepNC_NCL = F,
 /
 
 &PLOT

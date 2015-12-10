@@ -395,7 +395,7 @@
       SUBROUTINE EXPORT_BOUNDARY_POINT
       USE DATAPOOL
       IMPLICIT NONE
-      character(len=100), parameter :: eFileWAM = "system_bnd_wam.dat"
+      character(len=100), parameter :: eFileWAM = "system_wam_bnd.dat"
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif

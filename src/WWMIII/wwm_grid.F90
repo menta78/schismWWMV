@@ -372,7 +372,7 @@
       SUBROUTINE GRID_EXPORT_WAM(eFileOut, FieldExport)
       USE DATAPOOL
       IMPLICIT NONE
-      character(len=100), intent(in) :: eFileOut
+      character(len=*), intent(in) :: eFileOut
       real(rkind), intent(in) :: FieldExport(np_total)
       real(rkind), allocatable :: XPout(:), YPout(:)
       logical LFLIVE
@@ -400,7 +400,7 @@
       SUBROUTINE GRID_EXPORT_FUNCTION
       USE DATAPOOL
       IMPLICIT NONE
-      character(len=*), parameter :: eFile = "system_wam.dat"
+      character(len=*), parameter :: eFile = "system_wam_grd.dat"
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
@@ -555,9 +555,9 @@
       SUBROUTINE EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, MNPout, MNEout, XPout, YPout, DEPout, INEout)
       USE DATAPOOL
       IMPLICIT NONE
-      character(len=100), intent(in) :: eFile
+      character(len=*), intent(in) :: eFile
       integer, intent(in) :: MNPout, MNEout
-      real(rkind), intent(in) :: XPout(MNP), YPout(MNP), DEPout(MNP)
+      real(rkind), intent(in) :: XPout(MNPout), YPout(MNPout), DEPout(MNPout)
       integer, intent(in) :: INEout(3,MNEout)
       integer :: FHNDL_EXPORT = 4347
       integer I

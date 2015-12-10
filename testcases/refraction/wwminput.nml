@@ -13,7 +13,8 @@
  UNITC   = "SEC"              ,
  ENDTC   = 20000101.003000     ,
  DMIN    =  1.000000000000000E-003,
- MULTIPLE_OUT_INFO       = T
+ MULTIPLE_OUT_INFO       = T,
+ MODEL_OUT_TYPE = "WAM",
  /
 
 
@@ -49,7 +50,7 @@
  LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
  USE_EXACT_FORMULA_SPHERICAL_AREA        = F,
- LEXPORT_GRID_MOD_OUT        = F,
+ LEXPORT_GRID_MOD_OUT        = T,
  /
 
 
