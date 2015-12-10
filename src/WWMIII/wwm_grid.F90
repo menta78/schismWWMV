@@ -369,6 +369,37 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GRID_EXPORT_FUNCTION
+      USE DATAPOOL
+      IMPLICIT NONE
+      real(rkind), allocatable :: XPout(:), YPout(:)
+      character(len=*), parameter :: eFile = "system_wam.dat"
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (LEXPORT_GRID_MOD_OUT) THEN
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WW3') THEN
+            CALL EXPORT_GRID_WW3_FORMAT
+          END IF
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
+            IF (LSPHE) THEN
+              CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, np_total, ne_total, XPtotal, YPtotal, DEPtotal, INEtotal)
+            ELSE
+              allocate(XPout(np_total), YPout(np_total), stat=istat)
+              IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+              XPout = XPtotal / 111111.
+              YPout = YPtotal / 111111.
+              CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, np_total, ne_total, XPout, YPout, DEPtotal, INEtotal)
+            END IF
+          END IF
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
@@ -413,6 +444,7 @@
           END DO
         END IF
       END IF
+      CALL GRID_EXPORT_FUNCTION
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
