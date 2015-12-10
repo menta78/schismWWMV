@@ -566,7 +566,7 @@
       DO I=1,MNPout
         WRITE(FHNDL_EXPORT,'(I10,2F20.8,F15.4)') I-1, XPout(I), YPout(I), DEPout(I)
       END DO
-      CALL XFNHEADER_2(FHNDL_EXPORT, MNE)
+      CALL XFNHEADER_2(FHNDL_EXPORT, MNEout)
       DO I=1,MNEout
         WRITE(FHNDL_EXPORT,'(5I10)') INEout(1,I)-1, INEout(2,I)-1, INEout(3,I)-1, 0, I-1
       END DO
