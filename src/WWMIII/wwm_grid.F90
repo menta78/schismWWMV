@@ -498,4 +498,26 @@
       CLOSE(FHNDL_EXPORT_GRID_WW3)
       deallocate(IPbound, IPisland, ACTIVE)
       END SUBROUTINE
-      
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, MNPout, MNEout, XPout, YPout, DEPout, INEout)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=100), intent(in) :: eFile
+      integer, intent(in) :: MNPout, MNEout
+      real(rkind), intent(in) :: XPout(MNP), YPout(MNP), DEPout(MNP)
+      integer, intent(in) :: INEout(3,MNEout)
+      integer :: FHNDL_EXPORT = 4347
+      integer I
+      OPEN(FHNDL_EXPORT, FILE = TRIM(eFile), STATUS='unknown')
+      CALL XFNHEADER_1(FHNDL_EXPORT, 0, MNPout)
+      DO I=1,MNPout
+        WRITE(FHNDL_EXPORT,'(I10,2F20.8,F15.4)') I-1, XPout(I), YPout(I), DEPout(I)
+      END DO
+      CALL XFNHEADER_2(FHNDL_EXPORT, MNE)
+      DO I=1,MNEout
+        WRITE(FHNDL_EXPORT,'(5I10)') INEout(1,I)-1, INEout(2,I)-1, INEout(3,I)-1, 0, I-1
+      END DO
+      CLOSE(FHNDL_EXPORT)
+      END SUBROUTINE
