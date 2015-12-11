@@ -66,12 +66,17 @@
       !
       ! The boundary output
       !
+!      Print *, '1: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' MAIN%TMJD=', MAIN%TMJD
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
 #ifdef NCDF
+!        Print *, '2: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD)) THEN
+!          Print *, '3: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           CALL WRITE_NETCDF_BOUNDARY
+!          Print *, '4: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
+!          Print *, '5: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
         END IF
 #else
         CALL WWM_ABORT('Need netcdf for the boundary output')

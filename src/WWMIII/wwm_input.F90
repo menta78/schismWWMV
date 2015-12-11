@@ -901,11 +901,15 @@
          OUT_BOUC % ENDT=ENDTC_OUT
          OUT_BOUC % UNIT=UNITC_OUT
          OUT_BOUC % DELT=DELTC_OUT
+!         Print *, '3: DELTC_OUT=', DELTC_OUT
          OUT_BOUC % DEFINETC=DEFINETC
          OUT_BOUC % FNAME = NETCDF_OUT_FILE
          CALL CT2MJD(OUT_BOUC % BEGT, OUT_BOUC % BMJD)
          CALL CT2MJD(OUT_BOUC % ENDT, OUT_BOUC % EMJD)
          CALL CU2SEC(OUT_BOUC % UNIT, OUT_BOUC % DELT)
+!         Print *, 'OUT_BOUC % BMJD = ', OUT_BOUC % BMJD
+         OUT_BOUC % TMJD = OUT_BOUC % BMJD
+!         Print *, 'OUT_BOUC % TMJD = ', OUT_BOUC % TMJD
          IF (DEFINETC .lt. 0) THEN
            OUT_BOUC % IDEF = -1
          ELSE
