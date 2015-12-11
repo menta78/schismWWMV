@@ -402,205 +402,212 @@
       SPDIR = zero
       FR    = zero
 
-         ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
-         COSTH = zero
-         SINTH = zero
-         COS2TH = zero
-         SIN2TH = zero
+      ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
+      COSTH = zero
+      SINTH = zero
+      COS2TH = zero
+      SIN2TH = zero
 
-         ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), ID_NEXT(MDC), ID_PREV(MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
-         SINCOSTH = zero
-         SIGPOW = zero
-         DS_BAND = zero
-         DS_INCR = zero
-         DO ID=1,MDC-1
-           ID_NEXT(ID)=ID+1
-         END DO
-         ID_NEXT(MDC)=1
-         DO ID=2,MDC
-           ID_PREV(ID)=ID-1
-         END DO
-         ID_PREV(1)=MDC
-
-         SGLOW  = PI2*FRLOW
-         SGHIGH = PI2*FRHIGH
+      ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), ID_NEXT(MDC), ID_PREV(MDC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
+      SINCOSTH = zero
+      SIGPOW = zero
+      DS_BAND = zero
+      DS_INCR = zero
+      DO ID=1,MDC-1
+        ID_NEXT(ID)=ID+1
+      END DO
+      ID_NEXT(MDC)=1
+      DO ID=2,MDC
+        ID_PREV(ID)=ID-1
+      END DO
+      ID_PREV(1)=MDC
+      IF (USE_FRATIO) THEN
+        FRHIGH = FRLOW
+        DO IS=2,MSC
+          FRHIGH = FRHIGH * FRATIO
+        END DO
+      END IF
+      
+      SGLOW  = PI2*FRLOW
+      SGHIGH = PI2*FRHIGH
 
 !2do check FRINTF for LOPTSIG
 
-         IF (LOPTSIG) THEN
-           SFAC   = 1.1_rkind
-           FRINTF = 0.1_rkind
-         ELSE 
-           FRINTF = LOG(SGHIGH/SGLOW)/MyREAL(MSC-1) 
-           SFAC   = EXP(FRINTF)
-         END IF
+      IF (LOPTSIG) THEN
+        SFAC   = 1.1_rkind
+        FRINTF = 0.1_rkind
+      ELSE 
+        FRINTF = LOG(SGHIGH/SGLOW)/MyREAL(MSC-1) 
+        SFAC   = EXP(FRINTF)
+      END IF
 
-         FRATIO = SFAC
-         FRINTH = SQRT(SFAC)
-         FR(1)  = FRLOW
+      FRATIO = SFAC
+      FRINTH = SQRT(SFAC)
+      FR(1)  = FRLOW
 
-         WRITE(STAT%FHNDL,*) 'RESOLUTION IN SIGMA SPACE AND FACTORS'
-         WRITE(STAT%FHNDL,*) 'SGLOW', SGLOW
-         WRITE(STAT%FHNDL,*) 'LOPTSIG', LOPTSIG
-         WRITE(STAT%FHNDL,*) 'SFAC, FRINTF, FRINTH', SFAC, FRINTF, FRINTH
+      WRITE(STAT%FHNDL,*) 'RESOLUTION IN SIGMA SPACE AND FACTORS'
+      WRITE(STAT%FHNDL,*) 'SGLOW', SGLOW
+      WRITE(STAT%FHNDL,*) 'LOPTSIG', LOPTSIG
+      WRITE(STAT%FHNDL,*) 'SFAC, FRINTF, FRINTH', SFAC, FRINTF, FRINTH
 
-         DO IS = 2, MSC
-           FR(IS) = FR(IS-1) * SFAC
-         END DO
+      DO IS = 2, MSC
+        FR(IS) = FR(IS-1) * SFAC
+      END DO
 
-         SPSIG = FR * PI2 
+      SPSIG = FR * PI2 
 
-         WRITE(STAT%FHNDL,*) 'SFAC=', SFAC
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'REL. FREQ. Distribution is =', FRINTF 
+      WRITE(STAT%FHNDL,*) 'SFAC=', SFAC
+      WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'REL. FREQ. Distribution is =', FRINTF 
 
-         IF ( ABS(FRINTF - .1)/FRINTF * 100. .GT. 1. ) THEN
-           WRITE(DBG%FHNDL,*) 'Freq. resolution is not optimal for Snl4'
-           WRITE(DBG%FHNDL,'(3F15.4)') 1. + FRINTF, ABS(FRINTF - .1)/FRINTF * 100.
-           WRITE(DBG%FHNDL,*) 'rel. freq. res. should be 1.1 is now', 1. + FRINTF, 'ERROR IS:', ABS(FRINTF - .1)/FRINTF * 100.
-         END IF  
+      IF ( ABS(FRINTF - .1)/FRINTF * 100. .GT. 1. ) THEN
+        WRITE(DBG%FHNDL,*) 'Freq. resolution is not optimal for Snl4'
+        WRITE(DBG%FHNDL,'(3F15.4)') 1. + FRINTF, ABS(FRINTF - .1)/FRINTF * 100.
+        WRITE(DBG%FHNDL,*) 'rel. freq. res. should be 1.1 is now', 1. + FRINTF, 'ERROR IS:', ABS(FRINTF - .1)/FRINTF * 100.
+      END IF  
          
-         IF (MSC .GE. 2) THEN
-           DS_BAND(0)     = SPSIG(2)- SPSIG(1)
-           DS_BAND(1)     = DS_BAND(0)
-           DS_BAND(MSC)   = SPSIG(MSC) - SPSIG(MSC-1)
-           DS_BAND(MSC+1) = DS_BAND(MSC)
-           DS_INCR(0)     = DS_BAND(0)
-           DS_INCR(1)     = DS_BAND(0)
-           DS_INCR(MSC)   = DS_BAND(MSC)
-           DS_INCR(MSC+1) = DS_INCR(MSC)
-           DO IS = 2, MSC-1 ! Bandwith at gridpoints
-              DS_BAND(IS) = (SPSIG(IS)-SPSIG(IS-1))/2. + (SPSIG(IS+1)-SPSIG(IS))/2.
-           END DO
-           DO IS = 2, MSC ! Stepwidth between gridpoints K and K-1
-              DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
-           END DO
-         END IF
+      IF (MSC .GE. 2) THEN
+        DS_BAND(0)     = SPSIG(2)- SPSIG(1)
+        DS_BAND(1)     = DS_BAND(0)
+        DS_BAND(MSC)   = SPSIG(MSC) - SPSIG(MSC-1)
+        DS_BAND(MSC+1) = DS_BAND(MSC)
+        DS_INCR(0)     = DS_BAND(0)
+        DS_INCR(1)     = DS_BAND(0)
+        DS_INCR(MSC)   = DS_BAND(MSC)
+        DS_INCR(MSC+1) = DS_INCR(MSC)
+        DO IS = 2, MSC-1 ! Bandwith at gridpoints
+          DS_BAND(IS) = (SPSIG(IS)-SPSIG(IS-1))/2. + (SPSIG(IS+1)-SPSIG(IS))/2.
+        END DO
+        DO IS = 2, MSC ! Stepwidth between gridpoints K and K-1
+          DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
+        END DO
+      END IF
 
-         SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
-         SSB                =  (SPSIG(2)-SPSIG(1))/PI2
-         MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
+      SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
+      SSB                =  (SPSIG(2)-SPSIG(1))/PI2
+      MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
 
-         ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
-         SPSIGL(1) = FRLOW * PI2
-         DO IS = 2, MSCL
-           SPSIGL(IS) = SPSIGL(IS-1) + SSB
-         ENDDO
+      ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
+      SPSIGL(1) = FRLOW * PI2
+      DO IS = 2, MSCL
+        SPSIGL(IS) = SPSIGL(IS-1) + SSB
+      ENDDO
 !
 !    *** the ratio of the consecutive frequency ... for quad
 !
-         IF ( MSC .GT. 3) THEN
-           MSC2   = INT(MyREAL(MSC)/TWO)
-           MSC1   = MSC2-1
-           XIS    = SPSIG(MSC2)/SPSIG(MSC1)
-           XISLN  = LOG(XIS)
-           IF (SMETHOD .GT. 0 .AND. MESTR .GT. 0) CALL INIT_TRIAD
-         ELSE
-           IF (SMETHOD .GT. 0 .AND. MESNL .GT. 0) CALL WWM_ABORT('TOO LESS FREQ FOR SNL4 SET MESNL = 0')
-           IF (SMETHOD .GT. 0 .AND. MESTR .GT. 0) CALL WWM_ABORT('TOO LESS FREQ FOR SNL3 SET MESTR = 0')
-         END IF
+      IF ( MSC .GT. 3) THEN
+        MSC2   = INT(MyREAL(MSC)/TWO)
+        MSC1   = MSC2-1
+        XIS    = SPSIG(MSC2)/SPSIG(MSC1)
+        XISLN  = LOG(XIS)
+        IF (SMETHOD .GT. 0 .AND. MESTR .GT. 0) CALL INIT_TRIAD
+      ELSE
+        IF (SMETHOD .GT. 0 .AND. MESNL .GT. 0) CALL WWM_ABORT('TOO LESS FREQ FOR SNL4 SET MESNL = 0')
+        IF (SMETHOD .GT. 0 .AND. MESTR .GT. 0) CALL WWM_ABORT('TOO LESS FREQ FOR SNL3 SET MESTR = 0')
+      END IF
 !
 !    *** frequency grid in [Hz]
 !
-         FR = SPSIG/PI2
+      FR = SPSIG/PI2
 ! 
 !    *** set the distribution of the dectional domain
 ! 
-         IF (MDC == 1) THEN
-           DDIR = 1._rkind
-           SPDIR(1) = 0._rkind
-         ELSE
-            IF (LCIRD) THEN 
-              DDIR = ABS(MAXDIR-MINDIR)/MyREAL(MDC)
-              DO ID = 1, MDC
-                 IF (LSTAG) THEN
-                   SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1) + DDIR/2.0 
-                 ELSE
-                   SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1)
-                 END IF
-                 IF (SPDIR(ID) >= PI2) SPDIR(ID) = SPDIR(ID) - PI2
-              END DO
+      IF (MDC == 1) THEN
+        DDIR = 1._rkind
+        SPDIR(1) = 0._rkind
+      ELSE
+        IF (LCIRD) THEN 
+          DDIR = ABS(MAXDIR-MINDIR)/MyREAL(MDC)
+          DO ID = 1, MDC
+            IF (LSTAG) THEN
+              SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1) + DDIR/2.0 
             ELSE
-              IF (LNAUTIN) THEN
-                TMP = MAXDIR
-                MAXDIR = MINDIR 
-                MINDIR = TMP
-              END IF 
-              WRITE(STAT%FHNDL,*) 'MINDIR MAXDIR', MINDIR, MAXDIR, MINDIR*RADDEG, MAXDIR*RADDEG
-              IF (MAXDIR.LT.MINDIR) MAXDIR = MAXDIR + PI2            
-              DDIR = (MAXDIR-MINDIR) / MyREAL(MDC)                     
-              DO ID = 1, MDC
-                SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1)
-              END DO
-            END IF  
-         END IF
+              SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1)
+            END IF
+            IF (SPDIR(ID) >= PI2) SPDIR(ID) = SPDIR(ID) - PI2
+          END DO
+        ELSE
+          IF (LNAUTIN) THEN
+            TMP = MAXDIR
+            MAXDIR = MINDIR 
+            MINDIR = TMP
+          END IF 
+          WRITE(STAT%FHNDL,*) 'MINDIR MAXDIR', MINDIR, MAXDIR, MINDIR*RADDEG, MAXDIR*RADDEG
+          IF (MAXDIR.LT.MINDIR) MAXDIR = MAXDIR + PI2            
+          DDIR = (MAXDIR-MINDIR) / MyREAL(MDC)                     
+          DO ID = 1, MDC
+            SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1)
+          END DO
+        END IF  
+      END IF
 !
 !     *** set trig. in angular space 
 !
-         COSTH(:)    = COS(SPDIR(:))
-         SINTH(:)    = SIN(SPDIR(:))
-         COS2TH(:)   = COS(SPDIR(:))**2
-         SIN2TH(:)   = SIN(SPDIR(:))**2
-         SINCOSTH(:) = COS(SPDIR(:))*SIN(SPDIR(:))
+      COSTH(:)    = COS(SPDIR(:))
+      SINTH(:)    = SIN(SPDIR(:))
+      COS2TH(:)   = COS(SPDIR(:))**2
+      SIN2TH(:)   = SIN(SPDIR(:))**2
+      SINCOSTH(:) = COS(SPDIR(:))*SIN(SPDIR(:))
 !
 !      *** set POWERS OF SPSIG
 !
-         SIGPOW(:,1) = SPSIG(:)
-         SIGPOW(:,2) = SPSIG(:)**2
-         SIGPOW(:,3) = SPSIG(:) * SIGPOW(:,2)
-         SIGPOW(:,4) = SPSIG(:) * SIGPOW(:,3)
-         SIGPOW(:,5) = SPSIG(:) * SIGPOW(:,4)
-         SIGPOW(:,6) = SPSIG(:) * SIGPOW(:,5)
+      SIGPOW(:,1) = SPSIG(:)
+      SIGPOW(:,2) = SPSIG(:)**2
+      SIGPOW(:,3) = SPSIG(:) * SIGPOW(:,2)
+      SIGPOW(:,4) = SPSIG(:) * SIGPOW(:,3)
+      SIGPOW(:,5) = SPSIG(:) * SIGPOW(:,4)
+      SIGPOW(:,6) = SPSIG(:) * SIGPOW(:,5)
 !
-         FDIR = FRINTF * DDIR
+      FDIR = FRINTF * DDIR
 
-         DELTH = PI2/MyREAL(MDC)
+      DELTH = PI2/MyREAL(MDC)
+!
+! WAM related definitions
+!
+      ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
+      DFIM = ZERO
+      DFFR = ZERO
+      DFFR2 = ZERO 
+      DFIMOFR = ZERO
+      FR5 = ZERO
+      FRM5 = ZERO 
+      COFRM4 = ZERO
 
-         ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
-         DFIM = ZERO
-         DFFR = ZERO
-         DFFR2 = ZERO 
-         DFIMOFR = ZERO
-         FR5 = ZERO
-         FRM5 = ZERO 
-         COFRM4 = ZERO
+      IF (LSOURCESWAM) THEN
+        ALLOCATE(TH(MDC), stat=istat)
+        th = zero
+        DELTH = PI2/REAL(MDC)
+        DELTR = DELTH*REARTH
+        DO ID=1,MDC
+          IF (LSTAG) THEN
+            TH(ID) = REAL(ID-1)*DELTH
+          ELSE
+            TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
+          ENDIF
+          COSTH(ID) = COS(TH(ID))
+          SINTH(ID) = SIN(TH(ID))
+        ENDDO
+      END IF
 
-         if (LSOURCESWAM) then
-           ALLOCATE(TH(MDC), stat=istat)
-           th = zero
-           DELTH = PI2/REAL(MDC)
-           DELTR = DELTH*REARTH
-           DO ID=1,MDC
-             IF (LSTAG) THEN
-               TH(ID) = REAL(ID-1)*DELTH
-             ELSE
-               TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
-             ENDIF
-             COSTH(ID) = COS(TH(ID))
-             SINTH(ID) = SIN(TH(ID))
-           ENDDO
-         endif
+      
+      CO1 = 0.5*(FRATIO-1.)*DELTH
+      DFIM(1)= CO1*FR(1)
+      DO IS=2,MSC-1
+        DFIM(IS)=CO1 * (FR(IS)+FR(IS-1))
+      ENDDO
+      DFIM(IS)=CO1*FR(IS-1)
 
-         CO1 = 0.5*(FRATIO-1.)*DELTH
-         DFIM(1)= CO1*FR(1)
-         DO IS=2,MSC-1
-           DFIM(IS)=CO1 * (FR(IS)+FR(IS-1))
-         ENDDO
-         DFIM(IS)=CO1*FR(IS-1)
-
-         DO IS = 1, MSC
-           DFFR(IS)    = DFIM(IS)*FR(IS)
-           DFFR2(IS)   = DFIM(IS)*FR(IS)**2
-           DFIMOFR(IS) = DFIM(IS)/FR(IS)
-           FR5(IS)     = FR(IS)**5
-           FRM5(IS)    = ONE/FR5(IS)
-           COFRM4(IS)  = COEF4*G9/FR(IS)**4
-         END DO
-
-         FLOGSPRDM1=1./LOG10(FRATIO)
-
+      DO IS = 1, MSC
+        DFFR(IS)    = DFIM(IS)*FR(IS)
+        DFFR2(IS)   = DFIM(IS)*FR(IS)**2
+        DFIMOFR(IS) = DFIM(IS)/FR(IS)
+        FR5(IS)     = FR(IS)**5
+        FRM5(IS)    = ONE/FR5(IS)
+        COFRM4(IS)  = COEF4*G9/FR(IS)**4
+      END DO
+      FLOGSPRDM1=1./LOG10(FRATIO)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

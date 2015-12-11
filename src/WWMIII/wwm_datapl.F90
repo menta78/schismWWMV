@@ -498,6 +498,7 @@
 !
 ! Spectral Grid ...
 !
+         LOGICAL          :: USE_FRATIO = .FALSE.
          REAL(rkind)      :: FRLOW
          REAL(rkind)      :: FRHIGH
          REAL(rkind)      :: SGLOW
