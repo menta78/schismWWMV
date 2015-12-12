@@ -392,10 +392,34 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE EXPORT_BOUNDARY_POINT
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=100), parameter :: eFileWAM = "system_wam_bnd.dat"
+      real(rkind), allocatable :: IOBPexport(:)
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (LEXPORT_GRID_MOD_OUT) THEN
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
+            allocate(IOBPexport(np_total), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
+            IOBPexport = MyREAL(IOBPtotal)
+            CALL GRID_EXPORT_WAM(eFileWAM, IOBPexport)
+            deallocate(IOBPexport)
+          END IF
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_IOBP_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc
+      integer iProc, IP
       allocate(IOBPtotal(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
 #ifdef MPI_PARALL_GRID
@@ -414,7 +438,8 @@
 #else
       CALL SINGLE_READ_IOBP_TOTAL(IOBPtotal, IGRIDTYPE, BND, np_total)
 #endif
-      END SUBROUTINE
+      CALL EXPORT_BOUNDARY_POINT
+      END SUBROUTINE READ_IOBP_TOTAL
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -439,8 +464,8 @@
       END DO
       MaxIEcont=maxval(ContElements)
       SatMaxDeg=2*MaxIEcont
-      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL), stat=istat)
-      allocate(IEcontain(MaxIEcont,NP_TOTAL), stat=istat)
+      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL), IEcontain(MaxIEcont,NP_TOTAL), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
       ListDegWork=0
       DO IE=1,NE_TOTAL
         DO I=1,3
@@ -472,6 +497,7 @@
         END DO
       END DO
       allocate(StatusAdj(SatMaxDeg), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 2')
       NumberAllTwo=0
       NumberBoundary=0
       NumberPathological=0

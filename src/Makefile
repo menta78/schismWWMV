@@ -431,4 +431,5 @@ clean:
 ###	$(QUIET)rm -rf $(PARMETISDIR)/*.a
 	#(cd $(PARMETISDIR)/METISLib ; make realclean )
 	#(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
-
+	$(QUIET)rm -rf *.mod
+	$(QUIET)make -C WWMIII clean

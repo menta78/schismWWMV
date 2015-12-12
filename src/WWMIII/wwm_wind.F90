@@ -500,7 +500,7 @@
         END IF
       END IF
 # else
-      CF_IX=CF_IX_GLOGAL
+      CF_IX=CF_IX_GLOBAL
       CF_IY=CF_IY_GLOBAL
       CF_COEFF=CF_COEFF_GLOBAL
       deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
@@ -675,6 +675,7 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+
       IXs=-1
       IYs=-1
       DO IX=1,nx-1
@@ -688,6 +689,7 @@
         END DO
       END DO
       aShift=1
+
       DO
         IXmin=max(1, IXs - aShift)
         IYmin=max(1, IYs - aShift)
@@ -737,6 +739,7 @@
               eCF_COEFF(2)=a*(1-b)
               eCF_COEFF(3)=(1-a)*b
               eCF_COEFF(4)=a*b
+              RETURN
             END IF
           END DO
         END DO
@@ -745,22 +748,23 @@
         END IF
         aShift=aShift + 1
       END DO
-      IF (EXTRAPO_IN .eqv. .FALSE.) THEN
-        WRITE(STAT % FHNDL,*) 'aShift=', aShift
-        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
-        FLUSH(STAT % FHNDL)
-        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
-      ELSE
+
+      IF (EXTRAPO_IN) THEN
+        EXTRAPO_OUT=.TRUE.
         eCF_IX = IXs
         eCF_IY = IYs
         eCF_COEFF(1)=1
         eCF_COEFF(2)=0
         eCF_COEFF(3)=0
         eCF_COEFF(4)=0
-        EXTRAPO_OUT=.TRUE.
         WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
         WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
-      END IF
+      ELSE 
+        WRITE(STAT % FHNDL,*) 'aShift=', aShift
+        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
+        FLUSH(STAT % FHNDL)
+        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -807,6 +811,7 @@
         eX=XP_WIND(I)
         eY=YP_WIND(I)
         CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED_WIND, eX, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
+        WRITE(WINDBG%FHNDL,'(4I10,10F20.10)') I, MNP_WIND, eCF_IX, eCF_IY, eCF_COEFF
         CF_IX(I) = eCF_IX
         CF_IY(I) = eCF_IY
         CF_COEFF(:,I) = eCF_COEFF

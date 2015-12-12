@@ -38,53 +38,27 @@
       !
       ! The wavewatch III exports
       !
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_BOUC_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_BOUC_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        WRITE(STAT%FHNDL,*) 'MAIN%TMJD=', MAIN%TMJD
-!        WRITE(STAT%FHNDL,*) 'OUT_BOUC_WW3%TMJD=', OUT_BOUC_WW3%TMJD
-!        WRITE(STAT%FHNDL,*) 'OUT_BOUC_WW3%EMJD=', OUT_BOUC_WW3%EMJD
+      IF (LEXPORT_BOUC_MOD_OUT) THEN
         FLUSH(STAT%FHNDL)
         IF ( (MAIN%TMJD .GE. OUT_BOUC_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
           CALL EXPORT_BOUC_WW3_FORMAT
           OUT_BOUC_WW3%TMJD = OUT_BOUC_WW3%TMJD + OUT_BOUC_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_WIND_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_WIND_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
+      IF (LEXPORT_WIND_MOD_OUT) THEN
         IF ( (MAIN%TMJD .GE. OUT_WIND_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WIND_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
           CALL EXPORT_WIND_WW3_FORMAT
           OUT_WIND_WW3%TMJD = OUT_WIND_WW3%TMJD + OUT_WIND_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_CURR_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_CURR_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
+      IF (LEXPORT_CURR_MOD_OUT) THEN
         IF ( (MAIN%TMJD .GE. OUT_CURR_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_CURR_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
           CALL EXPORT_CURR_WW3_FORMAT
           OUT_CURR_WW3%TMJD = OUT_CURR_WW3%TMJD + OUT_CURR_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_WALV_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_WALV_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
+      IF (LEXPORT_WALV_MOD_OUT) THEN
         IF ( (MAIN%TMJD .GE. OUT_WALV_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WALV_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
           CALL EXPORT_WALV_WW3_FORMAT
           OUT_WALV_WW3%TMJD = OUT_WALV_WW3%TMJD + OUT_WALV_WW3%DELT*SEC2DAY
         END IF
@@ -92,12 +66,17 @@
       !
       ! The boundary output
       !
+!      Print *, '1: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' MAIN%TMJD=', MAIN%TMJD
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
 #ifdef NCDF
+!        Print *, '2: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD)) THEN
+!          Print *, '3: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           CALL WRITE_NETCDF_BOUNDARY
+!          Print *, '4: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
+!          Print *, '5: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
         END IF
 #else
         CALL WWM_ABORT('Need netcdf for the boundary output')
@@ -1471,9 +1450,9 @@
       REAL(rkind) :: HS,TM01,TM02,KLM,WLM,TM10
       REAL(rkind) :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
       REAL(rkind) :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
-      REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
-      REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
-      REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+      REAL(rkind) :: STOKESSURFX,STOKESSURFY
+      REAL(rkind) :: STOKESBAROX,STOKESBAROY
+      REAL(rkind) :: STOKESBOTTX,STOKESBOTTY
       REAL(rkind) :: eWindMag
       OUTPAR    = ZERO
 
@@ -2139,15 +2118,17 @@
           deallocate(dspl_his)
         END DO
       END IF
-# endif
       END SUBROUTINE
+# endif
 !**********************************************************************
 !*  Init the MPI arrays                                               *
 !**********************************************************************
       SUBROUTINE COLLECT_OUTT_ARRAY
+      USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), allocatable :: OUTT_LOC(:,:)
       REAL(rkind)              :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
+      integer IP
 # ifdef MPI_PARALL_GRID
       logical, save :: IsMPIarrayInitialized = .FALSE.
       integer iProc, IPglob

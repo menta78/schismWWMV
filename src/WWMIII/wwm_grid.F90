@@ -369,6 +369,56 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GRID_EXPORT_WAM(eFileOut, FieldExport)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), intent(in) :: eFileOut
+      real(rkind), intent(in) :: FieldExport(np_total)
+      real(rkind), allocatable :: XPout(:), YPout(:)
+      logical LFLIVE
+      CHARACTER(LEN=512) :: ErrMsg
+      INQUIRE( FILE = TRIM(eFileOut), EXIST = LFLIVE )
+      IF (LFLIVE) THEN
+         WRITE(ErrMsg,10) TRIM(eFileOut)
+10       FORMAT('GRID_EXPORT_WAM: Please remove file before overwrite file = ', a)
+         CALL WWM_ABORT(ErrMsg)
+      END IF
+      IF (LSPHE) THEN
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPtotal, YPtotal, FieldExport, INEtotal)
+      ELSE
+        allocate(XPout(np_total), YPout(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+        XPout = XPtotal / 111111.
+        YPout = YPtotal / 111111.
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPout, YPout, FieldExport, INEtotal)
+        deallocate(XPout, YPout)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GRID_EXPORT_FUNCTION
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), parameter :: eFile = "system_wam_grd.dat"
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (LEXPORT_GRID_MOD_OUT) THEN
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WW3') THEN
+            CALL EXPORT_GRID_WW3_FORMAT
+          END IF
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
+            CALL GRID_EXPORT_WAM(eFile, DEPtotal)
+          END IF
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
@@ -413,6 +463,7 @@
           END DO
         END IF
       END IF
+      CALL GRID_EXPORT_FUNCTION
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -498,4 +549,26 @@
       CLOSE(FHNDL_EXPORT_GRID_WW3)
       deallocate(IPbound, IPisland, ACTIVE)
       END SUBROUTINE
-      
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, MNPout, MNEout, XPout, YPout, DEPout, INEout)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), intent(in) :: eFile
+      integer, intent(in) :: MNPout, MNEout
+      real(rkind), intent(in) :: XPout(MNPout), YPout(MNPout), DEPout(MNPout)
+      integer, intent(in) :: INEout(3,MNEout)
+      integer :: FHNDL_EXPORT = 4347
+      integer I
+      OPEN(FHNDL_EXPORT, FILE = TRIM(eFile), STATUS='unknown')
+      CALL XFNHEADER_1(FHNDL_EXPORT, 0, MNPout)
+      DO I=1,MNPout
+        WRITE(FHNDL_EXPORT,'(I10,2F20.8,F15.4)') I-1, XPout(I), YPout(I), DEPout(I)
+      END DO
+      CALL XFNHEADER_2(FHNDL_EXPORT, MNEout)
+      DO I=1,MNEout
+        WRITE(FHNDL_EXPORT,'(5I10)') INEout(1,I)-1, INEout(2,I)-1, INEout(3,I)-1, 0, I-1
+      END DO
+      CLOSE(FHNDL_EXPORT)
+      END SUBROUTINE

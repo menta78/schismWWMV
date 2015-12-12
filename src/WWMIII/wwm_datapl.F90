@@ -300,6 +300,7 @@
          LOGICAL    :: LWRITE_WW3_RESULTS              = .FALSE.
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
+         character(len=20) :: MODEL_OUT_TYPE = "WW3"
 
          LOGICAL    :: MULTIPLE_IN_GRID = .TRUE.
          LOGICAL    :: MULTIPLE_IN_BOUND = .TRUE.
@@ -403,11 +404,11 @@
          
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
-         LOGICAL :: LEXPORT_GRID_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_BOUC_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_CURR_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_WALV_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_WIND_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_GRID_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_BOUC_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_CURR_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_WALV_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_WIND_MOD_OUT = .FALSE.
          REAL(rkind) :: EXPORT_BOUC_DELTC
          REAL(rkind) :: EXPORT_CURR_DELTC
          REAL(rkind) :: EXPORT_WALV_DELTC
@@ -497,6 +498,7 @@
 !
 ! Spectral Grid ...
 !
+         LOGICAL          :: USE_FRATIO = .FALSE.
          REAL(rkind)      :: FRLOW
          REAL(rkind)      :: FRHIGH
          REAL(rkind)      :: SGLOW

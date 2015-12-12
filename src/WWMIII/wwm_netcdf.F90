@@ -20,11 +20,11 @@
       posBlank=INDEX(eStrUnitTime(1:alen), ' ')
       Xname=eStrUnitTime(1:posBlank-1) ! should be days/hours/seconds
       IF (TRIM(Xname) .eq. 'days') THEN
-        ConvertToDay=1
+        ConvertToDay=MyREAL(1)
       ELSEIF (TRIM(Xname) .eq. 'hours') THEN
-        ConvertToDay=1/24
+        ConvertToDay=MyREAL(1)/MyREAL(24)
       ELSEIF (TRIM(Xname) .eq. 'seconds') THEN
-        ConvertToDay=1/86400
+        ConvertToDay=MyREAL(1)/MyREAL(86400)
       ELSE
         CALL WWM_ABORT('Error in the code for conversion')
       END IF
