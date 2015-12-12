@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SCHISM Makefile
+# Parallel SELFE Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -29,136 +29,155 @@
 #
 # Libraries (needed for parallel code)
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+#   ALTLIBS: Flags for linking alternate solver libraries (LAPACK or ITPACK,
+#            these are just for testing)
+#
+#
+#
 ################################################################################
 
-################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
-#################################################################################
-ENV = ARON
+
+ENV = ubuntu.gnu
 
 ################################################################################
-# Environment 
+# Environment for Ubuntu with GNU compilers
+# Packages requirement: gfortran, gcc, libnetcdf-dev, mpich2, libparmetis-dev, libcr-dev,
+# which can be installed with the command below:
+# "sudo apt-get install gfortran gcc libnetcdf-dev mpich2 libparmetis-dev libcr-dev"
+# Test is passed on Ubuntu 11.10 64bit, Ubuntu 12.04 64bit
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+#  USE_WRAP = yes
+FCP = /usr/bin/mpif90.mpich2 -f90=gfortran -ffree-line-length-none
 FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf 
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+FCPFLAGS = $(PPFLAGS) -O2 -Bstatic #-g -fbacktrace #-finit-real=nan -fbounds-check #MPI code
+FLDFLAGS = -O2 #for final linking of object files
+
+  #####Libraries
+#MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
+MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L/usr/lib/ -lnetcdf -lnetcdff
+CDFMOD = -I/usr/include/ # modules for netcdf
+ifdef USE_GOTM
+   GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
+   GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
+else
+   GTMMOD =
+   GTMLIBS =
+endif
+
+
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pschism_$(ENV)
+
+#EXEC   := othername.ex
+
 
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSCHISM is always on and is defined elsewhere
+# -DSELFE is always on and is defined elsewhere
 
 # Precip/evaporation model
-# USE_PREC_EVAP = yes
-# EXEC := $(EXEC)_EVAP
+# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
 
 # MM5 in heat exchange model
-# USE_MM5 = yes
-# EXEC := $(EXEC)_MM5
+# PPFLAGS := $(PPFLAGS) -DMM5
 
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
+# TVD flag (turn off for performance)
+#  CHOOSE_TVD = yes
+#   EXEC := $(EXEC)_CHOOSE_TVD
 
 # GOTM turbulence closure model
 # USE_GOTM = yes
-# EXEC := $(EXEC)_GOTM
-
-# Don't comment out the follow ifdef
-ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
-else
-  GTMMOD =
-  GTMLIBS =
-endif
 
 # Wind wave model WWM
- USE_WWM = yes
-# EXEC := $(EXEC)_WWM
+# USE_WWM = yes
 
-# TIMOR (not active)
+# Implicit schemes in WWM needs PetSc
+# USE_PETSC = yes
+
+# TIMOR 
 # USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
 
 # Harmonic analysis tool
 # USE_HA = yes
-# EXEC := $(EXEC)_HA
 
-#Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
+##### Select only _one_ model from below
 
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
+# Ecological model - NAPZD Spitz (internal use only)
+# USE_NAPZD = yes
 
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
+# Or:
 # Ecological model (EcoSim)
 # USE_ECO = yes
-# EXEC := $(EXEC)_ECO
 
+# Or:
 # CE-QUAL-ICM
 # USE_ICM = yes
-# EXEC := $(EXEC)_ICM
 
+# Or:
+# Sediment model 
+# USE_SED = yes
+
+# If you choose SED you should set the following algorithmic preferences
+
+  ##Bedload 
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
+
+  ##Bedload - MPM model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
+
+  ##slope formulation
+#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
+#  PPFLAGS := $(PPFLAGS) -DDELFT
+#  PPFLAGS := $(PPFLAGS) -DCARMO
+
+  ##Bedload - VR model
+#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
+
+  ##Suspended load
+#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
+
+  ##boundary conditions for WENO
+  ## default strictly monotonic
+#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
+#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
+
+  ## Morphology
+#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
+
+  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
+#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
+  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
+
+  ##sediment density in eqstate
+#   PPFLAGS:= $(PPFLAGS) -DDENSED
+
+# Or:
+# Sediment model (2D)
+# #  USE_SED2D = yes
+
+# Or:
 # Oil spill model (not active)
 # USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-####End of tracer models
 
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
 
 #########  Compiler configuration related flags
 
 # Include a timer
-# USE_TIMER = yes
-# EXEC := $(EXEC)_TIMER
+# TIMER = yes
 
 # Debug mode (more time consuming)
 # USE_DEBUG = yes
-# EXEC := $(EXEC)_DEBUG
 
 
 ######### Specialty compiler flags and workarounds
@@ -166,8 +185,13 @@ endif
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
 
+# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
+USE_OPEN64 = no
+
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE
+
+
+#############################################################################################
+

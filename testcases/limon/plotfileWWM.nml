@@ -1,0 +1,19 @@
+&PROC
+ MODELNAME = "WWM", 
+ BEGTC = "19980901.000000", 
+ DELTC =  10, 
+ UNITC = "SEC", 
+ ENDTC = "19980901.001000", 
+ GridFile = "/home/aron/GIT/wwmIII/testcases/limon/field.nc", 
+ HisPrefix = "/home/aron/GIT/wwmIII/testcases/limon/field.nc", 
+ PicPrefix = "/home/aron/GIT/wwmIII/testcases/limon/"
+ Extension="png",
+ KeepNC_NCL = F,
+/
+
+&VARS
+ WIND10 = F, 
+ WINDMAG = F, 
+ Hwave = T
+/
+
