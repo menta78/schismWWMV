@@ -229,13 +229,6 @@
             DO IS=1,MSC
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-!            DO IS=2,MSC
-!              A_SIG(IS,ID,IP) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-!            END DO
-            !
-!            DO IS=1,MSC-1
-!              C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-!            END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
             ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
@@ -731,7 +724,7 @@
 #endif
       REAL(rkind) :: eFact
       REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
-      INTEGER :: IP, J, idx, nbIter, is_converged, itmp
+      INTEGER :: IP, J, idx, nbIter, is_converged(1), itmp(1)
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
       integer nbPassive
@@ -790,7 +783,7 @@
       !
       nbIter=0
       DO
-        is_converged = 0
+        is_converged(1) = 0
         JDX=0
 #ifdef DEBUG_ITERATION_LOOP
         FieldOut1 = 0
@@ -837,7 +830,7 @@
 #endif
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .lt. jgs_diff_solverthr) THEN
-                  is_converged=is_converged+1
+                  is_converged(1) = is_converged(1) + 1
                   IF (WAE_JGS_CFL_LIM) THEN
                     NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
                   END IF
@@ -847,16 +840,16 @@
           ELSE
             nbPassive = nbPassive + 1
             IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
-              is_converged = is_converged + 1
+              is_converged(1) = is_converged(1) + 1
             END IF
           END IF
         END DO
         IF (JGS_CHKCONV) THEN
 #ifdef MPI_PARALL_GRID
-          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
+          CALL MPI_ALLREDUCE(is_converged, itmp(1), 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
 #endif
-          p_is_converged = (real(np_total) - real(is_converged))/real(np_total) * 100.
+          p_is_converged = (real(np_total) - real(is_converged(1)))/real(np_total) * 100.
         ENDIF 
 
 #ifdef MPI_PARALL_GRID
@@ -879,7 +872,7 @@
 !
 ! The termination criterions several can be chosen
 !
-        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged, np_total-is_converged, p_is_converged, pmin
+        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
         !
         ! Number of iterations. If too large the exit.
         !

@@ -4,9 +4,9 @@
  DELTC =  10, 
  UNITC = "SEC", 
  ENDTC = "19980901.001000", 
- GridFile = "/home/aron/GIT/wwmIII/testcases/limon/field.nc", 
- HisPrefix = "/home/aron/GIT/wwmIII/testcases/limon/field.nc", 
- PicPrefix = "/home/aron/GIT/wwmIII/testcases/limon/"
+ GridFile = "field.nc", 
+ HisPrefix = "field.nc", 
+ PicPrefix = "WWM_plot/"
  Extension="png",
  KeepNC_NCL = F,
 /

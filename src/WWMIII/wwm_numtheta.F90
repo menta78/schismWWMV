@@ -96,6 +96,7 @@
            IF (DEP(IP) .LT. DMIN) CYCLE ! skip dry nodes ...
            IF (IOBP(IP) .EQ. 2) CYCLE ! skip active boundary points ...
            CALL PROPTHETA(IP,CAD)
+           WRITE(STAT%FHNDL,*) 'IP=', IP, ' MNP=', MNP
            DO IS = 1, MSC
              ACQ(1:MDC) = AC2(IS,:,IP)
              CADS(1:MDC) = CAD(IS,:)
@@ -108,6 +109,7 @@
                ITER = ABS(NINT(CFLCAD))
              END IF 
              ITER = MAX(1,ITER)
+             WRITE(STAT%FHNDL,*) 'IS=', IS, ' ITER=', ITER
              DT4DI = DT4D / MyREAL(ITER)
              DO IT = 1, ITER ! Iteration
                CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
