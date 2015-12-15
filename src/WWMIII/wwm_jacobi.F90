@@ -165,11 +165,6 @@
       END DO
       IF (LBCWA .OR. LBCSP) THEN
         DO IP = 1, IWBMNP
-          IF (LINHOM) THEN
-            IPrel=IP
-          ELSE
-            IPrel=1
-          ENDIF
           IPGL1 = IWBNDLC(IP)
           ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
         END DO
