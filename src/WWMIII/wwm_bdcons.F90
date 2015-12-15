@@ -2364,7 +2364,7 @@
       iret = nf90_def_dim(ncid, 'IWBMNPGL', nbBound, iwbmnpgl_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
       !
-      CALL WRITE_PARAM_1(ncid, one_dims)
+      CALL WRITE_PARAM_1(ncid, nfreq_dims, ndir_dims, one_dims)
       !
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !

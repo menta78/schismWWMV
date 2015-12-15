@@ -33,7 +33,7 @@
 
  &GRID
  LCIRD   = T,
- LSTAG   = F,
+ LSTAG   = T,
  USE_FRATIO = T,
  FRATIO  = 1.1,
  MINDIR  =  0.000000000000000E+000,
