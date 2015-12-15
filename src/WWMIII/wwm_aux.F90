@@ -1,4 +1,5 @@
 #include "wwm_functions.h"
+#define DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -293,7 +294,12 @@
          WEI(:)  = 0.0_rkind
          DVDX(:) = 0.0_rkind
          DVDY(:) = 0.0_rkind
-
+#ifdef DEBUG
+         WRITE(STAT%FHNDL,*) 'DIFFERENTIATE_XYDIR'
+         WRITE(STAT%FHNDL,*) 'sum(VAR ) = ', sum(VAR)
+         WRITE(STAT%FHNDL,*) 'sum(IEN ) = ', sum(IEN)
+         WRITE(STAT%FHNDL,*) 'sum(TRIA) = ', sum(TRIA)
+#endif
          DO IE = 1, MNE 
             NI = INE(:,IE)
             I1 = INE(1,IE)
@@ -311,22 +317,22 @@
             DVDX(NI) = DVDX(NI) + DVDXIE
             DVDY(NI) = DVDY(NI) + DVDYIE
          END DO
-
          DVDX(:) = DVDX(:)/WEI(:)
          DVDY(:) = DVDY(:)/WEI(:)
-
          DO IP = 1, MNP
            IF (DEP(IP) .LT. DMIN) THEN
              DVDX(IP) = 0.
              DVDY(IP) = 0.
            END IF
          END DO
-
 #ifdef MPI_PARALL_GRID 
          CALL exchange_p2d(DVDX)
          CALL exchange_p2d(DVDY)
 #endif
-
+#ifdef DEBUG
+         WRITE(STAT%FHNDL,*) 'sum(DVDX) = ', sum(DVDX)
+         WRITE(STAT%FHNDL,*) 'sum(DVDY) = ', sum(DVDY)
+#endif
          IF (.FALSE.) THEN
            OPEN(2305, FILE  = 'erggrad.bin'  , FORM = 'UNFORMATTED') 
            WRITE(2305) 1.

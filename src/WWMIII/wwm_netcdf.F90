@@ -376,8 +376,8 @@
           ListDegWork(IP)=pos+1
         END DO
       END DO
-      WRITE(STAT%FHNDL,*) 'Stage 1 finished'
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'Stage 1 finished'
+!      FLUSH(STAT%FHNDL)
       allocate(StatusAdj(SatMaxDeg))
       allocate(TheBound % IOBP(np_total))
       NumberAllTwo=0
@@ -437,8 +437,8 @@
       WRITE(STAT%FHNDL,*) 'NumberBoundary    =', NumberBoundary
       WRITE(STAT%FHNDL,*) 'NumberPathological=', NumberPathological
       FLUSH(STAT%FHNDL)
-      WRITE(STAT%FHNDL,*) 'Stage 2 finished'
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'Stage 2 finished'
+!      FLUSH(STAT%FHNDL)
       allocate(TheBound % ListBoundEdge(2, TheBound % nbEdgeBound))
       idxEdgeBound=0
       TheBound % IOBP = 0
@@ -464,8 +464,8 @@
           END IF
         END DO
       END DO
-      WRITE(STAT%FHNDL,*) 'Stage 3 finished'
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'Stage 3 finished'
+!      FLUSH(STAT%FHNDL)
       allocate(TheBound % ListVertBound(TheBound % nbVertBound))
       idx=0
       DO IP=1,np_total
@@ -497,8 +497,8 @@
           ListDegVertBound(IP)=eDeg+1
         END DO
       END DO
-      WRITE(STAT%FHNDL,*) 'Stage 4 finished'
-      FLUSH(STAT%FHNDL)
+!      WRITE(STAT%FHNDL,*) 'Stage 4 finished'
+!      FLUSH(STAT%FHNDL)
       allocate(TheBound % AdjacencyEdgeBound(2,TheBound % nbEdgeBound))
       allocate(ListDegEdgeBound(TheBound % nbEdgeBound))
       ListDegEdgeBound=0
@@ -688,11 +688,11 @@
           deallocate(ListAdjVert, ListAdjVertBound)
         END IF
       END DO
-      WRITE(STAT%FHNDL,*) 'Stage 5 finished'
-      FLUSH(STAT%FHNDL)
-      DO iEdgeBound=1,TheBound % nbEdgeBound
-        WRITE(DBG%FHNDL,*) 'iEdgeBound/eDeg=', iEdgeBound, ListDegEdgeBound(iEdgeBound)
-      END DO
+!      WRITE(STAT%FHNDL,*) 'Stage 5 finished'
+!      FLUSH(STAT%FHNDL)
+!      DO iEdgeBound=1,TheBound % nbEdgeBound
+!        WRITE(DBG%FHNDL,*) 'iEdgeBound/eDeg=', iEdgeBound, ListDegEdgeBound(iEdgeBound)
+!      END DO
       DO iEdgeBound=1,TheBound % nbEdgeBound
         IF (ListDegEdgeBound(iEdgeBound) .ne. 2) THEN
           WRITE(DBG%FHNDL,*) 'iEdgeBound=', iEdgeBound
@@ -753,6 +753,8 @@
       END DO
       deallocate(StatusAdj, ListAdjWithDupl)
       deallocate(MappingIP_iEdgeBound, ListDegEdgeBound)
+      WRITE(STAT%FHNDL,*) 'Leaving SERIAL_GET_BOUNDARY_NEXTGENERATION'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

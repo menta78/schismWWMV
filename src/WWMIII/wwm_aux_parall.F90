@@ -1123,18 +1123,16 @@
       DO irank=0,nproc-1
         iProc=irank+1
         eSend=0
-        IF (irank .ne. rank_boundary) THEN
-          MNPloc=ListMNP(iProc)
-          DO IP=1,MNPloc
-            IP_glob=ListIPLG(IP+ListFirst(iProc))
-            IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
-              eSend=eSend+1
-            END IF
-          END DO
-          IF (eSend .gt. 0) THEN
-            bound_nbproc=bound_nbproc+1
-            rank_hasboundary=irank
+        MNPloc=ListMNP(iProc)
+        DO IP=1,MNPloc
+          IP_glob=ListIPLG(IP+ListFirst(iProc))
+          IF ((IOBPtotal(IP_glob) .eq. 2).or.(IOBPtotal(IP_glob) .eq. 4)) THEN
+            eSend=eSend+1
           END IF
+        END DO
+        IF (eSend .gt. 0) THEN
+          bound_nbproc=bound_nbproc+1
+          rank_hasboundary=irank
         END IF
         NbSend(iProc)=eSend
       END DO
@@ -1261,6 +1259,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer IP, irank
+!      Print *, 'REDUCE_BOUNDARY_ARRAY_SPPARM, step 1'
 #ifndef MPI_PARALL_GRID
       IF (LINHOM) THEN
         SPPARM_GL=SPPARM
@@ -1270,9 +1269,12 @@
         END DO
       ENDIF
 #else
+!      Print *, 'REDUCE_BOUNDARY_ARRAY_SPPARM, step 2'
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
       END IF
+!      Print *, 'REDUCE_BOUNDARY_ARRAY_SPPARM, step 3'
+!      Print *, 'LINHOM=', LINHOM
       IF (LINHOM) THEN
         IF (myrank .eq. rank_boundary) THEN
           DO irank=1,bound_nbproc
@@ -1288,6 +1290,11 @@
           CALL MPI_SEND(SPPARM, 8*IWBMNP, rtype, rank_boundary, 2099, comm, ierr)
         END IF
       ELSE
+!        Print *, 'rank_boundary=', rank_boundary
+!        Print *, 'rank_hasboundary=', rank_hasboundary
+!        Print *, 'allocated(SPPARM)=', allocated(SPPARM)
+!        Print *, 'size(SPPARM,1)=', size(SPPARM,1)
+!        Print *, 'size(SPPARM,2)=', size(SPPARM,2)
         IF (rank_boundary .ne. rank_hasboundary) THEN
           IF (myrank .eq. rank_hasboundary) THEN
             CALL MPI_SEND(SPPARM,8,rtype, rank_boundary, 2045, comm, ierr)

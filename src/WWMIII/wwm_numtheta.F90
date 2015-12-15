@@ -85,6 +85,7 @@
          REAL(rkind)    :: DT4DI 
          REAL(rkind)    :: REST
          REAL(rkind)    :: CFLCAD
+         integer :: ID
 !$OMP PARALLEL DEFAULT(NONE) & 
 !$OMP&         SHARED(AC2,SI,DAC_THE,DT4D,DDIR,LCIRD,LTHBOUND,MNP, & 
 !$OMP&                MSC,MDC,WK,DEP,DMIN,CURTXY,ICOMP,IOBP,DAC_ADV,DAC_SIG,DAC_SOU)  &
@@ -96,11 +97,19 @@
            IF (DEP(IP) .LT. DMIN) CYCLE ! skip dry nodes ...
            IF (IOBP(IP) .EQ. 2) CYCLE ! skip active boundary points ...
            CALL PROPTHETA(IP,CAD)
+#ifdef DEBUG
            WRITE(STAT%FHNDL,*) 'IP=', IP, ' MNP=', MNP
+#endif
            DO IS = 1, MSC
              ACQ(1:MDC) = AC2(IS,:,IP)
              CADS(1:MDC) = CAD(IS,:)
-             CFLCAD = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR 
+             CFLCAD = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR
+#ifdef DEBUG
+             WRITE(STAT%FHNDL,*) 'IS=', IS, ' DT4D=', DT4D, ' DDIR=', DDIR
+             DO ID=1,MDC
+               WRITE(STAT%FHNDL,*) 'ID=', ID, ' cad=', CAD(IS,ID)
+             END DO
+#endif
              IF (CFLCAD .LT. THR) CYCLE
              REST  = ABS(MOD(CFLCAD,1.0_rkind))
              IF (REST .GT. THR .AND. REST .LT. 0.5) THEN
@@ -109,7 +118,9 @@
                ITER = ABS(NINT(CFLCAD))
              END IF 
              ITER = MAX(1,ITER)
+#ifdef DEBUG
              WRITE(STAT%FHNDL,*) 'IS=', IS, ' ITER=', ITER
+#endif
              DT4DI = DT4D / MyREAL(ITER)
              DO IT = 1, ITER ! Iteration
                CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
@@ -577,7 +588,15 @@
          REAL(rkind)    :: WKDEP, DWDH, CFL
 
          CAD = 0.
-
+#ifdef DEBUG
+         WRITE(STAT%FHNDL,*) 'DEP=', DEP(IP)
+         WRITE(STAT%FHNDL,*) 'DMIN=', DMIN
+         WRITE(STAT%FHNDL,*) 'LSTCU=', LSTCU
+         WRITE(STAT%FHNDL,*) 'LSECU=', LSECU
+         WRITE(STAT%FHNDL,*) 'maxval(DDEP)=', maxval(DDEP)
+         WRITE(STAT%FHNDL,*) 'maxval(CG)=', maxval(CG)
+#endif
+         
          SELECT CASE (DIMMODE)
 
              CASE (1)

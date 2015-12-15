@@ -1,6 +1,7 @@
 #include "wwm_functions.h"
 #undef positivity
 #undef DEBUG_COHERENCY_FLUCT
+#define DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -392,6 +393,9 @@
             FLALL(2,IE) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
             FLALL(3,IE) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
          END DO
+#ifdef DEBUG
+         WRITE(STAT%FHNDL,*) 'sum(abs(FLALL))=', sum(abs(FLALL))
+#endif
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN

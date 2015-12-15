@@ -2484,6 +2484,7 @@
       REAL(rkind)  :: eTimeDay
       integer POSITION_BEFORE_POINT, nbTime
       LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 1'
       IF (OUT_STATION%IDEF.gt.0) THEN
         WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
   10    FORMAT (a,'_',i4.4)
@@ -2493,6 +2494,7 @@
       ENDIF
       WRITE (FILE_NAME,30) TRIM(PRE_FILE_NAME)
   30  FORMAT (a,'.nc')
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 2'
       IF (IsInitDone .eqv. .FALSE.) THEN
         IsInitDone=.TRUE.
         nbTime=-1
@@ -2505,16 +2507,20 @@
        END IF
 #endif
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 3'
       !
       ! Getting the needed global arrays 
       !
       CALL INIT_NETCDF_BOUNDARY_OUTPUT
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 4'
       IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_SPPARM
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 5'
       IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 6'
 !      WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
 !      WRITE(STAT%FHNDL,*) 'sum(SPPARM)=', sum(SPPARM)
 !      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
@@ -2562,12 +2568,14 @@
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 7'
       IF (OUT_BOUC % IDEF.gt.0) THEN
         IF (recs_his .eq. OUT_BOUC % IDEF) THEN
           ifile=ifile+1
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 8'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2691,6 +2699,8 @@
       character (len=100) :: eStrUnitTime
       integer idx
       character (len = *), parameter :: CallFct="INIT_NETCDF_BOUNDAY_WWM"
+      WRITE(STAT%FHNDL,*) 'Entering INIT_NETCDF_BOUNDARY_WWM'
+      FLUSH(STAT%FHNDL)
       IF (TRIM(NETCDF_IN_FILE) .eq. "unset") THEN
         CALL WWM_ABORT('NETCDF_IN_FILE must be set for running')
       END IF
@@ -2794,6 +2804,8 @@
       SEBO%EMJD = BOUND_LIST_TIME(BOUND_NB_TIME)
       RETURN
   10  FORMAT (a,'_',i4.4)
+      WRITE(STAT%FHNDL,*) 'LEaving INIT_NETCDF_BOUNDARY_WWM'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************

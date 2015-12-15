@@ -63,6 +63,8 @@
           OUT_WALV_WW3%TMJD = OUT_WALV_WW3%TMJD + OUT_WALV_WW3%DELT*SEC2DAY
         END IF
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After specific model output'
+      FLUSH(STAT%FHNDL)
       !
       ! The boundary output
       !
@@ -82,6 +84,8 @@
         CALL WWM_ABORT('Need netcdf for the boundary output')
 #endif
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After boundary output'
+      FLUSH(STAT%FHNDL)
       !
       ! The nesting
       !
@@ -92,6 +96,8 @@
         CALL WWM_ABORT('Need netcdf for the nesting output')
 #endif
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After nesting operation'
+      FLUSH(STAT%FHNDL)
       !
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
       FLUSH(STAT%FHNDL)
