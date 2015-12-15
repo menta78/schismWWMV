@@ -22,6 +22,6 @@ BoundSingle_max = 1.2, 11
  WINDMAG = F,
  WIND10 = F, 
  Hwave = T,
- TM02 = T,
+ TM02 = F,
  DSPR = F,
 /

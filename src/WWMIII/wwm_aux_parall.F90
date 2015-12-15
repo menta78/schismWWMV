@@ -1136,6 +1136,9 @@
         END IF
         NbSend(iProc)=eSend
       END DO
+      IF (rank_hasboundary .eq. -1) THEN
+        CALL WWM_ABORT('We cannot work with rank_has_boundary = -1')
+      END IF
       IF (myrank .eq. rank_boundary) THEN
 !        WRITE(STAT%FHNDL,*) 'bound_nbproc=', bound_nbproc
 !        FLUSH(STAT%FHNDL)
