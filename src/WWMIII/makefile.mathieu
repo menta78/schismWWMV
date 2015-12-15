@@ -66,9 +66,9 @@ F90 = $(WWM_COMPILER)
 
 
 #GFORTRAN
-F90OPTI = -g -O3 -ffree-line-length-0
+#F90OPTI = -g -O3 -ffree-line-length-0
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
-#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
+F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o

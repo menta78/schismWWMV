@@ -461,6 +461,15 @@
           DO IE=1,ne_total
             INEtotal(:,IE) = eGrid % INEtotal(:,IE)
           END DO
+          IF (CART2LATLON) THEN
+            XPtotal = XPtotal / 111111.
+            YPtotal = YPtotal / 111111.
+          ELSE IF (LATLON2CART) THEN
+            XPtotal = XPtotal * 111111.
+            YPtotal = YPtotal * 111111.
+          ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+            CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+          END IF
         END IF
       END IF
       CALL GRID_EXPORT_FUNCTION
