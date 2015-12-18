@@ -268,6 +268,7 @@
         END DO
         DO IP = 1, NP_TOTAL
           READ(eBND%FHNDL, *, IOSTAT = IFSTAT) ITMP, BNDTMP, BNDTMP, BNDTMP
+!          READ(eBND%FHNDL, *, IOSTAT = IFSTAT) BNDTMP, BNDTMP, BNDTMP
           IF ( IFSTAT /= 0 ) THEN
             Print *, 'eBND%FNAME=', eBND%FNAME
             Print *, 'ITMP=', ITMP, 'BNDTMP=', BNDTMP

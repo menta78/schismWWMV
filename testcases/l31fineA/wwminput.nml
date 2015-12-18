@@ -100,7 +100,6 @@
  WINDFAC        = 1.00000000000000,  
  IWINDFORMAT    = 1,                 
  LWINDFROMWWM   = .T.,               
- SHIFT_WIND_TIME = 0.000000000000000E+000, 
 /
 
 &CURR          
@@ -222,14 +221,13 @@
 
 &HISTORY       
  BEGTC          = '19980901.000000',
- DELTC          = 0.200000000000,
+ DELTC          = 10.00000000000,
  UNITC          = 'SEC',
  ENDTC          = '19980901.050000',
  DEFINETC       = 0.000000000000000E+000, 
- OUTSTYLE       = 'XFN',             
+ OUTSTYLE       = 'NC',
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
- IOBPD          = .F.,               
  LENERGY        = .F.,               
  LWXFN          = .F.,               
  GRIDWRITE      = .T.,               
@@ -238,9 +236,9 @@
  USE_SINGLE_OUT = .T.,               
  PRINTMMA       = .F.,               
  HS             = .T.,               
- TM01           = .F.,               
- TM02           = .F.,               
- TM10           = .F.,               
+ TM01           = .T.,
+ TM02           = .T.,
+ TM10           = .T.,               
  KLM            = .F.,               
  WLM            = .F.,               
  ETOTC          = .F.,               
@@ -271,8 +269,8 @@
  WINDX          = .F.,               
  WINDY          = .F.,               
  CD             = .F.,               
- CURRTX         = .F.,               
- CURRTY         = .F.,               
+ CURRTX         = .T.,
+ CURRTY         = .T.,
  WATLEV         = .F.,               
  WATLEVOLD      = .F.,               
  DEPDT          = .F.,               
@@ -400,7 +398,6 @@
 /
 
 &NESTING
-L_WRITE=F
 /
 
 

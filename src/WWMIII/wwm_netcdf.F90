@@ -1442,7 +1442,7 @@
         END IF
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 32, iret)
 ! IOBP
-        iret=nf90_def_var(ncid,"IOBP",NF90_RUNTYPE,(/ p_dims/),var_id)
+        iret=nf90_def_var(ncid,"IOBP",NF90_INT,(/ p_dims/),var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 33, iret)
 ! depth
         iret=nf90_def_var(ncid,'depth',NF90_RUNTYPE,(/ p_dims/),var_id)
@@ -1529,7 +1529,7 @@
           iret=nf90_inq_varid(ncid, "x", var_id)
         ENDIF
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
-        iret=nf90_put_var(ncid,var_id,XPtotal, start = (/1/), count = (/ np_total/))
+        iret=nf90_put_var(ncid,var_id,XPtotal)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
         !
         IF (LSPHE) THEN
@@ -1538,17 +1538,17 @@
           iret=nf90_inq_varid(ncid, "y", var_id)
         ENDIF
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
-        iret=nf90_put_var(ncid,var_id,YPtotal, start = (/1/), count = (/ np_total/))
+        iret=nf90_put_var(ncid,var_id,YPtotal)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
         !
         iret=nf90_inq_varid(ncid, "IOBP", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
-        iret=nf90_put_var(ncid,var_id,IOBPtotal, start = (/1/), count = (/ np_total/))
+        iret=nf90_put_var(ncid,var_id,IOBPtotal)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
         !
         iret=nf90_inq_varid(ncid, "depth", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
-        iret=nf90_put_var(ncid,var_id,DEPtotal, start = (/1/), count = (/ np_write/))
+        iret=nf90_put_var(ncid,var_id,DEPtotal)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
         !
         Oper=2
