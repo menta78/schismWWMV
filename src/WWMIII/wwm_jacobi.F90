@@ -72,7 +72,7 @@
       REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
       INTEGER     :: I1, I2, I3
       INTEGER     :: IP, ID, IS, IE
-      INTEGER     :: I, IPGL1, IPrel
+      INTEGER     :: I, IPGL1
 
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
@@ -752,7 +752,7 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: eFact
-      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
+      REAL(rkind) :: Sum_new, eVal, DiffNew
       INTEGER :: IP, J, idx, nbIter, is_converged(1), itmp(1)
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.

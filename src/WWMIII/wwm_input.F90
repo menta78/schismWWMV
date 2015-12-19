@@ -1444,10 +1444,6 @@
 #ifdef MPI_PARALL_GRID
               READ(CUR%FHNDL, *, IOSTAT = ISTAT) tmp_arr
               DO I=1,NP_GLOBAL
-                WRITE(STAT%FHNDL,*) 'I=', I, ' ipgl%rank=', ipgl(I)%rank, ' id=', ipgl(I)%id
-              END DO
-              FLUSH(STAT%FHNDL)
-              DO I=1,NP_GLOBAL
                 IF (ipgl(I)%rank==myrank) THEN
                   IF ( ISTAT > 0 ) CALL WWM_ABORT('error in the wind velocity file')
                   CURTXY(ipgl(I)%id,1)=tmp_arr(I)

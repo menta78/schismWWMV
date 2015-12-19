@@ -575,7 +575,6 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: K
-      INTEGER             :: IT, IFILE
       IF (LWINDFROMWWM) THEN
         CALL UPDATE_WIND(K)
       END IF
@@ -740,7 +739,7 @@
 # ifdef TIMINGS 
       REAL(rkind)        :: TIME1, TIME2
 # endif
-      integer :: j,k
+      integer :: k
 # if defined DEBUG && (defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV)
       write(740+MyRankGlobal,*)  'WWMIII_MPI, before mpi_init'
       FLUSH(740+MyRankGlobal)

@@ -129,13 +129,13 @@ implicit none
     DEP8 => z
 
     INETMP => INE
-    DO I=1,npa
-      WRITE(740+myrank,*) ' I=', I, ' iplg=', iplg(I)
-    END DO
-    DO I=1,np_global
-      WRITE(740+myrank,*) ' I=', I, ' ipgl1=', ipgl1(I)
-    END DO
-    FLUSH(740+myrank)
+!    DO I=1,npa
+!      WRITE(740+myrank,*) ' I=', I, ' iplg=', iplg(I)
+!    END DO
+!    DO I=1,np_global
+!      WRITE(740+myrank,*) ' I=', I, ' ipgl1=', ipgl1(I)
+!    END DO
+!    FLUSH(740+myrank)
     
     if(allocated(ipgl)) deallocate(ipgl)
     allocate(ipgl(np_global), stat=istat)
