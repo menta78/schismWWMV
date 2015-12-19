@@ -113,6 +113,7 @@ implicit none
     use yowpd,only: nTasks, ipgl1=>ipgl, npa, ne, np, ng, x, y, z, INE, abort
     implicit  none
     integer :: istat
+    integer I, IP, IPglob
 
     nproc = nTasks
     MNP = npa
@@ -128,15 +129,26 @@ implicit none
     DEP8 => z
 
     INETMP => INE
-
+    DO I=1,npa
+      WRITE(740+myrank,*) ' I=', I, ' iplg=', iplg(I)
+    END DO
+    DO I=1,np_global
+      WRITE(740+myrank,*) ' I=', I, ' ipgl1=', ipgl1(I)
+    END DO
+    FLUSH(740+myrank)
     
     if(allocated(ipgl)) deallocate(ipgl)
     allocate(ipgl(np_global), stat=istat)
     if(istat/=0) ABORT("allocate")
     ipgl(:)%id = 0
-    ipgl(1:np_global)%id = ipgl1(1:np_global)
     ipgl(:)%rank = -1
-    ipgl(iplg(1:npa))%rank = myrank
+    DO IP=1,npa
+      IPglob=iplg(IP)
+      ipgl(IPglob) % id = IP
+      ipgl(IPglob) % rank = myrank
+    END DO
+!    ipgl(1:np_global)%id = ipgl1(1:np_global)
+!    ipgl(iplg(1:npa))%rank = myrank
 
   end subroutine
 
