@@ -2364,7 +2364,9 @@
       iret = nf90_def_dim(ncid, 'IWBMNPGL', nbBound, iwbmnpgl_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
       !
-      CALL WRITE_PARAM_1(ncid, nfreq_dims, ndir_dims, one_dims)
+      IF (PARAMWRITE_BOUC) THEN
+        CALL WRITE_PARAM_1(ncid, nfreq_dims, ndir_dims, one_dims)
+      END IF
       !
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
@@ -2426,7 +2428,9 @@
       iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
       !
-      CALL WRITE_PARAM_2(ncid)
+      IF (PARAMWRITE_BOUC) THEN
+        CALL WRITE_PARAM_2(ncid)
+      END IF
       !
       iret=nf90_inq_varid(ncid, "IOBP", var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)

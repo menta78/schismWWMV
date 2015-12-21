@@ -948,6 +948,7 @@
 
          INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 63
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
+         LOGICAL                :: PARAMWRITE_BOUC = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.
          TYPE VAROUT

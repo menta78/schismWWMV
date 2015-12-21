@@ -673,6 +673,7 @@
          REAL(rkind) :: DEFINETC
          LOGICAL     :: USE_SINGLE_OUT
          LOGICAL     :: EXTRAPOLATION_ALLOWED
+         LOGICAL     :: PARAMWRITE
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO,        &
@@ -698,7 +699,7 @@
      &      NETCDF_OUT_SPECTRA, NETCDF_OUT_FILE, USE_SINGLE_OUT,        &
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
      &      EXTRAPOLATION_ALLOWED,                                      &
-     &      HACK_HARD_SET_IOBP,                                         &
+     &      HACK_HARD_SET_IOBP, PARAMWRITE,                             &
      &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
@@ -878,10 +879,12 @@
          NETCDF_OUT_FILE=BOUC_NETCDF_OUT_FILE
 #endif
          EXTRAPOLATION_ALLOWED = EXTRAPOLATION_ALLOWED_BOUC
+         PARAMWRITE = PARAMWRITE_BOUC
          READ(INP%FHNDL,  NML = BOUC )
          wwm_print_namelist(BOUC)
          FLUSH(CHK%FHNDL)
          MULTIPLE_IN_BOUND=MULTIPLE_IN
+         PARAMWRITE_BOUC = PARAMWRITE
          EXTRAPOLATION_ALLOWED_BOUC = EXTRAPOLATION_ALLOWED
 #ifdef NCDF
          BOUC_NETCDF_OUT_PARAM  =NETCDF_OUT_PARAM
@@ -907,8 +910,9 @@
          CALL CT2MJD(OUT_BOUC % BEGT, OUT_BOUC % BMJD)
          CALL CT2MJD(OUT_BOUC % ENDT, OUT_BOUC % EMJD)
          CALL CU2SEC(OUT_BOUC % UNIT, OUT_BOUC % DELT)
-!         Print *, 'OUT_BOUC % BMJD = ', OUT_BOUC % BMJD
          OUT_BOUC % TMJD = OUT_BOUC % BMJD
+!         Print *, 'OUT_BOUC % BMJD = ', OUT_BOUC % BMJD
+!         Print *, 'OUT_BOUC % EMJD = ', OUT_BOUC % EMJD
 !         Print *, 'OUT_BOUC % TMJD = ', OUT_BOUC % TMJD
          IF (DEFINETC .lt. 0) THEN
            OUT_BOUC % IDEF = -1
