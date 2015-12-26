@@ -196,7 +196,7 @@
  RTHETA         = 0.500000000000000, 
  LEXPIMP        = .F.,               
  FREQEXP        = 0.100000000000000, 
- LVECTOR        = .F.,               
+ LVECTOR        = .T.,               
  IVECTOR        = 2,                 
  DTMIN_DYN      = 1.00000000000000,  
  NDYNITER       = 100,               

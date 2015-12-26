@@ -36,7 +36,7 @@ F90 = mpif90
 #debugging flags
 #F90OPTI = -fpp -traceback -g
 #F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointers -warn interfaces,nouncalled
-F90OPTI = -O1 -axSSE4.2 -traceback -g
+F90OPTI = -O3 -axSSE4.2 -traceback -g
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 
