@@ -1,10 +1,7 @@
 #include "wwm_functions.h"
 #undef positivity
 #undef DEBUG_COHERENCY_FLUCT
-<<<<<<< HEAD
 #define DEBUG
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -19,16 +16,11 @@
            CFLCXY(2,:) = LARGE
            CFLCXY(3,:) = LARGE 
          END IF
-<<<<<<< HEAD
 #ifdef DEBUG
          DO ID=1,MDC
            WRITE(STAT%FHNDL,*) 'ID=', ID, ' C/S=', COSTH(ID), SINTH(ID)
          END DO
 #endif
-         
-=======
- 
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !$OMP PARALLEL
          IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
@@ -247,12 +239,9 @@
 !           IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
          END DO
        END DO
-<<<<<<< HEAD
 #ifdef DEBUG
        WRITE(STAT%FHNDL,*) 'sum(abs(KKSUM))=', sum(abs(KKSUM))
 #endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 
 #ifdef MPI_PARALL_GRID
        DTMAX_GLOBAL_EXP = VERYLARGE
@@ -319,11 +308,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-<<<<<<< HEAD
        SUBROUTINE EXPLICIT_N_SCHEME(IS,ID)
-=======
-       SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID )
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
@@ -358,13 +343,10 @@
 ! local parameter
 !
          REAL(rkind) :: TMP
-<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) '-----------------------------------------'
          WRITE(STAT%FHNDL,*) 'IS=', IS, ' ID=', ID
 #endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -422,7 +404,6 @@
             FLALL(2,IE) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
             FLALL(3,IE) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
          END DO
-<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) '      THR      =', THR
          WRITE(STAT%FHNDL,*) 'sum(abs(C(1:)))=', sum(abs(C(1,:)))
@@ -433,8 +414,6 @@
          WRITE(STAT%FHNDL,*) 'sum(abs(KELEM))=', sum(abs(KELEM))
          WRITE(STAT%FHNDL,*) 'sum(abs(FLALL))=', sum(abs(FLALL))
 #endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
@@ -445,12 +424,9 @@
          DTSI(:)  = DT4AI/SI(:)
 
          U = AC2(IS,ID,:)
-<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) 'EXPLICIT_N_SCHEME Before sum(U)=', sum(U)
 #endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 #ifdef DEBUG_COHERENCY_FLUCT
          WRITE(STAT%FHNDL,*) 'IS=', IS, ' ID=', ID
          CALL Print_SumScalar(SI, "SI at start of EXPLICIT_N_SCHEME")
@@ -478,12 +454,9 @@
 !     &    SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2)*DT4A/MINVAL(EDGELENGTH), MAXVAL(CG(IS,:)), SQRT(G9*MAXVAL(DEP))
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
-<<<<<<< HEAD
 #ifdef DEBUG
            WRITE(STAT%FHNDL,*) 'ITER=', ITER_EXP(IS,ID)
 #endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
            DO IT = 1, ITER_EXP(IS,ID)
 #ifdef DEBUG_COHERENCY_FLUCT
              WRITE(STAT%FHNDL,*) 'IT=', IT
@@ -563,16 +536,9 @@
 #endif
            END DO  ! ----> End Iteration
          END IF ! IMETHOD
-<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) 'EXPLICIT_N_SCHEME  After sum(U)=', sum(U)
 #endif
-#ifdef DEBUG
-         WRITE(STAT%FHNDL,*) '-----------------------------------------'
-#endif
-=======
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
-
          AC2(IS,ID,:) = U
 
          IF (LADVTEST) THEN
@@ -2828,11 +2794,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_I
-=======
-      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -3218,11 +3180,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_II
-=======
-      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -3402,11 +3360,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_III
-=======
-      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF_VECTOPER
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
       USE DATAPOOL
       IMPLICIT NONE
 !
@@ -3577,8 +3531,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-<<<<<<< HEAD
-=======
        SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
          USE DATAPOOL
          IMPLICIT NONE
@@ -3736,4 +3688,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
->>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
