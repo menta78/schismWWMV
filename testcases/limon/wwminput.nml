@@ -197,7 +197,7 @@
  LEXPIMP        = .F.,               
  FREQEXP        = 0.100000000000000, 
  LVECTOR        = .T.,               
- IVECTOR        = 2,                 
+ IVECTOR        = 5,                 
  DTMIN_DYN      = 1.00000000000000,  
  NDYNITER       = 100,               
  DTMIN_SIN      = 1.00000000000000,  
