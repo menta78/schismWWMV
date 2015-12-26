@@ -1,6 +1,10 @@
 #include "wwm_functions.h"
 #undef positivity
 #undef DEBUG_COHERENCY_FLUCT
+<<<<<<< HEAD
+#define DEBUG
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -15,7 +19,16 @@
            CFLCXY(2,:) = LARGE
            CFLCXY(3,:) = LARGE 
          END IF
+<<<<<<< HEAD
+#ifdef DEBUG
+         DO ID=1,MDC
+           WRITE(STAT%FHNDL,*) 'ID=', ID, ' C/S=', COSTH(ID), SINTH(ID)
+         END DO
+#endif
+         
+=======
  
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !$OMP PARALLEL
          IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
@@ -114,12 +127,6 @@
 #ifdef PETSC
        use PETSC_CONTROLLER, only : EIMPS_PETSC
        use petsc_block,    only: EIMPS_PETSC_BLOCK
-#endif
-       IMPLICIT NONE
- 
-       INTEGER             :: IS, ID
-       REAL(rkind)         :: DTMAX
-
 #endif
        IMPLICIT NONE
  
@@ -240,9 +247,12 @@
 !           IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
          END DO
        END DO
+<<<<<<< HEAD
 #ifdef DEBUG
        WRITE(STAT%FHNDL,*) 'sum(abs(KKSUM))=', sum(abs(KKSUM))
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 
 #ifdef MPI_PARALL_GRID
        DTMAX_GLOBAL_EXP = VERYLARGE
@@ -309,7 +319,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+<<<<<<< HEAD
        SUBROUTINE EXPLICIT_N_SCHEME(IS,ID)
+=======
+       SUBROUTINE EXPLICIT_N_SCHEME  ( IS, ID )
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN)    :: IS,ID
@@ -344,10 +358,13 @@
 ! local parameter
 !
          REAL(rkind) :: TMP
+<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) '-----------------------------------------'
          WRITE(STAT%FHNDL,*) 'IS=', IS, ' ID=', ID
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -405,6 +422,7 @@
             FLALL(2,IE) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
             FLALL(3,IE) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
          END DO
+<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) '      THR      =', THR
          WRITE(STAT%FHNDL,*) 'sum(abs(C(1:)))=', sum(abs(C(1,:)))
@@ -415,6 +433,8 @@
          WRITE(STAT%FHNDL,*) 'sum(abs(KELEM))=', sum(abs(KELEM))
          WRITE(STAT%FHNDL,*) 'sum(abs(FLALL))=', sum(abs(FLALL))
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 ! If the current field or water level changes estimate the iteration
 ! number based on the new flow field and the CFL number of the scheme
          IF (LCALC) THEN
@@ -425,9 +445,12 @@
          DTSI(:)  = DT4AI/SI(:)
 
          U = AC2(IS,ID,:)
+<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) 'EXPLICIT_N_SCHEME Before sum(U)=', sum(U)
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 #ifdef DEBUG_COHERENCY_FLUCT
          WRITE(STAT%FHNDL,*) 'IS=', IS, ' ID=', ID
          CALL Print_SumScalar(SI, "SI at start of EXPLICIT_N_SCHEME")
@@ -455,9 +478,12 @@
 !     &    SQRT(MAXVAL(C(1,:))**2+MAXVAL(C(2,:))**2)*DT4A/MINVAL(EDGELENGTH), MAXVAL(CG(IS,:)), SQRT(G9*MAXVAL(DEP))
          IMETHOD = 1
          IF (IMETHOD == 1) THEN
+<<<<<<< HEAD
 #ifdef DEBUG
            WRITE(STAT%FHNDL,*) 'ITER=', ITER_EXP(IS,ID)
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
            DO IT = 1, ITER_EXP(IS,ID)
 #ifdef DEBUG_COHERENCY_FLUCT
              WRITE(STAT%FHNDL,*) 'IT=', IT
@@ -537,12 +563,15 @@
 #endif
            END DO  ! ----> End Iteration
          END IF ! IMETHOD
+<<<<<<< HEAD
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) 'EXPLICIT_N_SCHEME  After sum(U)=', sum(U)
 #endif
 #ifdef DEBUG
          WRITE(STAT%FHNDL,*) '-----------------------------------------'
 #endif
+=======
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 
          AC2(IS,ID,:) = U
 
@@ -2685,6 +2714,41 @@
         !
         ! Arrays for Jacobi-Gauss-Seidel solver
         !
+        IF (AMETHOD .eq. 7) THEN
+          IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
+            ALLOCATE(LIST_ADJ_VERT(MAX_DEG,MNP), VERT_DEG(MNP), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6a')
+            J = 0
+            K = 0
+            DO IP = 1, MNP
+              ITMP=0
+              DO I = 1, CCON(IP) ! Check how many entries there are ...
+                J = J + 1
+                IP_J  = PTABLE(J,2)
+                IP_K  = PTABLE(J,3)
+                ITMP(IP)   = 1
+                ITMP(IP_J) = 1
+                ITMP(IP_K) = 1
+              END DO
+              IADJ=0
+              DO I = 1, MNP
+                IF (ITMP(I) .GT. 0) THEN
+                  K = K + 1
+                  IF (I .ne. IP) THEN
+                    IADJ=IADJ + 1
+                    LIST_ADJ_VERT(IADJ,IP)=I
+                  END IF
+                  JA(K) = I
+                END IF
+              END DO
+              VERT_DEG(IP)=IADJ
+              IA(IP + 1) = K + 1
+            END DO
+            ALLOCATE(REV_BOOK(NNZ), stat=istat)
+            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 6b')
+            REV_BOOK=0
+            DO IP=1,MNP
+              DO J=IA(IP),IA(IP+1)-1
                 JP=JA(J)
                 IF (IP .ne. JP) THEN
                   FPOS=-1
@@ -2764,42 +2828,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_I
-         USE DATAPOOL
-         IMPLICIT NONE
-!
-! local integer
-!
-         INTEGER :: IP, IE, IT, IS, ID
-         INTEGER :: I1, I2, I3
-         INTEGER :: NI(3), I, IPOS
-!
-! local double
-!
-         REAL(rkind)  :: UTILDE
-         REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
-
-#ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: WILD(MNP), WILD2D(MDC,MNP)
-#endif
-        DEALLOCATE(PTABLE)
-      ENDIF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE DEALLOC_FLUCT
-      USE DATAPOOL
-      implicit none
-      DEALLOCATE (IE_CELL, POS_CELL, IE_CELL2, POS_CELL2)
-      IF (ICOMP .GT. 0 .OR. LEXPIMP) THEN
-        DEALLOCATE (JA, IA, POSI)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
+=======
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -3039,6 +3072,41 @@
 #else
              DO IP = 1, MNP
                DTMAX_EXP        = SI(IP)/MAX(THR,MAXVAL(KKSUM(IP,:,:)))
+               DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
+             END DO
+#endif
+             CFLXY = DT4A/DTMAX_GLOBAL_EXP
+             REST = ABS(MOD(CFLXY,ONE))
+             IF (REST .LT. THR) THEN
+               ITER_MAX = ABS(NINT(CFLXY))
+             ELSE IF (REST .GT. THR .AND. REST .LT. ONEHALF) THEN
+               ITER_MAX = ABS(NINT(CFLXY)) + 1
+             ELSE
+               ITER_MAX = ABS(NINT(CFLXY))
+             END IF
+           END IF !IVECTOR
+           WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
+           FLUSH(STAT%FHNDL)
+         END IF !LCALC
+
+#ifdef TIMINGS
+         CALL WAV_MY_WTIME(TIME1)
+#endif
+         IF (IVECTOR == 1) THEN
+         DO ID = 1, MDC
+           DO IS = 1, MSC
+             DT4AI = DT4A/ITER_EXP(IS,ID)
+             DO IT = 1, ITER_EXP(IS,ID)
+               ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
+               DO IE = 1, MNE
+                 NI = INE(:,IE)
+                 U3(:) = AC2(IS,ID,NI)
+                 UTILDE = N(IE,IS,ID) * ( FLALL(1,IE,IS,ID) * U3(1) + FLALL(2,IE,IS,ID) * U3(2) + FLALL(3,IE,IS,ID) * U3(3) )
+                 ST(NI(1),IS,ID)  = ST(NI(1),IS,ID) + KELEM(1,IE,IS,ID) * (U3(1) - UTILDE)
+                 ST(NI(2),IS,ID)  = ST(NI(2),IS,ID) + KELEM(2,IE,IS,ID) * (U3(2) - UTILDE)
+                 ST(NI(3),IS,ID)  = ST(NI(3),IS,ID) + KELEM(3,IE,IS,ID) * (U3(3) - UTILDE)
+               END DO !IE
+               AC2(IS,ID,:) = MAX(ZERO,AC2(IS,ID,:)-DT4AI/SI*ST(:,IS,ID)*IOBWB)*IOBPD(ID,:)
 #ifdef MPI_PARALL_GRID
                WILD = AC2(IS,ID,:)
                CALL EXCHANGE_P2D(WILD)
@@ -3074,7 +3142,7 @@
            DT4AI = DT4A/ITER_MAX
            DO IT = 1, ITER_MAX
              DO ID = 1, MDC
-               CIT_N_SCHEME_VECTOR_I EXPLICIT_N_SCHEME_VECTOR_I              EXPLICIT_N_SCHEME_VECTOR_IST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
+               ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
                  U3(:) = AC2(IS,ID,NI)
@@ -3146,11 +3214,15 @@
 #endif
          END DO !IT
          END IF
-      END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_I
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_II
+=======
+      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -3192,41 +3264,6 @@
          N     = ZERO
 
          IF (LCALC) THEN
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               KMAX = ZERO
-               KSUM = ZERO
-               DO IP = 1, MNP
-                 DO I = 1, CCON(IP)
-                   IE     =  IE_CELL2(IP,I)
-                   IPOS   = POS_CELL2(IP,I)
-! get node indices from the element table ...
-                   NI = INE(:,IE)
-! estimate speed in WAE
-                   CX = (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
-                   CY =( CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
-! upwind indicators
-                   LAMBDA(1) = ONESIXTH * SUM(CX)
-                   LAMBDA(2) = ONESIXTH * SUM(CY)
-! flux jacobians
-                   KELEM(1)  = MAX(ZERO, LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) )! K
-                   KELEM(2)  = MAX(ZERO, LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE) )
-                   KELEM(3)  = MAX(ZERO, LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE) )
-
-                   KSUM(IP)  = KSUM(IP) + KELEM(IPOS)
-!2do check if also stable when abs removed
-                   IF ( KELEM(IPOS) > KMAX(IP) ) KMAX(IP) = KELEM(IPOS)
-                 END DO
-                END DO
-#ifdef MPI_PARALL_GRID
-                DTMAX_GLOBAL_EXP = VERYLARGE
-                DTMAX_GLOBAL_EXP_LOC = VERYLARGE
-                DO IP = 1, NP_RES
-                  DTMAX_EXP = SI(IP)/MAX(THR,KSUM(IP))
-                  DTMAX_GLOBAL_EXP_LOC = MIN ( DTMAX_GLOBAL_EXP_LOC, DTMAX_EXP)
-                END DO
-                CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
-#else
            DO ID = 1, MDC
              DO IS = 1, MSC
                KMAX = ZERO
@@ -3315,6 +3352,41 @@
                    CX = (CG(NI,IS)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
                    CY = (CG(NI,IS)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
 ! flux integration using simpson rule ...
+                   FL11  = CX(2) * IEN(1,IE) + CY(2) * IEN(2,IE)
+                   FL12  = CX(3) * IEN(1,IE) + CY(3) * IEN(2,IE)
+                   FL21  = CX(3) * IEN(3,IE) + CY(3) * IEN(4,IE)
+                   FL22  = CX(1) * IEN(3,IE) + CY(1) * IEN(4,IE)
+                   FL31  = CX(1) * IEN(5,IE) + CY(1) * IEN(6,IE)
+                   FL32  = CX(2) * IEN(5,IE) + CY(2) * IEN(6,IE)
+
+                   FL111 = TWO*FL11+FL12
+                   FL112 = TWO*FL12+FL11
+                   FL211 = TWO*FL21+FL22
+                   FL212 = TWO*FL22+FL21
+                   FL311 = TWO*FL31+FL32
+                   FL312 = TWO*FL32+FL31
+! upwind indicators
+                   LAMBDA(1) = ONESIXTH * SUM(CX)
+                   LAMBDA(2) = ONESIXTH * SUM(CY)
+! flux jacobians
+                   KELEM(1)  = LAMBDA(1) * IEN(1,IE) + LAMBDA(2) * IEN(2,IE) ! K
+                   KELEM(2)  = LAMBDA(1) * IEN(3,IE) + LAMBDA(2) * IEN(4,IE)
+                   KELEM(3)  = LAMBDA(1) * IEN(5,IE) + LAMBDA(2) * IEN(6,IE)
+! inverse of the positive sum ...
+                   N         = -ONE/MIN(-THR,SUM(MIN(ZERO,KELEM))) ! N
+! positive flux jacobians
+                   KELEM(1)  = MAX(ZERO,KELEM(1)) ! K+
+                   KELEM(2)  = MAX(ZERO,KELEM(2))
+                   KELEM(3)  = MAX(ZERO,KELEM(3))
+! simposon integration last step ...
+                   FLALL(1) = (FL311 + FL212) * ONESIXTH + KELEM(1)
+                   FLALL(2) = (FL111 + FL312) * ONESIXTH + KELEM(2)
+                   FLALL(3) = (FL211 + FL112) * ONESIXTH + KELEM(3)
+! flux conserving upwind contribution
+                   U3 = UIP(NI)
+                   UTILDE3  = N * ( FLALL(1) * U3(1) + FLALL(2) * U3(2) + FLALL(3) * U3(3) )
+! coefficient for the integration in time
+                   ST = ST + KELEM(IPOS) * (UIP(IP) - UTILDE3)
                  END DO
 ! time stepping ...
                  UIP(IP) = MAX(ZERO,UIP(IP)-DT4AI/SI(IP)*ST*IOBWB(IP))*IOBPD(ID,IP)
@@ -3326,11 +3398,15 @@
            CALL EXCHANGE_P4D_WWM(AC2)
 #endif
          END DO !IT
-      END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_II
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+<<<<<<< HEAD
       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_III
+=======
+      SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_HPCF_VECTOPER
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
       USE DATAPOOL
       IMPLICIT NONE
 !
@@ -3497,11 +3573,13 @@
         CALL EXCHANGE_P4D_WWM(AC2)
 #endif
       END DO
-      END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_III
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_IV
+<<<<<<< HEAD
+=======
+       SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -3654,7 +3732,8 @@
            CALL EXCHANGE_P4D_WWM(AC2)
 #endif
          END DO
-      END SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_IV
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+>>>>>>> 3139b26fe0db0dec76354a7359ddbe62746a9674
