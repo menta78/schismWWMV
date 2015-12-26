@@ -16,37 +16,36 @@
            CFLCXY(2,:) = LARGE
            CFLCXY(3,:) = LARGE 
          END IF
-#ifdef DEBUG
-         DO ID=1,MDC
-           WRITE(STAT%FHNDL,*) 'ID=', ID, ' C/S=', COSTH(ID), SINTH(ID)
-         END DO
-#endif
-!$OMP PARALLEL
-         IF (AMETHOD == 1) THEN
-!$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               CALL EXPLICIT_N_SCHEME(IS,ID)
+
+         IF (LVECTOR) THEN
+           IF (AMETHOD == 1) THEN
+             CALL EXPLICIT_N_SCHEME_VECTOR_I
+           ELSE
+             CALL WWM_ABORT('NOT SUPPORTED IN VECTOR MODE')
+           ENDIF
+         ELSE
+           IF (AMETHOD == 1) THEN
+             DO ID = 1, MDC
+               DO IS = 1, MSC
+                 CALL EXPLICIT_N_SCHEME(IS,ID)
+               END DO
              END DO
-           END DO
-         ELSE IF (AMETHOD == 2) THEN
-!$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               CALL EXPLICIT_PSI_SCHEME(IS,ID)
-!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+           ELSE IF (AMETHOD == 2) THEN
+             DO ID = 1, MDC
+               DO IS = 1, MSC
+                 CALL EXPLICIT_PSI_SCHEME(IS,ID)
+!                 CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+               END DO
              END DO
-           END DO
-         ELSE IF (AMETHOD == 3) THEN
-!$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
-               CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
-!               CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+           ELSE IF (AMETHOD == 3) THEN
+             DO ID = 1, MDC
+               DO IS = 1, MSC
+                 CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
+!                 CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
+               END DO
              END DO
-           END DO
-         END IF
-!$OMP END PARALLEL
+           END IF
+         ENDIF
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
