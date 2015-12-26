@@ -3157,7 +3157,7 @@
                    NI   = INE(:,IE)
                    U3   = AC2(IS,ID,NI)
                    UTILDE = N(IS,ID,IE) * ( FLALL(IS,ID,IE,1) * U3(1) + FLALL(IS,ID,IE,2) * U3(2) + FLALL(IS,ID,IE,3) * U3(3) )
-                   ST1    = ST1 + KELEM(IS,ID,IE,IPOS)*(AC2(IS,ID,IP)-UTILDE)
+                   ST1    = ST1 + KELEM(IS,ID,IPOS,IE)*(AC2(IS,ID,IP)-UTILDE)
                  END DO
                  AC2(IS,ID,IP) = MAX(ZERO,AC2(IS,ID,IP)-DT4AI/SI(IP)*ST1*IOBWB(IP))
                END DO !ID
