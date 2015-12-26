@@ -3530,7 +3530,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-       SUBROUTINE EXPLICIT_N_SCHEME_HPCF2
+       SUBROUTINE EXPLICIT_N_SCHEME_VECTOR_IV
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -3625,11 +3625,11 @@
          DO IT = 1, ITER_MAX
            DO ID = 1, MSC
              DO IS = 1, MDC
-!!$OMP WORKSHARE
+!$OMP WORKSHARE
                CX = (CG(IS,:)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
                CY = (CG(IS,:)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
-!!$OMP END WORKSHARE
-!!$OMP DO PRIVATE(IE,NI,I1,I2,I3,LLAMBDA,FL11,FL12,FL21,FL22,FL31,FL32,FL111,FL112,FL211,FL212,FL311,FL312,FLALL)
+!$OMP END WORKSHARE
+!$OMP DO PRIVATE(IE,NI,I1,I2,I3,LLAMBDA,FL11,FL12,FL21,FL22,FL31,FL32,FL111,FL112,FL211,FL212,FL311,FL312,FLALL)
                DO IE = 1, MNE ! must go over the augmented domain ...
                  NI = INE(:,IE)
                  I1 = INE(1,IE)
@@ -3648,7 +3648,6 @@
                  KELEM(1,IE)  = MAX(ZERO,KTMP(1))
                  KELEM(2,IE)  = MAX(ZERO,KTMP(2))
                  KELEM(3,IE)  = MAX(ZERO,KTMP(3))
-!                 WRITE(DBG%FHNDL,'(3I10,3F15.4)') IS, ID, IE, KELEM(:,IE)
                  FL11  = CX(I2) * IEN(1,IE) + CY(I2) * IEN(2,IE)
                  FL12  = CX(I3) * IEN(1,IE) + CY(I3) * IEN(2,IE)
                  FL21  = CX(I3) * IEN(3,IE) + CY(I3) * IEN(4,IE)
@@ -3665,9 +3664,8 @@
                  FLALL(2) = (FL111 + FL312) * ONESIXTH + KELEM(2,IE)
                  FLALL(3) = (FL211 + FL112) * ONESIXTH + KELEM(3,IE)
                  UTILDE3(IE) = N * (DOT_PRODUCT(FLALL,AC2(IS,ID,NI(:))))
-                 !UTILDE3(IE) = N * ( FLALL(1) * AC2(IS,ID,NI(1)) + FLALL(2) * AC2(IS,ID,NI(2) + FLALL(3) * AC2(IS,ID,NI(3)))
                END DO !IE
-!!$OMP DO PRIVATE(IP,ST,IE,IPOS)
+!$OMP DO PRIVATE(IP,ST,IE,IPOS)
                DO IP = 1, NP_RES
                  ST = 0
                  DO I = 1, CCON(IP)
