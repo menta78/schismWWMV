@@ -462,14 +462,14 @@
             INEtotal(:,IE) = eGrid % INEtotal(:,IE)
           END DO
           IF (CART2LATLON) THEN
-            XPtotal = XPtotal / 111111.
-            YPtotal = YPtotal / 111111.
+            XPtotal = XPtotal / 111111.11
+            YPtotal = YPtotal / 111111.11
             IF (LSPHE .eqv. .FALSE.) THEN
               CALL WWM_ABORT('For CART2LATLON we need LSPHE = T')
             END IF
           ELSE IF (LATLON2CART) THEN
-            XPtotal = XPtotal * 111111.
-            YPtotal = YPtotal * 111111.
+            XPtotal = XPtotal * 111111.11
+            YPtotal = YPtotal * 111111.11
             IF (LSPHE .eqv. .TRUE.) THEN
               CALL WWM_ABORT('For LATLON2CART we need LSPHE = F')
             END IF

@@ -1165,6 +1165,8 @@
          INTEGER                :: ITER_MAX
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:), IEND(:,:,:)
+         
+         REAL(rkind),  ALLOCATABLE   :: FLALLGL(:,:,:,:), KELEMGL(:,:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
          REAL(rkind), ALLOCATABLE    :: CFL_CASD(:,:)
@@ -1193,7 +1195,9 @@
 ! Dislin
 !
          LOGICAL                      :: LDISLIN = .FALSE.
-
+!
+! WAM Sources 
+!
          REAL(rkind)                  :: XNLEV(1) = 10.
 
          REAL(rkind), PARAMETER       :: XEPS = RHOA/RHOW
@@ -1307,6 +1311,7 @@
          integer :: rank_boundary=0 ! could be set to another rank.
          integer :: rank_hasboundary = -1
          integer :: bound_nbproc
+
          integer, dimension(:), pointer :: Indexes_boundary
          integer, dimension(:), pointer :: bound_listproc
          integer, dimension(:), pointer :: spparm_rqst
@@ -1355,7 +1360,6 @@
 !      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
 !      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
          REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
-
 
 #ifdef WWM_SOLVER
       TYPE LocalColorInfo
@@ -1446,6 +1450,7 @@
          integer, dimension(:), pointer :: sync_p2dsend_type
          integer, dimension(:), pointer :: sync_p2drecv_type
       END TYPE LocalColorInfo
+
       TYPE I5_SolutionData
          real(rkind), dimension(:,:,:), pointer :: AC1
          real(rkind), dimension(:,:,:), pointer :: AC3
@@ -1457,6 +1462,7 @@
          real(rkind), dimension(:,:,:), pointer :: ASPAR_pc
          real(rkind), dimension(:,:,:), pointer :: B_block
       END TYPE I5_SolutionData
+
       type(LocalColorInfo) :: MainLocalColor
       type(I5_SolutionData) :: SolDat
       integer :: NblockFreqDir = 10
