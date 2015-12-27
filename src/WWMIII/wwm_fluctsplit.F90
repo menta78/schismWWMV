@@ -993,8 +993,8 @@
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
            WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),  IP = 1, MNP)
-           CALL CHECKCONS(U,SUMAC2)
-           IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
+           CALL CHECKCONS(AC2(1,1,:),SUMAC2)
+           IF (MINVAL(AC2(1,1,:)) .LT. MINTEST) MINTEST = MINVAL(U)
            WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
      &       SUMAC1, SUMAC2, MINTEST
            WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
@@ -3691,7 +3691,7 @@
             FLALL(:,:,2) = (FL111(:,:) + FL312(:,:)) * ONESIXTH + KP(:,:,2)
             FLALL(:,:,3) = (FL211(:,:) + FL112(:,:)) * ONESIXTH + KP(:,:,3)
 ! flux conserving upwind contribution
-            UTILDE3(:,:) = N(:,:) * ( FLALL(:,:,1) * AC2(:,:,I1) + FLALL(:,:,2) * AC2(:,:,I2) + FLALL(:,:,3) * AC2(:,:,3) )
+            UTILDE3(:,:) = N(:,:) * ( FLALL(:,:,1) * AC2(:,:,NI(1)) + FLALL(:,:,2) * AC2(:,:,NI(2)) + FLALL(:,:,3) * AC2(:,:,NI(3)) )
 ! coefficient for the integration in time
             ST(:,:) = ST(:,:) + KP(:,:,IPOS) * (AC2(:,:,IP) - UTILDE3(:,:))
 ! time stepping ...
