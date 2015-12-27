@@ -18,7 +18,7 @@
       integer eIOBP
       integer nbBound, nbTime
       integer np_write, ne_write
-      integer MULTIPLEOUT_W
+      logical MULTIPLEOUT_W
       logical GRIDWRITE_W, IOBPD_HISTORY_W, WriteOutputProcess
       !
       ! First reading the grids
