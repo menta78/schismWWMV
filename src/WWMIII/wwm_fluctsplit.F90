@@ -20,6 +20,7 @@
          IF (LVECTOR) THEN
            IF (AMETHOD == 1) THEN
              CALL EXPLICIT_N_SCHEME_VECTOR_HPCF
+             !CALL EXPLICIT_N_SCHEME_VECTOR_III
            ELSE
              CALL WWM_ABORT('NOT SUPPORTED IN VECTOR MODE')
            ENDIF
@@ -3175,7 +3176,7 @@
              ENDIF
            END DO !IP
            DO IS = 1, MSC
-             AC2(IS,:,:)=AC2(IS,:,:)*IOBPD
+             AC2(IS,:,:)=AC2(IS,:,:)*DBLE(IOBPD)
            END DO 
 #ifdef MPI_PARALL_GRID
            CALL EXCHANGE_P4D_WWM(AC2)
@@ -3597,8 +3598,8 @@
               END DO
             END DO
 ! upwind indicators
-            LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,1) + CX(:,:,1))
-            LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,1) + CY(:,:,1))
+            LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
+            LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
 ! flux jacobians
             KELEM(:,:,1)  = MAX(ZERO, LAMBDA(:,:,1) * IEN(1,IE) + LAMBDA(:,:,2) * IEN(2,IE) )! K
             KELEM(:,:,2)  = MAX(ZERO, LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE) )
@@ -3635,18 +3636,24 @@
               END DO ! IS
             END DO ! ID
 
-            WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', ITER_MAX, MAXVAL(ITER_EXP)
-            FLUSH(STAT%FHNDL)
           END DO
         END DO
+
+        WRITE(STAT%FHNDL,*) 'MAX. ITERATIONS USED IN ADV. SCHEME', MAXVAL(ITER_EXP)
+        FLUSH(STAT%FHNDL)
+
       END IF
+
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 #endif
       ITER_MAX = MAXVAL(ITER_EXP)
       DT4AI = DT4A/ITER_MAX
+
       DO IT = 1, ITER_MAX
+        write(*,*) it, iter_max
         DO IP = 1, MNP
+          write(*,*) ip 
           ST = ZERO
           DO I = 1, CCON(IP)
 ! get element and the position of IP in the element index
@@ -3669,12 +3676,12 @@
             FL31(:,:) = CX(:,:,1) * IEN(5,IE) + CY(:,:,1) * IEN(6,IE)
             FL32(:,:) = CX(:,:,2) * IEN(5,IE) + CY(:,:,2) * IEN(6,IE)
 
-            FL111(:,:) = TWO*FL11(:,:)+FL12(:,:)
-            FL112(:,:) = TWO*FL12(:,:)+FL11(:,:)
-            FL211(:,:) = TWO*FL21(:,:)+FL22(:,:)
-            FL212(:,:) = TWO*FL22(:,:)+FL21(:,:)
-            FL311(:,:) = TWO*FL31(:,:)+FL32(:,:)
-            FL312(:,:) = TWO*FL32(:,:)+FL31(:,:)
+            FL111 = TWO*FL11+FL12
+            FL112 = TWO*FL12+FL11
+            FL211 = TWO*FL21+FL22
+            FL212 = TWO*FL22+FL21
+            FL311 = TWO*FL31+FL32
+            FL312 = TWO*FL32+FL31
 ! upwind indicators
             LAMBDA(:,:,1) = ONESIXTH * (CX(:,:,1) + CX(:,:,2) + CX(:,:,3))
             LAMBDA(:,:,2) = ONESIXTH * (CY(:,:,1) + CY(:,:,2) + CY(:,:,3))
@@ -3683,8 +3690,8 @@
             KELEM(:,:,2)  = LAMBDA(:,:,1) * IEN(3,IE) + LAMBDA(:,:,2) * IEN(4,IE)
             KELEM(:,:,3)  = LAMBDA(:,:,1) * IEN(5,IE) + LAMBDA(:,:,2) * IEN(6,IE)
 ! inverse of the positive sum ...
-            KM=MIN(ZERO,KELEM)
-            KP=MAX(ZERO,KELEM)
+            KM=MIN(-THR,KELEM)
+            KP=MAX(THR,KELEM)
             N(:,:) = -ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
 ! simposon integration last step ...
             FLALL(:,:,1) = (FL311(:,:) + FL212(:,:)) * ONESIXTH + KP(:,:,1)
@@ -3696,11 +3703,13 @@
             ST(:,:) = ST(:,:) + KP(:,:,IPOS) * (AC2(:,:,IP) - UTILDE3(:,:))
 ! time stepping ...
           END DO ! CCON
-          AC2(:,:,IP) = MAX(ZERO,AC1(:,:,IP)-DT4AI/SI(IP)*ST(:,:)*IOBWB(IP))
+          AC2(:,:,IP) = MAX(ZERO,AC2(:,:,IP)-DT4AI/SI(IP)*ST(:,:)*IOBWB(IP))
         END DO ! MNP
+       write(*,*) 'before excahge'
 #ifdef MPI_PARALL_GRID
         CALL EXCHANGE_P4D_WWM(AC2)
 #endif
+       write(*,*) 'after exchange'
       END DO
       END SUBROUTINE
 !**********************************************************************
