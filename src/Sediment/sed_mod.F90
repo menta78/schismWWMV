@@ -109,6 +109,7 @@
        INTEGER :: sed_morph              ! activation key for morphodynamics
        INTEGER :: drag_formulation       ! key for drag fourmulation method
        INTEGER :: ised_bc_bot            !bottom b.c. option flag
+       INTEGER :: ierosion               !Erosion formulation
 
        INTEGER :: comp_ws                ! activation of Soulsby settling velocity
        INTEGER :: comp_tauce             ! activation of Soulsby critical shear stress
@@ -146,7 +147,7 @@
 
        REAL(rkind), ALLOCATABLE  :: bedthick_overall(:)        ! bed thickness; bedthick_overall(npa)
 !       REAL(rkind), ALLOCATABLE :: Csed(:)      ! initial concentration used during analytical initialization
-       REAL(rkind), ALLOCATABLE :: Erate(:)     ! erosion rate coefficient; Erate(ntr_l)>0 [kg/m/m/s]
+       REAL(rkind), ALLOCATABLE :: Erate(:)     ! erosion rate coefficient; Erate(ntr_l)>0 [kg/m/m/s or s/m]
        REAL(rkind), ALLOCATABLE :: Sd50(:)      ! mediam grain diameter; Sd50(ntr_l) [m]
        REAL(rkind), ALLOCATABLE :: Srho(:)      ! Sed grain density; Srho(ntr_l) [kg/m^3]
        REAL(rkind), ALLOCATABLE :: Wsed(:)      ! settling velocity (>0); Wsed(ntr_l) [m/s]

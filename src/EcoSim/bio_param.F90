@@ -270,9 +270,10 @@
 !
 !  The following parameters are derived or only known during execution.
 !
-        common /param/ NBIT
+        common /param/ NBIT, NBIT2
 	
-        integer,save :: NBIT,NBIT2
+        !integer,save :: NBIT,NBIT2
+        integer :: NBIT,NBIT2
 
 	CONTAINS
 !=======================================================================
@@ -313,7 +314,6 @@
 
 
         NBIT=5+(Nbac*3)+(Ndom*3)+(Nfec*4)+(Nphy*3)+(Nzoo*3)+2
-        NBIT2=NBIT+2 !including T,S
 !
 !  Add phytoplankton silica constituents.
 !
@@ -329,7 +329,6 @@
             IF (PIG(PHY(i),j).eq.1) NBIT=NBIT+1
           END DO
         END DO
-
 !  MFR - Add iron (if iron calculations are made...)
 
         IF (IRON==1) NBIT=NBIT+1+Nbac*1+Nfec*1+Nphy*1
@@ -340,7 +339,8 @@
 
 ! Marta Rodrigues
 ! Total number of tracer variables + S + T
-!      NT = NBIT + NAT         
+!      NT = NBIT + NAT   
+       NBIT2=NBIT+2 !including T,S
 
       RETURN	
       END SUBROUTINE

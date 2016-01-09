@@ -275,8 +275,23 @@
 !  pH             pH in the water                                      !
 !=======================================================================
 !
+! Marta Rodrigues - Nov/2015 ===========================================
+! Atmospheric variables for specif.F90                                 ! 
+!                                                                      ! 
+! cloud  Cloud cover @ elements                                        !
+! flag_cloud Flag to choose the input for cloud cover (currently       ! 
+!            only 1 is available                                       !
+! hair    Relative humidity @ elements                                 !
+! tair    Air temperature @ elements                                   !
+! pair    Atm. pressures @ elements                                    !
+! uwind   U-wind @ elements                                            !
+! vwind   V-wind @ elements                                            !
+!=======================================================================
+ 
+
       USE bio_param
       USE eclight
+      USE schism_glbl, only:wsett,irange_tr
 
       IMPLICIT NONE
       SAVE
@@ -307,6 +322,7 @@
       logical :: Regen_flag
 
       integer :: NIT_flag, DENIT_flag, REAER_flag
+      integer :: flag_cloud = 1
 !
 !  Phytoplankton parameters.
 !
@@ -445,9 +461,17 @@
       real(r8) :: pCO2a = -99.d0
       real(r8) :: pH = -99.d0   
 
-      real(r8), allocatable :: SpecIr(:,:)
+      real(r8), allocatable :: specir(:,:)
       real(r8), allocatable :: avcos(:,:)
-      
+
+! MFR - Nov/2015 - Atmospheric variable for specir.F90 
+      real(r8), allocatable :: cloud(:)  ! cloud cover @ elements
+      real(r8), allocatable :: hair(:)   ! relative humidity @ elements
+      real(r8), allocatable :: tair(:)   ! air temperature @ elements
+      real(r8), allocatable :: pair(:)   ! atm. pressures @ elements
+      real(r8), allocatable :: uwind(:)  ! U-wind @ elements
+      real(r8), allocatable :: vwind(:)  ! V-wind @ elements
+     
 
 !-----------------------------------------------------------------------
 !  Internal parameters.
@@ -522,27 +546,77 @@
 !  "mod_biology" - called "biology"                                    !
 !=======================================================================
       USE bio_param
-      USE eclight 
+      USE eclight
+      USE schism_glbl, only:wsett,irange_tr
+ 
 !
 !  Local variable declarations
 !
       integer :: ibac, iband, ifec, iphy, ng
 ! Marta Rodrigues
-      integer :: izoo 
+      integer :: izoo
+      integer :: tmp00, tmp1 
 !
 !-----------------------------------------------------------------------
 !  Derived parameters.
 !-----------------------------------------------------------------------
    ibac=0
-!
+
 !  Convert rates from day-1 to second-1.
 !
+        tmp00 = irange_tr(1,6)-1
+
 ! Marta Rodrigues - DO ng=1,Ngrids
         DO iphy=1,Nphy
           GtALG_max(iphy)=GtALG_max(iphy)*sec2day
           ExALG(iphy)=ExALG(iphy)*sec2day
           HsGRZ(iphy)=HsGRZ(iphy)*sec2day
-          WS(iphy)=WS(iphy)*sec2day
+          
+          !WS(iphy)=WS(iphy)*sec2day
+          ! MFR, Nov/2015 - Set wsett for phytoplankton tracers
+          tmp1 = tmp00+iPhyC(iphy)
+          wsett(tmp1)=WS(iphy)*sec2day
+          tmp1 = tmp00+iPhyN(iphy)
+          wsett(tmp1)=WS(iphy)*sec2day
+          tmp1 = tmp00+iPhyP(iphy)
+          wsett(tmp1)=WS(iphy)*sec2day
+          IF(IRON==1)THEN
+             tmp1 = tmp00+iPhyF(iphy)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPhyS(iphy).gt.0) THEN
+              tmp1 = tmp00+iPhyS(iphy)
+              wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF 
+  
+          tmp1 = tmp00+iPigs(iphy,1)
+          wsett(tmp1)=WS(iphy)*sec2day
+          IF (iPigs(iphy,2).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,2)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPigs(iphy,3).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,3)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPigs(iphy,4).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,4)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPigs(iphy,5).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,5)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPigs(iphy,6).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,6)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF
+          IF (iPigs(iphy,7).gt.0) THEN
+             tmp1 = tmp00+iPigs(iphy,7)
+             wsett(tmp1)=WS(iphy)*sec2day
+          ENDIF  
+          ! End wsett for phytoplankton tracers
+
           basalPhy(iphy)=basalPhy(iphy)*sec2day 
         END DO
         DO ibac=1,Nbac
@@ -550,7 +624,21 @@
           basalBac(ibac)=basalBac(ibac)*sec2day
         END DO
         DO ifec=1,Nfec
-          WF(ifec)=WF(ifec)*sec2day
+          ! WF(ifec)=WF(ifec)*sec2day
+          ! MFR, Nov/2015 - Set wsett for fecal/detritus tracers
+          tmp1 = tmp00+iFecC(ifec)
+          wsett(tmp1)=WF(ifec)*sec2day
+          tmp1 = tmp00+iFecN(ifec)
+          wsett(tmp1)=WF(ifec)*sec2day
+          tmp1 = tmp00+iFecP(ifec)
+          wsett(tmp1)=WF(ifec)*sec2day
+          IF(IRON==1) THEN
+            tmp1 = tmp00+iFecF(ifec)
+            wsett(tmp1)=WF(ifec)*sec2day
+          ENDIF 
+          tmp1 = tmp00+iFecS(ifec)
+          wsett(tmp1)=WF(ifec)*sec2day
+          ! End wsett for fecal/detritus tracers
         END DO
         RtNIT=RtNIT*sec2day
         RtDENIT=RtDENIT*sec2day

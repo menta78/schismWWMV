@@ -75,6 +75,7 @@
       ised_bc_bot=-100
       depo_scale=-100
       ised_dump=-100
+      ierosion=-100
 
       OPEN(5,FILE='sediment.in',STATUS='old')
       IF(myrank==0) WRITE(16,*)'reading sediment.in'
@@ -236,6 +237,9 @@
           CASE('ised_dump')
             READ(line_str,*) var1, var2, ised_dump
 
+          CASE('ierosion')
+            READ(line_str,*) var1, var2, ierosion
+
         END SELECT
 
       ENDDO !scan sediment.in
@@ -254,8 +258,8 @@
 !---------------------
 
 !     Catch unread parameters (for new additions only)
-      if(ised_bc_bot<0.or.depo_scale<0.or.ised_dump<0) then
-        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,depo_scale,ised_dump
+      if(ised_bc_bot<0.or.depo_scale<0.or.ised_dump<0.or.ierosion<0) then
+        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,depo_scale,ised_dump,ierosion
         call parallel_abort(errmsg)
       endif 
 
@@ -280,6 +284,7 @@
           ! Sed type is SAND
           CALL sed_taucrit(i)
         ENDIF
+
         ! tau_ce already read in for other Sed type (MUD or GRAVEL); scale to
         ! get m^2/s/s
         tau_ce(i) = tau_ce(i)/rhom
@@ -305,11 +310,11 @@
          WRITE(16,*) 'New layer thickness',newlayer_thick
          WRITE(16,*) '----------------------------------------------'
          WRITE(16,*) 'Sed type  ;  Sd50 [m]  ;  Srho [kg/m3]  ;',     &
-         &          '  Wsed [m/s]  ;  Erate [kg/m2/s]  ;  tau_ce', &
-         &          ' [Pa]  ;  morph_fac  '
+         &          '  Wsed [m/s]  ;  Erate ;  tau_ce', &
+         &          ' [Pa]  ;  morph_fac ; ierosion '
          DO i = 1,ntr_l !ntracers
            WRITE(16,*) iSedtype(i),Sd50(i),Srho(i),Wsed(i),Erate(i),   &
-           &          tau_ce(i)*rhom,morph_fac(i)
+           &           tau_ce(i)*rhom,morph_fac(i),ierosion
          ENDDO
          WRITE(16,*)
        ENDIF

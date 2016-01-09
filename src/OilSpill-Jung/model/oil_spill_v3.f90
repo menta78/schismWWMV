@@ -418,7 +418,7 @@
       if(istat/=0) stop 'Failed to alloc (4)'
 !     Then compute the rest of side related arrays with additional
 !     inputs (xnd,ynd) (x,y coordinates of each node)
-      call selfe_geometry(np,ne,ns,real(x),real(y),i34,elnode,ic3,elside,isdel,isidenode,xcj,ycj)
+      call schism_geometry(np,ne,ns,real(x),real(y),i34,elnode,ic3,elside,isdel,isidenode,xcj,ycj)
 
       !Remaining side arrays
       do i=1,ns

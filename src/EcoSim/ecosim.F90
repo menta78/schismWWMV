@@ -13,7 +13,7 @@
 !   limitations under the License.
 
     
-          SUBROUTINE ecosim(Uwind,Vwind)
+          SUBROUTINE ecosim(wtratio)
 !
 !!======================================================================
 !! April/May, 2007 - Original code                                     ! 
@@ -64,8 +64,12 @@
 !
       USE bio_param
       USE biology
-      USE schism_glbl, only : nea,nvrt,tr_el,bdy_frc,flx_sf,flx_bt,idry_e,kbe,ze,dt, &
-     &irange_tr !,ntracers2,ntracers
+      USE schism_glbl, only : nea,nvrt,tr_el,&
+                              bdy_frc,flx_sf,flx_bt,&
+                              idry_e,kbe,ze,dt,&
+                              irange_tr,& !,ntracers2,ntracers
+                              windx1,windx2,windy1,windy2,&
+                              elnode,i34 
       USE schism_msgp, only : myrank,parallel_abort
 
       IMPLICIT NONE
@@ -80,7 +84,7 @@
 !      real(r8), intent(in) :: z_w(nvrt,nea)      
 !      real(r8), intent(in) :: dt
 
-!      real(r8), intent(in) :: SpecIr(nea,NBands)
+!      real(r8), intent(in) :: specir(nea,NBands)
 !      real(r8), intent(in) :: avcos(nea,NBands)
      
 !
@@ -204,8 +208,11 @@
       real(r8), dimension(nea)  :: temp,salt
       real(r8) :: reox,Hconc,eqstate
 
-      real(r8), intent(in) :: Uwind(nea)
-      real(r8), intent(in) :: Vwind(nea) 
+      real(r8) :: u_wind1,u_wind2,v_wind1,v_wind2
+
+      !real(r8), intent(in) :: uwind(nea)
+      !real(r8), intent(in) :: vwind(nea)
+      real(r8), intent(in) :: wtratio 
 
 !
 !=======================================================================
@@ -292,7 +299,6 @@
             Bio(k,isalt)=tr_el(2,k,i) !tsel(2,k,i) !MFR *Hz_inv(k,i)
           END DO
 !        END DO
-
 !
 !-----------------------------------------------------------------------
 !  Compute temperature and salinity dependent variables.
@@ -582,7 +588,7 @@
             Ed_nz(nvrt)=0.0_r8
             E0_nz(nvrt)=0.0_r8
             Keuphotic=nvrt+1
-            IF (SpecIr(i,21).gt.VSMALL) THEN
+            IF (specir(i,21).gt.VSMALL) THEN
 !MFR - SELFE 2D/3D
               IF((kbe(i)+1).ne.nvrt)THEN
                 DO k=kbe(i)+1,nvrt-1
@@ -609,7 +615,7 @@
 !
               Ed_tot=0.0_r8
               DO iband=1,NBands
-                Ed_tot=Ed_tot+SpecIr(i,iband)*DLAM
+                Ed_tot=Ed_tot+specir(i,iband)*DLAM
                 avgcos(nvrt,iband)=avcos(i,iband)
               END DO
 !
@@ -768,7 +774,7 @@
                     FV1=dATT(k,iband)*Hz(k)
                     FV2=dATT_sum(iband)+0.5_r8*FV1
                     dATT_sum(iband)=dATT_sum(iband)+FV1
-                    specir_d(k,iband)=SpecIr(i,iband)*                &
+                    specir_d(k,iband)=specir(i,iband)*                &
      &                                EXP(-FV2)*DLAM
 !
 !  Calculate spectral scalar irradiance.  Morel, 1991 Prog. Ocean.
@@ -1400,7 +1406,7 @@
      &                                     FV1
                   Bio_new(k,iDIC_)=Bio_new(k,iDIC_)-                &
      &                               FV1
-!
+!       
 !  Pigment growth calculations.
 !
  		  DO ipig=1,Npig
@@ -1999,66 +2005,65 @@
               Bio_new(k,iDO_)=Bio_new(k,iDO_)+omegaO2C*&
                                      (GtALG_r(k,iphy)*Bio(k,iPhyC(iphy))- &
                                        respPhy(iphy))
-	      	      
 	    END DO
 	  END DO  	     
 
 
 ! Marta Rodrigues (! To check later...)
 ! Sinking
-! MFR - At the moment sinking is set only for the 3D model
-        IF((kbe(i)+1).ne.nvrt)THEN
-          DO iphy=1,Nphy
+! MFR, Nov/2015 - Sinking is now computed with itr_met=3
+!        IF((kbe(i)+1).ne.nvrt)THEN
+!          DO iphy=1,Nphy
 !            DO i=1,nea
 !              if(idry_e(i)==1) cycle
-
-              DO k=kbe(i)+1,nvrt-1
-            
-                Bio_new(k,iPhyC(iphy))=Bio_new(k,iPhyC(iphy))- &
-                                      WS(iphy)*((Bio(k+1,iPhyC(iphy))- &
-                                      Bio(k-1,iPhyC(iphy)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                Bio_new(k,iPhyN(iphy))=Bio_new(k,iPhyN(iphy))- &
-                                      WS(iphy)*((Bio(k+1,iPhyN(iphy))- &
-                                      Bio(k-1,iPhyN(iphy)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                Bio_new(k,iPhyP(iphy))=Bio_new(k,iPhyP(iphy))- &
-                                      WS(iphy)*((Bio(k+1,iPhyP(iphy))- &
-                                      Bio(k-1,iPhyP(iphy)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                IF(IRON==1)THEN
-                 Bio_new(k,iPhyF(iphy))=Bio_new(k,iPhyF(iphy))- &
-                                      WS(iphy)*((Bio(k+1,iPhyF(iphy))- &
-                                      Bio(k-1,iPhyF(iphy)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-                END IF  !IRON
-
-                IF(iphy<=2) THEN
-
-                  Bio_new(k,iPhyS(iphy))=Bio_new(k,iPhyS(iphy))- &
-                                        WS(iphy)*((Bio(k+1,iPhyS(iphy))- &
-                                        Bio(k-1,iPhyS(iphy)))/(ze(k+1,i)-   &
-                                        ze(k-1,i)))
-                END IF
-
-                DO ipig=1,Npig
-                  IF (iPigs(iphy,ipig).gt.0) THEN
-                    itrc=iPigs(iphy,ipig)
-
-                    Bio_new(k,itrc)=-WS(iphy)*((Bio(k+1,itrc)- &
-                                    Bio(k-1,itrc))/(ze(k+1,i)-   &
-                                    ze(k-1,i)))
-                  END IF
-  
-                END DO
-              END DO  
+!
+!              DO k=kbe(i)+1,nvrt-1
+!            
+!                Bio_new(k,iPhyC(iphy))=Bio_new(k,iPhyC(iphy))- &
+!                                      WS(iphy)*((Bio(k+1,iPhyC(iphy))- &
+!                                      Bio(k-1,iPhyC(iphy)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                Bio_new(k,iPhyN(iphy))=Bio_new(k,iPhyN(iphy))- &
+!                                      WS(iphy)*((Bio(k+1,iPhyN(iphy))- &
+!                                      Bio(k-1,iPhyN(iphy)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                Bio_new(k,iPhyP(iphy))=Bio_new(k,iPhyP(iphy))- &
+!                                      WS(iphy)*((Bio(k+1,iPhyP(iphy))- &
+!                                      Bio(k-1,iPhyP(iphy)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                IF(IRON==1)THEN
+!                 Bio_new(k,iPhyF(iphy))=Bio_new(k,iPhyF(iphy))- &
+!                                      WS(iphy)*((Bio(k+1,iPhyF(iphy))- &
+!                                      Bio(k-1,iPhyF(iphy)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!                END IF  !IRON
+!
+!                IF(iphy<=2) THEN
+!
+!                  Bio_new(k,iPhyS(iphy))=Bio_new(k,iPhyS(iphy))- &
+!                                        WS(iphy)*((Bio(k+1,iPhyS(iphy))- &
+!                                        Bio(k-1,iPhyS(iphy)))/(ze(k+1,i)-   &
+!                                        ze(k-1,i)))
+!                END IF
+!
+!                DO ipig=1,Npig
+!                  IF (iPigs(iphy,ipig).gt.0) THEN
+!                    itrc=iPigs(iphy,ipig)
+!
+!                    Bio_new(k,itrc)=-WS(iphy)*((Bio(k+1,itrc)- &
+!                                    Bio(k-1,itrc))/(ze(k+1,i)-   &
+!                                    ze(k-1,i)))
+!                  END IF
+!  
+!                END DO
+!              END DO  
 !          END DO 
-          END DO ! Nphy
-        ENDIF !3D
-
+!          END DO ! Nphy
+!        ENDIF !3D
+!
 !
 !-----------------------------------------------------------------------
 !  Bacterial losses.
@@ -2307,7 +2312,7 @@
 
               Bio_new(k,iDIC_)=Bio_new(k,iDIC_)+    &
      &                           EfcPrd(izoo)*FV1         
-              
+
 !  Nitrogen calculations
               
 	      FV1=Bio(k,iZooN(izoo))*GZ(izoo)
@@ -2350,6 +2355,7 @@
               Bio_new(k,iZooC(izoo))=Bio_new(k,iZooC(izoo))-respZoo(izoo)
 	      
 	      Bio_new(k,iDIC_)=Bio_new(k,iDIC_)+respZoo(izoo)
+
 	      
 ! Oxygen calculations
 
@@ -2378,6 +2384,7 @@
      &                                   FV3
                 Bio_new(k,iDIC_)=Bio_new(k,iDIC_)+                  &
      &                             FV3
+
 !
 !  Nitrogen calculations.  Nitrogen goes to NH4.
 !
@@ -2424,45 +2431,45 @@
 ! ----------------------------------------------------------------------
 ! Fecal matter sinking.
 ! ----------------------------------------------------------------------
-! MFR - At the moment sinking is set only for the 3D model
-          IF((kbe(i)+1).ne.nvrt)THEN
-            DO ifec=1,Nfec
+! MFR, Nov/2015 - Sinking is now computed with itr_met=3
+!          IF((kbe(i)+1).ne.nvrt)THEN
+!            DO ifec=1,Nfec
 !             DO i=1,nea
 !                if(idry_e(i)==1) cycle
-                DO k=kbe(i)+1,nvrt-1
-
-                Bio_new(k,iFecC(ifec))=Bio_new(k,iFecC(ifec))- &
-                                      WF(ifec)*((Bio(k+1,iFecC(ifec))- &
-                                      Bio(k-1,iFecC(ifec)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                Bio_new(k,iFecN(ifec))=Bio_new(k,iFecN(ifec))- &
-                                      WF(ifec)*((Bio(k+1,iFecN(ifec))- &
-                                      Bio(k-1,iFecN(ifec)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                Bio_new(k,iFecP(ifec))=Bio_new(k,iFecP(ifec))- &
-                                      WF(ifec)*((Bio(k+1,iFecP(ifec))- &
-                                      Bio(k-1,iFecP(ifec)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-                IF(IRON==1)THEN
-                 Bio_new(k,iFecF(ifec))= Bio_new(k,iFecF(ifec))- &
-                                      WF(ifec)*((Bio(k+1,iFecF(ifec))- &
-                                      Bio(k-1,iFecF(ifec)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-                END IF
-
-                Bio_new(k,iFecS(ifec))=Bio_new(k,iFecS(ifec))- &
-                                      WF(ifec)*((Bio(k+1,iFecS(ifec))- &
-                                      Bio(k-1,iFecS(ifec)))/(ze(k+1,i)-   &
-                                      ze(k-1,i)))
-
-             END DO
+!                DO k=kbe(i)+1,nvrt-1
+!
+!                Bio_new(k,iFecC(ifec))=Bio_new(k,iFecC(ifec))- &
+!                                      WF(ifec)*((Bio(k+1,iFecC(ifec))- &
+!                                      Bio(k-1,iFecC(ifec)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                Bio_new(k,iFecN(ifec))=Bio_new(k,iFecN(ifec))- &
+!                                      WF(ifec)*((Bio(k+1,iFecN(ifec))- &
+!                                      Bio(k-1,iFecN(ifec)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                Bio_new(k,iFecP(ifec))=Bio_new(k,iFecP(ifec))- &
+!                                      WF(ifec)*((Bio(k+1,iFecP(ifec))- &
+!                                      Bio(k-1,iFecP(ifec)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!                IF(IRON==1)THEN
+!                 Bio_new(k,iFecF(ifec))= Bio_new(k,iFecF(ifec))- &
+!                                      WF(ifec)*((Bio(k+1,iFecF(ifec))- &
+!                                      Bio(k-1,iFecF(ifec)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!                END IF
+!
+!                Bio_new(k,iFecS(ifec))=Bio_new(k,iFecS(ifec))- &
+!                                      WF(ifec)*((Bio(k+1,iFecS(ifec))- &
+!                                      Bio(k-1,iFecS(ifec)))/(ze(k+1,i)-   &
+!                                      ze(k-1,i)))
+!
+!             END DO
 !          END DO 
-          END DO ! Nfec
-        END IF
-
+!          END DO ! Nfec
+!        END IF
+!
 ! ----------------------------------------------------------------------
 
 !
@@ -2516,7 +2523,6 @@
      &                                         FV7*total_photo
                       Bio_new(k,iDIC_)=Bio_new(k,iDIC_)+            &
      &                                         photo_DIC
-
                     END IF
 
 
@@ -2744,7 +2750,6 @@
                    WRITE(600,*) myrank,bdy_frc(itrc+irange_tr(1,6)-1,k,i),itrc,k,i
                  ENDIF
                END IF
-
 ! MFR               t(k,i,itrc)=MAX(MinVal,                           &
 ! MFR     &                                t(k,i,itrc)+               &
 ! MFR     &                                Hz(k,i)*                        &
@@ -2761,23 +2766,31 @@
 ! Calculates bottom flux for SELFE
 ! ---------------------------------------------------------------------
 !       flx_bt(ntracers,nea)
-        flx_bt(irange_tr(1,6):irange_tr(2,6),:,:) = 0.d0
+        flx_bt(irange_tr(1,6):irange_tr(2,6),:) = 0.d0
 !
 ! ---------------------------------------------------------------------
 ! Calculates surface flux for SELFE
 ! ---------------------------------------------------------------------
 !       flx_sf(ntracers,nea)
-        flx_sf(irange_tr(1,6):irange_tr(2,6),:,:) = 0.d0
+        flx_sf(irange_tr(1,6):irange_tr(2,6),:) = 0.d0
 	
 ! Include surface flux from reaeration for DO and DIC
-
+        wind_speed = 0.d0 
         DO i=1,nea
-	    wind_speed(i)=SQRT(Uwind(i)*Uwind(i)+Vwind(i)*Vwind(i))
+            ! Compute uwind and vwind @ elements
+            u_wind1=sum(windx1(elnode(1:i34(i),i)))/i34(i)
+            u_wind2=sum(windx2(elnode(1:i34(i),i)))/i34(i)
+            v_wind1=sum(windy1(elnode(1:i34(i),i)))/i34(i)
+            v_wind2=sum(windy2(elnode(1:i34(i),i)))/i34(i)
+
+            uwind(i)=u_wind1+wtratio*(u_wind2-u_wind1)
+            vwind(i)=v_wind1+wtratio*(v_wind2-v_wind1)
+	    wind_speed(i)=SQRT(uwind(i)*uwind(i)+vwind(i)*vwind(i))
             ! To prevent unrealistic Kreaer
 	    IF(wind_speed(i)>=10.0d0) wind_speed(i)=10.0d0         
 	    temp(i)=tr_el(1,nvrt,i) !tsel(1,nvrt,i)
 	    salt(i)=tr_el(2,nvrt,i) !tsel(2,nvrt,i)
-	    
+
 	    IF(REAER_flag==1)then !Use Wanninkhof,1992
 	      
 	       ScO2=(1800.6-120.1*temp(i)+3.7818*temp(i)**2-0.047608*&

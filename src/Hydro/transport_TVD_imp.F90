@@ -77,7 +77,7 @@
 !      real(rkind) :: vdf_c1(nvrt) !coefficients related to vertical diffusive flux
 !      real(rkind) :: vdf_c2(nvrt) !coefficients related to vertical diffusive flux
 #ifdef DEBUG
-      real(rkind) :: r_s0(nvrt),r_s0(nvrt) !local Courant number
+      real(rkind) :: r_s(nvrt),r_s0(nvrt) !local Courant number
       real(rkind) :: dtbe(ne)
 #endif
 
@@ -777,17 +777,18 @@
 
             !The _coefficient_ of modified flux (space) at intermediate levels
             flux_mod_v1(:)=1 !init
-            do k=kbe(i)+1,nvrt-1 !intermediate levels (exclude bnds)
-              if(flux_adv_vface(k,m,i)>=0) then
-                kup=k
-              else if(flux_adv_vface(k,m,i)<0) then
-                kup=k+1
+            do k=kbe(i)+1,nvrt-1 !intermediate levels (exclude bnds); k='j' in notes
+              !Find downwind prism 'i'
+              if(flux_adv_vface(k,m,i)<=0) then
+                kdo=k
+              else !if(flux_adv_vface(k,m,i)>0) then
+                kdo=k+1
               endif
       
               psum=0
-              do l=0,1 !two vertical faces of upwind prism
-                if(flux_adv_vface(kup-l,m,i)*(1-2*l)>0) then !outflow
-                  if(abs(rrat(kup-l))>1.e-6) psum=psum+phi(kup-l)/rrat(kup-l)
+              do l=0,1 !two vertical faces of downwind prism
+                if(flux_adv_vface(kdo-l,m,i)*(1-2*l)>0) then !outflow
+                  if(abs(rrat(kdo-l))>1.e-6) psum=psum+phi(kdo-l)/rrat(kdo-l)
                 endif !outflow
               enddo !l
 

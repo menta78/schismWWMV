@@ -109,7 +109,7 @@
             cff4=min(cff4,1.d0)
           endif
 
-          cff5 = DSQRT(cff4*cff4+cff3*cff3)
+          cff5 = SQRT(cff4*cff4+cff3*cff3)
           ! Bottom stress [m^2/s/s]
           bustr(i) = wrk*cff4*cff5
           bvstr(i) = wrk*cff3*cff5
@@ -127,7 +127,7 @@
 !            bvstr(i) = cff5*cff3/hh
 !          ENDIF ! End test on Zob>ze
           ! Bottom stress mag. [m^2/s/s]
-          tau_c(i) = DSQRT(bustr(i)*bustr(i)+bvstr(i)*bvstr(i))
+          tau_c(i) = SQRT(bustr(i)*bustr(i)+bvstr(i)*bvstr(i))
         END DO !i
 
 !      ELSEIF (drag_formulation == 2) THEN

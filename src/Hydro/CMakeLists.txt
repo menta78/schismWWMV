@@ -14,6 +14,7 @@ add_library(hydro hydraulic_structures.F90
                   solver_subs.F90 
                   transport_TVD.F90
                   transport_TVD_imp.F90
+                  simpler_wind.F90
                   )
 list( APPEND locallibs hydro)
 
@@ -23,4 +24,3 @@ list( APPEND locallibs hydro)
 message(STATUS "Mod libraries: ${schismmodlibs}")
 add_dependencies(hydro core ${schismmodlibs})
 target_link_libraries(hydro core ${schismmodlibs})
-

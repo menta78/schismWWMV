@@ -44,7 +44,7 @@ module schism_glbl
   real(rkind),parameter :: grav=9.81d0
   real(rkind),parameter :: rho0=1000.d0 !1025. !ref. density for S=33 and T=10C
   real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p); dimension J/kg/K
-  real(rkind),parameter :: rearth=6378206.4d0 !earth radius
+!  real(rkind),parameter :: rearth=6378206.4d0 !earth radius
   real(rkind),parameter :: omega_e=7.292d-5 !angular freq. of earth rotation
   !For water quality model
   integer,parameter :: NDTWQ=1   !add by YC
@@ -71,23 +71,23 @@ module schism_glbl
                       ubs0,ubs1,ubs2,ubs4,ubs5,ubs6, &
                       a2_cm03,schk,schpsi
 
-  integer,parameter :: natrm=7 !# of _available_ tracer models at the moment (including T,S)
+  integer,parameter :: natrm=10 !# of _available_ tracer models at the moment (including T,S)
   !Parameters from param.in
   integer,save :: ipre,nonhydro,indvel,imm,ihot,ics,iwbl,iharind,nws, &
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ishapiro,ieos_type
+                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg
   integer,save :: ntrs(natrm)
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
                       &surf_time1,surf_time2,time_nu,step_nu,time_nu_tr,step_nu_tr,dzb_min,vdmax_pp1, &
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
-                      &shapiro,vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
-                      &prmsl_ref,cdh,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
-                      &xlsc0
+                      &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
+                      &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
+                      &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
@@ -152,7 +152,7 @@ module schism_glbl
     real(rkind) :: rt2        ! time remaining from left-over from previous subdomain 
     real(rkind) :: ut,vt,wt  ! Current backtracking sub-step velocity
     real(rkind) :: xt,yt,zt  ! Current backtracking sub-step point
-    real(rkind) :: sclr(4)     ! Backtracked values for T,S, dfv, dfh
+    real(rkind) :: sclr(4)     ! Backtracked values for some tracers (debug only)
     real(rkind) :: gcor0(3)  ! global coord. of the starting pt (for ics=2)
     real(rkind) :: frame0(3,3) ! frame tensor at starting pt (for ics=2)
   end type bt_type
@@ -332,9 +332,10 @@ module schism_glbl
   integer,save,allocatable :: isblock_nd(:,:),isblock_el(:),iq_block_lcl(:),iq_block(:)
   real(rkind),save,allocatable :: trobc(:,:),vobc1(:),vobc2(:),tamp(:), &
                                   &tnf(:),tfreq(:),tear(:),amig(:),ff(:),face(:), &
-                                  &emo(:,:,:),efa(:,:,:),vmo(:,:),vfa(:,:),eth(:,:), &
+                                  &emo(:,:,:),efa(:,:,:),umo(:,:,:),ufa(:,:,:), &
+                                  &vmo(:,:,:),vfa(:,:,:),eth(:,:), &
                                   &qthcon(:),uth(:,:),vth(:,:),uthnd(:,:,:),vthnd(:,:,:), &
-                                  &ath(:,:,:,:),carea(:),eta_mean(:),q_block(:),vnth_block(:,:), &
+                                  &ath(:,:,:,:),carea(:),clen(:),eta_mean(:),q_block(:),vnth_block(:,:), &
                                   &dir_block(:,:),q_block_lcl(:),ath3(:,:,:,:)
   real(4),save,allocatable :: ath2(:,:,:,:,:)
 
@@ -406,14 +407,14 @@ module schism_glbl
   real(rkind),save,allocatable :: Cdp(:)         ! drag at node
   real(rkind),save,allocatable :: rmanning(:)         ! Manning's n at node
   real(rkind),save,allocatable :: windx(:),windy(:) !wind vector
-  real(rkind),save,allocatable :: sdbt(:,:,:),webt(:,:), &
+  real(rkind),save,allocatable :: sdbt(:,:,:),webt(:,:),shapiro(:), &
                                   &windx1(:),windy1(:),windx2(:),windy2(:), &
                                   &surf_t1(:),surf_t2(:),surf_t(:), & !YC
                                   &tau(:,:),windfactor(:),pr1(:),airt1(:), &
                                   &shum1(:),pr2(:),airt2(:),shum2(:),pr(:), &
                                   &sflux(:),srad(:),tauxz(:),tauyz(:),fluxsu(:), &
                                   &fluxlu(:),hradu(:),hradd(:),chi(:),cori(:), &
-                                  &Cd(:),rough_p(:),erho(:,:),hvis(:,:),d2uv(:,:,:), &
+                                  &Cd(:),rough_p(:),erho(:,:),hvis_coef(:,:),d2uv(:,:,:), &
                                   &sparsem(:,:),bcc(:,:,:), & !t_nudge(:),s_nudge(:), &
                                   &tr_nudge(:,:),dr_dxy(:,:,:),fun_lat(:,:), &
                                   &elev_nudge(:),uv_nudge(:),fluxprc(:),fluxevp(:), &
@@ -490,11 +491,24 @@ module schism_glbl
 !#endif
 
 !#ifdef USE_ECO 
+!...  MFR, Nov/2015 - Updated, ECO uses nws=2 
 !...  MFR - other variables to atmospheric parameters (when nws=0 ... probably to clean later...)
-      real(rkind),save,allocatable :: Pair(:), Tair(:), Hair(:), Uwind(:), Vwind(:), cloud(:)
+!      real(rkind),save,allocatable :: Pair(:), Tair(:), Hair(:), Uwind(:), Vwind(:), cloud(:)
 !...  MFR - Tracer models
       real(rkind),save :: tr_tmp1
 !#endif
+
+  real(rkind),save,allocatable :: s2_daily(:,:,:),dd_daily(:,:,:),zz1_daily(:,:,:),zz2_daily(:,:,:)
+  real(rkind),save,allocatable :: s2_sum(:,:),dd_sum(:,:),zz1_sum(:,:),zz2_sum(:,:)
+  integer,save,allocatable :: srao_step(:,:)
+
+! IVICA: nws=5,6 option
+  real(rkind),save,allocatable     :: cf_a(:),cf_b(:),cf_c(:),cf_d(:),cf_J(:)
+  integer,save,allocatable         :: cf_c11(:,:), cf_c21(:,:), cf_c22(:,:), cf_c12(:,:), wind_time_sec(:)
+  integer,save                     :: NDX_WIND_FD, NDY_WIND_FD, rec1, rec2, rec1_old, rec2_old, nwtimes
+  real(rkind),save                 :: cf_scale_factor_uwind, cf_add_offset_uwind
+  real(rkind),save                 :: cf_scale_factor_vwind, cf_add_offset_vwind
+  real(rkind),save                 :: cf_scale_factor_pr, cf_add_offset_pr
 
 !End module variables declaration
 

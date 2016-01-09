@@ -295,10 +295,10 @@
         depth_flow = min(struct%height, depth_flow)
         area = depth_flow*struct%width
         diff = min(max_elev - struct%elev, max_elev - min_elev)
-        flow = signed_coef*area*sqrt2g*sqrt(diff)      
+        flow = signed_coef*area*sqrt2g*sqrt(diff)       ! m² * sqrt(m)/s * sqrt(m)  = m³/s
       case(WEIR)
         area = struct%width*depth_flow
-	flow = signed_coef*area*sqrt2g*sqrt(depth_flow)
+        flow = signed_coef*area*sqrt2g*sqrt(depth_flow)
         if (min_elev > struct%elev) then
           dratio = (min_elev - struct%elev)/depth_flow
           attenuation = (1.d0 - (dratio)**expon)**3.85d-1
