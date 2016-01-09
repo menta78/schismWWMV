@@ -300,6 +300,7 @@
          LOGICAL    :: LWRITE_WW3_RESULTS              = .FALSE.
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
+         character(len=20) :: MODEL_OUT_TYPE = "WW3"
 
          LOGICAL    :: MULTIPLE_IN_GRID = .TRUE.
          LOGICAL    :: MULTIPLE_IN_BOUND = .TRUE.
@@ -403,11 +404,11 @@
          
          TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
-         LOGICAL :: LEXPORT_GRID_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_BOUC_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_CURR_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_WALV_WW3 = .FALSE.
-         LOGICAL :: LEXPORT_WIND_WW3 = .FALSE.
+         LOGICAL :: LEXPORT_GRID_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_BOUC_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_CURR_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_WALV_MOD_OUT = .FALSE.
+         LOGICAL :: LEXPORT_WIND_MOD_OUT = .FALSE.
          REAL(rkind) :: EXPORT_BOUC_DELTC
          REAL(rkind) :: EXPORT_CURR_DELTC
          REAL(rkind) :: EXPORT_WALV_DELTC
@@ -497,6 +498,7 @@
 !
 ! Spectral Grid ...
 !
+         LOGICAL          :: USE_FRATIO = .FALSE.
          REAL(rkind)      :: FRLOW
          REAL(rkind)      :: FRHIGH
          REAL(rkind)      :: SGLOW
@@ -642,7 +644,7 @@
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
          TYPE NESTING_INFORMATION
            integer IWBMNP
-           TYPE(TIMEDEF), allocatable     :: eTime
+           TYPE(TIMEDEF)                  :: eTime
            integer, dimension(:), pointer :: IOBPtotal
            integer, dimension(:), pointer :: IWBNDLC
            type(GridInformation) :: eGrid
@@ -946,6 +948,7 @@
 
          INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 63
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
+         LOGICAL                :: PARAMWRITE_BOUC = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
          LOGICAL                :: GRIDWRITE = .TRUE.
          TYPE VAROUT
@@ -1162,6 +1165,8 @@
          INTEGER                :: ITER_MAX
          REAL(rkind),  ALLOCATABLE   :: SI(:)
          REAL(rkind),  ALLOCATABLE   :: IEN(:,:), IEND(:,:,:)
+         
+         REAL(rkind),  ALLOCATABLE   :: FLALLGL(:,:,:,:), KELEMGL(:,:,:,:)
 
          REAL(rkind), ALLOCATABLE    :: CFLCXY(:,:)
          REAL(rkind), ALLOCATABLE    :: CFL_CASD(:,:)
@@ -1190,7 +1195,9 @@
 ! Dislin
 !
          LOGICAL                      :: LDISLIN = .FALSE.
-
+!
+! WAM Sources 
+!
          REAL(rkind)                  :: XNLEV(1) = 10.
 
          REAL(rkind), PARAMETER       :: XEPS = RHOA/RHOW
@@ -1304,6 +1311,7 @@
          integer :: rank_boundary=0 ! could be set to another rank.
          integer :: rank_hasboundary = -1
          integer :: bound_nbproc
+
          integer, dimension(:), pointer :: Indexes_boundary
          integer, dimension(:), pointer :: bound_listproc
          integer, dimension(:), pointer :: spparm_rqst
@@ -1352,7 +1360,6 @@
 !      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
 !      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
          REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
-
 
 #ifdef WWM_SOLVER
       TYPE LocalColorInfo
@@ -1443,6 +1450,7 @@
          integer, dimension(:), pointer :: sync_p2dsend_type
          integer, dimension(:), pointer :: sync_p2drecv_type
       END TYPE LocalColorInfo
+
       TYPE I5_SolutionData
          real(rkind), dimension(:,:,:), pointer :: AC1
          real(rkind), dimension(:,:,:), pointer :: AC3
@@ -1454,6 +1462,7 @@
          real(rkind), dimension(:,:,:), pointer :: ASPAR_pc
          real(rkind), dimension(:,:,:), pointer :: B_block
       END TYPE I5_SolutionData
+
       type(LocalColorInfo) :: MainLocalColor
       type(I5_SolutionData) :: SolDat
       integer :: NblockFreqDir = 10

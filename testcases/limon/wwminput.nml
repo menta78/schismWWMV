@@ -9,9 +9,9 @@
  LMONO_OUT      = .F.,               
  LMONO_IN       = .F.,               
  BEGTC          = '19980901.000000', 
- DELTC          =  1.000000000000,   
+ DELTC          =  10.000000000000,   
  UNITC          = 'SEC',             
- ENDTC          = '19980901.000010', 
+ ENDTC          = '19980901.000200', 
  DMIN           = 1.000000000000000E-004, 
 /
 
@@ -35,7 +35,7 @@
  MDC            = 36,                
  FRLOW          = 4.000000000000000E-002, 
  FRHIGH         = 1.0000000000000,   
- MSC            = 36,                
+ MSC            = 12,                
  FILEGRID       = 'hgrid.gr3',       
  IGRIDTYPE      = 3,                 
  LSLOP          = .F.,               
@@ -72,7 +72,7 @@
  WBHS           = 4.00000000000000,  
  WBTP           = 8.00000000000000,  
  WBDM           = 90.0000000000000,  
- WBDS           = 20.0000000000000,  
+ WBDS           = 5.0000000000000,  
  WBSS           = 2.00000000000000,  
  WBDSMS         = 1.00000000000000,  
  WBGAUSS        = 0.100000000000000, 
@@ -161,7 +161,7 @@
  ICOMP          = 0,                 
  AMETHOD        = 1,                 
  SMETHOD        = 1,                 
- DMETHOD        = 0,                 
+ DMETHOD        = 2,                 
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
  MAXCFLTH       = 1.00000000000000,  
@@ -172,8 +172,8 @@
  LFILTERSIG     = .F.,               
  MAXCFLSIG      = 1.00000000000000,  
  LSIGBOUND      = .F.,               
- LLIMT          = .F.,               
- LIMFAK         = 0.100000000000000, 
+ LLIMT          = .T.,               
+ LIMFAK         = 0.600000000000000, 
  MELIM          = 3,                 
  LDIFR          = .F.,               
  IDIFFR         = 1,                 
@@ -196,8 +196,8 @@
  RTHETA         = 0.500000000000000, 
  LEXPIMP        = .F.,               
  FREQEXP        = 0.100000000000000, 
- LVECTOR        = .F.,               
- IVECTOR        = 2,                 
+ LVECTOR        = .T.,               
+ IVECTOR        = 5,                 
  DTMIN_DYN      = 1.00000000000000,  
  NDYNITER       = 100,               
  DTMIN_SIN      = 1.00000000000000,  
@@ -229,12 +229,11 @@
  BEGTC          = '19980901.000000',
  DELTC          =  1.000000000000,
  UNITC          = 'SEC',
- ENDTC          = '19980901.000010',
+ ENDTC          = '19980902.000000',
  DEFINETC       = 0.000000000000000E+000, 
- OUTSTYLE       = 'XFN',
+ OUTSTYLE      = 'XFN',
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
- IOBPD          = .F.,               
  LENERGY        = .F.,               
  LWXFN          = .F.,               
  GRIDWRITE      = .T.,               
@@ -405,7 +404,6 @@
 /
 
 &NESTING
-L_WRITE = F,
 /
 
 &PETSCOPTIONS  

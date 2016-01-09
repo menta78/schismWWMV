@@ -732,9 +732,9 @@ MODULE wwm_hotfile_mod
       USE NETCDF
       IMPLICIT NONE
       character(len=140), intent(in) :: FILERET
-      integer, intent(in) :: nbTime, MULTIPLEOUT_W
+      integer, intent(in) :: nbTime
       logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W
-      integer, intent(in) :: np_write, ne_write
+      integer, intent(in) :: np_write, ne_write, MULTIPLEOUT_W
       !
       character (len = *), parameter :: CallFct="WRITE_HOTFILE_PART_1"
       character (len = *), parameter :: UNITS = "units"

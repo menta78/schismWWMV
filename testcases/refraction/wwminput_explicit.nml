@@ -33,7 +33,7 @@
 
  &GRID
  LCIRD   = T,
- LSTAG   = T,
+ LSTAG   = F,
  USE_FRATIO = T,
  FRATIO  = 1.1,
  MINDIR  =  0.000000000000000E+000,
@@ -185,7 +185,7 @@
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
- FRICC   = -6.700000000000000E-002,
+ FRICC   = 6.700000000000000E-002,
  MESBR   =           1,
  ICRIT   =           1,
  IBREAK  =           1,
@@ -201,9 +201,9 @@
 
 
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
- SMETHOD =           0,
+ ICOMP   =           0,
+ AMETHOD =           1,
+ SMETHOD =           2,
  DMETHOD =           2,
  LITERSPLIT      = F,
  LFILTERTH       = F,

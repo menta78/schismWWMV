@@ -403,6 +403,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF
       SUBROUTINE LOAD_INTERP_ARRAY(FileSave, success)
       USE DATAPOOL
       USE NETCDF
@@ -423,9 +424,9 @@
         RETURN
       END IF
       success=.TRUE.
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
-#endif
+# endif
         allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
         !
@@ -450,11 +451,11 @@
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 27, iret)
         !
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
+# endif
       !
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .eqv. .FALSE.) THEN
         CF_IX=CF_IX_GLOBAL
         CF_IY=CF_IY_GLOBAL
@@ -498,12 +499,12 @@
           CALL MPI_RECV(CF_COEFF, 4*MNP, rtype, 0, 713, comm, istatus, ierr)
         END IF
       END IF
-#else
-      CF_IX=CF_IX_GLOGAL
+# else
+      CF_IX=CF_IX_GLOBAL
       CF_IY=CF_IY_GLOBAL
       CF_COEFF=CF_COEFF_GLOBAL
       deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
-#endif
+# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -525,7 +526,7 @@
       WRITE(STAT%FHNDL,*) 'minval(CF_IX)=', minval(CF_IX)
       WRITE(STAT%FHNDL,*) 'minval(CF_IY)=', minval(CF_IY)
       WRITE(STAT%FHNDL,*) 'minval(CF_COEFF)=', minval(CF_COEFF)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .eqv. .TRUE.) THEN
         IF (myrank .eq. 0) THEN
           allocate(ListFirstMNP(nproc), stat=istat)
@@ -581,19 +582,19 @@
         CF_IY_GLOBAL=CF_IY
         CF_COEFF_GLOBAL=CF_COEFF
       END IF
-#else
+# else
       allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
       CF_IX_GLOBAL=CF_IX
       CF_IY_GLOBAL=CF_IY
       CF_COEFF_GLOBAL=CF_COEFF
-#endif
+# endif
       !
       ! Now writing up
       !
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
-#endif
+# endif
         iret=nf90_create(TRIM(FileSave), nf90_CLOBBER, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
         !
@@ -646,11 +647,11 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
         !
         deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif      
-         
-      END SUBROUTINE
+# endif      
+     END SUBROUTINE SAVE_INTERP_ARRAY
+#endif    
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -674,6 +675,7 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+
       IXs=-1
       IYs=-1
       DO IX=1,nx-1
@@ -687,6 +689,7 @@
         END DO
       END DO
       aShift=1
+
       DO
         IXmin=max(1, IXs - aShift)
         IYmin=max(1, IYs - aShift)
@@ -736,6 +739,7 @@
               eCF_COEFF(2)=a*(1-b)
               eCF_COEFF(3)=(1-a)*b
               eCF_COEFF(4)=a*b
+              RETURN
             END IF
           END DO
         END DO
@@ -744,22 +748,23 @@
         END IF
         aShift=aShift + 1
       END DO
-      IF (EXTRAPO_IN .eqv. .FALSE.) THEN
-        WRITE(STAT % FHNDL,*) 'aShift=', aShift
-        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
-        FLUSH(STAT % FHNDL)
-        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
-      ELSE
+
+      IF (EXTRAPO_IN) THEN
+        EXTRAPO_OUT=.TRUE.
         eCF_IX = IXs
         eCF_IY = IYs
         eCF_COEFF(1)=1
         eCF_COEFF(2)=0
         eCF_COEFF(3)=0
         eCF_COEFF(4)=0
-        EXTRAPO_OUT=.TRUE.
         WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
         WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
-      END IF
+      ELSE 
+        WRITE(STAT % FHNDL,*) 'aShift=', aShift
+        WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
+        FLUSH(STAT % FHNDL)
+        CALL WWM_ABORT('We find a model point outside of the available forcing grid')
+      ENDIF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -787,12 +792,14 @@
       SHIFTXY(3,2)=1
       SHIFTXY(4,1)=1
       SHIFTXY(4,2)=1
+#ifdef NCDF
       WRITE(WINDBG%FHNDL,*) 'LSAVE_INTERP_ARRAY=', LSAVE_INTERP_ARRAY
       IF (LSAVE_INTERP_ARRAY) THEN
         CALL LOAD_INTERP_ARRAY(FileSave, success)
         WRITE(WINDBG%FHNDL,*) 'success=', success
         IF (success .eqv. .TRUE.) RETURN
       END IF
+#endif     
       CF_IX=0
       CF_IY=0
       CF_COEFF=0
@@ -804,6 +811,7 @@
         eX=XP_WIND(I)
         eY=YP_WIND(I)
         CALL COMPUTE_SINGLE_INTERPOLATION_INFO(TheInfo, EXTRAPOLATION_ALLOWED_WIND, eX, eY, eCF_IX, eCF_IY, eCF_COEFF, EXTRAPO_OUT)
+        WRITE(WINDBG%FHNDL,'(4I10,10F20.10)') I, MNP_WIND, eCF_IX, eCF_IY, eCF_COEFF
         CF_IX(I) = eCF_IX
         CF_IY(I) = eCF_IY
         CF_COEFF(:,I) = eCF_COEFF
@@ -811,9 +819,11 @@
           nbExtrapolation = nbExtrapolation + 1
         END IF
       END DO
+#ifdef NCDF
       IF (LSAVE_INTERP_ARRAY) THEN
         CALL SAVE_INTERP_ARRAY(FileSave)
       END IF
+#endif     
       IF (EXTRAPOLATION_ALLOWED_WIND .eqv. .TRUE.) THEN
         WRITE(WINDBG%FHNDL,*) ' nbExtrapolation=', nbExtrapolation
       END IF

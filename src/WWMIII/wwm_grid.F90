@@ -275,10 +275,10 @@
           rbuf_int(1)=eGrid % np_total
           rbuf_int(2)=eGrid % ne_total
           DO iProc=2,nproc
-            CALL MPI_SEND(rbuf_int,2,itype, iProc-1, 30, comm, ierr)
+            CALL MPI_SEND(rbuf_int,2,itype, iProc-1, 30, comm, istatus, ierr)
           END DO
           DO iProc=2,nproc
-            CALL MPI_SEND(INEtotal,3*eGrid % ne_total,itype, iProc-1, 32, comm, ierr)
+            CALL MPI_SEND(INEtotal,3*eGrid % ne_total,itype, iProc-1, 32, comm, istatus, ierr)
           END DO
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=eGrid % np_total + 7*eGrid % ne_total
@@ -312,7 +312,7 @@
             END DO
           END IF
           DO iProc=2,nproc
-            CALL MPI_SEND(rbuf_real,nb_real,rtype, iProc-1, 34, comm, ierr)
+            CALL MPI_SEND(rbuf_real,nb_real,rtype, iProc-1, 34, comm, istatus, ierr)
           END DO
           deallocate(rbuf_real)
         ELSE
@@ -369,6 +369,56 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GRID_EXPORT_WAM(eFileOut, FieldExport)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), intent(in) :: eFileOut
+      real(rkind), intent(in) :: FieldExport(np_total)
+      real(rkind), allocatable :: XPout(:), YPout(:)
+      logical LFLIVE
+      CHARACTER(LEN=512) :: ErrMsg
+      INQUIRE( FILE = TRIM(eFileOut), EXIST = LFLIVE )
+      IF (LFLIVE) THEN
+         WRITE(ErrMsg,10) TRIM(eFileOut)
+10       FORMAT('GRID_EXPORT_WAM: Please remove file before overwrite file = ', a)
+         CALL WWM_ABORT(ErrMsg)
+      END IF
+      IF (LSPHE) THEN
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPtotal, YPtotal, FieldExport, INEtotal)
+      ELSE
+        allocate(XPout(np_total), YPout(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_input, allocate error 16')
+        XPout = XPtotal / 111111.
+        YPout = YPtotal / 111111.
+        CALL EXPORT_GRID_SYSTEM_DAT_FORMAT(eFileOut, np_total, ne_total, XPout, YPout, FieldExport, INEtotal)
+        deallocate(XPout, YPout)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GRID_EXPORT_FUNCTION
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), parameter :: eFile = "system_wam_grd.dat"
+#ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+#endif
+        IF (LEXPORT_GRID_MOD_OUT) THEN
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WW3') THEN
+            CALL EXPORT_GRID_WW3_FORMAT
+          END IF
+          IF (TRIM(MODEL_OUT_TYPE) .eq. 'WAM') THEN
+            CALL GRID_EXPORT_WAM(eFile, DEPtotal)
+          END IF
+        END IF
+#ifdef MPI_PARALL_GRID
+      END IF
+#endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE READ_SPATIAL_GRID_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
@@ -411,8 +461,24 @@
           DO IE=1,ne_total
             INEtotal(:,IE) = eGrid % INEtotal(:,IE)
           END DO
+          IF (CART2LATLON) THEN
+            XPtotal = XPtotal / 111111.11
+            YPtotal = YPtotal / 111111.11
+            IF (LSPHE .eqv. .FALSE.) THEN
+              CALL WWM_ABORT('For CART2LATLON we need LSPHE = T')
+            END IF
+          ELSE IF (LATLON2CART) THEN
+            XPtotal = XPtotal * 111111.11
+            YPtotal = YPtotal * 111111.11
+            IF (LSPHE .eqv. .TRUE.) THEN
+              CALL WWM_ABORT('For LATLON2CART we need LSPHE = F')
+            END IF
+          ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+            CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+          END IF
         END IF
       END IF
+      CALL GRID_EXPORT_FUNCTION
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -498,4 +564,26 @@
       CLOSE(FHNDL_EXPORT_GRID_WW3)
       deallocate(IPbound, IPisland, ACTIVE)
       END SUBROUTINE
-      
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE EXPORT_GRID_SYSTEM_DAT_FORMAT(eFile, MNPout, MNEout, XPout, YPout, DEPout, INEout)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(len=*), intent(in) :: eFile
+      integer, intent(in) :: MNPout, MNEout
+      real(rkind), intent(in) :: XPout(MNPout), YPout(MNPout), DEPout(MNPout)
+      integer, intent(in) :: INEout(3,MNEout)
+      integer :: FHNDL_EXPORT = 4347
+      integer I
+      OPEN(FHNDL_EXPORT, FILE = TRIM(eFile), STATUS='unknown')
+      CALL XFNHEADER_1(FHNDL_EXPORT, 0, MNPout)
+      DO I=1,MNPout
+        WRITE(FHNDL_EXPORT,'(I10,2F20.8,F15.4)') I-1, XPout(I), YPout(I), DEPout(I)
+      END DO
+      CALL XFNHEADER_2(FHNDL_EXPORT, MNEout)
+      DO I=1,MNEout
+        WRITE(FHNDL_EXPORT,'(5I10)') INEout(1,I)-1, INEout(2,I)-1, INEout(3,I)-1, 0, I-1
+      END DO
+      CLOSE(FHNDL_EXPORT)
+      END SUBROUTINE

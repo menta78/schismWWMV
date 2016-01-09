@@ -3,7 +3,7 @@
  DIMMODE =           2,
  LSTEA   = F,
  LQSTEA  = F,
- LSPHE   = F,
+ LSPHE   = T,
  LNAUTIN = T,
  LNAUTOUT        = T,
  LMONO_OUT       = F,
@@ -48,11 +48,11 @@
  SLMAX   =  0.200000002980232     ,
  LVAR1D  = F,
  LOPTSIG = F,
- CART2LATLON     = F,
+ CART2LATLON     = T,
  LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
  USE_EXACT_FORMULA_SPHERICAL_AREA        = F,
- LEXPORT_GRID_MOD_OUT        = T,
+ LEXPORT_GRID_MOD_OUT        = F,
  /
 
 
@@ -185,7 +185,7 @@
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
- FRICC   = -6.700000000000000E-002,
+ FRICC   = 6.700000000000000E-002,
  MESBR   =           1,
  ICRIT   =           1,
  IBREAK  =           1,
@@ -201,9 +201,9 @@
 
 
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
- SMETHOD =           0,
+ ICOMP   =           0,
+ AMETHOD =           1,
+ SMETHOD =           2,
  DMETHOD =           2,
  LITERSPLIT      = F,
  LFILTERTH       = F,

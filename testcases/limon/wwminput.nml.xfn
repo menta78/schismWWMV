@@ -9,10 +9,10 @@
  LMONO_OUT      = .F.,               
  LMONO_IN       = .F.,               
  BEGTC          = '19980901.000000', 
- DELTC          =  0.2,   
+ DELTC          =  10.000000000000,   
  UNITC          = 'SEC',             
- ENDTC          = '19980901.001000', 
- DMIN           = 0.001, 
+ ENDTC          = '19980901.010000', 
+ DMIN           = 1.000000000000000E-004, 
 /
 
 &COUPL         
@@ -28,22 +28,22 @@
 /
 
 &GRID          
- LCIRD   = F,
- LSTAG   = F,
- MINDIR  =   265.0000    ,
- MAXDIR  =   275.0000    ,
- MDC     =       20,
- FRLOW   =    0.15,
- FRHIGH   =   2.  ,
- MSC     =       50,
- FILEGRID        = 'hgrid.gr3'                               ,
- IGRIDTYPE        = 3,
- LSLOP   = F,
- SLMAX   =  0.2000000    ,
- LVAR1D  = F
- LOPTSIG        = .F.,
- CART2LATLON    = .F.,
- LATLON2CART    = .F.,
+ LCIRD          = .T.,               
+ LSTAG          = .T.,               
+ MINDIR         = 0.000000000000000E+000, 
+ MAXDIR         = 360.000000000000,  
+ MDC            = 36,                
+ FRLOW          = 4.000000000000000E-002, 
+ FRHIGH         = 1.0000000000000,   
+ MSC            = 12,                
+ FILEGRID       = 'hgrid.gr3',       
+ IGRIDTYPE      = 3,                 
+ LSLOP          = .F.,               
+ SLMAX          = 0.200000000000000, 
+ LVAR1D         = .F.,               
+ LOPTSIG        = .T.,               
+ CART2LATLON    = .F.,               
+ LATLON2CART    = .F.,               
 /
 
 &INIT          
@@ -53,33 +53,37 @@
 /
 
 &BOUC          
- LBCSE   = F,
- LBCWA   = F,
- LBCSP   = T,
- LINHOM  = F,
- LBSP1D  = T,
- LBSP2D  = F,
- LBINTER = F,
- BEGTC          = '19980901.000000',
- DELTC          = 10.000000000000,
- UNITC          = 'SEC',
- ENDTC          = '19980901.050000',
- FILEBOUND       = 'wwmbnd.gr3'                              ,
- IBOUNDFORMAT     = 1,
- FILEWAVE        = 'waveC1.bcd'                              ,
- WBHS          = 0.07240000   ,
- WBTP          = 1.000000000     ,
- WBDM    =   270.0000    ,
- WBDS    =   20.00000    ,
- WBSS    =   3.000000    ,
- WBDSMS  =   1.000000    ,
- WBGAUSS =  0.1000000    ,
- WBPKEN  =   3.300000    ,
- NCDF_HS_NAME    = 'hs'                                      ,
- NCDF_DIR_NAME   = 'dir'                                     ,
- NCDF_SPR_NAME   = 'spr'                                     ,
- NCDF_FP_NAME    = 'fp'                                      ,
- NCDF_F02_NAME   = 't02'
+ LBCSE          = .F.,               
+ LBCWA          = .T.,               
+ LBCSP          = .F.,               
+ LINHOM         = .F.,               
+ LBSP1D         = .F.,               
+ LBSP2D         = .F.,               
+ LBINTER        = .F.,               
+ BEGTC          = '19980901.000000', 
+ DELTC          = 5.00000000000000,  
+ UNITC          = 'SEC',             
+ ENDTC          = '19980901.010000', 
+ FILEBOUND      = 'wwmbnd.gr3',      
+ IBOUNDFORMAT   = 1,                 
+ FILEWAVE       = 'wwmbnd.gr3',      
+ LINDSPRDEG     = .F.,               
+ LPARMDIR       = .F.,               
+ WBHS           = 4.00000000000000,  
+ WBTP           = 8.00000000000000,  
+ WBDM           = 90.0000000000000,  
+ WBDS           = 5.0000000000000,  
+ WBSS           = 2.00000000000000,  
+ WBDSMS         = 1.00000000000000,  
+ WBGAUSS        = 0.100000000000000, 
+ WBPKEN         = 3.30000000000000,  
+ NCDF_HS_NAME   = 'hs',              
+ NCDF_DIR_NAME  = 'dir',             
+ NCDF_SPR_NAME  = 'spr',             
+ NCDF_FP_NAME   = 'fp',              
+ NCDF_F02_NAME  = 't02',             
+ NETCDF_OUT_PARAM = .T. , 
+ NETCDF_OUT_SPECTRA = .T. , 
 /
 
 &WIND          
@@ -100,6 +104,7 @@
  WINDFAC        = 1.00000000000000,  
  IWINDFORMAT    = 1,                 
  LWINDFROMWWM   = .T.,               
+ !SHIFT_WIND_TIME = 0.000000000000000E+000, 
 /
 
 &CURR          
@@ -135,28 +140,28 @@
 /
 
 &ENGS          
- MESNL          = 0,                 
- MESIN          = 0,                 
+ MESNL          = 1,                 
+ MESIN          = 5,                 
  IFRIC          = 1,                 
  MESBF          = 1,                 
  FRICC          = 6.700000000000000E-002, 
  MESBR          = 1,                 
  ICRIT          = 1,                 
- ALPBJ          = 0.50,  
+ ALPBJ          = 1.00000000000000,  
  BRHD           = 0.730000000000000, 
- LMAXETOT       = .F.,               
- MESDS          = 0,                 
- MESTR          = 5,                 
+ LMAXETOT       = .T.,               
+ MESDS          = 5,                 
+ MESTR          = 1,                 
  TRICO          = 1.00000000000000,  
- TRIRA          = 25.0000000000000,  
- TRIURS         = 0.0100000000000000, 
+ TRIRA          = 2.50000000000000,  
+ TRIURS         = 0.100000000000000, 
 /
 
 &NUMS          
  ICOMP          = 0,                 
  AMETHOD        = 1,                 
- SMETHOD        = 3,                 
- DMETHOD        = 1,                 
+ SMETHOD        = 1,                 
+ DMETHOD        = 2,                 
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
  MAXCFLTH       = 1.00000000000000,  
@@ -167,15 +172,15 @@
  LFILTERSIG     = .F.,               
  MAXCFLSIG      = 1.00000000000000,  
  LSIGBOUND      = .F.,               
- LLIMT          = .F.,               
- LIMFAK         = 1.00000000000000, 
- MELIM          = 1,                 
+ LLIMT          = .T.,               
+ LIMFAK         = 0.600000000000000, 
+ MELIM          = 3,                 
  LDIFR          = .F.,               
  IDIFFR         = 1,                 
  LADVTEST       = .F.,               
- LSOUBOUND      = .T.,               
+ LSOUBOUND      = .F.,               
  LCONV          = .F.,               
- LCFL           = .F.,               
+ LCFL           = .T.,               
  LCHKCONV       = .T.,               
  NQSITER        = 10,                
  QSCONV1        = 0.980000000000000, 
@@ -193,7 +198,7 @@
  FREQEXP        = 0.100000000000000, 
  LVECTOR        = .F.,               
  IVECTOR        = 2,                 
- DTMIN_DYN      = 0.01,  
+ DTMIN_DYN      = 1.00000000000000,  
  NDYNITER       = 100,               
  DTMIN_SIN      = 1.00000000000000,  
  DTMIN_SNL4     = 1.00000000000000,  
@@ -212,20 +217,21 @@
  LNANINFCHK     = .F.,               
  LZETA_SETUP    = .F.,               
  ZETA_METH      = 0,                 
- LSOURCESWAM    = F,               
+ LSOURCESWAM    = .T.,               
  PMIN           = 1.0,               
  LSOURCESWWIII  = .F.,               
  BLOCK_GAUSS_SEIDEL = .T.,               
  LNONL          = .F.,               
+ ASPAR_LOCAL_LEVEL = 2 
 /
 
 &HISTORY       
  BEGTC          = '19980901.000000',
- DELTC          = 10.00000000000,
+ DELTC          =  1.000000000000,
  UNITC          = 'SEC',
- ENDTC          = '19980901.050000',
+ ENDTC          = '19980902.000000',
  DEFINETC       = 0.000000000000000E+000, 
- OUTSTYLE       = 'NC',
+ OUTSTYLE      = 'XFN',
  FILEOUT        = 'field.dat',       
  LOUTITER       = .F.,               
  LENERGY        = .F.,               
@@ -236,9 +242,9 @@
  USE_SINGLE_OUT = .T.,               
  PRINTMMA       = .F.,               
  HS             = .T.,               
- TM01           = .T.,
- TM02           = .T.,
- TM10           = .T.,               
+ TM01           = .F.,               
+ TM02           = .F.,               
+ TM10           = .F.,               
  KLM            = .F.,               
  WLM            = .F.,               
  ETOTC          = .F.,               
@@ -269,8 +275,8 @@
  WINDX          = .F.,               
  WINDY          = .F.,               
  CD             = .F.,               
- CURRTX         = .T.,
- CURRTY         = .T.,
+ CURRTX         = .F.,               
+ CURRTY         = .F.,               
  WATLEV         = .F.,               
  WATLEVOLD      = .F.,               
  DEPDT          = .F.,               
@@ -310,9 +316,9 @@
  LOUTITER       = .F.,               
  IOUTS          = 0,                 
  NOUTS          = 'P-1',             
- XOUTS          = 199*0.000000000000000E+000
- YOUTS          = 199*0.000000000000000E+000
- CUTOFF         = 199*0.000000000000000E+000
+ XOUTS          = 1950.00000000000,  ! 199*0.000000000000000E+000
+ YOUTS          = 304.000000000000,  ! 199*0.000000000000000E+000
+ CUTOFF         = 0.440000000000000, ! 199*0.000000000000000E+000
  LSIGMAX        = .T.,               
  LSP1D          = .F.,               
  LSP2D          = .F.,               
@@ -386,8 +392,8 @@
  DELTC          = 5.00000000000000,  
  UNITC          = 'SEC',             
  ENDTC          = '19980901.010000', 
- LHOTF          = .F.,               
- LCYCLEHOT      = .T.,               
+ LHOTF          = .T.,               
+ LCYCLEHOT      = .F.,               
  FILEHOT_OUT    = 'hotfile_out.dat', 
  HOTSTYLE_IN    = 2,                 
  HOTSTYLE_OUT   = 2,                 
@@ -399,7 +405,6 @@
 
 &NESTING
 /
-
 
 &PETSCOPTIONS  
  Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html = ,                  

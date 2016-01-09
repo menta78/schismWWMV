@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 from StringIO import StringIO
 
 obs   = np.loadtxt('120s_phillim_dia.site',skiprows=1)
-test1 = np.loadtxt('10s_phillim_dia.site',skiprows=1)
+test1 = np.loadtxt('120s_phillim_dia.site',skiprows=1)
 #test2 = np.loadtxt('strang600nolim.site',skiprows=1)   
 #test3 = np.loadtxt('nostrang600nolim.site',skiprows=1)
-test4 = np.loadtxt('120s_phillim_tsa.site',skiprows=1)
+test4 = np.loadtxt('120s_phillim_dia.site',skiprows=1)
 
 nobs = len(obs[:,1])
 print nobs

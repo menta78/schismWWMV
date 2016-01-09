@@ -2,32 +2,33 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GENERAL_OUTPUT
+      SUBROUTINE GENERAL_OUTPUT(TIME)
       USE WWM_HOTFILE_MOD
       USE DATAPOOL
       IMPLICIT NONE
+      REAL(rkind), INTENT(IN) :: TIME
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4,L5)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD, (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)
       !
       ! The history output
       !
-      IF ( (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)) THEN
+      IF ( (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD+1.E-8)) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD
-        CALL OUTPUT_HISTORY(RTIME*DAY2SEC,.FALSE.)
+        CALL OUTPUT_HISTORY( TIME )
         OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
       END IF
       !
       ! The station output
       !
-      IF ( (MAIN%TMJD .GE. OUT_STATION%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_STATION%EMJD)) THEN
+      IF ( (MAIN%TMJD .GE. OUT_STATION%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_STATION%EMJD+1.E-8)) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
-        CALL OUTPUT_STATION(.FALSE.)
+        CALL OUTPUT_STATION
         OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
       END IF
       !
       ! The hotfile output
       !
       IF (LHOTF) THEN
-        IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD)) THEN
+        IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD+1.E-8)) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
           FLUSH(STAT%FHNDL)
           CALL OUTPUT_HOTFILE
@@ -37,71 +38,54 @@
       !
       ! The wavewatch III exports
       !
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_BOUC_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_BOUC_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        WRITE(STAT%FHNDL,*) 'MAIN%TMJD=', MAIN%TMJD
-!        WRITE(STAT%FHNDL,*) 'OUT_BOUC_WW3%TMJD=', OUT_BOUC_WW3%TMJD
-!        WRITE(STAT%FHNDL,*) 'OUT_BOUC_WW3%EMJD=', OUT_BOUC_WW3%EMJD
+      IF (LEXPORT_BOUC_MOD_OUT) THEN
         FLUSH(STAT%FHNDL)
-        IF ( (MAIN%TMJD .GE. OUT_BOUC_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
+        IF ( (MAIN%TMJD .GE. OUT_BOUC_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC_WW3%EMJD+1.E-8)) THEN
           CALL EXPORT_BOUC_WW3_FORMAT
           OUT_BOUC_WW3%TMJD = OUT_BOUC_WW3%TMJD + OUT_BOUC_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_WIND_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_WIND_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
-        IF ( (MAIN%TMJD .GE. OUT_WIND_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WIND_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
+      IF (LEXPORT_WIND_MOD_OUT) THEN
+        IF ( (MAIN%TMJD .GE. OUT_WIND_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WIND_WW3%EMJD+1.E-8)) THEN
           CALL EXPORT_WIND_WW3_FORMAT
           OUT_WIND_WW3%TMJD = OUT_WIND_WW3%TMJD + OUT_WIND_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_CURR_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_CURR_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
-        IF ( (MAIN%TMJD .GE. OUT_CURR_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_CURR_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
+      IF (LEXPORT_CURR_MOD_OUT) THEN
+        IF ( (MAIN%TMJD .GE. OUT_CURR_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_CURR_WW3%EMJD+1.E-8)) THEN
           CALL EXPORT_CURR_WW3_FORMAT
           OUT_CURR_WW3%TMJD = OUT_CURR_WW3%TMJD + OUT_CURR_WW3%DELT*SEC2DAY
         END IF
       END IF
-!      WRITE(STAT%FHNDL,*) 'Before LEXPORT_WALV_WW3'
-!      FLUSH(STAT%FHNDL)
-      IF (LEXPORT_WALV_WW3) THEN
-!        WRITE(STAT%FHNDL,*) 'Before time test'
-!        FLUSH(STAT%FHNDL)
-        IF ( (MAIN%TMJD .GE. OUT_WALV_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WALV_WW3%EMJD)) THEN
-!          WRITE(STAT%FHNDL,*) 'After time test'
-!          FLUSH(STAT%FHNDL)
+      IF (LEXPORT_WALV_MOD_OUT) THEN
+        IF ( (MAIN%TMJD .GE. OUT_WALV_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_WALV_WW3%EMJD+1.E-8)) THEN
           CALL EXPORT_WALV_WW3_FORMAT
           OUT_WALV_WW3%TMJD = OUT_WALV_WW3%TMJD + OUT_WALV_WW3%DELT*SEC2DAY
         END IF
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After specific model output'
+      FLUSH(STAT%FHNDL)
       !
       ! The boundary output
       !
+!      Print *, '1: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' MAIN%TMJD=', MAIN%TMJD
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
 #ifdef NCDF
-        IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD)) THEN
+!        Print *, '2: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' OUT_BOUC % EMJD=', OUT_BOUC%EMJD
+        IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD+1.E-8)) THEN
+!          Print *, '3: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           CALL WRITE_NETCDF_BOUNDARY
+!          Print *, '4: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
           OUT_BOUC%TMJD = OUT_BOUC%TMJD + OUT_BOUC%DELT*SEC2DAY
+!          Print *, '5: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
         END IF
 #else
         CALL WWM_ABORT('Need netcdf for the boundary output')
 #endif
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After boundary output'
+      FLUSH(STAT%FHNDL)
       !
       ! The nesting
       !
@@ -112,6 +96,8 @@
         CALL WWM_ABORT('Need netcdf for the nesting output')
 #endif
       END IF
+      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After nesting operation'
+      FLUSH(STAT%FHNDL)
       !
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
       FLUSH(STAT%FHNDL)
@@ -119,32 +105,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WWM_OUTPUT( TIME, LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_HISTORY( TIME )
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)    :: TIME
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
-      CALL OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-      CALL OUTPUT_STATION( LINIT_OUTPUT )
-      OUT_HISTORY%TMJD = OUT_HISTORY%TMJD + OUT_HISTORY%DELT*SEC2DAY
-      OUT_STATION%TMJD = OUT_STATION%TMJD + OUT_STATION%DELT*SEC2DAY
-
-      WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH WWM OUTPUT'
-      FLUSH(STAT%FHNDL)
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE OUTPUT_HISTORY( TIME, LINIT_OUTPUT )
-      USE DATAPOOL
-      IMPLICIT NONE
-      REAL(rkind), INTENT(IN)    :: TIME
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
       SELECT CASE (VAROUT_HISTORY%IOUTP)
         CASE (0)
           ! Do nothing ...
         CASE (1)
-          CALL OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
+          CALL OUTPUT_HISTORY_XFN( TIME )
         CASE (2)
 #ifdef NCDF
           CALL OUTPUT_HISTORY_NC
@@ -165,10 +134,9 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_STATION( LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_STATION
       USE DATAPOOL
       IMPLICIT NONE
-      LOGICAL, INTENT(IN) :: LINIT_OUTPUT
       CHARACTER(LEN=15)   :: CTIME
       CALL MJD2CT(MAIN%TMJD, CTIME)
       IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
@@ -177,7 +145,7 @@
           CASE (0)
             ! Do nothing ...
           CASE (1)
-            CALL OUTPUT_STE(CTIME, LINIT_OUTPUT)
+            CALL OUTPUT_STE(CTIME)
           CASE (2)
 #ifdef NCDF
             CALL OUTPUT_STATION_NC
@@ -194,7 +162,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_HISTORY_XFN( TIME, LINIT_OUTPUT )
+      SUBROUTINE OUTPUT_HISTORY_XFN( TIME )
 !
 !     XFN TYPE OUTPUT
 !
@@ -202,8 +170,7 @@
          IMPLICIT NONE
          REAL(rkind), INTENT(IN)   :: TIME
          ! Yes we really want kind=4 variables here. The xfn tools can read kind=4 only
-         LOGICAL, INTENT(IN)       :: LINIT_OUTPUT
-
+         LOGICAL, SAVE             :: LINIT_OUTPUT = .TRUE.
          INTEGER                   :: IP
          LOGICAL                   :: DoAirSea
 #ifdef MPI_PARALL_GRID
@@ -425,6 +392,7 @@
 #endif
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
         FLUSH(STAT%FHNDL)
+        LINIT_OUTPUT=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -469,12 +437,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_STE(CTIME,LINIT_OUTPUT)
+      SUBROUTINE OUTPUT_STE(CTIME)
       USE DATAPOOL
       IMPLICIT NONE
 
       CHARACTER(LEN=15), INTENT(IN) :: CTIME
-      LOGICAL, INTENT(IN)           :: LINIT_OUTPUT
 
       REAL(rkind) :: ACLOC(MSC,MDC), ACOUT_1D(MSC,3), ACOUT_2D(MSC*MDC)
 
@@ -484,6 +451,7 @@
       INTEGER           :: I, NI(3), IS
       LOGICAL           :: ALIVE, LSAME
       REAL(rkind)       :: WI(3)
+      LOGICAL, SAVE     :: LINIT_OUTPUT = .TRUE.
 #ifdef MPI_PARALL_GRID
       REAL(rkind) :: TheIsumR
 #endif
@@ -744,6 +712,7 @@
 #endif
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
       FLUSH(STAT%FHNDL)
+      LINIT_OUTPUT=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !* The netcdf output outs the most variables and is the most          *
@@ -1487,9 +1456,9 @@
       REAL(rkind) :: HS,TM01,TM02,KLM,WLM,TM10
       REAL(rkind) :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
       REAL(rkind) :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
-      REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
-      REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
-      REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+      REAL(rkind) :: STOKESSURFX,STOKESSURFY
+      REAL(rkind) :: STOKESBAROX,STOKESBAROY
+      REAL(rkind) :: STOKESBOTTX,STOKESBOTTY
       REAL(rkind) :: eWindMag
       OUTPAR    = ZERO
 
@@ -2155,15 +2124,17 @@
           deallocate(dspl_his)
         END DO
       END IF
-# endif
       END SUBROUTINE
+# endif
 !**********************************************************************
 !*  Init the MPI arrays                                               *
 !**********************************************************************
       SUBROUTINE COLLECT_OUTT_ARRAY
+      USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), allocatable :: OUTT_LOC(:,:)
       REAL(rkind)              :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
+      integer IP
 # ifdef MPI_PARALL_GRID
       logical, save :: IsMPIarrayInitialized = .FALSE.
       integer iProc, IPglob

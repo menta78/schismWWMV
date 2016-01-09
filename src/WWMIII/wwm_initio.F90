@@ -7,28 +7,23 @@
        SUBROUTINE INIT_ARRAYS
        USE DATAPOOL
        IMPLICIT NONE
+
        IF (DIMMODE .EQ. 1) THEN
          ALLOCATE( DX1(0:MNP+1), DX2(0:MNP+1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 1')
          DX1 = zero
          DX2 = zero 
        ENDIF
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 1'
-!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( XP(MNP), YP(MNP), DEP(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 2')
        XP  = zero
        YP  = zero
        DEP = zero
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 2'
-!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( INVSPHTRANS(MNP,2), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 3')
        INVSPHTRANS = zero
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 3'
-!       FLUSH(STAT%FHNDL)
 
        ALLOCATE( INE(3,MNE), IEN(6,MNE), IEND(3,3,MNE), TRIA(MNE), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 4')
@@ -36,6 +31,7 @@
        IEN = zero
        IEND = zero
        TRIA = zero
+
 #ifdef MPI_PARALL_GRID
 # ifdef PDLIB
        INE(:,:) = INETMP(:,:)
@@ -43,8 +39,6 @@
        INE = INETMP(1:3,:)
 # endif
 #endif
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 4'
-!       FLUSH(STAT%FHNDL)
 !
 ! spectral grid - shared
 !
@@ -57,22 +51,16 @@
        ALLOCATE (AC2(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
        AC2 = zero
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 5'
-!       FLUSH(STAT%FHNDL)
 
        ALLOCATE (AC1(MSC,MDC,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
        AC1 = zero
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 6'
-!       FLUSH(STAT%FHNDL)
 
        IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
          ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9a')
          U_JACOBI = zero
        END IF
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 7'
-!       FLUSH(STAT%FHNDL)
 
        IF (ICOMP .GE. 2) THEN
          ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
@@ -80,8 +68,6 @@
          IMATRAA = zero
          IMATDAA = zero
        END IF
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
-!       FLUSH(STAT%FHNDL)
 
 !       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
 !       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
@@ -229,7 +215,7 @@
 !
 !  new stuff not ready  
 !
-       IF (LCONV) THEN ! more work needed ...
+       IF (LCONV .AND. .FALSE.) THEN ! more work needed ...
          ALLOCATE ( IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
          IP_IS_STEADY = 0
@@ -298,6 +284,7 @@
        SXY3D = zero
        SYY3D = zero
 #endif
+
 #ifndef SCHISM
        IF (LCPL) THEN
          IF (LTIMOR.or.LSHYFEM) THEN
@@ -313,8 +300,6 @@
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32')
        HMAX = zero
        ISHALLOW = 0
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 20'
-!       FLUSH(STAT%FHNDL)
 
        IF (LSOURCESWAM .OR. MESIN == 2) THEN
          ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
@@ -349,8 +334,6 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32e')
          FCONST = 1
        ENDIF
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 21'
-!       FLUSH(STAT%FHNDL)
 !
 !      init source term parameter 
 !      
@@ -385,8 +368,15 @@
           ALPHA   = 0.004
         ENDIF
       ELSE
-         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
+        CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
       ENDIF ! IPHYS
+
+      IF (LVECTOR) THEN
+        ALLOCATE( KELEMGL(MSC,MDC,3,MNE),FLALLGL(MSC,MDC,3,MNE), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
+        KELEMGL = ZERO
+        FLALLGL = ZERO
+      ENDIF
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)
@@ -527,11 +517,8 @@
       USE W3SRC4MD
 #endif
       IMPLICIT NONE
-!
       REAL(rkind)    :: TIME1, TIME2
-#if defined MPI_PARALL_GRID && !defined PDLIB
-      integer i,j
-#endif
+      integer        :: i,j
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
@@ -635,15 +622,17 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE PARALLEL INITIALIZATION'
       FLUSH(STAT%FHNDL)
       WLDEP=DEP
-      IF (CART2LATLON) THEN
-        XP = XP / 111111.
-        YP = YP / 111111.
-      ELSE IF (LATLON2CART) THEN
-        XP = XP * 111111.
-        YP = YP * 111111. 
-      ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
-        CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
-      ENDIF 
+!      Print *, 'CART2LATLON=', CART2LATLON
+!      Print *, 'LATLON2CART=', LATLON2CART
+!      IF (CART2LATLON) THEN
+!        XP = XP / 111111.
+!        YP = YP / 111111.
+!      ELSE IF (LATLON2CART) THEN
+!        XP = XP * 111111.
+!        YP = YP * 111111. 
+!      ELSE IF (CART2LATLON .AND. LATLON2CART) THEN
+!        CALL  WWM_ABORT('CART2LATLON .AND. LATLON2CART cannot be T')
+!      ENDIF
       CALL INIT_SPATIAL_GRID
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT SPATIAL GRID'
       FLUSH(STAT%FHNDL)
@@ -779,7 +768,7 @@
 #ifdef MPI_PARALL_GRID
       CALL EXCHANGE_P4D_WWM(AC2)
 #endif
-      CALL WWM_OUTPUT(ZERO,.TRUE.)
+      CALL GENERAL_OUTPUT(ZERO)
       IF (LWXFN) THEN
         CALL WRINPGRD_XFN
       ELSE IF(LWSHP) THEN
@@ -1073,6 +1062,7 @@
 
          IMPLICIT NONE
          INTEGER IQGRID, INODE
+         integer ierr_xnl
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
          FLUSH(STAT%FHNDL)
@@ -1096,10 +1086,10 @@
            ELSE IF (MESNL .EQ. 5) THEN
              IQGRID = 3
              INODE  = 1
-             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR)
+             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
              CALL INIT_CONSTANTS
-             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR)
-             IF (IERR .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
+             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
+             IF (IERR_XNL .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
          ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS' 

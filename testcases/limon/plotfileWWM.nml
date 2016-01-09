@@ -1,0 +1,19 @@
+&PROC
+ MODELNAME = "WWM", 
+ BEGTC = "19980901.000000", 
+ DELTC =  10, 
+ UNITC = "SEC", 
+ ENDTC = "19980901.001000", 
+ GridFile = "field.nc", 
+ HisPrefix = "field.nc", 
+ PicPrefix = "WWM_plot/"
+ Extension="png",
+ KeepNC_NCL = F,
+/
+
+&VARS
+ WIND10 = F, 
+ WINDMAG = F, 
+ Hwave = T
+/
+

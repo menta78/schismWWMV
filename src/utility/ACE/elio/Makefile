@@ -16,3 +16,6 @@ lib: $(OBJS) elio.h elio.c
 	$(CC) $(CFLAGS) -c -g elio.c
 	-/bin/rm libelio.a
 	ar q libelio.a $(OBJS)
+
+clean:
+	rm *.o

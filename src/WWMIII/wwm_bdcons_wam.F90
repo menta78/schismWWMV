@@ -31,8 +31,10 @@
           nbExtrapolation=nbExtrapolation + 1
         END IF
       END DO
-      WRITE(STAT % FHNDL, *) 'Computing extrapolation array for boundary'
-      WRITE(STAT % FHNDL, *) 'nbExtrapolation=', nbExtrapolation
+      IF (EXTRAPOLATION_ALLOWED_BOUC) THEN
+        WRITE(STAT % FHNDL, *) 'Computing extrapolation array for boundary'
+        WRITE(STAT % FHNDL, *) 'nbExtrapolation=', nbExtrapolation
+      END IF
       END SUBROUTINE COMPUTE_BND_INTERPOLATION_ARRAY
 !**********************************************************************
 !*                                                                    *

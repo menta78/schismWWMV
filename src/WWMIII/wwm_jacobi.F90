@@ -2,6 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#define DEBUG
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
@@ -48,7 +49,9 @@
           END DO
         END DO
       END DO
+#ifdef MPI_PARALL_GRID     
       CALL EXCHANGE_P2D(CFLadvgeoOut)
+#endif
       DO IP=1,MNP
         CFLadvgeoOutI(IP) = NINT(CFLadvgeoOut(IP))
       END DO
@@ -69,11 +72,12 @@
       REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
       INTEGER     :: I1, I2, I3
       INTEGER     :: IP, ID, IS, IE
-      INTEGER     :: I, IPGL1, IPrel
+      INTEGER     :: I, IPGL1
 
       REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
       REAL(rkind) :: CXnorm
+      REAL(rkind) sumTMP3, sumCXY, sumCG, sumASPARdiag
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -83,6 +87,16 @@
 !
 !     Calculate countour integral quantities ...
 !
+#ifdef DEBUG
+      WRITE(STAT%FHNDL,*) 'MNP=', MNP
+      WRITE(STAT%FHNDL,*) 'sum(IOBWB)=', sum(IOBWB)
+      WRITE(STAT%FHNDL,*) 'sum(IOBPD)=', sum(IOBPD)
+      WRITE(STAT%FHNDL,*) 'sum(IOBDP)=', sum(IOBDP)
+      WRITE(STAT%FHNDL,*) 'LSPHE=', LSPHE
+      sumTMP3=0
+      sumCXY=0
+      sumCG=0
+#endif
       IF (LCFL) THEN
         CFLCXY(1,:) = ZERO
         CFLCXY(2,:) = ZERO
@@ -127,6 +141,10 @@
             END DO
           END DO
         END DO
+#ifdef DEBUG
+        sumCXY = sumCXY + sum(abs(CXY))
+        sumCG  = sumCG  + sum(abs(CG ))
+#endif
 
         LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
         K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
@@ -156,22 +174,35 @@
             DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
           END DO
           TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+#ifdef DEBUG
+          sumTMP3 = sumTMP3 + sum(abs(TMP3))
+#endif
           ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
           ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
           ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
         END DO
       END DO
+#ifdef DEBUG
+      WRITE(STAT%FHNDL,*) 'sumTMP3=', sumTMP3
+      WRITE(STAT%FHNDL,*) 'sumCXY=', sumCXY
+      WRITE(STAT%FHNDL,*) 'sumCG=', sumCG
+      WRITE(STAT%FHNDL,*) 'LBCWA=', LBCWA
+      WRITE(STAT%FHNDL,*) 'LBCSP=', LBCSP
+      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
+#endif
       IF (LBCWA .OR. LBCSP) THEN
         DO IP = 1, IWBMNP
-          IF (LINHOM) THEN
-            IPrel=IP
-          ELSE
-            IPrel=1
-          ENDIF
           IPGL1 = IWBNDLC(IP)
           ASPAR(:,:,I_DIAG(IPGL1)) = SI(IPGL1) ! Set boundary on the diagonal
         END DO
       END IF
+#ifdef DEBUG
+      sumASPARdiag=0
+      DO IP=1,MNP
+        sumASPARdiag = sumASPARdiag + sum(abs(ASPAR(:,:,I_DIAG(IP))))
+      END DO
+      WRITE(STAT%FHNDL,*) 'sumASPARdiag=', sumASPARdiag
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -227,13 +258,6 @@
             DO IS=1,MSC
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-!            DO IS=2,MSC
-!              A_SIG(IS,ID,IP) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-!            END DO
-            !
-!            DO IS=1,MSC-1
-!              C_SIG(IS,ID,IP) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-!            END DO
             B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
             ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
@@ -607,6 +631,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#ifdef NCDF      
       SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
       USE DATAPOOL
       USE NETCDF  
@@ -625,7 +650,7 @@
       integer, allocatable :: ListFirstMNP(:)
       WRITE(FileSave, 10) 'DebugJacobi', iPass
 10    FORMAT(a, '_', i4.4,'.nc')
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
         allocate(ListFirstMNP(nproc), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 1')
@@ -653,15 +678,15 @@
       ELSE
         CALL MPI_SEND(FieldOut1, NP_RES, rtype, 0, 511, comm, ierr)
       END IF
-#else
+# else
       FieldOutTotal1 = FieldOut1
-#endif
+# endif
       !
       ! Now writing to netcdf file
       ! 
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
-#endif
+# endif
         IF (iIter .eq. 1) THEN
           iret = nf90_create(TRIM(FileSave), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
@@ -693,15 +718,16 @@
         iret=nf90_inq_varid(ncid, "FieldOut1", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         !
-        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_global, 1 /))
+        iret=nf90_put_var(ncid,var_id,FieldOutTotal1,start=(/1, iIter/), count=(/ np_total, 1 /))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
         !
         iret = nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-#ifdef MPI_PARALL_GRID
+# ifdef MPI_PARALL_GRID
       END IF
-#endif
-      END SUBROUTINE
+# endif
+      END SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI
+#endif    
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -726,22 +752,29 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: eFact
-      REAL(rkind) :: Sum_new, Sum_prev, eVal, DiffNew
-      INTEGER :: IP, J, idx, nbIter, is_converged, itmp
+      REAL(rkind) :: Sum_new, eVal, DiffNew
+      INTEGER :: IP, J, idx, nbIter, is_converged(1), itmp(1)
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
       integer nbPassive
+#ifdef DEBUG
+      REAL(rkind) sumESUM
+#endif
+      WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
       WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
+      WRITE(STAT%FHNDL,*) 'LNONL=', LNONL
       WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
       WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
       IF (WAE_JGS_CFL_LIM) THEN
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_jacobi, allocate error 3')
-          CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
         END IF
         InitCFLadvgeo=.TRUE.
         NumberOperationJGS = 0
+        IF (LCALC) THEN
+          CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
+        END IF
       END IF
 
 #ifdef TIMINGS
@@ -751,6 +784,10 @@
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         CALL EIMPS_ASPAR_BLOCK(ASPAR_JAC)
       END IF
+#ifdef DEBUG
+      WRITE(STAT%FHNDL,*) 'sum(abs(ASPAR_JAC))=', sum(abs(ASPAR_JAC))
+      WRITE(STAT%FHNDL,*) 'sum(    ASPAR_JAC )=', sum(ASPAR_JAC)
+#endif
       IF ((ASPAR_LOCAL_LEVEL .ge. 5).and.(ASPAR_LOCAL_LEVEL .le. 7)) THEN
         CALL COMPUTE_K_CRFS_XYU
       END IF
@@ -783,15 +820,19 @@
       !
       nbIter=0
       DO
-        is_converged = 0
+        is_converged(1) = 0
         JDX=0
 #ifdef DEBUG_ITERATION_LOOP
         FieldOut1 = 0
 #endif
+#ifdef DEBUG
+        WRITE(STAT%FHNDL,*) 'Before iteration sum(AC2)=', sum(abs(AC2))
+        sumESUM=0
+#endif
         nbPassive = 0
+        
         DO IP=1,NP_RES
           ACLOC = AC2(:,:,IP)
-          Sum_prev = sum(ACLOC)
           IF (WAE_JGS_CFL_LIM .eqv. .FALSE.) THEN
             test=.TRUE.
           ELSE
@@ -803,17 +844,14 @@
           END IF
           IF (test) THEN
             CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
+#ifdef DEBUG
+            sumESUM = sumESUM + sum(abs(eSum))
+#endif
             eSum=eSum/ASPAR_DIAG
             IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
             !eSum=max(zero,eSum)
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
-              IF (LNANINFCHK) THEN
-                IF (SUM(eSum) .ne. SUM(esum)) THEN
-                  WRITE(DBG%FHNDL,*) IP, SUM(ESUM), SUM(IMATDA), SUM(IMATRA), ASPAR_DIAG, DEP(IP)
-                  CALL WWM_ABORT('NAN IN SOLVER')
-                ENDIF
-              ENDIF
             ELSE
               U_JACOBI(:,:,IP)=eSum
             END IF
@@ -830,7 +868,7 @@
 #endif
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .lt. jgs_diff_solverthr) THEN
-                  is_converged=is_converged+1
+                  is_converged(1) = is_converged(1) + 1
                   IF (WAE_JGS_CFL_LIM) THEN
                     NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
                   END IF
@@ -840,16 +878,19 @@
           ELSE
             nbPassive = nbPassive + 1
             IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
-              is_converged = is_converged + 1
+              is_converged(1) = is_converged(1) + 1
             END IF
           END IF
         END DO
+#ifdef DEBUG
+        WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
+#endif
         IF (JGS_CHKCONV) THEN
 #ifdef MPI_PARALL_GRID
-          CALL MPI_ALLREDUCE(is_converged, itmp, 1, itype, MPI_SUM, COMM, ierr)
+          CALL MPI_ALLREDUCE(is_converged, itmp(1), 1, itype, MPI_SUM, COMM, ierr)
           is_converged = itmp
 #endif
-          p_is_converged = (real(np_total) - real(is_converged))/real(np_total) * 100.
+          p_is_converged = (real(np_total) - real(is_converged(1)))/real(np_total) * 100.
         ENDIF 
 
 #ifdef MPI_PARALL_GRID
@@ -862,15 +903,20 @@
         IF (.NOT. BLOCK_GAUSS_SEIDEL) THEN
           AC2 = U_JACOBI
         ENDIF
+#ifdef DEBUG
+        WRITE(STAT%FHNDL,*) ' After iteration sum(AC2)=', sum(abs(AC2))
+#endif
 #ifdef DEBUG_ITERATION_LOOP
         iIter=nbIter + 1
+# ifdef NCDF        
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
+# endif        
 #endif
 
 !
 ! The termination criterions several can be chosen
 !
-        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged, np_total-is_converged, p_is_converged, pmin
+        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
         !
         ! Number of iterations. If too large the exit.
         !

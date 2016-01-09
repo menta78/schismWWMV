@@ -25,3 +25,10 @@ all:
 	make -C xmgr5
 	cp xmgr5/xmgr5 $(HOME)/bin
 
+
+clean:
+	make -C elio clean
+	make -C lib clean
+	make -C xmgredit5 clean
+	make -C xmvis6 clean
+	make -C xmgr5 clean

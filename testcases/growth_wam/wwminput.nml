@@ -9,10 +9,12 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030910.000000     ,
- DELTC   = 600.000000000000     ,
+ DELTC   =   10.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20040915.000000     ,
- DMIN    =  0.100000000000000     
+ ENDTC   = 20030911.000000     ,
+ DMIN    =  0.100000000000000     ,
+ MULTIPLE_OUT_INFO       = T,
+ MODEL_OUT_TYPE  = WW3                 
  /
  &COUPL
  LCPL    = F,
@@ -34,6 +36,8 @@
  FRLOW   =  5.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
  MSC     =          36,
+ USE_FRATIO      = F,
+ FRATIO  =  0.000000000000000E+000,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -42,12 +46,15 @@
  LVAR1D  = F,
  LOPTSIG = T,
  CART2LATLON     = F,
- LATLON2CART     = F
+ LATLON2CART     = F,
+ APPLY_DXP_CORR  = F,
+ USE_EXACT_FORMULA_SPHERICAL_AREA = F,
+ LEXPORT_GRID_MOD_OUT = F
  /
  &INIT
  LHOTR   = F,
  LINID   = T,
- INITSTYLE       =           3
+ INITSTYLE = 1, 
  /
  &BOUC
  LBCSE   = F,
@@ -80,7 +87,22 @@
  NCDF_DIR_NAME   = dir                                     ,
  NCDF_SPR_NAME   = spr                                     ,
  NCDF_FP_NAME    = fp                                      ,
- NCDF_F02_NAME   = t02                                     
+ NCDF_F02_NAME   = t02                                     ,
+ MULTIPLE_IN     = T,
+ NETCDF_OUT_PARAM        = F,
+ NETCDF_OUT_SPECTRA      = F,
+ NETCDF_OUT_FILE = boundary_out_spec.nc                                                                                              
+ USE_SINGLE_OUT  = T,
+ BEGTC_OUT       = 20030910.000000     ,
+ DELTC_OUT       =   600.000000000000     ,
+ UNITC_OUT       = SEC                 ,
+ ENDTC_OUT       = 20040915.000000     ,
+ EXTRAPOLATION_ALLOWED   = F,
+ HACK_HARD_SET_IOBP      = F,
+ PARAMWRITE      = T,
+ NETCDF_IN_FILE  = unset                                                                                                             
+ LEXPORT_BOUC_MOD_OUT    = F,
+ EXPORT_BOUC_DELTC       =  0.000000000000000E+000
  /
  &WIND
  LSEWD   = F,
@@ -97,12 +119,16 @@
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
-                           ,
  WINDFAC =   1.00000000000000     ,
  IWINDFORMAT     =           4,
  LWINDFROMWWM    = T,
- SHIFT_WIND_TIME =  0.000000000000000E+000,
- MULTIPLE_IN     = T
+ GRIB_FILE_TYPE  =           1,
+ EXTRAPOLATION_ALLOWED   = F,
+ USE_STEPRANGE   = T,
+ MULTIPLE_IN     = T,
+ LEXPORT_WIND_MOD_OUT    = F,
+ EXPORT_WIND_DELTC       =  0.000000000000000E+000,
+ LSAVE_INTERP_ARRAY      = F
  /
  &CURR
  LSECU   = F,
@@ -115,10 +141,13 @@
  LCCUR   = F,
  CCURTX  =  0.000000000000000E+000,
  CCURTY  =  0.000000000000000E+000,
+ FILECUR = ''
  LERGINP = T,
  CURFAC  =   1.00000000000000     ,
  ICURRFORMAT     =           1,
- MULTIPLE_IN     = T
+ MULTIPLE_IN     = T,
+ LEXPORT_CURR_MOD_OUT    = F,
+ EXPORT_CURR_DELTC       =  0.000000000000000E+000
  /
  &WALV
  LSEWL   = F,
@@ -130,10 +159,13 @@
  LSTWL   = F,
  LCWLV   = F,
  CWATLV  =  0.000000000000000E+000,
+ FILEWATL  = ''
  LERGINP = T,
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1,
- MULTIPLE_IN     = T
+ MULTIPLE_IN     = T,
+ LEXPORT_WALV_MOD_OUT    = F,
+ EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
  MESNL   =           1,
@@ -141,8 +173,9 @@
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  1.900000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
+ IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
@@ -174,25 +207,13 @@
  IDIFFR  =           1,
  LADVTEST        = F,
  LSOUBOUND       = F,
- LCONV   = F,
  LCFL    = F,
- LCHKCONV        = T,
- NQSITER =           1,
- QSCONV1 =  0.970000000000000     ,
- QSCONV2 =  0.970000000000000     ,
- QSCONV3 =  0.970000000000000     ,
- QSCONV4 =  0.970000000000000     ,
- QSCONV5 =  0.970000000000000     ,
- EPSH1   =  1.000000000000000E-003,
- EPSH2   =  1.000000000000000E-003,
- EPSH3   =  1.000000000000000E-003,
- EPSH4   =  1.000000000000000E-003,
- EPSH5   =  1.000000000000000E-003,
  RTHETA  =  0.500000000000000     ,
  LEXPIMP = F,
  FREQEXP =  0.000000000000000E+000,
  LVECTOR = F,
  IVECTOR =           2,
+ LGSE    = F,
  DTMIN_DYN       =  1.000000000000000E-005,
  NDYNITER        =     1000000,
  DTMIN_SIN       =   1.00000000000000     ,
@@ -208,15 +229,35 @@
  NDYNITER_SNL3   =           1,
  NDYNITER_SBF    =           1,
  NB_BLOCK        =           3,
- MAXITER =          100000,
+ MAXITER =      100000,
  LNANINFCHK      = F,
- LZETA_SETUP     = F,
- ZETA_METH       =           0,
  LSOURCESWAM     = T,
- PMIN    =   .00000000000000     ,
+ PMIN    =  0.000000000000000E+000,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,
- LNONL   = F
+ LNONL   = F,
+ L_SOLVER_NORM   = F,
+ WAE_SOLVERTHR   =  1.000000000000000E-010,
+ ASPAR_LOCAL_LEVEL       =           0,
+ WAE_JGS_CFL_LIM = F,
+ JGS_CHKCONV     = T,
+ JGS_DIFF_SOLVERTHR      =  9.999999747378752E-006,
+ LCONV   = F,
+ LCHKCONV        = T,
+ NQSITER =           1,
+ QSCONV1 =  0.970000000000000     ,
+ QSCONV2 =  0.970000000000000     ,
+ QSCONV3 =  0.970000000000000     ,
+ QSCONV4 =  0.970000000000000     ,
+ QSCONV5 =  0.970000000000000     ,
+ EPSH1   =  1.000000000000000E-003,
+ EPSH2   =  1.000000000000000E-003,
+ EPSH3   =  1.000000000000000E-003,
+ EPSH4   =  1.000000000000000E-003,
+ EPSH5   =  1.000000000000000E-003,
+ LZETA_SETUP     = F,
+ ZETA_METH       =           0,
+ STP_SOLVERTHR   =  1.000000000000000E-010
  /
  &HISTORY
  BEGTC   = 20030910.000000     ,
@@ -293,7 +334,11 @@
  CFL1    = F,
  CFL2    = F,
  CFL3    = F,
- ZETA_SETUP      = F
+ ZETA_SETUP      = F,
+ CFL_CASD1       = F,
+ CFL_CASD2       = F,
+ CFL_CASD3       = F,
+ CFL_CASD4       = F
  /
  &STATION
  BEGTC   = 20030910.000000     ,
@@ -308,37 +353,7 @@
  FILEOUT = station.dat                             ,
  LOUTITER        = F,
  IOUTS   =           1,
- NOUTS   = ST4TSA                                                                                                                    
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                   ,
+ NOUTS   = 'ST4TSA',
  XOUTS   =   250.000000000000     , 199*0.000000000000000E+000  ,
  YOUTS   =   250.000000000000     , 199*0.000000000000000E+000  ,
  CUTOFF  =   1.00000000000000     , 199*0.000000000000000E+000  ,
@@ -346,38 +361,8 @@
  LSP1D   = T,
  LSP2D   = T,
  LLOUTS  = F,
- ILOUTS  =           0,
- NLOUTS  =                                                                                                                           
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                   ,
+ ILOUTS  = 0,
+ NLOUTS  = ''   
  AC      = F,
  WK      = F,
  ACOUT_1D        = F,
@@ -438,7 +423,11 @@
  CFL1    = F,
  CFL2    = F,
  CFL3    = F,
- ZETA_SETUP      = F
+ ZETA_SETUP      = F,
+ CFL_CASD1       = F,
+ CFL_CASD2       = F,
+ CFL_CASD3       = F,
+ CFL_CASD4       = F
  /
  &HOTFILE
  BEGTC   = 20000101.000000     ,
@@ -457,7 +446,18 @@
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
  /
-
-&NESTING
-  L_WRITE = F,
+ &NESTING
+ L_NESTING       = F,
+ NB_GRID_NEST    =           0,
+ LISTBEGTC       = ''
+ LISTDELTC       = 0.,
+ LISTUNITC       = ''
+ LISTENDTC       = ''
+ LISTIGRIDTYPE   = 20*0,
+ LISTFILEGRID    = ''
+ LISTFILEBOUND   = '' 
+ LISTPREFIX      = ''
+ L_HOTFILE       = F,
+ L_BOUC_PARAM    = F,
+ L_BOUC_SPEC     = F
  /

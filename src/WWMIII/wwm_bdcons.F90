@@ -982,7 +982,7 @@
         CALL WWM_ABORT('Compile with GRIB_API for IBOUNDFORMAT=5')
 #endif
       END IF
-      IF ((IBOUNDFORMAT .eq. 4).or.(IBOUNDFORMAT .eq. 5).or.LEXPORT_BOUC_WW3.or.BOUC_NETCDF_OUT_PARAM.or.BOUC_NETCDF_OUT_SPECTRA) THEN
+      IF ((IBOUNDFORMAT .eq. 4).or.(IBOUNDFORMAT .eq. 5).or.LEXPORT_BOUC_MOD_OUT.or.BOUC_NETCDF_OUT_PARAM.or.BOUC_NETCDF_OUT_SPECTRA) THEN
 #ifdef MPI_PARALL_GRID
         CALL SETUP_BOUNDARY_SCATTER_REDUCE_ARRAY
 #endif
@@ -1002,7 +1002,7 @@
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
             END IF
           END IF 
-          IF (LBCSP .or. LEXPORT_BOUC_WW3 .or. BOUC_NETCDF_OUT_SPECTRA) THEN
+          IF (LBCSP .or. LEXPORT_BOUC_MOD_OUT .or. BOUC_NETCDF_OUT_SPECTRA) THEN
             IF (.NOT. ALLOCATED(WBAC_GL)) THEN
               allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
@@ -1010,7 +1010,7 @@
           END IF
         END IF
       END IF
-!      WRITE(STAT%FHNDL, *) 'LEXPORT_BOUC_WW3=', LEXPORT_BOUC_WW3
+!      WRITE(STAT%FHNDL, *) 'LEXPORT_BOUC_MOD_OUT=', LEXPORT_BOUC_MOD_OUT
 !      WRITE(STAT%FHNDL, *) 'IWBMNP=', IWBMNP
 !      WRITE(STAT%FHNDL, *) 'allocated(WBAC)=', allocated(WBAC)
 !      WRITE(STAT%FHNDL, *) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
@@ -2364,7 +2364,9 @@
       iret = nf90_def_dim(ncid, 'IWBMNPGL', nbBound, iwbmnpgl_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
       !
-      CALL WRITE_PARAM_1(ncid, one_dims)
+      IF (PARAMWRITE_BOUC) THEN
+        CALL WRITE_PARAM_1(ncid, nfreq_dims, ndir_dims, one_dims)
+      END IF
       !
       CALL WRITE_NETCDF_TIME_HEADER(ncid, nbTime, ntime_dims)
       !
@@ -2390,14 +2392,14 @@
       iret=nf90_put_att(ncid,var_id,'description','indices of boundary nodes')
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       !
-      IF (BOUC_NETCDF_OUT_PARAM) THEN
+      IF (BOUC_PARAM) THEN
         iret=nf90_def_var(ncid,'SPPARM',NF90_OUTTYPE_BOUC,(/ eight_dims, iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 21, iret)
         iret=nf90_put_att(ncid,var_id,'description','Parametric boundary condition')
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 22, iret)
       END IF
       !
-      IF (BOUC_NETCDF_OUT_SPECTRA) THEN
+      IF (BOUC_SPEC) THEN
         iret=nf90_def_var(ncid,'WBAC',NF90_OUTTYPE_BOUC,(/ nfreq_dims, ndir_dims,  iwbmnpgl_dims, ntime_dims /), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 23, iret)
         iret=nf90_put_att(ncid,var_id,'description','boundary wave action')
@@ -2426,7 +2428,9 @@
       iret=nf90_open(TRIM(FILE_NAME), NF90_WRITE, ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
       !
-      CALL WRITE_PARAM_2(ncid)
+      IF (PARAMWRITE_BOUC) THEN
+        CALL WRITE_PARAM_2(ncid)
+      END IF
       !
       iret=nf90_inq_varid(ncid, "IOBP", var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
@@ -2476,7 +2480,7 @@
       USE NETCDF
       implicit none
       logical, save :: IsInitDone = .FALSE.
-      character(len =256) :: FILE_NAME, PRE_FILE_NAME
+      character(len = 256) :: FILE_NAME, PRE_FILE_NAME
       character (len = *), parameter :: CallFct="WRITE_NETCDF_BOUNDARY"
       integer iret, ncid, irec_dim, recs_his, var_id
       integer, save ::  ifile = 1
@@ -2484,6 +2488,7 @@
       REAL(rkind)  :: eTimeDay
       integer POSITION_BEFORE_POINT, nbTime
       LPOS=POSITION_BEFORE_POINT(OUT_BOUC % FNAME)
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 1'
       IF (OUT_STATION%IDEF.gt.0) THEN
         WRITE (PRE_FILE_NAME,10) OUT_BOUC % FNAME(1:LPOS),ifile
   10    FORMAT (a,'_',i4.4)
@@ -2493,6 +2498,7 @@
       ENDIF
       WRITE (FILE_NAME,30) TRIM(PRE_FILE_NAME)
   30  FORMAT (a,'.nc')
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 2'
       IF (IsInitDone .eqv. .FALSE.) THEN
         IsInitDone=.TRUE.
         nbTime=-1
@@ -2505,16 +2511,20 @@
        END IF
 #endif
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 3'
       !
       ! Getting the needed global arrays 
       !
       CALL INIT_NETCDF_BOUNDARY_OUTPUT
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 4'
       IF (BOUC_NETCDF_OUT_PARAM .and. LBCWA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_SPPARM
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 5'
       IF (BOUC_NETCDF_OUT_SPECTRA) THEN
         CALL REDUCE_BOUNDARY_ARRAY_WBAC
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 6'
 !      WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
 !      WRITE(STAT%FHNDL,*) 'sum(SPPARM)=', sum(SPPARM)
 !      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP
@@ -2562,12 +2572,14 @@
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
       END IF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 7'
       IF (OUT_BOUC % IDEF.gt.0) THEN
         IF (recs_his .eq. OUT_BOUC % IDEF) THEN
           ifile=ifile+1
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
+!      Print *, 'WRITE_NETCDF_BOUNDARY, step 8'
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -2691,6 +2703,8 @@
       character (len=100) :: eStrUnitTime
       integer idx
       character (len = *), parameter :: CallFct="INIT_NETCDF_BOUNDAY_WWM"
+      WRITE(STAT%FHNDL,*) 'Entering INIT_NETCDF_BOUNDARY_WWM'
+      FLUSH(STAT%FHNDL)
       IF (TRIM(NETCDF_IN_FILE) .eq. "unset") THEN
         CALL WWM_ABORT('NETCDF_IN_FILE must be set for running')
       END IF
@@ -2794,6 +2808,8 @@
       SEBO%EMJD = BOUND_LIST_TIME(BOUND_NB_TIME)
       RETURN
   10  FORMAT (a,'_',i4.4)
+      WRITE(STAT%FHNDL,*) 'LEaving INIT_NETCDF_BOUNDARY_WWM'
+      FLUSH(STAT%FHNDL)
       END SUBROUTINE
 #endif
 !**********************************************************************
@@ -2827,9 +2843,9 @@
       REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
       real, allocatable :: ABPIO(:)
       REAL(rkind) :: eCLATS, eCG, DEPLOC, eVal
-      REAL XFR, eTH, FREQ1, IPglob
+      REAL XFR, eTH, FREQ1
       INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISP
-      INTEGER NK, NTH
+      INTEGER NK, NTH, IPglob
       INTEGER TheOut
       INTEGER TIME2(2)
       nbDirichlet=0
@@ -2916,6 +2932,7 @@
              eCLATS = 1
            END IF
            DO IK=1,NK
+!AR: here is the bug SPSIGLOC is not defined please correct this
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              eCG = WVCG              
              DO ITH=1,NTH
