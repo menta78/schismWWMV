@@ -84,6 +84,10 @@
         END DO
         REWIND(WAV%FHNDL)
         WRITE(STAT%FHNDL,*) 'NUM_WAM_SPEC_FILES=', NUM_WAM_SPEC_FILES
+        FLUSH(STAT%FHNDL)
+        IF (NUM_WAM_SPEC_FILES .eq. 0) THEN
+          CALL WWM_ABORT('We need at least one file in order for this to work')
+        END IF
         !
         ! Reading the file names
         !
@@ -179,33 +183,32 @@
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
           eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
-!          WRITE(STAT%FHNDL,*) 'iFile=', iFile
-!          FLUSH(STAT%FHNDL)
-!          Print *, 'iFile=', iFile, ' eFile=', TRIM(eFile)
+          WRITE(STAT%FHNDL,*) 'iFile=', iFile
+          WRITE(STAT%FHNDL,*) 'eFile=', TRIM(eFile)
+          FLUSH(STAT%FHNDL)
           CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
-!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
-!          FLUSH(STAT%FHNDL)
+          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
+          FLUSH(STAT%FHNDL)
           CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
-!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 2'
-!          FLUSH(STAT%FHNDL)
+          WRITE(STAT%FHNDL,*) 'Debug GRID, step 2'
+          FLUSH(STAT%FHNDL)
           call grib_count_in_file(ifile,n)
-!          WRITE(STAT%FHNDL,*) 'Debug GRID, step 3'
-!          FLUSH(STAT%FHNDL)
+          WRITE(STAT%FHNDL,*) 'Debug GRID, step 3'
+          FLUSH(STAT%FHNDL)
           allocate(igrib(n))
           DO i=1,n
-!            WRITE(STAT%FHNDL,*) 'i=', i
-!            FLUSH(STAT%FHNDL)
+            WRITE(STAT%FHNDL,*) 'i=', i
+            FLUSH(STAT%FHNDL)
             call grib_new_from_file(ifile, igrib(i))
-!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
-!            FLUSH(STAT%FHNDL)
+            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
+            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'directionNumber', idir)
-!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
-!            FLUSH(STAT%FHNDL)
+            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
+            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
-!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
-!            FLUSH(STAT%FHNDL)
+            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
+            FLUSH(STAT%FHNDL)
             IF ((idir .eq. 1).and.(ifreq .eq. 1)) THEN
-!              Print *, 'i=', i, ' idir=', idir, ' ifreq=', ifreq
               CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
               !
               idx=idx+1
@@ -213,8 +216,8 @@
               ListIFileWAM(idx) = IFILE_IN
             END IF
             call grib_release(igrib(i))
-!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
-!            FLUSH(STAT%FHNDL)
+            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
+            FLUSH(STAT%FHNDL)
           END DO
           deallocate(igrib)
           CALL GRIB_CLOSE_FILE(ifile)
@@ -227,17 +230,26 @@
         shortName='2dfd'
         GRIB_TYPE=1 ! 1 for ECMWF
         IFILE_IN = 1
-!        Print *, 'Before READ_GRID_INFO_FROM_GRIB'
+        WRITE(STAT%FHNDL,*) 'Before READ_GRID_INFO_FROM_GRIB'
+        FLUSH(STAT%FHNDL)
+        WRITE(STAT%FHNDL,*) 'IFILE_IN=', IFILE_IN
+        FLUSH(STAT%FHNDL)
+        WRITE(STAT%FHNDL,*) 'WAM_SPEC_FILE_NAMES=', WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
+        FLUSH(STAT%FHNDL)
         CALL READ_GRID_INFO_FROM_GRIB(TheInfo, WAM_SPEC_FILE_NAMES_BND(IFILE_IN), shortName, GRIB_TYPE)
-!        Print *, 'After READ_GRID_INFO_FROM_GRIB'
+        WRITE(STAT%FHNDL,*) 'After READ_GRID_INFO_FROM_GRIB'
+        FLUSH(STAT%FHNDL)
 # ifdef MPI_PARALL_GRID
       END IF
 # endif
+      WRITE(STAT%FHNDL,*) 'Before COMPUTE_BND_INTERPOLATION_ARRAY'
+      FLUSH(STAT%FHNDL)
       CALL COMPUTE_BND_INTERPOLATION_ARRAY(TheInfo)
+      WRITE(STAT%FHNDL,*) 'After COMPUTE_BND_INTERPOLATION_ARRAY'
+      FLUSH(STAT%FHNDL)
       deallocate(TheInfo % LON, TheInfo % LAT)
       nx_wam = TheInfo % nx_dim
       ny_wam = TheInfo % ny_dim
-!      Print *, 'After COMPUTE_BND_INTERPOLATION_ARRAY'
       !
       ! Now the spectral interpolation arrays
       !

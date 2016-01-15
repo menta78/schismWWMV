@@ -165,7 +165,11 @@
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
                      &vsource(nea),dldxy_sd(4,2,nea)
+<<<<<<< HEAD
       real(rkind) :: swild(max(100,nsa+nvrt+12+ntracers)),swild2(nvrt,12),swild10(max(4,nvrt),12), &
+=======
+      real(rkind) :: swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(4,nvrt),12), &
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
      &swild3(20+ntracers),swild4(2,4)
       real(4) :: swild8(nvrt,2) !used in ST nudging
       logical :: lelbc(npa)
@@ -2304,13 +2308,19 @@
 !'
         swild98=0
         do j=1,ns !residents only
+<<<<<<< HEAD
 !          if(isdel(2,j)==0.or.idry_s(j)==1) cycle
 !          if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
           if(idry_s(j)==1) cycle
+=======
+          if(isdel(2,j)==0.or.idry_s(j)==1) cycle
+          if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
           if(ihydraulics/=0.and.nhtblocks>0) then
             if(isblock_sd(1,j)/=0) cycle
           endif
   
+<<<<<<< HEAD
           !wet side 
           do k=kbs(j)+1,nvrt !viscosity = 0 at bottom
             sum1=0; sum2=0
@@ -2321,6 +2331,13 @@
               if(idry_e(ie)==1) cycle
 
               !Wet elem
+=======
+          !Internal wet side j with 2 wet elements
+          do k=kbs(j)+1,nvrt !viscosity = 0 at bottom
+            sum1=0; sum2=0
+            do l=1,2 !element
+              ie=isdel(l,j)
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
               do i=1,i34(ie) !prep. side vel. via vertical interp
                 jsj=elside(i,ie)
                 if(jsj==j) then
@@ -2345,10 +2362,17 @@
               enddo !i=1,i34(ie)
 
               !\nabla{u} const. within an elem. (elem. frame)
+<<<<<<< HEAD
 !              dudx=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
 !              dudy=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
 !              dvdx=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
 !              dvdy=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
+=======
+              dudx=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
+              dudy=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
+              dvdx=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
+              dvdy=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
  
               !do i=1,2 !i34(ie) !2 sides per elem.
                 !jsj=elside(i,ie)
@@ -2371,11 +2395,15 @@
               in2=nxq(i34(ie)-1,ll,i34(ie))
               sum1=sum1+soln(in1,1)+soln(in2,1)
               sum2=sum2+soln(in1,2)+soln(in2,2)
+<<<<<<< HEAD
               icount=icount+2
+=======
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
             enddo !l=1,2
 
             !Diffusion #
             rat=hvis_coef0 !hvis_coef(k,j)
+<<<<<<< HEAD
             !d2uv(1,k,j)=rat*(sum1-4*su2(k,j))/dt !m/s/s; side frame
             d2uv(1,k,j)=rat*(sum1-icount*su2(k,j))/dt !m/s/s; side frame
             d2uv(2,k,j)=rat*(sum2-icount*sv2(k,j))/dt
@@ -2383,6 +2411,14 @@
             !Save for biharm.
             swild98(1,k,j)=sum1-icount*su2(k,j) !m/s; side frame
             swild98(2,k,j)=sum2-icount*sv2(k,j)
+=======
+            d2uv(1,k,j)=rat*(sum1-4*su2(k,j))/dt !m/s/s; side frame
+            d2uv(2,k,j)=rat*(sum2-4*sv2(k,j))/dt
+
+            !Save for biharm.
+            swild98(1,k,j)=sum1-4*su2(k,j) !m/s; side frame
+            swild98(2,k,j)=sum2-4*sv2(k,j)
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
           enddo !k=kbs(j)+1,nvrt 
         enddo !j=1,ns
 
@@ -2400,13 +2436,19 @@
         if(ihorcon==2) then
           d2uv=0 !reset
           do j=1,ns !residents only
+<<<<<<< HEAD
 !            if(isdel(2,j)==0.or.idry_s(j)==1) cycle
 !            if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
             if(idry_s(j)==1) cycle
+=======
+            if(isdel(2,j)==0.or.idry_s(j)==1) cycle
+            if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
             if(ihydraulics/=0.and.nhtblocks>0) then
               if(isblock_sd(1,j)/=0) cycle
             endif
 
+<<<<<<< HEAD
             !wet side
             do k=kbs(j)+1,nvrt 
               sum1=0; sum2=0
@@ -2417,6 +2459,13 @@
                 if(idry_e(ie)==1) cycle
 
                 !Wet elem
+=======
+            !Internal wet side j with 2 wet elem
+            do k=kbs(j)+1,nvrt 
+              sum1=0; sum2=0
+              do l=1,2 !element
+                ie=isdel(l,j)
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
                 do i=1,i34(ie) !prep. side vel. via vertical interp
                   !If jsj is on the bnd, 0 contribution to sum
                   jsj=elside(i,ie)
@@ -2445,15 +2494,23 @@
                 in2=nxq(i34(ie)-1,ll,i34(ie))
                 sum1=sum1+soln(in1,1)+soln(in2,1) !m/s
                 sum2=sum2+soln(in1,2)+soln(in2,2)
+<<<<<<< HEAD
                 icount=icount+2
+=======
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
               enddo !l=1,2
 
               !Diffusion #
               rat=hvis_coef0 !const.
               !Note the '-'
+<<<<<<< HEAD
               !d2uv(1,k,j)=-rat*(sum1-4*swild98(1,k,j))/dt !m/s/s; side frame
               d2uv(1,k,j)=-rat*(sum1-icount*swild98(1,k,j))/dt !m/s/s; side frame
               d2uv(2,k,j)=-rat*(sum2-icount*swild98(2,k,j))/dt
+=======
+              d2uv(1,k,j)=-rat*(sum1-4*swild98(1,k,j))/dt !m/s/s; side frame
+              d2uv(2,k,j)=-rat*(sum2-4*swild98(2,k,j))/dt
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
             enddo !k=kbs(j)+1,nvrt
           enddo !j=1,ns
 
@@ -2476,7 +2533,11 @@
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 
+<<<<<<< HEAD
 !      if(iupwind_mom==0) then !ELM
+=======
+      if(iupwind_mom==0) then !ELM
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !     Temp. array swild9[6-8] for ELAD
 !     swild96(1:2,nvrt,nsa): \epsilon (over/under-shoots in ELAD) for u,v (if ibtrack_test=1, 1->T and 2 is not used)
@@ -3177,12 +3238,17 @@
       deallocate(swild96,swild97,swild98)
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+<<<<<<< HEAD
 !      else
       if(iupwind_mom/=0) then
+=======
+      else
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 !     Upwind
 !Error: not working for ics=2
+<<<<<<< HEAD
 !     Cell-vertex ball
 !     bcc() to temp. store \nabla \cdot (u\bf{u}) @ nodes and levels
       bcc=0
@@ -3319,6 +3385,100 @@
       wtimer(4,2)=wtimer(4,2)+mpi_wtime()-cwtmp
 #endif
 
+=======
+      do i=1,ns
+        sdbt(1,:,i)=su2(:,i)
+        sdbt(2,:,i)=sv2(:,i)
+      enddo !i
+
+      do i=1,ns !residents
+        if(idry_s(i)==1) cycle
+
+        do k=kbs(i),nvrt
+          !Upwind elem.
+          vnorm=su2(k,i)*sframe(1,1,i)+sv2(k,i)*sframe(2,1,i)
+          if(vnorm>=0.or.isbs(i)/=0) then
+            ie=isdel(1,i)
+          else !internal
+            ie=isdel(2,i)
+          endif
+          if(ie<=0) call parallel_abort('STEP: no upwind')
+          if(idry_e(ie)==0) then
+            !Vertical interp
+            do m=1,i34(ie)
+              isd=elside(m,ie)
+              if(isd==i) then
+                swild10(m,1)=su2(k,i)
+                swild10(m,2)=sv2(k,i)
+              else
+                rrhs(1,:)=su2(:,isd)
+                rrhs(2,:)=sv2(:,isd)
+                call vinter(100,nvrt,2,zs(k,i),kbs(isd),nvrt,k,zs(:,isd),rrhs,swild,ibelow)
+                swild10(m,1)=swild(1) !u@side
+                swild10(m,2)=swild(2) !v
+              endif !isd/=i
+
+              nd=elnode(m,ie)
+              rrhs(1,:)=uu2(:,nd)
+              rrhs(2,:)=vv2(:,nd)
+              call vinter(100,nvrt,2,zs(k,i),kbp(nd),nvrt,k,znl(:,nd),rrhs,swild,ibelow)
+              swild10(m,3)=swild(1) !u@node
+              swild10(m,4)=swild(2) !v
+            enddo !m
+
+            sum1=0
+            sum2=0
+            do m=1,i34(ie)
+              isd=elside(m,ie)
+              if(isbs(isd)==-1) cycle
+
+!              in1=nxq(1,m,i34(ie))
+!              in2=nxq(2,m,i34(ie))
+!              utmp=(swild10(in1,3)+swild10(in2,3))/2 !reconst'ed side vel.
+!              vtmp=(swild10(in1,4)+swild10(in2,4))/2
+!              vn1=utmp*sframe(1,1,isd)+vtmp*sframe(2,1,isd)
+!              vn1=vn1*ssign(m,ie) !outward normal
+!              sum1=sum1+utmp*vn1*distj(isd)
+!              sum2=sum2+vtmp*vn1*distj(isd)
+
+              vn1=swild10(m,1)*sframe(1,1,isd)+swild10(m,2)*sframe(2,1,isd)
+              vn1=vn1*ssign(m,ie) !outward normal
+              sum1=sum1+swild10(m,1)*vn1*distj(isd)
+              sum2=sum2+swild10(m,2)*vn1*distj(isd)
+            enddo !m
+            sum1=sum1/area(ie)
+            sum2=sum2/area(ie)
+
+            sdbt(1,k,i)=sdbt(1,k,i)-dt*sum1
+            sdbt(2,k,i)=sdbt(2,k,i)-dt*sum2
+
+            !Vertical
+            n1=isidenode(1,i); n2=isidenode(2,i)
+            tmp1=(ww2(k,n1)+ww2(k,n2))/2
+            if(tmp1>=0) then
+              kbb=max(kbs(i)+1,k) !upwind
+            else
+              kbb=min(nvrt,k+1) !upwind
+            endif
+            wtmp1=(ww2(kbb,n1)+ww2(kbb,n2))/2
+            wtmp2=(ww2(kbb-1,n1)+ww2(kbb-1,n2))/2
+            utmp=(su2(kbb,i)*wtmp1-su2(kbb-1,i)*wtmp2)/(zs(kbb,i)-zs(kbb-1,i))
+            vtmp=(sv2(kbb,i)*wtmp1-sv2(kbb-1,i)*wtmp2)/(zs(kbb,i)-zs(kbb-1,i))
+            sdbt(1,k,i)=sdbt(1,k,i)-dt*utmp
+            sdbt(2,k,i)=sdbt(2,k,i)-dt*vtmp
+          endif !ie/=0 and wet
+        enddo !k=kbs(i),nvrt
+      enddo !i=1,ns
+
+#ifdef INCLUDE_TIMING
+      cwtmp=mpi_wtime()
+#endif
+      call exchange_s3d_4(sdbt)
+#ifdef INCLUDE_TIMING
+      wtimer(4,2)=wtimer(4,2)+mpi_wtime()-cwtmp
+#endif
+
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       endif !ELM or upwind
 
@@ -3483,7 +3643,11 @@
             endif; endif
 
             !Case of under-resolution: zero out the gradient below bottom
+<<<<<<< HEAD
             if(ie/=0) then; if(idry_e(ie)==0.and.ze(kbe(i),i)<ze(kbe(ie),ie)) then
+=======
+            if(ze(kbe(i),i)<ze(kbe(ie),ie)) then
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
               tmp0=-ze(kbe(i),i) !max depth
               tmp1=abs(ze(kbe(i),i)-ze(kbe(ie),ie)) !change
               if(tmp0>=hw_depth.and.tmp1>=hw_ratio*tmp0) then
@@ -3493,7 +3657,12 @@
                   endif !swild(k)
                 enddo !k
               endif !tmp0>=
+<<<<<<< HEAD
             endif; endif !-ze(kbe(i),i)
+=======
+            endif !-ze(kbe(i),i)
+
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
           enddo !j=1,i34
 
           do k=kbe(i)+1,nvrt
@@ -6127,6 +6296,7 @@
 
 #ifdef USE_COSINE 
 ! reactive terms in cosine
+<<<<<<< HEAD
 
 !...    Calculates sources and sinks terms of the ecological model
         if(myrank==0) write(16,*) 'Calculating cosine sources and sinks terms (3)'
@@ -6138,6 +6308,19 @@
         flx_bt(itmp1:itmp2,:)=0.d0
         flx_sf(itmp1:itmp2,:)=0.d0
 
+=======
+
+!...    Calculates sources and sinks terms of the ecological model
+        if(myrank==0) write(16,*) 'Calculating cosine sources and sinks terms (3)'
+!'
+        itmp1=irange_tr(1,8)
+        itmp2=irange_tr(2,8)
+ 
+        bdy_frc(itmp1:itmp2,:,:)=0.d0
+        flx_bt(itmp1:itmp2,:)=0.d0
+        flx_sf(itmp1:itmp2,:)=0.d0
+
+>>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
         !updated bdry_frc, flx_bt, flx_sf
         call cosine(windx,windy,time,itmp1,itmp2)
         if(myrank==0) write(16,*) 'Done cosine sources and sinks terms (0)'

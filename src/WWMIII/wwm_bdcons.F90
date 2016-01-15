@@ -2843,9 +2843,9 @@
       REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
       real, allocatable :: ABPIO(:)
       REAL(rkind) :: eCLATS, eCG, DEPLOC, eVal
-      REAL XFR, eTH, FREQ1, IPglob
+      REAL XFR, eTH, FREQ1
       INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISP
-      INTEGER NK, NTH
+      INTEGER NK, NTH, IPglob
       INTEGER TheOut
       INTEGER TIME2(2)
       nbDirichlet=0
@@ -2932,6 +2932,7 @@
              eCLATS = 1
            END IF
            DO IK=1,NK
+!AR: here is the bug SPSIGLOC is not defined please correct this
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              eCG = WVCG              
              DO ITH=1,NTH

@@ -131,7 +131,7 @@
         END IF
         IF (L_HOTFILE) THEN
           FILERET = TRIM(ListPrefix(iGrid)) // '_hotfile.nc'
-          MULTIPLEOUT_W = .FALSE.
+          MULTIPLEOUT_W = 0 
           GRIDWRITE_W = .FALSE.
           IOBPD_HISTORY_W = .FALSE.
           WriteOutputProcess = .TRUE.

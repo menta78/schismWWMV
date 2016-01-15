@@ -16,7 +16,8 @@ INSTALLDIR = /usr/local/ace
 
 ############################################
 # LINUX
-LIBS = -L/usr/X11R6/lib64 -L/opt/local/lib -lXm  -lXt -lXext -lXpm -lX11 -lICE -lSM -lm
+LIBS = -L/usr/X11R6/lib64 -L/opt/local/lib -lXm -lXp -lXt -lXext -lXpm -lX11 -lICE -lSM -lm
+#LIBS = -L/usr/X11R6/lib64 -L/opt/local/lib -lXm  -lXt -lXext -lXpm -lX11 -lICE -lSM -lm
 INCLUDES = -I/usr/X11R6/include  -I/opt/local/include
 CC = gcc -g -O3  # -fsanitize=address,leak,undefined
 

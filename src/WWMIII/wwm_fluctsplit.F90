@@ -906,16 +906,17 @@
              dxx   = sqrt(si(ip))
              gam   = ONE + FRINTF 
              nn    = a_s * (GAM-ONE/GAM) * CCT * DT4A
-             ss    = a_n * DDIR * CCT * DT4A 
-             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
-             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
-             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
-             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
-             rr(1,:) =  sss + nnn + r0
-             rr(2,:) = -sss + nnn + r0
-             rr(3,:) = -sss - nnn + r0
-             rr(4,:) =  sss - nnn + r0
-             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
+             ss    = a_n * DDIR * CCT * DT4A
+! diffusion vel. vectors in wave and cross wave direction  
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * costh(id)
+!             rr(1,:) =  sss + nnn + r0
+!             rr(2,:) = -sss + nnn + r0
+!             rr(3,:) = -sss - nnn + r0
+!             rr(4,:) =  sss - nnn + r0
+!             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
 !             avg_area = nn * ss
              if (ip == 10001 .and. .false.) then
                write(100001,'(A)') 'C -------------------------'
@@ -993,8 +994,8 @@
          IF (LADVTEST) THEN
            WRITE(4001)  SNGL(RTIME)
            WRITE(4001) (SNGL(C(1,IP)), SNGL(C(2,IP)), SNGL(AC2(1,1,IP)),  IP = 1, MNP)
-           CALL CHECKCONS(U,SUMAC2)
-           IF (MINVAL(U) .LT. MINTEST) MINTEST = MINVAL(U)
+           CALL CHECKCONS(AC2(1,1,:),SUMAC2)
+           IF (MINVAL(AC2(1,1,:)) .LT. MINTEST) MINTEST = MINVAL(U)
            WRITE (*,*) 'VOLUMES AT T0, T1 and T2',SUMACt0,              &
      &       SUMAC1, SUMAC2, MINTEST
            WRITE (*,*) 'VOLUME ERROR: TOTAL and ACTUAL',                &
@@ -3691,7 +3692,7 @@
             FLALL(:,:,2) = (FL111(:,:) + FL312(:,:)) * ONESIXTH + KP(:,:,2)
             FLALL(:,:,3) = (FL211(:,:) + FL112(:,:)) * ONESIXTH + KP(:,:,3)
 ! flux conserving upwind contribution
-            UTILDE3(:,:) = N(:,:) * ( FLALL(:,:,1) * AC2(:,:,I1) + FLALL(:,:,2) * AC2(:,:,I2) + FLALL(:,:,3) * AC2(:,:,3) )
+            UTILDE3(:,:) = N(:,:) * ( FLALL(:,:,1) * AC2(:,:,NI(1)) + FLALL(:,:,2) * AC2(:,:,NI(2)) + FLALL(:,:,3) * AC2(:,:,NI(3)) )
 ! coefficient for the integration in time
             ST(:,:) = ST(:,:) + KP(:,:,IPOS) * (AC2(:,:,IP) - UTILDE3(:,:))
 ! time stepping ...

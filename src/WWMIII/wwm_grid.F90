@@ -275,10 +275,10 @@
           rbuf_int(1)=eGrid % np_total
           rbuf_int(2)=eGrid % ne_total
           DO iProc=2,nproc
-            CALL MPI_SEND(rbuf_int,2,itype, iProc-1, 30, comm, ierr)
+            CALL MPI_SEND(rbuf_int,2,itype, iProc-1, 30, comm, istatus, ierr)
           END DO
           DO iProc=2,nproc
-            CALL MPI_SEND(INEtotal,3*eGrid % ne_total,itype, iProc-1, 32, comm, ierr)
+            CALL MPI_SEND(INEtotal,3*eGrid % ne_total,itype, iProc-1, 32, comm, istatus, ierr)
           END DO
           IF (IGRIDTYPE .eq. 2) THEN
             nb_real=eGrid % np_total + 7*eGrid % ne_total
@@ -312,7 +312,7 @@
             END DO
           END IF
           DO iProc=2,nproc
-            CALL MPI_SEND(rbuf_real,nb_real,rtype, iProc-1, 34, comm, ierr)
+            CALL MPI_SEND(rbuf_real,nb_real,rtype, iProc-1, 34, comm, istatus, ierr)
           END DO
           deallocate(rbuf_real)
         ELSE
