@@ -178,6 +178,17 @@ ifdef USE_ICM
   OBJS := $(OBJS) icm_mod.o icm_sed_mod.o icm_init.o icm_biology.o  icm.o  read_icm_input.o
 endif
 
+ifdef USE_COSINE
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_COSINE
+  OBJS := $(OBJS) cosine.o 
+endif
+
+ifdef USE_FIB
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_FIB
+###Add FIB file here
+  OBJS := $(OBJS) fib_param.o fib.o
+endif
+
 ifdef USE_NAPZD
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_NAPZD
   OBJS := $(OBJS) biology_napzd.o napzd_spitz.o read_napzd_input.o
@@ -229,9 +240,11 @@ ifdef USE_SED2D
                   sed2d_main.o sed2d_main_mcml.o
 endif
 
+#Remaining Hydro
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o schism_init.o \
         schism_step.o schism_finalize.o bktrk_subs.o solver_subs.o \
-        io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o sflux_9c.o lap.o
+        io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o \
+        sflux_9c.o lap.o simpler_wind.o single_netcdf.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
