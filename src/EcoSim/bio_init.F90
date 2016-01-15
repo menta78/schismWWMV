@@ -90,12 +90,11 @@
 	    	    
             cff1=-0.0827_r8*sftm+2.6386_r8
             cff2=MAX(0.00001_r8,cff1*(1.0_r8-(sftm-temp)*cff3))
-
 !
 ! Initialization of nutrients.
 !
             tmp00 = irange_tr(1,6)-1 
-
+            
             tmp1 = tmp00+iNH4_
             tr_nd(tmp1,k,i)=0.053_r8*temp+0.7990_r8 !NH4
             tmp2 = tmp00+iNO3_
@@ -145,9 +144,9 @@
             DO iseco=1,Nzoo
               tmp1 = tmp00+iZooC(iseco)
 	      tr_nd(tmp1,k,i)=2_r8
-              tmp1 = tmp00+iZooC(iseco)
+              tmp1 = tmp00+iZooN(iseco)
 	      tr_nd(tmp1,k,i)=0.2_r8
-              tmp1 = tmp00+iZooC(iseco)
+              tmp1 = tmp00+iZooP(iseco)
 	      tr_nd(tmp1,k,i)=0.02_r8
 	    END DO  
 
@@ -160,11 +159,10 @@
               tmp1 = tmp00+iPhyC(iseco)
               tr_nd(tmp1,k,i)=MAX(0.02_r8,                            &
      &                              0.75_r8*0.75_r8*cff5*cff2*cff14)
-              
               tmp2 = tmp00+iPhyN(iseco) 
               tr_nd(tmp2,k,i)=tr_nd(tmp1,k,i)*cff8
               tmp3 = tmp00+iPhyP(iseco)
-              tr_nd(tmp1,k,i)=tr_nd(tmp2,k,i)*cff4
+              tr_nd(tmp3,k,i)=tr_nd(tmp2,k,i)*cff4
 
               IF(IRON==1)THEN
                  tmp3 = tmp00+iPhyF(iseco)

@@ -252,20 +252,26 @@
           allocate(ie_dump(ne_dump),vol_dump(ne_dump),stat=l)
           if(l/=0) call parallel_abort('SED: alloc (9)')
           read(18,*)(ie_dump(l),vol_dump(l),l=1,ne_dump)
+          if(myrank==0) write(16,*)'start dumping at time:',real(t_dump),ne_dump
 
-          !Modify depth, bed(), but not bottom()
+          !Modify depth, bed(), but not bottom() or bed_frac
           do l=1,ne_dump
             ie=ie_dump(l) !global index
             if(iegl(ie)%rank==myrank) then
               i=iegl(ie)%id !local index
               cff=vol_dump(l)/area(i) !m
-              tmp=bed(top,i,1)+cff
+              tmp=bed(top,i,ithck)+cff
               if(tmp>0) then !enough sed on top
                 bed(top,i,ithck)=tmp
               else !re-init.
-                tmp=sum(bedthick_overall(elnode(1:i34(i),i)))/i34(i)/Nbed
-                bed(:,i,ithck)=tmp
+                tmp=max(0.d0,sum(bed(:,i,ithck))+cff)
+                bed(:,i,ithck)=tmp/Nbed
               endif
+              do ised=1,ntr_l
+                bed_mass(:,i,1,ised)=bed(:,i,ithck)*Srho(ised)*(1.0d0-bed(:,i,iporo))*bed_frac(:,i,ised)
+                bed_mass(:,i,2,ised)=bed_mass(:,i,1,ised)
+              enddo !ised
+
               do j=1,i34(i)
                 dp(elnode(j,i))=dp(elnode(j,i))-cff
               enddo !j
@@ -550,12 +556,11 @@
         ENDDO !End loop ntracer
 
         ! Update mean bottom properties
-!YJZ Error: cff5 can =0 if all eroded
         if(cff5<0) then
           WRITE(errmsg,*)'SED3D: cff5<0 (2); ',cff5
           call parallel_abort(errmsg)
         else if(cff5==0) then
-          WRITE(12,*)'SED3D: all eroded at elem. ',ielg(i),it
+          !WRITE(12,*)'SED3D: all eroded at elem. ',ielg(i),it
           !Care takers
           bottom(i,itauc) = tau_ce(1)
           bottom(i,isd50) = Sd50(1)
@@ -667,11 +672,28 @@
                 !Apply a scale to depo_mss
                 depo_mss=depo_mss*depo_scale
 
-! - Compute erosion, eros_mss (kg/m/m) following Ariathurai and 
-! Arulanandan (1978) (original erosion flux is in kg/m/m/s; note dt
-! below)
+! - Compute erosion, eros_mss (kg/m/m) following 
+!  (original erosion flux is in kg/m/m/s; note dt below)
                 cff1=(1.0d0-bed(top,i,iporo))*bed_frac(top,i,ised)
-                eros_mss=MAX(0.0d0,dt*Erate(ised)*cff1*(tau_wc(i)/tau_ce(ised)-1.0d0)) !kg/m/m
+                if(ierosion==0) then 
+                  !Ariathurai & Arulanandan (1978)
+                  eros_mss=MAX(0.0d0,dt*Erate(ised)*cff1*(tau_wc(i)/tau_ce(ised)-1.0d0)) !kg/m/m
+                else if(ierosion==1) then 
+                  !Winterwerp et al. (JGR, vol 117, 2012, C10020); eq. (15)
+                  cff2=tau_wc(i)/tau_ce(ised) !tau_b/tau_cr [-]
+                  if(cff2<0.52) then
+                    cff4=0
+                  else if(cff2<=1.7) then
+                    cff4=-0.144*cff2**3+0.904*cff2*cff2-0.823*cff2+0.204 ![-]
+                  else
+                    cff4=cff2-1 ![-]
+                  endif !cff2
+                  cff3=tau_ce(ised)*rhom !critical shear stress in Pa
+                  eros_mss=Erate(ised)*cff3 !kg/m/m/s; Erate (M_E in original paper) in [s/m]
+                  eros_mss=MAX(0.0d0,cff1*dt*eros_mss) !kg/m/m
+                else
+                  CALL parallel_abort('SED3D: unknown erosion formula')
+                endif
                 eros_mss=MIN(eros_mss,MIN(Srho(ised)*cff1*bottom(i,iactv),bed_mass(top,i,nnew,ised))+depo_mss) !>=0
 
                 IF (sed_morph>=1) THEN
@@ -850,7 +872,6 @@
 
         IF(sed_morph>=1) bottom(i,iactv)=MAX(bottom(i,iactv)*morph_fac(1),bottom(i,iactv))
 
-        !IF(bottom(i,iactv).GT.bed(top,i,ithck)) THEN
         IF(bed(top,i,ithck)<bottom(i,iactv)) THEN
           IF(Nbed==1) THEN
             bottom(i,iactv) = bed(top,i,ithck) !possibly 0
@@ -978,7 +999,7 @@
           WRITE(errmsg,*)'SED3D: cff5<0 (1); ',cff5
           call parallel_abort(errmsg)
         else if(cff5==0) then
-          WRITE(12,*)'SED3D: all eroded at elem. (2):',ielg(i),it
+          !WRITE(12,*)'SED3D: all eroded at elem. (2):',ielg(i),it
           !Caretakers
           bottom(i,itauc) = tau_ce(1)
           bottom(i,isd50) = Sd50(1)

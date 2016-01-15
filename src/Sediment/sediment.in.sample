@@ -69,6 +69,13 @@ bedload == 1
 !------------------------------------------------------------------------------
 suspended_load == 1
 
+!- Erosional formulations
+!- 0 = Ariathurai & Arulanandan (1978)
+!- 1 = Winterwerp et al. (2012)
+!  The dimension of the erosion constant SAND_ERATE varies with different formulations
+!------------------------------------------------------------------------------
+ierosion == 0
+
 !- Dumping/dredging option
 !- 0: no; 1: needs input sed_dump.in
 ------------------------------------------------------------------------------
@@ -244,9 +251,12 @@ SAND_SRHO == 2650.0d0 2650.0d0 2650.0d0 2650.0d0 2650.0d0
 !------------------------------------------------------------------------------
 SAND_WSED == 8.06d0 16.92d0 51.43d0 78.19d0 128.65d0
 
-!- SURFACE EROSION RATE, E0 (kg/m2/s) - [1:Ntracers] --------------------------
+!- SURFACE EROSION RATE, E0 - [1:Ntracers] --------------------------
+!  If ierosion=0, dimension is kg/m/m/s
+!  If ierosion=1, dimension is s/m (see M_E of Table 1 of Winterwerp et al. 2012, JGR, vol 117)
 !------------------------------------------------------------------------------
-SAND_ERATE == 1.6d-3 1.6d-3 1.6d-3 1.6d-3 1.6d-3
+SAND_ERATE == 1.6d-3 1.6d-3 1.6d-3 1.6d-3 1.6d-3 !ierosion=0
+!SAND_ERATE == 1.d-4 1.d-4 1.d-4 1.d-4 1.d-4 !ierosion=1
 
 !- CRITICAL SHEAR STRESS FOR EROSION AND DEPOSITION (Pa) - [1:Ntracers] -----
 !  These will be overwritten if comp_tauce=1 and Sedtype(i)=1 (so in that case you can

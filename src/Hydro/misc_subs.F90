@@ -590,7 +590,7 @@
             endif !iwet
           enddo !i=1,ns
 
-          idry_e2=inew
+          idry_e2(1:nea)=inew(1:nea)
 !          call exchange_e2di(idry_e2)
           call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
           if(srwt_xchng_gb(1)) then
@@ -1695,44 +1695,46 @@
 !									   *
 !     Solve for the density
 !     From Pond and Pickard's book.					   *
-!     validity region: T: [0,40], S: [0:42]				   *
+!     validity region: T: [-2,40], S: [0:42], p: [0,1000bars]
 !     Inputs: 
 !            indx: info re: where this routine is called; for debug only
 !            igb: global index for ndoe/elem. etc for debug only
-!            tem,sal: T,S (assumed to be at wet spots).
+!            tem2,sal2: T,S (assumed to be at wet spots).
+!            zc0: z-coord. (for pressure)
 !     Output: density.
 !									   *
 !***************************************************************************
 !   
-      function eqstate(indx,igb,tem2,sal2 &
+      function eqstate(indx,igb,tem2,sal2,zc0 &
 #ifdef USE_SED 
      &                ,ntr_sed,sconc,Srho   &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
      &                  ,sconc,Srho,laddmud_d &
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
      &                 )
-      use schism_glbl, only: rkind,tempmin,tempmax,saltmin,saltmax,errmsg, &
-     &ifort12,ddensed,ieos_type,eos_a,eos_b
+      use schism_glbl, only: rkind,grav,rho0,tempmin,tempmax,saltmin,saltmax,errmsg, &
+     &ifort12,ddensed,ieos_type,eos_a,eos_b,ieos_pres
       use schism_msgp, only : parallel_abort
       implicit none
 
       real(rkind) :: eqstate
       integer, intent(in) :: indx !info re: where this routine is called; for debug only
       integer, intent(in) :: igb !global index for ndoe/elem. etc for debug only
-      real(rkind), intent(in) :: tem2,sal2
+      real(rkind), intent(in) :: tem2,sal2,zc0
 #ifdef USE_SED
       integer, intent(in) :: ntr_sed !for dim. SED3D arrays
       real(rkind), intent(in) :: sconc(ntr_sed),Srho(ntr_sed)
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !      real(rkind), intent(in) :: sconc(ntracers),Srho(ntracers)
 !      logical, intent(in) :: laddmud_d
 #endif
 
       !Local 
       integer :: ised
-      real(rkind) :: tem,sal,SedDen,rho_w
+      real(rkind) :: tem,sal,SedDen,rho_w,hpres,secant,secant0, &
+     &rkw,aw,aa,bw,bb,tt2,tt3,tt4,tt5,ss3
 
       tem=tem2; sal=sal2
       if(tem<-98.or.sal<-98) then
@@ -1749,18 +1751,43 @@
       endif
 
       select case(ieos_type)
-        case(0) !UNICEF
+        case(0) !UNESCO; valid [-2,40C],[0,42PSU],[0,1000bars]
+          !Save large #s
+          tt2=tem*tem; tt3=tem*tt2; tt4=tt2*tt2; tt5=tem*tt4
+          ss3=sqrt(sal)*sal
+ 
 !         Density at one standard atmosphere
-          eqstate=1000-0.157406+6.793952E-2*tem-9.095290E-3*tem**2 &
-     &+1.001685E-4*tem**3-1.120083E-6*tem**4+6.536332E-9*tem**5+ &
+          eqstate=1000-0.157406+6.793952E-2*tem-9.095290E-3*tt2+ &
+     &1.001685E-4*tt3-1.120083E-6*tt4+6.536332E-9*tt5+ &
      &sal*(0.824493-4.0899E-3*tem+&
-     &7.6438E-5*tem**2-8.2467E-7*tem**3+5.3875E-9*tem**4)+&
-     &sqrt(sal)**3*(-5.72466E-3+1.0227E-4*tem-1.6546E-6*tem**2)+&
-     &4.8314E-4*sal**2
+     &7.6438E-5*tt2-8.2467E-7*tt3+5.3875E-9*tt4)+&
+     &ss3*(-5.72466E-3+1.0227E-4*tem-1.6546E-6*tt2)+&
+     &4.8314E-4*sal*sal
           if(eqstate<980) then
             write(errmsg,*)'Weird density:',eqstate,tem,sal,indx,igb
             call parallel_abort(errmsg)
           endif
+
+          !Pressure effects
+          if(ieos_pres/=0) then
+            !hydrostatic pressure in bars=1.e5 Pa
+            hpres=rho0*grav*abs(zc0)*1.e-5 
+            !Secant bulk modulus Kw [bar] for pure water
+            rkw=19652.21+148.4206*tem-2.327105*tt2+1.360477e-2*tt3-5.155288e-5*tt4
+            aw=3.239908+1.43713e-3*tem+1.16092e-4*tt2-5.77905e-7*tt3
+            bw=8.50935e-5-6.12293e-6*tem+5.2787e-8*tt2
+            aa=aw+(2.2838e-3-1.0981e-5*tem-1.6078e-6*tt2)*sal+1.91075e-4*ss3
+            bb=bw+(-9.9348e-7+2.0816e-8*tem+9.1697e-10*tt2)*sal
+
+            !Secant bulk modulus K at 1 bar
+            secant0=rkw+(54.6746-0.603459*tem+1.09987e-2*tt2-6.167e-5*tt3)*sal+ &
+     &(7.944e-2+1.6483e-2*tem-5.3009e-4*tt2)*ss3
+
+            !Secant bulk modulus
+            secant=secant0+aa*hpres+bb*hpres*hpres
+
+            eqstate=eqstate/(1-hpres/secant)
+          endif !ieos_pres
 
 #ifdef USE_SED
 !...      Add sediment density effects
@@ -1780,7 +1807,7 @@
           endif !ddensed==1
 #endif /*USE_SED*/
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !          if(laddmud_d) then
 !            rho_w=eqstate
 !            do ised=1,ntracers
@@ -2168,15 +2195,16 @@
 !            yp1 and yp2: 1st derivatives at xcor(1) and xcor(npts);
 !     Output: 
 !            ypp(npts): 2nd deriavtives used in interpolation.
+!            yp(npts): 1st deriavtives 
 !===============================================================================
-      subroutine cubic_spline(npts,xcor,yy,yp1,yp2,ypp)
+      subroutine cubic_spline(npts,xcor,yy,yp1,yp2,ypp,yp)
       use schism_glbl, only : rkind,errmsg
       use schism_msgp, only : parallel_abort
       implicit none
 
       integer, intent(in) :: npts
       real(rkind), intent(in) :: xcor(npts),yy(npts),yp1,yp2
-      real(rkind), intent(out) :: ypp(npts)
+      real(rkind), intent(out) :: ypp(npts),yp(npts)
   
       !Local
       integer :: k
@@ -2214,7 +2242,11 @@
       enddo !k
 
       call tridag(npts,1,npts,1,alow,bdia,cupp,rrhs,ypp,gam)
-!      ypp(:)=soln(:,1)
+    
+      yp(1)=yp1; yp(npts)=yp2
+      do k=2,npts-1
+        yp(k)=(yy(k+1)-yy(k))/(xcor(k+1)-xcor(k))-(xcor(k+1)-xcor(k))/6*(2*ypp(k)+ypp(k+1))
+      enddo !k
 
       end subroutine cubic_spline
 
@@ -2246,9 +2278,9 @@
       real(rkind), intent(out) :: yyout(npts2)
  
       !Local
-      real(rkind) :: ypp(npts)
+      real(rkind) :: ypp(npts),yp(npts)
 
-      call cubic_spline(npts,xcor,yy,yp1,yp2,ypp)
+      call cubic_spline(npts,xcor,yy,yp1,yp2,ypp,yp)
       call eval_cubic_spline(npts,xcor,yy,ypp,npts2,xout,ixmin,xmin,xmax,yyout)
 
       end subroutine do_cubic_spline
@@ -2302,12 +2334,13 @@
 
 !       Half levels
         do k=1,nvrt
-          rho_mean(k,i)=eqstate(5,ielg(i),swild2(k,i,1),swild2(k,i,2) &
+          kl=max(k,kbe(i)+1)
+          rho_mean(k,i)=eqstate(5,ielg(i),swild2(k,i,1),swild2(k,i,2),swild(kl) &
 ! LLP
 #ifdef USE_SED
      &                          ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
 #endif /*USE_SED*/
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !Error: need to use cubic spline also for mud density; also need to average for element
 !     &                             ,trel(:,k,i),rhomud(1:ntracers,max(k,kbe(i)),elnode(1,i)),laddmud_d &
 #endif
@@ -2369,7 +2402,7 @@
       do i=1,npa
         if(idry(i)==1) cycle
 
-        call cubic_spline(nvrt-kbp(i)+1,znl(kbp(i):nvrt,i),var_nd(kbp(i):nvrt,i),0._rkind,0._rkind,swild)
+        call cubic_spline(nvrt-kbp(i)+1,znl(kbp(i):nvrt,i),var_nd(kbp(i):nvrt,i),0._rkind,0._rkind,swild,swild2(1:nvrt-kbp(i)+1,1))
         hp_int(kbp(i):nvrt,i)=swild(1:(nvrt-kbp(i)+1))
       enddo !i=1,npa
 
@@ -2698,7 +2731,7 @@
       alpha_zonal=0 !0.05 !rotation angle w.r.t. polar axis in radian
       omega_zonal=2*pi/12/86400 !angular freq. of solid body rotation
 !      gh0=2.94e4 !g*h0
-!      u00_zonal=omega_zonal*rearth !zonal vel. at 'rotated' equator
+!      u00_zonal=omega_zonal*rearth_pole !zonal vel. at 'rotated' equator
       gh0=grav*5960 !case #5
       u00_zonal=20 !case #5
 
@@ -2720,7 +2753,7 @@
 !      eta2=0 
       do i=1,npa
         !Full zonal flow
-        gh=gh0-(rearth*omega_e*u00_zonal+u00_zonal**2/2)* &
+        gh=gh0-(rearth_pole*omega_e*u00_zonal+u00_zonal**2/2)* &
      &(sin(ylat(i))*cos(alpha_zonal)-cos(xlon(i))*cos(ylat(i))*sin(alpha_zonal))**2
         eta2(i)=gh/grav
         uzonal=u00_zonal*(cos(ylat(i))*cos(alpha_zonal)+cos(xlon(i))*sin(ylat(i))*sin(alpha_zonal)) !zonal vel.

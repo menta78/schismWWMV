@@ -33,9 +33,9 @@
       use schism_msgp
       use misc_modules
 
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
 !      USE flmud_pool, only: wsink !wsink([],nvrt,npa)>=0 (positive down)
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -709,12 +709,12 @@
             cupp(kin)=cupp(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
 
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
 !              !Sink vel.
 !              !Error: need to differentiate tracer index
 !              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
 !
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
           endif !k<nvrt
 
           if(k>kbe(i)+1) then
@@ -730,7 +730,7 @@
             alow(kin)=alow(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
 
-!#ifdef USE_TIMOR_FLMUD
+!#ifdef USE_TIMOR
 !            if(imod==1) then
 !              !Sink vel.
 !              !Error: need to differentiate tracer index
@@ -738,7 +738,7 @@
 !              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
 !
 !            endif
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
           endif !k>kbe(i)+1
 
 !         Advective flux

@@ -12,7 +12,7 @@
 !   See the License for the specific language governing permissions and
 !   limitations under the License.    
     
-    SUBROUTINE spec_ir(Tair, Pair, Hair, cloud, Uwind, Vwind)
+    SUBROUTINE spec_ir(wtratio)
 
     
 !!======================================================================
@@ -20,6 +20,7 @@
 !!======================================================Marta Rodrigues=
 !!                                                                     !
 !! This subroutine is from ROMS (where is called ana_specir.h):        !
+!! Revision: Nov/2015 - Updated to use nws=2                           !
 !!                                                                     ! 
 !!======================================================================
 !! Copyright (c) 2002-2007 The ROMS/TOMS Group                         !
@@ -43,7 +44,12 @@
       USE bio_param
       USE eclight
       USE biology
-      USE schism_glbl, only : nea,pi,xlon_el,ylat_el,idry_e
+      USE schism_glbl, only : nea,pi,xlon_el,ylat_el,idry_e,&
+                              windx1,windx2,windy1,windy2,&
+                              pr1,pr2,&
+                              airt1,airt2,&
+                              shum1,shum2,&
+                              elnode, i34 
 !
       IMPLICIT NONE
       SAVE
@@ -56,18 +62,25 @@
 !      real(r8), intent(in) :: yday, hour
 !      real(r8), intent(in) :: lonr(ne)
 !      real(r8), intent(in) :: latr(ne)
-      real(r8), intent(in) :: cloud(nea)
-      real(r8), intent(in) :: Hair(nea)
-      real(r8), intent(in) :: Tair(nea)
-      real(r8), intent(in) :: Pair(nea)
-      real(r8), intent(in) :: Uwind(nea)
-      real(r8), intent(in) :: Vwind(nea)
-!      real(r8), intent(inout) :: SpecIr(nea,Nbands)
+!      real(r8), intent(in) :: cloud(nea)
+!      real(r8), intent(in) :: Hair(nea)
+!      real(r8), intent(in) :: Tair(nea)
+!      real(r8), intent(in) :: Pair(nea)
+!      real(r8), intent(in) :: Uwind(nea)
+!      real(r8), intent(in) :: Vwind(nea)
+!      real(r8), intent(inout) :: specir(nea,Nbands)
 !      real(r8), intent(inout) :: avcos(nea,Nbands)
+      real(r8), intent(in) :: wtratio
 
+! Local variables
+      real(r8) :: eT,eTH2O,eTice
+      real(r8) :: u_wind1,u_wind2,v_wind1,v_wind2
+      real(r8) :: p_1,p_2
+      real(r8) :: t_air1,t_air2
+      real(r8) :: s_hum1,s_hum2
 !
 !  Local constant declarations.
-!
+
       real(r8) :: am = 1.0_r8        ! Aerosol type 1-10: ocean to land
       real(r8) :: betalam = 0.55_r8
       real(r8) :: p0 = 29.92_r8      ! Standard pressure (inches of Hg)
@@ -149,6 +162,57 @@
 
 	  LatRad=ylat_el(i)*deg2rad
           LonRad=xlon_el(i)*deg2rad
+
+! MFR - Nov/2015 - Compute atmos variables from nws=2 and cloud cover
+!                  @ elements
+
+            u_wind1=sum(windx1(elnode(1:i34(i),i)))/i34(i)
+            u_wind2=sum(windx2(elnode(1:i34(i),i)))/i34(i)
+            v_wind1=sum(windy1(elnode(1:i34(i),i)))/i34(i)
+            v_wind2=sum(windy2(elnode(1:i34(i),i)))/i34(i)
+            p_1=sum(pr1(elnode(1:i34(i),i)))/i34(i)
+            p_2=sum(pr2(elnode(1:i34(i),i)))/i34(i)
+            t_air1=sum(airt1(elnode(1:i34(i),i)))/i34(i)
+            t_air2=sum(airt2(elnode(1:i34(i),i)))/i34(i)
+            s_hum1=sum(shum1(elnode(1:i34(i),i)))/i34(i)
+            s_hum2=sum(shum2(elnode(1:i34(i),i)))/i34(i)
+
+            uwind(i)=u_wind1+wtratio*(u_wind2-u_wind1)
+            vwind(i)=v_wind1+wtratio*(v_wind2-v_wind1)
+            pair(i)=p_1+wtratio*(p_2-p_1)
+            tair(i)=t_air1+wtratio*(t_air2-t_air1)
+            hair(i)=s_hum1+wtratio*(s_hum2-s_hum1)
+
+            ! Compute relative humidity
+            ! 1st compute water and ice saturation vapor pressure, in hPa
+            ! (CIMO Guide,WMO,2008)
+            eTH2O = 6.112*exp(17.62*tair(i)/(243.12+tair(i)))
+
+            eTice = 6.112*exp(22.46*tair(i)/(272.62+tair(i)))
+
+            eT = MIN(eTH2O,eTice)
+
+            ! epsilon = Rdry/Rvap = 287.58/461.5 ~ 0.622
+            ! HR = 100*w/ws; q~w; ws~0.622*eT/p; HR~q*p*100/(0.622*eT)
+            ! pair in hPa (pair=pair*0.01)
+            ! hair in %
+            ! tair in ºC 
+           
+            pair(i)=pair(i)*0.01d0
+            hair(i) = 100.d0*hair(i)*pair(i)*461.5d0/(287.58d0*eT)
+
+            IF(flag_cloud==1)THEN
+               ! Rough estimation of cloud cover from relative humidity (Sundqvist et al.,
+               ! 1989)
+               cloud(i)=1-dsqrt((1-hair(i)/100)/(1-0.75))
+               IF(cloud(i)<0.d0) cloud(i)=0.0d0
+            ELSE
+               ! Cloud cover from file
+               ! MFR - In implementation
+            ENDIF
+! -------------------------------------------------------------------------------
+
+
 !
 !  Compute Climatological Ozone.
 !
@@ -178,7 +242,7 @@
 !  Modified March, 1994 according to Kasten and Young 1989.
 !
             rm=1.0_r8/(cosunz+0.50572_r8*(96.07995_r8-theta)**rex)
-            rmp=rm*(Pair(i)*0.02952756_r8)/p0
+            rmp=rm*(pair(i)*0.02952756_r8)/p0
             rmo=(1.0_r8+22.0_r8/6370.0_r8)/                             &
      &          SQRT(cosunz*cosunz+44.0_r8/6370.0_r8)
 
@@ -188,11 +252,11 @@
 !
 !  Compute wind speed (24 hour mean is equal to current wind).
 !
-            wspeed=SQRT(Uwind(i)*Uwind(i)+Vwind(i)*Vwind(i))
+            wspeed=SQRT(uwind(i)*uwind(i)+vwind(i)*vwind(i))
 !
 !  Relative humidity factor, frh.
 !
-            rh=Hair(i)
+            rh=hair(i)
             IF (rh.ge.100.0_r8) rh=99.9_r8
             frh=((2.0_r8-rh*0.01_r8)/                                   &
                  (6.0_r8*(1.0_r8-rh*0.01_r8)))**0.333_r8
@@ -370,7 +434,7 @@
 !
 !  Convert from W/cm/um to micromole quanta/m2/s.
 !
-              SpecIr(i,iband)=Ed(iband)*10.0_r8*qlam(iband)
+              specir(i,iband)=Ed(iband)*10.0_r8*qlam(iband)
 !
 !  Correction of zenith angle after crossing air/sea interface.
 !
@@ -381,12 +445,12 @@
             END DO
           ELSE
             DO iband=1,NBands
-              SpecIr(i,iband)=0.0_r8
+              specir(i,iband)=0.0_r8
               avcos(i,iband)=0.66564_r8
             END DO
           END IF
       END DO
-        
+   
       RETURN
       END SUBROUTINE spec_ir
       

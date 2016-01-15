@@ -251,12 +251,12 @@ subroutine partition_hgrid
     do i=1,npa
       !Stereographic projection for partition only
       !Center is at south pole and plane is at north pole; must remove south pole
-      if(rearth+znd(i)<=0) then
-        write(errmsg,*)'PARTITION: remove south pole:',i,rearth+znd(i)
+      if(rearth_pole+znd(i)<=0) then
+        write(errmsg,*)'PARTITION: remove south pole:',i,rearth_pole+znd(i)
         call parallel_abort(errmsg)
       endif
-      xproj(i)=2*rearth*xnd(i)/(rearth+znd(i))
-      yproj(i)=2*rearth*ynd(i)/(rearth+znd(i))
+      xproj(i)=2*rearth_eq*xnd(i)/(rearth_pole+znd(i))
+      yproj(i)=2*rearth_eq*ynd(i)/(rearth_pole+znd(i))
     enddo !i=1,npa
   endif !ics
 
@@ -1632,9 +1632,9 @@ subroutine aquire_hgrid(full_aquire)
         dp(ii)=dptmp
         lreadll=.true. !flag to indicate lat/lon already read in
         !global coordi.
-        xnd(ii)=rearth*cos(ylat(ii))*cos(xlon(ii))
-        ynd(ii)=rearth*cos(ylat(ii))*sin(xlon(ii))
-        znd(ii)=rearth*sin(ylat(ii))
+        xnd(ii)=rearth_eq*cos(ylat(ii))*cos(xlon(ii))
+        ynd(ii)=rearth_eq*cos(ylat(ii))*sin(xlon(ii))
+        znd(ii)=rearth_pole*sin(ylat(ii))
       endif !ics
 !      if(dp(node%id).le.0) idrynode(node%id)=1
     endif !node%rank

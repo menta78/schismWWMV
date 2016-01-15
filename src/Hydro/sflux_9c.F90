@@ -2658,7 +2658,7 @@
      &                                   info%times(time_num_1) )
         got_suitable_bracket = got_bracket .and. &
      &                         (window_hours .lt. info%max_window_hours)
-
+         
 ! fail if we don't have a suitable bracket and if fail_if_missing is set
         if ( (.not. got_suitable_bracket) .and. &
      &       (info%fail_if_missing) ) then
@@ -2668,12 +2668,13 @@
      &     info%times(1),'last time available = ', &
      &     info%times(info%num_times), 'got_bracket = ', got_bracket, &
            'got_suitable_bracket = ', got_suitable_bracket
-
+          
           if (got_bracket) then
             write(msg_tmp,*) ', window_hours = ', window_hours, &
                             'max_window_hours = ', info%max_window_hours, &
                             'time_1 = ', info%times(time_num_1), &
                             'time_2 = ', info%times(time_num_1+1)
+
             errmsg=errmsg//msg_tmp
           endif
           call parallel_abort(errmsg)

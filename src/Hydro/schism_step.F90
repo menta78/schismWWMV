@@ -83,8 +83,8 @@
       integer, intent(in) :: it
 
 !     External functions
-      integer :: kronecker
-      real(rkind) :: eqstate,quad_int
+      integer :: kronecker,lindex_s
+      real(rkind) :: eqstate,quad_int,signa
 
 !     Local variables
       integer :: istat,i,j,k,l,m,kk,mm,jj,ll,lll,nd,nd0,ie,ie0,iegb,icount, &
@@ -96,7 +96,7 @@
                  &in2,irank_s,itmp,itmp1,itmp2,node1,node2,ndim,mk,nd_lam, &
                  &iee,idel,irow,icol,ieq,ij,kbb,lwrite,lit,ihot_len,IHOTSTP, &
                  &itmpf,ibt,mmk,ndo,n,ind_tr
-      real(rkind) :: cwtmp,cwtmp2,wtmp1,wtmp2,time,ramp,rampbc,rampwind,dzdx,dzdy, &
+      real(rkind) :: cwtmp,cwtmp2,cwtmp3,wtmp1,wtmp2,time,ramp,rampbc,rampwind,dzdx,dzdy, &
                      &dudz,dvdz,dudx,dudx2,dvdx,dvdx2,dudy,dudy2,dvdy,dvdy2, &
                      &dzz1,ta,wx2,wy2,wtratio,sum1,sum2,sum3,sum4,dragcmin, &
                      &dragcmax,wmag,vmag,vmag1,vmag2,dragcoef,tmp,tmp0,tmp1, &
@@ -134,7 +134,7 @@
                      &av_dep,vel_m1,vel_m2,xtmp,ytmp,ftmp,tvol12,fluxbnd, &
                      &fluxchan,fluxchan1,fluxchan2,tot_s,flux_s,ah,ubm,ramp_ss,Cdmax, &
                      &wmag_e,wmag_factor, & !wmag_e and wmag_facotr addedy by wangzg
-                     &bthick_ori,big_ubstar,big_vbstar,zsurf,tot_bedmass
+                     &bthick_ori,big_ubstar,big_vbstar,zsurf,tot_bedmass,w1,w2
 
 !     Output handles
       character(len=72) :: it_char
@@ -164,8 +164,8 @@
                      &bigu(2,nsa),ghat1(2,nea),etp(npa),h1d(0:nvrt),SS1d(0:nvrt), &
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
-                     &vsource(nea)
-      real(rkind) :: swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(4,nvrt),12), &
+                     &vsource(nea),dldxy_sd(4,2,nea)
+      real(rkind) :: swild(max(100,nsa+nvrt+12+ntracers)),swild2(nvrt,12),swild10(max(4,nvrt),12), &
      &swild3(20+ntracers),swild4(2,4)
       real(4) :: swild8(nvrt,2) !used in ST nudging
       logical :: lelbc(npa)
@@ -178,6 +178,7 @@
       real(4),allocatable :: swild9(:,:) !used in tracer nudging
       real(rkind),allocatable :: rwild(:,:) 
       real(rkind),allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange (deallocate immediately afterwards)
+      real(rkind),allocatable :: swild96(:,:,:),swild97(:,:,:) !used in ELAD (deallocate immediately afterwards)
       real(rkind),allocatable :: hp_int(:,:,:),buf1(:,:),buf2(:,:),buf3(:),msource(:,:)
       real(rkind),allocatable :: fluxes_vol(:),fluxes_vol_gb(:) !volume fluxes output between regions
       logical :: ltmp,ltmp1(1),ltmp2(1)
@@ -188,7 +189,7 @@
       real(rkind),allocatable :: bpgr(:,:),wafo(:,:,:)
 #endif
 !     Tracers
-      real(rkind),allocatable :: Bio_bdefp(:,:),tr_tc(:,:),tr_tl(:,:)
+      real(rkind),allocatable :: Bio_bdefp(:,:),tr_tc(:,:),tr_tl(:,:),tsd(:,:)
 
 #ifdef USE_WWM
       CHARACTER(LEN=3) :: RADFLAG
@@ -228,6 +229,11 @@
       if(istat/=0) call parallel_abort('STEP: NAPZD allocation failure')
 #endif
 
+      if(ibtrack_test==1) then
+        allocate(tsd(nvrt,nsa),stat=istat)
+        if(istat/=0) call parallel_abort('STEP: tsd allocation failure')
+      endif
+
 #ifdef USE_SED
        !allocate(tr_tc(ntracers,nea),tr_tl(ntracers,nea),stat=istat)
        allocate(tr_tc(ntrs(5),nea),tr_tl(ntrs(5),nea),stat=istat)
@@ -240,12 +246,28 @@
        if(istat/=0) call parallel_abort('STEP: WWM allocation failure')
 #endif
 
-!      End alloc.
+!     Alloc. the large array for nws=4-6 option (may consider changing
+!     to unformatted binary read)
+      if(nws==4) then
+        allocate(rwild(np_global,3),stat=istat)
+        if(istat/=0) call parallel_abort('MAIN: failed to alloc. (71)')
+      endif !nws=4
+      if(nws==5.or.nws==6) then
+        allocate(rwild(npa,3),stat=istat)
+        if(istat/=0) call parallel_abort('MAIN: failed to alloc. (72)')
+      endif !nws
+
+!     End alloc.
 
 !      do it=iths+1,ntime
 
 #ifdef INCLUDE_TIMING
       wtmp1=mpi_wtime() !Forcing preparation section
+#endif
+
+!TIMER2 for easier timing of major blocks
+#ifdef TIMER2
+      cwtmp3=mpi_wtime()
 #endif
 
       time=it*dt 
@@ -290,135 +312,51 @@
         bdef2(i)=bdef(i)/ibdef*min0(it,ibdef)
       enddo !i
 
-!...  Horizontal viscosity; compute d2uv (incorporated hvis inside)
-!     Pre-compute some derivatives in each element to speed up
-!     Use sdbt(1:4,nvrt,nsa) (nsa>=nea checked) as temporary array.
-      d2uv=0
 
-      if(ihorcon/=0) then
-        sdbt=0 !for dry and below bottom spots
-        do i=1,nea
-          if(idry_e(i)==1) cycle
+!     Derivatives of shape function for sides (elem. frame if ics=2)
+!     Put this into _init
+      do i=1,nea
+        !Prep (x,y) if ics=2
+        do j=1,i34(i)
+          isd=elside(j,i)
+          in1=nxq(1,j,i34(i)) !local node index
+          in2=nxq(2,j,i34(i))
+          swild2(1,j)=(xel(in1,i)+xel(in2,i))/2 !xcj
+          swild2(2,j)=(yel(in1,i)+yel(in2,i))/2 !ycj
+        enddo !j
+ 
+!        tmp0=signa(xcj(elside(1,i)),xcj(elside(2,i)),xcj(elside(3,i)),ycj(elside(1,i)),ycj(elside(2,i)),ycj(elside(3,i))) !area
+        tmp0=signa(swild2(1,1),swild2(1,2),swild2(1,3),swild2(2,1),swild2(2,2),swild2(2,3)) !area
+        if(tmp0<=0) call parallel_abort('STEP: area<=0 (1)')
+        if(i34(i)==3) then
+          do j=1,i34(i)
+            !isd1=elside(nxq(1,j,i34(i)),i)
+            !isd2=elside(nxq(2,j,i34(i)),i)
+            !dldxy_sd(j,1,i)=(ycj(isd1)-ycj(isd2))/2/tmp0 !dL_j/dx
+            !dldxy_sd(j,2,i)=(xcj(isd2)-xcj(isd1))/2/tmp0 !dL_j/dy
+            in1=nxq(1,j,i34(i))
+            in2=nxq(2,j,i34(i))
+            dldxy_sd(j,1,i)=(swild2(2,in1)-swild2(2,in2))/2/tmp0 !dL_j/dx
+            dldxy_sd(j,2,i)=(swild2(1,in2)-swild2(1,in1))/2/tmp0 !dL_j/dy
+          enddo !j
+        else  !quad; evaluate at centroid
+          !tmp2=signa(xcj(elside(1,i)),xcj(elside(3,i)),xcj(elside(4,i)),ycj(elside(1,i)),ycj(elside(3,i)),ycj(elside(4,i)))
+          tmp2=signa(swild2(1,1),swild2(1,3),swild2(1,4),swild2(2,1),swild2(2,3),swild2(2,4))
+          if(tmp2<=0) call parallel_abort('STEP: area<=0 (2)')
+          tmp2=tmp2+tmp0 !area
+          do j=1,i34(i)
+            !isd1=elside(nxq(1,j,i34(i)),i)
+            !isd3=elside(nxq(3,j,i34(i)),i)
+            !dldxy_sd(j,1,i)=(ycj(isd1)-ycj(isd3))/2/tmp2 !dphi_dx
+            !dldxy_sd(j,2,i)=(xcj(isd3)-xcj(isd1))/2/tmp2 !dphi_dy
+            in1=nxq(1,j,i34(i))
+            in2=nxq(3,j,i34(i))
+            dldxy_sd(j,1,i)=(swild2(2,in1)-swild2(2,in2))/2/tmp2 !dL_j/dx
+            dldxy_sd(j,2,i)=(swild2(1,in2)-swild2(1,in1))/2/tmp2 !dL_j/dy
 
-!         Wet
-          do k=kbe(i),nvrt
-            k2=min(k+1,nvrt)
-            k1=max(k-1,kbe(i))
-            dzdx=0; dzdy=0; dudz=0; dvdz=0; dudx2=0; dudy2=0; dvdx2=0; dvdy2=0
-            do j=1,i34(i) !nodes
-              nd=elnode(j,i)
-              dzdx=dzdx+znl(max(k,kbp(nd)),nd)*dldxy(j,1,i)
-              dzdy=dzdy+znl(max(k,kbp(nd)),nd)*dldxy(j,2,i)
-              dzz1=znl(max(k2,kbp(nd)),nd)-znl(max(k1,kbp(nd)),nd)
-!              if(k1==k2.or.dzz1<=0) then
-              if(dzz1<0) then
-                write(errmsg,*)'Impossible 91:',k1,k2,dzz1
-                call parallel_abort(errmsg)
-              endif
-              if(dzz1/=0) then
-                dudz=dudz+(uu2(k2,nd)-uu2(k1,nd))/dzz1/i34(i)
-                dvdz=dvdz+(vv2(k2,nd)-vv2(k1,nd))/dzz1/i34(i)
-              endif
-              dudx2=dudx2+uu2(k,nd)*dldxy(j,1,i) !on S-plane for k>=kz
-              dudy2=dudy2+uu2(k,nd)*dldxy(j,2,i)
-              dvdx2=dvdx2+vv2(k,nd)*dldxy(j,1,i)
-              dvdy2=dvdy2+vv2(k,nd)*dldxy(j,2,i)
-            enddo !j
-            if(k<kz) then !z-levels
-              dzdx=0; dzdy=0
-            endif
-            sdbt(1,k,i)=dudx2-dudz*dzdx !dudx; whole level
-            sdbt(2,k,i)=dudy2-dudz*dzdy !dudy
-            sdbt(3,k,i)=dvdx2-dvdz*dzdx !dvdx
-            sdbt(4,k,i)=dvdy2-dvdz*dzdy !dvdy
-          enddo !k=kbe(i),nvrt
-        enddo !i=1,nea
-
-        allocate(swild98(2,nvrt,nsa),stat=istat)
-        if(istat/=0) call parallel_abort('MAIN: fail to allocate swild98 (3)')
-!'
-        swild98=0
-        do i=1,ns !residents
-          if(idry_s(i)==1) cycle
-
-          do k=1,nvrt
-            dudx=0; dudy=0; dvdx=0; dvdy=0
-            icount=0
-            do j=1,2
-              ie=isdel(j,i)
-              if(ie/=0) then
-                icount=icount+1
-                dudx=dudx+sdbt(1,k,ie)
-                dudy=dudy+sdbt(2,k,ie)
-                dvdx=dvdx+sdbt(3,k,ie)
-                dvdy=dvdy+sdbt(4,k,ie)
-              endif !ie/=0
-            enddo !j=1,2
-            if(icount==0) then
-              write(errmsg,*)'MAIN: Impossible 78'
-              call parallel_abort(errmsg)
-            endif
-            dudx=dudx/icount
-            dudy=dudy/icount
-            dvdx=dvdx/icount
-            dvdy=dvdy/icount
-            swild98(1,k,i)=dudx*sframe(1,1,i)+dudy*sframe(2,1,i) !dudn; whole level
-            swild98(2,k,i)=dvdx*sframe(1,1,i)+dvdy*sframe(2,1,i) !dvdn
-            !Deal with free slip land bnd; this is just a back-up case as land bnd will
-            !be dealt with separately below
-            !if(isbs(i)==-1) swild98(:,k,i)=0 
-          enddo !k=1,nvrt
-        enddo !i=1,ns
-
-!       Update ghost 
-#ifdef INCLUDE_TIMING
-        cwtmp=mpi_wtime()
-#endif
-        call exchange_s3d_2(swild98)
-#ifdef INCLUDE_TIMING
-        wtimer(3,2)=wtimer(3,2)+mpi_wtime()-cwtmp
-#endif
-
-!       Compute horizontal viscosity term: \nabla\cdot(\miu\nabla \vector{u})
-        do j=1,ns !residents only
-          do k=kbs(j)+1,nvrt !viscosity = 0 at bottom
-            ta=0
-            do l=1,2 !element
-              ie=isdel(l,j)
-              if(ie/=0) then
-                ta=ta+area(ie)
-                do i=1,i34(ie) !sides
-                  jsj=elside(i,ie)
-                  if(isbs(jsj)==-1) then !deal with land bnd
-                    tmp=sqrt(su2(k,jsj)**2+sv2(k,jsj)**2)
-                    d2uv(1,k,j)=d2uv(1,k,j)-distj(jsj)*cdh*tmp*su2(k,jsj)
-                    d2uv(2,k,j)=d2uv(2,k,j)-distj(jsj)*cdh*tmp*sv2(k,jsj)
-                  else if(isdel(2,j)==0.or.jsj/=j) then
-                    d2uv(1:2,k,j)=d2uv(1:2,k,j)+ssign(i,ie)*distj(jsj)*hvis(k,ie)*swild98(1:2,k,jsj)
-                  endif
-                enddo !i
-              endif !ie/=0
-            enddo !l
-            if(ta==0) then
-              write(errmsg,*)'MAIN: Impossible 77'
-              call parallel_abort(errmsg)
-            endif
-            d2uv(1:2,k,j)=d2uv(1:2,k,j)/ta
-          enddo !k
-        enddo !j=1,ns
-
-!       Update ghost 
-#ifdef INCLUDE_TIMING
-        cwtmp=mpi_wtime()
-#endif
-        call exchange_s3d_2(d2uv)
-#ifdef INCLUDE_TIMING
-        wtimer(3,2)=wtimer(3,2)+mpi_wtime()-cwtmp
-#endif
-        deallocate(swild98)
-      endif !ihorcon/=0
-
-      if(myrank==0) write(16,*)'done hvis and bottom fric: '
+          enddo !j
+        endif !i34(i)
+      enddo !i=1,nea
 
 !...  Earth tidal potential at nodes: pre-compute to save time
 !...
@@ -433,6 +371,15 @@
 
 !...  process new wind info 
 !...  Wind vectors always in lat/lon frame 
+      if(nws==0) then
+        windx1 = 0
+        windy1 = 0
+        windy2 = 0
+        windx2 = 0
+        windx  = 0
+        windy  = 0
+      endif
+
       if(nws==1) then
         if(time>=wtime2) then
           wtime1=wtime2
@@ -460,8 +407,6 @@
           pr1=pr2
 !          The large array for nws=4 option (may consider changing to
 !          unformatted binary read)
-          allocate(rwild(np_global,3),stat=istat)
-          if(istat/=0) call parallel_abort('STEP: failed to alloc. (71)')
           read(22,*)tmp,rwild(:,:) 
           do i=1,np_global
             if(ipgl(i)%rank==myrank) then
@@ -471,7 +416,6 @@
               pr2(nd)=rwild(i,3)
             endif
           enddo !i
-          deallocate(rwild)
         endif
 
         wtratio=(time-wtime1)/wtiminc
@@ -482,17 +426,45 @@
         enddo !i
       endif !nws=4
 
-#ifdef USE_ICM
-! calculating WMS used for reareation,added by wangzg
-      if(irea==1) then
-        do i=1,nea
-          if(idry_e(i)==1) cycle
-          wmag_e=sum(sqrt(windx(elnode(1:i34(i),i))**2+windy(elnode(1:i34(i),i))**2))/i34(i) 
-          wmag_factor=sum(windfactor(elnode(1:i34(i),i)))/i34(i)
-          WMS(i)=wmag_e !*wmag_factor !no windfactor for DO reareation
-        enddo !i
-      endif !irea=1
-#endif
+! IVICA
+      if(nws==5.or.nws==6) then
+        if(it==1) then
+          rec1_old=0
+          rec2_old=0
+        endif
+        CALL GET_FRC_REC(time, rec1, rec2, w1, w2)
+        if(rec1/=rec1_old) then
+          if(nws==5) CALL READ_INTERP_NETCDF_CF(rec1,rwild)
+          if(nws==6) CALL READ_NETCDF_DIRECT(rec1,rwild)
+          windx1(:)=rwild(:,1)
+          windy1(:)=rwild(:,2)
+          pr1(:)=rwild(:,3)
+        endif
+        if(rec2/=rec2_old) then
+          if(nws==5) CALL READ_INTERP_NETCDF_CF(rec2,rwild) !  read 2.nd record for init only
+          if(nws==6) CALL READ_NETCDF_DIRECT(rec2,rwild)
+          windx2(:)=rwild(:,1)
+          windy2(:)=rwild(:,2)
+          pr2(:)=rwild(:,3)
+        endif
+        if(abs(w1-1)>1.e-5) then
+          windx(:)=windx1(:)*w1+windx2(:)*w2
+          windy(:)=windy1(:)*w1+windy2(:)*w2
+          pr(:)=pr1(:)*w1+pr2(:)*w2
+        else
+          windx(:)=windx1(:)
+          windy(:)=windy1(:)
+          pr(:)=pr1(:)
+        endif
+        if(myrank==0)  THEN
+          WRITE(16,'(A,I12,2x,I12)') '++ wind_time_sec(rec1/rec2)= ',wind_time_sec(rec1),wind_time_sec(rec2)
+          WRITE(16,101) time,rec1,rec1_old,rec2,rec2_old,w1,w2
+        ENDIF
+        rec1_old=rec1
+        rec2_old=rec2
+101     format('selfe_step=' ,F8.1,' r1=',I4,' r1_old= ',I4,' r2= ',I4,' r2_old=',I4,' w1=',F6.3,' w2=',F6.3)
+!'
+      endif !5|6
 
 !     CORIE mode
       if(nws>=2.and.nws<=3) then
@@ -550,10 +522,25 @@
         enddo !i
       endif
 
+#ifdef USE_ICM
+! calculating WMS used for reareation,added by wangzg
+      if(irea==1) then
+        do i=1,nea
+          if(idry_e(i)==1) cycle
+          wmag_e=sum(sqrt(windx(elnode(1:i34(i),i))**2+windy(elnode(1:i34(i),i))**2))/i34(i)
+          wmag_factor=sum(windfactor(elnode(1:i34(i),i)))/i34(i)
+          WMS(i)=wmag_e !*wmag_factor !no windfactor for DO reareation
+        enddo !i
+      endif !irea=1
+#endif
+
+
+
 !-------------------------------------------------------------------------------
 !   Wind wave model (WWM)
 !-------------------------------------------------------------------------------
 #ifdef USE_WWM
+
       if(mod(it,nstep_wwm)==0) then
         wtmp1=mpi_wtime()
         if(myrank==0) write(16,*)'starting WWM'
@@ -858,7 +845,7 @@
         if(nws==0) then
           tau(1,i)=0
           tau(2,i)=0
-        else if(nws==1.or.nws==4.or.nws>=2.and.ihconsv==0.or.iwind_form==-1) then
+        else if(nws==1.or.nws>=4.or.nws>=2.and.ihconsv==0.or.iwind_form==-1) then
           wmag=sqrt(windx(i)**2+windy(i)**2)
           dragcoef=1.0d-3*(0.61+0.063*wmag)
           dragcoef=min(max(dragcoef,dragcmin),dragcmax)
@@ -1278,60 +1265,6 @@
         enddo !k
       endif !nfltype
 
-!      if(ntetype>0) then
-!        if(time>th_time(1,2,3)) then
-!          ath(:,1,1,3)=ath(:,1,2,3)
-!          read(52,*) tmp,ath(1:ntetype,1,2,3)
-!          th_time(1,1,3)=th_time(1,2,3)
-!          th_time(1,2,3)=th_time(1,2,3)+th_dt(1,3)
-!        endif !time
-!!        if(it==iths_main+1.and.abs(tmp-time)>1.e-4) then
-!!          write(errmsg,*)'Starting time wrong for temp',it,tmp
-!!          call parallel_abort(errmsg)
-!!        endif
-!
-!        rat=(time-th_time(1,1,3))/th_dt(1,3)
-!        if(rat<-small1.or.rat>1+small1) then
-!          write(errmsg,*) 'STEP: rat out in temp.th:',rat,time,th_time(1,1:2,3)
-!          call parallel_abort(errmsg)
-!        endif
-!        icount=0
-!        do k=1,nope_global
-!          if(itetype(k)==1) then
-!            icount=icount+1
-!            if(icount>ntetype) call parallel_abort('Wrong counting 3')
-!            tth(1,1,k)=(1-rat)*ath(icount,1,1,3)+rat*ath(icount,1,2,3)
-!          endif
-!        enddo !k
-!      endif !ntetype
-!
-!      if(nsatype>0) then
-!        if(time>th_time(1,2,4)) then
-!          ath(:,1,1,4)=ath(:,1,2,4)
-!          read(53,*) tmp,ath(1:nsatype,1,2,4)
-!          th_time(1,1,4)=th_time(1,2,4)
-!          th_time(1,2,4)=th_time(1,2,4)+th_dt(1,4)
-!        endif !time
-!!        if(it==iths_main+1.and.abs(tmp-time)>1.e-4) then
-!!          write(errmsg,*)'Starting time wrong for salt',it,tmp
-!!          call parallel_abort(errmsg)
-!!        endif
-!
-!        rat=(time-th_time(1,1,4))/th_dt(1,4)
-!        if(rat<-small1.or.rat>1+small1) then
-!          write(errmsg,*) 'STEP: rat out in salt.th:',rat,time,th_time(1,1:2,4)
-!          call parallel_abort(errmsg)
-!        endif
-!        icount=0
-!        do k=1,nope_global
-!          if(isatype(k)==1) then
-!            icount=icount+1
-!            if(icount>nsatype) call parallel_abort('Wrong counting 4')
-!            sth(1,1,k)=(1-rat)*ath(icount,1,1,4)+rat*ath(icount,1,2,4)
-!          endif
-!        enddo !k
-!      endif
-
       do i=1,natrm
         if(ntrs(i)>0.and.ntrtype1(i)>0) then !type I
           do m=irange_tr(1,i),irange_tr(2,i) !1,ntracers
@@ -1385,7 +1318,7 @@
         icount=0
         icount2=0
         do k=1,nope_global
-          if(iettype(k)==4) then
+          if(iettype(k)>=4) then
             icount=icount+1
             if(icount>nettype2) call parallel_abort('Wrong counting 7')
             do j=1,nond_global(k)
@@ -1420,7 +1353,7 @@
         icount=0
         icount2=0
         do k=1,nope_global
-          if(iabs(ifltype(k))==4) then
+          if(iabs(ifltype(k))>=4) then
             icount=icount+1
             if(icount>nfltype2) call parallel_abort('Wrong counting 6')
             do j=1,nond_global(k)
@@ -1433,76 +1366,6 @@
           endif
         enddo !k
       endif !nfltype2
-
-!      if(ntetype2>0) then
-!        if(time>th_time2(2,3)) then
-!          ath2(:,:,:,1,3)=ath2(:,:,:,2,3)
-!          irec_th(3)=irec_th(3)+1
-!          read(56,rec=irec_th(3)) floatout,ath2(1,1:nvrt,1:nnode_te,2,3)
-!          th_time2(1,3)=th_time2(2,3)
-!          th_time2(2,3)=th_time2(2,3)+th_dt2(3)
-!        endif !time
-!!        if(it==iths_main+1.and.abs(floatout-time)>1.e-4) then
-!!          write(errmsg,*)'Starting time wrong for temp. 2',it,floatout
-!!          call parallel_abort(errmsg)
-!!        endif
-!
-!        rat=(time-th_time2(1,3))/th_dt2(3)
-!        if(rat<-small1.or.rat>1+small1) then
-!          write(errmsg,*) 'STEP: rat out in temp3D.th:',rat,time,th_time2(1:2,3)
-!          call parallel_abort(errmsg)
-!        endif
-!        icount=0
-!        icount2=0
-!        do k=1,nope_global
-!          if(iabs(itetype(k))==4) then
-!            icount=icount+1
-!            if(icount>ntetype2) call parallel_abort('Wrong counting 8')
-!            do j=1,nond_global(k)
-!!              nd=iond_global(k,j)
-!              icount2=icount2+1
-!              if(icount2>nnode_te) call parallel_abort('Wrong counting te')
-!!'
-!              tth(1:nvrt,j,k)=(1-rat)*ath2(1,1:nvrt,icount2,1,3)+rat*ath2(1,1:nvrt,icount2,2,3)
-!            enddo !j
-!          endif
-!        enddo !k
-!      endif !ntetype2
-!
-!      if(nsatype2>0) then
-!        if(time>th_time2(2,4)) then
-!          ath2(:,:,:,1,4)=ath2(:,:,:,2,4)
-!          irec_th(4)=irec_th(4)+1
-!          read(57,rec=irec_th(4)) floatout,ath2(1,1:nvrt,1:nnode_sa,2,4)
-!          th_time2(1,4)=th_time2(2,4)
-!          th_time2(2,4)=th_time2(2,4)+th_dt2(4)
-!        endif !time
-!!        if(it==iths_main+1.and.abs(floatout-time)>1.e-4) then
-!!          write(errmsg,*)'Starting time wrong for salt 2',it,floatout
-!!          call parallel_abort(errmsg)
-!!        endif
-! 
-!        rat=(time-th_time2(1,4))/th_dt2(4)
-!        if(rat<-small1.or.rat>1+small1) then
-!          write(errmsg,*) 'STEP: rat out in salt3D.th:',rat,time,th_time2(1:2,4)
-!          call parallel_abort(errmsg)
-!        endif
-!        icount=0
-!        icount2=0
-!        do k=1,nope_global
-!          if(iabs(isatype(k))==4) then
-!            icount=icount+1
-!            if(icount>nsatype2) call parallel_abort('Wrong counting 9')
-!            do j=1,nond_global(k)
-!!              nd=iond_global(k,j)
-!              icount2=icount2+1
-!              if(icount2>nnode_sa) call parallel_abort('Wrong counting sa')
-!!'
-!              sth(1:nvrt,j,k)=(1-rat)*ath2(1,1:nvrt,icount2,1,4)+rat*ath2(1,1:nvrt,icount2,2,4)
-!            enddo !j
-!          endif
-!        enddo !k
-!      endif !nsatype2
 
 !     Tracers
       if(time>th_time2(2,5)) then
@@ -1629,9 +1492,9 @@
         endif !nsinks
       endif !if_source
 
-!     Calcualtion of cross-section areas for flow b.c.
+!     Calcualtion of cross-section areas and length for flow b.c.
       if(lflbc) then
-        allocate(buf1(nope_global,1),buf2(nope_global,1)); buf1=0d0;
+        allocate(buf1(nope_global,2),buf2(nope_global,2)); buf1=0d0;
         do k=1,nope
           kk=iopelg(k) !global segment #
           if(ifltype(kk)/=0) then
@@ -1662,6 +1525,7 @@
                 call parallel_abort(errmsg)
               endif
               buf1(kk,1)=buf1(kk,1)+htot*distj(isd0)
+              buf1(kk,2)=buf1(kk,2)+distj(isd0) !length
             enddo !i=1,nond(k)-1
           endif
         enddo !k=1,nope
@@ -1669,13 +1533,21 @@
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
 #endif
-        call mpi_allreduce(buf1,buf2,nope_global,rtype,MPI_SUM,comm,ierr)
+        call mpi_allreduce(buf1,buf2,nope_global*2,rtype,MPI_SUM,comm,ierr)
 #ifdef INCLUDE_TIMING
         wtimer(3,2)=wtimer(3,2)+mpi_wtime()-cwtmp
 #endif
         carea=0
+        clen=0
         do k=1,nope_global
-          if(ifltype(k)/=0) carea(k)=buf2(k,1)
+          if(ifltype(k)/=0) then
+            carea(k)=buf2(k,1)
+            clen(k)=buf2(k,2)
+            if(clen(k)<=0) then
+             write(errmsg,*)'cross lenth<=0:',k,clen(k)
+             call parallel_abort(errmsg)
+            endif
+          endif
         enddo
         deallocate(buf1,buf2)
       endif !lflbc
@@ -1747,8 +1619,8 @@
           vnth0=0 !normal vel.
           do jfr=1,nbfr
             ncyc=int(amig(jfr)*time/2/pi)
-            arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-vfa(ibnd,jfr)
-            vnth0=vnth0+ramp*ff(jfr)*vmo(ibnd,jfr)*cos(arg)
+            arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-vfa(ibnd,1,jfr)
+            vnth0=vnth0+ramp*ff(jfr)*vmo(ibnd,1,jfr)*cos(arg)
           enddo !jfr=1,nbfr
           if(ics==1) then
             uth(:,i)=vnth0*sframe(1,1,i)
@@ -1758,7 +1630,7 @@
             uth(:,i)=tmp1
             vth(:,i)=tmp2
           endif !ics
-        else if(iabs(ifltype(ibnd))==4) then
+        else if(iabs(ifltype(ibnd))==4.or.iabs(ifltype(ibnd))==5) then
           do k=1,nvrt
             if(uthnd(k,nwild(1),ibnd)<-98.or.uthnd(k,nwild(2),ibnd)<-98.or. &
                vthnd(k,nwild(1),ibnd)<-98.or.vthnd(k,nwild(2),ibnd)<-98) then
@@ -1768,6 +1640,21 @@
             uth(k,i)=ramp*(uthnd(k,nwild(1),ibnd)+uthnd(k,nwild(2),ibnd))/2
             vth(k,i)=ramp*(vthnd(k,nwild(1),ibnd)+vthnd(k,nwild(2),ibnd))/2
           enddo !k
+
+          if(iabs(ifltype(ibnd))==5) then !add tides
+            ubar1=0
+            vbar1=0
+            do j=1,2 !2 nodes
+              do jfr=1,nbfr
+                arg=amig(jfr)*time+face(jfr)-ufa(ibnd,nwild(j),jfr)
+                ubar1=ubar1+ff(jfr)*umo(ibnd,nwild(j),jfr)*cos(arg)
+                arg=amig(jfr)*time+face(jfr)-vfa(ibnd,nwild(j),jfr)
+                vbar1=vbar1+ff(jfr)*vmo(ibnd,nwild(j),jfr)*cos(arg)
+              enddo !jfr=1,nbfr
+            enddo !j
+            uth(:,i)=uth(:,i)+ramp*ubar1/2 
+            vth(:,i)=vth(:,i)+ramp*vbar1/2
+          endif !iabs(ifltype(ibnd))==5
         endif
       enddo !i=1,nsa
 
@@ -2056,9 +1943,9 @@
 
           call do_turbulence(nlev,dt,toth,u_taus,u_taub,z0s,z0b,h1d,NN1d,SS1d)
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
           call flmud(j,dt,rough_p(j),SS1d,NN1d,tke1d,eps1d,L1d,num1d,nuh1d)
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
 
 !         Debug11
 !          if(myrank==2.and.iplg(j)==14178.and.it==3253) write(98,*)(k,h1d(k),NN1d(k),SS1d(k), &
@@ -2075,13 +1962,13 @@
               call parallel_abort(errmsg)
             endif
  
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
             !Modify viscosity
             tmp=vts(klev,j)
             if(tmp/=tmp) call parallel_abort('GOTM: vts is NaN from TIMOR')
 !'
             if(laddmud_v) num1d(k)=num1d(k)+tmp
-#endif /*USE_TIMOR_FLMUD*/
+#endif /*USE_TIMOR*/
 
             dfv(klev,j)=min(diffmax(j),num1d(k)+diffmin(j)) 
             dfh(klev,j)=min(diffmax(j),nuh1d(k)+diffmin(j))
@@ -2408,29 +2295,221 @@
       wtmp1=wtmp2
 #endif
 
+!...  Horizontal viscosity, implemented as a filter
+!     In side frame if ics=2
+      d2uv=0
+      if(ihorcon/=0) then
+        allocate(swild98(2,nvrt,nsa),stat=istat)
+        if(istat/=0) call parallel_abort('MAIN: fail to allocate swild98 (3)')
+!'
+        swild98=0
+        do j=1,ns !residents only
+!          if(isdel(2,j)==0.or.idry_s(j)==1) cycle
+!          if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
+          if(idry_s(j)==1) cycle
+          if(ihydraulics/=0.and.nhtblocks>0) then
+            if(isblock_sd(1,j)/=0) cycle
+          endif
+  
+          !wet side 
+          do k=kbs(j)+1,nvrt !viscosity = 0 at bottom
+            sum1=0; sum2=0
+            icount=0
+            do l=1,2 !element
+              ie=isdel(l,j)
+              if(ie<=0) cycle
+              if(idry_e(ie)==1) cycle
+
+              !Wet elem
+              do i=1,i34(ie) !prep. side vel. via vertical interp
+                jsj=elside(i,ie)
+                if(jsj==j) then
+                  swild(1)=su2(k,j)
+                  swild(2)=sv2(k,j)
+                else
+                  rrhs(1,:)=su2(:,jsj)
+                  rrhs(2,:)=sv2(:,jsj)
+                  call vinter(100,nvrt,2,zs(k,j),kbs(jsj),nvrt,k,zs(:,jsj),rrhs,swild,ibelow)
+                endif !isd/=i
+
+                !Project to side and elem. frame for ics=2
+                if(ics==1) then
+                  !Side frame of j
+                  soln(i,1)=swild(1); soln(i,2)=swild(2)
+                  !Elem frame
+                  swild10(1,i)=swild(1); swild10(2,i)=swild(2)
+                else
+                  call project_hvec(swild(1),swild(2),sframe(:,:,jsj),sframe(:,:,j),soln(i,1),soln(i,2))
+                  call project_hvec(swild(1),swild(2),sframe(:,:,jsj),eframe(:,:,ie),swild10(1,i),swild10(2,i))
+                endif
+              enddo !i=1,i34(ie)
+
+              !\nabla{u} const. within an elem. (elem. frame)
+!              dudx=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
+!              dudy=dot_product(swild10(1,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
+!              dvdx=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),1,ie))
+!              dvdy=dot_product(swild10(2,1:i34(ie)),dldxy_sd(1:i34(ie),2,ie))
+ 
+              !do i=1,2 !i34(ie) !2 sides per elem.
+                !jsj=elside(i,ie)
+                !if(isbs(jsj)==-1) then !deal with land bnd
+                !  tmp=sqrt(su2(k,jsj)**2+sv2(k,jsj)**2)
+                !  d2uv(1,k,j)=d2uv(1,k,j)-distj(jsj)*cdh*tmp*su2(k,jsj)
+                !  d2uv(2,k,j)=d2uv(2,k,j)-distj(jsj)*cdh*tmp*sv2(k,jsj)
+                !else if(isdel(2,j)==0.or.jsj/=j) then
+                !if(jsj/=j.and.isbs(j)/=-1) then !do nothing for land bnd side j
+                !vnor1=dudx*sframe(1,1,jsj)+dudy*sframe(2,1,jsj) !dudn; local x-direction
+                !vnor2=dvdx*sframe(1,1,jsj)+dvdy*sframe(2,1,jsj) !dvdn
+              !enddo !i
+
+              ll=lindex_s(j,ie)
+              if(ll==0) then
+                write(errmsg,*)'STEP: Cannot find a side'
+                call parallel_abort(errmsg)
+              endif
+              in1=nxq(1,ll,i34(ie))
+              in2=nxq(i34(ie)-1,ll,i34(ie))
+              sum1=sum1+soln(in1,1)+soln(in2,1)
+              sum2=sum2+soln(in1,2)+soln(in2,2)
+              icount=icount+2
+            enddo !l=1,2
+
+            !Diffusion #
+            rat=hvis_coef0 !hvis_coef(k,j)
+            !d2uv(1,k,j)=rat*(sum1-4*su2(k,j))/dt !m/s/s; side frame
+            d2uv(1,k,j)=rat*(sum1-icount*su2(k,j))/dt !m/s/s; side frame
+            d2uv(2,k,j)=rat*(sum2-icount*sv2(k,j))/dt
+
+            !Save for biharm.
+            swild98(1,k,j)=sum1-icount*su2(k,j) !m/s; side frame
+            swild98(2,k,j)=sum2-icount*sv2(k,j)
+          enddo !k=kbs(j)+1,nvrt 
+        enddo !j=1,ns
+
+!       Update ghost 
+#ifdef INCLUDE_TIMING
+        cwtmp=mpi_wtime()
+#endif
+        call exchange_s3d_2(d2uv)
+        call exchange_s3d_2(swild98)
+#ifdef INCLUDE_TIMING
+        wtimer(3,2)=wtimer(3,2)+mpi_wtime()-cwtmp
+#endif
+
+        !Biharm
+        if(ihorcon==2) then
+          d2uv=0 !reset
+          do j=1,ns !residents only
+!            if(isdel(2,j)==0.or.idry_s(j)==1) cycle
+!            if(idry_e(isdel(1,j))==1.or.idry_e(isdel(2,j))==1) cycle
+            if(idry_s(j)==1) cycle
+            if(ihydraulics/=0.and.nhtblocks>0) then
+              if(isblock_sd(1,j)/=0) cycle
+            endif
+
+            !wet side
+            do k=kbs(j)+1,nvrt 
+              sum1=0; sum2=0
+              icount=0
+              do l=1,2 !element
+                ie=isdel(l,j)
+                if(ie<=0) cycle
+                if(idry_e(ie)==1) cycle
+
+                !Wet elem
+                do i=1,i34(ie) !prep. side vel. via vertical interp
+                  !If jsj is on the bnd, 0 contribution to sum
+                  jsj=elside(i,ie)
+                  if(jsj==j) then
+                    swild(1:2)=swild98(1:2,k,j)
+                  else
+                    rrhs(1:2,:)=swild98(1:2,:,jsj)
+                    call vinter(100,nvrt,2,zs(k,j),kbs(jsj),nvrt,k,zs(:,jsj),rrhs,swild,ibelow)
+                  endif !isd/=i
+ 
+                  !Project to side frame for ics=2
+                  if(ics==1) then
+                    soln(i,1)=swild(1); soln(i,2)=swild(2)
+                  else
+                    !Side frame of j
+                    call project_hvec(swild(1),swild(2),sframe(:,:,jsj),sframe(:,:,j),soln(i,1),soln(i,2))
+                  endif
+                enddo !i
+
+                ll=lindex_s(j,ie)
+                if(ll==0) then
+                  write(errmsg,*)'STEP: Cannot find a side(2)'
+                  call parallel_abort(errmsg)
+                endif
+                in1=nxq(1,ll,i34(ie))
+                in2=nxq(i34(ie)-1,ll,i34(ie))
+                sum1=sum1+soln(in1,1)+soln(in2,1) !m/s
+                sum2=sum2+soln(in1,2)+soln(in2,2)
+                icount=icount+2
+              enddo !l=1,2
+
+              !Diffusion #
+              rat=hvis_coef0 !const.
+              !Note the '-'
+              !d2uv(1,k,j)=-rat*(sum1-4*swild98(1,k,j))/dt !m/s/s; side frame
+              d2uv(1,k,j)=-rat*(sum1-icount*swild98(1,k,j))/dt !m/s/s; side frame
+              d2uv(2,k,j)=-rat*(sum2-icount*swild98(2,k,j))/dt
+            enddo !k=kbs(j)+1,nvrt
+          enddo !j=1,ns
+
+          call exchange_s3d_2(d2uv)
+        endif !Biharm; ihorcon=2
+        deallocate(swild98)
+      endif !ihorcon/=0
+
+      if(myrank==0) write(16,*)'done hvis... '
+
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time (sec) taken for force prep=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
+#endif
+
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-!   Backtracking
+!   Backtracking/upwind for momentum
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-!     Debug: test backtracking alone
-      if(ibtrack_test==1) then
+
+!      if(iupwind_mom==0) then !ELM
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!     Temp. array swild9[6-8] for ELAD
+!     swild96(1:2,nvrt,nsa): \epsilon (over/under-shoots in ELAD) for u,v (if ibtrack_test=1, 1->T and 2 is not used)
+!     swild97(1:2,nvrt,nsa): u,v in the next iteration (ELAD). If ibtrack_test=1, 1->T (2 not used)
+!     swild98(1:4,nvrt,nsa): 1:2 max/min for u; 3:4 for v (only 1:2 are used for T)
+      allocate(swild96(2,nvrt,nsa),swild97(2,nvrt,nsa),swild98(4,nvrt,nsa),stat=istat)
+      if(istat/=0) call parallel_abort('MAIN: fail to allocate swild98 (3.2)')
+      swild98=0 !init
+
+!'    Debug: test backtracking alone
+      if(ibtrack_test==1) then !implies ibc==1.and.ibtp==0
         !For first step, generate vertical profiles for T,S
         if(it==iths_main+1) then
-          do i=1,npa
-            do k=1,nvrt
-              tr_nd(1,k,i)=tr_nd0(1,1,i)-20*tanh(5*znl(k,i)/dp(i))
-              tr_nd(2,k,i)=tr_nd0(2,1,i)-20*tanh(5*znl(k,i)/dp(i))
-            enddo !k
+          open(31,file='temp.ic',status='old')
+          read(31,*)
+          read(31,*)
+          do i=1,np_global
+            read(31,*) itmp,xtmp,ytmp,tmp
+            if(ipgl(i)%rank==myrank) tr_nd0(1,:,ipgl(i)%id)=tmp
           enddo !i
-!          do i=1,nsa
-!            t0=tsd(1,i); s0=ssd(1,i)
-!            do k=1,nvrt
-!              tsd(k,i)=t0-20*tanh(5*zs(k,i)/dps(i))
-!              ssd(k,i)=s0-20*tanh(5*zs(k,i)/dps(i))
-!            enddo !k
-!          enddo !i
-        endif !it       
+          close(31)
+          tr_nd(1,:,:)=tr_nd0(1,:,:)
+
+          do i=1,nsa
+            n1=isidenode(1,i); n2=isidenode(2,i)
+            do k=1,nvrt
+              tsd(k,i)=(tr_nd(1,k,n1)+tr_nd(1,k,n2))/2 !-20*tanh(5*zs(k,i)/dps(i))
+            enddo !k
+
+            !Debug
+            !write(12,*)i,real(xcj(i)),real(ycj(i)),real(tsd(nvrt,i)),real(tr_nd(1,nvrt,n1)),real(tr_nd(1,nvrt,n2))
+          enddo !i
+        endif !it
 
         eta1=0; eta2=0; we=0
         rot_per=3000 !period
@@ -2602,6 +2681,12 @@
                 !sdbt(4,j,isd0)=ssd(j,isd0)
                 sdbt(1,j,isd0)=su2(j,isd0)
                 sdbt(2,j,isd0)=sv2(j,isd0)
+                swild98(1:2,j,isd0)=su2(j,isd0)
+                swild98(3:4,j,isd0)=sv2(j,isd0)
+
+                if(ibtrack_test==1) then
+                  swild98(1:2,j,isd0)=tsd(j,isd0) !max/min
+                endif
               else !element
                 webt(j,ie0)=we(j,ie0)
               endif
@@ -2622,31 +2707,19 @@
                   dudy=dot_product(uu2(j,elnode(1:i34(ie),ie)),dldxy(1:i34(ie),2,ie))
                   dvdx=dot_product(vv2(j,elnode(1:i34(ie),ie)),dldxy(1:i34(ie),1,ie))
                   dvdy=dot_product(vv2(j,elnode(1:i34(ie),ie)),dldxy(1:i34(ie),2,ie))
-                  !do jj=1,3
-                  !  dudx=dudx !+ufg()*dldxy(jj,1,ie) !not strictly along z; in element frame for ics=2
-                  !  dudy=dudy !+ufg()*dldxy(jj,2,ie) !not strictly along z
-                  !  dvdx=dvdx !+vfg()*dldxy(jj,1,ie)
-                  !  dvdy=dvdy !+vfg()*dldxy(jj,2,ie)
-                  !enddo !jj
                   suma=suma+dt*sqrt(dudx**2+dudy**2+dvdx**2+dvdy**2)
                 enddo !ii=1,2
                 if(icount==0) then
                   write(errmsg,*)'Impossible 77'
                   call parallel_abort(errmsg)
                 endif
+                !'4' is somewhat arbitrary
                 ndelt=max0(ndelt_min,min0(ndelt_max,int(suma/icount)*4)) !>=1
               else !element; no lat/lon
                 dudx=dot_product(uu2(j,elnode(1:i34(ie0),ie0)),dldxy(1:i34(ie0),1,ie0))
                 dudy=dot_product(uu2(j,elnode(1:i34(ie0),ie0)),dldxy(1:i34(ie0),2,ie0))
                 dvdx=dot_product(vv2(j,elnode(1:i34(ie0),ie0)),dldxy(1:i34(ie0),1,ie0))
                 dvdy=dot_product(vv2(j,elnode(1:i34(ie0),ie0)),dldxy(1:i34(ie0),2,ie0))
-
-                !do jj=1,3
-                !  dudx=dudx !+ufg()*dldxy(jj,1,ie0) !not strictly along z
-                !  dudy=dudy !+ufg()*dldxy(jj,2,ie0) !not strictly along z
-                !  dvdx=dvdx !+vfg()*dldxy(jj,1,ie0)
-                !  dvdy=dvdy !+vfg()*dldxy(jj,2,ie0)
-                !enddo !jj
                 suma=dt*sqrt(dudx**2+dudy**2+dvdx**2+dvdy**2)
                 ndelt=max0(ndelt_min,min0(ndelt_max,int(suma)*4)) !>=1
               endif
@@ -2656,8 +2729,21 @@
               if(l<=2) then
                 eps=btrack_nudge
                 if(ics==1) then
-                  xt=(1-eps)*xt+eps*xctr(nnel)
-                  yt=(1-eps)*yt+eps*yctr(nnel)
+                  if(ihydlg/=0) then
+                    if(i34(nnel)==3) then
+                      swild4(1,1)=1./3+0.0014; swild4(1,2)=1./3+0.0003
+                    else
+                      swild4(1,1)=1./4+0.0014; swild4(1,2)=1./4+0.0003; swild4(1,3)=1./4-0.0011
+                    endif
+                    swild4(1,i34(nnel))=1-sum(swild4(1,1:i34(nnel)-1))
+                    xctr2=dot_product(swild4(1,1:i34(nnel)),xnd(elnode(1:i34(nnel),nnel)))
+                    yctr2=dot_product(swild4(1,1:i34(nnel)),ynd(elnode(1:i34(nnel),nnel)))
+                    xt=(1-eps)*xt+eps*xctr2 
+                    yt=(1-eps)*yt+eps*yctr2 
+                  else !ihydlg=0
+                    xt=(1-eps)*xt+eps*xctr(nnel)
+                    yt=(1-eps)*yt+eps*yctr(nnel)
+                  endif !ihydlg
                 else !lat/lon
                   xt=(1-eps)*xt+eps*xctr2
                   yt=(1-eps)*yt+eps*yctr2
@@ -2666,16 +2752,11 @@
 
               time_rm=dt
               time_rm2=-99 !leftover from previous subdomain; init. as flag
-!#ifdef FUJITSU
               !FUJITSU has issues with slices of arrays in this call
               swild_tmp(1:3) = swild(1:3)
               swild10_tmp(1:3,1:3) = swild10(1:3,1:3)
               call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild_tmp,swild10_tmp, &
      &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
-!#else
-!              call btrack(l,ipsgb,ifl_bnd,j,iadvf,swild(1:3),swild10(1:3,1:3), &
-!     &dtbk,vis_coe,time_rm,time_rm2,uuint,vvint,wwint,nnel,jlev,xt,yt,zt,swild3,ltmp)
-!#endif
 
               if(ltmp) then !Backtracking exits augmented subdomain
                 !Add trajectory to inter-subdomain backtracking list
@@ -2705,14 +2786,20 @@
                 btlist(nbtrk)%frame0=swild10(1:3,1:3)
               else !Backtracking completed within augmented subdomain
                 if(l==2) then !sides
-                  !sdbt(3,j,isd0)=swild3(1) !ttint
-                  !sdbt(4,j,isd0)=swild3(2) !ssint
                   if(iadvf==0) then
                     sdbt(1,j,isd0)=su2(j,isd0)
                     sdbt(2,j,isd0)=sv2(j,isd0)
                   else
                     sdbt(1,j,isd0)=uuint
                     sdbt(2,j,isd0)=vvint
+                  endif
+           
+                  if(ibtrack_test==1) then
+                    tsd(j,isd0)=swild3(1)
+                    swild98(1,j,isd0)=swild3(2) !max
+                    swild98(2,j,isd0)=swild3(3) !min
+                  else
+                    swild98(1:4,j,isd0)=swild3(1:4) 
                   endif
 
                   !Check for ics=2 and zonal flow
@@ -2754,9 +2841,9 @@
 !                    !Exact T
 !                    !ll of foot (original frame)
 !                    call compute_ll(xex,yex,zex,rlon0,rlat0)
-!                    rrr=rearth*acos(cos(rlat0)*cos(rlon0+pi/2))
-!                    if(rrr<rearth/3) then
-!                      tex=500*(1+cos(pi*rrr/rearth*3))
+!                    rrr=rearth_pole*acos(cos(rlat0)*cos(rlon0+pi/2))
+!                    if(rrr<rearth_pole/3) then
+!                      tex=500*(1+cos(pi*rrr/rearth_pole*3))
 !                    else
 !                      tex=0
 !                    endif
@@ -2788,7 +2875,7 @@
           enddo !j=jmin,nvrt
 
         enddo !i=1,limit
-      enddo !l=2,3; nodes or sides or elements
+      enddo !l=2,3; sides or elements
 
 !     Complete inter-subdomain backtracking (if necessary)
       if(nproc>1) then
@@ -2826,14 +2913,20 @@
                 call parallel_abort(errmsg)
               endif
               isd0=isgl(btlist(ibt)%i0gb)%id
-              !sdbt(3,j,isd0)=btlist(ibt)%sclr(1) !tt
-              !sdbt(4,j,isd0)=btlist(ibt)%sclr(2) !st
               if(iadvf==0) then
                 sdbt(1,j,isd0)=su2(j,isd0)
                 sdbt(2,j,isd0)=sv2(j,isd0)
               else
                 sdbt(1,j,isd0)=btlist(ibt)%ut
                 sdbt(2,j,isd0)=btlist(ibt)%vt
+              endif
+
+              if(ibtrack_test==1) then
+                tsd(j,isd0)=btlist(ibt)%sclr(1)
+                swild98(1,j,isd0)=btlist(ibt)%sclr(2) !max
+                swild98(2,j,isd0)=btlist(ibt)%sclr(3) !min
+              else
+                swild98(1:4,j,isd0)=btlist(ibt)%sclr(1:4)
               endif
 
 !              xyzs(isd0,j,1)=btlist(ibt)%xt; xyzs(isd0,j,2)=btlist(ibt)%yt; xyzs(isd0,j,3)=btlist(ibt)%zt;
@@ -2863,13 +2956,90 @@
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
 #endif
-!      call exchange_p3d_4(ptbt)
       call exchange_s3d_4(sdbt)
+      call exchange_s3d_4(swild98)
       call exchange_e3dw(webt)
+
+      if(ibtrack_test==1) call exchange_s3dw(tsd)
 
 #ifdef INCLUDE_TIMING
       wtimer(4,2)=wtimer(4,2)+mpi_wtime()-cwtmp
 #endif
+
+!     ELAD for kriging
+!Error: ics=2
+      if(inter_mom/=0) then
+        if(ics==2) call parallel_abort('STEP: ELAD and ics=2')
+        do iter=1,15 !100
+          !Calc epsilon
+          swild96=0
+          do i=1,nsa
+            if(idry_s(i)==1) cycle            
+            do k=kbs(i),nvrt
+              !swild96(1,k,i)=max(0.d0,tsd(k,i)-swild98(1,k,i))+min(0.d0,tsd(k,i)-swild98(2,k,i))
+              swild96(1,k,i)=max(0.d0,sdbt(1,k,i)-swild98(1,k,i))+min(0.d0,sdbt(1,k,i)-swild98(2,k,i)) !u
+              swild96(2,k,i)=max(0.d0,sdbt(2,k,i)-swild98(3,k,i))+min(0.d0,sdbt(2,k,i)-swild98(4,k,i)) !v
+            enddo !k
+          enddo !i
+
+          tmp1=maxval(abs(swild96(1:2,:,:)))
+!          swild(2)=maxval(swild98(1,:,:))
+!          swild(3)=minval(swild98(2,:,:))
+          call mpi_allreduce(tmp1,tmp,1,rtype,MPI_MAX,comm,ierr)
+!          call mpi_allreduce(swild(3),tmp,1,rtype,MPI_MIN,comm,ierr)
+          if(myrank==0) write(16,*)'ELAD, max over/undershoot=',real(tmp),iter
+
+          !Update
+          swild97(1:2,:,:)=sdbt(1:2,:,:) !for dry side etc
+          do i=1,ns !resident
+            if(idry_s(i)==1) cycle
+
+            if(isdel(2,i)==0) then !bnd side
+              ie=isdel(1,i) !wet
+              do k=kbs(i),nvrt
+                suru=0
+                surv=0
+                ll=lindex_s(i,ie)
+                do j=1,2 !side
+                  if(j==1) then
+                    id=elside(nxq(1,ll,i34(ie)),ie)
+                  else
+                    id=elside(nxq(i34(ie)-1,ll,i34(ie)),ie)
+                  endif
+                  kin=max(k,kbs(id))
+                  suru=suru+swild96(1,kin,id)
+                  surv=surv+swild96(2,kin,id)
+                enddo !j
+                !swild97(1,k,i)=tsd(k,i)+0.125*(suru-2*swild96(1,k,i))
+                swild97(1,k,i)=sdbt(1,k,i)+0.125*(suru-2*swild96(1,k,i))
+                swild97(2,k,i)=sdbt(2,k,i)+0.125*(surv-2*swild96(2,k,i))
+              enddo !k
+            else !internal side
+              if(idry_e(isdel(2,i))==1) cycle
+
+              !Both elem. r wet
+              do k=kbs(i),nvrt 
+                suru=0
+                surv=0
+                do j=1,4
+                  id=isidenei2(j,i)
+                  kin=max(k,kbs(id))
+                  suru=suru+swild96(1,kin,id)
+                  surv=surv+swild96(2,kin,id)
+                enddo !j
+                !swild97(1,k,i)=tsd(k,i)+0.125*(suru-4*swild96(1,k,i))
+                swild97(1,k,i)=sdbt(1,k,i)+0.125*(suru-4*swild96(1,k,i))
+                swild97(2,k,i)=sdbt(2,k,i)+0.125*(surv-4*swild96(2,k,i))
+              enddo !k
+            endif !isdel(2,i)
+          enddo !i=1,ns
+
+          call exchange_s3d_2(swild97)
+
+          !tsd=swild97(1,:,:)
+          sdbt(1:2,:,:)=swild97(1:2,:,:)
+        enddo !iter
+      endif !inter_mom; ELAD
 
 !     Debug
 !      do i=1,np
@@ -3003,7 +3173,160 @@
 !     start turbulence timing
       wtmp1=wtmp2
 #endif
+ 
+      deallocate(swild96,swild97,swild98)
 
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!      else
+      if(iupwind_mom/=0) then
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+!     Upwind
+!Error: not working for ics=2
+!     Cell-vertex ball
+!     bcc() to temp. store \nabla \cdot (u\bf{u}) @ nodes and levels
+      bcc=0
+      do i=1,np
+        if(idry(i)==1) cycle
+ 
+        !Wet node
+        do k=kbp(i),nvrt
+          fluxchan1=0 !sum of fluxes;\int_\Gamma u*u_n d\Gamma
+          fluxchan2=0 !sum of fluxes;
+          suma=0 !sum of areas
+          do j=1,nne(i)
+            ie=indel(j,i)
+            if(idry_e(ie)==1) cycle
+ 
+            !Wet elem
+            suma=suma+area(ie)/i34(ie) !approx for quad
+            id=iself(j,i)
+            id3=nxq(i34(ie)-1,id,i34(ie)) !adjacent side index
+            id2=nxq(i34(ie)-2,id,i34(ie)) !adjacent side index
+            isd3=elside(id3,ie)
+            isd2=elside(id2,ie)
+
+            do m=1,i34(ie) !side
+              isd=elside(m,ie)
+              rrhs(1,:)=su2(:,isd)
+              rrhs(2,:)=sv2(:,isd)
+              call vinter(100,nvrt,2,znl(k,i),kbs(isd),nvrt,k,zs(:,isd),rrhs,swild,ibelow)
+              swild10(m,1)=swild(1) !u@side @nodal level
+              swild10(m,2)=swild(2) !v
+            enddo !m
+            utmp=sum(swild10(1:i34(ie),1))/i34(ie) !vel @ centroid
+            vtmp=sum(swild10(1:i34(ie),2))/i34(ie) !vel @ centroid
+
+            !1st segment
+            !Normal dir x length
+            xtmp=yctr(ie)-ycj(isd3)
+            ytmp=xcj(isd3)-xctr(ie)
+            vnor1=utmp*xtmp+vtmp*ytmp !normal vel x length 
+            vnor2=swild10(id3,1)*xtmp+swild10(id3,2)*ytmp !normal vel@side x length 
+            fluxchan1=fluxchan1+(utmp*vnor1+swild10(id3,1)*vnor2)/2
+            fluxchan2=fluxchan2+(vtmp*vnor1+swild10(id3,2)*vnor2)/2
+            if(isbs(isd3)>0) then !open bnd
+              vnorm=swild10(id3,1)*sframe(1,1,isd3)+swild10(id3,2)*sframe(2,1,isd3) !outer normal vel
+              fluxchan1=fluxchan1+swild10(id3,1)*vnorm*distj(isd3)/2
+              fluxchan2=fluxchan2+swild10(id3,2)*vnorm*distj(isd3)/2
+            endif !isbs>0
+            
+            !2nd segment
+            !Normal dir x length
+            xtmp=ycj(isd2)-yctr(ie)
+            ytmp=xctr(ie)-xcj(isd2)
+            vnor1=utmp*xtmp+vtmp*ytmp !normal vel x length
+            vnor2=swild10(id2,1)*xtmp+swild10(id2,2)*ytmp !normal vel x length 
+            fluxchan1=fluxchan1+(utmp*vnor1+swild10(id2,1)*vnor2)/2
+            fluxchan2=fluxchan2+(vtmp*vnor1+swild10(id2,2)*vnor2)/2
+            if(isbs(isd2)>0) then !open bnd
+              vnorm=swild10(id2,1)*sframe(1,1,isd2)+swild10(id2,2)*sframe(2,1,isd2) !outer normal
+              fluxchan1=fluxchan1+swild10(id2,1)*vnorm*distj(isd2)/2
+              fluxchan2=fluxchan2+swild10(id2,2)*vnorm*distj(isd2)/2
+            endif !isbs>0
+          enddo !j=1,nne(i)
+          
+          if(suma/=0) then
+            bcc(1,k,i)=fluxchan1/suma !m/s/s
+            bcc(2,k,i)=fluxchan2/suma
+          endif !suma/=0
+        enddo !k=kbp(i),nvrt
+ 
+        !Extend
+        bcc(1,1:kbp(i)-1,i)=bcc(1,kbp(i),i)
+        bcc(2,1:kbp(i)-1,i)=bcc(2,kbp(i),i)
+      enddo !i=1,np
+
+#ifdef INCLUDE_TIMING
+      cwtmp=mpi_wtime()
+#endif
+      call exchange_p3d_2(bcc)
+#ifdef INCLUDE_TIMING
+      wtimer(4,2)=wtimer(4,2)+mpi_wtime()-cwtmp
+#endif
+
+      !Vertical advection part
+!      sdbt=0
+      do i=1,ns
+        if(idry_s(i)==1) cycle
+
+        !Wet side
+        alow=0 !w @ side
+        icount=0
+        do j=1,2 !elem
+          ie=isdel(j,i)
+          if(ie>0) then
+            icount=icount+1
+            alow(1:nvrt)=alow(1:nvrt)+we(:,ie)
+          endif
+        enddo !j=1,2
+        if(icount==0) call parallel_abort('STEP: icount (9)')
+        alow=alow/icount
+
+        !1st derivative at bnd
+        tmp1=(alow(nvrt)*su2(nvrt,i)-alow(nvrt-1)*su2(nvrt-1,i))/(zs(nvrt,i)-zs(nvrt-1,i))
+        tmp2=(alow(kbs(i)+1)*su2(kbs(i)+1,i)-alow(kbs(i))*su2(kbs(i),i))/(zs(kbs(i)+1,i)-zs(kbs(i),i))
+        call cubic_spline(nvrt-kbs(i)+1,zs(kbs(i):nvrt,i),alow(kbs(i):nvrt)*su2(kbs(i):nvrt,i), &
+     &tmp2,tmp1,swild(kbs(i):nvrt),swild2(kbs(i):nvrt,1))
+
+        tmp1=(alow(nvrt)*sv2(nvrt,i)-alow(nvrt-1)*sv2(nvrt-1,i))/(zs(nvrt,i)-zs(nvrt-1,i))
+        tmp2=(alow(kbs(i)+1)*sv2(kbs(i)+1,i)-alow(kbs(i))*sv2(kbs(i),i))/(zs(kbs(i)+1,i)-zs(kbs(i),i))
+        call cubic_spline(nvrt-kbs(i)+1,zs(kbs(i):nvrt,i),alow(kbs(i):nvrt)*sv2(kbs(i):nvrt,i), &
+     &tmp2,tmp1,swild(kbs(i):nvrt),swild2(kbs(i):nvrt,2))
+
+        !Total advection (average onto side)
+        n1=isidenode(1,i); n2=isidenode(2,i)
+        do k=kbs(i),nvrt
+          if(isbs(i)==0) then !internal
+            sdbt(1,k,i)=su2(k,i)-dt*(bcc(1,k,n1)+bcc(1,k,n2))/2-dt*swild2(k,1)
+            sdbt(2,k,i)=sv2(k,i)-dt*(bcc(2,k,n1)+bcc(2,k,n2))/2-dt*swild2(k,2)
+          else !bnd side; use ELM
+            !Use elem average b/cos there is no viscosity
+!            ie=isdel(1,i)
+!            tmp1=sum(bcc(1,k,elnode(1:i34(ie),ie)))/i34(ie)
+!            tmp2=sum(bcc(2,k,elnode(1:i34(ie),ie)))/i34(ie)
+!            sdbt(1,k,i)=su2(k,i)-dt*tmp1-dt*swild2(k,1)
+!            sdbt(2,k,i)=sv2(k,i)-dt*tmp2-dt*swild2(k,2)
+          endif !isbs
+        enddo !k
+      enddo !i=1,ns
+
+#ifdef INCLUDE_TIMING
+      cwtmp=mpi_wtime()
+#endif
+      call exchange_s3d_4(sdbt)
+#ifdef INCLUDE_TIMING
+      wtimer(4,2)=wtimer(4,2)+mpi_wtime()-cwtmp
+#endif
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      endif !ELM or upwind
+
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time taken for mom advection=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
+#endif
 
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -3024,17 +3347,30 @@
               eic=0
             endif
 
-            if(iettype(i)==1.or.iettype(i)==2) then
-              elbc(ip)=ramp*eth(1,i)+(1-ramp)*eic
-            else if(iettype(i)==3) then
-              elbc(ip)=(1-ramp)*eic !initialize
+            !Prep tide
+            if(iettype(i)==3.or.iettype(i)==5) then
+              eta1_bar=(1-ramp)*eic !initialize
               do jfr=1,nbfr
                 ncyc=int(amig(jfr)*time/2/pi)
                 arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-efa(i,j,jfr)
-                elbc(ip)=elbc(ip)+ramp*ff(jfr)*emo(i,j,jfr)*cos(arg)
+                eta1_bar=eta1_bar+ramp*ff(jfr)*emo(i,j,jfr)*cos(arg)
               enddo !jfr=1,nbfr
+            endif
+
+            if(iettype(i)==1.or.iettype(i)==2) then
+              elbc(ip)=ramp*eth(1,i)+(1-ramp)*eic
+            else if(iettype(i)==3) then
+              elbc(ip)=eta1_bar
+!              elbc(ip)=(1-ramp)*eic !initialize
+!              do jfr=1,nbfr
+!                ncyc=int(amig(jfr)*time/2/pi)
+!                arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-efa(i,j,jfr)
+!                elbc(ip)=elbc(ip)+ramp*ff(jfr)*emo(i,j,jfr)*cos(arg)
+!              enddo !jfr=1,nbfr
             else if(iettype(i)==4) then
               elbc(ip)=ramp*eth(j,i)+(1-ramp)*eic
+            else if(iettype(i)==5) then
+              elbc(ip)=ramp*eth(j,i)+eta1_bar
             endif
 
             !Add inverse barometric effects
@@ -3099,10 +3435,10 @@
       if(myrank==0) write(16,*)'done 1st preparation'
         
 !...  Baroclinic force at side and whole levels
+      bcc=0 !init for 2D cases
       if(ibc==0) then
-        bcc=0 
 !       Prepare cubic spline (2nd derivative stored in hp_int temporarily)
-        hp_int=0 !temporary save of 2nd deriavtives
+        hp_int=0 !temporary save of 2nd deriavtives (or density in 2D)
         do i=1,nea
           if(idry_e(i)==1) cycle
 
@@ -3112,10 +3448,9 @@
           else !3D
             swild(kbe(i)+1:nvrt)=(ze(kbe(i):nvrt-1,i)+ze(kbe(i)+1:nvrt,i))/2
             call cubic_spline(nvrt-kbe(i),swild(kbe(i)+1:nvrt),erho(kbe(i)+1:nvrt,i)-rho_mean(kbe(i)+1:nvrt,i), &
-     &0._rkind,0._rkind,hp_int(kbe(i)+1:nvrt,i,1))
+     &0._rkind,0._rkind,hp_int(kbe(i)+1:nvrt,i,1),swild10(kbe(i)+1:nvrt,1))
           endif !2D/3D
         enddo !i=1,nea
-
         dr_dxy=0 !@ half levels; in eframe if ics=2
         do i=1,ne !resident
           if(idry_e(i)==1) cycle
@@ -3133,18 +3468,32 @@
                 swild2(kbe(ie)+1:nvrt,12)=(ze(kbe(ie):nvrt-1,ie)+ze(kbe(ie)+1:nvrt,ie))/2
                 !eta_min maybe < zmax
                 eta_min=min(swild(nvrt),swild2(nvrt,12))
-                zmax=max(swild(kbe(i)+1),swild2(kbe(ie)+1,12))
-                if(-zmax>h_bcc1) then !deep sea
-                  ibot_fl=0
-                else !shallow
-                  ibot_fl=1
-                endif
+                zmax=max(swild(kbe(i)+1),swild2(kbe(ie)+1,12)) !not really used
+!                if(-zmax>h_bcc1) then !deep sea
+!                  ibot_fl=0
+!                else !shallow
+!                  ibot_fl=1
+!                endif
+                ibot_fl=1
 
                 call eval_cubic_spline(nvrt-kbe(ie),swild2(kbe(ie)+1:nvrt,12), &
      &erho(kbe(ie)+1:nvrt,ie)-rho_mean(kbe(ie)+1:nvrt,ie), &
      &hp_int(kbe(ie)+1:nvrt,ie,1),nvrt-kbe(i),swild(kbe(i)+1:nvrt),ibot_fl,zmax,eta_min,swild2(kbe(i)+1:nvrt,j))
               endif !2D/3D
             endif; endif
+
+            !Case of under-resolution: zero out the gradient below bottom
+            if(ie/=0) then; if(idry_e(ie)==0.and.ze(kbe(i),i)<ze(kbe(ie),ie)) then
+              tmp0=-ze(kbe(i),i) !max depth
+              tmp1=abs(ze(kbe(i),i)-ze(kbe(ie),ie)) !change
+              if(tmp0>=hw_depth.and.tmp1>=hw_ratio*tmp0) then
+                do k=kbe(i)+1,nvrt
+                  if(swild(k)<ze(kbe(ie),ie)) then
+                    swild2(k,j)=erho(k,i)-rho_mean(k,i) !so that cupp() below=0
+                  endif !swild(k)
+                enddo !k
+              endif !tmp0>=
+            endif; endif !-ze(kbe(i),i)
           enddo !j=1,i34
 
           do k=kbe(i)+1,nvrt
@@ -3181,7 +3530,7 @@
                 endif !ics
                 cupp(j)=swild2(k,j)-(erho(k,i)-rho_mean(k,i))
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
                 !Limit density difference
                 cupp(j)=max(-80.d0,min(80.d0,cupp(j)))
 #endif
@@ -3455,16 +3804,26 @@
 #endif /*USE_WWM*/
 
           !hvis
+          do k=kbs(isd),nvrt
+            if(ics==1) then
+              swild10(k,1)=d2uv(1,k,isd)
+              swild10(k,2)=d2uv(2,k,isd)
+            else
+              call project_hvec(d2uv(1,k,isd),d2uv(2,k,isd),sframe(:,:,isd),eframe(:,:,i),swild10(k,1),swild10(k,2))
+            endif
+          enddo !k
           horx=0
           hory=0
           do k=kbs(isd)+1,nvrt
-            horx=horx+(zs(k,isd)-zs(k-1,isd))*(d2uv(1,k,isd)+d2uv(1,k-1,isd))/2
-            hory=hory+(zs(k,isd)-zs(k-1,isd))*(d2uv(2,k,isd)+d2uv(2,k-1,isd))/2
+            horx=horx+(zs(k,isd)-zs(k-1,isd))*(swild10(k,1)+swild10(k-1,1))/2 !(d2uv(1,k,isd)+d2uv(1,k-1,isd))/2
+            hory=hory+(zs(k,isd)-zs(k-1,isd))*(swild10(k,2)+swild10(k-1,2))/2 !(d2uv(2,k,isd)+d2uv(2,k-1,isd))/2
           enddo !k
           bigf1=bigf1+cff1*horx/i34(i)
           bigf2=bigf2+cff1*hory/i34(i)
-          botf1=botf1+cff2*chi(isd)*d2uv(1,kbs(isd)+1,isd)/i34(i)
-          botf2=botf2+cff2*chi(isd)*d2uv(2,kbs(isd)+1,isd)/i34(i)
+          !botf1=botf1+cff2*chi(isd)*d2uv(1,kbs(isd)+1,isd)/i34(i)
+          !botf2=botf2+cff2*chi(isd)*d2uv(2,kbs(isd)+1,isd)/i34(i)
+          botf1=botf1+cff2*chi(isd)*swild10(kbs(isd)+1,1)/i34(i)
+          botf2=botf2+cff2*chi(isd)*swild10(kbs(isd)+1,2)/i34(i)
         enddo !j: nodes and sides
       
         bigf1=bigf1+h_bar*(0.69*grav*detpdx-dprdx/rho0)
@@ -3862,7 +4221,7 @@
 
 !	    I_3 
             if(isbs(isd)>0.and.ifltype(max(1,isbs(isd)))/=0) then !.and.(.not.lelbc(i))) then 
-!             Natural or Flather 1 b.c.
+!             Natural or Flather b.c.
 !             Calculate I_3 even if i is on essential b.c. so as to check symmetry later
 !             especially for Flather b.c.
               if(idry_s(isd)==1) then
@@ -3883,6 +4242,7 @@
                 bigvn=bigvn+(zs(k+1,isd)-zs(k,isd))*(vn1+vn2)/2
               enddo !k
               ri3=distj(isd)*bigvn/2
+
               if(ifltype(isbs(isd))==-1) then !Flather 1
                 if(eta_mean(i)<-98.or.eta_mean(nj)<-98) then
                   write(errmsg,*)'Mismatch 1'
@@ -3897,6 +4257,25 @@
                 sparsem(0,i)=sparsem(0,i)+thetai*dt*con0*2
                 sparsem(ind,i)=sparsem(ind,i)+thetai*dt*con0
               endif !Flather 1
+
+              if(ifltype(isbs(isd))==-2) then !discharge relation (outgoing only)
+                !Reset ri3
+                ri3=0
+                
+                etam=(eta2(i)+eta2(nj))/2
+                !clen>0 checked 
+                !tmp2=(-0.0011*etam+0.0907)/clen(isbs(isd)) !\bar{f} [m/s]
+                swild(1:4)=(/1.d0,etam,etam*etam,etam*etam*etam/)
+                tmp2=dot_product(disch_coef(1:4),swild(1:4))/clen(isbs(isd)) !\bar{f} [m/s]
+                if(tmp2<0) then
+                  write(errmsg,*)'bar{f}<0 at discharge bnd:',i,dps(isd),tmp2,etam
+                  call parallel_abort(errmsg)
+                endif
+                con0=distj(isd)/6*tmp2*thetai*dt
+                sparsem(0,i)=sparsem(0,i)+con0*2
+                sparsem(ind,i)=sparsem(ind,i)+con0
+              endif !discharge
+
               qel(i)=qel(i)-thetai*dt*ri3
             endif !I_3
 
@@ -4019,6 +4398,12 @@
       enddo !i=1,np
 #endif /*DEBUG*/
 
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time taken for maxtrix prep=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
+#endif
+
 !     Save eta1
       eta1=eta2
 
@@ -4043,7 +4428,7 @@
 
       etatotl=0
       do i=1,np
-        if(eta2(i)>elevmax(i)) elevmax(i)=eta2(i) !only for residents
+        if(ihydlg==0.and.eta2(i)>elevmax(i)) elevmax(i)=eta2(i) !only for residents
 
         if(associated(ipgl(iplg(i))%next)) then !interface node
           if(ipgl(iplg(i))%next%rank<myrank) cycle !already in the sum so skip
@@ -4066,6 +4451,12 @@
       wtimer(7,1)=wtimer(7,1)+wtmp2-wtmp1
 !  start momentum
       wtmp1=wtmp2
+#endif
+
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time for solver=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
 #endif
 
 !
@@ -4267,6 +4658,11 @@
           hat_gam_x=hat_gam_x+dt*d2uv(1,nvrt,j)
           hat_gam_y=hat_gam_y+dt*d2uv(2,nvrt,j)
 
+!new18
+!          write(12,*)'mom2d:',iplg(node1),iplg(node2),htot,hhat(j),sdbt(1:2,nvrt,j), &
+!     &su2(nvrt,j),sv2(nvrt,j),dpr_dx(j),dpr_dy(j),detp_dx(j),detp_dy(j),bcc(1:2,kbs(j),j), &
+!     &taux2,tauy2,deta1_dx(j),deta1_dy(j),deta2_dx(j),deta2_dy(j),d2uv(1:2,nvrt,j)
+
           tmp1=hat_gam_x*hhat(j)/htot
           tmp2=hat_gam_y*hhat(j)/htot
           su2(:,j)=max(-rmaxvel1,min(rmaxvel1,tmp1)) !uniformity
@@ -4279,6 +4675,7 @@
 !-------------------------------------------------------------------------------------
         else !3D; nvrt>kbs(j)+1
 !-------------------------------------------------------------------------------------
+
 !       Define layer thickness & viscosity
         do k=kbs(j)+1,nvrt
           dzz(k)=zs(k,j)-zs(k-1,j)
@@ -4440,7 +4837,7 @@
 !	Impose horizontal b.c.
         do k=kbs(j),nvrt
           if(isbs(j)>0.and.ifltype(max(1,isbs(j)))/=0) then !open bnd side
-            if(uth(k,j)<-98.or.vth(k,j)<-98) then
+            if(ifltype(isbs(j))/=-2.and.(uth(k,j)<-98.or.vth(k,j)<-98)) then
               write(errmsg,*)'Wrong vel. input:',uth(k,j),vth(k,j),node1,node2
               call parallel_abort(errmsg)
             endif
@@ -4468,7 +4865,27 @@
                 su2(k,j)=vnorm
                 sv2(k,j)=0
               endif !ics
-            else if(ifltype(isbs(j))==-4) then !3D radiation
+            else if(ifltype(isbs(j))==-2) then !discharge
+              etam=(eta1(node1)+eta1(node2))/2
+              !tmp2=(-0.0011*etam+0.0907)/clen(isbs(j)) !\bar{f}>=0
+              swild(1:4)=(/1.0d0,etam,etam*etam,etam*etam*etam/)
+              tmp2=dot_product(disch_coef(1:4),swild(1:4))/clen(isbs(isd)) !\bar{f} [m/s]
+              tmp1=(eta2(node1)+eta2(node2))/2
+              htot=tmp1+dps(j)
+              if(htot<=0) then
+                write(errmsg,*)'Discharge bc depth<=0:',isbs(j),htot
+                call parallel_abort(errmsg)
+              endif
+              vnorm=tmp2*tmp1/htot
+              if(ics==1) then
+                su2(k,j)=vnorm*sframe(1,1,j)
+                sv2(k,j)=vnorm*sframe(2,1,j)
+              else
+                su2(k,j)=vnorm
+                sv2(k,j)=0
+              endif !ics
+
+            else if(ifltype(isbs(j))==-4.or.ifltype(isbs(j))==-5) then !3D radiation
               if(ics==1) then
                 vnorm=su2(k,j)*sframe(1,1,j)+sv2(k,j)*sframe(2,1,j)
               else
@@ -4556,7 +4973,7 @@
 
 !...  Shapiro filter (used only if indvel<=0)
 !     use bcc as temporary variable (sframe)
-      if(indvel<=0) then
+      if(ishapiro/=0) then
         bcc=0
         do i=1,ns !residents only
           if(isdel(2,i)==0.or.idry_s(i)==1) cycle
@@ -4584,8 +5001,23 @@
               suru=suru+utmp
               surv=surv+vtmp
             enddo !j
-            bcc(1,k,i)=su2(k,i)+shapiro/4*(suru-4*su2(k,i)) !sframe if ics=2
-            bcc(2,k,i)=sv2(k,i)+shapiro/4*(surv-4*sv2(k,i))
+
+!            !Calc filter strenghth
+!            shapiro=gam_max 
+!            !Debug
+!            if(it==200.and.k==nvrt) then
+!!              write(38,*)islg(i),real(xcj(i)),real(ycj(i)),real(hvis_D(k,i)**shapiro_1)
+!!            endif
+!
+!            !Calc smoothness indicator
+!!            tmp1=suru/4-su2(k,i)
+!!            tmp2=surv/4-sv2(k,i)
+!!            tmp=0.5*sqrt(tmp1*tmp1+tmp2*tmp2) !indicator
+!!            shapiro=min(gam_max,shapiro_1*tmp)
+
+            bcc(1,k,i)=su2(k,i)+shapiro(i)/4*(suru-4*su2(k,i)) !sframe if ics=2
+            bcc(2,k,i)=sv2(k,i)+shapiro(i)/4*(surv-4*sv2(k,i))
+
           enddo !k
         enddo !i=1,ns
 
@@ -4628,7 +5060,7 @@
         su2(:,:)=swild98(1,:,:)
         sv2(:,:)=swild98(2,:,:)
         deallocate(swild98)
-      endif !indvel<=0; Shapiro filter
+      endif !ishapiro/=0
 
       if(myrank==0) write(16,*)'done solving momentum eq...'
 
@@ -5363,7 +5795,7 @@
 #endif
 
 !     Test backtracking alone with rotating Gausshill
-      if(ibtrack_test==1) then
+      if(ibtrack_test==1) then !b-tropic w/o transport
         eta1=0; eta2=0; we=0
         rot_per=3000 !period
         rot_f=2*pi/rot_per !freq.
@@ -5390,7 +5822,62 @@
             ww2(k,i)=0 !-1.e-4*znl(k,i)*(50+znl(k,i))
           enddo !k
         enddo !i
+
+        !Convert side T to node T for next btrack (pure tri)
+        tr_nd(1,:,:)=0 !init
+        do i=1,nea
+          do k=1,nvrt
+            do j=1,3
+              isd=elside(j,i)
+              isd2=elside(nxq(1,j,i34(i)),i) 
+              isd3=elside(nxq(2,j,i34(i)),i)
+              nd=elnode(j,i)
+              tr_nd(1,k,nd)=tr_nd(1,k,nd)+tsd(k,isd2)+tsd(k,isd3)-tsd(k,isd)
+            enddo !j
+          enddo !k
+        enddo !i
+
+        do i=1,np
+          tr_nd(1,:,i)=tr_nd(1,:,i)/nne(i)
+        enddo !i
+
+!       Inverse distance fit
+!        tr_nd(1,:,:)=0 !init
+!        do i=1,np
+!          do k=1,nvrt
+!            sum1=0
+!            do j=1,nne(i)
+!              ie=indel(j,i)
+!              id=iself(j,i)
+!              do l=1,2 !2 adjacent sides
+!                isd=elside(nxq(l+i34(ie)-3,id,i34(ie)),ie)
+!                if(isdel(2,isd)==0) then !bnd side (even for ghost) - contribution doubles
+!                  itmp=2
+!                else
+!                  itmp=1
+!                endif
+!
+!                tr_nd(1,k,i)=tr_nd(1,k,i)+tsd(k,isd)/distj(isd)*itmp
+!                sum1=sum1+1/distj(isd)*itmp
+!              enddo !l
+!            enddo !j
+!          
+!            if(sum1==0) then
+!              write(errmsg,*)'STEP: Isolated open bnd node:',iplg(i),isbnd(1:2,i)
+!              call parallel_abort(errmsg)
+!            endif
+!            tr_nd(1,k,i)=tr_nd(1,k,i)/sum1
+!          enddo !k
+!        enddo !i=1,np
+       
+        call exchange_p3d_tr(tr_nd)
       endif !ibtrack_test
+
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time taken for 3D vel=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
+#endif
 
 !*************************************************************************************
 !
@@ -5587,7 +6074,8 @@
         if (yday==366) yday = 1
 
         if(myrank==0) write(16,*) 'Calculating spectral irradiance (0)'
-        call spec_ir(Tair, Pair, Hair, cloud, Uwind, Vwind) !,SpecIr, avcos)
+        ! call spec_ir(Tair, Pair, Hair, cloud, Uwind, Vwind) !,SpecIr, avcos)
+        call spec_ir(wtratio)
 
 !...    Calculates sources and sinks terms of the ecological model
         if(myrank==0) write(16,*) 'Calculating ecological sources and sinks terms (0)'
@@ -5600,7 +6088,8 @@
         flx_sf(itmp1:itmp2,:)=0.d0
 
         !updated bdry_frc, flx_bt, flx_sf
-        call ecosim(Uwind,Vwind)
+        !call ecosim(Uwind,Vwind)
+        call ecosim(wtratio)
         if(myrank==0) write(16,*) 'Done ecological sources and sinks terms (0)'
 !'
 #endif /*USE_ECO*/
@@ -5636,14 +6125,48 @@
         endif !iSun=2
 #endif /*USE_ICM*/
 
+#ifdef USE_COSINE 
+! reactive terms in cosine
 
-!#ifdef USE_TIMOR_FLMUD
+!...    Calculates sources and sinks terms of the ecological model
+        if(myrank==0) write(16,*) 'Calculating cosine sources and sinks terms (3)'
+!'
+        itmp1=irange_tr(1,8)
+        itmp2=irange_tr(2,8)
+ 
+        bdy_frc(itmp1:itmp2,:,:)=0.d0
+        flx_bt(itmp1:itmp2,:)=0.d0
+        flx_sf(itmp1:itmp2,:)=0.d0
+
+        !updated bdry_frc, flx_bt, flx_sf
+        call cosine(windx,windy,time,itmp1,itmp2)
+        if(myrank==0) write(16,*) 'Done cosine sources and sinks terms (0)'
+!'
+#endif /*USE_COSINE*/
+
+#ifdef USE_FIB
+!prepare reactive terms in FIB
+        if(myrank==0) write(16,*) 'Calculating FIB sources and sinks terms'
+!'
+        itmp1=irange_tr(1,9)
+        itmp2=irange_tr(2,9)
+
+        bdy_frc(itmp1:itmp2,:,:)=0.d0
+        flx_bt(itmp1:itmp2,:)=0.d0
+        flx_sf(itmp1:itmp2,:)=0.d0
+
+        !updated bdry_frc, flx_bt, flx_sf
+        call fib
+        if(myrank==0) write(16,*) 'Done FIB sources and sinks terms'
+#endif /*USE_FIB*/
+
+!#ifdef USE_TIMOR
 !        !Treat settling vel. inside routine
 !
 !        flx_bt=0
 !        flx_sf=0
 !        bdy_frc=0
-!#endif /*USE_TIMOR_FLMUD*/
+!#endif /*USE_TIMOR*/
 
         ltvd=itr_met>=2
         if(itr_met<=2) then !upwind or explicit TVD
@@ -5878,6 +6401,12 @@
 
       if(myrank==0) write(16,*)'done solving transport equation'
 
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time taken for transport=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
+#endif
+
 #ifdef USE_SED2D
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime() !start of timer
@@ -5893,18 +6422,6 @@
       timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
 #endif 
 #endif /*USE_SED2D*/
-
-#ifdef USE_TIMOR
-#ifdef INCLUDE_TIMING
-      cwtmp2=mpi_wtime() !start of timer
-#endif
-      !write(*,*) 'STARTING TIME LOOP TIMOR' 
-      call timor_timeloop
-#ifdef INCLUDE_TIMING
-      timer_ns(3)=timer_ns(3)+mpi_wtime()-cwtmp2 !end timing this section
-#endif 
-#endif /*USE_SED2D*/
-
 
 #ifdef INCLUDE_TIMING
 ! end transport
@@ -6003,7 +6520,7 @@
 #endif
 
 !...  Compute nodal vel. for output and next backtracking
-      call nodalvel !(ifltype)
+      call nodalvel
 
 !...  Density (using new level indices)
       prho=-99
@@ -6013,18 +6530,18 @@
           k2=max(k,kbp(i))
 
 !new9: debug
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !          if(tr_nd(irange_tr(),k2,i)<-98) then
 !            write(errmsg,*)'new9:',iplg(i),k,k2,tr_nd(1,k2,i),rhomud(1:ntracers,k2,i)
 !            call parallel_abort(errmsg)
 !          endif
 #endif
 
-          prho(k,i)=eqstate(3,iplg(i),tr_nd(1,k,i),tr_nd(2,k,i)           &
+          prho(k,i)=eqstate(3,iplg(i),tr_nd(1,k,i),tr_nd(2,k,i),znl(k2,i)         &
 #ifdef USE_SED
      &                     ,ntrs(5),tr_nd(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)       &
 #endif 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !     &                      ,tr_nd(:,k2,i),rhomud(1:ntracers,k2,i),laddmud_d &
 #endif 
      &                     )
@@ -6037,7 +6554,7 @@
         do k=1,nvrt
           k2=max(k,kbe(i))
 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !          do m=1,ntracers
 !            swild(m)=sum(rhomud(m,k2,elnode(1:3,i)))/3
 !          enddo !m
@@ -6048,11 +6565,11 @@
 !            call parallel_abort(errmsg)
 !          endif
 #endif
-          erho(k,i)=eqstate(4,ielg(i),tr_el(1,k,i),tr_el(2,k,i)   &
+          erho(k,i)=eqstate(4,ielg(i),tr_el(1,k,i),tr_el(2,k,i),ze(k2,i)   &
 #ifdef USE_SED
      &                    ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)      &
 #endif 
-#ifdef USE_TIMOR_FLMUD
+#ifdef USE_TIMOR
 !     &                        ,trel(:,k,i),swild(1:ntracers),laddmud_d &
 #endif 
      &                       )          
@@ -6207,7 +6724,7 @@
             ftmp=fac*distj(i)*(zs(k+1,i)-zs(k,i))*vnn
             fluxes_vol(itmp1)=fluxes_vol(itmp1)+ftmp
           enddo !k
-        endif !side bording 2 regions
+        endif !side bordering 2 regions
       enddo !i=1,ns
 
 #ifdef INCLUDE_TIMING
@@ -6239,6 +6756,23 @@
 ! Write global output data
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
+!     For hydrology, do further processing: filter elev. for isolated wet nodes and compute discharge for
+!     output (bcc)
+      if(ihydlg/=0) then
+        do i=1,np
+          if(idry(i)==1) then
+            swild(i)=-dp(i)
+          else !wet
+            swild(i)=eta2(i)
+          endif
+          if(swild(i)>elevmax(i)) elevmax(i)=swild(i) !only for residents
+          htot=swild(i)+dp(i)
+          !bcc(1,1,i)=dav(1,i)*htot
+          !bcc(2,1,i)=dav(2,i)*htot
+        enddo !i
+      endif !ihydlg
+
+#ifndef SINGLE_NETCDF_OUTPUT
       do j=1,noutput
         if(iof(j)==1.and.mod(it,nspool)==0) then
           write(ichan(j)) real(time,out_rkind)
@@ -6414,6 +6948,27 @@
             endif
 #endif
 
+#ifdef USE_COSINE
+            if(j>=indx_out(8,1).and.j<=indx_out(8,2)) then
+              ind_tr=j-indx_out(8,1)+irange_tr(1,8) !index into tracer #
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
+#endif
+
+#ifdef USE_FIB
+            if(j>=indx_out(9,1).and.j<=indx_out(9,2)) then
+              ind_tr=j-indx_out(9,1)+irange_tr(1,9) !index into tracer #
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
+#endif
+
+#ifdef USE_TIMOR
+            if(j>=indx_out(10,1).and.j<=indx_out(10,2)) then
+              ind_tr=j-indx_out(10,1)+irange_tr(1,10) !index into tracer #
+              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
+            endif
+#endif
+
 #ifdef USE_SED2D
             if(j>=indx_out(6,1).and.j<=indx_out(6,2)) then          
               if(j<=indx_out(6,1)+3) then !scalar
@@ -6472,6 +7027,12 @@
           if(myrank==0) write(16,'(a48)')'done outputting '//variable_nm(j)
         endif !iof(j).eq.1.and.mod(it,nspool).eq.0
       enddo !j=1,noutput
+#else
+      IF (mod(it,nspool)==0) THEN
+        CALL NETCDF_SINGLE_OUTPUT(it)
+      END IF
+#endif /*SINGLE_NETCDF_OUTPUT*/
+
       
 !...  Non-standard outputs
       if(iof_ns(1)==1) then 
@@ -6997,7 +7558,7 @@
       if(if_source==1) deallocate(msource)
       if(nonhydro==1) deallocate(qhat,dqnon_dxy,qmatr,qir)
       deallocate(hp_int)
-
+      if(allocated(rwild)) deallocate(rwild)
       deallocate(swild9)
 
 #ifdef DEBUG
@@ -7011,9 +7572,17 @@
 #ifdef USE_SED
       deallocate(tr_tc,tr_tl)
 #endif
+
+      if(ibtrack_test==1) deallocate(tsd)
  
 #ifdef USE_WWM
       deallocate(stokes_w,stokes_w_nd,stokes_vel_sd)
+#endif
+
+#ifdef TIMER2
+      tmp=mpi_wtime()
+      write(12,*)'Time taken for outputs=',tmp-cwtmp3,it
+      cwtmp3=tmp !reset
 #endif
 
       end subroutine schism_step

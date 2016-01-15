@@ -109,7 +109,7 @@
       theta_cr = 0.3d0/(1.d0+1.2d0*dstar) + 0.055d0 *                &
       &         (1.d0-EXP(-0.02d0*dstar))
 
-!'- Critical shear stress (N.m-2)
+!'- Critical shear stress (N.m-2) - will be scaled to m^2/s/s in read_sed_input
       tau_ce(ised) = theta_cr*g*(Srho(ised)-rhom)*Sd50(ised)
 
       if(tau_ce(ised)<=0) then

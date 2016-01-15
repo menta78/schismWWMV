@@ -1,7 +1,7 @@
 #include "wwm_functions.h"
 #undef positivity
 #undef DEBUG_COHERENCY_FLUCT
-#define DEBUG
+#undef DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -907,16 +907,17 @@
              dxx   = sqrt(si(ip))
              gam   = ONE + FRINTF 
              nn    = a_s * (GAM-ONE/GAM) * CCT * DT4A
-             ss    = a_n * DDIR * CCT * DT4A 
-             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * costh(id)
-             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * DT4A * sinth(id)
-             nnn(1) = - a_n * DDIR * CCT * DT4A * sinth(id)
-             nnn(2) =   a_n * DDIR * CCT * DT4A * costh(id)
-             rr(1,:) =  sss + nnn + r0
-             rr(2,:) = -sss + nnn + r0
-             rr(3,:) = -sss - nnn + r0
-             rr(4,:) =  sss - nnn + r0
-             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
+             ss    = a_n * DDIR * CCT * DT4A
+! diffusion vel. vectors in wave and cross wave direction  
+             sss(1) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * costh(id)
+             sss(2) = 0.5 * a_s * (GAM-ONE/GAM) * CCT * sinth(id)
+             nnn(1) = - a_n * DDIR * CCT * sinth(id)
+             nnn(2) =   a_n * DDIR * CCT * costh(id)
+!             rr(1,:) =  sss + nnn + r0
+!             rr(2,:) = -sss + nnn + r0
+!             rr(3,:) = -sss - nnn + r0
+!             rr(4,:) =  sss - nnn + r0
+!             ratio = sqrt(nnn(1)**2+nnn(2)**2)/(sqrt(nnn(1)**2+nnn(2)**2)+sqrt(sss(1)**2+sss(2)**2))
 !             avg_area = nn * ss
              if (ip == 10001 .and. .false.) then
                write(100001,'(A)') 'C -------------------------'

@@ -2710,15 +2710,25 @@
       integer, allocatable :: igrib(:)
       character(len=100) eShortName
       !
+      WRITE(STAT%FHNDL,*) 'TheFile=', TheFile
+      FLUSH(STAT%FHNDL)
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
       CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
       !
+      WRITE(STAT%FHNDL,*) 'n=', n
+      FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,*) 'eShortName=', eShortName
+      FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,*) 'GRIB_TYPE=', GRIB_TYPE
+      FLUSH(STAT%FHNDL)
       WeFound=.FALSE.;
       DO i=1,n
         call grib_new_from_file(ifile, igrib(i))
         call grib_get(igrib(i), 'shortName', eShortName)
+        WRITE(STAT%FHNDL,*) 'i=', i, ' WeFound=', WeFound
+        FLUSH(STAT%FHNDL)
         IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
           IF (GRIB_TYPE .eq. 1) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE1(TheInfo, igrib(i))
@@ -2733,6 +2743,8 @@
         END IF
         call grib_release(igrib(i))
       END DO
+      WRITE(STAT%FHNDL,*) 'After loop'
+      FLUSH(STAT%FHNDL)
       IF (WeFound .eqv. .FALSE.) THEN
         Print *, 'Failed to find the wind variable in the grib file'
         CALL WWM_ABORT("Wind has not been found in grib file")          
@@ -2757,7 +2769,7 @@
       REAL(rkind), allocatable :: wind_time_mjd(:)
       REAL cf_scale_factor, cf_add_offset
       TYPE(FD_FORCING_GRID) :: TheInfo
-!     PRint *, 'Begin of INIT_GRIB_WIND'
+!     Print *, 'Begin of INIT_GRIB_WIND'
       WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
       WRITE(WINDBG%FHNDL, *) 'MULTIPLE_IN_WIND=', MULTIPLE_IN_WIND
 # ifdef MPI_PARALL_GRID
