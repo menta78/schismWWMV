@@ -36,6 +36,7 @@
 !                    Waves: Aron Roland (Zanke & Partner),Ulrich Zanke (Zanke & Partner) 
 !                    Water quality: Harry Wang (VIMS)
 !                    Hydraulic structures: Eli Ateljevich (CAL-DWR)
+!                    Ecosystem: Fei Chai (U. Maine)
 !                                                                                       
 !       The heat exchange module makes use of the bulk aerodynamic surface flux         
 !       algorithm introduced by Zeng et al (1998), and the polynomial fits to           
@@ -85,7 +86,7 @@ subroutine schism_main
   implicit none
   integer :: it,iths,ntime
   call schism_init(iths,ntime)
-  do it=iths+1,ntime    
+  do it=iths+1,ntime
     call schism_step(it)
   enddo !it
   call schism_finalize

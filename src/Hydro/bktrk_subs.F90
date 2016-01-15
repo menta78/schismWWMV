@@ -702,7 +702,7 @@ end subroutine inter_btrack
 !             nnel,jlev: initial and final element and level;
 !
 !       Output:
-!             sclr(4): no longer used;
+!             sclr(4): no longer used except for debugging sometimes;
 !             iexit: logical flag indicating backtracking exits augmented subdomain. If
 !                    iexit=.true., nnel is inside the aug. domain and should also be inside
 !                    one of the neighboring processes. (xt,yt) is inside nnel.
@@ -736,7 +736,7 @@ end subroutine inter_btrack
       real(rkind) :: vxl(3,2),vyl(3,2),vzl(3,2) !,vxn(3),vyn(3),vzn(3)
       real(rkind) :: arco(4),t_xi(6),s_xi(6),sig(3),subrat(4),ztmp(nvrt), &
      &swild(10),swild2(10,nvrt),swild3(nvrt) 
-      real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,2) 
+      real(rkind) :: al_beta(mnei_kr+3,4),uvdata(mnei_kr,3) 
       logical :: lrk
 
 !     Constants used in 5th order R-K
@@ -750,6 +750,7 @@ end subroutine inter_btrack
 !      dc(1)=b(7,1)-2825./27648; dc(2)=0; dc(3)=b(7,3)-18575./48384
 !      dc(4)=b(7,4)-13525./55296; dc(5)=b(7,5)-277./14336; dc(6)=b(7,6)-0.25
 
+      sclr=0 !not used except for debug
       !Initial exit is false
       iexit=.false.
 
@@ -856,8 +857,9 @@ end subroutine inter_btrack
 
         if(iflqs1==3) then 
 !         Exit during iteration in quicksearch; reduce time step and retry
-          if(iadptive>=1) then
-            write(errmsg,*)'BTRACK: iadptive>=1:',iadptive,0.5*dtb,trm
+          !if(iadptive>=1) then
+          if(iadptive>=5) then
+            write(errmsg,*)'BTRACK: iadptive>=5:',iadptive,0.5*dtb,trm
             call parallel_abort(errmsg)
           endif !iadptive
           if(trm<=0) call parallel_abort('BTRACK: trm<=0 (2a)')
@@ -928,7 +930,38 @@ end subroutine inter_btrack
 !     Error: Kriging for wvel as well?
       if(l_ns==3) return
 
-!     Kriging for vel. (excluding bnd nodes/sides)
+!     Calc max/min for ELAD
+!     If inter_mom/=0, sclr() will be updated below
+      if(ibtrack_test==1) then
+        sclr(1)=0
+        do j=1,i34(nnel)
+          nd=elnode(j,nnel)
+          tmp=tr_nd(1,jlev,nd)*(1-zrat)+tr_nd(1,jlev-1,nd)*zrat
+          sclr(1)=sclr(1)+tmp*arco(j)
+        enddo !j
+
+        sclr(2)=-huge(1.d0) !max
+        sclr(3)=huge(1.d0) !min
+        do j=1,i34(nnel)
+          nd=elnode(j,nnel)
+          sclr(2)=max(sclr(2),tr_nd(1,jlev,nd),tr_nd(1,jlev-1,nd))
+          sclr(3)=min(sclr(3),tr_nd(1,jlev,nd),tr_nd(1,jlev-1,nd))
+        enddo !j
+      else !not btrack test
+        sclr(1)=-huge(1.d0) !u max
+        sclr(2)=huge(1.d0) !u min
+        sclr(3)=-huge(1.d0) !v max
+        sclr(4)=huge(1.d0) !v min
+        do j=1,i34(nnel)
+          nd=elnode(j,nnel)
+          sclr(1)=max(sclr(1),uu2(jlev,nd),uu2(jlev-1,nd))
+          sclr(2)=min(sclr(2),uu2(jlev,nd),uu2(jlev-1,nd))
+          sclr(3)=max(sclr(3),vv2(jlev,nd),vv2(jlev-1,nd))
+          sclr(4)=min(sclr(4),vv2(jlev,nd),vv2(jlev-1,nd))
+        enddo !j
+      endif !ibtrack_test
+
+!     Kriging for vel. (excluding bnd sides)
 !     For ics=2, akrmat_nd is based on eframe and need to project vel. to this frame 1st
       if(ifl_bnd/=1.and.krvel(nnel)==1) then
 !       Do more inter-domain btrack if necessary to make sure the ending element is resident
@@ -954,14 +987,6 @@ end subroutine inter_btrack
               uvdata(i,1)=0
               uvdata(i,2)=0
             else !wet
-!              if(interpol(nnel)==1) then
-!                kbb=kbp(nd)
-!                swild3(kbb:nvrt)=znl(kbb:nvrt,nd)
-!                swild2(1,kbb:nvrt)=uu2(kbb:nvrt,nd)
-!                swild2(2,kbb:nvrt)=vv2(kbb:nvrt,nd)
-!                call vinter(10,nvrt,2,zt,kbb,nvrt,jlev,swild3,swild2,swild,ibelow)
-!                uvdata(i,1:2)=swild(1:2)
-!              else !along S
               if(ics==1) then
                 vxl(1,1)=uu2(jlev,nd); vxl(1,2)=uu2(jlev-1,nd)
                 vxl(2,1)=vv2(jlev,nd); vxl(2,2)=vv2(jlev-1,nd)
@@ -971,13 +996,15 @@ end subroutine inter_btrack
               endif !ics
               uvdata(i,1)=vxl(1,1)*(1-zrat)+vxl(1,2)*zrat
               uvdata(i,2)=vxl(2,1)*(1-zrat)+vxl(2,2)*zrat
+              !For ibtrack_test only
+              uvdata(i,3)=tr_nd(1,jlev,nd)*(1-zrat)+tr_nd(1,jlev-1,nd)*zrat
             endif
           enddo !all ball nodes
 
           do i=1,npp+3
-            al_beta(i,1:2)=0
+            al_beta(i,1:3)=0
             do j=1,npp
-              al_beta(i,1:2)=al_beta(i,1:2)+akrmat_nd(i,j,ie)*uvdata(j,1:2)
+              al_beta(i,1:3)=al_beta(i,1:3)+akrmat_nd(i,j,ie)*uvdata(j,1:3)
             enddo !j
           enddo !i
 
@@ -992,8 +1019,8 @@ end subroutine inter_btrack
 
           uuint=al_beta(npp+1,1)+al_beta(npp+2,1)*xn2+al_beta(npp+3,1)*yn2
           vvint=al_beta(npp+1,2)+al_beta(npp+2,2)*xn2+al_beta(npp+3,2)*yn2
-          !uuint=al_beta(npp+1,1)+al_beta(npp+2,1)*xt+al_beta(npp+3,1)*yt
-          !vvint=al_beta(npp+1,2)+al_beta(npp+2,2)*xt+al_beta(npp+3,2)*yt
+          !For ibtrack_test=1
+          if(ibtrack_test==1) sclr(1)=al_beta(npp+1,3)+al_beta(npp+2,3)*xn2+al_beta(npp+3,3)*yn2
           do i=1,npp
             nd=itier_nd(i,ie)
             if(ics==1) then
@@ -1006,6 +1033,8 @@ end subroutine inter_btrack
             covar2=covar(kr_co,rr)
             uuint=uuint+al_beta(i,1)*covar2
             vvint=vvint+al_beta(i,2)*covar2
+            !For ibtrack_test=1
+            if(ibtrack_test==1) sclr(1)=sclr(1)+al_beta(i,3)*covar2
           enddo !i
 
           !Proj vel. back to frame0
@@ -1017,9 +1046,6 @@ end subroutine inter_btrack
         endif !resident element
       endif !Kriging
 
-!...  Interpolation at the foot for S,T
-!...  Not calculated for upwind/TVD
-      sclr=0 !not used
 !     nnel wet
       if(zrat<0.or.zrat>1) then
         write(errmsg,*)'BTRACK: zrat wrong:',jlev,zrat
@@ -1351,7 +1377,11 @@ end subroutine inter_btrack
         endif
 
 !       Nudge intersect (xin,yin), and update starting pt
-        eps=1.e-2 !100*small2
+        if(ihydlg/=0) then
+          eps=4.03e-2
+        else
+          eps=1.e-2 !100*small2
+        endif
         if(ics==1) then
           xctr3=xctr(nel); yctr3=yctr(nel)
         else !lat/lon

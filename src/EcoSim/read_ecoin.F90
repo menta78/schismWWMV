@@ -24,7 +24,8 @@ subroutine read_ecoin
 
      use bio_param
      use biology
-     use schism_glbl, only: rkind  
+     use schism_glbl, only: rkind,itr_met
+     use schism_msgp, only : myrank,parallel_abort  
 
      implicit none
      
@@ -563,6 +564,7 @@ subroutine read_ecoin
        filename(3:3)=it_char
        call read_inputs(trim(filename),2,tmp1,tmp2,tmp3)
        WS(i)=tmp2
+       if(WS(i)>0.d0.and.itr_met/=3) call parallel_abort('ECOSIM: Phy sinking must use itr_met=3')
      END DO
      
      filename(1:20)='                    '
@@ -859,6 +861,7 @@ subroutine read_ecoin
        filename(3:3)=it_char
        call read_inputs(trim(filename),2,tmp1,tmp2,tmp3)
        WF(i)=tmp2
+       if(WF(i)>0.d0.and.itr_met/=3) call parallel_abort('ECOSIM: Fec sinking must use itr_met=3')
      END DO
      
      filename(1:20)='                    '

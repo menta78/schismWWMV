@@ -1,7 +1,7 @@
 #include "wwm_functions.h"
 #undef positivity
 #undef DEBUG_COHERENCY_FLUCT
-#define DEBUG
+#undef DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

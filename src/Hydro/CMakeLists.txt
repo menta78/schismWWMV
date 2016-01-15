@@ -1,5 +1,10 @@
 #set_source_files_properties(transport.F90 PROPERTIES COMPILE_FLAGS -vec-report2)
 set(schismmodlibs hydro ${schismmodlibs} PARENT_SCOPE)
+if(DEFINED TVD_LIM)
+  add_definitions(-DTVD_${TVD_LIM})
+else()
+  message(FATAL_ERROR "TVD_LIM must be provided. It must be one of SB, VL, MM or OS for Superbee, Van Leer, Minmod, or Osher.")
+endif()
 add_library(hydro hydraulic_structures.F90
                   schism_init.F90
                   schism_step.F90
@@ -14,6 +19,7 @@ add_library(hydro hydraulic_structures.F90
                   solver_subs.F90 
                   transport_TVD.F90
                   transport_TVD_imp.F90
+                  simpler_wind.F90
                   )
 list( APPEND locallibs hydro)
 
@@ -23,4 +29,3 @@ list( APPEND locallibs hydro)
 message(STATUS "Mod libraries: ${schismmodlibs}")
 add_dependencies(hydro core ${schismmodlibs})
 target_link_libraries(hydro core ${schismmodlibs})
-
