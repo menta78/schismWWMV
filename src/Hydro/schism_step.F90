@@ -165,11 +165,7 @@
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
                      &vsource(nea),dldxy_sd(4,2,nea)
-<<<<<<< HEAD
-      real(rkind) :: swild(max(100,nsa+nvrt+12+ntracers)),swild2(nvrt,12),swild10(max(4,nvrt),12), &
-=======
       real(rkind) :: swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(4,nvrt),12), &
->>>>>>> 6a2cc7a7fe5847061bb7f9d1d7f48d8d6ac3338b
      &swild3(20+ntracers),swild4(2,4)
       real(4) :: swild8(nvrt,2) !used in ST nudging
       logical :: lelbc(npa)
