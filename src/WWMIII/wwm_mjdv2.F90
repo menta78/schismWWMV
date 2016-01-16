@@ -218,64 +218,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CT2MJD_V1(STIME,XMJD)
-         USE DATAPOOL, ONLY : RKIND
-         IMPLICIT NONE
-         CHARACTER(LEN=15), INTENT(IN) :: STIME
-         real(rkind), INTENT(INOUT)    :: XMJD
-!
-! ... FORMAT IS YYYYMMDD.HHMMSS , LENGTH IS 15
-!
-         INTEGER :: IY = 0
-         INTEGER :: IM = 0
-         INTEGER :: ID = 0
-         INTEGER :: IH = 0
-         INTEGER :: IMIN  = 0
-         INTEGER :: ISEC  = 0
-         INTEGER :: IFLAG = 1
-
-         READ(STIME(1:4),  *,END=100,ERR=100) IY
-         READ(STIME(5:6),  *,END=100,ERR=100) IM
-         READ(STIME(7:8),  *,END=100,ERR=100) ID
-         READ(STIME(10:11),*,END=100,ERR=100) IH
-         READ(STIME(12:13),*,END=100,ERR=100) IMIN
-         READ(STIME(14:15),*,END=100,ERR=100) ISEC
-
-         CALL MJDYMD(XMJD  , IY    , IM    , ID    , IH    ,   &
-     &               IMIN  , ISEC  , IFLAG                    )
-         RETURN
-
-100      XMJD = 0.0
-         RETURN
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE MJD2CT_V1(XMJD,STIME)
-         USE DATAPOOL, ONLY : RKIND
-         IMPLICIT NONE
-         CHARACTER(LEN=15), INTENT(OUT) :: STIME
-         real(rkind), INTENT(IN) :: XMJD
-         real(rkind)             :: TMJD
-         INTEGER                 :: IY, IM, ID, IH, IMIN, ISEC
-
-         INTEGER :: IFLAG = 2
-
-         TMJD = XMJD
-
-         CALL MJDYMD( TMJD, IY, IM, ID, IH, IMIN, ISEC, IFLAG )
-
-         WRITE(STIME(1:4),'(I4.4)') IY
-         WRITE(STIME(5:6),'(I2.2)') IM
-         WRITE(STIME(7:8),'(I2.2)') ID
-         WRITE(STIME(9:9),'(A)') '.'
-         WRITE(STIME(10:11),'(I2.2)') IH
-         WRITE(STIME(12:13),'(I2.2)') IMIN
-         WRITE(STIME(14:15),'(I2.2)') ISEC
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE CU2SEC(UNITT, DT)
       USE DATAPOOL, ONLY : DBG, RKIND
       IMPLICIT NONE

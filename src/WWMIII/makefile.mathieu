@@ -42,7 +42,7 @@ F90 = $(WWM_COMPILER)
 #F90OPTI =  -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
 #F90OPTI =  -O2 -assume realloc_lhs -check all -traceback -warn all -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI =  -traceback -fstack-protector -assume protect_parens -g
-F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+#F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -check all -traceback -fstack-protector -assume protect_parens -implicitnone
 #F90OPTI = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl #-openmp#-check all -warn all
@@ -68,7 +68,7 @@ F90OPTI = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
 #GFORTRAN
 #F90OPTI = -g -O3 -ffree-line-length-0
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
-#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
+F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
