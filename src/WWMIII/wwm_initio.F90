@@ -1108,7 +1108,7 @@
 #ifdef MPI_PARALL_GRID
            CALL MPI_BARRIER(COMM, ierr)
 #endif
-           IF (LPRECOMP_EXIST) THEN
+           IF (LPRECOMP_EXIST .AND. .FALSE.) THEN ! this is buggy in mpi !!!
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
              OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
              IF (IPHYS == 0) THEN

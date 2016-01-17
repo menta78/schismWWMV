@@ -226,18 +226,4 @@
         IF (LOUTWAM) WRITE(111111,'(3F20.10)') DELTAIL, SUM(TAUHFT), SUM(TAUHFT2) 
       ENDIF
 
-!      DO M=1,NFRE
-!        WRITE(100000,*) M, FR(M)
-!      ENDDO
-
-!      DO M=1,NFRE
-!        DO L=0,IALPHA
-!          DO K=0,IUSTAR
-!            WRITE(100002,*) K,L,M,TAUHFT(K,L,M)
-!          ENDDO
-!        ENDDO
-!      ENDDO
-
-!      DEALLOCATE(W)
-
       END SUBROUTINE TAUHF_WAM
