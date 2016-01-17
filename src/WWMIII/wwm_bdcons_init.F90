@@ -554,25 +554,21 @@
       INTEGER     :: IP, SPsize
       INTEGER     :: STATUS(MNP)
       INTEGER     :: idx, PosWBAC
+#ifdef MPI_PARALL_GRID
+      INTEGER     :: IPglob
+#endif
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
       CALL PRINT_STATISTICS_IOBP_TOTAL
       IOBP    = 0
-      DO IP = 1, NP_TOTAL
 #ifdef MPI_PARALL_GRID
-# ifndef PDLIB
-        IF (ipgl(ip)%rank == myrank) THEN
-          IOBP(ipgl(ip)%id) = IOBPtotal(IP)
-        END IF
-# else
-        IF (ipgl(ip)%id .gt. 0) THEN
-          IOBP(ipgl(ip)%id) = IOBPtotal(IP)
-        END IF
-# endif
-#else
-        IOBP(IP) = IOBPtotal(IP)
-#endif
+      DO IP=1,MNP
+        IPglob=iplg(IP)
+        IOBP(IP) = IOBPtotal(IPglob)
       END DO
+#else
+      IOBP = IOBPtotal
+#endif
 #ifdef SCHISM
       DO IP = 1, NP_RES ! reset boundary flag in the case that wave boundary are not used but defined in the boundary file
         IF (.NOT. LBCWA .AND. .NOT. LBCSP) THEN
@@ -647,21 +643,14 @@
         ! For hackish purposes, sometimes, we want to have an interior point
         ! set to Neumann condition 2 for example.
         ! Use that option only if you are sure of yourself.
-        DO IP = 1, NP_TOTAL
 #ifdef MPI_PARALL_GRID
-# ifndef PDLIB
-          IF (ipgl(ip)%rank == myrank) THEN
-            IOBP(ipgl(ip)%id) = IOBPtotal(IP)
-          END IF
-# else
-          IF (ipgl(ip)%id .gt. 0) THEN
-            IOBP(ipgl(ip)%id) = IOBPtotal(IP)
-          END IF
-# endif
-#else
-          IOBP(IP) = IOBPtotal(IP)
-#endif
+        DO IP=1,MNP
+          IPglob=iplg(IP)
+          IOBP(IP) = IOBPtotal(IPglob)
         END DO
+#else
+        IOBP = IOBPtotal
+#endif
       END IF
 !
 ! allocate wave boundary arrays ... 

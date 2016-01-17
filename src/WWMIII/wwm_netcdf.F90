@@ -72,7 +72,7 @@
       eStrTime( 4: 4)=YnameYear( 4: 4)
       !
       ! month
-      WRITE(WINDBG%FHNDL,*) 'YnameMonth=', YnameMonth
+      WRITE(STAT%FHNDL,*) 'YnameMonth=', YnameMonth
       lenMonth=LEN_TRIM(YnameMonth)
       IF (lenMonth .eq. 2) THEN
         eStrTime( 5: 5)=YnameMonth( 1: 1)
@@ -152,14 +152,14 @@
             eStrTime(14:14)='0'
             eStrTime(15:15)=YnameSec( 1: 1)
           ELSE
-            WRITE(WINDBG%FHNDL,*) 'YnameSec=', TRIM(Ynamesec)
-            WRITE(WINDBG%FHNDL,*) 'lenSec=', lenSec
-            FLUSH(WINDBG%FHNDL)
+            WRITE(STAT%FHNDL,*) 'YnameSec=', TRIM(Ynamesec)
+            WRITE(STAT%FHNDL,*) 'lenSec=', lenSec
+            FLUSH(STAT%FHNDL)
             CALL WWM_ABORT('DIE in trying to get the sec')
           END IF
         END IF
       END IF
-      WRITE(WINDBG%FHNDL,*) 'eStrTime=', eStrTime
+      WRITE(STAT%FHNDL,*) 'eStrTime=', eStrTime
       CALL CT2MJD(eStrTime, eTimeStart)
       END SUBROUTINE
 !**********************************************************************
