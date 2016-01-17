@@ -146,22 +146,28 @@ Example:
  UNITC = "SEC", 
 \end{verbatim}
 
-The variables that are available for use and plots are:
+
+
+
+The variables that are available for use and plots are:\\
+{\bf Generic model kind of variables}:
 \begin{enumerate}
+\item {\bf CFL1}: CFL variable number 1
+\item {\bf CFL2}: CFL variable number 2
+\item {\bf CFL3}: CFL variable number 3
+\item {\bf FieldOut1}: Generic Field out 1
+\item {\bf IOBP\_WW3}: The IOBP of the WW3 model
+\item {\bf MAPSTA}: The MAPSTA of the WW3 model
+\end{enumerate}
+{\bf Atmospheric variables}:
+\begin{enumerate}
+\item {\bf WIND\_X}: eastward wind component at 10m.
+\item {\bf WIND\_X}: northward wind component at 10m.
 \item {\bf WIND10}: 10m wind speed (as a vector with Uwind, Vwind components)
-\item {\bf SurfCurr}: Surface currents
-\item {\bf Hwave}: Significant Wave height
 \item {\bf WINDMAG}: Wind magnitude
-\item {\bf TempSurf}: Surface sea temperature
-\item {\bf SaltSurf}: Surface sea salinity
 \item {\bf AIRT2}: 2m air temperature
 \item {\bf Rh2}: 2m air humidity
-\item {\bf ZetaOcean}: free surface elevation
-\item {\bf MwaveFreq}: Mean wave frequency
-\item {\bf PwaveFreq}: Peak wave frequency
 \item {\bf AIRD}: Surface air density
-\item {\bf CdWave}: drag coefficient from the wave model
-\item {\bf AlphaWave}: Charnock coefficient from the wave model
 \item {\bf rain}: rainfall rate
 \item {\bf swrad}: shortwave radiation
 \item {\bf lwrad}: longwave radiation
@@ -170,11 +176,35 @@ The variables that are available for use and plots are:
 \item {\bf shflux}: surface heat flux
 \item {\bf ssflux}: surface salinity flux (ah ah)
 \item {\bf evaporation}: evaporation
-\item {\bf MwavePer}: mean wave period
-\item {\bf PwavePer}: Peak wave period
 \item {\bf SurfPres}: surface air pressure.
 \end{enumerate}
-
+{\bf Oceanic variables}:
+\begin{enumerate}
+\item {\bf SurfCurr}: Surface currents
+\item {\bf SurfCurrMag}: Surface currents magnitude
+\item {\bf TempSurf}: Surface sea temperature
+\item {\bf SaltSurf}: Surface sea salinity
+\item {\bf ZetaOcean}: free surface elevation
+\end{enumerate}
+{\bf Wave variables}:
+\begin{enumerate}
+\item {\bf Hwave}: Significant Wave height
+\item {\bf BreakingFraction}: quotient Hwave / Depth.
+\item {\bf TM02}: zero crossing wave period
+\item {\bf CdWave}: drag coefficient from the wave model
+\item {\bf AlphaWave}: Charnock coefficient from the wave model
+\item {\bf MeanWaveDir}: mean wave direction
+\item {\bf PeakWaveDir}: peak wave direction
+\item {\bf DiscPeakWaveDir}: discrete peak wave direction
+\item {\bf MeanWavePer}: mean wave period
+\item {\bf PeakWavePer}: peak wave period
+\item {\bf MeanWaveFreq}: Mean wave frequency
+\item {\bf PeakWaveFreq}: Peak wave frequency
+\item {\bf MeanWaveDirSpread}: Mean wave directional spreading
+\item {\bf PeakWaveDirSpread}: Peak wave directional spreading
+\item {\bf ZetaSetup}: free surface elevation from the solution of the setup equation
+\item {\bf TotSurfStr}: total surface stress
+\end{enumerate}
 
 
 
@@ -186,7 +216,7 @@ The variables that are available for use and plots are:
 
 The following programs are available:
 \begin{enumerate}
-\item {\bf PLOT\_result}: It is for plotting data files.
+\item {\bf PLOT\_results}: It is for plotting data files.
 \item {\bf PLOT\_diff\_results}: It is for plotting the difference of model results (models have to be identical and share the same grid.
 \item {\bf AltimeterComparison}: This is for comparison of model results with altimeter
 \item {\bf CREATE\_sflux}: This is for creating sflux files from finite difference model usable by the SELFE model.
@@ -276,6 +306,19 @@ By default a fixed colorbar is used for the plots. The range is fixed in the cod
 If you want a colorbar that varies from one time to the next then use {\tt VariableColormap} and the maximum and minimum of the field will be used. If you do not want and colorbar to plotted, then select {\tt DoColorBar = F}.
 
 
+\subsubsection{Selection of subregion}
+By default we plot the data over a rectangle defined by the longitude and latitude of the grid considered. This grid is called the {\bf main} grid.
+The relevant entries to this issue are:
+\begin{verbatim}
+DoMain = F,
+ListFrameMinLon = -10, -5
+ListFrameMinLat = -10, 5
+ListFrameMaxLon = 10,  20
+ListFrameMaxLat = 10, 20
+\end{verbatim}
+The variable {\bf DoMain} specifies whether we plot the main region or not. By default it is true.
+The {\bf ListFrame} variables specifies the other rectangle considered. With the above choice we have two regions being considered. One is from longitude -10 to 10 and latitude -10 to 10. The pther is from longitude -5 to 20 and latitude 5 to 20.
+
 
 
 \subsubsection{Miscelaneous options}
@@ -295,17 +338,6 @@ Following options are available in the {\tt PLOT} section:
   \end{enumerate}
   Defaut is RasterFill.
 \end{enumerate}
-
-It is also possible to plot values of field in a fixed LON/LAT ranges. Relevant options are the following:
-\begin{enumerate}
-\item {\tt DoMain} (logical): draw the grid of the model. Default is true.
-\item {\tt ListFrameMinLon / ListFrameMinLat / ListFrameMaxLon / ListFrameMaxLat}: The list of values of the fields considered.
-\end{enumerate}
-
-
-
-
-
 
 
 
@@ -407,11 +439,25 @@ This program is for creating sflux files that can be used by the SELFE program.
  AnalyticPRMSL = F,
  AnalyticSPFH = T,
  AnalyticSTMP = F,
+ AnalyticPRATE = T,
+ AnalyticDLWRF = T
+ AnalyticDSWRF = T
 /
 \end{verbatim}
 There is only a {\tt PROC} entry, which specifies the model that is used. {\tt DELTC} contains the interval between data output. The sflux files are daily files so DELTC must be a divisor of the length of the day.
 {\tt OutPrefix} contains the prefix where the data is written.
-The {\tt AnalyticWind} and others specifies whether we use analytic wind (and hence zero) if no wind is available or whether we use the data available from the model. Same for {\tt AnalyticPRMSL}, {\tt AnalyticSPFH} and {\tt AnalyticSTMP} switches.
+
+The {\tt AnalyticWind} and others specifies whether we use analytic values for the field used in the model.
+More precisely:
+\begin{enumerate}
+\item {\tt AnalyticWind}: If true the wind is send to zero
+\item {\tt AnalyticSPFH}: If true the 2m air humidity is set to zero
+\item {\tt AnalyticSTMP}: If true the 2m air temperature is set to 15 deg C.
+\item {\tt AnalyticPRMSL}: If true the surface air pressure is set to 105384.9 Pascal.
+\item {\tt AnalyticPRATE}: If true the rate of precipitation is set to 0.
+\item {\tt AnalyticDLWRF}: If true the downward longwave flux is set to 0
+\item {\tt AnalyticDSWRF}: If true the downward shortwave flux is set to 0
+\end{enumerate}
 
 
 
