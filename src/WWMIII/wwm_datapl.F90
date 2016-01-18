@@ -180,6 +180,7 @@
            integer nbTime
            integer idVar
            real(rkind), allocatable :: ListTime(:)
+           logical MULTIPLE_IN
          END TYPE VAR_NETCDF_CF
 !
 ! ... logicals ... wwmDlogic.mod
