@@ -2346,7 +2346,7 @@
       END IF
 # endif
 #ifdef MPI_PARALL_GRID
-      IF (.NOT. MULTIPLE_IN_WIND) THEN
+      IF (.NOT. MULTIPLE_IN) THEN
         IF (myrank .eq. 0) THEN
           eInt(1)=nbtime_mjd
           DO IPROC=2,nproc
