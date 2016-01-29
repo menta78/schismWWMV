@@ -1171,8 +1171,8 @@
        REAL(rkind)     :: ACLOC(MSC,MDC)
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
-       TMPPAR = 0.
        INTEGER         :: nbINIT1
+       TMPPAR = 0.
        nbINIT1 = 0
        IF (.NOT. LHOTR .AND. LINID) THEN
          WRITE(STAT%FHNDL,*) 'Computing initial condition by parametric method'
