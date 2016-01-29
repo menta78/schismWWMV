@@ -518,6 +518,7 @@
  CFL_CASD2      = F                  !61: CFL dir/freq 2
  CFL_CASD3      = F                  !62: CFL dir/freq 3
  CFL_CASD4      = F                  !63: CFL dir/freq 4
+ NB_ITER_SOLV   = F                  !64: number of iteration of the solver
 /
 
 &STATION
@@ -624,6 +625,7 @@
  CFL_CASD2      = F                  !61: CFL dir/freq 2
  CFL_CASD3      = F                  !62: CFL dir/freq 3
  CFL_CASD4      = F                  !63: CFL dir/freq 4
+ NB_ITER_SOLV   = F                  !64: Number of iteration of the solver
 /
 
 &HOTFILE

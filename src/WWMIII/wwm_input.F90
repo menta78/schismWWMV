@@ -53,7 +53,7 @@
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
@@ -70,7 +70,7 @@
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -86,7 +86,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          XOUTS = 0.
          YOUTS = 0.
@@ -168,6 +168,7 @@
          CFL_CASD2=.FALSE.
          CFL_CASD3=.FALSE.
          CFL_CASD4=.FALSE.
+         NB_ITER_SOLV=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
@@ -324,6 +325,7 @@
          LVAR_READ(61)=CFL_CASD2
          LVAR_READ(62)=CFL_CASD3
          LVAR_READ(63)=CFL_CASD4
+         LVAR_READ(64)=NB_ITER_SOLV
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -407,6 +409,7 @@
          CFL_CASD2=.FALSE.
          CFL_CASD3=.FALSE.
          CFL_CASD4=.FALSE.
+         NB_ITER_SOLV=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
@@ -568,6 +571,7 @@
          LVAR_READ(61)=CFL_CASD2
          LVAR_READ(62)=CFL_CASD3
          LVAR_READ(63)=CFL_CASD4
+         LVAR_READ(64)=NB_ITER_SOLV
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN
