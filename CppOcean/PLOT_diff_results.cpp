@@ -41,75 +41,6 @@ template <typename T> using MySparseMatrix = Eigen::SparseMatrix<T,Eigen::ColMaj
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-void PrintMMA_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
-{
-int eta=F.rows();
-int xi=F.cols();
-double minval, maxval;
-double sum=0;
-int nb=0;
-bool IsFirst=true;
-for (int i=0; i<eta; i++)
-for (int j=0; j<xi; j++)
-if (MSK(i,j) == 1) {
-double eVal=F(i,j);
-sum+=eVal;
-nb++;
-if (IsFirst) {
-IsFirst=false;
-maxval=eVal;
-minval=eVal;
-}
-else {
-if (eVal > maxval)
-maxval=eVal;
-if (eVal < minval)
-minval=eVal;
-}
-}
-double eMean=sum/double(nb);
-std::cerr << "  " << VarName << " min=" << minval << " max=" << maxval << " avg=" << eMean << "\n";
-}
-void LocateMM_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
-{
-int eta=F.rows();
-int xi=F.cols();
-double minval, maxval;
-int nb=0;
-bool IsFirst=true;
-int iMax=-1;
-int jMax=-1;
-int iMin=-1;
-int jMin=-1;
-for (int i=0; i<eta; i++)
-for (int j=0; j<xi; j++)
-if (MSK(i,j) == 1) {
-double eVal=F(i,j);
-nb++;
-if (IsFirst) {
-IsFirst=false;
-maxval=eVal;
-minval=eVal;
-iMax=i;
-jMax=j;
-iMin=i;
-jMin=j;
-}
-else {
-if (eVal > maxval) {
-maxval=eVal;
-iMax=i;
-jMax=j;
-}
-if (eVal < minval) {
-minval=eVal;
-iMin=i;
-jMin=j;
-}
-}
-}
-std::cerr << "  " << VarName << " min(p,i,j)=(" << minval << "," << iMin << "," << jMin << ") max(p,i,j)=(" << maxval << "," << iMax << "," << jMax << ")\n";
-}
 struct SingleBlock {
 std::map<std::string, int> ListIntValues;
 std::map<std::string, bool> ListBoolValues;
@@ -350,28 +281,6 @@ std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
 exit(1);
 }
 }
-MyVector<int> WWM_ReadBoundFile_gr3(std::string const& BoundFile)
-{
-std::ifstream IN(BoundFile);
-std::string line;
-std::getline(IN, line);
-int mne, mnp;
-IN >> mne;
-IN >> mnp;
-MyVector<int> eVect(mnp);
-for (int i=0; i<mnp; i++) {
-int KTMP;
-double XPDTMP, YPDTMP, ZPDTMP;
-IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
-if (KTMP != i+1) {
-std::cerr << "Inconsistency at this level\n";
-exit(1);
-}
-int eIOBP=int(ZPDTMP);
-eVect(i)=eIOBP;
-}
-return eVect;
-}
 double TheSignFct(double const& eVal)
 {
 if (eVal > 0)
@@ -501,6 +410,112 @@ os << "    amres@amParallelPosF   = 0.5   ; Right-justifed\n";
 os << "    annoidr = gsn_add_annotation(plot, txidr, amres)\n";
 os << "  end if\n";
 os << "end\n";
+}
+struct T_stat {
+int nbMeas;
+double MaxMeas;
+double MinMeas;
+double MaxModel;
+double MinModel;
+double MeanMeas;
+double MeanModel;
+double MeanError;
+double AbsoluteError;
+double RMSE;
+double CenteredRMSE;
+double Correlation;
+double ScatterIndex;
+double CenteredScatterIndex;
+double Slope;
+std::string strMaxMeas;
+std::string strMinMeas;
+std::string strMaxModel;
+std::string strMinModel;
+std::string strMeanMeas;
+std::string strMeanModel;
+std::string strMeanError;
+std::string strAbsoluteError;
+std::string strRMSE;
+std::string strCenteredRMSE;
+std::string strCorrelation;
+std::string strScatterIndex;
+std::string strCenteredScatterIndex;
+std::string strSlope;
+std::string strNature="ME    AE    RMSE CRMSE  CORR   SCI   CSCI";
+std::string str;
+};
+struct PairMM {
+double Meas;
+double Model;
+};
+void PrintMMA_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
+{
+int eta=F.rows();
+int xi=F.cols();
+double minval, maxval;
+double sum=0;
+int nb=0;
+bool IsFirst=true;
+for (int i=0; i<eta; i++)
+for (int j=0; j<xi; j++)
+if (MSK(i,j) == 1) {
+double eVal=F(i,j);
+sum+=eVal;
+nb++;
+if (IsFirst) {
+IsFirst=false;
+maxval=eVal;
+minval=eVal;
+}
+else {
+if (eVal > maxval)
+maxval=eVal;
+if (eVal < minval)
+minval=eVal;
+}
+}
+double eMean=sum/double(nb);
+std::cerr << "  " << VarName << " min=" << minval << " max=" << maxval << " avg=" << eMean << "\n";
+}
+void LocateMM_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
+{
+int eta=F.rows();
+int xi=F.cols();
+double minval, maxval;
+int nb=0;
+bool IsFirst=true;
+int iMax=-1;
+int jMax=-1;
+int iMin=-1;
+int jMin=-1;
+for (int i=0; i<eta; i++)
+for (int j=0; j<xi; j++)
+if (MSK(i,j) == 1) {
+double eVal=F(i,j);
+nb++;
+if (IsFirst) {
+IsFirst=false;
+maxval=eVal;
+minval=eVal;
+iMax=i;
+jMax=j;
+iMin=i;
+jMin=j;
+}
+else {
+if (eVal > maxval) {
+maxval=eVal;
+iMax=i;
+jMax=j;
+}
+if (eVal < minval) {
+minval=eVal;
+iMin=i;
+jMin=j;
+}
+}
+}
+std::cerr << "  " << VarName << " min(p,i,j)=(" << minval << "," << iMin << "," << jMin << ") max(p,i,j)=(" << maxval << "," << iMax << "," << jMax << ")\n";
 }
 template <typename T>
 struct is_ring_field {
@@ -1283,29 +1298,27 @@ eArr(i)=eValI;
 delete [] eValINT;
 return eArr;
 }
-MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_rho)
+MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_u)
 {
-int eta_rho=MSK_rho.rows();
-int xi_rho=MSK_rho.cols();
 int eta_u=eVar_u.rows();
 int xi_u=eVar_u.cols();
-if (eta_u != eta_rho || xi_u != xi_rho-1) {
-std::cerr << "Dimension error in My_u2rho\n";
-exit(1);
-}
+int eta_rho = eta_u;
+int xi_rho = xi_u + 1;
 MyMatrix<double> eVar_rho(eta_rho, xi_rho);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 int eSumMsk=0;
 double eSumVal=0;
-if (MSK_rho(i,j) == 1) {
+if (j<xi_u) {
+if (MSK_u(i,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_u(i,j);
+eSumVal += eVar_u(i,j);
 }
-if (j < xi_u) {
-if (MSK_rho(i,j+1) == 1) {
+}
+if (j > 0) {
+if (MSK_u(i,j-1) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_u(i,j+1);
+eSumVal += eVar_u(i,j-1);
 }
 }
 if (eSumMsk == 0) {
@@ -1318,29 +1331,27 @@ eVar_rho(i,j)=eVal;
 }
 return eVar_rho;
 }
-MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_rho)
+MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_v)
 {
-int eta_rho=MSK_rho.rows();
-int xi_rho=MSK_rho.cols();
 int eta_v=eVar_v.rows();
 int xi_v=eVar_v.cols();
-if (eta_v != eta_rho-1 || xi_v != xi_rho) {
-std::cerr << "Dimension error in My_v2rho\n";
-exit(1);
-}
+int xi_rho = xi_v;
+int eta_rho = eta_v + 1;
 MyMatrix<double> eVar_rho(eta_rho, xi_rho);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 int eSumMsk=0;
 double eSumVal=0;
-if (MSK_rho(i,j) == 1) {
+if (i < eta_v) {
+if (MSK_v(i,j) == 1) {
 eSumMsk++;
 eSumVal=eSumVal + eVar_v(i,j);
 }
-if (i < eta_v) {
-if (MSK_rho(i+1,j) == 1) {
+}
+if (i > 0) {
+if (MSK_v(i-1,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_v(i+1,j);
+eSumVal=eSumVal + eVar_v(i-1,j);
 }
 }
 if (eSumMsk == 0) {
@@ -1939,138 +1950,6 @@ double MaxLon;
 double MinLat;
 double MaxLat;
 };
-struct T_stat {
-int nbMeas;
-double MaxMeas;
-double MinMeas;
-double MaxModel;
-double MinModel;
-double MeanMeas;
-double MeanModel;
-double MeanError;
-double AbsoluteError;
-double RMSE;
-double CenteredRMSE;
-double Correlation;
-double ScatterIndex;
-double CenteredScatterIndex;
-double Slope;
-std::string strMaxMeas;
-std::string strMinMeas;
-std::string strMaxModel;
-std::string strMinModel;
-std::string strMeanMeas;
-std::string strMeanModel;
-std::string strMeanError;
-std::string strAbsoluteError;
-std::string strRMSE;
-std::string strCenteredRMSE;
-std::string strCorrelation;
-std::string strScatterIndex;
-std::string strCenteredScatterIndex;
-std::string strSlope;
-std::string strNature="ME    AE    RMSE CRMSE  CORR   SCI   CSCI";
-std::string str;
-};
-struct PairMM {
-double Meas;
-double Model;
-};
-T_stat ComputeStatistics_Pair(std::vector<PairMM> const& eVect)
-{
-T_stat eStat;
-int nbMeas=0;
-double SumAbs=0;
-double SumSqr=0;
-double eSum1=0;
-double eSum2=0;
-double eSum11=0;
-double eSum12=0;
-double eSum22=0;
-double MaxMeas=-10^(31);
-double MaxModel=-10^(31);
-double MinMeas=10^(31);
-double MinModel=10^(31);
-for (auto& ePair : eVect) {
-nbMeas++;
-double eMeas=ePair.Meas;
-double eModel=ePair.Model;
-MaxMeas=std::max(MaxMeas, eMeas);
-MaxModel=std::max(MaxModel, eModel);
-MinMeas=std::min(MinMeas, eMeas);
-MinModel=std::min(MinModel, eModel);
-eSum1 =eSum1 + eMeas;
-eSum2 =eSum2 + eModel;
-eSum11=eSum11 + eMeas*eMeas;
-eSum12=eSum12 + eMeas*eModel;
-eSum22=eSum22 + eModel*eModel;
-SumAbs=SumAbs + fabs(eMeas - eModel);
-double eDiff=eMeas-eModel;
-SumSqr=SumSqr + eDiff*eDiff;
-}
-double eME=(eSum2 - eSum1)/double(nbMeas);
-double eRMSE=sqrt(SumSqr / double(nbMeas));
-double eCentRMSE=sqrt(eRMSE*eRMSE - eME*eME);
-double eAE=SumAbs/double(nbMeas);
-double avgSum1=eSum1/double(nbMeas);
-double avgSum2=eSum2/double(nbMeas);
-double avgSum11=eSum11/double(nbMeas);
-double avgSum12=eSum12/double(nbMeas);
-double avgSum22=eSum22/double(nbMeas);
-double eProd11=avgSum11 - avgSum1*avgSum1;
-double eProd12=avgSum12 - avgSum1*avgSum2;
-double eProd22=avgSum22 - avgSum2*avgSum2;
-double TheCorr=eProd12/sqrt(eProd11*eProd22);
-double eScat=eRMSE/avgSum1;
-double eCentScat=eCentRMSE/avgSum1;
-double eSlope=eSum12/eSum11;
-eStat.nbMeas=nbMeas;
-eStat.MaxMeas=MaxMeas;
-eStat.MinMeas=MinMeas;
-eStat.MaxModel=MaxModel;
-eStat.MinModel=MinModel;
-eStat.MeanMeas=avgSum1;
-eStat.MeanModel=avgSum2;
-eStat.MeanError=eME;
-eStat.AbsoluteError=eAE;
-eStat.RMSE=eRMSE;
-eStat.CenteredRMSE=eCentRMSE;
-eStat.Correlation=TheCorr;
-eStat.ScatterIndex=eScat;
-eStat.CenteredScatterIndex=eCentScat;
-eStat.Slope=eSlope;
-eStat.strMaxMeas=DoubleTo4dot2f(MaxMeas);
-eStat.strMinMeas=DoubleTo4dot2f(MinMeas);
-eStat.strMaxModel=DoubleTo4dot2f(MaxModel);
-eStat.strMinModel=DoubleTo4dot2f(MinModel);
-eStat.strMeanMeas=DoubleTo4dot2f(avgSum1);
-eStat.strMeanModel=DoubleTo4dot2f(avgSum2);
-eStat.strMeanError=DoubleTo4dot2f(eME);
-eStat.strAbsoluteError=DoubleTo4dot2f(eAE);
-eStat.strRMSE=DoubleTo4dot2f(eRMSE);
-eStat.strCenteredRMSE=DoubleTo4dot2f(eCentRMSE);
-eStat.strCorrelation=DoubleTo4dot2f(TheCorr);
-eStat.strScatterIndex=DoubleTo4dot2f(eScat);
-eStat.strCenteredScatterIndex=DoubleTo4dot2f(eCentScat);
-eStat.strSlope=DoubleTo4dot2f(eSlope);
-eStat.str=eStat.strMeanError + " " + eStat.strAbsoluteError + " " + eStat.strRMSE + " " + eStat.strCenteredRMSE + " " + eStat.strCorrelation + " " + eStat.strScatterIndex + " " + eStat.strCenteredScatterIndex;
-return eStat;
-}
-T_stat ComputeStatistics_MyVector(MyVector<double> const& ListMeas, MyVector<double> const& ListModel)
-{
-if (ListMeas.size() != ListModel.size()) {
-std::cerr << "Error in ComputeStatistics_MyVector\n";
-std::cerr << "Discrepancy in number of measurements\n";
-std::cerr << "Please solve the problem\n";
-exit(1);
-}
-std::vector<PairMM> ListPair;
-int nbEnt=ListMeas.size();
-for (int iEnt=0; iEnt<nbEnt; iEnt++) {
-ListPair.push_back({ListMeas(iEnt), ListModel(iEnt)});
-}
-return ComputeStatistics_Pair(ListPair);
-}
 template<typename T>
 MyMatrix<T> DimensionExtraction(Eigen::Tensor<T, 3> const& eT, size_t const& iDim, int const& eDim)
 {
@@ -2323,7 +2202,7 @@ MyMatrix<T> Output(nbRow, nbRow);
 TMat_Inverse_destroy(provMat, Output);
 return Output;
 }
-# 2905 "/home/mathieu/GIT/wwmIII/CppOcean/PLOT_diff_results.cpp"
+# 2770 "/home/mathieu/GIT/wwmIII/CppOcean/PLOT_diff_results.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -3052,7 +2931,7 @@ int NPROC=eBlPROC.ListIntValues.at("NPROC");
 std::string PrefixTemp=PLOT_CreatePrefixTemp(eFull);
 if (eBlPROC.ListBoolValues.at("FirstCleanDirectory")) {
 RemoveFileSpecificExtension(PicPrefix, Extension);
-# 3788 "/home/mathieu/GIT/wwmIII/CppOcean/PLOT_diff_results.cpp"
+# 3653 "/home/mathieu/GIT/wwmIII/CppOcean/PLOT_diff_results.cpp"
 }
 std::string eDir=FILE_GetAbsoluteDirectory(PicPrefix);
 CreateDirectory(eDir);
@@ -3198,7 +3077,7 @@ ListStringValues1["ENDTC"]="20110925.000000";
 ListDoubleValues1["DELTC"]=600;
 ListStringValues1["UNITC"]="SEC";
 ListStringValues1["GridFile"]="unset GridFile";
-ListStringValues1["BoundFile"]="unset BoundFile";
+ListStringValues1["BoundFile"]="unset";
 ListBoolValues1["CutWorldMap"]=false;
 ListBoolValues1["HigherLatitudeCut"]=false;
 ListBoolValues1["SplittingAt180"]=false;
@@ -3815,6 +3694,33 @@ GrdArr.GrdArrRho.MSK=MSKarr;
 GrdArr.IOBP=IOBParr;
 return GrdArr;
 }
+MyVector<int> WWM_ReadBoundFile_gr3(std::string const& BoundFile)
+{
+if (IsExistingFile(BoundFile) == false) {
+std::cerr << "Error in WWM_ReadBoundFile_gr3\n";
+std::cerr << "Missing BoundFile=" << BoundFile << "\n";
+exit(1);
+}
+std::ifstream IN(BoundFile);
+std::string line;
+std::getline(IN, line);
+int mne, mnp;
+IN >> mne;
+IN >> mnp;
+MyVector<int> eVect(mnp);
+for (int i=0; i<mnp; i++) {
+int KTMP;
+double XPDTMP, YPDTMP, ZPDTMP;
+IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
+if (KTMP != i+1) {
+std::cerr << "Inconsistency at this level\n";
+exit(1);
+}
+int eIOBP=int(ZPDTMP);
+eVect(i)=eIOBP;
+}
+return eVect;
+}
 GridArray WWM_ReadGridFile_gr3(std::string const& GridFile)
 {
 GridArray GrdArr;
@@ -3860,6 +3766,38 @@ GrdArr.INE(iE,1)=ip2 - 1;
 GrdArr.INE(iE,2)=ip3 - 1;
 }
 return GrdArr;
+}
+MyVector<int> WWM_ReadBoundFile_xfn(std::string const& BoundFile)
+{
+if (IsExistingFile(BoundFile) == false) {
+std::cerr << "Error in WWM_ReadBoundFile_xfn\n";
+std::cerr << "Missing BoundFile=" << BoundFile << "\n";
+exit(1);
+}
+std::ifstream IN(BoundFile);
+std::string line;
+for (int i=0; i<2; i++)
+std::getline(IN, line);
+int ITMP, JTMP;
+IN >> ITMP;
+std::getline(IN, line);
+IN >> JTMP;
+int mnp=ITMP + JTMP;
+for (int i=0; i<7; i++)
+std::getline(IN, line);
+MyVector<int> eVect(mnp);
+for (int i=0; i<mnp; i++) {
+int KTMP;
+double XPDTMP, YPDTMP, ZPDTMP;
+IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
+if (KTMP != i+1) {
+std::cerr << "Inconsistency error\n";
+exit(1);
+}
+int eIOBP=int(ZPDTMP);
+eVect(i)=eIOBP;
+}
+return eVect;
 }
 GridArray WWM_ReadGridFile_xfn(std::string const& GridFile)
 {
@@ -4152,6 +4090,7 @@ std::string eExtension=FILE_GetExtension(GridFile);
 if (eExtension == "gr3") {
 GridArray GrdArr=WWM_ReadGridFile_gr3(GridFile);
 if (BoundFile != "unset") {
+std::cerr << "BoundFile=" << BoundFile << "\n";
 MyVector<int> eVect=WWM_ReadBoundFile_gr3(BoundFile);
 if (eVect.size() != GrdArr.GrdArrRho.LON.size()) {
 std::cerr << "not same number of vertices between grid file and boundary file\n";
@@ -4165,7 +4104,7 @@ return GrdArr;
 if (eExtension == "dat") {
 GridArray GrdArr=WWM_ReadGridFile_xfn(GridFile);
 if (BoundFile != "unset") {
-MyVector<int> eVect=WWM_ReadBoundFile_gr3(BoundFile);
+MyVector<int> eVect=WWM_ReadBoundFile_xfn(BoundFile);
 if (eVect.size() != GrdArr.GrdArrRho.LON.size()) {
 std::cerr << "not same number of vertices between grid file and boundary file\n";
 std::cerr << "nbVert(grid)=" << GrdArr.GrdArrRho.LON.size() << "\n";
@@ -5317,6 +5256,101 @@ valX[i]=eX;
 }
 eVarX.putVar(valX);
 delete [] valX;
+}
+T_stat ComputeStatistics_Pair(std::vector<PairMM> const& eVect)
+{
+T_stat eStat;
+int nbMeas=0;
+double SumAbs=0;
+double SumSqr=0;
+double eSum1=0;
+double eSum2=0;
+double eSum11=0;
+double eSum12=0;
+double eSum22=0;
+double MaxMeas=-10^(31);
+double MaxModel=-10^(31);
+double MinMeas=10^(31);
+double MinModel=10^(31);
+for (auto& ePair : eVect) {
+nbMeas++;
+double eMeas=ePair.Meas;
+double eModel=ePair.Model;
+MaxMeas=std::max(MaxMeas, eMeas);
+MaxModel=std::max(MaxModel, eModel);
+MinMeas=std::min(MinMeas, eMeas);
+MinModel=std::min(MinModel, eModel);
+eSum1 =eSum1 + eMeas;
+eSum2 =eSum2 + eModel;
+eSum11=eSum11 + eMeas*eMeas;
+eSum12=eSum12 + eMeas*eModel;
+eSum22=eSum22 + eModel*eModel;
+SumAbs=SumAbs + fabs(eMeas - eModel);
+double eDiff=eMeas-eModel;
+SumSqr=SumSqr + eDiff*eDiff;
+}
+double eME=(eSum2 - eSum1)/double(nbMeas);
+double eRMSE=sqrt(SumSqr / double(nbMeas));
+double eCentRMSE=sqrt(eRMSE*eRMSE - eME*eME);
+double eAE=SumAbs/double(nbMeas);
+double avgSum1=eSum1/double(nbMeas);
+double avgSum2=eSum2/double(nbMeas);
+double avgSum11=eSum11/double(nbMeas);
+double avgSum12=eSum12/double(nbMeas);
+double avgSum22=eSum22/double(nbMeas);
+double eProd11=avgSum11 - avgSum1*avgSum1;
+double eProd12=avgSum12 - avgSum1*avgSum2;
+double eProd22=avgSum22 - avgSum2*avgSum2;
+double TheCorr=eProd12/sqrt(eProd11*eProd22);
+double eScat=eRMSE/avgSum1;
+double eCentScat=eCentRMSE/avgSum1;
+double eSlope=eSum12/eSum11;
+eStat.nbMeas=nbMeas;
+eStat.MaxMeas=MaxMeas;
+eStat.MinMeas=MinMeas;
+eStat.MaxModel=MaxModel;
+eStat.MinModel=MinModel;
+eStat.MeanMeas=avgSum1;
+eStat.MeanModel=avgSum2;
+eStat.MeanError=eME;
+eStat.AbsoluteError=eAE;
+eStat.RMSE=eRMSE;
+eStat.CenteredRMSE=eCentRMSE;
+eStat.Correlation=TheCorr;
+eStat.ScatterIndex=eScat;
+eStat.CenteredScatterIndex=eCentScat;
+eStat.Slope=eSlope;
+eStat.strMaxMeas=DoubleTo4dot2f(MaxMeas);
+eStat.strMinMeas=DoubleTo4dot2f(MinMeas);
+eStat.strMaxModel=DoubleTo4dot2f(MaxModel);
+eStat.strMinModel=DoubleTo4dot2f(MinModel);
+eStat.strMeanMeas=DoubleTo4dot2f(avgSum1);
+eStat.strMeanModel=DoubleTo4dot2f(avgSum2);
+eStat.strMeanError=DoubleTo4dot2f(eME);
+eStat.strAbsoluteError=DoubleTo4dot2f(eAE);
+eStat.strRMSE=DoubleTo4dot2f(eRMSE);
+eStat.strCenteredRMSE=DoubleTo4dot2f(eCentRMSE);
+eStat.strCorrelation=DoubleTo4dot2f(TheCorr);
+eStat.strScatterIndex=DoubleTo4dot2f(eScat);
+eStat.strCenteredScatterIndex=DoubleTo4dot2f(eCentScat);
+eStat.strSlope=DoubleTo4dot2f(eSlope);
+eStat.str=eStat.strMeanError + " " + eStat.strAbsoluteError + " " + eStat.strRMSE + " " + eStat.strCenteredRMSE + " " + eStat.strCorrelation + " " + eStat.strScatterIndex + " " + eStat.strCenteredScatterIndex;
+return eStat;
+}
+T_stat ComputeStatistics_MyVector(MyVector<double> const& ListMeas, MyVector<double> const& ListModel)
+{
+if (ListMeas.size() != ListModel.size()) {
+std::cerr << "Error in ComputeStatistics_MyVector\n";
+std::cerr << "Discrepancy in number of measurements\n";
+std::cerr << "Please solve the problem\n";
+exit(1);
+}
+std::vector<PairMM> ListPair;
+int nbEnt=ListMeas.size();
+for (int iEnt=0; iEnt<nbEnt; iEnt++) {
+ListPair.push_back({ListMeas(iEnt), ListModel(iEnt)});
+}
+return ComputeStatistics_Pair(ListPair);
 }
 void AngleRhoRot(MyMatrix<double> & U_rho, MyMatrix<double> & V_rho,
 GridArray const& GrdArr)
@@ -7148,6 +7182,10 @@ std::string eChar=HisPrefix.substr(iChar,1);
 if (eChar == "/")
 ListPos.push_back(iChar);
 }
+if (ListPos.size() == 0) {
+std::cerr << "We should use / in HisPrefix for ROMS_IVICA\n";
+exit(1);
+}
 int iCharLast=ListPos[ListPos.size() - 1];
 std::string eDir=HisPrefix.substr(0,iCharLast+1);
 std::string RawPrefix=HisPrefix.substr(iCharLast+1,len-iCharLast-1);
@@ -7889,8 +7927,10 @@ Eigen::Tensor<double,3> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
 int s_rho=Utot.dimension(0);
 MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
 MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
-U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrRho.MSK);
-V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrRho.MSK);
+std::cerr << "Before My_u2rho\n";
+U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrU.MSK);
+std::cerr << "After My_u2rho\n";
+V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrV.MSK);
 }
 if (eModelName == "WWM") {
 U=Get2DvariableSpecTime(TotalArr, "CURTX", eTimeDay);

@@ -819,6 +819,7 @@
       !
       !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
+      NumberIterationSolver = 0
       nbIter=0
       DO
         is_converged(1) = 0
@@ -844,6 +845,7 @@
             END IF
           END IF
           IF (test) THEN
+            NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
             CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
 #ifdef DEBUG
             sumESUM = sumESUM + sum(abs(eSum))

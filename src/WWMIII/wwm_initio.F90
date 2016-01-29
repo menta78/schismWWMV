@@ -190,6 +190,12 @@
 !
 ! water level, currents and depths ...
 !
+       ALLOCATE(NumberIterationSolver(MNP), stat=istat)
+       IF (istat/=0) CALL WWM_ABORT('error in allocate of NumberIterationSolver')
+       NumberIterationSolver = 0
+!
+! water level, currents and depths ...
+!
        ALLOCATE(WINDXY(MNP,2), PRESSURE(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 19')
        WINDXY = zero
