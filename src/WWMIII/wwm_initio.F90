@@ -1172,8 +1172,12 @@
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
        TMPPAR = 0.
+       INTEGER         :: nbINIT1
+       nbINIT1 = 0
        IF (.NOT. LHOTR .AND. LINID) THEN
+         WRITE(STAT%FHNDL,*) 'Computing initial condition by parametric method'
          IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
+           WRITE(STAT%FHNDL,*) 'Computing the TMPPAR'
 #ifdef NCDF
            CALL READ_NETCDF_WW3_PARAM
 #else
@@ -1198,6 +1202,7 @@
              IF (DIMMODE .EQ. 1 .AND. IP .EQ. 1) CYCLE
              IF (INITSTYLE == 1) THEN
                IF (WIND10 .GT. 1.) THEN !AR: why one? 
+                 nbINIT1 = nbINIT1 + 1
                  WINDTH = VEC2DEG(WINDX,WINDY)
                  CALL DEG2NAUT(WINDTH, DEG, LNAUTIN)
                  FDLESS = G9*AVETL/WIND10**2
@@ -1215,7 +1220,6 @@
                  SPPAR(7) = 0.1
                  SPPAR(8) = 3.3
                  CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
-                 AC2(:,:,IP) = ACLOC
                ELSE
                  ACLOC = 1.E-8
                END IF
@@ -1225,13 +1229,12 @@
                TMPPAR(7,IP) = 0.1
                TMPPAR(8,IP) = 3.3
                CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
-               AC2(:,:,IP) = ACLOC
              ELSE IF (INITSTYLE == 3) THEN
                OPEN(1113,FILE='fort.10003',STATUS='OLD')
                DO ID=1,MDC
                  DO IS=1,MSC
-                   READ(1113,*) K, M, AC2(IS,ID,IP)
-                   AC2(IS,ID,IP) =  AC2(IS,ID,IP) / PI2 / SPSIG(IS)
+                   READ(1113,*) K, M, ACLOC(IS,ID)
+                   ACLOC(IS,ID) =  ACLOC(IS,ID) / PI2 / SPSIG(IS)
                  ENDDO
                ENDDO
                REWIND(1113)
@@ -1242,13 +1245,18 @@
              HS          = 0.
              TP          = 0.
              WINDTH      = 0.
-             AC2(:,:,IP) = 0.
+             ACLOC       = 0.
            END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
+           AC2(:,:,IP) = ACLOC
          END DO ! IP
        ELSE IF (LHOTR .AND. .NOT. LINID) THEN
+         WRITE(STAT%FHNDL,*) 'Calling the INPUT_HOTFILE'
          CALL INPUT_HOTFILE
        END IF
+       WRITE(STAT%FHNDL,*) 'nbINIT1 = ', nbINIT1
+       CALL Print_SumAC2("After the INIT operations")
        CALL SET_WAVE_BOUNDARY
+       CALL Print_SumAC2("After SET_WAVE_BOUNDARY")
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
