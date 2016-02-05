@@ -839,6 +839,7 @@
 #endif
       FLUSH(STAT%FHNDL)
       AC1 = AC2
+      CALL Print_SumAC2("Leaving INITIALIZE_WWM")
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1255,7 +1256,7 @@
        END IF
        WRITE(STAT%FHNDL,*) 'nbINIT1 = ', nbINIT1
        CALL Print_SumAC2("After the INIT operations")
-       CALL SET_WAVE_BOUNDARY
+!       CALL SET_WAVE_BOUNDARY
        CALL Print_SumAC2("After SET_WAVE_BOUNDARY")
        END SUBROUTINE
 !**********************************************************************

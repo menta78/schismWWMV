@@ -197,17 +197,17 @@
           FLUSH(STAT%FHNDL)
           allocate(igrib(n))
           DO i=1,n
-            WRITE(STAT%FHNDL,*) 'i=', i
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) 'i=', i
+!            FLUSH(STAT%FHNDL)
             call grib_new_from_file(ifile, igrib(i))
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 1'
+!            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'directionNumber', idir)
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 2'
+!            FLUSH(STAT%FHNDL)
             call grib_get(igrib(i), 'frequencyNumber', ifreq)
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 3'
+!            FLUSH(STAT%FHNDL)
             IF ((idir .eq. 1).and.(ifreq .eq. 1)) THEN
               CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
               !
@@ -216,8 +216,8 @@
               ListIFileWAM(idx) = IFILE_IN
             END IF
             call grib_release(igrib(i))
-            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
-            FLUSH(STAT%FHNDL)
+!            WRITE(STAT%FHNDL,*) '  Debug loop GRID, step 4'
+!            FLUSH(STAT%FHNDL)
           END DO
           deallocate(igrib)
           CALL GRIB_CLOSE_FILE(ifile)
