@@ -932,9 +932,11 @@
            ! Inhomogenous in space
            ! Steady in time
            IF (WBTP*FRLOW .gt. 1) THEN
+             Print *, 'WBTP=', WBTP, ' FRLOW=', FRLOW
              CALL WWM_ABORT('FRLOW is too high with respect to WBTP')
            END IF
            IF (WBTP*FRHIGH .lt. 1) THEN
+             Print *, 'WBTP=', WBTP, ' FRHIGH=', FRHIGH
              CALL WWM_ABORT('FRHIGH is too low with respect to WBTP')
            END IF
          END IF
