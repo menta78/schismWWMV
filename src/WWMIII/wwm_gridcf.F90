@@ -336,10 +336,6 @@
             END SELECT
          END IF
 
-
-
-         RETURN
-
 101      FORMAT (1X,'The averege element length = ',F16.5/ &
      &           1X,'The minimum element length = ',F16.5/ &
      &           1X,'The maximum element length = ',F16.5/ )
@@ -415,6 +411,7 @@
       SIGPOW = zero
       DS_BAND = zero
       DS_INCR = zero
+
       DO ID=1,MDC-1
         ID_NEXT(ID)=ID+1
       END DO
@@ -423,13 +420,7 @@
         ID_PREV(ID)=ID-1
       END DO
       ID_PREV(1)=MDC
-      IF (USE_FRATIO) THEN
-        FRHIGH = FRLOW
-        DO IS=2,MSC
-          FRHIGH = FRHIGH * FRATIO
-        END DO
-      END IF
-      
+
       SGLOW  = PI2*FRLOW
       SGHIGH = PI2*FRHIGH
 
