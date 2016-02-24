@@ -44,6 +44,10 @@
 
 
 
+
+
+
+
 \title{{\tt C++} - ocean}
 
 
@@ -69,17 +73,48 @@ We explain here the C++ programs which are designed to work with oceanographic a
 
 
 
+\section{Namelist format}
+
+The input of the programs is done in namelist files that contains the information used.
+They are formed of blocks of the following kinds.
+
+\begin{verbatim}
+&PROC
+ MODELNAME = "WWM"
+ GridFile = "hgrid.gr3",
+ HisPrefix = "WWM_output_",
+/
+\end{verbatim}
+
+The namelists are done according to following principles:
+\begin{enumerate}
+\item The beginning of a block is {\tt \&PROC} and the ending is {\tt /}.
+\item If a variable is not defined in a block then the default value is used.
+\item A variable cannot be defined two times.
+\item The blocks and variables can be ordered in anyway the users want. A block may be completely absent in which case all its variables are the default ones.
+\item Everything after a {\tt !} is considered as comment and not read.
+\item Strings can be delimited by {\tt {\"{ }}} or {\tt '} or nothing, but endings cannot be mixed.
+\item When inconsistencies are detected, clear error messages are printed.
+\end{enumerate}
+
+
+
+
+
+
+
+
+
 \section{Model data input}
 
-The supported models are: {\tt WWM}, {\tt WAM}, {\tt COSMO}, {\tt WW3}, {\tt ROMS}, {\tt GRIB\_ECMWF}, {\tt GRIB\_GFS}, {\tt GRIB\_COSMO}, {\tt GRIB\_DWD}.
+The supported models are: {\tt WWM}, {\tt WWM\_DAILY}, {\tt WAM}, {\tt COSMO}, {\tt WW3}, {\tt ROMS}, {\tt GRIB\_ECMWF}, {\tt GRIB\_GFS}, {\tt GRIB\_COSMO}, {\tt GRIB\_DWD}.
 The relevant values in the file are {\tt GridFile}, {\tt HisPrefix} and {\tt MODELNAME}.
 
 
 
 Currently the code supports the following models:
 \begin{enumerate}
-\item {\tt WWM}: The Wind Wave Model III for wave modelling. 3 formats of grids are supported at the present moment:
-{\bf .gr3}, {\bf .dat} (XFN format) and {\bf .nc} (netcdf file).
+\item {\tt WWM}: The Wind Wave Model III for wave modelling. 3 formats of grids are supported at the present moment: {\bf .gr3}, (or {\bf .ll} a synonym for gr3 files), {\bf .dat} (XFN format) and {\bf .nc} (netcdf file).
 Example of input file:
 \begin{verbatim}
  MODELNAME = "WWM"
@@ -98,6 +133,7 @@ or
  GridFile = "WWM_output_0001.nc",
  HisPrefix = "WWM_output_",
 \end{verbatim}
+\item {\tt WWM\_DAILY} is a variant of the above where the files are in disordered form, for example of the form {\tt WWM\_output\_20160219\_00.nc}.
 \item {\tt WAM}: Both in its structured and unstructured versions.
 \begin{verbatim}
  MODELNAME = "WAM"
@@ -131,22 +167,39 @@ or
  HisPrefix = "/home/mathieu/Forecast_input/ECMWF_coarse/", 
 \end{verbatim}
 The {\tt GridFile} does not need to be set because the grid is part of the data itself.
-
 \end{enumerate}
 
 
-\section{Time and variables}
-
-The times are enetered just as in {\tt WWM}.
-Example:
+\section{Time conventions}
+The times are entered in following format:
 \begin{verbatim}
  BEGTC = "20150410.000000",
  ENDTC = "20150421.120000",
  DELTC = 7200, 
  UNITC = "SEC", 
 \end{verbatim}
+as it this means that we do output from {\tt 2015-04-10 00:00:00} to {\tt 2015-04-21 12:00:00} at 2 hours of interval.
+
+The possible values for UNITC are {\tt SEC}, {\tt MIN}, {\tt HOUR} and {\tt DAY}. The Default value is {\tt SEC}.
+
+The value of {\tt DELTC} specifies the interval between time output. This is a double precision number so for example the following
+\begin{verbatim}
+ DELTC = 0.5, 
+ UNITC = "HOUR", 
+\end{verbatim}
+means that output is done every $30$ minutes.
 
 
+\section{Variables}
+
+There are many variables possible. The possible variables are of 4 kinds:
+\begin{enumerate}
+\item kind ``rho'': those are scalar variables over the domain. For example the bathymetry.
+\item kind ``uv'': those are vector variables over the domain. For example current on the ocean surface.
+\item kind ``3Drho'': those are scalar variables over the domain with a vertical slant. For example the salinity.
+\item kind ``3Duv'': those are vector variables over the domain. For example the horizontal component of the current.
+\end{enumerate}
+Most variables are of type rho. Thus we indicate the type only if different from rho.
 
 
 The variables that are available for use and plots are:\\
@@ -156,15 +209,16 @@ The variables that are available for use and plots are:\\
 \item {\bf CFL2}: CFL variable number 2
 \item {\bf CFL3}: CFL variable number 3
 \item {\bf FieldOut1}: Generic Field out 1
-\item {\bf IOBP\_WW3}: The IOBP of the WW3 model
+\item {\bf ThreeDfield1} (3Drho): Generic 3D field out 1
+\item {\bf IOBPWW3}: The IOBP of the WW3 model
 \item {\bf MAPSTA}: The MAPSTA of the WW3 model
 \end{enumerate}
 {\bf Atmospheric variables}:
 \begin{enumerate}
-\item {\bf WIND\_X}: eastward wind component at 10m.
-\item {\bf WIND\_X}: northward wind component at 10m.
-\item {\bf WIND10}: 10m wind speed (as a vector with Uwind, Vwind components)
-\item {\bf WINDMAG}: Wind magnitude
+\item {\bf Uwind}: eastward wind component at 10m. (WWM : Uwind)
+\item {\bf Vwind}: northward wind component at 10m. (WWM : Vwind)
+\item {\bf WIND10} (uv): 10m wind speed (WWM : Uwind/Vwind)
+\item {\bf WINDMAG}: Wind magnitude (WWM : WINDMAG)
 \item {\bf AIRT2}: 2m air temperature
 \item {\bf Rh2}: 2m air humidity
 \item {\bf AIRD}: Surface air density
@@ -177,37 +231,55 @@ The variables that are available for use and plots are:\\
 \item {\bf ssflux}: surface salinity flux (ah ah)
 \item {\bf evaporation}: evaporation
 \item {\bf SurfPres}: surface air pressure.
+\item {\bf AirZ0}: air roughness length (WWM : Z0)
+\item {\bf AirFricVel}: air friction velocity (WWM : UFRIC)
 \end{enumerate}
 {\bf Oceanic variables}:
 \begin{enumerate}
-\item {\bf SurfCurr}: Surface currents
-\item {\bf SurfCurrMag}: Surface currents magnitude
+\item {\bf SurfCurr} (uv): Surface currents (WWM : CURTX/CURTY or UsurfCurr/VsurfCurr)
+\item {\bf UsurfCurr}: Surface current eastward component (WWM : as above)
+\item {\bf VsurfCurr}: Surface currents northward component (WWM : as above)
+\item {\bf SurfCurrMag}: Surface currents magnitude (WWM : as above)
 \item {\bf TempSurf}: Surface sea temperature
 \item {\bf SaltSurf}: Surface sea salinity
-\item {\bf ZetaOcean}: free surface elevation
+\item {\bf ZetaOcean}: free surface elevation (WWM : WATLEV)
+\item {\bf Curr} (3Duv): Current (WWM : Curr)
 \end{enumerate}
 {\bf Wave variables}:
 \begin{enumerate}
-\item {\bf Hwave}: Significant Wave height
-\item {\bf BreakingFraction}: quotient Hwave / Depth.
-\item {\bf TM02}: zero crossing wave period
-\item {\bf CdWave}: drag coefficient from the wave model
-\item {\bf AlphaWave}: Charnock coefficient from the wave model
-\item {\bf MeanWaveDir}: mean wave direction
-\item {\bf PeakWaveDir}: peak wave direction
-\item {\bf DiscPeakWaveDir}: discrete peak wave direction
-\item {\bf MeanWavePer}: mean wave period
-\item {\bf PeakWavePer}: peak wave period
-\item {\bf MeanWaveFreq}: Mean wave frequency
-\item {\bf PeakWaveFreq}: Peak wave frequency
-\item {\bf MeanWaveDirSpread}: Mean wave directional spreading
-\item {\bf PeakWaveDirSpread}: Peak wave directional spreading
-\item {\bf ZetaSetup}: free surface elevation from the solution of the setup equation
-\item {\bf TotSurfStr}: total surface stress
+\item {\bf Hwave}: Significant Wave height (WWM: HS)
+\item {\bf BreakingFraction}: quotient Hwave / Depth (WWM : needs HS and WATLEV)
+\item {\bf TM02}: zero crossing wave period (WWM : TM02)
+\item {\bf CdWave}: drag coefficient from the wave model (WWM : CD)
+\item {\bf AlphaWave}: Charnock coefficient from the wave model (WWM : ALPHA\_CH)
+\item {\bf MeanWaveDir}: mean wave direction (WWM : DM)
+\item {\bf PeakWaveDir}: peak wave direction (WWM : PEAKD)
+\item {\bf MeanWaveDirVect} (uv): mean wave direction as direction plot (WWM : DM)
+\item {\bf PeakWaveDirVect} (uv): peak wave direction as direction plot (WWM : PEAKD)
+\item {\bf DiscPeakWaveDir}: discrete peak wave direction (WWM : DPEAK)
+\item {\bf MeanWavePer}: mean wave period (WWM : TM01)
+\item {\bf PeakWavePer}: peak wave period (WWM : TPP)
+\item {\bf MeanWaveFreq}: Mean wave frequency (WWM : needs TM01)
+\item {\bf PeakWaveFreq}: Peak wave frequency (WWM : needs TPP)
+\item {\bf MeanWaveLength}: Mean wave length (WWM : WLM)
+\item {\bf PeakWaveLength}: Peak wave length (WWM : LPP)
+\item {\bf MeanWaveNumber}: Mean wave Number (WWM : KLM)
+\item {\bf PeakWaveNumber}: Peak wave Number (WWM : KPP)
+\item {\bf MeanWaveDirSpread}: Mean wave directional spreading (WWM : DSPR)
+\item {\bf PeakWaveDirSpread}: Peak wave directional spreading (WWM : PEAKDSPR)
+\item {\bf ZetaSetup}: free surface elevation from the solution of the setup equation (WWM : ZETA\_SETUP)
+\item {\bf TotSurfStr}: total surface stress (WWM : TAUTOT)
+\item {\bf WaveSurfStr}: wave supported surface stress (WWM : TAUW)
+\item {\bf SurfStrHF}: high frequency surface stress (WWM : TAUHF)
 \end{enumerate}
 
+It is important to note that this is a uniform interface.
+You specify the model, the variables you need and the software tries
+to recover them by using specific methodology of the model (GRIB, netCDF, etc.).
+The same names are used for all models.
 
-
+The variable can also be composed. For example {\tt Hwave\_MeanWaveDirVect} means u/v set to the mean
+wave direction and the F value set to the significant wave height.
 
 
 
@@ -252,7 +324,7 @@ It means that model output of DWD from the directory {\tt /home/mathieu/Forecast
 
 Variable that is plotted is {\tt WINDMAG} only as selected by the {\tt T/F} switches. If a variable is not put then it is false by default.
 
-A small example input file for {\tt PLOT\_diff\_results} is the follwoing:
+A small example input file for {\tt PLOT\_diff\_results} is the following:
 \begin{verbatim}
 &PROC
  MODELNAME = "WAM", 
@@ -267,6 +339,7 @@ A small example input file for {\tt PLOT\_diff\_results} is the follwoing:
  PicPrefix = "Pictures/WAM_Hwave_coupled_uncoupled/",
  Extension= "png",
  KeepNC_NCL = T,
+ NPROC = 2,
 /
 
 &VARS
@@ -276,8 +349,44 @@ A small example input file for {\tt PLOT\_diff\_results} is the follwoing:
 /
 \end{verbatim}
 
+It is possible to plot combination of variables. For example, if we write
+\begin{verbatim}
+&VARS
+ Hwave_WIND10 = T, 
+/
+\end{verbatim}
+then a vector plot of the wind is done with superimposed significant wave height.
 
-\subsubsection{Nature query option}
+
+\subsubsection{PROC entries meaning}
+The {\tt PROC} entry contains all instructions relativer to the process itself.
+Where to access data, where to write it, stuff like that.
+
+List of all options:
+\begin{enumerate}
+\item {\tt KeepNC\_NCL} (logical): whether to keep the {\tt .ncl} files and input {\tt .nc}
+files in the temporary directory. Default is false. Put it as true if you want to improve
+your pictures and/or solve a bug in the .ncl program.
+\item {\tt Extension} (logical): types of the picture file. Default is {\tt png}.
+\item {\tt ListNatureQuery}: see Section \ref{NatureQuery} for explanation.
+\item {\tt PicPrefix} (string): Where you put your picture. Default value is {\tt Pictures/DIR\_plot/}.
+\item {\tt FirstCleanDirectory} (logical): whether to remove existing file in the directory. Default is true.
+\item {\tt WriteITimeInFileName} (logical): specifies whether we write the iTime entry in the filename. Default is true.\\
+If true the filename are typically of the form {\tt Hwave\_0071\_20160208\_230000.png} and if false the filename are of the form {\tt Hwave\_20160208\_230000.png}.
+\item {\tt OverwritePrevious} (logical): if set to false then previous picture files are not overwritten. Default is true.
+\item {\tt NPROC} (integer): Number of processors used for making the plots. Default is 1. If {\tt KeepNC\_NCL} is selected then NPROC should be equal to 1. The parallelization is over the NCL programs.
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Nature query option}\label{NatureQuery}
 We have following possible queries for the {\tt PLOT\_result}:
 \begin{verbatim}
 ListNatureQuery = 'instant', 'average', 'swathMax', 'swathMin'
@@ -292,14 +401,16 @@ Above options are also possible for {\tt PLOT\_diff\_result}. But two more optio
 \subsubsection{Colorbar selections}
 We have following options for the colormaps:
 \begin{verbatim}
-DoColorBar = T
-BoundSingle_var = Hwave, TM02
-BoundSingle_min = 0,   5
-BoundSingle_max = 4,   20
-BoundDiff_var = Hwave, TM02
-BoundDiff_min = -0.2, -2
-BoundDiff_max = 0.2,  2
-VariableColormap = F
+&PLOT
+ DoColorBar = T
+ BoundSingle_var = Hwave, TM02
+ BoundSingle_min = 0,   5
+ BoundSingle_max = 4,   20
+ BoundDiff_var = Hwave, TM02
+ BoundDiff_min = -0.2, -2
+ BoundDiff_max = 0.2,  2
+ VariableColormap = F
+/
 \end{verbatim}
 By default a fixed colorbar is used for the plots. The range is fixed in the code for each variable and is generally reasonable. If you want to change the minimum/maximum, then you need to use {\tt BoundSingle\_var/min/max} for {\tt PLOT\_result} and {\tt BoundDiff\_var/min/max} for {\tt PLOT\_diff\_results}.
 
@@ -310,11 +421,13 @@ If you want a colorbar that varies from one time to the next then use {\tt Varia
 By default we plot the data over a rectangle defined by the longitude and latitude of the grid considered. This grid is called the {\bf main} grid.
 The relevant entries to this issue are:
 \begin{verbatim}
-DoMain = F,
-ListFrameMinLon = -10, -5
-ListFrameMinLat = -10, 5
-ListFrameMaxLon = 10,  20
-ListFrameMaxLat = 10, 20
+&PLOT
+ DoMain = F,
+ ListFrameMinLon = -10, -5
+ ListFrameMinLat = -10, 5
+ ListFrameMaxLon = 10,  20
+ ListFrameMaxLat = 10, 20
+/
 \end{verbatim}
 The variable {\bf DoMain} specifies whether we plot the main region or not. By default it is true.
 The {\bf ListFrame} variables specifies the other rectangle considered. With the above choice we have two regions being considered. One is from longitude -10 to 10 and latitude -10 to 10. The pther is from longitude -5 to 20 and latitude 5 to 20.
@@ -327,9 +440,10 @@ Following options are available in the {\tt PLOT} section:
 \begin{enumerate}
 \item {\tt DoTitle} (logical): draw the title of the figures. Default is true.
 \item {\tt PlotDepth} (logical): draw the bathymetry of the domain if available. Default is true.
-\item {\tt PrintMMA} (logical): Print the minimum / maximum / average of the fields considered. Default is false
+\item {\tt PrintMMA} (logical): Print the minimum / maximum / average values of the fields considered. Default is false
 \item {\tt LocateMM} (logical): locate the position of maximum and minimum values. Default is false.
 \item {\tt FillLand} (logical): Fill the land by using the geographic database of NCL.
+\item {\tt cnSmoothingOn} (string): whether to apply smoothing. Default is true.
 \item {\tt cnFillMode} (string): Method used for drawing. Available methods are:
   \begin{enumerate}
   \item ``RasterFill'': It plots values of the cell corresponding to the field considered.
@@ -337,6 +451,18 @@ Following options are available in the {\tt PLOT} section:
   \item ``CellFill'': It is a smoothed field (only for finite difference)
   \end{enumerate}
   Defaut is RasterFill.
+\item {\tt UseFDgrid} (logical): sometimes it is better to do plots
+using finite difference grids, even if the grid is unstructured. Default is false.
+\item {\tt RenameVariable\_VarName1} and {\tt RenameVariable\_VarName2} (list of string): Those two variables can be used to rename the variable used for output.\\
+  For example
+\begin{verbatim}
+&PLOT
+ RenameVariable_VarName1 = "Hwave", 
+ RenameVariable_VarName2 = "Wave height", 
+/
+\end{verbatim}
+will use the word ``Wave height'' in the picture title for the plots of the Hwave variable instead of the standard name ``Significant wave height''.
+  
 \end{enumerate}
 
 
@@ -497,10 +623,6 @@ The {\tt OUTPUT} array contains the description of the model output. We have a {
 Similarly, we have the {\tt BEGTC}, {\tt ENDTC} for the time frame of the data output, {\tt DELTC} for the frequency of the output and {\tt DEFINETC} for how large a single file should be.
 
 The {\tt VARS} array contains the list of variables that are used for the output.
-
-
-
-
 
 
 

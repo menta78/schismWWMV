@@ -423,26 +423,25 @@
         ID_PREV(ID)=ID-1
       END DO
       ID_PREV(1)=MDC
-      IF (USE_FRATIO) THEN
-        FRHIGH = FRLOW
-        DO IS=2,MSC
-          FRHIGH = FRHIGH * FRATIO
-        END DO
-      END IF
       
-      SGLOW  = PI2*FRLOW
-      SGHIGH = PI2*FRHIGH
-
 !2do check FRINTF for LOPTSIG
 
       IF (LOPTSIG) THEN
         SFAC   = 1.1_rkind
         FRINTF = 0.1_rkind
+        FRHIGH = FRLOW
+        DO IS=2,MSC
+          FRHIGH = FRHIGH * SFAC
+        END DO
       ELSE 
         FRINTF = LOG(SGHIGH/SGLOW)/MyREAL(MSC-1) 
         SFAC   = EXP(FRINTF)
       END IF
 
+      SGLOW  = PI2*FRLOW
+      SGHIGH = PI2*FRHIGH
+
+      
       FRATIO = SFAC
       FRINTH = SQRT(SFAC)
       FR(1)  = FRLOW

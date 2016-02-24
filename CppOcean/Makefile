@@ -12,7 +12,7 @@ OUTPUTFLAG 	= -o
 
 CFLAGS 		= -I$(EIGEN_PATH) $(NETCDF_CXX_ALLINC) $(GRIB_INCDIR)
 
-LIBS		= $(NETCDF_CXX_LINK) $(GRIB_C_LINK)
+LIBS		= -lm -lpthread $(NETCDF_CXX_LINK) $(GRIB_C_LINK)
 
 %.o: %.cpp
 	@echo
