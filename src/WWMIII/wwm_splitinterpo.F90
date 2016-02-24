@@ -19,8 +19,6 @@ MODULE SplitInterpo
         integer, dimension(:), pointer :: ListStartIDXrange
         integer, dimension(:), pointer :: ListIE
       END TYPE FULL_SPLIT_INFO
-
-     
       CONTAINS
 !**********************************************************************
 !*                                                                    *

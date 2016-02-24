@@ -101,28 +101,26 @@
          REAL(rkind), allocatable           :: nwild_loc(:)
          REAL(rkind), allocatable           :: nwild_loc_res(:)
 #endif
-         REAL(rkind),  PARAMETER            :: ZERO     = 0._rkind
-         REAL(rkind),  PARAMETER            :: ONE      = 1._rkind
-         REAL(rkind),  PARAMETER            :: TWO      = 2._rkind
-         REAL(rkind),  PARAMETER            :: THREE    = 3._rkind
-         REAL(rkind),  PARAMETER            :: FOUR     = 4._rkind
-         REAL(rkind),  PARAMETER            :: FIVE     = 5._rkind
-         REAL(rkind),  PARAMETER            :: SIX      = 6._rkind
-         REAL(rkind),  PARAMETER            :: SEVEN    = 7._rkind
-         REAL(rkind),  PARAMETER            :: EIGHT    = 8._rkind
-         REAL(rkind),  PARAMETER            :: NINE     = 9._rkind
-         REAL(rkind),  PARAMETER            :: TEN      = 10._rkind
-         
-         REAL(rkind),  PARAMETER            :: ZEROFIVE = 0.5_rkind
+         REAL(rkind), PARAMETER             :: ZERO     = 0._rkind
+         REAL(rkind), PARAMETER             :: ONE      = 1._rkind
+         REAL(rkind), PARAMETER             :: TWO      = 2._rkind
+         REAL(rkind), PARAMETER             :: THREE    = 3._rkind
+         REAL(rkind), PARAMETER             :: FOUR     = 4._rkind
+         REAL(rkind), PARAMETER             :: FIVE     = 5._rkind
+         REAL(rkind), PARAMETER             :: SIX      = 6._rkind
+         REAL(rkind), PARAMETER             :: SEVEN    = 7._rkind
+         REAL(rkind), PARAMETER             :: EIGHT    = 8._rkind
+         REAL(rkind), PARAMETER             :: NINE     = 9._rkind
+         REAL(rkind), PARAMETER             :: TEN      = 10._rkind
+         REAL(rkind), PARAMETER             :: ZEROFIVE = 0.5_rkind
 
-         REAL(rkind),  PARAMETER            :: TENM8    = 1.0E-1_rkind
-         REAL(rkind),  PARAMETER            :: TENM10   = 1.0E-1_rkind
+         REAL(rkind), PARAMETER             :: TENM8    = 1.0E-1_rkind
+         REAL(rkind), PARAMETER             :: TENM10   = 1.0E-1_rkind
 
-
-         REAL(rkind),  PARAMETER            :: ONESIXTH = ONE/SIX
-         REAL(rkind),  PARAMETER            :: ONETHIRD = ONE/THREE
-         REAL(rkind),  PARAMETER            :: TWOTHIRD = TWO/THREE
-         REAL(rkind),  PARAMETER            :: ONEHALF  = ONE/TWO
+         REAL(rkind), PARAMETER             :: ONESIXTH = ONE/SIX
+         REAL(rkind), PARAMETER             :: ONETHIRD = ONE/THREE
+         REAL(rkind), PARAMETER             :: TWOTHIRD = TWO/THREE
+         REAL(rkind), PARAMETER             :: ONEHALF  = ONE/TWO
 
          REAL(rkind), PARAMETER             :: PI        = 3.141592653589793_rkind
          REAL(rkind), PARAMETER             :: PIHALF    = PI*ONEHALF
@@ -169,6 +167,7 @@
          INTEGER                            :: NMAX
          REAL(rkind), PARAMETER             :: DEPFAC   = 6.d0
          REAL(rkind)                        :: DSIGTAB
+         INTEGER, ALLOCATABLE               :: NumberIterationSolver(:)
 !
 ! Fundamental data types 
 !
@@ -180,6 +179,7 @@
            integer nbTime
            integer idVar
            real(rkind), allocatable :: ListTime(:)
+           logical MULTIPLE_IN
          END TYPE VAR_NETCDF_CF
 !
 ! ... logicals ... wwmDlogic.mod
@@ -946,7 +946,7 @@
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 63
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 64
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_BOUC = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.

@@ -560,7 +560,6 @@
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
       CALL PRINT_STATISTICS_IOBP_TOTAL
-      IOBP    = 0
 #ifdef MPI_PARALL_GRID
       DO IP=1,MNP
         IPglob=iplg(IP)

@@ -640,6 +640,65 @@ MODULE wwm_hotfile_mod
       INTEGER :: iret, ncid, ac_id, var_oned_id
       INTEGER :: nbF, iProc, idxFil, idxMem
       integer istat
+      REAL(rkind), allocatable :: ListTimeRead(:)
+      integer nbTimeHotfile
+      integer IHOTREAD
+      REAL(rkind), parameter :: TolDay  = 0.0001_rkind
+      real(rkind) :: ConvertToDay, eTime, eTimeStart
+      character (len=100) :: eStrUnitTime
+      integer iTime, varid, dimids(2)
+      !
+      ! Reading the time.
+      !
+      ISTAT = nf90_open(TRIM(HOTIN%FNAME), nf90_nowrite, ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
+
+      ISTAT = nf90_inq_varid(ncid, "ocean_time", varid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
+
+      ISTAT = nf90_inquire_variable(ncid, varid, dimids=dimids)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
+
+      ISTAT = nf90_inquire_dimension(ncid, dimids(1), len=nbTimeHotfile)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
+
+      ISTAT = nf90_get_att(ncid, varid, "units", eStrUnitTime)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
+      CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+      
+      allocate(ListTimeRead(nbtimeHotfile), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
+
+      ISTAT = nf90_get_var(ncid, varid, ListTimeRead)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
+
+      IHOTREAD = -1
+      DO iTime=1,nbTimeHotfile
+        eTime=ListTimeRead(iTime)*ConvertToDay + eTimeStart
+        IF (ABS(eTime - MAIN % BMJD) .le. TolDay) THEN
+          IHOTREAD = iTime
+        END IF
+      END DO
+      deallocate(ListTimeRead)
+      
+      ISTAT = nf90_close(ncid)
+      CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
+
+      !
+      ! Now for the operations
+      !
+      IF (IHOTREAD .eq. -1) THEN
+        CALL WWM_ABORT('We did not find a matching entry in the hotfile')
+      END IF
+
+      
+      IF (IHOTREAD .ne. IHOTPOS_IN) THEN
+        WRITE(DBG%FHNDL,*) 'Remark: We have inconsistency in the data reading'
+        WRITE(DBG%FHNDL,*) 'IHOTREAD   = ', IHOTREAD
+        WRITE(DBG%FHNDL,*) 'IHOTPOS_IN = ', IHOTPOS_IN
+        WRITE(DBG%FHNDL,*) 'We use IHOTREAD later on'
+      END IF
+      
       IF (MULTIPLEIN_HOT.eq.0) THEN
 # ifdef MPI_PARALL_GRID
         iret=nf90_open(TRIM(HOTIN%FNAME), nf90_nowrite, ncid)
@@ -649,13 +708,13 @@ MODULE wwm_hotfile_mod
         iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, iret)
         DO IP=1,MNP
-          iret=nf90_get_var(ncid,ac_id,ACLOC, start=(/1,1,iplg(IP),IHOTPOS_IN/), count = (/MSC, MDC, 1, 1 /))
+          iret=nf90_get_var(ncid,ac_id,ACLOC, start=(/1,1,iplg(IP),IHOTREAD/), count = (/MSC, MDC, 1, 1 /))
           IF (iret /= 0) THEN
             Print *, 'This time send direcly your bug to Mathieu.Dutour@gmail.com'
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
           END IF
           AC2(:,:,IP)=ACLOC
-          iret=nf90_get_var(ncid,var_oned_id,VARLOC, start=(/1,iplg(IP),IHOTPOS_IN/), count = (/nbOned, 1, 1 /))
+          iret=nf90_get_var(ncid,var_oned_id,VARLOC, start=(/1,iplg(IP),IHOTREAD/), count = (/nbOned, 1, 1 /))
           IF (iret /= 0) THEN
             Print *, 'Same story. Send direcly your bug to Mathieu.Dutour@gmail.com'
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
@@ -671,9 +730,9 @@ MODULE wwm_hotfile_mod
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
         iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
-        iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/), count=(/MSC,MDC,MNP,1/))
+        iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTREAD/), count=(/MSC,MDC,MNP,1/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
-        iret=nf90_get_var(ncid,ac_id,VAR_ONED, start=(/1,1,IHOTPOS_IN/), count=(/nbOned, MNP, 1/))
+        iret=nf90_get_var(ncid,ac_id,VAR_ONED, start=(/1,1,IHOTREAD/), count=(/nbOned, MNP, 1/))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, iret)
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
@@ -688,7 +747,7 @@ MODULE wwm_hotfile_mod
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
           iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, iret)
-          iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTPOS_IN/),  count = (/MSC, MDC, MNP, 1 /))
+          iret=nf90_get_var(ncid,ac_id,AC2, start=(/1,1,1,IHOTREAD/),  count = (/MSC, MDC, MNP, 1 /))
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, iret)
           iret=nf90_close(ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, iret)
@@ -706,9 +765,9 @@ MODULE wwm_hotfile_mod
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, iret)
             iret=nf90_inq_varid(ncid, "var_oned", var_oned_id)
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 19, iret)
-            iret=nf90_get_var(ncid,ac_id,ACinB, start=(/1,1,1,IHOTPOS_IN/), count=(/MSC, MDC, NPLOC, 1 /))
+            iret=nf90_get_var(ncid,ac_id,ACinB, start=(/1,1,1,IHOTREAD/), count=(/MSC, MDC, NPLOC, 1 /))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
-            iret=nf90_get_var(ncid,var_oned_id,VAR_ONED_B, start=(/1,1,IHOTPOS_IN/), count=(/nbOned, NPLOC, 1 /))
+            iret=nf90_get_var(ncid,var_oned_id,VAR_ONED_B, start=(/1,1,IHOTREAD/), count=(/nbOned, NPLOC, 1 /))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 21, iret)
             iret=nf90_close(ncid)
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 22, iret)

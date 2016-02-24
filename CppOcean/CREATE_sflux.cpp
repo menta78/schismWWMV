@@ -61,28 +61,6 @@ std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
 exit(1);
 }
 }
-MyVector<int> WWM_ReadBoundFile_gr3(std::string const& BoundFile)
-{
-std::ifstream IN(BoundFile);
-std::string line;
-std::getline(IN, line);
-int mne, mnp;
-IN >> mne;
-IN >> mnp;
-MyVector<int> eVect(mnp);
-for (int i=0; i<mnp; i++) {
-int KTMP;
-double XPDTMP, YPDTMP, ZPDTMP;
-IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
-if (KTMP != i+1) {
-std::cerr << "Inconsistency at this level\n";
-exit(1);
-}
-int eIOBP=int(ZPDTMP);
-eVect(i)=eIOBP;
-}
-return eVect;
-}
 double TheSignFct(double const& eVal)
 {
 if (eVal > 0)
@@ -98,29 +76,27 @@ Lon=Lon - 360;
 if (Lon < -180)
 Lon=Lon + 360;
 }
-MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_rho)
+MyMatrix<double> My_u2rho(MyMatrix<double> const& eVar_u, MyMatrix<int> const& MSK_u)
 {
-int eta_rho=MSK_rho.rows();
-int xi_rho=MSK_rho.cols();
 int eta_u=eVar_u.rows();
 int xi_u=eVar_u.cols();
-if (eta_u != eta_rho || xi_u != xi_rho-1) {
-std::cerr << "Dimension error in My_u2rho\n";
-exit(1);
-}
+int eta_rho = eta_u;
+int xi_rho = xi_u + 1;
 MyMatrix<double> eVar_rho(eta_rho, xi_rho);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 int eSumMsk=0;
 double eSumVal=0;
-if (MSK_rho(i,j) == 1) {
+if (j<xi_u) {
+if (MSK_u(i,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_u(i,j);
+eSumVal += eVar_u(i,j);
 }
-if (j < xi_u) {
-if (MSK_rho(i,j+1) == 1) {
+}
+if (j > 0) {
+if (MSK_u(i,j-1) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_u(i,j+1);
+eSumVal += eVar_u(i,j-1);
 }
 }
 if (eSumMsk == 0) {
@@ -133,29 +109,27 @@ eVar_rho(i,j)=eVal;
 }
 return eVar_rho;
 }
-MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_rho)
+MyMatrix<double> My_v2rho(MyMatrix<double> const& eVar_v, MyMatrix<int> const& MSK_v)
 {
-int eta_rho=MSK_rho.rows();
-int xi_rho=MSK_rho.cols();
 int eta_v=eVar_v.rows();
 int xi_v=eVar_v.cols();
-if (eta_v != eta_rho-1 || xi_v != xi_rho) {
-std::cerr << "Dimension error in My_v2rho\n";
-exit(1);
-}
+int xi_rho = xi_v;
+int eta_rho = eta_v + 1;
 MyMatrix<double> eVar_rho(eta_rho, xi_rho);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 int eSumMsk=0;
 double eSumVal=0;
-if (MSK_rho(i,j) == 1) {
+if (i < eta_v) {
+if (MSK_v(i,j) == 1) {
 eSumMsk++;
 eSumVal=eSumVal + eVar_v(i,j);
 }
-if (i < eta_v) {
-if (MSK_rho(i+1,j) == 1) {
+}
+if (i > 0) {
+if (MSK_v(i-1,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_v(i+1,j);
+eSumVal=eSumVal + eVar_v(i-1,j);
 }
 }
 if (eSumMsk == 0) {
@@ -200,7 +174,7 @@ std::vector<double> LCoeff(3);
 for (int i=0; i<3; i++) {
 LCoeff[i]=eProduct(i);
 }
-# 282 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 253 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 return LCoeff;
 }
 bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
@@ -285,6 +259,72 @@ iEdge++;
 }
 }
 return ListEdges;
+}
+struct T_stat {
+int nbMeas;
+double MaxMeas;
+double MinMeas;
+double MaxModel;
+double MinModel;
+double MeanMeas;
+double MeanModel;
+double MeanError;
+double AbsoluteError;
+double RMSE;
+double CenteredRMSE;
+double Correlation;
+double ScatterIndex;
+double CenteredScatterIndex;
+double Slope;
+std::string strMaxMeas;
+std::string strMinMeas;
+std::string strMaxModel;
+std::string strMinModel;
+std::string strMeanMeas;
+std::string strMeanModel;
+std::string strMeanError;
+std::string strAbsoluteError;
+std::string strRMSE;
+std::string strCenteredRMSE;
+std::string strCorrelation;
+std::string strScatterIndex;
+std::string strCenteredScatterIndex;
+std::string strSlope;
+std::string strNature="ME    AE    RMSE CRMSE  CORR   SCI   CSCI";
+std::string str;
+};
+struct PairMM {
+double Meas;
+double Model;
+};
+void PrintMMA_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::string const& VarName)
+{
+int eta=F.rows();
+int xi=F.cols();
+double minval, maxval;
+double sum=0;
+int nb=0;
+bool IsFirst=true;
+for (int i=0; i<eta; i++)
+for (int j=0; j<xi; j++)
+if (MSK(i,j) == 1) {
+double eVal=F(i,j);
+sum+=eVal;
+nb++;
+if (IsFirst) {
+IsFirst=false;
+maxval=eVal;
+minval=eVal;
+}
+else {
+if (eVal > maxval)
+maxval=eVal;
+if (eVal < minval)
+minval=eVal;
+}
+}
+double eMean=sum/double(nb);
+std::cerr << "  " << VarName << " min=" << minval << " max=" << maxval << " avg=" << eMean << "\n";
 }
 struct SingleBlock {
 std::map<std::string, int> ListIntValues;
@@ -1003,7 +1043,7 @@ MyMatrix<T> Output(nbRow, nbRow);
 TMat_Inverse_destroy(provMat, Output);
 return Output;
 }
-# 1270 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 1319 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -1595,6 +1635,16 @@ if (eSubChar == eChar)
 return i;
 }
 return -1;
+}
+std::string DoubleTo4dot2f(double const& x)
+{
+char buffer[50];
+int n=sprintf(buffer, "%4.2f", x);
+if (n == 0) {
+std::cerr << "Clear error in DoubleTo4dot2f\n";
+exit(1);
+}
+return std::string(buffer);
 }
 std::string IntToString(int const & x)
 {
@@ -2556,7 +2606,7 @@ ListStringValues1["ENDTC"]="20110925.000000";
 ListDoubleValues1["DELTC"]=600;
 ListStringValues1["UNITC"]="SEC";
 ListStringValues1["GridFile"]="unset GridFile";
-ListStringValues1["BoundFile"]="unset BoundFile";
+ListStringValues1["BoundFile"]="unset";
 ListBoolValues1["CutWorldMap"]=false;
 ListBoolValues1["HigherLatitudeCut"]=false;
 ListBoolValues1["SplittingAt180"]=false;
@@ -2661,7 +2711,7 @@ std::map<std::string, std::string> ListStringValues1;
 std::map<std::string, std::vector<std::string> > ListListStringValues1;
 ListStringValues1["MODELNAME"]="unset MODELNAME";
 ListStringValues1["GridFile"]="unset GridFile";
-ListStringValues1["BoundFile"]="unset BoundFile";
+ListStringValues1["BoundFile"]="unset";
 ListStringValues1["HisPrefix"]="unset HisPrefix";
 ListStringValues1["BEGTC"]="20110915.000000";
 ListDoubleValues1["DELTC"]=600;
@@ -2747,6 +2797,33 @@ eCoordGrdArr.Jdx.push_back(j);
 }
 eCoordGrdArr.nbWet=nbWet;
 }
+MyVector<int> WWM_ReadBoundFile_gr3(std::string const& BoundFile)
+{
+if (IsExistingFile(BoundFile) == false) {
+std::cerr << "Error in WWM_ReadBoundFile_gr3\n";
+std::cerr << "Missing BoundFile=" << BoundFile << "\n";
+exit(1);
+}
+std::ifstream IN(BoundFile);
+std::string line;
+std::getline(IN, line);
+int mne, mnp;
+IN >> mne;
+IN >> mnp;
+MyVector<int> eVect(mnp);
+for (int i=0; i<mnp; i++) {
+int KTMP;
+double XPDTMP, YPDTMP, ZPDTMP;
+IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
+if (KTMP != i+1) {
+std::cerr << "Inconsistency at this level\n";
+exit(1);
+}
+int eIOBP=int(ZPDTMP);
+eVect(i)=eIOBP;
+}
+return eVect;
+}
 GridArray WWM_ReadGridFile_gr3(std::string const& GridFile)
 {
 GridArray GrdArr;
@@ -2792,6 +2869,38 @@ GrdArr.INE(iE,1)=ip2 - 1;
 GrdArr.INE(iE,2)=ip3 - 1;
 }
 return GrdArr;
+}
+MyVector<int> WWM_ReadBoundFile_xfn(std::string const& BoundFile)
+{
+if (IsExistingFile(BoundFile) == false) {
+std::cerr << "Error in WWM_ReadBoundFile_xfn\n";
+std::cerr << "Missing BoundFile=" << BoundFile << "\n";
+exit(1);
+}
+std::ifstream IN(BoundFile);
+std::string line;
+for (int i=0; i<2; i++)
+std::getline(IN, line);
+int ITMP, JTMP;
+IN >> ITMP;
+std::getline(IN, line);
+IN >> JTMP;
+int mnp=ITMP + JTMP;
+for (int i=0; i<7; i++)
+std::getline(IN, line);
+MyVector<int> eVect(mnp);
+for (int i=0; i<mnp; i++) {
+int KTMP;
+double XPDTMP, YPDTMP, ZPDTMP;
+IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
+if (KTMP != i+1) {
+std::cerr << "Inconsistency error\n";
+exit(1);
+}
+int eIOBP=int(ZPDTMP);
+eVect(i)=eIOBP;
+}
+return eVect;
 }
 GridArray WWM_ReadGridFile_xfn(std::string const& GridFile)
 {
@@ -4556,6 +4665,86 @@ exit(1);
 }
 std::cerr << "nbPlus = " << nbPlus << "  nbMinus = " << nbMinus << "\n";
 }
+T_stat ComputeStatistics_Pair(std::vector<PairMM> const& eVect)
+{
+T_stat eStat;
+int nbMeas=0;
+double SumAbs=0;
+double SumSqr=0;
+double eSum1=0;
+double eSum2=0;
+double eSum11=0;
+double eSum12=0;
+double eSum22=0;
+double MaxMeas=-10^(31);
+double MaxModel=-10^(31);
+double MinMeas=10^(31);
+double MinModel=10^(31);
+for (auto& ePair : eVect) {
+nbMeas++;
+double eMeas=ePair.Meas;
+double eModel=ePair.Model;
+MaxMeas=std::max(MaxMeas, eMeas);
+MaxModel=std::max(MaxModel, eModel);
+MinMeas=std::min(MinMeas, eMeas);
+MinModel=std::min(MinModel, eModel);
+eSum1 =eSum1 + eMeas;
+eSum2 =eSum2 + eModel;
+eSum11=eSum11 + eMeas*eMeas;
+eSum12=eSum12 + eMeas*eModel;
+eSum22=eSum22 + eModel*eModel;
+SumAbs=SumAbs + fabs(eMeas - eModel);
+double eDiff=eMeas-eModel;
+SumSqr=SumSqr + eDiff*eDiff;
+}
+double eME=(eSum2 - eSum1)/double(nbMeas);
+double eRMSE=sqrt(SumSqr / double(nbMeas));
+double eCentRMSE=sqrt(eRMSE*eRMSE - eME*eME);
+double eAE=SumAbs/double(nbMeas);
+double avgSum1=eSum1/double(nbMeas);
+double avgSum2=eSum2/double(nbMeas);
+double avgSum11=eSum11/double(nbMeas);
+double avgSum12=eSum12/double(nbMeas);
+double avgSum22=eSum22/double(nbMeas);
+double eProd11=avgSum11 - avgSum1*avgSum1;
+double eProd12=avgSum12 - avgSum1*avgSum2;
+double eProd22=avgSum22 - avgSum2*avgSum2;
+double TheCorr=eProd12/sqrt(eProd11*eProd22);
+double eScat=eRMSE/avgSum1;
+double eCentScat=eCentRMSE/avgSum1;
+double eSlope=eSum12/eSum11;
+eStat.nbMeas=nbMeas;
+eStat.MaxMeas=MaxMeas;
+eStat.MinMeas=MinMeas;
+eStat.MaxModel=MaxModel;
+eStat.MinModel=MinModel;
+eStat.MeanMeas=avgSum1;
+eStat.MeanModel=avgSum2;
+eStat.MeanError=eME;
+eStat.AbsoluteError=eAE;
+eStat.RMSE=eRMSE;
+eStat.CenteredRMSE=eCentRMSE;
+eStat.Correlation=TheCorr;
+eStat.ScatterIndex=eScat;
+eStat.CenteredScatterIndex=eCentScat;
+eStat.Slope=eSlope;
+eStat.strMaxMeas=DoubleTo4dot2f(MaxMeas);
+eStat.strMinMeas=DoubleTo4dot2f(MinMeas);
+eStat.strMaxModel=DoubleTo4dot2f(MaxModel);
+eStat.strMinModel=DoubleTo4dot2f(MinModel);
+eStat.strMeanMeas=DoubleTo4dot2f(avgSum1);
+eStat.strMeanModel=DoubleTo4dot2f(avgSum2);
+eStat.strMeanError=DoubleTo4dot2f(eME);
+eStat.strAbsoluteError=DoubleTo4dot2f(eAE);
+eStat.strRMSE=DoubleTo4dot2f(eRMSE);
+eStat.strCenteredRMSE=DoubleTo4dot2f(eCentRMSE);
+eStat.strCorrelation=DoubleTo4dot2f(TheCorr);
+eStat.strScatterIndex=DoubleTo4dot2f(eScat);
+eStat.strCenteredScatterIndex=DoubleTo4dot2f(eCentScat);
+eStat.strSlope=DoubleTo4dot2f(eSlope);
+eStat.str=eStat.strMeanError + " " + eStat.strAbsoluteError + " " + eStat.strRMSE + " " + eStat.strCenteredRMSE + " " + eStat.strCorrelation + " " + eStat.strScatterIndex + " " + eStat.strCenteredScatterIndex;
+return eStat;
+}
 std::string NAMELIST_ClearEndOfLine(std::string const& eStr)
 {
 std::string eCharCommentB="!";
@@ -5858,6 +6047,10 @@ std::string eChar=HisPrefix.substr(iChar,1);
 if (eChar == "/")
 ListPos.push_back(iChar);
 }
+if (ListPos.size() == 0) {
+std::cerr << "We should use / in HisPrefix for ROMS_IVICA\n";
+exit(1);
+}
 int iCharLast=ListPos[ListPos.size() - 1];
 std::string eDir=HisPrefix.substr(0,iCharLast+1);
 std::string RawPrefix=HisPrefix.substr(iCharLast+1,len-iCharLast-1);
@@ -6124,6 +6317,7 @@ std::string eExtension=FILE_GetExtension(GridFile);
 if (eExtension == "gr3") {
 GridArray GrdArr=WWM_ReadGridFile_gr3(GridFile);
 if (BoundFile != "unset") {
+std::cerr << "BoundFile=" << BoundFile << "\n";
 MyVector<int> eVect=WWM_ReadBoundFile_gr3(BoundFile);
 if (eVect.size() != GrdArr.GrdArrRho.LON.size()) {
 std::cerr << "not same number of vertices between grid file and boundary file\n";
@@ -6137,7 +6331,7 @@ return GrdArr;
 if (eExtension == "dat") {
 GridArray GrdArr=WWM_ReadGridFile_xfn(GridFile);
 if (BoundFile != "unset") {
-MyVector<int> eVect=WWM_ReadBoundFile_gr3(BoundFile);
+MyVector<int> eVect=WWM_ReadBoundFile_xfn(BoundFile);
 if (eVect.size() != GrdArr.GrdArrRho.LON.size()) {
 std::cerr << "not same number of vertices between grid file and boundary file\n";
 std::cerr << "nbVert(grid)=" << GrdArr.GrdArrRho.LON.size() << "\n";
@@ -6373,7 +6567,7 @@ double xj = X(kj);
 double yj = Y(kj);
 double xk = X(kk);
 double yk = Y(kk);
-# 7626 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 7848 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 double f1, f2, f3;
 f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
 f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
@@ -6947,8 +7141,10 @@ Eigen::Tensor<double,3> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
 int s_rho=Utot.dimension(0);
 MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
 MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
-U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrRho.MSK);
-V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrRho.MSK);
+std::cerr << "Before My_u2rho\n";
+U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrU.MSK);
+std::cerr << "After My_u2rho\n";
+V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrV.MSK);
 }
 if (eModelName == "WWM") {
 U=Get2DvariableSpecTime(TotalArr, "CURTX", eTimeDay);
@@ -7423,7 +7619,7 @@ int nbTimeRel=ListITime.size();
 std::cerr << "nbTimeRel=" << nbTimeRel << "\n";
 int idx=iDay - (iDayFirst-1);
 std::string eFileNC=OutPrefix + StringNumber(idx,3) + ".nc";
-# 8775 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 8999 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 netCDF::NcFile dataFile(eFileNC, netCDF::NcFile::replace, netCDF::NcFile::nc4);
 std::cerr << "eta_rho=" << eta_rho << "  xi_rho=" << xi_rho << "\n";
 netCDF::NcDim eDimAsize=dataFile.addDim("aSize", eta_rho);
@@ -7640,8 +7836,14 @@ std::vector<MyMatrix<double> > ListHatFunction3(nbGrid);
 for (int iGrid=0; iGrid<nbGrid; iGrid++) {
 MyMatrix<double> TheHatSma=ListHatFunction2[iGrid];
 for (int i=0; i<eta_rho; i++)
-for (int j=0; j<xi_rho; j++)
+for (int j=0; j<xi_rho; j++) {
+if (TotalSumHat(i,j) > 0) {
 TheHatSma(i,j)=TheHatSma(i,j)/TotalSumHat(i,j);
+}
+else {
+TheHatSma(i,j)=0;
+}
+}
 ListHatFunction3[iGrid]=TheHatSma;
 }
 TotalArrayInterpolation TotalArr;
@@ -7666,11 +7868,15 @@ MyMatrix<double> Unity=ZeroMatrix<double>(eta_rho, xi_rho);
 for (int iGrid=0; iGrid<nbGrid; iGrid++) {
 MyMatrix<double> eHatFunction=TotalArr.ListHatFunction[iGrid];
 fRecVar=ModelSpecificVarSpecificTime(TotalArr.ListTotalArr[iGrid], eVarName, eTimeDay);
+std::cerr << "Begin debugging ---------------------------------------\n";
+PrintMMA_FCT(fRecVar.U, TotalArr.ListTotalArr[iGrid].GrdArr.GrdArrRho.MSK, "U");
+PrintMMA_FCT(fRecVar.V, TotalArr.ListTotalArr[iGrid].GrdArr.GrdArrRho.MSK, "V");
+std::cerr << "  End debugging ---------------------------------------\n";
 gRecVar=INTERPOL_SingleRecVarInterpolation(TotalArr.ListSingleArrayInterpolation[iGrid], fRecVar);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 Unity(i,j) += eHatFunction(i,j);
-if (fRecVar.VarNature == "VarNature") {
+if (fRecVar.VarNature == "rho") {
 F(i,j) += gRecVar.F(i,j)*eHatFunction(i,j);
 }
 else {

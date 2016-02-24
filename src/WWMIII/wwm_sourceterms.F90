@@ -79,7 +79,7 @@
 #endif
 
 #ifdef TIMINGS
-         call WAV_MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME1)
 #endif 
 
 !         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN

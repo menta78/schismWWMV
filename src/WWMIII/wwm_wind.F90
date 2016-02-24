@@ -2139,7 +2139,7 @@
         eStrV='VsurfCurr'
       END IF
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
+      IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
@@ -2166,7 +2166,7 @@
       END IF
 # endif
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND) THEN
+      IF (eVAR % MULTIPLE_IN) THEN
         DO IP=1,MNP
           IP_glob=iplg(IP)
           outwind(IP,1)=Vtotal1(IP_glob)
@@ -2210,7 +2210,7 @@
       cf_scale_factor = eVAR % cf_scale_factor
       cf_add_offset = eVAR % cf_add_offset
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
+      IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
@@ -2230,7 +2230,7 @@
       END IF
 # endif
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND) THEN
+      IF (eVAR % MULTIPLE_IN) THEN
         DO IP=1,MNP
           IP_glob=iplg(IP)
           outvar(IP)=Vtotal(IP_glob)
@@ -2272,6 +2272,7 @@
       integer eInt(1)
       real(rkind) :: eReal(2)
       integer IPROC
+      eVAR % MULTIPLE_IN = MULTIPLE_IN
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
@@ -2346,7 +2347,7 @@
       END IF
 # endif
 #ifdef MPI_PARALL_GRID
-      IF (.NOT. MULTIPLE_IN_WIND) THEN
+      IF (.NOT. MULTIPLE_IN) THEN
         IF (myrank .eq. 0) THEN
           eInt(1)=nbtime_mjd
           DO IPROC=2,nproc

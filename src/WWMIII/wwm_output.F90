@@ -1440,6 +1440,7 @@
         OUTPAR(62) = CFL_CASD(3,IP)
         OUTPAR(63) = CFL_CASD(4,IP)
       ENDIF
+      OUTPAR(64) = MyREAL(NumberIterationSolver(IP))
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1551,6 +1552,7 @@
           OUTPAR(62) = OUTPAR(62) + WI(J)*CFL_CASD(3,IP)
           OUTPAR(63) = OUTPAR(63) + WI(J)*CFL_CASD(4,IP)
         ENDIF
+        OUTPAR(64) = OUTPAR(64) + WI(J)*MyREAL(NumberIterationSolver(IP))
       END DO
       IF (VAROUT_STATION%ComputeStokes) THEN
         CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
