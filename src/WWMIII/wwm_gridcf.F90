@@ -420,14 +420,10 @@
         ID_PREV(ID)=ID-1
       END DO
       ID_PREV(1)=MDC
-<<<<<<< HEAD
 
       SGLOW  = PI2*FRLOW
       SGHIGH = PI2*FRHIGH
 
-=======
-      
->>>>>>> 8e9667b9e0bed356cabb9f9eefd33dbb1543a48e
 !2do check FRINTF for LOPTSIG
 
       IF (LOPTSIG) THEN
