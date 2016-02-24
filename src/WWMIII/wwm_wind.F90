@@ -2119,7 +2119,7 @@
       TYPE(VAR_NETCDF_CF)                :: eVAR
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
-      character (len = *), parameter :: CallFct="READ_DIRECT_NETCDF_CF"
+      character (len = *), parameter :: CallFct = "READ_DIRECT_NETCDF_CF"
       INTEGER                            :: FID, ID
       real(rkind) :: U_tot(np_total), V_tot(np_total)
       real(rkind) :: Vtotal1(np_total), Vtotal2(np_total)
@@ -2138,9 +2138,12 @@
         eStrU='UsurfCurr'
         eStrV='VsurfCurr'
       END IF
+      Print *, 'eStrU=', eStrU, ' eStrV=', eStrV
 # ifdef MPI_PARALL_GRID
       IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
+        Print *, 'filename=', TRIM(eVAR % eFileName)
+
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)

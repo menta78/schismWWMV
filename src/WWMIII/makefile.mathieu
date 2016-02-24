@@ -5,7 +5,7 @@ PROG = $(HOME)/bin/wwmadv
 FFLAGS = -DST42 -DWWM_SETUP
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
-MPI = on
+MPI =
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
@@ -21,7 +21,7 @@ GRIB = on
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
-PDLIB = on
+PDLIB =
 
 
 #F90 = gfortran
@@ -35,7 +35,7 @@ F90 = $(WWM_COMPILER)
 #INTEL
 #INTEL: DEBUGGING FLAG
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
+ F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
 
 #INTEL: OPTI FLAG 
 #F90OPTI =  -O2

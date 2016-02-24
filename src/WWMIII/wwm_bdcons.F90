@@ -84,10 +84,13 @@
       END IF
       SPPARwork=SPPAR
       SPPARwork(2)=SPPAR(2) + DeltaPer
+      iIter=0
       DO
+        iIter=iIter + 1
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
         TheErr=(TM - Tper)*eSign
+        Print *, 'iIter=', iIter, ' TheErr=', TheErr, ' DeltaPer=', DeltaPer
         IF (TheErr > 0) THEN
           EXIT
         END IF
@@ -103,6 +106,7 @@
       nbIter=20
       iIter=0
       DO
+        Print *, 'iIter=', iIter
         SPPARwork=0.5_rkind*SPPARwork1 + 0.5_rkind*SPPARwork2
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
@@ -869,7 +873,7 @@
               SPPARM(6,1) = WBDSMS
               SPPARM(7,1) = WBGAUSS
               SPPARM(8,1) = WBPKEN
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .FALSE.)
             END IF ! LBCSE
           END IF
         END IF ! LINHOM
