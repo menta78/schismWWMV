@@ -1183,7 +1183,7 @@
                I2 = INE(2,IE)
                I3 = INE(3,IE)
                NI = INE(:,IE)
-               U3 = U(NI) 
+               U3 = U(NI)
                IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE

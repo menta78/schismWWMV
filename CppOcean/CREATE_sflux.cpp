@@ -44,22 +44,8 @@ return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2
 }
 std::vector<std::string> GetAllPossibleModels()
 {
-std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30"};
+std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WWM_DAILY", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30"};
 return vec;
-}
-void CHECK_Model_Allowedness(std::string const& eModelName)
-{
-std::vector<std::string> vec=GetAllPossibleModels();
-bool isPresent = (std::find(vec.begin(), vec.end(), eModelName) != vec.end());
-if (isPresent == false) {
-std::cerr << "We did not find the MODEL NAME\n";
-std::cerr << "MODELNAME = " << eModelName << "\n";
-std::cerr << "List of allowed models\n";
-for (int iModel=0; iModel<int(vec.size()); iModel++) {
-std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
-}
-exit(1);
-}
 }
 double TheSignFct(double const& eVal)
 {
@@ -123,13 +109,13 @@ double eSumVal=0;
 if (i < eta_v) {
 if (MSK_v(i,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_v(i,j);
+eSumVal += eVar_v(i,j);
 }
 }
 if (i > 0) {
 if (MSK_v(i-1,j) == 1) {
 eSumMsk++;
-eSumVal=eSumVal + eVar_v(i-1,j);
+eSumVal += eVar_v(i-1,j);
 }
 }
 if (eSumMsk == 0) {
@@ -138,6 +124,90 @@ eVar_rho(i,j)=0;
 else {
 double eVal=eSumVal/double(eSumMsk);
 eVar_rho(i,j)=eVal;
+}
+}
+return eVar_rho;
+}
+Eigen::Tensor<double,3> My_u2rho_3D(Eigen::Tensor<double,3> const& eVar_u, MyMatrix<int> const& MSK_u)
+{
+auto LDim=eVar_u.dimensions();
+int s_vert=LDim[0];
+int eta_u=LDim[1];
+int xi_u=LDim[2];
+int eta_rho = eta_u;
+int xi_rho = xi_u + 1;
+std::vector<double> VertColumn(s_vert);
+Eigen::Tensor<double,3> eVar_rho(s_vert, eta_rho, xi_rho);
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++) {
+int eSumMsk=0;
+for (int k=0; k<s_vert; k++)
+VertColumn[k]=0;
+if (j<xi_u) {
+if (MSK_u(i,j) == 1) {
+eSumMsk++;
+for (int k=0; k<s_vert; k++)
+VertColumn[k] += eVar_u(k,i,j);
+}
+}
+if (j > 0) {
+if (MSK_u(i,j-1) == 1) {
+eSumMsk++;
+for (int k=0; k<s_vert; k++)
+VertColumn[k] += eVar_u(k,i,j-1);
+}
+}
+if (eSumMsk == 0) {
+for (int k=0; k<s_vert; k++)
+eVar_rho(k,i,j)=0;
+}
+else {
+for (int k=0; k<s_vert; k++) {
+double eVal=VertColumn[k]/double(eSumMsk);
+eVar_rho(k,i,j)=eVal;
+}
+}
+}
+return eVar_rho;
+}
+Eigen::Tensor<double,3> My_v2rho_3D(Eigen::Tensor<double,3> const& eVar_v, MyMatrix<int> const& MSK_v)
+{
+auto LDim=eVar_v.dimensions();
+int s_vert=LDim[0];
+int eta_v=LDim[1];
+int xi_v=LDim[2];
+int xi_rho = xi_v;
+int eta_rho = eta_v + 1;
+std::vector<double> VertColumn;
+Eigen::Tensor<double,3> eVar_rho(s_vert,eta_rho, xi_rho);
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++) {
+int eSumMsk=0;
+for (int k=0; k<s_vert; k++)
+VertColumn[k]=0;
+if (i < eta_v) {
+if (MSK_v(i,j) == 1) {
+eSumMsk++;
+for (int k=0; k<s_vert; k++)
+VertColumn[k] += eVar_v(k,i,j);
+}
+}
+if (i > 0) {
+if (MSK_v(i-1,j) == 1) {
+eSumMsk++;
+for (int k=0; k<s_vert; k++)
+VertColumn[k] += eVar_v(k,i-1,j);
+}
+}
+if (eSumMsk == 0) {
+for (int k=0; k<s_vert; k++)
+eVar_rho(k,i,j)=0;
+}
+else {
+for (int k=0; k<s_vert; k++) {
+double eVal=VertColumn[k]/double(eSumMsk);
+eVar_rho(k,i,j)=eVal;
+}
 }
 }
 return eVar_rho;
@@ -174,7 +244,7 @@ std::vector<double> LCoeff(3);
 for (int i=0; i<3; i++) {
 LCoeff[i]=eProduct(i);
 }
-# 253 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 328 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 return LCoeff;
 }
 bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
@@ -240,7 +310,7 @@ int eAdj=ListAdjacency(iNode, iAdj);
 if (eAdj > iNode)
 eSet.insert(eAdj);
 }
-nbEdge+=eSet.size();
+nbEdge += eSet.size();
 }
 MyMatrix<int> ListEdges(nbEdge,2);
 int iEdge=0;
@@ -399,87 +469,6 @@ for (int i=0; i<iPos; i++)
 RetStr=RetStr + eStr.at(i);
 return RetStr;
 }
-bool NAMELIST_ReadBoolValue(std::string const& eVarValue)
-{
-if (eVarValue == ".F.")
-return false;
-if (eVarValue == ".T.")
-return true;
-if (eVarValue == "F")
-return false;
-if (eVarValue == "T")
-return true;
-std::cerr << "Boolean value has not been found\n";
-std::cerr << "eVarValue = " << eVarValue << "\n";
-std::cerr << "Allowed: T / F / .T. / .F.\n";
-exit(1);
-}
-std::string NAMELIST_ConvertFortranStringToCppString(std::string const& eStr)
-{
-int len=eStr.length();
-std::string eFirstChar=eStr.substr(0, 1);
-std::string eLastChar=eStr.substr(len-1, 1);
-int RemovableEnding=0;
-if (eFirstChar == "'" || eFirstChar == "\"") {
-RemovableEnding=1;
-if (eFirstChar != eLastChar) {
-std::cerr << "eFirstChar = " << eFirstChar << "\n";
-std::cerr << " eLastChar = " << eLastChar << "\n";
-std::cerr << "The character used for noting beginning and end of string should be identical\n";
-exit(1);
-}
-}
-if (RemovableEnding == 1)
-return eStr.substr(1,len-2);
-return eStr;
-}
-std::vector<std::string> NAMELIST_ConvertFortranListStringToCppListString(std::string const& eStr)
-{
-int len=eStr.length();
-std::string eFirstChar=eStr.substr(0, 1);
-std::string eLastChar=eStr.substr(len-1,1);
-if (eFirstChar != "'" && eFirstChar != "\"") {
-std::cerr << "eStr=" << eStr << "\n";
-std::cerr << "For list of strings, one should use string \"  \"   or '    '   \n";
-exit(1);
-}
-if (eLastChar != "'" && eLastChar != "\"") {
-std::cerr << "eStr=" << eStr << "\n";
-std::cerr << "For list of strings, one should use string \"  \"   or '    '   \n";
-exit(1);
-}
-if (eFirstChar != eLastChar) {
-std::cerr << "eStr=" << eStr << "\n";
-std::cerr << "eFirstChar=" << eFirstChar << "\n";
-std::cerr << "eLastChar=" << eLastChar << "\n";
-std::cerr << "No coherency in endings\n";
-exit(1);
-}
-std::string eSepChar=eFirstChar;
-int IsInString=0;
-std::string eFound="";
-std::vector<std::string> eListStr;
-for (int i=0; i<len; i++) {
-std::string eChar=eStr.substr(i,1);
-if (eChar == eSepChar) {
-eFound += eChar;
-if (IsInString == 1) {
-IsInString=0;
-std::string eCppStr=NAMELIST_ConvertFortranStringToCppString(eFound);
-eListStr.push_back(eCppStr);
-eFound="";
-}
-else {
-IsInString=1;
-}
-}
-else {
-if (IsInString == 1)
-eFound += eChar;
-}
-}
-return eListStr;
-}
 void NAMELIST_WriteBlock(std::ostream &os, std::string const& eBlockName, SingleBlock const& eBlock)
 {
 os << "&" << eBlockName << "\n";
@@ -576,7 +565,24 @@ return Fret;
 }
 std::vector<std::string> GetAllPossibleVariables()
 {
-std::vector<std::string> ListVarOut={"WIND10", "WIND_X", "WIND_Y", "SurfCurr", "SurfCurrMag", "Hwave", "WINDMAG", "TempSurf", "SaltSurf", "AIRT2", "Rh2", "ZetaOcean", "MeanWaveFreq", "PeakWaveFreq", "AIRD", "CdWave", "AlphaWave", "rain", "swrad", "lwrad", "latent", "sensible", "shflux", "ssflux", "evaporation", "MeanWavePer", "PeakWavePer", "SurfPres", "TM02", "DynBathy", "MeanWaveDirSpread", "PeakWaveDirSpread", "BreakingFraction", "ZetaSetup", "MeanWaveDir", "PeakWaveDir", "DiscPeakWaveDir", "IOBP_WW3", "MAPSTA", "FieldOut1", "CFL1", "CFL2", "CFL3"};
+std::vector<std::string> ListVarOut{
+"IOBPWW3", "MAPSTA", "FieldOut1", "CFL1", "CFL2", "CFL3", "ThreeDfield1", "NbIterSolv",
+"WIND10", "Uwind", "Vwind","WINDMAG",
+"SurfCurr", "UsurfCurr", "VsurfCurr", "SurfCurrMag",
+"Curr", "CurrMag",
+"TempSurf", "SaltSurf", "AIRT2", "Rh2", "AIRD", "SurfPres",
+"ZetaOcean", "ZetaOceanDerivative", "DynBathy", "ZetaSetup",
+"CdWave", "AlphaWave", "AirZ0", "AirFricVel",
+"shflux", "ssflux", "evaporation",
+"Hwave", "BreakingFraction",
+"rain", "swrad", "lwrad", "latent", "sensible",
+"MeanWaveFreq", "PeakWaveFreq", "TM02",
+"MeanWavePer", "PeakWavePer",
+"MeanWaveDirSpread", "PeakWaveDirSpread",
+"MeanWaveDir", "PeakWaveDir", "MeanWaveDirVect", "PeakWaveDirVect",
+"DiscPeakWaveDir",
+"MeanWaveLength", "PeakWaveLength", "MeanWaveNumber", "PeakWaveNumber",
+"TotSurfStr", "WaveSurfStr", "SurfStrHF"};
 return ListVarOut;
 }
 struct PairMinMax {
@@ -661,37 +667,6 @@ sin (zlampol) * sin(zrlas) * cos(zphis);
 if (zarg2 == 0) zarg2=1.0e-20;
 double rlarot2rla = eMultInv * atan2(zarg1,zarg2);
 return rlarot2rla;
-}
-void Apply_COSMO_Transformation(MyMatrix<double> & LON, MyMatrix<double> & LAT, CosmoGridInfo const& eCosmoGrid)
-{
-double pollat_sp=eCosmoGrid.latitudeOfSouthernPoleInDegrees;
-double pollon_sp=eCosmoGrid.longitudeOfSouthernPoleInDegrees;
-double polgam=eCosmoGrid.angleOfRotationInDegrees;
-double zstartlon_tot=eCosmoGrid.longitudeOfFirstGridPointInDegrees;
-double zstartlat_tot=eCosmoGrid.latitudeOfFirstGridPointInDegrees;
-double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
-double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
-double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
-double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
-if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
-std::cerr << "Error of consistency in zstartlat / zendlat\n";
-exit(1);
-}
-int eta_rho=LON.rows();
-int xi_rho=LON.cols();
-double pollat= - pollat_sp;
-double pollon= pollon_sp - double(180);
-double startlon_tot=zstartlon_tot;
-double startlat_tot=zstartlat_tot;
-for (int i=0; i<eta_rho; i++)
-for (int j=0; j<xi_rho; j++) {
-double eLonR=startlon_tot + double(i)*dlon;
-double eLatR=startlat_tot + double(j)*dlat;
-double eLat=phirot2phi(eLatR, eLonR, pollat, pollon, polgam);
-double eLon=rlarot2rla(eLatR, eLonR, pollat, pollon, polgam);
-LON(i,j)=eLon;
-LAT(i,j)=eLat;
-}
 }
 struct PairCoord {
 int i;
@@ -792,51 +767,6 @@ ANG_rho(eta_rho-1,iXi) = ANG_rho(eta_rho-2,iXi);
 return ANG_rho;
 }
 template<typename T>
-MyMatrix<T> DimensionExtraction(Eigen::Tensor<T, 3> const& eT, size_t const& iDim, int const& eDim)
-{
-int n1=eT.dimension(0);
-int n2=eT.dimension(1);
-int n3=eT.dimension(2);
-if (iDim == 0) {
-MyMatrix<T> eMat(n2, n3);
-for (int i2=0; i2<n2; i2++)
-for (int i3=0; i3<n3; i3++)
-eMat(i2,i3)=eT(eDim,i2,i3);
-return eMat;
-}
-if (iDim == 1) {
-MyMatrix<T> eMat(n1, n3);
-for (int i1=0; i1<n1; i1++)
-for (int i3=0; i3<n3; i3++)
-eMat(i1,i3)=eT(i1,eDim,i3);
-return eMat;
-}
-if (iDim == 2) {
-MyMatrix<T> eMat(n1, n2);
-for (int i1=0; i1<n1; i1++)
-for (int i2=0; i2<n2; i2++)
-eMat(i1,i2)=eT(i1,i2,eDim);
-return eMat;
-}
-std::cerr << "Wrong input in ThreeDimArray\n";
-std::cerr << "iDim=" << iDim << "\n";
-std::cerr << "Allowed values: 0, 1, 2\n";
-exit(1);
-}
-template<typename T>
-T ScalarProduct(MyVector<T> const& V1, MyVector<T> const & V2)
-{
-if (V1.size() != V2.size()) {
-std::cerr << "Vectors of wrong sizes\n";
-exit(1);
-}
-size_t siz=V1.size();
-T eSum=0;
-for (size_t i=0; i<siz; i++)
-eSum += V1(i)*V2(i);
-return eSum;
-}
-template<typename T>
 MyMatrix<T> ZeroMatrix(int const& nbRow, int const& nbCol)
 {
 MyMatrix<T> retMat(nbRow, nbCol);
@@ -856,24 +786,6 @@ eZero=0;
 for (int iRow=0; iRow<nbRow; iRow++)
 retVect(iRow)=eZero;
 return retVect;
-}
-template<typename T>
-void TMat_Copy(MyMatrix<T> const&eMatI, MyMatrix<T> &eMatO)
-{
-int nbRowI, nbColI, nbRowO, nbColO;
-nbRowI=eMatI.rows();
-nbRowO=eMatO.rows();
-nbColI=eMatI.cols();
-nbColO=eMatO.cols();
-if (nbRowI != nbRowO || nbColI != nbColO) {
-std::cerr << "Error in the input\n";
-exit(1);
-}
-for (int iRow=0; iRow<nbRowI; iRow++)
-for (int iCol=0; iCol<nbColI; iCol++) {
-T eVal=eMatI(iRow, iCol);
-eMatO(iRow, iCol)=eVal;
-}
 }
 template<typename T>
 void ZeroAssignation(MyMatrix<T> &TheMat)
@@ -900,46 +812,6 @@ TheTrans(iCol, iRow)=eVal;
 return TheTrans;
 }
 template<typename T>
-MyVector<T> ProductVectorMatrix(MyVector<T> const& X, MyMatrix<T> const& M)
-{
-int nbCol=M.cols();
-int nbRow=M.rows();
-if (X.size() != nbRow) {
-std::cerr << "Error in the product X A\n";
-exit(1);
-}
-MyVector<T> Vret(nbCol);
-for (int iCol=0; iCol<nbCol; iCol++) {
-T sum=0;
-for (int iRow=0; iRow<nbRow; iRow++)
-sum += M(iRow,iCol)*X(iRow);
-Vret(iCol)=sum;
-}
-return Vret;
-}
-template<typename T>
-MyVector<T> VectorMatrix(MyVector<T> const& eVect, MyMatrix<T> const& eMat)
-{
-int nbCol=eMat.cols();
-int nbRow=eMat.rows();
-int n=eVect.size();
-if (n != nbRow) {
-std::cerr << "n should be equal to nbRow\n";
-exit(1);
-}
-MyVector<T> rVect(nbCol);
-for (int iCol=0; iCol<nbCol; iCol++) {
-T eSum=0;
-for (int iRow=0; iRow<nbRow; iRow++) {
-T eVal=eMat(iRow, iCol);
-T fVal=eVect(iRow);
-eSum += eVal*fVal;
-}
-rVect(iCol)=eSum;
-}
-return rVect;
-}
-template<typename T>
 void SwapValues(T& val1, T& val2)
 {
 T prov;
@@ -952,98 +824,7 @@ struct Inverse_exception {
 std::string errmsg;
 T pivot;
 };
-template<typename T>
-void TMat_Inverse_destroy(MyMatrix<T> &Input, MyMatrix<T> &Output)
-{
-int nbRow, nbCol;
-int iCol, iRow, WeFound;
-int iRowFound;
-int iColB;
-nbRow=Input.rows();
-nbCol=Input.cols();
-T prov1, prov2, eVal;
-if (nbRow != nbCol) {
-std::cerr << "Error on nbRow, nbCol in TMat_Inverse_destroy";
-exit(1);
-}
-for (iRow=0; iRow<nbRow; iRow++)
-for (iCol=0; iCol<nbRow; iCol++)
-{
-if (iRow == iCol)
-prov1=1;
-else
-prov1=0;
-Output(iRow,iCol)=prov1;
-}
-iRowFound=-400;
-for (iCol=0; iCol<nbCol; iCol++)
-{
-WeFound=0;
-for (iRow=iCol; iRow<nbRow; iRow++)
-if (WeFound == 0)
-{
-eVal=Input(iRow,iCol);
-if (eVal != 0)
-{
-WeFound=1;
-iRowFound=iRow;
-prov1=1/eVal;
-}
-}
-if (WeFound == 0) {
-Inverse_exception<T> eExcept;
-eExcept.errmsg="Error in matrix inversion";
-eExcept.pivot=0;
-throw eExcept;
-}
-for (iColB=0; iColB<nbCol; iColB++)
-{
-eVal=prov1*Input(iRowFound,iColB);
-Input(iRowFound,iColB)=eVal;
-eVal=prov1*Output(iRowFound,iColB);
-Output(iRowFound,iColB)=eVal;
-}
-for (iRow=0; iRow<nbRow; iRow++)
-if (iRow != iRowFound) {
-prov2=Input(iRow, iCol);
-for (iColB=0; iColB<nbCol; iColB++) {
-prov1=prov2*Input(iRowFound,iColB);
-eVal=Input(iRow,iColB) - prov1;
-Input(iRow, iColB)=eVal;
-prov1=prov2*Output(iRowFound,iColB);
-eVal=Output(iRow,iColB) - prov1;
-Output(iRow,iColB)=eVal;
-}
-}
-if (iRowFound != iCol) {
-for (iColB=0; iColB<nbCol; iColB++) {
-prov1=Input(iRowFound, iColB);
-prov2=Input(iCol, iColB);
-SwapValues(prov1, prov2);
-Input(iRowFound, iColB)=prov1;
-Input(iCol , iColB)=prov2;
-prov1=Output(iRowFound, iColB);
-prov2=Output(iCol, iColB);
-SwapValues(prov1, prov2);
-Output(iRowFound, iColB)=prov1;
-Output(iCol , iColB)=prov2;
-}
-}
-}
-}
-template<typename T>
-MyMatrix<T> Inverse(MyMatrix<T> const&Input)
-{
-int nbRow, nbCol;
-nbRow=Input.rows();
-nbCol=Input.cols();
-MyMatrix<T> provMat(nbRow, nbCol);
-TMat_Copy(Input, provMat);
-MyMatrix<T> Output(nbRow, nbRow);
-TMat_Inverse_destroy(provMat, Output);
-return Output;
-}
-# 1319 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 1056 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -1234,6 +1015,9 @@ return false;
 }
 return false;
 }
+struct TerminalException {
+int eVal;
+};
 template <typename T>
 struct is_ring_field {
 static const bool value = false;
@@ -1352,7 +1136,7 @@ LMult[i] += 1;
 return;
 }
 std::cerr << "Should never reach that stage\n";
-exit(1);
+throw TerminalException{1};
 };
 for (auto & eVal : eVect)
 UpPosition(eVal);
@@ -1374,7 +1158,7 @@ struct PairLL {
 double eLon;
 double eLat;
 };
-struct RecVar {
+struct RecSymbolic {
 double eTimeDay;
 int iTime;
 std::string strPres;
@@ -1387,11 +1171,17 @@ double maxval;
 double mindiff;
 double maxdiff;
 std::string Unit;
+std::string VarNature;
+std::string nameU, nameV;
+};
+struct RecVar {
+RecSymbolic RecS;
 MyMatrix<double> U;
 MyMatrix<double> V;
 MyMatrix<double> F;
-std::string VarNature;
-std::string nameU, nameV;
+Eigen::Tensor<double,3> Uthree;
+Eigen::Tensor<double,3> Vthree;
+Eigen::Tensor<double,3> Tens3;
 };
 struct CoordGridArrayFD {
 int eta, xi;
@@ -1428,6 +1218,7 @@ std::string FirstTimeStr, LastTimeStr;
 std::vector<std::string> ListFileNames;
 std::vector<std::vector<GRIB_MessageInfo> > ListListMessages;
 std::vector<GRIB_MessageInfo> ListAllMessage;
+std::vector<std::string> RawVarNames;
 std::vector<int> ListITime;
 std::vector<double> ListStartTime;
 std::vector<int> ListIStartTime;
@@ -1473,7 +1264,7 @@ DIR* dirp=opendir(ePath.c_str());
 if (dirp == NULL) {
 std::cerr << "Error in routine FILE_GetDirectoryListFile\n";
 std::cerr << "Error in call to opendir\n";
-exit(1);
+throw TerminalException{1};
 }
 struct dirent *dp;
 std::vector<std::string> ListFile;
@@ -1486,9 +1277,16 @@ int err=closedir(dirp);
 if (err != 0) {
 std::cerr << "err=" << err << "\n";
 printf("Oh dear, something went wrong with ls! %s\n", strerror(errno));
-exit(1);
+throw TerminalException{1};
 }
 return ListFile;
+}
+bool FILE_IsDirectoryEmpty(std::string const& eDir)
+{
+std::vector<std::string> TheList = FILE_GetDirectoryListFile(eDir);
+if (TheList.size() == 0)
+return true;
+return false;
 }
 bool FILE_IsRegularFile(std::string const& eFile)
 {
@@ -1499,7 +1297,7 @@ if (status != 0) {
 std::cerr << "Problem in FILE_IsRegularFile\n";
 std::cerr << "Error, errno = " << errno << "\n";
 std::cerr << "eFile=" << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 if (S_ISREG (st_buf.st_mode)) {
 return true;
@@ -1541,7 +1339,7 @@ if (ENOTDIR == errno) {
 return false;
 }
 std::cerr << "Should not happen a priori\n";
-exit(1);
+throw TerminalException{1};
 }
 return true;
 }
@@ -1570,7 +1368,7 @@ if ((buf = (char *)malloc((size_t)size)) != NULL) {
 ptr=getcwd(buf, (size_t)size);
 if (ptr == NULL && errno != ERANGE) {
 std::cerr << "Error while trying to use getcwd\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string eRet = buf;
 eRet=eRet + "/";
@@ -1586,10 +1384,56 @@ return eRet;
 }
 else {
 std::cerr << "Not enough memory\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 #endif
+#ifndef WINDOWS
+std::string FILE_GetAbsoluteDirectory(std::string const& ePrefix)
+{
+std::string FirstChar=ePrefix.substr(0, 1);
+if (FirstChar == "/") {
+return ePrefix;
+}
+else {
+std::string ePWD=GetCurrentDirectory();
+return ePWD + ePrefix;
+}
+}
+#endif
+std::string ExtractDirectoryFromFileString(std::string const& eFile)
+{
+int len=eFile.size();
+int iCharFinal=-1;
+for (int iChar=0; iChar<len; iChar++) {
+std::string eChar=eFile.substr(iChar,1);
+if (eChar == "/")
+iCharFinal=iChar;
+}
+if (iCharFinal == -1) {
+std::cerr << "Error in ExtractDirectoryFromFileString\n";
+throw TerminalException{1};
+}
+return eFile.substr(0,iCharFinal+1);
+}
+void CreateDirectory(std::string const& eDir)
+{
+const char *dir=eDir.c_str();
+char tmp[256];
+char *p = NULL;
+size_t len;
+snprintf(tmp, sizeof(tmp),"%s",dir);
+len = strlen(tmp);
+if(tmp[len - 1] == '/')
+tmp[len - 1] = 0;
+for(p = tmp + 1; *p; p++)
+if(*p == '/') {
+*p = 0;
+mkdir(tmp, S_IRWXU);
+*p = '/';
+}
+mkdir(tmp, S_IRWXU);
+}
 std::vector<std::string> ls_operation(std::string const& ThePrefix)
 {
 std::string TmpFile="/tmp/file" + random_string(20);
@@ -1599,7 +1443,7 @@ if (iret == -1) {
 std::cerr << "Error in ls_operation\n";
 std::cerr << "ThePrefix=" << ThePrefix << "\n";
 std::cerr << "unable to run the process\n";
-exit(1);
+throw TerminalException{1};
 }
 std::ifstream os;
 os.open(TmpFile);
@@ -1642,7 +1486,7 @@ char buffer[50];
 int n=sprintf(buffer, "%4.2f", x);
 if (n == 0) {
 std::cerr << "Clear error in DoubleTo4dot2f\n";
-exit(1);
+throw TerminalException{1};
 }
 return std::string(buffer);
 }
@@ -1855,7 +1699,36 @@ s << "exception eStr=\n";
 s << eStr;
 std::string vStr(s.str());
 std::cerr << vStr;
-exit(1);
+throw TerminalException{1};
+}
+}
+std::string DATE_ConvertSix2mystringPresReduced(std::vector<int> const& Date)
+{
+if (Date[3] != 0 || Date[4] != 0 || Date[5] != 0) {
+return DATE_ConvertSix2mystringPres(Date);
+}
+try {
+int year, month, day;
+year=Date[0];
+month=Date[1];
+day=Date[2];
+std::string eTimeStr=StringNumber(year, 4) + "-" +
+StringNumber(month, 2) + "-" +
+StringNumber(day, 2);
+return eTimeStr;
+}
+catch (std::string & eStr) {
+std::stringstream s;
+s << "Error in DATE_ConvertSix2mystringFile\n";
+s << "Date.size()=" << Date.size() << "\n";
+s << "Date=";
+WriteStdVector(s, Date);
+s << "-----------------------------------------\n";
+s << "exception eStr=\n";
+s << eStr;
+std::string vStr(s.str());
+std::cerr << vStr;
+throw TerminalException{1};
 }
 }
 std::string DATE_ConvertSix2mystringFile(std::vector<int> const& Date)
@@ -1884,7 +1757,7 @@ s << "exception eStr=\n";
 s << eStr;
 std::string vStr(s.str());
 std::cerr << vStr;
-exit(1);
+throw TerminalException{1};
 }
 }
 int MONTH_LEN(int const& year, int const& month)
@@ -1915,7 +1788,7 @@ return 29;
 }
 }
 std::cerr << "Error happened in LEN_MONTH\n";
-exit(1);
+throw TerminalException{1};
 }
 std::vector<int> JD2DATE(double const& eJD)
 {
@@ -1990,6 +1863,16 @@ std::vector<int> eDate=JD2DATE(eMJD);
 STIME=DATE_ConvertSix2mystringPres(eDate);
 return STIME;
 }
+std::string DATE_ConvertMjd2mystringPresReduced(double const& XMJD)
+{
+std::string STIME;
+double XMJD_1858, eMJD;
+XMJD_1858=DATE2JD({1858, 11, 17, 0, 0, 0});
+eMJD = XMJD + XMJD_1858;
+std::vector<int> eDate=JD2DATE(eMJD);
+STIME=DATE_ConvertSix2mystringPresReduced(eDate);
+return STIME;
+}
 std::vector<int> DATE_ConvertMjd2six(double const& XMJD)
 {
 double XMJD_1858, eMJD;
@@ -2043,11 +1926,19 @@ if (IsDone == 0) {
 std::cerr << "UNITC has not been found\n";
 std::cerr << "Allowed: DAY, HOUR, MIN, SEC\n";
 std::cerr << "UNITC=" << UNITC << "\n";
-exit(1);
+throw TerminalException{1};
 }
 double DeltaInterval=eInterval*eMult;
 double FirstTime=CT2MJD(BEGTC);
 double LastTime=CT2MJD(ENDTC);
+double tolDay= double(1) / double(10000);
+if (LastTime < FirstTime - tolDay) {
+std::cerr << "We should have ENDTC >= BEGTC. But instead we have:\n";
+std::cerr << "BEGTC = " << BEGTC << "\n";
+std::cerr << "ENDTC = " << ENDTC << "\n";
+std::cerr << "Please correct\n";
+throw TerminalException{1};
+}
 return GetInterval(FirstTime, LastTime, DeltaInterval);
 }
 struct InterpInfo {
@@ -2066,19 +1957,19 @@ std::cerr << "The asked entry is before the first time\n";
 std::cerr << "AskedTime=" << DATE_ConvertMjd2mystringPres(eTimeDay) << "\n";
 std::cerr << "FirstTime=" << DATE_ConvertMjd2mystringPres(LTime[0]) << "\n";
 std::cerr << " LastTime=" << DATE_ConvertMjd2mystringPres(LTime[nbTime-1]) << "\n";
-exit(1);
+throw TerminalException{1};
 }
 if (eTimeDay > LTime[nbTime-1] + tolDay) {
 std::cerr << "The asked entry is after the last time\n";
 std::cerr << "AskedTime=" << DATE_ConvertMjd2mystringPres(eTimeDay) << "\n";
 std::cerr << "FirstTime=" << DATE_ConvertMjd2mystringPres(LTime[0]) << "\n";
 std::cerr << " LastTime=" << DATE_ConvertMjd2mystringPres(LTime[nbTime-1]) << "\n";
-exit(1);
+throw TerminalException{1};
 }
 if (nbTime <= 1) {
 std::cerr << "We need at least two entries in order to do the time differential\n";
 std::cerr << "nbTime=" << nbTime << "\n";
-exit(1);
+throw TerminalException{1};
 }
 for (int iTimeUpp=1; iTimeUpp<nbTime; iTimeUpp++) {
 int iTimeLow=iTimeUpp-1;
@@ -2096,7 +1987,7 @@ return eInterpInfo;
 }
 std::cerr << "Failed to find matching record\n";
 std::cerr << "Please debug\n";
-exit(1);
+throw TerminalException{1};
 }
 InterpInfo GetTimeInterpolationInfo(std::vector<double> const& LTime, double const& eTimeDay)
 {
@@ -2116,14 +2007,14 @@ std::cerr << "The asked entry is before the first time\n";
 std::cerr << "AskedTime=" << DATE_ConvertMjd2mystringPres(eTimeDay) << "\n";
 std::cerr << "FirstTime=" << DATE_ConvertMjd2mystringPres(LTime[0]) << "\n";
 std::cerr << " LastTime=" << DATE_ConvertMjd2mystringPres(LTime[nbTime-1]) << "\n";
-exit(1);
+throw TerminalException{1};
 }
 if (eTimeDay > LTime[nbTime-1] + tolDay) {
 std::cerr << "The asked entry is after the last time\n";
 std::cerr << "AskedTime=" << DATE_ConvertMjd2mystringPres(eTimeDay) << "\n";
 std::cerr << "FirstTime=" << DATE_ConvertMjd2mystringPres(LTime[0]) << "\n";
 std::cerr << " LastTime=" << DATE_ConvertMjd2mystringPres(LTime[nbTime-1]) << "\n";
-exit(1);
+throw TerminalException{1};
 }
 for (int iTimeUpp=1; iTimeUpp<nbTime; iTimeUpp++) {
 int iTimeLow=iTimeUpp-1;
@@ -2141,7 +2032,7 @@ return eInterpInfo;
 }
 std::cerr << "Failed to find matching record\n";
 std::cerr << "Please debug\n";
-exit(1);
+throw TerminalException{1};
 }
 InterpInfo GetTimeInterpolationInfo_infinite(double const& FirstTime, double const& TheSep, double const& eTimeDay)
 {
@@ -2151,12 +2042,12 @@ std::cerr << "Error in GetTimeInterpolationInfo_infinite\n";
 std::cerr << "We have FirstTime = " << FirstTime << "\n";
 std::cerr << "     and eTimeDay = " << eTimeDay << "\n";
 std::cerr << "i.e. eTimeDay < FirstTime\n";
-exit(1);
+throw TerminalException{1};
 }
 if (TheSep < 0) {
 std::cerr << "We need TheSep > 0\n";
 std::cerr << "But we have TheSep = " << TheSep << "\n";
-exit(1);
+throw TerminalException{1};
 }
 InterpInfo eInterpInfo;
 int iTime=1;
@@ -2191,7 +2082,7 @@ std::cerr << "eTimeFay  = " << eTimeDay << "\n";
 std::cerr << "iTime     = " << iTime << "\n";
 std::cerr << "TheSep    = " << TheSep << "\n";
 std::cerr << "Probably a bug in the infinite loop\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 }
@@ -2229,18 +2120,35 @@ return ListRelITime;
 double GetListTimeSeparation(std::vector<double> const& ListTime)
 {
 int nbTime=ListTime.size();
-std::vector<double> ListDiff(nbTime-1);
-for (int iTime=1; iTime<nbTime; iTime++)
-ListDiff[iTime-1]=ListTime[iTime] - ListTime[iTime-1];
-double eMin=VectorMin(ListDiff);
-double eMax=VectorMax(ListDiff);
-double eDiff=eMax - eMin;
-if (eDiff < 1.0e-6) {
-return eMax;
+std::vector<double> ListVal;
+std::vector<int> ListNb;
+double tolDay = double(1) / double(100000);
+auto InsertDiff=[&](double const& eVal) -> void {
+int len=ListVal.size();
+for (int i=0; i<len; i++) {
+if (fabs(eVal - ListVal[i]) < tolDay) {
+ListNb[i]++;
+return;
 }
-else {
-return -1;
 }
+ListVal.push_back(eVal);
+ListNb.push_back(1);
+};
+for (int iTime=1; iTime<nbTime; iTime++) {
+double eDiff=ListTime[iTime] - ListTime[iTime-1];
+InsertDiff(eDiff);
+}
+int siz=ListVal.size();
+int eNb=0;
+double eVal = -1;
+for (int i=0; i<siz; i++) {
+if (ListNb[i] > eNb) {
+eNb = ListNb[i];
+eVal = ListVal[i];
+}
+}
+return eVal;
+# 2753 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 }
 struct GraphSparseImmutable {
 public:
@@ -2326,7 +2234,7 @@ int GetColor(int const& iVert) const
 {
 if (HasVertexColor == false) {
 std::cerr << "Call to GetColor while HasVertexColor=false\n";
-exit(1);
+throw TerminalException{1};
 }
 return ListVertexColor[iVert];
 }
@@ -2348,7 +2256,7 @@ RecVar INTERPOL_SingleRecVarInterpolation(SingleArrayInterpolation const& eSingA
 int eta_rho=eSingArr.eta_rho;
 int xi_rho=eSingArr.xi_rho;
 MyMatrix<double> F, U, V;
-if (fRecVar.VarNature == "rho") {
+if (fRecVar.RecS.VarNature == "rho") {
 F=ZeroMatrix<double>(eta_rho, xi_rho);
 }
 else {
@@ -2356,22 +2264,7 @@ U=ZeroMatrix<double>(eta_rho, xi_rho);
 V=ZeroMatrix<double>(eta_rho, xi_rho);
 }
 RecVar eRecVar;
-eRecVar.eTimeDay=fRecVar.eTimeDay;
-eRecVar.iTime=fRecVar.iTime;
-eRecVar.strPres=fRecVar.strPres;
-eRecVar.strFile=fRecVar.strFile;
-eRecVar.VarName1=fRecVar.VarName1;
-eRecVar.VarName2=fRecVar.VarName2;
-eRecVar.minval=fRecVar.minval;
-eRecVar.maxval=fRecVar.maxval;
-eRecVar.mindiff=fRecVar.mindiff;
-eRecVar.maxdiff=fRecVar.maxdiff;
-eRecVar.Unit=fRecVar.Unit;
-eRecVar.VarNature=fRecVar.VarNature;
-if (eRecVar.VarNature == "uv") {
-eRecVar.nameU=fRecVar.nameU;
-eRecVar.nameV=fRecVar.nameV;
-}
+eRecVar.RecS=fRecVar.RecS;
 int nbEnt=eSingArr.LEta.size();
 for (int iEnt=0; iEnt<nbEnt; iEnt++) {
 double eF=0;
@@ -2384,7 +2277,7 @@ for (auto & ePart : eSingArr.LSingle[iEnt].LPart) {
 int fEta=ePart.eEta;
 int fXi=ePart.eXi;
 double eCoeff=ePart.eCoeff;
-if (fRecVar.VarNature == "rho") {
+if (fRecVar.RecS.VarNature == "rho") {
 eF += eCoeff*fRecVar.F(fEta,fXi);
 }
 else {
@@ -2392,7 +2285,7 @@ eU += eCoeff*fRecVar.U(fEta,fXi);
 eV += eCoeff*fRecVar.V(fEta,fXi);
 }
 }
-if (fRecVar.VarNature == "rho") {
+if (fRecVar.RecS.VarNature == "rho") {
 F(eEta,eXi)=eF;
 }
 else {
@@ -2401,7 +2294,7 @@ V(eEta,eXi)=eV;
 }
 }
 }
-if (fRecVar.VarNature == "rho") {
+if (fRecVar.RecS.VarNature == "rho") {
 eRecVar.F=F;
 }
 else {
@@ -2511,16 +2404,16 @@ iter++;
 }
 if (timeDim.isUnlimited() == false) {
 std::cerr << "Error the dimension should be unlimited\n";
-exit(1);
+throw TerminalException{1};
 }
 size_t siz=timeDim.getSize();
 if (ListRecVar.size() == 0) {
 std::cerr << "What is the point of writing\n";
 std::cerr << "ZERO variables\n";
-exit(1);
+throw TerminalException{1};
 }
-double eTimeDay=ListRecVar[0].eTimeDay;
-std::string strPres=ListRecVar[0].strPres;
+double eTimeDay=ListRecVar[0].RecS.eTimeDay;
+std::string strPres=ListRecVar[0].RecS.strPres;
 std::vector<size_t> start2{siz};
 std::vector<size_t> count2{1};
 eVAR_d.putVar(start2, count2, &eTimeDay);
@@ -2534,15 +2427,15 @@ float *A;
 A=new float[nbWet];
 std::vector<size_t> start{siz,0};
 std::vector<size_t> count{1, size_t(nbWet)};
-if (eRecVar.VarNature == "rho") {
-netCDF::NcVar eVar_F=dataFile.getVar(eRecVar.VarName1);
+if (eRecVar.RecS.VarNature == "rho") {
+netCDF::NcVar eVar_F=dataFile.getVar(eRecVar.RecS.VarName1);
 for (int i=0; i<nbWet; i++)
 A[i]=float(eRecVar.F(i,0));
 eVar_F.putVar(start, count, A);
 }
 else {
-netCDF::NcVar eVar_U=dataFile.getVar(eRecVar.nameU);
-netCDF::NcVar eVar_V=dataFile.getVar(eRecVar.nameV);
+netCDF::NcVar eVar_U=dataFile.getVar(eRecVar.RecS.nameU);
+netCDF::NcVar eVar_V=dataFile.getVar(eRecVar.RecS.nameV);
 for (int i=0; i<nbWet; i++)
 A[i]=float(eRecVar.U(i,0));
 eVar_U.putVar(start, count, A);
@@ -2559,8 +2452,8 @@ float *A;
 A=new float[eta_rho*xi_rho];
 std::vector<size_t> start{siz,0,0};
 std::vector<size_t> count{1, size_t(eta_rho), size_t(xi_rho)};
-if (eRecVar.VarNature == "rho") {
-netCDF::NcVar eVar_F=dataFile.getVar(eRecVar.VarName1);
+if (eRecVar.RecS.VarNature == "rho") {
+netCDF::NcVar eVar_F=dataFile.getVar(eRecVar.RecS.VarName1);
 int idx=0;
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
@@ -2570,8 +2463,8 @@ idx++;
 eVar_F.putVar(start, count, A);
 }
 else {
-netCDF::NcVar eVar_U=dataFile.getVar(eRecVar.nameU);
-netCDF::NcVar eVar_V=dataFile.getVar(eRecVar.nameV);
+netCDF::NcVar eVar_U=dataFile.getVar(eRecVar.RecS.nameU);
+netCDF::NcVar eVar_V=dataFile.getVar(eRecVar.RecS.nameV);
 int idx=0;
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
@@ -2590,115 +2483,6 @@ eVar_V.putVar(start, count, A);
 delete [] A;
 }
 }
-}
-FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
-{
-std::map<std::string, SingleBlock> ListBlock;
-std::string BlockName1="PROC";
-std::map<std::string, int> ListIntValues1;
-std::map<std::string, bool> ListBoolValues1;
-std::map<std::string, double> ListDoubleValues1;
-std::map<std::string, std::string> ListStringValues1;
-std::map<std::string, std::vector<std::string> > ListListStringValues1;
-ListStringValues1["MODELNAME"]="COSMO or WAM, ROMS, ROMS_IVICA, WWM, WW3, GRIB_DWD, GRIB_ECMWF, GRIB_GFS, GRIB_COSMO";
-ListStringValues1["BEGTC"]="20110915.000000";
-ListStringValues1["ENDTC"]="20110925.000000";
-ListDoubleValues1["DELTC"]=600;
-ListStringValues1["UNITC"]="SEC";
-ListStringValues1["GridFile"]="unset GridFile";
-ListStringValues1["BoundFile"]="unset";
-ListBoolValues1["CutWorldMap"]=false;
-ListBoolValues1["HigherLatitudeCut"]=false;
-ListBoolValues1["SplittingAt180"]=false;
-ListDoubleValues1["MinLatCut"]=-80;
-ListDoubleValues1["MaxLatCut"]=80;
-ListStringValues1["PicPrefix"]="Pictures/DIR_plot/";
-ListStringValues1["Extension"]="png";
-ListListStringValues1["ListNatureQuery"]={"instant"};
-ListDoubleValues1["TimeFrameDay"]=1;
-ListBoolValues1["FirstCleanDirectory"]=true;
-ListBoolValues1["KeepNC_NCL"]=false;
-ListBoolValues1["OverwritePrevious"]=false;
-ListIntValues1["NPROC"]=1;
-SingleBlock BlockPROC;
-BlockPROC.ListIntValues=ListIntValues1;
-BlockPROC.ListBoolValues=ListBoolValues1;
-BlockPROC.ListDoubleValues=ListDoubleValues1;
-BlockPROC.ListStringValues=ListStringValues1;
-BlockPROC.ListListStringValues=ListListStringValues1;
-BlockPROC.BlockName=BlockName1;
-ListBlock["PROC"]=BlockPROC;
-std::string BlockName2="PLOT";
-std::map<std::string, int> ListIntValues2;
-std::map<std::string, bool> ListBoolValues2;
-std::map<std::string, double> ListDoubleValues2;
-std::map<std::string, std::string> ListStringValues2;
-std::map<std::string, std::vector<double> > ListListDoubleValues2;
-std::map<std::string, std::vector<std::string> > ListListStringValues2;
-ListStringValues2["ColorMap"]="BlAqGrYeOrReVi200";
-ListStringValues2["ColorMapDiff"]="BlWhRe";
-ListStringValues2["cnFillMode"]="RasterFill";
-ListBoolValues2["DoColorBar"]=true;
-ListBoolValues2["cnSmoothingOn"]=true;
-ListIntValues2["nbLevelSpa"]=50;
-ListIntValues2["nbLabelStride"]=10;
-ListBoolValues2["UseNativeGrid"]=true;
-ListBoolValues2["DoTitle"]=true;
-ListStringValues2["GridResolution"]="HighRes";
-ListBoolValues2["DrawRiver"]=false;
-ListBoolValues2["PrintMMA"]=false;
-ListBoolValues2["LocateMM"]=false;
-ListBoolValues2["DoMain"]=true;
-ListBoolValues2["PlotDepth"]=true;
-ListBoolValues2["PlotMesh"]=false;
-ListBoolValues2["DrawContourBathy"]=false;
-ListBoolValues2["DrawAnnotation"]=false;
-ListDoubleValues2["AnnotationLon"]=0;
-ListDoubleValues2["AnnotationLat"]=0;
-ListStringValues2["AnnotationText"]="something to write";
-ListListStringValues2["BoundSingle_var"]={};
-ListListDoubleValues2["BoundSingle_min"]={};
-ListListDoubleValues2["BoundSingle_max"]={};
-ListListStringValues2["BoundDiff_var"]={};
-ListListDoubleValues2["BoundDiff_min"]={};
-ListListDoubleValues2["BoundDiff_max"]={};
-ListBoolValues2["VariableRange"]=false;
-ListBoolValues2["FillLand"]=true;
-ListListDoubleValues2["ListFrameMinLon"]={};
-ListListDoubleValues2["ListFrameMinLat"]={};
-ListListDoubleValues2["ListFrameMaxLon"]={};
-ListListDoubleValues2["ListFrameMaxLat"]={};
-ListBoolValues2["DoMain"]=true;
-SingleBlock BlockPLOT;
-BlockPLOT.ListIntValues=ListIntValues2;
-BlockPLOT.ListBoolValues=ListBoolValues2;
-BlockPLOT.ListDoubleValues=ListDoubleValues2;
-BlockPLOT.ListStringValues=ListStringValues2;
-BlockPLOT.ListListStringValues=ListListStringValues2;
-BlockPLOT.ListListDoubleValues=ListListDoubleValues2;
-BlockPLOT.BlockName=BlockName2;
-ListBlock["PLOT"]=BlockPLOT;
-std::string BlockName3="VARS";
-std::map<std::string, int> ListIntValues3;
-std::map<std::string, bool> ListBoolValues3;
-std::map<std::string, double> ListDoubleValues3;
-std::map<std::string, std::string> ListStringValues3;
-std::map<std::string, std::vector<std::string> > ListListStringValues3;
-std::vector<std::string> ListVarOut=GetAllPossibleVariables();
-for (auto& eVal : ListVarOut)
-ListBoolValues3[eVal]=false;
-SingleBlock BlockVARS;
-BlockVARS.ListIntValues=ListIntValues3;
-BlockVARS.ListBoolValues=ListBoolValues3;
-BlockVARS.ListDoubleValues=ListDoubleValues3;
-BlockVARS.ListStringValues=ListStringValues3;
-BlockVARS.ListListStringValues=ListListStringValues3;
-BlockVARS.BlockName=BlockName3;
-ListBlock["VARS"]=BlockVARS;
-FullNamelist eFullNamelist;
-eFullNamelist.ListBlock=ListBlock;
-eFullNamelist.FileName="undefined";
-return eFullNamelist;
 }
 FullNamelist NAMELIST_GetStandard_CREATE_sflux()
 {
@@ -2755,7 +2539,7 @@ int eta_rho_msk=GrdArr.GrdArrRho.MSK.rows();
 int xi_rho_msk =GrdArr.GrdArrRho.MSK.cols();
 if (eta_rho_msk != eta_rho || xi_rho_msk != xi_rho) {
 std::cerr << "Dimension error in the arrays\n";
-exit(1);
+throw TerminalException{1};
 }
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++)
@@ -2783,6 +2567,20 @@ MaxLat=eLat;
 }
 return {MinLon, MaxLon, MinLat, MaxLat};
 }
+void CHECK_Model_Allowedness(std::string const& eModelName)
+{
+std::vector<std::string> vec=GetAllPossibleModels();
+bool isPresent = (std::find(vec.begin(), vec.end(), eModelName) != vec.end());
+if (isPresent == false) {
+std::cerr << "We did not find the MODEL NAME\n";
+std::cerr << "MODELNAME = " << eModelName << "\n";
+std::cerr << "List of allowed models\n";
+for (int iModel=0; iModel<int(vec.size()); iModel++) {
+std::cerr << "iModel=" << iModel << " eModel=" << vec[iModel] << "\n";
+}
+throw TerminalException{1};
+}
+}
 void InitializeIdxJdxWet(CoordGridArrayFD & eCoordGrdArr)
 {
 int eta=eCoordGrdArr.eta;
@@ -2802,7 +2600,7 @@ MyVector<int> WWM_ReadBoundFile_gr3(std::string const& BoundFile)
 if (IsExistingFile(BoundFile) == false) {
 std::cerr << "Error in WWM_ReadBoundFile_gr3\n";
 std::cerr << "Missing BoundFile=" << BoundFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::ifstream IN(BoundFile);
 std::string line;
@@ -2817,7 +2615,7 @@ double XPDTMP, YPDTMP, ZPDTMP;
 IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
 if (KTMP != i+1) {
 std::cerr << "Inconsistency at this level\n";
-exit(1);
+throw TerminalException{1};
 }
 int eIOBP=int(ZPDTMP);
 eVect(i)=eIOBP;
@@ -2835,7 +2633,7 @@ if (IsExistingFile(GridFile) == false) {
 std::cerr << "Error in WWM_ReadGridFile_gr3\n";
 std::cerr << "GridFile = " << GridFile << "\n";
 std::cerr << "is missing\n";
-exit(1);
+throw TerminalException{1};
 }
 std::ifstream IN(GridFile);
 std::string line;
@@ -2875,7 +2673,7 @@ MyVector<int> WWM_ReadBoundFile_xfn(std::string const& BoundFile)
 if (IsExistingFile(BoundFile) == false) {
 std::cerr << "Error in WWM_ReadBoundFile_xfn\n";
 std::cerr << "Missing BoundFile=" << BoundFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::ifstream IN(BoundFile);
 std::string line;
@@ -2895,7 +2693,7 @@ double XPDTMP, YPDTMP, ZPDTMP;
 IN >> KTMP >> XPDTMP >> YPDTMP >> ZPDTMP;
 if (KTMP != i+1) {
 std::cerr << "Inconsistency error\n";
-exit(1);
+throw TerminalException{1};
 }
 int eIOBP=int(ZPDTMP);
 eVect(i)=eIOBP;
@@ -2913,7 +2711,7 @@ if (IsExistingFile(GridFile) == false) {
 std::cerr << "Error in WWM_ReadGridFile_xfn\n";
 std::cerr << "GridFile = " << GridFile << "\n";
 std::cerr << "is missing\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string line;
 int ITMP, JTMP;
@@ -2966,16 +2764,16 @@ double MinDist=2400;
 for (int iPoint=0; iPoint<nbPoint; iPoint++) {
 double eLon=GrdArr.GrdArrRho.LON(iPoint,0);
 if (eLon > 0)
-eLon=eLon - 360;
+eLon -= 360;
 LonSplit= - 180 - eps;
 double dist=fabs(eLon - LonSplit);
 if (dist < MinDist)
 MinDist=dist;
 }
 std::cerr << "eps=" << eps << " MinDist=" << MinDist << "\n";
-if (MinDist > eps)
+if (MinDist > eps/2)
 break;
-eps=eps*2;
+eps *= 2;
 }
 int nbTrig=GrdArr.INE.rows();
 std::vector<int> ListStatus(nbTrig);
@@ -2987,9 +2785,9 @@ int i3=GrdArr.INE(iTrig,2);
 double eLon1=GrdArr.GrdArrRho.LON(i1,0);
 double eLon2=GrdArr.GrdArrRho.LON(i2,0);
 double eLon3=GrdArr.GrdArrRho.LON(i3,0);
-eLon1=eLon1 - LonSplit;
-eLon2=eLon2 - LonSplit;
-eLon3=eLon3 - LonSplit;
+eLon1 -= LonSplit;
+eLon2 -= LonSplit;
+eLon3 -= LonSplit;
 DifferenceLonRenormalize(eLon1);
 DifferenceLonRenormalize(eLon2);
 DifferenceLonRenormalize(eLon3);
@@ -3122,8 +2920,9 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_IsVar\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
+try {
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 if(data.isNull()) {
@@ -3131,27 +2930,31 @@ return false;
 }
 return true;
 }
+catch (...) {
+return false;
+}
+}
 MyMatrix<double> NC_Read2Dvariable(std::string const& eFile, std::string const& eVar)
 {
 if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_Read2Dvariable\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 netCDF::NcType eType=data.getType();
 if (data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 1)\n";
 std::cerr << "eFile = " << eFile << "\n";
 std::cerr << "eVar  = " << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 2) {
 std::cerr << "The number of dimensions is not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim=data.getDim(0);
 int eta=eDim.getSize();
@@ -3204,7 +3007,7 @@ IsMatch=true;
 }
 if (IsMatch == false) {
 std::cerr << "Did not find the right number type\n";
-exit(1);
+throw TerminalException{1};
 }
 return eArr;
 }
@@ -3214,21 +3017,21 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_Read2Dvariable_int\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 netCDF::NcType eType=data.getType();
 if(data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 2)\n";
 std::cerr << "eFile = " << eFile << "\n";
 std::cerr << "eVar  = " << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 2) {
 std::cerr << "The number of dimensions is not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim=data.getDim(0);
 int eta=eDim.getSize();
@@ -3253,7 +3056,7 @@ else {
 std::cerr << "Error in the call\n";
 std::cerr << "eFile=" << eFile << "\n";
 std::cerr << "eVar=" << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 return eArr;
 }
@@ -3263,21 +3066,21 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_Read1Dvariable\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 netCDF::NcType eType=data.getType();
 if(data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 3)\n";
 std::cerr << "eFile = " << eFile << "\n";
 std::cerr << "eVar  = " << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 1) {
 std::cerr << "The number of dimensions is not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim=data.getDim(0);
 int dim=eDim.getSize();
@@ -3341,7 +3144,7 @@ IsMatch=true;
 }
 if (IsMatch == false) {
 std::cerr << "Did not find any matching number type\n";
-exit(1);
+throw TerminalException{1};
 }
 double eScal, eOff;
 try {
@@ -3379,21 +3182,21 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_Read1Dvariable_int\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 netCDF::NcType eType=data.getType();
 if(data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 4)\n";
 std::cerr << "eFile = " << eFile << "\n";
 std::cerr << "eVar  = " << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 1) {
 std::cerr << "The number of dimensions is not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim=data.getDim(0);
 int dim=eDim.getSize();
@@ -3452,7 +3255,7 @@ std::cerr << "We did not find a match for the time unit\n";
 std::cerr << "eStrUnitTime=" << eStrUnitTime << "\n";
 std::cerr << "Xname=" << Xname << "\n";
 std::cerr << "allowed Xname=days/hours/seconds\n";
-exit(1);
+throw TerminalException{1};
 }
 int alen=eStrUnitTime.length();
 std::string Yname=eStrUnitTime.substr(posBlank+1, alen - 1 - posBlank);
@@ -3488,7 +3291,7 @@ std::cerr << "YnameTimeP=" << YnameTimeP << "\n";
 std::cerr << "Need to program that case\n";
 std::cerr << "Basically time can be of the form 0:0:0 GMT\n";
 std::cerr << "or other stuff like that\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 }
@@ -3523,20 +3326,20 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "Error in NC_ReadTimeFromFile\n";
 std::cerr << "Trying to open non-existing file\n";
 std::cerr << "eFile = " << eFile << "\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(StringTime);
 if(data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 5)\n";
 std::cerr << "eFile = " << eFile << "\n";
 std::cerr << "StringTime = " << StringTime << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 1) {
 std::cerr << "The number of dimensions is not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim=data.getDim(0);
 int siz=eDim.getSize();
@@ -3597,15 +3400,15 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "NETCDF_Get2DvariableSpecEntry_FD\n";
 std::cerr << "The file eFile=" << eFile << "\n";
 std::cerr << "does not exist\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 if(data.isNull()) {
-std::cerr << "Error in accessing to variable eVar in eFile\n";
+std::cerr << "Error in accessing to the file (Case 6)\n";
 std::cerr << "eFile=" << eFile << "\n";
 std::cerr << "eVar=" << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim == 3) {
@@ -3616,7 +3419,7 @@ if (iRec >= nbRec) {
 std::cerr << "Error, iRec is too large\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
-exit(1);
+throw TerminalException{1};
 }
 eDim=data.getDim(1);
 size_t eta=eDim.getSize();
@@ -3657,7 +3460,7 @@ delete [] eVal;
 }
 if (IsDone == false) {
 std::cerr << "no good type founds\n";
-exit(1);
+throw TerminalException{1};
 }
 return eArr;
 }
@@ -3668,7 +3471,7 @@ if (iRec >= nbRec) {
 std::cerr << "Error, iRec is too large\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
-exit(1);
+throw TerminalException{1};
 }
 eDim=data.getDim(1);
 int nbWet=eDim.getSize();
@@ -3697,7 +3500,7 @@ delete [] eValF;
 }
 if (IsDone == false) {
 std::cerr << "no good type founds\n";
-exit(1);
+throw TerminalException{1};
 }
 if (nbWet == GrdArr.GrdArrRho.nbWet) {
 int eta=GrdArr.GrdArrRho.eta;
@@ -3744,7 +3547,7 @@ return eArr;
 std::cerr << "Routine is NETCDF_Get2DvariableSpecEntry_FD\n";
 std::cerr << "eVar=" << eVar << "\n";
 std::cerr << "We did not find the size\n";
-exit(1);
+throw TerminalException{1};
 }
 MyMatrix<double> NETCDF_Get2DvariableSpecEntry_FE(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
@@ -3752,22 +3555,22 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "NETCDF_Get2DvariableSpecEntry_FE\n";
 std::cerr << "The file eFile=" << eFile << "\n";
 std::cerr << "does not exist\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcVar data=dataFile.getVar(eVar);
 if(data.isNull()) {
-std::cerr << "Error in accessing eVar in eFile\n";
+std::cerr << "Error in accessing to the file (Case 7)\n";
 std::cerr << "eFile=" << eFile << "\n";
 std::cerr << "eVar=" << eVar << "\n";
 std::cerr << "iRec=" << iRec << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim != 2) {
 std::cerr << "This command will certainly not work\n";
 std::cerr << "Dimensions are not correct\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcDim eDim;
 eDim=data.getDim(0);
@@ -3776,7 +3579,7 @@ if (iRec >= nbRec) {
 std::cerr << "Error, iRec is too large\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
-exit(1);
+throw TerminalException{1};
 }
 eDim=data.getDim(1);
 size_t mnp=eDim.getSize();
@@ -3832,7 +3635,7 @@ IsDone=true;
 }
 if (IsDone == false) {
 std::cerr << "Data reading failed for 2D finite element\n";
-exit(1);
+throw TerminalException{1};
 }
 if (GrdArr.L_IndexSelect) {
 int siz=GrdArr.I_IndexSelect.size();
@@ -3845,25 +3648,130 @@ return eArrRet;
 }
 return eArr;
 }
+Eigen::Tensor<double,3> NETCDF_Get3DvariableSpecEntry_FE(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
+{
+if (IsExistingFile(eFile) == false) {
+std::cerr << "NETCDF_Get2DvariableSpecEntry_FE\n";
+std::cerr << "The file eFile=" << eFile << "\n";
+std::cerr << "does not exist\n";
+throw TerminalException{1};
+}
+netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
+netCDF::NcVar data=dataFile.getVar(eVar);
+if(data.isNull()) {
+std::cerr << "Error in accessing to the file (Case 8)\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "eVar=" << eVar << "\n";
+std::cerr << "iRec=" << iRec << "\n";
+throw TerminalException{1};
+}
+int nbDim=data.getDimCount();
+if (nbDim != 3) {
+std::cerr << "This command will certainly not work\n";
+std::cerr << "Dimensions are not correct\n";
+throw TerminalException{1};
+}
+netCDF::NcDim eDim0=data.getDim(0);
+int nbRec=eDim0.getSize();
+if (iRec >= nbRec) {
+std::cerr << "Error, iRec is too large\n";
+std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
+std::cerr << "We need C-convention iRec < nbRec\n";
+throw TerminalException{1};
+}
+netCDF::NcDim eDim1=data.getDim(1);
+size_t mnp=eDim1.getSize();
+netCDF::NcDim eDim2=data.getDim(2);
+size_t NTR=eDim2.getSize();
+std::vector<size_t> start{size_t(iRec), 0, 0};
+std::vector<size_t> count{1, mnp, NTR};
+netCDF::NcType eType=data.getType();
+Eigen::Tensor<double,3> eArr(int(NTR), int(mnp), 1);
+bool IsDone=false;
+if (eType == netCDF::NcType::nc_DOUBLE) {
+double *eVal;
+eVal=new double[mnp*NTR];
+data.getVar(start, count, eVal);
+int idx=0;
+for (size_t i=0; i<mnp; i++) {
+for (size_t iTr=0; iTr<NTR; iTr++) {
+eArr(iTr,i,0)=eVal[idx];
+idx++;
+}
+}
+delete [] eVal;
+IsDone=true;
+}
+if (eType == netCDF::NcType::nc_FLOAT) {
+float *eVal;
+eVal=new float[mnp*NTR];
+data.getVar(start, count, eVal);
+int idx=0;
+for (size_t i=0; i<mnp; i++) {
+for (size_t iTr=0; iTr<NTR; iTr++) {
+float eValF=eVal[idx];
+double eValD=double(eValF);
+eArr(iTr,i,0)=eValD;
+idx++;
+}
+}
+delete [] eVal;
+IsDone=true;
+}
+if (eType == netCDF::NcType::nc_INT) {
+int *eVal;
+eVal=new int[mnp*NTR];
+data.getVar(start, count, eVal);
+int idx=0;
+for (size_t i=0; i<mnp; i++) {
+for (size_t iTr=0; iTr<NTR; iTr++) {
+int eValF=eVal[idx];
+double eValD=double(eValF);
+eArr(iTr,i,0)=eValD;
+idx++;
+}
+}
+delete [] eVal;
+IsDone=true;
+}
+if (eType == netCDF::NcType::nc_UINT) {
+unsigned int *eVal;
+eVal=new unsigned int[mnp];
+data.getVar(start, count, eVal);
+int idx=0;
+for (size_t i=0; i<mnp; i++) {
+for (size_t iTr=0; iTr<NTR; iTr++) {
+unsigned int eValF=eVal[idx];
+double eValD=double(eValF);
+eArr(iTr,i,0)=eValD;
+idx++;
+}
+}
+delete [] eVal;
+IsDone=true;
+}
+if (IsDone == false) {
+std::cerr << "Data reading failed for 2D finite element\n";
+throw TerminalException{1};
+}
+if (GrdArr.L_IndexSelect) {
+int siz=GrdArr.I_IndexSelect.size();
+Eigen::Tensor<double,3> eArrRet(siz, int(NTR), 1);
+for (int i=0; i<siz; i++) {
+int iGlob=GrdArr.I_IndexSelect[i];
+for (size_t iTr=0; iTr<NTR; iTr++)
+eArrRet(iTr,i,0)=eArr(iTr,iGlob,0);
+}
+return eArrRet;
+}
+return eArr;
+}
 MyMatrix<double> NETCDF_Get2DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
 if (GrdArr.IsFE == 1) {
 return NETCDF_Get2DvariableSpecEntry_FE(eFile, GrdArr, eVar, iRec);
 }
 return NETCDF_Get2DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
-}
-bool NC_TOTALARR_IsVar(TotalArrGetData const& TotalArr, std::string const& eVar)
-{
-std::string HisFile;
-int iFile=0;
-ArrayHistory eArr=TotalArr.eArr;
-if (eArr.AppendVarName) {
-HisFile=eArr.ListFileNames[iFile] + eVar + ".nc";;
-}
-else {
-HisFile=eArr.ListFileNames[iFile];
-}
-return NC_IsVar(HisFile, eVar);
 }
 MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
 {
@@ -3876,7 +3784,7 @@ std::cerr << "iFile=" << iFile << " len=" << len << "\n";
 std::cerr << "We need iFile < len\n";
 std::cerr << "Error. trying to get eArr.ListFileNames\n";
 std::cerr << "After the last values\n";
-exit(1);
+throw TerminalException{1};
 }
 if (eArr.AppendVarName) {
 return eArr.ListFileNames[iFile] + eVar + ".nc";
@@ -3957,7 +3865,7 @@ IsDone=true;
 }
 if (IsDone == false) {
 std::cerr << "Failed to find matching entry for TimeSteppingInfo = " << eArr.TimeSteppingInfo << "\n";
-exit(1);
+throw TerminalException{1};
 }
 MyMatrix<double> eVarLow=NETCDF_Get2DvariableSpecEntry(HisFileLow, GrdArr, eVar, iRecLow);
 MyMatrix<double> eVarUpp=NETCDF_Get2DvariableSpecEntry(HisFileUpp, GrdArr, eVar, iRecUpp);
@@ -3977,7 +3885,7 @@ if (IsExistingFile(eFile) == false) {
 std::cerr << "NETCDF_Get3DvariableSpecEntry_FD\n";
 std::cerr << "The file eFile=" << eFile << "\n";
 std::cerr << "does not exist\n";
-exit(1);
+throw TerminalException{1};
 }
 netCDF::NcFile dataFile(eFile, netCDF::NcFile::read);
 netCDF::NcDim eDim;
@@ -3987,10 +3895,10 @@ eDim=dataFile.getDim("s_w");
 int s_w=eDim.getSize();
 netCDF::NcVar data=dataFile.getVar(eVar);
 if(data.isNull()) {
-std::cerr << "Error in accessing to the file\n";
+std::cerr << "Error in accessing to the file (Case 10)\n";
 std::cerr << "eFile=" << eFile << "\n";
 std::cerr << "eVar=" << eVar << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int nbDim=data.getDimCount();
 if (nbDim == 4) {
@@ -4000,7 +3908,7 @@ if (iRec >= nbRec) {
 std::cerr << "Error, iRec is too large\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
-exit(1);
+throw TerminalException{1};
 }
 eDim=data.getDim(1);
 int s_vert=eDim.getSize();
@@ -4034,7 +3942,7 @@ delete [] eValF;
 }
 if (IsDone == false) {
 std::cerr << "no good type founds\n";
-exit(1);
+throw TerminalException{1};
 }
 int idx=0;
 for (int k=0; k<s_vert; k++)
@@ -4051,7 +3959,7 @@ if (iRec >= nbRec) {
 std::cerr << "Error, iRec is too large\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
-exit(1);
+throw TerminalException{1};
 }
 eDim=data.getDim(1);
 int nbWet=eDim.getSize();
@@ -4080,7 +3988,7 @@ delete [] eValF;
 }
 if (IsDone == false) {
 std::cerr << "no good type founds\n";
-exit(1);
+throw TerminalException{1};
 }
 if (nbWet == s_rho*GrdArr.GrdArrRho.nbWet) {
 int eta=GrdArr.GrdArrRho.eta;
@@ -4147,17 +4055,16 @@ std::cerr << "nbWetRho=" << GrdArr.GrdArrRho.nbWet << "\n";
 std::cerr << "  nbWetU=" << GrdArr.GrdArrU.nbWet << "\n";
 std::cerr << "  nbWetV=" << GrdArr.GrdArrV.nbWet << "\n";
 std::cerr << "We did not find the size\n";
-exit(1);
+throw TerminalException{1};
 }
 Eigen::Tensor<double,3> NETCDF_Get3DvariableSpecEntry(std::string const& eFile, GridArray const& GrdArr, std::string const& eVar, int const& iRec)
 {
 if (GrdArr.IsFE == 1) {
-std::cerr << "You need to program this part of the program\n";
-exit(1);
+return NETCDF_Get3DvariableSpecEntry_FE(eFile, GrdArr, eVar, iRec);
 }
 return NETCDF_Get3DvariableSpecEntry_FD(eFile, GrdArr, eVar, iRec);
 }
-Eigen::Tensor<double,3> Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
+Eigen::Tensor<double,3> NETCDF_Get3DvariableSpecTime(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
 {
 ArrayHistory eArr=TotalArr.eArr;
 GridArray GrdArr=TotalArr.GrdArr;
@@ -4316,22 +4223,18 @@ int eVert=INE(iEle,i);
 ListNbEnt[eVert]+=2;
 }
 std::cerr << "nbNode=" << nbNode << "\n";
-std::cerr << "GetUnstructuredVertexAdjInfo, step 1\n";
 int TotalSum_unrefined=6*nbEle;
-std::cerr << "TotalSum_unrefined=" << TotalSum_unrefined << "\n";
 std::vector<int> ListStart_unrefined(nbNode+1,0);
 for (int iNode=0; iNode<nbNode; iNode++)
 ListStart_unrefined[iNode+1]=ListStart_unrefined[iNode] + ListNbEnt[iNode];
-std::cerr << "ListStart(last)=" << ListStart_unrefined[nbNode] << "\n";
 std::vector<int> ListListAdj_unrefined(TotalSum_unrefined,-1);
 std::vector<int> ListIndexPos(nbNode,0);
-std::cerr << "GetUnstructuredVertexAdjInfo, step 2\n";
 auto fInsert=[&](int const& eVert, int const& eVertAdj) -> void {
 int eStart=ListStart_unrefined[eVert];
 int eEnd=ListStart_unrefined[eVert] + ListIndexPos[eVert];
 if (ListListAdj_unrefined[eEnd] != -1) {
 std::cerr << "Logical error in the code\n";
-exit(1);
+throw TerminalException{1};
 }
 for (int i=eStart; i<eEnd; i++)
 if (ListListAdj_unrefined[i] == eVertAdj)
@@ -4339,7 +4242,6 @@ return;
 ListIndexPos[eVert]++;
 ListListAdj_unrefined[eEnd]=eVertAdj;
 };
-std::cerr << "GetUnstructuredVertexAdjInfo, step 3\n";
 for (int iEle=0; iEle<nbEle; iEle++)
 for (int i=0; i<3; i++) {
 int iNext=NextIdx(3,i);
@@ -4350,14 +4252,11 @@ int eVertN=INE(iEle,iNext);
 fInsert(eVert, eVertP);
 fInsert(eVert, eVertN);
 }
-std::cerr << "GetUnstructuredVertexAdjInfo, step 4\n";
 std::vector<int> ListStart(nbNode+1,0);
 for (int iNode=0; iNode<nbNode; iNode++)
 ListStart[iNode+1]=ListStart[iNode] + ListIndexPos[iNode];
-std::cerr << "GetUnstructuredVertexAdjInfo, step 5\n";
 int TotalSum=ListStart[nbNode];
 std::vector<int> ListListAdj(TotalSum,-1);
-std::cerr << "GetUnstructuredVertexAdjInfo, step 6\n";
 for (int iNode=0; iNode<nbNode; iNode++) {
 int eStart=ListStart[iNode];
 int eStart_unrefined=ListStart_unrefined[iNode];
@@ -4365,7 +4264,6 @@ int siz=ListIndexPos[iNode];
 for (int i=0; i<siz; i++)
 ListListAdj[eStart + i]=ListListAdj_unrefined[eStart_unrefined+i];
 }
-std::cerr << "GetUnstructuredVertexAdjInfo, step 7\n";
 return GraphSparseImmutable(nbNode, ListStart, ListListAdj);
 }
 std::vector<int> GetUnstructuredTriangleAdjInfo_vectint(MyMatrix<int> const& INE, int nbNode)
@@ -4437,13 +4335,13 @@ int idxEnd=IndexEnd[eVert1];
 for (int iEdge=idxStart; iEdge<idxEnd; iEdge++) {
 if (ListEdges(iEdge,0) != eVert1) {
 std::cerr << "Clear inconsistency in code\n";
-exit(1);
+throw TerminalException{1};
 }
 if (ListEdges(iEdge,1) == eVert2)
 return iEdge;
 }
 std::cerr << "Failed to find the correct indexes iEdge\n";
-exit(1);
+throw TerminalException{1};
 };
 MyMatrix<int> LEdge=GetEdgeSet(INE, nbNode);
 std::vector<int> NumberMatch(nbEdge, 0);
@@ -4516,14 +4414,14 @@ std::cerr << "Error in the unstructured grid\n";
 std::cerr << "mnp=" << mnp << "  mne=" << mne << "\n";
 std::cerr << "ie=" << ie << "\n";
 std::cerr << "INE=[" << GrdArr.INE(ie,0) << " , " << GrdArr.INE(ie,1) << " , " << GrdArr.INE(ie,2) << "]\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 }
 if (nbPlus > 0 && nbMinus > 0) {
 std::cerr << "The grid is incorrectly oriented\n";
 std::cerr << "mne=" << mne << " : nbPlus=" << nbPlus << "  nbMinus=" << nbMinus << "\n";
-exit(1);
+throw TerminalException{1};
 }
 MyVector<int> Status=GetBoundaryStatus(GrdArr.INE, mnp);
 int nbStatusNormal=0;
@@ -4562,28 +4460,25 @@ int eCon=CCON[ip];
 if (eCon > MAXMNECON)
 MAXMNECON=eCon;
 }
-int CHILF[mnp];
-for (int ip=0; ip<mnp; ip++) {
-CHILF[ip]=0;
-}
-int CELLVERTEX[mnp][MAXMNECON][2];
+std::vector<int> CHILF(mnp,0);
+Eigen::Tensor<int,3> CELLVERTEX(mnp,MAXMNECON,2);
 for (int ie=0; ie<mne; ie++)
 for (int j=0; j<3; j++) {
 int i=GrdArr.INE(ie,j);
-CELLVERTEX[i][ CHILF[i] ][0] = ie;
-CELLVERTEX[i][ CHILF[i] ][1] = j;
+CELLVERTEX(i, CHILF[i] ,0) = ie;
+CELLVERTEX(i, CHILF[i] ,1) = j;
 CHILF[i]++;
 }
 int COUNT_MAX=0;
 for (int ip=0; ip<mnp; ip++)
 COUNT_MAX += CCON[ip];
-int IE_CELL2[mnp][MAXMNECON];
-int POS_CELL2[mnp][MAXMNECON];
+MyMatrix<int> IE_CELL2 (mnp,MAXMNECON);
+MyMatrix<int> POS_CELL2(mnp,MAXMNECON);
 int j=0;
 for (int ip=0; ip<mnp; ip++)
 for (int i=0; i<CCON[ip]; i++) {
-IE_CELL2[ip][i] = CELLVERTEX[ip][i][0];
-POS_CELL2[ip][i] = CELLVERTEX[ip][i][1];
+IE_CELL2 (ip,i) = CELLVERTEX(ip,i,0);
+POS_CELL2(ip,i) = CELLVERTEX(ip,i,1);
 j++;
 }
 for (int ie=0; ie<mne; ie++)
@@ -4594,16 +4489,16 @@ int IP_NEXT=GrdArr.INE(ie, INEXT);
 int nbMatch=0;
 std::vector<int> Lmatch;
 for (int icon=0; icon<CCON[ip]; icon++) {
-int ie2=IE_CELL2[ip][icon];
+int ie2=IE_CELL2(ip,icon);
 if (ie != ie2) {
-int POS=POS_CELL2[ip][icon];
+int POS=POS_CELL2(ip,icon);
 int POS_NEXT=POS_TRICK[POS][0];
 int IP_ADJ_NEXT=GrdArr.INE(ie2, POS_NEXT);
 if (IP_ADJ_NEXT == IP_NEXT) {
 std::cerr << "Combinatorial orientability problem\n";
 std::cerr << "IE=" << ie << " IE2=" << ie2 << "\n";
 std::cerr << "IP=" << ip << " IP_NEXT=" << IP_NEXT << "\n";
-exit(1);
+throw TerminalException{1};
 }
 int POS_PREV=POS_TRICK[POS][1];
 int IP_ADJ_PREV=GrdArr.INE(ie2, POS_PREV);
@@ -4625,7 +4520,7 @@ int iem=Lmatch[iMatch];
 std::cerr << "  iMatch=" << iMatch << " ie=" << iem << "\n";
 std::cerr << "     ine=[" << GrdArr.INE(iem,0) << "," << GrdArr.INE(iem,1) << "," << GrdArr.INE(iem,2) << "]\n";
 }
-exit(1);
+throw TerminalException{1};
 }
 }
 std::cerr << "Now leaving the combinatorial check\n";
@@ -4661,7 +4556,7 @@ if (nbPlus > 0 && nbMinus > 0) {
 std::cerr << "Orientation error\n";
 std::cerr << "nbPlus =" << nbPlus << "\n";
 std::cerr << "nbMinus=" << nbMinus << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::cerr << "nbPlus = " << nbPlus << "  nbMinus = " << nbMinus << "\n";
 }
@@ -4769,6 +4664,87 @@ if (test)
 return eStrPrior;
 return eStr3;
 }
+bool NAMELIST_ReadBoolValue(std::string const& eVarValue)
+{
+if (eVarValue == ".F.")
+return false;
+if (eVarValue == ".T.")
+return true;
+if (eVarValue == "F")
+return false;
+if (eVarValue == "T")
+return true;
+std::cerr << "Boolean value has not been found\n";
+std::cerr << "eVarValue = " << eVarValue << "\n";
+std::cerr << "Allowed: T / F / .T. / .F.\n";
+throw TerminalException{1};
+}
+std::string NAMELIST_ConvertFortranStringToCppString(std::string const& eStr)
+{
+int len=eStr.length();
+std::string eFirstChar=eStr.substr(0, 1);
+std::string eLastChar=eStr.substr(len-1, 1);
+int RemovableEnding=0;
+if (eFirstChar == "'" || eFirstChar == "\"") {
+RemovableEnding=1;
+if (eFirstChar != eLastChar) {
+std::cerr << "eFirstChar = " << eFirstChar << "\n";
+std::cerr << " eLastChar = " << eLastChar << "\n";
+std::cerr << "The character used for noting beginning and end of string should be identical\n";
+throw TerminalException{1};
+}
+}
+if (RemovableEnding == 1)
+return eStr.substr(1,len-2);
+return eStr;
+}
+std::vector<std::string> NAMELIST_ConvertFortranListStringToCppListString(std::string const& eStr)
+{
+int len=eStr.length();
+std::string eFirstChar=eStr.substr(0, 1);
+std::string eLastChar=eStr.substr(len-1,1);
+if (eFirstChar != "'" && eFirstChar != "\"") {
+std::cerr << "eStr=" << eStr << "\n";
+std::cerr << "For list of strings, one should use string \"  \"   or '    '   \n";
+throw TerminalException{1};
+}
+if (eLastChar != "'" && eLastChar != "\"") {
+std::cerr << "eStr=" << eStr << "\n";
+std::cerr << "For list of strings, one should use string \"  \"   or '    '   \n";
+throw TerminalException{1};
+}
+if (eFirstChar != eLastChar) {
+std::cerr << "eStr=" << eStr << "\n";
+std::cerr << "eFirstChar=" << eFirstChar << "\n";
+std::cerr << "eLastChar=" << eLastChar << "\n";
+std::cerr << "No coherency in endings\n";
+throw TerminalException{1};
+}
+std::string eSepChar=eFirstChar;
+int IsInString=0;
+std::string eFound="";
+std::vector<std::string> eListStr;
+for (int i=0; i<len; i++) {
+std::string eChar=eStr.substr(i,1);
+if (eChar == eSepChar) {
+eFound += eChar;
+if (IsInString == 1) {
+IsInString=0;
+std::string eCppStr=NAMELIST_ConvertFortranStringToCppString(eFound);
+eListStr.push_back(eCppStr);
+eFound="";
+}
+else {
+IsInString=1;
+}
+}
+else {
+if (IsInString == 1)
+eFound += eChar;
+}
+}
+return eListStr;
+}
 std::vector<double> NAMELIST_ConvertFortranStringListDoubleToCppVectorDouble(std::string const& eVarValue)
 {
 std::string eSepChar=",";
@@ -4801,10 +4777,11 @@ return eListRetInt;
 }
 void NAMELIST_ReadNamelistFile(std::string const& eFileName, FullNamelist &eFullNamelist)
 {
+std::set<std::pair<std::string, std::string>> ListInsertValues;
 if (IsExistingFile(eFileName) == false) {
 std::cerr << "The following namelist file is missing\n";
 std::cerr << "eFileName = " << eFileName << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::ifstream INfs(eFileName);
 bool InBlock=false;
@@ -4823,7 +4800,7 @@ int len=eStr.length();
 if (eStr.find(strTab) != std::string::npos) {
 std::cerr << "Tabs are not allowed\n";
 std::cerr << "LINE=" << eStr << "\n";
-exit(1);
+throw TerminalException{1};
 }
 if (len> 0) {
 if (eStr.find(Ampersand) != std::string::npos) {
@@ -4832,7 +4809,7 @@ if (eFirstChar != "&") {
 std::cerr << "Error while reading namelist file = " << eFileName << "\n";
 std::cerr << "Error, Ampersand (&) should be only in the first character\n";
 std::cerr << "LINE=" << eStr << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string strRed=eStr.substr(1, len-1);
 if (InBlock == false) {
@@ -4845,7 +4822,7 @@ std::cerr << "LINE=" << eStr << "\n";
 std::cerr << "List of authorized block names:\n";
 for (auto & eBlock : eFullNamelist.ListBlock)
 std::cerr << "Block name=" << eBlock.first << "\n";
-exit(1);
+throw TerminalException{1};
 }
 InBlock=true;
 }
@@ -4853,7 +4830,7 @@ else {
 if (strRed != "END") {
 std::cerr << "Ampersand detected. We should leave with a END\n";
 std::cerr << "LINE=" << eStr << "\n";
-exit(1);
+throw TerminalException{1};
 }
 InBlock=false;
 }
@@ -4871,6 +4848,15 @@ std::string eVarName=STRING_RemoveSpacesBeginningEnd(eStrPrior);
 std::string eVarValue=STRING_RemoveSpacesBeginningEnd(eStrPosterior);
 std::string eVarNature=NAMELIST_FindPositionVariableInBlock(
 eVarName, eFullNamelist.ListBlock[eBlockName]);
+std::pair<std::string, std::string> ePair{eBlockName, eVarName};
+auto searchB=ListInsertValues.find(ePair);
+if (searchB != ListInsertValues.end()) {
+std::cerr << "In the block " << eBlockName << "\n";
+std::cerr << "the entry " << eVarName << "\n";
+std::cerr << "is defined two times\n";
+throw TerminalException{1};
+}
+ListInsertValues.insert(ePair);
 if (eVarNature == "not found") {
 NAMELIST_WriteBlock(std::cerr, eBlockName, eFullNamelist.ListBlock[eBlockName]);
 std::cerr << "Error in reading the NAMELIST file. See above allowed entries\n";
@@ -4878,7 +4864,7 @@ std::cerr << "The variable " << eVarName << "\n";
 std::cerr << "is in block " << eBlockName << "\n";
 std::cerr << "of the file " << eFileName << "\n";
 std::cerr << "but it is not allowed for the chosen application\n";
-exit(1);
+throw TerminalException{1};
 }
 if (eVarNature == "int") {
 int eVal;
@@ -4915,7 +4901,7 @@ else {
 int nbChar=eStr3.size();
 if (nbChar != 0) {
 std::cerr << "If lines has no = sign then it should be empty\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 }
@@ -4927,8 +4913,33 @@ InBlock=false;
 }
 if (InBlock == true) {
 std::cerr << "Error. When leaving namelist reading, we should be out of block\n";
-exit(1);
+throw TerminalException{1};
 }
+}
+bool TOTALARR_IsVar(TotalArrGetData const& TotalArr, std::string const& eVar)
+{
+if (TotalArr.eArr.KindArchive == "NETCDF") {
+std::string HisFile;
+int iFile=0;
+ArrayHistory eArr=TotalArr.eArr;
+if (eArr.AppendVarName) {
+HisFile=eArr.ListFileNames[iFile] + eVar + ".nc";;
+}
+else {
+HisFile=eArr.ListFileNames[iFile];
+}
+return NC_IsVar(HisFile, eVar);
+}
+if (TotalArr.eArr.KindArchive == "GRIB") {
+for (auto & eVarName : TotalArr.eArr.RawVarNames)
+if (eVarName == eVar)
+return true;
+return false;
+}
+std::cerr << "Error in TOTALARR_IsVar\n";
+std::cerr << "The KindArchive does not allow to find the nature\n";
+std::cerr << "KindArchive=" << TotalArr.eArr.KindArchive << "\n";
+throw TerminalException{1};
 }
 PairMinMax ComputeMinMax(GridArray const& GrdArr, MyMatrix<double> const& F)
 {
@@ -4941,7 +4952,7 @@ if (eta_rho != eta_rho_msk || xi_rho != xi_rho_msk) {
 std::cerr << "ComputeMinMax error : Inconsistency in dimension\n";
 std::cerr << "  F: eta_rho=" << eta_rho << " xi_rho=" << xi_rho << "\n";
 std::cerr << "MSK: eta_rho=" << eta_rho_msk << " xi_rho=" << xi_rho_msk << "\n";
-exit(1);
+throw TerminalException{1};
 }
 double TheMin=0;
 double TheMax=0;
@@ -4985,8 +4996,8 @@ std::cerr << "nbSingleMax = " << nbSingleMax << "\n";
 }
 for (int iS=0; iS<nbSingle; iS++)
 if (ePlotBound.BoundSingle_var[iS] == eVarName) {
-eRecVar.minval=ePlotBound.BoundSingle_min[iS];
-eRecVar.maxval=ePlotBound.BoundSingle_max[iS];
+eRecVar.RecS.minval=ePlotBound.BoundSingle_min[iS];
+eRecVar.RecS.maxval=ePlotBound.BoundSingle_max[iS];
 }
 int nbDiff=ePlotBound.BoundDiff_var.size();
 int nbDiffMin=ePlotBound.BoundDiff_min.size();
@@ -5000,16 +5011,16 @@ std::cerr << "nbDiffMax = " << nbDiffMax << "\n";
 }
 for (int iD=0; iD<nbDiff; iD++)
 if (ePlotBound.BoundDiff_var[iD] == eVarName) {
-eRecVar.mindiff=ePlotBound.BoundDiff_min[iD];
-eRecVar.maxdiff=ePlotBound.BoundDiff_max[iD];
+eRecVar.RecS.mindiff=ePlotBound.BoundDiff_min[iD];
+eRecVar.RecS.maxdiff=ePlotBound.BoundDiff_max[iD];
 }
 int eSize=eRecVar.F.size();
 if (ePlotBound.VariableRange == true && eSize > 0) {
 PairMinMax ePair=ComputeMinMax(TotalArr.GrdArr, eRecVar.F);
-eRecVar.mindiff=ePair.TheMin;
-eRecVar.maxdiff=ePair.TheMax;
-eRecVar.minval=ePair.TheMin;
-eRecVar.maxval=ePair.TheMax;
+eRecVar.RecS.mindiff=ePair.TheMin;
+eRecVar.RecS.maxdiff=ePair.TheMax;
+eRecVar.RecS.minval=ePair.TheMin;
+eRecVar.RecS.maxval=ePair.TheMax;
 }
 }
 std::string GetStrAllOfPlot(VarQuery const& eQuery)
@@ -5024,13 +5035,38 @@ else {
 if (iTime > 10000) {
 std::cerr << "Error in the code\n";
 std::cerr << "iTime is too large\n";
-exit(1);
+throw TerminalException{1};
 }
 strAll=StringNumber(iTime, 4) + "_" + strFile;
 }
 if (eQuery.NatureQuery != "instant")
-strAll=strAll + "_" + eQuery.NatureQuery;
+strAll += "_" + eQuery.NatureQuery;
 return strAll;
+}
+std::string GetStrPresOfPlot(VarQuery const& eQuery)
+{
+std::string strPres1=DATE_ConvertMjd2mystringPresReduced(eQuery.eTimeDay);
+if (eQuery.NatureQuery == "instant") {
+return "at " + strPres1;
+}
+if (eQuery.NatureQuery == "swathMax") {
+double TimeFrameDay=eQuery.TimeFrameDay;
+std::string strPres2=DATE_ConvertMjd2mystringPresReduced(eQuery.eTimeDay + TimeFrameDay);
+return "max from " + strPres1 + " to " + strPres2;
+}
+if (eQuery.NatureQuery == "swathMin") {
+double TimeFrameDay=eQuery.TimeFrameDay;
+std::string strPres2=DATE_ConvertMjd2mystringPresReduced(eQuery.eTimeDay + TimeFrameDay);
+return "min from " + strPres1 + " to " + strPres2;
+}
+if (eQuery.NatureQuery == "average") {
+double TimeFrameDay=eQuery.TimeFrameDay;
+std::string strPres2=DATE_ConvertMjd2mystringPresReduced(eQuery.eTimeDay + TimeFrameDay);
+return "avg. from " + strPres1 + " to " + strPres2;
+}
+std::cerr << "Failed to find NatureQuery in list of available options\n";
+std::cerr << "eQuery.NatureQuery=" << eQuery.NatureQuery << "\n";
+throw TerminalException{1};
 }
 std::vector<std::string> GRIB_GetAllFilesInDirectory(std::string const& ePrefix)
 {
@@ -5045,6 +5081,37 @@ RetListFile.push_back(eFile);
 }
 }
 return RetListFile;
+}
+void Apply_COSMO_Transformation(MyMatrix<double> & LON, MyMatrix<double> & LAT, CosmoGridInfo const& eCosmoGrid)
+{
+double pollat_sp=eCosmoGrid.latitudeOfSouthernPoleInDegrees;
+double pollon_sp=eCosmoGrid.longitudeOfSouthernPoleInDegrees;
+double polgam=eCosmoGrid.angleOfRotationInDegrees;
+double zstartlon_tot=eCosmoGrid.longitudeOfFirstGridPointInDegrees;
+double zstartlat_tot=eCosmoGrid.latitudeOfFirstGridPointInDegrees;
+double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
+double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
+double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
+double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
+if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
+std::cerr << "Error of consistency in zstartlat / zendlat\n";
+throw TerminalException{1};
+}
+int eta_rho=LON.rows();
+int xi_rho=LON.cols();
+double pollat= - pollat_sp;
+double pollon= pollon_sp - double(180);
+double startlon_tot=zstartlon_tot;
+double startlat_tot=zstartlat_tot;
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++) {
+double eLonR=startlon_tot + double(i)*dlon;
+double eLatR=startlat_tot + double(j)*dlat;
+double eLat=phirot2phi(eLatR, eLonR, pollat, pollon, polgam);
+double eLon=rlarot2rla(eLatR, eLonR, pollat, pollon, polgam);
+LON(i,j)=eLon;
+LAT(i,j)=eLat;
+}
 }
 GridArray GRIB_ReadGridArray(std::string const& FileName, std::string const& eModelName)
 {
@@ -5131,7 +5198,7 @@ free(values);
 return GrdArr;
 }
 std::cerr << "Failed to find the variable\n";
-exit(1);
+throw TerminalException{1};
 }
 std::vector<GRIB_MessageInfo> GRIB_GetAllListPairTime(std::string const& FileName)
 {
@@ -5150,7 +5217,7 @@ grib_keys_iterator* kiter=NULL;
 kiter=grib_keys_iterator_new(h,key_iterator_filter_flags,name_space);
 if (!kiter) {
 printf("ERROR: Unable to create keys iterator\n");
-exit(1);
+throw TerminalException{1};
 }
 std::string ShortNameValue;
 std::string NameValue;
@@ -5200,7 +5267,7 @@ stepRange=stoi(StepRangeValue);
 else {
 if (siz != 2) {
 std::cerr << "Inconsistency in our assumptions\n";
-exit(1);
+throw TerminalException{1};
 }
 stepRange=stoi(LStr[1]);
 }
@@ -5263,7 +5330,7 @@ grib_keys_iterator* kiter=NULL;
 kiter=grib_keys_iterator_new(h,key_iterator_filter_flags,name_space);
 if (!kiter) {
 std::cerr << "ERROR: Unable to create keys iterator\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string ShortNameValue;
 while(grib_keys_iterator_next(kiter)) {
@@ -5315,7 +5382,7 @@ idx++;
 }
 fclose(in);
 std::cerr << "Failed to find the matching GRIB_MessageInfo\n";
-exit(1);
+throw TerminalException{1};
 }
 MyMatrix<double> GRIB_Read2DVariable(std::vector<GRIB_MessageInfo> const& ListMessage, std::string const& VarName)
 {
@@ -5332,7 +5399,7 @@ std::cerr << "  eMesg.idx = " << eMesg.idx << "\n";
 std::cerr << "Error in GRIB_Read2DVariable\n";
 std::cerr << "Failed to find the variable =" << VarName << "\n";
 std::cerr << "Exiting\n";
-exit(1);
+throw TerminalException{1};
 }
 MyMatrix<double> GRID_Get2DVariableTimeDifferentiate(TotalArrGetData const& TotalArr, std::string const& eVar, double const& eTimeDay)
 {
@@ -5359,7 +5426,7 @@ for (int iTimeStart=0; iTimeStart<nbTimeStart; iTimeStart++)
 if (ListStatusLow[iTimeStart] != -1 && ListStatusUpp[iTimeStart] != -1)
 return iTimeStart;
 std::cerr << "We failed to find a correct iTimeStart\n";
-exit(1);
+throw TerminalException{1};
 };
 int iTimeStart=GetITimeStart();
 int iMesgLow=ListStatusLow[iTimeStart];
@@ -5660,7 +5727,7 @@ int nbPt1=ListPt1.size();
 if (nbPt1 == 0) {
 std::cerr << "The list ListPt1 should not be empty\n";
 std::cerr << "nbPt1=" << nbPt1 << "\n";
-exit(1);
+throw TerminalException{1};
 }
 auto fDist=[&](int const& i1, int const& i2) -> double {
 double eLon1=ListPt1[i1].eLon;
@@ -5705,6 +5772,200 @@ break;
 ListUpperEst[i2]=eDist;
 }
 return ListUpperEst;
+}
+template<typename T>
+MyMatrix<T> DimensionExtraction(Eigen::Tensor<T, 3> const& eT, size_t const& iDim, int const& eDim)
+{
+int n1=eT.dimension(0);
+int n2=eT.dimension(1);
+int n3=eT.dimension(2);
+if (iDim == 0) {
+MyMatrix<T> eMat(n2, n3);
+for (int i2=0; i2<n2; i2++)
+for (int i3=0; i3<n3; i3++)
+eMat(i2,i3)=eT(eDim,i2,i3);
+return eMat;
+}
+if (iDim == 1) {
+MyMatrix<T> eMat(n1, n3);
+for (int i1=0; i1<n1; i1++)
+for (int i3=0; i3<n3; i3++)
+eMat(i1,i3)=eT(i1,eDim,i3);
+return eMat;
+}
+if (iDim == 2) {
+MyMatrix<T> eMat(n1, n2);
+for (int i1=0; i1<n1; i1++)
+for (int i2=0; i2<n2; i2++)
+eMat(i1,i2)=eT(i1,i2,eDim);
+return eMat;
+}
+std::cerr << "Wrong input in ThreeDimArray\n";
+std::cerr << "iDim=" << iDim << "\n";
+std::cerr << "Allowed values: 0, 1, 2\n";
+throw TerminalException{1};
+}
+template<typename T>
+T ScalarProduct(MyVector<T> const& V1, MyVector<T> const & V2)
+{
+if (V1.size() != V2.size()) {
+std::cerr << "Vectors of wrong sizes\n";
+throw TerminalException{1};
+}
+size_t siz=V1.size();
+T eSum=0;
+for (size_t i=0; i<siz; i++)
+eSum += V1(i)*V2(i);
+return eSum;
+}
+template<typename T>
+void TMat_Copy(MyMatrix<T> const&eMatI, MyMatrix<T> &eMatO)
+{
+int nbRowI, nbColI, nbRowO, nbColO;
+nbRowI=eMatI.rows();
+nbRowO=eMatO.rows();
+nbColI=eMatI.cols();
+nbColO=eMatO.cols();
+if (nbRowI != nbRowO || nbColI != nbColO) {
+std::cerr << "Error in the input\n";
+throw TerminalException{1};
+}
+for (int iRow=0; iRow<nbRowI; iRow++)
+for (int iCol=0; iCol<nbColI; iCol++) {
+T eVal=eMatI(iRow, iCol);
+eMatO(iRow, iCol)=eVal;
+}
+}
+template<typename T>
+MyVector<T> ProductVectorMatrix(MyVector<T> const& X, MyMatrix<T> const& M)
+{
+int nbCol=M.cols();
+int nbRow=M.rows();
+if (X.size() != nbRow) {
+std::cerr << "Error in the product X A\n";
+throw TerminalException{1};
+}
+MyVector<T> Vret(nbCol);
+for (int iCol=0; iCol<nbCol; iCol++) {
+T sum=0;
+for (int iRow=0; iRow<nbRow; iRow++)
+sum += M(iRow,iCol)*X(iRow);
+Vret(iCol)=sum;
+}
+return Vret;
+}
+template<typename T>
+MyVector<T> VectorMatrix(MyVector<T> const& eVect, MyMatrix<T> const& eMat)
+{
+int nbCol=eMat.cols();
+int nbRow=eMat.rows();
+int n=eVect.size();
+if (n != nbRow) {
+std::cerr << "n should be equal to nbRow\n";
+throw TerminalException{1};
+}
+MyVector<T> rVect(nbCol);
+for (int iCol=0; iCol<nbCol; iCol++) {
+T eSum=0;
+for (int iRow=0; iRow<nbRow; iRow++) {
+T eVal=eMat(iRow, iCol);
+T fVal=eVect(iRow);
+eSum += eVal*fVal;
+}
+rVect(iCol)=eSum;
+}
+return rVect;
+}
+template<typename T>
+void TMat_Inverse_destroy(MyMatrix<T> &Input, MyMatrix<T> &Output)
+{
+int nbRow, nbCol;
+int iCol, iRow, WeFound;
+int iRowFound;
+int iColB;
+nbRow=Input.rows();
+nbCol=Input.cols();
+T prov1, prov2, eVal;
+if (nbRow != nbCol) {
+std::cerr << "Error on nbRow, nbCol in TMat_Inverse_destroy";
+throw TerminalException{1};
+}
+for (iRow=0; iRow<nbRow; iRow++)
+for (iCol=0; iCol<nbRow; iCol++)
+{
+if (iRow == iCol)
+prov1=1;
+else
+prov1=0;
+Output(iRow,iCol)=prov1;
+}
+iRowFound=-400;
+for (iCol=0; iCol<nbCol; iCol++)
+{
+WeFound=0;
+for (iRow=iCol; iRow<nbRow; iRow++)
+if (WeFound == 0)
+{
+eVal=Input(iRow,iCol);
+if (eVal != 0)
+{
+WeFound=1;
+iRowFound=iRow;
+prov1=1/eVal;
+}
+}
+if (WeFound == 0) {
+Inverse_exception<T> eExcept;
+eExcept.errmsg="Error in matrix inversion";
+eExcept.pivot=0;
+throw eExcept;
+}
+for (iColB=0; iColB<nbCol; iColB++)
+{
+eVal=prov1*Input(iRowFound,iColB);
+Input(iRowFound,iColB)=eVal;
+eVal=prov1*Output(iRowFound,iColB);
+Output(iRowFound,iColB)=eVal;
+}
+for (iRow=0; iRow<nbRow; iRow++)
+if (iRow != iRowFound) {
+prov2=Input(iRow, iCol);
+for (iColB=0; iColB<nbCol; iColB++) {
+prov1=prov2*Input(iRowFound,iColB);
+eVal=Input(iRow,iColB) - prov1;
+Input(iRow, iColB)=eVal;
+prov1=prov2*Output(iRowFound,iColB);
+eVal=Output(iRow,iColB) - prov1;
+Output(iRow,iColB)=eVal;
+}
+}
+if (iRowFound != iCol) {
+for (iColB=0; iColB<nbCol; iColB++) {
+prov1=Input(iRowFound, iColB);
+prov2=Input(iCol, iColB);
+SwapValues(prov1, prov2);
+Input(iRowFound, iColB)=prov1;
+Input(iCol , iColB)=prov2;
+prov1=Output(iRowFound, iColB);
+prov2=Output(iCol, iColB);
+SwapValues(prov1, prov2);
+Output(iRowFound, iColB)=prov1;
+Output(iCol , iColB)=prov2;
+}
+}
+}
+}
+template<typename T>
+MyMatrix<T> Inverse(MyMatrix<T> const&Input)
+{
+int nbRow, nbCol;
+nbRow=Input.rows();
+nbCol=Input.cols();
+MyMatrix<T> provMat(nbRow, nbCol);
+TMat_Copy(Input, provMat);
+MyMatrix<T> Output(nbRow, nbRow);
+TMat_Inverse_destroy(provMat, Output);
+return Output;
 }
 template<typename T>
 MyVector<T> CanonicalizeVector(MyVector<T> const& V)
@@ -5964,7 +6225,7 @@ if (IsExistingFile(GridFile) == false) {
 std::cerr << "Error in WWM_ReadGridFile_netcdf\n";
 std::cerr << "GridFile = " << GridFile << "\n";
 std::cerr << "is missing\n";
-exit(1);
+throw TerminalException{1};
 }
 GrdArr.INE=NC_ReadElements(GridFile, "ele");
 MyVector<int> LType=NC_Read1Dvariable_int(GridFile, "LSPHE");
@@ -6038,7 +6299,7 @@ GrdArr.GrdArrRho.MSK=MSKarr;
 GrdArr.ModelName="WW3";
 return GrdArr;
 }
-ArrayHistory RomsIvica_ReadArrayHistory(std::string const& HisPrefix)
+ArrayHistory Sequential_ReadArrayHistory(std::string const& HisPrefix)
 {
 int len=HisPrefix.length();
 std::vector<int> ListPos;
@@ -6049,7 +6310,7 @@ ListPos.push_back(iChar);
 }
 if (ListPos.size() == 0) {
 std::cerr << "We should use / in HisPrefix for ROMS_IVICA\n";
-exit(1);
+throw TerminalException{1};
 }
 int iCharLast=ListPos[ListPos.size() - 1];
 std::string eDir=HisPrefix.substr(0,iCharLast+1);
@@ -6113,7 +6374,7 @@ eArr.ListTime=ListTime;
 eArr.AppendVarName=false;
 eArr.KindArchive="NETCDF";
 eArr.TimeSteppingInfo="classic";
-std::cerr << "Array RomsIvica has been completed. Leaving\n";
+std::cerr << "Seqeuntial array has been completed. Leaving\n";
 return eArr;
 }
 ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime)
@@ -6125,6 +6386,7 @@ std::vector<int> ListIRec;
 std::vector<double> ListTime;
 ArrayHistory eArr;
 if (IsExistingFile(HisPrefix)) {
+std::cerr << "StringTime=" << StringTime << "\n";
 std::vector<double> LTime=NC_ReadTimeFromFile(HisPrefix, StringTime);
 ListFileNames.push_back(HisPrefix);
 int siz=LTime.size();
@@ -6136,6 +6398,7 @@ ListTime.push_back(LTime[i]);
 FirstTime=ListTime[0];
 LastTime=ListTime[siz-1];
 double TheSep=GetListTimeSeparation(ListTime);
+std::cerr << "TheSep=" << TheSep << "\n";
 if (TheSep < 0) {
 eArr.TimeSteppingInfo="classic";
 }
@@ -6157,7 +6420,7 @@ std::cerr << "maybe you specified wrong HisPrefix\n";
 std::cerr << "HisPrefix = " << HisPrefix << "\n";
 std::cerr << " there is no files  HisPrefix????.nc\n";
 std::cerr << "Please correct\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 int iFileEnd=iFileBegin;
@@ -6281,7 +6544,7 @@ if (eModelName == "WAM")
 return HisPrefix + "0001.nc";
 if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
 return eTriple.GridFile;
-if (eModelName == "WWM")
+if (eModelName == "WWM" || eModelName == "WWM_DAILY")
 return eTriple.GridFile;
 if (eModelName == "WW3") {
 std::string ThePrefix=HisPrefix + "*";
@@ -6293,7 +6556,7 @@ std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
 if (ListFile.size() == 0) {
 std::cerr << "The list of files is empty\n";
 std::cerr << "Error happened in GRIB_GetAllFilesInDirectory\n";
-exit(1);
+throw TerminalException{1};
 }
 return ListFile[0];
 }
@@ -6302,19 +6565,19 @@ std::string eFile=HisPrefix;
 if (IsExistingFile(eFile) == false) {
 std::cerr << "The file eFile = " << eFile << " is missing\n";
 std::cerr << "It serves as grid and should be put in HisPrefix\n";
-exit(1);
+throw TerminalException{1};
 }
 return eFile;
 }
 std::cerr << "Error in GET_GRID_FILE\n";
 std::cerr << "Did not find the matching model for the grid\n";
 std::cerr << "Please correct\n";
-exit(1);
+throw TerminalException{1};
 }
 GridArray ReadUnstructuredGrid(std::string const& GridFile, std::string const& BoundFile)
 {
 std::string eExtension=FILE_GetExtension(GridFile);
-if (eExtension == "gr3") {
+if (eExtension == "gr3" || eExtension == "ll") {
 GridArray GrdArr=WWM_ReadGridFile_gr3(GridFile);
 if (BoundFile != "unset") {
 std::cerr << "BoundFile=" << BoundFile << "\n";
@@ -6345,7 +6608,7 @@ if (eExtension == "nc")
 return WWM_ReadGridFile_netcdf(GridFile);
 std::cerr << "Error in reading grid for WWM\n";
 std::cerr << "We did not find the right kind\n";
-exit(1);
+throw TerminalException{1};
 }
 GridArray PRE_RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
@@ -6361,7 +6624,7 @@ return NC_ReadWamGridFile(GridFile);
 if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
 return NC_ReadRomsGridFile(GridFile);
 }
-if (eModelName == "WWM") {
+if (eModelName == "WWM" || eModelName == "WWM_DAILY") {
 std::string BoundFile=eTriple.BoundFile;
 return ReadUnstructuredGrid(GridFile, BoundFile);
 }
@@ -6374,7 +6637,7 @@ std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
 if (ListFile.size() == 0) {
 std::cerr << "The list of files is empty\n";
 std::cerr << "Error happened in GRIB_GetAllFilesInDirectory\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string eFileName=ListFile[0];
 return GRIB_ReadGridArray(eFileName, eModelName);
@@ -6384,14 +6647,14 @@ std::string eFileName=eTriple.HisPrefix;
 if (IsExistingFile(eFileName) == false) {
 std::cerr << "The file eFileName = " << eFileName << " is missing\n";
 std::cerr << "This is set by HisPRefix and serves for the data storage\n";
-exit(1);
+throw TerminalException{1};
 }
 return GRIB_ReadGridArray(eFileName, eModelName);
 }
 std::cerr << "Error in PRE_RETRIEVE_GRID_ARRAY\n";
 std::cerr << "Did not find the matching model for the grid\n";
 std::cerr << "Please correct\n";
-exit(1);
+throw TerminalException{1};
 }
 GridArray RETRIEVE_GRID_ARRAY(TripleModelDesc const& eTriple)
 {
@@ -6421,8 +6684,8 @@ if (eModelName == "WW3") {
 std::string HisFile=GET_GRID_FILE(eTriple);
 return WW3_ReadArrayHistory(HisFile, HisPrefix);
 }
-if (eModelName == "ROMS_IVICA")
-return RomsIvica_ReadArrayHistory(HisPrefix);
+if (eModelName == "ROMS_IVICA" || eModelName == "WWM_DAILY")
+return Sequential_ReadArrayHistory(HisPrefix);
 return NC_ReadArrayHistory_Kernel(HisPrefix, StringTime);
 }
 ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
@@ -6451,7 +6714,7 @@ if (TotalNbMessage == 0) {
 std::cerr << "TotalNbMessage=" << TotalNbMessage << "\n";
 std::cerr << "|ListFile|=" << ListFile.size() << "\n";
 std::cerr << "We have zero messages. No work can be done\n";
-exit(1);
+throw TerminalException{1};
 }
 sort(ListAllMessage.begin(), ListAllMessage.end(),
 [&](GRIB_MessageInfo const& a, GRIB_MessageInfo const& b) -> bool {
@@ -6497,15 +6760,18 @@ GRIB_MessageInfo eMesg=ListAllMessage[iMesg];
 int iTime=ListITime[iMesg];
 if (iTime < 0 || iTime >= nbTime) {
 std::cerr << "iTime=" << iTime << " but nbTime=" << nbTime << "\n";
-exit(1);
+throw TerminalException{1};
 }
 ListListMessages[iTime].push_back(eMesg);
 }
+std::set<std::string> SetRawNames;
 for (int iTime=0; iTime<nbTime; iTime++) {
 std::vector<GRIB_MessageInfo> ListMessages=ListListMessages[iTime];
 std::set<std::string> ListShortName;
-for (auto & eMesg : ListMessages)
+for (auto & eMesg : ListMessages) {
 ListShortName.insert(eMesg.shortName);
+SetRawNames.insert(eMesg.shortName);
+}
 std::vector<GRIB_MessageInfo> NewListMessages;
 for (auto & eShortName : ListShortName) {
 bool IsFirst=true;
@@ -6526,6 +6792,9 @@ NewListMessages.push_back(NewMesg);
 }
 ListListMessages[iTime] = NewListMessages;
 }
+std::vector<std::string> RawVarNames;
+for (auto& eName : SetRawNames)
+RawVarNames.push_back(eName);
 ArrayHistory eArr;
 eArr.nbFile=nbFile;
 eArr.nbTime=nbTime;
@@ -6533,6 +6802,7 @@ eArr.ListListMessages=ListListMessages;
 eArr.ListAllMessage=ListAllMessage;
 eArr.ListStartTime=ListStartTime;
 eArr.ListIStartTime=ListIStartTime;
+eArr.RawVarNames=RawVarNames;
 eArr.ListITime=ListITime;
 eArr.ListTime=ListTime;
 eArr.KindArchive="GRIB";
@@ -6567,18 +6837,13 @@ double xj = X(kj);
 double yj = Y(kj);
 double xk = X(kk);
 double yk = Y(kk);
-# 7848 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 8181 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 double f1, f2, f3;
 f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
 f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
 f3 = xk*(yi-Yp) + xi*(Yp-yk) + Xp*(yk-yi);
-if (f1 > -THR) {
-if (f2 > -THR) {
-if (f3 > -THR) {
+if (f1 > -THR && f2 > -THR && f3 > -THR)
 return true;
-}
-}
-}
 return false;
 };
 double dx=0;
@@ -6623,7 +6888,6 @@ if (IsCorrect(iEltStart, eX, eY))
 return iEltStart;
 int iEleWork=iEltStart;
 double distCurr=DistCentTriangle(eX, eY, iEleWork);
-std::cerr << "distCurr=" << distCurr << "\n";
 int nbIter=0;
 while(1) {
 bool DoSomething=false;
@@ -6635,10 +6899,8 @@ double eDist=DistCentTriangle(eX, eY, iEleAdj);
 if (eDist < distCurr) {
 iEleWork=iEleAdj;
 distCurr=eDist;
-std::cerr << "iEleWork=" << iEleWork << " distCurr=" << distCurr << "\n";
 DoSomething=true;
 if (IsCorrect(iEleWork, eX, eY)) {
-std::cerr << "Success of heuristic nbIter=" << nbIter << "\n";
 return iEleWork;
 }
 }
@@ -6658,6 +6920,7 @@ double Yp=ListXY(1,iPoint);
 int eElt=SearchElement(Xp, Yp, ielePrev);
 if (eElt >= 0)
 ielePrev=eElt;
+std::cerr << "iPoint=" << iPoint << " eElt=" << eElt << "\n";
 SingleRecInterp eRec;
 if (eElt == -1) {
 eRec={false, {}};
@@ -6790,7 +7053,7 @@ return {false, {}};
 bool test=FindRecordArray(ePair.i, ePair.j, eX, eY, eRec);
 if (test == false) {
 std::cerr << "Inconsistency in the computation\n";
-exit(1);
+throw TerminalException{1};
 }
 return eRec;
 };
@@ -6836,108 +7099,135 @@ return GRIB_Get2DvariableSpecTime(TotalArr, VarName, eTimeDay);
 }
 std::cerr << "The KindArchive does not allow to find the nature\n";
 std::cerr << "KindArchive=" << TotalArr.eArr.KindArchive << "\n";
-exit(1);
+throw TerminalException{1};
 }
-RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string const& eVarName, double const& eTimeDay)
+RecVar ModelSpecificVarSpecificTime_Kernel(TotalArrGetData const& TotalArr, std::string const& eVarName, double const& eTimeDay)
 {
 std::string eModelName=TotalArr.GrdArr.ModelName;
-RecVar eRecVar;
+if (eModelName == "ROMS_IVICA")
+eModelName = "ROMS";
+if (eModelName == "WWM_DAILY")
+eModelName = "WWM";
 int eta_rho=TotalArr.GrdArr.GrdArrRho.LON.rows();
 int xi_rho=TotalArr.GrdArr.GrdArrRho.LON.cols();
 std::string strPres=DATE_ConvertMjd2mystringPres(eTimeDay);
 std::string strFile=DATE_ConvertMjd2mystringFile(eTimeDay);
-eRecVar.eTimeDay=eTimeDay;
-eRecVar.strPres=strPres;
-eRecVar.strFile=strFile;
-eRecVar.VarNature="rho";
+RecSymbolic RecS;
+RecS.eTimeDay=eTimeDay;
+RecS.strPres="at " + strPres;
+RecS.strFile=strFile;
+RecS.VarNature="rho";
+RecS.VarName1=eVarName;
+RecS.VarName2="unset";
 MyMatrix<double> F;
-MyMatrix<double> Fret;
 MyMatrix<double> U;
 MyMatrix<double> V;
-eRecVar.VarName1=eVarName;
-eRecVar.VarName2="unset";
+Eigen::Tensor<double,3> Tens3;
+Eigen::Tensor<double,3> Uthree;
+Eigen::Tensor<double,3> Vthree;
+if (eVarName == "NbIterSolv") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "NB_ITER_SOLV", eTimeDay);
+RecS.VarName2="nb Iteration Solver";
+RecS.minval=0;
+RecS.maxval=50;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="nondim.";
+}
 if (eVarName == "CFL1") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "CFL1", eTimeDay);
-eRecVar.VarName2="CFL1";
-eRecVar.minval=0;
-eRecVar.maxval=5;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="CFL1";
+RecS.minval=0;
+RecS.maxval=5;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="nondim.";
 }
 if (eVarName == "CFL2") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "CFL2", eTimeDay);
-eRecVar.VarName2="CFL2";
-eRecVar.minval=0;
-eRecVar.maxval=5;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="CFL2";
+RecS.minval=0;
+RecS.maxval=5;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="nondim.";
 }
 if (eVarName == "CFL3") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "CFL3", eTimeDay);
-eRecVar.VarName2="CFL3";
-eRecVar.minval=0;
-eRecVar.maxval=5;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="CFL3";
+RecS.minval=0;
+RecS.maxval=5;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="nondim.";
+}
+if (eVarName == "ThreeDfield1") {
+if (eModelName == "WWM" || eModelName == "ROMS")
+Tens3 = NETCDF_Get3DvariableSpecTime(TotalArr, "ThreeDfield1", eTimeDay);
+RecS.VarName2="Generic three dim. field 1";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.VarNature="3Drho";
+RecS.Unit="unspecified";
 }
 if (eVarName == "FieldOut1") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "FieldOut1", eTimeDay);
-eRecVar.VarName2="Generic Field Out 1";
-eRecVar.minval=0;
-eRecVar.maxval=1;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="unspecified";
+RecS.VarName2="Generic Field Out 1";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="unspecified";
 }
-if (eVarName == "IOBP_WW3") {
+if (eVarName == "IOBPWW3") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "IOBP_WW3", eTimeDay);
-eRecVar.VarName2="IOBP of wavewatchIII";
-eRecVar.minval=0;
-eRecVar.maxval=1;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="IOBP of wavewatchIII";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="nondim.";
 }
 if (eVarName == "MAPSTA") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "MAPSTA", eTimeDay);
-eRecVar.VarName2="MAPSTA of wavewatchIII";
-eRecVar.minval=-2;
-eRecVar.maxval=2;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="MAPSTA of wavewatchIII";
+RecS.minval=-2;
+RecS.maxval=2;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="nondim.";
 }
-if (eVarName == "WIND_X") {
-RecVar RecVarWork=ModelSpecificVarSpecificTime(TotalArr, "WIND10", eTimeDay);
+if (eVarName == "Uwind") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "WIND10", eTimeDay);
 F=RecVarWork.U;
-eRecVar.VarName2="Eastward wind";
-eRecVar.minval=0;
-eRecVar.maxval=13;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="m/s";
+RecS.VarName2="Eastward wind";
+RecS.minval=-10;
+RecS.maxval=10;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="m/s";
 }
-if (eVarName == "WIND_Y") {
-RecVar RecVarWork=ModelSpecificVarSpecificTime(TotalArr, "WIND10", eTimeDay);
+if (eVarName == "Vwind") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "WIND10", eTimeDay);
 F=RecVarWork.V;
-eRecVar.VarName2="Northward wind";
-eRecVar.minval=0;
-eRecVar.maxval=13;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="m/s";
+RecS.VarName2="Northward wind";
+RecS.minval=-10;
+RecS.maxval=10;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="m/s";
 }
 if (eVarName == "WIND10") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA" || eModelName == "WWM") {
+if (eModelName == "ROMS" || eModelName == "WWM") {
 U=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "Vwind", eTimeDay);
 }
@@ -6950,19 +7240,19 @@ U=Get2DvariableSpecTime(TotalArr, "10u", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "10v", eTimeDay);
 }
 AngleRhoRot(U, V, TotalArr.GrdArr);
-eRecVar.VarName2="10m wind";
-eRecVar.minval=0;
-eRecVar.maxval=13;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="m/s";
-eRecVar.VarNature="uv";
-eRecVar.nameU="Uwind";
-eRecVar.nameV="Vwind";
+RecS.VarName2="10m wind";
+RecS.minval=0;
+RecS.maxval=13;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="m/s";
+RecS.VarNature="uv";
+RecS.nameU="Uwind";
+RecS.nameV="Vwind";
 }
 if (eVarName == "WINDMAG") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA" || eModelName == "WWM") {
-if (NC_TOTALARR_IsVar(TotalArr, "Uwind") == true) {
+if (eModelName == "ROMS" || eModelName == "WWM") {
+if (TOTALARR_IsVar(TotalArr, "Uwind") && TOTALARR_IsVar(TotalArr, "Vwind") ) {
 MyMatrix<double> Us=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
 MyMatrix<double> Vs=Get2DvariableSpecTime(TotalArr, "Vwind", eTimeDay);
 F=COMPUTE_NORM(Us, Vs);
@@ -6989,71 +7279,75 @@ F=COMPUTE_NORM(Us, Vs);
 if (eModelName == "GRIB_WAM_FORT30") {
 F=Get2DvariableSpecTime(TotalArr, "wind", eTimeDay);
 }
-eRecVar.VarName2="10m wind speed";
-eRecVar.minval=0;
-eRecVar.maxval=13;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="m/s";
+RecS.VarName2="10m wind speed";
+RecS.minval=0;
+RecS.maxval=13;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="m/s";
 }
 if (eVarName == "AIRD") {
 if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "AIRD", eTimeDay);
-eRecVar.VarName2="air density";
-eRecVar.minval=1.12;
-eRecVar.maxval=1.20;
-eRecVar.mindiff=-0.02;
-eRecVar.maxdiff=0.02;
-eRecVar.Unit="kg/m3";
+RecS.VarName2="air density";
+RecS.minval=1.12;
+RecS.maxval=1.20;
+RecS.mindiff=-0.02;
+RecS.maxdiff=0.02;
+RecS.Unit="kg/m3";
 }
 if (eVarName == "rain") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "rain", eTimeDay);
-if (eModelName == "GRIB_COSMO" || eModelName == "GRIB_DWD")
+if (eModelName == "GRIB_COSMO" || eModelName == "GRIB_DWD" || eModelName == "GRIB_ECMWF")
 F=GRID_Get2DVariableTimeDifferentiate(TotalArr, "tp", eTimeDay);
-eRecVar.VarName2="rainfall rate";
-eRecVar.minval=0;
-eRecVar.maxval=0.001;
-eRecVar.mindiff=-0.001;
-eRecVar.maxdiff=0.001;
-eRecVar.Unit="kg/m^2/s";
+RecS.VarName2="rainfall rate";
+RecS.minval=0;
+RecS.maxval=0.001;
+RecS.mindiff=-0.001;
+RecS.maxdiff=0.001;
+RecS.Unit="kg/m^2/s";
 }
 if (eVarName == "swrad") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "swrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
 F=Get2DvariableSpecTime(TotalArr, "sobs_rad", eTimeDay);
-eRecVar.VarName2="Shortwave flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+if (eModelName == "GRIB_ECMWF")
+F=GRID_Get2DVariableTimeDifferentiate(TotalArr, "ssrd", eTimeDay);
+RecS.VarName2="Shortwave flux";
+RecS.minval=100;
+RecS.maxval=1000;
+RecS.mindiff=-100;
+RecS.maxdiff=100;
+RecS.Unit="W/m2";
 }
 if (eVarName == "lwrad") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "lwrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
 F=Get2DvariableSpecTime(TotalArr, "thbs_rad", eTimeDay);
-eRecVar.VarName2="Longwave flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+if (eModelName == "GRIB_ECMWF")
+F=GRID_Get2DVariableTimeDifferentiate(TotalArr, "strd", eTimeDay);
+RecS.VarName2="Longwave flux";
+RecS.minval=200;
+RecS.maxval=500;
+RecS.mindiff=-50;
+RecS.maxdiff= 50;
+RecS.Unit="W/m2";
 }
 if (eVarName == "latent") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "latent", eTimeDay);
-eRecVar.VarName2="Latent flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+RecS.VarName2="Latent flux";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="W/m2";
 }
 if (eVarName == "SurfPres") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
+if (eModelName == "ROMS") {
 MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "Pair", eTimeDay);
 F=100*Fin;
 }
@@ -7063,81 +7357,196 @@ if (eModelName == "GRIB_ECMWF")
 F=Get2DvariableSpecTime(TotalArr, "msl", eTimeDay);
 if (eModelName == "GRIB_COSMO")
 F=Get2DvariableSpecTime(TotalArr, "pmsl", eTimeDay);
-eRecVar.VarName2="mean sea level pressure";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+RecS.VarName2="mean sea level pressure";
+RecS.minval=100000;
+RecS.maxval=103000;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="Pa";
 }
 if (eVarName == "sensible") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "sensible", eTimeDay);
-eRecVar.VarName2="Sensible heat flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+RecS.VarName2="Sensible heat flux";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="W/m2";
 }
 if (eVarName == "shflux") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "shflux", eTimeDay);
-eRecVar.VarName2="Surface heat flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="W/m2";
+RecS.VarName2="Surface heat flux";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="W/m2";
 }
 if (eVarName == "ssflux") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "ssflux", eTimeDay);
-eRecVar.VarName2="Surface salinity flux";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="PSU/m2s";
+RecS.VarName2="Surface salinity flux";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="PSU/m2s";
 }
 if (eVarName == "evaporation") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "evaporation", eTimeDay);
-eRecVar.VarName2="Evaporation rate";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="kg/m2s";
+RecS.VarName2="Evaporation rate";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="kg/m2s";
 }
 if (eVarName == "AIRT2") {
-if (eModelName == "COSMO")
+if (eModelName == "COSMO") {
 F=Get2DvariableSpecTime(TotalArr, "t_2m", eTimeDay);
-if (eModelName == "GRIB_DWD" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_GFS" || eModelName == "GRIB_COSMO")
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) -= double(273.15);
+}
+if (eModelName == "GRIB_DWD" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_GFS" || eModelName == "GRIB_COSMO") {
 F=Get2DvariableSpecTime(TotalArr, "2t", eTimeDay);
-eRecVar.VarName2="2m air temperature";
-eRecVar.minval=10;
-eRecVar.maxval=20;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="deg";
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) -= double(273.15);
+}
+RecS.VarName2="2m air temperature";
+RecS.minval=10;
+RecS.maxval=20;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="deg";
 }
 if (eVarName == "Rh2") {
 if (eModelName == "COSMO")
 F=Get2DvariableSpecTime(TotalArr, "rh_2m", eTimeDay);
 if (eModelName == "GRIB_DWD")
 F=Get2DvariableSpecTime(TotalArr, "RELHUM_2M", eTimeDay);
-eRecVar.VarName2="2m relative humidity";
-eRecVar.minval=0;
-eRecVar.maxval=100;
-eRecVar.mindiff=-20;
-eRecVar.maxdiff=20;
-eRecVar.Unit="nondim.";
+if (eModelName == "GRIB_ECMWF") {
+if (TOTALARR_IsVar(TotalArr, "2r")) {
+F=Get2DvariableSpecTime(TotalArr, "2r", eTimeDay);
+}
+else {
+int MethodRH = 2;
+if (MethodRH == 1) {
+double airDens=1.225;
+double waterDens=0.804;
+double quot=waterDens / (airDens - waterDens);
+MyMatrix<double> Fspecific=Get2DvariableSpecTime(TotalArr, "q", eTimeDay);
+double TheMult=100 / ( 0.622 * quot);
+F = Fspecific * TheMult;
+}
+if (MethodRH == 2) {
+MyMatrix<double> F_q=Get2DvariableSpecTime(TotalArr, "q", eTimeDay);
+MyMatrix<double> F_p;
+if (TOTALARR_IsVar(TotalArr, "msl")) {
+F_p=Get2DvariableSpecTime(TotalArr, "msl", eTimeDay);
+}
+else {
+int eta=F_q.rows();
+int xi=F_q.cols();
+F_p=MyMatrix<double>(eta,xi);
+for (int i=0; i<eta; i++)
+for (int j=0; j<xi; j++)
+F_p(i,j)=103000;
+}
+MyMatrix<double> F_TK=Get2DvariableSpecTime(TotalArr, "2t", eTimeDay);
+int eta=F_q.rows();
+int xi=F_q.cols();
+F=MyMatrix<double>(eta,xi);
+for (int i=0; i<eta; i++)
+for (int j=0; j<xi; j++) {
+double eT=F_TK(i,j);
+double eQ=F_q(i,j);
+double eP=F_p(i,j);
+double eT0=double(273.15);
+double TheQuot=double(17.67) * (eT - eT0)/(eT - double(29.65));
+double eRH=0.263 * eP *eQ /(exp(TheQuot));
+F(i,j)=T_min(eRH, double(100));
+}
+}
+}
+}
+RecS.VarName2="2m relative humidity";
+RecS.minval=0;
+RecS.maxval=100;
+RecS.mindiff=-20;
+RecS.maxdiff=20;
+RecS.Unit="nondim.";
+}
+if (eVarName == "UsurfCurr") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "SurfCurr", eTimeDay);
+F=RecVarWork.U;
+RecS.VarName2="Eastward current";
+RecS.minval=-0.3;
+RecS.maxval=0.3;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m/s";
+}
+if (eVarName == "VsurfCurr") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "SurfCurr", eTimeDay);
+F=RecVarWork.V;
+RecS.VarName2="Northward current";
+RecS.minval=-0.3;
+RecS.maxval=0.3;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m/s";
+}
+if (eVarName == "Curr") {
+if (eModelName == "ROMS") {
+Eigen::Tensor<double,3> Utot=NETCDF_Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
+Eigen::Tensor<double,3> Vtot=NETCDF_Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
+Uthree=My_u2rho_3D(Utot, TotalArr.GrdArr.GrdArrU.MSK);
+Vthree=My_v2rho_3D(Vtot, TotalArr.GrdArr.GrdArrV.MSK);
+}
+if (eModelName == "WWM") {
+Uthree=NETCDF_Get3DvariableSpecTime(TotalArr, "Ucurr", eTimeDay);
+Vthree=NETCDF_Get3DvariableSpecTime(TotalArr, "Vcurr", eTimeDay);
+}
+RecS.VarName2="baroclinic current";
+RecS.minval=0;
+RecS.maxval=0.2;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.VarNature="3Duv";
+RecS.Unit="m/s";
+}
+if (eVarName == "CurrMag") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "Curr", eTimeDay);
+auto LDim=RecVarWork.Uthree.dimensions();
+int dim0=LDim[0];
+int dim1=LDim[1];
+int dim2=LDim[2];
+Eigen::Tensor<double,3> Tens3(dim0, dim1, dim2);
+for (int i0=0; i0<dim0; i0++)
+for (int i1=0; i1<dim1; i1++)
+for (int i2=0; i2<dim2; i2++) {
+double eU=RecVarWork.Uthree(i0, i1, i2);
+double eV=RecVarWork.Vthree(i0, i1, i2);
+double eNorm=sqrt(eU*eU + eV*eV);
+Tens3(i0, i1, i2) = eNorm;
+}
+RecS.VarName2="baroclinic current magnitude";
+RecS.minval=0;
+RecS.maxval=0.2;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.VarNature="3Drho";
+RecS.Unit="m/s";
 }
 if (eVarName == "SurfCurr") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-Eigen::Tensor<double,3> Utot=Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
-Eigen::Tensor<double,3> Vtot=Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
+if (eModelName == "ROMS") {
+Eigen::Tensor<double,3> Utot=NETCDF_Get3DvariableSpecTime(TotalArr, "u", eTimeDay);
+Eigen::Tensor<double,3> Vtot=NETCDF_Get3DvariableSpecTime(TotalArr, "v", eTimeDay);
 int s_rho=Utot.dimension(0);
 MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
 MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
@@ -7147,37 +7556,52 @@ std::cerr << "After My_u2rho\n";
 V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrV.MSK);
 }
 if (eModelName == "WWM") {
+if (TOTALARR_IsVar(TotalArr, "CURTX") && TOTALARR_IsVar(TotalArr, "CURTX") ) {
 U=Get2DvariableSpecTime(TotalArr, "CURTX", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "CURTY", eTimeDay);
+}
+else {
+if (TOTALARR_IsVar(TotalArr, "UsurfCurr") && TOTALARR_IsVar(TotalArr, "VsurfCurr") ) {
+U=Get2DvariableSpecTime(TotalArr, "UsurfCurr", eTimeDay);
+V=Get2DvariableSpecTime(TotalArr, "VsurfCurr", eTimeDay);
+}
+else {
+Eigen::Tensor<double,3> Utot=NETCDF_Get3DvariableSpecTime(TotalArr, "Ucurr", eTimeDay);
+Eigen::Tensor<double,3> Vtot=NETCDF_Get3DvariableSpecTime(TotalArr, "Vcurr", eTimeDay);
+int s_rho=Utot.dimension(0);
+U=DimensionExtraction(Utot, 0, s_rho-1);
+V=DimensionExtraction(Vtot, 0, s_rho-1);
+}
+}
 }
 if (eModelName == "COSMO" || eModelName == "WAM") {
 U=Get2DvariableSpecTime(TotalArr, "ucurr", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "vcurr", eTimeDay);
 }
 AngleRhoRot(U, V, TotalArr.GrdArr);
-eRecVar.VarName2="surface current";
-eRecVar.minval=0;
-eRecVar.maxval=0.5;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="m/s";
-eRecVar.VarNature="uv";
-eRecVar.nameU="UsurfCurr";
-eRecVar.nameV="VsurfCurr";
+RecS.VarName2="surface current";
+RecS.minval=0;
+RecS.maxval=0.5;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m/s";
+RecS.VarNature="uv";
+RecS.nameU="UsurfCurr";
+RecS.nameV="VsurfCurr";
 }
 if (eVarName == "SurfCurrMag") {
-RecVar RecVarWork=ModelSpecificVarSpecificTime(TotalArr, "SurfCurr", eTimeDay);
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "SurfCurr", eTimeDay);
 F=COMPUTE_NORM(RecVarWork.U, RecVarWork.V);
-eRecVar.VarName2="surface current magnitude";
-eRecVar.minval=0;
-eRecVar.maxval=0.5;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="m/s";
+RecS.VarName2="surface current magnitude";
+RecS.minval=0;
+RecS.maxval=0.5;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m/s";
 }
 if (eVarName == "TempSurf") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-Eigen::Tensor<double,3> TheTemp=Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
+if (eModelName == "ROMS") {
+Eigen::Tensor<double,3> TheTemp=NETCDF_Get3DvariableSpecTime(TotalArr, "temp", eTimeDay);
 int s_rho=TheTemp.dimension(0);
 F=DimensionExtraction(TheTemp, 0, s_rho-1);
 }
@@ -7187,94 +7611,192 @@ int siz=F.size();
 for (int i=0; i<siz; i++)
 F(i) -= double(273.15);
 }
-eRecVar.VarName2="sea surface temperature";
-eRecVar.minval=10;
-eRecVar.maxval=20;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="deg";
+RecS.VarName2="sea surface temperature";
+RecS.minval=10;
+RecS.maxval=20;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="deg";
 }
 if (eVarName == "SaltSurf") {
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA") {
-Eigen::Tensor<double,3> TheSalt=Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
+if (eModelName == "ROMS") {
+Eigen::Tensor<double,3> TheSalt=NETCDF_Get3DvariableSpecTime(TotalArr, "salt", eTimeDay);
 int s_rho=TheSalt.dimension(0);
 F=DimensionExtraction(TheSalt, 0, s_rho-1);
 }
-eRecVar.VarName2="sea surface salinity";
-eRecVar.minval=30;
-eRecVar.maxval=40;
-eRecVar.mindiff=-2;
-eRecVar.maxdiff=2;
-eRecVar.Unit="PSU";
+RecS.VarName2="sea surface salinity";
+RecS.minval=30;
+RecS.maxval=40;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="PSU";
 }
 if (eVarName == "ZetaOcean") {
 if (eModelName == "COSMO")
 F=Get2DvariableSpecTime(TotalArr, "ZetaOcean", eTimeDay);
-if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
+if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "zeta", eTimeDay);
-eRecVar.VarName2="free surface elevation";
-eRecVar.minval=-0.2;
-eRecVar.maxval=0.2;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="m";
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "WATLEV", eTimeDay);
+RecS.VarName2="free surface elevation";
+RecS.minval=-0.2;
+RecS.maxval=0.2;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m";
+}
+if (eVarName == "ZetaOceanDerivative") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "DEPDT", eTimeDay);
+RecS.VarName2="free surface elevation derivative";
+RecS.minval=-0.01;
+RecS.maxval=0.01;
+RecS.mindiff=-0.001;
+RecS.maxdiff=0.001;
+RecS.Unit="m/s";
+}
+if (eVarName == "MeanWaveLength") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "WLM", eTimeDay);
+RecS.VarName2="mean wave length";
+RecS.minval=2;
+RecS.maxval=30;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="m";
+}
+if (eVarName == "PeakWaveLength") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "LPP", eTimeDay);
+RecS.VarName2="peak wave length";
+RecS.minval=2;
+RecS.maxval=30;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="m";
+}
+if (eVarName == "MeanWaveNumber") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "KLM", eTimeDay);
+RecS.VarName2="mean wave number";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m-1";
+}
+if (eVarName == "PeakWaveNumber") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "KPP", eTimeDay);
+RecS.VarName2="peak wave number";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m-1";
 }
 if (eVarName == "MeanWaveDir") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "DM", eTimeDay);
-eRecVar.VarName2="mean wave direction";
-eRecVar.minval=0;
-eRecVar.maxval=360;
-eRecVar.mindiff=-30;
-eRecVar.maxdiff=30;
-eRecVar.Unit="deg";
+RecS.VarName2="mean wave direction";
+RecS.minval=0;
+RecS.maxval=360;
+RecS.mindiff=-30;
+RecS.maxdiff=30;
+RecS.Unit="deg";
 }
 if (eVarName == "PeakWaveDir") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "PEAKD", eTimeDay);
-eRecVar.VarName2="peak wave direction";
-eRecVar.minval=0;
-eRecVar.maxval=360;
-eRecVar.mindiff=-30;
-eRecVar.maxdiff=30;
-eRecVar.Unit="deg";
+RecS.VarName2="peak wave direction";
+RecS.minval=0;
+RecS.maxval=360;
+RecS.mindiff=-30;
+RecS.maxdiff=30;
+RecS.Unit="deg";
+}
+if (eVarName == "MeanWaveDirVect") {
+if (eModelName == "WWM") {
+F=Get2DvariableSpecTime(TotalArr, "DM", eTimeDay);
+int nbRow=F.rows();
+int nbCol=F.cols();
+double deg2rad=3.1415926535 / double(180);
+U=MyMatrix<double>(nbRow,nbCol);
+V=MyMatrix<double>(nbRow,nbCol);
+for (int iRow=0; iRow<nbRow; iRow++)
+for (int iCol=0; iCol<nbCol; iCol++) {
+double eAngRad=deg2rad*F(iRow,iCol);
+U(iRow,iCol)=cos(eAngRad);
+V(iRow,iCol)=sin(eAngRad);
+}
+}
+RecS.VarName2="mean wave direction";
+RecS.minval=0;
+RecS.maxval=360;
+RecS.mindiff=-30;
+RecS.maxdiff=30;
+RecS.VarNature="uv";
+RecS.Unit="deg";
+}
+if (eVarName == "PeakWaveDirVect") {
+if (eModelName == "WWM") {
+F=Get2DvariableSpecTime(TotalArr, "PEAKD", eTimeDay);
+int nbRow=F.rows();
+int nbCol=F.cols();
+double deg2rad=3.1415926535 / double(180);
+U=MyMatrix<double>(nbRow,nbCol);
+V=MyMatrix<double>(nbRow,nbCol);
+for (int iRow=0; iRow<nbRow; iRow++)
+for (int iCol=0; iCol<nbCol; iCol++) {
+double eAngRad=deg2rad*F(iRow,iCol);
+U(iRow,iCol)=cos(eAngRad);
+V(iRow,iCol)=sin(eAngRad);
+}
+}
+RecS.VarName2="peak wave direction";
+RecS.minval=0;
+RecS.maxval=360;
+RecS.mindiff=-30;
+RecS.maxdiff=30;
+RecS.VarNature="uv";
+RecS.Unit="deg";
 }
 if (eVarName == "DiscPeakWaveDir") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "DPEAK", eTimeDay);
-eRecVar.VarName2="discrete peak wave direction";
-eRecVar.minval=0;
-eRecVar.maxval=360;
-eRecVar.mindiff=-30;
-eRecVar.maxdiff=30;
-eRecVar.Unit="deg";
+RecS.VarName2="discrete peak wave direction";
+RecS.minval=0;
+RecS.maxval=360;
+RecS.mindiff=-30;
+RecS.maxdiff=30;
+RecS.Unit="deg";
 }
 if (eVarName == "ZetaSetup") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "ZETA_SETUP", eTimeDay);
-eRecVar.VarName2="free surface setup";
-eRecVar.minval=0;
-eRecVar.maxval=0.76;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="m";
+RecS.VarName2="free surface setup";
+RecS.minval=0;
+RecS.maxval=0.76;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="m";
 }
 if (eVarName == "BreakingFraction") {
 MyMatrix<double> Fhs, Fzeta;
 if (eModelName == "WWM")
 Fhs=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
 if (eModelName == "WWM")
-Fzeta=Get2DvariableSpecTime(TotalArr, "HS", eTimeDay);
+Fzeta=Get2DvariableSpecTime(TotalArr, "WATLEV", eTimeDay);
 F=MyMatrix<double>(eta_rho, xi_rho);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++)
 F(i,j)=Fhs(i,j) / (Fzeta(i,j) + TotalArr.GrdArr.GrdArrRho.DEP(i,j));
-eRecVar.VarName2="Breaking fraction";
-eRecVar.minval=0;
-eRecVar.maxval=0.76;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="nondim.";
+RecS.VarName2="Breaking fraction";
+RecS.minval=0;
+RecS.maxval=0.76;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="nondim.";
 }
 if (eVarName == "Hwave") {
 if (eModelName == "WWM")
@@ -7285,36 +7807,40 @@ if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "Hwave", eTimeDay);
 if (eModelName == "GRIB_WAM_FORT30")
 F=Get2DvariableSpecTime(TotalArr, "swh", eTimeDay);
-eRecVar.VarName2="Significant wave height";
-eRecVar.minval=0;
-eRecVar.maxval=4.5;
-eRecVar.mindiff=-0.5;
-eRecVar.maxdiff=0.5;
-eRecVar.Unit="m";
+RecS.VarName2="Significant wave height";
+RecS.minval=0;
+RecS.maxval=4.5;
+RecS.mindiff=-0.5;
+RecS.maxdiff=0.5;
+RecS.Unit="m";
 }
 if (eVarName == "MeanWaveFreq") {
 if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "MwaveFreq", eTimeDay);
-eRecVar.VarName2="mean wave frequency";
-eRecVar.minval=0;
-eRecVar.maxval=0.9;
-eRecVar.mindiff=-0.2;
-eRecVar.maxdiff=0.2;
-eRecVar.Unit="Hz";
+if (eModelName == "WWM") {
+MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "TM01", eTimeDay);
+F=FreqPeriodChange(Fin);
+}
+RecS.VarName2="mean wave frequency";
+RecS.minval=0;
+RecS.maxval=0.9;
+RecS.mindiff=-0.2;
+RecS.maxdiff=0.2;
+RecS.Unit="Hz";
 }
 if (eVarName == "PeakWaveFreq") {
 if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "PwaveFreq", eTimeDay);
 if (eModelName == "WWM") {
-MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "TM01", eTimeDay);
+MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "TPP", eTimeDay);
 F=FreqPeriodChange(Fin);
 }
-eRecVar.VarName2="peak wave frequency";
-eRecVar.minval=0;
-eRecVar.maxval=0.9;
-eRecVar.mindiff=-0.2;
-eRecVar.maxdiff=0.2;
-eRecVar.Unit="Hz";
+RecS.VarName2="peak wave frequency";
+RecS.minval=0;
+RecS.maxval=0.9;
+RecS.mindiff=-0.2;
+RecS.maxdiff=0.2;
+RecS.Unit="Hz";
 }
 if (eVarName == "MeanWavePer") {
 if (eModelName == "COSMO" || eModelName == "WAM") {
@@ -7323,12 +7849,12 @@ F=FreqPeriodChange(Fin);
 }
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "TM01", eTimeDay);
-eRecVar.VarName2="mean wave period";
-eRecVar.minval=2;
-eRecVar.maxval=10;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="s";
+RecS.VarName2="mean wave period";
+RecS.minval=2;
+RecS.maxval=10;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="s";
 }
 if (eVarName == "PeakWavePer") {
 if (eModelName == "COSMO" || eModelName == "WAM") {
@@ -7337,122 +7863,260 @@ F=FreqPeriodChange(Fin);
 }
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "TPP", eTimeDay);
-eRecVar.VarName2="peak wave period";
-eRecVar.minval=2;
-eRecVar.maxval=10;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="s";
+RecS.VarName2="peak wave period";
+RecS.minval=2;
+RecS.maxval=10;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="s";
 }
 if (eVarName == "TM02") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "TM02", eTimeDay);
-eRecVar.VarName2="zero crossing wave period";
-eRecVar.minval=2;
-eRecVar.maxval=10;
-eRecVar.mindiff=-1;
-eRecVar.maxdiff=1;
-eRecVar.Unit="s";
+RecS.VarName2="zero crossing wave period";
+RecS.minval=2;
+RecS.maxval=10;
+RecS.mindiff=-1;
+RecS.maxdiff=1;
+RecS.Unit="s";
 }
 if (eVarName == "DynBathy") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "DW", eTimeDay);
-eRecVar.VarName2="dynamic bathymetry";
-eRecVar.minval=0;
-eRecVar.maxval=30;
-eRecVar.mindiff=-5;
-eRecVar.maxdiff=5;
-eRecVar.Unit="deg";
+RecS.VarName2="dynamic bathymetry";
+RecS.minval=0;
+RecS.maxval=30;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="deg";
 }
 if (eVarName == "MeanWaveDirSpread") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "DSPR", eTimeDay);
-eRecVar.VarName2="directional spreading";
-eRecVar.minval=0;
-eRecVar.maxval=30;
-eRecVar.mindiff=-5;
-eRecVar.maxdiff=5;
-eRecVar.Unit="deg";
+RecS.VarName2="directional spreading";
+RecS.minval=0;
+RecS.maxval=30;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="deg";
 }
 if (eVarName == "PeakWaveDirSpread") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "PEAKDSPR", eTimeDay);
-eRecVar.VarName2="peak directional spreading";
-eRecVar.minval=0;
-eRecVar.maxval=30;
-eRecVar.mindiff=-5;
-eRecVar.maxdiff=5;
-eRecVar.Unit="deg";
+RecS.VarName2="peak directional spreading";
+RecS.minval=0;
+RecS.maxval=30;
+RecS.mindiff=-5;
+RecS.maxdiff=5;
+RecS.Unit="deg";
+}
+if (eVarName == "AirZ0") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "Z0", eTimeDay);
+RecS.VarName2="air roughness length";
+RecS.minval=0;
+RecS.maxval= 0.0002;
+RecS.mindiff=-0.00005;
+RecS.maxdiff= 0.00005;
+RecS.Unit="m";
+}
+if (eVarName == "AirFricVel") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "UFRIC", eTimeDay);
+RecS.VarName2="air roughness length";
+RecS.minval=0;
+RecS.maxval=0.3;
+RecS.mindiff=-0.05;
+RecS.maxdiff= 0.05;
+RecS.Unit="m";
 }
 if (eVarName == "CdWave") {
 if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "CdWave", eTimeDay);
-eRecVar.VarName2="drag coefficient from the wave model";
-eRecVar.minval=0.10;
-eRecVar.maxval=0.20;
-eRecVar.mindiff=-0.05;
-eRecVar.maxdiff=0.05;
-eRecVar.Unit="nondim.";
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "CD", eTimeDay);
+RecS.VarName2="drag coefficient from the wave model";
+RecS.minval=0;
+RecS.maxval=0.20;
+RecS.mindiff=-0.05;
+RecS.maxdiff=0.05;
+RecS.Unit="nondim.";
 }
 if (eVarName == "AlphaWave") {
 if (eModelName == "COSMO" || eModelName == "WAM")
 F=Get2DvariableSpecTime(TotalArr, "AlphaWave", eTimeDay);
-eRecVar.VarName2="Charnock coefficient from the wave model";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="nondim.";
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "ALPHA_CH", eTimeDay);
+RecS.VarName2="Charnock coefficient from the wave model";
+RecS.minval=0;
+RecS.maxval=0.033;
+RecS.mindiff=-0.1;
+RecS.maxdiff=0.1;
+RecS.Unit="nondim.";
 }
 if (eVarName == "TotSurfStr") {
 if (eModelName == "WWM")
 F=Get2DvariableSpecTime(TotalArr, "TAUTOT", eTimeDay);
-eRecVar.VarName2="Total Surface stress";
-eRecVar.minval=0;
-eRecVar.maxval=0.033;
-eRecVar.mindiff=-0.1;
-eRecVar.maxdiff=0.1;
-eRecVar.Unit="unknown";
+RecS.VarName2="Total Surface stress";
+RecS.minval=0;
+RecS.maxval=0.06;
+RecS.mindiff=-0.01;
+RecS.maxdiff= 0.01;
+RecS.Unit="unknown";
 }
-if (eRecVar.VarName2 == "unset") {
+if (eVarName == "WaveSurfStr") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "TAUW", eTimeDay);
+RecS.VarName2="wave supported Surface stress";
+RecS.minval=0;
+RecS.maxval=0.06;
+RecS.mindiff=-0.01;
+RecS.maxdiff= 0.01;
+RecS.Unit="unknown";
+}
+if (eVarName == "SurfStrHF") {
+if (eModelName == "WWM")
+F=Get2DvariableSpecTime(TotalArr, "TAUHF", eTimeDay);
+RecS.VarName2="high frequency Surface stress";
+RecS.minval=0;
+RecS.maxval=0.06;
+RecS.mindiff=-0.01;
+RecS.maxdiff= 0.01;
+RecS.Unit="unknown";
+}
+RecVar eRecVar;
+eRecVar.RecS=RecS;
+if (RecS.VarName2 == "unset") {
 std::cerr << "We did not find the variable\n";
 std::cerr << "eVarName = " << eVarName << "\n";
 std::cerr << "in the list of allowed ones\n";
 std::cerr << "possibly missspelling or lack of relevant code\n";
-exit(1);
+throw TerminalException{1};
 }
 if (eModelName != "TRIVIAL") {
-if (eRecVar.VarNature == "rho") {
+if (RecS.VarNature == "rho") {
 if (F.size() == 0) {
+std::cerr << "VarNature = " << RecS.VarNature << "\n";
 std::cerr << "Variable eVarName = " << eVarName << "\n";
 std::cerr << "is recognized by the program as authorized variable\n";
 std::cerr << "But it has not been assigned.\n";
 std::cerr << "Possibly because of missing facility for\n";
 std::cerr << "eModelName = " << eModelName << "\n";
-exit(1);
+throw TerminalException{1};
 }
 eRecVar.F=F;
 }
-if (eRecVar.VarNature == "uv") {
+if (RecS.VarNature == "uv") {
 if (U.size() == 0 || V.size() == 0) {
+std::cerr << "VarNature = " << RecS.VarNature << "\n";
 std::cerr << "Variable eVarName = " << eVarName << "\n";
 std::cerr << "is recognized by the program\n";
 std::cerr << "But it has not been assigned.\n";
 std::cerr << "Possibly because of missing facility for\n";
 std::cerr << "eModelName = " << eModelName << "\n";
-exit(1);
+throw TerminalException{1};
 }
 eRecVar.U=U;
 eRecVar.V=V;
+int nbRow=U.rows();
+int nbCol=U.cols();
+MyMatrix<double> Fwr(nbRow, nbCol);
+for (int iRow=0; iRow<nbRow; iRow++)
+for (int iCol=0; iCol<nbCol; iCol++) {
+double eU=U(iRow,iCol);
+double eV=V(iRow,iCol);
+double eNorm=sqrt(eU*eU + eV*eV);
+Fwr(iRow,iCol) = eNorm;
+}
+eRecVar.F=Fwr;
+}
+if (RecS.VarNature == "3Drho") {
+auto LDim=Tens3.dimensions();
+if (LDim[0] == 0) {
+std::cerr << "VarNature = " << RecS.VarNature << "\n";
+std::cerr << "Variable eVarName = " << eVarName << "\n";
+std::cerr << "is recognized by the program\n";
+std::cerr << "But it has not been assigned.\n";
+std::cerr << "Possibly because of missing facility for\n";
+std::cerr << "eModelName = " << eModelName << "\n";
+throw TerminalException{1};
+}
+eRecVar.Tens3=Tens3;
+}
+if (RecS.VarNature == "3Duv") {
+auto LDim=Uthree.dimensions();
+if (LDim[0] == 0) {
+std::cerr << "VarNature = " << RecS.VarNature << "\n";
+std::cerr << "Variable eVarName = " << eVarName << "\n";
+std::cerr << "is recognized by the program\n";
+std::cerr << "But it has not been assigned.\n";
+std::cerr << "Possibly because of missing facility for\n";
+std::cerr << "eModelName = " << eModelName << "\n";
+throw TerminalException{1};
+}
+int dim0=LDim[0];
+int dim1=LDim[1];
+int dim2=LDim[2];
+Eigen::Tensor<double,3> Fwr(dim0, dim1, dim2);
+for (int i0=0; i0<dim0; i0++)
+for (int i1=0; i1<dim1; i1++)
+for (int i2=0; i2<dim2; i2++) {
+double eU=Uthree(i0, i1, i2);
+double eV=Vthree(i0, i1, i2);
+double eNorm=sqrt(eU*eU + eV*eV);
+Fwr(i0, i1, i2) = eNorm;
+}
+eRecVar.Tens3=Fwr;
 }
 }
 return eRecVar;
 }
-RecVar ModelSpecificVarSpecificTimeBound(TotalArrGetData const& TotalArr, std::string const& eVarName, double const& eTimeDay, PlotBound const& ePlotBound)
+RecVar ModelSpecificVarSpecificTime(TotalArrGetData const& TotalArr, std::string const& eVarName, double const& eTimeDay)
 {
-RecVar eRecVar=ModelSpecificVarSpecificTime(TotalArr, eVarName, eTimeDay);
-ApplyPlotBound(TotalArr, eRecVar, eVarName, ePlotBound);
-return eRecVar;
+std::string eSep="_";
+std::vector<std::string> ListStr=STRING_Split(eVarName, eSep);
+int len=ListStr.size();
+if (len == 1)
+return ModelSpecificVarSpecificTime_Kernel(TotalArr, eVarName, eTimeDay);
+std::string eVar_rho=ListStr[0];
+std::string eVar_uv=ListStr[1];
+RecVar RecVar_rho=ModelSpecificVarSpecificTime_Kernel(TotalArr, eVar_rho, eTimeDay);
+RecVar RecVar_uv =ModelSpecificVarSpecificTime_Kernel(TotalArr, eVar_uv , eTimeDay);
+std::string VarNat_rho=RecVar_rho.RecS.VarNature;
+std::string VarNat_uv =RecVar_uv.RecS.VarNature;
+if (VarNat_rho != "rho" && VarNat_rho != "3Drho") {
+std::cerr << "The RecVar_rho is not a rho type variable. Error!\n";
+std::cerr << "Correct way to call is Var_rho _ Var_uv\n";
+std::cerr << "for Example Hwave_SurfCurr for Hwave as rho variable and SurfCurr as uv variable\n";
+std::cerr << "The call was with eVarName=" << eVarName << "\n";
+throw TerminalException{1};
+}
+if (VarNat_uv != "uv" && VarNat_uv != "3Duv") {
+std::cerr << "The RecVar_uv is not a uv type variable. Error!\n";
+std::cerr << "Correct way to call is Var_rho _ Var_uv\n";
+std::cerr << "for Example Hwave_SurfCurr for Hwave as rho variable and SurfCurr as uv variable\n";
+std::cerr << "The call was with eVarName=" << eVarName << "\n";
+throw TerminalException{1};
+}
+if ((VarNat_rho == "3Drho" && VarNat_uv == "uv") || (VarNat_rho == "rho" && VarNat_uv == "3Duv") ) {
+std::cerr << "Error. variables do not have the same dimensionality\n";
+std::cerr << "It should be both 3D or both 2D\n";
+std::cerr << "Right now, we have VarNat_rho=" << VarNat_rho << "\n";
+std::cerr << "Right now, we have VarNat_uv =" << VarNat_uv << "\n";
+throw TerminalException{1};
+}
+if (VarNat_rho == "rho") {
+RecVar_rho.U = RecVar_uv.U;
+RecVar_rho.V = RecVar_uv.V;
+}
+if (VarNat_rho == "3Drho") {
+RecVar_rho.Uthree = RecVar_uv.Uthree;
+RecVar_rho.Vthree = RecVar_uv.Vthree;
+}
+RecVar_rho.RecS.VarName1 += "_" + RecVar_uv.RecS.VarName1;
+RecVar_rho.RecS.VarName2 += " + " + RecVar_uv.RecS.VarName2;
+RecVar_rho.RecS.VarNature="uv";
+return RecVar_rho;
 }
 RecVar RetrieveTrivialRecVar(std::string const& eVarName)
 {
@@ -7460,6 +8124,46 @@ TotalArrGetData TotalArrTrivial;
 TotalArrTrivial.GrdArr.ModelName="TRIVIAL";
 double eTimeDayTrivial=0;
 return ModelSpecificVarSpecificTime(TotalArrTrivial, eVarName, eTimeDayTrivial);
+}
+std::vector<std::string> GetAllPossibleVariables_with_pairs()
+{
+std::vector<std::string> ListVar=GetAllPossibleVariables();
+std::vector<std::string> ListVar_rho;
+std::vector<std::string> ListVar_uv;
+std::vector<std::string> ListVar_3Drho;
+std::vector<std::string> ListVar_3Duv;
+std::vector<std::string> ListVar_Ret;
+for (auto & eVar : ListVar) {
+RecVar eRec=RetrieveTrivialRecVar(eVar);
+if (eRec.RecS.VarNature == "rho")
+ListVar_rho.push_back(eVar);
+if (eRec.RecS.VarNature == "uv")
+ListVar_uv.push_back(eVar);
+if (eRec.RecS.VarNature == "3Drho")
+ListVar_3Drho.push_back(eVar);
+if (eRec.RecS.VarNature == "3Duv")
+ListVar_3Duv.push_back(eVar);
+ListVar_Ret.push_back(eVar);
+}
+for (auto & eVar_uv : ListVar_uv) {
+for (auto & eVar_rho : ListVar_rho) {
+std::string eVarTot = eVar_rho + "_" + eVar_uv;
+ListVar_Ret.push_back(eVarTot);
+}
+}
+for (auto & eVar_uv : ListVar_3Duv) {
+for (auto & eVar_rho : ListVar_3Drho) {
+std::string eVarTot = eVar_rho + "_" + eVar_uv;
+ListVar_Ret.push_back(eVarTot);
+}
+}
+return ListVar_Ret;
+}
+RecVar ModelSpecificVarSpecificTimeBound(TotalArrGetData const& TotalArr, std::string const& eVarName, double const& eTimeDay, PlotBound const& ePlotBound)
+{
+RecVar eRecVar=ModelSpecificVarSpecificTime(TotalArr, eVarName, eTimeDay);
+ApplyPlotBound(TotalArr, eRecVar, eVarName, ePlotBound);
+return eRecVar;
 }
 RecVar ModelSpecificVarSpecificTimeGeneral(TotalArrGetData const& TotalArr, std::string const& eVarName, VarQuery const& eQuery, PlotBound const& ePlotBound)
 {
@@ -7469,7 +8173,7 @@ std::cerr << "We failed to find NatureQuery=" << eQuery.NatureQuery << "\n";
 std::cerr << "List of allowed queries:\n";
 for (auto & eStr : ListAllow)
 std::cerr << "  eStr=" << eStr << "\n";
-exit(1);
+throw TerminalException{1};
 }
 std::string strPres=DATE_ConvertMjd2mystringPres(eQuery.eTimeDay);
 std::cerr << "Query ModelSpecificVarSpecificTimeGeneral NatureQuery=" << eQuery.NatureQuery << " date=" << strPres << " VarName=" << eVarName << "\n";
@@ -7484,68 +8188,130 @@ std::vector<int> ListRelITime=GetIntervalListITime(TotalArr.eArr.ListTime, eTime
 int nbTimeRel=ListRelITime.size();
 RecVar RecVarTrivial=RetrieveTrivialRecVar(eVarName);
 MyMatrix<double> F, U, V;
+Eigen::Tensor<double,3> Tens3;
+Eigen::Tensor<double,3> Uthree;
+Eigen::Tensor<double,3> Vthree;
 for (int iTimeRel=0; iTimeRel<nbTimeRel; iTimeRel++) {
 int iTime=ListRelITime[iTimeRel];
 double eTimeDayB=TotalArr.eArr.ListTime[iTime];
 eRecVar=ModelSpecificVarSpecificTimeBound(TotalArr, eVarName, eTimeDayB, ePlotBound);
 if (iTimeRel == 0) {
-if (RecVarTrivial.VarNature == "rho") {
+if (RecVarTrivial.RecS.VarNature == "rho") {
 F=eRecVar.F;
 }
-else {
+if (RecVarTrivial.RecS.VarNature == "uv") {
 U=eRecVar.U;
 V=eRecVar.V;
+F=eRecVar.F;
+}
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+Tens3=eRecVar.Tens3;
+}
+if (RecVarTrivial.RecS.VarNature == "3Duv") {
+Uthree=eRecVar.Uthree;
+Vthree=eRecVar.Vthree;
+Tens3=eRecVar.Tens3;
 }
 }
 else {
 if (eQuery.NatureQuery == "average") {
-if (RecVarTrivial.VarNature == "rho") {
+if (RecVarTrivial.RecS.VarNature == "rho") {
 F += eRecVar.F;
 }
-if (RecVarTrivial.VarNature == "uv") {
+if (RecVarTrivial.RecS.VarNature == "uv") {
 U += eRecVar.U;
 V += eRecVar.V;
+F += eRecVar.F;
+}
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+Tens3 += eRecVar.Tens3;
+}
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+Uthree += eRecVar.Uthree;
+Vthree += eRecVar.Vthree;
+Tens3 += eRecVar.Tens3;
 }
 }
 if (eQuery.NatureQuery == "swathMax") {
-if (RecVarTrivial.VarNature == "rho") {
+if (RecVarTrivial.RecS.VarNature == "rho") {
 F=F.cwiseMax(eRecVar.F);
 }
-if (RecVarTrivial.VarNature == "uv") {
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+Tens3=Tens3.cwiseMax(eRecVar.Tens3);
+}
+if (RecVarTrivial.RecS.VarNature == "uv" || RecVarTrivial.RecS.VarNature == "3Duv") {
 std::cerr << "swathMax for uv does not have any sense\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 if (eQuery.NatureQuery == "swathMin") {
-if (RecVarTrivial.VarNature == "rho") {
+if (RecVarTrivial.RecS.VarNature == "rho") {
 F=F.cwiseMin(eRecVar.F);
 }
-if (RecVarTrivial.VarNature == "uv") {
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+Tens3=Tens3.cwiseMin(eRecVar.Tens3);
+}
+if (RecVarTrivial.RecS.VarNature == "uv" || RecVarTrivial.RecS.VarNature == "3Duv") {
 std::cerr << "swathMin for uv does not have any sense\n";
-exit(1);
+throw TerminalException{1};
 }
 }
 }
 }
 if (eQuery.NatureQuery == "average") {
-if (RecVarTrivial.VarNature == "rho") {
+if (RecVarTrivial.RecS.VarNature == "rho") {
 F /= double(nbTimeRel);
 }
-if (RecVarTrivial.VarNature == "uv") {
+if (RecVarTrivial.RecS.VarNature == "uv") {
 U /= double(nbTimeRel);
 V /= double(nbTimeRel);
+F /= double(nbTimeRel);
+}
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+auto LDim=Tens3.dimensions();
+int dim0=LDim[0];
+int dim1=LDim[1];
+int dim2=LDim[2];
+for (int i0=0; i0<dim0; i0++)
+for (int i1=0; i1<dim1; i1++)
+for (int i2=0; i2<dim2; i2++)
+Tens3(i0, i1, i2) /= double(nbTimeRel);
+}
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+auto LDim=Tens3.dimensions();
+int dim0=LDim[0];
+int dim1=LDim[1];
+int dim2=LDim[2];
+for (int i0=0; i0<dim0; i0++)
+for (int i1=0; i1<dim1; i1++)
+for (int i2=0; i2<dim2; i2++) {
+Uthree(i0, i1, i2) /= double(nbTimeRel);
+Vthree(i0, i1, i2) /= double(nbTimeRel);
+Tens3 (i0, i1, i2) /= double(nbTimeRel);
 }
 }
-if (RecVarTrivial.VarNature == "rho") {
+}
+if (RecVarTrivial.RecS.VarNature == "rho") {
 eRecVar.F=F;
 }
-if (RecVarTrivial.VarNature == "uv") {
+if (RecVarTrivial.RecS.VarNature == "3Drho") {
+eRecVar.Tens3=Tens3;
+}
+if (RecVarTrivial.RecS.VarNature == "uv") {
 eRecVar.U=U;
 eRecVar.V=V;
+eRecVar.F=F;
+}
+if (RecVarTrivial.RecS.VarNature == "3Duv") {
+eRecVar.Uthree=Uthree;
+eRecVar.Vthree=Vthree;
+eRecVar.Tens3=Tens3;
 }
 }
 std::string strAll=GetStrAllOfPlot(eQuery);
-eRecVar.strAll=strAll;
+std::string strPresPlot=GetStrPresOfPlot(eQuery);
+eRecVar.RecS.strAll=strAll;
+eRecVar.RecS.strPres=strPresPlot;
 ApplyPlotBound(TotalArr, eRecVar, eVarName, ePlotBound);
 return eRecVar;
 }
@@ -7618,8 +8384,10 @@ double eTimeFirst=DATE_ConvertSix2mjd(eTimeFirstSix);
 int nbTimeRel=ListITime.size();
 std::cerr << "nbTimeRel=" << nbTimeRel << "\n";
 int idx=iDay - (iDayFirst-1);
+std::string eDir=FILE_GetAbsoluteDirectory(OutPrefix);
+std::string eDirB=ExtractDirectoryFromFileString(eDir);
+CreateDirectory(eDirB);
 std::string eFileNC=OutPrefix + StringNumber(idx,3) + ".nc";
-# 8999 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 netCDF::NcFile dataFile(eFileNC, netCDF::NcFile::replace, netCDF::NcFile::nc4);
 std::cerr << "eta_rho=" << eta_rho << "  xi_rho=" << xi_rho << "\n";
 netCDF::NcDim eDimAsize=dataFile.addDim("aSize", eta_rho);
@@ -7664,7 +8432,7 @@ eVarData_uwind.putAtt(LongName, std::string("10 m U-wind"));
 eVarData_vwind.putAtt(LongName, std::string("10 m V-wind"));
 eVarData_dlwrf.putAtt(LongName, std::string("Downward Long Wave Radiation Flux"));
 eVarData_dswrf.putAtt(LongName, std::string("Downward Short Wave Radiation Flux"));
-eVarData_prate.putAtt(LongName, std::string("urface Precipitation Rate"));
+eVarData_prate.putAtt(LongName, std::string("Surface Precipitation Rate"));
 eVarData_prmsl.putAtt(StdName, std::string("air_pressure_at_sea_level"));
 eVarData_stmp.putAtt(StdName, std::string("air_temperature"));
 eVarData_spfh.putAtt(StdName, std::string("specific_humidity"));
@@ -7867,16 +8635,14 @@ MyMatrix<double> V=ZeroMatrix<double>(eta_rho, xi_rho);
 MyMatrix<double> Unity=ZeroMatrix<double>(eta_rho, xi_rho);
 for (int iGrid=0; iGrid<nbGrid; iGrid++) {
 MyMatrix<double> eHatFunction=TotalArr.ListHatFunction[iGrid];
+std::cerr << "Before ModelSpecificVarSpecificTime deadly call\n";
 fRecVar=ModelSpecificVarSpecificTime(TotalArr.ListTotalArr[iGrid], eVarName, eTimeDay);
-std::cerr << "Begin debugging ---------------------------------------\n";
-PrintMMA_FCT(fRecVar.U, TotalArr.ListTotalArr[iGrid].GrdArr.GrdArrRho.MSK, "U");
-PrintMMA_FCT(fRecVar.V, TotalArr.ListTotalArr[iGrid].GrdArr.GrdArrRho.MSK, "V");
-std::cerr << "  End debugging ---------------------------------------\n";
+std::cerr << "After the deadly call\n";
 gRecVar=INTERPOL_SingleRecVarInterpolation(TotalArr.ListSingleArrayInterpolation[iGrid], fRecVar);
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
 Unity(i,j) += eHatFunction(i,j);
-if (fRecVar.VarNature == "rho") {
+if (fRecVar.RecS.VarNature == "rho") {
 F(i,j) += gRecVar.F(i,j)*eHatFunction(i,j);
 }
 else {
@@ -7891,22 +8657,8 @@ for (int j=0; j<xi_rho; j++) {
 TotalErr += fabs(Unity(i,j) - double(1));
 }
 std::cerr << "TotalErr=" << TotalErr << "\n";
-eRecVar.eTimeDay=fRecVar.eTimeDay;
-eRecVar.strPres=fRecVar.strPres;
-eRecVar.strFile=fRecVar.strFile;
-eRecVar.VarName1=fRecVar.VarName1;
-eRecVar.VarName2=fRecVar.VarName2;
-eRecVar.minval=fRecVar.minval;
-eRecVar.maxval=fRecVar.maxval;
-eRecVar.mindiff=fRecVar.mindiff;
-eRecVar.maxdiff=fRecVar.maxdiff;
-eRecVar.Unit=fRecVar.Unit;
-eRecVar.VarNature=fRecVar.VarNature;
-if (eRecVar.VarNature == "uv") {
-eRecVar.nameU=fRecVar.nameU;
-eRecVar.nameV=fRecVar.nameV;
-}
-if (fRecVar.VarNature == "rho") {
+eRecVar.RecS=fRecVar.RecS;
+if (fRecVar.RecS.VarNature == "rho") {
 eRecVar.F=F;
 }
 else {
@@ -7992,20 +8744,147 @@ std::cerr << "|ListVarName|=" << ListVarName.size() << "\n";
 for (auto & eVarName : ListVarName) {
 std::cerr << "Init for variable eVarName=" << eVarName << "\n";
 RecVar eRecVar=ModelSpecificVarSpecificTime(TotalArr, eVarName, eTimeDay);
-if (eRecVar.VarNature == "rho") {
-netCDF::NcVar eVAR_rho=dataFile.addVar(eRecVar.VarName1, typeNameFloat, LDim);
-eVAR_rho.putAtt(LongName, eRecVar.VarName2);
+if (eRecVar.RecS.VarNature == "rho") {
+netCDF::NcVar eVAR_rho=dataFile.addVar(eRecVar.RecS.VarName1, typeNameFloat, LDim);
+eVAR_rho.putAtt(LongName, eRecVar.RecS.VarName2);
 }
 else {
-netCDF::NcVar eVAR_u=dataFile.addVar(eRecVar.nameU, typeNameFloat, LDim);
-netCDF::NcVar eVAR_v=dataFile.addVar(eRecVar.nameV, typeNameFloat, LDim);
-eVAR_u.putAtt(LongName, eRecVar.VarName2);
-eVAR_v.putAtt(LongName, eRecVar.VarName2);
+netCDF::NcVar eVAR_u=dataFile.addVar(eRecVar.RecS.nameU, typeNameFloat, LDim);
+netCDF::NcVar eVAR_v=dataFile.addVar(eRecVar.RecS.nameV, typeNameFloat, LDim);
+eVAR_u.putAtt(LongName, eRecVar.RecS.VarName2);
+eVAR_v.putAtt(LongName, eRecVar.RecS.VarName2);
 }
 }
+}
+FullNamelist NAMELIST_GetStandard_PlotRoutine_common()
+{
+std::map<std::string, SingleBlock> ListBlock;
+std::string BlockName1="PROC";
+std::map<std::string, int> ListIntValues1;
+std::map<std::string, bool> ListBoolValues1;
+std::map<std::string, double> ListDoubleValues1;
+std::map<std::string, std::string> ListStringValues1;
+std::map<std::string, std::vector<std::string> > ListListStringValues1;
+std::string LPoss="Possibilities:";
+bool IsFirst=true;
+for (auto & eStr : GetAllPossibleModels()) {
+if (IsFirst == false)
+LPoss += ",";
+LPoss += " " + eStr;
+}
+ListStringValues1["MODELNAME"]=LPoss;
+ListStringValues1["BEGTC"]="20110915.000000";
+ListStringValues1["ENDTC"]="20110925.000000";
+ListDoubleValues1["DELTC"]=600;
+ListStringValues1["UNITC"]="SEC";
+ListStringValues1["GridFile"]="unset GridFile";
+ListStringValues1["BoundFile"]="unset";
+ListBoolValues1["CutWorldMap"]=false;
+ListBoolValues1["HigherLatitudeCut"]=false;
+ListBoolValues1["SplittingAt180"]=false;
+ListDoubleValues1["MinLatCut"]=-80;
+ListDoubleValues1["MaxLatCut"]=80;
+ListStringValues1["PicPrefix"]="Pictures/DIR_plot/";
+ListStringValues1["Extension"]="png";
+ListListStringValues1["ListNatureQuery"]={"instant"};
+ListDoubleValues1["TimeFrameDay"]=1;
+ListBoolValues1["FirstCleanDirectory"]=true;
+ListBoolValues1["KeepNC_NCL"]=false;
+ListBoolValues1["OverwritePrevious"]=false;
+ListBoolValues1["WriteITimeInFileName"]=true;
+ListIntValues1["NPROC"]=1;
+SingleBlock BlockPROC;
+BlockPROC.ListIntValues=ListIntValues1;
+BlockPROC.ListBoolValues=ListBoolValues1;
+BlockPROC.ListDoubleValues=ListDoubleValues1;
+BlockPROC.ListStringValues=ListStringValues1;
+BlockPROC.ListListStringValues=ListListStringValues1;
+BlockPROC.BlockName=BlockName1;
+ListBlock["PROC"]=BlockPROC;
+std::string BlockName2="PLOT";
+std::map<std::string, int> ListIntValues2;
+std::map<std::string, bool> ListBoolValues2;
+std::map<std::string, double> ListDoubleValues2;
+std::map<std::string, std::string> ListStringValues2;
+std::map<std::string, std::vector<double> > ListListDoubleValues2;
+std::map<std::string, std::vector<int> > ListListIntValues2;
+std::map<std::string, std::vector<std::string> > ListListStringValues2;
+ListStringValues2["ColorMap"]="BlAqGrYeOrReVi200";
+ListStringValues2["ColorMapDiff"]="BlWhRe";
+ListStringValues2["cnFillMode"]="RasterFill";
+ListBoolValues2["DoColorBar"]=true;
+ListBoolValues2["cnSmoothingOn"]=true;
+ListIntValues2["nbLevelSpa"]=50;
+ListIntValues2["nbLabelStride"]=10;
+ListBoolValues2["UseNativeGrid"]=true;
+ListBoolValues2["DoTitle"]=true;
+ListStringValues2["GridResolution"]="HighRes";
+ListBoolValues2["DrawRiver"]=false;
+ListBoolValues2["PrintMMA"]=false;
+ListBoolValues2["LocateMM"]=false;
+ListBoolValues2["DoMain"]=true;
+ListBoolValues2["PlotDepth"]=true;
+ListBoolValues2["PlotMesh"]=false;
+ListBoolValues2["DrawContourBathy"]=false;
+ListBoolValues2["DrawAnnotation"]=false;
+ListBoolValues2["ExcludeLargeValues"]=false;
+ListDoubleValues2["ThresholdExclusionPlot"]=100000;
+ListDoubleValues2["MultiplierResolutionFE_FD"]=1;
+ListListIntValues2["Tens3ListLevel"]={};
+ListDoubleValues2["AnnotationLon"]=0;
+ListDoubleValues2["AnnotationLat"]=0;
+ListStringValues2["AnnotationText"]="something to write";
+ListListStringValues2["RenameVariable_VarName1"]={};
+ListListStringValues2["RenameVariable_VarName2"]={};
+ListListStringValues2["BoundSingle_var"]={};
+ListListDoubleValues2["BoundSingle_min"]={};
+ListListDoubleValues2["BoundSingle_max"]={};
+ListListStringValues2["BoundDiff_var"]={};
+ListListDoubleValues2["BoundDiff_min"]={};
+ListListDoubleValues2["BoundDiff_max"]={};
+ListBoolValues2["VariableRange"]=false;
+ListBoolValues2["FillLand"]=true;
+ListListDoubleValues2["ListFrameMinLon"]={};
+ListListDoubleValues2["ListFrameMinLat"]={};
+ListListDoubleValues2["ListFrameMaxLon"]={};
+ListListDoubleValues2["ListFrameMaxLat"]={};
+ListBoolValues2["UseFDgrid"]=false;
+ListBoolValues2["DoMain"]=true;
+SingleBlock BlockPLOT;
+BlockPLOT.ListIntValues=ListIntValues2;
+BlockPLOT.ListBoolValues=ListBoolValues2;
+BlockPLOT.ListDoubleValues=ListDoubleValues2;
+BlockPLOT.ListStringValues=ListStringValues2;
+BlockPLOT.ListListStringValues=ListListStringValues2;
+BlockPLOT.ListListDoubleValues=ListListDoubleValues2;
+BlockPLOT.ListListIntValues=ListListIntValues2;
+BlockPLOT.BlockName=BlockName2;
+ListBlock["PLOT"]=BlockPLOT;
+std::string BlockName3="VARS";
+std::map<std::string, int> ListIntValues3;
+std::map<std::string, bool> ListBoolValues3;
+std::map<std::string, double> ListDoubleValues3;
+std::map<std::string, std::string> ListStringValues3;
+std::map<std::string, std::vector<std::string> > ListListStringValues3;
+std::vector<std::string> ListVarOut=GetAllPossibleVariables_with_pairs();
+for (auto& eVal : ListVarOut)
+ListBoolValues3[eVal]=false;
+SingleBlock BlockVARS;
+BlockVARS.ListIntValues=ListIntValues3;
+BlockVARS.ListBoolValues=ListBoolValues3;
+BlockVARS.ListDoubleValues=ListDoubleValues3;
+BlockVARS.ListStringValues=ListStringValues3;
+BlockVARS.ListListStringValues=ListListStringValues3;
+BlockVARS.BlockName=BlockName3;
+ListBlock["VARS"]=BlockVARS;
+FullNamelist eFullNamelist;
+eFullNamelist.ListBlock=ListBlock;
+eFullNamelist.FileName="undefined";
+return eFullNamelist;
 }
 int main(int argc, char *argv[])
 {
+try {
 FullNamelist eFull=NAMELIST_GetStandard_CREATE_sflux();
 if (argc != 2) {
 std::cerr << "CREATE_sflux is used as\n";
@@ -8016,4 +8895,8 @@ return -1;
 std::string eFileName=argv[1];
 NAMELIST_ReadNamelistFile(eFileName, eFull);
 CREATE_sflux_files(eFull);
+}
+catch (TerminalException const& e) {
+exit(e.eVal);
+}
 }
