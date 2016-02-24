@@ -54,7 +54,7 @@
 
 &BOUC          
  LBCSE          = .F.,               
- LBCWA          = .F.,               
+ LBCWA          = .T.,               
  LBCSP          = .F.,               
  LINHOM         = .F.,               
  LBSP1D         = .F.,               
@@ -69,7 +69,7 @@
  FILEWAVE       = 'wwmbnd.gr3',      
  LINDSPRDEG     = .F.,               
  LPARMDIR       = .F.,               
- WBHS           = 4.00000000000000,  
+ WBHS           = 0.00000000000000,  
  WBTP           = 8.00000000000000,  
  WBDM           = 90.0000000000000,  
  WBDS           = 5.0000000000000,  

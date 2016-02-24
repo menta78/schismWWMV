@@ -30,10 +30,10 @@
  LSTAG   = T,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          24,
+ MDC     =          12,
  FRLOW   =  4.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          24,
+ MSC     =          36,
  FILEGRID        = hgrid.gr3                                                                                                         
                            ,
  IGRIDTYPE       =           3,
@@ -46,7 +46,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = T,
+ LINID   = F,
  INITSTYLE = 1
  /
  &BOUC
@@ -143,7 +143,7 @@
  BRHD    =  0.730000000000000     ,
  LMAXETOT        =  T,
  MESDS   =          1, 
- MESTR   =          1,
+ MESTR   =          0,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
