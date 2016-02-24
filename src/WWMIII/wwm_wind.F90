@@ -2138,11 +2138,10 @@
         eStrU='UsurfCurr'
         eStrV='VsurfCurr'
       END IF
-      Print *, 'eStrU=', eStrU, ' eStrV=', eStrV
+      outwind = ZERO
 # ifdef MPI_PARALL_GRID
       IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
-        Print *, 'filename=', TRIM(eVAR % eFileName)
 
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
@@ -2263,7 +2262,7 @@
       INTEGER           :: fid, varid
       INTEGER           :: dimidsB(2), dimids(2)
       integer nbChar
-      character (len=20) :: WindTimeStr
+      character (len=20) :: eTimeStr
       character(len=100) :: CHRERR
       character (len = *), parameter :: CallFct="INIT_DIRECT_NETCDF_CF"
       character (len=100) :: eStrUnitTime
@@ -2275,6 +2274,7 @@
       integer eInt(1)
       real(rkind) :: eReal(2)
       integer IPROC
+      integer np_file
       eVAR % MULTIPLE_IN = MULTIPLE_IN
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
@@ -2292,9 +2292,17 @@
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(1), len=np_file)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
-        WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(WindTimeStr)
+        IF (np_file .ne. np_total) THEN
+          Print *, 'We have np_file=', np_file
+          Print *, '   But np_total=', np_total
+          CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+        END IF
+
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=eTimeStr)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(eTimeStr)
         FLUSH(WINDBG%FHNDL)
 
         ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
@@ -2317,7 +2325,7 @@
 
         ! Reading time
        
-        ISTAT = nf90_inq_varid(fid, WindTimeStr, varid)
+        ISTAT = nf90_inq_varid(fid, eTimeStr, varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
@@ -2388,7 +2396,6 @@
       ELSE
         eVAR % idVar = 2
       END IF
-
       END SUBROUTINE
 #endif
 #ifdef GRIB_API_ECMWF
