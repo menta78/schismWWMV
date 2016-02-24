@@ -14,6 +14,6 @@
 &VARS
  WIND10 = F, 
  WINDMAG = T, 
- UVsurf = F, 
+ SurfCurr = F, 
  Hwave = T
 /
