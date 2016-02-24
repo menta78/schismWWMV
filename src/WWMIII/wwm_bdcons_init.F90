@@ -659,12 +659,12 @@
       ELSE
         SPsize=1
       ENDIF
-      IF (LBCWA) THEN
+      IF (LBCWA .OR. BOUC_NETCDF_OUT_PARAM) THEN
         ALLOCATE( SPPARM(8,SPsize), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 4')
         SPPARM = 0.
       ENDIF
-      IF (LBCWA .OR. LBCSP) THEN
+      IF (LBCWA .OR. LBCSP .OR. BOUC_NETCDF_OUT_SPECTRA) THEN
         ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
         WBAC = 0.
