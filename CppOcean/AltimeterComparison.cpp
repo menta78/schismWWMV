@@ -30,6 +30,7 @@ template <typename T> using MySparseMatrix = Eigen::SparseMatrix<T,Eigen::ColMaj
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 typedef unsigned long ulong;
 typedef unsigned int uint;
 #include <errno.h>
@@ -636,7 +637,7 @@ std::vector<double> LCoeff(3);
 for (int i=0; i<3; i++) {
 LCoeff[i]=eProduct(i);
 }
-# 814 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 815 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 return LCoeff;
 }
 bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
@@ -725,7 +726,7 @@ struct Inverse_exception {
 std::string errmsg;
 T pivot;
 };
-# 954 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 955 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -1275,6 +1276,7 @@ std::vector<int> ListIFile;
 std::vector<int> ListIRec;
 std::vector<double> ListTime;
 std::string TimeSteppingInfo;
+std::string HisPrefix;
 double SeparationTime;
 int nbRecBegin;
 int nbRecMiddle;
@@ -1996,6 +1998,7 @@ eInterpInfo.iTimeLow = iTimeLow;
 eInterpInfo.iTimeUpp = iTimeUpp;
 eInterpInfo.alphaLow = alphaLow;
 eInterpInfo.alphaUpp = alphaUpp;
+eInterpInfo.UseSingleEntry=false;
 return eInterpInfo;
 }
 iTime++;
@@ -2071,7 +2074,7 @@ eVal = ListVal[i];
 }
 }
 return eVal;
-# 2686 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 2690 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 }
 std::vector<std::string> GRIB_GetAllFilesInDirectory(std::string const& ePrefix)
 {
@@ -4985,6 +4988,7 @@ MyMatrix<double> NETCDF_Get2DvariableSpecEntry_FE(std::string const& eFile, Grid
 {
 if (IsExistingFile(eFile) == false) {
 std::cerr << "NETCDF_Get2DvariableSpecEntry_FE\n";
+std::cerr << "eVar=" << eVar << " iRec=" << iRec << "\n";
 std::cerr << "The file eFile=" << eFile << "\n";
 std::cerr << "does not exist\n";
 throw TerminalException{1};
@@ -5210,6 +5214,9 @@ MyMatrix<double> NETCDF_Get2DvariableSpecTime(TotalArrGetData const& TotalArr, s
 ArrayHistory eArr=TotalArr.eArr;
 GridArray GrdArr=TotalArr.GrdArr;
 auto GetHisFileName=[&](int const& iFile) -> std::string {
+if (eArr.TimeSteppingInfo == "multiplenetcdf") {
+return eArr.HisPrefix + StringNumber(iFile+1,4) + ".nc";
+}
 int len=eArr.ListFileNames.size();
 if (iFile >= len) {
 std::cerr << "iFile=" << iFile << " len=" << len << "\n";
@@ -5246,8 +5253,8 @@ int iFileLow=eArr.ListIFile[iTimeLow];
 int iFileUpp=eArr.ListIFile[iTimeUpp];
 iRecLow=eArr.ListIRec[iTimeLow];
 iRecUpp=eArr.ListIRec[iTimeUpp];
-std::string HisFileLow=GetHisFileName(iFileLow);
-std::string HisFileUpp=GetHisFileName(iFileUpp);
+HisFileLow=GetHisFileName(iFileLow);
+HisFileUpp=GetHisFileName(iFileUpp);
 IsDone=true;
 }
 if (eArr.TimeSteppingInfo == "singlefile") {
@@ -5267,8 +5274,8 @@ int iFileLow=0;
 int iFileUpp=0;
 iRecLow=iTimeLow;
 iRecUpp=iTimeUpp;
-std::string HisFileLow=GetHisFileName(iFileLow);
-std::string HisFileUpp=GetHisFileName(iFileUpp);
+HisFileLow=GetHisFileName(iFileLow);
+HisFileUpp=GetHisFileName(iFileUpp);
 IsDone=true;
 }
 if (eArr.TimeSteppingInfo == "multiplenetcdf") {
@@ -5291,8 +5298,8 @@ int iFileLow=eRecLow[0];
 int iFileUpp=eRecUpp[0];
 iRecLow=eRecLow[1];
 iRecUpp=eRecUpp[1];
-std::string HisFileLow=GetHisFileName(iFileLow);
-std::string HisFileUpp=GetHisFileName(iFileUpp);
+HisFileLow=GetHisFileName(iFileLow);
+HisFileUpp=GetHisFileName(iFileUpp);
 IsDone=true;
 }
 if (IsDone == false) {
@@ -6366,7 +6373,7 @@ eArr.ListTime=ListTime;
 eArr.AppendVarName=false;
 eArr.KindArchive="NETCDF";
 eArr.TimeSteppingInfo="classic";
-std::cerr << "Seqeuntial array has been completed. Leaving\n";
+std::cerr << "Sequential array has been completed. Leaving\n";
 return eArr;
 }
 ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime)
@@ -6401,6 +6408,7 @@ eArr.SeparationTime=TheSep;
 std::cerr << "eArr.SeparationTime = " << eArr.SeparationTime << "\n";
 }
 else {
+std::cerr << "Case 2\n";
 int iFileBegin=0;
 while(1) {
 iFileBegin++;
@@ -6415,6 +6423,7 @@ std::cerr << "Please correct\n";
 throw TerminalException{1};
 }
 }
+std::cerr << "iFileBegin=" << iFileBegin << "\n";
 int iFileEnd=iFileBegin;
 while(1) {
 std::string TheHisFile=HisPrefix + StringNumber(iFileEnd+1, 4) + ".nc";
@@ -6422,6 +6431,7 @@ if (IsExistingFile(TheHisFile) == 0)
 break;
 iFileEnd++;
 }
+std::cerr << "iFileEnd=" << iFileEnd << "\n";
 std::string TheHisFileBegin=HisPrefix + StringNumber(iFileBegin, 4) + ".nc";
 std::vector<double> LTimeBegin=NC_ReadTimeFromFile(TheHisFileBegin, StringTime);
 int nbRecBegin=LTimeBegin.size();
@@ -6450,6 +6460,7 @@ else {
 iFileMiddle=iFileBegin;
 nbRecMiddle=nbRecBegin;
 }
+std::cerr << "iFileMiddle=" << iFileMiddle << "\n";
 int nbRecEnd;
 if (iFileEnd != iFileMiddle) {
 std::string TheHisFile=HisPrefix + StringNumber(iFileEnd, 4) + ".nc";
@@ -6460,7 +6471,7 @@ else {
 nbRecEnd=nbRecMiddle;
 }
 int nbFile=1 + iFileEnd - iFileBegin;
-int NbPerArray[nbFile];
+std::vector<int> NbPerArray(nbFile);
 for (int iFile=0; iFile<nbFile; iFile++)
 NbPerArray[iFile]=nbRecMiddle;
 NbPerArray[0]=nbRecBegin;
@@ -6484,17 +6495,23 @@ eArr.TimeSteppingInfo="multiplenetcdf";
 eArr.SeparationTime=DeltaTime;
 eArr.nbRecBegin=nbRecBegin;
 eArr.nbRecMiddle=nbRecMiddle;
+eArr.HisPrefix=HisPrefix;
 }
-eArr.nbFile=ListFileNames.size();
+int nbFile=ListFileNames.size();
+std::cerr << "nbFile=" << nbFile << "\n";
 eArr.nbTime=ListTime.size();
 eArr.FirstTime=FirstTime;
 eArr.LastTime=LastTime;
+if (eArr.TimeSteppingInfo != "multiplenetcdf") {
+eArr.nbFile=nbFile;
 eArr.ListFileNames=ListFileNames;
 eArr.ListIFile=ListIFile;
 eArr.ListIRec=ListIRec;
 eArr.ListTime=ListTime;
+}
 eArr.AppendVarName=false;
 eArr.KindArchive="NETCDF";
+std::cerr << "Leaving NC_ReadArrayHistory_Kernel\n";
 return eArr;
 }
 ArrayHistory WW3_ReadArrayHistory(std::string const& HisFile, std::string const& HisPrefix)
@@ -6831,11 +6848,16 @@ if (TotalArr.eArr.KindArchive == "NETCDF") {
 std::string HisFile;
 int iFile=0;
 ArrayHistory eArr=TotalArr.eArr;
+if (eArr.TimeSteppingInfo == "multiplenetcdf") {
+HisFile=eArr.HisPrefix + StringNumber(iFile+1,4) + ".nc";
+}
+else {
 if (eArr.AppendVarName) {
 HisFile=eArr.ListFileNames[iFile] + eVar + ".nc";;
 }
 else {
 HisFile=eArr.ListFileNames[iFile];
+}
 }
 return NC_IsVar(HisFile, eVar);
 }
@@ -7719,7 +7741,7 @@ double xj = X(kj);
 double yj = Y(kj);
 double xk = X(kk);
 double yk = Y(kk);
-# 9238 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 9269 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 double f1, f2, f3;
 f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
 f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
