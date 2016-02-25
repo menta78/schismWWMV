@@ -2290,7 +2290,7 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
          I_DIAG = 0
 
-         IF (LVECTOR .and. (AMETHOD .eq. 1)) THEN
+         IF (LVECTOR .and. (AMETHOD .eq. 1) .and. (ICOMP.eq.0)) THEN
            ALLOCATE(FLALLGL(MSC,MDC,3,MNE), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
          END IF
