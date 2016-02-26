@@ -291,6 +291,8 @@
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  
          LOGICAL    :: LGSE        = .TRUE.
+         LOGICAL    :: USE_OPTI_SPEC_SHAPE_BOUC = .FALSE.
+         LOGICAL    :: USE_OPTI_SPEC_SHAPE_INIT = .FALSE.
 
 
          integer :: idxWind

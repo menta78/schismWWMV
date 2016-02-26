@@ -1211,7 +1211,7 @@
                  SPPAR(6) = 2.
                  SPPAR(7) = 0.1
                  SPPAR(8) = 3.3
-                 CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', .FALSE.)
+                 CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', USE_OPTI_SPEC_SHAPE_INIT)
                ELSE
                  ACLOC = 1.E-8
                END IF
@@ -1220,7 +1220,7 @@
                TMPPAR(6,IP) = 1.
                TMPPAR(7,IP) = 0.1
                TMPPAR(8,IP) = 3.3
-               CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', .FALSE.)
+               CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', USE_OPTI_SPEC_SHAPE_INIT)
              ELSE IF (INITSTYLE == 3) THEN
                OPEN(1113,FILE='fort.10003',STATUS='OLD')
                DO ID=1,MDC

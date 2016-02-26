@@ -859,7 +859,7 @@
             END IF
           END IF ! LBCSE ...
           DO IP = 1, IWBMNP
-            CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
+            CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', USE_OPTI_SPEC_SHAPE_BOUC)
           END DO
         ELSE ! Homogenous in space
           IF (IWBMNP .gt. 0) THEN
@@ -869,7 +869,7 @@
               ELSE IF (IBOUNDFORMAT == 2) THEN
                 CALL READWAVEPARFVCOM
               END IF
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
             ELSE ! Steady in time ...
               SPPARM = 0.
               IF (LMONO_IN) THEN
@@ -884,7 +884,7 @@
               SPPARM(6,1) = WBDSMS
               SPPARM(7,1) = WBGAUSS
               SPPARM(8,1) = WBPKEN
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', USE_OPTI_SPEC_SHAPE_BOUC)
             END IF ! LBCSE
           END IF
         END IF ! LINHOM
