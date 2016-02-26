@@ -146,24 +146,13 @@
 !$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, NP_WORK
            IF (DEP(IP) .LT. DMIN) CYCLE
-           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               ACLOC = AC2(:,:,IP)
-               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
-               !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-               IMATDAA(:,:,IP) = IMATDA 
-               IMATRAA(:,:,IP) = IMATRA 
-             ENDIF
-           ELSE
-             IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                 ACLOC = AC2(:,:,IP)
-                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.,10, 'SOURCE_INT_IMP_WWM BOUNDARY')
-                 !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-                 IMATDAA(:,:,IP) = IMATDA
-                 IMATRAA(:,:,IP) = IMATRA 
-               ENDIF
-             ENDIF
+           IF (IOBP(IP) .EQ. 2) CYCLE
+           IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
+             ACLOC = AC2(:,:,IP)
+             CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
+             !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
+             IMATDAA(:,:,IP) = IMATDA 
+             IMATRAA(:,:,IP) = IMATRA 
            ENDIF
          END DO
 !$OMP END PARALLEL 
@@ -592,8 +581,6 @@
          END DO
 
 !         write(*,'(A10,2I10,L10,I10,2F15.6)') 'after', ip, iobp(ip), limiter, iselect, sum(acloc), sum(imatra)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
