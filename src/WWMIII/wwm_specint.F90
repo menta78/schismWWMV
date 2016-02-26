@@ -4,11 +4,6 @@
 !**********************************************************************
       SUBROUTINE SOURCE_INT_EXP
          USE DATAPOOL
-#ifdef ST41
-         USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
-#elif ST42
-         USE W3SRC4MD, ONLY : LFIRSTSOURCE
-#endif
          IMPLICIT NONE
 
          INTEGER        :: IP, IS, ID, I, K, M
@@ -106,21 +101,12 @@
          ENDDO
 !$OMP END PARALLEL 
 
-#if defined ST41 || defined ST42
-         LFIRSTSOURCE = .FALSE.
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SOURCE_INT_IMP_WWM
          USE DATAPOOL
-#ifdef ST41
-         USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
-#endif
-#ifdef ST42
-         USE W3SRC4MD, ONLY : LFIRSTSOURCE
-#endif
          IMPLICIT NONE
 
          INTEGER :: IP
@@ -156,9 +142,6 @@
            ENDIF
          END DO
 !$OMP END PARALLEL 
-#if defined ST41 || defined ST42
-         LFIRSTSOURCE = .FALSE.
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

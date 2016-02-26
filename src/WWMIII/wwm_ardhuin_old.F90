@@ -134,7 +134,6 @@
       INTEGER                 :: SSDSISO, SSDSBRFDF
       REAL(rkind)                    :: SSDSBM(0:4)
       REAL(rkind)                    :: ZZ0MAX
-      LOGICAL                 :: LFIRSTSOURCE = .TRUE.
       CONTAINS
 !/ ------------------------------------------------------------------- /
 !**********************************************************************
