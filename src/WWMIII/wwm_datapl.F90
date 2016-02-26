@@ -1127,6 +1127,7 @@
          REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.
          INTEGER                :: ASPAR_LOCAL_LEVEL = 0
+         LOGICAL                :: IMPL_GEOADVECT = .TRUE.
                              ! value 0 CAD_THE, CAS_THE and ASPAR_JAC used
                              ! value 1 ASPAR_JAC used
                              ! value 2 no allocation
