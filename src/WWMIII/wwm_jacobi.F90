@@ -423,9 +423,13 @@
       REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
       REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
       REAL(rkind) :: eVal
+      LOGICAL LRECALC
+      INTEGER ISELECT
       IMATRA=0
       IMATDA=0
-#ifdef newsources 
+      LRECALC = .FALSE.
+      ISELECT = 10
+#ifdef newsources
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
           CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
@@ -441,10 +445,10 @@
 #else
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 1')
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM) 
+            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 2')
           ENDIF
         ENDIF
       ELSE
@@ -836,7 +840,7 @@
       !
       ! Now the Gauss Seidel iterations
       !
-      SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       NumberIterationSolver = 0
       nbIter=0
