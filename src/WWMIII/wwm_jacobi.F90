@@ -152,7 +152,6 @@
         sumCXY = sumCXY + sum(abs(CXY))
         sumCG  = sumCG  + sum(abs(CG ))
 #endif
-
         LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
         K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
@@ -507,6 +506,7 @@
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
+!AR: todo: make a subroutine of below ...
         DO I=1,3
           IPie = INE(I,IE)
           DO ID=1,MDC
@@ -772,6 +772,7 @@
       WRITE(STAT%FHNDL,*) 'LNONL=', LNONL
       WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
       WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
+
       IF (WAE_JGS_CFL_LIM) THEN
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
@@ -836,7 +837,7 @@
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'Before iteration sum(AC2)=', sum(abs(AC2))
         sumESUM=0
-#endif
+#endif/SINGLE_VERTEX_COMPUTATION
         nbPassive = 0
         
         DO IP=1,NP_RES

@@ -714,8 +714,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG,  &
-     &  RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR, ICOMP
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -993,24 +992,13 @@
 
 !           IMATRAIMATDA
 
-!      IF (ICOMP < 2) THEN
-        S = D * A
-!      ELSE
-!        DO IK=1, NK
-!          DO ITH=1, NTH
-!            IS = ITH+(IK-1)*NTH
-              !write(*,*) IK, ITH, IS, D(IS)
-!            IF (D(IS) .GT. ZERO) THEN
-!              S(IS) = D(IS) * A(IS) 
-!              D(IS) = ZERO
-!            ELSE
-!              S(IS) = ZERO
-!              D(IS) = - D(IS) 
-!            ENDIF
-!          END DO
-!        END DO
-!      ENDIF
+      S = D * A
 
+      IF (ICOMP .LT. 2) THEN
+        D = 0.
+      ELSE
+        D = 0.
+      END IF
 !
 ! ... Test output of arrays
 !
@@ -1911,71 +1899,8 @@
       END SUBROUTINE CALC_USTAR
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SDS4(A, K, CG, USTAR, USDIR, DEPTH, S, D, BRLAMBDA, WHITECAP)
-
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  !            F. Ardhuin             !
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         13-Nov-2013 |
-!/                  +-----------------------------------+
-!/
-!/    30-Aug-2010 : Clean up from common ST3-ST4 routine( version 3.14-Ifremer )
-!/
-!  1. Purpose :
-!
-!     Calculate whitecapping source term and diagonal term of derivative.
-!
-!  2. Method :
-!
-!       Ardhuin et al. (JPO 2009) and Filipot & Ardhuin (OM, submitted)
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       A         R.A.  I   Action density spectrum (1-D).
-!       K         R.A.  I   Wavenumber for entire spectrum.          *)
-!       USTAR     Real  I   Friction velocity.
-!       USDIR     Real  I   wind stress direction.
-!       DEPTH     Real  I   Water depth.
-!       S         R.A.  O   Source term (1-D version).
-!       D         R.A.  O   Diagonal term of derivative.             *)
-!       BRLAMBDA  R.A.  O   Phillips' Lambdas
-!     ----------------------------------------------------------------
-!                         *) Stored in 1-D array with dimension NTH*NK
-!
-!  4. Subroutines used :
-!
-!       STRACE    Subroutine tracing.                 ( !/S switch )
-!       PRT2DS    Print plot of spectrum.             ( !/T0 switch )
-!       OUTMAT    Print out matrix.                   ( !/T1 switch )
-!
-!  5. Called by :
-!
-!       W3SRCE   Source term integration.
-!       W3EXPO   Point output program.
-!       GXEXPO   GrADS point output program.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S   Enable subroutine tracing.
-!     !/T   Enable general test output.
-!     !/T0  2-D print plot of source term.
-!     !/T1  Print arrays.
-!
-! 10. Source code :
-!
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG,       &
-     &   PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8
+      USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG, PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8, ICOMP
 !
       IMPLICIT NONE
 !/
@@ -2387,13 +2312,11 @@
 !                        COMPUTES SOURCES TERM
 !                        IMATRAIMATDA
 !/ ------------------------------------------------------------------- /
-!       IF (ICOMP .LT. 2) THEN
-         S = (SSDS + D) * A
-         D = D + SSDS
-!       ELSE 
-!         D = D - SSDS
-!       ENDIF
-!            
+      S = D * A
+      IF (ICOMP .EQ. 2) THEN
+        S = 0.
+        D = -D
+      END IF
 !/ ------------------------------------------------------------------- /
 !                     COMPUTES WHITECAP PARAMETERS
 !/ ------------------------------------------------------------------- /
