@@ -113,7 +113,10 @@
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)    :: CONST, SND, DT, DELT, XIMP, DELT5, MAXDAC
+         REAL(rkind)    :: eFact, UFR_LIM, NEWDAC
          INTEGER        :: NP_WORK
+         INTEGER        :: IS, ID
 !$OMP WORKSHARE
          IMATDAA = 0.
          IMATRAA = 0.
@@ -123,7 +126,17 @@
          ELSE
            NP_WORK = MNP
          END IF
+!
+! limiter related variables
+!
+         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+         SND   = PI2*5.6*1.0E-3
 
+         DT = DT4S
+         DELT = DT4S
+         XIMP = 1._rkind
+         DELT5 = XIMP*DELT
+         MAXDAC = ZERO
          
 !$OMP PARALLEL DEFAULT(NONE)  &
 !$OMP&         SHARED(MNP,MSC,MDC,DEP,DMIN,IOBP,SMETHOD, &
@@ -136,9 +149,30 @@
            IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
              ACLOC = AC2(:,:,IP)
              CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
-             !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-             IMATDAA(:,:,IP) = IMATDA 
-             IMATRAA(:,:,IP) = IMATRA 
+             IF (LLIMT) THEN
+               DO IS = 1, MSC
+                 IF (MELIM .EQ. 1) THEN
+                   MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+                 ELSE IF (MELIM .EQ. 2) THEN
+                   UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
+                   MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
+                 ELSE IF (MELIM .EQ. 3) THEN
+                   IF (USNEW(IP) .GT. SMALL) THEN
+                     MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
+                   ELSE
+                     MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+                   END IF
+                 END IF
+                 DO ID = 1, MDC
+                   eFact  = DT / (ONE - DT * MIN(ZERO,IMATDA(IS,ID)))
+                   NEWDAC = IMATRA(IS,ID) * eFact
+                   NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
+                   IMATRA(IS,ID) = NEWDAC / eFact
+                 END DO
+               END DO
+             END IF
+             IMATDAA(:,:,IP) = IMATDA
+             IMATRAA(:,:,IP) = IMATRA
            ENDIF
          END DO
 !$OMP END PARALLEL 
@@ -158,8 +192,8 @@
          REAL(rkind)  :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
          REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH,TEMP,GTEMP1
-         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,FLHAB,DELFL,USFM, NEWDACDT
-         REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC, FF
+         REAL(rkind)  :: RATIO, LIMFAC, LIMDAC, FLHAB, USFM, NEWDACDT
+         REAL(rkind)  :: SC, SP, JAC, FF
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
      
