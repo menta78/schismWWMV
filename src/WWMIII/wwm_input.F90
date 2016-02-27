@@ -53,7 +53,7 @@
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
@@ -70,7 +70,7 @@
      &      STOKESBOTTX, STOKESBOTTY,                                   &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -86,7 +86,7 @@
      &      WINDMAG, TAUW, TAUWX, TAUWY, TAUHF, TAUTOT,                 &
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
-     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4
+     &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          XOUTS = 0.
          YOUTS = 0.
@@ -168,6 +168,7 @@
          CFL_CASD2=.FALSE.
          CFL_CASD3=.FALSE.
          CFL_CASD4=.FALSE.
+         NB_ITER_SOLV=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
@@ -324,6 +325,7 @@
          LVAR_READ(61)=CFL_CASD2
          LVAR_READ(62)=CFL_CASD3
          LVAR_READ(63)=CFL_CASD4
+         LVAR_READ(64)=NB_ITER_SOLV
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN
@@ -407,6 +409,7 @@
          CFL_CASD2=.FALSE.
          CFL_CASD3=.FALSE.
          CFL_CASD4=.FALSE.
+         NB_ITER_SOLV=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = MAIN%DELT
          UNITC = MAIN%UNIT
@@ -568,6 +571,7 @@
          LVAR_READ(61)=CFL_CASD2
          LVAR_READ(62)=CFL_CASD3
          LVAR_READ(63)=CFL_CASD4
+         LVAR_READ(64)=NB_ITER_SOLV
          VAROUT_STATION%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_STATION)
          IF (.not. LCFL) THEN
@@ -683,8 +687,7 @@
      &      LETOT, NLVT, DTCOUP, IMET_DRY
 
          NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
-     &      FRHIGH, MSC, USE_FRATIO, FRATIO,                            &
-     &      FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,                  &
+     &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
      &      LOPTSIG, CART2LATLON, LATLON2CART, APPLY_DXP_CORR,          &
      &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_MOD_OUT
 
@@ -724,6 +727,7 @@
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
+     &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
      &      LLIMT, LIMFAK, MELIM, LDIFR, IDIFFR, LADVTEST, LSOUBOUND,   &
@@ -928,9 +932,11 @@
            ! Inhomogenous in space
            ! Steady in time
            IF (WBTP*FRLOW .gt. 1) THEN
+             Print *, 'WBTP=', WBTP, ' FRLOW=', FRLOW
              CALL WWM_ABORT('FRLOW is too high with respect to WBTP')
            END IF
            IF (WBTP*FRHIGH .lt. 1) THEN
+             Print *, 'WBTP=', WBTP, ' FRHIGH=', FRHIGH
              CALL WWM_ABORT('FRHIGH is too low with respect to WBTP')
            END IF
          END IF
@@ -1184,6 +1190,7 @@
          IMPLICIT NONE
 
          REAL(rkind) :: TEST
+         REAL(rkind) :: tolDay = MyREAL(1) / MyREAL(10000)
 
 !        Check timings ...
 
@@ -1213,7 +1220,7 @@
            IF (SECU%BMJD .GE. SECU%EMJD) CALL WWM_ABORT('CHECK CURRENT TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
          END IF
          IF (LHOTF) THEN
-           IF (HOTF%BMJD .GE. HOTF%EMJD) CALL WWM_ABORT('CHECK HOTFILE TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
+           IF (HOTF%BMJD .GE. HOTF%EMJD + tolDay) CALL WWM_ABORT('CHECK HOTFILE TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
          END IF
          IF (SEBO%BMJD .GE. SEBO%EMJD) CALL WWM_ABORT('CHECK BOUNDARY TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')
          
@@ -1367,7 +1374,7 @@
          IF (LSEWD .AND. LSTWD) THEN
            WRITE(DBG%FHNDL,*) 'YOU MUST USE EITHER UNSTEADY OR STEADY WIND'
            WRITE(DBG%FHNDL,*) 'PLEASE CHECK CODE EXITS'
-           CALL WWM_ABORT('CHECK LSEWL OR LSTDW')
+           CALL WWM_ABORT('CHECK LSEWD OR LSTDW')
          END IF
 
          IF (LSTCU .AND. LSECU) THEN

@@ -53,7 +53,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = T,
+ LINID   = F,
  INITSTYLE = 1, 
  /
  &BOUC
@@ -169,7 +169,7 @@
  /
  &ENGS
  MESNL   =           1,
- MESIN   =           5,
+ MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  1.900000000000000E-002,
@@ -177,9 +177,9 @@
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
- BRHD    =  0.70000000000000     ,
- LMAXETOT        = T,
- MESDS   =           5,
+ BRHD    =  0.730000000000000     ,
+ LMAXETOT        = F,
+ MESDS   =           1,
  MESTR   =           1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
@@ -200,9 +200,9 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- LLIMT   = F,
+ LLIMT   = T,
  LIMFAK  =  0.100000000000000     ,
- MELIM   =           3,
+ MELIM   =           1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
@@ -231,7 +231,7 @@
  NB_BLOCK        =           3,
  MAXITER =      100000,
  LNANINFCHK      = F,
- LSOURCESWAM     = T,
+ LSOURCESWAM     = F,
  PMIN    =  0.000000000000000E+000,
  LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,

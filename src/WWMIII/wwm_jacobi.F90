@@ -80,6 +80,7 @@
       REAL(rkind) :: LAMBDA(2,MSC,MDC)
       REAL(rkind) :: CXnorm
       REAL(rkind) sumTMP3, sumCXY, sumCG, sumASPARdiag
+      REAL(rkind) DTeffect
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
       POS_TRICK(2,1) = 3
@@ -99,6 +100,11 @@
       sumCXY=0
       sumCG=0
 #endif
+      IF (IMPL_GEOADVECT) THEN
+        DTeffect = DT4A
+      ELSE
+        DTeffect = ZERO
+      END IF
       IF (LCFL) THEN
         CFLCXY(1,:) = ZERO
         CFLCXY(2,:) = ZERO
@@ -173,7 +179,7 @@
           I3=JA_IE(I,3,IE)
           K1(:,:) =  KP(:,:,I)
           DO ID=1,MDC
-            DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+            DTK(:,ID) =  K1(:,ID) * DTeffect * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
           END DO
           TMP3(:,:)  =  DTK(:,:) * NM(:,:)
 #ifdef DEBUG
@@ -832,6 +838,7 @@
       !
       SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
+      NumberIterationSolver = 0
       nbIter=0
       DO
         is_converged(1) = 0
@@ -857,6 +864,7 @@
             END IF
           END IF
           IF (test) THEN
+            NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
             CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
 #ifdef DEBUG
             sumESUM = sumESUM + sum(abs(eSum))

@@ -1183,7 +1183,7 @@
                I2 = INE(2,IE)
                I3 = INE(3,IE)
                NI = INE(:,IE)
-               U3 = U(NI) 
+               U3 = U(NI)
                IF (THETA_ACE(1,IE) .LT. ZERO) THEN
                  TMP(1) = WII(1,I1)
                ELSE
@@ -2290,6 +2290,11 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 2')
          I_DIAG = 0
 
+         IF (LVECTOR .and. (AMETHOD .eq. 1) .and. (ICOMP.eq.0)) THEN
+           ALLOCATE(FLALLGL(MSC,MDC,3,MNE), stat=istat)
+           IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
+         END IF
+        
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

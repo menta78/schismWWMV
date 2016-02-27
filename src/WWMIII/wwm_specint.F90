@@ -4,11 +4,6 @@
 !**********************************************************************
       SUBROUTINE SOURCE_INT_EXP
          USE DATAPOOL
-#ifdef ST41
-         USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
-#elif ST42
-         USE W3SRC4MD, ONLY : LFIRSTSOURCE
-#endif
          IMPLICIT NONE
 
          INTEGER        :: IP, IS, ID, I, K, M
@@ -106,66 +101,47 @@
          ENDDO
 !$OMP END PARALLEL 
 
-#if defined ST41 || defined ST42
-         LFIRSTSOURCE = .FALSE.
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SOURCE_INT_IMP_WWM
          USE DATAPOOL
-#ifdef ST41
-         USE W3SRC4MD_OLD, ONLY : LFIRSTSOURCE
-#endif
-#ifdef ST42
-         USE W3SRC4MD, ONLY : LFIRSTSOURCE
-#endif
          IMPLICIT NONE
 
          INTEGER :: IP
 
          REAL(rkind)    :: ACLOC(MSC,MDC)
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-
+         INTEGER        :: NP_WORK
 !$OMP WORKSHARE
          IMATDAA = 0.
          IMATRAA = 0.
 !$OMP END WORKSHARE
+         IF ((AMETHOD .eq. 7).and.(ICOMP.eq.3)) THEN
+           NP_WORK = NP_RES
+         ELSE
+           NP_WORK = MNP
+         END IF
 
+         
 !$OMP PARALLEL DEFAULT(NONE)  &
 !$OMP&         SHARED(MNP,MSC,MDC,DEP,DMIN,IOBP,SMETHOD, &
 !$OMP&         LSOUBOUND) &
 !$OMP&         PRIVATE(IP,ACLOC,AC2,IMATDA,IMATRA,IMATRAA,IMATDAA)
 !$OMP DO SCHEDULE(DYNAMIC,1)
-         DO IP = 1, MNP
+         DO IP = 1, NP_WORK
            IF (DEP(IP) .LT. DMIN) CYCLE
-           IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-             IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-               ACLOC = AC2(:,:,IP)
-               CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
-               !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-               IMATDAA(:,:,IP) = IMATDA 
-               IMATRAA(:,:,IP) = IMATRA 
-             ENDIF
-           ELSE
-             IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-                 ACLOC = AC2(:,:,IP)
-                 CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE.,10, 'SOURCE_INT_IMP_WWM BOUNDARY')
-                 !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-                 IMATDAA(:,:,IP) = IMATDA
-                 IMATRAA(:,:,IP) = IMATRA 
-               ENDIF
-             ENDIF
+           IF (IOBP(IP) .EQ. 2) CYCLE
+           IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
+             ACLOC = AC2(:,:,IP)
+             CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'SOURCE_INT_IMP_WWM DOMAIN') 
+             !CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
+             IMATDAA(:,:,IP) = IMATDA 
+             IMATRAA(:,:,IP) = IMATRA 
            ENDIF
          END DO
 !$OMP END PARALLEL 
-#if defined ST41 || defined ST42
-         LFIRSTSOURCE = .FALSE.
-#endif
-
-!         PAUSE
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -588,8 +564,6 @@
          END DO
 
 !         write(*,'(A10,2I10,L10,I10,2F15.6)') 'after', ip, iobp(ip), limiter, iselect, sum(acloc), sum(imatra)
-
-         RETURN
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

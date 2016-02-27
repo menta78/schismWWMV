@@ -504,7 +504,7 @@
       USE DATAPOOL
       implicit NONE
       real(rkind), intent(in) :: F(MNP)
-      character(len=*) :: string
+      character(len=*), intent(in) :: string
       real(rkind) :: eSum
       CALL TOTAL_SUMMATION_SCALAR(F, eSum)
       WRITE(STAT%FHNDL,*) 'sum(F)=', eSum,' mesg:', TRIM(string)

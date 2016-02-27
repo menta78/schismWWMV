@@ -11,10 +11,16 @@
       REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG, OPTI
-      IF (OPTI) THEN
-        CALL OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
-      ELSE
+      IF (SPPAR(1) .lt. VERYSMALL) THEN
         CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      ELSE
+        IF (OPTI) THEN
+!          Print *, 'Before call to OPTI_SPECTRAL_SHAPE'
+          CALL OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+!          Print *, ' After call to OPTI_SPECTRAL_SHAPE'
+        ELSE
+          CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+        END IF
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -44,10 +50,13 @@
       END DO
       CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
       IF (SPPAR(5) .gt. 0) THEN
+!        Print *, 'Using PEAK parameters'
         CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+!        Print *, '   PEAKDM=', PEAKDM
         TM=TPP
         DM=PEAKDM
       ELSE
+!        Print *, 'Using MEAN parameters'
         CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
         TM=TM01
       END IF
@@ -84,10 +93,15 @@
       END IF
       SPPARwork=SPPAR
       SPPARwork(2)=SPPAR(2) + DeltaPer
+      iIter=0
       DO
+        iIter=iIter + 1
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
         TheErr=(TM - Tper)*eSign
+!        Print *, 'iIter=', iIter, ' TheErr=', TheErr, ' DeltaPer=', DeltaPer
+!        Print *, '  eSign=', eSign, ' TM=', TM, ' Tper=', Tper
+!        Print *, 'SPPARwork(2)=', SPPARwork(2)
         IF (TheErr > 0) THEN
           EXIT
         END IF
@@ -103,6 +117,7 @@
       nbIter=20
       iIter=0
       DO
+!        Print *, 'iIter=', iIter
         SPPARwork=0.5_rkind*SPPARwork1 + 0.5_rkind*SPPARwork2
         CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
         CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
@@ -844,7 +859,7 @@
             END IF
           END IF ! LBCSE ...
           DO IP = 1, IWBMNP
-            CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', .FALSE.)
+            CALL SPECTRAL_SHAPE(SPPARM(:,IP),WBACOUT(:,:,IP),.FALSE.,'CALL FROM WB 1', USE_OPTI_SPEC_SHAPE_BOUC)
           END DO
         ELSE ! Homogenous in space
           IF (IWBMNP .gt. 0) THEN
@@ -854,7 +869,7 @@
               ELSE IF (IBOUNDFORMAT == 2) THEN
                 CALL READWAVEPARFVCOM
               END IF
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', .FALSE.)
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
             ELSE ! Steady in time ...
               SPPARM = 0.
               IF (LMONO_IN) THEN
@@ -869,7 +884,7 @@
               SPPARM(6,1) = WBDSMS
               SPPARM(7,1) = WBGAUSS
               SPPARM(8,1) = WBPKEN
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', .TRUE.)
+              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1),.FALSE.,'CALL FROM WB 4', USE_OPTI_SPEC_SHAPE_BOUC)
             END IF ! LBCSE
           END IF
         END IF ! LINHOM

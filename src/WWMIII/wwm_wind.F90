@@ -2119,7 +2119,7 @@
       TYPE(VAR_NETCDF_CF)                :: eVAR
       INTEGER, INTENT(in)                :: RECORD_IN
       REAL(rkind), INTENT(out)           :: outwind(MNP,2)
-      character (len = *), parameter :: CallFct="READ_DIRECT_NETCDF_CF"
+      character (len = *), parameter :: CallFct = "READ_DIRECT_NETCDF_CF"
       INTEGER                            :: FID, ID
       real(rkind) :: U_tot(np_total), V_tot(np_total)
       real(rkind) :: Vtotal1(np_total), Vtotal2(np_total)
@@ -2138,9 +2138,11 @@
         eStrU='UsurfCurr'
         eStrV='VsurfCurr'
       END IF
+      outwind = ZERO
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
+      IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
+
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
@@ -2166,7 +2168,7 @@
       END IF
 # endif
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND) THEN
+      IF (eVAR % MULTIPLE_IN) THEN
         DO IP=1,MNP
           IP_glob=iplg(IP)
           outwind(IP,1)=Vtotal1(IP_glob)
@@ -2210,7 +2212,7 @@
       cf_scale_factor = eVAR % cf_scale_factor
       cf_add_offset = eVAR % cf_add_offset
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
+      IF (eVAR % MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
         CALL TEST_FILE_EXIST_DIE("Missing file : ", TRIM(eVAR % eFileName))
         ISTAT = NF90_OPEN(TRIM(eVAR % eFileName), NF90_NOWRITE, FID)
@@ -2230,7 +2232,7 @@
       END IF
 # endif
 # ifdef MPI_PARALL_GRID
-      IF (MULTIPLE_IN_WIND) THEN
+      IF (eVAR % MULTIPLE_IN) THEN
         DO IP=1,MNP
           IP_glob=iplg(IP)
           outvar(IP)=Vtotal(IP_glob)
@@ -2260,7 +2262,7 @@
       INTEGER           :: fid, varid
       INTEGER           :: dimidsB(2), dimids(2)
       integer nbChar
-      character (len=20) :: WindTimeStr
+      character (len=20) :: eTimeStr
       character(len=100) :: CHRERR
       character (len = *), parameter :: CallFct="INIT_DIRECT_NETCDF_CF"
       character (len=100) :: eStrUnitTime
@@ -2272,6 +2274,8 @@
       integer eInt(1)
       real(rkind) :: eReal(2)
       integer IPROC
+      integer np_file
+      eVAR % MULTIPLE_IN = MULTIPLE_IN
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
 # endif
@@ -2288,9 +2292,17 @@
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=WindTimeStr)
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(1), len=np_file)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
-        WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(WindTimeStr)
+        IF (np_file .ne. np_total) THEN
+          Print *, 'We have np_file=', np_file
+          Print *, '   But np_total=', np_total
+          CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+        END IF
+
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=eTimeStr)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
+        WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(eTimeStr)
         FLUSH(WINDBG%FHNDL)
 
         ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
@@ -2313,7 +2325,7 @@
 
         ! Reading time
        
-        ISTAT = nf90_inq_varid(fid, WindTimeStr, varid)
+        ISTAT = nf90_inq_varid(fid, eTimeStr, varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
         ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
@@ -2346,7 +2358,7 @@
       END IF
 # endif
 #ifdef MPI_PARALL_GRID
-      IF (.NOT. MULTIPLE_IN_WIND) THEN
+      IF (.NOT. MULTIPLE_IN) THEN
         IF (myrank .eq. 0) THEN
           eInt(1)=nbtime_mjd
           DO IPROC=2,nproc
@@ -2384,7 +2396,6 @@
       ELSE
         eVAR % idVar = 2
       END IF
-
       END SUBROUTINE
 #endif
 #ifdef GRIB_API_ECMWF

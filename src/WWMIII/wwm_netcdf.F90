@@ -1200,6 +1200,10 @@
         eStr="CFL_CASD4"
         eStrFullName="CFL value for CAD"
         eStrUnit="unknown"
+      ELSE IF (IDX.eq.64) THEN
+        eStr="NB_ITER_SOLV"
+        eStrFullName="Number of iteration of the solver"
+        eStrUnit="nondim."
       ELSE
         CALL WWM_ABORT('Wrong Number')
       END IF

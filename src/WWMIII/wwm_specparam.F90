@@ -1378,7 +1378,6 @@
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
        MAXAC = MAXVAL(ACLOC)
-
        IF (MAXAC .gt. VERYSMALL .AND. DEPLOC .GT. DMIN) THEN
          ETOTF3 = ZERO
          ETOTF4 = ZERO

@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   = 600.000000000000     ,
+ DELTC   = 10.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
@@ -30,10 +30,10 @@
  LSTAG   = T,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          24,
+ MDC     =          12,
  FRLOW   =  4.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          24,
+ MSC     =          36,
  FILEGRID        = hgrid.gr3                                                                                                         
                            ,
  IGRIDTYPE       =           3,
@@ -47,11 +47,11 @@
  &INIT
  LHOTR   = F,
  LINID   = F,
- INITSTYLE       =           1
+ INITSTYLE = 1
  /
  &BOUC
  LBCSE   = F,
- LBCWA   = T,
+ LBCWA   = F,
  LBCSP   = F,
  LINHOM  = F,
  LBSP1D  = F,
@@ -97,11 +97,9 @@
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = wind.dat                                                                                                          
-                           ,
  WINDFAC =   1.00000000000000     ,
  IWINDFORMAT     =           1,
  LWINDFROMWWM    =  T,
- SHIFT_WIND_TIME =  0.000000000000000E+000
  /
  &CURR
  LSECU   = F,
@@ -130,34 +128,31 @@
  LSTWL   = F,
  LCWLV   = F,
  CWATLV  =  0.000000000000000E+000,
- FILEWATL        =                                                                                                                   
-                           ,
- LERGINP = F,
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1
  /
  &ENGS
- MESNL   =          0,
- MESIN   =          0,
+ MESNL   =          1,
+ MESIN   =          1,
  IFRIC   =          1,
- MESBF   =          0,
+ MESBF   =          1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =          0,
+ MESBR   =          1,
  ICRIT   =          1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        =  T,
- MESDS   =          0, 
+ MESDS   =          1, 
  MESTR   =          0,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
- SMETHOD =           0,
- DMETHOD =           6,
+ ICOMP   =           0,
+ AMETHOD =           0,
+ SMETHOD =           1,
+ DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -168,7 +163,7 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- LLIMT   = F,
+ LLIMT   = T,
  LIMFAK  =  0.100000000000000     ,
  MELIM   =           1,
  LDIFR   = F,
@@ -456,7 +451,6 @@
  /
 
 &NESTING
- L_WRITE = F
 /
 
 &PETScOptions

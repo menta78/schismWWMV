@@ -70,6 +70,8 @@
       !
 !      Print *, '1: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' MAIN%TMJD=', MAIN%TMJD
       IF (BOUC_NETCDF_OUT_PARAM .or. BOUC_NETCDF_OUT_SPECTRA) THEN
+!        Print *, 'BOUC_NETCDF_OUT_PARAM=', BOUC_NETCDF_OUT_PARAM
+!        Print *, 'BOUC_NETCDF_OUT_SPECTRA=', BOUC_NETCDF_OUT_SPECTRA
 #ifdef NCDF
 !        Print *, '2: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' OUT_BOUC % EMJD=', OUT_BOUC%EMJD
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD+1.E-8)) THEN
@@ -1440,6 +1442,7 @@
         OUTPAR(62) = CFL_CASD(3,IP)
         OUTPAR(63) = CFL_CASD(4,IP)
       ENDIF
+      OUTPAR(64) = MyREAL(NumberIterationSolver(IP))
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *
@@ -1551,6 +1554,7 @@
           OUTPAR(62) = OUTPAR(62) + WI(J)*CFL_CASD(3,IP)
           OUTPAR(63) = OUTPAR(63) + WI(J)*CFL_CASD(4,IP)
         ENDIF
+        OUTPAR(64) = OUTPAR(64) + WI(J)*MyREAL(NumberIterationSolver(IP))
       END DO
       IF (VAROUT_STATION%ComputeStokes) THEN
         CALL STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,STOKESBOTTX, STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)

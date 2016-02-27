@@ -1,8 +1,5 @@
-PROGRAM		= AltimeterComparison \
-		  PLOT_diff_results \
-		  CREATE_sflux \
-		  MERGE_field \
-		  PLOT_results
+PROGRAM = AltimeterComparison CREATE_sflux MERGE_field PLOT_diff_results PLOT_results
+
 
 OBJECTS		= $(PROGRAM:%=%.o)
 
@@ -15,7 +12,7 @@ OUTPUTFLAG 	= -o
 
 CFLAGS 		= -I$(EIGEN_PATH) $(NETCDF_CXX_ALLINC) $(GRIB_INCDIR)
 
-LIBS		= $(NETCDF_CXX_LINK) $(GRIB_C_LINK)
+LIBS		= -lm -lpthread $(NETCDF_CXX_LINK) $(GRIB_C_LINK)
 
 %.o: %.cpp
 	@echo

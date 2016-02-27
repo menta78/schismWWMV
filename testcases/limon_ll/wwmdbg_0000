@@ -6,12 +6,6 @@
  STATION Names
  P-1                 
  Freq. resolution is not optimal for Snl4
-         1.1400        28.5465
- rel. freq. res. should be 1.1 is now   1.13995112282036      ERROR IS:
-   28.5464814609043     
- SEARCHING FOR STATION ACROSS RANKS           0
-    MYRANK         0           STATION =         1   IN ELEMENT =         0         0
-SUM OF THE FOUND STATIONS MYRA         0         1         0
-   STATION NOT FOUND         1P-1         1950.00000000   304.00000000
- CUT-OFF FREQ. OF STATION =           1  0.440000000000000      RAD - IS =
-          18
+         1.0920         8.7336
+ rel. freq. res. should be 1.1 is now   1.09196788071052      ERROR IS:
+   8.73361516818917     

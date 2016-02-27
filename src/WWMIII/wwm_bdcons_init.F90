@@ -560,7 +560,6 @@
       IOBPD   = 0
       CALL READ_IOBP_TOTAL
       CALL PRINT_STATISTICS_IOBP_TOTAL
-      IOBP    = 0
 #ifdef MPI_PARALL_GRID
       DO IP=1,MNP
         IPglob=iplg(IP)
@@ -660,12 +659,12 @@
       ELSE
         SPsize=1
       ENDIF
-      IF (LBCWA) THEN
+      IF (LBCWA .OR. BOUC_NETCDF_OUT_PARAM) THEN
         ALLOCATE( SPPARM(8,SPsize), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 4')
         SPPARM = 0.
       ENDIF
-      IF (LBCWA .OR. LBCSP) THEN
+      IF (LBCWA .OR. LBCSP .OR. BOUC_NETCDF_OUT_SPECTRA) THEN
         ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
         WBAC = 0.
