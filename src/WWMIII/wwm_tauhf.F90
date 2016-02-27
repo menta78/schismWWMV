@@ -211,19 +211,22 @@
       IF (IPHYS == 0) THEN
 #ifdef MPI_PARALL_GRID
         if (myrank == 0 ) then
+#endif
           WRITE(5011) DELALP, DELUST, DELTAIL
           WRITE(5011) TAUHFT
+#ifdef MPI_PARALL_GRID
         endif
 #endif
         IF (LOUTWAM) WRITE(111111,'(F20.10)') SUM(TAUHFT)
       ELSE
 #ifdef MPI_PARALL_GRID
         if (myrank ==0 ) then
+#endif
           WRITE(5011) DELALP, DELUST, DELTAIL
           WRITE(5011) TAUHFT, TAUHFT2, TAUW
+#ifdef MPI_PARALL_GRID
         endif
 #endif
         IF (LOUTWAM) WRITE(111111,'(3F20.10)') DELTAIL, SUM(TAUHFT), SUM(TAUHFT2) 
       ENDIF
-
       END SUBROUTINE TAUHF_WAM
