@@ -6,6 +6,7 @@
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
 #undef DEBUG
+!AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
       USE DATAPOOL
       IMPLICIT NONE
@@ -406,33 +407,45 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IMATRA_IMATDA(IP, ACin, IMATRA, IMATDA)
+      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
 !AR: This is not good u are passing a array of size MNP but u are not using it make a local copy in the calling routine ...
+!AR: Do not use temporary array in function call ...
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(in)  :: ACin(MSC,MDC,MNP)
+      REAL(rkind), intent(in)  :: ACLOC(MSC,MDC)
       REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
       REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
       REAL(rkind) :: eVal
       IMATRA=0
       IMATDA=0
+#ifdef newsources 
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-            CALL CYCLE3 (IP, max(zero,ACin(:,:,IP)), IMATRA, IMATDA)
-          ENDIF
+          CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            IF ( DEP(IP) .GT. DMIN .AND. IOBP(IP) .NE. 2) THEN
-              CALL CYCLE3 (IP, ACin(:,:,IP), IMATRA, IMATDA)
-            ENDIF
+            CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
           ENDIF
         ENDIF
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
       END IF
+#else
+      IF (LNONL) THEN
+        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
+        ELSE
+          IF (LSOUBOUND) THEN ! Source terms on boundary ...
+            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM) 
+          ENDIF
+        ENDIF
+      ELSE
+        IMATDA = IMATDAA(:,:,IP)
+        IMATRA = IMATRAA(:,:,IP)
+      END IF
+#endif
       eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
       IMATRA = IMATRA * eVal
       IMATDA = IMATDA * eVal
@@ -817,7 +830,7 @@
       !
       ! Now the Gauss Seidel iterations
       !
-      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       nbIter=0
       DO
@@ -913,7 +926,6 @@
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
 # endif        
 #endif
-
 !
 ! The termination criterions several can be chosen
 !
@@ -986,12 +998,13 @@
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
       REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
             CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
             ASPAR_DIAG = ASPAR_DIAG + IMATDA
             eSum = BLOC + IMATRA
           ELSE
@@ -1034,7 +1047,7 @@
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
             CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
             ASPAR_DIAG = ASPAR_DIAG + IMATDA
             eSum = BLOC + IMATRA
           ELSE
@@ -1070,7 +1083,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1106,7 +1119,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1121,7 +1134,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1136,7 +1149,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1151,7 +1164,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1166,7 +1179,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1181,7 +1194,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1196,7 +1209,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1211,7 +1224,7 @@
         CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+            CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
           ELSE
             eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
             IMATRA = IMATRAA(:,:,IP) * eVal
@@ -1238,7 +1251,7 @@
       REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
 #endif
       REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: ASPAR_DIAG(MSC,MDC), ACLOC(MSC,MDC)
       REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
       REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
       REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
@@ -1248,12 +1261,13 @@
       Norm_L2=0
       Norm_LINF=0
       DO IP=1,NP_RES
+        ACLOC = AC2(:,:,IP)
         IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
           ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
               CALL GET_BLOCAL(IP, BLOC)
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
               eSum = BLOC + IMATRA
             ELSE
@@ -1301,7 +1315,7 @@
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
               CALL GET_BLOCAL(IP, BLOC)
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
               ASPAR_DIAG = ASPAR_DIAG + IMATDA
               eSum = BLOC + IMATRA
             ELSE
@@ -1342,7 +1356,7 @@
           CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
             ELSE
               CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
             END IF
@@ -1377,7 +1391,7 @@
           CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
             ELSE
               CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
             END IF
@@ -1390,7 +1404,7 @@
           CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_IMATRA_IMATDA(IP, AC2, IMATRA, IMATDA)
+              CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
             ELSE
               CALL GET_IMATRA_IMATDA(IP, AC1, IMATRA, IMATDA)
             END IF

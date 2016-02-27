@@ -89,8 +89,12 @@
          IDISP = 999
 
          IF (.NOT. LRECALC) THEN
-           ACLOC1 = AC1(:,:,IP)
-           CALL MEAN_WAVE_PARAMETER(IP,ACLOC1,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
+           IF (ICOMP .LT. 2) THEN
+             ACLOC = AC2(:,:,IP)
+           ELSE
+             ACLOC = AC2(:,:,IP)
+           ENDIF
+           CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
          END IF
 
          SUMACLOC    = SUM(ACLOC)
