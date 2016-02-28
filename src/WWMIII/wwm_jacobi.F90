@@ -412,19 +412,27 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA_RET, IMATDA_RET)
 !AR: This is not good u are passing a array of size MNP but u are not using it make a local copy in the calling routine ...
 !AR: Do not use temporary array in function call ...
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(in)  :: ACLOC(MSC,MDC)
-      REAL(rkind), intent(out) :: IMATRA(MSC,MDC)
-      REAL(rkind), intent(out) :: IMATDA(MSC,MDC)
+      REAL(rkind), intent(out) :: IMATRA_RET(MSC,MDC)
+      REAL(rkind), intent(out) :: IMATDA_RET(MSC,MDC)
+      REAL(rkind) :: IMATRA(MSC,MDC)
+      REAL(rkind) :: IMATDA(MSC,MDC)
       REAL(rkind) :: eVal
+      REAL(rkind) :: ACref(MSC,MDC)
+      INTEGER ID, idx
+      LOGICAL LRECALC
+      INTEGER ISELECT
       IMATRA=0
       IMATDA=0
-#ifdef newsources 
+      LRECALC = .FALSE.
+      ISELECT = 10
+#ifdef newsources
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
           CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
@@ -440,10 +448,17 @@
 #else
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+<<<<<<< HEAD
           CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATRA_IMATDA')
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
             CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATDA_IMATRA') 
+=======
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 1')
+        ELSE
+          IF (LSOUBOUND) THEN ! Source terms on boundary ...
+            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 2')
+>>>>>>> 2e7023d463f3f0f5bfd3ff85ac078fe8d2f3b7fa
           ENDIF
         ENDIF
       ELSE
@@ -451,9 +466,24 @@
         IMATRA = IMATRAA(:,:,IP)
       END IF
 #endif
-      eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-      IMATRA = IMATRA * eVal
-      IMATDA = IMATDA * eVal
+      IF (optionCall .eq. 1) THEN
+        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+        IMATRA_RET = eVal * IMATRA
+        IMATDA_RET = eVal * IMATDA
+      END IF
+      IF (optionCall .eq. 2) THEN
+        idx=IWBNDLC_REV(IP)
+        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
+          ACref(:,:) = WBAC(:,:,idx)
+        ELSE
+          DO ID=1,MDC
+            ACref(:,ID) = AC1(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
+          ENDDO
+        END IF
+        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+        IMATRA_RET =  eVal * (IMATRA - MIN(ZERO,IMATDA) * ACref)
+        IMATDA_RET = -eVal * MIN(ZERO,IMATDA)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -865,14 +895,15 @@
             END IF
           END IF
           IF (test) THEN
+!            WRITE(STAT%FHNDL,*) 'IP=', IP
             NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
             CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
 #ifdef DEBUG
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
-            IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
-            !eSum=max(zero,eSum)
+!            IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
+!            WRITE(STAT%FHNDL,*) '|eSum|=', sum(eSum), ' |acloc|=', sum(acloc)
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
             ELSE
@@ -889,6 +920,7 @@
 #ifdef DEBUG_ITERATION_LOOP
               FieldOut1(IP)=p_is_converged
 #endif
+!              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .lt. jgs_diff_solverthr) THEN
                   is_converged(1) = is_converged(1) + 1
@@ -908,6 +940,10 @@
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
 #endif
+!        WRITE(STAT%FHNDL,*) 'is_converged(1)=', is_converged(1)
+!        WRITE(STAT%FHNDL,*) 'NP_RES=', NP_RES
+!        WRITE(STAT%FHNDL,*) 'nbPassive=', nbPassive
+!        WRITE(STAT%FHNDL,*) 'diffconv=', NP_RES - is_converged(1)
         IF (JGS_CHKCONV) THEN
 #ifdef MPI_PARALL_GRID
           CALL MPI_ALLREDUCE(is_converged, itmp(1), 1, itype, MPI_SUM, COMM, ierr)
