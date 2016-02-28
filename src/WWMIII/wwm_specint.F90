@@ -623,7 +623,7 @@
 
          IF (LIMITER) THEN
            IF (MELIM == 1) THEN
-             NPF(:) = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(:,IP)**3*CG(:,IP))
+             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(:,IP)**3*CG(:,IP))
            ELSE IF (MELIM == 2) THEN
              DO IS = 1, MSC
                USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))

@@ -413,8 +413,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA_RET, IMATDA_RET)
-!AR: This is not good u are passing a array of size MNP but u are not using it make a local copy in the calling routine ...
-!AR: Do not use temporary array in function call ...
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
@@ -448,10 +446,10 @@
 #else
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 1')
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv Domain')
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 2')
+            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv Bound')
           ENDIF
         ENDIF
       ELSE
