@@ -440,10 +440,10 @@
 #else
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATRA_IMATDA')
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM) 
+            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATDA_IMATRA') 
           ENDIF
         ENDIF
       ELSE
@@ -837,7 +837,7 @@
       !
       ! Now the Gauss Seidel iterations
       !
-      SOLVERTHR=10E-8*AVETL!*TLMIN**2
+      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
       !
       NumberIterationSolver = 0
       nbIter=0

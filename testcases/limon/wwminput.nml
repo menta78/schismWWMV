@@ -50,12 +50,12 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = T,
+ LINID   = F,
  INITSTYLE       =           1
  /
  &BOUC
  LBCSE   = F,
- LBCWA   = F,
+ LBCWA   = T,
  LBCSP   = F,
  LINHOM  = F,
  LBSP1D  = F,

@@ -13,7 +13,7 @@
       USE DATAPOOL, ONLY : USTDIR, Z0, SMALL, VERYSMALL, MSC_HF, DDIR
       USE DATAPOOL, ONLY : SPSIG, SPDIR, FRINTF, ONE, RHOA, RHOAW, TAUHF
       USE DATAPOOL, ONLY : TAUW, FR, MESNL, MESIN, MESDS, MESBF, MESBR
-      USE DATAPOOL, ONLY : MESTR, ISHALLOW, DS_INCR, IOBP, IOBPD
+      USE DATAPOOL, ONLY : MESTR, ISHALLOW, DS_INCR, IOBP, IOBPD, LADVTEST
       USE DATAPOOL, ONLY : LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION
       USE DATAPOOL, ONLY : AIRMOMENTUM, ONEHALF, NSPEC, RKIND, LSOURCESWAM
 #ifdef WWM_MPI
@@ -82,18 +82,13 @@
          CALL WAV_MY_WTIME(TIME1)
 #endif 
 
-!         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
-!           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
-!         END IF
-
          IDISP = 999
 
+         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
+           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
+         END IF
+
          IF (.NOT. LRECALC) THEN
-           IF (ICOMP .LT. 2) THEN
-             ACLOC = AC2(:,:,IP)
-           ELSE
-             ACLOC = AC2(:,:,IP)
-           ENDIF
            CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
          END IF
 
@@ -107,16 +102,15 @@
          DSSNL4      = zero
          SSBR        = zero
          SSBF        = zero
-         IMATRA_WAM  = zero
-         IMATDA_WAM  = zero
          TMPAC       = zero
          IMATRA      = zero 
          IMATDA      = zero 
          IMATRAWW3   = zero 
          IMATDAWW3   = zero 
+         IMATRA_WAM  = zero
+         IMATDA_WAM  = zero
          QBLOCAL(IP) = zero 
 
-#ifdef ST_DEF
          IF (MESDS == 1 .OR. MESIN .EQ. 1) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
@@ -142,7 +136,6 @@
              WN2(ITH+IS0) = WN2(1+IS0)
            END DO
          END DO
-#endif
 
 #ifdef DEBUG
          WRITE(*,*) '0', SUM(IMATRA), SUM(IMATDA), ISELECT, MESIN, CALLFROM
