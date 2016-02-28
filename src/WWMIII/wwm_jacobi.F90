@@ -448,17 +448,10 @@
 #else
       IF (LNONL) THEN
         IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-<<<<<<< HEAD
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATRA_IMATDA')
-        ELSE
-          IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, .FALSE., 10, 'GET_IMATDA_IMATRA') 
-=======
           CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 1')
         ELSE
           IF (LSOUBOUND) THEN ! Source terms on boundary ...
             CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv, case 2')
->>>>>>> 2e7023d463f3f0f5bfd3ff85ac078fe8d2f3b7fa
           ENDIF
         ENDIF
       ELSE

@@ -89,14 +89,6 @@
          END IF
 
          IF (.NOT. LRECALC) THEN
-<<<<<<< HEAD
-=======
-!           IF (ICOMP .LT. 2) THEN
-!             ACLOC = AC2(:,:,IP)
-!           ELSE
-!             ACLOC = AC2(:,:,IP)
-!           ENDIF
->>>>>>> 2e7023d463f3f0f5bfd3ff85ac078fe8d2f3b7fa
            CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
          END IF
 
