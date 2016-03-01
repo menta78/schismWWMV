@@ -412,7 +412,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA_RET, IMATDA_RET)
+      SUBROUTINE GET_IMATRA_IMATDA_OLD(IP, ACLOC, IMATRA_RET, IMATDA_RET)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP

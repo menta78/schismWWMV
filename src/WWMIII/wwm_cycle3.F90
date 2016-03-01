@@ -1,7 +1,6 @@
 #include "wwm_functions.h"
 !**********************************************************************
 !*                                                                    *
-!**********************************************************************
       SUBROUTINE CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
          USE DATAPOOL
          IMPLICIT NONE
@@ -34,8 +33,8 @@
          SSBR  = ZERO; DSSBR  = ZERO
          SSBF  = ZERO; DSSBF  = ZERO
          SSBRL = ZERO; DSSBRL = ZERO
-         SSDS = ZERO; DSSDS = ZERO
-         SSLIM = ZERO; DSSLIM = ZERO
+         SSDS   = ZERO; DSSDS = ZERO
+         SSLIM  = ZERO; DSSLIM = ZERO
          IMATRA = ZERO; IMATDA = ZERO
 
          TESTNODE = 339
@@ -70,7 +69,7 @@
 !             IMATRA(IS,ID) = LIMDAC/DT4A
              LIMFAC        = MIN(ONE,ABS(LIMDAC)/MAX(THR,ABS(IMATRA(IS,ID)*DT4A)))
 !             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) 
-             SSLIM(IS,ID) = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
+             SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
              DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID) - ABS(LIMFAC * IMATDA(IS,ID))),NEWDAC)
            ENDDO
          ENDDO

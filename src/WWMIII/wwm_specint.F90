@@ -2,6 +2,37 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA) 
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER        :: IP, IS, ID, I, K, M
+         INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
+         INTEGER, SAVE  :: IFIRST, ISELECT
+         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
+         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS, VEC2RAD
+
+         DO IP = 1, MNP
+           IF (DEP(IP) .LT. DMIN) CYCLE
+           IF (IOBP(IP) .EQ. 0) THEN
+               ACLOC  = AC2(:,:,IP)
+               CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA) 
+           ELSE !Boundary node ... 
+             IF (LSOUBOUND) THEN ! Source terms on boundary ...
+               IF (IOBP(IP) .NE. 2) THEN
+                 ACLOC  = AC2(:,:,IP)
+               ENDIF
+             ELSE
+               ACLOC = AC2(:,:,IP)
+               CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
+             ENDIF
+           ENDIF
+         ENDDO
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SOURCE_INT_EXP
          USE DATAPOOL
          IMPLICIT NONE
@@ -155,7 +186,7 @@
                    MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
                  ELSE IF (MELIM .EQ. 2) THEN
                    UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
-                   MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
+OMPUTE_SOURCES
                  ELSE IF (MELIM .EQ. 3) THEN
                    IF (USNEW(IP) .GT. SMALL) THEN
                      MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
