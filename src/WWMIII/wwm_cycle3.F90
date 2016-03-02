@@ -1,7 +1,8 @@
 #include "wwm_functions.h"
 !**********************************************************************
 !*                                                                    *
-      SUBROUTINE CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
+!**********************************************************************
+      SUBROUTINE CYCLE3_PRE (IP, ACLOC, IMATRA, IMATDA)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -21,9 +22,12 @@
          REAL(rkind)                :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
          REAL(rkind)                :: SSBRL(MSC,MDC),DSSBRL(MSC,MDC)
          REAL(rkind)                :: SSLIM(MSC,MDC), DSSLIM(MSC,MDC)
-         REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
+         REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM
+         REAL(rkind)                :: KMWAM2,HS,WIND10
          REAL(rkind)                :: EFTAIL,EMAX,NEWDAC,MAXDAC,FPM,WINDTH
          REAL(rkind)                :: RATIO,LIMFAC,LIMDAC
+
+         LOGICAL                    :: LSOURCESLIM = .TRUE. 
 
          NEWAC = ZERO
          SSINL = ZERO
@@ -37,9 +41,6 @@
          SSLIM  = ZERO; DSSLIM = ZERO
          IMATRA = ZERO; IMATDA = ZERO
 
-         TESTNODE = 339
-         TESTNODE = -1
-
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
          IF (MESIN .GT. 0) THEN
@@ -50,60 +51,32 @@
          ENDIF
 
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
-         IF (MESNL .GT. 0) CALL SNL41(IP,KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
+         IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 
-         IF (ISHALLOW(IP) .EQ. 1) THEN
-           IF (MESTR .GT. 0) CALL triad_eldeberky (ip, hs, sme01, acloc, imatra, imatda, ssnl3, dssnl3)
-           IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR) ! Maybe not KMWAM
-           IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
-         ENDIF
+         IMATRA = SSINL + SSDS + SSINE + SSNL4
+         IMATDA = DSSDS + DSSNL4
 
-         IMATRA = SSINL + SSDS + SSINE + SSNL4 + SSNL3
-         IMATDA = DSSDS + DSSNL3
-
-         DO IS = 1, MSC
-           MAXDAC   = LIMFAK*0.0081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID)*DT4A
-             LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-!             IMATRA(IS,ID) = LIMDAC/DT4A
-             LIMFAC        = MIN(ONE,ABS(LIMDAC)/MAX(THR,ABS(IMATRA(IS,ID)*DT4A)))
-!             IMATDA(IS,ID) = LIMFAC * IMATDA(IS,ID) 
-             SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
-             DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID) - ABS(LIMFAC * IMATDA(IS,ID))),NEWDAC)
+         IF (LSOURCESLIM) THEN
+           DO IS = 1, MSC
+             MAXDAC = 0.00081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             DO ID = 1, MDC
+               NEWDAC = IMATRA(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,IMATDA(IS,ID)))
+               LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
+               IMATRA(IS,ID) = LIMDAC/DT4A
+               SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
+               DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID)-ABS(LIMFAC*IMATDA(IS,ID))),NEWDAC)
+             ENDDO
            ENDDO
-         ENDDO
-
-         IMATRA = IMATRA + SSBR 
-         IMATDA = IMATDA + DSSBR + DSSBF
-
-         IF (LMAXETOT) THEN
-           NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
-           EFTAIL = ONE / (PTAIL(1)-ONE)
-           HS = 4._rkind*SQRT(ETOT)
-           EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
-           IF (ETOT .GT. EMAX) THEN
-             RATIO  = EMAX/ETOT
-             SSBRL  = ACLOC*(RATIO-ONE)/DT4A
-             DSSBRL = (RATIO-ONE)/DT4A 
-           END IF
-           IMATRA = IMATRA +  SSBRL 
-           IMATDA = IMATDA + DSSBRL
          ENDIF
 
-         IF (IP == TESTNODE) THEN
-           WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
+         IF (.TRUE.) THEN
            WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+           WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
            WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
            WRITE(*,'(A20,6E20.10)') 'WHITECAP', SUM(SSDS), SUM(DSSDS), MINVAL(SSDS), MAXVAL(SSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
            WRITE(*,'(A20,6E20.10)') 'SNL4', SUM(SSNL4), SUM(DSSNL4), MINVAL(SSNL4), MAXVAL(SSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
-           WRITE(*,'(A20,6E20.10)') 'SNL3', SUM(SSNL3), SUM(DSSNL3), MINVAL(SSNL3), MAXVAL(SSNL3), MINVAL(DSSNL3), MAXVAL(DSSNL3)
-           WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
-           WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
-           WRITE(*,'(A20,6E20.10)') 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL), MINVAL(SSBRL), MAXVAL(SSBRL), MINVAL(DSSBRL), MAXVAL(DSSBRL)
            WRITE(*,'(A20,6E20.10)') 'LIMITER',  SUM(SSLIM), SUM(DSSLIM), MINVAL(SSLIM), MAXVAL(SSLIM), MINVAL(DSSLIM), MAXVAL(DSSLIM)
            WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
-!           PAUSE
          ENDIF
 
       END SUBROUTINE
@@ -124,22 +97,20 @@
 
          INTEGER       :: IS
 
-         REAL(rkind)    :: CDS, ALPHA_PM, FAC
-         REAL(rkind)    :: STP_OV, STP_PM, N2
+         REAL(rkind)   :: CDS, ALPHA_PM, FAC
+         REAL(rkind)   :: STP_OV, STP_PM, N2
 !
          ALPHA_PM  =  3.02E-3
          CDS       =  2.36E-5
 
          STP_OV = KMESPC * SQRT(ETOT)
          STP_PM = SQRT(ALPHA_PM)
-
          N2     = 4
-
          FAC    = CDS * (STP_OV / STP_PM)**N2
 
          DO IS = 1, MSC
-           DSSDS(IS,:) = FAC * SMESPC * (WK(IS,IP)/KMESPC)
-           SSDS(IS,:)  = - DSSDS(IS,:) * ACLOC(IS,:)
+           DSSDS(IS,:) = - FAC * SMESPC * (WK(IS,IP)/KMESPC)
+           SSDS(IS,:)  =   DSSDS(IS,:) * ACLOC(IS,:)
          END DO
 
       END SUBROUTINE
@@ -202,10 +173,11 @@
            CINV = WK(IS,IP)/SPSIG(IS)
            AUX3 = AUX2 * CINV
            DO ID = 1, MDC
-             COSDIF = MyCOS(SPDIR(ID)-WINDTH)
-             SWINB = AUX1 * ( AUX3  * COSDIF - ONE )
+             COSDIF        = MyCOS(SPDIR(ID)-WINDTH)
+             SWINB         = AUX1 * ( AUX3  * COSDIF - ONE )
              DSSINE(IS,ID) = MAX( ZERO, SWINB * SPSIG(IS) )
-             SSINE(IS,ID) = DSSINE(IS,ID) * ACLOC(IS,ID)
+             SSINE(IS,ID)  = DSSINE(IS,ID) * ACLOC(IS,ID)
+             DSSINE(IS,ID) = 0.d0
            END DO
          END DO
 
@@ -219,35 +191,20 @@
 
          INTEGER                 :: IP, IS, ID
 
-         REAL(rkind), INTENT(INOUT) :: ACOLD(MSC,MDC), ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
 
          REAL(rkind)             :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
          REAL(rkind)             :: MAXDAC, CONST, SND, DELT5
 
-
-         IF (DEP(IP) .LT. DMIN .OR. IOBP(IP) .EQ. 2) RETURN
-
-         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
-         SND   = PI2*5.6*1.0E-3
-
-         DELT = DT4S
-         XIMP = 1._rkind
-         DELT5 = XIMP*DELT
-         DELFL= COFRM4*DELT
-         MAXDAC = ZERO
-
          DO IS = 1, MSC
-           MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+           MAXDAC = 0.00081/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
              NEWDAC = NEWAC - OLDAC
-!             IF (NEWDAC .GT. 0.) THEN
-               NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!             ELSE
-!               IF (QBLOCAL(IP) .LT. THR) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-!             END IF
-             ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
+             NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
+             ACLOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
            END DO
          END DO
 
@@ -255,4 +212,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-

@@ -1405,12 +1405,6 @@
            call wwm_abort('LVECTOR must be FALSE to use PETSc')
          END IF
 
-         IF (LSOURCESWAM .AND. MELIM .NE. 3) THEN
-           call wwm_abort('FOR WAM YOU NEED MELIM == 3')
-         ELSE IF (.NOT. LSOURCESWAM .AND. MELIM .EQ. 3) THEN
-           call wwm_abort('FOR WWM SOURCES YOU NEED MELIM .LT. 3') 
-         ENDIF
-
 #ifndef GRIB_API_ECMWF 
          IF (IWINDFORMAT == 7) CALL wwm_abort('you need to compile with grib')
 #endif
