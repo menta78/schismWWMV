@@ -223,10 +223,15 @@
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
      
+<<<<<<< HEAD
          ICODE = 3 
 
          ACLOC = 10E-3     
   
+=======
+         ICODE = 1 
+         
+>>>>>>> 6d1eb70aad44531b61fdc71a211a4c2db2e1e11f
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
