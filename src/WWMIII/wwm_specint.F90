@@ -229,8 +229,6 @@
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
      
          ICODE = 1 
-
-         ACLOC = 10E-6         
          
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC

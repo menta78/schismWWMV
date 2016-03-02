@@ -412,265 +412,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_BSIDE_DIAG(IP, ACin, BSIDE, DIAG)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, intent(in) :: IP
-      REAL(rkind), intent(in)  :: ACin(MSC,MDC,MNP)
-      REAL(rkind), intent(out) :: BSIDE(MSC,MDC)
-      REAL(rkind), intent(out) :: DIAG (MSC,MDC)
-      REAL(rkind) :: IMATRA(MSC,MDC)
-      REAL(rkind) :: IMATDA(MSC,MDC)
-      REAL(rkind) :: ACLOC (MSC,MDC)
-      REAL(rkind) :: eVal
-      REAL(rkind) :: ACref(MSC,MDC)
-      INTEGER ID, idx
-      LOGICAL LRECALC
-      INTEGER ISELECT
-      IMATRA=0
-      IMATDA=0
-      LRECALC = .FALSE.
-      ISELECT = 10
-      ACLOC = ACin(:,:,IP)
-#ifdef newsources
-      IF (LNONL) THEN
-        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
-        ELSE
-          IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
-          ENDIF
-        ENDIF
-      ELSE
-        IMATDA = IMATDAA(:,:,IP)
-        IMATRA = IMATRAA(:,:,IP)
-      END IF
-#else
-      
-      IF (LNONL) THEN
-        IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv Domain')
-        ENDIF
-      ELSE
-        IMATDA = IMATDAA(:,:,IP)
-        IMATRA = IMATRAA(:,:,IP)
-      END IF
-#endif
-      IF (optionCall .eq. 1) THEN
-        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-        BSIDE = eVal * IMATRA
-        DIAG  = eVal * IMATDA
-      END IF
-      IF (optionCall .eq. 2) THEN
-        idx=IWBNDLC_REV(IP)
-        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
-          ACref(:,:) = WBAC(:,:,idx)
-        ELSE
-          DO ID=1,MDC
-            ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
-          ENDDO
-        END IF
-        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-        BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * ACref)
-        DIAG  = -eVal * MIN(ZERO,IMATDA)
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE GET_BLOCAL(IP, BLOC)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, INTENT(IN) :: IP
-      REAL(rkind), INTENT(OUT) :: BLOC(MSC,MDC)
-      INTEGER ID, idx
-      idx=IWBNDLC_REV(IP)
-      IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
-        BLOC = WBAC(:,:,idx)  * SI(IP)
-      ELSE
-        DO ID=1,MDC
-          BLOC(:,ID) = AC1(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
-        ENDDO
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
-      INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
-      REAL(rkind) :: DIFRU, USOC, WVC
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
-      INTEGER     :: I1, I2, I3
-      INTEGER     :: ID, IS, IE, IPOS
-      INTEGER     :: I, ICON
-      INTEGER     :: IP_fall, IPie, TheVal
-      INTEGER     :: ID1, ID2, POS1, POS2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
-      REAL(rkind) :: eFact
-      POS_TRICK(1,1) = 2
-      POS_TRICK(1,2) = 3
-      POS_TRICK(2,1) = 3
-      POS_TRICK(2,2) = 1
-      POS_TRICK(3,1) = 1
-      POS_TRICK(3,2) = 2
-
-      ASPAR_LOC=ZERO
-      ASPAR_DIAG=ZERO
-      DO ICON = 1, CCON(IP)
-        IE     =  IE_CELL2(IP,ICON)
-        IPOS   = POS_CELL2(IP,ICON)
-        I1 = INE(1,IE)
-        I2 = INE(2,IE)
-        I3 = INE(3,IE)
-!AR: todo: make a subroutine of below ...
-        DO I=1,3
-          IPie = INE(I,IE)
-          DO ID=1,MDC
-            DO IS=1,MSC
-              IF (LSECU .OR. LSTCU) THEN
-                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)+CURTXY(IPie,1)
-                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)+CURTXY(IPie,2)
-              ELSE
-                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)
-                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)
-              END IF
-              IF (LSPHE) THEN
-                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IPie,1)
-                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*INVSPHTRANS(IPie,2)
-              END IF
-              IF (LDIFR) THEN
-                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*DIFRM(IPie)
-                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IPie)
-                IF (LSECU .OR. LSTCU) THEN
-                  IF (IDIFFR .GT. 1) THEN
-                    WVC = SPSIG(IS)/WK(IS,IPie)
-                    USOC = (COSTH(ID)*CURTXY(IPie,1) + SINTH(ID)*CURTXY(IPie,2))/WVC
-                    DIFRU = ONE + USOC * (ONE - DIFRM(IPie))
-                  ELSE
-                    DIFRU = DIFRM(IPie)
-                  END IF
-                  CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IPie,1)
-                  CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IPie,2)
-                END IF
-              END IF
-            END DO
-          END DO
-        END DO
-        LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
-        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
-        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
-        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
-        FL11(:,:) = CXY(1,:,:,2)*IEN(1,IE)+CXY(2,:,:,2)*IEN(2,IE)
-        FL12(:,:) = CXY(1,:,:,3)*IEN(1,IE)+CXY(2,:,:,3)*IEN(2,IE)
-        FL21(:,:) = CXY(1,:,:,3)*IEN(3,IE)+CXY(2,:,:,3)*IEN(4,IE)
-        FL22(:,:) = CXY(1,:,:,1)*IEN(3,IE)+CXY(2,:,:,1)*IEN(4,IE)
-        FL31(:,:) = CXY(1,:,:,1)*IEN(5,IE)+CXY(2,:,:,1)*IEN(6,IE)
-        FL32(:,:) = CXY(1,:,:,2)*IEN(5,IE)+CXY(2,:,:,2)*IEN(6,IE)
-        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
-        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
-        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
-        KM = MIN(ZERO,K)
-        KP(:,:,:) = MAX(ZERO,K)
-        DELTAL(:,:,:) = CRFS(:,:,:) - KP(:,:,:)
-        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
-        TRIA03 = ONETHIRD * TRIA(IE)
-        !
-        IP_fall=INE(IPOS,IE)
-        IF (IP_fall .ne. IP) THEN
-          CALL WWM_ABORT('Bugs and many more bugs')
-        END IF
-        POS1=POS_IP_ADJ(1,IPOS,IE)
-        POS2=POS_IP_ADJ(2,IPOS,IE)
-!        I1=JA_IE(IPOS,1,IE)
-!        I2=JA_IE(IPOS,2,IE)
-!        I3=JA_IE(IPOS,3,IE)
-        K1(:,:) =  KP(:,:,IPOS)
-        DO ID=1,MDC
-          DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
-        END DO
-        TMP3(:,:)  =  DTK(:,:) * NM(:,:)
-        ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,IPOS)
-        ASPAR_LOC(:,:,POS1)=ASPAR_LOC(:,:,POS1)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
-        ASPAR_LOC(:,:,POS2)=ASPAR_LOC(:,:,POS2)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
-      END DO
-      IF (REFRACTION_IMPL) THEN
-        TheVal=1
-        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
-        IF (DEP(IP) .LT. DMIN) TheVal=0
-        IF (IOBP(IP) .EQ. 2) TheVal=0
-        IF (TheVal .eq. 1) THEN
-          CALL PROPTHETA(IP,CAD)
-        ELSE
-          CAD=ZERO
-        END IF
-        CP_THE = MAX(ZERO,CAD)
-        CM_THE = MIN(ZERO,CAD)
-        eFact=(DT4D/DDIR)*SI(IP)
-        DO ID=1,MDC
-          ID1 = ID_PREV(ID)
-          ID2 = ID_NEXT(ID)
-          A_THE(:,ID) = - eFact *  CP_THE(:,ID1)
-          C_THE(:,ID) =   eFact *  CM_THE(:,ID2)
-        END DO
-        ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
-      ELSE
-        A_THE=ZERO
-        C_THE=ZERO
-      END IF
-      IF (FREQ_SHIFT_IMPL) THEN
-        TheVal=1
-        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
-        IF (DEP(IP) .LT. DMIN) TheVal=0
-        IF (IOBP(IP) .EQ. 2) TheVal=0
-        IF (TheVal .eq. 1) THEN
-          CALL PROPSIGMA(IP,CAS)
-        ELSE
-          CAS=ZERO
-        END IF
-        eFact=DT4F*SI(IP)
-        DO ID = 1, MDC
-          CASS(1:MSC) = CAS(:,ID)
-          CASS(0)     = 0.
-          CASS(MSC+1) = CASS(MSC)
-          CP_SIG = MAX(ZERO,CASS)
-          CM_SIG = MIN(ZERO,CASS)
-          DO IS=1,MSC
-            B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
-          END DO
-          DO IS=2,MSC
-            A_SIG(IS,ID) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
-          END DO
-          DO IS=1,MSC-1
-            C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
-          END DO
-          B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
-          ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
-        END DO
-      ELSE
-        A_SIG=ZERO
-        C_SIG=ZERO
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
 #ifdef NCDF      
       SUBROUTINE DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
       USE DATAPOOL
@@ -1019,6 +760,265 @@
       iPass=iPass+1
 #endif
       CONTAINS
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GET_BSIDE_DIAG(IP, ACin, BSIDE, DIAG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(in)  :: ACin(MSC,MDC,MNP)
+      REAL(rkind), intent(out) :: BSIDE(MSC,MDC)
+      REAL(rkind), intent(out) :: DIAG (MSC,MDC)
+      REAL(rkind) :: IMATRA(MSC,MDC)
+      REAL(rkind) :: IMATDA(MSC,MDC)
+      REAL(rkind) :: ACLOC (MSC,MDC)
+      REAL(rkind) :: eVal
+      REAL(rkind) :: ACref(MSC,MDC)
+      INTEGER ID, idx
+      LOGICAL LRECALC
+      INTEGER ISELECT
+      IMATRA=0
+      IMATDA=0
+      LRECALC = .FALSE.
+      ISELECT = 10
+      ACLOC = ACin(:,:,IP)
+#ifdef newsources
+      IF (LNONL) THEN
+        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
+          CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
+        ELSE
+          IF (LSOUBOUND) THEN ! Source terms on boundary ...
+            CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
+          ENDIF
+        ENDIF
+      ELSE
+        IMATDA = IMATDAA(:,:,IP)
+        IMATRA = IMATRAA(:,:,IP)
+      END IF
+#else
+      
+      IF (LNONL) THEN
+        IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
+          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv Domain')
+        ENDIF
+      ELSE
+        IMATDA = IMATDAA(:,:,IP)
+        IMATRA = IMATRAA(:,:,IP)
+      END IF
+#endif
+      IF (optionCall .eq. 1) THEN
+        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+        BSIDE = eVal * IMATRA
+        DIAG  = eVal * IMATDA
+      END IF
+      IF (optionCall .eq. 2) THEN
+        idx=IWBNDLC_REV(IP)
+        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
+          ACref(:,:) = WBAC(:,:,idx)
+        ELSE
+          DO ID=1,MDC
+            ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
+          ENDDO
+        END IF
+        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+        BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * ACref)
+        DIAG  = -eVal * MIN(ZERO,IMATDA)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GET_BLOCAL(IP, BLOC)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IP
+      REAL(rkind), INTENT(OUT) :: BLOC(MSC,MDC)
+      INTEGER ID, idx
+      idx=IWBNDLC_REV(IP)
+      IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
+        BLOC = WBAC(:,:,idx)  * SI(IP)
+      ELSE
+        DO ID=1,MDC
+          BLOC(:,ID) = AC1(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
+        ENDDO
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, intent(in) :: IP
+      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
+      REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      INTEGER :: POS_TRICK(3,2)
+      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
+      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: DIFRU, USOC, WVC
+      REAL(rkind) :: DELTAL(MSC,MDC,3)
+      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
+      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      INTEGER     :: I1, I2, I3
+      INTEGER     :: ID, IS, IE, IPOS
+      INTEGER     :: I, ICON
+      INTEGER     :: IP_fall, IPie, TheVal
+      INTEGER     :: ID1, ID2, POS1, POS2
+      REAL(rkind) :: CAD(MSC,MDC)
+      REAL(rkind) :: CAS(MSC,MDC)
+      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
+      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
+      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: eFact
+      POS_TRICK(1,1) = 2
+      POS_TRICK(1,2) = 3
+      POS_TRICK(2,1) = 3
+      POS_TRICK(2,2) = 1
+      POS_TRICK(3,1) = 1
+      POS_TRICK(3,2) = 2
+
+      ASPAR_LOC=ZERO
+      ASPAR_DIAG=ZERO
+      DO ICON = 1, CCON(IP)
+        IE     =  IE_CELL2(IP,ICON)
+        IPOS   = POS_CELL2(IP,ICON)
+        I1 = INE(1,IE)
+        I2 = INE(2,IE)
+        I3 = INE(3,IE)
+!AR: todo: make a subroutine of below ...
+        DO I=1,3
+          IPie = INE(I,IE)
+          DO ID=1,MDC
+            DO IS=1,MSC
+              IF (LSECU .OR. LSTCU) THEN
+                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)+CURTXY(IPie,1)
+                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)+CURTXY(IPie,2)
+              ELSE
+                CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)
+                CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)
+              END IF
+              IF (LSPHE) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*INVSPHTRANS(IPie,1)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*INVSPHTRANS(IPie,2)
+              END IF
+              IF (LDIFR) THEN
+                CXY(1,IS,ID,I) = CXY(1,IS,ID,I)*DIFRM(IPie)
+                CXY(2,IS,ID,I) = CXY(2,IS,ID,I)*DIFRM(IPie)
+                IF (LSECU .OR. LSTCU) THEN
+                  IF (IDIFFR .GT. 1) THEN
+                    WVC = SPSIG(IS)/WK(IS,IPie)
+                    USOC = (COSTH(ID)*CURTXY(IPie,1) + SINTH(ID)*CURTXY(IPie,2))/WVC
+                    DIFRU = ONE + USOC * (ONE - DIFRM(IPie))
+                  ELSE
+                    DIFRU = DIFRM(IPie)
+                  END IF
+                  CXY(1,IS,ID,I) = CXY(1,IS,ID,I) + DIFRU*CURTXY(IPie,1)
+                  CXY(2,IS,ID,I) = CXY(2,IS,ID,I) + DIFRU*CURTXY(IPie,2)
+                END IF
+              END IF
+            END DO
+          END DO
+        END DO
+        LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
+        K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
+        K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)
+        K(:,:,3)  = LAMBDA(1,:,:) * IEN(5,IE) + LAMBDA(2,:,:) * IEN(6,IE)
+        FL11(:,:) = CXY(1,:,:,2)*IEN(1,IE)+CXY(2,:,:,2)*IEN(2,IE)
+        FL12(:,:) = CXY(1,:,:,3)*IEN(1,IE)+CXY(2,:,:,3)*IEN(2,IE)
+        FL21(:,:) = CXY(1,:,:,3)*IEN(3,IE)+CXY(2,:,:,3)*IEN(4,IE)
+        FL22(:,:) = CXY(1,:,:,1)*IEN(3,IE)+CXY(2,:,:,1)*IEN(4,IE)
+        FL31(:,:) = CXY(1,:,:,1)*IEN(5,IE)+CXY(2,:,:,1)*IEN(6,IE)
+        FL32(:,:) = CXY(1,:,:,2)*IEN(5,IE)+CXY(2,:,:,2)*IEN(6,IE)
+        CRFS(:,:,1) = - ONESIXTH *  (TWO *FL31(:,:) + FL32(:,:) + FL21(:,:) + TWO * FL22(:,:) )
+        CRFS(:,:,2) = - ONESIXTH *  (TWO *FL32(:,:) + TWO * FL11(:,:) + FL12(:,:) + FL31(:,:) )
+        CRFS(:,:,3) = - ONESIXTH *  (TWO *FL12(:,:) + TWO * FL21(:,:) + FL22(:,:) + FL11(:,:) )
+        KM = MIN(ZERO,K)
+        KP(:,:,:) = MAX(ZERO,K)
+        DELTAL(:,:,:) = CRFS(:,:,:) - KP(:,:,:)
+        NM(:,:)=ONE/MIN(-THR,KM(:,:,1) + KM(:,:,2) + KM(:,:,3))
+        TRIA03 = ONETHIRD * TRIA(IE)
+        !
+        IP_fall=INE(IPOS,IE)
+        IF (IP_fall .ne. IP) THEN
+          CALL WWM_ABORT('Bugs and many more bugs')
+        END IF
+        POS1=POS_IP_ADJ(1,IPOS,IE)
+        POS2=POS_IP_ADJ(2,IPOS,IE)
+!        I1=JA_IE(IPOS,1,IE)
+!        I2=JA_IE(IPOS,2,IE)
+!        I3=JA_IE(IPOS,3,IE)
+        K1(:,:) =  KP(:,:,IPOS)
+        DO ID=1,MDC
+          DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
+        END DO
+        TMP3(:,:)  =  DTK(:,:) * NM(:,:)
+        ASPAR_DIAG=ASPAR_DIAG + TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,IPOS)
+        ASPAR_LOC(:,:,POS1)=ASPAR_LOC(:,:,POS1)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,1))
+        ASPAR_LOC(:,:,POS2)=ASPAR_LOC(:,:,POS2)-TMP3(:,:)*DELTAL(:,:,POS_TRICK(IPOS,2))
+      END DO
+      IF (REFRACTION_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPTHETA(IP,CAD)
+        ELSE
+          CAD=ZERO
+        END IF
+        CP_THE = MAX(ZERO,CAD)
+        CM_THE = MIN(ZERO,CAD)
+        eFact=(DT4D/DDIR)*SI(IP)
+        DO ID=1,MDC
+          ID1 = ID_PREV(ID)
+          ID2 = ID_NEXT(ID)
+          A_THE(:,ID) = - eFact *  CP_THE(:,ID1)
+          C_THE(:,ID) =   eFact *  CM_THE(:,ID2)
+        END DO
+        ASPAR_DIAG = ASPAR_DIAG + eFact * (CP_THE(:,:) - CM_THE(:,:))
+      ELSE
+        A_THE=ZERO
+        C_THE=ZERO
+      END IF
+      IF (FREQ_SHIFT_IMPL) THEN
+        TheVal=1
+        IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LSIGBOUND) TheVal=0
+        IF (DEP(IP) .LT. DMIN) TheVal=0
+        IF (IOBP(IP) .EQ. 2) TheVal=0
+        IF (TheVal .eq. 1) THEN
+          CALL PROPSIGMA(IP,CAS)
+        ELSE
+          CAS=ZERO
+        END IF
+        eFact=DT4F*SI(IP)
+        DO ID = 1, MDC
+          CASS(1:MSC) = CAS(:,ID)
+          CASS(0)     = 0.
+          CASS(MSC+1) = CASS(MSC)
+          CP_SIG = MAX(ZERO,CASS)
+          CM_SIG = MIN(ZERO,CASS)
+          DO IS=1,MSC
+            B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
+          END DO
+          DO IS=2,MSC
+            A_SIG(IS,ID) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
+          END DO
+          DO IS=1,MSC-1
+            C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
+          END DO
+          B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+          ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
+        END DO
+      ELSE
+        A_SIG=ZERO
+        C_SIG=ZERO
+      END IF
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
