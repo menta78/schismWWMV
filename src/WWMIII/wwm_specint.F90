@@ -186,7 +186,7 @@
                    MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
                  ELSE IF (MELIM .EQ. 2) THEN
                    UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
-OMPUTE_SOURCES
+                   MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
                  ELSE IF (MELIM .EQ. 3) THEN
                    IF (USNEW(IP) .GT. SMALL) THEN
                      MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
@@ -229,6 +229,8 @@ OMPUTE_SOURCES
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
      
          ICODE = 1 
+
+         ACLOC = 10E-6         
          
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC

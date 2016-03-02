@@ -1,5 +1,5 @@
 #include ${PETSC_DIR}/conf/variables
-PROG = $(HOME)/bin/wwmadv
+PROG = $(HOME)/bin/wwm
 #PROG = wwmadv
 
 FFLAGS = -DST42 -DWWM_SETUP
