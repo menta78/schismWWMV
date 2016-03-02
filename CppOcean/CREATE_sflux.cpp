@@ -1,4 +1,4 @@
-# 1 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 4 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 #include <netcdf>
 #include "grib_api.h"
 #include <Eigen/Dense>
@@ -45,10 +45,10 @@ return {"ERS1", "ERS2", "ENVISAT", "TOPEX", "POSEIDON", "JASON1", "GFO", "JASON2
 }
 std::vector<std::string> GetAllPossibleModels()
 {
-std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WWM_DAILY", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30"};
+std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WWM_DAILY", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30", "SCHISM_SFLUX"};
 return vec;
 }
-double TheSignFct(double const& eVal)
+int TheSignFct(double const& eVal)
 {
 if (eVal > 0)
 return 1;
@@ -245,7 +245,7 @@ std::vector<double> LCoeff(3);
 for (int i=0; i<3; i++) {
 LCoeff[i]=eProduct(i);
 }
-# 329 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 332 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 return LCoeff;
 }
 bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
@@ -372,7 +372,7 @@ void PrintMMA_FCT(MyMatrix<double> const& F, MyMatrix<int> const& MSK, std::stri
 {
 int eta=F.rows();
 int xi=F.cols();
-double minval, maxval;
+double minval=0, maxval=0;
 double sum=0;
 int nb=0;
 bool IsFirst=true;
@@ -380,7 +380,7 @@ for (int i=0; i<eta; i++)
 for (int j=0; j<xi; j++)
 if (MSK(i,j) == 1) {
 double eVal=F(i,j);
-sum+=eVal;
+sum += eVal;
 nb++;
 if (IsFirst) {
 IsFirst=false;
@@ -571,7 +571,7 @@ std::vector<std::string> ListVarOut{
 "WIND10", "Uwind", "Vwind","WINDMAG",
 "SurfCurr", "UsurfCurr", "VsurfCurr", "SurfCurrMag",
 "Curr", "CurrMag",
-"TempSurf", "SaltSurf", "AIRT2", "Rh2", "AIRD", "SurfPres",
+"TempSurf", "SaltSurf", "AIRT2", "AIRT2K", "Rh2", "Rh2frac", "AIRD", "SurfPres",
 "ZetaOcean", "ZetaOceanDerivative", "DynBathy", "ZetaSetup",
 "CdWave", "AlphaWave", "AirZ0", "AirFricVel",
 "shflux", "ssflux", "evaporation",
@@ -665,7 +665,6 @@ zarg2 = cos (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis) +
 zcospol * sin(zphis)) +
 sin (zlampol) * sin(zrlas) * cos(zphis);
 }
-if (zarg2 == 0) zarg2=1.0e-20;
 double rlarot2rla = eMultInv * atan2(zarg1,zarg2);
 return rlarot2rla;
 }
@@ -825,7 +824,7 @@ struct Inverse_exception {
 std::string errmsg;
 T pivot;
 };
-# 1057 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 1060 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -1229,6 +1228,7 @@ std::vector<double> ListTime;
 std::string TimeSteppingInfo;
 std::string HisPrefix;
 double SeparationTime;
+int nbDigit;
 int nbRecBegin;
 int nbRecMiddle;
 bool AppendVarName;
@@ -1615,7 +1615,7 @@ hour=Date[3];
 min=Date[4];
 sec=Date[5];
 int a, y, m;
-a = floor((double(14) - double(month))/double(12));
+a = int(floor((double(14) - double(month))/double(12)));
 y = year + 4800 - a;
 m = month + 12*a - 3;
 eJDbase = double(day)
@@ -1797,23 +1797,23 @@ std::vector<int> JD2DATE(double const& eJD)
 int year, month, day, hour, min, sec;
 int ijd, a, b, c, d, e, m;
 double fjd, second;
-ijd = floor(eJD + 0.5);
+ijd = int(floor(eJD + 0.5));
 a = ijd + 32044;
-b = floor((double(4)*double(a) + double(3)) / double(146097));
-c = a - floor((double(b) * double(146097)) / double(4));
-d = floor((double(4)*double(c) + double(3)) / double(1461));
-e = c - floor((double(1461)*double(d)) / double(4));
-m = floor((double(5) * double(e) + double(2)) / double(153));
-day = e - floor((double(153) * double(m) + double(2)) / double(5)) + 1;
-month = m + 3 - 12 * floor(double(m) / double(10));
-year = b * 100 + d - 4800 + floor(double(m) / double(10));
+b = int(floor((double(4)*double(a) + double(3)) / double(146097)));
+c = a - int(floor((double(b) * double(146097)) / double(4)));
+d = int(floor((double(4)*double(c) + double(3)) / double(1461)));
+e = c - int(floor((double(1461)*double(d)) / double(4)));
+m = int(floor((double(5) * double(e) + double(2)) / double(153)));
+day = e - int(floor((double(153) * double(m) + double(2)) / double(5))) + 1;
+month = m + 3 - 12 * int(floor(double(m) / double(10)));
+year = b * 100 + d - 4800 + int(floor(double(m) / double(10)));
 fjd = eJD - double(ijd) + 0.5;
 second = double(86400) * fjd;
-hour = floor(second/double(3600));
+hour = int(floor(second/double(3600)));
 second = second - double(3600)*double(hour);
-min = floor(second/double(60));
-sec = floor(second - double(60)*min);
-int secNear=round(second - double(60)*min);
+min = int(floor(second/double(60)));
+sec = int(floor(second - double(60)*min));
+int secNear=int(round(second - double(60)*min));
 if (secNear == 60) {
 sec=0;
 min=min+1;
@@ -1907,7 +1907,7 @@ return ListTime;
 std::vector<double> GetInterval(std::string const& BEGTC, std::string const& ENDTC, double const& eInterval, std::string const& UNITC)
 {
 int IsDone=0;
-double eMult;
+double eMult = 0;
 if (UNITC == "DAY") {
 IsDone=1;
 eMult=double(1);
@@ -2151,7 +2151,7 @@ eVal = ListVal[i];
 }
 }
 return eVal;
-# 2757 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 2761 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 }
 struct GraphSparseImmutable {
 public:
@@ -2505,6 +2505,10 @@ ListDoubleValues1["DELTC"]=600;
 ListStringValues1["UNITC"]="SEC";
 ListStringValues1["ENDTC"]="20110925.000000";
 ListStringValues1["OutPrefix"]="Pictures/DIR_plot/";
+ListIntValues1["idxForc"]=1;
+ListBoolValues1["DoAIRfiles"]=false;
+ListBoolValues1["DoPRCfiles"]=false;
+ListBoolValues1["DoRADfiles"]=false;
 ListBoolValues1["AnalyticWind"]=false;
 ListBoolValues1["AnalyticPRMSL"]=true;
 ListBoolValues1["AnalyticSPFH"]=true;
@@ -3272,8 +3276,8 @@ int sizStrDateT=LStrDateT.size();
 if (sizStrDateT > 1) {
 YnameDate=LStrDateT[0];
 std::string eStrB=LStrDateT[1];
-int alenB=eStrUnitTime.length();
-YnameTime=eStrB.substr(0,alenB-2);
+int alenC=eStrUnitTime.length();
+YnameTime=eStrB.substr(0,alenC-2);
 std::cerr << "Case of WW3\n";
 std::cerr << "YnameDate=" << YnameDate << "\n";
 std::cerr << "YnameTime=" << YnameTime << "\n";
@@ -3355,7 +3359,13 @@ eTimeAtt.getValues(eString);
 std::string eStrUnitTime=eString;
 double ConvertToDay, eTimeStart;
 CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart);
-std::vector<double> LTime;
+std::vector<double> LTime(siz);
+if (siz == 0) {
+std::cerr << "We found siz=0\n";
+std::cerr << "This means that we find zero times in the file\n";
+std::cerr << "which is not what we expected\n";
+throw TerminalException{1};
+}
 double minTime=0, maxTime=0;
 for (int i=0; i<siz; i++) {
 double eTimeDay = eVal[i]*ConvertToDay + eTimeStart;
@@ -3369,29 +3379,14 @@ maxTime=eTimeDay;
 if (eTimeDay < minTime)
 minTime=eTimeDay;
 }
-LTime.push_back(eTimeDay);
+LTime[i]=eTimeDay;
 }
 delete [] eVal;
 bool ShowMinMax=false;
 if (ShowMinMax) {
-double minTimeB, maxTimeB;
-for (int i=0; i<siz; i++) {
-double eTimeDay = LTime[i];
-if (i == 0) {
-minTimeB=eTimeDay;
-maxTimeB=eTimeDay;
-}
-else {
-if (eTimeDay > maxTime)
-maxTimeB=eTimeDay;
-if (eTimeDay < minTime)
-minTimeB=eTimeDay;
-}
-LTime.push_back(eTimeDay);
-}
-std::cerr << "minTime=" << minTimeB << " maxTime=" << maxTimeB << "\n";
-std::string strPresMin=DATE_ConvertMjd2mystringPres(minTimeB);
-std::string strPresMax=DATE_ConvertMjd2mystringPres(maxTimeB);
+std::cerr << "minTime=" << minTime << " maxTime=" << maxTime << "\n";
+std::string strPresMin=DATE_ConvertMjd2mystringPres(minTime);
+std::string strPresMax=DATE_ConvertMjd2mystringPres(maxTime);
 std::cerr << "strPresMin=" << strPresMin << "\n";
 std::cerr << "strPresMax=" << strPresMax << "\n";
 }
@@ -3419,7 +3414,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 1)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -3471,7 +3467,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 2)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -3580,7 +3577,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 3)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -3678,7 +3676,8 @@ throw TerminalException{1};
 netCDF::NcDim eDim0=data.getDim(0);
 int nbRec=eDim0.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 4)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -3783,7 +3782,7 @@ ArrayHistory eArr=TotalArr.eArr;
 GridArray GrdArr=TotalArr.GrdArr;
 auto GetHisFileName=[&](int const& iFile) -> std::string {
 if (eArr.TimeSteppingInfo == "multiplenetcdf") {
-return eArr.HisPrefix + StringNumber(iFile+1,4) + ".nc";
+return eArr.HisPrefix + StringNumber(iFile+1,eArr.nbDigit) + ".nc";
 }
 int len=eArr.ListFileNames.size();
 if (iFile >= len) {
@@ -3802,7 +3801,7 @@ return eArr.ListFileNames[iFile];
 };
 std::string HisFileLow, HisFileUpp;
 int iRecLow, iRecUpp;
-double alphaLow, alphaUpp;
+double alphaLow=0, alphaUpp=0;
 bool IsDone=false;
 if (eArr.TimeSteppingInfo == "classic") {
 InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
@@ -3912,7 +3911,8 @@ if (nbDim == 4) {
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 6)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -3963,7 +3963,8 @@ return eArr;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 7)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -4317,7 +4318,7 @@ eSet.insert(eAdj);
 nbEdge += eSet.size();
 }
 MyMatrix<int> ListEdges(nbEdge,2);
-int iEdge=0;
+int posEdge=0;
 std::vector<int> IndexStart(nbNode);
 std::vector<int> IndexEnd (nbNode);
 for (int iNode=0; iNode<nbNode; iNode++) {
@@ -4328,13 +4329,13 @@ int eAdj=ListAdjacency(iNode, iAdj);
 if (eAdj > iNode)
 eSet.insert(eAdj);
 }
-IndexStart[iNode]=iEdge;
+IndexStart[iNode]=posEdge;
 for (auto eAdj : eSet) {
-ListEdges(iEdge,0)=iNode;
-ListEdges(iEdge,1)=eAdj;
-iEdge++;
+ListEdges(posEdge,0)=iNode;
+ListEdges(posEdge,1)=eAdj;
+posEdge++;
 }
-IndexEnd [iNode]=iEdge;
+IndexEnd [iNode]=posEdge;
 }
 auto GetIEdge=[&](int const& eVert1, int const& eVert2) -> int {
 int idxStart=IndexStart[eVert1];
@@ -4347,7 +4348,7 @@ throw TerminalException{1};
 if (ListEdges(iEdge,1) == eVert2)
 return iEdge;
 }
-std::cerr << "Failed to find the correct indexes iEdge\n";
+std::cerr << "Failed to find the correct indexes iEdgeIter\n";
 throw TerminalException{1};
 };
 MyMatrix<int> LEdge=GetEdgeSet(INE, nbNode);
@@ -5105,7 +5106,8 @@ double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
 double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
 double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
 double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
-if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
+double tolLL = double(1) / double(100000);
+if ( fabs(zendlon_tot - zstartlon_tot) < tolLL || fabs(zendlat_tot - zstartlat_tot) < tolLL) {
 std::cerr << "Error of consistency in zstartlat / zendlat\n";
 throw TerminalException{1};
 }
@@ -6174,11 +6176,34 @@ if (postfix == "atm") {
 eCosmoWamGridArray.GrdArrRho.ANG=NC_Read2Dvariable(eFile, "ANG_atm");
 }
 else {
-eCosmoWamGridArray.GrdArrRho.ANG=ZeroMatrix<double>(eta_rho, xi_rho);
+eCosmoWamGridArray.GrdArrRho.ANG=CreateAngleMatrix(eCosmoWamGridArray.GrdArrRho.LON, eCosmoWamGridArray.GrdArrRho.LAT);
 }
 eCosmoWamGridArray.GrdArrRho.eta=eta_rho;
 eCosmoWamGridArray.GrdArrRho.xi =xi_rho;
 return eCosmoWamGridArray;
+}
+GridArray NC_ReadSCHISM_sflux_grid(std::string const& eFile)
+{
+GridArray GrdArr;
+GrdArr.ModelName="SCHISM_SFLUX";
+GrdArr.IsFE=0;
+GrdArr.IsSpherical=true;
+std::string LONstr="lon";
+GrdArr.GrdArrRho.LON=NC_Read2Dvariable(eFile, LONstr);
+std::string LATstr="lat";
+GrdArr.GrdArrRho.LAT=NC_Read2Dvariable(eFile, LATstr);
+int eta_rho=GrdArr.GrdArrRho.LON.rows();
+int xi_rho=GrdArr.GrdArrRho.LON.cols();
+GrdArr.GrdArrRho.HaveDEP=false;
+MyMatrix<int> MSK_int(eta_rho, xi_rho);
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++)
+MSK_int(i,j)=1;
+GrdArr.GrdArrRho.MSK=MSK_int;
+GrdArr.GrdArrRho.ANG=CreateAngleMatrix(GrdArr.GrdArrRho.LON, GrdArr.GrdArrRho.LAT);
+GrdArr.GrdArrRho.eta=eta_rho;
+GrdArr.GrdArrRho.xi =xi_rho;
+return GrdArr;
 }
 MyMatrix<int> NC_ReadElements(std::string const& eFile, std::string const& eStr)
 {
@@ -6389,7 +6414,7 @@ eArr.TimeSteppingInfo="classic";
 std::cerr << "Sequential array has been completed. Leaving\n";
 return eArr;
 }
-ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime)
+ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime, int const&nbDigit)
 {
 double FirstTime, LastTime;
 std::vector<std::string> ListFileNames;
@@ -6421,11 +6446,10 @@ eArr.SeparationTime=TheSep;
 std::cerr << "eArr.SeparationTime = " << eArr.SeparationTime << "\n";
 }
 else {
-std::cerr << "Case 2\n";
 int iFileBegin=0;
 while(1) {
 iFileBegin++;
-std::string TheHisFile=HisPrefix + StringNumber(iFileBegin, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileBegin, nbDigit) + ".nc";
 if (IsExistingFile(TheHisFile) == 1)
 break;
 if (iFileBegin == 9999) {
@@ -6439,13 +6463,13 @@ throw TerminalException{1};
 std::cerr << "iFileBegin=" << iFileBegin << "\n";
 int iFileEnd=iFileBegin;
 while(1) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileEnd+1, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileEnd+1, nbDigit) + ".nc";
 if (IsExistingFile(TheHisFile) == 0)
 break;
 iFileEnd++;
 }
 std::cerr << "iFileEnd=" << iFileEnd << "\n";
-std::string TheHisFileBegin=HisPrefix + StringNumber(iFileBegin, 4) + ".nc";
+std::string TheHisFileBegin=HisPrefix + StringNumber(iFileBegin, nbDigit) + ".nc";
 std::vector<double> LTimeBegin=NC_ReadTimeFromFile(TheHisFileBegin, StringTime);
 int nbRecBegin=LTimeBegin.size();
 double DeltaTime;
@@ -6454,7 +6478,7 @@ DeltaTime=LTimeBegin[1]-LTimeBegin[0];
 }
 else {
 if (iFileEnd > iFileBegin) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileBegin+1, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileBegin+1, nbDigit) + ".nc";
 std::vector<double> LTimeBP1=NC_ReadTimeFromFile(TheHisFile, StringTime);
 DeltaTime=LTimeBP1[0] - LTimeBegin[0];
 }
@@ -6465,7 +6489,7 @@ DeltaTime=0;
 int iFileMiddle, nbRecMiddle;
 if (iFileEnd != iFileBegin) {
 iFileMiddle=iFileBegin+1;
-std::string TheHisFile=HisPrefix + StringNumber(iFileMiddle, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileMiddle, nbDigit) + ".nc";
 std::vector<double> LTimeMiddle=NC_ReadTimeFromFile(TheHisFile, StringTime);
 nbRecMiddle=LTimeMiddle.size();
 }
@@ -6476,7 +6500,7 @@ nbRecMiddle=nbRecBegin;
 std::cerr << "iFileMiddle=" << iFileMiddle << "\n";
 int nbRecEnd;
 if (iFileEnd != iFileMiddle) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileEnd, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileEnd, nbDigit) + ".nc";
 std::vector<double> LTimeEnd=NC_ReadTimeFromFile(TheHisFile, StringTime);
 nbRecEnd=LTimeEnd.size();
 }
@@ -6493,7 +6517,7 @@ double currentTime=LTimeBegin[0];
 FirstTime=currentTime;
 for (int iFile=0; iFile<nbFile; iFile++) {
 int iFileTot=iFile+iFileBegin;
-std::string TheHisFile=HisPrefix + StringNumber(iFileTot, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileTot, nbDigit) + ".nc";
 ListFileNames.push_back(TheHisFile);
 int siz=NbPerArray[iFile];
 for (int i=0; i<siz; i++) {
@@ -6522,6 +6546,7 @@ eArr.ListIFile=ListIFile;
 eArr.ListIRec=ListIRec;
 eArr.ListTime=ListTime;
 }
+eArr.nbDigit=nbDigit;
 eArr.AppendVarName=false;
 eArr.KindArchive="NETCDF";
 std::cerr << "Leaving NC_ReadArrayHistory_Kernel\n";
@@ -6567,6 +6592,8 @@ return HisPrefix + "0001.nc";
 if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
 return eTriple.GridFile;
 if (eModelName == "WWM" || eModelName == "WWM_DAILY")
+return eTriple.GridFile;
+if (eModelName == "SCHISM_SFLUX")
 return eTriple.GridFile;
 if (eModelName == "WW3") {
 std::string ThePrefix=HisPrefix + "*";
@@ -6653,6 +6680,9 @@ return ReadUnstructuredGrid(GridFile, BoundFile);
 if (eModelName == "WW3") {
 return NC_ReadWW3_GridFile(GridFile);
 }
+if (eModelName == "SCHISM_SFLUX") {
+return NC_ReadSCHISM_sflux_grid(GridFile);
+}
 if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_COSMO") {
 std::string HisPrefix=eTriple.HisPrefix;
 std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
@@ -6708,7 +6738,9 @@ return WW3_ReadArrayHistory(HisFile, HisPrefix);
 }
 if (eModelName == "ROMS_IVICA" || eModelName == "WWM_DAILY")
 return Sequential_ReadArrayHistory(HisPrefix);
-return NC_ReadArrayHistory_Kernel(HisPrefix, StringTime);
+if (eModelName == "SCHISM_SFLUX")
+return NC_ReadArrayHistory_Kernel(HisPrefix, "time", 3);
+return NC_ReadArrayHistory_Kernel(HisPrefix, StringTime, 4);
 }
 ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
 {
@@ -6747,7 +6779,7 @@ return false;
 double TimePrev=ListAllMessage[0].time;
 std::vector<double> ListTime{TimePrev};
 std::vector<int> ListITime(TotalNbMessage);
-int iTime=0;
+int posTime=0;
 for (int iMesg=0; iMesg<TotalNbMessage; iMesg++) {
 GRIB_MessageInfo eMesg=ListAllMessage[iMesg];
 double eTime=eMesg.time;
@@ -6755,9 +6787,9 @@ double TimeDiff = fabs(eTime - TimePrev);
 if (TimeDiff > MaxErrorTime) {
 ListTime.push_back(eTime);
 TimePrev=eTime;
-iTime++;
+posTime++;
 }
-ListITime[iMesg]=iTime;
+ListITime[iMesg]=posTime;
 }
 std::vector<double> ListStartTime;
 std::vector<int> ListIStartTime(TotalNbMessage);
@@ -6859,7 +6891,7 @@ double xj = X(kj);
 double yj = Y(kj);
 double xk = X(kk);
 double yk = Y(kk);
-# 8212 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
+# 8241 "/home/mathieu/GIT/wwmIII/CppOcean/CREATE_sflux.cpp"
 double f1, f2, f3;
 f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
 f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
@@ -6985,8 +7017,8 @@ double eCoeff00=(1-lambda1)*(1-lambda2);
 double eCoeff10=lambda1*(1-lambda2);
 double eCoeff01=(1-lambda1)*lambda2;
 double eCoeff11=lambda1*lambda2;
-std::vector<double> LCoeff{eCoeff00, eCoeff10, eCoeff01, eCoeff11};
-return LCoeff;
+std::vector<double> LCoeffRet{eCoeff00, eCoeff10, eCoeff01, eCoeff11};
+return LCoeffRet;
 }
 X={CoordGridArr.LON(eEta+1, eXi+1), CoordGridArr.LON(eEta+1, eXi), CoordGridArr.LON(eEta, eXi+1)};
 Y={CoordGridArr.LAT(eEta+1, eXi+1), CoordGridArr.LAT(eEta+1, eXi), CoordGridArr.LAT(eEta, eXi+1)};
@@ -7249,6 +7281,10 @@ RecS.maxdiff=2;
 RecS.Unit="m/s";
 }
 if (eVarName == "WIND10") {
+if (eModelName == "SCHISM_SFLUX") {
+U=Get2DvariableSpecTime(TotalArr, "uwind", eTimeDay);
+V=Get2DvariableSpecTime(TotalArr, "vwind", eTimeDay);
+}
 if (eModelName == "ROMS" || eModelName == "WWM") {
 U=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "Vwind", eTimeDay);
@@ -7288,6 +7324,11 @@ F=Get2DvariableSpecTime(TotalArr, "WNDMAG", eTimeDay);
 }
 }
 }
+if (eModelName == "SCHISM_SFLUX") {
+MyMatrix<double> Us=Get2DvariableSpecTime(TotalArr, "uwind", eTimeDay);
+MyMatrix<double> Vs=Get2DvariableSpecTime(TotalArr, "vwind", eTimeDay);
+F=COMPUTE_NORM(Us, Vs);
+}
 if (eModelName == "COSMO" || eModelName == "WAM") {
 MyMatrix<double> Us=Get2DvariableSpecTime(TotalArr, "U_10", eTimeDay);
 MyMatrix<double> Vs=Get2DvariableSpecTime(TotalArr, "V_10", eTimeDay);
@@ -7319,6 +7360,8 @@ RecS.maxdiff=0.02;
 RecS.Unit="kg/m3";
 }
 if (eVarName == "rain") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "prate", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "rain", eTimeDay);
 if (eModelName == "GRIB_COSMO" || eModelName == "GRIB_DWD" || eModelName == "GRIB_ECMWF")
@@ -7331,6 +7374,8 @@ RecS.maxdiff=0.001;
 RecS.Unit="kg/m^2/s";
 }
 if (eVarName == "swrad") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "dswrf", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "swrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
@@ -7345,6 +7390,8 @@ RecS.maxdiff=100;
 RecS.Unit="W/m2";
 }
 if (eVarName == "lwrad") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "dlwrf", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "lwrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
@@ -7372,6 +7419,9 @@ if (eVarName == "SurfPres") {
 if (eModelName == "ROMS") {
 MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "Pair", eTimeDay);
 F=100*Fin;
+}
+if (eModelName == "SCHISM_SFLUX") {
+F=Get2DvariableSpecTime(TotalArr, "prmsl", eTimeDay);
 }
 if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS")
 F=Get2DvariableSpecTime(TotalArr, "prmsl", eTimeDay);
@@ -7426,7 +7476,26 @@ RecS.mindiff=-0.1;
 RecS.maxdiff=0.1;
 RecS.Unit="kg/m2s";
 }
+if (eVarName == "AIRT2K") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "AIRT2", eTimeDay);
+F=RecVarWork.F;
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) += double(273.15);
+RecS.VarName2="2m air temperature (K)";
+RecS.minval=273.15 + 10;
+RecS.maxval=273.15 + 20;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="deg";
+}
 if (eVarName == "AIRT2") {
+if (eModelName == "SCHISM_SFLUX") {
+F=Get2DvariableSpecTime(TotalArr, "stmp", eTimeDay);
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) -= double(273.15);
+}
 if (eModelName == "COSMO") {
 F=Get2DvariableSpecTime(TotalArr, "t_2m", eTimeDay);
 int siz=F.size();
@@ -7446,11 +7515,25 @@ RecS.mindiff=-2;
 RecS.maxdiff=2;
 RecS.Unit="deg";
 }
+if (eVarName == "Rh2frac") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "Rh2", eTimeDay);
+F=RecVarWork.F / double(100);
+RecS.VarName2="2m relative humidity";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-0.2;
+RecS.maxdiff=0.2;
+RecS.Unit="nondim.";
+}
 if (eVarName == "Rh2") {
 if (eModelName == "COSMO")
 F=Get2DvariableSpecTime(TotalArr, "rh_2m", eTimeDay);
 if (eModelName == "GRIB_DWD")
 F=Get2DvariableSpecTime(TotalArr, "RELHUM_2M", eTimeDay);
+if (eModelName == "SCHISM_SFLUX") {
+MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "spfh", eTimeDay);
+F=100 * Fin;
+}
 if (eModelName == "GRIB_ECMWF") {
 if (TOTALARR_IsVar(TotalArr, "2r")) {
 F=Get2DvariableSpecTime(TotalArr, "2r", eTimeDay);
@@ -7572,9 +7655,7 @@ Eigen::Tensor<double,3> Vtot=NETCDF_Get3DvariableSpecTime(TotalArr, "v", eTimeDa
 int s_rho=Utot.dimension(0);
 MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
 MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
-std::cerr << "Before My_u2rho\n";
 U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrU.MSK);
-std::cerr << "After My_u2rho\n";
 V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrV.MSK);
 }
 if (eModelName == "WWM") {
@@ -8345,6 +8426,17 @@ std::string eModelName=eBlPROC.ListStringValues.at("MODELNAME");
 std::string GridFile=eBlPROC.ListStringValues.at("GridFile");
 std::string BoundFile=eBlPROC.ListStringValues.at("BoundFile");
 std::string HisPrefix=eBlPROC.ListStringValues.at("HisPrefix");
+bool DoAIRfiles=eBlPROC.ListBoolValues.at("DoAIRfiles");
+bool DoPRCfiles=eBlPROC.ListBoolValues.at("DoPRCfiles");
+bool DoRADfiles=eBlPROC.ListBoolValues.at("DoRADfiles");
+bool AnalyticWind=eBlPROC.ListBoolValues.at("AnalyticWind");
+bool AnalyticPrmsl=eBlPROC.ListBoolValues.at("AnalyticPRMSL");
+bool AnalyticStmp=eBlPROC.ListBoolValues.at("AnalyticSTMP");
+bool AnalyticSpfh=eBlPROC.ListBoolValues.at("AnalyticSPFH");
+bool AnalyticDlwrf=eBlPROC.ListBoolValues.at("AnalyticDLWRF");
+bool AnalyticDswrf=eBlPROC.ListBoolValues.at("AnalyticDSWRF");
+bool AnalyticPrate=eBlPROC.ListBoolValues.at("AnalyticPRATE");
+int idxForc=eBlPROC.ListIntValues.at("idxForc");
 TripleModelDesc eTriple{eModelName, GridFile, BoundFile, HisPrefix, false, false, 0, 0};
 GridArray GrdArr=RETRIEVE_GRID_ARRAY(eTriple);
 ArrayHistory eArr=ReadArrayHistory(eTriple);
@@ -8357,32 +8449,17 @@ std::cerr << "nbTime=" << nbTime << "\n";
 TotalArrGetData TotalArr{GrdArr, eArr};
 int eta_rho=GrdArr.GrdArrRho.LON.rows();
 int xi_rho =GrdArr.GrdArrRho.LON.cols();
-MyMatrix<double> Uwind(eta_rho,xi_rho);
-MyMatrix<double> Vwind(eta_rho,xi_rho);
-MyMatrix<double> PRMSL(eta_rho,xi_rho);
-MyMatrix<double> STMP(eta_rho,xi_rho);
-MyMatrix<double> SPFH(eta_rho,xi_rho);
-MyMatrix<double> PRATE(eta_rho,xi_rho);
-MyMatrix<double> DLWRF(eta_rho,xi_rho);
-MyMatrix<double> DSWRF(eta_rho,xi_rho);
-for (int i=0; i<eta_rho; i++)
-for (int j=0; j<xi_rho; j++) {
-Uwind(i,j)=0;
-Vwind(i,j)=0;
-PRMSL(i,j)=105384.9;
-STMP(i,j)=15;
-SPFH(i,j)=0;
-PRATE(i,j)=0;
-DLWRF(i,j)=0;
-DSWRF(i,j)=0;
-}
 double FirstTime=ListTime[0];
 double LastTime=ListTime[nbTime-1];
 double eps=0.0001;
 int iDayFirst=int(floor(FirstTime + eps));
 int iDayLast=int(floor(LastTime + eps));
 std::string OutPrefix=eBlPROC.ListStringValues.at("OutPrefix");
+std::string eDir=FILE_GetAbsoluteDirectory(OutPrefix);
+std::string eDirB=ExtractDirectoryFromFileString(eDir);
+CreateDirectory(eDirB);
 for (int iDay=iDayFirst; iDay<=iDayLast; iDay++) {
+std::cerr << "-------------------------------------------------------------\n";
 std::vector<int> ListITime;
 bool IsFirst=true;
 double MinTimeFirst=-1;
@@ -8403,151 +8480,139 @@ MinTimeFirst=eTime;
 std::vector<int> eDateMinSix=DATE_ConvertMjd2six(MinTimeFirst);
 std::vector<int> eTimeFirstSix{eDateMinSix[0], eDateMinSix[1], eDateMinSix[2], 0,0,0};
 double eTimeFirst=DATE_ConvertSix2mjd(eTimeFirstSix);
+std::string strPresB=DATE_ConvertSix2mystringPres(eTimeFirstSix);
 int nbTimeRel=ListITime.size();
-std::cerr << "nbTimeRel=" << nbTimeRel << "\n";
+std::cerr << "iDay=" << iDay << " date=" << strPresB << " nbTimeRel=" << nbTimeRel << "\n";
 int idx=iDay - (iDayFirst-1);
-std::string eDir=FILE_GetAbsoluteDirectory(OutPrefix);
-std::string eDirB=ExtractDirectoryFromFileString(eDir);
-CreateDirectory(eDirB);
-std::string eFileNC=OutPrefix + StringNumber(idx,3) + ".nc";
-netCDF::NcFile dataFile(eFileNC, netCDF::NcFile::replace, netCDF::NcFile::nc4);
-std::cerr << "eta_rho=" << eta_rho << "  xi_rho=" << xi_rho << "\n";
-netCDF::NcDim eDimAsize=dataFile.addDim("aSize", eta_rho);
-netCDF::NcDim eDimBsize=dataFile.addDim("bSize", xi_rho);
-netCDF::NcDim eDimNb=dataFile.addDim("time");
-netCDF::NcDim eDimDate=dataFile.addDim("dateString", 19);
 std::vector<std::string> ListDimTime{"time"};
 std::vector<std::string> ListDimTimeStr{"time", "dateString"};
 std::vector<std::string> ListDimABsize{"aSize", "bSize"};
 std::vector<std::string> ListDimField{"time", "aSize", "bSize"};
-netCDF::NcVar eVarData_prmsl=dataFile.addVar("prmsl", "float", ListDimField);
-netCDF::NcVar eVarData_stmp =dataFile.addVar("stmp" , "float", ListDimField);
-netCDF::NcVar eVarData_spfh =dataFile.addVar("spfh" , "float", ListDimField);
-netCDF::NcVar eVarData_uwind=dataFile.addVar("uwind", "float", ListDimField);
-netCDF::NcVar eVarData_vwind=dataFile.addVar("vwind", "float", ListDimField);
-netCDF::NcVar eVarData_dlwrf=dataFile.addVar("dlwrf", "float", ListDimField);
-netCDF::NcVar eVarData_dswrf=dataFile.addVar("dswrf", "float", ListDimField);
-netCDF::NcVar eVarData_prate=dataFile.addVar("prate", "float", ListDimField);
-netCDF::NcVar eVarData_lon=dataFile.addVar("lon", "float", ListDimABsize);
-netCDF::NcVar eVarData_lat=dataFile.addVar("lat", "float", ListDimABsize);
-netCDF::NcVar eVarData_ang=dataFile.addVar("ang", "float", ListDimABsize);
-netCDF::NcVar eVarData_time=dataFile.addVar("time", "double", ListDimTime);
 std::string Units="units";
 std::string LongName="long_name";
 std::string StdName="standard_name";
 std::string BasDate="base_date";
-eVarData_time.putAtt(LongName, std::string("Time"));
-eVarData_time.putAtt(StdName, std::string("time"));
 int Data[4];
 std::vector<int> eDate=DATE_ConvertMjd2six(eTimeFirst);
 for (int i=0; i<4; i++)
 Data[i]=eDate[i];
-std::string strPresFirst=DATE_ConvertMjd2mystringPres(eTimeFirst);
-std::string AttUnitTime="days since " + strPresFirst;
-eVarData_time.putAtt(BasDate, netCDF::NcType::nc_INT, 4, Data);
-eVarData_time.putAtt(Units, AttUnitTime);
-netCDF::NcVar eVarData_timeStr=dataFile.addVar("time_str", "char", ListDimTimeStr);
-eVarData_prmsl.putAtt(LongName, std::string("Pressure reduced to MSL"));
-eVarData_stmp.putAtt(LongName, std::string("Surface Air Temperature (2m AGL)"));
-eVarData_spfh.putAtt(LongName, std::string("Surface Specific Humidity (2m AGL)"));
-eVarData_uwind.putAtt(LongName, std::string("10 m U-wind"));
-eVarData_vwind.putAtt(LongName, std::string("10 m V-wind"));
-eVarData_dlwrf.putAtt(LongName, std::string("Downward Long Wave Radiation Flux"));
-eVarData_dswrf.putAtt(LongName, std::string("Downward Short Wave Radiation Flux"));
-eVarData_prate.putAtt(LongName, std::string("Surface Precipitation Rate"));
-eVarData_prmsl.putAtt(StdName, std::string("air_pressure_at_sea_level"));
-eVarData_stmp.putAtt(StdName, std::string("air_temperature"));
-eVarData_spfh.putAtt(StdName, std::string("specific_humidity"));
-eVarData_uwind.putAtt(StdName, std::string("eastward_wind"));
-eVarData_vwind.putAtt(StdName, std::string("northward_wind"));
-eVarData_dlwrf.putAtt(StdName, std::string("surface_downwelling_longwave_flux_in_air"));
-eVarData_dswrf.putAtt(StdName, std::string("surface_downwelling_shortwave_flux_in_air"));
-eVarData_prate.putAtt(StdName, std::string("precipitation_flux"));
-eVarData_prmsl.putAtt(Units, std::string("Pa"));
-eVarData_stmp.putAtt(Units, std::string("K"));
-eVarData_spfh.putAtt(Units, std::string("1"));
-eVarData_uwind.putAtt(Units, std::string("m/s"));
-eVarData_vwind.putAtt(Units, std::string("m/s"));
-eVarData_dlwrf.putAtt(Units, std::string("W/m^2"));
-eVarData_dswrf.putAtt(Units, std::string("W/m^2"));
-eVarData_prate.putAtt(Units, std::string("kg/m^2/s"));
-double *XfieldD;
-XfieldD=new double[eta_rho*xi_rho];
-auto StdGridWrite=[&](netCDF::NcVar & eVarData, MyMatrix<double> const& F) -> void {
-int posA=0;
-for (int i=0; i<eta_rho; i++)
-for (int j=0; j<xi_rho; j++) {
-double eLon=GrdArr.GrdArrRho.LON(i,j);
-XfieldD[posA]=float(eLon);
-posA++;
-}
-eVarData_lon.putVar(XfieldD);
+struct InfoVarWrite {
+std::string VarName;
+std::string FullName;
+std::string Units;
+std::string PolyAccess;
+double DefaultValue;
+bool DoAnalytic;
 };
-StdGridWrite(eVarData_lon, GrdArr.GrdArrRho.LON);
-StdGridWrite(eVarData_lat, GrdArr.GrdArrRho.LAT);
-StdGridWrite(eVarData_ang, GrdArr.GrdArrRho.ANG);
+auto WriteFullVariable=[&](netCDF::NcFile & recFile, netCDF::NcVar & eVarData_time, netCDF::NcVar & eVarData_timeStr, InfoVarWrite const& eV) -> void {
+netCDF::NcVar eVarData=recFile.addVar(eV.VarName, "float", ListDimField);
+eVarData.putAtt(LongName, eV.FullName);
+eVarData.putAtt(Units, eV.Units);
+MyMatrix<double> VAR(eta_rho,xi_rho);
+float *XfieldD;
+XfieldD=new float[eta_rho*xi_rho];
 for (int iTimeRel=0; iTimeRel<nbTimeRel; iTimeRel++) {
 int iTime=ListITime[iTimeRel];
-double eTimeDay=eArr.ListTime[iTime];
-RecVar eRecVar;
-if (eBlPROC.ListBoolValues.at("AnalyticWind") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "WIND10", eTimeDay);
-Uwind=eRecVar.U;
-Vwind=eRecVar.V;
+double eTimeDay=ListTime[iTime];
+if (eV.DoAnalytic) {
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++)
+VAR(i,j)=eV.DefaultValue;
 }
-if (eBlPROC.ListBoolValues.at("AnalyticPRMSL") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "SurfPres", eTimeDay);
-PRMSL=eRecVar.F;
+else {
+RecVar eRecVar=ModelSpecificVarSpecificTime(TotalArr, eV.PolyAccess, eTimeDay);
+VAR=eRecVar.F;
 }
-if (eBlPROC.ListBoolValues.at("AnalyticSTMP") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "AIRT2", eTimeDay);
-STMP=eRecVar.F;
-}
-if (eBlPROC.ListBoolValues.at("AnalyticSPFH") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "Rh2", eTimeDay);
-SPFH=eRecVar.F;
-}
-if (eBlPROC.ListBoolValues.at("AnalyticPRATE") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "rain", eTimeDay);
-PRATE=eRecVar.F;
-}
-if (eBlPROC.ListBoolValues.at("AnalyticDSWRF") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "swrad", eTimeDay);
-DSWRF=eRecVar.F;
-}
-if (eBlPROC.ListBoolValues.at("AnalyticDLWRF") == false) {
-eRecVar=ModelSpecificVarSpecificTime(TotalArr, "lwrad", eTimeDay);
-DLWRF=eRecVar.F;
-}
-std::string strPres=DATE_ConvertMjd2mystringPres(eTimeDay);
+std::string strPresC=DATE_ConvertMjd2mystringPres(eTimeDay);
 std::vector<size_t> startpT{size_t(iTimeRel)};
 std::vector<size_t> countpT{1};
 double eTimePrint = eTimeDay - eTimeFirst;
 eVarData_time.putVar(startpT, countpT, &eTimePrint);
 std::vector<size_t> startpK{size_t(iTimeRel),0};
 std::vector<size_t> countpK{1,19};
-eVarData_timeStr.putVar(startpK, countpK, strPres.c_str());
+eVarData_timeStr.putVar(startpK, countpK, strPresC.c_str());
 std::vector<size_t> startp{size_t(iTimeRel),0,0};
 std::vector<size_t> countp{1,size_t(eta_rho),size_t(xi_rho)};
-auto varWrite=[&](netCDF::NcVar &eVarData, MyMatrix<double> const& F) -> void {
 int posA=0;
 for (int i=0; i<eta_rho; i++)
 for (int j=0; j<xi_rho; j++) {
-XfieldD[posA]=float(F(i,j));
+XfieldD[posA]=float(VAR(i,j));
 posA++;
 }
 eVarData.putVar(startp, countp, XfieldD);
-};
-varWrite(eVarData_uwind, Uwind);
-varWrite(eVarData_vwind, Vwind);
-varWrite(eVarData_prmsl, PRMSL);
-varWrite(eVarData_stmp, STMP);
-varWrite(eVarData_spfh, SPFH);
-varWrite(eVarData_prate, PRATE);
-varWrite(eVarData_dlwrf, DLWRF);
-varWrite(eVarData_dswrf, DSWRF);
 }
 delete [] XfieldD;
+};
+auto DoWriteDown=[&](bool const& DoAIR, bool const& DoPRC, bool const& DoRAD) -> void {
+std::string eFileNC;
+std::string Postfix=IntToString(idxForc) + "." + StringNumber(idx,3) + ".nc";
+if (DoAIR)
+eFileNC=OutPrefix + "sflux_air_" + Postfix;
+if (DoPRC)
+eFileNC=OutPrefix + "sflux_prc_" + Postfix;
+if (DoRAD)
+eFileNC=OutPrefix + "sflux_rad_" + Postfix;
+netCDF::NcFile dataFile(eFileNC, netCDF::NcFile::replace, netCDF::NcFile::nc4);
+netCDF::NcDim eDimAsize=dataFile.addDim("aSize", eta_rho);
+netCDF::NcDim eDimBsize=dataFile.addDim("bSize", xi_rho);
+netCDF::NcDim eDimNb=dataFile.addDim("time");
+netCDF::NcDim eDimDate=dataFile.addDim("dateString", 19);
+netCDF::NcVar eVarData_lon=dataFile.addVar("lon", "float", ListDimABsize);
+netCDF::NcVar eVarData_lat=dataFile.addVar("lat", "float", ListDimABsize);
+netCDF::NcVar eVarData_ang=dataFile.addVar("ang", "float", ListDimABsize);
+netCDF::NcVar eVarData_time=dataFile.addVar("time", "double", ListDimTime);
+eVarData_time.putAtt(LongName, std::string("Time"));
+eVarData_time.putAtt(StdName, std::string("time"));
+std::string strPresFirst=DATE_ConvertMjd2mystringPres(eTimeFirst);
+std::string AttUnitTime="days since " + strPresFirst;
+eVarData_time.putAtt(BasDate, netCDF::NcType::nc_INT, 4, Data);
+eVarData_time.putAtt(Units, AttUnitTime);
+netCDF::NcVar eVarData_timeStr=dataFile.addVar("time_str", "char", ListDimTimeStr);
+auto StdGridWrite=[&](netCDF::NcVar & eVarData, MyMatrix<double> const& F) -> void {
+int posA=0;
+float *XfieldD;
+XfieldD=new float[eta_rho*xi_rho];
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++) {
+double eLon=F(i,j);
+XfieldD[posA]=float(eLon);
+posA++;
+}
+eVarData.putVar(XfieldD);
+delete [] XfieldD;
+};
+StdGridWrite(eVarData_lon, GrdArr.GrdArrRho.LON);
+StdGridWrite(eVarData_lat, GrdArr.GrdArrRho.LAT);
+StdGridWrite(eVarData_ang, GrdArr.GrdArrRho.ANG);
+if (DoAIR) {
+InfoVarWrite eV_prmsl{"prmsl", "Pressure reduced to MSL", "Pa", "SurfPres", 105384.9, AnalyticPrmsl};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_prmsl);
+InfoVarWrite eV_uwind{"uwind", "10 m U-wind", "m/s", "Uwind", 0, AnalyticWind};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_uwind);
+InfoVarWrite eV_vwind{"vwind", "10 m V-wind", "m/s", "Vwind", 0, AnalyticWind};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_vwind);
+InfoVarWrite eV_stmp {"stmp", "Surface Air Temperature (2m AGL)", "K", "AIRT2K", 273.15 + 15, AnalyticStmp};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_stmp );
+InfoVarWrite eV_spfh {"spfh", "Surface Specific Humidity (2m AGL)", "1", "Rh2frac", 0, AnalyticSpfh};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_spfh );
+}
+if (DoPRC) {
+InfoVarWrite eV_prate{"prate", "precipitation flux", "kg/m^2/s", "rain", 0, AnalyticPrate};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_prate);
+}
+if (DoRAD) {
+InfoVarWrite eV_dlwrf{"dlwrf", "Downward Long Wave Radiation Flux", "W/m^2", "lwrad", 0,AnalyticDlwrf};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_dlwrf);
+InfoVarWrite eV_dswrf{"dswrf", "Downward Short Wave Radiation Flux","W/m^2", "swrad", 0,AnalyticDswrf};
+WriteFullVariable(dataFile, eVarData_time, eVarData_timeStr, eV_dswrf);
+}
+};
+if (DoAIRfiles)
+DoWriteDown(true, false, false);
+if (DoPRCfiles)
+DoWriteDown(false, true, false);
+if (DoRADfiles)
+DoWriteDown(false, false, true);
 }
 }
 SingleArrayInterpolation INTERPOL_CreateSingleRecVarInterpol(GridArray const& GrdArrOut, GridArray const& GrdArrIn)
@@ -8815,6 +8880,8 @@ ListBoolValues1["KeepNC_NCL"]=false;
 ListBoolValues1["OverwritePrevious"]=false;
 ListBoolValues1["WriteITimeInFileName"]=true;
 ListIntValues1["NPROC"]=1;
+ListDoubleValues1["ThresholdApplyAverage"]=10000;
+ListBoolValues1["ApplyThresholdAveraging"]=false;
 SingleBlock BlockPROC;
 BlockPROC.ListIntValues=ListIntValues1;
 BlockPROC.ListBoolValues=ListBoolValues1;
@@ -8906,6 +8973,8 @@ return eFullNamelist;
 }
 int main(int argc, char *argv[])
 {
+std::cerr << std::fixed;
+std::cerr << std::setprecision(9);
 try {
 FullNamelist eFull=NAMELIST_GetStandard_CREATE_sflux();
 if (argc != 2) {

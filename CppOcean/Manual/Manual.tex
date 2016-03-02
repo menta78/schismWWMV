@@ -107,7 +107,7 @@ The namelists are done according to following principles:
 
 \section{Model data input}
 
-The supported models are: {\tt WWM}, {\tt WWM\_DAILY}, {\tt WAM}, {\tt COSMO}, {\tt WW3}, {\tt ROMS}, {\tt GRIB\_ECMWF}, {\tt GRIB\_GFS}, {\tt GRIB\_COSMO}, {\tt GRIB\_DWD}.
+The supported models are: {\tt WWM}, {\tt WWM\_DAILY}, {\tt WAM}, {\tt COSMO}, {\tt WW3}, {\tt ROMS}, {\tt GRIB\_ECMWF}, {\tt SCHISM\_SFLUX}, {\tt GRIB\_GFS}, {\tt GRIB\_COSMO}, {\tt GRIB\_DWD}.
 The relevant values in the file are {\tt GridFile}, {\tt HisPrefix} and {\tt MODELNAME}.
 
 
@@ -133,6 +133,13 @@ or
  GridFile = "WWM_output_0001.nc",
  HisPrefix = "WWM_output_",
 \end{verbatim}
+\item {\tt SCHISM\_SFLUX} is the case of SCHISM sflux files. A typical construction would be
+\begin{verbatim}
+ MODELNAME = "SCHISM_SFLUX"
+ GridFile = "sflux_air_1.001.nc",
+ HisPrefix = "sflux_air_1.",
+\end{verbatim}
+For rain and long/short wave fluxes, use {\tt sflux\_prc\_1.} and {\tt sflux\_rad\_1.} Also, for the second forcing if present, use {\tt sflux\_air\_2.} and similar.
 \item {\tt WWM\_DAILY} is a variant of the above where the files are in disordered form, for example of the form {\tt WWM\_output\_20160219\_00.nc}.
 \item {\tt WAM}: Both in its structured and unstructured versions.
 \begin{verbatim}
@@ -219,7 +226,8 @@ The variables that are available for use and plots are:\\
 \item {\bf Vwind}: northward wind component at 10m. (WWM : Vwind)
 \item {\bf WIND10} (uv): 10m wind speed (WWM : Uwind/Vwind)
 \item {\bf WINDMAG}: Wind magnitude (WWM : WINDMAG)
-\item {\bf AIRT2}: 2m air temperature
+\item {\bf AIRT2}: 2m air temperature (in deg C)
+\item {\bf AIRT2K}: 2m air temperature (in deg K)
 \item {\bf Rh2}: 2m air humidity
 \item {\bf AIRD}: Surface air density
 \item {\bf rain}: rainfall rate

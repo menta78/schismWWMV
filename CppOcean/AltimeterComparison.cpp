@@ -68,7 +68,7 @@ SmoothArr GetSmoothingArray(double const& avgDistKM_model, double const& avgDist
 {
 double TheSizeReal=avgDistKM_model / avgDistKM_track;
 double w=(TheSizeReal-1)/2;
-int wlow=floor(w);
+int wlow=int(floor(w));
 int LenTotal=1+2*wlow + 2;
 std::vector<int> ListShift;
 std::vector<double> ListWeight;
@@ -471,10 +471,10 @@ return eVar_rho;
 }
 std::vector<std::string> GetAllPossibleModels()
 {
-std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WWM_DAILY", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30"};
+std::vector<std::string> vec{"COSMO", "WAM", "ROMS", "ROMS_IVICA", "WWM", "WWM_DAILY", "WW3", "GRIB_DWD", "GRIB_ECMWF", "GRIB_GFS", "GRIB_COSMO", "GRIB_WAM_FORT30", "SCHISM_SFLUX"};
 return vec;
 }
-double TheSignFct(double const& eVal)
+int TheSignFct(double const& eVal)
 {
 if (eVal > 0)
 return 1;
@@ -523,7 +523,7 @@ std::vector<std::string> ListVarOut{
 "WIND10", "Uwind", "Vwind","WINDMAG",
 "SurfCurr", "UsurfCurr", "VsurfCurr", "SurfCurrMag",
 "Curr", "CurrMag",
-"TempSurf", "SaltSurf", "AIRT2", "Rh2", "AIRD", "SurfPres",
+"TempSurf", "SaltSurf", "AIRT2", "AIRT2K", "Rh2", "Rh2frac", "AIRD", "SurfPres",
 "ZetaOcean", "ZetaOceanDerivative", "DynBathy", "ZetaSetup",
 "CdWave", "AlphaWave", "AirZ0", "AirFricVel",
 "shflux", "ssflux", "evaporation",
@@ -637,7 +637,7 @@ std::vector<double> LCoeff(3);
 for (int i=0; i<3; i++) {
 LCoeff[i]=eProduct(i);
 }
-# 815 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 818 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 return LCoeff;
 }
 bool TestFeasibilityByQuad(QuadCoordinate const& eQuad, double const& eLon, double const& eLat)
@@ -726,7 +726,7 @@ struct Inverse_exception {
 std::string errmsg;
 T pivot;
 };
-# 955 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 958 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 template<typename T>
 struct SelectionRowCol {
 int TheRank;
@@ -1278,6 +1278,7 @@ std::vector<double> ListTime;
 std::string TimeSteppingInfo;
 std::string HisPrefix;
 double SeparationTime;
+int nbDigit;
 int nbRecBegin;
 int nbRecMiddle;
 bool AppendVarName;
@@ -1538,7 +1539,7 @@ hour=Date[3];
 min=Date[4];
 sec=Date[5];
 int a, y, m;
-a = floor((double(14) - double(month))/double(12));
+a = int(floor((double(14) - double(month))/double(12)));
 y = year + 4800 - a;
 m = month + 12*a - 3;
 eJDbase = double(day)
@@ -1720,23 +1721,23 @@ std::vector<int> JD2DATE(double const& eJD)
 int year, month, day, hour, min, sec;
 int ijd, a, b, c, d, e, m;
 double fjd, second;
-ijd = floor(eJD + 0.5);
+ijd = int(floor(eJD + 0.5));
 a = ijd + 32044;
-b = floor((double(4)*double(a) + double(3)) / double(146097));
-c = a - floor((double(b) * double(146097)) / double(4));
-d = floor((double(4)*double(c) + double(3)) / double(1461));
-e = c - floor((double(1461)*double(d)) / double(4));
-m = floor((double(5) * double(e) + double(2)) / double(153));
-day = e - floor((double(153) * double(m) + double(2)) / double(5)) + 1;
-month = m + 3 - 12 * floor(double(m) / double(10));
-year = b * 100 + d - 4800 + floor(double(m) / double(10));
+b = int(floor((double(4)*double(a) + double(3)) / double(146097)));
+c = a - int(floor((double(b) * double(146097)) / double(4)));
+d = int(floor((double(4)*double(c) + double(3)) / double(1461)));
+e = c - int(floor((double(1461)*double(d)) / double(4)));
+m = int(floor((double(5) * double(e) + double(2)) / double(153)));
+day = e - int(floor((double(153) * double(m) + double(2)) / double(5))) + 1;
+month = m + 3 - 12 * int(floor(double(m) / double(10)));
+year = b * 100 + d - 4800 + int(floor(double(m) / double(10)));
 fjd = eJD - double(ijd) + 0.5;
 second = double(86400) * fjd;
-hour = floor(second/double(3600));
+hour = int(floor(second/double(3600)));
 second = second - double(3600)*double(hour);
-min = floor(second/double(60));
-sec = floor(second - double(60)*min);
-int secNear=round(second - double(60)*min);
+min = int(floor(second/double(60)));
+sec = int(floor(second - double(60)*min));
+int secNear=int(round(second - double(60)*min));
 if (secNear == 60) {
 sec=0;
 min=min+1;
@@ -1830,7 +1831,7 @@ return ListTime;
 std::vector<double> GetInterval(std::string const& BEGTC, std::string const& ENDTC, double const& eInterval, std::string const& UNITC)
 {
 int IsDone=0;
-double eMult;
+double eMult = 0;
 if (UNITC == "DAY") {
 IsDone=1;
 eMult=double(1);
@@ -2074,7 +2075,7 @@ eVal = ListVal[i];
 }
 }
 return eVal;
-# 2690 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 2694 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 }
 std::vector<std::string> GRIB_GetAllFilesInDirectory(std::string const& ePrefix)
 {
@@ -2165,7 +2166,6 @@ zarg2 = cos (zlampol) * (-zsinpol * cos(zrlas) * cos(zphis) +
 zcospol * sin(zphis)) +
 sin (zlampol) * sin(zrlas) * cos(zphis);
 }
-if (zarg2 == 0) zarg2=1.0e-20;
 double rlarot2rla = eMultInv * atan2(zarg1,zarg2);
 return rlarot2rla;
 }
@@ -2180,7 +2180,8 @@ double zendlon_tot=eCosmoGrid.longitudeOfLastGridPointInDegrees;
 double zendlat_tot=eCosmoGrid.latitudeOfLastGridPointInDegrees;
 double dlon=eCosmoGrid.iDirectionIncrementInDegrees;
 double dlat=eCosmoGrid.jDirectionIncrementInDegrees;
-if (zendlon_tot == zstartlon_tot || zendlat_tot == zstartlat_tot) {
+double tolLL = double(1) / double(100000);
+if ( fabs(zendlon_tot - zstartlon_tot) < tolLL || fabs(zendlat_tot - zstartlat_tot) < tolLL) {
 std::cerr << "Error of consistency in zstartlat / zendlat\n";
 throw TerminalException{1};
 }
@@ -2719,7 +2720,7 @@ eSet.insert(eAdj);
 nbEdge += eSet.size();
 }
 MyMatrix<int> ListEdges(nbEdge,2);
-int iEdge=0;
+int posEdge=0;
 std::vector<int> IndexStart(nbNode);
 std::vector<int> IndexEnd (nbNode);
 for (int iNode=0; iNode<nbNode; iNode++) {
@@ -2730,13 +2731,13 @@ int eAdj=ListAdjacency(iNode, iAdj);
 if (eAdj > iNode)
 eSet.insert(eAdj);
 }
-IndexStart[iNode]=iEdge;
+IndexStart[iNode]=posEdge;
 for (auto eAdj : eSet) {
-ListEdges(iEdge,0)=iNode;
-ListEdges(iEdge,1)=eAdj;
-iEdge++;
+ListEdges(posEdge,0)=iNode;
+ListEdges(posEdge,1)=eAdj;
+posEdge++;
 }
-IndexEnd [iNode]=iEdge;
+IndexEnd [iNode]=posEdge;
 }
 auto GetIEdge=[&](int const& eVert1, int const& eVert2) -> int {
 int idxStart=IndexStart[eVert1];
@@ -2749,7 +2750,7 @@ throw TerminalException{1};
 if (ListEdges(iEdge,1) == eVert2)
 return iEdge;
 }
-std::cerr << "Failed to find the correct indexes iEdge\n";
+std::cerr << "Failed to find the correct indexes iEdgeIter\n";
 throw TerminalException{1};
 };
 MyMatrix<int> LEdge=GetEdgeSet(INE, nbNode);
@@ -3972,7 +3973,7 @@ SatelliteId.insert(eEnt);
 }
 return SatelliteId;
 }
-std::vector<PairListWindWave> MergeTracksForRawStatistics(std::vector<SatelliteListTrack> const& LTrack, std::set<int> const& SatelliteId, FullNamelist const& eFull)
+std::vector<PairListWindWave> MergeTracksForRawStatistics(std::vector<SatelliteListTrack> const& LTrack, FullNamelist const& eFull)
 {
 SingleBlock eBlSEL=eFull.ListBlock.at("SELECT");
 double MinWind=eBlSEL.ListDoubleValues.at("MinWIND");
@@ -4704,8 +4705,8 @@ int sizStrDateT=LStrDateT.size();
 if (sizStrDateT > 1) {
 YnameDate=LStrDateT[0];
 std::string eStrB=LStrDateT[1];
-int alenB=eStrUnitTime.length();
-YnameTime=eStrB.substr(0,alenB-2);
+int alenC=eStrUnitTime.length();
+YnameTime=eStrB.substr(0,alenC-2);
 std::cerr << "Case of WW3\n";
 std::cerr << "YnameDate=" << YnameDate << "\n";
 std::cerr << "YnameTime=" << YnameTime << "\n";
@@ -4787,7 +4788,13 @@ eTimeAtt.getValues(eString);
 std::string eStrUnitTime=eString;
 double ConvertToDay, eTimeStart;
 CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart);
-std::vector<double> LTime;
+std::vector<double> LTime(siz);
+if (siz == 0) {
+std::cerr << "We found siz=0\n";
+std::cerr << "This means that we find zero times in the file\n";
+std::cerr << "which is not what we expected\n";
+throw TerminalException{1};
+}
 double minTime=0, maxTime=0;
 for (int i=0; i<siz; i++) {
 double eTimeDay = eVal[i]*ConvertToDay + eTimeStart;
@@ -4801,29 +4808,14 @@ maxTime=eTimeDay;
 if (eTimeDay < minTime)
 minTime=eTimeDay;
 }
-LTime.push_back(eTimeDay);
+LTime[i]=eTimeDay;
 }
 delete [] eVal;
 bool ShowMinMax=false;
 if (ShowMinMax) {
-double minTimeB, maxTimeB;
-for (int i=0; i<siz; i++) {
-double eTimeDay = LTime[i];
-if (i == 0) {
-minTimeB=eTimeDay;
-maxTimeB=eTimeDay;
-}
-else {
-if (eTimeDay > maxTime)
-maxTimeB=eTimeDay;
-if (eTimeDay < minTime)
-minTimeB=eTimeDay;
-}
-LTime.push_back(eTimeDay);
-}
-std::cerr << "minTime=" << minTimeB << " maxTime=" << maxTimeB << "\n";
-std::string strPresMin=DATE_ConvertMjd2mystringPres(minTimeB);
-std::string strPresMax=DATE_ConvertMjd2mystringPres(maxTimeB);
+std::cerr << "minTime=" << minTime << " maxTime=" << maxTime << "\n";
+std::string strPresMin=DATE_ConvertMjd2mystringPres(minTime);
+std::string strPresMax=DATE_ConvertMjd2mystringPres(maxTime);
 std::cerr << "strPresMin=" << strPresMin << "\n";
 std::cerr << "strPresMax=" << strPresMax << "\n";
 }
@@ -4851,7 +4843,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 1)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -4903,7 +4896,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 2)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -5012,7 +5006,8 @@ netCDF::NcDim eDim;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 3)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -5110,7 +5105,8 @@ throw TerminalException{1};
 netCDF::NcDim eDim0=data.getDim(0);
 int nbRec=eDim0.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 4)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -5215,7 +5211,7 @@ ArrayHistory eArr=TotalArr.eArr;
 GridArray GrdArr=TotalArr.GrdArr;
 auto GetHisFileName=[&](int const& iFile) -> std::string {
 if (eArr.TimeSteppingInfo == "multiplenetcdf") {
-return eArr.HisPrefix + StringNumber(iFile+1,4) + ".nc";
+return eArr.HisPrefix + StringNumber(iFile+1,eArr.nbDigit) + ".nc";
 }
 int len=eArr.ListFileNames.size();
 if (iFile >= len) {
@@ -5234,7 +5230,7 @@ return eArr.ListFileNames[iFile];
 };
 std::string HisFileLow, HisFileUpp;
 int iRecLow, iRecUpp;
-double alphaLow, alphaUpp;
+double alphaLow=0, alphaUpp=0;
 bool IsDone=false;
 if (eArr.TimeSteppingInfo == "classic") {
 InterpInfo eInterpInfo=GetTimeInterpolationInfo(eArr.ListTime, eTimeDay);
@@ -5344,7 +5340,8 @@ if (nbDim == 4) {
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 6)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -5395,7 +5392,8 @@ return eArr;
 eDim=data.getDim(0);
 int nbRec=eDim.getSize();
 if (iRec >= nbRec) {
-std::cerr << "Error, iRec is too large\n";
+std::cerr << "eFile=" << eFile << "\n";
+std::cerr << "Error, iRec is too large (Case 7)\n";
 std::cerr << "iRec=" << iRec << " nbRec=" << nbRec << "\n";
 std::cerr << "We need C-convention iRec < nbRec\n";
 throw TerminalException{1};
@@ -5766,11 +5764,34 @@ if (postfix == "atm") {
 eCosmoWamGridArray.GrdArrRho.ANG=NC_Read2Dvariable(eFile, "ANG_atm");
 }
 else {
-eCosmoWamGridArray.GrdArrRho.ANG=ZeroMatrix<double>(eta_rho, xi_rho);
+eCosmoWamGridArray.GrdArrRho.ANG=CreateAngleMatrix(eCosmoWamGridArray.GrdArrRho.LON, eCosmoWamGridArray.GrdArrRho.LAT);
 }
 eCosmoWamGridArray.GrdArrRho.eta=eta_rho;
 eCosmoWamGridArray.GrdArrRho.xi =xi_rho;
 return eCosmoWamGridArray;
+}
+GridArray NC_ReadSCHISM_sflux_grid(std::string const& eFile)
+{
+GridArray GrdArr;
+GrdArr.ModelName="SCHISM_SFLUX";
+GrdArr.IsFE=0;
+GrdArr.IsSpherical=true;
+std::string LONstr="lon";
+GrdArr.GrdArrRho.LON=NC_Read2Dvariable(eFile, LONstr);
+std::string LATstr="lat";
+GrdArr.GrdArrRho.LAT=NC_Read2Dvariable(eFile, LATstr);
+int eta_rho=GrdArr.GrdArrRho.LON.rows();
+int xi_rho=GrdArr.GrdArrRho.LON.cols();
+GrdArr.GrdArrRho.HaveDEP=false;
+MyMatrix<int> MSK_int(eta_rho, xi_rho);
+for (int i=0; i<eta_rho; i++)
+for (int j=0; j<xi_rho; j++)
+MSK_int(i,j)=1;
+GrdArr.GrdArrRho.MSK=MSK_int;
+GrdArr.GrdArrRho.ANG=CreateAngleMatrix(GrdArr.GrdArrRho.LON, GrdArr.GrdArrRho.LAT);
+GrdArr.GrdArrRho.eta=eta_rho;
+GrdArr.GrdArrRho.xi =xi_rho;
+return GrdArr;
 }
 MyMatrix<int> NC_ReadElements(std::string const& eFile, std::string const& eStr)
 {
@@ -6291,7 +6312,7 @@ double eLon2=GrdArr.GrdArrRho.LON(iRow-1, iCol);
 double eLat2=GrdArr.GrdArrRho.LAT(iRow-1, iCol);
 double DistKM=GeodesicDistanceKM(eLon1, eLat1, eLon2, eLat2);
 SumDistKM += DistKM;
-SumNb += 1;
+SumNb++;
 }
 }
 }
@@ -6376,7 +6397,7 @@ eArr.TimeSteppingInfo="classic";
 std::cerr << "Sequential array has been completed. Leaving\n";
 return eArr;
 }
-ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime)
+ArrayHistory NC_ReadArrayHistory_Kernel(std::string const& HisPrefix, std::string const& StringTime, int const&nbDigit)
 {
 double FirstTime, LastTime;
 std::vector<std::string> ListFileNames;
@@ -6408,11 +6429,10 @@ eArr.SeparationTime=TheSep;
 std::cerr << "eArr.SeparationTime = " << eArr.SeparationTime << "\n";
 }
 else {
-std::cerr << "Case 2\n";
 int iFileBegin=0;
 while(1) {
 iFileBegin++;
-std::string TheHisFile=HisPrefix + StringNumber(iFileBegin, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileBegin, nbDigit) + ".nc";
 if (IsExistingFile(TheHisFile) == 1)
 break;
 if (iFileBegin == 9999) {
@@ -6426,13 +6446,13 @@ throw TerminalException{1};
 std::cerr << "iFileBegin=" << iFileBegin << "\n";
 int iFileEnd=iFileBegin;
 while(1) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileEnd+1, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileEnd+1, nbDigit) + ".nc";
 if (IsExistingFile(TheHisFile) == 0)
 break;
 iFileEnd++;
 }
 std::cerr << "iFileEnd=" << iFileEnd << "\n";
-std::string TheHisFileBegin=HisPrefix + StringNumber(iFileBegin, 4) + ".nc";
+std::string TheHisFileBegin=HisPrefix + StringNumber(iFileBegin, nbDigit) + ".nc";
 std::vector<double> LTimeBegin=NC_ReadTimeFromFile(TheHisFileBegin, StringTime);
 int nbRecBegin=LTimeBegin.size();
 double DeltaTime;
@@ -6441,7 +6461,7 @@ DeltaTime=LTimeBegin[1]-LTimeBegin[0];
 }
 else {
 if (iFileEnd > iFileBegin) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileBegin+1, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileBegin+1, nbDigit) + ".nc";
 std::vector<double> LTimeBP1=NC_ReadTimeFromFile(TheHisFile, StringTime);
 DeltaTime=LTimeBP1[0] - LTimeBegin[0];
 }
@@ -6452,7 +6472,7 @@ DeltaTime=0;
 int iFileMiddle, nbRecMiddle;
 if (iFileEnd != iFileBegin) {
 iFileMiddle=iFileBegin+1;
-std::string TheHisFile=HisPrefix + StringNumber(iFileMiddle, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileMiddle, nbDigit) + ".nc";
 std::vector<double> LTimeMiddle=NC_ReadTimeFromFile(TheHisFile, StringTime);
 nbRecMiddle=LTimeMiddle.size();
 }
@@ -6463,7 +6483,7 @@ nbRecMiddle=nbRecBegin;
 std::cerr << "iFileMiddle=" << iFileMiddle << "\n";
 int nbRecEnd;
 if (iFileEnd != iFileMiddle) {
-std::string TheHisFile=HisPrefix + StringNumber(iFileEnd, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileEnd, nbDigit) + ".nc";
 std::vector<double> LTimeEnd=NC_ReadTimeFromFile(TheHisFile, StringTime);
 nbRecEnd=LTimeEnd.size();
 }
@@ -6480,7 +6500,7 @@ double currentTime=LTimeBegin[0];
 FirstTime=currentTime;
 for (int iFile=0; iFile<nbFile; iFile++) {
 int iFileTot=iFile+iFileBegin;
-std::string TheHisFile=HisPrefix + StringNumber(iFileTot, 4) + ".nc";
+std::string TheHisFile=HisPrefix + StringNumber(iFileTot, nbDigit) + ".nc";
 ListFileNames.push_back(TheHisFile);
 int siz=NbPerArray[iFile];
 for (int i=0; i<siz; i++) {
@@ -6509,6 +6529,7 @@ eArr.ListIFile=ListIFile;
 eArr.ListIRec=ListIRec;
 eArr.ListTime=ListTime;
 }
+eArr.nbDigit=nbDigit;
 eArr.AppendVarName=false;
 eArr.KindArchive="NETCDF";
 std::cerr << "Leaving NC_ReadArrayHistory_Kernel\n";
@@ -6564,6 +6585,8 @@ return HisPrefix + "0001.nc";
 if (eModelName == "ROMS" || eModelName == "ROMS_IVICA")
 return eTriple.GridFile;
 if (eModelName == "WWM" || eModelName == "WWM_DAILY")
+return eTriple.GridFile;
+if (eModelName == "SCHISM_SFLUX")
 return eTriple.GridFile;
 if (eModelName == "WW3") {
 std::string ThePrefix=HisPrefix + "*";
@@ -6650,6 +6673,9 @@ return ReadUnstructuredGrid(GridFile, BoundFile);
 if (eModelName == "WW3") {
 return NC_ReadWW3_GridFile(GridFile);
 }
+if (eModelName == "SCHISM_SFLUX") {
+return NC_ReadSCHISM_sflux_grid(GridFile);
+}
 if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS" || eModelName == "GRIB_ECMWF" || eModelName == "GRIB_COSMO") {
 std::string HisPrefix=eTriple.HisPrefix;
 std::vector<std::string> ListFile=GRIB_GetAllFilesInDirectory(HisPrefix);
@@ -6705,7 +6731,9 @@ return WW3_ReadArrayHistory(HisFile, HisPrefix);
 }
 if (eModelName == "ROMS_IVICA" || eModelName == "WWM_DAILY")
 return Sequential_ReadArrayHistory(HisPrefix);
-return NC_ReadArrayHistory_Kernel(HisPrefix, StringTime);
+if (eModelName == "SCHISM_SFLUX")
+return NC_ReadArrayHistory_Kernel(HisPrefix, "time", 3);
+return NC_ReadArrayHistory_Kernel(HisPrefix, StringTime, 4);
 }
 ArrayHistory GRIB_ReadArrayHistory(std::string const& HisPrefix)
 {
@@ -6744,7 +6772,7 @@ return false;
 double TimePrev=ListAllMessage[0].time;
 std::vector<double> ListTime{TimePrev};
 std::vector<int> ListITime(TotalNbMessage);
-int iTime=0;
+int posTime=0;
 for (int iMesg=0; iMesg<TotalNbMessage; iMesg++) {
 GRIB_MessageInfo eMesg=ListAllMessage[iMesg];
 double eTime=eMesg.time;
@@ -6752,9 +6780,9 @@ double TimeDiff = fabs(eTime - TimePrev);
 if (TimeDiff > MaxErrorTime) {
 ListTime.push_back(eTime);
 TimePrev=eTime;
-iTime++;
+posTime++;
 }
-ListITime[iMesg]=iTime;
+ListITime[iMesg]=posTime;
 }
 std::vector<double> ListStartTime;
 std::vector<int> ListIStartTime(TotalNbMessage);
@@ -7164,19 +7192,19 @@ eVarX2D.putVar(X2D);
 eVarY2D.putVar(Y2D);
 delete [] X2D;
 delete [] Y2D;
-int canvasInt[aSize][bSize];
+MyMatrix<int> canvasInt(aSize,bSize);
 for (int iA=0; iA<aSize; iA++)
 for (int iB=0; iB<bSize; iB++)
-canvasInt[iA][iB]=0;
+canvasInt(iA,iB)=0;
 for (int iEnt=0; iEnt<nb; iEnt++) {
 double eA=eDrawScatter.eVectA(iEnt);
 double eB=eDrawScatter.eVectB(iEnt);
 double iA_d=(eA - data_rangeA[0])/deltaA;
 double iB_d=(eB - data_rangeB[0])/deltaB;
-int iA=floor(iA_d);
-int iB=floor(iB_d);
+int iA=int(floor(iA_d));
+int iB=int(floor(iB_d));
 if (iA >=0 && iA<aSize && iB>=0 && iB<bSize)
-canvasInt[iA][iB]++;
+canvasInt(iA,iB)++;
 }
 double *canvas;
 canvas=new double[aSize*bSize];
@@ -7185,7 +7213,7 @@ idx=0;
 for (int iA=0; iA<aSize; iA++)
 for (int iB=0; iB<bSize; iB++) {
 double eVal;
-int eValI=canvasInt[iA][iB];
+int eValI=canvasInt(iA,iB);
 if (eValI == 0)
 eVal=MissVal;
 else
@@ -7741,7 +7769,7 @@ double xj = X(kj);
 double yj = Y(kj);
 double xk = X(kk);
 double yk = Y(kk);
-# 9269 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
+# 9308 "/home/mathieu/GIT/wwmIII/CppOcean/AltimeterComparison.cpp"
 double f1, f2, f3;
 f1 = xi*(yj-Yp) + xj*(Yp-yi) + Xp*(yi-yj);
 f2 = xj*(yk-Yp) + xk*(Yp-yj) + Xp*(yj-yk);
@@ -7867,8 +7895,8 @@ double eCoeff00=(1-lambda1)*(1-lambda2);
 double eCoeff10=lambda1*(1-lambda2);
 double eCoeff01=(1-lambda1)*lambda2;
 double eCoeff11=lambda1*lambda2;
-std::vector<double> LCoeff{eCoeff00, eCoeff10, eCoeff01, eCoeff11};
-return LCoeff;
+std::vector<double> LCoeffRet{eCoeff00, eCoeff10, eCoeff01, eCoeff11};
+return LCoeffRet;
 }
 X={CoordGridArr.LON(eEta+1, eXi+1), CoordGridArr.LON(eEta+1, eXi), CoordGridArr.LON(eEta, eXi+1)};
 Y={CoordGridArr.LAT(eEta+1, eXi+1), CoordGridArr.LAT(eEta+1, eXi), CoordGridArr.LAT(eEta, eXi+1)};
@@ -8416,13 +8444,15 @@ UpdateMinMaxXY(eBez.point2);
 std::cerr << "SVG: X(min/max)=" << MinX << " / " << MaxX << "\n";
 std::cerr << "SVG: Y(min/max)=" << MinY << " / " << MaxY << "\n";
 double scale_factor, add_offsetX, add_offsetY;
-double height, width;
+double height=0, width=0;
+bool FrameInit=false;
 if (eSVGplot.FrameOption == 0) {
 height=eSVGplot.height;
 width=eSVGplot.width;
 scale_factor=eSVGplot.scale_factor;
 add_offsetX=eSVGplot.add_offsetX;
 add_offsetY=eSVGplot.add_offsetY;
+FrameInit=true;
 }
 if (eSVGplot.FrameOption == 1) {
 height=eSVGplot.height;
@@ -8436,6 +8466,12 @@ double MidY=(MaxY + MinY) / 2;
 scale_factor=T_min(scale_factorX, scale_factorY);
 add_offsetX=FrameX/2 - scale_factor*MidX;
 add_offsetY=FrameY/2 - scale_factor*MidY;
+FrameInit=true;
+}
+if (FrameInit == false) {
+std::cerr << "FrameOption has not been used\n";
+std::cerr << "Please correct this\n";
+throw TerminalException{1};
 }
 auto GetStringValue=[&](double const& eVal, double const& add_offset) -> std::string {
 double eValM=add_offset + eVal*scale_factor;
@@ -8831,6 +8867,10 @@ RecS.maxdiff=2;
 RecS.Unit="m/s";
 }
 if (eVarName == "WIND10") {
+if (eModelName == "SCHISM_SFLUX") {
+U=Get2DvariableSpecTime(TotalArr, "uwind", eTimeDay);
+V=Get2DvariableSpecTime(TotalArr, "vwind", eTimeDay);
+}
 if (eModelName == "ROMS" || eModelName == "WWM") {
 U=Get2DvariableSpecTime(TotalArr, "Uwind", eTimeDay);
 V=Get2DvariableSpecTime(TotalArr, "Vwind", eTimeDay);
@@ -8870,6 +8910,11 @@ F=Get2DvariableSpecTime(TotalArr, "WNDMAG", eTimeDay);
 }
 }
 }
+if (eModelName == "SCHISM_SFLUX") {
+MyMatrix<double> Us=Get2DvariableSpecTime(TotalArr, "uwind", eTimeDay);
+MyMatrix<double> Vs=Get2DvariableSpecTime(TotalArr, "vwind", eTimeDay);
+F=COMPUTE_NORM(Us, Vs);
+}
 if (eModelName == "COSMO" || eModelName == "WAM") {
 MyMatrix<double> Us=Get2DvariableSpecTime(TotalArr, "U_10", eTimeDay);
 MyMatrix<double> Vs=Get2DvariableSpecTime(TotalArr, "V_10", eTimeDay);
@@ -8901,6 +8946,8 @@ RecS.maxdiff=0.02;
 RecS.Unit="kg/m3";
 }
 if (eVarName == "rain") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "prate", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "rain", eTimeDay);
 if (eModelName == "GRIB_COSMO" || eModelName == "GRIB_DWD" || eModelName == "GRIB_ECMWF")
@@ -8913,6 +8960,8 @@ RecS.maxdiff=0.001;
 RecS.Unit="kg/m^2/s";
 }
 if (eVarName == "swrad") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "dswrf", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "swrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
@@ -8927,6 +8976,8 @@ RecS.maxdiff=100;
 RecS.Unit="W/m2";
 }
 if (eVarName == "lwrad") {
+if (eModelName == "SCHISM_SFLUX")
+F=Get2DvariableSpecTime(TotalArr, "dlwrf", eTimeDay);
 if (eModelName == "ROMS")
 F=Get2DvariableSpecTime(TotalArr, "lwrad", eTimeDay);
 if (eModelName == "GRIB_COSMO")
@@ -8954,6 +9005,9 @@ if (eVarName == "SurfPres") {
 if (eModelName == "ROMS") {
 MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "Pair", eTimeDay);
 F=100*Fin;
+}
+if (eModelName == "SCHISM_SFLUX") {
+F=Get2DvariableSpecTime(TotalArr, "prmsl", eTimeDay);
 }
 if (eModelName == "GRIB_DWD" || eModelName == "GRIB_GFS")
 F=Get2DvariableSpecTime(TotalArr, "prmsl", eTimeDay);
@@ -9008,7 +9062,26 @@ RecS.mindiff=-0.1;
 RecS.maxdiff=0.1;
 RecS.Unit="kg/m2s";
 }
+if (eVarName == "AIRT2K") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "AIRT2", eTimeDay);
+F=RecVarWork.F;
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) += double(273.15);
+RecS.VarName2="2m air temperature (K)";
+RecS.minval=273.15 + 10;
+RecS.maxval=273.15 + 20;
+RecS.mindiff=-2;
+RecS.maxdiff=2;
+RecS.Unit="deg";
+}
 if (eVarName == "AIRT2") {
+if (eModelName == "SCHISM_SFLUX") {
+F=Get2DvariableSpecTime(TotalArr, "stmp", eTimeDay);
+int siz=F.size();
+for (int i=0; i<siz; i++)
+F(i) -= double(273.15);
+}
 if (eModelName == "COSMO") {
 F=Get2DvariableSpecTime(TotalArr, "t_2m", eTimeDay);
 int siz=F.size();
@@ -9028,11 +9101,25 @@ RecS.mindiff=-2;
 RecS.maxdiff=2;
 RecS.Unit="deg";
 }
+if (eVarName == "Rh2frac") {
+RecVar RecVarWork=ModelSpecificVarSpecificTime_Kernel(TotalArr, "Rh2", eTimeDay);
+F=RecVarWork.F / double(100);
+RecS.VarName2="2m relative humidity";
+RecS.minval=0;
+RecS.maxval=1;
+RecS.mindiff=-0.2;
+RecS.maxdiff=0.2;
+RecS.Unit="nondim.";
+}
 if (eVarName == "Rh2") {
 if (eModelName == "COSMO")
 F=Get2DvariableSpecTime(TotalArr, "rh_2m", eTimeDay);
 if (eModelName == "GRIB_DWD")
 F=Get2DvariableSpecTime(TotalArr, "RELHUM_2M", eTimeDay);
+if (eModelName == "SCHISM_SFLUX") {
+MyMatrix<double> Fin=Get2DvariableSpecTime(TotalArr, "spfh", eTimeDay);
+F=100 * Fin;
+}
 if (eModelName == "GRIB_ECMWF") {
 if (TOTALARR_IsVar(TotalArr, "2r")) {
 F=Get2DvariableSpecTime(TotalArr, "2r", eTimeDay);
@@ -9154,9 +9241,7 @@ Eigen::Tensor<double,3> Vtot=NETCDF_Get3DvariableSpecTime(TotalArr, "v", eTimeDa
 int s_rho=Utot.dimension(0);
 MyMatrix<double> Usurf=DimensionExtraction(Utot, 0, s_rho-1);
 MyMatrix<double> Vsurf=DimensionExtraction(Vtot, 0, s_rho-1);
-std::cerr << "Before My_u2rho\n";
 U=My_u2rho(Usurf, TotalArr.GrdArr.GrdArrU.MSK);
-std::cerr << "After My_u2rho\n";
 V=My_v2rho(Vsurf, TotalArr.GrdArr.GrdArrV.MSK);
 }
 if (eModelName == "WWM") {
@@ -10362,6 +10447,8 @@ ListBoolValues1["KeepNC_NCL"]=false;
 ListBoolValues1["OverwritePrevious"]=false;
 ListBoolValues1["WriteITimeInFileName"]=true;
 ListIntValues1["NPROC"]=1;
+ListDoubleValues1["ThresholdApplyAverage"]=10000;
+ListBoolValues1["ApplyThresholdAveraging"]=false;
 SingleBlock BlockPROC;
 BlockPROC.ListIntValues=ListIntValues1;
 BlockPROC.ListBoolValues=ListBoolValues1;
@@ -10601,12 +10688,12 @@ T_stat eStatWind=ComputeStatistics_Pair(TotalListPairWind);
 Print_Down_Statistics(os, eNameWind, eStatWind);
 for (auto & eRec : eSS) {
 std::string SatName=GetNameOfSatelliteAltimeter(eRec.eSat);
-std::string eNameWind=SatName + " wind statistics";
-T_stat eStatWind=ComputeStatistics_Pair(eRec.ListPairWind);
-Print_Down_Statistics(os, eNameWind, eStatWind);
-osShort << eNameWind << "\n";
-osShort << eStatWind.strNature << "\n";
-osShort << eStatWind.str << "\n";
+std::string eNameWindB=SatName + " wind statistics";
+T_stat eStatWindB=ComputeStatistics_Pair(eRec.ListPairWind);
+Print_Down_Statistics(os, eNameWindB, eStatWindB);
+osShort << eNameWindB << "\n";
+osShort << eStatWindB.strNature << "\n";
+osShort << eStatWindB.str << "\n";
 }
 }
 if (ePerm.eFull.ListBlock.at("PROCESS").ListBoolValues.at("DO_HS")) {
@@ -10619,12 +10706,12 @@ T_stat eStatWave=ComputeStatistics_Pair(TotalListPairWave);
 Print_Down_Statistics(os, eNameWave, eStatWave);
 for (auto & eRec : eSS) {
 std::string SatName=GetNameOfSatelliteAltimeter(eRec.eSat);
-std::string eNameWave=SatName + " wave statistics";
-T_stat eStatWave=ComputeStatistics_Pair(eRec.ListPairWave);
-Print_Down_Statistics(os, eNameWave, eStatWave);
-osShort << eNameWave << "\n";
-osShort << eStatWave.strNature << "\n";
-osShort << eStatWave.str << "\n";
+std::string eNameWaveB=SatName + " wave statistics";
+T_stat eStatWaveB=ComputeStatistics_Pair(eRec.ListPairWave);
+Print_Down_Statistics(os, eNameWaveB, eStatWaveB);
+osShort << eNameWaveB << "\n";
+osShort << eStatWaveB.strNature << "\n";
+osShort << eStatWaveB.str << "\n";
 }
 }
 os.close();
@@ -10891,8 +10978,7 @@ std::vector<double> ListModelWave;
 std::string strMeasWave, strModelWave, strMeasWind, strModelWind;
 int idx=0;
 double SumTimeDay=0;
-double MinTime;
-double MaxTime;
+double MinTime=0, MaxTime=0;
 std::vector<std::string> ListStrMeasWind;
 std::vector<std::string> ListStrModelWind;
 std::vector<std::string> ListStrMeasWave;
@@ -10979,7 +11065,7 @@ ListListStatus.push_back(GetListStatusTrackLength(PreListSingleEntry, eFull));
 std::vector<SingleEntryAltimeter> ListSingleEntry=SelectByStatus(ListListStatus, PreListSingleEntry);
 double avgDistKM_target=GetGridSpacing(GrdArr);
 std::vector<SatelliteListTrack> ListTrackInfo=GetListTrackAltimeter(ListSingleEntry, avgDistKM_target, eFull);
-std::vector<PairListWindWave> eSS=MergeTracksForRawStatistics(ListTrackInfo, SatelliteId, eFull);
+std::vector<PairListWindWave> eSS=MergeTracksForRawStatistics(ListTrackInfo, eFull);
 if (eBlPROC.ListBoolValues.at("DO_STAT")) {
 RAW_STATISTICS_ALTIMETER(eSS, ListTrackInfo, ePerm);
 }
