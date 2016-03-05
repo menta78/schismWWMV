@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA) 
+      SUBROUTINE DEEP_WATER(IP, ACLOC, IMATRA, IMATDA) 
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -591,7 +591,8 @@
          REAL(rkind) :: NEWDAC
 
          ACOLD = ACLOC
-         CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
+         CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA)
+         CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA) 
          DO IS = 1, MSC
            DO ID = 1, MDC
              NEWDAC = IMATRA(IS,ID) * DT / (1.-DT*MIN(ZERO,IMATDA(IS,ID))) 
