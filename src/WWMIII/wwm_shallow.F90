@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SHALLOW (IP, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE SHALLOW_WATER (IP, ACLOC, IMATRA, IMATDA)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -30,32 +30,32 @@
          SSBRL  = ZERO; DSSBRL  = ZERO
          SSBF  = ZERO; DSSBF  = ZERO
 
+         IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACLOC,SSBRL)
+
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 
          IF (MESTR .GT. 0) CALL TRIAD_ELDEBERKY(IP, HS, SME01, ACLOC, IMATRA, IMATDA, SSNL3, DSSNL3)
          IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
          IF (MESBF .GT. 0) CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBF,DSSBF)
 
-         IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-         IMATRA = IMATRA + SSBR + SSNL3 
-
-         IF (LMAXETOT) THEN
-           NEWAC = ACLOC + IMATRA*DT4A/MAX((ONE-DT4A*IMATDA),ONE)
-           CALL MEAN_WAVE_PARAMETER(IP,NEWAC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-           EMAX = 1._rkind/16._rkind * (HMAX(IP))**2 ! HMAX is defined in the breaking routine or has some default value
-           IF (ETOT .GT. EMAX) THEN
-             RATIO  = EMAX/ETOT
-             !SSBRL  = ACLOC*(RATIO-ONE)/DT4A
-             DSSBRL = (RATIO-ONE)/DT4A ! Always negative ...
-           END IF
-           IMATDA = IMATDA + DSSBRL
+         IF (LLIMT) THEN
+           DO IS = 1, MSC
+             MAXDAC = 0.00081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             DO ID = 1, MDC
+               NEWDAC = SSNL3(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,DSSNL3(IS,ID)))
+               LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
+               SSNL3(IS,ID) = LIMDAC/DT4A
+             ENDDO
+           ENDDO
          ENDIF
+
+         IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
+         IMATRA = IMATRA + SSBR  + SSNL3 
 
          WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
          WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
          WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
          WRITE(*,'(A20,6E20.10)') 'BREAKING LIMITER', SUM(SSBRL), SUM(DSSBRL), MINVAL(SSBRL), MAXVAL(SSBRL), MINVAL(DSSBRL), MAXVAL(DSSBRL)
-         !WRITE(*,'(A20,6E20.10)') 'LIMITER',  SUM(SSLIM), SUM(DSSLIM), MINVAL(SSLIM), MAXVAL(SSLIM), MINVAL(DSSLIM), MAXVAL(DSSLIM)
          WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
 
       END SUBROUTINE
