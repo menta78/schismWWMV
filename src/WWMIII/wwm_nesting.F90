@@ -20,6 +20,7 @@
       integer np_write, ne_write
       integer MULTIPLEOUT_W
       logical GRIDWRITE_W, IOBPD_HISTORY_W, WriteOutputProcess
+      logical CG_HISTORY_W
       !
       ! First reading the grids
       !
@@ -135,7 +136,8 @@
           GRIDWRITE_W = .FALSE.
           IOBPD_HISTORY_W = .FALSE.
           WriteOutputProcess = .TRUE.
-          CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+          CG_HISTORY_W = .FALSE.
+          CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W, np_write, ne_write)
           CALL WRITE_NETCDF_HEADERS_2(FILERET, MULTIPLEOUT_W, WriteOutputProcess, GRIDWRITE_W, np_write, ne_write)
         END IF
       END DO
