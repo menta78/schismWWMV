@@ -1944,6 +1944,7 @@
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
       integer, allocatable :: IOBPDoutput(:,:)
+      integer, allocatable :: CGoutput(:,:)
       integer IVAR, nbVar
       integer nbTime
 !
@@ -2009,7 +2010,7 @@
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           nbTime=-1
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, CG_HISTORY, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
@@ -2042,7 +2043,12 @@
       IF (IOBPD_HISTORY) THEN
         allocate(IOBPDoutput(MDC, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
-        CALL GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+        CALL GET_MULTIARR_OUTPUT(IOBPDoutput, IOBPD, MDC, np_write)
+      END IF
+      IF (CG_HISTORY) THEN
+        allocate(CGoutput(MSC, np_write), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
+        CALL GET_MULTIARR_OUTPUT(CGoutput, CG, MSC, np_write)
       END IF
       recs_his2=recs_his2 + 1
       IF (WriteOutputProcess_his) THEN
@@ -2062,6 +2068,12 @@
           iret=nf90_inq_varid(ncid, "IOBPD", var_id)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           iret=nf90_put_var(ncid,var_id,IOBPDoutput,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
+        END IF
+        IF (CG_HISTORY) THEN
+          iret=nf90_inq_varid(ncid, "CG", var_id)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
+          iret=nf90_put_var(ncid,var_id,CGoutput,start = (/1, 1, recs_his/), count = (/ MSC, np_write, 1 /))
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
         END IF
         DO IVAR=1,nbVar

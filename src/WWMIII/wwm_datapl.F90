@@ -216,6 +216,7 @@
          LOGICAL           :: LTHBOUND   = .FALSE.
          LOGICAL           :: LSOUBOUND  = .FALSE.
          LOGICAL           :: IOBPD_HISTORY = .FALSE.
+         LOGICAL           :: CG_HISTORY = .FALSE.
          LOGICAL           :: DOPEAK_BOUNDARY = .TRUE.
          LOGICAL           :: DOPEAK_GLOBAL = .TRUE.
 

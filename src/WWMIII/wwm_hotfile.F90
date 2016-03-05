@@ -786,13 +786,13 @@ MODULE wwm_hotfile_mod
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+      SUBROUTINE WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
       character(len=140), intent(in) :: FILERET
       integer, intent(in) :: nbTime
-      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W
+      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W
       integer, intent(in) :: np_write, ne_write, MULTIPLEOUT_W
       !
       character (len = *), parameter :: CallFct="WRITE_HOTFILE_PART_1"
@@ -803,7 +803,7 @@ MODULE wwm_hotfile_mod
       iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
 
-      CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+      CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W, np_write, ne_write)
 
       iret=nf90_def_dim(ncid, "nboned", nbOned, nboned_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
@@ -870,6 +870,7 @@ MODULE wwm_hotfile_mod
       INTEGER :: POS, nbTime, np_write, ne_write
       REAL(rkind)  :: eTimeDay
       character(len=140) :: FILERET
+      logical :: CG_HISTORY_W = .FALSE.
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT_HOT.eq.0) THEN
         np_write=np_global
@@ -891,7 +892,7 @@ MODULE wwm_hotfile_mod
           nbTime=-1
         END IF
         IF (WriteOutputProcess_hot) THEN
-          CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_HOT, GRIDWRITE, IOBPD_HISTORY, np_write, ne_write)
+          CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_HOT, GRIDWRITE, IOBPD_HISTORY, CG_HISTORY_W, np_write, ne_write)
         END IF
         CALL WRITE_NETCDF_HEADERS_2(FILERET, MULTIPLEOUT_HOT, WriteOutputProcess_hot, GRIDWRITE, np_write, ne_write)
 !$OMP END MASTER

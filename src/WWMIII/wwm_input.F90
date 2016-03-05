@@ -24,6 +24,7 @@
 #endif
          USE DATAPOOL, only : STATION_P => STATION
          USE DATAPOOL, only : IOBPD => IOBPD_HISTORY
+         USE DATAPOOL, only : CG => CG_HISTORY
          USE DATAPOOL, only : MAIN, PRINTMMA, ZERO
          USE DATAPOOL, only : WriteOutputProcess_hot
          USE DATAPOOL, only : WriteOutputProcess_his
@@ -56,7 +57,7 @@
      &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
-     &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD,                         &
+     &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD, CG,                     &
      &      LENERGY, LWXFN, GRIDWRITE, PARAMWRITE,                      &
      &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &

@@ -1285,59 +1285,62 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_IOBPD_OUTPUT(IOBPDoutput, np_write)
+      SUBROUTINE GET_MULTIARR_OUTPUT(ARRoutput, ARR, len, np_write)
       USE DATAPOOL
       IMPLICIT NONE
+      INTEGER, INTENT(OUT) :: ARRoutput(len, np_write)
+      INTEGER, INTENT(in)  :: ARR      (len, MNP)
+      INTEGER, intent(in)  :: len
       INTEGER, intent(in)  :: np_write
-      INTEGER, INTENT(OUT) :: IOBPDoutput(MDC, np_write)
 # ifdef MPI_PARALL_GRID
-      integer, allocatable :: rIOBPD(:,:), rStatus(:), Status(:)
+      integer, allocatable :: rARR(:,:), rStatus(:), Status(:)
       integer iProc, IP
       IF (MULTIPLEOUT_HIS .eq. 1) THEN
-        IOBPDoutput=IOBPD
+        ARRoutput=ARR
       ELSE
-        allocate(rIOBPD(MDC, np_total), rStatus(np_total), Status(np_total), stat=istat)
+        allocate(rARR(len, np_total), rStatus(np_total), Status(np_total), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
-        IOBPDoutput=0
+        ARRoutput=0
         Status=0
         DO IP=1,MNP
-          IOBPDoutput(:, iplg(IP))=IOBPD(:,IP)
+          ARRoutput(:, iplg(IP))=ARR(:,IP)
           Status(iplg(IP)) = 1
         END DO
         IF (myrank .eq. 0) THEN
           DO iProc=2,nproc
-            CALL MPI_RECV(rIOBPD, MDC*np_total, itype, iProc-1, 193, comm, istatus, ierr)
+            CALL MPI_RECV(rARR, MDC*np_total, itype, iProc-1, 193, comm, istatus, ierr)
             CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 197, comm, istatus, ierr)
             DO IP=1,np_total
               IF (rStatus(IP) .eq. 1) THEN
-                IOBPDoutput(:,IP)=rIOBPD(:,IP)
+                Status(IP)=1
+                ARRoutput(:,IP)=rARR(:,IP)
               END IF
             END DO
           END DO
           DO iProc=2,nproc
-            CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, iProc-1, 199, comm, ierr)
+            CALL MPI_SEND(ARRoutput, len*np_total, itype, iProc-1, 199, comm, ierr)
           END DO
         ELSE
-          CALL MPI_SEND(IOBPDoutput, MDC*np_total, itype, 0, 193, comm, ierr)
+          CALL MPI_SEND(ARRoutput, len*np_total, itype, 0, 193, comm, ierr)
           CALL MPI_SEND(Status, np_total, itype, 0, 197, comm, ierr)
-          CALL MPI_RECV(IOBPDoutput, MDC*np_total, itype, 0, 199, comm, istatus, ierr)
+          CALL MPI_RECV(ARRoutput, len*np_total, itype, 0, 199, comm, istatus, ierr)
         ENDIF
-        deallocate(rIOBPD, rStatus, Status)
+        deallocate(rARR, rStatus, Status)
       END IF
 # else
-      IOBPDoutput=IOBPD
+      ARRoutput=ARR
 # endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, GRIDWRITE_W, IOBPD_HISTORY_W, np_write, ne_write)
+      SUBROUTINE WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT, GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W, np_write, ne_write)
       USE DATAPOOL
       USE NETCDF
       implicit none
       integer, intent(in) :: ncid, nbTime, MULTIPLEOUT
       integer, intent(in) :: np_write, ne_write
-      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W
+      logical, intent(in) :: GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W
       !
       character (len = *), parameter :: UNITS = "units"
       integer one_dims, two_dims, three_dims, fifteen_dims
@@ -1458,17 +1461,21 @@
         CALL SERIAL_WRITE_BOUNDARY(ncid, np_total, ne_total, INEtotal, Oper)
         !
       END IF
-      IF (IOBPD_HISTORY_W) THEN
 # ifdef MPI_PARALL_GRID
-        IF (MULTIPLEOUT.eq.1) THEN
-          p_dims=np_global_dims
-        ELSE
-          p_dims=mnp_dims
-        END IF
-# else
+      IF (MULTIPLEOUT.eq.1) THEN
+        p_dims=np_global_dims
+      ELSE
         p_dims=mnp_dims
+      END IF
+# else
+      p_dims=mnp_dims
 # endif
+      IF (IOBPD_HISTORY_W) THEN
         iret=nf90_def_var(ncid,'IOBPD',NF90_INT,(/ ndir_dims, p_dims, ntime_dims/), var_id)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
+      END IF
+      IF (CG_HISTORY_W) THEN
+        iret=nf90_def_var(ncid,'CG',NF90_INT,(/ nfreq_dims, p_dims, ntime_dims/), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       END IF
       END SUBROUTINE
