@@ -6,28 +6,24 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER        :: IP, IS, ID, I, K, M
-         INTEGER        :: NIT_SIN, NIT_SDS, NIT_SNL4, NIT_SNL3, NIT_SBR, NIT_SBF, NIT_ALL
-         INTEGER, SAVE  :: IFIRST, ISELECT
-         REAL(rkind)    :: ACLOC(MSC,MDC), IMATRA(MSC,MDC), IMATDA(MSC,MDC), SSBRL2(MSC,MDC)
-         REAL(rkind)    :: DT4S_T, DT4S_E, DT4S_Q, DT4S_H, DT4S_TQ, DT4S_TS, VEC2RAD
+         INTEGER, INTENT(IN)      :: IP
 
-         DO IP = 1, MNP
-           IF (DEP(IP) .LT. DMIN) CYCLE
-           IF (IOBP(IP) .EQ. 0) THEN
-               ACLOC  = AC2(:,:,IP)
-               CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA) 
-           ELSE !Boundary node ... 
-             IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF (IOBP(IP) .NE. 2) THEN
-                 ACLOC  = AC2(:,:,IP)
-               ENDIF
-             ELSE
-               ACLOC = AC2(:,:,IP)
-               CALL CYCLE3(IP, ACLOC, IMATRA, IMATDA)
-             ENDIF
-           ENDIF
-         ENDDO
+         REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+
+         IMATRA = 0.d0
+         IMATDA = 0.d0 
+
+         IF (MESIN == 1) THEN
+           WRITE(*,*) 'DOING ST4'
+           CALL ST4_PRE(IP, ACLOC, IMATRA, IMATDA)
+         ELSE IF (MESIN == 2) THEN 
+           WRITE(*,*) 'DOING WAM'
+           CALL ECMWF_PRE(IP, ACLOC, IMATRA, IMATDA)
+         ELSE IF (MESIN == 3) THEN
+           WRITE(*,*) 'DOING SWAN SHIT'
+           CALL CYCLE3_PRE(IP, ACLOC, IMATRA, IMATDA) 
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
@@ -66,11 +62,11 @@
                  IF (LSOURCESWAM) THEN
                    CALL SOURCE_INT_EXP_WAM(IP, ACLOC)  
                  ELSE
-                   CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC,20)
+                   CALL INT_IP_STAT(IP,DT4S,ACLOC)
                  ENDIF
                  IF (MESTR .GT. 0) CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL, 4)
                ELSE IF (SMETHOD == 2) THEN
-                 CALL INT_IP_STAT(IP,DT4S, LLIMT,ACLOC, 10)
+                 CALL INT_IP_STAT(IP,DT4S,ACLOC)
                ELSE IF (SMETHOD == 3) THEN
                  CALL RKS_SP3(IP,DT4S,LLIMT,ACLOC, 10)
                ELSE IF (SMETHOD == 4) THEN
@@ -93,15 +89,15 @@
                IF (IOBP(IP) .NE. 2) THEN
                  ACLOC  = AC2(:,:,IP)
                  IF (SMETHOD == 1) THEN
-                   CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
+                   IF (MESBR .GT. 0 .OR. MESBF .GT. 0) CALL RKS_SP3(IP,DT4S,.FALSE.,ACLOC,30)
                    IF (LSOURCESWAM) THEN
                      CALL SOURCE_INT_EXP_WAM(IP, ACLOC)
                    ELSE
                      CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC,20)
                    ENDIF
-                   CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL,4)
+                   IF (MESTR .GT. 0) CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL, 4)
                  ELSE IF (SMETHOD == 2) THEN
-                   CALL INT_IP_STAT(IP,DT4S, LLIMT,ACLOC,10)
+                   CALL INT_IP_STAT(IP,DT4S,ACLOC)
                  ELSE IF (SMETHOD == 3) THEN
                    CALL RKS_SP3(IP,DT4S,LLIMT,ACLOC,10)
                  ELSE IF (SMETHOD == 4) THEN
@@ -186,7 +182,6 @@
                    MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
                  ELSE IF (MELIM .EQ. 2) THEN
                    UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
-                   MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
                  ELSE IF (MELIM .EQ. 3) THEN
                    IF (USNEW(IP) .GT. SMALL) THEN
                      MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
@@ -228,8 +223,8 @@
 
          REAL(rkind),DIMENSION(MDC,MSC)  :: SSDS,DSSDS,SSNL4,DSSNL4,SSIN,DSSIN
      
-         ICODE = 1 
-         
+         ICODE = 3 
+
          IF (MESIN .GT. 0 .OR. MESDS .GT. 0 .OR. MESNL .GT. 0) THEN
            DO IS = 1, MSC
              DO ID = 1, MDC
@@ -582,53 +577,29 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_STAT(IP,DT,LIMITER,ACLOC,ISELECT)
+      SUBROUTINE INT_IP_STAT(IP,DT,ACLOC)
 
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN) :: IP, ISELECT
-         LOGICAL, INTENT(IN) :: LIMITER
+         INTEGER, INTENT(IN) :: IP
          REAL(rkind), INTENT(IN) :: DT
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), ACOLD(MSC,MDC)
 
          INTEGER :: IS, ID
+         REAL(rkind) :: NEWDAC
 
-         REAL(rkind)    :: NPF(MSC)
-         REAL(rkind)    :: OLDAC
-         REAL(rkind)    :: NEWDAC
-         REAL(rkind)    :: MAXDAC, CONST, SND, USTAR
-
-         CALL SOURCETERMS(IP, ACLOC, IMATRA, IMATDA, .FALSE., ISELECT, 'INT_IP_STAT')  ! 1. CALL
-
-         CONST = PI2**2*3.0*1.0E-7*DT*SPSIG(MSC_HF(IP))
-         SND   = PI2*5.6*1.0E-3
-
-         IF (LIMITER) THEN
-           IF (MELIM == 1) THEN
-             NPF = 0.0081_rkind*LIMFAK/(TWO*SPSIG*WK(:,IP)**3*CG(:,IP))
-           ELSE IF (MELIM == 2) THEN
-             DO IS = 1, MSC
-               USTAR = MAX(UFRIC(IP), G9*SND/SPSIG(IS))
-               NPF(IS) = ABS((CONST*USTAR)/(SPSIG(IS)**3*WK(IS,IP)))
-             END DO
-           END IF
-         END IF
-
-!         if (SUM(ACLOC) .NE. SUM(ACLOC)) STOP 'NAN l. 174 wwm_specint.F90'
-
+         ACOLD = ACLOC
+         CALL GET_IMATRA_IMATDA(IP, ACLOC, IMATRA, IMATDA)
          DO IS = 1, MSC
-           MAXDAC = NPF(IS)
            DO ID = 1, MDC
-             OLDAC  = ACLOC(IS,ID)
-             NEWDAC = IMATRA(IS,ID) * DT / ( 1.0 - DT * MIN(ZERO,IMATDA(IS,ID))) 
-             IF (LIMITER) NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-             ACLOC(IS,ID) = MAX( 0.0_rkind, OLDAC + NEWDAC ) 
+             NEWDAC = IMATRA(IS,ID) * DT / (1.-DT*MIN(ZERO,IMATDA(IS,ID))) 
+             ACLOC(IS,ID) = MAX( 0.0_rkind, ACOLD(IS,ID) + NEWDAC ) 
            END DO
          END DO
+         IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
 
-!         write(*,'(A10,2I10,L10,I10,2F15.6)') 'after', ip, iobp(ip), limiter, iselect, sum(acloc), sum(imatra)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

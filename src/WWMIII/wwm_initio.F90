@@ -744,11 +744,7 @@
       CALL SETSHALLOW
       CALL SET_HMAX
 
-      IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
-        CALL WWM_ABORT('DO NOT USE MESIN = 1 OR MESDS = 1 together with LSOURCESWAM .OR. LSOURCESWWIII')
-      END IF
-
-      IF ( (MESIN .EQ. 1 .OR. MESDS .EQ. 1) .AND. SMETHOD .GT. 0 .AND. .NOT. (LSOURCESWAM .OR. LSOURCESWWIII)) THEN
+      IF (MESIN .EQ. 1 .AND. SMETHOD .GT. 0) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
         FLUSH(STAT%FHNDL)
 #ifdef ST41
@@ -1087,7 +1083,7 @@
          FLUSH(STAT%FHNDL)
 
          IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII) .AND. SMETHOD .GT. 0) THEN
-           IF (MESNL .LT. 5) THEN
+           IF (MESNL .GT. 0 .and. MESNL .LT. 5) THEN
              CALL PARAMETER4SNL
            ELSE IF (MESNL .EQ. 5) THEN
              IQGRID = 3
@@ -1106,7 +1102,7 @@
 #ifdef MPI_PARALL_GRID
            CALL MPI_BARRIER(COMM, ierr)
 #endif
-           IF (LPRECOMP_EXIST .AND. .FALSE.) THEN ! this is buggy in mpi !!!
+           IF (LPRECOMP_EXIST) THEN ! this is buggy in mpi !!!
              WRITE(STAT%FHNDL,'("+TRACE...",A)')'READING STRESS TABLES'
              OPEN(5011, FILE='fort.5011', FORM='UNFORMATTED') 
              IF (IPHYS == 0) THEN
@@ -1239,7 +1235,7 @@
              WINDTH      = 0.
              ACLOC       = 0.
            END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
-           AC2(:,:,IP) = ACLOC
+           AC2(:,:,IP) = 10E-7 
          END DO ! IP
        ELSE IF (LHOTR .AND. .NOT. LINID) THEN
          WRITE(STAT%FHNDL,*) 'Calling the INPUT_HOTFILE'

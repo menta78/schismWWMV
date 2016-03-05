@@ -23,7 +23,7 @@
 
          REAL(rkind),DIMENSION(MDC,MSC) :: SSDS,DSSDS,SSNL4,DSSNL4,SSINE,DSSINE
 
-         IMETHOD = 4 
+         IMETHOD = 0 
 
          SSNL3 = ZERO; DSSNL3 = ZERO
          SSBR  = ZERO; DSSBR  = ZERO
@@ -54,108 +54,64 @@
      &                   SSDS, DSSDS, SSINE, DSSINE, &
      &                   SSNL4, DSSNL4)
 
-         IF (IOBP(IP) .EQ. 0) THEN
-           DO ID = 1, MDC
-             DO IS = 1, MSC 
-               JAC = ONE/PI2/SPSIG(IS)
-               IF (IMETHOD == 0) THEN
-                 IMATRA(IS,ID) =  SL(IP,ID,IS)*JAC
-                 IMATDA(IS,ID) = ZERO 
-               ELSE IF (IMETHOD == 1) THEN 
-                 IMATRA(IS,ID) = (SSINE(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
-               ELSE IF (IMETHOD == 2) THEN
-                 IMATRA(IS,ID) = (SSINE(ID,IS)+SSNL4(ID,IS))*JAC
-                 IMATDA(IS,ID) = -TWO*DSSDS(ID,IS)
-               ELSE IF (IMETHOD == 3) THEN
-                 IF (SSINE(ID,IS) .GT. ZERO) THEN
-                   IMATRA(IS,ID) = SSINE(ID,IS)*JAC
-                 ELSE
-                   IMATDA(IS,ID) = -TWO*DSSINE(ID,IS)
-                 ENDIF
-               ELSE IF (IMETHOD == 4) THEN
-                 GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
-                 GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
-                 FLHAB  = ABS(GTEMP2)
-                 DELFL  = COFRM4(IS)*DT4A
-                 USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-                 TEMP   = USFM*DELFL
-                 FLHAB  = MIN(FLHAB,TEMP)
-                 IMATRA(IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                 LIMFAC        = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(SMALL,ABS(IMATRAA(IS,ID,IP))))
-                 IMATDA(IS,ID) = ZERO ! -FL(IP,ID,IS)
-               ENDIF 
-             ENDDO ! ID
-           ENDDO ! IS
-           IF (LNANINFCHK) THEN
-             IF (SUM(IMATRA(:,:)) .NE. SUM(IMATRA(:,:))) THEN
-               WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
-               CALL WWM_ABORT('NAN IN SOURCES 1a') 
-             ENDIF
-             IF (SUM(IMATDA(:,:)) .NE. SUM(IMATDA(:,:))) THEN
-               WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
-               CALL WWM_ABORT('NAN IN SOURCES 1b') 
-             ENDIF
-           ENDIF
-           IF (.NOT. LINID) THEN
-             CALL SET_WIND( IP, WIND10, WINDTH )
-             CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-             CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
-             IMATRA = IMATRA + SSINL
-           ENDIF
-         ELSE ! IOBP(IP) .NE. 0
-           IF (LSOUBOUND) THEN ! Source terms on boundary ...
-             IF (IOBP(IP) .NE. 2) THEN
-               DO ID = 1, MDC
-                 DO IS = 1, MSC
-                   JAC = ONE/PI2/SPSIG(IS)
-                   IF (IMETHOD == 0) THEN
-                     IMATRA(IS,ID) =  SL(IP,ID,IS)/PI2/SPSIG(IS)
-                     IMATDA(IS,ID) = ZERO
-                   ELSE IF (IMETHOD == 1) THEN
-                     IMATRA(IS,ID) = (SSINE(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
-                   ELSE IF (IMETHOD == 2) THEN
-                     IMATRA(IS,ID) = (SSINE(ID,IS)+SSNL4(ID,IS))*JAC
-                     IMATDA(IS,ID) = -TWO*DSSDS(ID,IS)
-                   ELSE IF (IMETHOD == 3) THEN
-                     IF (SSINE(ID,IS) .GT. ZERO) THEN
-                       IMATRA(IS,ID) = SSINE(ID,IS)*JAC
-                     ELSE
-                       IMATDA(IS,ID) = -TWO*DSSINE(ID,IS)
-                     ENDIF
-                   ELSE IF (IMETHOD == 4) THEN
-                     GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
-                     GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
-                     FLHAB  = ABS(GTEMP2)
-                     DELFL  = COFRM4(IS)*DT4A
-                     USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-                     TEMP   = USFM*DELFL
-                     FLHAB  = MIN(FLHAB,TEMP)
-                     IMATRA(IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
-                     LIMFAC        = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(THR,ABS(IMATRA(IS,ID))))
-                     IMATDA(IS,ID) = ZERO ! -FL(IP,ID,IS)
-                   ENDIF
-                 ENDDO ! ID
-               ENDDO ! IS
-               IF (.NOT. LINID) THEN
-                 CALL SET_WIND( IP, WIND10, WINDTH )
-                 CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-                 CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
-                 IMATRA = IMATRA + SSINL
+         DO ID = 1, MDC
+           DO IS = 1, MSC 
+             JAC = ONE/PI2/SPSIG(IS)
+             IF (IMETHOD == 0) THEN
+               IMATRA(IS,ID) = SL(IP,ID,IS)*JAC
+               IMATDA(IS,ID) = ZERO 
+             ELSE IF (IMETHOD == 1) THEN 
+               IMATRA(IS,ID) = (SSINE(ID,IS)+SSDS(ID,IS)+SSNL4(ID,IS))*JAC
+             ELSE IF (IMETHOD == 2) THEN
+               IMATRA(IS,ID) = (SSINE(ID,IS)+SSNL4(ID,IS))*JAC
+               IMATDA(IS,ID) = -TWO*DSSDS(ID,IS)
+             ELSE IF (IMETHOD == 3) THEN
+               IF (SSINE(ID,IS) .GT. ZERO) THEN
+                 IMATRA(IS,ID) = SSINE(ID,IS)*JAC
+               ELSE
+                 IMATDA(IS,ID) = -TWO*DSSINE(ID,IS)
                ENDIF
-             ENDIF
+             ELSE IF (IMETHOD == 4) THEN
+               GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
+               GTEMP2 = DT4A*SL(IP,ID,IS)/GTEMP1
+               FLHAB  = ABS(GTEMP2)
+               DELFL  = COFRM4(IS)*DT4A
+               USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               TEMP   = USFM*DELFL
+               FLHAB  = MIN(FLHAB,TEMP)
+               IMATRA(IS,ID) = SIGN(FLHAB,GTEMP2)/DT4A*JAC
+               LIMFAC        = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2/DT4A))/MAX(SMALL,ABS(IMATRAA(IS,ID,IP))))
+               IMATDA(IS,ID) = ZERO ! -FL(IP,ID,IS)
+             ENDIF 
+           ENDDO ! ID
+         ENDDO ! IS
+
+         IF (.NOT. LINID) THEN
+           CALL SET_WIND( IP, WIND10, WINDTH )
+           CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+           CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+           IMATRA = IMATRA + SSINL
+         ENDIF
+
+         CALL SOURCE_INT_EXP_WAM(IP, ACLOC)
+
+         IF (LNANINFCHK) THEN
+           IF (SUM(IMATRA(:,:)) .NE. SUM(IMATRA(:,:))) THEN
+             WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+             CALL WWM_ABORT('NAN IN SOURCES 1a')
+           ENDIF
+           IF (SUM(IMATDA(:,:)) .NE. SUM(IMATDA(:,:))) THEN
+             WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
+             CALL WWM_ABORT('NAN IN SOURCES 1b')
            ENDIF
          ENDIF
 
-         IF (IP == TESTNODE) THEN
-           WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
-           WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
-           WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
-           WRITE(*,'(A20,6E20.10)') 'WHITECAP', SUM(SSDS), SUM(DSSDS), MINVAL(SSDS), MAXVAL(SSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
-           WRITE(*,'(A20,6E20.10)') 'SNL4', SUM(SSNL4), SUM(DSSNL4), MINVAL(SSNL4), MAXVAL(SSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
-!           WRITE(*,'(A20,6E20.10)') 'LIMITER',  SUM(SSLIM), SUM(DSSLIM), MINVAL(SSLIM), MAXVAL(SSLIM), MINVAL(DSSLIM), MAXVAL(DSSLIM)
-           WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
-!           PAUSE
-         ENDIF
+         WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
+         WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+         WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
+         WRITE(*,'(A20,6E20.10)') 'WHITECAP', SUM(SSDS), SUM(DSSDS), MINVAL(SSDS), MAXVAL(SSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
+         WRITE(*,'(A20,6E20.10)') 'SNL4', SUM(SSNL4), SUM(DSSNL4), MINVAL(SSNL4), MAXVAL(SSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
+         WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
 
       END SUBROUTINE
 !**********************************************************************
