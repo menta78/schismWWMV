@@ -166,7 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- MESIN   =           3,
+ MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  1.900000000000000E-002,
