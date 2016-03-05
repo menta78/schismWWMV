@@ -113,7 +113,7 @@
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
  WDIR    =  0.000000000000000E+000,
- WVEL    =   10.0000000000000     ,
+ WVEL    =  20.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
@@ -166,8 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- MESNL   =           1,
- MESIN   =           1,
+ MESIN   =           3,
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  1.900000000000000E-002,
@@ -177,7 +176,6 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
- MESDS   =           1,
  MESTR   =           1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
@@ -186,7 +184,7 @@
  &NUMS
  ICOMP   =           0,
  AMETHOD =           0,
- SMETHOD =           1,
+ SMETHOD =           2,
  DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
@@ -199,8 +197,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  =  0.100000000000000     ,
- MELIM   =           1,
+ MELIM   = 3, 
+ LIMFAK  = 0.6
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,

@@ -185,30 +185,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE LIMITER(IP,ACOLD,ACLOC)
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER                 :: IP, IS, ID
-
-         REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-
-         REAL(rkind)             :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
-         REAL(rkind)             :: MAXDAC, CONST, SND, DELT5
-
-         DO IS = 1, MSC
-           MAXDAC = 0.00081/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           DO ID = 1, MDC
-             NEWAC  = ACLOC(IS,ID)
-             OLDAC  = ACOLD(IS,ID)
-             NEWDAC = NEWAC - OLDAC
-             NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-             ACLOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
-           END DO
-         END DO
-
-         END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************

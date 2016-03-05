@@ -93,19 +93,6 @@
            IMATRA = IMATRA + SSINL
          ENDIF
 
-         CALL SOURCE_INT_EXP_WAM(IP, ACLOC)
-
-         IF (LNANINFCHK) THEN
-           IF (SUM(IMATRA(:,:)) .NE. SUM(IMATRA(:,:))) THEN
-             WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
-             CALL WWM_ABORT('NAN IN SOURCES 1a')
-           ENDIF
-           IF (SUM(IMATDA(:,:)) .NE. SUM(IMATDA(:,:))) THEN
-             WRITE(*,*) 'NAN AT NODE', IP, 'AT DEPTH', DEP(IP)
-             CALL WWM_ABORT('NAN IN SOURCES 1b')
-           ENDIF
-         ENDIF
-
          WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
          WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
          WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
@@ -153,35 +140,6 @@
                  AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
                END DO
              END DO
-           ELSE
-             IF (LSOUBOUND) THEN ! Source terms on boundary ...
-               IF (IOBP(IP) .NE. 2) THEN
-                 FL = FL3
-                 THWOLD(:,1) = THWNEW
-                 U10NEW = MAX(TWO,SQRT(WINDXY(:,1)**2+WINDXY(:,2)**2)) * WINDFAC
-                 Z0NEW(IP) = Z0OLD(IP,1)
-                 THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-                     FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
-                     FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
-                     SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
-                   END DO
-                 END DO
-                 CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
-     &                            THWOLD(IP,1), USOLD(IP,1), &
-     &                            TAUW(IP), Z0OLD(IP,1), &
-     &                            ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                            U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                            Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                            SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-                 DO IS = 1, MSC
-                   DO ID = 1, MDC
-                     AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
-                   END DO
-                 END DO
-               ENDIF
-             ENDIF
            ENDIF
          END DO
       END SUBROUTINE

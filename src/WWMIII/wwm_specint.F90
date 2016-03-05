@@ -2,28 +2,29 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE DEEP_WATER(IP, ACLOC, IMATRA, IMATDA) 
+      SUBROUTINE INT_IP_STAT(IP,DT,ACLOC)
+
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)      :: IP
+         INTEGER, INTENT(IN) :: IP
+         REAL(rkind), INTENT(IN) :: DT
+         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), ACOLD(MSC,MDC)
 
-         REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+         INTEGER :: IS, ID
+         REAL(rkind) :: NEWDAC
 
-         IMATRA = 0.d0
-         IMATDA = 0.d0 
-
-         IF (MESIN == 1) THEN
-           WRITE(*,*) 'DOING ST4'
-           CALL ST4_PRE(IP, ACLOC, IMATRA, IMATDA)
-         ELSE IF (MESIN == 2) THEN 
-           WRITE(*,*) 'DOING WAM'
-           CALL ECMWF_PRE(IP, ACLOC, IMATRA, IMATDA)
-         ELSE IF (MESIN == 3) THEN
-           WRITE(*,*) 'DOING SWAN SHIT'
-           CALL CYCLE3_PRE(IP, ACLOC, IMATRA, IMATDA) 
-         ENDIF
+         ACOLD = ACLOC
+         CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA)
+         !CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA)
+         DO IS = 1, MSC
+           DO ID = 1, MDC
+             NEWDAC = IMATRA(IS,ID) * DT / (1.-DT*MIN(ZERO,IMATDA(IS,ID)))
+             ACLOC(IS,ID) = MAX( 0.0_rkind, ACOLD(IS,ID) + NEWDAC )
+           END DO
+         END DO
+         IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
 
       END SUBROUTINE
 !**********************************************************************
@@ -54,6 +55,7 @@
 !$OMP DO SCHEDULE(DYNAMIC,1)
          DO IP = 1, MNP
 !           IF (IP_IS_STEADY(IP) .EQ. 1) CYCLE
+           IF (ANY(ACLOC .LT. 0.)) STOP 'NEGATIVE WAVE ACTION'
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 0) THEN
                ACLOC  = AC2(:,:,IP)
@@ -577,34 +579,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_IP_STAT(IP,DT,ACLOC)
-
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN) :: IP
-         REAL(rkind), INTENT(IN) :: DT
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), ACOLD(MSC,MDC)
-
-         INTEGER :: IS, ID
-         REAL(rkind) :: NEWDAC
-
-         ACOLD = ACLOC
-         CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA)
-         CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA) 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             NEWDAC = IMATRA(IS,ID) * DT / (1.-DT*MIN(ZERO,IMATDA(IS,ID))) 
-             ACLOC(IS,ID) = MAX( 0.0_rkind, ACOLD(IS,ID) + NEWDAC ) 
-           END DO
-         END DO
-         IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
-
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE RKS_SP3(IP,DTSII,LIMITER,ACLOC,ISELECT)
 
          USE DATAPOOL
@@ -885,7 +859,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE ACTION_LIMITER_LOCAL(IP,ACLOC,ACOLD)
+         SUBROUTINE LIMITER(IP,ACLOC,ACOLD)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -897,37 +871,40 @@
          REAL(rkind)                :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
          REAL(rkind)                :: MAXDACOLD
 
-         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
-         SND   = PI2*5.6*1.0E-3
-
-         DELT = DT4S
-         XIMP = 1._rkind
-         DELT5 = XIMP*DELT
-         DELFL= COFRM4*DELT
+         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+         SND    = PI2*5.6*1.0E-3
+         DELT   = DT4S
+         XIMP   = 1._rkind
+         DELT5  = XIMP*DELT
+         DELFL  = COFRM4*DELT
          MAXDAC = ZERO
 
          DO IS = 1, MSC
-           IF (MELIM .EQ. 1) THEN
+           IF (MESIN .EQ. 1) THEN
+             LIMFAK = 0.1
              MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           ELSE IF (MELIM .EQ. 2) THEN
-             UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
-             MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
-           ELSE IF (MELIM .EQ. 3) THEN
+           ELSE IF (MESIN .EQ. 2) THEN
              IF (USNEW(IP) .GT. SMALL) THEN
+               LIMFAK = 0.6
                MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
              ELSE
+               LIMFAK = 0.1
                MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
              END IF
+           ELSE IF (MESIN .EQ. 3) THEN
+             LIMFAK = 0.1
+             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            END IF
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
              NEWDAC = NEWAC - OLDAC
              NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-             ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
+             ACLOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
            END DO
          END DO
-         END SUBROUTINE
+
+         END SUBROUTINE LIMITER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -995,7 +972,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE RESCALE_SPECTRUM()
+         SUBROUTINE RESCALE_SPECTRUM
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IP, IS, ID
