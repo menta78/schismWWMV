@@ -65,7 +65,8 @@
          REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ
          REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), SUMACLOC, IMATRAT(MSC,MDC), BRLAMBDA(NSPEC)
          REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, SNL3(MSC,MDC), DSNL3(MSC,MDC)
-
+         REAL(rkind)    :: SFNL(MSC,MDC), DSNL(MSC,MDC)
+         
 #ifdef SNL4_TSA
          REAL(rkind)    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
 #endif
@@ -237,7 +238,7 @@
              ELSE IF (MESNL .EQ. 3) THEN
                CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
              ELSE IF (MESNL .EQ. 4) THEN
-               CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA, SFNL, DSNL)
              ELSE IF (MESNL .EQ. 5) THEN
                ACLOC_WRT = REAL(ACLOC)
                SPSIG_WRT = REAL(SPSIG)

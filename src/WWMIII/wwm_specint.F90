@@ -95,7 +95,7 @@
                    IF (LSOURCESWAM) THEN
                      CALL SOURCE_INT_EXP_WAM(IP, ACLOC)
                    ELSE
-                     CALL INT_IP_STAT(IP,DT4S,LLIMT,ACLOC,20)
+                     CALL INT_IP_STAT(IP,DT4S,ACLOC)
                    ENDIF
                    IF (MESTR .GT. 0) CALL INT_IP_DYN(IP, DT4S, LLIMT, DTMIN_DYN, NDYNITER, ACLOC, NIT_ALL, 4)
                  ELSE IF (SMETHOD == 2) THEN
