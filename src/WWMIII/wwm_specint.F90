@@ -112,18 +112,19 @@
          MAXDAC = ZERO
 
          DO IS = 1, MSC
-           IF (MESIN .EQ. 1) THEN
+           IF (ISOURCE .EQ. 1) THEN
              LIMFAK = 0.1
              MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           ELSE IF (MESIN .EQ. 2) THEN
-             IF (USNEW(IP) .GT. SMALL) THEN
+           ELSE IF (ISOURCE .EQ. 2) THEN
+             !IF (USNEW(IP) .GT. SMALL) THEN
                LIMFAK = 0.6
-               MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
-             ELSE
-               LIMFAK = 0.1
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-             END IF
-           ELSE IF (MESIN .EQ. 3) THEN
+               USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)*DT4A
+             !ELSE
+             !  LIMFAK = 0.1
+             !  MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             !END IF
+           ELSE IF (ISOURCE .EQ. 3) THEN
              LIMFAK = 0.1
              MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            END IF
