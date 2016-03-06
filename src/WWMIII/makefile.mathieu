@@ -91,7 +91,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_jafu.o wwm_nlweigt.o wwm_buildstress.o wwm_inisnonlin.o \
        wwm_fkmean.o wwm_fkmean_local.o wwm_frcutindex.o wwm_frcutindex_local.o \
        wwm_femeanws.o wwm_femeanws_local.o wwm_sdissip.o wwm_sdissip_local.o \
-       wwm_ecmwf.o wwm_st4.o wwm_implsch.o wwm_implsch_local.o wwm_implsch2.o \
+       wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_implsch.o wwm_implsch_local.o wwm_implsch2.o \
        wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
 #       dislin.o diclass.o \
 
