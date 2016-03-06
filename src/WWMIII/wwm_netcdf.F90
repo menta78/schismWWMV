@@ -1475,7 +1475,7 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       END IF
       IF (CG_HISTORY_W) THEN
-        iret=nf90_def_var(ncid,'CG',NF90_INT,(/ nfreq_dims, p_dims, ntime_dims/), var_id)
+        iret=nf90_def_var(ncid,'CG',NF90_RUNTYPE,(/ nfreq_dims, p_dims, ntime_dims/), var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       END IF
       END SUBROUTINE
