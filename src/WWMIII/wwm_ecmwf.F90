@@ -2,32 +2,31 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_PRE (IP, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE ECMWF_PRE (IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
 
-         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
 
          INTEGER      :: IS, ID, IMETHOD
+
          REAL(rkind)  :: VEC2RAD
-         REAL(rkind)  :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
-         REAL(rkind)  :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
-         REAL(rkind)  :: SSBF(MSC,MDC),DSSBF(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
          REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH,TEMP,GTEMP1
          REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC
 
-         REAL(rkind),DIMENSION(MDC,MSC) :: SSDS,DSSDS,SSNL4,DSSNL4,SSINE,DSSINE
-
          IMETHOD = 0 
-
-         SSNL3 = ZERO; DSSNL3 = ZERO
-         SSBR  = ZERO; DSSBR  = ZERO
-         SSBF  = ZERO; DSSBF  = ZERO
+ 
+         SSINE = ZERO; DSSINE = ZERO
+         SSDS  = ZERO; DSSDS  = ZERO
+         SSNL4 = ZERO; DSSNL4 = ZERO
          SSINL = ZERO
 
 !AR: next step is to use here the local routines ...
@@ -111,36 +110,28 @@
          REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
          REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         IMATDAA = 0.
-         IMATRAA = 0.
-
-         DO IP = 1, MNP
-           IF (DEP(IP) .LT. DMIN) CYCLE
-           IF (IOBP(IP) .EQ. 0) THEN
-             THWOLD(IP,1) = THWNEW(IP)
-             THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
-             U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
-             Z0NEW(IP) = Z0OLD(IP,1)
-             DO IS = 1, MSC
-               DO ID = 1, MDC
-                 FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
-                 FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
-                 SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
-               END DO
-             END DO
-             CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
-     &                        THWOLD(IP,1), USOLD(IP,1), &
-     &                        TAUW(IP), Z0OLD(IP,1), &
-     &                        ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                        U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                        Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                        SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
-             DO IS = 1, MSC
-               DO ID = 1, MDC
-                 AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
-               END DO
-             END DO
-           ENDIF
+         THWOLD(IP,1) = THWNEW(IP)
+         THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
+         U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
+         Z0NEW(IP) = Z0OLD(IP,1)
+         DO IS = 1, MSC
+           DO ID = 1, MDC
+             FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
+             FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
+             SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
+           END DO
+         END DO
+         CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+     &                    THWOLD(IP,1), USOLD(IP,1), &
+     &                    TAUW(IP), Z0OLD(IP,1), &
+     &                    ROAIRO(IP,1), ZIDLOLD(IP,1), &
+     &                    U10NEW(IP), THWNEW(IP), USNEW(IP), &
+     &                    Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+     &                    SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+         DO IS = 1, MSC
+           DO ID = 1, MDC
+             AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+           END DO
          END DO
       END SUBROUTINE
 !**********************************************************************

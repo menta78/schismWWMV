@@ -255,6 +255,7 @@
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
          LOGICAL    :: LLIMT       = .TRUE.
+         LOGICAL    :: LSOURCESLIM = .FALSE.
          LOGICAL    :: LCFL        = .FALSE.
          LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
@@ -1233,7 +1234,7 @@
          REAL(rkind), ALLOCATABLE     :: USTDIR(:)   ! Direction of Stress
          REAL(rkind), ALLOCATABLE     :: CD(:)       ! Drag Coefficient
          REAL(rkind), ALLOCATABLE     :: FMEAN(:)    ! Mean Freq.
-         REAL(rkind), ALLOCATABLE     :: EMEAN(:)    ! Mean Energy
+         REAL(rkind), ALLOCATABLE     :: EMEAN(:)
          REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
 !         REAL(rkind), ALLOCATABLE     :: DELFL(:)
