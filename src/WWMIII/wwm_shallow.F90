@@ -9,7 +9,7 @@
          INTEGER, INTENT(IN)        :: IP
 
          REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
 
          INTEGER      :: IS, ID, IMETHOD
          REAL(rkind)  :: VEC2RAD

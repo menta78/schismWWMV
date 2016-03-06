@@ -178,8 +178,6 @@
         ENDIF
       ENDIF
 
-      IMATRA = 0.
-      IMATDA = 0.
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
