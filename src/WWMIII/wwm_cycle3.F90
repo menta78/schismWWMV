@@ -2,54 +2,42 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CYCLE3_PRE (IP, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE CYCLE3_PRE (IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
+         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
 
          REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSINL(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
 
          INTEGER                    :: IS, ID
 
-         REAL(rkind)                :: NEWAC(MSC,MDC), SSINL(MSC,MDC)
-         REAL(rkind)                :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
-         REAL(rkind)                :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-         REAL(rkind)                :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
-         REAL(rkind)                :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
-         REAL(rkind)                :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
-         REAL(rkind)                :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
-         REAL(rkind)                :: SSBRL(MSC,MDC),DSSBRL(MSC,MDC)
+         REAL(rkind)                :: NEWAC(MSC,MDC)
          REAL(rkind)                :: SSLIM(MSC,MDC), DSSLIM(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
          REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM
          REAL(rkind)                :: KMWAM2,HS,WIND10
          REAL(rkind)                :: EFTAIL,EMAX,NEWDAC,MAXDAC,FPM,WINDTH
          REAL(rkind)                :: RATIO,LIMFAC,LIMDAC
 
-         LOGICAL                    :: LSOURCESLIM = .TRUE. 
-
          NEWAC = ZERO
          SSINL = ZERO
          SSINE = ZERO; DSSINE = ZERO
          SSNL4 = ZERO; DSSNL4 = ZERO
-         SSNL3 = ZERO; DSSNL3 = ZERO
-         SSBR  = ZERO; DSSBR  = ZERO
-         SSBF  = ZERO; DSSBF  = ZERO
-         SSBRL = ZERO; DSSBRL = ZERO
          SSDS   = ZERO; DSSDS = ZERO
          SSLIM  = ZERO; DSSLIM = ZERO
          IMATRA = ZERO; IMATDA = ZERO
 
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
 
-         IF (MESIN .GT. 0) THEN
-           CALL SET_WIND( IP, WIND10, WINDTH )
-           CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-           IF (.NOT. LINID) CALL SIN_LIN( IP, WINDTH, FPM, SSINL)
-           CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
-         ENDIF
-
+         CALL SET_WIND( IP, WIND10, WINDTH )
+         CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+         IF (WIND10 .GT. THR .AND. ETOT .LT. THR) CALL SIN_LIN( IP, WINDTH, FPM, SSINL)
+         IF (MESIN .GT. 0) CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 

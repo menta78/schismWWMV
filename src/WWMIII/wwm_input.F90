@@ -723,7 +723,7 @@
      &      WALVFAC, IWATLVFORMAT, MULTIPLE_IN, LEXPORT_WALV_MOD_OUT,   &
      &      EXPORT_WALV_DELTC
 
-         NAMELIST /ENGS/ MESNL, MESIN, IFRIC, MESBF, FRICC,             &
+         NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
      &      MESBR, ICRIT, IBREAK, ALPBJ, BRHD,                          &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
@@ -737,8 +737,8 @@
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, MAXITER,             &
-     &      LNANINFCHK, LSOURCESWAM, PMIN,                              &
-     &      LSOURCESWWIII, BLOCK_GAUSS_SEIDEL, LNONL,                   &
+     &      LNANINFCHK, PMIN,                              &
+     &      BLOCK_GAUSS_SEIDEL, LNONL,                   &
      &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
      &      WAE_JGS_CFL_LIM,                                            &
      &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
@@ -1254,11 +1254,11 @@
 
          IF (SMETHOD .GT. 0) THEN
 
-           IF (MESIN .GT. 6) THEN
+           IF (MESIN .GT. 1) THEN
              call wwm_abort('CHECK NUMS - MESIN OUT OF RANGE')
            END IF
 
-           IF (MESBR .GT. 1) THEN
+           IF (MESBR .GT. 2) THEN
              call wwm_abort('CHECK NUMS - MESBR OUT OF RANGE')
            END IF
 #ifdef ROMS_WWM_PGMCL_COUPLING
@@ -1273,7 +1273,7 @@
              CALL WWM_ABORT('LCPL=T if running with SCHISM')
            ENDIF
 #endif
-           IF (MESBF .GT. 0 .AND. FRICC .LT. 0.) THEN
+           IF (FRICC .LT. 0.) THEN
              call wwm_abort('CHECK NUMS - FRICTION COEFFICIENT HAS WRONG SIGN')
            END IF
 
@@ -1290,15 +1290,15 @@
              call wwm_abort('If AMETHOD=6 then you need MPI')
            ENDIF
 #endif
-           IF (MESTR .GT. 7) THEN
+           IF (MESTR .GT. 1) THEN
              call wwm_abort('CHECK NUMS - MESTR OUT OF RANGE')
            END IF
 
-           IF (MESNL .GT. 6) THEN
+           IF (MESNL .GT. 2) THEN
              call wwm_abort('CHECK NUMS - MESNL OUT OF RANGE')
            END IF
 
-           IF (MESDS .GT. 6) THEN
+           IF (MESDS .GT. 1) THEN
              call wwm_abort('CHECK NUMS - MESDS OUT OF RANGE')
            END IF
 
@@ -1364,13 +1364,13 @@
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SWTICHES FOR THE LIMTER'
-!         WRITE(STAT%FHNDL,*) 'LLIMT', LLIMT
+         WRITE(STAT%FHNDL,*) 'LLIMT', LLIMT
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ACTIVATED SOURCE TERMS'
-!         WRITE(STAT%FHNDL,*) 'MESIN', MESIN
-!         WRITE(STAT%FHNDL,*) 'MESNL', MESNL
-!         WRITE(STAT%FHNDL,*) 'MESBR', MESBR
-!         WRITE(STAT%FHNDL,*) 'MESDS', MESDS
-!         WRITE(STAT%FHNDL,*) 'MESTR', MESTR
+         WRITE(STAT%FHNDL,*) 'MESIN', MESIN
+         WRITE(STAT%FHNDL,*) 'MESNL', MESNL
+         WRITE(STAT%FHNDL,*) 'MESBR', MESBR
+         WRITE(STAT%FHNDL,*) 'MESDS', MESDS
+         WRITE(STAT%FHNDL,*) 'MESTR', MESTR
 
          IF (LSEWD .AND. LSTWD) THEN
            WRITE(DBG%FHNDL,*) 'YOU MUST USE EITHER UNSTEADY OR STEADY WIND'

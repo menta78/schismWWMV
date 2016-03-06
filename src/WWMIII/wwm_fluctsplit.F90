@@ -1375,7 +1375,7 @@
            ENDIF
          END IF
 
-         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+         IF (ISOURCE == 2) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                GTEMP2 = IMATRAA(IS,ID,IP)/MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
@@ -1388,7 +1388,7 @@
                !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
              ENDIF
            END DO
-         ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+         ELSE
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
@@ -1571,7 +1571,7 @@
            END DO
          END IF
 
-         IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. LSOURCESWAM) THEN
+         IF (ISOURCE == 2) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                !GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
@@ -1595,7 +1595,7 @@
                !B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
-         ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
+         ELSE 
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
                ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal

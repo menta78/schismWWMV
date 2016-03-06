@@ -574,7 +574,7 @@
       FRM5 = ZERO 
       COFRM4 = ZERO
 
-      IF (LSOURCESWAM) THEN
+      IF (ISOURCE == 2) THEN
         ALLOCATE(TH(MDC), stat=istat)
         th = zero
         DELTH = PI2/REAL(MDC)
@@ -589,7 +589,6 @@
           SINTH(ID) = SIN(TH(ID))
         ENDDO
       END IF
-
       
       CO1 = 0.5*(FRATIO-1.)*DELTH
       DFIM(1)= CO1*FR(1)

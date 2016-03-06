@@ -166,6 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
+ ISOURCE =           1, 
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
@@ -184,7 +185,7 @@
  &NUMS
  ICOMP   =           0,
  AMETHOD =           0,
- SMETHOD =           2,
+ SMETHOD =           1,
  DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
@@ -227,9 +228,7 @@
  NB_BLOCK        =           3,
  MAXITER =      100000,
  LNANINFCHK      = F,
- LSOURCESWAM     = F,
  PMIN    =  0.000000000000000E+000,
- LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,

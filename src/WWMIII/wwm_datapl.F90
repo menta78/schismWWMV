@@ -288,8 +288,6 @@
          LOGICAL    :: LOPTSIG     = .FALSE.
          LOGICAL    :: LWINDSWAN   = .FALSE.
          LOGICAL    :: LZYLINDER   = .TRUE.
-         LOGICAL    :: LSOURCESWAM = .FALSE. 
-         LOGICAL    :: LSOURCESWWIII = .FALSE. 
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  
          LOGICAL    :: LGSE        = .TRUE.
@@ -897,16 +895,16 @@
 !
 ! ... source term ... wwmDsi.mod
 !
-         INTEGER                :: MESIN = 2
-         INTEGER                :: MESBR = 1
-         INTEGER                :: MESDS = 2
-         INTEGER                :: MESNL = 1
-         INTEGER                :: MESBF = 1
-         INTEGER                :: MESTR = 1
-         INTEGER                :: MESCU = 0
-         INTEGER                :: ICRIT = 1
-         INTEGER                :: IBREAK = 1
-         INTEGER                :: IFRIC = 1
+         INTEGER                :: ISOURCE = 1
+         INTEGER                :: MESIN   = 1
+         INTEGER                :: MESBR   = 1
+         INTEGER                :: MESDS   = 1 
+         INTEGER                :: MESNL   = 1
+         INTEGER                :: MESBF   = 1
+         INTEGER                :: MESTR   = 0 
+         INTEGER                :: ICRIT   = 1
+         INTEGER                :: IBREAK  = 1
+         INTEGER                :: IFRIC   = 1
           
 
          REAL(rkind)             :: FRICC = -0.067

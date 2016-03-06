@@ -322,7 +322,7 @@
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 20'
 !       FLUSH(STAT%FHNDL)
 
-       IF (LSOURCESWAM .OR. MESIN == 2) THEN
+       IF (ISOURCE == 2) THEN
          ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
          FL = ZERO
@@ -450,7 +450,7 @@
 !
 ! WAM Cycle 4.5 - shared
 !
-      IF (MESIN .EQ. 2) THEN
+      IF (ISOURCE .EQ. 2) THEN
         DEALLOCATE ( TAUHFT, TAUT)
       ENDIF
 !
@@ -744,14 +744,10 @@
       CALL SETSHALLOW
       CALL SET_HMAX
 
-      IF (MESIN .EQ. 1 .AND. SMETHOD .GT. 0) THEN
+      IF (ISOURCE == 1) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
         FLUSH(STAT%FHNDL)
-#ifdef ST41
-        CALL PREPARE_ARDHUIN_OLD
-#elif ST42
         CALL PREPARE_ARDHUIN
-#endif
       ENDIF
       
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
@@ -990,7 +986,7 @@
 !2do: Check with WAM parameterization and WW3
 !
          PQUAD(1) = 0.25
-         IF (MESIN .EQ. 1) THEN
+         IF (ISOURCE .EQ. 1) THEN
            PQUAD(2) = 2.5E7
          ELSE
            PQUAD(2) = 2.78E7
@@ -1005,7 +1001,7 @@
          PTAIL(1) = 4._rkind
          PTAIL(2) = 2.5_rkind
          PTAIL(3) = PTAIL(1) + 1._rkind
-         IF (MESIN .EQ. 2) THEN
+         IF (ISOURCE .EQ. 2) THEN
            PTAIL(1) = 5._rkind
            PTAIL(3) = PTAIL(1) + 1._rkind
          ENDIF
@@ -1082,7 +1078,7 @@
          WRITE(STAT%FHNDL,*) 'WAVEKCG'
          FLUSH(STAT%FHNDL)
 
-         IF (.NOT. (LSOURCESWAM .OR. LSOURCESWWIII) .AND. SMETHOD .GT. 0) THEN
+         IF (ISOURCE .NE. 2) THEN
            IF (MESNL .GT. 0 .and. MESNL .LT. 5) THEN
              CALL PARAMETER4SNL
            ELSE IF (MESNL .EQ. 5) THEN
@@ -1093,7 +1089,7 @@
              CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
              IF (IERR_XNL .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
-         ELSE IF (LSOURCESWAM .AND. .NOT. LSOURCESWWIII) THEN
+         ELSE IF (ISOURCE == 2) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS' 
            CALL NLWEIGT
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING NONLINEAR COEFFICIENTS'
@@ -1135,10 +1131,11 @@
 
            WRITE(STAT%FHNDL,'("+TRACE...",A)')'INITIALIZING STRESS ARRAYS'
            IF (MESIN .GT. 0) CALL BUILDSTRESS
-         ELSE IF (LSOURCESWWIII .AND. .NOT. LSOURCESWAM) THEN
+
          ENDIF
 
          IF (MESTR == 6) CALL GRAD_CG_K 
+
        END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

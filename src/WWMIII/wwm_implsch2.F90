@@ -346,7 +346,8 @@
      &                    ROAIRO, ZIDLOLD, &
      &                    U10NEW, THWNEW, USNEW, &
      &                    Z0NEW, ROAIRN, ZIDLNEW, &
-     &                    SL, FCONST, FMEANWS, MIJ)
+     &                    SL, FCONST, FMEANWS, MIJ, & 
+     &                    SSIN, DSSIN, SSDS, DSSDS)
 
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
@@ -372,7 +373,6 @@
      &                           ROAIRO,ZIDLOLD,FMEANWS
       REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
-
 ! ----------------------------------------------------------------------
 
       INTEGER :: IJ,IJS,IJL,K,L,M,IG,ILEV,IDELT,IU06
@@ -450,8 +450,7 @@
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER MEAN PARAMETER'
         IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,5F20.10)') MIJ(IJ), AKMEAN, FMEANWS, TEMP2(IJ,MIJ(IJ)), GADIAG(IJ)
       ENDDO
-
-
+!
 !*    2.5.4 MERGE TAIL INTO SPECTRA.
 !           ------------------------
 

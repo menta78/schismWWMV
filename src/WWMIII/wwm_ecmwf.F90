@@ -103,12 +103,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_POST
+      SUBROUTINE ECMWF_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER        :: IP, IS, ID
-         REAL(rkind)    :: ACLOC(MSC,MDC), VEC2RAD
-         REAL(rkind)    :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+
+         INTEGER, INTENT(IN)           :: IP
+         REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(OUT)      :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
+         REAL(rkind), INTENT(OUT)      :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
+
+         INTEGER                       :: IS, ID
+         REAL(rkind)                   :: VEC2RAD, WINDTH, FPM, WIND10
+         REAL(rkind)                   :: IMATRA(MSC,MDC)
 
          THWOLD(IP,1) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
@@ -116,23 +122,35 @@
          Z0NEW(IP) = Z0OLD(IP,1)
          DO IS = 1, MSC
            DO ID = 1, MDC
-             FL3(IP,ID,IS) =  AC2(IS,ID,IP) * PI2 * SPSIG(IS)
-             FL(IP,ID,IS)  =  IMATDAA(IS,ID,IP)
-             SL(IP,ID,IS)  =  IMATRAA(IS,ID,IP) * PI2 * SPSIG(IS)
+             FL3(IP,ID,IS) =  ACLOC(IS,ID) * PI2 * SPSIG(IS)
            END DO
          END DO
+         FL(IP,:,:) = ZERO
+         SL(IP,:,:) = ZERO
          CALL POSTINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
      &                    THWOLD(IP,1), USOLD(IP,1), &
      &                    TAUW(IP), Z0OLD(IP,1), &
      &                    ROAIRO(IP,1), ZIDLOLD(IP,1), &
      &                    U10NEW(IP), THWNEW(IP), USNEW(IP), &
      &                    Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                    SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP))
+     &                    SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP), &
+     &                    SSINE, DSSINE, SSDS, DSSDS)
          DO IS = 1, MSC
            DO ID = 1, MDC
-             AC2(IS,ID,IP) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+             ACLOC(IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
            END DO
          END DO
+         IF (.NOT. LINID) THEN
+           CALL SET_WIND( IP, WIND10, WINDTH )
+           CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+           CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+         ENDIF
+
+         WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
+         WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+         WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
+         WRITE(*,'(A20,6E20.10)') 'WHITECAP', SUM(SSDS), SUM(DSSDS), MINVAL(SSDS), MAXVAL(SSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

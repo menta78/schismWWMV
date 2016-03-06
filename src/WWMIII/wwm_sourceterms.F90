@@ -15,7 +15,7 @@
       USE DATAPOOL, ONLY : TAUW, FR, MESNL, MESIN, MESDS, MESBF, MESBR
       USE DATAPOOL, ONLY : MESTR, ISHALLOW, DS_INCR, IOBP, IOBPD, LADVTEST
       USE DATAPOOL, ONLY : LNANINFCHK, DBG, IFRIC, RTIME, DISSIPATION
-      USE DATAPOOL, ONLY : AIRMOMENTUM, ONEHALF, NSPEC, RKIND, LSOURCESWAM
+      USE DATAPOOL, ONLY : AIRMOMENTUM, ONEHALF, NSPEC, RKIND, ISOURCE
 #ifdef WWM_MPI
       USE DATAPOOL, ONLY : myrank
 #endif
@@ -84,10 +84,6 @@
 #endif 
 
          IDISP = 999
-
-         IF (LMAXETOT .AND. .NOT. LADVTEST .AND. ISHALLOW(IP) .EQ. 1 .AND. .NOT. LRECALC) THEN
-           CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche to reduce stiffness of source terms ...
-         END IF
 
          IF (.NOT. LRECALC) THEN
            CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) ! 1st guess ... 
@@ -314,7 +310,6 @@
                  !IMATDA(:,ID) = IMATDA(:,ID)+IMATDAWW3(:,ID) !/ CG(:,IP)
                END DO
              ELSE IF (MESDS == 2) THEN
-               IF (.NOT. LSOURCESWAM) CALL WWM_ABORT('PLEASE USE LSOURCESWAM FOR ECWAM SOURCE TERM FORMULATION')
              ELSE IF (MESDS == 3) THEN
                CALL SDS_NEDWAM_CYCLE4( IP, KMWAM, SME01, ETOT, ACLOC, IMATRA, IMATDA, SSDS  ) ! NEDWAM 
              ELSE IF (MESDS == 4) THEN
@@ -428,7 +423,7 @@
 !------------------------------------------------------------------------------------------------------------------------!
          IF (LRECALC .and. IOBP(IP) .EQ. 0) THEN
 
-           IF (MESIN == 1) THEN
+           IF (ISOURCE == 1) THEN
              AS      = 0.
 #ifdef ST41
              CALL W3SPR4_OLD ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
@@ -442,10 +437,8 @@
              WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
              CALL WWM_ABORT('stop wwm_sourceterms l.186')
 #endif
-           ELSEIF (MESIN == 2) THEN
-           ELSEIF (MESIN == 3) THEN
-           ELSEIF (MESIN == 4) THEN
-           ELSEIF (MESIN == 5) THEN
+           ELSEIF (ISOURCE == 2) THEN
+           ELSEIF (ISOURCE == 3) THEN
            ENDIF
 
            DISSIPATION(IP) = 0.
