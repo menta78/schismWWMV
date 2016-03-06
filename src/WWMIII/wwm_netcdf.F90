@@ -1308,7 +1308,7 @@
         END DO
         IF (myrank .eq. 0) THEN
           DO iProc=2,nproc
-            CALL MPI_RECV(rARR, MDC*np_total, itype, iProc-1, 193, comm, istatus, ierr)
+            CALL MPI_RECV(rARR, len*np_total, itype, iProc-1, 193, comm, istatus, ierr)
             CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 197, comm, istatus, ierr)
             DO IP=1,np_total
               IF (rStatus(IP) .eq. 1) THEN

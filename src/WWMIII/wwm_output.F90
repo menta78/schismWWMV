@@ -2069,12 +2069,14 @@
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           iret=nf90_put_var(ncid,var_id,IOBPDoutput,start = (/1, 1, recs_his/), count = (/ MDC, np_write, 1 /))
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
+          deallocate(IOBPDoutput)
         END IF
         IF (CG_HISTORY) THEN
           iret=nf90_inq_varid(ncid, "CG", var_id)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           iret=nf90_put_var(ncid,var_id,CGoutput,start = (/1, 1, recs_his/), count = (/ MSC, np_write, 1 /))
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
+          deallocate(CGoutput)
         END IF
         DO IVAR=1,nbVar
           I=VAROUT_HISTORY % ListIdxEff(IVAR)
@@ -2096,9 +2098,6 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
 !$OMP END MASTER
       ENDIF
-      IF (IOBPD_HISTORY) THEN
-        deallocate(IOBPDoutput)
-      END IF
       DEALLOCATE(OUTT)
       IF (OUT_HISTORY%IDEF.gt.0) THEN
         IF (recs_his2.eq.OUT_HISTORY%IDEF) THEN
