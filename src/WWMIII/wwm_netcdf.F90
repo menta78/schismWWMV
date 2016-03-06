@@ -1285,7 +1285,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_MULTIARR_OUTPUT(ARRoutput, ARR, len, np_write)
+      SUBROUTINE GET_MULTIARR_OUTPUT_I(ARRoutput, ARR, len, np_write)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(OUT) :: ARRoutput(len, np_write)
@@ -1324,6 +1324,56 @@
           CALL MPI_SEND(ARRoutput, len*np_total, itype, 0, 193, comm, ierr)
           CALL MPI_SEND(Status, np_total, itype, 0, 197, comm, ierr)
           CALL MPI_RECV(ARRoutput, len*np_total, itype, 0, 199, comm, istatus, ierr)
+        ENDIF
+        deallocate(rARR, rStatus, Status)
+      END IF
+# else
+      ARRoutput=ARR
+# endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GET_MULTIARR_OUTPUT_R(ARRoutput, ARR, len, np_write)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), INTENT(OUT) :: ARRoutput(len, np_write)
+      REAL(rkind), INTENT(in)  :: ARR      (len, MNP)
+      INTEGER, intent(in)  :: len
+      INTEGER, intent(in)  :: np_write
+# ifdef MPI_PARALL_GRID
+      REAL(rkind), allocatable :: rARR(:,:)
+      integer, allocatable :: rStatus(:), Status(:)
+      integer iProc, IP
+      IF (MULTIPLEOUT_HIS .eq. 1) THEN
+        ARRoutput=ARR
+      ELSE
+        allocate(rARR(len, np_total), rStatus(np_total), Status(np_total), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_netcdf, allocate error 7')
+        ARRoutput=0
+        Status=0
+        DO IP=1,MNP
+          ARRoutput(:, iplg(IP))=ARR(:,IP)
+          Status(iplg(IP)) = 1
+        END DO
+        IF (myrank .eq. 0) THEN
+          DO iProc=2,nproc
+            CALL MPI_RECV(rARR, len*np_total, rtype, iProc-1, 193, comm, istatus, ierr)
+            CALL MPI_RECV(rStatus, np_total, itype, iProc-1, 197, comm, istatus, ierr)
+            DO IP=1,np_total
+              IF (rStatus(IP) .eq. 1) THEN
+                Status(IP)=1
+                ARRoutput(:,IP)=rARR(:,IP)
+              END IF
+            END DO
+          END DO
+          DO iProc=2,nproc
+            CALL MPI_SEND(ARRoutput, len*np_total, rtype, iProc-1, 199, comm, ierr)
+          END DO
+        ELSE
+          CALL MPI_SEND(ARRoutput, len*np_total, rtype, 0, 193, comm, ierr)
+          CALL MPI_SEND(Status, np_total, itype, 0, 197, comm, ierr)
+          CALL MPI_RECV(ARRoutput, len*np_total, rtype, 0, 199, comm, istatus, ierr)
         ENDIF
         deallocate(rARR, rStatus, Status)
       END IF

@@ -1944,7 +1944,7 @@
       character(len=40) :: eStr, eStrUnit
       character(len=80) :: eStrFullName
       integer, allocatable :: IOBPDoutput(:,:)
-      integer, allocatable :: CGoutput(:,:)
+      REAL(rkind), allocatable :: CGoutput(:,:)
       integer IVAR, nbVar
       integer nbTime
 !
@@ -2043,12 +2043,12 @@
       IF (IOBPD_HISTORY) THEN
         allocate(IOBPDoutput(MDC, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
-        CALL GET_MULTIARR_OUTPUT(IOBPDoutput, IOBPD, MDC, np_write)
+        CALL GET_MULTIARR_OUTPUT_I(IOBPDoutput, IOBPD, MDC, np_write)
       END IF
       IF (CG_HISTORY) THEN
         allocate(CGoutput(MSC, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_output, allocate error 5')
-        CALL GET_MULTIARR_OUTPUT(CGoutput, CG, MSC, np_write)
+        CALL GET_MULTIARR_OUTPUT_R(CGoutput, CG, MSC, np_write)
       END IF
       recs_his2=recs_his2 + 1
       IF (WriteOutputProcess_his) THEN
