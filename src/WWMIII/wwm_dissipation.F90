@@ -2,50 +2,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSDS )
-!
-!     Cycle 3 dissipation 
-!
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN)    :: IP
-         REAL(rkind)   , INTENT(IN)    :: KMESPC, SMESPC, ETOT
-         REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(OUT)   :: SSDS(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
-
-         INTEGER :: IS, ID
-
-         REAL(rkind)    :: CDS, ALPHA_PM
-         REAL(rkind)    :: STP_OV, STP_PM, N1, N2
-         REAL(rkind)    :: C_K(MSC)
-!
-         ALPHA_PM     = 3.02E-3
-         CDS          = -2.36E-5
-         STP_OV = KMESPC * SQRT(ETOT)
-         STP_PM = SQRT(ALPHA_PM)
-         N1     = 1
-         N2     = 2. * 2. 
-         C_K(:) = CDS * (STP_OV / STP_PM)**N2
-
-         DO IS = 1, MSC
-            DO ID = 1, MDC
-              SSDS(IS,ID) = C_K(IS) * SMESPC * (WK(IS,IP)/KMESPC)
-              IF (ICOMP .GE. 2) THEN
-                IMATDA(IS,ID) = IMATDA(IS,ID) - SSDS(IS,ID)
-              ELSE IF (ICOMP .LT. 2) THEN
-                IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
-                IMATRA(IS,ID) = IMATRA(IS,ID) + SSDS(IS,ID) * ACLOC(IS,ID)
-              END IF
-            END DO
-         END DO
-
-         RETURN
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSDS )
          USE DATAPOOL
          IMPLICIT NONE

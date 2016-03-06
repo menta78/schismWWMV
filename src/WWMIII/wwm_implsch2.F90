@@ -65,7 +65,8 @@
      &                           ROAIRO,ZIDLOLD,FMEANWS 
       REAL(rkind),DIMENSION(IJS:IJL) :: U10NEW,THWNEW,USNEW,Z0NEW, &
      &                           ROAIRN,ZIDLNEW
-      REAL(rkind),DIMENSION(NANG,NFRE)  :: SSDS,DSSDS,SSBF,DSSBF,SSNL4,DSSNL4,SSIN,DSSIN
+      REAL(rkind),DIMENSION(NFRE,NANG) :: SSDS,DSSDS,SSBF,DSSBF,SSIN,DSSIN
+      REAL(rkind),DIMENSION(NFRE,NANG) :: SSNL4,DSSNL4
 
 ! ----------------------------------------------------------------------
  
@@ -216,6 +217,7 @@
         CALL SDISS_ARDH_VEC (FL3 ,FL, IJS, IJL, SL, F1MEAN, XKMEAN,&
      &                PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
+      write(*,'(2I10,4F20.10)') IJS, IJL, F1MEAN, XKMEAN, SUM(SSDS), SUM(DSSDS)
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,*) 'AFTER DISSIP' 
       IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111113,'(I10,10F15.7)') IJS, SUM(FL), SUM(SL) 
       IF (ITEST.GE.2) THEN

@@ -44,7 +44,7 @@
 !    1                    THWOLD,USOLD,TAUW,Z0OLD,ROAIRO,ZIDLOLD,
 !    2                    U10NEW,THWNEW,USNEW,Z0NEW,ROAIRN,ZIDLNEW,
 !    3                    SL,FCONST)
-!          *FL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
+!          *EL3*    - FREQUENCY SPECTRUM(INPUT AND OUTPUT).
 !          *FL*     - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE
 !          *IJS*    - INDEX OF FIRST GRIDPOINT
 !          *IJL*    - INDEX OF LAST GRIDPOINT
@@ -346,7 +346,7 @@
       DO K=1,NANG
         DO M=1,NFRE
           DO IJ=IJS,IJL
-            GTEMP1 = MAX((1.-DELT5*FL(IJ,K,M)),1.)
+            GTEMP1 = MAX(1.-DELT5*FL(IJ,K,M),1.)
             GTEMP2 = DELT*SL(IJ,K,M)/GTEMP1
             FLHAB = ABS(GTEMP2)
             FLHAB = MIN(FLHAB,TEMP(IJ,M))

@@ -87,7 +87,7 @@
       INTEGER :: IJ, IJS, IJL, M, K, MIJ(IJS:IJL), IC, IG
       REAL(rkind) :: SCDFM, ROG, ALPH, ARG, CONSD, CONSS, X, SDISS, EMAX, Q_OLD, Q, REL_ERR
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
-      REAL(rkind),DIMENSION(NANG,NFRE) :: SSDS,DSSDS 
+      REAL(rkind),DIMENSION(NFRE,NANG) :: SSDS,DSSDS 
       REAL(rkind),DIMENSION(IJS:IJL) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
       REAL(rkind),DIMENSION(IJS:IJL) :: TEMP1, SDS
       REAL(rkind),DIMENSION(NFRE) :: FAC
@@ -175,11 +175,11 @@
           ENDDO
           DO K=1,NANG
             DO IJ=IJS,IJL
-              SDISS = TEMP1(IJ)*F(IJ,K,M)
-              SL(IJ,K,M) = SL(IJ,K,M)+TEMP1(IJ)*F(IJ,K,M)
+              SDISS      = TEMP1(IJ)*F(IJ,K,M)
+              SL(IJ,K,M) = SL(IJ,K,M)+SDISS
               FL(IJ,K,M) = FL(IJ,K,M)+TEMP1(IJ)
-              SSDS(K,M)  = TEMP1(IJ)*F(IJ,K,M)
-              DSSDS(K,M) = TEMP1(IJ)
+              SSDS(M,K)  = TEMP1(IJ)*F(IJ,K,M)
+              DSSDS(M,K) = TEMP1(IJ)
               IF (LCFLX.AND.M.LE.MIJ(IJ)) THEN
                 PHIEPS(IJ) = PHIEPS(IJ)+SDISS*CONSTFM(IJ,M)
                 TAUWD(IJ)  = TAUWD(IJ)+CM(IJS)*SDISS*CONSTFM(IJ,M)
@@ -190,7 +190,7 @@
     
         DO IJ=IJS,IJL 
           IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,'(5F20.10)')SDS(IJ),TEMP1(IJ),&
-     &                   CM(IJ)
+     &                   CM(IJ),SUM(SSDS),SUM(DSSDS)
         ENDDO
 !
 !*    2. COMPUTATION OF BOTTOM-INDUCED DISSIPATION COEFFICIENT.
@@ -232,8 +232,8 @@
 !SHALLOW
       ENDIF
 
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
-      IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111119,*) '------- FINISHED DISSIPATION -------' 
+      IF (LOUTWAM) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
+      IF (LOUTWAM) WRITE(111119,*) '------- FINISHED DISSIPATION -------' 
 
       !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
 

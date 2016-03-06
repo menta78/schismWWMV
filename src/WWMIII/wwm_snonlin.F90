@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN, SSNL4, DSSNL4)
+      SUBROUTINE SNONLIN (F, FL, IJS, IJL, IG, SL, AKMEAN, SSNL4_OUT, DSSNL4_OUT)
 
 ! ----------------------------------------------------------------------
 
@@ -89,7 +89,8 @@
       REAL(rkind),DIMENSION(IJS:IJL)           :: FTEMP,AD,DELAD,DELAP,DELAM
       REAL(rkind),DIMENSION(IJS:IJL)           :: AKMEAN,ENHFR
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F,FL,SL
-      REAL(rkind),DIMENSION(NANG,NFRE) :: DSSNL4, SSNL4 
+      REAL(rkind),DIMENSION(NANG,NFRE)         :: DSSNL4, SSNL4 
+      REAL(rkind),DIMENSION(NFRE,NANG)         :: DSSNL4_OUT, SSNL4_OUT
 
       REAL(rkind)                              :: FKLAMMA, FKLAMMB, FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(rkind)                              :: FKLAMP2, FKLAPA2, FKLAPB2, FKLAP12, FKLAP22, FKLAMM, FKLAMM1
@@ -106,7 +107,6 @@
 
 !      REAL ZHOOK_HANDLE
 
-
 !      IF (LHOOK) CALL DR_HOOK('SNONLIN',0,ZHOOK_HANDLE)
 ! ----------------------------------------------------------------------
 
@@ -116,7 +116,6 @@
       IF (ISHALLO.NE.1) THEN
         IF (ISNONLIN.EQ.0) THEN
           DO IJ=IJS,IJL
-!AR: change dep to depth to dep in WWM 
             ENHFR(IJ) = 0.75*DEP(IJ)*AKMEAN(IJ)
             ENHFR(IJ) = MAX(ENHFR(IJ),.5)
             ENHFR(IJ) = 1.+(5.5/ENHFR(IJ))*(1.-.833*ENHFR(IJ)) * &
@@ -517,7 +516,6 @@
               ENDDO
             ENDDO
           ENDDO
-
         ENDIF
 
 !*    BRANCH BACK TO 2. FOR NEXT FREQUENCY.
@@ -530,33 +528,14 @@
 !     &                  FLSUM, SLSUM
           ENDIF
         ENDDO
-  
       ENDDO
 
-!      IF (ICOMP .GE. 2) THEN
-!        DO M = 1, NFRE
-!          DO K = 1, NANG 
-!            IF (SSNL4(K,M) .LT. ZERO) THEN
-!              SSNL4(K,M) = ZERO
-!              DSSNL4(K,M) = - DSSNL4(K,M)
-!            ELSE
-!              DSSNL4(K,M) = ZERO
-!            ENDIF
-!          END DO
-!        ENDDO
-!      ENDIF
-
-        DO IJ=IJS,IJL
-!        WRITE(111117,'(2F30.25)') & 
-!     &                  SUM(FL(IJ,:,:)),SUM(SL(IJ,:,:))
-!        WRITE(111117,*) 'NOW THE FULL THING'
-!        DO K = 1, NANG
-!          DO M = 1, NFRE
-!            WRITE(111117,'(2I10,2F30.25)') &
-!     &         K, M, FL(IJ,K,M), SL(IJ,K,M)
-!          ENDDO
-!        ENDDO
-        ENDDO      
+      DO K=1,NANG
+        DO M=1,NFRE
+          SSNL4_OUT(M,K) = SSNL4(K,M) 
+          SSNL4_OUT(M,K) = DSSNL4(K,M)
+        ENDDO
+      ENDDO
 
 !      IF (LHOOK) CALL DR_HOOK('SNONLIN',1,ZHOOK_HANDLE)
       RETURN

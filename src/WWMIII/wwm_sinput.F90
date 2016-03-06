@@ -115,7 +115,7 @@
       REAL(rkind),DIMENSION(IJS:IJL,NANG,NFRE) :: F, FL, SL
       REAL(rkind),DIMENSION(IJS:IJL) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
  
-      REAL(rkind),DIMENSION(NANG,NFRE) :: SSIN, DSSIN
+      REAL(rkind),DIMENSION(NFRE,NANG) :: SSIN, DSSIN
 
 ! ----------------------------------------------------------------------
       INTEGER :: IJ,IJS,IJL,IG,K,M
@@ -276,8 +276,8 @@
           DO IJ=IJS,IJL
             FL(IJ,K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
             SL(IJ,K,M) = FL(IJ,K,M)*F(IJ,K,M)
-            SSIN(K,M) = FL(IJ,K,M)*F(IJ,K,M)
-            DSSIN(K,M) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
+            SSIN(M,K) = FL(IJ,K,M)*F(IJ,K,M)
+            DSSIN(M,K) = 0.5*CNSN(IJ)*UFAC2(IJ,K)
           ENDDO
         ENDDO
       ENDDO ! FREQUENCY LOOP 
