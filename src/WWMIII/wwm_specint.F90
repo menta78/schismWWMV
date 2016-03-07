@@ -48,7 +48,7 @@
              ACLOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
            END DO
          END DO
-         CALL POST_INTEGRATION(IP,ACLOC)
+         !CALL POST_INTEGRATION(IP,ACLOC)
          IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
 
          WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
@@ -133,7 +133,7 @@
 
          DO IS = 1, MSC
            IF (ISOURCE .EQ. 1) THEN
-             LIMFAK = 1. 
+             LIMFAK = 0.1 
              MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            ELSE IF (ISOURCE .EQ. 2) THEN
              IF (USNEW(IP) .GT. SMALL) THEN
