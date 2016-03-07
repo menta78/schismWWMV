@@ -123,7 +123,7 @@
             ENHFR = 1.+(5.5/ENHFR)*(1.-.833*ENHFR) * &
      &            EXP(-1.25*ENHFR)
           DO MC=1,MLSTHG
-            ENH(MC,IG,1) = ENHFR
+            ENH(IPP,MC,1) = ENHFR
           ENDDO
         ENDIF
       ENDIF
@@ -190,7 +190,7 @@
         IF (ISHALLO.EQ.1) THEN
           FTEMP = AF11(MC)
         ELSE
-          FTEMP = AF11(MC)*ENH(MC,IG,1)
+          FTEMP = AF11(MC)*ENH(IPP,MC,1)
         ENDIF
 
 

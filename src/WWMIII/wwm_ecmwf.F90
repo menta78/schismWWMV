@@ -8,7 +8,7 @@
 
          INTEGER, INTENT(IN)        :: IP
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
@@ -40,21 +40,24 @@
          Z0NEW(IP) = Z0OLD(IP,1)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
 
-         CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
-     &                   THWOLD(IP,1), USOLD(IP,1), &
-     &                   TAUW(IP), Z0OLD(IP,1), &
-     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
-     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
-     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
-     &                   SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP), &
-     &                   SSDS, DSSDS, SSINE, DSSINE, &
-     &                   SSNL4, DSSNL4)
+!         CALL PREINTRHS (FL3(IP,:,:), FL(IP,:,:), IP, IP, 1, &
+!     &                   THWOLD(IP,1), USOLD(IP,1), &
+!     &                   TAUW(IP), Z0OLD(IP,1), &
+!     &                   ROAIRO(IP,1), ZIDLOLD(IP,1), &
+!     &                   U10NEW(IP), THWNEW(IP), USNEW(IP), &
+!     &                   Z0NEW(IP), ROAIRN(IP), ZIDLNEW(IP), &
+!     &                   SL(IP,:,:), FCONST(IP,:), FMEANWS(IP), MIJ(IP), &
+!     &                   SSDS, DSSDS, SSINE, DSSINE, &
+!     &                   SSNL4, DSSNL4)
+
+         CALL IMPLSCH_LOCAL (IP, FL3(IP,:,:), FL(IP,:,:), 1, SL(IP,:,:))
 
          DO ID = 1, MDC
            DO IS = 1, MSC 
              JAC = ONE/PI2/SPSIG(IS)
-             IMATRA(IS,ID) = SL(IP,ID,IS)*JAC
-             IMATDA(IS,ID) = FL(IP,ID,IS)/PI2
+             IMATRA(IS,ID) = 0.!SL(IP,ID,IS)*JAC
+             IMATDA(IS,ID) = 0.!FL(IP,ID,IS)/PI2
+             ACLOC(IS,ID) = FL3(IP,ID,IS)*JAC
            ENDDO ! ID
          ENDDO ! IS
 

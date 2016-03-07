@@ -51,7 +51,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = F,
+ LINID   = T,
  INITSTYLE = 1, 
  /
  &BOUC
@@ -113,7 +113,7 @@
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
  WDIR    =  0.000000000000000E+000,
- WVEL    =  10.0000000000000     ,
+ WVEL    =  20.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
@@ -166,7 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           3, 
+ ISOURCE =           2, 
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,

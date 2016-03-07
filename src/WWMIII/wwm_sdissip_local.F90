@@ -163,7 +163,6 @@
           TEMP1 = SDS*( (1.-DELTA)*X + DELTA*X**2)
           !CM(IJ)    = TFAK(INDEP,M)/FAC(M)
           CM    = WK(M,IPP)/FAC(M)
-        ENDDO
         DO K=1,NANG
           SDISS = TEMP1*F(K,M)
           SL(K,M) = SL(K,M)+TEMP1*F(K,M)
@@ -175,6 +174,7 @@
             TAUWD  = TAUWD+CM*SDISS*CONSTFM(M)
           ENDIF
         ENDDO
+      ENDDO
     
           IF (LOUTWAM) WRITE(111119,'(5F20.10)')SDS,TEMP1,&
      &                   CM
