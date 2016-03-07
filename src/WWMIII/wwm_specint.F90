@@ -133,8 +133,13 @@
 
          DO IS = 1, MSC
            IF (ISOURCE .EQ. 1) THEN
-             LIMFAK = 0.1 
-             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             IF (UFRIC(IP) .GT. SMALL) THEN
+               USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
+             ELSE
+               LIMFAK = 0.1
+               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+             END IF
            ELSE IF (ISOURCE .EQ. 2) THEN
              IF (USNEW(IP) .GT. SMALL) THEN
                USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))

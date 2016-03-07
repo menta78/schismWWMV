@@ -322,12 +322,13 @@
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 20'
 !       FLUSH(STAT%FHNDL)
 
+       ALLOCATE(FMEANWS(MNP)); FMEANWS = ZERO
+       ALLOCATE(FMEAN(MNP)); FMEAN = ZERO
+       ALLOCATE(EMEAN(MNP)); EMEAN = ZERO
+
        IF (ISOURCE == 2) THEN
-         ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
+         ALLOCATE( MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
-         FMEAN = ZERO
-         EMEAN = ZERO
-         FMEANWS = ZERO
          MIJ = 0
          ENH = 1.d0
          ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
