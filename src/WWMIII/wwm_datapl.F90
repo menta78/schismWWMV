@@ -1235,7 +1235,6 @@
          REAL(rkind), ALLOCATABLE     :: EMEAN(:)
          REAL(rkind), ALLOCATABLE     :: TH(:)       ! Directions ...
          REAL(rkind), ALLOCATABLE     :: COFRM4(:) 
-!         REAL(rkind), ALLOCATABLE     :: DELFL(:)
          REAL(rkind), ALLOCATABLE     :: ENH(:,:,:)
          REAL(rkind), ALLOCATABLE     :: THWOLD(:,:), THWNEW(:), Z0OLD(:,:), Z0NEW(:), ROAIRO(:,:), ROAIRN(:)
          REAL(rkind), ALLOCATABLE     :: ZIDLOLD(:,:), ZIDLNEW(:), U10NEW(:), USNEW(:), U10OLD(:,:)
@@ -1245,7 +1244,6 @@
          INTEGER, ALLOCATABLE         :: INLCOEF(:,:), MIJ(:)
 
          REAL(rkind), ALLOCATABLE     :: FKLAP(:), FKLAP1(:), FKLAM(:), FKLAM1(:), FRH(:)
-         REAL(rkind), ALLOCATABLE     :: FL(:,:,:), FL3(:,:,:), SL(:,:,:)
 
          LOGICAL, PARAMETER    :: LBIWBK = .FALSE. !! Shallow Water Wave Breaking ECMWF
          LOGICAL, PARAMETER    :: LCFLX  = .FALSE. !! Compute Flux to the Ocean 

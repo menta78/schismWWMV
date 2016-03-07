@@ -22,6 +22,8 @@
          REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
          REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC
 
+         REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+
          SSINE = ZERO; DSSINE = ZERO
          SSDS  = ZERO; DSSDS  = ZERO
          SSNL4 = ZERO; DSSNL4 = ZERO
@@ -29,9 +31,9 @@
 
          DO IS = 1, MSC
            DO ID = 1, MDC
-             FL3(IP,ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
-             FL(IP,ID,IS)  = FL3(IP,ID,IS)
-             SL(IP,ID,IS)  = FL(IP,ID,IS)
+             FL3(ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+             FL(ID,IS)  = FL3(ID,IS)
+             SL(ID,IS)  = FL(ID,IS)
            END DO
          END DO
 
@@ -50,13 +52,13 @@
 !     &                   SSDS, DSSDS, SSINE, DSSINE, &
 !     &                   SSNL4, DSSNL4)
 
-         CALL WAM_PRE (IP, FL3(IP,:,:), FL(IP,:,:), SL(IP,:,:), SSDS, DSSDS, SSNL4, DSSNL4, SSINE, DSSINE)
+         CALL WAM_PRE (IP, FL3, FL, SL, SSDS, DSSDS, SSNL4, DSSNL4, SSINE, DSSINE)
 
          DO ID = 1, MDC
            DO IS = 1, MSC 
              JAC = ONE/PI2/SPSIG(IS)
-             IMATRA(IS,ID) = SL(IP,ID,IS)*JAC
-             IMATDA(IS,ID) = FL(IP,ID,IS)/PI2
+             IMATRA(IS,ID) = SL(ID,IS)*JAC
+             IMATDA(IS,ID) = FL(ID,IS)/PI2
            ENDDO ! ID
          ENDDO ! IS
 
@@ -85,19 +87,21 @@
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
 
+         REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+
          THWOLD(IP,1) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
          U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
          Z0NEW(IP) = Z0OLD(IP,1)
          DO IS = 1, MSC
            DO ID = 1, MDC
-             FL3(IP,ID,IS) =  ACLOC(IS,ID) * PI2 * SPSIG(IS)
+             FL3(ID,IS) =  ACLOC(IS,ID) * PI2 * SPSIG(IS)
            END DO
          END DO
-         CALL WAM_POST (IP, FL3(IP,:,:))
+         CALL WAM_POST (IP, FL3)
          DO IS = 1, MSC
            DO ID = 1, MDC
-             ACLOC(IS,ID) = FL3(IP,ID,IS) / PI2 / SPSIG(IS)
+             ACLOC(IS,ID) = FL3(ID,IS) / PI2 / SPSIG(IS)
            END DO
          END DO
 

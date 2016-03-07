@@ -323,11 +323,6 @@
 !       FLUSH(STAT%FHNDL)
 
        IF (ISOURCE == 2) THEN
-         ALLOCATE( FL(MNP,MDC,MSC), FL3(MNP,MDC,MSC), SL(MNP,MDC,MSC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32a')
-         FL = ZERO
-         FL3 = ZERO
-         SL = ZERO
          ALLOCATE( FMEAN(MNP), EMEAN(MNP), FMEANWS(MNP), MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
          FMEAN = ZERO
