@@ -11,7 +11,7 @@
  BEGTC   = 20030910.000000     ,
  DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030931.000000     ,
+ ENDTC   = 20030911.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
@@ -166,7 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           3, 
+ ISOURCE =           2, 
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
