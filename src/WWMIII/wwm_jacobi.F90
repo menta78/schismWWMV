@@ -582,10 +582,12 @@
       END IF
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
-        IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
-          CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
-          ASPAR_DIAG = ASPAR_DIAG + DIAG
-          eSum = BLOC + BSIDE
+        IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN 
+          DO IP = 1, NPRES
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
+            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
+            B_JAC(:,:,IP)             = BLOC + BSIDE
+          ENDDO
         END IF
       END IF
 
