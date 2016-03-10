@@ -583,7 +583,9 @@
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
-          CALL GET_BSIDE_DIAG
+          CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
+          ASPAR_DIAG = ASPAR_DIAG + DIAG
+          eSum = BLOC + BSIDE
         END IF
       END IF
 
@@ -758,26 +760,22 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_BSIDE_DIAG(IP, ACin, BSIDE, DIAG)
+      SUBROUTINE GET_BSIDE_DIAG(IP, ACin1, ACin2, BSIDE, DIAG, BLOC)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(in)  :: ACin(MSC,MDC,MNP)
+      REAL(rkind), intent(in)  :: ACin1(MSC,MDC,MNP)
+      REAL(rkind), intent(in)  :: ACin2(MSC,MDC,MNP)
       REAL(rkind), intent(out) :: BSIDE(MSC,MDC)
       REAL(rkind), intent(out) :: DIAG (MSC,MDC)
-      REAL(rkind) :: IMATRA(MSC,MDC)
-      REAL(rkind) :: IMATDA(MSC,MDC)
-      REAL(rkind) :: ACLOC (MSC,MDC)
-      REAL(rkind) :: eVal
-      REAL(rkind) :: ACref(MSC,MDC)
+      REAL(rkind), intent(out) :: BLOC(MSC,MDC)
+      REAL(rkind)              :: IMATRA(MSC,MDC)
+      REAL(rkind)              :: IMATDA(MSC,MDC)
+      REAL(rkind)              :: eVal
       INTEGER ID, idx
-      LOGICAL LRECALC
-      INTEGER ISELECT
-      IMATRA=0
-      IMATDA=0
-      LRECALC = .FALSE.
-      ISELECT = 10
-      ACLOC = ACin(:,:,IP)
+
+      IMATRA=ZERO
+      IMATDA=ZERO
 
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
@@ -785,30 +783,16 @@
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
       END IF
-:
+
       IF (optionCall .eq. 1) THEN
-        idx=IWBNDLC_REV(IP)
-        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
-          ACref(:,:) = WBAC(:,:,idx)
-        ELSE
-          DO ID=1,MDC
-            ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
-          ENDDO
-        END IF
+        CALL GET_BLOCAL(IP, ACin1, BLOC)
         eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
         BSIDE = eVal * IMATRA
         DIAG  = eVal * IMATDA
       ELSE IF (optionCall .eq. 2) THEN
-        idx=IWBNDLC_REV(IP)
-        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
-          ACref(:,:) = WBAC(:,:,idx)
-        ELSE
-          DO ID=1,MDC
-            ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
-          ENDDO
-        END IF
+        CALL GET_BLOCAL(IP, ACin1, BLOC) 
         eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP) 
-        BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * ACref)
+        BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * Acin2(:,:,IP))
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
 
@@ -816,10 +800,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE GET_BLOCAL(IP, BLOC)
+      SUBROUTINE GET_BLOCAL(IP, Ac1in, BLOC)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
+      REAL(rkind), intent(in)  :: AC1in(MSC,MDC,MNP)
       REAL(rkind), INTENT(OUT) :: BLOC(MSC,MDC)
       INTEGER ID, idx
       idx=IWBNDLC_REV(IP)
@@ -827,7 +812,7 @@
         BLOC = WBAC(:,:,idx)  * SI(IP)
       ELSE
         DO ID=1,MDC
-          BLOC(:,ID) = AC1(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
+          BLOC(:,ID) = Ac1in(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
         ENDDO
       END IF
       END SUBROUTINE
@@ -1026,15 +1011,14 @@
         ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
             ASPAR_DIAG = ASPAR_DIAG + DIAG
             eSum = BLOC + BSIDE
           ELSE
             eSum = B_JAC(:,:,IP)
           END IF
         ELSE
-          CALL GET_BLOCAL(IP, eSum)
+          CALL GET_BLOCAL(IP, AC1, eSum)
         END IF
         DO J=IA(IP),IA(IP+1)-1 
           IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
@@ -1069,15 +1053,14 @@
         ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
             ASPAR_DIAG = ASPAR_DIAG + DIAG
             eSum = BLOC + BSIDE
           ELSE
             eSum = B_JAC(:,:,IP)
           END IF
         ELSE
-          CALL GET_BLOCAL(IP, eSum)
+          CALL GET_BLOCAL(IP, AC1, eSum)
         END IF
         CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
         DO J=IA(IP),IA(IP+1)-1 
@@ -1103,12 +1086,11 @@
         END IF
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
         CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1137,12 +1119,11 @@
         END IF
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
         CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP ,AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1150,12 +1131,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
         CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1163,12 +1143,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
         CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP,AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1176,12 +1155,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 6) THEN
         CALL NEGATIVE_PART_D(JDX, IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1189,12 +1167,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 7) THEN
         CALL NEGATIVE_PART_E(JDX, IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1202,12 +1179,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 8) THEN
         CALL NEGATIVE_PART_F(IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1215,12 +1191,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 9) THEN
         CALL NEGATIVE_PART_G(IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1228,12 +1203,11 @@
         eSum=eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 10) THEN
         CALL NEGATIVE_PART_H(IP, NEG_P, ASPAR_DIAG)
-        CALL GET_BLOCAL(IP, eSum)
         IF (SOURCE_IMPL) THEN
           IF (LNONL) THEN
-            CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
           ELSE
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+            CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
           END IF
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
@@ -1271,15 +1245,14 @@
           ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BLOCAL(IP, BLOC)
-              CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
               ASPAR_DIAG = ASPAR_DIAG + DIAG
               eSum = BLOC + BSIDE
             ELSE
               eSum = B_JAC(:,:,IP)
             END IF
           ELSE
-            CALL GET_BLOCAL(IP, eSum)
+            CALL GET_BLOCAL(IP, AC1, eSum)
           END IF
           DO J=IA(IP),IA(IP+1)-1
             idx=JA(J)
@@ -1319,15 +1292,14 @@
           ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BLOCAL(IP, BLOC)
-              CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
               ASPAR_DIAG = ASPAR_DIAG + DIAG
               eSum = BLOC + BSIDE
             ELSE
               eSum = B_JAC(:,:,IP)
             END IF
           ELSE
-            CALL GET_BLOCAL(IP, eSum)
+            CALL GET_BLOCAL(IP, AC1, eSum)
           END IF
           CALL GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
           DO J=IA(IP),IA(IP+1)-1
@@ -1358,12 +1330,11 @@
           END IF
         ELSE IF (ASPAR_LOCAL_LEVEL .eq. 2) THEN
           CALL LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-          CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
             ELSE
-              CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC1, BSIDE, DIAG, eSum)
             END IF
             ASPAR_DIAG = ASPAR_DIAG + DIAG
             eSum = eSum + BSIDE
@@ -1393,12 +1364,11 @@
           END IF
         ELSE IF (ASPAR_LOCAL_LEVEL .eq. 3) THEN
           CALL NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
-          CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
             ELSE
-              CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
             END IF
             ASPAR_DIAG = ASPAR_DIAG + DIAG
             eSum = eSum + BSIDE
@@ -1406,12 +1376,11 @@
           eSum = eSum - NEG_P - ASPAR_DIAG*AC2(:,:,IP)
         ELSE IF (ASPAR_LOCAL_LEVEL .eq. 4) THEN
           CALL NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
-          CALL GET_BLOCAL(IP, eSum)
           IF (SOURCE_IMPL) THEN
             IF (LNONL) THEN
-              CALL GET_BSIDE_DIAG(IP, AC2, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
             ELSE
-              CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
+              CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, eSum)
             END IF
             ASPAR_DIAG = ASPAR_DIAG + DIAG
             eSum = eSum + BSIDE
