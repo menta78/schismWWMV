@@ -188,6 +188,96 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE COMPUTE_IMPLICIT
+        USE DATAPOOL
+#ifdef PETSC
+        USE PETSC_BLOCK, ONLY : EIMPS_PETSC_BLOCK
+#endif
+        IMPLICIT NONE
+#ifdef TIMINGS
+        REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
+        REAL(rkind)       :: TIME6, TIME7, TIME8
+#endif
+        INTEGER :: IP
+
+        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+          DT4A = MAIN%DELT
+          DT4S = DT4A
+          DT4D = DT4A
+          DT4F = DT4A
+        ELSE IF (LQSTEA) THEN
+          DT4A = DT_ITER
+          DT4S = DT4A
+          DT4D = DT4A
+          DT4F = DT4A
+        END IF
+
+        AC1 = AC2
+
+       IF (LNANINFCHK) THEN
+         WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
+         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
+       ENDIF
+
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME1)
+#endif
+        CALL COMPUTE_DIFFRACTION
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER DIFFRACTION',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
+        ENDIF
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME2)
+#endif
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME3)
+#endif
+        CALL SOURCES_IMPLICIT
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER SOURCES',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 3a')
+          IF (SUM(IMATRAA) .NE. SUM(IMATRAA)) CALL WWM_ABORT('NAN IN COMPUTE 3b')
+          IF (SUM(IMATDAA) .NE. SUM(IMATDAA)) CALL WWM_ABORT('NAN IN COMPUTE 3c')
+        ENDIF
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME4)
+#endif
+        IF (AMETHOD .eq.5) THEN
+#ifdef PETSC
+          CALL EIMPS_PETSC_BLOCK
+#endif
+        ELSE IF (AMETHOD .eq. 7) THEN
+#ifdef WWM_SOLVER
+          CALL EIMPS_TOTAL_JACOBI_ITERATION
+#endif
+        END IF
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) ' AFTER ADVECTION',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
+        ENDIF
+
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME5)
+#endif
+
+#ifdef TIMINGS
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOLVER               ', TIME5-TIME4
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME5-TIME1
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
+#endif
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE COMPUTE_SPATIAL
         USE DATAPOOL
         IMPLICIT NONE
@@ -287,100 +377,6 @@
          WRITE (311) SNGL(RTIME)
          WRITE (311) (SNGL(TMPCAS(IP)), SNGL(TMPCAS(IP)), SNGL(TMPCFLCAS(IP)), IP = 1, MNP)
          
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE COMPUTE_IMPLICIT
-        USE DATAPOOL
-#ifdef PETSC
-        USE PETSC_BLOCK, ONLY : EIMPS_PETSC_BLOCK
-#endif
-        IMPLICIT NONE
-#ifdef TIMINGS
-        REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
-        REAL(rkind)       :: TIME6, TIME7, TIME8
-#endif
-        INTEGER :: IP
-
-        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
-          DT4A = MAIN%DELT
-          DT4S = DT4A
-          DT4D = DT4A
-          DT4F = DT4A 
-        ELSE IF (LQSTEA) THEN
-          DT4A = DT_ITER
-          DT4S = DT4A
-          DT4D = DT4A
-          DT4F = DT4A
-        END IF
-
-        AC1 = AC2
-
-       IF (LNANINFCHK) THEN
-         WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
-         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 1')
-       ENDIF
-
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME1)
-#endif
-        CALL COMPUTE_DIFFRACTION
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) ' AFTER DIFFRACTION',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
-        ENDIF
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME2)
-#endif
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME3)
-#endif
-        IF (SMETHOD .GT. 0) THEN
-          CALL SOURCES_IMPLICIT
-        ENDIF
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) ' AFTER SOURCES',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 3a')
-          IF (SUM(IMATRAA) .NE. SUM(IMATRAA)) CALL WWM_ABORT('NAN IN COMPUTE 3b')
-          IF (SUM(IMATDAA) .NE. SUM(IMATDAA)) CALL WWM_ABORT('NAN IN COMPUTE 3c')
-        ENDIF
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME4)
-#endif
-        IF (AMETHOD .eq.5) THEN
-#ifdef PETSC
-          CALL EIMPS_PETSC_BLOCK
-#endif
-        ELSE IF (AMETHOD .eq. 7) THEN
-#ifdef WWM_SOLVER
-          CALL EIMPS_TOTAL_JACOBI_ITERATION
-#endif
-        END IF
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) ' AFTER ADVECTION',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
-        ENDIF
-
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME5)
-#endif
-
-#ifdef TIMINGS
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS IMPLICIT             ', TIME5-TIME4
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME4-TIME3+TIME6-TIME5
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'ACTION LIMITER                   ', TIME7-TIME6
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME3-TIME2
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME7-TIME1
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
-#endif
-    
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

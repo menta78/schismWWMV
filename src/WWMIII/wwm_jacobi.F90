@@ -518,7 +518,7 @@
       REAL(rkind) :: MaxNorm, SumNorm, p_is_converged
       REAL(rkind) :: eSum(MSC,MDC)
       REAL(rkind) :: BSIDE(MSC,MDC), DIAG(MSC,MDC)
-      REAL(rkind) :: ACLOC(msc,mdc)
+      REAL(rkind) :: ACLOC(MSC,MDC)
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
@@ -785,13 +785,7 @@
       ACLOC = ACin(:,:,IP)
 #ifdef newsources
       IF (LNONL) THEN
-        IF ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3)) THEN
-          CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
-        ELSE
-          IF (LSOUBOUND) THEN ! Source terms on boundary ...
-            CALL CYCLE3 (IP, ACLOC, IMATRA, IMATDA)
-          ENDIF
-        ENDIF
+         CALL SOURCES_IMPLICIT 
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
@@ -799,9 +793,7 @@
 #else
       
       IF (LNONL) THEN
-        IF (LSOUBOUND .or. ((ABS(IOBP(IP)) .NE. 1 .AND. IOBP(IP) .NE. 3))) THEN
-          CALL SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, 'JacobiSolv Domain')
-        ENDIF
+        CALL SOURCES_IMPLICIT
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
@@ -890,7 +882,7 @@
         I1 = INE(1,IE)
         I2 = INE(2,IE)
         I3 = INE(3,IE)
-!AR: todo: make a subroutine of below ...
+
         DO I=1,3
           IPie = INE(I,IE)
           DO ID=1,MDC
@@ -924,6 +916,7 @@
             END DO
           END DO
         END DO
+
         LAMBDA(:,:,:) = ONESIXTH * (CXY(:,:,:,1) + CXY(:,:,:,2) + CXY(:,:,:,3))
         K(:,:,1)  = LAMBDA(1,:,:) * IEN(1,IE) + LAMBDA(2,:,:) * IEN(2,IE)
         K(:,:,2)  = LAMBDA(1,:,:) * IEN(3,IE) + LAMBDA(2,:,:) * IEN(4,IE)

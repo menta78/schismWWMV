@@ -198,7 +198,9 @@
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
 
          INTEGER    :: MNP_WIND
+
          REAL(rkind), allocatable :: XP_WIND(:), YP_WIND(:)
+
          REAL(rkind)       :: WINDFAC    = 1.0
          REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
@@ -212,19 +214,19 @@
          REAL(rkind)       :: MAXCFLCAD  = 1.0
          REAL(rkind)       :: MAXCFLCAS  = 1.0
 
-         LOGICAL           :: LSIGBOUND  = .FALSE.
-         LOGICAL           :: LTHBOUND   = .FALSE.
-         LOGICAL           :: LSOUBOUND  = .FALSE.
-         LOGICAL           :: IOBPD_HISTORY = .FALSE.
-         LOGICAL           :: CG_HISTORY = .FALSE.
-         LOGICAL           :: DOPEAK_BOUNDARY = .TRUE.
-         LOGICAL           :: DOPEAK_GLOBAL = .TRUE.
+         LOGICAL    :: LSIGBOUND  = .FALSE.
+         LOGICAL    :: LTHBOUND   = .FALSE.
+         LOGICAL    :: LSOUBOUND  = .FALSE.
+         LOGICAL    :: IOBPD_HISTORY = .FALSE.
+         LOGICAL    :: CG_HISTORY = .FALSE.
+         LOGICAL    :: DOPEAK_BOUNDARY = .TRUE.
+         LOGICAL    :: DOPEAK_GLOBAL = .TRUE.
 
-         LOGICAL :: FREQ_SHIFT_IMPL
-         LOGICAL :: REFRACTION_IMPL
-         LOGICAL :: SOURCE_IMPL
-         LOGICAL :: APPLY_DXP_CORR = .FALSE.
-         LOGICAL :: USE_EXACT_FORMULA_SPHERICAL_AREA = .FALSE.
+         LOGICAL    :: FREQ_SHIFT_IMPL
+         LOGICAL    :: REFRACTION_IMPL
+         LOGICAL    :: SOURCE_IMPL
+         LOGICAL    :: APPLY_DXP_CORR = .FALSE.
+         LOGICAL    :: USE_EXACT_FORMULA_SPHERICAL_AREA = .FALSE.
 
          LOGICAL    :: LTEST       = .FALSE.
          LOGICAL    :: LDIFR       = .FALSE.
@@ -255,7 +257,7 @@
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
          LOGICAL    :: LLIMT       = .TRUE.
-         LOGICAL    :: LSOURCESLIM = .FALSE.
+         LOGICAL    :: LSOURCESLIM = .TRUE.
          LOGICAL    :: LCFL        = .FALSE.
          LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
@@ -295,13 +297,14 @@
          LOGICAL    :: USE_OPTI_SPEC_SHAPE_INIT = .FALSE.
 
 
-         integer :: idxWind
+         INTEGER    :: idxWind
 
 
          LOGICAL    :: LWRITE_ORIG_WIND                = .FALSE.
          LOGICAL    :: LWRITE_WW3_RESULTS              = .FALSE.
          LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
          LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
+
          character(len=20) :: MODEL_OUT_TYPE = "WW3"
 
          LOGICAL    :: MULTIPLE_IN_GRID = .TRUE.
@@ -403,8 +406,7 @@
             integer, dimension(:), pointer :: IOBP
          END TYPE BoundaryInfo
          
-         
-         TYPE (TIMEDEF)         :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
+         TYPE (TIMEDEF)  :: MAIN, OUT_HISTORY, OUT_STATION, SEWI, SECU, SEWL, SEBO,  ASSI, HOTF, OUT_BOUC
 
          LOGICAL :: LEXPORT_GRID_MOD_OUT = .FALSE.
          LOGICAL :: LEXPORT_BOUC_MOD_OUT = .FALSE.
@@ -415,16 +417,13 @@
          REAL(rkind) :: EXPORT_CURR_DELTC
          REAL(rkind) :: EXPORT_WALV_DELTC
          REAL(rkind) :: EXPORT_WIND_DELTC
-         TYPE (TIMEDEF)        :: OUT_BOUC_WW3, OUT_WIND_WW3, OUT_CURR_WW3, OUT_WALV_WW3
+         TYPE (TIMEDEF) :: OUT_BOUC_WW3, OUT_WIND_WW3, OUT_CURR_WW3, OUT_WALV_WW3
          INTEGER :: FHNDL_EXPORT_GRID_WW3
          INTEGER :: FHNDL_EXPORT_BOUC_WW3
          INTEGER :: FHNDL_EXPORT_WIND_WW3
          INTEGER :: FHNDL_EXPORT_CURR_WW3
          INTEGER :: FHNDL_EXPORT_WALV_WW3
          
-         
-
-
          REAL(rkind)            :: DT_DIFF_19901900 = 47892._rkind
          REAL(rkind)            :: RTIME = 0.
          REAL(rkind)            :: DT4D, DT4F, DT4S, DT4A, DT_ITER
@@ -547,11 +546,6 @@
          REAL(rkind), ALLOCATABLE      :: CG(:,:), DCGDX(:,:), DCGDY(:,:)
          REAL(rkind), ALLOCATABLE      :: WC(:,:)
 
-#ifdef SCHISM
-!         REAL(rkind), ALLOCATABLE    :: CGX(:,:,:)
-!         REAL(rkind), ALLOCATABLE    :: CGY(:,:,:)
-#endif
-
          INTEGER   :: DIMMODE
 
 #ifndef MPI_PARALL_GRID
@@ -562,6 +556,7 @@
          INTEGER   :: MDC
          INTEGER   :: MSC, MSCL
          INTEGER   :: NSPEC
+
          INTEGER, allocatable :: ID_NEXT(:), ID_PREV(:)
 
          LOGICAL   :: LCYCLEHOT
@@ -569,7 +564,9 @@
 
          REAL(rkind), ALLOCATABLE       :: XP(:)
          REAL(rkind), ALLOCATABLE       :: YP(:)
+
          INTEGER, ALLOCATABLE      :: INE(:,:)
+
          INTEGER, ALLOCATABLE      :: INE_WIND(:,:)
          INTEGER, ALLOCATABLE      :: WIND_ELE(:)
          REAL(rkind), ALLOCATABLE :: XYPWIND(:,:)

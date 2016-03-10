@@ -8,7 +8,7 @@
 
          INTEGER, INTENT(IN)        :: IP
 
-         REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)

@@ -8,10 +8,10 @@
  LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
- BEGTC   = 20030910.000000     ,
+ BEGTC   = 20030911.000000     ,
  DELTC   = 60.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030911.000000     ,
+ ENDTC   = 20030914.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
@@ -166,7 +166,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           2, 
+ ISOURCE =           3, 
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
@@ -183,8 +183,8 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           0,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
  DMETHOD =           0,
  LITERSPLIT      = F,

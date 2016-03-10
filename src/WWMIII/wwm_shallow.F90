@@ -6,8 +6,8 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)        :: IP
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+         INTEGER, INTENT(IN)      :: IP
+         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
@@ -27,8 +27,6 @@
          SSBR  = ZERO; DSSBR  = ZERO
          SSBRL = ZERO
          SSBF  = ZERO; DSSBF  = ZERO
-
-         IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACLOC,SSBRL)
 
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 

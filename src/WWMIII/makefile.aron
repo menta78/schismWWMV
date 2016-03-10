@@ -80,15 +80,22 @@ F90OPTI = -O1 -axSSE4.2 -traceback -g  -check uninit -check bounds -check pointe
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
 OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
-       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
-       wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
-       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
-       wwm_wave_setup.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o \
-       wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
-       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl42.o wwm_snl4_tsa.o wwm_babanin.o wwm_sourceterms.o \
-       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
-       wwm_snonlin_local.o wwm_stress.o wwm_stresso_local.o wwm_sdiss_ardh_vec_local.o wwm_sinput_local.o wwm_sinput_ard_local.o wwm_wsigstar_local.o wwm_tauhf.o wwm_airsea_local.o wwm_jafu.o wwm_nlweigt.o wwm_buildstress.o wwm_inisnonlin.o wwm_fkmean_local.o wwm_frcutindex_local.o wwm_femeanws_local.o wwm_sdissip_local.o wwm_implsch_local.o \
-       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
+         wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
+         wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
+         wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o \
+         wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
+         wwm_wave_setup.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
+         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o \
+         wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
+         wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o \
+         wwm_snl4.o wwm_snl42.o wwm_snl4_tsa.o wwm_babanin.o wwm_sourceterms.o \
+         wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
+         wwm_snonlin_local.o wwm_stress.o wwm_stresso_local.o wwm_sdiss_ardh_vec_local.o \
+         wwm_sinput_local.o wwm_sinput_ard_local.o wwm_wsigstar_local.o wwm_tauhf.o wwm_airsea_local.o \
+         wwm_jafu.o wwm_nlweigt.o wwm_buildstress.o wwm_inisnonlin.o wwm_fkmean_local.o\
+         wwm_frcutindex_local.o wwm_femeanws_local.o wwm_sdissip_local.o wwm_implsch_local.o \
+         wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o\
+         wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
 #       dislin.o diclass.o \
 
 FFLAGS += -DWWM_SOLVER

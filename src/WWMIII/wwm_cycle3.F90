@@ -22,7 +22,7 @@
          REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM
          REAL(rkind)                :: KMWAM2,HS,WIND10
          REAL(rkind)                :: EFTAIL,EMAX,NEWDAC,MAXDAC,FPM,WINDTH
-         REAL(rkind)                :: RATIO,LIMFAC,LIMDAC
+         REAL(rkind)                :: RATIO,LIMDAC
 
          NEWAC = ZERO
          SSINL = ZERO
@@ -42,7 +42,7 @@
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 
          IMATRA = SSINL + SSDS + SSINE + SSNL4
-         IMATDA = DSSDS + DSSNL4
+         IMATDA = 0.!DSSDS + DSSNL4
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC
@@ -51,8 +51,8 @@
                NEWDAC = IMATRA(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,IMATDA(IS,ID)))
                LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
                IMATRA(IS,ID) = LIMDAC/DT4A
-               SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
-               DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID)-ABS(LIMFAC*IMATDA(IS,ID))),NEWDAC)
+               !SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
+               !DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID)-ABS(LIMFAC*IMATDA(IS,ID))),NEWDAC)
              ENDDO
            ENDDO
          ENDIF

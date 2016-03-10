@@ -6,7 +6,7 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)      :: IP
-         REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSINL(MSC,MDC)

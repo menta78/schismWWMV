@@ -45,6 +45,7 @@
          DO IS = 1, MSC
            DO ID = 1, MDC
              NEWDAC = IMATRA(IS,ID) * DT / (ONE-DT*MIN(ZERO,IMATDA(IS,ID)))
+!             write(*,*) NEWDAC / ( IMATRA(IS,ID) * DT )
              ACLOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
            END DO
          END DO
@@ -61,6 +62,61 @@
          WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
          WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
          
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INT_PATANKAR(IP,ACLOC,IMATRA,IMATDA)
+
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)      :: IP
+         REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+
+         INTEGER       :: IS, ID
+         REAL(rkind)   :: NEWDAC
+         REAL(rkind)   :: SSINL(MSC,MDC)
+         REAL(rkind)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
+         REAL(rkind)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
+         REAL(rkind)   :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
+         REAL(rkind)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
+         REAL(rkind)   :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
+         REAL(rkind)   :: SSBRL(MSC,MDC)
+         REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+         REAL(rkind)   :: ACOLD(MSC,MDC)
+
+         IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
+           RETURN
+         ELSE IF (LSOUBOUND .AND. IOBP(IP) .EQ. 2) THEN
+           RETURN
+         ENDIF
+
+         ACOLD = ACLOC
+         SSINL = ZERO
+         SSINE = ZERO; DSSINE = ZERO
+         SSDS  = ZERO; DSSDS  = ZERO
+         SSNL3 = ZERO; DSSNL3 = ZERO
+         SSNL4 = ZERO; DSSNL4 = ZERO
+         SSBR  = ZERO; DSSBR  = ZERO
+         SSBF  = ZERO; DSSBF  = ZERO
+         IMATDA = ZERO; IMATRA = ZERO
+         SSBRL = ZERO
+
+         CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+         IF (ISHALLOW(IP)) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+
+         WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+         WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
+         WRITE(*,'(A20,6E20.10)') 'BREAKING LIMITER', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
+         WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
+         WRITE(*,'(A20,6E20.10)') 'WHITECAP', SUM(SSDS), SUM(DSSDS), MINVAL(SSDS), MAXVAL(SSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
+         WRITE(*,'(A20,6E20.10)') 'SNL4', SUM(SSNL4), SUM(DSSNL4), MINVAL(SSNL4), MAXVAL(SSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
+         WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
+         WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
+         WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -107,6 +163,20 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE SOURCES_IMPLICIT
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER :: IP
+         REAL(rkind) :: ACLOC(MSC,MDC),IMATRA(MSC,MDC),IMATDA(MSC,MDC)
+
+         DO IP = 1, MNP
+           ACLOC = AC2(:,:,IP)
+           IF (SMETHOD == 1) THEN
+             CALL INT_PATANKAR(IP,ACLOC,IMATRA,IMATDA)
+           ENDIF
+           IMATRAA(:,:,IP) = IMATRA
+           IMATDAA(:,:,IP) = IMATDA
+         ENDDO
+         pause
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
