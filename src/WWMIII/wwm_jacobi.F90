@@ -4,7 +4,7 @@
 !**********************************************************************
 #define DEBUG
 #define DEBUG_ITERATION_LOOP
-#undef DEBUG_ITERATION_LOOP
+!#undef DEBUG_ITERATION_LOOP
 #undef DEBUG
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
@@ -583,12 +583,7 @@
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN
-          DO IP=1,NP_RES
-            CALL GET_BLOCAL(IP, BLOC)
-            CALL GET_BSIDE_DIAG(IP, AC1, BSIDE, DIAG)
-            ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
-            B_JAC(:,:,IP)             = BLOC + BSIDE
-          END DO
+          CALL GET_BSIDE_DIAG
         END IF
       END IF
 
@@ -783,28 +778,15 @@
       LRECALC = .FALSE.
       ISELECT = 10
       ACLOC = ACin(:,:,IP)
-#ifdef newsources
+
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
       END IF
-#else
-      
-      IF (LNONL) THEN
-        CALL SOURCES_IMPLICIT
-      ELSE
-        IMATDA = IMATDAA(:,:,IP)
-        IMATRA = IMATRAA(:,:,IP)
-      END IF
-#endif
+:
       IF (optionCall .eq. 1) THEN
-        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
-        BSIDE = eVal * IMATRA
-        DIAG  = eVal * IMATDA
-      END IF
-      IF (optionCall .eq. 2) THEN
         idx=IWBNDLC_REV(IP)
         IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
           ACref(:,:) = WBAC(:,:,idx)
@@ -813,10 +795,23 @@
             ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
           ENDDO
         END IF
-        eVal = SI(IP) * DT4A * IOBWB(IP) * IOBDP(IP)
+        eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
+        BSIDE = eVal * IMATRA
+        DIAG  = eVal * IMATDA
+      ELSE IF (optionCall .eq. 2) THEN
+        idx=IWBNDLC_REV(IP)
+        IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
+          ACref(:,:) = WBAC(:,:,idx)
+        ELSE
+          DO ID=1,MDC
+            ACref(:,ID) = ACLOC(:,ID) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
+          ENDDO
+        END IF
+        eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP) 
         BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * ACref)
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
