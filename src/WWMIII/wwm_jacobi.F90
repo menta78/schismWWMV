@@ -585,7 +585,6 @@
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN 
           DO IP = 1, NP_RES
             CALL GET_BSIDE_DIAG(IP, AC2, AC2, BSIDE, DIAG, BLOC)
-            pause
             ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
             B_JAC(:,:,IP)             = BLOC + BSIDE
           ENDDO
@@ -787,20 +786,20 @@
         IMATRA = IMATRAA(:,:,IP)
       END IF
 
+      eVal = SI(IP) * DT4A
+
       IF (optionCall .eq. 1) THEN
         CALL GET_BLOCAL(IP, ACin1, BLOC)
-        eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)
         BSIDE = eVal * IMATRA
         DIAG  = eVal * IMATDA
       ELSE IF (optionCall .eq. 2) THEN
         CALL GET_BLOCAL(IP, ACin1, BLOC) 
-        eVal = SI(IP) * DT4A * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP) 
         BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * Acin2(:,:,IP))
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
-
-      WRITE(*,*) IP, SUM(ACin1), SUM(ACin2), SUM(BSIDE), SUM(DIAG), SUM(BLOC)
-      pause
+ 
+      WRITE(*,*) 'GET_BSIDE_DIAG'
+      WRITE(*,'(I10,10G20.10)') IP, SUM(ACin1), SUM(ACin2), SUM(BSIDE), SUM(DIAG), SUM(BLOC)
 
       END SUBROUTINE
 !**********************************************************************

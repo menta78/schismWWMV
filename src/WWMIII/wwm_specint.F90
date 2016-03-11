@@ -75,8 +75,6 @@
          REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
 
-         INTEGER       :: IS, ID
-         REAL(rkind)   :: NEWDAC
          REAL(rkind)   :: SSINL(MSC,MDC)
          REAL(rkind)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
          REAL(rkind)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
@@ -86,12 +84,6 @@
          REAL(rkind)   :: SSBRL(MSC,MDC)
          REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
          REAL(rkind)   :: ACOLD(MSC,MDC)
-
-         IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
-           RETURN
-         ELSE IF (LSOUBOUND .AND. IOBP(IP) .EQ. 2) THEN
-           RETURN
-         ENDIF
 
          ACOLD = ACLOC
          SSINL = ZERO
@@ -103,6 +95,12 @@
          SSBF  = ZERO; DSSBF  = ZERO
          IMATDA = ZERO; IMATRA = ZERO
          SSBRL = ZERO
+
+         IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
+           RETURN
+         ELSE IF (LSOUBOUND .AND. IOBP(IP) .EQ. 2) THEN
+           RETURN
+         ENDIF
 
          CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          IF (ISHALLOW(IP)) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
@@ -116,7 +114,8 @@
          WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
          WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
          WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
-         pause
+   
+          pause
 
       END SUBROUTINE
 !**********************************************************************
@@ -166,7 +165,7 @@
       SUBROUTINE SOURCES_IMPLICIT
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER :: IP
+         INTEGER     :: IP
          REAL(rkind) :: ACLOC(MSC,MDC),IMATRA(MSC,MDC),IMATDA(MSC,MDC)
 
          DO IP = 1, MNP
@@ -177,6 +176,8 @@
            IMATRAA(:,:,IP) = IMATRA
            IMATDAA(:,:,IP) = IMATDA
          ENDDO
+
+         WRITE(*,*) 'SOURCES_IMPLICIT', SUM(IMATRAA), SUM(IMATDAA)
 
       END SUBROUTINE
 !**********************************************************************

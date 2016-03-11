@@ -80,6 +80,7 @@
          IMATRAA = zero
          IMATDAA = zero
        END IF
+
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
 !       FLUSH(STAT%FHNDL)
 
@@ -93,18 +94,6 @@
 !       STOKES_X = ZERO
 !       STOKES_Y = ZERO
 !       JPRESS = ZERO
-
-       IF (LITERSPLIT) THEN
-!         ALLOCATE (AC1(MNP,MSC,MDC)); AC1 = zero
-         ALLOCATE (DAC_ADV(2,MNP,MSC,MDC), DAC_THE(2,MNP,MSC,MDC), DAC_SIG(2,MNP,MSC,MDC), DAC_SOU(2,MNP,MSC,MDC), stat=istat)
-         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11')
-         DAC_ADV = zero
-         DAC_THE = zero
-         DAC_SIG = zero
-         DAC_SOU = zero
-       END IF
-!       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 9'
-!       FLUSH(STAT%FHNDL)
 
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER
