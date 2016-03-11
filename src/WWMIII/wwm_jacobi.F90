@@ -4,7 +4,7 @@
 !**********************************************************************
 #define DEBUG
 #define DEBUG_ITERATION_LOOP
-!#undef DEBUG_ITERATION_LOOP
+#undef DEBUG_ITERATION_LOOP
 #undef DEBUG
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
@@ -632,8 +632,7 @@
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
-!            IF (LLIMT) CALL ACTION_LIMITER_LOCAL(IP,eSum,acloc)
-!            WRITE(STAT%FHNDL,*) '|eSum|=', sum(eSum), ' |acloc|=', sum(acloc)
+            IF (LLIMT) CALL LIMITER(IP,acloc,eSum)
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
             ELSE
@@ -798,8 +797,7 @@
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
  
-      WRITE(*,*) 'GET_BSIDE_DIAG'
-      WRITE(*,'(I10,10G20.10)') IP, SUM(ACin1), SUM(ACin2), SUM(BSIDE), SUM(DIAG), SUM(BLOC)
+      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(IMATRA), SUM(IMATDA), SUM(BSIDE), SUM(DIAG), SUM(BLOC), 'GET_BSIDE_DIAG'
 
       END SUBROUTINE
 !**********************************************************************
