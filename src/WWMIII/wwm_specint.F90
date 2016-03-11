@@ -176,7 +176,7 @@
            IMATRAA(:,:,IP) = IMATRA
            IMATDAA(:,:,IP) = IMATDA
          ENDDO
-         pause
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
