@@ -33,16 +33,14 @@
          IMATRA = ZERO; IMATDA = ZERO
 
          CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2) 
-
          CALL SET_WIND( IP, WIND10, WINDTH )
          CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
          IF (WIND10 .GT. THR .AND. ETOT .LT. THR) CALL SIN_LIN( IP, WINDTH, FPM, SSINL)
          IF (MESIN .GT. 0) CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
-
-         IMATRA = SSINL + SSDS + SSINE + SSNL4
-         IMATDA = DSSDS + DSSNL4
+         IMATRA = SSINE + SSNL4
+         IMATDA = SSDS 
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC
@@ -88,11 +86,18 @@
          STP_PM = SQRT(ALPHA_PM)
          N2     = 4
          FAC    = CDS * (STP_OV / STP_PM)**N2
-
-         DO IS = 1, MSC
-           DSSDS(IS,:) = - FAC * SMESPC * (WK(IS,IP)/KMESPC)
-           SSDS(IS,:)  =   DSSDS(IS,:) * ACLOC(IS,:)
-         END DO
+ 
+         IF (SOURCE_IMPL) THEN
+           DO IS = 1, MSC
+             DSSDS(IS,:) = FAC * SMESPC * (WK(IS,IP)/KMESPC)
+             SSDS(IS,:)  = - DSSDS(IS,:) * ACLOC(IS,:)
+           END DO
+         ELSE
+           DO IS = 1, MSC
+             DSSDS(IS,:) = - FAC * SMESPC * (WK(IS,IP)/KMESPC)
+             SSDS(IS,:)  =   DSSDS(IS,:) * ACLOC(IS,:)
+           END DO
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************

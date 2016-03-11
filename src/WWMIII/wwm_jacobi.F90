@@ -522,7 +522,7 @@
       REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
       REAL(rkind) :: BLOC(MSC,MDC)
       REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
-      LOGICAL     :: test
+      LOGICAL     :: test=.true.
       REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
 #ifdef DEBUG_ITERATION_LOOP
       integer iIter
@@ -586,7 +586,7 @@
           DO IP = 1, NP_RES
             CALL GET_BSIDE_DIAG(IP, AC2, AC2, BSIDE, DIAG, BLOC)
             ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
-            B_JAC(:,:,IP)             = BLOC + BSIDE
+            B_JAC(:,:,IP)             = BSIDE + BLOC
           ENDDO
         END IF
       END IF
@@ -612,18 +612,19 @@
         sumESUM=0
 #endif/SINGLE_VERTEX_COMPUTATION
         nbPassive = 0
-        
+       
         DO IP=1,NP_RES
+
           ACLOC = AC2(:,:,IP)
-          IF (WAE_JGS_CFL_LIM .eqv. .FALSE.) THEN
-            test=.TRUE.
-          ELSE
+
+          IF (WAE_JGS_CFL_LIM) THEN
             IF (NumberOperationJGS(IP) .lt. CFLadvgeoI(IP)) THEN
               test=.TRUE.
             ELSE
               test=.FALSE.
             END IF
           END IF
+
           IF (test) THEN
 !            WRITE(STAT%FHNDL,*) 'IP=', IP
             NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
@@ -632,12 +633,12 @@
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
-            IF (LLIMT) CALL LIMITER(IP,acloc,eSum)
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
             ELSE
               U_JACOBI(:,:,IP)=eSum
             END IF
+
             IF (JGS_CHKCONV) THEN
               Sum_new = sum(eSum)
               if (Sum_new .gt. thr8) then
@@ -658,14 +659,14 @@
                   END IF
                 END IF
               END IF
-            END IF
-          ELSE
+            END IF!JGS_CHKCONV
+          ELSE!test
             nbPassive = nbPassive + 1
             IF (JGS_CHKCONV .and. (IPstatus(IP) .eq. 1)) THEN
               is_converged(1) = is_converged(1) + 1
             END IF
-          END IF
-        END DO
+          END IF!test
+        END DO!IP
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
 #endif
@@ -734,6 +735,7 @@
 #endif
 !
       DO IP = 1, MNP
+        CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP))
         AC2(:,:,IP) = MAX(ZERO,AC2(:,:,IP))
       END DO
 
@@ -797,7 +799,7 @@
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
  
-      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(IMATRA), SUM(IMATDA), SUM(BSIDE), SUM(DIAG), SUM(BLOC), 'GET_BSIDE_DIAG'
+      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(IMATRA), SUM(IMATDA), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 
       END SUBROUTINE
 !**********************************************************************
