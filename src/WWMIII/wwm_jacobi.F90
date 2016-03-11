@@ -547,6 +547,8 @@
       WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
       WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
 
+      AC1 = AC2
+
       IF (WAE_JGS_CFL_LIM) THEN
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
@@ -583,7 +585,7 @@
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN 
-          DO IP = 1, NPRES
+          DO IP = 1, NP_RES
             CALL GET_BSIDE_DIAG(IP, AC1, AC2, BSIDE, DIAG, BLOC)
             ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
             B_JAC(:,:,IP)             = BLOC + BSIDE
@@ -778,6 +780,8 @@
 
       IMATRA=ZERO
       IMATDA=ZERO
+
+      RETURN
 
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
