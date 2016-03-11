@@ -585,14 +585,12 @@
         IF ((.NOT. LNONL) .AND. SOURCE_IMPL) THEN 
           DO IP = 1, NP_RES
             CALL GET_BSIDE_DIAG(IP, AC2, AC2, BSIDE, DIAG, BLOC)
+            pause
             ASPAR_JAC(:,:,I_DIAG(IP)) = ASPAR_JAC(:,:,I_DIAG(IP)) + DIAG
             B_JAC(:,:,IP)             = BLOC + BSIDE
-            write(*,*) sum(bloc), sum(bside), sum(diag)
           ENDDO
         END IF
       END IF
-
-      pause
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME3)
@@ -781,8 +779,6 @@
 
       IMATRA=ZERO
       IMATDA=ZERO
-
-      RETURN
 
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 

@@ -42,7 +42,7 @@
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 
          IMATRA = SSINL + SSDS + SSINE + SSNL4
-         IMATDA = 0.!DSSDS + DSSNL4
+         IMATDA = DSSDS + DSSNL4
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC
@@ -56,6 +56,9 @@
              ENDDO
            ENDDO
          ENDIF
+
+         WRITE(*,*) 'wind, th, fpm and sum sources'
+         WRITE(*,*) WIND10, WINDTH, FPM, SUM(IMATRA), SUM(IMATDA)
 
       END SUBROUTINE
 !**********************************************************************
