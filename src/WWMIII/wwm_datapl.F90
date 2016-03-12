@@ -1281,7 +1281,7 @@
          INTEGER, PARAMETER     :: NFREHF=49
          INTEGER, PARAMETER     :: JPLEVC=1
  
-         REAL(rkind)            :: SWELLFT(IAB)
+         REAL(rkind)            :: SWELLFT(0:IAB)
          REAL(rkind)            :: FLOGSPRDM1, CL11, CL21, ACL1, ACL2
 
          REAL(rkind)            :: DELTAUW

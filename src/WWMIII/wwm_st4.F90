@@ -55,6 +55,7 @@
       AS         = 0. 
 
       IF (MESIN .GT. 0) THEN
+
         CALL SET_WIND( IP, WIND10, WINDTH )
         CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
         CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
@@ -69,6 +70,7 @@
           SSINE(:,ID)  = IMATRAWW3(:,ID) / CG(:,IP) 
           DSSINE(:,ID) = IMATDAWW3(:,ID)
         END DO
+
       ENDIF
 
       IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
@@ -78,13 +80,13 @@
         CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
         CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
         DO ID = 1, MDC
-          SSDS(:,ID)   = IMATRAWW3(:,ID) / CG(:,IP)
-          DSSDS(:,ID)  = IMATDAWW3(:,ID) 
+          SSDS(:,ID)  = IMATRAWW3(:,ID) / CG(:,IP)
+          DSSDS(:,ID) = IMATDAWW3(:,ID) 
         END DO
       ENDIF
 
-      IMATRA = SSINL + SSINE + SSDS + SSNL4
-      IMATRA = DSSINE + DSSDS + DSSNL4
+      IMATRA = SSINL + SSINE + SSNL4 + SSDS
+      IMATDA = DSSINE + DSSNL4 + DSSDS
 !
       END SUBROUTINE
 !**********************************************************************
