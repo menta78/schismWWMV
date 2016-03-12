@@ -402,11 +402,13 @@
               IF (SOURCE_IMPL) THEN
                 IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
                 IMATDA(I,J) = IMATDA(I,J) - DSNL(I,J) / PI3
-                SFNL(I,J)   = SFNL(I,J) / SIGPI
+                SFNL(I,J)   =   SFNL(I,J) / SIGPI
                 DSNL(I,J)   = - DSNL(I,J) / PI3
               ELSE
                 IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
                 IMATDA(I,J) = IMATDA(I,J) + DSNL(I,J) / PI3
+                SFNL(I,J)   = SFNL(I,J) / SIGPI
+                DSNL(I,J)   = DSNL(I,J) / PI3
               END IF
            END DO
          END DO

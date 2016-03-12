@@ -11,7 +11,7 @@
  BEGTC   = 20030911.000000     ,
  DELTC   = 600.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030914.000000     ,
+ ENDTC   = 20030921.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
@@ -198,8 +198,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- MELIM   = 3, 
- LIMFAK  = 0.6
+ MELIM   = 1, 
+ LIMFAK  = 0.1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,

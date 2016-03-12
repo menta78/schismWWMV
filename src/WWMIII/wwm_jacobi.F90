@@ -633,6 +633,7 @@
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
+
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
             ELSE
@@ -736,7 +737,6 @@
 !
       DO IP = 1, MNP
         CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP))
-        AC2(:,:,IP) = MAX(ZERO,AC2(:,:,IP))
       END DO
 
 #ifdef TIMINGS

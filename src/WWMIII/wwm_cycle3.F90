@@ -39,8 +39,9 @@
          IF (MESIN .GT. 0) CALL SIN_EXP( IP, WINDTH, ACLOC, SSINE, DSSINE )
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
-         IMATRA = SSINE + SSNL4
-         IMATDA = SSDS 
+
+         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 
+         IMATDA = 0.!       DSSINE + DSSDS + DSSNL4 
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC
@@ -90,7 +91,7 @@
          IF (SOURCE_IMPL) THEN
            DO IS = 1, MSC
              DSSDS(IS,:) = FAC * SMESPC * (WK(IS,IP)/KMESPC)
-             SSDS(IS,:)  = - DSSDS(IS,:) * ACLOC(IS,:)
+             SSDS(IS,:)  = - DSSDS(IS,:) * ACLOC(IS,:) 
            END DO
          ELSE
            DO IS = 1, MSC
@@ -161,9 +162,14 @@
            DO ID = 1, MDC
              COSDIF        = MyCOS(SPDIR(ID)-WINDTH)
              SWINB         = AUX1 * ( AUX3  * COSDIF - ONE )
-             DSSINE(IS,ID) = MAX( ZERO, SWINB * SPSIG(IS) )
-             SSINE(IS,ID)  = DSSINE(IS,ID) * ACLOC(IS,ID)
-             DSSINE(IS,ID) = 0.d0
+             SWINB         = MAX( ZERO, SWINB * SPSIG(IS) )
+             IF (SOURCE_IMPL) THEN
+               DSSINE(IS,ID) = ZERO 
+               SSINE(IS,ID)  = SWINB * ACLOC(IS,ID)
+             ELSE
+               DSSINE(IS,ID) = SWINB 
+               SSINE(IS,ID)  = SWINB * ACLOC(IS,ID)
+             ENDIF
            END DO
          END DO
 
