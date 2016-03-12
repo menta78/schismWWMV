@@ -41,7 +41,7 @@
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
 
          IMATRA = SSINL + SSINE +  SSDS +  SSNL4 
-         IMATDA = 0.!       DSSINE + DSSDS + DSSNL4 
+         IMATDA =        DSSINE + DSSDS + DSSNL4 
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC

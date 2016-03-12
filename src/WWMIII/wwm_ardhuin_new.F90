@@ -716,7 +716,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR, ICOMP
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR, ICOMP, SOURCE_IMPL
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -991,16 +991,18 @@
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
 
-
-!           IMATRAIMATDA
+      IF (SOURCE_IMPL) THEN
+        DO IK =1,NK
+          DO ITH=1,NTH
+            IS=ITH+(IK-1)*NTH
+            S(IS) = D(IS) * A(IS)
+          END DO
+        ENDDO
+      ELSE
+        S = D * A
+      ENDIF
 
       S = D * A
-
-      IF (ICOMP .LT. 2) THEN
-        D = 0.
-      ELSE
-        D = 0.
-      END IF
 !
 ! ... Test output of arrays
 !
