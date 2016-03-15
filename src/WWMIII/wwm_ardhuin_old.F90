@@ -1,4 +1,4 @@
-#incl
+#include "wwm_functions.h"
 !/ ------------------------------------------------------------------- /
       MODULE W3SRC4MD_OLD
 #ifdef ST41

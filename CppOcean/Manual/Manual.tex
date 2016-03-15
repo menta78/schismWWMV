@@ -196,6 +196,21 @@ The value of {\tt DELTC} specifies the interval between time output. This is a d
 \end{verbatim}
 means that output is done every $30$ minutes.
 
+An alternative for the set up is to put {\tt BEGTC} and/or {\tt ENDTC}
+to {\tt ``earliest''} and/or {\tt ``latest''} in order to put the plots
+of all data that are available.
+
+For example the following for the plotting software:
+\begin{verbatim}
+ BEGTC = "earliest",
+ ENDTC = "latest",
+ DELTC = 3600, 
+ UNITC = "SEC", 
+\end{verbatim}
+means that we plot from the earliest time available in the file to the
+latest time available.
+
+
 
 \section{Variables}
 
@@ -255,6 +270,7 @@ The variables that are available for use and plots are:\\
 \end{enumerate}
 {\bf Wave variables}:
 \begin{enumerate}
+\item {\bf CGwave}: group velocity of the waves (WWM: CG)
 \item {\bf Hwave}: Significant Wave height (WWM: HS)
 \item {\bf BreakingFraction}: quotient Hwave / Depth (WWM : needs HS and WATLEV)
 \item {\bf TM02}: zero crossing wave period (WWM : TM02)
@@ -595,7 +611,7 @@ More precisely:
 
 
 
-\subsection{INTERPOL\_field}
+\subsection{MERGE\_field}
 
 This program is for interpolating the fields from several models, and merging them in order to
 create one single series of forcing file that can be used for running WWM (only WWM right now).
@@ -613,12 +629,14 @@ An example of input file is below:
  MODELNAME = "WWM"
  GridFile = "/home/mathieu/Forecast_input/MERGE_ECMWF/hgrid.gr3",
  HisPrefix = "File.nc",
- HisPrefixOut = "/home/mathieu/Forecast_input/MERGE_ECMWF/Forc_",
+ HisPrefixOut = "/home/mathieu/Forecast_input/MERGE_ECMWF/Forc",
  BEGTC = "20150410.000000",
  ENDTC = "20150421.120000",
  DELTC = 3600, 
  UNITC = "SEC", 
  DEFINETC = 86400,
+ WriteIFile = T,
+ WriteDate = F,
 /
 
 &VARS
@@ -627,8 +645,30 @@ An example of input file is below:
 \end{verbatim}
 The {\tt INPUT} field contains the list of model runs available. So we have a list of model names, grid files and prefix.
 
-The {\tt OUTPUT} array contains the description of the model output. We have a {\tt MODELNAME}, {\tt GridFile} and {\tt HisPrefix} for the description of the model output. We also have a {\tt HisPRefixOut} which is the prefix of the forcing files.
-Similarly, we have the {\tt BEGTC}, {\tt ENDTC} for the time frame of the data output, {\tt DELTC} for the frequency of the output and {\tt DEFINETC} for how large a single file should be.
+The {\tt OUTPUT} array contains the description of the model output. We have a {\tt MODELNAME}, {\tt GridFile} and {\tt HisPrefix} for the description of the model output. We also have a {\tt HisPrefixOut} which is the prefix of the forcing files.
+Similarly, we have the {\tt BEGTC}, {\tt ENDTC} for the time frame of the data output, {\tt DELTC} for the frequency of the output and {\tt DEFINETC} for how many seconds a file will contain.
+
+The {\tt WriteIFile} specifies whether we put the file number in the filename. The {\tt WriteDate} specifies whether we put the first file data in the filename.
+For example
+\begin{verbatim}
+&OUTPUT
+ HisPrefixOut = "Forc",
+ WriteIFile = T,
+ WriteDate = F,
+/
+\end{verbatim}
+will give you file names of the form {\tt Forc\_0001.nc} while
+\begin{verbatim}
+&OUTPUT
+ HisPrefixOut = "Forc",
+ WriteIFile = F,
+ WriteDate = T,
+/
+\end{verbatim}
+will give you file names of the form {\tt Forc\_20160415\_000000.nc}
+
+
+
 
 The {\tt VARS} array contains the list of variables that are used for the output.
 

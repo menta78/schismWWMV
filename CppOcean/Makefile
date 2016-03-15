@@ -1,4 +1,4 @@
-PROGRAM = AltimeterComparison CREATE_sflux MERGE_field PLOT_diff_results PLOT_results
+PROGRAM = AltimeterComparison
 
 
 OBJECTS		= $(PROGRAM:%=%.o)
