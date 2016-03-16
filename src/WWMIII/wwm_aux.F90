@@ -286,7 +286,7 @@
          REAL(rkind), INTENT(IN)  :: VAR(MNP)
          REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
          INTEGER           :: NI(3)
-         INTEGER           :: IE, I1, I2, I3, IP
+         INTEGER           :: IE, IP
          REAL(rkind)            :: DEDY(3),DEDX(3)
          REAL(rkind)            :: DVDXIE, DVDYIE
 
@@ -303,9 +303,6 @@
 #endif
          DO IE = 1, MNE 
             NI = INE(:,IE)
-            I1 = INE(1,IE)
-            I2 = INE(2,IE)
-            I3 = INE(3,IE)
             WEI(NI) = WEI(NI) + 2.*TRIA(IE)
             DEDX(1) = IEN(1,IE)
             DEDX(2) = IEN(3,IE)
@@ -385,7 +382,7 @@
       REAL(rkind), INTENT(IN)  :: VAR(MNP)
       REAL(rkind), INTENT(OUT) :: DVDX(MNP), DVDY(MNP)
       INTEGER           :: NI(3)
-      INTEGER           :: IE, I1, I2, I3, IP
+      INTEGER           :: IE, IP
       REAL(rkind)            :: DEDY(3),DEDX(3)
       REAL(rkind)            :: DVDXIE, DVDYIE
       REAL(rkind)            :: WEI(MNP)
@@ -394,9 +391,6 @@
       WEI(:)  = 0.0_rkind
       DO IE = 1, MNE 
         NI = INE(:,IE)
-        I1 = INE(1,IE)
-        I2 = INE(2,IE)
-        I3 = INE(3,IE)
         WEI(NI) = WEI(NI) + 2.*TRIA(IE)
         DEDX(1) = IEN(1,IE)
         DEDX(2) = IEN(3,IE)
@@ -421,9 +415,6 @@
       DVDY(:) = 0.0_rkind
       DO IE = 1, MNE 
         NI = INE(:,IE)
-        I1 = INE(1,IE)
-        I2 = INE(2,IE)
-        I3 = INE(3,IE)
         DVDX(NI) = DVDX(NI) + IE_DX_SMO(IE)
         DVDY(NI) = DVDY(NI) + IE_DY_SMO(IE)
       END DO
