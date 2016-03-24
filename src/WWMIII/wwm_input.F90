@@ -29,6 +29,7 @@
          USE DATAPOOL, only : WriteOutputProcess_hot
          USE DATAPOOL, only : WriteOutputProcess_his
          USE DATAPOOL, only : WriteOutputProcess_stat
+         USE DATAPOOL, only : HISTORY_XFN, HISTORY_NC, HISTORY_SHP
 
          IMPLICIT NONE
          CHARACTER(LEN=40)  :: FILEOUT
@@ -43,6 +44,7 @@
          INTEGER     :: I
          LOGICAL     :: PARAMWRITE
          LOGICAL     :: AC, WK, ACOUT_1D, ACOUT_2D
+         LOGICAL     :: OutputOptionsSet
          LOGICAL     ::   HS, TM01, TM02, TM10, KLM, WLM,               &
      &      ETOTC, ETOTS, DM, DSPR,                                     &
      &      TPPD, CPPD, KPPD, CGPD,                                     &
@@ -240,17 +242,30 @@
 !
 ! set the output flag
 !
-         VAROUT_HISTORY%IOUTP = 1
+         OutputOptionsSet=.FALSE.
          IF (     TRIM(OUTSTYLE) == 'NO') THEN
-            VAROUT_HISTORY%IOUTP = 0
-         ELSE IF (TRIM(OUTSTYLE) == 'XFN') THEN
-            VAROUT_HISTORY%IOUTP = 1
-         ELSE IF (TRIM(OUTSTYLE) == 'NC') THEN
-            VAROUT_HISTORY%IOUTP = 2
-         ELSE IF (TRIM(OUTSTYLE) == 'SHP') THEN
-            VAROUT_HISTORY%IOUTP = 3
+           OutputOptionsSet=.TRUE.
          END IF
-
+         IF (     TRIM(OUTSTYLE) == 'XFN') THEN
+           OutputOptionsSet=.TRUE.
+           HISTORY_XFN = .TRUE.
+         END IF
+         IF (     TRIM(OUTSTYLE) == 'NC') THEN
+           OutputOptionsSet=.TRUE.
+           HISTORY_NC  = .TRUE.
+         END IF
+         IF (     TRIM(OUTSTYLE) == 'NCXFN') THEN
+           OutputOptionsSet=.TRUE.
+           HISTORY_XFN = .TRUE.
+           HISTORY_NC  = .TRUE.
+         END IF
+         IF (     TRIM(OUTSTYLE) == 'SHP') THEN
+           OutputOptionsSet=.TRUE.
+           HISTORY_SHP = .TRUE.
+         END IF
+         IF (OutputOptionsSet .eqv. .FALSE.) THEN
+           CALL WWM_ABORT('OUTSTYLE badly set. allowed choices: NO, NC, XFN and SHP')
+         END IF
          IF (   TRIM(FILEOUT) == 'zorglub') THEN
            IF (     TRIM(OUTSTYLE) == 'XFN') THEN
               FILEOUT='XFNout'

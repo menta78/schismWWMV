@@ -111,25 +111,23 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)    :: TIME
-      SELECT CASE (VAROUT_HISTORY%IOUTP)
-        CASE (0)
-          ! Do nothing ...
-        CASE (1)
-          CALL OUTPUT_HISTORY_XFN( TIME )
-        CASE (2)
+      IF (HISTORY_XFN) THEN
+        CALL OUTPUT_HISTORY_XFN( TIME )
+      END IF
+      IF (HISTORY_NC) THEN
 #ifdef NCDF
-          CALL OUTPUT_HISTORY_NC
+        CALL OUTPUT_HISTORY_NC
 #else
-          CALL WWM_ABORT('For History in netcdf, need netcdf!')
+        CALL WWM_ABORT('For History in netcdf, need netcdf!')
 #endif
+      END IF
+      IF (HISTORY_XFN) THEN
 #ifdef DARKO
-        CASE (3)
-          CALL OUTPUT_HISTORY_SHP( TIME )
+        CALL OUTPUT_HISTORY_SHP( TIME )
+#else
+        CALL WWM_ABORT('For DARKO, compile with -DDARKO option')
 #endif
-        CASE DEFAULT
-          WRITE(DBG%FHNDL,*) 'IOUTP=', VAROUT_HISTORY%IOUTP
-          CALL WWM_ABORT('WRONG NO OUTPUT SPECIFIED')
-      END SELECT
+      END IF
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE

@@ -997,6 +997,9 @@
          LOGICAL        :: WriteOutputProcess_stat
 
          CHARACTER(LEN=20)      :: OUTSTYLE
+         LOGICAL                :: HISTORY_XFN = .FALSE.
+         LOGICAL                :: HISTORY_NC  = .FALSE.
+         LOGICAL                :: HISTORY_SHP = .FALSE.
 
          CHARACTER(LEN=20)      :: OUTT_VARNAMES(OUTVARS)
          CHARACTER(LEN=20)      :: CURR_VARNAMES(CURRVARS)
