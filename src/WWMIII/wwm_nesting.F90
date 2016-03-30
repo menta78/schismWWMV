@@ -369,7 +369,7 @@
             WATLEVLOC=0
           END IF
           DO I=1,3
-            eW=ListNestInfo(iGrid) % HOT_W(I,IP)
+            eW=ListNestInfo(iGrid) % BOUC_W(I,IP)
             IP2=INE(I,IE)
             ACLOC = ACLOC + eW * AC2(:,:,IP2)
             IF (L_BOUC_PARAM) THEN
