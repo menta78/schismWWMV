@@ -1935,7 +1935,9 @@
       integer, intent(in) :: nbtime_mjd
       real(rkind), intent(in) :: WIND_TIME_MJD(nbtime_mjd)
       CHARACTER(LEN=15) :: eTimeStr
-      IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - THR) THEN
+      real(rkind) DiffTime
+      real(rkind) :: tolDay = 0.00001
+      IF (SEWI%BMJD .LT. minval(WIND_TIME_MJD) - tolDay) THEN
         WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND START TIME is outside CF wind_time range!'
         CALL MJD2CT(SEWI%BMJD,eTimeStr)
@@ -1950,9 +1952,11 @@
         WRITE(wwmerr, *) 'Error in WIND_TIME_MJD 1, read ', TRIM(WINDBG%FNAME)
         CALL WWM_ABORT(wwmerr)
       END IF
-      IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + THR) THEN
+      IF (SEWI%EMJD .GT. maxval(WIND_TIME_MJD) + tolDay) THEN
         WRITE(WINDBG%FHNDL,*) 'END OF RUN'
         WRITE(WINDBG%FHNDL,*) 'WIND END TIME is outside CF wind_time range!'
+        DiffTime=maxval(WIND_TIME_MJD) + THR - SEWI%EMJD
+        WRITE(WINDBG%FHNDL,*) 'DiffTime=', DiffTime
         CALL MJD2CT(SEWI%BMJD,eTimeStr)
         WRITE(WINDBG%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
         CALL MJD2CT(SEWI%EMJD,eTimeStr)
