@@ -63,7 +63,7 @@ FLDFLAGS = $(OPTFLAGS) #for final linking of object files
 #####Libraries
 #MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
 MTSLIBS = -L./ParMetis-3.1-Sep2010/ -lparmetis -lmetis
-CDFLIBS = $(NETCDF_LINK_FORTRAN)
+CDFLIBS = $(NETCDF_FORTRAN_LINK)
 CDFMOD = -I$(NETCDF_INCDIR)
 ifdef USE_GOTM
    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
