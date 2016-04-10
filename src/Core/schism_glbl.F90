@@ -73,7 +73,7 @@ module schism_glbl
 
   integer,parameter :: natrm=10 !# of _available_ tracer models at the moment (including T,S)
   !Parameters from param.in
-  integer,save :: ipre,nonhydro,indvel,imm,ihot,ics,iwbl,iharind,nws, &
+  integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws, &
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
@@ -87,7 +87,8 @@ module schism_glbl
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
                       &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
                       &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
-                      &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio
+                      &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio, &
+                      &slr_rate
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
@@ -152,7 +153,7 @@ module schism_glbl
     real(rkind) :: rt2        ! time remaining from left-over from previous subdomain 
     real(rkind) :: ut,vt,wt  ! Current backtracking sub-step velocity
     real(rkind) :: xt,yt,zt  ! Current backtracking sub-step point
-    real(rkind) :: sclr(4)     ! Backtracked values for some tracers (debug only)
+    real(rkind) :: sclr(4)     ! Backtracked values for some tracers
     real(rkind) :: gcor0(3)  ! global coord. of the starting pt (for ics=2)
     real(rkind) :: frame0(3,3) ! frame tensor at starting pt (for ics=2)
   end type bt_type
@@ -219,9 +220,8 @@ module schism_glbl
   !ie is the local element index. For quads, the derivative is evaluated at
   !centroid
   real(rkind),save,allocatable :: dldxy(:,:,:)
-  !Transformation tensor for element frame: eframe(i,j,ie) for ics=2
+  !Transformation tensor for element (ll) frame: eframe(i,j,ie) for ics=2
   !where j is the axis id, i is the component id, ie is the local element id (aug.)
-  !xe axis points from local node 2 to 3 (i.e. side 1)
   !Undefined for ics=1
   real(rkind),save,allocatable :: eframe(:,:,:)
   !x,y coordinates of each element node in the _element_ frame
@@ -266,7 +266,7 @@ module schism_glbl
 !  integer,save,allocatable :: iback(:)        ! back-up flag for abnormal cases in S-coord.
   real(rkind),save,allocatable :: hmod(:)        ! constrained depth
   real(rkind),save,allocatable :: znl(:,:)        ! z-coord in local Z-axis (vertical up)
-  ! Transformation tensor for node frame: pframe(i,j,ip) for ics=2.
+  ! Transformation tensor for node (ll) frame: pframe(i,j,ip) for ics=2.
   ! where j is the axis id, i is the component id, ip is the local node id (aug.)
   ! For ics=1, this is not used
   real(rkind),save,allocatable :: pframe(:,:,:)
@@ -299,7 +299,11 @@ module schism_glbl
   !Transformation tensor for side frame: sframe(i,j,isd)
   ! where j is the axis id, i is the component id, isd is the local side id (aug.)
   ! For ics=1, only sframe(1:2,1:2,isd) are used
+  ! x-axis is from adjacent elem 1 to 2.
   real(rkind),save,allocatable :: sframe(:,:,:)
+  !cos/sin of side normals. If ics=1, these are same as sframe(1:2,1,isd)
+  !If ics=2, these are product of sframe(:,1,:) and local lat/lon frame
+  real(rkind),save,allocatable :: snx(:),sny(:)
   real(rkind),save,allocatable :: isblock_sd(:,:)
   integer,save,allocatable :: islg2(:)      ! Local-to-global side index table (2-tier augmented)
   integer,save,allocatable :: isgl2(:,:)      ! Global-to-local side index table (2-tier augmented)
@@ -364,9 +368,6 @@ module schism_glbl
   real(rkind),save,allocatable :: flx_sf(:,:) !surface b.c. \kappa*dC/dz = flx_sf (at element center)
   real(rkind),save,allocatable :: flx_bt(:,:) !bottom b.c.
   real(rkind),save,allocatable :: hdif(:,:) !horizontal diffusivity
-!  real(rkind),save,allocatable :: tem0(:,:) ! Initial temperature at nodes
-!  real(rkind),save,allocatable :: sal0(:,:) ! Initial salinity at nodes
-!  real(rkind),save,allocatable :: trel0(:,:,:) ! Initial tracer conc. at prism center
   real(rkind),save,allocatable :: tr_nd0(:,:,:) ! Initial tracer conc. at nodes
   real(rkind),save,allocatable :: eta1(:)   ! Elevation at nodes at previous timestep
   real(rkind),save,allocatable :: eta2(:)   ! Elevation at nodes at current timestep
@@ -374,22 +375,20 @@ module schism_glbl
   real(rkind),save,allocatable :: we(:,:) 
   !Vertical velocity at element centers & whole levels, calculated using F.V.M. For hydrostatic 
   !model, this is the same as we(); for non-hydrostatic model, this is only used in upwind transport
-  real(rkind),save,allocatable :: we_fv(:,:) 
+!  real(rkind),save,allocatable :: we_fv(:,:) 
   real(rkind),save,allocatable :: flux_adv_vface(:,:,:) !unmodified vertical fluxes (positive upward)
   !x & y-component of velocity at side centers & whole levels
-  !For ics=1, these are defined in the _global_ frame
-  !For ics=2, these are defined in the _side_ frame
+  !For ics=1, these are defined in the global frame
+  !For ics=2, these are defined in the ll frame
   real(rkind),save,allocatable :: su2(:,:),sv2(:,:) 
-  !velocity at nodes in an element. In eframe if ics=2
+  !velocity at nodes in an element. In ll if ics=2
   !ufg(1:4,1:nvrt,1:nea)
   real(rkind),save,allocatable :: ufg(:,:,:),vfg(:,:,:)
-!  real(rkind),save,allocatable :: tnd(:,:)  ! Temperature at nodes & whole levels
-!  real(rkind),save,allocatable :: snd(:,:)  ! Salinity at nodes & whole levels
   real(rkind),save,allocatable :: prho(:,:) ! Density at whole levels and either nodes or elements
   real(rkind),save,allocatable :: q2(:,:)   ! Turbulent kinetic energy at sides & half levels
   real(rkind),save,allocatable :: xl(:,:)   ! Turbulent mixing length at sides & half levels
-  real(rkind),save,allocatable :: xlmin2(:) ! ??? Turbulent mixing length
-  !Velocity at nodes & whole levels at current timestep. If ics=2, it's in node frame
+  real(rkind),save,allocatable :: xlmin2(:) ! min. turbulent mixing length fro non-surface layers
+  !Velocity at nodes & whole levels at current timestep. If ics=2, it's in ll frame
   real(rkind),save,allocatable :: uu2(:,:),vv2(:,:),ww2(:,:)
   real(rkind),save,allocatable :: bdef(:)   !bottom deformation
   real(rkind),save,allocatable :: bdef1(:)   !bottom deformation
@@ -407,7 +406,7 @@ module schism_glbl
   real(rkind),save,allocatable :: Cdp(:)         ! drag at node
   real(rkind),save,allocatable :: rmanning(:)         ! Manning's n at node
   real(rkind),save,allocatable :: windx(:),windy(:) !wind vector
-  real(rkind),save,allocatable :: sdbt(:,:,:),webt(:,:),shapiro(:), &
+  real(rkind),save,allocatable :: sdbt(:,:,:),shapiro(:), &
                                   &windx1(:),windy1(:),windx2(:),windy2(:), &
                                   &surf_t1(:),surf_t2(:),surf_t(:), & !YC
                                   &tau(:,:),windfactor(:),pr1(:),airt1(:), &
@@ -425,7 +424,7 @@ module schism_glbl
 
   ! Non-hydrostatic arrays
   real(rkind),save,allocatable :: qnon(:,:)   
-  integer,save,allocatable :: ihydro(:)
+!  integer,save,allocatable :: ihydro(:)
 
   ! Station and other output arrays
   real(rkind),save,allocatable :: xsta(:),ysta(:),zstal(:),zsta(:),arco_sta(:,:), &
@@ -509,6 +508,9 @@ module schism_glbl
   real(rkind),save                 :: cf_scale_factor_uwind, cf_add_offset_uwind
   real(rkind),save                 :: cf_scale_factor_vwind, cf_add_offset_vwind
   real(rkind),save                 :: cf_scale_factor_pr, cf_add_offset_pr
+
+! Marsh model
+  integer,save,allocatable     :: imarsh(:),ibarrier_m(:)
 
 !End module variables declaration
 

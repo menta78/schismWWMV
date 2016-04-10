@@ -110,7 +110,6 @@
 #endif
 
 !'    Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
-!     Use we_fv for vertical vel.
 !     For rewetted elements, tr_el takes the value from last wet step
 
 !     Compute (pre-limiting) fluxes at all faces 
@@ -126,13 +125,13 @@
           if(is_land) then !land
             flux_adv_hface(k,j)=0.d0
           else            
-            if(ics==1) then
-              vnor1=su2(k,j)*sframe(1,1,j)+sv2(k,j)*sframe(2,1,j)
-              vnor2=su2(k-1,j)*sframe(1,1,j)+sv2(k-1,j)*sframe(2,1,j)
-            else !lat/lon
-              vnor1=su2(k,j)
-              vnor2=su2(k-1,j)
-            endif !ics
+!            if(ics==1) then
+            vnor1=su2(k,j)*snx(j)+sv2(k,j)*sny(j)
+            vnor2=su2(k-1,j)*snx(j)+sv2(k-1,j)*sny(j)
+!            else !lat/lon
+!              vnor1=su2(k,j)
+!              vnor2=su2(k-1,j)
+!            endif !ics
             flux_adv_hface(k,j)=(zs(k,j)-zs(k-1,j))*distj(j)*(vnor1+vnor2)/2 !normal * area = flux (in local x-direction)
 
 !         Debug

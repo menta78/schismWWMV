@@ -71,7 +71,10 @@
 #endif
 
       USE hydraulic_structures
-
+      USE CF_VARIABLES, only : INIT_NETCDF_CF_ALLVAR, READ_NETCDF_CF_ALLVAR
+#ifdef SINGLE_NETCDF_OUTPUT
+      USE single_netcdf, only : INIT_NETCDF_SINGLE_OUTPUT
+#endif
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -114,7 +117,7 @@
                 &ipgb,isgb,iegb,irr0,nn,ifl,nd,nd1,nd2,ii,nope1, &
                 &ntmp,nrecl_et,nrecl_fl,nrecl_te,nrecl_sa,nrecl_tr2(natrm),nd_gb, &
                 &jblock,jface,isd,n1,n2,n3,ndgb,ndgb1,ndgb2,irank, &
-                &ihydro_region,iabort,ie,ie2,l0,id,id1,id2,iabort_gb,j1,j2, &
+                &iabort,ie,ie2,l0,id,id1,id2,iabort_gb,j1,j2, &
                 &ne_kr,nei_kr,npp,info,num,nz_r2,ip,IHABEG,il, &
                 &ninv,it,kl,noutput_ns,iside,ntrmod
 
@@ -228,19 +231,19 @@
       call get_param('param.in','rearth_eq',2,itmp,rearth_eq,stringvalue) 
 
 !'    Some modules are not available in lon/lat mode yet
-#if defined USE_SED2D || defined USE_SED || defined USE_ICM || defined USE_TIMOR
+#if defined USE_SED2D || defined USE_ICM || defined USE_TIMOR
       if(ics==2) then      
         write(errmsg,*)'Some models cannot be run on lon/lat!'
         call parallel_abort(errmsg)
       endif
 #endif
 
-      call get_param('param.in','nonhydro',1,nonhydro,tmp,stringvalue)
-      if(nonhydro/=0.and.nonhydro/=1) call parallel_abort('INIT: check nonhydro')
-      if(nonhydro==1) then
-        if(ics==2) call parallel_abort('ics=2 and nonhydro==1')
-        call get_param('param.in','ihydro_region',1,ihydro_region,tmp,stringvalue)
-      endif
+!      call get_param('param.in','nonhydro',1,nonhydro,tmp,stringvalue)
+!      if(nonhydro/=0.and.nonhydro/=1) call parallel_abort('INIT: check nonhydro')
+!      if(nonhydro==1) then
+!        if(ics==2) call parallel_abort('ics=2 and nonhydro==1')
+!        call get_param('param.in','ihydro_region',1,ihydro_region,tmp,stringvalue)
+!      endif
 
       call get_param('param.in','indvel',1,indvel,tmp,stringvalue)
       if(indvel<-1.or.indvel>1) then
@@ -596,7 +599,7 @@
       call get_param('param.in','sim_month',2,itmp,sim_month,stringvalue)
       call get_param('param.in','sim_day',2,itmp,sim_day,stringvalue)
       call get_param('param.in','sim_hour',2,itmp,sim_hour,stringvalue)
-      call get_param('param.in','sim_minute',1,itmp,sim_minute,stringvalue)
+      call get_param('param.in','sim_minute',2,itmp,sim_minute,stringvalue)
       call get_param('param.in','sim_second',2,itmp,sim_second,stringvalue)
 !     Pass time info to EcoSim and ICM
 #ifdef USE_ECO
@@ -609,9 +612,9 @@
 #endif
      
 !...  Transport method for all tracers including T,S
-!     1: upwind; 2: TVD (explicit); 3: TVD (implicit vertical)
+!     1: upwind; 2: TVD (explicit); 3: TVD (implicit vertical); 4: WENO (implicit vertical)
       call get_param('param.in','itr_met',1,itr_met,tmp,stringvalue)
-      if(itr_met<1.or.itr_met>3) then
+      if(itr_met<1.or.itr_met>4) then
         write(errmsg,*)'Unknown tracer method',itr_met
         call parallel_abort(errmsg)
       endif
@@ -620,7 +623,7 @@
       endif
    
       !For implicit transport, read in tolerances for convergence
-      if(itr_met==3) then
+      if(itr_met>=3) then
         call get_param('param.in','eps1_tvd_imp',2,itmp,eps1_tvd_imp,stringvalue)
         call get_param('param.in','eps2_tvd_imp',2,itmp,eps2_tvd_imp,stringvalue)
       endif
@@ -991,7 +994,7 @@
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
 
-      noutput_ns=20 !hvel.67,vert.69,temp.70,salt.70 etc
+      noutput_ns=21 !hvel.67,vert.69,temp.70,salt.70 etc
       allocate(outfile_ns(noutput_ns),iof_ns(noutput_ns),stat=istat)
       outfile_ns(1)='hvel.67' !must be consistent when calling the output routine later
       outfile_ns(2)='vert.69'
@@ -1013,6 +1016,7 @@
       outfile_ns(18)='sbsa.66'
       outfile_ns(19)='bthk.66'
       outfile_ns(20)='bage.66'
+      outfile_ns(21)='mrsh.66'
 
       !varnm_ns is not used at the moment except for noting purpose
       !varnm_ns(1)='3D horizontal vel. at sides and whole levels'
@@ -1305,18 +1309,6 @@
         call parallel_abort(errmsg)
       endif
 
-!     Check compatability between 2D model and parameters
-!      if(lm2d) then
-!        if(ntracers/=0.or.nonhydro==1.or.ihdif/=0.or. &
-!     &ibc==0.or.ibtp==1.or.nchi/=-1.or.ihconsv==1.or.isconsv==1.or. &
-!     &itur/=0.or.ibcc_mean/=0.or.inu_st/=0.or.icst==2.or.nws==3) then
-!          write(errmsg,*)'Uncompatable params. for 2D model:',ntracers, &
-!     &nonhydro,ihdif,ibc,ibtp,nchi,ihconsv,isconsv,itur, &
-!     &ibcc_mean,inu_st,icst,nws
-!          call parallel_abort(errmsg)
-!        endif
-!      endif !lm2d
-
 !     Volume and mass sources/sinks option
       call get_param('param.in','if_source',1,if_source,tmp,stringvalue)
       if(if_source/=0.and.if_source/=1) call parallel_abort('Wrong if_source')
@@ -1339,6 +1331,14 @@
         call get_param('param.in','eos_a',2,itmp,eos_a,stringvalue)
         call get_param('param.in','eos_b',2,itmp,eos_b,stringvalue)
       endif
+
+#ifdef USE_MARSH
+      !SLR rate in mm/year
+      call get_param('param.in','slr_rate',2,itmp,slr_rate,stringvalue)
+      !Convert to m/s
+      if(slr_rate<0) call parallel_abort('INIT: slr_rate<0')
+      slr_rate=slr_rate*1.e-3/365/86400 !m/s
+#endif
 
 !...  Check parameter read in from param.in
       if(myrank==0) write(16,*)'done reading param.in; s2_mxnbt in param.in =',s2_mxnbt
@@ -1445,7 +1445,7 @@
 
 !...  Quad does not work for certain options
       if(lhas_quad) then
-        if(nonhydro==1.or.indvel<0.or.inunfl==1) &
+        if(indvel<0.or.inunfl==1) &
      &call parallel_abort('INIT: quad grid does not work for certain options')
 !'
 #if defined USE_WWM || defined USE_SED2D
@@ -1477,15 +1477,15 @@
      &krvel(nea),itvd_e(nea),ze(nvrt,nea),dldxy(4,2,nea),dp00(npa),kfp(npa),kbp(npa), &
      &kbp00(npa),kbp_e(np),idry(npa),hmod(npa),znl(nvrt,npa), &
      &kbs(nsa),idry_s(nsa),isidenei2(4,ns),zs(nvrt,nsa), &
-     &delj(ns),ibnd_ext_int(npa),pframe(3,3,npa),sigma_lcl(nvrt,npa),shape_c2(4,2,nea),stat=istat)
+     &delj(ns),ibnd_ext_int(npa),pframe(3,3,npa),sigma_lcl(nvrt,npa),shape_c2(4,2,nea), &
+     &snx(nsa),sny(nsa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: grid geometry arrays allocation failure')
 !'
 
 !     Allocate the remaining arrays held in schism_glbl, except for Kriging related arrays 
       !allocate(tem0(nvrt,npa),sal0(nvrt,npa),eta1(npa),eta2(npa), & !tsel(2,nvrt,nea)
       allocate(eta1(npa),eta2(npa), & !tsel(2,nvrt,nea)
-          & we(nvrt,nea),we_fv(nvrt,nea),su2(nvrt,nsa),sv2(nvrt,nsa),ufg(4,nvrt,nea),vfg(4,nvrt,nea), &
-!          & tnd(nvrt,npa),snd(nvrt,npa), &
+          & we(nvrt,nea),su2(nvrt,nsa),sv2(nvrt,nsa),ufg(4,nvrt,nea),vfg(4,nvrt,nea), &
           & prho(nvrt,npa),q2(nvrt,npa),xl(nvrt,npa),xlmin2(npa), &
           & uu2(nvrt,npa),vv2(nvrt,npa),ww2(nvrt,npa),bdef(npa),bdef1(npa),bdef2(npa),dfh(nvrt,npa), &
           & bdy_frc(ntracers,nvrt,nea),flx_sf(ntracers,nea),flx_bt(ntracers,nea), &
@@ -1510,7 +1510,7 @@
 !'
 
 !     All other arrays
-      allocate(sdbt(4,nvrt,nsa),webt(nvrt,nea), & !bubt(2,nea), & 
+      allocate(sdbt(4,nvrt,nsa), & !webt(nvrt,nea), bubt(2,nea), & 
          &  windx1(npa),windy1(npa),windx2(npa),windy2(npa),windx(npa),windy(npa), &
          &  tau(2,npa),iadv(npa),windfactor(npa),pr1(npa),airt1(npa),shum1(npa), &
          &  pr2(npa),airt2(npa),shum2(npa),pr(npa),sflux(npa),srad(npa),tauxz(npa),tauyz(npa), &
@@ -1547,7 +1547,12 @@
 
 #ifdef USE_NAPZD
       allocate(Bio_bdef(nvrt,nea),stat=istat)
-      if(istat/=0) call parallel_abort('MAIN: NAPZD allocation failure')
+      if(istat/=0) call parallel_abort('INIT: NAPZD allocation failure')
+#endif
+
+#ifdef USE_MARSH
+      allocate(imarsh(nea),ibarrier_m(nea),stat=istat)
+      if(istat/=0) call parallel_abort('INIT: MARSH allocation failure')
 #endif
 
 !     Wave model arrays
@@ -1580,16 +1585,17 @@
 #endif
 
 !     Non-hydrostatic arrays
+!     Keep qnon for the time being due to hotstart
       allocate(qnon(nvrt,npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: Nonhydro allocation failure (1)')
 !'
       qnon=0 !initialize
-
-      if(nonhydro==1) then
-        allocate(ihydro(npa),stat=istat) 
-        if(istat/=0) call parallel_abort('MAIN: Nonhydro allocation failure')
-!'
-      endif
+!
+!      if(nonhydro==1) then
+!        allocate(ihydro(npa),stat=istat) 
+!        if(istat/=0) call parallel_abort('MAIN: Nonhydro allocation failure')
+!!'
+!      endif
 
 !     Alloc flux output arrays
       if(iflux/=0) then
@@ -1746,6 +1752,18 @@
         endif
       endif !ics==2
 
+!...  Compute sn[xy] for side normal dir
+      if(ics==1) then
+        snx(:)=sframe(1,1,:)
+        sny(:)=sframe(2,1,:)
+      else !lat/lon; use 1st node's ll frame
+        do i=1,nsa
+          n1=isidenode(1,i)
+          snx(i)=dot_product(sframe(1:3,1,i),pframe(1:3,1,n1))
+          sny(i)=dot_product(sframe(1:3,1,i),pframe(1:3,2,n1))
+        enddo !i
+      endif !ics
+
 !...  Modified depth
       dpmax=-1.e25 !max. depth
       do i=1,npa
@@ -1776,7 +1794,7 @@
       endif !ivcor==1
 
 !...  Derivatives of shape functions
-!...  For ics=2, this is done inside element frame
+!...  For ics=2, this is done inside element/ll frame
 !...  For quads, the derivative is evaluated at centroid
       do i=1,nea
         do j=1,i34(i)
@@ -1826,7 +1844,7 @@
       iabort=0
       do i=1,nea
         if(i34(i)==4) then
-          !Side coord. (elem. frame if ics=2)
+          !Side coord. (elem/ll frame if ics=2)
           do j=1,4
             j1=nxq(1,j,i34(i))
             j2=nxq(2,j,i34(i))
@@ -1871,7 +1889,7 @@
       endif
 
 !...  Compute lat/lon at element center for EcoSim 
-#ifdef USE_ECO 
+#if defined USE_ECO || defined USE_COSINE 
       open(32,file='hgrid.ll',status='old')
       read(32,*)
       read(32,*) !ne,np
@@ -1891,6 +1909,29 @@
         ylat_el(i)=sum(ylat(elnode(1:i34(i),i)))/i34(i)*180/pi
       enddo !i
 #endif
+
+#ifdef USE_MARSH
+!...  Inputs for marsh migration model
+      open(10,file='marsh_init.prop',status='old')
+      open(32,file='marsh_barrier.prop',status='old')
+      do i=1,ne_global
+        read(10,*)j,tmp1
+        read(32,*)j,tmp2
+        itmp1=nint(tmp1)
+        itmp2=nint(tmp2)
+        if(itmp1/=0.and.itmp1/=1.or.itmp2/=0.and.itmp2/=1) then
+          write(errmsg,*)'Unknown marsh flag:',i,tmp1,tmp2
+          call parallel_abort(errmsg)
+        endif
+        if(iegl(i)%rank==myrank) then
+          ie=iegl(i)%id
+          imarsh(ie)=itmp1
+          ibarrier_m(ie)=itmp2
+          if(itmp2==1) imarsh(ie)=0
+        endif
+      enddo !i
+      close(10); close(32)
+#endif      
 
 !... Read lat/lon for spectral spatial interpolation  in WWM
 #ifdef USE_WWM
@@ -2265,9 +2306,6 @@
 
 !...  Read in hydraulics.in
       if(ihydraulics/=0) then
-        !Non-hydro model not working yet
-        if(nonhydro/=0) call parallel_abort('INIT: Non-hydro model cannot be used with hydraulics option')
-!'
         !Specify blocks for hydraulic transfer structures (where fluxes are specified,
         !and tracers are conserved)
         call load_structures('hydraulics.in')
@@ -2477,6 +2515,7 @@
         if(istat/=0) call parallel_abort('INIT: ieg_source failure')
         do i=1,nsources
           read(31,*)ieg_source(i) !global elem. #
+          write(*,*) i, ieg_source(i)
         enddo !i
 
         read(31,*) !blank line
@@ -2492,11 +2531,13 @@
           open(63,file='vsource.th',status='old') !values (>=0) in m^3/s
           read(63,*)tmp,ath3(1:nsources,1,1,1)
           read(63,*)th_dt3(1),ath3(1:nsources,1,2,1)
+          write(*,*) abs(tmp), th_dt3(1), dt
           if(abs(tmp)>1.e-6.or.th_dt3(1)<dt) call parallel_abort('SCHISM_INIT: vsource.th start time wrong')
           th_time3(1,1)=0
           th_time3(2,1)=th_dt3(1)
 
           !msource.th: values in concentration dimension (psu etc)
+          !Use -9999 to injet ambient values
           open(65,file='msource.th',status='old') 
           read(65,*)tmp,ath3(1:nsources,1:ntracers,1,3)
           read(65,*)th_dt3(3),ath3(1:nsources,1:ntracers,2,3)
@@ -2525,26 +2566,26 @@
       nrec=min(ntime,ihfskip)/nspool
 
 !...  Option for specifying hydrostatic region for non-hydrostatic model
-      if(nonhydro==1) then
-        if(ihydro_region==1) then
-          open(32,file='hydro_region.gr3',status='old')
-          read(32,*)
-          read(32,*) itmp1,itmp2
-          if(itmp1/=ne_global.or.itmp2/=np_global) &
-     &call parallel_abort('Check hydro_region.gr3')
-          do i=1,np_global
-            read(32,*)j,xtmp,ytmp,tmp 
-            if(ipgl(i)%rank==myrank) then
-              ihydro(ipgl(i)%id)=nint(tmp)
-              if(nint(tmp)/=0.and.nint(tmp)/=1) call parallel_abort('MAIN: check hydro_region.gr3')
-!'
-            endif
-          enddo !i
-          close(32)
-        else
-          ihydro=0 !0: non-hydro node; 1: hydrostatic node
-        endif
-      endif !nonhydro
+!      if(nonhydro==1) then
+!        if(ihydro_region==1) then
+!          open(32,file='hydro_region.gr3',status='old')
+!          read(32,*)
+!          read(32,*) itmp1,itmp2
+!          if(itmp1/=ne_global.or.itmp2/=np_global) &
+!     &call parallel_abort('Check hydro_region.gr3')
+!          do i=1,np_global
+!            read(32,*)j,xtmp,ytmp,tmp 
+!            if(ipgl(i)%rank==myrank) then
+!              ihydro(ipgl(i)%id)=nint(tmp)
+!              if(nint(tmp)/=0.and.nint(tmp)/=1) call parallel_abort('MAIN: check hydro_region.gr3')
+!!'
+!            endif
+!          enddo !i
+!          close(32)
+!        else
+!          ihydro=0 !0: non-hydro node; 1: hydrostatic node
+!        endif
+!      endif !nonhydro
 
 !...  Compute neighborhood for internal sides for Shapiro filter
 !...  isidenei2(4,ns): 4 neighboring sides of a _resident_ side
@@ -3192,8 +3233,9 @@
 !...  Surface min. mixing length for f.s. and max. for all; inactive 
 !      read(15,*) !xlmax00
 
-!     TVD scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd. itvd_e and h_tvd are shared 
-!     between T,S and all tracers
+!     TVD/WENO scheme will be used if itvd_e=1 and min(total depth @ 3 nodes) >=h_tvd. itvd_e and h_tvd are shared 
+!     between T,S and all tracers. Also if h_tvd>=1.e5 and itr_met>=3, then upwind is used for all tracers 
+!     and some parts of the code are bypassed for efficiency
       itvd_e=0 !init. for upwind
       if(itr_met>=2) then
         open(32,file='tvd.prop',status='old')
@@ -3412,8 +3454,6 @@
 
 !...  Compute neighborhood for 2-tier Kriging and invert matrix for resident elements only
 !     Compute ne_kr for dimensioning
-!      if(ics==2.and.inter_mom/=0) call parallel_abort('ics=2 and inter_mom/=0')
-!'
       ie_kr=0 !non-zero value points to local nth Kriging elements
       ne_kr=0 !total # of elements in Kriging zone
       do i=1,ne !resident
@@ -3630,7 +3670,7 @@
       endif
 
 !     For ics=1, (su2,sv2) are defined in the _global_ Cartesian frame
-!     For ics=2, they are defined in the _side_ frame
+!     For ics=2, they are defined in the ll frame
       su2=0; sv2=0
       we=0 !in element frame
 
@@ -3913,25 +3953,8 @@
       endif !nws=4
 
       if(nws==5.or.nws==6) then
-        CALL INIT_NETCDF_DIRECT
-        wtime1=wind_time_sec(1)
-        wtime2=wind_time_sec(2)
-        if(nws==5) CALL READ_INTERP_NETCDF_CF(1,rwild)
-        if(nws==6) CALL READ_NETCDF_DIRECT(1,rwild)
-        windx1(:)=rwild(:,1)
-        windy1(:)=rwild(:,2)
-        pr1(:)=rwild(:,3)
-        if(nws==5) CALL READ_INTERP_NETCDF_CF(2,rwild) ! read 2.nd record for init only
-        if(nws==6) CALL READ_NETCDF_DIRECT(2,rwild)
-        windx2(:)=rwild(:,1)
-        windy2(:)=rwild(:,2)
-        pr2(:)=rwild(:,3)
-        wtratio=(time-wtime1)/(wtime2-wtime1)
-        windx=windx1+wtratio*(windx2-windx1)
-        windy=windy1+wtratio*(windy2-windy1)
-        pr=pr1+wtratio*(pr2-pr1)
-        if(myrank==0) WRITE(16,'(A,F12.1,2x,F12.1,2x,F12.1)')'time, wtime1, wtime2= ',time, wtime1, wtime2
-!'
+        CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
+        CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
       endif !5|6
 
 !	CORIE mode
@@ -3966,70 +3989,72 @@
 
 !     VIMS Point source loading added by YC
 #ifdef USE_ICM 
-      if(myrank==0) write(16,*)'start reading ICM point source...'
-      call WQCO1(dt,rnday,NDTWQ)
-      if(iWQPS==2) then
-        PSQ(:)=0.
-        PSK(:)=0
-        WWPRPOC(:) = 0.
-        WWPLPOC(:) = 0.
-        WWPDOCA(:) = 0.
-        WWPRPON(:) = 0.
-        WWPLPON(:) = 0.
-        WWPDON(:)  = 0.
-        WWPNH4(:)  = 0.
-        WWPNO3(:)  = 0.
-        WWPRPOP(:) = 0.
-        WWPLPOP(:) = 0.
-        WWPDOP(:)  = 0.
-        WWPPO4t(:) = 0.
-        WWPSU(:)   = 0.
-        WWPSAt(:)  = 0.
-        WWPCOD(:)  = 0.
-        WWPDO(:)   = 0.
+!      if(myrank==0) write(16,*)'start reading ICM point source...'
+!      call WQCO1(dt,rnday,NDTWQ)
+       call read_icm_param
+!      if(iWQPS==2) then
+!        PSQ(:)=0.
+!        PSK(:)=0
+!        WWPRPOC(:) = 0.
+!        WWPLPOC(:) = 0.
+!        WWPDOCA(:) = 0.
+!        WWPRPON(:) = 0.
+!        WWPLPON(:) = 0.
+!        WWPDON(:)  = 0.
+!        WWPNH4(:)  = 0.
+!        WWPNO3(:)  = 0.
+!        WWPRPOP(:) = 0.
+!        WWPLPOP(:) = 0.
+!        WWPDOP(:)  = 0.
+!        WWPPO4t(:) = 0.
+!        WWPSU(:)   = 0.
+!        WWPSAt(:)  = 0.
+!        WWPCOD(:)  = 0.
+!        WWPDO(:)   = 0.
 !
-        x1 = 1.0E3 !conversion from kg to g
-        open(61,file='ps.in',status='old')
-        read(61,*)
-        read(61,*)
-        do i=1,nps
-          read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
-          &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
-          if(iegl(iegb)%rank==myrank) then
-            PSQ(iegl(iegb)%id)     = xPSQ !m^3/s - usually negative
-            PSK(iegl(iegb)%id)     = xPSK !vertical layer where the source is applied
-            WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3 = g per day
-            WWPLPOC(iegl(iegb)%id) = PLPOC * x1
-            WWPDOCA(iegl(iegb)%id) = PDOCA * x1
-            WWPRPON(iegl(iegb)%id) = PRPON * x1
-            WWPLPON(iegl(iegb)%id) = PLPON * x1
-            WWPDON(iegl(iegb)%id)  = PDON  * x1
-            WWPNH4(iegl(iegb)%id)  = PNH4  * x1
-            WWPNO3(iegl(iegb)%id)  = PNO3  * x1
-            WWPRPOP(iegl(iegb)%id) = PRPOP * x1
-            WWPLPOP(iegl(iegb)%id) = PLPOP * x1
-            WWPDOP(iegl(iegb)%id)  = PDOP  * x1
-            WWPPO4t(iegl(iegb)%id) = PPO4t * x1
-            WWPSU(iegl(iegb)%id)   = PSU  * x1
-            WWPSAt(iegl(iegb)%id)  = PSAt * x1
-            WWPCOD(iegl(iegb)%id)  = PCOD * x1
-            WWPDO(iegl(iegb)%id)   = PDO  * x1
-          endif
-        enddo
-        npstime=0
-        npstiminc=86400.  !added by YC, users can change by themselves
+!        x1 = 1.0E3 !conversion from kg to g
+!        open(61,file='ps.in',status='old')
+!        read(61,*)
+!        read(61,*)
+!        do i=1,nps
+!          read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
+!          &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
+!          if(iegl(iegb)%rank==myrank) then
+!            PSQ(iegl(iegb)%id)     = xPSQ !m^3/s - usually negative
+!            PSK(iegl(iegb)%id)     = xPSK !vertical layer where the source is applied
+!            WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3 = g per day
+!            WWPLPOC(iegl(iegb)%id) = PLPOC * x1
+!            WWPDOCA(iegl(iegb)%id) = PDOCA * x1
+!            WWPRPON(iegl(iegb)%id) = PRPON * x1
+!            WWPLPON(iegl(iegb)%id) = PLPON * x1
+!            WWPDON(iegl(iegb)%id)  = PDON  * x1
+!            WWPNH4(iegl(iegb)%id)  = PNH4  * x1
+!            WWPNO3(iegl(iegb)%id)  = PNO3  * x1
+!            WWPRPOP(iegl(iegb)%id) = PRPOP * x1
+!            WWPLPOP(iegl(iegb)%id) = PLPOP * x1
+!            WWPDOP(iegl(iegb)%id)  = PDOP  * x1
+!            WWPPO4t(iegl(iegb)%id) = PPO4t * x1
+!            WWPSU(iegl(iegb)%id)   = PSU  * x1
+!            WWPSAt(iegl(iegb)%id)  = PSAt * x1
+!            WWPCOD(iegl(iegb)%id)  = PCOD * x1
+!            WWPDO(iegl(iegb)%id)   = PDO  * x1
+!          endif
+!        enddo
+!        npstime=0
+!        npstiminc=86400.  !added by YC, users can change by themselves
 !org yc        npstime1=0
 !org yc        npstime2=npstiminc 
-        if(myrank==0) write(16,*)'end reading ICM point source...'
-      endif ! iWQPS=2
+!        if(myrank==0) write(16,*)'end reading ICM point source...'
+!      endif ! iWQPS=2
 
 !...  Reads model inputs
         if(myrank==0) write(16,*)'Reading ICM parameters inputs'
         allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
         if(istat/=0) call parallel_abort('Failed to allocate (11)')
-        call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea) !added by YC
-        call WQinput !(time) !added by YC, still need debuging
-        call wqm_out
+        !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea) !added by YC
+        call read_icm_param2
+        call WQinput(0.d0) !(time) !added by YC, still need debuging
+        !call wqm_out
         if(myrank==0) write(16,*)'done reading ICM parameters'
 
 !     VIMS surface temperature mode added by YC
@@ -4163,8 +4188,7 @@
 
 #ifdef USE_SED
       !Sediment model (3D)
-      if(ics==2) call parallel_abort('MAIN: Sediment model cannot be used with lat/long coordinates (ics=2)')
-      if(imm/=0) call parallel_abort('MAIN: imm and sediment model cannot be used at same time')
+      if(imm/=0) call parallel_abort('INIT: imm and sediment model cannot be used at same time')
 !' * FG. - Moving most of sediment initializations within sed_init.F90
       !Reads sediment model inputs (sediment.in file) and update
       !settling vel. wsett()
@@ -4500,6 +4524,10 @@
             !Model sets own i.c.
 #ifdef USE_ECO
             call bio_init !init. tr_nd
+#elif USE_ICM
+#else
+            write(errmsg,*)'INIT: type 0 i.c.:',mm
+            call parallel_abort(errmsg)
 #endif
 
 !#ifdef USE_TIMOR
@@ -4732,6 +4760,17 @@
 
 #endif /*USE_SED*/
 
+#ifdef USE_MARSH
+        call parallel_abort('INIT: no hotstart with MARSH yet')
+        do i=1,ne_global
+          read(36) iegb,itmp1
+          if(iegl(iegb)%rank==myrank) then
+            ie=iegl(iegb)%id
+            imarsh(ie)=itmp1
+          endif
+        enddo !i
+#endif /*USE_MARSH*/
+
 #ifdef USE_HA
 !...
 !......HOT START INFORMATION FOR HARMONIC ANALYSIS
@@ -4882,25 +4921,8 @@
 
 !IVICA
         if(nws==5.or.nws==6) then
-          CALL INIT_NETCDF_DIRECT
-          wtime1=wind_time_sec(1)
-          wtime2=wind_time_sec(2)
-          if(nws==5) CALL READ_INTERP_NETCDF_CF(1,rwild)
-          if(nws==6) CALL READ_NETCDF_DIRECT(1,rwild)
-          windx1(:)=rwild(:,1)
-          windy1(:)=rwild(:,2)
-          pr1(:)=rwild(:,3)
-          if(nws==5) CALL READ_INTERP_NETCDF_CF(2,rwild) ! read 2.nd record for init only
-          if(nws==6) CALL READ_NETCDF_DIRECT(2,rwild)
-          windx2(:)=rwild(:,1)
-          windy2(:)=rwild(:,2)
-          pr2(:)=rwild(:,3)
-          wtratio=(time-wtime1)/(wtime2-wtime1)
-          windx=windx1+wtratio*(windx2-windx1)
-          windy=windy1+wtratio*(windy2-windy1)
-          pr=pr1+wtratio*(pr2-pr1)
-          if(myrank==0)  WRITE(16,'(A,F12.1,2x,F12.1,2x,F12.1)') 'time, wtime1, wtime2= ',time, wtime1, wtime2
-!'
+          CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
+          CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
         endif !5|6
 
         if(nws>=2.and.nws<=3) then
@@ -4934,9 +4956,11 @@
 !       VIMS Point source loading added by YC
 #ifdef USE_ICM 
         if(myrank==0) write(16,*)'hotstart ICM point source..'
-        call WQCO1(dt,rnday,NDTWQ)                                         !added by YC
+        !call WQCO1(dt,rnday,NDTWQ)                                         !added by YC
+        call read_icm_param
         allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
-        call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea)                  !added by YC
+        !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea)                  !added by YC
+        call read_icm_param2
         if(iWQPS==2) then
           PSQ(:)=0.
           PSK(:)=0
@@ -5000,10 +5024,11 @@
         ninv=time/npstiminc
         npstime=ninv*npstiminc
  
-        do it=0,ninv
-          call WQinput !(time)
-        enddo
-        call wqm_out
+        call WQinput(time)
+        !do it=0,ninv
+        !  call WQinput !(time)
+        !enddo
+        !call wqm_out
 
         if(myrank==0) write(16,*)'end hotstart ICM point source..'
         
@@ -5295,6 +5320,10 @@
       close(10)
       
       if(myrank==0) write(16,'(a)')'Done initializing outputs'
+
+#ifdef SINGLE_NETCDF_OUTPUT
+      CALL INIT_NETCDF_SINGLE_OUTPUT(sim_year, sim_month, sim_day, sim_hour, sim_minute, sim_second)
+#endif
 
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

@@ -144,7 +144,7 @@ comp_tauce == 0
 
 !- ROUGHNESS LENGTH PREDICTION FROM BEDFORMS ----------------------------------
 !- bedforms_rough:
-!- 0 = Disabled (rough.gr3 for both hydrodynamic and sediment)
+!- 0 = Disabled (rough.gr3 for hydrodynamic and sediment) 
 !- 1 = Z0 bedforms for hydrodynamics (if bfric=1) / Nikurasde for sediment  (Van Rijn, 2007)
 !- 2 = Z0 bedforms for both hydrodynamics (if bfric=1) and sediment
 !  (so '1' and '2' will send total roughness back to hydro, but total roughness 

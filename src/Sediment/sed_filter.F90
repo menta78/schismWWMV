@@ -55,7 +55,7 @@
 ! \sum(xi*dldxy(,1:2,))=slope_cr*slope_[xy]/slope : slope_[xy] are \nabla h,
 ! and slope=|\nabla h|
 
-      USE schism_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,xnd,ynd,    &
+      USE schism_glbl, ONLY: dldxy,idry,nea,i34,elnode,npa,rkind,area,    &
      &                     errmsg,dp,np,xel,yel,nxq
       USE schism_msgp, ONLY: comm,exchange_p2d,ierr,itype,myrank,      &
      &                     nproc,parallel_abort
@@ -145,7 +145,8 @@
               endif !m
 
               nwild2(1:3)=elnode(nwild(1:3),i) !3 nodes of the tri
-              ar2=signa(xnd(nwild2(1)),xnd(nwild2(2)),xnd(nwild2(3)),ynd(nwild2(1)),ynd(nwild2(2)),ynd(nwild2(3)))
+!              ar2=signa(xnd(nwild2(1)),xnd(nwild2(2)),xnd(nwild2(3)),ynd(nwild2(1)),ynd(nwild2(2)),ynd(nwild2(3)))
+              ar2=signa(xel(nwild(1),i),xel(nwild(2),i),xel(nwild(3),i),yel(nwild(1),i),yel(nwild(2),i),yel(nwild(3),i))
               if(ar2<=0) call parallel_abort('SED_FILTER: ar2<=0')
               do jj=1,3
                 !Elem. type is 3 not 4!!

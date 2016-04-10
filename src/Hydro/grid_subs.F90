@@ -536,7 +536,7 @@ subroutine aquire_hgrid(full_aquire)
   type(llist_type),pointer :: llp,node,nodep,side,sidep
   logical :: found,local1,local2,found1,found2
   real(rkind),parameter :: deg2rad=pi/180.
-  integer :: n1,n2,n3,n4,jsj,nt,nn,nscnt,nsgcnt !,ics
+  integer :: n1,n2,n3,n4,jsj,nt,nn,nscnt,nsgcnt
   real(rkind) :: ar1,ar2,ar3,ar4,signa !slam0,sfea0,
   real(rkind) :: xtmp,ytmp,dptmp,thetan,egb1,egb2,egb
 !  integer :: ipre 

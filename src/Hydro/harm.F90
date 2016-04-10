@@ -1085,6 +1085,10 @@
      &              ', FACE READ IN FROM HOT START FILE = ',F10.5,/)
             endif
          end do
+
+         DEALLOCATE ( IFREQ,IFF,IFACE )
+         DEALLOCATE ( INAMEFR )
+
          if(NSCREEN.EQ.1.AND.myrank.EQ.0) write(6,1010)
          write(12,1010)
  1010    FORMAT(//,5x,'********** RUN TERMINATED **********',/)
