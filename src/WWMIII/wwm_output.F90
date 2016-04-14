@@ -2148,6 +2148,8 @@
       REAL(rkind), allocatable :: OUTT_LOC(:,:)
       REAL(rkind)              :: ACLOC(MSC,MDC), OUTPAR(OUTVARS_COMPLETE)
       integer IP
+      REAL(rkind) eFact, eVal, eMax
+      INTEGER IVAR
 # ifdef MPI_PARALL_GRID
       logical, save :: IsMPIarrayInitialized = .FALSE.
       integer iProc, IPglob
@@ -2205,6 +2207,24 @@
       END DO
 !$OMP END DO
 !$OMP END PARALLEL
+# endif
+# ifdef MPI_PARALL_GRID
+      IF (myrank .eq. 0) THEN
+# endif
+        WRITE(STAT%FHNDL,*) 'nbVar=', nbVar
+        eFact = 0.8_rkind
+        DO IVAR=1,nbVar
+          eMax=maxval(OUTT(IVAR,:))
+          WRITE(STAT%FHNDL,*) 'IVAR=', IVAR,  ' max=', eMax
+          DO IP=1,np_global
+            eVal=OUTT(IVAR,IP)
+            IF (eVal .gt. eFact*eMax) THEN
+              WRITE(STAT%FHNDL,*) ' IP=', IP, ' val=', eVal
+            END IF
+          END DO
+        END DO
+# ifdef MPI_PARALL_GRID
+      END IF
 # endif
       END SUBROUTINE
       END SUBROUTINE

@@ -558,6 +558,8 @@
           CALL COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoI)
         END IF
       END IF
+      WRITE(STAT%FHNDL,*) 'Before call to LOCAL_NODE_PRINT'
+      CALL LOCAL_NODE_PRINT(20506, "Before Jacobi iteration")
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
@@ -730,6 +732,7 @@
         END IF
       END DO
       WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
+      CALL LOCAL_NODE_PRINT(20506, "After Jacobi Iteration")
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME4)
@@ -738,6 +741,7 @@
       DO IP = 1, MNP
         CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP))
       END DO
+      CALL LOCAL_NODE_PRINT(20506, "After limiter")
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME5)

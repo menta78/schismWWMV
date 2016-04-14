@@ -2858,3 +2858,73 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE LOCAL_NODE_PRINT(IPglob, string)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: IPglob
+      character(*), intent(in) :: string
+      !
+      integer IP, IPmap, ID, IS
+      integer nbMatch
+      real(rkind) HS, ETAIL, DS, ETOT, tmp(MSC)
+!      WRITE(STAT%FHNDL,*) 'Beginning of LOCAL_NODE_PRINT function'
+!      WRITE(STAT%FHNDL,*) 'IPglob=', IPglob
+      nbMatch=0
+      DO IP=1,MNP
+        IPmap=iplg(IP)
+        IF (IPmap .eq. IPglob) THEN
+          nbMatch=nbMatch+1
+          WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT'
+          WRITE(STAT%FHNDL,*) 'string=', string
+          IF (IP .le. NP_RES) THEN
+            WRITE(STAT%FHNDL,*) 'Main node'
+          ELSE
+            WRITE(STAT%FHNDL,*) 'Ghost node'
+          END IF
+          ETOT = 0
+          DO ID=1,MDC
+            tmp(:) = AC2(:,ID,IP) * SPSIG
+            ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
+            DO IS=2,MSC
+              ETOT = ETOT + ONEHALF*(tmp(is) + tmp(is-1))*ds_band(is)*ddir
+            END DO
+            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc) * ddir
+          END DO
+          DS    = SPSIG(MSC) - SPSIG(MSC-1)
+          ETAIL = SUM(AC2(MSC,:,IP)) * SIGPOW(MSC,2) * DDIR * DS
+          ETOT  = ETOT + PTAIL(6) * ETAIL
+          HS=4.0_rkind * SQRT(ETOT)
+          !
+          WRITE(STAT%FHNDL,*) 'HS=', HS
+          WRITE(STAT%FHNDL,*) 'IOBP=', IOBP(IP), ' DEP=', DEP(IP)
+          WRITE(STAT%FHNDL,*) 'X=', XP(IP), ' Y=', YP(IP)
+          DO IS=1,MSC
+            DO ID=1,MDC
+              WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' ac2=', AC2(IS,ID,IP)
+            END DO
+          END DO
+          WRITE(STAT%FHNDL,*) 'WIND X=', WINDXY(IP,1), ' Y=', WINDXY(IP,2)
+          WRITE(STAT%FHNDL,*) 'CURT X=', CURTXY(IP,1), ' Y=', CURTXY(IP,2)
+          DO ID=1,MDC
+            WRITE(STAT%FHNDL,*) 'ID=', ID, ' IOBPD=', IOBPD(ID,IP)
+          END DO
+          IF (ICOMP .GE. 2) THEN
+            DO IS=1,MSC
+              DO ID=1,MDC
+                WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' IMATRAA/IMATDAA=', IMATRAA(IS,ID,IP), IMATDAA(IS,ID,IP)
+              END DO
+            END DO
+          END IF
+          WRITE(STAT%FHNDL,*) 'UFRIC=', UFRIC(IP), ' ALPHA_CH=', ALPHA_CH(IP)
+          WRITE(STAT%FHNDL,*) 'Z0=', Z0(IP), ' CD=', CD(IP)
+          WRITE(STAT%FHNDL,*) 'USTDIR=', USTDIR(IP), ' TAUHF=', TAUHF(IP)
+          WRITE(STAT%FHNDL,*) 'TAUW=', TAUW(IP), ' TAUTOT=', TAUTOT(IP)
+          WRITE(STAT%FHNDL,*) 'TAUWX=', TAUWX(IP), ' TAUWY=', TAUWY(IP)
+        END IF
+      END DO
+      WRITE(STAT%FHNDL,*) 'nbMatch=', nbMatch
+      FLUSH(STAT%FHNDL)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
