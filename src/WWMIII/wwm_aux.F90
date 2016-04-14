@@ -2861,6 +2861,7 @@
       SUBROUTINE LOCAL_NODE_PRINT(IPglob, string)
       USE DATAPOOL
       IMPLICIT NONE
+      integer, save :: idxcall = 0
       integer, intent(in) :: IPglob
       character(*), intent(in) :: string
       !
@@ -2870,11 +2871,12 @@
 !      WRITE(STAT%FHNDL,*) 'Beginning of LOCAL_NODE_PRINT function'
 !      WRITE(STAT%FHNDL,*) 'IPglob=', IPglob
       nbMatch=0
+      idxcall=idxcall+1
       DO IP=1,MNP
         IPmap=iplg(IP)
         IF (IPmap .eq. IPglob) THEN
           nbMatch=nbMatch+1
-          WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT'
+          WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'string=', string
           IF (IP .le. NP_RES) THEN
             WRITE(STAT%FHNDL,*) 'Main node'
@@ -2895,7 +2897,7 @@
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS=4.0_rkind * SQRT(ETOT)
           !
-          WRITE(STAT%FHNDL,*) 'HS=', HS
+          WRITE(STAT%FHNDL,*) 'HS=', HS, ' idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'IOBP=', IOBP(IP), ' DEP=', DEP(IP)
           WRITE(STAT%FHNDL,*) 'X=', XP(IP), ' Y=', YP(IP)
           DO IS=1,MSC
@@ -2909,9 +2911,11 @@
             WRITE(STAT%FHNDL,*) 'ID=', ID, ' IOBPD=', IOBPD(ID,IP)
           END DO
           IF (ICOMP .GE. 2) THEN
+            WRITE(STAT%FHNDL,*) 'min/max(IMATRAA)=', minval(IMATRAA(:,:,IP)), maxval(IMATRAA(:,:,IP))
+            WRITE(STAT%FHNDL,*) 'min/max(IMATDAA)=', minval(IMATDAA(:,:,IP)), maxval(IMATDAA(:,:,IP))
             DO IS=1,MSC
               DO ID=1,MDC
-                WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' IMATRAA/IMATDAA=', IMATRAA(IS,ID,IP), IMATDAA(IS,ID,IP)
+                WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' TR/TD=', IMATRAA(IS,ID,IP), IMATDAA(IS,ID,IP)
               END DO
             END DO
           END IF
