@@ -540,9 +540,9 @@
         IF (nb1 .gt. 2) NumberPathological=NumberPathological + 1
       END DO
       deallocate(StatusAdj, ListAdjWithDupl)
-      WRITE(STAT%FHNDL,*) 'NumberAllTwo      =', NumberAllTwo
-      WRITE(STAT%FHNDL,*) 'NumberBoundary    =', NumberBoundary
-      WRITE(STAT%FHNDL,*) 'NumberPathological=', NumberPathological
+      WRITE(STAT%FHNDL,*) 'NumberAllTwo       =', NumberAllTwo
+      WRITE(STAT%FHNDL,*) 'NumberBoundary     =', NumberBoundary
+      WRITE(STAT%FHNDL,*) 'NumberPathological =', NumberPathological
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************
