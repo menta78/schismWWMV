@@ -304,7 +304,7 @@
 
       USE schism_glbl, ONLY: nea,npa,mnei_p,ntrs,irange_tr,ipgl,ielg,i34,elnode,np_global,  &
      &                     ifile_char,ifile_len,area,np,nne,indel,iself,nnp,indnd,nxq,     &
-     & isbnd,rough_p,errmsg,ihot,xnd,ynd,xcj,ycj,xctr,yctr,elside
+     & isbnd,rough_p,errmsg,ihot,xnd,ynd,xcj,ycj,xctr,yctr,elside,ics,xel,yel
       USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
 
       IMPLICIT NONE
@@ -313,10 +313,10 @@
 
 !- Local variables --------------------------------------------------!
 
-      INTEGER :: i,j,k,ie,jj,id,id2,id3,nd,indx,m,nwild(3),nwild2(3)
+      INTEGER :: i,j,k,ie,jj,id,id1,id2,id3,nd,indx,m,nwild(3),nwild2(3)
       INTEGER :: ised,ic,itmp,istat
 
-      REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5
+      REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5,cff6
       REAL(rkind) :: bed_frac_sum,ar1,ar2
 
       REAL(rkind),DIMENSION(npa) :: bdfc
@@ -373,10 +373,22 @@
 !               mcoefd(j+1,i) = mcoefd(j+1,i)+area(ie)*aux2
 !            ENDIF
           else !quad
+            id1=nxq(1,id,i34(ie))
             id2=nxq(2,id,i34(ie))
             id3=nxq(3,id,i34(ie))
-            ar1=signa(xnd(i),xcj(elside(id3,ie)),xctr(ie),ynd(i),ycj(elside(id3,ie)),yctr(ie)) 
-            ar2=signa(xnd(i),xctr(ie),xcj(elside(id2,ie)),ynd(i),yctr(ie),ycj(elside(id2,ie)))
+            if(ics==1) then
+              ar1=signa(xnd(i),xcj(elside(id3,ie)),xctr(ie),ynd(i),ycj(elside(id3,ie)),yctr(ie)) 
+              ar2=signa(xnd(i),xctr(ie),xcj(elside(id2,ie)),ynd(i),yctr(ie),ycj(elside(id2,ie)))
+            else !ll
+              cff1=(xel(id,ie)+xel(id1,ie))/2 !xcj(elside(id3,ie))
+              cff2=(yel(id,ie)+yel(id1,ie))/2 !ycj(elside(id3,ie))
+              cff3=sum(xel(1:4,ie))/4 !xctr
+              cff4=sum(yel(1:4,ie))/4 !yctr
+              cff5=(xel(id,ie)+xel(id3,ie))/2 !xcj(elside(id2,ie))
+              cff6=(yel(id,ie)+yel(id3,ie))/2 !ycj(elside(id2,ie))
+              ar1=signa(xel(id,ie),cff1,cff3,yel(id,ie),cff2,cff4)
+              ar2=signa(xel(id,ie),cff3,cff5,yel(id,ie),cff4,cff6)
+            endif !ics
             if(ar1<=0.or.ar2<=0) call parallel_abort('SED_INIT:area<=0')
             mcoefd(0,i)=mcoefd(0,i)+(ar1+ar2)*7./12 !diagonal
 
@@ -393,9 +405,9 @@
               nwild(jj)=indx
             enddo !jj
 
-             mcoefd(nwild(1),i)=mcoefd(nwild(1),i)+ar1/4+ar2/12
-             mcoefd(nwild(3),i)=mcoefd(nwild(3),i)+ar1/12+ar2/4
-             mcoefd(nwild(2),i)=mcoefd(nwild(2),i)+ar1/12+ar2/12
+            mcoefd(nwild(1),i)=mcoefd(nwild(1),i)+ar1/4+ar2/12
+            mcoefd(nwild(3),i)=mcoefd(nwild(3),i)+ar1/12+ar2/4
+            mcoefd(nwild(2),i)=mcoefd(nwild(2),i)+ar1/12+ar2/12
           endif !i34
         ENDDO ! END loop nne
       ENDDO ! END loop np
@@ -408,11 +420,13 @@
       nwild2(1:3)=(/1,3,4/) !prep. indices for 2nd tri of quad
       DO i=1,nea
         if(i34(i)==4) then !2 areas
-          nwild(1:3)=elnode(1:3,i)
-          ar1=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
-          nwild(2)=elnode(3,i)
-          nwild(3)=elnode(4,i)
-          ar2=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
+          !nwild(1:3)=elnode(1:3,i)
+          !ar1=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
+          ar1=signa(xel(1,i),xel(2,i),xel(3,i),yel(1,i),yel(2,i),yel(3,i))
+          !nwild(2)=elnode(3,i)
+          !nwild(3)=elnode(4,i)
+          !ar2=signa(xnd(nwild(1)),xnd(nwild(2)),xnd(nwild(3)),ynd(nwild(1)),ynd(nwild(2)),ynd(nwild(3)))
+          ar2=signa(xel(1,i),xel(3,i),xel(4,i),yel(1,i),yel(3,i),yel(4,i))
           if(ar1<=0.or.ar2<=0) call parallel_abort('SED_INIT:area2<=0')
         endif
 

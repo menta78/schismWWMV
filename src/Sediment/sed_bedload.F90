@@ -348,7 +348,7 @@
 
       USE sed_mod
       USE schism_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
-     &yctr,np,indel,errmsg,xnd,ynd,elside,iself,nxq,xcj,ycj
+     &yctr,np,indel,errmsg,elside,iself,nxq,xcj,ycj,ics,xel,yel
       USE schism_msgp
       
       IMPLICIT NONE
@@ -360,8 +360,8 @@
       REAL(rkind),INTENT(IN) :: rtol     ! Relative tolerance
       REAL(rkind),DIMENSION(npa),INTENT(OUT) :: qsan,hbed,hbed_ised
 
-      INTEGER     :: i,j,nm1,nm2,nm3,ks,k,ie,id,id1,id2,isd1,isd2
-      REAL(rkind) :: yp,xp,flux,cff,cff1,cff2,cff3
+      INTEGER     :: i,j,nm1,nm2,nm3,ks,k,ie,id,id1,id2,id3,isd1,isd2
+      REAL(rkind) :: yp,xp,flux,cff,cff1,cff2,cff3,cff4
 
       REAL(rkind),DIMENSION(np) :: bed_poro 
       
@@ -388,46 +388,6 @@
 ! Add for each node in qsan. The unit normal is directed outward.
 !---------------------------------------------------------------------
       qsan=0.0d0 ![m^3]
-
-!      DO i = 1,nea
-!        IF(idry_e(i)==1) CYCLE
-!            
-!!---------------------------------------------------------------------
-!! -  Apply morphology factor to bedload transport
-!!---------------------------------------------------------------------
-!        FX_r(i) = FX_r(i)*morph_fac(ised)*bed_frac(1,i,ised) !m^2
-!        FY_r(i) = FY_r(i)*morph_fac(ised)*bed_frac(1,i,ised)
-!
-!        nm1 = elnode(1,i)
-!        nm2 = elnode(2,i)
-!        nm3 = elnode(3,i)
-!
-!!---------------------------------------------------------------------
-!! - Integrate bedload flux from element center to edge centers
-!! balance flux at neighbouring edges to obtain flux for nodes
-!! flux [m3], qsan [m3]
-!!---------------------------------------------------------------------
-!
-!        xp   = (xnd(nm2)+xnd(nm3))/2.d0
-!        yp   = (ynd(nm2)+ynd(nm3))/2.d0
-!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-!        qsan(nm2) = qsan(nm2)-flux
-!        qsan(nm3) = qsan(nm3)+flux
-!
-!        xp   = (xnd(nm3)+xnd(nm1))/2.d0
-!        yp   = (ynd(nm3)+ynd(nm1))/2.d0
-!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-!        qsan(nm3) = qsan(nm3)-flux
-!        qsan(nm1) = qsan(nm1)+flux
-!
-!        xp   = (xnd(nm1)+xnd(nm2))/2.d0
-!        yp   = (ynd(nm1)+ynd(nm2))/2.d0
-!        flux = FX_r(i)*(yp-yctr(i))-FY_r(i)*(xp-xctr(i))
-!        qsan(nm1) = qsan(nm1)-flux
-!        qsan(nm2) = qsan(nm2)+flux
-!
-!      ENDDO !End loop =1,nea
-
       do i=1,np !resident only required
         do j=1,nne(i)        
           ie=indel(j,i)
@@ -435,13 +395,19 @@
           if(idry_e(ie)==1) cycle
 
           !Wet elem.
-!          id1=elnode(nxq(1,id,i34(ie)),ie)
-!          id2=elnode(nxq(i34(ie)-1,id,i34(ie)),ie)
-!          qsan(i)=qsan(i)+FX_r(ie)*(ynd(id2)-ynd(id1))/2+FY_r(ie)*(xnd(id1)-xnd(id2))/2 !m^3
-
-          isd1=elside(nxq(i34(ie)-2,id,i34(ie)),ie)
-          isd2=elside(nxq(i34(ie)-1,id,i34(ie)),ie)
-          qsan(i)=qsan(i)+FX_r(ie)*(ycj(isd1)-ycj(isd2))+FY_r(ie)*(xcj(isd2)-xcj(isd1)) !m^3
+          if(ics==1) then
+            isd1=elside(nxq(i34(ie)-2,id,i34(ie)),ie)
+            isd2=elside(nxq(i34(ie)-1,id,i34(ie)),ie)
+            qsan(i)=qsan(i)+FX_r(ie)*(ycj(isd1)-ycj(isd2))+FY_r(ie)*(xcj(isd2)-xcj(isd1)) !m^3
+          else !ll
+            id1=nxq(1,id,i34(ie))
+            id3=nxq(i34(ie)-1,id,i34(ie))
+            cff1=(xel(id,ie)+xel(id1,ie))/2 !xcj(isd2)-> between i and id1   
+            cff2=(yel(id,ie)+yel(id1,ie))/2 !ycj(isd2)-> between i and id1   
+            cff3=(xel(id,ie)+xel(id3,ie))/2 !xcj(isd1)-> between i and id3   
+            cff4=(yel(id,ie)+yel(id3,ie))/2 !ycj(isd1)-> between i and id3   
+            qsan(i)=qsan(i)+FX_r(ie)*(cff4-cff2)+FY_r(ie)*(cff1-cff3) !m^3
+          endif !ics
         enddo !j
       enddo !i=1,np
 
@@ -492,7 +458,6 @@
 
 !---------------------------------------------------------------------
 ! - Bed/bottom level change due to bedload transport in [m]
-! ????? isn't there a dimension mismatch ?????
 !---------------------------------------------------------------------
       !aggregate over all sed. classes (this routine is called inside a sed class loop)
       hbed(:) = hbed(:)+hbed_ised(:) 

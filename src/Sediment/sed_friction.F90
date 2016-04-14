@@ -93,7 +93,7 @@
             IF(hh<=0.OR.Zob(i)<=0) THEN
               CALL parallel_abort('SED-current_stress: Cd failed')
             ENDIF
-            cff1 = 1.0d0/DLOG(hh/Zob(i))
+            cff1 = 1.0d0/LOG(hh/Zob(i))
             cff2 = vonKar*vonKar*cff1*cff1
             wrk  = MIN(Cdb_max,MAX(Cdb_min,cff2))
           else
@@ -243,9 +243,9 @@
         IF (abskb.LE.0.2d0) THEN
           fw = 0.3d0
         ELSEIF ((abskb.GT.0.2d0).AND.(abskb.LE.100.0d0)) THEN
-          fw = DEXP(-8.82d0 + 7.02d0*abskb**(-0.078d0))
+          fw = EXP(-8.82d0 + 7.02d0*abskb**(-0.078d0))
         ELSE
-          fw = DEXP(-7.30d0 + 5.61d0*abskb**(-0.109d0))
+          fw = EXP(-7.30d0 + 5.61d0*abskb**(-0.109d0))
         ENDIF ! End test on abskb value
 
         ! * Wave bottom stress (in m2.s-2)

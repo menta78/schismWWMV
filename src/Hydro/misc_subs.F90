@@ -304,11 +304,11 @@
                 id=iself(j,nodeA)
                 isd2=elside(id,ie2)
                 if(icolor2(isd2)==1) then
-                  if(ics==1) then
-                    tmp=su2(nvrt,isd2)*sframe(1,1,isd2)+sv2(nvrt,isd2)*sframe(2,1,isd2)
-                  else !ics=2
-                    tmp=su2(nvrt,isd2)
-                  endif !ics
+!                  if(ics==1) then
+                  tmp=su2(nvrt,isd2)*snx(isd2)+sv2(nvrt,isd2)*sny(isd2)
+!                  else !ics=2
+!                    tmp=su2(nvrt,isd2)
+!                  endif !ics
                   flux_t=-tmp*ssign(id,ie2) !inward normal
                   if(flux_t>0) then
                     n1=isidenode(1,isd2)
@@ -343,18 +343,18 @@
                     idry_e2(ie2)=0
                     do l=1,2 !sides sharing nodeA
                       id1=elside(nx(id,l),ie2)
-                      if(ics==1) then
-                        swild2(1,1:nvrt)=su2(1:nvrt,isd2)
-                        swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
-                      else !ics=2
-                        !Assuming plane rotation
-                        dot11=dot_product(sframe(1:3,1,isd2),sframe(1:3,1,id1))
-                        dot21=dot_product(sframe(1:3,2,isd2),sframe(1:3,1,id1))
-                        swild2(1,1:nvrt)=su2(1:nvrt,isd2)*dot11+sv2(1:nvrt,isd2)*dot21
-                        dot12=dot_product(sframe(1:3,1,isd2),sframe(1:3,2,id1))
-                        dot22=dot_product(sframe(1:3,2,isd2),sframe(1:3,2,id1))
-                        swild2(2,1:nvrt)=su2(1:nvrt,isd2)*dot12+sv2(1:nvrt,isd2)*dot22
-                      endif !ics
+!                      if(ics==1) then
+                      swild2(1,1:nvrt)=su2(1:nvrt,isd2)
+                      swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
+!                      else !ics=2
+!                        !Assuming plane rotation
+!                        dot11=dot_product(sframe(1:3,1,isd2),sframe(1:3,1,id1))
+!                        dot21=dot_product(sframe(1:3,2,isd2),sframe(1:3,1,id1))
+!                        swild2(1,1:nvrt)=su2(1:nvrt,isd2)*dot11+sv2(1:nvrt,isd2)*dot21
+!                        dot12=dot_product(sframe(1:3,1,isd2),sframe(1:3,2,id1))
+!                        dot22=dot_product(sframe(1:3,2,isd2),sframe(1:3,2,id1))
+!                        swild2(2,1:nvrt)=su2(1:nvrt,isd2)*dot12+sv2(1:nvrt,isd2)*dot22
+!                      endif !ics
                       if(inew(id1)==0) then
                         su2(1:nvrt,id1)=swild2(1,1:nvrt)
                         sv2(1:nvrt,id1)=swild2(2,1:nvrt)
@@ -466,18 +466,18 @@
                 id1=elside(nx(l0,j),ie)
                 if(icolor2(id1)==0) then
 
-                  if(ics==1) then
-                    swild2(1,1:nvrt)=su2(1:nvrt,isd)
-                    swild2(2,1:nvrt)=sv2(1:nvrt,isd)
-                  else !ics=2
-                    !Assuming plane rotation
-                    dot11=dot_product(sframe(1:3,1,isd),sframe(1:3,1,id1))
-                    dot21=dot_product(sframe(1:3,2,isd),sframe(1:3,1,id1))
-                    swild2(1,1:nvrt)=su2(1:nvrt,isd)*dot11+sv2(1:nvrt,isd)*dot21
-                    dot12=dot_product(sframe(1:3,1,isd),sframe(1:3,2,id1))
-                    dot22=dot_product(sframe(1:3,2,isd),sframe(1:3,2,id1))
-                    swild2(2,1:nvrt)=su2(1:nvrt,isd)*dot12+sv2(1:nvrt,isd)*dot22
-                  endif !ics
+!                  if(ics==1) then
+                  swild2(1,1:nvrt)=su2(1:nvrt,isd)
+                  swild2(2,1:nvrt)=sv2(1:nvrt,isd)
+!                  else !ics=2
+!                    !Assuming plane rotation
+!                    dot11=dot_product(sframe(1:3,1,isd),sframe(1:3,1,id1))
+!                    dot21=dot_product(sframe(1:3,2,isd),sframe(1:3,1,id1))
+!                    swild2(1,1:nvrt)=su2(1:nvrt,isd)*dot11+sv2(1:nvrt,isd)*dot21
+!                    dot12=dot_product(sframe(1:3,1,isd),sframe(1:3,2,id1))
+!                    dot22=dot_product(sframe(1:3,2,isd),sframe(1:3,2,id1))
+!                    swild2(2,1:nvrt)=su2(1:nvrt,isd)*dot12+sv2(1:nvrt,isd)*dot22
+!                  endif !ics
 
                   if(inew(id1)==0) then
                     !vel. only accurate in resident domain
@@ -563,18 +563,18 @@
      &isdel(2,isd2)>0.and.idry_e2(max(1,isdel(2,isd2)))==0) then !at least one wet element
                     icount=icount+1
 
-                    if(ics==1) then
-                      swild2(1,1:nvrt)=su2(1:nvrt,isd2)
-                      swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
-                    else !ics=2
-                      !Assuming plane rotation
-                      dot11=dot_product(sframe(1:3,1,isd2),sframe(1:3,1,i))
-                      dot21=dot_product(sframe(1:3,2,isd2),sframe(1:3,1,i))
-                      swild2(1,1:nvrt)=su2(1:nvrt,isd2)*dot11+sv2(1:nvrt,isd2)*dot21
-                      dot12=dot_product(sframe(1:3,1,isd2),sframe(1:3,2,i))
-                      dot22=dot_product(sframe(1:3,2,isd2),sframe(1:3,2,i))
-                      swild2(2,1:nvrt)=su2(1:nvrt,isd2)*dot12+sv2(1:nvrt,isd2)*dot22
-                    endif !ics
+!                    if(ics==1) then
+                    swild2(1,1:nvrt)=su2(1:nvrt,isd2)
+                    swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
+!                    else !ics=2
+!                      !Assuming plane rotation
+!                      dot11=dot_product(sframe(1:3,1,isd2),sframe(1:3,1,i))
+!                      dot21=dot_product(sframe(1:3,2,isd2),sframe(1:3,1,i))
+!                      swild2(1,1:nvrt)=su2(1:nvrt,isd2)*dot11+sv2(1:nvrt,isd2)*dot21
+!                      dot12=dot_product(sframe(1:3,1,isd2),sframe(1:3,2,i))
+!                      dot22=dot_product(sframe(1:3,2,isd2),sframe(1:3,2,i))
+!                      swild2(2,1:nvrt)=su2(1:nvrt,isd2)*dot12+sv2(1:nvrt,isd2)*dot22
+!                    endif !ics
 
                     sutmp(1:nvrt)=sutmp(1:nvrt)+swild2(1,1:nvrt) !su2(1:nvrt,isd2)
                     svtmp(1:nvrt)=svtmp(1:nvrt)+swild2(2,1:nvrt) !sv2(1:nvrt,isd2)
@@ -1183,23 +1183,21 @@
                     if(idry_s(isd)==0) then
                       icount=icount+1
 
-                      if(ics==1) then
-                        swild2(1)=su2(k,isd)
-                        swild2(2)=sv2(k,isd)
-                      else !ics=2
-                        !Assuming plane rotation
-                        dot11=dot_product(sframe(1:3,1,isd),sframe(1:3,1,i))
-                        dot21=dot_product(sframe(1:3,2,isd),sframe(1:3,1,i))
-                        swild2(1)=su2(k,isd)*dot11+sv2(k,isd)*dot21
-                        dot12=dot_product(sframe(1:3,1,isd),sframe(1:3,2,i))
-                        dot22=dot_product(sframe(1:3,2,isd),sframe(1:3,2,i))
-                        swild2(2)=su2(k,isd)*dot12+sv2(k,isd)*dot22
-                      endif !ics
+!                      if(ics==1) then
+!                        swild2(1)=su2(k,isd)
+!                        swild2(2)=sv2(k,isd)
+!                      else !ics=2
+!                        !Assuming plane rotation
+!                        dot11=dot_product(sframe(1:3,1,isd),sframe(1:3,1,i))
+!                        dot21=dot_product(sframe(1:3,2,isd),sframe(1:3,1,i))
+!                        swild2(1)=su2(k,isd)*dot11+sv2(k,isd)*dot21
+!                        dot12=dot_product(sframe(1:3,1,isd),sframe(1:3,2,i))
+!                        dot22=dot_product(sframe(1:3,2,isd),sframe(1:3,2,i))
+!                        swild2(2)=su2(k,isd)*dot12+sv2(k,isd)*dot22
+!                      endif !ics
 
-                      utmp=utmp+swild2(1) !su2(k,isd)
-                      vtmp=vtmp+swild2(2) !sv2(k,isd)
-                      !ttmp=ttmp+tsd(k,isd)
-                      !stmp=stmp+ssd(k,isd)
+                      utmp=utmp+su2(k,isd)
+                      vtmp=vtmp+sv2(k,isd)
                     endif
                   enddo !jj
                 endif !ie/=0
@@ -1327,17 +1325,17 @@
           !Save side vel.
           do j=1,i34(i) !side index
             isd=elside(j,i)
-            if(ics==1) then
-              swild5(j,1)=su2(k,isd)
-              swild5(j,2)=sv2(k,isd)
-            else !lat/lon
-              !Element frame
-              swild5(j,1)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,1,i))+ &
-                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,1,i))
-              !v
-              swild5(j,2)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,2,i))+ &
-                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,2,i))
-            endif !ics
+!            if(ics==1) then
+            swild5(j,1)=su2(k,isd)
+            swild5(j,2)=sv2(k,isd)
+!            else !lat/lon
+!              !Element frame
+!              swild5(j,1)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,1,i))+ &
+!                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,1,i))
+!              !v
+!              swild5(j,2)=su2(k,isd)*dot_product(sframe(:,1,isd),eframe(:,2,i))+ &
+!                         &sv2(k,isd)*dot_product(sframe(:,2,isd),eframe(:,2,i))
+!            endif !ics
           enddo !j
   
           if(i34(i)==3) then !Triangles
@@ -1345,20 +1343,6 @@
               isd=j !elside(j,i)
               isd2=nxq(1,j,i34(i)) !elside(nx(j,1),i)
               isd3=nxq(2,j,i34(i)) !elside(nx(j,2),i)
-!              if(ics==1) then
-!                ufg(j,k,i)=su2(k,nwild(2))+su2(k,nwild(3))-su2(k,nwild(1))
-!                vfg(j,k,i)=sv2(k,nwild(2))+sv2(k,nwild(3))-sv2(k,nwild(1))
-!              else !lat/lon
-!                !Element frame
-!                do m=1,3
-!                  !u for side nwild(m)
-!                  swild5(m,1)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,1,i))+ &
-!                             &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,1,i))
-!                  !v
-!                  swild5(m,2)=su2(k,nwild(m))*dot_product(sframe(:,1,nwild(m)),eframe(:,2,i))+ &
-!                             &sv2(k,nwild(m))*dot_product(sframe(:,2,nwild(m)),eframe(:,2,i))
-!                enddo !m
-!              endif !ics
               ufg(j,k,i)=swild5(isd2,1)+swild5(isd3,1)-swild5(isd,1)
               vfg(j,k,i)=swild5(isd2,2)+swild5(isd3,2)-swild5(isd,2)
             enddo !j
@@ -1403,16 +1387,16 @@
             if(idry_e(ie)==0) then
               icount=icount+1
 
-              if(ics==1) then
-                uu2(k,i)=uu2(k,i)+ufg(id,k,ie)
-                vv2(k,i)=vv2(k,i)+vfg(id,k,ie)
-              else !lat/lon
-                !To node frame
-                uu2(k,i)=uu2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,1,i))+ &
-                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,1,i)) 
-                vv2(k,i)=vv2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,2,i))+ &
-                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,2,i)) 
-              endif !ics
+!              if(ics==1) then
+              uu2(k,i)=uu2(k,i)+ufg(id,k,ie)
+              vv2(k,i)=vv2(k,i)+vfg(id,k,ie)
+!              else !lat/lon
+!                !To node frame
+!                uu2(k,i)=uu2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,1,i))+ &
+!                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,1,i)) 
+!                vv2(k,i)=vv2(k,i)+ufg(id,k,ie)*dot_product(eframe(:,1,ie),pframe(:,2,i))+ &
+!                                 &vfg(id,k,ie)*dot_product(eframe(:,2,ie),pframe(:,2,i)) 
+!              endif !ics
             endif !idry_e
 
             !Vertical direction same between element and node frames
@@ -1514,19 +1498,19 @@
 !                  call vinter
 !                endif
 !              else !along S
-              if(ics==1) then
-                swild(1)=su2(k,isd)
-                swild(2)=sv2(k,isd)
-              else !lat/lon
-                swild(1)=su2(k,isd)*dot_product(sframe(:,1,isd),pframe(:,1,i))+&
-                        &sv2(k,isd)*dot_product(sframe(:,2,isd),pframe(:,1,i))
-                swild(2)=su2(k,isd)*dot_product(sframe(:,1,isd),pframe(:,2,i))+&
-                        &sv2(k,isd)*dot_product(sframe(:,2,isd),pframe(:,2,i))
-              endif !ics
+!              if(ics==1) then
+!              swild(1)=su2(k,isd)
+!              swild(2)=sv2(k,isd)
+!              else !lat/lon
+!                swild(1)=su2(k,isd)*dot_product(sframe(:,1,isd),pframe(:,1,i))+&
+!                        &sv2(k,isd)*dot_product(sframe(:,2,isd),pframe(:,1,i))
+!                swild(2)=su2(k,isd)*dot_product(sframe(:,1,isd),pframe(:,2,i))+&
+!                        &sv2(k,isd)*dot_product(sframe(:,2,isd),pframe(:,2,i))
+!              endif !ics
 !              endif !Z or S
 
-              uu2(k,i)=uu2(k,i)+swild(1)/distj(isd)*nfac
-              vv2(k,i)=vv2(k,i)+swild(2)/distj(isd)*nfac
+              uu2(k,i)=uu2(k,i)+su2(k,isd)/distj(isd)*nfac
+              vv2(k,i)=vv2(k,i)+sv2(k,isd)/distj(isd)*nfac
               weit=weit+1/distj(isd)*nfac
             enddo !l
 
@@ -2305,9 +2289,7 @@
       !Local
       integer :: i,k,kl,istat
       real(rkind) :: swild(nvrt) !,swild2(nvrt,nea,2)
-      real(rkind), allocatable :: swild2(:,:,:)
-
-      allocate(swild2(nvrt,nea,2),stat=istat)
+      real(rkind) :: swild2(nvrt,2)
 
       rho_mean=-99
 !     T,S @ elements
@@ -2323,19 +2305,19 @@
           swild(k)=(ze(k,i)+ze(k-1,i))/2
         enddo !k
         call eval_cubic_spline(nz_r,z_r,tem1,cspline_ypp(1:nz_r,1),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
-     &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,i,1))
+     &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,1))
         call eval_cubic_spline(nz_r,z_r,sal1,cspline_ypp(1:nz_r,2),nvrt-kbe(i),swild(kbe(i)+1:nvrt), &
-     &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,i,2))
+     &0,z_r(1),z_r(nz_r),swild2(kbe(i)+1:nvrt,2))
 
 !       Extend
         do k=1,kbe(i)
-          swild2(k,i,1:2)=swild2(kbe(i)+1,i,1:2)
+          swild2(k,1:2)=swild2(kbe(i)+1,1:2)
         enddo !k
 
 !       Half levels
         do k=1,nvrt
           kl=max(k,kbe(i)+1)
-          rho_mean(k,i)=eqstate(5,ielg(i),swild2(k,i,1),swild2(k,i,2),swild(kl) &
+          rho_mean(k,i)=eqstate(5,ielg(i),swild2(k,1),swild2(k,2),swild(kl) &
 ! LLP
 #ifdef USE_SED
      &                          ,ntrs(5),tr_el(irange_tr(1,5):irange_tr(2,5),k,i),Srho(:)    &
@@ -2349,9 +2331,6 @@
      &                            )
         enddo !k
       enddo !i=1,nea
-
-      deallocate(swild2)
-
       end subroutine mean_density
 
 !     Kronecker delta
@@ -2781,7 +2760,7 @@
         enddo !j
       enddo !i
       we=0
-      we_fv=0
+!      we_fv=0
 
       end subroutine zonal_flow
 
@@ -3222,7 +3201,7 @@
 !===============================================================================
 !     Numerical/analytical integration related to quad elements
 !     Inputs:
-!            indx: 1, return \int \phi_ip*\phi_l dA; 2, return \int \nabla\phi_ip \cdot \nabla\phi_l dA
+!            indx: 1, return \int \phi_ip*\phi_ll dA; 2, return \int \nabla\phi_ip \cdot \nabla\phi_ll dA
 !            ie: elem. # (local)
 !            ip,ll: local node indices \in[1:4] of shape function
 !===============================================================================
@@ -3241,7 +3220,6 @@
      &phiip_x,phiip_y,phill_x,phill_y,coe1,coe2,rjac,rint,tmp
 
       if(i34(ie)/=4.or.ip<1.or.ip>4.or.ll<1.or.ll>4) call parallel_abort('quad_int: not quad')
-!Error: ics=2 not checked
       !Const
       pt(1)=0.57735
       pt(2)=-pt(1)
@@ -3280,12 +3258,12 @@
             if(rjac<=0) call parallel_abort('quad_int: Jac<=0')
 
             if(indx==2) then
-              x_xi=0.25*(wild(1)+pt(i)*wild(3))
+              x_xi=0.25*(wild(1)+pt(i)*wild(3)) !dx/d\xi
               x_et=0.25*(wild(5)+pt(j)*wild(3))
               y_xi=0.25*(wild(2)+pt(i)*wild(4))
               y_et=0.25*(wild(6)+pt(j)*wild(4))
               !Following 4 do not have Jacobian
-              phiip_x=y_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))-y_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))
+              phiip_x=y_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))-y_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j)) !d\phi_ip/dx *J
               phiip_y=x_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))-x_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))
               phill_x=y_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))-y_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))
               phill_y=x_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))-x_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))

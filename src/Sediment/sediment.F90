@@ -94,11 +94,11 @@
 
       USE sed_mod
       USE schism_glbl, ONLY : rkind,nvrt,ne,nea,npa,np,irange_tr,ntrs,idry_e,   &
-     &                      idry,area,xnd,ynd,znl,dt,i34,elnode,xctr,yctr,   &
+     &                      idry,area,znl,dt,i34,elnode,xctr,yctr,   &
      &                      kbe,ze,pi,nne,indel,tr_el,flx_bt,    &
      &                      errmsg,ielg,iplg,nond_global,iond_global,&
      &                      ipgl,nope_global,np_global,dp,h0,dpe,    &
-     &                      iegl,out_wwm,pi,eta2,dp00,dldxy,we_fv,time_stamp
+     &                      iegl,out_wwm,pi,eta2,dp00,dldxy,we,time_stamp
       USE schism_msgp
       use misc_modules
 
@@ -383,21 +383,6 @@
 !    An equivalent implementation is found in schism_main for dl 
 !    Dphi/Dx, Dphi/Dy
 !---------------------------------------------------------------------
-!          nm1= elnode(1,i)
-!          nm2= elnode(2,i)
-!          nm3= elnode(3,i)
-!          derx1 = ynd(nm2)-ynd(nm3)
-!          derx2 = ynd(nm3)-ynd(nm1)
-!          derx3 = ynd(nm1)-ynd(nm2)
-!          dery1 = xnd(nm3)-xnd(nm2)
-!          dery2 = xnd(nm1)-xnd(nm3)
-!          dery3 = xnd(nm2)-xnd(nm1)
-
-          ! Element area from main
-!          dzdx = (dp(nm1)*derx1+dp(nm2)*derx2+dp(nm3)*derx3)/        &
-!          &      2.0d0/area(i)
-!          dzdy = (dp(nm1)*dery1+dp(nm2)*dery2+dp(nm3)*dery3)/        &
-!          &      2.0d0/area(i)
           dzdx=dot_product(dp(elnode(1:i34(i),i)),dldxy(1:i34(i),1,i))
           dzdy=dot_product(dp(elnode(1:i34(i),i)),dldxy(1:i34(i),2,i))
 
@@ -619,10 +604,10 @@
                 !Limit ratio between reference depth and bottom depth
                 ta=min(0.5d0,relath*cff/cff1) !usually the relath is 0.01; for natural river, it should be even smaller
 
-                aref=ta*we_fv(kbe(i)+1,i) !w-vel. at ref. height                
+                aref=ta*we(kbe(i)+1,i) !w-vel. at ref. height                
                 if(aref>=Wsed(ised)) then !no depos.
                   depo_mss=0
-                else !ta*we_fv(kbe(i)+1,i)<Wsed(ised)
+                else !ta*we(kbe(i)+1,i)<Wsed(ised)
                   !Estimate the starting pt
                   cff9=ze(kbe(i),i)+(Wsed(ised)-aref)*dt !>ze(kbe(i),i); foot of char.
                   Ksed=nvrt+1 !init. for abnormal case
@@ -664,7 +649,7 @@
                     cff7=(ze(nvrt,i)+ze(nvrt-1,i))/2
                     depo_mss=depo_mss+(min(ze(nvrt,i),cff9)-cff7)*tr_el(indx,nvrt,i)
                   endif
-                endif !we_fv(kbe(i)+1,i) <> Wsed(ised)
+                endif !we(kbe(i)+1,i) <> Wsed(ised)
  
                 !Debug
                 !depo_mss=0

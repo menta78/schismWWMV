@@ -702,7 +702,7 @@ end subroutine inter_btrack
 !             nnel,jlev: initial and final element and level;
 !
 !       Output:
-!             sclr(4): no longer used except for debugging sometimes;
+!             sclr(4): btrack'ed values of some variables;
 !             iexit: logical flag indicating backtracking exits augmented subdomain. If
 !                    iexit=.true., nnel is inside the aug. domain and should also be inside
 !                    one of the neighboring processes. (xt,yt) is inside nnel.
@@ -750,7 +750,7 @@ end subroutine inter_btrack
 !      dc(1)=b(7,1)-2825./27648; dc(2)=0; dc(3)=b(7,3)-18575./48384
 !      dc(4)=b(7,4)-13525./55296; dc(5)=b(7,5)-277./14336; dc(6)=b(7,6)-0.25
 
-      sclr=0 !not used except for debug
+      sclr=0 
       !Initial exit is false
       iexit=.false.
 
@@ -987,13 +987,13 @@ end subroutine inter_btrack
               uvdata(i,1)=0
               uvdata(i,2)=0
             else !wet
-              if(ics==1) then
-                vxl(1,1)=uu2(jlev,nd); vxl(1,2)=uu2(jlev-1,nd)
-                vxl(2,1)=vv2(jlev,nd); vxl(2,2)=vv2(jlev-1,nd)
-              else
-                call project_hvec(uu2(jlev,nd),vv2(jlev,nd),pframe(:,:,nd),eframe(:,:,nnel),vxl(1,1),vxl(2,1))
-                call project_hvec(uu2(jlev-1,nd),vv2(jlev-1,nd),pframe(:,:,nd),eframe(:,:,nnel),vxl(1,2),vxl(2,2))
-              endif !ics
+!              if(ics==1) then
+              vxl(1,1)=uu2(jlev,nd); vxl(1,2)=uu2(jlev-1,nd)
+              vxl(2,1)=vv2(jlev,nd); vxl(2,2)=vv2(jlev-1,nd)
+!              else
+!                call project_hvec(uu2(jlev,nd),vv2(jlev,nd),pframe(:,:,nd),eframe(:,:,nnel),vxl(1,1),vxl(2,1))
+!                call project_hvec(uu2(jlev-1,nd),vv2(jlev-1,nd),pframe(:,:,nd),eframe(:,:,nnel),vxl(1,2),vxl(2,2))
+!              endif !ics
               uvdata(i,1)=vxl(1,1)*(1-zrat)+vxl(1,2)*zrat
               uvdata(i,2)=vxl(2,1)*(1-zrat)+vxl(2,2)*zrat
               !For ibtrack_test only
@@ -1031,18 +1031,18 @@ end subroutine inter_btrack
               rr=sqrt((xn2-xn3)**2+(yn2-yn3)**2)
             endif !ics
             covar2=covar(kr_co,rr)
-            uuint=uuint+al_beta(i,1)*covar2
+            uuint=uuint+al_beta(i,1)*covar2 !dir assumed to be same as frame0 (ll)
             vvint=vvint+al_beta(i,2)*covar2
             !For ibtrack_test=1
             if(ibtrack_test==1) sclr(1)=sclr(1)+al_beta(i,3)*covar2
           enddo !i
 
-          !Proj vel. back to frame0
-          if(ics==2) then
-            call project_hvec(uuint,vvint,eframe(:,:,nnel),frame0,uuint1,vvint1)
-            uuint=uuint1
-            vvint=vvint1
-          endif !ics
+!          !Proj vel. back to frame0
+!          if(ics==2) then
+!            call project_hvec(uuint,vvint,eframe(:,:,nnel),frame0,uuint1,vvint1)
+!            uuint=uuint1
+!            vvint=vvint1
+!          endif !ics
         endif !resident element
       endif !Kriging
 
@@ -1075,7 +1075,7 @@ end subroutine inter_btrack
 !       vis_coe: weighting factor between continuous and discontinuous vel. - not used anymore
 !       time: time step from (x0,y0,z0) to (xt,yt,zt);
 !       x0,y0,z0:  starting pt. (x0,y0) must be inside nnel 
-!                  (for ics=2, z0 is in vertical direction and coord. are in frame0); 
+!                  (for ics=2, z0 is in vertical direction and (x0,y0,z0) are in frame0); 
 !       nnel,jlev: starting element and level. nnel must be inside aug. domain.
 !       xt,yt,zt: projected end pt; (for ics=2, zt is in vertical direction)
 !       uuint0,vvint0,wwint0: vel. used in 'time' (info only). In frame0 if ics=2.
@@ -1189,9 +1189,21 @@ end subroutine inter_btrack
           go to 400
         endif
       else !quad
-        call quad_shape(0,1,nel,xcg,ycg,inside1,arco) !info only
+        !Reproject pt in eframe of nel for ics=2
+        if(ics==1) then
+          xn1=xcg; yn1=ycg
+          xn2=xt; yn2=yt
+        else !ll
+          call project_pt('l2g',xcg,ycg,0.d0,gcor0,frame0,xcg2,ycg2,zcg2)
+          call project_pt('g2l',xcg2,ycg2,zcg2,(/xctr(nel),yctr(nel),zctr(nel)/),eframe(:,:,nel),xn1,yn1,zn1)
+          call project_pt('l2g',xt,yt,0.d0,gcor0,frame0,xcg2,ycg2,zcg2)
+          call project_pt('g2l',xcg2,ycg2,zcg2,(/xctr(nel),yctr(nel),zctr(nel)/),eframe(:,:,nel),xn2,yn2,zn2)
+        endif !ics
+        !call quad_shape(0,1,nel,xcg,ycg,inside1,arco) !info only
+        call quad_shape(0,1,nel,xn1,yn1,inside1,arco) !info only
         ar_min1=minval(arco) !info for debug only
-        call quad_shape(0,2,nel,xt,yt,inside2,arco)
+        !call quad_shape(0,2,nel,xt,yt,inside2,arco)
+        call quad_shape(0,2,nel,xn2,yn2,inside2,arco)
         ar_min2=minval(arco)
         if(inside2/=0) then
           nnel=nel
@@ -1273,9 +1285,9 @@ end subroutine inter_btrack
             if(i34(nel)==3) then
               call area_coord(0,nel,gcor0,frame0,xcg,ycg,arco)
             else
-              call quad_shape(0,3,nel,xcg,ycg,inside1,arco)
+              if(ics==1) call quad_shape(0,3,nel,xcg,ycg,inside1,arco)
             endif !i34
-            ar_min1=minval(arco(1:i34(nel))) !info for debug only
+            ar_min1=minval(arco(1:i34(nel))) !info for debug only (undefined if ics=2 and quads)
           else !i=2; out of luck
             write(errmsg,*)'QUICKSEARCH: no intersecting edge; start ID (node/side/elem)=', &
      &l_ns,'; start gb. node/side/elem #=',ipsgb,'; start level=',jlev,'; current elem=',ielg(nel), &
@@ -1336,7 +1348,16 @@ end subroutine inter_btrack
         if(i34(nel)==3) then
           call area_coord(1,nel,gcor0,frame0,xt,yt,arco) !'1' - fix A.C.
         else
-          call quad_shape(1,4,nel,xt,yt,inside2,arco)
+          !Reproject pt in eframe of nel for ics=2
+          if(ics==1) then
+            xn2=xt; yn2=yt
+          else !ll
+            call project_pt('l2g',xt,yt,0.d0,gcor0,frame0,xcg2,ycg2,zcg2)
+            call project_pt('g2l',xcg2,ycg2,zcg2,(/xctr(nel),yctr(nel),zctr(nel)/),eframe(:,:,nel),xn2,yn2,zn2)
+          endif !ics
+
+          !call quad_shape(1,4,nel,xt,yt,inside2,arco)
+          call quad_shape(1,4,nel,xn2,yn2,inside2,arco)
         endif
         nnel=nel
         trm=0
@@ -1393,13 +1414,14 @@ end subroutine inter_btrack
         xcg=xin
         ycg=yin
    
-        if(ics==1) then
-          vtan=su2(jlev,isd)*sframe(1,2,isd)+sv2(jlev,isd)*sframe(2,2,isd)
-          xvel=vtan*sframe(1,2,isd) !-vtan*sny(isd)
-          yvel=vtan*sframe(2,2,isd) !vtan*snx(isd)
-        else !lat/lon
-          call project_hvec(0.d0,sv2(jlev,isd),sframe(:,:,isd),frame0,xvel,yvel)
-        endif !ics
+!        if(ics==1) then
+          !vtan=su2(jlev,isd)*sframe(1,2,isd)+sv2(jlev,isd)*sframe(2,2,isd)
+        vtan=-su2(jlev,isd)*sny(isd)+sv2(jlev,isd)*snx(isd)
+        xvel=-vtan*sny(isd) !sframe(1,2,isd) !-vtan*sny(isd)
+        yvel=vtan*snx(isd) !sframe(2,2,isd) !vtan*snx(isd)
+!        else !lat/lon
+!          call project_hvec(0.d0,sv2(jlev,isd),sframe(:,:,isd),frame0,xvel,yvel)
+!        endif !ics
 
         zvel=(ww2(jlev,md1)+ww2(jlev,md2))/2
         xt=xin-xvel*trm
@@ -1454,7 +1476,16 @@ end subroutine inter_btrack
           exit loop4
         endif
       else !quad
-        call quad_shape(0,5,nel,xt,yt,inside2,arco)
+        !Reproject pt in eframe of nel for ics=2
+        if(ics==1) then
+          xn2=xt; yn2=yt
+        else !ll
+          call project_pt('l2g',xt,yt,0.d0,gcor0,frame0,xcg2,ycg2,zcg2)
+          call project_pt('g2l',xcg2,ycg2,zcg2,(/xctr(nel),yctr(nel),zctr(nel)/),eframe(:,:,nel),xn2,yn2,zn2)
+        endif !ics
+
+        !call quad_shape(0,5,nel,xt,yt,inside2,arco)
+        call quad_shape(0,5,nel,xn2,yn2,inside2,arco)
         ar_min1=minval(arco(1:4))
         if(inside2/=0) then
           !arco will be fixed immediately outside loop4
@@ -1531,7 +1562,16 @@ end subroutine inter_btrack
       if(i34(nnel)==3) then
         call area_coord(1,nnel,gcor0,frame0,xt,yt,arco)
       else
-        call quad_shape(1,6,nnel,xt,yt,inside2,arco)
+        !Reproject pt in eframe of nel for ics=2
+        if(ics==1) then
+          xn2=xt; yn2=yt
+        else !ll
+          call project_pt('l2g',xt,yt,0.d0,gcor0,frame0,xcg2,ycg2,zcg2)
+          call project_pt('g2l',xcg2,ycg2,zcg2,(/xctr(nnel),yctr(nnel),zctr(nnel)/),eframe(:,:,nnel),xn2,yn2,zn2)
+        endif !ics
+
+        !call quad_shape(1,6,nnel,xt,yt,inside2,arco)
+        call quad_shape(1,6,nnel,xn2,yn2,inside2,arco)
       endif !i34
 
 !      do j=1,3 !nodes
@@ -1680,15 +1720,15 @@ end subroutine inter_btrack
         do j=1,3 !sides and nodes
           nd=elnode(j,nnel)
           isd=elside(j,nnel)
-          if(ics==1) then
-            vxn(j)=su2(jlev,isd)*(1-zrat)+su2(jlev-1,isd)*zrat
-            vyn(j)=sv2(jlev,isd)*(1-zrat)+sv2(jlev-1,isd)*zrat !side
-          else !lat/lon
-            call project_hvec(su2(jlev,isd),sv2(jlev,isd),sframe(:,:,isd),frame0,uj,vj)
-            call project_hvec(su2(jlev-1,isd),sv2(jlev-1,isd),sframe(:,:,isd),frame0,uj1,vj1)
-            vxn(j)=uj*(1-zrat)+uj1*zrat
-            vyn(j)=vj*(1-zrat)+vj1*zrat
-          endif !ics
+!          if(ics==1) then
+          vxn(j)=su2(jlev,isd)*(1-zrat)+su2(jlev-1,isd)*zrat
+          vyn(j)=sv2(jlev,isd)*(1-zrat)+sv2(jlev-1,isd)*zrat !side
+!          else !lat/lon
+!            call project_hvec(su2(jlev,isd),sv2(jlev,isd),sframe(:,:,isd),frame0,uj,vj)
+!            call project_hvec(su2(jlev-1,isd),sv2(jlev-1,isd),sframe(:,:,isd),frame0,uj1,vj1)
+!            vxn(j)=uj*(1-zrat)+uj1*zrat
+!            vyn(j)=vj*(1-zrat)+vj1*zrat
+!          endif !ics
           vzn(j)=ww2(jlev,nd)*(1-zrat)+ww2(jlev-1,nd)*zrat !node
         enddo !j=1,3
 
@@ -1703,13 +1743,13 @@ end subroutine inter_btrack
           nd=elnode(j,nnel)
           do l=1,2 !levels
             lev=jlev+l-2
-            if(ics==1) then
-              uu=uu2(lev,nd); vv=vv2(lev,nd)
-            else !lat/lon
-              call project_hvec(uu2(lev,nd),vv2(lev,nd),pframe(:,:,nd),frame0,uu,vv)
-            endif !ics
-            vxl(j,l)=uu !+vis_coe*uf
-            vyl(j,l)=vv !+vis_coe*vf
+!            if(ics==1) then
+!              uu=uu2(lev,nd); vv=vv2(lev,nd)
+!            else !lat/lon
+!              call project_hvec(uu2(lev,nd),vv2(lev,nd),pframe(:,:,nd),frame0,uu,vv)
+!            endif !ics
+            vxl(j,l)=uu2(lev,nd) !uu !+vis_coe*uf
+            vyl(j,l)=vv2(lev,nd) !vv !+vis_coe*vf
             vzl(j,l)=ww2(lev,nd)
           enddo !l
         enddo !j
