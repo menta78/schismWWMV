@@ -2208,24 +2208,26 @@
 !$OMP END DO
 !$OMP END PARALLEL
 # endif
+      IF (TEXT_OUTPUT_PRINT) THEN
 # ifdef MPI_PARALL_GRID
-      IF (myrank .eq. 0) THEN
+        IF (myrank .eq. 0) THEN
 # endif
-        WRITE(STAT%FHNDL,*) 'nbVar=', nbVar
-        eFact = 0.8_rkind
-        DO IVAR=1,nbVar
-          eMax=maxval(OUTT(IVAR,:))
-          WRITE(STAT%FHNDL,*) 'IVAR=', IVAR,  ' max=', eMax
-          DO IP=1,np_global
-            eVal=OUTT(IVAR,IP)
-            IF (eVal .gt. eFact*eMax) THEN
-              WRITE(STAT%FHNDL,*) ' IP=', IP, ' val=', eVal
-            END IF
+          WRITE(STAT%FHNDL,*) 'nbVar=', nbVar
+          eFact = 0.8_rkind
+          DO IVAR=1,nbVar
+            eMax=maxval(OUTT(IVAR,:))
+            WRITE(STAT%FHNDL,*) 'IVAR=', IVAR,  ' max=', eMax
+            DO IP=1,np_global
+              eVal=OUTT(IVAR,IP)
+              IF (eVal .gt. eFact*eMax) THEN
+                WRITE(STAT%FHNDL,*) ' IP=', IP, ' val=', eVal
+              END IF
+            END DO
           END DO
-        END DO
 # ifdef MPI_PARALL_GRID
-      END IF
+        END IF
 # endif
+      END IF
       END SUBROUTINE
       END SUBROUTINE
 #endif
