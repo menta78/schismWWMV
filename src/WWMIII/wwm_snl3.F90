@@ -3,14 +3,13 @@
 !*  Yasser Eldeberky, Nonlinear Transformation of Wave Spectra in     *
 !*        the Nearshore Zone, PhD thesis, TU Delft                    *
 !**********************************************************************
-      SUBROUTINE TRIAD_ELDEBERKY(ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
+      SUBROUTINE TRIAD_ELDEBERKY(ip, hs, smespc, acloc, ssnl3, dssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
       real(rkind), intent(out)   :: ssnl3(msc,mdc), dssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
       integer id, is, ismax
       real(rkind)    aux1, aux2, biph, c0, cm, e0
       real(rkind)    em,ft, rint, sigpi, sinbph, stri
@@ -19,8 +18,6 @@
       real(rkind) :: E(MSC)
       real(rkind) :: SA(1:MSC+TRI_ISP1,1:MDC)
 
-      SSNL3 = ZERO
-      dssnl3 = ZERO
       IF (HS .LT. SMALL) RETURN
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
       IF ( URSELL .le. TRI_ARR(5) ) RETURN
@@ -55,6 +52,8 @@
           SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E0)))
         END DO
       END DO
+      SSNL3 = ZERO
+      DSSNL3 = ZERO
       DO ID = 1, MDC
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2
@@ -66,17 +65,14 @@
             IF (STRI .GT. 0.) THEN
               SSNL3(IS,ID)  = eCont
             ELSE
-              IMATDA(IS,ID) = IMATDA(IS,ID) - eCont / ACLOC(IS,ID)
               DSSNL3(IS,ID) = - eCont/ACLOC(IS,ID)
             END IF
           ELSE
-            IMATDA(IS,ID) = ZERO !IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
             SSNL3(IS,ID)  = eCont
             DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
           END IF
         END DO
       END DO
-      IMATRA = IMATRA + SSNL3
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

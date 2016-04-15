@@ -3,7 +3,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, ACLOC, IMATRA, IMATDA, SSBR, DSSBR)
+      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, ACLOC, SSBR, DSSBR)
       USE DATAPOOL
       IMPLICIT NONE
 
@@ -12,7 +12,6 @@
       REAL(rkind), INTENT(IN)   :: ACLOC(MSC,MDC), SME, KME, ETOT, HS
 
       REAL(rkind), INTENT(OUT)     :: SSBR(MSC,MDC), DSSBR(MSC,MDC)
-      REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
       REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
@@ -188,8 +187,6 @@
           SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
         END DO
       END DO 
-      IMATDA = IMATDA + SURFSEL
-      IMATRA = IMATRA + SSBR
 
       !IF (ABS(SURFA0) .GT. 0. .OR. ABS(SURFA1) .GT. 0.) THEN
       !  IF (DEP(IP) .LT. 0.21 .AND. DEP(IP) .GT. 0.19) WRITE(3333,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME/PI, KME, DEP(IP), ETOT, HMAX(IP)
