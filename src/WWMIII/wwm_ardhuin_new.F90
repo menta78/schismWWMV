@@ -985,16 +985,7 @@
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
 
-      IF (SOURCE_IMPL) THEN
-        DO IK =1,NK
-          DO ITH=1,NTH
-            IS=ITH+(IK-1)*NTH
-            S(IS) = D(IS) * A(IS)
-          END DO
-        ENDDO
-      ELSE
         S = D * A
-      ENDIF
 !
 ! ... Test output of arrays
 !
