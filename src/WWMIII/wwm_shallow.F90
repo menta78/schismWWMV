@@ -9,7 +9,7 @@
          INTEGER, INTENT(IN)      :: IP
          REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
-         REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSBRL(MSC,MDC)
