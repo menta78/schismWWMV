@@ -2876,6 +2876,7 @@
           WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'IP=', IP, ' IPglob=', IPglob
           WRITE(STAT%FHNDL,*) 'string=', string
+          WRITE(STAT%FHNDL,*) 'ISHALLOW=', ISHALLOW(IP)
           IF (IP .le. NP_RES) THEN
             WRITE(STAT%FHNDL,*) 'Main node'
           ELSE
