@@ -2866,16 +2866,13 @@
       character(*), intent(in) :: string
       !
       integer IP, IPmap, ID, IS
-      integer nbMatch
       real(rkind) HS, ETAIL, DS, ETOT, tmp(MSC)
 !      WRITE(STAT%FHNDL,*) 'Beginning of LOCAL_NODE_PRINT function'
 !      WRITE(STAT%FHNDL,*) 'IPglob=', IPglob
-      nbMatch=0
       idxcall=idxcall+1
       DO IP=1,MNP
         IPmap=iplg(IP)
         IF (IPmap .eq. IPglob) THEN
-          nbMatch=nbMatch+1
           WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'IP=', IP, ' IPglob=', IPglob
           WRITE(STAT%FHNDL,*) 'string=', string
@@ -2927,7 +2924,6 @@
           WRITE(STAT%FHNDL,*) 'TAUWX=', TAUWX(IP), ' TAUWY=', TAUWY(IP)
         END IF
       END DO
-      WRITE(STAT%FHNDL,*) 'nbMatch=', nbMatch
       FLUSH(STAT%FHNDL)
       END SUBROUTINE
 !**********************************************************************

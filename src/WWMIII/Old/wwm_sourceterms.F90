@@ -1,11 +1,34 @@
 #include "wwm_functions.h"
+#undef DEBUG
+#define DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-!2do add mean quantities for 
+      SUBROUTINE LOCAL_DEBUG_IMATRA_IMATDA(IP, IPglob,IMATRA, IMATDA, string)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer, intent(in) :: IP, IPglob
+      REAL(rkind), intent(in) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      character(*), intent(in) :: string
+      integer, save :: idxcall = 0
+      integer IPmap
+      !
+      IPmap=iplg(IP)
+      WRITE(STAT%FHNDL,*) 'IP=', IP, 'IPmap=', IPmap, ' IPglob=', IPglob
+      IF (IPmap .eq. IPglob) THEN
+        idxcall=idxcall+1
+        WRITE(STAT%FHNDL,*) 'LOCAL_DEBUG_IMATRA_IMATDA idxcall=', idxcall
+        WRITE(STAT%FHNDL,*) 'string=', string
+        WRITE(STAT%FHNDL,*) 'min/max/sum(IMATRA)=', minval(IMATRA), maxval(IMATRA), sum(IMATRA)
+        WRITE(STAT%FHNDL,*) 'min/max/sum(IMATDA)=', minval(IMATDA), maxval(IMATDA), sum(IMATDA)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
       
-      USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC
+      USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC, STAT
       USE DATAPOOL, ONLY : CD, TAUTOT, TAUWX, TAUWY, DEP, AC1, AC2
       USE DATAPOOL, ONLY : PI2, CG, G9, ZERO, ALPHA_CH, QBLOCAL
       USE DATAPOOL, ONLY : USTDIR, Z0, SMALL, VERYSMALL, MSC_HF
@@ -134,8 +157,11 @@
            END DO
          END DO
 
+         WRITE(STAT%FHNDL,*) 'Before DEBUG enclosed part'
 #ifdef DEBUG
-         WRITE(*,*) '0', SUM(IMATRA), SUM(IMATDA), ISELECT, MESIN, CALLFROM
+         WRITE(STAT%FHNDL,*) 'Before call to LOCAL_DEBUG_IMATRA_IMATDA'
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 1")
+         WRITE(STAT%FHNDL,*) ' After call to LOCAL_DEBUG_IMATRA_IMATDA'
 #endif
 
 #ifdef TIMINGS
@@ -212,7 +238,7 @@
          END IF ! ISELECT 
 
 #ifdef DEBUG
-         WRITE(*,*) '1', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 2")
 #endif
 
 #ifdef TIMINGS
@@ -283,7 +309,7 @@
          ENDIF
 
 #ifdef DEBUG
-         WRITE(*,*) '2', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 3")
 #endif
 
 
@@ -342,7 +368,7 @@
          END IF
 
 #ifdef DEBUG
-         WRITE(*,*) '3', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 4")
 #endif
 
 #ifdef TIMINGS
@@ -372,7 +398,7 @@
          END IF
 
 #ifdef DEBUG
-         WRITE(*,*) '4', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 5")
 #endif
 
 
@@ -391,7 +417,7 @@
 #endif 
 
 #ifdef DEBUG
-         WRITE(*,*) '5', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 6")
 #endif
 
          IF (MESBF .GE. 1) THEN
@@ -410,7 +436,7 @@
          ENDIF
 
 #ifdef DEBUG
-         WRITE(*,*) '6', SUM(IMATRA), SUM(IMATDA)
+         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 7")
 #endif
 
 #ifdef TIMINGS
