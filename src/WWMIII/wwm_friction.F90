@@ -67,13 +67,12 @@
         KDEP = WK(IS,IP)*DEP(IP)
         DSSBF(IS,:) = CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
         DO ID = 1, MDC
+          SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
           IF (ICOMP .GE. 2) THEN
             IMATDA(IS,ID) = IMATDA(IS,ID) + DSSBF(IS,ID)
-            SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
-          ELSE IF (ICOMP .LT. 2) THEN
+          ELSE
             IMATDA(IS,ID) = IMATDA(IS,ID) - DSSBF(IS,ID)
             IMATRA(IS,ID) = IMATRA(IS,ID) - DSSBF(IS,ID) * ACLOC(IS,ID)
-            SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID) 
           END IF
         END DO
       END DO

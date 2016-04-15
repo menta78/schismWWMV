@@ -3,7 +3,7 @@
 !*  Yasser Eldeberky, Nonlinear Transformation of Wave Spectra in     *
 !*        the Nearshore Zone, PhD thesis, TU Delft                    *
 !**********************************************************************
-      subroutine triad_eldeberky(ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
+      SUBROUTINE TRIAD_ELDEBERKY(ip, hs, smespc, acloc, imatra, imatda, ssnl3, dssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
@@ -19,7 +19,7 @@
       real(rkind) :: E(MSC)
       real(rkind) :: SA(1:MSC+TRI_ISP1,1:MDC)
 
-      ssnl3 = ZERO
+      SSNL3 = ZERO
       dssnl3 = ZERO
       IF (HS .LT. SMALL) RETURN
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
@@ -64,20 +64,19 @@
           eCont = STRI / SIGPI
           IF (ICOMP .GE. 2) THEN
             IF (STRI .GT. 0.) THEN
-              IMATRA(IS,ID) = IMATRA(IS,ID) + eCont
               SSNL3(IS,ID)  = eCont
             ELSE
               IMATDA(IS,ID) = IMATDA(IS,ID) - eCont / ACLOC(IS,ID)
               DSSNL3(IS,ID) = - eCont/ACLOC(IS,ID)
             END IF
           ELSE
-            IMATRA(IS,ID) = IMATRA(IS,ID) + eCont
             IMATDA(IS,ID) = ZERO !IMATDA(IS,ID) + STRI / (ACLOC(IS,ID)*SIGPI)
             SSNL3(IS,ID)  = eCont
             DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
           END IF
         END DO
       END DO
+      IMATRA = IMATRA + SSNL3
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

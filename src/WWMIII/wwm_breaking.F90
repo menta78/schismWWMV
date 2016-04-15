@@ -24,7 +24,7 @@
       REAL(rkind) :: COST, SINT
 #endif
       REAL(rkind) :: GAMMA_WB, COEFF_A 
-      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B
+      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
 
@@ -177,22 +177,19 @@
           ENDIF
         ENDIF
       ENDIF
-
+      IF (ICOMP .ge. 2) THEN
+        SURFSEL=SURFA1
+      ELSE
+        SURFSEL=SURFA0
+      END IF
+      DSSBR = SURFSEL
       DO IS = 1, MSC
         DO ID = 1, MDC
-          IF (ICOMP .GE. 2) THEN
-            DSSBR(IS,ID)  = SURFA1
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
-            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-          ELSE IF (ICOMP .LT. 2) THEN
-            DSSBR(IS,ID)  = SURFA0
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
-            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
-          END IF
+          SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
         END DO
       END DO 
+      IMATDA = IMATDA + SURFSEL
+      IMATRA = IMATRA + SSBR
 
       !IF (ABS(SURFA0) .GT. 0. .OR. ABS(SURFA1) .GT. 0.) THEN
       !  IF (DEP(IP) .LT. 0.21 .AND. DEP(IP) .GT. 0.19) WRITE(3333,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME/PI, KME, DEP(IP), ETOT, HMAX(IP)
