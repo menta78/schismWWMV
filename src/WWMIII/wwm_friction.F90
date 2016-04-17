@@ -64,7 +64,9 @@
 
       DO IS = 1, MSC
         KDEP = WK(IS,IP)*DEP(IP)
-        DSSBF(IS,:) = CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
+! This correction puts the opposite sign compared to SWAN. At least it is physically
+! sensible since the bottom friction should decrease wave energy.
+        DSSBF(IS,:) = - CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
         DO ID = 1, MDC
           SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
 !          IF (ICOMP .GE. 2) THEN
