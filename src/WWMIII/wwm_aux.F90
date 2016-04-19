@@ -315,8 +315,8 @@
             DVDX(NI) = DVDX(NI) + DVDXIE
             DVDY(NI) = DVDY(NI) + DVDYIE
          END DO
-         DVDX(:) = DVDX(:)/WEI(:)
-         DVDY(:) = DVDY(:)/WEI(:)
+         DVDX = DVDX/WEI
+         DVDY = DVDY/WEI
          DO IP = 1, MNP
            IF (DEP(IP) .LT. DMIN) THEN
              DVDX(IP) = 0.
