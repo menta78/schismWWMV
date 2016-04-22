@@ -64,13 +64,22 @@
 
 
 \section{Introduction}
-WWMIII is a third generation wave model that solves the Wave Action Equation on an unstructured mesh.
-It provides following interesting features:
+WWMIII is a third generation wave model that allows to forecast gravity surface waves
+on lakes and open sea.
+
+solves the Wave Action Equation on unstructured triangular meshes.
+
+
+
+
+
+It provides following features:
 \begin{enumerate}
 \item It has many different source term formulations.
 \item It is based on redistribution schemes and provide several advection
   schemes that can be both explicit and implicit.
 \item It has coupling with many different geoscience models.
+\item 
 \end{enumerate}
 
 
@@ -645,6 +654,7 @@ TODO: clear the meaning with {\tt LSTCU}.
 This section specifies the choices of physical parametrizations done in the WWM model.
 \begin{verbatim}
 &ENGS !SOURCE TERMS
+ ISOURCE        = 1
  MESNL          = 1      
  MESIN          = 1      
  IFRIC          = 1              
@@ -667,22 +677,29 @@ This section specifies the choices of physical parametrizations done in the WWM 
 \end{verbatim}
 The meaning of the options is the following:
 \begin{enumerate}
+\item {\tt ISOURCE} (integer): the choice of the input source terms. Possible values:
+  \begin{itemize}
+  \item {\tt 1}: The Ardhuin et al. (2010) formulation \cite{ArdhuinSurfaceStressFormulation}.
+  \item {\tt 2}: The Cycle 4 formulation \cite{CycleIV}.
+  \item {\tt 3}: The Cycle 3 formulation \cite{WAMDIgroup}.
+  \end{itemize}
+Other formulations that could be put in the future are Makin \& Stam \cite{MakinStam} and Donealan et al. formulations.
+\item {\tt MESIN} (integer): the input source term. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: no wind input source terms.
+  \item {\tt 1}: The wind input is selected.
+  \end{itemize}
+Recommended option is {\tt MESIN=1}. Other options are for research purposes.
+\item {\tt MESDS} (integer): the whitecapping function.
+  \begin{itemize}
+  \item {\tt 0}: no wave dissipation source terms.
+  \item {\tt 1}: The dissipation is selected.
+  \end{itemize}
 \item {\tt MESNL} (integer): this is the option for nonlinear interactions:
   \begin{itemize}
   \item {\tt 0}: no nonlinear interactions
   \item {\tt 1}: nonlinear interactions computed according to DIA.
   \end{itemize}
-\item {\tt MESIN} (integer): the input source term. Possible values:
-  \begin{itemize}
-  \item {\tt 0}: no input source terms. 
-  \item {\tt 1}: The Ardhuin et al. (2010) formulation \cite{ArdhuinSurfaceStressFormulation}.
-  \item {\tt 2}: The Cycle 4 formulation \cite{CycleIV}.
-  \item {\tt 3}: The Makin \& Stam formulation \cite{MakinStam}.
-  \item {\tt 4}: The Donealan et al. formulation.
-  \item {\tt 5}: The Cycle 3 formulation
-  \end{itemize}
-Recommended option is {\tt MESIN=1}. Other options are for research purposes.
-\item {\tt MESDS} (integer): the whitecapping function. It is usually set to the same value as {\tt MESIN}.
 \item {\tt LPRECOMPST4} (logical): precompute ST4 data and save it to disk. This concerns only {\tt MESIN=1}. 
 \item {\tt IFRIC} (integer): atmospheric boundary layer formulation. Possible values:
   \begin{itemize}
