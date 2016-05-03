@@ -17,7 +17,7 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
@@ -88,7 +88,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
          wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o \
          wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
          wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o \
-         wwm_snl4.o wwm_snl42.o wwm_snl4_tsa.o wwm_babanin.o wwm_sourceterms.o \
+         wwm_snl4.o wwm_snl42.o wwm_snl4_tsa.o wwm_babanin.o \
          wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
          wwm_snonlin_local.o wwm_stress.o wwm_stresso_local.o wwm_sdiss_ardh_vec_local.o \
          wwm_sinput_local.o wwm_sinput_ard_local.o wwm_wsigstar_local.o wwm_tauhf.o wwm_airsea_local.o \
