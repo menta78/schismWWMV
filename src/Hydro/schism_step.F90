@@ -35,12 +35,7 @@
 #endif
 
 #ifdef USE_ICM
-      USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
-                          &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
-                          &WWPRPOP,WWPLPOP,WWPDOP,WWPPO4t,WWPSU,WWPSAt, &
-                          &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
-                          &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
-                          &PSAt,PCOD,PDO,WMS,irea    !added by YC
+      use icm_mod, only : iSun,iRea,WMS,wqc
       USE icm_sed_mod, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
                             &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
                             &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
@@ -112,7 +107,7 @@
                      &xlfs,xlbot,prod,buoy,diss,psi_n,psi_n1,q2l,upper, &
                      &xl_max,vd,td,qd1,qd2,t0,s0,rot_per,rot_f,xt,yt,zt, &
                      &xt4,yt4,zt4,uuint,vvint,wwint,vis_coe,suma,dtbk,eps, &
-                     &time_rm,time_rm2,u1,u2,v1,v2,eic,eta_min,zmax,xn1,yn1, &
+                     &time_rm,time_rm2,u1,u2,v1,v2,eta_min,zmax,xn1,yn1, &
                      &xn2,yn2,x10,x20,y10,y20,bb1,bb2,rl10,rl20,delta, &
                      &sintheta,tau_x,tau_x2,tau_y,tau_y2,detadx,detady,dprdx, &
                      &dprdy,detpdx,detpdy,chigamma,ubstar,vbstar,hhat_bar, &
@@ -853,6 +848,14 @@
 
 !    VIMS mode added by YC
 #ifdef USE_ICM 
+      !pass C(n+1,-P) for tranport, see (Park,1995)
+      do i=1,nea
+        do k=1,nvrt
+          do j=1,ntrs(7)
+            tr_el(j-1+irange_tr(1,7),k,i)=wqc(j,k,i)
+          enddo
+        enddo
+      enddo
 !      if(myrank==0) write(16,*)'start ICM point source..'
 !      if(iWQPS==2) then
 !        if(time>=npstime) then
@@ -3322,15 +3325,10 @@
           nd=iond_global(i,j) !global
           if(ipgl(nd)%rank==myrank) then
             ip=ipgl(nd)%id
-            if(nramp_elev==1) then
-              eic=etaic(ip)
-            else
-              eic=0
-            endif
 
             !Prep tide
             if(iettype(i)==3.or.iettype(i)==5) then
-              eta1_bar=(1-ramp)*eic !initialize
+              eta1_bar=(1-ramp)*etaic(ip) !initialize
               do jfr=1,nbfr
                 ncyc=int(amig(jfr)*time/2/pi)
                 arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-efa(i,j,jfr)
@@ -3339,17 +3337,11 @@
             endif
 
             if(iettype(i)==1.or.iettype(i)==2) then
-              elbc(ip)=ramp*eth(1,i)+(1-ramp)*eic
+              elbc(ip)=ramp*eth(1,i)+(1-ramp)*etaic(ip) !eic
             else if(iettype(i)==3) then
               elbc(ip)=eta1_bar
-!              elbc(ip)=(1-ramp)*eic !initialize
-!              do jfr=1,nbfr
-!                ncyc=int(amig(jfr)*time/2/pi)
-!                arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-efa(i,j,jfr)
-!                elbc(ip)=elbc(ip)+ramp*ff(jfr)*emo(i,j,jfr)*cos(arg)
-!              enddo !jfr=1,nbfr
             else if(iettype(i)==4) then
-              elbc(ip)=ramp*eth(j,i)+(1-ramp)*eic
+              elbc(ip)=ramp*eth(j,i)+(1-ramp)*etaic(ip)
             else if(iettype(i)==5) then
               elbc(ip)=ramp*eth(j,i)+eta1_bar
             endif
@@ -4155,7 +4147,7 @@
 
 !...      Impose Point Source volume at the surface layer (including 3D continuity); added by YC
 #ifdef USE_ICM
-          if(iWQPS==2) then
+!          if(iWQPS==2) then
 !            do l=1,3
 !              if(id==l) then
 !                fac=2
@@ -4168,8 +4160,8 @@
 !              qel(i)=qel(i)-PSQ(ie)*dt/12*fac
 !            enddo !l
 
-            qel(i)=qel(i)-PSQ(ie)*dt/i34(ie)
-          endif
+!            qel(i)=qel(i)-PSQ(ie)*dt/i34(ie)
+!          endif
 #endif /*USE_ICM*/
         enddo !j=1,nne(i)
 
@@ -5548,6 +5540,7 @@
           enddo !i
           if(myrank==0) write(16,*)'end ICM adjust. surface T..'
         endif !iSun=2
+
 #endif /*USE_ICM*/
 
 #ifdef USE_COSINE 
@@ -5610,18 +5603,6 @@
         !  write(12,*)'After trc. trans.:',it,j,real(tr_el(j,:,8))
         !enddo !j
 
-#ifdef USE_ICM
-        if(myrank==0) write(16,*)'start ICM (5)..'
-        if(amod(real(time),86400.)==0.) then
-          !call WQinput !(time)
-          !call wqm_out
-        endif
-        call WQinput(time)
-        if(myrank==0) write(16,*) 'Calculating ecological sources and sinks terms...'     !added by YC
-        !Main routine of ICM
-        call ecosystem(it)
-        if(myrank==0) write(16,*) 'Done ecological sources and sinks terms...'            !added by YC
-#endif /*USE_ICM*/
 
 !        trel(1:ntracers,:,:)=tr_el(1:ntracers,:,1:nea)
         if(difnum_max_l>difnum_max_l2) difnum_max_l2=difnum_max_l
@@ -5718,6 +5699,13 @@
           enddo !k
         enddo !i=1,nea
 
+#ifdef USE_ICM
+        !update ICM time varying input 
+        call WQinput(time)
+
+        if(myrank==0) write(16,*)'calculating ICM kinetic source/sink'
+        call ecosystem(it)
+#endif /*USE_ICM*/
 !Debug
 !        write(12,*)'stage 1'
 
